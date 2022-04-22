@@ -1,6 +1,6 @@
-# Music Assistant
+# Music Assistant frontend (Vue PWA)
 
-This template should help get you started developing with Vue 3 in Vite.
+The Music Assistant frontend/panel is developed in Vue, development instructions below.
 
 ## Recommended IDE Setup
 
