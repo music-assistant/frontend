@@ -44,7 +44,7 @@
     "https-localhost": "^4.7.1",
     "jsdom": "^19.0.0",
     "prettier": "^2.5.1",
-    "sass": "^1.38.0",
+    "sass": "^1.50.1",
     "sass-loader": "^10.0.0",
     "typescript": "~4.6.3",
     "vite": "^2.9.1",
