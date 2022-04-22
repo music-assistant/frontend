@@ -11,8 +11,8 @@ export default createVuetify(
       defaultSet: "mdi",
       aliases,
       sets: {
-        mdi
-      }
+        mdi,
+      },
     },
     display: {
       mobileBreakpoint: "md",
@@ -21,8 +21,8 @@ export default createVuetify(
         sm: 340,
         md: 540,
         lg: 800,
-        xl: 1280
-      }
+        xl: 1280,
+      },
     },
     theme: {
       defaultTheme: "light",
@@ -32,16 +32,16 @@ export default createVuetify(
           colors: {
             primary: colors.blue.base,
             accent: colors.blue.darken2,
-          }
+          },
         },
         dark: {
           dark: true,
           colors: {
             primary: colors.blue.darken4,
             accent: colors.blue.lighten2,
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   }
 );

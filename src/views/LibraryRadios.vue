@@ -10,7 +10,7 @@ import { api } from "../plugins/api";
 import type { Radio } from "../plugins/api";
 import { store } from "../plugins/store";
 
-const {t } = useI18n();
+const { t } = useI18n();
 const items = ref<Radio[]>([]);
 const loading = ref(true);
 

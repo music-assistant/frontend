@@ -7,7 +7,7 @@
     clipped
     temporary
     width="300"
-    style="z-index:99999"
+    style="z-index: 99999"
   >
     <v-card-title class="headline">
       <b>{{ $t("players") }}</b>
@@ -39,13 +39,17 @@
               <v-icon
                 size="45"
                 :icon="
-                  api.players[queue.player].is_group ? mdiSpeakerMultiple : mdiSpeaker
+                  api.players[queue.player].is_group
+                    ? mdiSpeakerMultiple
+                    : mdiSpeaker
                 "
                 color="accent"
               />
             </v-list-item-avatar>
             <div>
-              <v-list-item-title class="text-subtitle-1" style="margin-left: 10px"
+              <v-list-item-title
+                class="text-subtitle-1"
+                style="margin-left: 10px"
                 ><b>{{ queue.name.substring(0, 25) }}</b></v-list-item-title
               >
               <v-list-item-subtitle
@@ -100,7 +104,9 @@
               thumb-label
               :disabled="!childPlayer.powered"
               :model-value="Math.round(childPlayer.volume_level)"
-              @update:model-value="api.queueCommandVolume(childPlayer.player_id, $event)"
+              @update:model-value="
+                api.queueCommandVolume(childPlayer.player_id, $event)
+              "
             ></v-slider>
           </div>
         </v-expansion-panel-text>
@@ -117,7 +123,6 @@ import {
   mdiPower,
   mdiChevronUp,
   mdiChevronDown,
-  mdiVolumePlus,
 } from "@mdi/js";
 import type { Player, PlayerQueue } from "../plugins/api";
 import { store } from "../plugins/store";

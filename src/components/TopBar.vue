@@ -5,9 +5,12 @@
       :color="store.topBarTextColor"
       @click="backButton"
       v-if="store.prevRoutes.length > 0"
-      style="margin-left:-15px"
+      style="margin-left: -15px"
     />
-    <v-toolbar-title :style="`color: ${store.topBarTextColor}`" v-html="store.topBarTitle"></v-toolbar-title>
+    <v-toolbar-title
+      :style="`color: ${store.topBarTextColor}`"
+      v-html="store.topBarTitle"
+    ></v-toolbar-title>
     <template v-slot:append>
       <div style="align-items: center">
         <v-dialog>
@@ -25,7 +28,9 @@
             </v-tooltip>
           </template>
           <v-card min-width="400">
-            <v-card-title>{{ $t("jobs_running", [api.jobs.value.length]) }}</v-card-title>
+            <v-card-title>{{
+              $t("jobs_running", [api.jobs.value.length])
+            }}</v-card-title>
             <v-list>
               <v-list-item v-for="(item, index) in api.jobs.value" :key="index">
                 <v-list-item-title>{{ item }}</v-list-item-title>
@@ -38,7 +43,7 @@
           :icon="mdiDotsVertical"
           v-if="store.contextMenuParentItem"
           :color="store.topBarTextColor"
-          style="margin-right:-20px;"
+          style="margin-right: -20px"
           @click="
             store.contextMenuItems = [store.contextMenuParentItem];
             store.showContextMenu = true;
@@ -62,13 +67,12 @@ const router = useRouter();
 const backButton = function () {
   const prevRoute = store.prevRoutes.pop();
   if (prevRoute) {
-    prevRoute.params['backnav'] = 'true';
+    prevRoute.params["backnav"] = "true";
     router.replace(prevRoute).then(() => {
       setTimeout(() => {
-      window.scrollTo(0, prevRoute.meta.scrollPos || 0)
-    },400)
-    })
+        window.scrollTo(0, prevRoute.meta.scrollPos || 0);
+      }, 400);
+    });
   }
-}
-
+};
 </script>

@@ -44,7 +44,10 @@
           <!-- other details -->
           <div style="padding-bottom: 10px">
             <!-- version -->
-            <v-card-subtitle v-if="'version' in item && item.version" class="caption">
+            <v-card-subtitle
+              v-if="'version' in item && item.version"
+              class="caption"
+            >
               {{ item.version }}
             </v-card-subtitle>
 
@@ -59,7 +62,10 @@
                 color="primary"
                 :icon="mdiAccountMusic"
               ></v-icon>
-              <span v-for="(artist, artistindex) in item.artists" :key="artist.item_id">
+              <span
+                v-for="(artist, artistindex) in item.artists"
+                :key="artist.item_id"
+              >
                 <a style="color: accent" @click="artistClick(artist)">{{
                   artist.name
                 }}</a>
@@ -73,7 +79,10 @@
             </v-card-subtitle>
 
             <!-- album artist -->
-            <v-card-subtitle v-if="'artist' in item && item.artist" class="title">
+            <v-card-subtitle
+              v-if="'artist' in item && item.artist"
+              class="title"
+            >
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
                 small
@@ -154,7 +163,10 @@
                 v-html="
                   showFullInfo
                     ? getDescription()
-                    : truncateText(getDescription(), $vuetify.display.mobile ? 160 : 380)
+                    : truncateText(
+                        getDescription(),
+                        $vuetify.display.mobile ? 160 : 380
+                      )
                 "
               >
               </span>
@@ -205,19 +217,17 @@ import {
 
 import { store } from "../plugins/store";
 import api from "../plugins/api";
-import type {
-  Album,
-  Artist,
-  ItemMapping,
-  MediaItem,
-  MediaItemType,
-} from "../plugins/api";
-import { onActivated, onBeforeUnmount, onDeactivated, ref, watchEffect } from "vue";
+import type { Album, Artist, ItemMapping, MediaItemType } from "../plugins/api";
+import { onBeforeUnmount, ref, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url).href;
-const imgDefaultArtist = new URL("../assets/default_artist.png", import.meta.url).href;
+const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
+  .href;
+const imgDefaultArtist = new URL(
+  "../assets/default_artist.png",
+  import.meta.url
+).href;
 
 const { t } = useI18n();
 const router = useRouter();
@@ -291,11 +301,10 @@ const truncateText = function (text: string, maxChars: number) {
 </script>
 
 <style>
-
 .background-image {
   position: absolute;
 }
 .background-image .v-img__img--cover {
-  object-position: 50% 20%
+  object-position: 50% 20%;
 }
 </style>

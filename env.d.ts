@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /// <reference types="vite/client" />
 
 declare module "virtual:pwa-register/vue" {
-  // @ts-ignore ignore when vue is not installed
   import type { Ref } from "vue";
 
   export interface RegisterSWOptions {

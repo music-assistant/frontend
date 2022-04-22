@@ -13,7 +13,9 @@ const close = async () => {
   <div v-if="offlineReady || needRefresh" class="pwa-toast" role="alert">
     <div class="message">
       <span v-if="offlineReady"> App ready to work offline </span>
-      <span v-else> New content available, click on reload button to update. </span>
+      <span v-else>
+        New content available, click on reload button to update.
+      </span>
     </div>
     <button v-if="needRefresh" @click="updateServiceWorker()">Reload</button>
     <button @click="close">Close</button>

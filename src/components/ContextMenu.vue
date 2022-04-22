@@ -16,7 +16,9 @@
           </span></v-toolbar-title
         >
 
-        <v-btn :icon="mdiClose" dark text @click="close()">{{ $t("close") }}</v-btn>
+        <v-btn :icon="mdiClose" dark text @click="close()">{{
+          $t("close")
+        }}</v-btn>
       </v-toolbar>
       <!-- play contextmenu items -->
       <v-card-text v-if="playlists.length === 0 && playMenuItems.length > 0">
@@ -94,7 +96,7 @@ import {
 import ListviewItem from "./ListviewItem.vue";
 import { MediaType, QueueOption, Track } from "../plugins/api";
 import type { MediaItem, MediaItemType, Playlist } from "../plugins/api";
-import { ref, watch, watchEffect } from "vue";
+import { ref, watch } from "vue";
 import api from "../plugins/api";
 import { useI18n } from "vue-i18n";
 import { store } from "../plugins/store";
@@ -134,7 +136,10 @@ const showContextMenu = function () {
   playMenuItems.value = [];
   actionMenuItems.value = [];
   if (store.contextMenuItems.length === 1) header.value = firstItem.name;
-  else header.value = t("items_selected", [store.contextMenuItems.length]).toString();
+  else
+    header.value = t("items_selected", [
+      store.contextMenuItems.length,
+    ]).toString();
   // Play NOW
   if (itemIsAvailable(firstItem)) {
     playMenuItems.value.push({
@@ -153,7 +158,8 @@ const showContextMenu = function () {
   // Play NEXT
   if (
     itemIsAvailable(firstItem) &&
-    (store.contextMenuItems.length === 1 || firstItem.media_type === MediaType.TRACK)
+    (store.contextMenuItems.length === 1 ||
+      firstItem.media_type === MediaType.TRACK)
   ) {
     playMenuItems.value.push({
       label: "play_next",
@@ -206,7 +212,10 @@ const showContextMenu = function () {
     });
   }
   // refresh item
-  if (store.contextMenuItems.length === 1 && firstItem == store.contextMenuParentItem) {
+  if (
+    store.contextMenuItems.length === 1 &&
+    firstItem == store.contextMenuParentItem
+  ) {
     actionMenuItems.value.push({
       label: "refresh_item",
       action: () => {

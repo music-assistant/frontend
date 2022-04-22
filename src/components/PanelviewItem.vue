@@ -1,15 +1,27 @@
 <template>
   <v-card
     @click="emit('click', item)"
-    :min-height="[MediaType.ARTIST, MediaType.RADIO].includes(item.media_type) ? size * 1.7 : size * 2.2"
+    :min-height="
+      [MediaType.ARTIST, MediaType.RADIO].includes(item.media_type)
+        ? size * 1.7
+        : size * 2.2
+    "
     :min-width="size"
     hover
     border
     @click.right.prevent="emit('select', item, !isSelected)"
   >
     <MediaItemThumb :item="item" :size="size" :border="false" />
-    <div v-if="isSelected" style="position: absolute; top:0;background-color: #82b1ff94">
-      <v-btn variant="plain" size="51" :icon="mdiCheckboxMarkedOutline" @click.stop="emit('select', item, !isSelected)"></v-btn>
+    <div
+      v-if="isSelected"
+      style="position: absolute; top: 0; background-color: #82b1ff94"
+    >
+      <v-btn
+        variant="plain"
+        size="51"
+        :icon="mdiCheckboxMarkedOutline"
+        @click.stop="emit('select', item, !isSelected)"
+      ></v-btn>
     </div>
     <div
       v-if="isHiRes"
@@ -81,26 +93,21 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiCheckboxMarkedOutline,
-} from "@mdi/js";
+import { mdiCheckboxMarkedOutline } from "@mdi/js";
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
 import MediaItemThumb from "./MediaItemThumb.vue";
-import ProviderIcons from "./ProviderIcons.vue";
+
 import { iconHiRes } from "./ProviderIcons.vue";
-import {
-  Album,
+import type {
   Artist,
   ItemMapping,
   MediaItem,
   MediaItemType,
-  MediaQuality,
 } from "../plugins/api";
-import { MediaType } from "../plugins/api";
-import { formatDuration, truncateString } from "../utils";
-import { store } from "../plugins/store";
+import { MediaType, MediaQuality } from "../plugins/api";
+import { truncateString } from "../utils";
 
 // global refs
 const router = useRouter();
@@ -119,6 +126,7 @@ const props = withDefaults(defineProps<Props>(), {
 // computed properties
 const isHiRes = computed(() => {
   for (const prov of props.item.provider_ids) {
+    if (prov.quality == undefined) continue;
     if (prov.quality >= MediaQuality.FLAC_LOSSLESS_HI_RES_1) {
       if (prov.details) {
         return prov.details;
@@ -145,21 +153,6 @@ const emit = defineEmits<{
 
 // methods
 
-const albumClick = function (item: Album | ItemMapping) {
-  // album entry clicked
-  if (actionInProgress.value) return;
-  actionInProgress.value = true;
-  router.push({
-    name: "album",
-    params: {
-      item_id: item.item_id,
-      provider: item.provider,
-    },
-  });
-  setTimeout(() => {
-    actionInProgress.value = false;
-  }, 500);
-};
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
   if (actionInProgress.value) return;
@@ -174,12 +167,5 @@ const artistClick = function (item: Artist | ItemMapping) {
   setTimeout(() => {
     actionInProgress.value = false;
   }, 500);
-};
-const itemIsAvailable = function (item: MediaItem) {
-  if (!props.item.provider_ids) return true;
-  for (const x of item.provider_ids) {
-    if (x.available) return true;
-  }
-  return false;
 };
 </script>

@@ -21,15 +21,13 @@
 <script setup lang="ts">
 import type { MediaItemProviderId } from "../plugins/api";
 import { MediaQuality } from "../plugins/api";
-import { ref, computed } from "vue";
+import { computed } from "vue";
 
 interface Props {
   providerIds: MediaItemProviderId[];
   height: number;
 }
 const props = defineProps<Props>();
-
-const isHiRes = ref(false);
 
 const uniqueProviders = computed(() => {
   const output: MediaItemProviderId[] = [];
@@ -49,11 +47,16 @@ const uniqueProviders = computed(() => {
 <script lang="ts">
 import { ContentType } from "../plugins/api";
 
-export const iconSpotify = new URL("../assets/spotify.png", import.meta.url).href;
+export const iconSpotify = new URL("../assets/spotify.png", import.meta.url)
+  .href;
 export const iconQobuz = new URL("../assets/qobuz.png", import.meta.url).href;
-export const iconFilesystem = new URL("../assets/filesystem.png", import.meta.url).href;
+export const iconFilesystem = new URL(
+  "../assets/filesystem.png",
+  import.meta.url
+).href;
 export const iconTuneIn = new URL("../assets/tunein.png", import.meta.url).href;
-export const iconFallback = new URL("../assets/fallback.png", import.meta.url).href;
+export const iconFallback = new URL("../assets/fallback.png", import.meta.url)
+  .href;
 
 export const iconAac = new URL("../assets/aac.png", import.meta.url).href;
 export const iconFlac = new URL("../assets/flac.png", import.meta.url).href;
@@ -97,6 +100,6 @@ export const getQualityIcon = function (quality?: MediaQuality) {
   float: inherit;
   padding-left: 5px;
   display: flex;
-  margin: 5px
+  margin: 5px;
 }
 </style>

@@ -13,7 +13,11 @@
         >{{ $t("items_selected", [selectedItems.length]) }}</a
       >
       <v-spacer></v-spacer>
-      <v-menu anchor="bottom end" :close-on-content-click="true" v-model="showSortMenu">
+      <v-menu
+        anchor="bottom end"
+        :close-on-content-click="true"
+        v-model="showSortMenu"
+      >
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props">
             <v-icon :icon="mdiSort"></v-icon>
@@ -22,7 +26,7 @@
         <v-card>
           <v-list>
             <div v-for="item of sortKeys" :key="item.text">
-              <v-list-item @click="changeSort(item.value);">
+              <v-list-item @click="changeSort(item.value)">
                 <v-list-item-title v-text="item.text"></v-list-item-title>
                 <template v-slot:append>
                   <v-icon v-if="sortBy == item.value" :icon="mdiCheck"></v-icon>
@@ -33,7 +37,7 @@
           </v-list>
         </v-card>
       </v-menu>
-      <v-btn icon @click="changeSort(undefined, !sortDesc);">
+      <v-btn icon @click="changeSort(undefined, !sortDesc)">
         <v-icon v-if="!sortDesc" :icon="mdiArrowUp"></v-icon>
         <v-icon v-if="sortDesc" :icon="mdiArrowDown"></v-icon>
       </v-btn>
@@ -71,8 +75,17 @@
     >
       <v-progress-linear indeterminate v-if="loading"></v-progress-linear>
       <!-- panel view -->
-      <v-row dense align-content="stretch" align="stretch" v-if="viewMode == 'panel'">
-        <v-col v-for="item in filteredItems" :key="item.uri" align-self="stretch">
+      <v-row
+        dense
+        align-content="stretch"
+        align="stretch"
+        v-if="viewMode == 'panel'"
+      >
+        <v-col
+          v-for="item in filteredItems"
+          :key="item.uri"
+          align-self="stretch"
+        >
           <PanelviewItem
             :item="item"
             :size="thumbSize"
@@ -107,7 +120,9 @@
 
       <!-- show alert if no items found -->
       <v-alert type="info" v-if="!loading && items.length == 0">{{
-        api.jobs.value.length > 0 ? $t("no_content_sync_running") : $t("no_content")
+        api.jobs.value.length > 0
+          ? $t("no_content_sync_running")
+          : $t("no_content")
       }}</v-alert>
     </div>
   </section>
@@ -122,10 +137,17 @@ import {
   mdiSort,
   mdiGrid,
   mdiViewList,
-  mdiCheck
+  mdiCheck,
 } from "@mdi/js";
 
-import { watchEffect, ref, computed, onBeforeUnmount, onMounted, nextTick } from "vue";
+import {
+  watchEffect,
+  ref,
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  nextTick,
+} from "vue";
 import { useDisplay } from "vuetify";
 import type {
   Album,
@@ -189,9 +211,15 @@ const filteredItems = computed(() => {
     for (const item of props.items) {
       if (item.name.toLowerCase().includes(searchStr)) {
         result.push(item);
-      } else if ("artist" in item && item.artist.name.toLowerCase().includes(searchStr)) {
+      } else if (
+        "artist" in item &&
+        item.artist.name.toLowerCase().includes(searchStr)
+      ) {
         result.push(item);
-      } else if ("album" in item && item.album?.name.toLowerCase().includes(searchStr)) {
+      } else if (
+        "album" in item &&
+        item.album?.name.toLowerCase().includes(searchStr)
+      ) {
         result.push(item);
       } else if (
         "artists" in item &&
@@ -205,7 +233,9 @@ const filteredItems = computed(() => {
   }
   // sort
   if (sortBy.value == "name") {
-    result.sort((a, b) => (a.sort_name || a.name).localeCompare(b.sort_name || b.name));
+    result.sort((a, b) =>
+      (a.sort_name || a.name).localeCompare(b.sort_name || b.name)
+    );
   }
   if (sortBy.value == "album.name") {
     result.sort((a, b) =>
@@ -224,14 +254,18 @@ const filteredItems = computed(() => {
   }
   if (sortBy.value == "track_number") {
     result.sort(
-      (a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
+      (a, b) =>
+        ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
     );
     result.sort(
-      (a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
+      (a, b) =>
+        ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
     );
   }
   if (sortBy.value == "position") {
-    result.sort((a, b) => ((a as Track).position || 0) - ((b as Track).position || 0));
+    result.sort(
+      (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0)
+    );
   }
   if (sortBy.value == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
@@ -292,7 +326,7 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   // ugly hack to force the recyclescroller to re-render all items
   setTimeout(() => {
     sorting.value = false;
-    showSortMenu.value=false;
+    showSortMenu.value = false;
   }, 500);
 };
 

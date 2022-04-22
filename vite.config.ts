@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vuetify from "@vuetify/vite-plugin";
@@ -10,14 +11,14 @@ export default defineConfig({
   plugins: [
     vue(),
     vuetify({
-      autoImport: true
+      autoImport: true,
     }),
     VitePWA({
       includeAssets: [
         "favicon.svg",
         "favicon.ico",
         "robots.txt",
-        "apple-touch-icon.png"
+        "apple-touch-icon.png",
       ],
       manifest: {
         name: "Music Assistant",
@@ -28,28 +29,28 @@ export default defineConfig({
           {
             src: "pwa-192x192.png",
             sizes: "192x192",
-            type: "image/png"
-          },
-          {
-            src: "pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png"
+            type: "image/png",
           },
           {
             src: "pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable"
-          }
-        ]
-      }
-    })
+          },
+          {
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable",
+          },
+        ],
+      },
+    }),
   ],
   define: { "process.env": {} },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src")
-    }
+      "@": path.resolve(__dirname, "src"),
+    },
   },
   build: {
     // inject css into lib only works in umd mode
@@ -59,17 +60,17 @@ export default defineConfig({
       entry: path.resolve(__dirname, "src/main.ts"),
       name: "MusicAssistant",
       fileName: (format) => `mass.${format}.js`,
-      formats: ["iife", "umd"]
+      formats: ["iife", "umd"],
     },
     rollupOptions: {
       output: {
-        inlineDynamicImports: true
-      }
-    }
+        inlineDynamicImports: true,
+      },
+    },
   },
   server: {
-    host: true
-  }
+    host: true,
+  },
   /* remove the need to specify .vue files https://vitejs.dev/config/#resolve-extensions
   resolve: {
     extensions: [

@@ -1,9 +1,4 @@
-import {
-  createRouter,
-  createWebHashHistory,
-  type Router,
-  type RouterScrollBehavior
-} from "vue-router";
+import { createRouter, createWebHashHistory, type Router } from "vue-router";
 import HomeView from "../views/Home.vue";
 import LibraryArtistsView from "../views/LibraryArtists.vue";
 import LibraryTracksView from "../views/LibraryTracks.vue";
@@ -28,37 +23,37 @@ const routes = [
     name: "artists",
     path: "/artists",
     component: LibraryArtistsView,
-    props: true
+    props: true,
   },
   {
     name: "tracks",
     path: "/tracks",
     component: LibraryTracksView,
-    props: true
+    props: true,
   },
   {
     name: "albums",
     path: "/albums",
     component: LibraryAlbumsView,
-    props: true
+    props: true,
   },
   {
     name: "playlists",
     path: "/playlists",
     component: LibraryPlaylistsView,
-    props: true
+    props: true,
   },
   {
     name: "radios",
     path: "/radios",
     component: LibraryRadiosView,
-    props: true
+    props: true,
   },
   {
     name: "artist",
     path: "/artist",
     component: ArtistDetailsView,
-    props: true
+    props: true,
   },
   { name: "album", path: "/album", component: AlbumDetailsView, props: true },
   { name: "track", path: "/track", component: TrackDetailsView, props: true },
@@ -66,13 +61,13 @@ const routes = [
     name: "playlist",
     path: "/playlist",
     component: PlaylistDetailsView,
-    props: true
-  }
+    props: true,
+  },
 ];
 
 const router: Router = createRouter({
   history: createWebHashHistory(),
-  routes
+  routes,
 });
 
 router.beforeEach((to, from) => {
@@ -83,7 +78,7 @@ router.beforeEach((to, from) => {
     name: from.name as string,
     query: from.query,
     params: from.params,
-    meta: from.meta
+    meta: from.meta,
   });
 });
 

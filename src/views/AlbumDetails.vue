@@ -68,7 +68,10 @@ watchEffect(async () => {
   );
   album.value = item;
   // fetch additional info once main info retrieved
-  albumVersions.value = await api.getAlbumVersions(props.provider, props.item_id);
+  albumVersions.value = await api.getAlbumVersions(
+    props.provider,
+    props.item_id
+  );
   albumTracks.value = await api.getAlbumTracks(props.provider, props.item_id);
   loading.value = false;
 });

@@ -1,7 +1,7 @@
 import type { PlayerQueue } from "./api";
 import { reactive } from "vue";
 import type { MediaItemType } from "./api";
-import type {LocationQuery, RouteParams, RouteMeta} from "vue-router";
+import type { LocationQuery, RouteParams, RouteMeta } from "vue-router";
 
 interface Store {
   activePlayerQueue?: PlayerQueue;
@@ -34,5 +34,5 @@ export const store: Store = reactive({
   defaultTopBarTitle: "Music Assistant",
   contextMenuItems: [],
   contextMenuParentItem: undefined,
-  prevRoutes: []
+  prevRoutes: [],
 });

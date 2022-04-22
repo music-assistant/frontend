@@ -84,7 +84,8 @@ const setTheme = async function (hassData: HassData) {
 
   if (curTheme == "default") {
     // default theme
-    const defaultPrimaryColor = hassData.selectedTheme?.primaryColor || "#03A9F4";
+    const defaultPrimaryColor =
+      hassData.selectedTheme?.primaryColor || "#03A9F4";
     store.topBarColor = "#101e24";
     store.topBarTextColor = "#ffffff";
     store.darkTheme = darkMode;

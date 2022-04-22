@@ -9,10 +9,25 @@
   >
     <v-row dense align-content="stretch" align="stretch">
       <v-col v-for="card in cards" :key="card.key" align-self="stretch">
-        <v-card @click="$router.push(card.path)" hover border min-width="220" align="center" justify="center">
-          <v-icon variant="plain" :icon="card.icon" size="120" style="align: center"> </v-icon>
+        <v-card
+          @click="$router.push(card.path)"
+          hover
+          border
+          min-width="220"
+          align="center"
+          justify="center"
+        >
+          <v-icon
+            variant="plain"
+            :icon="card.icon"
+            size="120"
+            style="align: center"
+          >
+          </v-icon>
           <v-divider />
-          <div class="text-center text-h5" style="padding:10px">{{ $t(card.key) }}</div>
+          <div class="text-center text-h5" style="padding: 10px">
+            {{ $t(card.key) }}
+          </div>
         </v-card>
       </v-col>
     </v-row>

@@ -14,7 +14,11 @@
           <MediaItemThumb :item="item" :size="50" />
           <div
             v-if="isSelected"
-            style="position: absolute; margin-top: -50px; background-color: #82b1ff94"
+            style="
+              position: absolute;
+              margin-top: -50px;
+              background-color: #82b1ff94;
+            "
           >
             <v-icon dark size="51" :icon="mdiCheckboxMarkedOutline"></v-icon>
           </div> </v-list-item-avatar
@@ -23,7 +27,9 @@
       <!-- title -->
       <template v-slot:title>
         {{ item.name }}
-        <span v-if="'version' in item && item.version">({{ item.version }})</span>
+        <span v-if="'version' in item && item.version"
+          >({{ item.version }})</span
+        >
         <b v-if="!itemIsAvailable(item)"> UNAVAILABLE</b>
         <!-- explicit icon -->
         <v-tooltip anchor="bottom">
@@ -45,8 +51,12 @@
         <!-- track artists + album name -->
         <div v-if="'artists' in item && item.artists">
           <span v-for="(artist, artistindex) in item.artists" :key="artist.uri">
-            <a color="primary" @click.stop="artistClick(artist)">{{ artist.name }}</a>
-            <label v-if="artistindex + 1 < item.artists.length" :key="artistindex"
+            <a color="primary" @click.stop="artistClick(artist)">{{
+              artist.name
+            }}</a>
+            <label
+              v-if="artistindex + 1 < item.artists.length"
+              :key="artistindex"
               >/</label
             >
           </span>
@@ -65,7 +75,9 @@
         </div>
         <!-- album artist -->
         <div v-if="'artist' in item && item.artist">
-          <a @click.stop.stop="artistClick(item.artist)">{{ item.artist.name }}</a>
+          <a @click.stop.stop="artistClick(item.artist)">{{
+            item.artist.name
+          }}</a>
         </div>
         <!-- playlist owner -->
         <div v-if="'owner' in item && item.owner">{{ item.owner }}</div>
@@ -74,7 +86,6 @@
       <!-- actions -->
       <template v-slot:append>
         <div class="listitem-actions">
-
           <!-- hi res icon -->
           <v-img
             class="listitem-action"
@@ -87,12 +98,16 @@
                 : 'margin-top:5px;'
             "
           >
-            <v-tooltip activator="parent" anchor="bottom">{{ highResDetails }}</v-tooltip>
+            <v-tooltip activator="parent" anchor="bottom">{{
+              highResDetails
+            }}</v-tooltip>
           </v-img>
 
           <!-- provider icons -->
           <ProviderIcons
-            v-if="item.provider_ids && showProviders && !$vuetify.display.mobile"
+            v-if="
+              item.provider_ids && showProviders && !$vuetify.display.mobile
+            "
             :provider-ids="item.provider_ids"
             :height="20"
             class="listitem-actions"
@@ -101,7 +116,9 @@
           <!-- in library (heart) icon -->
           <div
             class="listitem-action"
-            v-if="'in_library' in item && showLibrary && !$vuetify.display.mobile"
+            v-if="
+              'in_library' in item && showLibrary && !$vuetify.display.mobile
+            "
           >
             <v-tooltip anchor="bottom">
               <template #activator="{ props }">
@@ -124,7 +141,9 @@
           <!-- track duration -->
           <div
             class="listitem-action"
-            v-if="showDuration && 'duration' in item && !$vuetify.display.mobile"
+            v-if="
+              showDuration && 'duration' in item && !$vuetify.display.mobile
+            "
           >
             <span>{{ formatDuration(item.duration) }}</span>
           </div>
@@ -169,7 +188,6 @@ import type {
 } from "../plugins/api";
 import { api, MediaQuality } from "../plugins/api";
 import { formatDuration, parseBool } from "../utils";
-import { store } from "../plugins/store";
 
 // global refs
 const router = useRouter();

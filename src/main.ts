@@ -44,23 +44,20 @@ export type HassPanelData = {
 };
 
 export class HassPropsForwardElem extends HTMLElement {
-
   public set hass(val: HassData) {
     document.dispatchEvent(
       new CustomEvent("forward-hass-prop", {
-        detail: val
+        detail: val,
       })
     );
   }
-
 
   public set panel(val: HassPanelData) {
     document.dispatchEvent(
       new CustomEvent("forward-panel-prop", {
-        detail: val
+        detail: val,
       })
     );
   }
-
 }
 customElements.define("music-assistant", HassPropsForwardElem);

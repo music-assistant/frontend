@@ -54,18 +54,27 @@ watchEffect(async () => {
   );
   playlist.value = item;
   // fetch additional info once main info retrieved
-  playlistTracks.value = await api.getPlaylistTracks(props.provider, props.item_id);
+  playlistTracks.value = await api.getPlaylistTracks(
+    props.provider,
+    props.item_id
+  );
   loading.value = false;
 });
 
 // listen for item updates to refresh interface when that happens
-const unsub = api.subscribe(MassEventType.PLAYLIST_UPDATED, async (evt: MassEvent) => {
-  const updItem = evt.data as Playlist;
-  if (updItem.item_id == props.item_id) {
-    // got update for current item
-    // fetch playlist tracks as they might have changed
-    playlistTracks.value = await api.getPlaylistTracks(props.provider, props.item_id);
+const unsub = api.subscribe(
+  MassEventType.PLAYLIST_UPDATED,
+  async (evt: MassEvent) => {
+    const updItem = evt.data as Playlist;
+    if (updItem.item_id == props.item_id) {
+      // got update for current item
+      // fetch playlist tracks as they might have changed
+      playlistTracks.value = await api.getPlaylistTracks(
+        props.provider,
+        props.item_id
+      );
+    }
   }
-});
+);
 onBeforeUnmount(unsub);
 </script>
