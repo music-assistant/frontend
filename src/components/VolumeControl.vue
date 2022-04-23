@@ -3,13 +3,11 @@
     <v-list style="overflow: hidden" lines="2">
       <v-list-item style="padding: 0; margin-left: 9px; margin-bottom: 9px">
         <template v-slot:prepend>
-          <v-list-item-avatar tile size="x-small">
-            <v-icon
-              size="45"
-              :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
-              color="accent"
-            />
-          </v-list-item-avatar>
+          <v-icon
+            size="45"
+            :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
+            color="accent"
+          />
         </template>
 
         <template v-slot:title>
@@ -52,12 +50,7 @@
         </span>
         <div
           class="text-caption"
-          style="
-            position: absolute;
-            width: 60px;
-            text-align: center;
-            margin-left: 0px;
-          "
+          style="position: absolute; width: 60px; text-align: center; margin-left: 0px"
         >
           {{ childPlayer.volume_level }}
         </div>
@@ -71,9 +64,7 @@
           thumb-label
           :disabled="!childPlayer.powered"
           :model-value="Math.round(childPlayer.volume_level)"
-          @update:model-value="
-            api.queueCommandVolume(childPlayer.player_id, $event)
-          "
+          @update:model-value="api.queueCommandVolume(childPlayer.player_id, $event)"
         ></v-slider>
       </div>
     </v-list>

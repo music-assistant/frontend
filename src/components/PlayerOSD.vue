@@ -17,27 +17,21 @@
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
       "
-      style="
-        position: absolute;
-        background-size: 100%;
-        padding: 0;
-        margin-top: -10px;
-      "
+      style="position: absolute; background-size: 100%; padding: 0; margin-top: -10px"
     />
     <!-- now playing media -->
     <div class="mediadetails">
-      <v-list-item-avatar tile class="mediadetails-thumb">
-        <media-item-thumb
-          :key="curMediaItem.item_id"
-          :item="curMediaItem"
-          :size="50"
-          v-if="curMediaItem"
-          style="width: 50px; border: 1px solid rgba(0, 0, 0, 0.54)"
-        />
-        <v-icon v-else :icon="mdiSpeaker" />
-      </v-list-item-avatar>
+      <media-item-thumb
+        class="mediadetails-thumb"
+        :key="curMediaItem.item_id"
+        :item="curMediaItem"
+        :size="50"
+        v-if="curMediaItem"
+        style="width: 50px; border: 1px solid rgba(0, 0, 0, 0.54)"
+      />
+      <v-icon v-else :icon="mdiSpeaker" />
+
       <v-list-item two-line class="mediadetails-title">
-        <v-list-item-avatar> </v-list-item-avatar>
         <div>
           <v-list-item-title v-if="curMediaItem">
             {{ curMediaItem.name }}</v-list-item-title
@@ -81,30 +75,22 @@
               contain
               :src="iconHiRes"
               height="25"
-              :style="
-                $vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''
-              "
+              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
             />
             <v-img
               v-if="streamDetails.bit_depth <= 16"
               contain
               :src="getContentTypeIcon(streamDetails.content_type)"
               height="25"
-              :style="
-                $vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''
-              "
+              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
             />
           </v-btn>
         </template>
         <v-card class="mx-auto" width="300">
           <v-list style="overflow: hidden">
-            <span class="text-h5" style="padding: 10px">{{
-              $t("stream_details")
-            }}</span>
+            <span class="text-h5" style="padding: 10px">{{ $t("stream_details") }}</span>
             <v-divider></v-divider>
-            <v-list-item
-              style="height: 50px; display: flex; align-items: center"
-            >
+            <v-list-item style="height: 50px; display: flex; align-items: center">
               <img
                 height="30"
                 width="50"
@@ -133,8 +119,7 @@
             <div
               style="height: 50px; display: flex; align-items: center"
               v-if="
-                store.activePlayerQueue &&
-                store.activePlayerQueue.crossfade_duration > 0
+                store.activePlayerQueue && store.activePlayerQueue.crossfade_duration > 0
               "
             >
               <img
@@ -173,21 +158,14 @@
       </v-menu>
 
       <!-- time details -->
-      <div
-        v-if="!$vuetify.display.mobile"
-        class="mediadetails-time text-caption"
-      >
+      <div v-if="!$vuetify.display.mobile" class="mediadetails-time text-caption">
         {{ playerCurTimeStr }} / {{ playerTotalTimeStr }}
       </div>
     </div>
 
     <!-- progress bar -->
     <div style="width: 100%; height: 5px">
-      <v-progress-linear
-        v-bind:model-value="progress"
-        height="3"
-        color="primary"
-      />
+      <v-progress-linear v-bind:model-value="progress" height="3" color="primary" />
     </div>
 
     <!-- Control buttons -->
@@ -236,9 +214,7 @@
         width="70"
       >
         <v-icon :icon="mdiSpeaker" />
-        <span v-if="store.activePlayerQueue">{{
-          store.activePlayerQueue.name
-        }}</span>
+        <span v-if="store.activePlayerQueue">{{ store.activePlayerQueue.name }}</span>
         <span v-else class="text-caption"> </span>
       </v-btn>
       <!-- active player volume -->
@@ -255,15 +231,11 @@
             >
               <v-icon :icon="mdiVolumeHigh" />
               <span>{{
-                Math.round(
-                  api.players[store.activePlayerQueue?.player]?.volume_level
-                )
+                Math.round(api.players[store.activePlayerQueue?.player]?.volume_level)
               }}</span>
             </v-btn>
           </template>
-          <VolumeControl
-            :player="api.players[store.activePlayerQueue?.queue_id]"
-          />
+          <VolumeControl :player="api.players[store.activePlayerQueue?.queue_id]" />
         </v-menu>
       </div>
       <!-- active player queue button -->
@@ -316,11 +288,7 @@ import VolumeControl from "./VolumeControl.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import { formatDuration, truncateString } from "../utils";
 import { useRouter } from "vue-router";
-import {
-  getContentTypeIcon,
-  iconHiRes,
-  getProviderIcon,
-} from "./ProviderIcons.vue";
+import { getContentTypeIcon, iconHiRes, getProviderIcon } from "./ProviderIcons.vue";
 
 const router = useRouter();
 const display = useDisplay();

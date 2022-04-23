@@ -35,21 +35,13 @@
           "
         >
           <v-list-item dense two-line style="padding: 0; margin-left: 9px">
-            <v-list-item-avatar>
-              <v-icon
-                size="45"
-                :icon="
-                  api.players[queue.player].is_group
-                    ? mdiSpeakerMultiple
-                    : mdiSpeaker
-                "
-                color="accent"
-              />
-            </v-list-item-avatar>
+            <v-icon
+              size="45"
+              :icon="api.players[queue.player].is_group ? mdiSpeakerMultiple : mdiSpeaker"
+              color="accent"
+            />
             <div>
-              <v-list-item-title
-                class="text-subtitle-1"
-                style="margin-left: 10px"
+              <v-list-item-title class="text-subtitle-1" style="margin-left: 10px"
                 ><b>{{ queue.name.substring(0, 25) }}</b></v-list-item-title
               >
               <v-list-item-subtitle
@@ -104,9 +96,7 @@
               thumb-label
               :disabled="!childPlayer.powered"
               :model-value="Math.round(childPlayer.volume_level)"
-              @update:model-value="
-                api.queueCommandVolume(childPlayer.player_id, $event)
-              "
+              @update:model-value="api.queueCommandVolume(childPlayer.player_id, $event)"
             ></v-slider>
           </div>
         </v-expansion-panel-text>
