@@ -158,7 +158,10 @@
       </v-menu>
 
       <!-- time details -->
-      <div v-if="!$vuetify.display.mobile" class="mediadetails-time text-caption">
+      <div
+        v-if="!$vuetify.display.mobile && streamDetails"
+        class="mediadetails-time text-caption"
+      >
         {{ playerCurTimeStr }} / {{ playerTotalTimeStr }}
       </div>
     </div>
