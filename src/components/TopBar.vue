@@ -4,7 +4,6 @@
       :icon="mdiArrowLeft"
       :color="store.topBarTextColor"
       @click="backButton"
-      v-if="store.prevRoutes.length > 0"
       style="margin-left: -15px"
     />
     <v-toolbar-title
@@ -95,6 +94,14 @@ const jobsInProgress = computed(() => {
 });
 
 const backButton = function () {
+  if (store.prevRoutes.length === 0) {
+    // we can not access main/parent window
+    // to fire event to open menu
+    // send browser back instead
+    window.history.back();
+    return;
+  }
+
   const prevRoute = store.prevRoutes.pop();
   if (prevRoute) {
     prevRoute.params["backnav"] = "true";

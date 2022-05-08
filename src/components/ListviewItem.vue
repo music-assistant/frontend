@@ -66,10 +66,12 @@
         </div>
         <!-- album artist -->
         <div v-if="'artist' in item && item.artist">
-          <a @click.stop.stop="artistClick(item.artist)">{{ item.artist.name }}</a>
+          <a @click.stop="artistClick(item.artist)">{{ item.artist.name }}</a>
         </div>
         <!-- playlist owner -->
         <div v-if="'owner' in item && item.owner">{{ item.owner }}</div>
+        <!-- radio description -->
+        <div v-if="item.media_type == MediaType.RADIO && item.metadata.description">{{ item.metadata.description }}</div>
       </template>
 
       <!-- actions -->
@@ -167,7 +169,7 @@ import type {
   MediaItem,
   MediaItemType,
 } from "../plugins/api";
-import { api, MediaQuality } from "../plugins/api";
+import { api, MediaQuality, MediaType } from "../plugins/api";
 import { formatDuration, parseBool } from "../utils";
 
 // global refs

@@ -770,10 +770,11 @@ export class MusicAssistantApi {
         (x) => x.id !== msg.data?.id && x.status !== JobStatus.FINISHED
       );
       this.jobs.value.push(msg.data as BackgroundJob);
-    } else {
-      console.log("unhandled event", msg);
     }
     this.signalEvent(msg);
+    if (msg.event !== MassEventType.QUEUE_TIME_UPDATED) {
+      console.log("received event", msg);
+    }
   }
 
   private signalEvent(msg: MassEvent) {

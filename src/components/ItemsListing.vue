@@ -17,6 +17,7 @@
         anchor="bottom end"
         :close-on-content-click="true"
         v-model="showSortMenu"
+        v-if="sortKeys.length > 1"
       >
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props">
