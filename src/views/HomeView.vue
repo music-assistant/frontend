@@ -17,6 +17,7 @@
           align="center"
           justify="center"
           :disabled="api.stats[card.stats] == 0"
+          :style="api.stats[card.stats] == 0 ? 'opacity:0.5' : ''"
         >
           <v-icon
             variant="plain"
