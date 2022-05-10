@@ -4,7 +4,7 @@
   "scripts": {
     "serve": "vite preview",
     "build": "vite build && npm run build:finish",
-    "build:finish": "replace-in-file '/src/main.ts' '/mass.iife.js' 'dist/index.html'",
+    "build:finish": "replace-in-file '/src/main.ts' 'mass.iife.js' 'dist/index.html'",
     "https-preview": "serve dist",
     "test:unit": "vitest --environment jsdom",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
