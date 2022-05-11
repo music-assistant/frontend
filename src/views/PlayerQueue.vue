@@ -34,24 +34,37 @@
           >
             <template v-slot:prepend
               ><v-list-item-avatar rounded="0" class="listitem-thumb">
-                <MediaItemThumb :item="item" :size="50" /> </v-list-item-avatar
+                <MediaItemThumb
+                  :item="item.media_item || item"
+                  :size="50"
+                /> </v-list-item-avatar
             ></template>
 
             <!-- title -->
             <template v-slot:title>
-              {{ item.name }}
-
-              <b v-if="!item.available"> UNAVAILABLE</b>
+              {{ item.media_item ? item.media_item.name : item.name }}
             </template>
 
             <!-- subtitle -->
             <template v-slot:subtitle>
-              {{ item.uri }}
+              <div v-if="item.media_item && 'artists' in item.media_item">
+                {{ item.media_item.artists[0].name }}
+              </div>
+              <div v-else-if="item.media_item">
+                {{ item.media_item.metadata.description }}
+              </div>
+              <div v-else>{{ item.uri }}</div>
             </template>
 
             <!-- actions -->
             <template v-slot:append>
               <div class="listitem-actions">
+
+              <!-- item duration -->
+                <div class="listitem-action">
+                  <span>{{ formatDuration(item.duration) }}</span>
+                </div>
+                
                 <!-- move up -->
                 <div class="listitem-action" v-if="!$vuetify.display.mobile">
                   <v-tooltip anchor="bottom">
@@ -100,10 +113,7 @@
                   </v-tooltip>
                 </div>
 
-                <!-- item duration -->
-                <div class="listitem-action">
-                  <span>{{ formatDuration(item.duration) }}</span>
-                </div>
+                
               </div>
             </template>
           </v-list-item>

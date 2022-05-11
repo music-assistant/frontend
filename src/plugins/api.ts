@@ -236,7 +236,7 @@ export interface QueueItem {
   media_type: MediaType;
   image?: string;
   available?: boolean;
-  is_media_item: boolean;
+  media_item?: Track | Radio;
 }
 
 export enum CrossFadeMode {
@@ -469,7 +469,10 @@ export class MusicAssistantApi {
     provider: string,
     item_id: string
   ): Promise<string> {
-    return this.getData("track/preview", { provider, item_id });
+    return this.getData("track/preview", {
+      provider,
+      item_id
+    });
   }
 
   public getLibraryArtists(): Promise<Artist[]> {

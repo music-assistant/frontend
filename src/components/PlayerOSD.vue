@@ -312,7 +312,6 @@ const router = useRouter();
 const display = useDisplay();
 
 // local refs
-const curMediaItem = ref<MediaItemType>();
 const showStreamDetails = ref(false);
 
 // computed properties
@@ -350,6 +349,10 @@ const streamDetails = computed(() => {
 const curQueueItemTime = computed(() => {
   if (activePlayerQueue.value) return activePlayerQueue.value.elapsed_time;
   return 0;
+});
+const curMediaItem = computed(() => {
+  if (curQueueItem.value) return curQueueItem.value.media_item;
+  return undefined;
 });
 
 // methods
