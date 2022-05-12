@@ -151,13 +151,8 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { api } from "../plugins/api";
 
-// global refs
-const router = useRouter();
-const i18n = useI18n();
-const display = useDisplay();
-
 // properties
-interface Props {
+export interface Props {
   itemtype: string;
   items: MediaItemType[];
   loading?: boolean;
@@ -178,6 +173,11 @@ const props = withDefaults(defineProps<Props>(), {
   showLibrary: true,
   showDuration: true,
 });
+
+// global refs
+const router = useRouter();
+const i18n = useI18n();
+const display = useDisplay();
 
 // local refs
 const viewMode = ref("list");
@@ -243,10 +243,10 @@ const filteredItems = computed(() => {
   }
   if (sortBy.value == "track_number") {
     result.sort(
-      (a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
+      (a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
     );
     result.sort(
-      (a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
+      (a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
     );
   }
   if (sortBy.value == "position") {
