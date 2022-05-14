@@ -23,7 +23,7 @@
         <!-- left side: cover image -->
         <div v-if="!$vuetify.display.mobile" xs5 pa-5>
           <v-img
-            :src="getImageUrl(item) || `https://ui-avatars.com/api/?name=${item.name}&size=200}`"
+            :src="getImageUrl(item)"
             :lazy-src="imgDefaultArtist"
             width="220px"
             style="
