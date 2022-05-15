@@ -22,7 +22,7 @@
       <v-layout v-if="item" style="padding-left: 15px; padding-right: 15px">
         <!-- left side: cover image -->
         <div v-if="!$vuetify.display.mobile" xs5 pa-5>
-          <MediaItemThumb :item="item" :size="180" :border="true" style="margin-top:15px" />
+          <MediaItemThumb :item="item" :size="180" :border="true" style="margin-top:15px;margin-bottom:15px" />
         </div>
 
         <div>

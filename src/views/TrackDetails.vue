@@ -21,6 +21,7 @@
       itemtype="tracks"
       :loading="loading"
       :parent-item="track"
+      :show-providers="true"
       v-if="activeTab == 'versions'"
     />
     <div v-if="activeTab == 'details'">
@@ -38,7 +39,7 @@
         <tbody>
           <tr v-for="(item, index) of track?.provider_ids" :key="item.item_id">
             <td class="details-column">
-              <v-img width="25px" :src="getProviderIcon(item.provider)"></v-img>
+              <v-img width="25px" :src="getProviderIcon(item.prov_type)"></v-img>
             </td>
             <td class="details-column">
               <a :href="item.url" target="_blank">{{ item.item_id }}</a>
@@ -58,7 +59,7 @@
             <td class="details-column">{{ item.details }}</td>
             <td
               class="details-column"
-              @mouseover="fetchPreviewUrl(item.provider, item.item_id, index)"
+              @mouseover="fetchPreviewUrl(item.prov_type, item.item_id, index)"
             >
               <audio style="width: 260px" controls :src="previewUrls[index]"></audio>
             </td>
@@ -73,7 +74,7 @@
 import ItemsListing from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
 import { ref, reactive } from "@vue/reactivity";
-import type { MassEvent, Track } from "../plugins/api";
+import type { MassEvent, ProviderType, Track } from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
 import { getProviderIcon, getQualityIcon } from "../components/ProviderIcons.vue";
 import { onBeforeUnmount, watchEffect } from "vue";
@@ -110,7 +111,7 @@ watchEffect(async () => {
 });
 
 const fetchPreviewUrl = async function (
-  provider: string,
+  provider: ProviderType,
   item_id: string,
   index: number
 ) {
@@ -125,7 +126,7 @@ const unsub = api.subscribe(MassEventType.TRACK_ADDED, (evt: MassEvent) => {
   if (
     (props.provider == "database" && newItem.item_id == props.item_id) ||
     newItem.provider_ids.filter(
-      (x) => x.provider == props.provider && x.item_id == props.item_id
+      (x) => x.prov_type == props.provider && x.item_id == props.item_id
     ).length > 0
   ) {
     // got update for current item

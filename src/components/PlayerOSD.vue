@@ -17,12 +17,7 @@
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
       "
-      style="
-        position: absolute;
-        background-size: 100%;
-        padding: 0;
-        margin-top: -10px;
-      "
+      style="position: absolute; background-size: 100%; padding: 0; margin-top: -10px"
     />
     <!-- now playing media -->
     <div
@@ -91,30 +86,22 @@
               contain
               :src="iconHiRes"
               height="25"
-              :style="
-                $vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''
-              "
+              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
             />
             <v-img
               v-if="streamDetails.bit_depth <= 16"
               contain
               :src="getContentTypeIcon(streamDetails.content_type)"
               height="25"
-              :style="
-                $vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''
-              "
+              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
             />
           </v-btn>
         </template>
         <v-card class="mx-auto" width="300">
           <v-list style="overflow: hidden">
-            <span class="text-h5" style="padding: 10px">{{
-              $t("stream_details")
-            }}</span>
+            <span class="text-h5" style="padding: 10px">{{ $t("stream_details") }}</span>
             <v-divider></v-divider>
-            <v-list-item
-              style="height: 50px; display: flex; align-items: center"
-            >
+            <v-list-item style="height: 50px; display: flex; align-items: center">
               <img
                 height="30"
                 width="50"
@@ -143,8 +130,7 @@
             <div
               style="height: 50px; display: flex; align-items: center"
               v-if="
-                activePlayerQueue &&
-                activePlayerQueue.settings.crossfade_duration > 0
+                activePlayerQueue && activePlayerQueue.settings.crossfade_duration > 0
               "
             >
               <img
@@ -196,17 +182,14 @@
       style="width: 100%; height: 5px"
       v-if="activePlayerQueue?.active && curQueueItem"
     >
-      <v-progress-linear
-        v-bind:model-value="progress"
-        height="3"
-        color="primary"
-      />
+      <v-progress-linear v-bind:model-value="progress" height="3" color="primary" />
     </div>
 
     <!-- Control buttons -->
     <div class="mediacontrols">
       <!-- left side: playback buttons -->
       <div class="mediacontrols-left">
+        <!-- prev track -->
         <v-btn
           small
           icon
@@ -216,16 +199,38 @@
         >
           <v-icon :icon="mdiSkipPrevious" />
         </v-btn>
+        <!-- play/pause button: only when MA queue is active -->
         <v-btn
           icon
           x-large
           variant="plain"
-          :disabled="!activePlayerQueue || !activePlayerQueue?.active"
+          v-if="activePlayerQueue && activePlayerQueue?.active"
           @click="api.queueCommandPlayPause(activePlayerQueue?.queue_id)"
         >
           <v-icon size="50">{{
             activePlayerQueue?.state == "playing" ? mdiPause : mdiPlay
           }}</v-icon>
+        </v-btn>
+        <!-- stop button: player is playing other source (not MA)-->
+        <v-btn
+          icon
+          x-large
+          variant="plain"
+          v-else-if="store.selectedPlayer?.state == PlayerState.PLAYING"
+          @click="api.queueCommandStop(activePlayerQueue?.queue_id)"
+        >
+          <v-icon size="50">{{ mdiStop }}</v-icon>
+        </v-btn>
+        <!-- play button: all other situations - resume the queue (disabled if queue is empty)-->
+        <v-btn
+          icon
+          x-large
+          variant="plain"
+          v-else
+          :disabled="activePlayerQueue && !activePlayerQueue?.current_item"
+          @click="api.queueCommandPlay(activePlayerQueue?.queue_id)"
+        >
+          <v-icon size="50">{{ mdiPlay }}</v-icon>
         </v-btn>
         <v-btn
           icon

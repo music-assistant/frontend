@@ -46,6 +46,7 @@ export interface MediaItemProviderId {
   available: boolean;
   quality?: MediaQuality;
   details?: string;
+  url?: string;
 }
 
 export enum LinkType {
@@ -107,7 +108,7 @@ export interface MediaItemMetadata {
 
 export interface ItemMapping {
   item_id: string;
-  provider: string;
+  provider: ProviderType;
   name: string;
   media_type: MediaType;
   uri: string;
@@ -115,7 +116,7 @@ export interface ItemMapping {
 
 export interface MediaItem {
   item_id: string;
-  provider: string;
+  provider: ProviderType;
   name: string;
   sort_name?: string;
   metadata: MediaItemMetadata;
@@ -194,7 +195,7 @@ export enum ContentType {
 
 export interface StreamDetails {
   type: StreamType;
-  provider: string;
+  provider: ProviderType;
   item_id: string;
   path: string;
   content_type: ContentType;
@@ -461,7 +462,7 @@ export class MusicAssistantApi {
   }
 
   public getTrack(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true,
     refresh = false
@@ -470,7 +471,7 @@ export class MusicAssistantApi {
   }
 
   public getTrackVersions(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true
   ): Promise<Track[]> {
@@ -478,7 +479,7 @@ export class MusicAssistantApi {
   }
 
   public getTrackPreviewUrl(
-    provider: string,
+    provider: ProviderType,
     item_id: string
   ): Promise<string> {
     return this.getData("track/preview", {
@@ -492,7 +493,7 @@ export class MusicAssistantApi {
   }
 
   public getArtist(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true,
     refresh = false
@@ -501,7 +502,7 @@ export class MusicAssistantApi {
   }
 
   public getArtistTracks(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true
   ): Promise<Track[]> {
@@ -509,7 +510,7 @@ export class MusicAssistantApi {
   }
 
   public getArtistAlbums(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true
   ): Promise<Album[]> {
@@ -521,7 +522,7 @@ export class MusicAssistantApi {
   }
 
   public getAlbum(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true,
     refresh = false
@@ -530,7 +531,7 @@ export class MusicAssistantApi {
   }
 
   public getAlbumTracks(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true
   ): Promise<Track[]> {
@@ -538,7 +539,7 @@ export class MusicAssistantApi {
   }
 
   public getAlbumVersions(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true
   ): Promise<Album[]> {
@@ -550,7 +551,7 @@ export class MusicAssistantApi {
   }
 
   public getPlaylist(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true,
     refresh = false
@@ -559,7 +560,7 @@ export class MusicAssistantApi {
   }
 
   public getPlaylistTracks(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true
   ): Promise<Track[]> {
@@ -579,7 +580,7 @@ export class MusicAssistantApi {
   }
 
   public getRadio(
-    provider: string,
+    provider: ProviderType,
     item_id: string,
     lazy = true,
     refresh = false

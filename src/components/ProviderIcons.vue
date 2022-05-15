@@ -3,9 +3,9 @@
     <img
       class="provider-icon"
       v-for="prov of uniqueProviders"
-      :key="prov.provider"
+      :key="prov.prov_type"
       :height="height"
-      :src="getProviderIcon(prov.provider)"
+      :src="getProviderIcon(prov.prov_type)"
       @click="enableLink ? provClicked(prov) : ''"
       :style="enableLink ? 'cursor: pointer' : ''"
     />
@@ -29,13 +29,13 @@ const uniqueProviders = computed(() => {
   const keys: string[] = [];
   if (!props.providerIds) return [];
   props.providerIds.forEach(function (prov: MediaItemProviderId) {
-    const key = prov.provider;
+    const key = prov.prov_type;
     if (keys.indexOf(key) === -1) {
       keys.push(key);
       output.push(prov);
     }
   });
-  return output.sort((a, b) => a.provider.localeCompare(b.provider));
+  return output.sort((a, b) => a.prov_type.localeCompare(b.prov_type));
 });
 
 const provClicked = function (prov: MediaItemProviderId) {
@@ -46,7 +46,7 @@ const provClicked = function (prov: MediaItemProviderId) {
 </script>
 
 <script lang="ts">
-import { ContentType } from "../plugins/api";
+import { ContentType, ProviderType } from "../plugins/api";
 
 export const iconSpotify = new URL("../assets/spotify.png", import.meta.url).href;
 export const iconQobuz = new URL("../assets/qobuz.png", import.meta.url).href;
@@ -61,10 +61,10 @@ export const iconOgg = new URL("../assets/ogg.png", import.meta.url).href;
 export const iconVorbis = new URL("../assets/vorbis.png", import.meta.url).href;
 export const iconHiRes = new URL("../assets/hires.png", import.meta.url).href;
 
-export const getProviderIcon = function (provider: string) {
-  if (provider == "spotify") return iconSpotify;
-  if (provider == "qobuz") return iconQobuz;
-  if (provider == "tunein") return iconTuneIn;
+export const getProviderIcon = function (provider: ProviderType) {
+  if (provider == ProviderType.SPOTIFY) return iconSpotify;
+  if (provider == ProviderType.QOBUZ) return iconQobuz;
+  if (provider == ProviderType.TUNEIN) return iconTuneIn;
   return iconFilesystem;
 };
 export const getContentTypeIcon = function (contentType: ContentType) {

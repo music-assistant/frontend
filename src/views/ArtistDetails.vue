@@ -21,6 +21,7 @@
       :loading="loading"
       itemtype="tracks"
       :parent-item="artist"
+      :show-providers="true"
       v-if="activeTab == 'tracks'"
     />
     <ItemsListing
@@ -28,6 +29,7 @@
       :loading="loading"
       itemtype="albums"
       :parent-item="artist"
+       :show-providers="true"
       v-if="activeTab == 'albums'"
     />
   </section>

@@ -208,12 +208,12 @@ const filteredItems = computed(() => {
     for (const item of props.items) {
       if (item.name.toLowerCase().includes(searchStr)) {
         result.push(item);
-      } else if ("artist" in item && item.artist.name.toLowerCase().includes(searchStr)) {
+      } else if ("artist" in item && item.artist?.name.toLowerCase().includes(searchStr)) {
         result.push(item);
       } else if ("album" in item && item.album?.name.toLowerCase().includes(searchStr)) {
         result.push(item);
       } else if (
-        "artists" in item &&
+        "artists" in item && item.artists &&
         item.artists[0].name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
