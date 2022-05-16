@@ -170,7 +170,11 @@
 
       <!-- time details -->
       <div
-        v-if="!$vuetify.display.mobile && streamDetails"
+        v-if="
+          !$vuetify.display.mobile &&
+          streamDetails &&
+          curMediaItem?.media_type !== MediaType.RADIO
+        "
         class="mediadetails-time text-caption"
       >
         {{ playerCurTimeStr }} / {{ playerTotalTimeStr }}
@@ -318,6 +322,7 @@ import {
   type StreamDetails,
   type MediaItemType,
   type MusicAssistantApi,
+  MediaType,
   type ItemMapping,
   type Track,
   type Radio,
