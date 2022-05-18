@@ -6,13 +6,13 @@
         :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
         value="tracks"
       >
-        {{ $t("artist_toptracks") }}</v-tab
+        {{ $t("tracks") }} ({{ artistTopTracks.length }})</v-tab
       >
       <v-tab
         :class="activeTab == 'albums' ? 'active-tab' : 'inactive-tab'"
         value="albums"
       >
-        {{ $t("artist_albums") }}</v-tab
+        {{ $t("albums") }} ({{ artistAlbums.length }})</v-tab
       >
     </v-tabs>
     <v-divider />
@@ -40,7 +40,7 @@
 import ItemsListing from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
 import { ref } from "@vue/reactivity";
-import type { Album, Artist, MassEvent, Track } from "../plugins/api";
+import type { Album, Artist, MassEvent, ProviderType, Track } from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
 import { onBeforeUnmount, watchEffect } from "vue";
 import { parseBool } from "../utils";
@@ -65,7 +65,7 @@ const loading = ref(true);
 watchEffect(async () => {
   api
     .getArtist(
-      props.provider,
+      props.provider as ProviderType,
       props.item_id,
       parseBool(props.lazy),
       parseBool(props.refresh)
@@ -74,11 +74,11 @@ watchEffect(async () => {
       artist.value = item;
       // fetch additional info once main info retrieved
       artistAlbums.value = await api.getArtistAlbums(
-        props.provider,
+        props.provider as ProviderType,
         props.item_id
       );
       artistTopTracks.value = await api.getArtistTracks(
-        props.provider,
+        props.provider as ProviderType,
         props.item_id
       );
     });

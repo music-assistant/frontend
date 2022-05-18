@@ -6,7 +6,7 @@
         :class="activeTab == 'versions' ? 'active-tab' : 'inactive-tab'"
         value="versions"
       >
-        {{ $t("track_versions") }}</v-tab
+        {{ $t("track_versions") }} ({{ trackVersions.length }})</v-tab
       >
       <v-tab
         :class="activeTab == 'details' ? 'active-tab' : 'inactive-tab'"
@@ -98,16 +98,22 @@ const loading = ref(true);
 const previewUrls = reactive<Record<number, string>>({});
 
 watchEffect(async () => {
-  const item = await api.getTrack(
-    props.provider,
-    props.item_id,
-    parseBool(props.lazy),
-    parseBool(props.refresh)
-  );
-  track.value = item;
-  // fetch additional info once main info retrieved
-  trackVersions.value = await api.getTrackVersions(props.provider, props.item_id);
-  loading.value = false;
+  api
+    .getTrack(
+      props.provider as ProviderType,
+      props.item_id,
+      parseBool(props.lazy),
+      parseBool(props.refresh)
+    )
+    .then(async (item) => {
+      track.value = item;
+      // fetch additional info once main info retrieved
+      trackVersions.value = await api.getTrackVersions(
+        props.provider as ProviderType,
+        props.item_id
+      );
+      loading.value = false;
+    });
 });
 
 const fetchPreviewUrl = async function (

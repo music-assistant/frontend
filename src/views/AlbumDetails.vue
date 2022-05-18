@@ -6,13 +6,13 @@
         :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
         value="tracks"
       >
-        {{ $t("album_tracks") }}</v-tab
+        {{ $t("tracks") }} ({{ albumTracks.length }})</v-tab
       >
       <v-tab
         :class="activeTab == 'versions' ? 'active-tab' : 'inactive-tab'"
         value="versions"
       >
-        {{ $t("album_versions") }}</v-tab
+        {{ $t("album_versions") }} ({{ albumVersions.length }})</v-tab
       >
     </v-tabs>
     <v-divider />
@@ -61,25 +61,31 @@ const albumVersions = ref<Album[]>([]);
 const loading = ref(true);
 
 watchEffect(async () => {
-  const item = await api.getAlbum(
-    props.provider as ProviderType,
-    props.item_id,
-    parseBool(props.lazy),
-    parseBool(props.refresh)
-  );
-  album.value = item;
-  // fetch additional info once main info retrieved
-  albumVersions.value = await api.getAlbumVersions(
-    props.provider as ProviderType,
-    props.item_id
-  );
+  api
+    .getAlbum(
+      props.provider as ProviderType,
+      props.item_id,
+      parseBool(props.lazy),
+      parseBool(props.refresh)
+    )
+    .then(async (item) => {
+      album.value = item;
+      // fetch additional info once main info retrieved
+      await getExtraInfo();
+      loading.value = false;
+    });
+});
+
+const getExtraInfo = async function () {
   albumTracks.value = await api.getAlbumTracks(
     props.provider as ProviderType,
     props.item_id
   );
-  for (const x of albumTracks.value) console.log(x.metadata)
-  loading.value = false;
-});
+  albumVersions.value = await api.getAlbumVersions(
+    props.provider as ProviderType,
+    props.item_id
+  );
+};
 
 // listen for item updates to refresh interface when that happens
 const unsub = api.subscribe(MassEventType.ALBUM_ADDED, (evt: MassEvent) => {
@@ -92,6 +98,7 @@ const unsub = api.subscribe(MassEventType.ALBUM_ADDED, (evt: MassEvent) => {
   ) {
     // got update for current item
     album.value = newItem;
+    getExtraInfo();
   }
 });
 onBeforeUnmount(unsub);
