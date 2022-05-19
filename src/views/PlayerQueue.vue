@@ -60,7 +60,7 @@
             <template v-slot:append>
               <div class="listitem-actions">
                 <!-- item duration -->
-                <div class="listitem-action">
+                <div class="listitem-action" v-if="item.duration">
                   <span>{{ formatDuration(item.duration) }}</span>
                 </div>
 
