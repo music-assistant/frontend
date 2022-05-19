@@ -6,7 +6,7 @@ import en from "../../../translations/frontend/en.json";
 import nl from "../../../translations/frontend/nl.json";
 const messages = {
   en,
-  nl
+  nl,
 };
 
 export const i18n = createI18n({
@@ -14,5 +14,5 @@ export const i18n = createI18n({
   globalInjection: true,
   locale: "en",
   fallbackLocale: "en",
-  messages
+  messages,
 });

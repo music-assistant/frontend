@@ -62,7 +62,12 @@ const cards = ref([
     stats: "library_artists",
   },
   { key: "albums", icon: mdiAlbum, path: "/albums", stats: "library_albums" },
-  { key: "tracks", icon: mdiFileMusic, path: "/tracks", stats: "library_tracks" },
+  {
+    key: "tracks",
+    icon: mdiFileMusic,
+    path: "/tracks",
+    stats: "library_tracks",
+  },
   {
     key: "playlists",
     icon: mdiPlaylistMusic,

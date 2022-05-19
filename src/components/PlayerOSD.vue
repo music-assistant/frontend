@@ -17,7 +17,12 @@
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
       "
-      style="position: absolute; background-size: 100%; padding: 0; margin-top: -10px"
+      style="
+        position: absolute;
+        background-size: 100%;
+        padding: 0;
+        margin-top: -10px;
+      "
     />
     <!-- now playing media -->
     <div
@@ -89,22 +94,30 @@
               contain
               :src="iconHiRes"
               height="25"
-              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
+              :style="
+                $vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''
+              "
             />
             <v-img
               v-if="streamDetails.bit_depth <= 16"
               contain
               :src="getContentTypeIcon(streamDetails.content_type)"
               height="25"
-              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
+              :style="
+                $vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''
+              "
             />
           </v-btn>
         </template>
         <v-card class="mx-auto" width="300">
           <v-list style="overflow: hidden">
-            <span class="text-h5" style="padding: 10px">{{ $t("stream_details") }}</span>
+            <span class="text-h5" style="padding: 10px">{{
+              $t("stream_details")
+            }}</span>
             <v-divider></v-divider>
-            <v-list-item style="height: 50px; display: flex; align-items: center">
+            <v-list-item
+              style="height: 50px; display: flex; align-items: center"
+            >
               <img
                 height="30"
                 width="50"
@@ -133,7 +146,8 @@
             <div
               style="height: 50px; display: flex; align-items: center"
               v-if="
-                activePlayerQueue && activePlayerQueue.settings.crossfade_duration > 0
+                activePlayerQueue &&
+                activePlayerQueue.settings.crossfade_duration > 0
               "
             >
               <img
@@ -189,7 +203,11 @@
       style="width: 100%; height: 5px"
       v-if="activePlayerQueue?.active && curQueueItem"
     >
-      <v-progress-linear v-bind:model-value="progress" height="3" color="primary" />
+      <v-progress-linear
+        v-bind:model-value="progress"
+        height="3"
+        color="primary"
+      />
     </div>
 
     <!-- Control buttons -->
@@ -328,7 +346,7 @@ import type {
   ItemMapping,
   Track,
   Radio,
-  Player
+  Player,
 } from "../plugins/api";
 import {
   api,
@@ -342,7 +360,11 @@ import VolumeControl from "./VolumeControl.vue";
 import MediaItemThumb, { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { formatDuration, truncateString } from "../utils";
 import { useRouter } from "vue-router";
-import { getContentTypeIcon, iconHiRes, getProviderIcon } from "./ProviderIcons.vue";
+import {
+  getContentTypeIcon,
+  iconHiRes,
+  getProviderIcon,
+} from "./ProviderIcons.vue";
 
 const iconCrossfade = new URL("../assets/crossfade.png", import.meta.url).href;
 const iconLevel = new URL("../assets/level.png", import.meta.url).href;

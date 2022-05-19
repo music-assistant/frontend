@@ -40,7 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
   lazy: true,
   refresh: false,
 });
-const activeTab = ref('tracks');
+const activeTab = ref("tracks");
 
 const playlist = ref<Playlist>();
 const playlistTracks = ref<Track[]>([]);

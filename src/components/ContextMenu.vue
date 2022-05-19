@@ -95,13 +95,7 @@ import {
 } from "@mdi/js";
 import ListviewItem from "./ListviewItem.vue";
 import { MediaType, QueueOption } from "../plugins/api";
-import type {
-  MediaItem,
-  MediaItemType,
-  Playlist,
-  Track,
-  PlayerQueue,
-} from "../plugins/api";
+import type { MediaItem, MediaItemType, Playlist, Track } from "../plugins/api";
 import { ref, watch } from "vue";
 import api from "../plugins/api";
 import { useI18n } from "vue-i18n";

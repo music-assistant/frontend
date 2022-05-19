@@ -3,7 +3,7 @@ import {
   type Connection,
   createConnection,
   ERR_HASS_HOST_REQUIRED,
-  getAuth
+  getAuth,
 } from "home-assistant-js-websocket";
 import { reactive, ref } from "vue";
 
@@ -13,7 +13,7 @@ export enum MediaType {
   TRACK = "track",
   PLAYLIST = "playlist",
   RADIO = "radio",
-  UNKNOWN = "unknown"
+  UNKNOWN = "unknown",
 }
 
 export enum MediaQuality {
@@ -25,7 +25,7 @@ export enum MediaQuality {
   FLAC_LOSSLESS_HI_RES_1 = 20, // 44.1/48khz 24 bits HI-RES
   FLAC_LOSSLESS_HI_RES_2 = 21, // 88.2/96khz 24 bits HI-RES
   FLAC_LOSSLESS_HI_RES_3 = 22, // 176/192khz 24 bits HI-RES
-  FLAC_LOSSLESS_HI_RES_4 = 23 // above 192khz 24 bits HI-RES
+  FLAC_LOSSLESS_HI_RES_4 = 23, // above 192khz 24 bits HI-RES
 }
 
 export enum ProviderType {
@@ -37,7 +37,7 @@ export enum ProviderType {
   QOBUZ = "qobuz",
   TUNEIN = "tunein",
   DATABASE = "database",
-  URL = "url"
+  URL = "url",
 }
 export interface MediaItemProviderId {
   item_id: string;
@@ -60,7 +60,7 @@ export enum LinkType {
   TIKTOK = "tiktok",
   DISCOGS = "discogs",
   WIKIPEDIA = "wikipedia",
-  ALLMUSIC = "allmusic"
+  ALLMUSIC = "allmusic",
 }
 
 export enum ImageType {
@@ -74,7 +74,7 @@ export enum ImageType {
   BACK = "back",
   CDART = "cdart",
   EMBEDDED_THUMB = "embedded_thumb",
-  OTHER = "other"
+  OTHER = "other",
 }
 
 export interface MediaItemLink {
@@ -134,7 +134,7 @@ export enum AlbumType {
   ALBUM = "album",
   SINGLE = "single",
   COMPILATION = "compilation",
-  UNKNOWN = "unknown"
+  UNKNOWN = "unknown",
 }
 
 export interface Album extends MediaItem {
@@ -176,7 +176,7 @@ export enum StreamType {
   EXECUTABLE = "executable",
   URL = "url",
   FILE = "file",
-  CACHE = "cache"
+  CACHE = "cache",
 }
 
 export enum ContentType {
@@ -190,7 +190,7 @@ export enum ContentType {
   PCM_S24LE = "s24le", // PCM signed 24-bit little-endian
   PCM_S32LE = "s32le", // PCM signed 32-bit little-endian
   PCM_F32LE = "f32le", // PCM 32-bit floating-point little-endian
-  PCM_F64LE = "f64le," // PCM 64-bit floating-point little-endian
+  PCM_F64LE = "f64le,", // PCM 64-bit floating-point little-endian
 }
 
 export interface StreamDetails {
@@ -215,7 +215,7 @@ export enum PlayerState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
-  OFF = "off"
+  OFF = "off",
 }
 
 export interface DeviceInfo {
@@ -256,13 +256,13 @@ export enum CrossFadeMode {
   DISABLED = "disabled", // no crossfading at all
   STRICT = "strict", // do not crossfade tracks of same album
   SMART = "smart", // crossfade if possible (do not crossfade different sample rates)
-  ALWAYS = "always" // all tracks - resample to fixed sample rate
+  ALWAYS = "always", // all tracks - resample to fixed sample rate
 }
 
 export enum RepeatMode {
   OFF = "off", // no repeat at all
   ONE = "one", // repeat current/single track
-  ALL = "all" // repeat entire queue
+  ALL = "all", // repeat entire queue
 }
 
 export interface QueueSettings {
@@ -312,7 +312,7 @@ export enum QueueCommand {
   MOVE_NEXT = "move_next",
   VOLUME_NORMALIZATION_ENABLED = "volume_normalization_enabled",
   VOLUME_NORMALIZATION_TARGET = "volume_normalization_target",
-  CROSSFADE_DURATION = "crossfade_duration"
+  CROSSFADE_DURATION = "crossfade_duration",
 }
 
 export enum MassEventType {
@@ -338,14 +338,14 @@ export enum MassEventType {
   PROVIDER_REGISTERED = "provider registered",
   BACKGROUND_JOB_UPDATED = "background_job_updated",
   // special types for local subscriptions only
-  ALL = "*"
+  ALL = "*",
 }
 
 export enum QueueOption {
   PLAY = "play",
   REPLACE = "replace",
   NEXT = "next",
-  ADD = "add"
+  ADD = "add",
 }
 
 export type MassEvent = {
@@ -359,7 +359,7 @@ export enum JobStatus {
   RUNNING = "running",
   CANCELLED = "cancelled",
   FINISHED = "success",
-  ERROR = "error"
+  ERROR = "error",
 }
 
 export type BackgroundJob = {
@@ -391,7 +391,7 @@ export class MusicAssistantApi {
     library_albums: 0,
     library_tracks: 0,
     library_playlists: 0,
-    library_radios: 0
+    library_radios: 0,
   });
   public jobs = ref<BackgroundJob[]>([]);
   private _wsEventCallbacks: Array<[string, CallableFunction]>;
@@ -428,7 +428,7 @@ export class MusicAssistantApi {
         this.handleMassEvent(msg);
       },
       {
-        type: "mass/subscribe"
+        type: "mass/subscribe",
       }
     );
   }
@@ -484,7 +484,7 @@ export class MusicAssistantApi {
   ): Promise<string> {
     return this.getData("track/preview", {
       provider,
-      item_id
+      item_id,
     });
   }
 
@@ -716,7 +716,7 @@ export class MusicAssistantApi {
           },
           saveTokens: (tokens) => {
             localStorage.hassTokens = JSON.stringify(tokens);
-          }
+          },
         }
       : {};
     try {
@@ -797,7 +797,7 @@ export class MusicAssistantApi {
     return (this._conn as Connection).sendMessagePromise({
       id: this._lastId,
       type: `mass/${endpoint}`,
-      ...args
+      ...args,
     });
   }
 
@@ -807,7 +807,7 @@ export class MusicAssistantApi {
     (this._conn as Connection).sendMessage({
       id: this._lastId,
       type: `mass/${endpoint}`,
-      ...args
+      ...args,
     });
   }
 }

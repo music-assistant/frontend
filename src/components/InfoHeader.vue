@@ -26,6 +26,7 @@
             :item="item"
             :size="180"
             :border="true"
+            :fallback="imgDefaultArtist"
             style="margin-top: 15px; margin-bottom: 15px"
           />
         </div>
@@ -39,7 +40,10 @@
           <!-- other details -->
           <div style="padding-bottom: 10px">
             <!-- version -->
-            <v-card-subtitle v-if="'version' in item && item.version" class="caption">
+            <v-card-subtitle
+              v-if="'version' in item && item.version"
+              class="caption"
+            >
               {{ item.version }}
             </v-card-subtitle>
 
@@ -54,7 +58,10 @@
                 color="primary"
                 :icon="mdiAccountMusic"
               ></v-icon>
-              <span v-for="(artist, artistindex) in item.artists" :key="artist.item_id">
+              <span
+                v-for="(artist, artistindex) in item.artists"
+                :key="artist.item_id"
+              >
                 <a style="color: accent" @click="artistClick(artist)">{{
                   artist.name
                 }}</a>
@@ -68,7 +75,10 @@
             </v-card-subtitle>
 
             <!-- album artist -->
-            <v-card-subtitle v-if="'artist' in item && item.artist" class="title">
+            <v-card-subtitle
+              v-if="'artist' in item && item.artist"
+              class="title"
+            >
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
                 small
@@ -149,7 +159,10 @@
                 v-html="
                   showFullInfo
                     ? getDescription()
-                    : truncateText(getDescription(), $vuetify.display.mobile ? 160 : 380)
+                    : truncateText(
+                        getDescription(),
+                        $vuetify.display.mobile ? 160 : 380
+                      )
                 "
               >
               </span>
@@ -223,8 +236,12 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const display = useDisplay();
 
-const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url).href;
-const imgDefaultArtist = new URL("../assets/default_artist.png", import.meta.url).href;
+const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
+  .href;
+const imgDefaultArtist = new URL(
+  "../assets/default_artist.png",
+  import.meta.url
+).href;
 
 const { t } = useI18n();
 const router = useRouter();

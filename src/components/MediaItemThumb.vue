@@ -66,7 +66,7 @@ watchEffect(async () => {
   if (!props.item) return;
   imgData.value =
     (await getImageThumbForItem(props.item, ImageType.THUMB, props.size)) ||
-    fallbackImage.value
+    fallbackImage.value;
 });
 </script>
 

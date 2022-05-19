@@ -22,9 +22,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) of radio?.provider_ids" :key="item.item_id">
+          <tr v-for="item of radio?.provider_ids" :key="item.item_id">
             <td class="details-column">
-              <v-img width="25px" :src="getProviderIcon(item.provider)"></v-img>
+              <v-img
+                width="25px"
+                :src="getProviderIcon(item.prov_type)"
+              ></v-img>
             </td>
             <td class="details-column">
               <a :href="item.url" target="_blank">{{ item.item_id }}</a>
@@ -51,10 +54,13 @@
 
 <script setup lang="ts">
 import InfoHeader from "../components/InfoHeader.vue";
-import { ref, reactive } from "@vue/reactivity";
-import type { MassEvent, Radio, Track } from "../plugins/api";
+import { ref } from "@vue/reactivity";
+import type { MassEvent, ProviderType, Radio, Track } from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
-import { getProviderIcon, getQualityIcon } from "../components/ProviderIcons.vue";
+import {
+  getProviderIcon,
+  getQualityIcon,
+} from "../components/ProviderIcons.vue";
 import { onBeforeUnmount, watchEffect } from "vue";
 import { parseBool } from "../utils";
 
@@ -72,11 +78,10 @@ const activeTab = ref("details");
 
 const radio = ref<Radio>();
 const loading = ref(true);
-const previewUrls = reactive<Record<number, string>>({});
 
 watchEffect(async () => {
   const item = await api.getRadio(
-    props.provider,
+    props.provider as ProviderType,
     props.item_id,
     parseBool(props.lazy),
     parseBool(props.refresh)
@@ -91,7 +96,7 @@ const unsub = api.subscribe(MassEventType.RADIO_ADDED, (evt: MassEvent) => {
   if (
     (props.provider == "database" && newItem.item_id == props.item_id) ||
     newItem.provider_ids.filter(
-      (x) => x.provider == props.provider && x.item_id == props.item_id
+      (x) => x.prov_type == props.provider && x.item_id == props.item_id
     ).length > 0
   ) {
     // got update for current item

@@ -84,7 +84,7 @@ import {
   mdiAlertCircle,
   mdiReload,
   mdiClose,
-  mdiMenu
+  mdiMenu,
 } from "@mdi/js";
 
 import { computed, mergeProps, ref } from "vue";
@@ -103,13 +103,13 @@ const jobsInProgress = computed(() => {
 });
 
 const toggleHAMenu = function () {
-    // toggle HA sidebar
-    const root = window.parent.document
-      .querySelector("home-assistant")
-      .shadowRoot.querySelector("home-assistant-main");
-    const evt = new Event("hass-toggle-menu", {});
-    root.dispatchEvent(evt);
-}
+  // toggle HA sidebar
+  const root = window.parent.document
+    .querySelector("home-assistant")
+    .shadowRoot.querySelector("home-assistant-main");
+  const evt = new Event("hass-toggle-menu", {});
+  root.dispatchEvent(evt);
+};
 
 const backButton = function () {
   if (store.prevRoutes.length === 0) {

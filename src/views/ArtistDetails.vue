@@ -40,7 +40,13 @@
 import ItemsListing from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
 import { ref } from "@vue/reactivity";
-import type { Album, Artist, MassEvent, ProviderType, Track } from "../plugins/api";
+import type {
+  Album,
+  Artist,
+  MassEvent,
+  ProviderType,
+  Track,
+} from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
 import { onBeforeUnmount, watchEffect } from "vue";
 import { parseBool } from "../utils";

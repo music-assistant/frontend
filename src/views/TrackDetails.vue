@@ -39,7 +39,10 @@
         <tbody>
           <tr v-for="(item, index) of track?.provider_ids" :key="item.item_id">
             <td class="details-column">
-              <v-img width="25px" :src="getProviderIcon(item.prov_type)"></v-img>
+              <v-img
+                width="25px"
+                :src="getProviderIcon(item.prov_type)"
+              ></v-img>
             </td>
             <td class="details-column">
               <a :href="item.url" target="_blank">{{ item.item_id }}</a>
@@ -61,7 +64,11 @@
               class="details-column"
               @mouseover="fetchPreviewUrl(item.prov_type, item.item_id, index)"
             >
-              <audio style="width: 260px" controls :src="previewUrls[index]"></audio>
+              <audio
+                style="width: 260px"
+                controls
+                :src="previewUrls[index]"
+              ></audio>
             </td>
           </tr>
         </tbody>
@@ -76,7 +83,10 @@ import InfoHeader from "../components/InfoHeader.vue";
 import { ref, reactive } from "@vue/reactivity";
 import type { MassEvent, ProviderType, Track } from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
-import { getProviderIcon, getQualityIcon } from "../components/ProviderIcons.vue";
+import {
+  getProviderIcon,
+  getQualityIcon,
+} from "../components/ProviderIcons.vue";
 import { onBeforeUnmount, watchEffect } from "vue";
 import { parseBool } from "../utils";
 
