@@ -41,7 +41,7 @@
       <v-list-item two-line class="mediadetails-title" v-if="curMediaItem">
         <div>
           <v-list-item-title v-if="$vuetify.display.mobile">
-            {{ truncateString(curMediaItem.name, 35) }}</v-list-item-title
+            {{ truncateString(curMediaItem.name, 30) }}</v-list-item-title
           >
           <v-list-item-title v-else> {{ curMediaItem.name }}</v-list-item-title>
           <v-list-item-subtitle
