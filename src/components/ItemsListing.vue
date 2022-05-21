@@ -42,11 +42,9 @@
         <v-icon v-if="!sortDesc" :icon="mdiArrowUp"></v-icon>
         <v-icon v-if="sortDesc" :icon="mdiArrowDown"></v-icon>
       </v-btn>
-      <v-menu anchor="bottom end" :close-on-content-click="false">
-        <v-btn icon @click="showSearch = !showSearch">
-          <v-icon :icon="mdiSearchWeb"></v-icon>
-        </v-btn>
-      </v-menu>
+      <v-btn icon @click="showSearch = !showSearch">
+        <v-icon :icon="mdiSearchWeb"></v-icon>
+      </v-btn>
       <v-btn icon style="margin-right: -15px" @click="toggleViewMode()">
         <v-icon v-if="viewMode == 'panel'" :icon="mdiViewList"></v-icon>
         <v-icon v-if="viewMode == 'list'" :icon="mdiGrid"></v-icon>
@@ -60,12 +58,7 @@
       hide-details
       autofocus
       variant="filled"
-      style="
-        width: auto;
-        margin-left: 15px;
-        margin-right: 15px;
-        margin-top: 10px;
-      "
+      style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
       v-if="showSearch"
     ></v-text-field>
 
@@ -79,17 +72,8 @@
     >
       <v-progress-linear indeterminate v-if="loading"></v-progress-linear>
       <!-- panel view -->
-      <v-row
-        dense
-        align-content="stretch"
-        align="stretch"
-        v-if="viewMode == 'panel'"
-      >
-        <v-col
-          v-for="item in filteredItems"
-          :key="item.uri"
-          align-self="stretch"
-        >
+      <v-row dense align-content="stretch" align="stretch" v-if="viewMode == 'panel'">
+        <v-col v-for="item in filteredItems" :key="item.uri" align-self="stretch">
           <PanelviewItem
             :item="item"
             :size="thumbSize"
@@ -145,14 +129,7 @@ import {
   mdiCheck,
 } from "@mdi/js";
 
-import {
-  watchEffect,
-  ref,
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  nextTick,
-} from "vue";
+import { watchEffect, ref, computed, onBeforeUnmount, onMounted, nextTick } from "vue";
 import { useDisplay } from "vuetify";
 import type {
   Album,
@@ -233,10 +210,7 @@ const filteredItems = computed(() => {
         item.artist?.name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
-      } else if (
-        "album" in item &&
-        item.album?.name.toLowerCase().includes(searchStr)
-      ) {
+      } else if ("album" in item && item.album?.name.toLowerCase().includes(searchStr)) {
         result.push(item);
       } else if (
         "artists" in item &&
@@ -251,9 +225,7 @@ const filteredItems = computed(() => {
   }
   // sort
   if (sortBy.value == "name") {
-    result.sort((a, b) =>
-      (a.sort_name || a.name).localeCompare(b.sort_name || b.name)
-    );
+    result.sort((a, b) => (a.sort_name || a.name).localeCompare(b.sort_name || b.name));
   }
   if (sortBy.value == "album.name") {
     result.sort((a, b) =>
@@ -272,18 +244,14 @@ const filteredItems = computed(() => {
   }
   if (sortBy.value == "track_number") {
     result.sort(
-      (a, b) =>
-        ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
+      (a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
     );
     result.sort(
-      (a, b) =>
-        ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
+      (a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
     );
   }
   if (sortBy.value == "position") {
-    result.sort(
-      (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0)
-    );
+    result.sort((a, b) => ((a as Track).position || 0) - ((b as Track).position || 0));
   }
   if (sortBy.value == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
