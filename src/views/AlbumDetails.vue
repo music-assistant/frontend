@@ -88,7 +88,7 @@ const getExtraInfo = async function () {
 };
 
 // listen for item updates to refresh interface when that happens
-const unsub = api.subscribe(MassEventType.ALBUM_ADDED, (evt: MassEvent) => {
+const unsub = api.subscribe(MassEventType.MEDIA_ITEM_UPDATED, (evt: MassEvent) => {
   const newItem = evt.data as Album;
   if (
     (props.provider == "database" && newItem.item_id == props.item_id) ||

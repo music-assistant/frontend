@@ -25,7 +25,7 @@
 import ItemsListing from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
 import { ref } from "@vue/reactivity";
-import type { MassEvent, Playlist, Track } from "../plugins/api";
+import type { MassEvent, Playlist, ProviderType, Track } from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
 import { onBeforeUnmount, watchEffect } from "vue";
 import { parseBool } from "../utils";
@@ -48,7 +48,7 @@ const loading = ref(true);
 
 watchEffect(async () => {
   const item = await api.getPlaylist(
-    props.provider,
+    props.provider as ProviderType,
     props.item_id,
     parseBool(props.lazy),
     parseBool(props.refresh)
@@ -56,7 +56,7 @@ watchEffect(async () => {
   playlist.value = item;
   // fetch additional info once main info retrieved
   playlistTracks.value = await api.getPlaylistTracks(
-    props.provider,
+    props.provider as ProviderType,
     props.item_id
   );
   loading.value = false;
@@ -64,14 +64,14 @@ watchEffect(async () => {
 
 // listen for item updates to refresh interface when that happens
 const unsub = api.subscribe(
-  MassEventType.PLAYLIST_UPDATED,
+  MassEventType.MEDIA_ITEM_UPDATED,
   async (evt: MassEvent) => {
     const updItem = evt.data as Playlist;
     if (updItem.item_id == props.item_id) {
       // got update for current item
       // fetch playlist tracks as they might have changed
       playlistTracks.value = await api.getPlaylistTracks(
-        props.provider,
+        props.provider as ProviderType,
         props.item_id
       );
     }

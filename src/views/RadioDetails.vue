@@ -91,7 +91,7 @@ watchEffect(async () => {
 });
 
 // listen for item updates to refresh interface when that happens
-const unsub = api.subscribe(MassEventType.RADIO_ADDED, (evt: MassEvent) => {
+const unsub = api.subscribe(MassEventType.MEDIA_ITEM_UPDATED, (evt: MassEvent) => {
   const newItem = evt.data as Track;
   if (
     (props.provider == "database" && newItem.item_id == props.item_id) ||

@@ -164,7 +164,7 @@ interface SortKey {
 }
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
-  showProviders: api.stats.providers.length > 1,
+  showProviders: Object.keys(api.providers).length > 1,
   showMenu: true,
   showLibrary: true,
   showDuration: true,

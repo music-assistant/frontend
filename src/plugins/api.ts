@@ -3,7 +3,7 @@ import {
   type Connection,
   createConnection,
   ERR_HASS_HOST_REQUIRED,
-  getAuth,
+  getAuth
 } from "home-assistant-js-websocket";
 import { reactive, ref } from "vue";
 
@@ -13,7 +13,7 @@ export enum MediaType {
   TRACK = "track",
   PLAYLIST = "playlist",
   RADIO = "radio",
-  UNKNOWN = "unknown",
+  UNKNOWN = "unknown"
 }
 
 export enum MediaQuality {
@@ -25,7 +25,7 @@ export enum MediaQuality {
   FLAC_LOSSLESS_HI_RES_1 = 20, // 44.1/48khz 24 bits HI-RES
   FLAC_LOSSLESS_HI_RES_2 = 21, // 88.2/96khz 24 bits HI-RES
   FLAC_LOSSLESS_HI_RES_3 = 22, // 176/192khz 24 bits HI-RES
-  FLAC_LOSSLESS_HI_RES_4 = 23, // above 192khz 24 bits HI-RES
+  FLAC_LOSSLESS_HI_RES_4 = 23 // above 192khz 24 bits HI-RES
 }
 
 export enum ProviderType {
@@ -37,7 +37,7 @@ export enum ProviderType {
   QOBUZ = "qobuz",
   TUNEIN = "tunein",
   DATABASE = "database",
-  URL = "url",
+  URL = "url"
 }
 export interface MediaItemProviderId {
   item_id: string;
@@ -60,7 +60,7 @@ export enum LinkType {
   TIKTOK = "tiktok",
   DISCOGS = "discogs",
   WIKIPEDIA = "wikipedia",
-  ALLMUSIC = "allmusic",
+  ALLMUSIC = "allmusic"
 }
 
 export enum ImageType {
@@ -74,7 +74,7 @@ export enum ImageType {
   BACK = "back",
   CDART = "cdart",
   EMBEDDED_THUMB = "embedded_thumb",
-  OTHER = "other",
+  OTHER = "other"
 }
 
 export interface MediaItemLink {
@@ -134,7 +134,7 @@ export enum AlbumType {
   ALBUM = "album",
   SINGLE = "single",
   COMPILATION = "compilation",
-  UNKNOWN = "unknown",
+  UNKNOWN = "unknown"
 }
 
 export interface Album extends MediaItem {
@@ -176,7 +176,7 @@ export enum StreamType {
   EXECUTABLE = "executable",
   URL = "url",
   FILE = "file",
-  CACHE = "cache",
+  CACHE = "cache"
 }
 
 export enum ContentType {
@@ -190,7 +190,7 @@ export enum ContentType {
   PCM_S24LE = "s24le", // PCM signed 24-bit little-endian
   PCM_S32LE = "s32le", // PCM signed 32-bit little-endian
   PCM_F32LE = "f32le", // PCM 32-bit floating-point little-endian
-  PCM_F64LE = "f64le,", // PCM 64-bit floating-point little-endian
+  PCM_F64LE = "f64le," // PCM 64-bit floating-point little-endian
 }
 
 export interface StreamDetails {
@@ -215,7 +215,7 @@ export enum PlayerState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
-  OFF = "off",
+  OFF = "off"
 }
 
 export interface DeviceInfo {
@@ -256,13 +256,13 @@ export enum CrossFadeMode {
   DISABLED = "disabled", // no crossfading at all
   STRICT = "strict", // do not crossfade tracks of same album
   SMART = "smart", // crossfade if possible (do not crossfade different sample rates)
-  ALWAYS = "always", // all tracks - resample to fixed sample rate
+  ALWAYS = "always" // all tracks - resample to fixed sample rate
 }
 
 export enum RepeatMode {
   OFF = "off", // no repeat at all
   ONE = "one", // repeat current/single track
-  ALL = "all", // repeat entire queue
+  ALL = "all" // repeat entire queue
 }
 
 export interface QueueSettings {
@@ -312,40 +312,31 @@ export enum QueueCommand {
   MOVE_NEXT = "move_next",
   VOLUME_NORMALIZATION_ENABLED = "volume_normalization_enabled",
   VOLUME_NORMALIZATION_TARGET = "volume_normalization_target",
-  CROSSFADE_DURATION = "crossfade_duration",
+  CROSSFADE_DURATION = "crossfade_duration"
 }
 
 export enum MassEventType {
-  PLAYER_ADDED = "player added",
-  PLAYER_REMOVED = "player removed",
-  PLAYER_UPDATED = "player updated",
-  STREAM_STARTED = "streaming started",
-  STREAM_ENDED = "streaming ended",
-  CONFIG_CHANGED = "config changed",
-  MUSIC_SYNC_STATUS = "music sync status",
+  PLAYER_ADDED = "player_added",
+  PLAYER_UPDATED = "player_updated",
+  STREAM_STARTED = "streaming_started",
+  STREAM_ENDED = "streaming_ended",
   QUEUE_ADDED = "queue_added",
-  QUEUE_UPDATED = "queue updated",
-  QUEUE_ITEMS_UPDATED = "queue items updated",
-  QUEUE_TIME_UPDATED = "queue time updated",
-  SHUTDOWN = "application shutdown",
-  ARTIST_ADDED = "artist added",
-  ALBUM_ADDED = "album added",
-  TRACK_ADDED = "track added",
-  PLAYLIST_ADDED = "playlist added",
-  PLAYLIST_UPDATED = "playlist updated",
-  RADIO_ADDED = "radio added",
-  TASK_UPDATED = "task updated",
-  PROVIDER_REGISTERED = "provider registered",
+  QUEUE_UPDATED = "queue_updated",
+  QUEUE_ITEMS_UPDATED = "queue_items_updated",
+  QUEUE_TIME_UPDATED = "queue_time_updated",
+  SHUTDOWN = "application_shutdown",
+  MEDIA_ITEM_ADDED = "media_item_added",
+  MEDIA_ITEM_UPDATED = "media_item_updated",
   BACKGROUND_JOB_UPDATED = "background_job_updated",
   // special types for local subscriptions only
-  ALL = "*",
+  ALL = "*"
 }
 
 export enum QueueOption {
   PLAY = "play",
   REPLACE = "replace",
   NEXT = "next",
-  ADD = "add",
+  ADD = "add"
 }
 
 export type MassEvent = {
@@ -359,7 +350,7 @@ export enum JobStatus {
   RUNNING = "running",
   CANCELLED = "cancelled",
   FINISHED = "success",
-  ERROR = "error",
+  ERROR = "error"
 }
 
 export type BackgroundJob = {
@@ -369,13 +360,19 @@ export type BackgroundJob = {
   status: JobStatus;
 };
 
-export interface Stats {
-  providers: string[];
-  library_artists: number;
-  library_albums: number;
-  library_tracks: number;
-  library_playlists: number;
-  library_radios: number;
+export interface MusicProvider {
+  type: ProviderType;
+  name: string;
+  id: string;
+  supported_mediatypes: MediaType[];
+}
+
+export interface Library {
+  artists: Artist[];
+  albums: Album[];
+  tracks: Track[];
+  radios: Radio[];
+  playlists: Playlist[];
 }
 
 export class MusicAssistantApi {
@@ -385,13 +382,13 @@ export class MusicAssistantApi {
   private _initialized: boolean;
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
-  public stats = reactive<Stats>({
-    providers: [],
-    library_artists: 0,
-    library_albums: 0,
-    library_tracks: 0,
-    library_playlists: 0,
-    library_radios: 0,
+  public providers = reactive<{ [provider_id: string]: MusicProvider }>({});
+  public library = reactive<Library>({
+    artists: [],
+    albums: [],
+    tracks: [],
+    radios: [],
+    playlists: []
   });
   public jobs = ref<BackgroundJob[]>([]);
   private _wsEventCallbacks: Array<[string, CallableFunction]>;
@@ -420,15 +417,14 @@ export class MusicAssistantApi {
     for (const queue of await this.getPlayerQueues()) {
       this.queues[queue.queue_id] = queue;
     }
-    this._updateStats();
-    this.jobs.value = await this.getData("jobs");
+    this._fetchState();
     // subscribe to mass events
     this._conn?.subscribeMessage(
       (msg: MassEvent) => {
         this.handleMassEvent(msg);
       },
       {
-        type: "mass/subscribe",
+        type: "mass/subscribe"
       }
     );
   }
@@ -447,14 +443,25 @@ export class MusicAssistantApi {
     return removeCallback;
   }
 
-  private async _updateStats() {
-    const stats = await this.getData<Stats>("stats");
-    this.stats.library_albums = stats.library_albums;
-    this.stats.library_artists = stats.library_artists;
-    this.stats.library_playlists = stats.library_playlists;
-    this.stats.library_radios = stats.library_radios;
-    this.stats.library_tracks = stats.library_tracks;
-    this.stats.providers = stats.providers;
+  private async _fetchState() {
+    // fetch full initial state
+    this.getLibraryAlbums().then((items) => {
+      this.library.albums = items;
+    });
+    this.getLibraryArtists().then((items) => {
+      this.library.artists = items;
+    });
+    this.getLibraryTracks().then((items) => {
+      this.library.tracks = items;
+    });
+    this.getLibraryRadios().then((items) => {
+      this.library.radios = items;
+    });
+    this.getLibraryPlaylists().then((items) => {
+      this.library.playlists = items;
+    });
+    this.providers = await this.getData("providers");
+    this.jobs.value = await this.getData("jobs");
   }
 
   public getLibraryTracks(): Promise<Track[]> {
@@ -484,7 +491,7 @@ export class MusicAssistantApi {
   ): Promise<string> {
     return this.getData("track/preview", {
       provider,
-      item_id,
+      item_id
     });
   }
 
@@ -716,7 +723,7 @@ export class MusicAssistantApi {
           },
           saveTokens: (tokens) => {
             localStorage.hassTokens = JSON.stringify(tokens);
-          },
+          }
         }
       : {};
     try {
@@ -764,21 +771,54 @@ export class MusicAssistantApi {
         (x) => x.id !== msg.data?.id && x.status !== JobStatus.FINISHED
       );
       this.jobs.value.push(msg.data as BackgroundJob);
+    } else if (
+      [
+        MassEventType.MEDIA_ITEM_ADDED,
+        MassEventType.MEDIA_ITEM_UPDATED
+      ].includes(msg.event)
+    ) {
+      // media item added/updated in library
+      this.handleLibraryEvent(msg.data as MediaItemType);
     }
-
-    // update stats if needed
-    if (msg.event == MassEventType.PROVIDER_REGISTERED) {
-      this._updateStats();
-    }
-    if (msg.event.includes("added")) {
-      const item = msg.data as MediaItemType;
-      if (item.in_library) {
-        this._updateStats();
-      }
-    }
+    // signal + log all events
     this.signalEvent(msg);
     if (msg.event !== MassEventType.QUEUE_TIME_UPDATED) {
       console.log("[event]", msg);
+    }
+  }
+
+  private handleLibraryEvent(item: MediaItemType) {
+    // handle new item added to library (or existing one updated)
+    if (item.media_type == MediaType.ALBUM) {
+      const items = this.library.albums.filter(
+        (x) => x.item_id != item.item_id
+      );
+      if (item.in_library) items.push(item as Album);
+      this.library.albums = items;
+    } else if (item.media_type == MediaType.ARTIST) {
+      const items = this.library.artists.filter(
+        (x) => x.item_id != item.item_id
+      );
+      if (item.in_library) items.push(item as Artist);
+      this.library.artists = items;
+    } else if (item.media_type == MediaType.TRACK) {
+      const items = this.library.tracks.filter(
+        (x) => x.item_id != item.item_id
+      );
+      if (item.in_library) items.push(item as Track);
+      this.library.tracks = items;
+    } else if (item.media_type == MediaType.PLAYLIST) {
+      const items = this.library.playlists.filter(
+        (x) => x.item_id != item.item_id
+      );
+      if (item.in_library) items.push(item as Playlist);
+      this.library.playlists = items;
+    } else if (item.media_type == MediaType.RADIO) {
+      const items = this.library.radios.filter(
+        (x) => x.item_id != item.item_id
+      );
+      if (item.in_library) items.push(item as Radio);
+      this.library.radios = items;
     }
   }
 
@@ -797,7 +837,7 @@ export class MusicAssistantApi {
     return (this._conn as Connection).sendMessagePromise({
       id: this._lastId,
       type: `mass/${endpoint}`,
-      ...args,
+      ...args
     });
   }
 
@@ -807,7 +847,7 @@ export class MusicAssistantApi {
     (this._conn as Connection).sendMessage({
       id: this._lastId,
       type: `mass/${endpoint}`,
-      ...args,
+      ...args
     });
   }
 }

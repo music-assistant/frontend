@@ -14,7 +14,11 @@
           <MediaItemThumb :item="item" :size="50" />
           <div
             v-if="isSelected"
-            style="position: absolute; background-color: #82b1ff94"
+            style="
+              position: absolute;
+              background-color: #82b1ff94;
+              margin-top: -50px;
+            "
           >
             <v-icon dark size="51" :icon="mdiCheckboxMarkedOutline"></v-icon>
           </div></div
@@ -270,7 +274,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 const itemIsAvailable = function (item: MediaItem) {
   if (!props.item.provider_ids) return true;
   for (const x of item.provider_ids) {
-    if (x.available && api.stats.providers.includes(x.prov_type)) return true;
+    if (x.available && x.prov_id in api.providers) return true;
   }
   return false;
 };
