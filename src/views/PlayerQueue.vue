@@ -1,7 +1,5 @@
 <template>
   <section>
-    <v-progress-linear indeterminate v-if="loading"></v-progress-linear>
-
     <v-tabs v-model="activePanel" show-arrows grow>
       <v-tab :value="0">{{
         $t("queue_next_items") + " (" + nextItems.length + ")"
@@ -19,6 +17,7 @@
         padding-bottom: 20px;
       "
     >
+      <v-progress-linear indeterminate v-if="loading"></v-progress-linear>
       <RecycleScroller
         v-slot="{ item }"
         :items="tabItems"
@@ -31,6 +30,7 @@
             ripple
             @click.stop="onClick(item)"
             @click.right.prevent="onClick(item)"
+            :disabled="item.item_id == curQueueItem?.item_id"
           >
             <template v-slot:prepend
               ><v-list-item-avatar rounded="0" class="listitem-thumb">
@@ -209,6 +209,22 @@
                 <v-icon :icon="mdiArrowDown"></v-icon>
               </v-list-item-avatar>
               <v-list-item-title>{{ $t("queue_move_down") }}</v-list-item-title>
+            </v-list-item>
+            <v-divider></v-divider>
+
+            <!-- delete -->
+            <v-list-item
+              @click="
+                api.queueCommandDelete(
+                  activePlayerQueue?.queue_id,
+                  (selectedItem as QueueItem).item_id
+                )
+              "
+            >
+              <v-list-item-avatar style="padding-right: 10px">
+                <v-icon :icon="mdiDelete"></v-icon>
+              </v-list-item-avatar>
+              <v-list-item-title>{{ $t("queue_delete") }}</v-list-item-title>
             </v-list-item>
             <v-divider></v-divider>
 
@@ -421,6 +437,7 @@ import {
   mdiRepeat,
   mdiChartBar,
   mdiCameraTimer,
+  mdiDelete
 } from "@mdi/js";
 import { ref } from "@vue/reactivity";
 import { RecycleScroller } from "vue-virtual-scroller";
@@ -457,6 +474,11 @@ const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
     return api.queues[store.selectedPlayer.active_queue];
   }
+  return undefined;
+});
+
+const curQueueItem = computed(() => {
+  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
   return undefined;
 });
 const nextItems = computed(() => {
@@ -533,7 +555,6 @@ watchEffect(() => {
   if (activePlayerQueue.value) {
     loadItems();
   }
-  loading.value = false;
 });
 </script>
 
