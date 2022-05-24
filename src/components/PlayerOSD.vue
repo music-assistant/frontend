@@ -5,6 +5,7 @@
     class="d-flex flex-column"
     style="width: 100%; border-top-style: ridge"
     elevation="5"
+    app
   >
     <v-divider />
     <v-img
