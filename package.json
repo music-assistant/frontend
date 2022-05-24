@@ -13,7 +13,7 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false"
   },
   "dependencies": {
-    "@mdi/font": "6.6.96",
+    "@mdi/font": "6.7.96",
     "home-assistant-js-websocket": "^7.0.5",
     "v3-infinite-loading": "^1.0.6",
     "vue": "^3.2.36",
