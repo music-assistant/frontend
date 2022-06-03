@@ -31,8 +31,9 @@
         :item="curMediaItem"
         :size="50"
         :width="50"
+        :height="50"
         v-if="curMediaItem"
-        style="width: 50px; border: 1px solid rgba(0, 0, 0, 0.54)"
+        style="border: 1px solid rgba(0, 0, 0, 0.54)"
       />
 
       <v-list-item two-line class="mediadetails-title" v-if="curMediaItem">
