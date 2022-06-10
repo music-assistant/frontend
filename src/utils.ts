@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean) => {
   if (val == undefined) return false;
   if (typeof val === "boolean") return val;

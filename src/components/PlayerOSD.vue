@@ -60,6 +60,11 @@
             </span>
           </v-list-item-subtitle>
           <v-list-item-subtitle
+            v-else-if="curQueueItem?.streamdetails?.stream_title"
+            style="margin-top: 5px; text-overflow: ellipsis; height: 30px"
+            >{{ curQueueItem?.streamdetails?.stream_title }}</v-list-item-subtitle
+          >
+          <v-list-item-subtitle
             v-else-if="curMediaItem.metadata.description"
             style="margin-top: 5px; text-overflow: ellipsis; height: 30px"
             >{{ curMediaItem.metadata.description }}</v-list-item-subtitle
@@ -71,7 +76,7 @@
           <v-list-item-title>{{ activePlayerQueue.name }}</v-list-item-title>
           <v-list-item-subtitle
             style="margin-top: 5px; text-overflow: ellipsis; height: 30px"
-            >{{ curQueueItem.name }}</v-list-item-subtitle
+            >{{ curQueueItem?.streamdetails?.stream_title || curQueueItem.name }}</v-list-item-subtitle
           >
         </div>
       </v-list-item>
@@ -189,8 +194,12 @@
 
     <!-- progress bar -->
     <div
-      style="width: 100%; height: 5px;padding-bottom:15px;margin-top:-5px;"
-      v-if="activePlayerQueue?.active && curQueueItem && curQueueItem.media_type != MediaType.RADIO"
+      style="width: 100%; height: 5px; padding-bottom: 15px; margin-top: -5px"
+      v-if="
+        activePlayerQueue?.active &&
+        curQueueItem &&
+        curQueueItem.media_type != MediaType.RADIO
+      "
     >
       <v-slider
         v-bind:model-value="curQueueItemTime"
@@ -199,8 +208,10 @@
         :min="0"
         :max="curQueueItem.duration"
         :thumb-size="10"
-        @update:model-value="api.queueCommandSeek(activePlayerQueue?.queue_id, $event)"
-        style="margin-left:0;margin-right:0"
+        @update:model-value="
+          api.queueCommandSeek(activePlayerQueue?.queue_id, Math.round($event))
+        "
+        style="margin-left: 0; margin-right: 0"
       />
     </div>
 

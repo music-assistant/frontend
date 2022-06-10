@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { throttle } from "helpful-decorators";
 import {
   type Connection,
   createConnection,
@@ -194,21 +195,21 @@ export enum ContentType {
 }
 
 export interface StreamDetails {
-  type: StreamType;
   provider: ProviderType;
   item_id: string;
-  path: string;
   content_type: ContentType;
-  player_id: string;
-  details: Record<string, unknown>;
-  seconds_played: number;
-  gain_correct: number;
-  loudness?: number;
+  media_type: MediaType;
   sample_rate: number;
   bit_depth: number;
   channels: number;
-  media_type: MediaType;
-  queue_id: string;
+  stream_title?: string;
+  duration?: number;
+  size?: number;
+  queue_id?: string;
+  seconds_streamed: number;
+  seconds_skipped: number;
+  gain_correct: number;
+  loudness?: number;
 }
 
 export enum PlayerState {
@@ -285,6 +286,7 @@ export interface PlayerQueue {
   state: PlayerState;
   available: boolean;
   current_index?: number;
+  index_in_buffer?: number;
   current_item?: QueueItem;
   next_item?: QueueItem;
   shuffle_enabled: boolean;
@@ -654,6 +656,7 @@ export class MusicAssistantApi {
   public queueCommandPrevious(queueId: string) {
     this.playerQueueCommand(queueId, QueueCommand.PREVIOUS);
   }
+
   public queueCommandVolume(queueId: string, newVolume: number) {
     this.playerQueueCommand(queueId, QueueCommand.VOLUME, newVolume);
     this.players[queueId].volume_level = newVolume;
@@ -682,6 +685,7 @@ export class MusicAssistantApi {
   public queueCommandDelete(queueId: string, itemId: string) {
     this.playerQueueCommand(queueId, QueueCommand.DELETE, itemId);
   }
+
   public queueCommandSeek(queueId: string, position: number) {
     this.playerQueueCommand(queueId, QueueCommand.SEEK, position);
   }
@@ -692,6 +696,7 @@ export class MusicAssistantApi {
     this.playerQueueCommand(queueId, QueueCommand.SKIP_BACK);
   }
 
+  @throttle(100, { trailing: false })
   public playerQueueCommand(
     queue_id: string,
     command: QueueCommand,
