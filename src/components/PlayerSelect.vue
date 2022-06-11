@@ -2,7 +2,7 @@
   <!-- players side menu -->
   <v-navigation-drawer
     v-model="store.showPlayersMenu"
-    position="right"
+    location="right"
     app
     clipped
     temporary

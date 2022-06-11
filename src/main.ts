@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use strict";
 import "vuetify/styles";
 import { createApp } from "vue";
 import vuetify from "./plugins/vuetify";
@@ -43,7 +44,7 @@ export type HassPanelData = {
   };
 };
 
-export class HassPropsForwardElem extends HTMLElement {
+class HassPropsForwardElem extends HTMLElement {
   public set hass(val: HassData) {
     document.dispatchEvent(
       new CustomEvent("forward-hass-prop", {

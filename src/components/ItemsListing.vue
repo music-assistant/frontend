@@ -14,7 +14,7 @@
       >
       <v-spacer></v-spacer>
       <v-menu
-        anchor="bottom end"
+        location="bottom end"
         :close-on-content-click="true"
         v-model="showSortMenu"
         v-if="sortKeys.length > 1"

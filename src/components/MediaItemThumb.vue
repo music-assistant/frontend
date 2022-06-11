@@ -7,29 +7,24 @@
     :height="height"
     :width="width"
   >
-    <v-avatar rounded="0" :style="`height:${height};width:${width}`">
-      <v-img
-        :key="item?.uri"
-        :cover="cover"
-        :src="imgData"
-        :style="border ? 'border: 1px solid rgba(0, 0, 0, 0.22)' : ''"
-        :max-height="maxHeight"
-        :max-width="maxWidth"
-        :min-height="minHeight"
-        :min-width="minWidth"
-        :height="height"
-        :width="width"
-      >
-        <template v-slot:placeholder>
-          <div class="d-flex align-center justify-center fill-height">
-            <v-progress-circular
-              indeterminate
-              color="grey-lighten-4"
-            ></v-progress-circular>
-          </div>
-        </template>
-      </v-img>
-    </v-avatar>
+    <v-img
+      :key="item?.uri"
+      :cover="cover"
+      :src="imgData"
+      :style="border ? 'border: 1px solid rgba(0, 0, 0, 0.22)' : ''"
+      :max-height="maxHeight"
+      :max-width="maxWidth"
+      :min-height="minHeight"
+      :min-width="minWidth"
+      :height="height"
+      :width="width"
+    >
+      <template v-slot:placeholder>
+        <div class="d-flex align-center justify-center fill-height">
+          <v-progress-circular indeterminate color="grey-lighten-4"></v-progress-circular>
+        </div>
+      </template>
+    </v-img>
   </div>
 </template>
 
@@ -56,9 +51,9 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   border: true,
   size: 200,
-  width: 'auto',
-  height: 'auto',
-  cover: true
+  width: "auto",
+  height: "auto",
+  cover: true,
 });
 
 const imgData = ref<string>();

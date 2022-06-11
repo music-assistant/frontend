@@ -53,9 +53,9 @@
                 width="35px"
                 :src="getQualityIcon(item.quality)"
                 :style="
-                  $vuetify.theme.current == 'light'
-                    ? 'object-fit: contain;filter: invert(100%);'
-                    : 'object-fit: contain;'
+                  theme.current.value.dark
+                    ? 'object-fit: contain;' 
+                    : 'object-fit: contain;filter: invert(100%);'
                 "
               ></v-img>
             </td>
@@ -81,6 +81,7 @@
 import ItemsListing from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
 import { ref, reactive } from "@vue/reactivity";
+import { useTheme } from "vuetify";
 import type { MassEvent, ProviderType, Track } from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
 import {
@@ -106,6 +107,7 @@ const track = ref<Track>();
 const trackVersions = ref<Track[]>([]);
 const loading = ref(true);
 const previewUrls = reactive<Record<number, string>>({});
+const theme = useTheme();
 
 watchEffect(async () => {
   api

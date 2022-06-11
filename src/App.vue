@@ -1,5 +1,5 @@
 <template>
-  <v-app :theme="theme">
+  <v-app>
     <!-- override background color set in iframe by HASS -->
     <div
       style="
@@ -72,7 +72,7 @@ document.addEventListener("forward-panel-prop", function (e) {
 
 // set theme colors based on HA theme
 // TODO: we can set the entire vuetify theme based on HA theme
-const theme = ref("light");
+const theme = useTheme();
 let lastTheme = "";
 const setTheme = async function (hassData: HassData) {
   // determine if dark theme active
@@ -104,7 +104,7 @@ const setTheme = async function (hassData: HassData) {
       store.darkTheme = isColorDark(bgColor);
     }
   }
-  theme.value = store.darkTheme ? "dark" : "light";
+  theme.name.value = store.darkTheme ? "dark" : "light";
 };
 
 setTimeout(() => {

@@ -32,7 +32,7 @@
         >
         <b v-if="!itemIsAvailable(item)"> UNAVAILABLE</b>
         <!-- explicit icon -->
-        <v-tooltip anchor="bottom">
+        <v-tooltip location="bottom">
           <template #activator="{ props }">
             <v-icon
               v-bind="props"
@@ -97,12 +97,12 @@
             :src="iconHiRes"
             width="35"
             :style="
-              $vuetify.theme.current == 'light'
+              theme.current.value.dark
                 ? 'margin-top:5px;filter: invert(100%);'
                 : 'margin-top:5px;'
             "
           >
-            <v-tooltip activator="parent" anchor="bottom">{{
+            <v-tooltip activator="parent" location="bottom">{{
               highResDetails
             }}</v-tooltip>
           </v-img>
@@ -124,7 +124,7 @@
               'in_library' in item && showLibrary && !$vuetify.display.mobile
             "
           >
-            <v-tooltip anchor="bottom">
+            <v-tooltip location="bottom">
               <template #activator="{ props }">
                 <v-btn
                   variant="plain"
@@ -192,10 +192,8 @@ import type {
 } from "../plugins/api";
 import { api, MediaQuality, MediaType } from "../plugins/api";
 import { formatDuration, parseBool } from "../utils";
+import { useTheme } from "vuetify";
 
-// global refs
-const router = useRouter();
-const actionInProgress = ref(false);
 
 // properties
 export interface Props {
@@ -207,6 +205,12 @@ export interface Props {
   showDuration?: boolean;
   isSelected: boolean;
 }
+
+// global refs
+const router = useRouter();
+const actionInProgress = ref(false);
+const theme = useTheme();
+
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showProviders: true,

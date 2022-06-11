@@ -38,9 +38,9 @@
                 width="35px"
                 :src="getQualityIcon(item.quality)"
                 :style="
-                  $vuetify.theme.current == 'light'
-                    ? 'object-fit: contain;filter: invert(100%);'
-                    : 'object-fit: contain;'
+                  theme.current.value.dark
+                    ? 'object-fit: contain;' 
+                    : 'object-fit: contain;filter: invert(100%);'
                 "
               ></v-img>
             </td>
@@ -54,6 +54,7 @@
 
 <script setup lang="ts">
 import InfoHeader from "../components/InfoHeader.vue";
+import { useTheme } from "vuetify";
 import { ref } from "@vue/reactivity";
 import type { MassEvent, ProviderType, Radio, Track } from "../plugins/api";
 import { api, MassEventType } from "../plugins/api";
@@ -78,6 +79,7 @@ const activeTab = ref("details");
 
 const radio = ref<Radio>();
 const loading = ref(true);
+const theme = useTheme();
 
 watchEffect(async () => {
   const item = await api.getRadio(

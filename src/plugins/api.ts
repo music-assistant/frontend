@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { throttle } from "helpful-decorators";
 import {
   type Connection,
   createConnection,
@@ -381,6 +380,7 @@ export class MusicAssistantApi {
   private _conn?: Connection;
   private _lastId: number;
   private _initialized: boolean;
+  private _throttleId?: any;
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
   public providers = reactive<{ [provider_id: string]: MusicProvider }>({});
@@ -696,13 +696,20 @@ export class MusicAssistantApi {
     this.playerQueueCommand(queueId, QueueCommand.SKIP_BACK);
   }
 
-  @throttle(100, { trailing: false })
   public playerQueueCommand(
     queue_id: string,
     command: QueueCommand,
     command_arg?: boolean | number | string
   ) {
-    this.executeCmd("playerqueue/command", { queue_id, command, command_arg });
+    // apply a bit of throttling here (for the volume and seek sliders especially)
+    clearTimeout(this._throttleId);
+    this._throttleId = setTimeout(() => {
+      this.executeCmd("playerqueue/command", {
+        queue_id,
+        command,
+        command_arg
+      });
+    }, 200);
   }
 
   public playerQueueSettings(queueId: string, settings: QueueSettingsUpdate) {

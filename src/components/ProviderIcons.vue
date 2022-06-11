@@ -1,7 +1,7 @@
 <template>
   <div class="provider-icons" :style="`height: ${height};`">
     <v-tooltip
-      anchor="bottom"
+      location="bottom"
       v-for="prov of uniqueProviders"
       v-bind:key="prov.prov_id"
     >

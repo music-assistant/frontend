@@ -38,7 +38,7 @@
       v-if="isHiRes"
       class="hiresicon"
       :style="
-        $vuetify.theme.current == 'dark'
+        theme.current.value.dark
           ? 'background-color: black'
           : 'background-color:white'
       "
@@ -50,9 +50,9 @@
             height="35"
             v-bind="props"
             :style="
-              $vuetify.theme.current == 'light'
-                ? 'object-fit: contain;filter: invert(100%);'
-                : 'object-fit: contain;'
+              theme.current.value.dark
+                ? 'object-fit: contain;'
+                : 'object-fit: contain;filter: invert(100%);'
             "
           />
         </template>
@@ -107,7 +107,7 @@
 import { mdiCheckboxMarkedOutline } from "@mdi/js";
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-
+import { useTheme } from "vuetify";
 import MediaItemThumb from "./MediaItemThumb.vue";
 
 import { iconHiRes } from "./ProviderIcons.vue";
@@ -120,9 +120,6 @@ import type {
 import { MediaType, MediaQuality } from "../plugins/api";
 import { truncateString } from "../utils";
 
-// global refs
-const router = useRouter();
-const actionInProgress = ref(false);
 
 // properties
 export interface Props {
@@ -133,6 +130,12 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   size: 200,
 });
+
+// global refs
+const router = useRouter();
+const actionInProgress = ref(false);
+const theme = useTheme();
+
 
 // computed properties
 const isHiRes = computed(() => {

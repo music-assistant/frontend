@@ -27,7 +27,7 @@
           :class="$vuetify.display.mobile ? '' : 'padded-overlay'"
         >
           <template v-slot:activator="{ props: menu }">
-            <v-tooltip anchor="top end" origin="end center">
+            <v-tooltip location="top end" origin="end center">
               <template v-slot:activator="{ props: tooltip }">
                 <v-progress-circular
                   v-if="jobsInProgress.length > 0"

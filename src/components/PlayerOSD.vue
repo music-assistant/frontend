@@ -14,7 +14,7 @@
       cover
       :src="fanartImage"
       :gradient="
-        $vuetify.theme.current == 'dark'
+        theme.current.value.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
       "
@@ -30,10 +30,13 @@
         :key="curMediaItem.item_id"
         :item="curMediaItem"
         :size="50"
+        :min-width="50"
+        :min-height="50"
         :width="50"
         :height="50"
+        :cover="true"
+        :border="true"
         v-if="curMediaItem"
-        style="border: 1px solid rgba(0, 0, 0, 0.54)"
       />
 
       <v-list-item two-line class="mediadetails-title" v-if="curMediaItem">
@@ -76,37 +79,29 @@
           <v-list-item-title>{{ activePlayerQueue.name }}</v-list-item-title>
           <v-list-item-subtitle
             style="margin-top: 5px; text-overflow: ellipsis; height: 30px"
-            >{{ curQueueItem?.streamdetails?.stream_title || curQueueItem.name }}</v-list-item-subtitle
+            >{{
+              curQueueItem?.streamdetails?.stream_title || curQueueItem.name
+            }}</v-list-item-subtitle
           >
         </div>
       </v-list-item>
 
       <!-- streaming quality details -->
 
-      <v-menu anchor="bottom end" v-if="streamDetails">
+      <v-menu location="bottom end" v-if="streamDetails">
         <template v-slot:activator="{ props }">
-          <v-btn
-            icon
-            x-small
-            variant="plain"
+          <v-img
+            contain
+            :src="
+              streamDetails.bit_depth > 16
+                ? iconHiRes
+                : getContentTypeIcon(streamDetails.content_type)
+            "
+            height="25"
+            :style="theme.current.value.dark ? '' : 'filter: invert(100%)'"
+            class="v-list-item-subtitle mediadetails-streamdetails"
             v-bind="props"
-            class="mediadetails-streamdetails"
-          >
-            <v-img
-              v-if="streamDetails.bit_depth > 16"
-              contain
-              :src="iconHiRes"
-              height="25"
-              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
-            />
-            <v-img
-              v-if="streamDetails.bit_depth <= 16"
-              contain
-              :src="getContentTypeIcon(streamDetails.content_type)"
-              height="25"
-              :style="$vuetify.theme.current == 'light' ? 'filter: invert(100%)' : ''"
-            />
-          </v-btn>
+          />
         </template>
         <v-card class="mx-auto" width="300">
           <v-list style="overflow: hidden">
@@ -129,9 +124,9 @@
                 width="50"
                 :src="getContentTypeIcon(streamDetails.content_type)"
                 :style="
-                  $vuetify.theme.current == 'light'
-                    ? 'object-fit: contain;filter: invert(100%);'
-                    : 'object-fit: contain;'
+                  theme.current.value.dark
+                    ? 'object-fit: contain;'
+                    : 'object-fit: contain;filter: invert(100%);'
                 "
               />
               {{ streamDetails.sample_rate / 1000 }} kHz /
@@ -150,9 +145,9 @@
                 contain
                 :src="iconCrossfade"
                 :style="
-                  $vuetify.theme.current == 'light'
-                    ? 'object-fit: contain;filter: invert(100%);'
-                    : 'object-fit: contain;'
+                  theme.current.value.dark
+                    ? 'object-fit: contain;'
+                    : 'object-fit: contain;filter: invert(100%);'
                 "
               />
               {{ $t("crossfade_enabled") }}
@@ -168,9 +163,9 @@
                 contain
                 :src="iconLevel"
                 :style="
-                  $vuetify.theme.current == 'light'
-                    ? 'object-fit: contain;filter: invert(100%);'
-                    : 'object-fit: contain;'
+                  theme.current.value.dark
+                    ? 'object-fit: contain;'
+                    : 'object-fit: contain;filter: invert(100%);'
                 "
               />
               {{ streamDetails.gain_correct }} dB
@@ -275,8 +270,7 @@
 
       <!-- active player btn -->
       <v-btn
-        text
-        large
+        icon
         variant="plain"
         @click="store.showPlayersMenu = true"
         class="mediacontrols-right"
@@ -284,11 +278,11 @@
         width="70"
       >
         <v-icon :icon="mdiSpeaker" />
-        <span v-if="activePlayerQueue">{{ activePlayerQueue.name }}</span>
+        <div v-if="activePlayerQueue">{{ activePlayerQueue.name }}</div>
       </v-btn>
       <!-- active player volume -->
       <div v-if="!$vuetify.display.mobile && activePlayerQueue">
-        <v-menu anchor="bottom end">
+        <v-menu location="bottom end">
           <template v-slot:activator="{ props }">
             <v-btn
               icon
@@ -299,9 +293,9 @@
               width="70"
             >
               <v-icon :icon="mdiVolumeHigh" />
-              <span>{{
-                Math.round(api.players[activePlayerQueue?.player]?.volume_level)
-              }}</span>
+              <div>
+                {{ Math.round(api.players[activePlayerQueue?.player]?.volume_level) }}
+              </div>
             </v-btn>
           </template>
           <VolumeControl :player="api.players[activePlayerQueue?.queue_id]" />
@@ -319,7 +313,7 @@
         class="mediacontrols-right"
       >
         <v-icon :icon="mdiPlaylistMusic" />
-        <span>{{ $t("queue") }}</span>
+        <div>{{ $t("queue") }}</div>
       </v-btn>
     </div>
   </v-footer>
@@ -366,6 +360,7 @@ const iconLevel = new URL("../assets/level.png", import.meta.url).href;
 
 const router = useRouter();
 const display = useDisplay();
+const theme = useTheme();
 
 // local refs
 const showStreamDetails = ref(false);
@@ -494,7 +489,7 @@ watchEffect(async () => {
 }
 
 .mediadetails-thumb {
-  width: auto;
+  width: 50px;
   float: left;
   height: 50px;
 }
@@ -517,8 +512,9 @@ watchEffect(async () => {
   float: right;
   width: 40px;
   right: 10px;
-  margin-top: -10px;
+  margin-top: -2px;
   position: absolute;
+  cursor: pointer;
 }
 
 .mediadetails-streamdetails .icon {
@@ -548,7 +544,7 @@ watchEffect(async () => {
   align-items: center;
 }
 
-.mediacontrols-right span {
+.mediacontrols-right div {
   width: 80px;
   font-size: xx-small;
   padding-top: 5px;

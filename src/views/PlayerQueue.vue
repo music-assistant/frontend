@@ -66,7 +66,7 @@
 
                 <!-- move up -->
                 <div class="listitem-action" v-if="!$vuetify.display.mobile">
-                  <v-tooltip anchor="bottom">
+                  <v-tooltip location="bottom">
                     <template #activator="{ props }">
                       <v-btn
                         variant="plain"
@@ -90,7 +90,7 @@
 
                 <!-- move down -->
                 <div class="listitem-action" v-if="!$vuetify.display.mobile">
-                  <v-tooltip anchor="bottom">
+                  <v-tooltip location="bottom">
                     <template #activator="{ props }">
                       <v-btn
                         variant="plain"
