@@ -412,7 +412,6 @@
             <!-- clear queue button -->
             <v-list-item>
               <v-btn
-                :disabled="items.length == 0"
                 width="100%"
                 @click="api.queueCommandClear(activePlayerQueue?.queue_id)"
                 >{{ $t("queue_clear") }}</v-btn
