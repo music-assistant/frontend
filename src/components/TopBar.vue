@@ -16,7 +16,7 @@
     />
     <v-toolbar-title
       :style="`color: ${store.topBarTextColor}`"
-      v-html="store.topBarTitle"
+      v-text="truncateString(store.topBarTitle || '', $vuetify.display.mobile ? 25 : 150)"
     ></v-toolbar-title>
     <template v-slot:append>
       <div style="align-items: center">
@@ -66,9 +66,30 @@
           :icon="mdiDotsVertical"
           v-if="store.contextMenuParentItem || store.customContextMenuCallback"
           :color="store.topBarTextColor"
-          style="margin-right: -20px"
+          style="margin-right: -50px"
           @click="onContextMenuBtn"
         ></v-btn>
+
+        <v-menu location="bottom end">
+          <template v-slot:activator="{ props }">
+            <v-btn
+              :icon="mdiDotsVertical"
+              v-if="store.topBarContextMenuItems.length > 0"
+              :color="store.topBarTextColor"
+              style="margin-right: -50px"
+              v-bind="props"
+            ></v-btn>
+          </template>
+
+          <v-list>
+            <v-list-item
+              v-for="(item, index) in store.topBarContextMenuItems"
+              :key="index"
+            >
+              <v-list-item-title @click="item.link">{{ item.title }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </div>
     </template>
   </v-app-bar>
@@ -92,6 +113,7 @@ import { useRouter } from "vue-router";
 import { api } from "../plugins/api";
 import { JobStatus } from "../plugins/api";
 import { store } from "../plugins/store";
+import { truncateString } from "../utils";
 
 const router = useRouter();
 const dialog = ref(false);
