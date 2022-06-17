@@ -38,7 +38,7 @@
       v-if="isHiRes"
       class="hiresicon"
       :style="
-        theme.current.value.dark
+        $vuetify.theme.current.dark
           ? 'background-color: black'
           : 'background-color:white'
       "
@@ -50,7 +50,7 @@
             height="35"
             v-bind="props"
             :style="
-              theme.current.value.dark
+              $vuetify.theme.current.dark
                 ? 'object-fit: contain;'
                 : 'object-fit: contain;filter: invert(100%);'
             "

@@ -4,7 +4,7 @@
     :items="api.library.artists.length > 0 ? api.library.artists : []"
     :show-library="false"
     :show-providers="true"
-    :show-search-by-default="!display.mobile"
+    :show-search-by-default="!$vuetify.display.mobile"
   />
 </template>
 

@@ -38,7 +38,7 @@
                 width="35px"
                 :src="getQualityIcon(item.quality)"
                 :style="
-                  theme.current.value.dark
+                  $vuetify.theme.current.dark
                     ? 'object-fit: contain;' 
                     : 'object-fit: contain;filter: invert(100%);'
                 "

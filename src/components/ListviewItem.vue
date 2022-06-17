@@ -97,9 +97,9 @@
             :src="iconHiRes"
             width="35"
             :style="
-              theme.current.value.dark
-                ? 'margin-top:5px;filter: invert(100%);'
-                : 'margin-top:5px;'
+              $vuetify.theme.current.dark
+                ? 'margin-top:5px;'
+                : 'margin-top:5px;filter: invert(100%);'
             "
           >
             <v-tooltip activator="parent" location="bottom">{{

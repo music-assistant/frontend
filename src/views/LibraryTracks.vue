@@ -5,7 +5,7 @@
     :show-library="false"
     :show-track-number="false"
     :show-providers="true"
-    :show-search-by-default="!display.mobile"
+    :show-search-by-default="!$vuetify.display.mobile"
   />
 </template>
 

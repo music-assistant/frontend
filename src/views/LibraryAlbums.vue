@@ -4,7 +4,7 @@
     :items="api.library.albums.length > 0 ? api.library.albums : []"
     :show-library="false"
     :show-providers="true"
-    :show-search-by-default="!display.mobile"
+    :show-search-by-default="!$vuetify.display.mobile"
   />
 </template>
 

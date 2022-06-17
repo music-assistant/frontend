@@ -14,7 +14,7 @@
       cover
       :src="fanartImage"
       :gradient="
-        theme.current.value.dark
+        $vuetify.theme.current.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
       "
@@ -109,7 +109,7 @@
                 : getContentTypeIcon(streamDetails.content_type)
             "
             height="25"
-            :style="theme.current.value.dark ? '' : 'filter: invert(100%)'"
+            :style="$vuetify.theme.current.dark ? '' : 'filter: invert(100%)'"
             class="v-list-item-subtitle mediadetails-streamdetails"
             v-bind="props"
           />
@@ -135,7 +135,7 @@
                 width="50"
                 :src="getContentTypeIcon(streamDetails.content_type)"
                 :style="
-                  theme.current.value.dark
+                  $vuetify.theme.current.dark
                     ? 'object-fit: contain;'
                     : 'object-fit: contain;filter: invert(100%);'
                 "
@@ -156,7 +156,7 @@
                 contain
                 :src="iconCrossfade"
                 :style="
-                  theme.current.value.dark
+                  $vuetify.theme.current.dark
                     ? 'object-fit: contain;'
                     : 'object-fit: contain;filter: invert(100%);'
                 "
@@ -174,7 +174,7 @@
                 contain
                 :src="iconLevel"
                 :style="
-                  theme.current.value.dark
+                  $vuetify.theme.current.dark
                     ? 'object-fit: contain;'
                     : 'object-fit: contain;filter: invert(100%);'
                 "
