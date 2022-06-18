@@ -140,8 +140,11 @@ export const getImageThumbForItem = async function (
   if (url.startsWith("http") && size) {
     // get url to resized image(thumb) from weserv service
     return `https://images.weserv.nl/?url=${url}&w=200`;
-  } else if (url.startsWith("http")) {
+  } else if (url.startsWith("https://")) {
     return url;
+  } else if (url.startsWith("http://")) {
+    // only allow https images!
+    return url.replace("http://", "https://");
   } else {
     // use image proxy in HA integration to grab thumb
     const encUrl = encodeURIComponent(url);
