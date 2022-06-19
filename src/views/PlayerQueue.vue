@@ -47,7 +47,13 @@
 
             <!-- subtitle -->
             <template v-slot:subtitle>
-              <div v-if="item.media_item && 'artists' in item.media_item">
+              <div
+                v-if="
+                  item.media_item &&
+                  'artists' in item.media_item &&
+                  item.media_item.artists.length > 0
+                "
+              >
                 {{ item.media_item.artists[0].name }}
               </div>
               <div v-else-if="item.media_item">
@@ -117,12 +123,9 @@
           <v-divider></v-divider>
         </div>
       </RecycleScroller>
-      <v-alert
-        type="info"
-        v-if="!loading && items.length == 0"
-        style="margin: 20px"
-        >{{ $t("no_content") }}</v-alert
-      >
+      <v-alert type="info" v-if="!loading && items.length == 0" style="margin: 20px">{{
+        $t("no_content")
+      }}</v-alert>
     </div>
 
     <!-- contextmenu -->
@@ -141,8 +144,7 @@
             ><b>{{ selectedItem?.name }}</b></v-toolbar-title
           >
           <v-toolbar-title v-else style="padding-left: 10px"
-            ><b>{{ $t("settings") }}</b> |
-            {{ activePlayerQueue?.name }}</v-toolbar-title
+            ><b>{{ $t("settings") }}</b> | {{ activePlayerQueue?.name }}</v-toolbar-title
           >
           <v-btn :icon="mdiClose" dark text @click="closeContextMenu()">{{
             $t("close")
@@ -249,9 +251,7 @@
               <v-select
                 :label="$t('shuffle')"
                 :prepend-icon="mdiShuffle"
-                :model-value="
-                  activePlayerQueue?.settings.shuffle_enabled.toString()
-                "
+                :model-value="activePlayerQueue?.settings.shuffle_enabled.toString()"
                 :items="[
                   { title: $t('on'), value: 'true' },
                   { title: $t('off'), value: 'false' },
@@ -312,16 +312,12 @@
                   padding-bottom: 0;
                   margin-top: -40px;
                 "
-                :disabled="
-                  !activePlayerQueue?.settings.volume_normalization_enabled
-                "
+                :disabled="!activePlayerQueue?.settings.volume_normalization_enabled"
                 color="primary"
                 :min="-50"
                 :max="10"
                 :step="0.5"
-                :model-value="
-                  activePlayerQueue?.settings.volume_normalization_target
-                "
+                :model-value="activePlayerQueue?.settings.volume_normalization_target"
                 @update:model-value="
                   api.playerQueueSettings(activePlayerQueue?.queue_id, {
                     volume_normalization_target: $event,
@@ -382,8 +378,7 @@
                   margin-top: -40px;
                 "
                 :disabled="
-                  activePlayerQueue?.settings.crossfade_mode ==
-                  CrossFadeMode.DISABLED
+                  activePlayerQueue?.settings.crossfade_mode == CrossFadeMode.DISABLED
                 "
                 color="primary"
                 :label="$t('crossfade_duration')"
@@ -436,18 +431,13 @@ import {
   mdiRepeat,
   mdiChartBar,
   mdiCameraTimer,
-  mdiDelete
+  mdiDelete,
 } from "@mdi/js";
 import { ref } from "@vue/reactivity";
 import { RecycleScroller } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import type { QueueItem, MassEvent } from "../plugins/api";
-import {
-  RepeatMode,
-  CrossFadeMode,
-  MassEventType,
-  MediaType,
-} from "../plugins/api";
+import { RepeatMode, CrossFadeMode, MassEventType, MediaType } from "../plugins/api";
 import api from "../plugins/api";
 import { computed, onBeforeUnmount, watchEffect } from "vue";
 import { store } from "../plugins/store";
@@ -496,14 +486,11 @@ const tabItems = computed(() => {
 });
 
 // listen for item updates to refresh items when that happens
-const unsub = api.subscribe(
-  MassEventType.QUEUE_ITEMS_UPDATED,
-  (evt: MassEvent) => {
-    if (evt.object_id == activePlayerQueue.value?.queue_id) {
-      loadItems();
-    }
+const unsub = api.subscribe(MassEventType.QUEUE_ITEMS_UPDATED, (evt: MassEvent) => {
+  if (evt.object_id == activePlayerQueue.value?.queue_id) {
+    loadItems();
   }
-);
+});
 onBeforeUnmount(unsub);
 onBeforeUnmount(() => {
   store.customContextMenuCallback = undefined;
@@ -518,9 +505,7 @@ const loadItems = async function () {
       selectedItem.value = undefined;
       showContextMenu.value = true;
     };
-    items.value = await api.getPlayerQueueItems(
-      activePlayerQueue.value.queue_id
-    );
+    items.value = await api.getPlayerQueueItems(activePlayerQueue.value.queue_id);
   } else {
     store.topBarTitle = t("queue");
     items.value = [];
