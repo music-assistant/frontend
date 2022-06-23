@@ -224,7 +224,7 @@
     <!-- Control buttons -->
     <div class="mediacontrols">
       <!-- left side: playback buttons -->
-      <div class="mediacontrols-left">
+      <div class="mediacontrols-left" v-if="activePlayerQueue && activePlayerQueue.available">
         <!-- prev track -->
         <v-btn
           small
@@ -294,7 +294,7 @@
       </v-btn>
       <!-- active player volume -->
       <div v-if="!$vuetify.display.mobile && activePlayerQueue">
-        <v-menu location="bottom end">
+        <v-menu location="bottom end" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
             <v-btn
               icon
