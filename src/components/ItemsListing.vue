@@ -6,9 +6,7 @@
       }}</span>
       <a
         v-else-if="store.contextMenuItems.length"
-        @click="
-          store.showContextMenu = true;
-        "
+        @click="store.showContextMenu = true"
         >{{ $t("items_selected", [store.contextMenuItems.length]) }}</a
       >
       <v-spacer></v-spacer>
@@ -251,11 +249,6 @@ const filteredItems = computed(() => {
       (a as Track).album?.name.localeCompare((b as Track).album?.name)
     );
   }
-  if (sortBy.value == "artist.name") {
-    result.sort((a, b) =>
-      (a as Album).artist.name.localeCompare((b as Album).artist.name)
-    );
-  }
   if (sortBy.value == "artists.name") {
     result.sort((a, b) =>
       (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name)
@@ -396,7 +389,7 @@ watchEffect(async () => {
     // albums listing
     _sortKeys.push({
       text: i18n.t("sort_artist").toString(),
-      value: "artist.name",
+      value: "artists.name",
     });
     _sortKeys.push({
       text: i18n.t("sort_date").toString(),
