@@ -232,10 +232,13 @@ export interface Player {
   elapsed_time: number;
   state: PlayerState;
   available: boolean;
-  is_group: boolean;
-  group_childs: string[];
-  group_parents: string[];
   volume_level: number;
+  is_group: boolean;
+  group_members: string[];
+  is_passive: boolean;
+  group_name: string;
+  group_powered: boolean;
+  group_volume_level: number;
   device_info: DeviceInfo;
   active_queue: string;
 }
@@ -313,7 +316,9 @@ export enum QueueCommand {
   MOVE_UP = "move_up",
   MOVE_DOWN = "move_down",
   MOVE_NEXT = "move_next",
-  DELETE = "delete"
+  DELETE = "delete",
+  GROUP_POWER = "group_power",
+  GROUP_VOLUME = "group_volume",
 }
 
 export enum MassEventType {
@@ -777,6 +782,15 @@ export class MusicAssistantApi {
   }
   public queueCommandSkipBack(queueId: string) {
     this.playerQueueCommand(queueId, QueueCommand.SKIP_BACK);
+  }
+
+  public queueCommandGroupVolume(queueId: string, newVolume: number) {
+    this.playerQueueCommand(queueId, QueueCommand.GROUP_VOLUME, newVolume);
+    this.players[queueId].group_volume_level = newVolume;
+  }
+  public queueCommandGroupPower(queueId: string, newPower: boolean) {
+    this.playerQueueCommand(queueId, QueueCommand.GROUP_POWER, newPower);
+    this.players[queueId].group_powered = newPower;
   }
 
   public playerQueueCommand(

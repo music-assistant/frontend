@@ -47,7 +47,7 @@
           <v-list-item-title v-else> {{ curMediaItem.name }}</v-list-item-title>
           <v-list-item-subtitle
             v-if="curMediaItem && 'artists' in curMediaItem && !$vuetify.display.mobile"
-            style="margin-top: 5px; text-overflow: ellipsis; height: 30px;"
+            style="margin-top: 5px; text-overflow: ellipsis; height: 30px"
           >
             <span
               v-for="(artist, artistindex) in getTrackArtists(curMediaItem)"
@@ -64,7 +64,7 @@
           </v-list-item-subtitle>
           <v-list-item-subtitle
             v-else-if="curMediaItem && 'artists' in curMediaItem"
-            style="margin-top: 5px; text-overflow: ellipsis; height: 30px;"
+            style="margin-top: 5px; text-overflow: ellipsis; height: 30px"
           >
             <span
               v-for="(artist, artistindex) in getTrackArtists(curMediaItem).slice(0, 1)"
@@ -224,13 +224,20 @@
     <!-- Control buttons -->
     <div class="mediacontrols">
       <!-- left side: playback buttons -->
-      <div class="mediacontrols-left" v-if="activePlayerQueue && activePlayerQueue.available">
+      <div
+        class="mediacontrols-left"
+        v-if="activePlayerQueue && activePlayerQueue.available"
+      >
         <!-- prev track -->
         <v-btn
           small
           icon
           variant="plain"
-          :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+          :disabled="
+            !activePlayerQueue ||
+            !activePlayerQueue?.active ||
+            activePlayerQueue?.items == 0
+          "
           @click="api.queueCommandPrevious(activePlayerQueue?.queue_id)"
         >
           <v-icon :icon="mdiSkipPrevious" />
@@ -273,7 +280,11 @@
           icon
           small
           variant="plain"
-          :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+          :disabled="
+            !activePlayerQueue ||
+            !activePlayerQueue?.active ||
+            activePlayerQueue?.items == 0
+          "
           @click="api.queueCommandNext(activePlayerQueue?.queue_id)"
         >
           <v-icon :icon="mdiSkipNext" />
@@ -290,7 +301,9 @@
         width="70"
       >
         <v-icon :icon="mdiSpeaker" />
-        <div v-if="activePlayerQueue">{{ activePlayerQueue.name }}</div>
+        <div v-if="activePlayerQueue">
+          {{ api.players[activePlayerQueue?.queue_id]?.group_name }}
+        </div>
       </v-btn>
       <!-- active player volume -->
       <div v-if="!$vuetify.display.mobile && activePlayerQueue">
@@ -306,11 +319,44 @@
             >
               <v-icon :icon="mdiVolumeHigh" />
               <div>
-                {{ Math.round(api.players[activePlayerQueue?.player]?.volume_level) }}
+                {{ Math.round(store.selectedPlayer?.group_volume_level || 0) }}
               </div>
             </v-btn>
           </template>
-          <VolumeControl :player="api.players[activePlayerQueue?.queue_id]" />
+
+          <v-card min-width="300">
+            <v-list style="overflow: hidden" lines="2">
+              <v-list-item style="padding: 0; margin-left: 9px; margin-bottom: 9px">
+                <template v-slot:prepend>
+                  <v-icon
+                    size="45"
+                    :icon="
+                      store.selectedPlayer?.is_group ? mdiSpeakerMultiple : mdiSpeaker
+                    "
+                    color="accent"
+                  />
+                </template>
+
+                <template v-slot:title>
+                  <div class="text-subtitle-1" style="margin-left: 10px">
+                    <b>{{ store.selectedPlayer?.group_name.substring(0, 25) }}</b>
+                  </div>
+                </template>
+
+                <template v-slot:subtitle>
+                  <div
+                    :key="store.selectedPlayer?.state"
+                    class="text-body-2"
+                    style="margin-left: 10px; text-align: left; width: 100%"
+                  >
+                    {{ $t("state." + store.selectedPlayer?.state) }}
+                  </div>
+                </template>
+              </v-list-item>
+              <v-divider></v-divider>
+              <VolumeControl :player="store.selectedPlayer as Player" />
+            </v-list>
+          </v-card>
         </v-menu>
       </div>
       <!-- active player queue button -->

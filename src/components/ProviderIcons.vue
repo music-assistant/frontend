@@ -48,9 +48,7 @@ const uniqueProviders = computed(() => {
 });
 
 const provClicked = function (prov: MediaItemProviderId) {
-  if (prov.url && prov.prov_type.includes("://")) {
-    window.open("file://" + prov.url, "_blank");
-  }
+  window.open(prov.url, "_blank");
 };
 </script>
 
