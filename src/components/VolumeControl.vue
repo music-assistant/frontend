@@ -62,7 +62,7 @@
         >
           <v-icon :icon="mdiPower"></v-icon>
         </v-btn>
-        {{ childPlayer.name }}
+        {{ childPlayer.group_name }}
       </span>
       <div
         class="text-caption"
@@ -103,6 +103,7 @@ const getVolumePlayers = function (player: Player) {
   }
   for (const groupChildId of player.group_members) {
     const volumeChild = api?.players[groupChildId];
+
     if (volumeChild && volumeChild.available) {
       items.push(volumeChild);
     }
