@@ -70,7 +70,7 @@
           >
           <!-- track + disc number -->
           <label v-if="showTrackNumber && item.track_number" style="color: grey"
-            >- disc {{ item.disc_number }} track {{ item.track_number }}</label
+            > - disc {{ item.disc_number }} track {{ item.track_number }}</label
           >
         </div>
         <!-- album artist -->
