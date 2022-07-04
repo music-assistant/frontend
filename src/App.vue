@@ -117,7 +117,11 @@ setTimeout(() => {
 }, 1000);
 </script>
 
-<style lang="scss">
+<style>
+
+a {
+  cursor: pointer;
+}
 .vertical-btn {
   display: flex;
   flex-direction: column;
@@ -136,11 +140,7 @@ div.v-navigation-drawer__scrim {
   opacity: 0.8;
   background: grey;
 }
-.vertical-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+
 .volumerow {
   height: 60px;
   padding-top: 5px;

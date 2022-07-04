@@ -22,11 +22,11 @@ export enum MediaQuality {
   LOSSY_MP3 = 1,
   LOSSY_OGG = 2,
   LOSSY_AAC = 3,
-  FLAC_LOSSLESS = 10, // 44.1/48khz 16 bits
-  FLAC_LOSSLESS_HI_RES_1 = 20, // 44.1/48khz 24 bits HI-RES
-  FLAC_LOSSLESS_HI_RES_2 = 21, // 88.2/96khz 24 bits HI-RES
-  FLAC_LOSSLESS_HI_RES_3 = 22, // 176/192khz 24 bits HI-RES
-  FLAC_LOSSLESS_HI_RES_4 = 23 // above 192khz 24 bits HI-RES
+  LOSSLESS = 10, // 44.1/48khz 16 bits
+  LOSSLESS_HI_RES_1 = 20, // 44.1/48khz 24 bits HI-RES
+  LOSSLESS_HI_RES_2 = 21, // 88.2/96khz 24 bits HI-RES
+  LOSSLESS_HI_RES_3 = 22, // 176/192khz 24 bits HI-RES
+  LOSSLESS_HI_RES_4 = 23 // above 192khz 24 bits HI-RES
 }
 
 export enum ProviderType {

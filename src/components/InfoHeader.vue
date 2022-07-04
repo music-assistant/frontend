@@ -116,7 +116,7 @@
           </div>
 
           <!-- play/info buttons -->
-          <div style="margin-left: 14px; padding-bottom: 10px">
+          <div style="display:flex;margin-left: 14px; padding-bottom: 10px">
             <v-btn
               color="primary"
               tile
@@ -153,20 +153,12 @@
           <!-- Description/metadata -->
           <v-card-subtitle
             class="body-2 justify-left"
-            style="padding-bottom: 10px"
+            style="padding-bottom: 10px;white-space: pre-line; cursor: pointer;"
             @click="showFullInfo = !showFullInfo"
             v-if="description"
+            v-html="description"
           >
-            <span>
-              <div v-html="description"> </div>
-              <v-btn
-                variant="plain"
-                :icon="showFullInfo ? mdiChevronUp : mdiChevronDown"
-                style="padding: 0; height: 20px"
-              ></v-btn>
-            </span>
             </v-card-subtitle>
-
 
           <!-- genres/tags -->
           <div
@@ -297,7 +289,7 @@ const description = computed(() => {
       }
     });
   }
-  const maxChars = display.mobile ? 160 : 380;
+  const maxChars = display.mobile ? 200 : 460;
   desc = desc.replace("\r\n", "<br /><br /><br />");
   desc = desc.replace("\r", "<br /><br />");
   desc = desc.replace("\n", "<br /><br />");

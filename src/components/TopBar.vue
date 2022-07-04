@@ -22,7 +22,7 @@
       v-text="truncateString(store.topBarTitle || '', $vuetify.display.mobile ? 25 : 150)"
     ></v-toolbar-title>
     <template v-slot:append>
-      <div style="align-items: center">
+      <div style="align-items: right; display: flex">
         <v-dialog
           v-model="dialog"
           overlay-opacity="0.8"
@@ -69,8 +69,8 @@
           :icon="mdiDotsVertical"
           v-if="store.contextMenuParentItem || store.customContextMenuCallback"
           :color="store.topBarTextColor"
-          style="margin-right: -50px"
           @click="onContextMenuBtn"
+          style="margin-right: -8px"
         ></v-btn>
 
         <v-menu location="bottom end">
@@ -79,7 +79,7 @@
               :icon="mdiDotsVertical"
               v-if="store.topBarContextMenuItems.length > 0"
               :color="store.topBarTextColor"
-              style="margin-right: -50px"
+              style="margin-right: -8px"
               v-bind="props"
             ></v-btn>
           </template>
@@ -88,8 +88,9 @@
             <v-list-item
               v-for="(item, index) in store.topBarContextMenuItems"
               :key="index"
+              @click="item.link"
             >
-              <v-list-item-title @click="item.link">{{ item.title }}</v-list-item-title>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>

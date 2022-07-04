@@ -92,7 +92,7 @@ export const getQualityIcon = function (quality?: MediaQuality) {
   if (quality == MediaQuality.LOSSY_AAC) return iconAac;
   if (quality == MediaQuality.LOSSY_MP3) return iconMp3;
   if (quality == MediaQuality.LOSSY_OGG) return iconOgg;
-  if (quality >= MediaQuality.FLAC_LOSSLESS) return iconFlac;
+  if (quality >= MediaQuality.LOSSLESS) return iconFlac;
   return iconFallback;
 };
 </script>

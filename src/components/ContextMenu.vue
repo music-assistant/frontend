@@ -16,9 +16,7 @@
           </span></v-toolbar-title
         >
 
-        <v-btn :icon="mdiClose" dark text @click="close()">{{
-          $t("close")
-        }}</v-btn>
+        <v-btn :icon="mdiClose" dark text @click="close()"></v-btn>
       </v-toolbar>
       <!-- play contextmenu items -->
       <v-card-text v-if="playlists.length === 0 && playMenuItems.length > 0">

@@ -6,20 +6,21 @@
       class="volumerow"
       :style="player.group_powered ? 'opacity: 0.75' : 'opacity: 0.5'"
     >
-      <span class="text-body-2">
-        <v-btn
-          icon
-          variant="plain"
-          @click="api.queueCommandGroupPower(player.player_id, !player.group_powered)"
-          width="60"
-          height="30"
-          size="x-large"
-          style=""
-        >
-          <v-icon :icon="mdiPower"></v-icon>
-        </v-btn>
-        {{ player.group_name }}
-      </span>
+      <v-btn
+        icon
+        variant="plain"
+        @click="api.queueCommandGroupPower(player.player_id, !player.group_powered)"
+        width="60"
+        height="30"
+        size="x-large"
+      >
+        <v-icon :icon="mdiPower"></v-icon>
+      </v-btn>
+      <span
+        class="text-body-2"
+        style="position: absolute; margin-left: 65px;margin-top:-25px"
+        >{{ player.group_name }}</span
+      >
       <div
         class="text-caption"
         style="position: absolute; width: 60px; text-align: center; margin-left: 0px"
@@ -62,7 +63,11 @@
         >
           <v-icon :icon="mdiPower"></v-icon>
         </v-btn>
-        {{ childPlayer.group_name }}
+        <span
+        class="text-body-2"
+        style="position: absolute; margin-left: 65px;margin-top:-25px"
+        >{{ childPlayer.group_name }}</span
+      >
       </span>
       <div
         class="text-caption"

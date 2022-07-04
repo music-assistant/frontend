@@ -141,14 +141,14 @@ const theme = useTheme();
 const isHiRes = computed(() => {
   for (const prov of props.item.provider_ids) {
     if (prov.quality == undefined) continue;
-    if (prov.quality >= MediaQuality.FLAC_LOSSLESS_HI_RES_1) {
+    if (prov.quality >= MediaQuality.LOSSLESS_HI_RES_1) {
       if (prov.details) {
         return prov.details;
-      } else if (prov.quality === MediaQuality.FLAC_LOSSLESS_HI_RES_1) {
+      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_1) {
         return "44.1/48khz 24 bits";
-      } else if (prov.quality === MediaQuality.FLAC_LOSSLESS_HI_RES_2) {
+      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_2) {
         return "88.2/96khz 24 bits";
-      } else if (prov.quality === MediaQuality.FLAC_LOSSLESS_HI_RES_3) {
+      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_3) {
         return "176/192khz 24 bits";
       } else {
         return "+192kHz 24 bits";

@@ -200,7 +200,7 @@
 
     <!-- progress bar -->
     <div
-      style="width: 100%; height: 5px; padding-bottom: 15px; margin-top: -5px"
+      style="width: 100%; height: 5px; padding-bottom: 20px; margin-top: -10px"
       v-if="
         activePlayerQueue?.active &&
         curQueueItem &&
@@ -298,7 +298,7 @@
         @click="store.showPlayersMenu = true"
         class="mediacontrols-right"
         height="50"
-        width="70"
+        width="80"
       >
         <v-icon :icon="mdiSpeaker" />
         <div v-if="activePlayerQueue">
@@ -325,7 +325,7 @@
           </template>
 
           <v-card min-width="300">
-            <v-list style="overflow: hidden" lines="2">
+            <v-list style="overflow: hidden" lines="two">
               <v-list-item style="padding: 0; margin-left: 9px; margin-bottom: 9px">
                 <template v-slot:prepend>
                   <v-icon
@@ -354,7 +354,7 @@
                 </template>
               </v-list-item>
               <v-divider></v-divider>
-              <VolumeControl :player="store.selectedPlayer as Player" />
+              <VolumeControl :player="store.selectedPlayer" />
             </v-list>
           </v-card>
         </v-menu>
@@ -364,11 +364,11 @@
         text
         icon
         variant="plain"
-        height="50"
-        width="70"
         @click="$router.push('/playerqueue/')"
         v-if="activePlayerQueue"
         class="mediacontrols-right"
+        height="50"
+        width="70"
       >
         <v-icon :icon="mdiPlaylistMusic" />
         <div>{{ $t("queue") }}</div>
@@ -588,28 +588,34 @@ watchEffect(async () => {
   padding-bottom: 5px;
 }
 .mediacontrols-left {
+  display: flex;
   width: auto;
   margin-left: -15px;
   padding-top: 0px;
   float: left;
+  align-content: center;
+}
+.mediacontrols button {
+  align-content: center;
 }
 .mediacontrols-right {
   float: right;
   padding-left: 10px;
   padding-right: 0px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  margin-top:-12px;
 }
 
+
 .mediacontrols-right div {
+  position: absolute;
   width: 80px;
   font-size: xx-small;
-  padding-top: 5px;
+  margin-top: 50px;
   text-overflow: ellipsis;
 
   /* Required for text-overflow to do anything */
   white-space: nowrap;
   overflow: hidden;
+  align-content: center;
 }
 </style>
