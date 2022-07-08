@@ -38,6 +38,7 @@ export enum ProviderType {
   SPOTIFY = "spotify",
   QOBUZ = "qobuz",
   TUNEIN = "tunein",
+  YTMUSIC = "ytmusic",
   DATABASE = "database",
   URL = "url",
 }

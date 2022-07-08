@@ -63,6 +63,7 @@ export const iconFilesystem = new URL(
   import.meta.url
 ).href;
 export const iconTuneIn = new URL("../assets/tunein.png", import.meta.url).href;
+export const iconYTMusic = new URL("../assets/ytmusic.png", import.meta.url).href;
 export const iconFallback = new URL("../assets/fallback.png", import.meta.url)
   .href;
 
@@ -77,6 +78,7 @@ export const getProviderIcon = function (provider: ProviderType) {
   if (provider == ProviderType.SPOTIFY) return iconSpotify;
   if (provider == ProviderType.QOBUZ) return iconQobuz;
   if (provider == ProviderType.TUNEIN) return iconTuneIn;
+  if (provider == ProviderType.YTMUSIC) return iconYTMusic;
   return iconFilesystem;
 };
 export const getContentTypeIcon = function (contentType: ContentType) {
