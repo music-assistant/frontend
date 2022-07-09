@@ -134,7 +134,7 @@
           v-if="!loading && items.length == 0 && (search || inLibraryOnly)"
           >{{ $t("no_content_filter") }}</v-alert
         >
-        <v-alert type="info" v-if="!loading && items.length == 0">{{
+        <v-alert type="info" v-else-if="!loading && items.length == 0">{{
           $t("no_content")
         }}</v-alert>
       </div>
