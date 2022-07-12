@@ -3,11 +3,10 @@
     v-model="store.showContextMenu"
     transition="dialog-bottom-transition"
     overlay-opacity="0.8"
-    fullscreen
-    :class="$vuetify.display.mobile ? '' : 'padded-overlay'"
+    :fullscreen="$vuetify.display.mobile"
   >
     <v-card>
-      <v-toolbar dark color="primary">
+      <v-toolbar dense dark color="primary">
         <v-icon :icon="mdiPlayCircleOutline"></v-icon>
         <v-toolbar-title style="padding-left: 10px"
           ><b>{{ header }}</b>

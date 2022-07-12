@@ -4,7 +4,7 @@
     :items="items"
     :show-duration="false"
     :show-providers="true"
-    :show-library="false"
+    :show-library="true"
     :load-data="loadItems"
     :sort-keys="['sort_name', 'timestamp DESC']"
   />

@@ -133,22 +133,19 @@
       v-model="showContextMenu"
       transition="dialog-bottom-transition"
       overlay-opacity="0.8"
-      fullscreen
-      :class="$vuetify.display.mobile ? '' : 'padded-overlay'"
+      :fullscreen="$vuetify.display.mobile"
       @click="showContextMenu = false"
     >
       <v-card>
-        <v-toolbar dark color="primary">
+        <v-toolbar sense dark color="primary">
           <v-icon :icon="mdiPlayCircleOutline"></v-icon>
           <v-toolbar-title v-if="selectedItem" style="padding-left: 10px"
-            ><b>{{ selectedItem?.name }}</b></v-toolbar-title
+            ><b>{{ truncateString(selectedItem?.name || '', $vuetify.display.mobile ? 20 : 150) }}</b></v-toolbar-title
           >
           <v-toolbar-title v-else style="padding-left: 10px"
             ><b>{{ $t("settings") }}</b> | {{ activePlayerQueue?.name }}</v-toolbar-title
           >
-          <v-btn :icon="mdiClose" dark text @click="closeContextMenu()">{{
-            $t("close")
-          }}</v-btn>
+          <v-btn :icon="mdiClose" dark text @click="closeContextMenu()"></v-btn>
         </v-toolbar>
         <!-- QueueItem related content menu -->
         <v-card-text v-if="selectedItem">
@@ -441,7 +438,7 @@ import { RepeatMode, CrossFadeMode, MassEventType, MediaType } from "../plugins/
 import api from "../plugins/api";
 import { computed, onBeforeUnmount, watchEffect } from "vue";
 import { store } from "../plugins/store";
-import { formatDuration, parseBool } from "../utils";
+import { formatDuration, parseBool, truncateString } from "../utils";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import MediaItemThumb from "../components/MediaItemThumb.vue";
