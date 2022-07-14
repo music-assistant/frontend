@@ -192,8 +192,6 @@
 <script setup lang="ts">
 import ProviderIcons from "./ProviderIcons.vue";
 import {
-  mdiChevronDown,
-  mdiChevronUp,
   mdiHeart,
   mdiHeartOutline,
   mdiAccountMusic,
@@ -206,7 +204,7 @@ import { useDisplay } from "vuetify";
 import api from "../plugins/api";
 import { ImageType } from "../plugins/api";
 import type { Album, Artist, ItemMapping, MediaItemType } from "../plugins/api";
-import { computed, onBeforeUnmount, ref, watchEffect } from "vue";
+import { computed, ref, watchEffect } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useI18n } from "vue-i18n";
@@ -224,10 +222,6 @@ const { mobile } = useDisplay();
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
-const imgDefaultArtist = new URL(
-  "../assets/default_artist.png",
-  import.meta.url
-).href;
 
 const { t } = useI18n();
 const router = useRouter();
@@ -243,15 +237,10 @@ watchEffect(async () => {
         ` | </span>${props.item.name}`;
     }
 
-    store.contextMenuParentItem = props.item;
     fanartImage.value =
       (await getImageThumbForItem(props.item, ImageType.FANART)) ||
       (await getImageThumbForItem(props.item, ImageType.THUMB));
   }
-});
-
-onBeforeUnmount(() => {
-  store.contextMenuParentItem = undefined;
 });
 
 const albumClick = function (item: Album | ItemMapping) {
