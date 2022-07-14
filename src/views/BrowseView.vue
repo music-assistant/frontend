@@ -80,7 +80,7 @@ const onClick = function (mediaItem: MediaItemType) {
     else title = title + mediaItem.name;
     router.replace({
       name: "browse",
-      params: { uri: mediaItem.uri, title: title },
+      query: { uri: mediaItem.uri, title: title },
     });
   } else {
     router.push({

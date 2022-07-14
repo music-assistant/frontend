@@ -29,7 +29,6 @@
             :min-width="180"
             :min-height="180"
             :border="true"
-            :fallback="imgDefaultArtist"
             style="margin-top: 15px; margin-bottom: 15px"
           />
         </div>
