@@ -32,7 +32,6 @@ import InfoHeader from "../components/InfoHeader.vue";
 import { api, ProviderType, type Playlist, type Track } from "../plugins/api";
 import { watchEffect, ref, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { store } from "../plugins/store";
 
 export interface Props {

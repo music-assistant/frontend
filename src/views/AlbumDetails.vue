@@ -45,8 +45,9 @@ import { filteredItems } from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
 import type { Album, Track } from "../plugins/api";
 import { api, ProviderType } from "../plugins/api";
-import { watchEffect, ref } from "vue";
-import { parseBool } from "../utils";
+import { watchEffect, ref, onBeforeUnmount } from "vue";
+import { useI18n } from "vue-i18n";
+import { store } from "../plugins/store";
 
 export interface Props {
   item_id: string;
@@ -64,25 +65,32 @@ const album = ref<Album>();
 const albumTracks = ref<Track[]>([]);
 const albumVersions = ref<Album[]>([]);
 const loading = ref(true);
+const { t } = useI18n();
 
-watchEffect(async () => {
-  api
-    .getAlbum(
-      props.provider as ProviderType,
-      props.item_id,
-      parseBool(props.lazy),
-      parseBool(props.refresh)
-    )
-    .then(async (item) => {
-      album.value = item;
-      // fetch additional info once main info retrieved
-      await getExtraInfo();
-      loading.value = false;
-    });
-  activeTab.value = "tracks";
+store.topBarContextMenuItems = [
+  {
+    title: t("refresh_item"),
+    link: () => {
+      albumTracks.value = [];
+      albumVersions.value = [];
+      loadItems(false, true);
+    },
+  },
+];
+onBeforeUnmount(() => {
+  store.topBarContextMenuItems = [];
 });
 
-const getExtraInfo = async function () {
+
+const loadItems = async function (lazy: boolean, refresh = false) {
+  loading.value = true;
+  album.value = await api.getAlbum(
+    props.provider as ProviderType,
+    props.item_id,
+    lazy,
+    refresh
+  );
+  // fetch additional info once main info retrieved
   albumTracks.value = await api.getAlbumTracks(
     props.provider as ProviderType,
     props.item_id
@@ -91,7 +99,16 @@ const getExtraInfo = async function () {
     props.provider as ProviderType,
     props.item_id
   );
+  loading.value = false;
 };
+
+watchEffect(async () => {
+  await loadItems(true);
+  if (album.value?.provider !== ProviderType.DATABASE) {
+    await loadItems(false);
+  }
+  activeTab.value = "tracks";
+});
 
 const loadAlbumTracks = async function (
   offset: number,

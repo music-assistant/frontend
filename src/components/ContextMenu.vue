@@ -4,6 +4,7 @@
     transition="dialog-bottom-transition"
     overlay-opacity="0.8"
     :fullscreen="$vuetify.display.mobile"
+    min-width="300"
   >
     <v-card>
       <v-toolbar dense dark color="primary">
@@ -288,7 +289,7 @@ const showContextMenu = function () {
 const showPlaylistsMenu = async function () {
   // get all editable playlists
   const items = [];
-  for (const playlist of api.library.playlists) {
+  for (const playlist of await api.getPlaylists()) {
     if (
       playlist.is_editable &&
       !(
