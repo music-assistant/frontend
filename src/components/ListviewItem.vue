@@ -4,39 +4,49 @@
       ripple
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
-      style="padding-right: 0px"
+      style="height: 60px"
+      :disabled="!itemIsAvailable(item)"
+      lines="two"
     >
-      <template v-slot:prepend
-        ><div v-if="item.media_type == MediaType.FOLDER" class="listitem-thumb">
-          <v-btn variant="plain" icon
-            ><v-icon :icon="mdiFolder" size="50" style="align: center;">
-            </v-icon
-          ></v-btn>
+      <template v-slot:prepend>
+        <div v-if="showCheckboxes" class="listitem-thumb">
+          <v-checkbox
+            :model-value="isSelected"
+            @click.stop
+            @update:model-value="
+              (x) => {
+                emit('select', item, x);
+              }
+            "
+          />
         </div>
         <div
-          v-else
+          v-else-if="item.media_type == MediaType.FOLDER"
           class="listitem-thumb"
-          @click.stop="emit('select', item, !isSelected)"
         >
-          <MediaItemThumb :item="item" :size="50" width="50px" height="50px" />
-          <div
-            v-if="isSelected"
-            style="position: absolute; background-color: #82b1ff94; margin-top: -50px"
-          >
-            <v-icon dark size="51" :icon="mdiCheckboxMarkedOutline"></v-icon>
-          </div></div
+          <v-btn variant="plain" icon
+            ><v-icon :icon="mdiFolder" size="60" style="align: center"> </v-icon
+          ></v-btn>
+        </div>
+        <div v-else class="listitem-thumb">
+          <MediaItemThumb
+            :item="item"
+            :size="50"
+            width="50px"
+            height="50px"
+          /></div
       ></template>
 
       <!-- title -->
       <template v-slot:title>
         <span v-if="item.media_type == MediaType.FOLDER">
-          <span v-if="'label' in item && item.label">{{ $t(item.label) }}</span>
-          <span v-else>{{ $t(item.name) }}</span>
+          <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
         </span>
         <span v-else>
           {{ item.name }}
-          <span v-if="'version' in item && item.version">({{ item.version }})</span>
-          <b v-if="!itemIsAvailable(item)"> UNAVAILABLE</b>
+          <span v-if="'version' in item && item.version"
+            >({{ item.version }})</span
+          >
         </span>
         <!-- explicit icon -->
         <v-tooltip location="bottom">
@@ -49,41 +59,55 @@
               v-if="parseBool(item.metadata.explicit || false)"
             />
           </template>
-          <span>{{ $t("explicit") }}</span>
+          <span>{{ $t("tooltip.explicit") }}</span>
         </v-tooltip>
       </template>
 
       <!-- subtitle -->
       <template v-slot:subtitle>
-        <!-- track artists + album name -->
-        <div v-if="'artists' in item && item.artists">
-          <span v-for="(artist, artistindex) in item.artists" :key="artist.uri">
-            <a color="primary" @click.stop="artistClick(artist)">{{ artist.name }}</a>
-            <label v-if="artistindex + 1 < item.artists.length" :key="artistindex"
-              >/</label
-            >
-          </span>
-          <!-- album -->
-          <a
-            v-if="!!item.album && !showTrackNumber"
-            style="color: grey"
-            @click.stop.stop="albumClick(item.album)"
-          >
-            - {{ item.album.name }}</a
-          >
-          <!-- track + disc number -->
-          <label v-if="showTrackNumber && item.track_number" style="color: grey">
-            - disc {{ item.disc_number }} track {{ item.track_number }}</label
-          >
+        <!-- track: artists(s) + album -->
+        <div
+          v-if="
+            item.media_type == MediaType.TRACK && item.album && !showTrackNumber
+          "
+        >
+          {{ getArtistsString(item.artists) }} • {{ item.album.name }}
         </div>
-        <!-- album artist -->
-        <div v-if="'artist' in item && item.artist">
-          <a @click.stop="artistClick(item.artist)">{{ item.artist.name }}</a>
+        <!-- albumtrack: artists(s) + disc/track number -->
+        <div
+          v-else-if="
+            item.media_type == MediaType.TRACK &&
+            item.track_number &&
+            showTrackNumber
+          "
+        >
+          {{ getArtistsString(item.artists) }} • disc
+          {{ item.disc_number }} track {{ item.track_number }}
+        </div>
+        <!-- album: albumtype + artists + year -->
+        <div
+          v-else-if="
+            item.media_type == MediaType.ALBUM && item.artists && item.year
+          "
+        >
+          {{ $t("album_type." + item.album_type) }} •
+          {{ getArtistsString(item.artists) }} • {{ item.year }}
+        </div>
+        <!-- album: albumtype + artists -->
+        <div v-else-if="item.media_type == MediaType.ALBUM && item.artists">
+          {{ $t("album_type." + item.album_type) }} •
+          {{ getArtistsString(item.artists) }}
+        </div>
+        <!-- track/album falback: artist present -->
+        <div v-else-if="'artist' in item && item.artist">
+          {{ item.artist.name }}
         </div>
         <!-- playlist owner -->
-        <div v-if="'owner' in item && item.owner">{{ item.owner }}</div>
+        <div v-else-if="'owner' in item && item.owner">{{ item.owner }}</div>
         <!-- radio description -->
-        <div v-if="item.media_type == MediaType.RADIO && item.metadata.description">
+        <div
+          v-if="item.media_type == MediaType.RADIO && item.metadata.description"
+        >
           {{ item.metadata.description }}
         </div>
       </template>
@@ -110,7 +134,9 @@
 
           <!-- provider icons -->
           <ProviderIcons
-            v-if="item.provider_ids && showProviders && !$vuetify.display.mobile"
+            v-if="
+              item.provider_ids && showProviders && !$vuetify.display.mobile
+            "
             :provider-ids="item.provider_ids"
             :height="20"
             class="listitem-actions"
@@ -119,7 +145,9 @@
           <!-- in library (heart) icon -->
           <div
             class="listitem-action"
-            v-if="'in_library' in item && showLibrary && !$vuetify.display.mobile"
+            v-if="
+              'in_library' in item && showLibrary && !$vuetify.display.mobile
+            "
           >
             <v-tooltip location="bottom">
               <template #activator="{ props }">
@@ -134,29 +162,28 @@
                 >
                 </v-btn>
               </template>
-              <span v-if="item.in_library">{{ $t("remove_library") }}</span>
-              <span v-if="!item.in_library">{{ $t("add_library") }}</span>
+              <span>{{ $t("tooltip.library") }}</span>
             </v-tooltip>
           </div>
 
           <!-- track duration -->
           <div
             class="listitem-action"
-            v-if="showDuration && 'duration' in item && !$vuetify.display.mobile"
+            v-if="
+              showDuration && 'duration' in item && !$vuetify.display.mobile
+            "
           >
             <span>{{ formatDuration(item.duration) }}</span>
           </div>
-
-          <!-- menu button/icon -->
-          <v-btn
-            class="listitem-action"
-            v-if="showMenu"
-            @click.stop="emit('menu', item)"
-            :icon="mdiDotsVertical"
-            variant="plain"
-            style="margin-right: -10px; margin-left: -10px"
-          ></v-btn>
         </div>
+        <!-- menu button/icon -->
+        <v-btn
+          v-if="showMenu"
+          @click.stop="emit('menu', item)"
+          :icon="mdiDotsVertical"
+          variant="plain"
+          style="position: absolute; right: -15px"
+        ></v-btn>
       </template>
     </v-list-item>
     <v-divider></v-divider>
@@ -180,15 +207,15 @@ import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcons from "./ProviderIcons.vue";
 import { iconHiRes } from "./ProviderIcons.vue";
 import type {
-  Album,
   Artist,
-  ItemMapping,
+  BrowseFolder,
   MediaItem,
   MediaItemType,
 } from "../plugins/api";
 import { api, MediaQuality, MediaType } from "../plugins/api";
-import { formatDuration, parseBool } from "../utils";
+import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from "../utils";
 import { useTheme } from "vuetify";
+import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -199,10 +226,12 @@ export interface Props {
   showLibrary?: boolean;
   showDuration?: boolean;
   isSelected: boolean;
+  showCheckboxes?: boolean;
 }
 
 // global refs
 const router = useRouter();
+const { t } = useI18n();
 const actionInProgress = ref(false);
 const theme = useTheme();
 
@@ -212,6 +241,7 @@ const props = withDefaults(defineProps<Props>(), {
   showMenu: true,
   showLibrary: true,
   showDuration: true,
+  showCheckboxes: false,
 });
 
 // computed properties
@@ -245,58 +275,12 @@ const emit = defineEmits<{
 
 // methods
 
-const albumClick = function (item: Album | ItemMapping) {
-  // album entry clicked
-  if (actionInProgress.value) return;
-  actionInProgress.value = true;
-  router.push({
-    name: "album",
-    params: {
-      item_id: item.item_id,
-      provider: item.provider,
-    },
-  });
-  setTimeout(() => {
-    actionInProgress.value = false;
-  }, 500);
-};
-const artistClick = function (item: Artist | ItemMapping) {
-  // album entry clicked
-  router.push({
-    name: "artist",
-    params: {
-      item_id: item.item_id,
-      provider: item.provider,
-    },
-  });
-};
 const itemIsAvailable = function (item: MediaItem) {
+  if (item.media_type == MediaType.FOLDER) return true;
   if (!props.item.provider_ids) return true;
   for (const x of item.provider_ids) {
-    if (x.available && x.prov_id in api.stats.providers) return true;
+    if (x.available && x.prov_id in api.providers) return true;
   }
   return false;
 };
 </script>
-
-<style scoped>
-.listitem-actions {
-  display: flex;
-  justify-content: end;
-  width: auto;
-  height: 50px;
-  vertical-align: middle;
-  align-items: center;
-  padding: 0px;
-}
-.listitem-action {
-  padding-left: 5px;
-}
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -15px;
-  width: 50px;
-  height: 50px;
-}
-</style>
