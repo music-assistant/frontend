@@ -10,7 +10,7 @@
     :max-width="size * 1.5"
     hover
     border
-    @click.right.prevent="emit('select', item, !isSelected)"
+    @click.right.prevent="emit('menu', item)"
   >
     <MediaItemThumb
       :item="item"
