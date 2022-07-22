@@ -1,9 +1,5 @@
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    transition="dialog-bottom-transition"
-    fullscreen
-  >
+  <v-dialog :model-value="modelValue" transition="dialog-bottom-transition" fullscreen>
     <v-card>
       <v-toolbar density="compact" dark color="primary">
         <v-icon :icon="mdiPlayCircleOutline"></v-icon>
@@ -46,9 +42,7 @@
               <v-list-item-avatar style="padding-right: 10px">
                 <v-icon :icon="item.icon"></v-icon>
               </v-list-item-avatar>
-              <v-list-item-title>{{
-                $t(item.label, item.labelArgs)
-              }}</v-list-item-title>
+              <v-list-item-title>{{ $t(item.label, item.labelArgs) }}</v-list-item-title>
             </v-list-item>
             <v-divider></v-divider>
           </div>
@@ -91,9 +85,7 @@
           <div v-for="prov of api.providers" :key="prov.id">
             <div
               v-if="
-                prov.supported_features.includes(
-                  MusicProviderFeature.PLAYLIST_CREATE
-                )
+                prov.supported_features.includes(MusicProviderFeature.PLAYLIST_CREATE)
               "
             >
               <v-list-item ripple>
@@ -184,7 +176,6 @@ const queueName = ref("");
 
 const emit = defineEmits<{
   (e: "refresh", value: MediaItemType): void;
-  (e: "delete", value: MediaItemType): void;
   (e: "clear"): void;
   (e: "update:modelValue", value: boolean): void;
   (e: "update:items", value: MediaItemType[]): void;
@@ -329,21 +320,14 @@ export const getPlayMenuItems = function (items: MediaItem[]) {
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (
-  items: MediaItem[],
-  parentItem?: MediaItem
-) {
+export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
   }
 
   // show info
-  if (
-    items.length === 1 &&
-    items[0] !== parentItem &&
-    itemIsAvailable(items[0])
-  ) {
+  if (items.length === 1 && items[0] !== parentItem && itemIsAvailable(items[0])) {
     contextMenuItems.push({
       label: "show_info",
       labelArgs: [],
@@ -473,6 +457,12 @@ export const getContextMenuItems = function (
       labelArgs: [],
       action: () => {
         api.deleteDbItem(items[0].media_type, items[0].item_id, true);
+        if (parentItem && parentItem.item_id == items[0].item_id) {
+          // refresh UI if paremtItem deleted
+          router.push({
+            name: `${parentItem.media_type}s`,
+          });
+        }
       },
       icon: mdiCancel,
     });
