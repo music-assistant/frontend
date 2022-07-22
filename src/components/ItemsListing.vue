@@ -55,9 +55,7 @@
             </v-badge>
           </v-btn>
         </template>
-        <span v-if="newContentAvailable">{{
-          $t("tooltip.refresh_new_content")
-        }}</span>
+        <span v-if="newContentAvailable">{{ $t("tooltip.refresh_new_content") }}</span>
         <span v-else>{{ $t("tooltip.refresh") }}</span>
       </v-tooltip>
 
@@ -71,10 +69,7 @@
           <v-tooltip location="bottom">
             <template v-slot:activator="{ props: tooltip }">
               <v-btn icon v-bind="props">
-                <v-icon
-                  v-bind="mergeProps(menu, tooltip)"
-                  :icon="mdiSort"
-                ></v-icon>
+                <v-icon v-bind="mergeProps(menu, tooltip)" :icon="mdiSort"></v-icon>
               </v-btn>
             </template>
             <span>{{ $t("tooltip.sort_options") }}</span>
@@ -84,9 +79,7 @@
           <v-list>
             <div v-for="key of sortKeys" :key="key">
               <v-list-item @click="changeSort(key)">
-                <v-list-item-title
-                  v-text="$t('sort.' + key)"
-                ></v-list-item-title>
+                <v-list-item-title v-text="$t('sort.' + key)"></v-list-item-title>
                 <template v-slot:append>
                   <v-icon v-if="sortBy == key" :icon="mdiCheck"></v-icon>
                 </template>
@@ -132,12 +125,7 @@
       :label="$t('search')"
       hide-details
       variant="filled"
-      style="
-        width: auto;
-        margin-left: 15px;
-        margin-right: 15px;
-        margin-top: 10px;
-      "
+      style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
       v-if="showSearch"
       @focus="searchHasFocus = true"
       @blur="searchHasFocus = false"
@@ -156,12 +144,7 @@
       <v-progress-linear indeterminate v-if="loading"></v-progress-linear>
 
       <!-- panel view -->
-      <v-row
-        dense
-        align-content="start"
-        align="start"
-        v-if="viewMode == 'panel'"
-      >
+      <v-row dense align-content="start" align="start" v-if="viewMode == 'panel'">
         <v-col v-for="item in items" :key="item.uri" align-self="start">
           <PanelviewItem
             :item="item"
@@ -193,6 +176,7 @@
             :show-providers="showProviders"
             :show-checkboxes="showCheckboxes"
             :is-selected="isSelected(item)"
+            :show-details="itemtype.includes('versions')"
             @select="onSelect"
             @menu="onMenu"
             @click="onClick"
@@ -315,7 +299,6 @@ const selectedItems = ref<MediaItemType[]>([]);
 const showContextMenu = ref(false);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
-const showSelectMenu = ref(false);
 
 // computed properties
 const thumbSize = computed(() => {
@@ -386,20 +369,19 @@ const onMenu = function (item: MediaItemType) {
 
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
-  if (mediaItem.media_type === "artist") {
+  const force_provider_version = props.itemtype.includes("versions").toString();
+
+  if (
+    ["artist", "album", "playlist"].includes(mediaItem.media_type) ||
+    force_provider_version == "true"
+  ) {
     router.push({
-      name: "artist",
-      params: { item_id: mediaItem.item_id, provider: mediaItem.provider },
-    });
-  } else if (mediaItem.media_type === "album") {
-    router.push({
-      name: "album",
-      params: { item_id: mediaItem.item_id, provider: mediaItem.provider },
-    });
-  } else if (mediaItem.media_type === "playlist") {
-    router.push({
-      name: "playlist",
-      params: { item_id: mediaItem.item_id, provider: mediaItem.provider },
+      name: mediaItem.media_type,
+      params: {
+        item_id: mediaItem.item_id,
+        provider: mediaItem.provider,
+        force_provider_version,
+      },
     });
   } else if (store.selectedPlayer) {
     // assume track (or radio) item
@@ -441,7 +423,6 @@ watch(
 
 const loadData = async function (clear = false, limit = defaultLimit) {
   if (clear) {
-    totalItems.value = undefined;
     offset.value = 0;
     newContentAvailable.value = false;
   }
@@ -585,10 +566,7 @@ export const filteredItems = function (
         item.artist?.name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
-      } else if (
-        "album" in item &&
-        item.album?.name.toLowerCase().includes(searchStr)
-      ) {
+      } else if ("album" in item && item.album?.name.toLowerCase().includes(searchStr)) {
         result.push(item);
       } else if (
         "artists" in item &&
@@ -603,9 +581,7 @@ export const filteredItems = function (
   }
   // sort
   if (sortBy == "sort_name") {
-    result.sort((a, b) =>
-      (a.sort_name || a.name).localeCompare(b.sort_name || b.name)
-    );
+    result.sort((a, b) => (a.sort_name || a.name).localeCompare(b.sort_name || b.name));
   }
   if (sortBy == "sort_album") {
     result.sort((a, b) =>
@@ -619,18 +595,14 @@ export const filteredItems = function (
   }
   if (sortBy == "track_number") {
     result.sort(
-      (a, b) =>
-        ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
+      (a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
     );
     result.sort(
-      (a, b) =>
-        ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
+      (a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
     );
   }
   if (sortBy == "position") {
-    result.sort(
-      (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0)
-    );
+    result.sort((a, b) => ((a as Track).position || 0) - ((b as Track).position || 0));
   }
   if (sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
@@ -640,9 +612,11 @@ export const filteredItems = function (
   }
 
   if (sortBy == "duration") {
-    result.sort(
-      (a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0)
-    );
+    result.sort((a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0));
+  }
+
+  if (sortBy == "provider") {
+    result.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 
   if (inLibraryOnly) {

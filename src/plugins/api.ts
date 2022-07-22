@@ -24,6 +24,7 @@ export enum MediaQuality {
   LOSSY_MP3 = 1,
   LOSSY_OGG = 2,
   LOSSY_AAC = 3,
+  LOSSY_M4A = 4,
   LOSSLESS = 10, // 44.1/48khz 16 bits
   LOSSLESS_HI_RES_1 = 20, // 44.1/48khz 24 bits HI-RES
   LOSSLESS_HI_RES_2 = 21, // 88.2/96khz 24 bits HI-RES
@@ -190,25 +191,25 @@ export type MediaItemType =
   | Radio
   | BrowseFolder;
 
-export enum StreamType {
-  EXECUTABLE = "executable",
-  URL = "url",
-  FILE = "file",
-  CACHE = "cache",
-}
-
 export enum ContentType {
   OGG = "ogg",
   FLAC = "flac",
   MP3 = "mp3",
   AAC = "aac",
   MPEG = "mpeg",
+  ALAC = "alac",
   WAV = "wav",
+  AIFF = "aiff",
+  WMA = "wma",
+  M4A = "m4a",
+  DSF = "dsf",
+  WAVPACK = "wv",
   PCM_S16LE = "s16le", // PCM signed 16-bit little-endian
   PCM_S24LE = "s24le", // PCM signed 24-bit little-endian
   PCM_S32LE = "s32le", // PCM signed 32-bit little-endian
   PCM_F32LE = "f32le", // PCM 32-bit floating-point little-endian
-  PCM_F64LE = "f64le,", // PCM 64-bit floating-point little-endian
+  PCM_F64LE = "f64le", // PCM 64-bit floating-point little-endian
+  UNKNOWN = "?",
 }
 
 export interface StreamDetails {
@@ -286,6 +287,12 @@ export enum RepeatMode {
   ALL = "all", // repeat entire queue
 }
 
+export enum MetadataMode {
+  DISABLED = "disabled", // do not notify icy support
+  DEFAULT = "default", // enable icy if player requests it, default chunksize
+  LEGACY = "legacy", // enable icy but with legacy 8kb chunksize, requires mp3
+}
+
 export interface QueueSettings {
   repeat_mode: RepeatMode;
   shuffle_enabled: boolean;
@@ -296,6 +303,7 @@ export interface QueueSettings {
   stream_type: ContentType;
   max_sample_rate: number;
   announce_volume_increase: number;
+  metadata_mode: MetadataMode;
 }
 
 export type QueueSettingsUpdate = Partial<QueueSettings>;
@@ -548,9 +556,16 @@ export class MusicAssistantApi {
     provider: ProviderType,
     item_id: string,
     lazy = true,
-    refresh = false
+    refresh = false,
+    force_provider_version = false
   ): Promise<Track> {
-    return this.getData("track", { provider, item_id, lazy, refresh });
+    return this.getData("track", {
+      provider,
+      item_id,
+      lazy,
+      refresh,
+      force_provider_version,
+    });
   }
 
   public getTrackVersions(
@@ -617,9 +632,16 @@ export class MusicAssistantApi {
     provider: ProviderType,
     item_id: string,
     lazy = true,
-    refresh = false
+    refresh = false,
+    force_provider_version = false
   ): Promise<Album> {
-    return this.getData("album", { provider, item_id, lazy, refresh });
+    return this.getData("album", {
+      provider,
+      item_id,
+      lazy,
+      refresh,
+      force_provider_version,
+    });
   }
 
   public getAlbumTracks(
@@ -691,6 +713,13 @@ export class MusicAssistantApi {
     refresh = false
   ): Promise<Radio> {
     return this.getData("radio", { provider, item_id, lazy, refresh });
+  }
+
+  public getRadioVersions(
+    provider: ProviderType,
+    item_id: string
+  ): Promise<Radio[]> {
+    return this.getData("radio/versions", { provider, item_id });
   }
 
   public getItem(

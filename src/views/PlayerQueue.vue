@@ -503,6 +503,26 @@
                       "
                     ></v-select>
                   </v-list-item>
+
+                  <!-- metadata mode -->
+                  <v-list-item>
+                    <v-select
+                      :model-value="activePlayerQueue?.settings.metadata_mode"
+                      :label="$t('metadata_mode.title')"
+                      :prepend-icon="mdiCastConnected"
+                      :items="[
+                        { title: $t('metadata_mode.disabled'), value: 'disabled' },
+                        { title: $t('metadata_mode.default'), value: 'default' },
+                        { title: $t('metadata_mode.legacy'), value: 'legacy' },
+                      ]"
+                      @update:model-value="
+                        api.playerQueueSettings(activePlayerQueue?.queue_id, {
+                          metadata_mode: $event,
+                        })
+                      "
+                    ></v-select>
+                  </v-list-item>
+
                 </v-list>
               </v-expansion-panel-text>
             </v-expansion-panel>

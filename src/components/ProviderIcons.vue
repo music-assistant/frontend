@@ -72,6 +72,7 @@ export const iconFlac = new URL("../assets/flac.png", import.meta.url).href;
 export const iconMp3 = new URL("../assets/mp3.png", import.meta.url).href;
 export const iconOgg = new URL("../assets/ogg.png", import.meta.url).href;
 export const iconVorbis = new URL("../assets/vorbis.png", import.meta.url).href;
+export const iconM4a = new URL("../assets/m4a.png", import.meta.url).href;
 export const iconHiRes = new URL("../assets/hires.png", import.meta.url).href;
 
 export const getProviderIcon = function (provider: ProviderType) {
@@ -87,6 +88,7 @@ export const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.MP3) return iconMp3;
   if (contentType == ContentType.MPEG) return iconMp3;
   if (contentType == ContentType.OGG) return iconOgg;
+  if (contentType == ContentType.M4A) return iconM4a;
   return iconFallback;
 };
 export const getQualityIcon = function (quality?: MediaQuality) {
@@ -94,8 +96,23 @@ export const getQualityIcon = function (quality?: MediaQuality) {
   if (quality == MediaQuality.LOSSY_AAC) return iconAac;
   if (quality == MediaQuality.LOSSY_MP3) return iconMp3;
   if (quality == MediaQuality.LOSSY_OGG) return iconOgg;
+  if (quality == MediaQuality.LOSSY_M4A) return iconM4a;
   if (quality >= MediaQuality.LOSSLESS) return iconFlac;
   return iconFallback;
+};
+
+export const getQualityDesc = function (provDetails: MediaItemProviderId) {
+  if (provDetails.details && !provDetails.details.includes('http')) {
+    return provDetails.details;
+  }
+  if (!provDetails.quality) provDetails.quality = 0;
+  if (provDetails.quality == MediaQuality.LOSSY_AAC) return "Lossy aac";
+  if (provDetails.quality == MediaQuality.LOSSY_MP3) return "Lossy mp3";
+  if (provDetails.quality == MediaQuality.LOSSY_OGG) return "Lossy ogg";
+  if (provDetails.quality == MediaQuality.LOSSY_M4A) return "Lossy m4a";
+  if (provDetails.quality > MediaQuality.LOSSLESS) return "Lossless Hi-Res";
+  if (provDetails.quality >= MediaQuality.LOSSLESS) return "Lossless";
+  return "Unknown media quality ";
 };
 </script>
 

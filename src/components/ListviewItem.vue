@@ -99,8 +99,8 @@
           {{ getArtistsString(item.artists) }}
         </div>
         <!-- track/album falback: artist present -->
-        <div v-else-if="'artist' in item && item.artist">
-          {{ item.artist.name }}
+        <div v-else-if="'artists' in item && item.artists">
+         {{ getArtistsString(item.artists) }}
         </div>
         <!-- playlist owner -->
         <div v-else-if="'owner' in item && item.owner">{{ item.owner }}</div>
@@ -176,9 +176,119 @@
             <span>{{ formatDuration(item.duration) }}</span>
           </div>
         </div>
+
+        <v-menu location="bottom end" v-if="showDetails" @click:outside.stop>
+          <template v-slot:activator="{ props }">
+            <v-icon
+              :icon="mdiInformationOutline"
+              size="30"
+              class="listitem-action"
+              style="margin-left: 10px; margin-right: -15px"
+              v-bind="props"
+            />
+          </template>
+          <v-card class="mx-auto" min-width="300">
+            <v-list style="overflow: hidden">
+              <span class="text-h5" style="padding: 10px">{{
+                $t("provider_details")
+              }}</span>
+              <v-divider></v-divider>
+              <!-- provider icon + name -->
+              <v-list-item
+                style="height: 50px; display: flex; align-items: center"
+              >
+                <img
+                  height="30"
+                  width="50"
+                  center
+                  :src="getProviderIcon(item.provider)"
+                  style="object-fit: contain; margin-left: -15px"
+                />
+                {{
+                  truncateString(
+                    api.providers[item.provider_ids[0].prov_id].name,
+                    25
+                  )
+                }}
+              </v-list-item>
+
+              <!-- item ID -->
+              <v-list-item
+                style="height: 50px; display: flex; align-items: center"
+              >
+                <v-icon
+                  size="40"
+                  :icon="mdiIdentifier"
+                  style="margin-left: -8px; padding-right: 10px"
+                />
+                {{ truncateString(item.item_id, 30) }}
+              </v-list-item>
+
+              <!-- link to web location of item (provider share link -->
+              <v-list-item
+                style="height: 50px; display: flex; align-items: center"
+                v-if="
+                  item.provider_ids[0].url && !item.provider.includes('file')
+                "
+              >
+                <v-icon
+                  size="40"
+                  :icon="mdiShareOutline"
+                  style="margin-left: -5px; padding-right: 5px"
+                />
+                <a :href="item.provider_ids[0].url" target="_blank">{{
+                  truncateString(item.provider_ids[0].url, 25)
+                }}</a>
+              </v-list-item>
+
+              <!-- quality details -->
+              <div style="height: 50px; display: flex; align-items: center">
+                <img
+                  height="30"
+                  width="50"
+                  :src="getQualityIcon(item.provider_ids[0].quality)"
+                  :style="
+                    $vuetify.theme.current.dark
+                      ? 'object-fit: contain;'
+                      : 'object-fit: contain;filter: invert(100%);'
+                  "
+                />
+                {{ getQualityDesc(item.provider_ids[0]) }}
+              </div>
+
+              <!-- track preview -->
+              <div v-if="item.media_type == MediaType.TRACK">
+                <div style="height: 50px; display: flex; align-items: center">
+                  <v-icon
+                    :icon="mdiHeadphones"
+                    size="40"
+                    style="margin-left: 10px; padding-right: 15px"
+                  />
+                  Preview
+                </div>
+                <div
+                  style="
+                    height: 50px;
+                    display: flex;
+                    align-items: center;
+                    margin-left: 10px;
+                    margin-right: 10px;
+                  "
+                  @mouseover="fetchPreviewUrl(item.provider, item.item_id)"
+                >
+                  <audio
+                    controls
+                    :src="previewUrls[`${item.provider}.${item.item_id}`]"
+                  ></audio>
+                </div>
+              </div>
+            </v-list>
+          </v-card>
+        </v-menu>
+
         <!-- menu button/icon -->
         <v-btn
-          v-if="showMenu"
+          v-if="showMenu && !showDetails"
           @click.stop="emit('menu', item)"
           :icon="mdiDotsVertical"
           variant="plain"
@@ -195,25 +305,41 @@ import {
   mdiHeart,
   mdiHeartOutline,
   mdiDotsVertical,
-  mdiCheckboxMarkedOutline,
+  mdiShareOutline,
   mdiAlphaEBox,
   mdiFolder,
+  mdiInformationOutline,
+  mdiHeadphones,
+  mdiWeb,
+  mdiIdentifier,
 } from "@mdi/js";
-import { ref, computed } from "vue";
+import { ref, computed, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { VTooltip } from "vuetify/components";
 
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcons from "./ProviderIcons.vue";
-import { iconHiRes } from "./ProviderIcons.vue";
+import {
+  iconHiRes,
+  getProviderIcon,
+  getQualityIcon,
+  getQualityDesc,
+} from "./ProviderIcons.vue";
 import type {
   Artist,
   BrowseFolder,
   MediaItem,
   MediaItemType,
+  ProviderType,
 } from "../plugins/api";
 import { api, MediaQuality, MediaType } from "../plugins/api";
-import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from "../utils";
+import {
+  formatDuration,
+  parseBool,
+  getArtistsString,
+  getBrowseFolderName,
+  truncateString,
+} from "../utils";
 import { useTheme } from "vuetify";
 import { useI18n } from "vue-i18n";
 
@@ -227,6 +353,7 @@ export interface Props {
   showDuration?: boolean;
   isSelected: boolean;
   showCheckboxes?: boolean;
+  showDetails?: boolean;
 }
 
 // global refs
@@ -234,6 +361,7 @@ const router = useRouter();
 const { t } = useI18n();
 const actionInProgress = ref(false);
 const theme = useTheme();
+const previewUrls = reactive<Record<string, string>>({});
 
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
@@ -282,5 +410,15 @@ const itemIsAvailable = function (item: MediaItem) {
     if (x.available && x.prov_id in api.providers) return true;
   }
   return false;
+};
+
+const fetchPreviewUrl = async function (
+  provider: ProviderType,
+  item_id: string
+) {
+  const key = `${provider}.${item_id}`;
+  if (key in previewUrls) return;
+  const url = await api.getTrackPreviewUrl(provider, item_id);
+  previewUrls[key] = url;
 };
 </script>

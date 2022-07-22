@@ -31,7 +31,7 @@
       :show-providers="true"
       :show-library="false"
       :load-data="loadAlbumVersions"
-      :sort-keys="['sort_name', 'year']"
+      :sort-keys="['provider', 'sort_name', 'year']"
       v-if="activeTab == 'versions'"
     />
   </section>
@@ -41,13 +41,20 @@
 import ItemsListing from "../components/ItemsListing.vue";
 import { filteredItems } from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
-import { MassEventType, type Album, type MassEvent, type MediaItemType } from "../plugins/api";
+import {
+  MassEventType,
+  type Album,
+  type MassEvent,
+  type MediaItemType,
+} from "../plugins/api";
 import { api, ProviderType } from "../plugins/api";
 import { watchEffect, ref, onMounted, onBeforeUnmount } from "vue";
+import { parseBool } from "@/utils";
 
 export interface Props {
   item_id: string;
   provider: string;
+  force_provider_version?: string;
 }
 const props = defineProps<Props>();
 const activeTab = ref("");
@@ -55,12 +62,16 @@ const activeTab = ref("");
 const itemDetails = ref<Album>();
 
 const loadItemDetails = async function () {
+  console.log(props);
   itemDetails.value = await api.getAlbum(
     props.provider as ProviderType,
     props.item_id,
+    true,
+    false,
+    parseBool(props.force_provider_version || "")
   );
   activeTab.value = "tracks";
-}
+};
 
 watchEffect(() => {
   // load info
