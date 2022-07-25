@@ -172,7 +172,7 @@
               :icon="mdiInformationOutline"
               size="30"
               class="listitem-action"
-              style="margin-left: 10px; margin-right: -15px"
+              style="margin-left: 10px; margin-right: 0px"
               v-bind="props"
             />
           </template>
@@ -266,7 +266,7 @@
 
         <!-- menu button/icon -->
         <v-btn
-          v-if="showMenu && !showDetails"
+          v-if="showMenu"
           @click.stop="emit('menu', item)"
           :icon="mdiDotsVertical"
           variant="plain"
