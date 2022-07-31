@@ -9,7 +9,9 @@
       <v-btn
         icon
         variant="plain"
-        @click="api.queueCommandGroupPower(player.player_id, !player.group_powered)"
+        @click="
+          api.queueCommandGroupPower(player.player_id, !player.group_powered)
+        "
         width="60"
         height="30"
         size="x-large"
@@ -18,12 +20,17 @@
       </v-btn>
       <span
         class="text-body-2"
-        style="position: absolute; margin-left: 65px;margin-top:-25px"
+        style="position: absolute; margin-left: 65px; margin-top: -25px"
         >{{ player.group_name }}</span
       >
       <div
         class="text-caption"
-        style="position: absolute; width: 60px; text-align: center; margin-left: 0px"
+        style="
+          position: absolute;
+          width: 60px;
+          text-align: center;
+          margin-left: 0px;
+        "
       >
         {{ player.group_volume_level }}
       </div>
@@ -37,7 +44,9 @@
         thumb-label
         :disabled="!player.group_powered"
         :model-value="Math.round(player.group_volume_level)"
-        @update:model-value="api.queueCommandGroupVolume(player.player_id, $event)"
+        @update:model-value="
+          api.queueCommandGroupVolume(player.player_id, $event)
+        "
       ></v-slider>
     </div>
     <v-divider
@@ -64,14 +73,26 @@
           <v-icon :icon="mdiPower"></v-icon>
         </v-btn>
         <span
-        class="text-body-2"
-        style="position: absolute; margin-left: 65px;margin-top:-25px"
-        >{{ childPlayer.name }}</span
-      >
+          v-if="player.group_members.includes(childPlayer.player_id)"
+          class="text-body-2"
+          style="position: absolute; margin-left: 65px; margin-top: -25px"
+          >{{ childPlayer.name }}</span
+        >
+        <span
+          v-else
+          class="text-body-2"
+          style="position: absolute; margin-left: 65px; margin-top: -25px"
+          >{{ childPlayer.group_name }}</span
+        >
       </span>
       <div
         class="text-caption"
-        style="position: absolute; width: 60px; text-align: center; margin-left: 0px"
+        style="
+          position: absolute;
+          width: 60px;
+          text-align: center;
+          margin-left: 0px;
+        "
       >
         {{ childPlayer.volume_level }}
       </div>
@@ -85,7 +106,9 @@
         thumb-label
         :disabled="!childPlayer.powered"
         :model-value="Math.round(childPlayer.volume_level)"
-        @update:model-value="api.queueCommandVolume(childPlayer.player_id, $event)"
+        @update:model-value="
+          api.queueCommandVolume(childPlayer.player_id, $event)
+        "
       ></v-slider>
     </div>
   </v-list>
