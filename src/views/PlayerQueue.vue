@@ -24,7 +24,7 @@
         theme="dark"
         :icon="mdiRadioTower"
         prominent
-        style="margin-right:10px;"
+        style="margin-right: 10px"
       >
         <b>{{ $t("queue_radio_enabled") }}</b>
         <br />
@@ -195,14 +195,7 @@
         <v-card-text v-if="selectedItem">
           <v-list>
             <!-- play now -->
-            <v-list-item
-              @click="
-                api.queueCommandPlayIndex(
-                  activePlayerQueue?.queue_id,
-                  (selectedItem as QueueItem).item_id
-                )
-              "
-            >
+            <v-list-item @click="queueCommand(selectedItem, 'play_now')">
               <v-list-item-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiPlayCircleOutline"></v-icon>
               </v-list-item-avatar>
@@ -211,14 +204,7 @@
             <v-divider></v-divider>
 
             <!-- play next (move to next in line) -->
-            <v-list-item
-              @click="
-                api.queueCommandMoveNext(
-                  activePlayerQueue?.queue_id,
-                  (selectedItem as QueueItem).item_id
-                )
-              "
-            >
+            <v-list-item @click="queueCommand(selectedItem, 'move_next')">
               <v-list-item-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiSkipNextCircleOutline"></v-icon>
               </v-list-item-avatar>
@@ -227,14 +213,7 @@
             <v-divider></v-divider>
 
             <!-- move up -->
-            <v-list-item
-              @click="
-                api.queueCommandMoveUp(
-                  activePlayerQueue?.queue_id,
-                  (selectedItem as QueueItem).item_id
-                )
-              "
-            >
+            <v-list-item @click="queueCommand(selectedItem, 'up')">
               <v-list-item-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiArrowUp"></v-icon>
               </v-list-item-avatar>
@@ -243,14 +222,7 @@
             <v-divider></v-divider>
 
             <!-- move down -->
-            <v-list-item
-              @click="
-                api.queueCommandMoveDown(
-                  activePlayerQueue?.queue_id,
-                  (selectedItem as QueueItem).item_id
-                )
-              "
-            >
+            <v-list-item @click="queueCommand(selectedItem, 'down')">
               <v-list-item-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiArrowDown"></v-icon>
               </v-list-item-avatar>
@@ -259,14 +231,7 @@
             <v-divider></v-divider>
 
             <!-- delete -->
-            <v-list-item
-              @click="
-                api.queueCommandDelete(
-                  activePlayerQueue?.queue_id,
-                  (selectedItem as QueueItem).item_id
-                )
-              "
-            >
+            <v-list-item @click="queueCommand(selectedItem, 'delete')">
               <v-list-item-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiDelete"></v-icon>
               </v-list-item-avatar>
@@ -725,6 +690,22 @@ const gotoItem = function (item: MediaItemType) {
     name: item.media_type,
     params: { item_id: item.item_id, provider: item.provider },
   });
+};
+
+const queueCommand = function (item: QueueItem | undefined, command: string) {
+  closeContextMenu();
+  if (!item || !activePlayerQueue.value) return;
+  if (command == "play_now") {
+    api.queueCommandPlayIndex(activePlayerQueue?.value.queue_id, item.item_id);
+  } else if (command == "move_next") {
+    api.queueCommandMoveNext(activePlayerQueue?.value.queue_id, item.item_id);
+  } else if (command == "up") {
+    api.queueCommandMoveUp(activePlayerQueue?.value.queue_id, item.item_id);
+  } else if (command == "down") {
+    api.queueCommandMoveDown(activePlayerQueue?.value.queue_id, item.item_id);
+  } else if (command == "delete") {
+    api.queueCommandDelete(activePlayerQueue?.value.queue_id, item.item_id);
+  }
 };
 
 const closeContextMenu = function () {
