@@ -373,7 +373,7 @@ export enum QueueOption {
   REPLACE = "replace",
   NEXT = "next",
   ADD = "add",
-  RADIO = "radio",
+  REPLACE_NEXT = "replace_next",
 }
 
 export type MassEvent = {
@@ -887,13 +887,14 @@ export class MusicAssistantApi {
 
   public playMedia(
     media: string | string[] | MediaItemType | MediaItemType[],
-    command: QueueOption = QueueOption.PLAY,
-    queue_id?: string
+    option: QueueOption = QueueOption.PLAY,
+    radio_mode = false,
+    queue_id?: string,
   ) {
     if (!queue_id) {
       queue_id = store.selectedPlayer?.active_queue;
     }
-    this.executeCmd("play_media", { queue_id, command, media });
+    this.executeCmd("play_media", { queue_id, option, media, radio_mode });
   }
 
   public startSync(
