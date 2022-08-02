@@ -481,7 +481,7 @@ export class MusicAssistantApi {
         .replace("wss://", "https://")
         .replace("/websocket", "");
     }
-    console.log("store.apiBaseUrl", store.apiBaseUrl)
+    console.log("store.apiBaseUrl", store.apiBaseUrl);
 
     store.apiInitialized = true;
     console.log("conn", this._conn);
@@ -967,12 +967,12 @@ export class MusicAssistantApi {
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
     } else if (
-      msg.event == MassEventType.BACKGROUND_JOB_UPDATED ||
-      MassEventType.BACKGROUND_JOB_FINISHED
+      msg.event ==
+        (MassEventType.BACKGROUND_JOB_UPDATED ||
+          MassEventType.BACKGROUND_JOB_FINISHED) &&
+      msg.data
     ) {
-      this.jobs.value = this.jobs.value.filter(
-        (x) => x.id !== msg.data?.id && x.status !== JobStatus.FINISHED
-      );
+      this.jobs.value = this.jobs.value.filter((x) => x.id !== msg.data?.id);
       this.jobs.value.push(msg.data as BackgroundJob);
     }
     // signal + log all events
