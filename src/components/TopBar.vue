@@ -48,11 +48,14 @@
             </v-toolbar>
 
             <v-list>
-              <v-list-item v-for="(item, index) in api.jobs.value" :key="index">
-                <v-list-item-avatar
-                  :icon="getJobStatusIcon(item.status)"
-                ></v-list-item-avatar>
-                <v-list-item-title>{{ item.name }}</v-list-item-title>
+              <v-list-item
+                v-for="(item, index) in api.jobs.value"
+                :key="index"
+                :title="item.name"
+              >
+                <template v-slot:prepend>
+                  <v-avatar :icon="getJobStatusIcon(item.status)"></v-avatar>
+                </template>
               </v-list-item>
             </v-list>
           </v-card>
@@ -73,10 +76,12 @@
             <v-list-item
               v-for="(item, index) in store.topBarContextMenuItems"
               :key="index"
-              @click="item.action"
+              :title="$t(item.label, item.labelArgs)"
+              @click="item.action ? item.action() : ''"
             >
-              <v-list-item-avatar :icon="item.icon"></v-list-item-avatar>
-              <v-list-item-title>{{ $t(item.label, item.labelArgs) }}</v-list-item-title>
+              <template v-slot:prepend>
+                  <v-avatar :icon="item.icon"></v-avatar>
+                </template>
             </v-list-item>
           </v-list>
         </v-menu>

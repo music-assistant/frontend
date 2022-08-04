@@ -27,7 +27,7 @@
     />
     <!-- now playing media -->
     <v-list-item
-      style="height: 60px; width: 100%; margin-top: -5px; padding-bottom: 20px"
+      style="height: 60px; width: 100%; margin-top: -5px; padding-bottom: 30px;padding-top: 5px"
       lines="two"
       v-if="activePlayerQueue?.active && curQueueItem"
     >
@@ -129,18 +129,16 @@
                   $t("stream_details")
                 }}</span>
                 <v-divider></v-divider>
-                <v-list-item
-                  style="height: 50px; display: flex; align-items: center"
-                >
+                <div style="height: 50px; display: flex; align-items: center">
                   <img
                     height="30"
                     width="50"
                     center
                     :src="getProviderIcon(streamDetails.provider)"
-                    style="object-fit: contain; margin-left: -15px"
+                    style="object-fit: contain;"
                   />
                   {{ $t("providers." + streamDetails.provider) }}
-                </v-list-item>
+                </div>
 
                 <div style="height: 50px; display: flex; align-items: center">
                   <img
@@ -456,8 +454,6 @@ const { mobile } = useDisplay();
 const theme = useTheme();
 
 // local refs
-const showStreamDetails = ref(false);
-const curMediaItem = ref<Track | Radio>();
 const fanartImage = ref();
 
 // computed properties
@@ -501,20 +497,10 @@ const itemClick = function (item: MediaItemType) {
 watch(
   () => curQueueItem.value?.item_id,
   async (newVal) => {
-    if (curQueueItem.value == undefined) {
-      curMediaItem.value = undefined;
-    } else if (curQueueItem.value.media_item) {
-      curMediaItem.value = curQueueItem.value.media_item;
-      // request full track info
-      curMediaItem.value = await api?.getItem(
-        curQueueItem.value.media_item.uri
-      );
-    }
-
-    if (curMediaItem.value) {
+    if (curQueueItem.value?.media_item) {
       fanartImage.value =
-        (await getImageThumbForItem(curMediaItem.value, ImageType.FANART)) ||
-        (await getImageThumbForItem(curMediaItem.value, ImageType.THUMB));
+        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.FANART)) ||
+        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB));
     }
   }
 );

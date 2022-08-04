@@ -14,6 +14,7 @@ interface Store {
   topBarTextColor: string;
   defaultTopBarTitle: string;
   topBarContextMenuItems: ContextMenuItem[];
+  blockGlobalPlayMenu: boolean;
   alwaysShowMenuButton: boolean;
   apiInitialized: boolean;
   apiBaseUrl: string;
@@ -34,6 +35,7 @@ export const store: Store = reactive({
   topBarTextColor: "#ffffff",
   defaultTopBarTitle: "Music Assistant",
   topBarContextMenuItems: [],
+  blockGlobalPlayMenu: false,
   alwaysShowMenuButton: false,
   apiInitialized: false,
   apiBaseUrl: "",

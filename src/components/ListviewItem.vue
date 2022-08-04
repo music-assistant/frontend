@@ -7,6 +7,7 @@
       style="height: 60px"
       :disabled="!itemIsAvailable(item)"
       lines="two"
+      density="compact"
     >
       <template v-slot:prepend>
         <div v-if="showCheckboxes" class="listitem-thumb">
@@ -216,15 +217,13 @@
               }}</span>
               <v-divider></v-divider>
               <!-- provider icon + name -->
-              <v-list-item
-                style="height: 50px; display: flex; align-items: center"
-              >
+              <div style="height: 50px; display: flex; align-items: center">
                 <img
                   height="30"
                   width="50"
                   center
                   :src="getProviderIcon(item.provider)"
-                  style="object-fit: contain; margin-left: -15px"
+                  style="object-fit: contain;"
                 />
                 {{
                   truncateString(
@@ -232,23 +231,20 @@
                     25
                   )
                 }}
-              </v-list-item>
+              </div>
 
               <!-- item ID -->
-              <v-list-item
-                style="height: 50px; display: flex; align-items: center"
-              >
+              <div style="height: 50px; display: flex; align-items: center">
                 <v-icon
                   size="40"
                   :icon="mdiIdentifier"
-                  style="margin-left: -8px; padding-right: 10px"
+                  style="padding-right: 10px"
                 />
                 {{ truncateString(item.item_id, 30) }}
-              </v-list-item>
+              </div>
 
               <!-- link to web location of item (provider share link -->
-              <v-list-item
-                style="height: 50px; display: flex; align-items: center"
+              <div style="height: 50px; display: flex; align-items: center"
                 v-if="
                   item.provider_ids[0].url && !item.provider.includes('file')
                 "
@@ -261,7 +257,7 @@
                 <a :href="item.provider_ids[0].url" target="_blank">{{
                   truncateString(item.provider_ids[0].url, 25)
                 }}</a>
-              </v-list-item>
+              </div>
 
               <!-- quality details -->
               <div style="height: 50px; display: flex; align-items: center">
@@ -314,7 +310,7 @@
           @click.stop="emit('menu', item)"
           :icon="mdiDotsVertical"
           variant="plain"
-          style="position: absolute; right: -15px"
+          style="position: absolute; right: -3px;width:10px"
         ></v-btn>
       </template>
     </v-list-item>

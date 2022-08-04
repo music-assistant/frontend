@@ -5,7 +5,7 @@ import {
   type Connection,
   createConnection,
   ERR_HASS_HOST_REQUIRED,
-  getAuth,
+  getAuth
 } from "home-assistant-js-websocket";
 import { reactive, ref } from "vue";
 
@@ -16,7 +16,7 @@ export enum MediaType {
   PLAYLIST = "playlist",
   RADIO = "radio",
   FOLDER = "folder",
-  UNKNOWN = "unknown",
+  UNKNOWN = "unknown"
 }
 
 export enum MediaQuality {
@@ -29,7 +29,7 @@ export enum MediaQuality {
   LOSSLESS_HI_RES_1 = 20, // 44.1/48khz 24 bits HI-RES
   LOSSLESS_HI_RES_2 = 21, // 88.2/96khz 24 bits HI-RES
   LOSSLESS_HI_RES_3 = 22, // 176/192khz 24 bits HI-RES
-  LOSSLESS_HI_RES_4 = 23, // above 192khz 24 bits HI-RES
+  LOSSLESS_HI_RES_4 = 23 // above 192khz 24 bits HI-RES
 }
 
 export enum ProviderType {
@@ -42,7 +42,7 @@ export enum ProviderType {
   TUNEIN = "tunein",
   YTMUSIC = "ytmusic",
   DATABASE = "database",
-  URL = "url",
+  URL = "url"
 }
 export interface MediaItemProviderId {
   item_id: string;
@@ -65,7 +65,7 @@ export enum LinkType {
   TIKTOK = "tiktok",
   DISCOGS = "discogs",
   WIKIPEDIA = "wikipedia",
-  ALLMUSIC = "allmusic",
+  ALLMUSIC = "allmusic"
 }
 
 export enum ImageType {
@@ -79,7 +79,7 @@ export enum ImageType {
   BACK = "back",
   CDART = "cdart",
   EMBEDDED_THUMB = "embedded_thumb",
-  OTHER = "other",
+  OTHER = "other"
 }
 
 export interface MediaItemLink {
@@ -141,7 +141,7 @@ export enum AlbumType {
   ALBUM = "album",
   SINGLE = "single",
   COMPILATION = "compilation",
-  UNKNOWN = "unknown",
+  UNKNOWN = "unknown"
 }
 
 export interface Album extends MediaItem {
@@ -209,7 +209,7 @@ export enum ContentType {
   PCM_S32LE = "s32le", // PCM signed 32-bit little-endian
   PCM_F32LE = "f32le", // PCM 32-bit floating-point little-endian
   PCM_F64LE = "f64le", // PCM 64-bit floating-point little-endian
-  UNKNOWN = "?",
+  UNKNOWN = "?"
 }
 
 export interface StreamDetails {
@@ -234,7 +234,7 @@ export enum PlayerState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
-  OFF = "off",
+  OFF = "off"
 }
 
 export interface DeviceInfo {
@@ -277,19 +277,19 @@ export enum CrossFadeMode {
   DISABLED = "disabled", // no crossfading at all
   STRICT = "strict", // do not crossfade tracks of same album
   SMART = "smart", // crossfade if possible (do not crossfade different sample rates)
-  ALWAYS = "always", // all tracks - resample to fixed sample rate
+  ALWAYS = "always" // all tracks - resample to fixed sample rate
 }
 
 export enum RepeatMode {
   OFF = "off", // no repeat at all
   ONE = "one", // repeat current/single track
-  ALL = "all", // repeat entire queue
+  ALL = "all" // repeat entire queue
 }
 
 export enum MetadataMode {
   DISABLED = "disabled", // do not notify icy support
   DEFAULT = "default", // enable icy if player requests it, default chunksize
-  LEGACY = "legacy", // enable icy but with legacy 8kb chunksize, requires mp3
+  LEGACY = "legacy" // enable icy but with legacy 8kb chunksize, requires mp3
 }
 
 export interface QueueSettings {
@@ -346,7 +346,7 @@ export enum QueueCommand {
   MOVE_NEXT = "move_next",
   DELETE = "delete",
   GROUP_POWER = "group_power",
-  GROUP_VOLUME = "group_volume",
+  GROUP_VOLUME = "group_volume"
 }
 
 export enum MassEventType {
@@ -365,7 +365,7 @@ export enum MassEventType {
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
   // special types for local subscriptions only
-  ALL = "*",
+  ALL = "*"
 }
 
 export enum QueueOption {
@@ -373,11 +373,11 @@ export enum QueueOption {
   REPLACE = "replace",
   NEXT = "next",
   ADD = "add",
-  REPLACE_NEXT = "replace_next",
+  REPLACE_NEXT = "replace_next"
 }
 
 export type MassEvent = {
-  event: MassEventType;
+  type: MassEventType;
   object_id?: string;
   data?: Record<string, any>;
 };
@@ -387,7 +387,7 @@ export enum JobStatus {
   RUNNING = "running",
   CANCELLED = "cancelled",
   FINISHED = "success",
-  ERROR = "error",
+  ERROR = "error"
 }
 
 export type BackgroundJob = {
@@ -421,7 +421,7 @@ export enum MusicProviderFeature {
   SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
-  PLAYLIST_CREATE = "playlist_create",
+  PLAYLIST_CREATE = "playlist_create"
 }
 
 export interface MusicProvider {
@@ -489,14 +489,7 @@ export class MusicAssistantApi {
     // load initial data from api
     this._fetchState();
     // subscribe to mass events
-    this._conn?.subscribeMessage(
-      (msg: MassEvent) => {
-        this.handleMassEvent(msg);
-      },
-      {
-        type: "mass/subscribe",
-      }
-    );
+    this._conn?.subscribeEvents((x) => this.handleHassEvent(x), "mass_event");
   }
 
   public subscribe(eventFilter: MassEventType, callback: CallableFunction) {
@@ -570,7 +563,7 @@ export class MusicAssistantApi {
       item_id,
       lazy,
       refresh,
-      force_provider_version,
+      force_provider_version
     });
   }
 
@@ -587,7 +580,7 @@ export class MusicAssistantApi {
   ): Promise<string> {
     return this.getData("track/preview", {
       provider,
-      item_id,
+      item_id
     });
   }
 
@@ -605,7 +598,7 @@ export class MusicAssistantApi {
       limit,
       library,
       search,
-      album_artists_only: albumArtistsOnly,
+      album_artists_only: albumArtistsOnly
     });
   }
 
@@ -654,7 +647,7 @@ export class MusicAssistantApi {
       item_id,
       lazy,
       refresh,
-      force_provider_version,
+      force_provider_version
     });
   }
 
@@ -876,7 +869,7 @@ export class MusicAssistantApi {
       this.executeCmd("playerqueue/command", {
         queue_id,
         command,
-        command_arg,
+        command_arg
       });
     }, 200);
   }
@@ -889,12 +882,63 @@ export class MusicAssistantApi {
     media: string | string[] | MediaItemType | MediaItemType[],
     option: QueueOption = QueueOption.PLAY,
     radio_mode = false,
-    queue_id?: string,
+    queue_id?: string
   ) {
     if (!queue_id) {
       queue_id = store.selectedPlayer?.active_queue;
     }
     this.executeCmd("play_media", { queue_id, option, media, radio_mode });
+  }
+
+  public async playPlaylistFromIndex(
+    playlist: Playlist,
+    startIndex: number,
+    queue_id?: string
+  ) {
+    const tracks = await this.getPlaylistTracks(
+      playlist.provider,
+      playlist.item_id
+    );
+    // to account for shuffle, we play the first track and append the rest
+    this.playMedia(
+      tracks[startIndex],
+      QueueOption.REPLACE,
+      undefined,
+      queue_id
+    );
+    this.playMedia(
+      tracks.slice(startIndex + 1),
+      QueueOption.ADD,
+      undefined,
+      queue_id
+    );
+  }
+
+  public async playAlbumFromItem(
+    album: Album,
+    startItem: Track,
+    queue_id?: string
+  ) {
+    const tracks = await this.getAlbumTracks(album.provider, album.item_id);
+    let startIndex = 0;
+    tracks.forEach(function (track, i) {
+      if (track.item_id == startItem.item_id) {
+        startIndex = i;
+      }
+    });
+    // to account for shuffle, we play the first track and append the rest
+    this.playMedia(
+      tracks[startIndex],
+      QueueOption.REPLACE,
+      undefined,
+      queue_id
+    );
+    this.playMedia(
+      tracks.slice(startIndex + 1),
+      QueueOption.ADD,
+      undefined,
+      queue_id
+    );
   }
 
   public startSync(
@@ -923,7 +967,7 @@ export class MusicAssistantApi {
           },
           saveTokens: (tokens: any) => {
             localStorage.hassTokens = JSON.stringify(tokens);
-          },
+          }
         }
       : {};
     try {
@@ -946,48 +990,51 @@ export class MusicAssistantApi {
     return connection;
   }
 
-  private handleMassEvent(msg: MassEvent) {
-    if (msg.event == MassEventType.QUEUE_ADDED) {
-      const queue = msg.data as PlayerQueue;
+  private handleHassEvent(msg: { event_type: string; data: MassEvent }) {
+    const massEvent: MassEvent = msg.data;
+    if (massEvent.type == MassEventType.QUEUE_ADDED) {
+      const queue = massEvent.data as PlayerQueue;
       this.queues[queue.queue_id] = queue;
-    } else if (msg.event == MassEventType.QUEUE_UPDATED) {
-      const queue = msg.data as PlayerQueue;
+    } else if (massEvent.type == MassEventType.QUEUE_UPDATED) {
+      const queue = massEvent.data as PlayerQueue;
       if (queue.queue_id in this.queues)
         Object.assign(this.queues[queue.queue_id], queue);
       else this.queues[queue.queue_id] = queue;
-    } else if (msg.event == MassEventType.QUEUE_TIME_UPDATED) {
-      const queueId = msg.object_id as string;
+    } else if (massEvent.type == MassEventType.QUEUE_TIME_UPDATED) {
+      const queueId = massEvent.object_id as string;
       if (queueId in this.queues)
-        this.queues[queueId].elapsed_time = msg.data as unknown as number;
-    } else if (msg.event == MassEventType.PLAYER_ADDED) {
-      const player = msg.data as Player;
+        this.queues[queueId].elapsed_time = massEvent.data as unknown as number;
+    } else if (massEvent.type == MassEventType.PLAYER_ADDED) {
+      const player = massEvent.data as Player;
       this.players[player.player_id] = player;
-    } else if (msg.event == MassEventType.PLAYER_UPDATED) {
-      const player = msg.data as Player;
+    } else if (massEvent.type == MassEventType.PLAYER_UPDATED) {
+      const player = massEvent.data as Player;
       if (player.player_id in this.players)
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
     } else if (
-      msg.event ==
+      massEvent.type ==
         (MassEventType.BACKGROUND_JOB_UPDATED ||
           MassEventType.BACKGROUND_JOB_FINISHED) &&
-      msg.data
+      massEvent.data
     ) {
-      this.jobs.value = this.jobs.value.filter((x) => x.id !== msg.data?.id);
-      this.jobs.value.push(msg.data as BackgroundJob);
+      this.jobs.value = this.jobs.value.filter(
+        (x) => x.id !== massEvent.data?.id
+      );
+      this.jobs.value.push(massEvent.data as BackgroundJob);
     }
     // signal + log all events
-    this.signalEvent(msg);
-    if (msg.event !== MassEventType.QUEUE_TIME_UPDATED) {
-      console.log("[event]", msg);
+    if (massEvent.type !== MassEventType.QUEUE_TIME_UPDATED) {
+      console.log("[event]", massEvent);
     }
+    this.signalEvent(massEvent);
   }
 
-  private signalEvent(msg: MassEvent) {
+  private signalEvent(massEvent: MassEvent) {
     // signal event to all listeners
     for (const listener of this._wsEventCallbacks) {
-      if (listener[0] === MassEventType.ALL || listener[0] === msg.event) {
-        listener[1](msg);
+      if (listener[0] === MassEventType.ALL || listener[0] === massEvent.type) {
+        listener[1](massEvent);
       }
     }
   }
@@ -998,7 +1045,7 @@ export class MusicAssistantApi {
     return (this._conn as Connection).sendMessagePromise({
       id: this._lastId,
       type: `mass/${endpoint}`,
-      ...args,
+      ...args
     });
   }
 
@@ -1008,7 +1055,7 @@ export class MusicAssistantApi {
     (this._conn as Connection).sendMessage({
       id: this._lastId,
       type: `mass/${endpoint}`,
-      ...args,
+      ...args
     });
   }
 }

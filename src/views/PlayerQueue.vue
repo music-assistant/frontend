@@ -195,47 +195,52 @@
         <v-card-text v-if="selectedItem">
           <v-list>
             <!-- play now -->
-            <v-list-item @click="queueCommand(selectedItem, 'play_now')">
-              <v-list-item-avatar style="padding-right: 10px">
+            <v-list-item @click="queueCommand(selectedItem, 'play_now')" :title="$t('play_now')" >
+            <template v-slot:prepend>
+              <v-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiPlayCircleOutline"></v-icon>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t("play_now") }}</v-list-item-title>
+              </v-avatar>
+              </template>
             </v-list-item>
             <v-divider></v-divider>
 
             <!-- play next (move to next in line) -->
-            <v-list-item @click="queueCommand(selectedItem, 'move_next')">
-              <v-list-item-avatar style="padding-right: 10px">
+            <v-list-item @click="queueCommand(selectedItem, 'move_next')" :title="$t('play_next')">
+            <template v-slot:prepend>
+            <v-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiSkipNextCircleOutline"></v-icon>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t("play_next") }}</v-list-item-title>
+              </v-avatar>
+              </template>
             </v-list-item>
             <v-divider></v-divider>
 
             <!-- move up -->
-            <v-list-item @click="queueCommand(selectedItem, 'up')">
-              <v-list-item-avatar style="padding-right: 10px">
+            <v-list-item @click="queueCommand(selectedItem, 'up')" :title="$t('queue_move_up')">
+            <template v-slot:prepend>
+            <v-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiArrowUp"></v-icon>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t("queue_move_up") }}</v-list-item-title>
+              </v-avatar></template>
+              
             </v-list-item>
             <v-divider></v-divider>
 
             <!-- move down -->
-            <v-list-item @click="queueCommand(selectedItem, 'down')">
-              <v-list-item-avatar style="padding-right: 10px">
+            <v-list-item @click="queueCommand(selectedItem, 'down')" :title="$t('queue_move_down')">
+            <template v-slot:prepend>
+            <v-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiArrowDown"></v-icon>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t("queue_move_down") }}</v-list-item-title>
+              </v-avatar>
+            </template>
             </v-list-item>
             <v-divider></v-divider>
 
             <!-- delete -->
-            <v-list-item @click="queueCommand(selectedItem, 'delete')">
-              <v-list-item-avatar style="padding-right: 10px">
+            <v-list-item @click="queueCommand(selectedItem, 'delete')" :title='$t("queue_delete")'>
+             <template v-slot:prepend>
+             <v-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiDelete"></v-icon>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t("queue_delete") }}</v-list-item-title>
+              </v-avatar></template>
+              
             </v-list-item>
             <v-divider></v-divider>
 
@@ -246,12 +251,14 @@
                   ? gotoItem(selectedItem.media_item)
                   : ''
               "
+              :title='$t("show_info")'
               v-if="selectedItem?.media_item?.media_type == MediaType.TRACK"
             >
-              <v-list-item-avatar style="padding-right: 10px">
+            <template v-slot:prepend>
+            <v-avatar style="padding-right: 10px">
                 <v-icon :icon="mdiInformationOutline"></v-icon>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t("show_info") }}</v-list-item-title>
+              </v-avatar></template>
+              
             </v-list-item>
             <v-divider></v-divider>
           </v-list>

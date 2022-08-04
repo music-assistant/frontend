@@ -35,20 +35,27 @@
             scrollToTop(player.player_id);
           "
         >
-          <v-list-item dense two-line style="padding: 0; margin-left: 9px">
-            <v-icon
-              size="45"
-              :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
-              color="accent"
-            />
-            <div style="margin-left: 10px; text-align: left">
-              <v-list-item-title class="text-subtitle-1"
-                ><b>{{ player.group_name.substring(0, 25) }}</b></v-list-item-title
-              >
-              <v-list-item-subtitle :key="player.state" class="text-body-2">
+          <v-list-item density="compact">
+            <template v-slot:prepend>
+              <v-icon
+                size="45"
+                :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
+                color="accent"
+                style="padding-left:0px;padding-right:0px;margin-left:-10px;margin-right: 10px;width:40px"
+              />
+            </template>
+            <template v-slot:title>
+              <div>
+                <div class="text-subtitle-1">
+                  <b>{{ player.group_name.substring(0, 25) }}</b>
+                </div>
+              </div>
+            </template>
+            <template v-slot:subtitle>
+              <div :key="player.state" class="text-body-2">
                 {{ $t("state." + player.state) }}
-              </v-list-item-subtitle>
-            </div>
+              </div>
+            </template>
           </v-list-item>
         </v-expansion-panel-title>
         <v-expansion-panel-text variant="contain">

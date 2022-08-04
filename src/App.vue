@@ -197,7 +197,7 @@ div.v-navigation-drawer__scrim {
   padding-left: 0px;
   margin-right: 10px;
   margin-left: -15px;
-  margin-top: 5px;
+  margin-top: 2px;
   width: 50px;
   height: 50px;
 }

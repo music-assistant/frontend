@@ -406,11 +406,13 @@ const onSelect = function (item: MediaItemType, selected: boolean) {
       }
     }
   }
+  store.blockGlobalPlayMenu = selectedItems.value.length > 0;
 };
 
 const onClearSelection = function () {
   selectedItems.value = [];
   showCheckboxes.value = false;
+  store.blockGlobalPlayMenu = false;
 };
 
 const toggleCheckboxes = function () {

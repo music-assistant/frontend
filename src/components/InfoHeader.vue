@@ -44,10 +44,7 @@
           <!-- other details -->
           <div style="padding-bottom: 10px">
             <!-- version -->
-            <v-card-subtitle
-              v-if="'version' in item && item.version"
-              class="caption"
-            >
+            <v-card-subtitle v-if="'version' in item && item.version" class="caption">
               {{ item.version }}
             </v-card-subtitle>
 
@@ -62,10 +59,7 @@
                 color="primary"
                 :icon="mdiAccountMusic"
               ></v-icon>
-              <span
-                v-for="(artist, artistindex) in item.artists"
-                :key="artist.item_id"
-              >
+              <span v-for="(artist, artistindex) in item.artists" :key="artist.item_id">
                 <a style="color: accent" @click="artistClick(artist)">{{
                   artist.name
                 }}</a>
@@ -79,10 +73,7 @@
             </v-card-subtitle>
 
             <!-- album artist -->
-            <v-card-subtitle
-              v-if="'artist' in item && item.artist"
-              class="title"
-            >
+            <v-card-subtitle v-if="'artist' in item && item.artist" class="title">
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
                 small
@@ -124,7 +115,9 @@
                   color="primary"
                   v-bind="props"
                   :prepend-icon="mdiPlayCircle"
-                  :disabled="!store.selectedPlayer?.available"
+                  :disabled="
+                    !store.selectedPlayer?.available || store.blockGlobalPlayMenu
+                  "
                 >
                   {{ $t("play") }}
                 </v-btn>
@@ -136,14 +129,14 @@
                   <v-list-item
                     v-for="menuItem in getPlayMenuItems([item])"
                     :key="menuItem.label"
-                    @click="menuItem.action"
+                    :title="$t(menuItem.label, menuItem.labelArgs)"
+                    @click="menuItem.action ? menuItem.action() : ''"
                   >
-                    <v-list-item-avatar style="padding-right: 10px">
-                      <v-icon :icon="menuItem.icon"></v-icon>
-                    </v-list-item-avatar>
-                    <v-list-item-title>{{
-                      $t(menuItem.label, menuItem.labelArgs)
-                    }}</v-list-item-title>
+                    <template v-slot:prepend>
+                      <v-avatar style="padding-right: 10px">
+                        <v-icon :icon="menuItem.icon"></v-icon>
+                      </v-avatar>
+                    </template>
                   </v-list-item>
                 </v-list>
               </v-card>
@@ -232,10 +225,7 @@ import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { truncateString } from "@/utils";
-import {
-  getPlayMenuItems,
-  getContextMenuItems,
-} from "./MediaItemContextMenu.vue";
+import { getPlayMenuItems, getContextMenuItems } from "./MediaItemContextMenu.vue";
 
 // properties
 export interface Props {
@@ -246,8 +236,7 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
 
-const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
-  .href;
+const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url).href;
 
 const { t } = useI18n();
 const router = useRouter();
@@ -274,10 +263,7 @@ watchEffect(async () => {
       (await getImageThumbForItem(props.item, ImageType.FANART)) ||
       (await getImageThumbForItem(props.item, ImageType.THUMB));
 
-    store.topBarContextMenuItems = getContextMenuItems(
-      [props.item],
-      props.item
-    );
+    store.topBarContextMenuItems = getContextMenuItems([props.item], props.item);
   }
 });
 

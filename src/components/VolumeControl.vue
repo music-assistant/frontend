@@ -18,11 +18,9 @@
       >
         <v-icon :icon="mdiPower"></v-icon>
       </v-btn>
-      <span
-        class="text-body-2"
-        style="position: absolute; margin-left: 65px; margin-top: -25px"
-        >{{ player.group_name }}</span
-      >
+      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
+        player.group_name
+      }}</span>
       <div
         class="text-caption"
         style="
@@ -75,13 +73,13 @@
         <span
           v-if="player.group_members.includes(childPlayer.player_id)"
           class="text-body-2"
-          style="position: absolute; margin-left: 65px; margin-top: -25px"
+          style="position: absolute; margin-top: 3px"
           >{{ childPlayer.name }}</span
         >
         <span
           v-else
           class="text-body-2"
-          style="position: absolute; margin-left: 65px; margin-top: -25px"
+          style="position: absolute; margin-top: 3px"
           >{{ childPlayer.group_name }}</span
         >
       </span>
