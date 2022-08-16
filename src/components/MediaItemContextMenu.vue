@@ -1,169 +1,154 @@
 <template>
-  <v-overlay
+  <v-dialog
     :model-value="modelValue"
     class="align-center justify-center"
     :scrim="false"
+    :fullscreen="true"
   >
-    <v-menu class="fullscreen-menu" :model-value="modelValue">
-      <v-card>
-        <v-toolbar density="default" dark color="primary">
-          <v-icon :icon="mdiPlayCircleOutline"></v-icon>
-          <v-toolbar-title style="padding-left: 10px" v-if="showPlaylistsMenu">
-            <b>{{ $t("add_playlist") }}</b>
-            <span v-if="!$vuetify.display.mobile">
-              | {{ header }}
-            </span></v-toolbar-title
-          >
-          <v-toolbar-title style="padding-left: 10px" v-else
-            ><b>{{ header }}</b>
-          </v-toolbar-title>
-          <v-btn :icon="mdiClose" dark text @click="close()"></v-btn>
-        </v-toolbar>
-        <!-- play contextmenu items -->
-        <v-card-text
-          v-if="
-            enablePlayItems && !showPlaylistsMenu && playMenuItems.length > 0
-          "
+    <v-card>
+      <v-toolbar density="default" dark color="primary">
+        <v-icon :icon="mdiPlayCircleOutline"></v-icon>
+        <v-toolbar-title style="padding-left: 10px" v-if="showPlaylistsMenu">
+          <b>{{ $t("add_playlist") }}</b>
+          <span v-if="!$vuetify.display.mobile"> | {{ header }} </span></v-toolbar-title
         >
-          <v-select
-            :label="$t('play_on')"
-            :model-value="store.selectedPlayer?.player_id"
-            :items="availablePlayers"
-            @update:model-value="
-              (newVal) => {
-                store.selectedPlayer = api.players[newVal];
-              }
-            "
-            hide-details
-          ></v-select>
+        <v-toolbar-title style="padding-left: 10px" v-else
+          ><b>{{ header }}</b>
+        </v-toolbar-title>
+        <v-btn :icon="mdiClose" dark text @click="close()"></v-btn>
+      </v-toolbar>
+      <!-- play contextmenu items -->
+      <v-card-text
+        v-if="enablePlayItems && !showPlaylistsMenu && playMenuItems.length > 0"
+      >
+        <v-select
+          :label="$t('play_on')"
+          :model-value="store.selectedPlayer?.player_id"
+          :items="availablePlayers"
+          @update:model-value="
+            (newVal) => {
+              store.selectedPlayer = api.players[newVal];
+            }
+          "
+          hide-details
+        ></v-select>
 
-          <v-list>
-            <div v-for="item of playMenuItems" :key="item.label">
-              <v-list-item
-                @click="itemClicked(item)"
-                :title="$t(item.label, item.labelArgs)"
-                density="default"
-              >
-                <template v-slot:prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon :icon="item.icon"></v-icon>
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider></v-divider>
-            </div>
-          </v-list>
-        </v-card-text>
-        <!-- action contextmenu items -->
-        <v-card-text
-          v-if="
-            enableActionMenuItems &&
-            !showPlaylistsMenu &&
-            actionMenuItems.length > 0
-          "
-          style="padding-top: 0; margin-top: -10px; padding-bottom: 0"
-        >
-          <v-list-item-subtitle style="margin-left: 10px">{{
-            $t("actions")
-          }}</v-list-item-subtitle>
-          <v-list>
-            <div v-for="item of actionMenuItems" :key="item.label">
-              <v-list-item
-                @click="itemClicked(item)"
-                :title="$t(item.label, item.labelArgs)"
-                density="default"
-              >
-                <template v-slot:prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon :icon="item.icon"></v-icon>
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider></v-divider>
-            </div>
-          </v-list>
-        </v-card-text>
-        <!-- playlists selection -->
-        <v-card-text v-if="showPlaylistsMenu">
-          <v-list>
-            <div v-for="playlist of playlists" :key="playlist.item_id">
-              <v-list-item
-                ripple
-                @click="addToPlaylist(playlist)"
-                density="default"
-              >
+        <v-list>
+          <div v-for="item of playMenuItems" :key="item.label">
+            <v-list-item
+              @click="itemClicked(item)"
+              :title="$t(item.label, item.labelArgs)"
+              density="default"
+            >
+              <template v-slot:prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon :icon="item.icon"></v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider></v-divider>
+          </div>
+        </v-list>
+      </v-card-text>
+      <!-- action contextmenu items -->
+      <v-card-text
+        v-if="enableActionMenuItems && !showPlaylistsMenu && actionMenuItems.length > 0"
+        style="padding-top: 0; margin-top: -10px; padding-bottom: 0"
+      >
+        <v-list-item-subtitle style="margin-left: 10px">{{
+          $t("actions")
+        }}</v-list-item-subtitle>
+        <v-list>
+          <div v-for="item of actionMenuItems" :key="item.label">
+            <v-list-item
+              @click="itemClicked(item)"
+              :title="$t(item.label, item.labelArgs)"
+              density="default"
+            >
+              <template v-slot:prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon :icon="item.icon"></v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider></v-divider>
+          </div>
+        </v-list>
+      </v-card-text>
+      <!-- playlists selection -->
+      <v-card-text v-if="showPlaylistsMenu">
+        <v-list>
+          <div v-for="playlist of playlists" :key="playlist.item_id">
+            <v-list-item ripple @click="addToPlaylist(playlist)" density="default">
+              <template v-slot:prepend>
+                <div class="listitem-thumb">
+                  <MediaItemThumb
+                    :item="playlist"
+                    :size="50"
+                    width="50px"
+                    height="50px"
+                  /></div
+              ></template>
+              <template v-slot:title>
+                <div>{{ playlist.name }}</div>
+              </template>
+              <template v-slot:subtitle>
+                <div>{{ playlist.owner }}</div>
+              </template>
+              <template v-slot:append>
+                <div class="listitem-actions">
+                  <ProviderIcons
+                    v-if="playlist.provider_ids"
+                    :provider-ids="playlist.provider_ids"
+                    :height="20"
+                    class="listitem-actions"
+                  />
+                </div>
+              </template>
+            </v-list-item>
+            <v-divider></v-divider>
+          </div>
+          <!-- create playlist row(s) -->
+          <div v-for="prov of api.providers" :key="prov.id">
+            <div
+              v-if="
+                prov.supported_features.includes(MusicProviderFeature.PLAYLIST_CREATE)
+              "
+            >
+              <v-list-item ripple>
                 <template v-slot:prepend>
                   <div class="listitem-thumb">
-                    <MediaItemThumb
-                      :item="playlist"
-                      :size="50"
-                      width="50px"
-                      height="50px"
-                    /></div
-                ></template>
-                <template v-slot:title>
-                  <div>{{ playlist.name }}</div>
-                </template>
-                <template v-slot:subtitle>
-                  <div>{{ playlist.owner }}</div>
-                </template>
-                <template v-slot:append>
-                  <div class="listitem-actions">
-                    <ProviderIcons
-                      v-if="playlist.provider_ids"
-                      :provider-ids="playlist.provider_ids"
-                      :height="20"
-                      class="listitem-actions"
+                    <img
+                      v-bind="props"
+                      :height="40"
+                      :src="getProviderIcon(prov.type)"
+                      style="margin-left: 5px; margin-top: 5px"
                     />
                   </div>
                 </template>
+                <template v-slot:title>
+                  <v-text-field
+                    :label="$t('create_playlist', [prov.name])"
+                    :append-icon="mdiPlaylistPlus"
+                    variant="plain"
+                    hide-details
+                    @update:model-value="
+                      (txt) => {
+                        newPlaylistName = txt;
+                      }
+                    "
+                    @click:append="newPlaylist(prov.id)"
+                    @keydown.enter="newPlaylist(prov.id)"
+                  ></v-text-field>
+                </template>
               </v-list-item>
               <v-divider></v-divider>
             </div>
-            <!-- create playlist row(s) -->
-            <div v-for="prov of api.providers" :key="prov.id">
-              <div
-                v-if="
-                  prov.supported_features.includes(
-                    MusicProviderFeature.PLAYLIST_CREATE
-                  )
-                "
-              >
-                <v-list-item ripple>
-                  <template v-slot:prepend>
-                    <div class="listitem-thumb">
-                      <img
-                        v-bind="props"
-                        :height="40"
-                        :src="getProviderIcon(prov.type)"
-                        style="margin-left: 5px; margin-top: 5px"
-                      />
-                    </div>
-                  </template>
-                  <template v-slot:title>
-                    <v-text-field
-                      :label="$t('create_playlist', [prov.name])"
-                      :append-icon="mdiPlaylistPlus"
-                      variant="plain"
-                      hide-details
-                      @update:model-value="
-                        (txt) => {
-                          newPlaylistName = txt;
-                        }
-                      "
-                      @click:append="newPlaylist(prov.id)"
-                      @keydown.enter="newPlaylist(prov.id)"
-                    ></v-text-field>
-                  </template>
-                </v-list-item>
-                <v-divider></v-divider>
-              </div>
-            </div>
-          </v-list>
-        </v-card-text>
-      </v-card>
-    </v-menu>
-  </v-overlay>
+          </div>
+        </v-list>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -361,10 +346,7 @@ export const radioSupported = function (item: MediaItemType) {
   return false;
 };
 
-export const getPlayMenuItems = function (
-  items: MediaItem[],
-  parentItem?: MediaItem
-) {
+export const getPlayMenuItems = function (items: MediaItem[], parentItem?: MediaItem) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
     return playMenuItems;
@@ -379,11 +361,7 @@ export const getPlayMenuItems = function (
     queueOptNext = QueueOption.REPLACE_NEXT;
   }
   // Play from here (playlist track)
-  if (
-    items.length == 1 &&
-    parentItem &&
-    parentItem.media_type == MediaType.PLAYLIST
-  ) {
+  if (items.length == 1 && parentItem && parentItem.media_type == MediaType.PLAYLIST) {
     playMenuItems.push({
       label: "play_playlist_from",
       action: () => {
@@ -395,11 +373,7 @@ export const getPlayMenuItems = function (
     });
   }
   // Play from here (album track)
-  if (
-    items.length == 1 &&
-    parentItem &&
-    parentItem.media_type == MediaType.ALBUM
-  ) {
+  if (items.length == 1 && parentItem && parentItem.media_type == MediaType.ALBUM) {
     playMenuItems.push({
       label: "play_album_from",
       action: () => {
@@ -461,21 +435,14 @@ export const getPlayMenuItems = function (
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (
-  items: MediaItem[],
-  parentItem?: MediaItem
-) {
+export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
   }
 
   // show info
-  if (
-    items.length === 1 &&
-    items[0] !== parentItem &&
-    itemIsAvailable(items[0])
-  ) {
+  if (items.length === 1 && items[0] !== parentItem && itemIsAvailable(items[0])) {
     contextMenuItems.push({
       label: "show_info",
       labelArgs: [],
