@@ -34,6 +34,10 @@ jobs:
         env:
           CI: true
       - name: Lint
-        run: yarn lint
+        run: yarn lint:check
+        env:
+          CI: true
+      - name: Typecheck
+        run: yarn typecheck
         env:
           CI: true
