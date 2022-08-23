@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "serve": "vite preview",
-    "build": "vite build && npm run build:finish",
+    "build": "vite build && yarn run build:finish",
     "build:finish": "replace-in-file '/src/main.ts' 'mass.iife.js' 'dist/index.html'",
     "https-preview": "serve dist",
     "test:unit": "vitest --environment jsdom",
