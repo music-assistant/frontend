@@ -24,29 +24,39 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 ## Project Setup
 
 ```sh
-npm install
+nvm use node
+yarn install
 ```
 
 ### Compile and Hot-Reload for Development
 
 ```sh
-npm run dev
+yarn dev
 ```
+
+This will launch an auto-reload development environment (usually at http://localhost:5173)
+Open the url in the browser and authenticate against Home Assistant.
 
 ### Type-Check, Compile and Minify for Production
 
 ```sh
-npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
+yarn build
 ```
 
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh
-npm run lint
+yarn lint
 ```
+
+### Test with Home Assistant integration (panel)
+
+To test a new version of the frontend live with the Home Assistant integartion without the need of building it all the time,
+it is possible to load the hot-reload dev version right into the HA panel using the environmental variable `MASS_DEBUG_URL`
+
+- Create an environmental variable `MASS_DEBUG_URL`
+- Set its contents to the location of your hot-reload URL: `http://localhost:5173/src/main.ts`
+- Adjust the url above if you run it on another port.
+- Make sur ethat the dev environment is running.
+- Start Home Assistant. 
+
