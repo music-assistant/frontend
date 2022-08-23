@@ -58,5 +58,4 @@ it is possible to load the hot-reload dev version right into the HA panel using 
 - Set its contents to the location of your hot-reload URL: `http://localhost:5173/src/main.ts`
 - Adjust the url above if you run it on another port.
 - Make sur ethat the dev environment is running.
-- Start Home Assistant. 
-
+- Start Home Assistant.
