@@ -69,6 +69,7 @@ export default defineConfig({
   },
   server: {
     host: true,
+    open: '/public/index.html'
   },
   /* remove the need to specify .vue files https://vitejs.dev/config/#resolve-extensions
   resolve: {
