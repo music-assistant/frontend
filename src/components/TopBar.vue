@@ -23,15 +23,12 @@
       style="margin-left: -10px"
       @click="toggleHAMenu"
     />
-    <v-toolbar-title
-      :style="`color: ${store.topBarTextColor}`"
-      v-html="
-        truncateString(
-          store.topBarTitle || '',
-          $vuetify.display.mobile ? 25 : 150
-        )
-      "
-    />
+    <v-toolbar-title :style="`color: ${store.topBarTextColor}`">{{
+      truncateString(
+        store.topBarTitle || '',
+        $vuetify.display.mobile ? 25 : 150
+      )
+    }}</v-toolbar-title>
     <template #append>
       <div style="align-items: right; display: flex">
         <v-menu v-model="dialog" fullscreen>

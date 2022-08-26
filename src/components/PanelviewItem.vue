@@ -64,14 +64,14 @@
           v-if="'artists' in item && item.artists"
           class="line-clamp-2"
           style="margin-bottom: 8px"
-          v-text="getArtistsString(item.artists)"
-        />
+          >{{ getArtistsString(item.artists) }}</v-list-item-subtitle
+        >
         <v-list-item-subtitle
           v-else-if="'owner' in item && item.owner"
           class="line-clamp-2"
           style="margin-bottom: 8px"
-          v-text="item.owner"
-        />
+          >{{ item.owner }}</v-list-item-subtitle
+        >
       </v-list-item-content>
     </v-list-item>
   </v-card>

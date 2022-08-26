@@ -96,7 +96,7 @@
           <v-list>
             <div v-for="key of sortKeys" :key="key">
               <v-list-item @click="changeSort(key)">
-                <v-list-item-title v-text="$t('sort.' + key)" />
+                <v-list-item-title>{{ $t('sort.' + key) }}</v-list-item-title>
                 <template #append>
                   <v-icon v-if="sortBy == key" :icon="mdiCheck" />
                 </template>
@@ -168,7 +168,7 @@
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
         <v-col
-          v-for="(item, i) in items"
+          v-for="item in items"
           :key="item.uri"
           :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
         >

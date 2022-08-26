@@ -206,9 +206,8 @@
             class="body-2 justify-left"
             style="padding-bottom: 10px; white-space: pre-line; cursor: pointer"
             @click="showFullInfo = !showFullInfo"
-            v-html="description"
-          />
-
+            >{{ description }}</v-card-subtitle
+          >
           <!-- genres/tags -->
           <div
             v-if="item && item.metadata.genres"
