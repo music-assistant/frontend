@@ -1,46 +1,44 @@
 <template>
-  <v-app-bar
-    elevation="0"
-    dense
-    app
-    style="height: 56px"
-    :color="store.topBarColor"
-  >
-    <v-app-bar-nav-icon
-      v-if="store.prevRoutes.length > 0"
-      :icon="mdiArrowLeft"
-      :color="store.topBarTextColor"
-      style="margin-left: -10px"
-      @click="backButton"
+  <v-app-bar :color="store.topBarColor" elevation="0" height="56">
+    <template #prepend>
+      <v-app-bar-nav-icon
+        v-if="
+          store.prevRoutes.length > 0 && router.currentRoute.value.path != '/'
+        "
+        :icon="mdiArrowLeft"
+        :color="store.topBarTextColor"
+        @click="backButton"
+      ></v-app-bar-nav-icon>
+
+      <v-app-bar-nav-icon
+        v-if="
+          ($vuetify.display.mobile || store.alwaysShowMenuButton) &&
+          store.prevRoutes.length === 0
+        "
+        :color="store.topBarTextColor"
+        @click="toggleHAMenu"
+      ></v-app-bar-nav-icon>
+    </template>
+
+    <v-toolbar-title
+      :class="'line-clamp-1'"
+      :style="`color: ${store.topBarTextColor}`"
+      v-html="truncateString(store.topBarTitle || '', 70)"
     />
-    <v-app-bar-nav-icon
-      v-if="
-        ($vuetify.display.mobile || store.alwaysShowMenuButton) &&
-        store.prevRoutes.length === 0
-      "
-      :icon="mdiMenu"
-      :color="store.topBarTextColor"
-      style="margin-left: -10px"
-      @click="toggleHAMenu"
-    />
-    <v-toolbar-title :style="`color: ${store.topBarTextColor}`">{{
-      truncateString(
-        store.topBarTitle || '',
-        $vuetify.display.mobile ? 25 : 150
-      )
-    }}</v-toolbar-title>
     <template #append>
       <div style="align-items: right; display: flex">
-        <v-menu v-model="dialog" fullscreen>
+        <v-menu v-model="dialog">
           <template #activator="{ props: menu }">
             <v-tooltip location="top end" origin="end center">
               <template #activator="{ props: tooltip }">
-                <v-progress-circular
-                  v-if="jobsInProgress.length > 0"
-                  indeterminate
-                  :color="store.topBarTextColor"
-                  v-bind="mergeProps(menu, tooltip)"
-                />
+                <v-btn icon>
+                  <v-progress-circular
+                    v-if="jobsInProgress.length > 0"
+                    indeterminate
+                    :color="store.topBarTextColor"
+                    v-bind="mergeProps(menu, tooltip)"
+                  />
+                </v-btn>
               </template>
               <span>{{ $t('jobs_running', [jobsInProgress.length]) }}</span>
             </v-tooltip>
@@ -71,13 +69,13 @@
 
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <v-btn
-              v-if="store.topBarContextMenuItems.length > 0"
-              :icon="mdiDotsVertical"
-              :color="store.topBarTextColor"
-              style="margin-right: -18px"
-              v-bind="props"
-            />
+            <v-btn v-if="store.topBarContextMenuItems.length > 0" icon>
+              <v-icon
+                :color="store.topBarTextColor"
+                :icon="mdiDotsVertical"
+                v-bind="props"
+              />
+            </v-btn>
           </template>
 
           <v-list>
@@ -94,6 +92,23 @@
           </v-list>
         </v-menu>
       </div>
+    </template>
+    <template #extension>
+      <v-tabs
+        v-model="tabs"
+        color="primary"
+        show-arrows
+        centered
+        style="width: 100%"
+      >
+        <v-tab to="/">Home</v-tab>
+        <v-tab to="/artists">Artists</v-tab>
+        <v-tab to="/albums">Albums</v-tab>
+        <v-tab to="/tracks">Tracks</v-tab>
+        <v-tab to="/radios">Radio</v-tab>
+        <v-tab to="/playlists">Playlists</v-tab>
+        <v-tab to="/browse">Browse</v-tab>
+      </v-tabs>
     </template>
   </v-app-bar>
 </template>
@@ -120,6 +135,7 @@ import { truncateString } from '../utils';
 
 const router = useRouter();
 const dialog = ref(false);
+const tabs = ref(null);
 
 const jobsInProgress = computed(() => {
   return api.jobs.value.filter((x) =>

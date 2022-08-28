@@ -22,7 +22,16 @@
         <div style="height: 150px" />
       </v-container>
     </v-main>
-    <player-o-s-d />
+    <v-footer
+      bottom
+      fixed
+      class="d-flex flex-column"
+      style="width: 100%; border-top-style: ridge"
+      elevation="5"
+      app
+    >
+      <player-o-s-d />
+    </v-footer>
     <ReloadPrompt v-if="store.isInStandaloneMode" />
   </v-app>
 </template>
@@ -153,13 +162,21 @@ div.v-navigation-drawer__scrim {
   margin-top: -10px;
 }
 
-.active-tab {
-  background: rgba(var(--v-theme-on-surface), 0.6);
-  color: rgb(var(--v-theme-surface));
+.v-app-bar.v-toolbar {
+  color: #fff;
 }
-.inactive-tab {
-  background: rgba(var(--v-theme-on-surface), 0.3);
-  color: rgba(var(--v-theme-surface), 0.6);
+
+div.v-slide-group__next {
+  margin-top: 15px;
+}
+
+div.v-slide-group__prev {
+  margin-top: 15px;
+}
+
+.v-tabs {
+  padding-right: 45px;
+  padding-left: 45px;
 }
 
 .hiresicon {
@@ -198,11 +215,14 @@ div.v-navigation-drawer__scrim {
   width: 50px;
   height: 50px;
 }
-.v-card--variant-elevated {
+.v-card {
   box-shadow: none;
   border-width: var(--ha-card-border-width, 1px);
   border-style: solid;
   border-color: var(--ha-card-border-color, var(--divider-color, #e0e0e0));
+}
+.text-caption {
+  z-index: 3;
 }
 .line-clamp-1 {
   white-space: nowrap;

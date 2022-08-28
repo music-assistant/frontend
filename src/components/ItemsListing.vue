@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
   <section>
-    <v-toolbar dense flat color="transparent" height="35">
+    <v-toolbar dense flat color="transparent" height="50">
       <v-tooltip location="bottom">
         <template #activator="{ props }">
           <v-btn
