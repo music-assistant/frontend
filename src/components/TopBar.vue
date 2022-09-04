@@ -1,5 +1,9 @@
 <template>
-  <v-app-bar :color="store.topBarColor" elevation="0" height="56">
+  <v-app-bar
+    :color="store.topBarColor"
+    elevation="0"
+    :height="store.topBarHeight"
+  >
     <template #prepend>
       <v-app-bar-nav-icon
         v-if="
@@ -27,13 +31,12 @@
     />
     <template #append>
       <div style="align-items: right; display: flex">
-        <v-menu v-model="dialog">
+        <v-menu v-model="dialog" dark :close-on-content-click="false">
           <template #activator="{ props: menu }">
             <v-tooltip location="top end" origin="end center">
               <template #activator="{ props: tooltip }">
-                <v-btn icon>
+                <v-btn v-if="jobsInProgress.length > 0" icon>
                   <v-progress-circular
-                    v-if="jobsInProgress.length > 0"
                     indeterminate
                     :color="store.topBarTextColor"
                     v-bind="mergeProps(menu, tooltip)"
@@ -43,16 +46,18 @@
               <span>{{ $t('jobs_running', [jobsInProgress.length]) }}</span>
             </v-tooltip>
           </template>
-          <v-card>
-            <v-toolbar dark color="primary">
-              <v-icon :icon="mdiReload" />
-              <v-toolbar-title style="padding-left: 10px">
-                <b>{{ $t('jobs') }}</b>
-              </v-toolbar-title>
-
-              <v-btn :icon="mdiClose" dark text @click="dialog = !dialog" />
+          <v-card min-width="300">
+            <v-toolbar dark :color="store.topBarColor">
+              <v-icon
+                :color="store.topBarTextColor"
+                style="margin-left: 16px"
+                :icon="mdiReload"
+              />
+              <v-toolbar-title
+                :style="`color: ${store.topBarTextColor}`"
+                :text="$t('jobs')"
+              />
             </v-toolbar>
-
             <v-list>
               <v-list-item
                 v-for="(item, index) in api.jobs.value"
@@ -96,7 +101,9 @@
     <template #extension>
       <v-tabs
         v-model="tabs"
-        color="primary"
+        :background-color="store.topBarColor"
+        :style="`color: ${store.topBarTextColor} !important`"
+        dark
         show-arrows
         centered
         style="width: 100%"
@@ -105,8 +112,8 @@
         <v-tab to="/artists">Artists</v-tab>
         <v-tab to="/albums">Albums</v-tab>
         <v-tab to="/tracks">Tracks</v-tab>
-        <v-tab to="/radios">Radio</v-tab>
         <v-tab to="/playlists">Playlists</v-tab>
+        <v-tab to="/radios">Radio</v-tab>
         <v-tab to="/browse">Browse</v-tab>
       </v-tabs>
     </template>

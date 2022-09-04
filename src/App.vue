@@ -6,7 +6,7 @@
         position: fixed;
         height: 100%;
         width: 100%;
-        background: rgb(var(--v-theme-background));
+        background: rgb(var(--primary-background-color));
       "
     />
     <player-select />
@@ -26,8 +26,16 @@
       bottom
       fixed
       class="d-flex flex-column"
-      style="width: 100%; border-top-style: ridge"
-      elevation="5"
+      :elevation="6"
+      style="
+        width: 100%;
+        box-shadow: var(
+          --ha-card-box-shadow,
+          0px 2px -1px 1px rgba(0, 0, 0, 0.2),
+          0px 1px 0px 1px rgba(0, 0, 0, 0.14),
+          0px 1px 0px 3px rgba(0, 0, 0, 0.12)
+        ) !important;
+      "
       app
     >
       <player-o-s-d />
@@ -79,14 +87,12 @@ document.addEventListener('forward-panel-prop', function (e) {
 // set theme colors based on HA theme
 // TODO: we can set the entire vuetify theme based on HA theme
 const theme = useTheme();
-let lastTheme = '';
+const lastTheme = '';
 const setTheme = async function (hassData: HassData) {
   // determine if dark theme active
   const curTheme = hassData.themes?.theme || 'default';
   const darkMode = hassData?.themes?.darkMode || false;
-  const checkKey = `${curTheme}.${darkMode}`;
-  if (lastTheme == checkKey) return;
-  lastTheme = checkKey;
+  store.darkTheme = darkMode;
 
   if (curTheme == 'default') {
     // default theme
@@ -94,22 +100,30 @@ const setTheme = async function (hassData: HassData) {
       hassData.selectedTheme?.primaryColor || '#03A9F4';
     store.topBarColor = '#101e24';
     store.topBarTextColor = '#ffffff';
-    store.darkTheme = darkMode;
     store.topBarColor = darkMode ? '#101e24' : defaultPrimaryColor;
   } else {
     // custom theme
     const theme = hassData.themes?.themes[hassData.themes.theme];
-    if (theme && 'app-header-background-color' in theme)
-      store.topBarColor = theme['app-header-background-color'];
-    if (theme && 'app-header-text-color' in theme)
-      store.topBarTextColor = theme['app-header-text-color'];
-    // determine if dark theme is active
-    if (darkMode) store.darkTheme = true;
-    else if (theme) {
-      const bgColor = theme['primary-background-color'] || store.topBarColor;
-      store.darkTheme = isColorDark(bgColor);
+    let themeCurMode;
+
+    if (theme && theme?.modes) {
+      themeCurMode = theme?.modes[darkMode ? 'dark' : 'light'];
+    } else {
+      themeCurMode = theme;
     }
+
+    if (themeCurMode && 'app-header-background-color' in themeCurMode)
+      store.topBarColor = themeCurMode['app-header-background-color'];
+    if (themeCurMode && 'app-header-text-color' in themeCurMode)
+      store.topBarTextColor = themeCurMode['app-header-text-color'];
+
+    /*if (!darkMode && themeCurMode) {
+      const bgColor =
+        themeCurMode['primary-background-color'] || store.topBarColor;
+      store.darkTheme = isColorDark(bgColor);
+    }*/
   }
+  store.topBarHeight = theme['header-height'] || 55;
   theme.name.value = store.darkTheme ? 'dark' : 'light';
 };
 
@@ -160,10 +174,6 @@ div.v-navigation-drawer__scrim {
 .slider .div.v-input__append {
   padding-top: 0px;
   margin-top: -10px;
-}
-
-.v-app-bar.v-toolbar {
-  color: #fff;
 }
 
 div.v-slide-group__next {
@@ -224,6 +234,15 @@ div.v-slide-group__prev {
 .text-caption {
   z-index: 3;
 }
+.v-list-item-subtitle {
+  font-size: 0.6875rem;
+}
+.v-list-item-title {
+  font-size: 0.875rem;
+}
+.v-footer {
+  padding: 10px 10px;
+}
 .line-clamp-1 {
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -238,5 +257,18 @@ div.v-slide-group__prev {
   box-sizing: border-box;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+}
+
+.citl {
+  position: relative;
+  min-height: 14px;
+}
+
+.citl > div {
+  position: absolute;
+}
+
+.citl > div > div {
+  white-space: nowrap;
 }
 </style>

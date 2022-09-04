@@ -35,28 +35,41 @@
 
       <!-- regular menu items -->
       <div style="margin-top: 20px">
-        <v-row dense align-content="start" align="start">
+        <v-row dense align-content="start" :align="'start'">
           <v-col v-for="card in cards" :key="card.label" align-self="start">
             <v-card
               class="mx-auto"
-              align="center"
               outlined
+              :align="'center'"
               min-width="150"
-              max-width="344"
+              max-width="350"
               @click="$router.push(card.path)"
             >
-              <v-list-item two-line>
+              <v-list-item
+                two-line
+                style="padding-left: 8px; padding-right: 8px"
+              >
                 <v-list-item-content>
-                  <v-btn variant="plain" icon height="80">
-                    <v-icon
-                      :icon="card.icon"
-                      size="80"
-                      style="align: center; padding: 10px"
-                    />
-                  </v-btn>
-                  <div class="mb-4">
-                    {{ $t(card.label) }}
-                  </div>
+                  <v-row>
+                    <v-col>
+                      <v-card style="border: none;" class="pa-2" tile>
+                        <v-btn variant="plain" :ripple="false" icon height="75">
+                          <v-icon
+                            :icon="card.icon"
+                            size="75"
+                            style="align: center;"
+                          />
+                        </v-btn>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                  <v-row style="padding-bottom: 20px">
+                    <v-col>
+                      <v-toolbar-subtitle>{{
+                        $t(card.label)
+                      }}</v-toolbar-subtitle>
+                    </v-col>
+                  </v-row>
                 </v-list-item-content>
               </v-list-item>
             </v-card>
@@ -135,14 +148,14 @@ const cards = ref([
     path: '/tracks',
   },
   {
-    label: 'radios',
-    icon: mdiRadio,
-    path: '/radios',
-  },
-  {
     label: 'playlists',
     icon: mdiPlaylistMusic,
     path: '/playlists',
+  },
+  {
+    label: 'radios',
+    icon: mdiRadio,
+    path: '/radios',
   },
   {
     label: 'browse',

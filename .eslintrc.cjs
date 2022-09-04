@@ -20,6 +20,12 @@ module.exports = {
   },
   plugins: [],
   rules: {
+    'prettier/prettier': [
+      'error',
+      {
+        endOfLine: 'auto',
+      },
+    ],
     semi: ['error', 'always'],
     'no-unused-vars': 1,
     indent: ['error', 2, { SwitchCase: 1 }],

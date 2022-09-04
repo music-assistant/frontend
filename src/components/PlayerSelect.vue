@@ -7,15 +7,19 @@
     clipped
     temporary
     width="300"
+    :border="0"
     style="z-index: 99999"
   >
-    <v-card-title class="headline">
+    <v-card-title
+      :style="`color: ${store.topBarTextColor}; background: rgb(var(--v-theme-primary)); height: ${store.topBarHeight}`"
+    >
       <b>{{ $t('players') }}</b>
     </v-card-title>
     <v-btn
       variant="plain"
       style="position: absolute; right: 10px; top: 0px"
       :icon="mdiClose"
+      :color="store.topBarTextColor"
       dark
       text
       @click="store.showPlayersMenu = !store.showPlayersMenu"
@@ -33,7 +37,7 @@
           class="playerrow"
           :style="
             store.selectedPlayer?.player_id == player.player_id
-              ? 'padding:0;background-color:rgba(50, 115, 220, 0.2);'
+              ? 'padding:0; background-color:rgba(50, 115, 220, 0.2);'
               : 'padding:0'
           "
           :expand-icon="mdiChevronDown"

@@ -12,6 +12,7 @@ interface Store {
   topBarTitle?: string;
   topBarColor: string;
   topBarTextColor: string;
+  topBarHeight: number;
   defaultTopBarTitle: string;
   topBarContextMenuItems: ContextMenuItem[];
   blockGlobalPlayMenu: boolean;
@@ -33,6 +34,7 @@ export const store: Store = reactive({
   darkTheme: false,
   topBarColor: '#424242',
   topBarTextColor: '#ffffff',
+  topBarHeight: 55,
   defaultTopBarTitle: 'Music Assistant',
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,
