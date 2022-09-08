@@ -52,9 +52,9 @@ import { watchEffect, ref, onMounted, onBeforeUnmount } from 'vue';
 import { parseBool } from '@/utils';
 
 export interface Props {
-  item_id: string;
+  itemId: string;
   provider: string;
-  force_provider_version?: string;
+  forceProviderVersion?: string;
 }
 const props = defineProps<Props>();
 const activeTab = ref('');
@@ -64,10 +64,10 @@ const itemDetails = ref<Album>();
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(
     props.provider as ProviderType,
-    props.item_id,
+    props.itemId,
     true,
     false,
-    parseBool(props.force_provider_version || '')
+    parseBool(props.forceProviderVersion || '')
   );
   activeTab.value = 'tracks';
 };
@@ -111,7 +111,7 @@ const loadAlbumTracks = async function (
 ) {
   const albumTracks = await api.getAlbumTracks(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   return filteredItems(albumTracks, offset, limit, sort, search, inLibraryOnly);
 };
@@ -125,7 +125,7 @@ const loadAlbumVersions = async function (
 ) {
   const albumVersions = await api.getAlbumVersions(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   return filteredItems(
     albumVersions,

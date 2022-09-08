@@ -145,7 +145,9 @@
           <!-- play/info buttons -->
           <div style="display: flex; margin-left: 14px; padding-bottom: 10px">
             <v-menu location="bottom">
+              <!-- eslint-disable vue/no-template-shadow -->
               <template #activator="{ props }">
+                <!-- eslint-enable vue/no-template-shadow -->
                 <v-btn
                   color="primary"
                   v-bind="props"
@@ -206,8 +208,11 @@
             class="body-2 justify-left"
             style="padding-bottom: 10px; white-space: pre-line; cursor: pointer"
             @click="showFullInfo = !showFullInfo"
-            v-html="description"
-          />
+          >
+            <!-- eslint-disable vue/no-v-html -->
+            <div v-html="description" />
+            <!-- eslint-enable vue/no-v-html -->
+          </v-card-subtitle>
 
           <!-- genres/tags -->
           <div
@@ -285,13 +290,6 @@ const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url)
 
 const { t } = useI18n();
 const router = useRouter();
-
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_queue];
-  }
-  return undefined;
-});
 
 watchEffect(async () => {
   if (props.item) {

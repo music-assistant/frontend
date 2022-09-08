@@ -29,7 +29,6 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { ref } from 'vue';
 import { api } from './plugins/api';
 import { store } from './plugins/store';
 import { isColorDark } from './utils';
@@ -106,7 +105,6 @@ const setTheme = async function (hassData: HassData) {
 
 setTimeout(() => {
   if (!store.apiInitialized) {
-    console.log('Activating stand-alone mode...');
     store.isInStandaloneMode = true;
     api.initialize();
   }

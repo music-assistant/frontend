@@ -445,30 +445,13 @@ import {
 } from '@mdi/js';
 
 import { watchEffect, ref, computed, watch } from 'vue';
-import { useDisplay, useTheme } from 'vuetify';
-import type {
-  Artist,
-  PlayerQueue,
-  QueueItem,
-  StreamDetails,
-  MediaItemType,
-  MusicAssistantApi,
-  ItemMapping,
-  Track,
-  Radio,
-  Player,
-} from '../plugins/api';
-import {
-  api,
-  PlayerState,
-  ContentType,
-  MediaType,
-  ImageType,
-} from '../plugins/api';
+
+import type { MediaItemType } from '../plugins/api';
+import { api, PlayerState, MediaType, ImageType } from '../plugins/api';
 import { store } from '../plugins/store';
 import VolumeControl from './VolumeControl.vue';
 import MediaItemThumb, { getImageThumbForItem } from './MediaItemThumb.vue';
-import { formatDuration, truncateString, getArtistsString } from '../utils';
+import { formatDuration, getArtistsString } from '../utils';
 import { useRouter } from 'vue-router';
 import {
   getContentTypeIcon,
@@ -480,8 +463,6 @@ const iconCrossfade = new URL('../assets/crossfade.png', import.meta.url).href;
 const iconLevel = new URL('../assets/level.png', import.meta.url).href;
 
 const router = useRouter();
-const { mobile } = useDisplay();
-const theme = useTheme();
 
 // local refs
 const fanartImage = ref();
@@ -517,7 +498,6 @@ const curQueueItemTime = computed(() => {
 
 // methods
 const itemClick = function (item: MediaItemType) {
-  console.log(item);
   router.push({
     name: item.media_type,
     params: { item_id: item.item_id, provider: item.provider },
@@ -528,7 +508,7 @@ const itemClick = function (item: MediaItemType) {
 
 watch(
   () => curQueueItem.value?.item_id,
-  async (newVal) => {
+  async () => {
     if (curQueueItem.value?.media_item) {
       fanartImage.value =
         (await getImageThumbForItem(

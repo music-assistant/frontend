@@ -52,9 +52,13 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  item: undefined,
+  size: undefined,
+  minSize: undefined,
   maxSize: 256,
   tile: true,
   cover: true,
+  fallback: undefined,
 });
 
 const imgData = ref<string>();

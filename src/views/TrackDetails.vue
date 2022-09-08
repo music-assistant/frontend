@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
-import { ref, reactive } from 'vue';
+import { ref } from 'vue';
 import {
   MassEventType,
   type ProviderType,
@@ -38,7 +38,7 @@ import { api } from '../plugins/api';
 import { onBeforeUnmount, onMounted, watchEffect } from 'vue';
 
 export interface Props {
-  item_id: string;
+  itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
@@ -49,7 +49,7 @@ const itemDetails = ref<Track>();
 const loadItemDetails = async function () {
   itemDetails.value = await api.getTrack(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   activeTab.value = 'versions';
 };
@@ -93,7 +93,7 @@ const loadTrackVersions = async function (
 ) {
   const trackVersions = await api.getTrackVersions(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   return filteredItems(
     trackVersions,

@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
   <section>
+    <!-- eslint-disable vue/no-template-shadow -->
     <v-toolbar dense flat color="transparent" height="35">
       <v-tooltip location="bottom">
         <template #activator="{ props }">
@@ -96,7 +97,7 @@
           <v-list>
             <div v-for="key of sortKeys" :key="key">
               <v-list-item @click="changeSort(key)">
-                <v-list-item-title v-text="$t('sort.' + key)" />
+                <v-list-item-title>{{ $t('sort.' + key) }}</v-list-item-title>
                 <template #append>
                   <v-icon v-if="sortBy == key" :icon="mdiCheck" />
                 </template>
@@ -168,7 +169,7 @@
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
         <v-col
-          v-for="(item, i) in items"
+          v-for="item in items"
           :key="item.uri"
           :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
         >
@@ -263,15 +264,12 @@ import {
 
 import {
   ref,
-  computed,
   onBeforeUnmount,
   nextTick,
   onMounted,
   watch,
   mergeProps,
-  watchEffect,
 } from 'vue';
-import { useDisplay } from 'vuetify';
 import {
   MassEventType,
   type Album,
@@ -287,7 +285,6 @@ import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
 import MediaItemContextMenu from './MediaItemContextMenu.vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
@@ -318,13 +315,13 @@ const props = withDefaults(defineProps<Props>(), {
   showMenu: true,
   showLibrary: true,
   showDuration: true,
+  parentItem: undefined,
 });
 
 const defaultLimit = 100;
 
 // global refs
 const router = useRouter();
-const i18n = useI18n();
 
 // local refs
 const viewMode = ref('list');
@@ -345,7 +342,7 @@ const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(false);
 
 // computed properties
-const panelViewItemResponsive = function (displaySize: any) {
+const panelViewItemResponsive = function (displaySize: number) {
   if (displaySize < 500) {
     return 2;
   } else if (displaySize <= 500) {

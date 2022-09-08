@@ -33,7 +33,7 @@ import { api } from '../plugins/api';
 import { watchEffect } from 'vue';
 
 export interface Props {
-  item_id: string;
+  itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
@@ -44,7 +44,7 @@ const itemDetails = ref<Radio>();
 const loadItemDetails = async function () {
   itemDetails.value = await api.getRadio(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   activeTab.value = 'versions';
 };
@@ -63,7 +63,7 @@ const loadRadioVersions = async function (
 ) {
   const radioVersions = await api.getRadioVersions(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   return filteredItems(
     radioVersions,

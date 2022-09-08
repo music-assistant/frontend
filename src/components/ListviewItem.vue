@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-template-shadow -->
 <template>
   <div>
     <v-list-item
@@ -329,8 +330,7 @@ import {
   mdiIdentifier,
   mdiLinkVariant,
 } from '@mdi/js';
-import { ref, computed, reactive } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, reactive } from 'vue';
 import { VTooltip } from 'vuetify/components';
 
 import MediaItemThumb from './MediaItemThumb.vue';
@@ -342,7 +342,6 @@ import {
   getQualityDesc,
 } from './ProviderIcons.vue';
 import type {
-  Artist,
   BrowseFolder,
   MediaItem,
   MediaItemType,
@@ -356,7 +355,6 @@ import {
   getBrowseFolderName,
   truncateString,
 } from '../utils';
-import { useTheme } from 'vuetify';
 import { useI18n } from 'vue-i18n';
 
 // properties
@@ -374,10 +372,8 @@ export interface Props {
 }
 
 // global refs
-const router = useRouter();
 const { t } = useI18n();
-const actionInProgress = ref(false);
-const theme = useTheme();
+
 const previewUrls = reactive<Record<string, string>>({});
 
 const props = withDefaults(defineProps<Props>(), {
@@ -387,6 +383,7 @@ const props = withDefaults(defineProps<Props>(), {
   showLibrary: true,
   showDuration: true,
   showCheckboxes: false,
+  parentItem: undefined,
 });
 
 // computed properties
@@ -412,11 +409,13 @@ const highResDetails = computed(() => {
 });
 
 // emits
+/* eslint-disable no-unused-vars */
 const emit = defineEmits<{
   (e: 'menu', value: MediaItemType): void;
   (e: 'click', value: MediaItemType): void;
   (e: 'select', value: MediaItemType, selected: boolean): void;
 }>();
+/* eslint-enable no-unused-vars */
 
 // methods
 

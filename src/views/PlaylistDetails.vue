@@ -38,7 +38,7 @@ import { api, ProviderType } from '../plugins/api';
 import { watchEffect, ref, onMounted, onBeforeUnmount } from 'vue';
 
 export interface Props {
-  item_id: string;
+  itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
@@ -49,7 +49,7 @@ const itemDetails = ref<Playlist>();
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   activeTab.value = 'tracks';
 };
@@ -93,7 +93,7 @@ const loadPlaylistTracks = async function (
 ) {
   const playlistTracks = await api.getPlaylistTracks(
     props.provider as ProviderType,
-    props.item_id
+    props.itemId
   );
   return filteredItems(
     playlistTracks,

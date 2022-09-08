@@ -1,6 +1,7 @@
 import { store } from './store';
 /* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-unused-vars */
 import {
   type Connection,
   createConnection,
@@ -481,10 +482,8 @@ export class MusicAssistantApi {
         .replace('wss://', 'https://')
         .replace('/websocket', '');
     }
-    console.log('store.apiBaseUrl', store.apiBaseUrl);
 
     store.apiInitialized = true;
-    console.log('conn', this._conn);
 
     // load initial data from api
     this._fetchState();
@@ -956,6 +955,7 @@ export class MusicAssistantApi {
   private async connectHassStandalone() {
     let auth;
     const storeAuth = true;
+    /* eslint-disable prettier/prettier */
     const authOptions = storeAuth
       ? {
         async loadTokens() {
@@ -970,6 +970,7 @@ export class MusicAssistantApi {
         },
       }
       : {};
+    /* eslint-enable prettier/prettier */
     try {
       auth = await getAuth(authOptions);
     } catch (err) {
@@ -1025,6 +1026,7 @@ export class MusicAssistantApi {
     }
     // signal + log all events
     if (massEvent.type !== MassEventType.QUEUE_TIME_UPDATED) {
+      // eslint-disable-next-line no-console
       console.log('[event]', massEvent);
     }
     this.signalEvent(massEvent);
@@ -1041,6 +1043,7 @@ export class MusicAssistantApi {
 
   private getData<T>(endpoint: string, args?: Record<string, any>): Promise<T> {
     this._lastId++;
+    // eslint-disable-next-line no-console
     console.log(`[getData] ${endpoint}`, args || '');
     return (this._conn as Connection).sendMessagePromise({
       id: this._lastId,
@@ -1051,6 +1054,7 @@ export class MusicAssistantApi {
 
   private executeCmd(endpoint: string, args?: Record<string, any>) {
     this._lastId++;
+    // eslint-disable-next-line no-console
     console.log(`[executeCmd] ${endpoint}`, args || '');
     (this._conn as Connection).sendMessage({
       id: this._lastId,

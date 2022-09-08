@@ -207,6 +207,7 @@ export interface Props {
   fullscreen?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
+  parentItem: undefined,
   enablePlayItems: true,
   enableActionMenuItems: true,
   fullscreen: true,

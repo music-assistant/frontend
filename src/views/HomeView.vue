@@ -72,24 +72,17 @@ import {
   mdiAccountMusic,
   mdiAlbum,
   mdiFileMusic,
-  mdiMagnify,
   mdiPlaylistMusic,
   mdiRadio,
   mdiFolder,
   mdiFileSync,
   mdiCached,
 } from '@mdi/js';
-import { ref, computed, onBeforeUnmount, watch } from 'vue';
+import { ref, onBeforeUnmount } from 'vue';
 import { store } from '../plugins/store';
-import PanelviewItem from '../components/PanelviewItem.vue';
 import GlobalSearch from '../components/GlobalSearch.vue';
 
-import { api, type MediaItemType } from '@/plugins/api';
-import { useDisplay } from 'vuetify';
-import { useI18n } from 'vue-i18n';
-
-const { mobile } = useDisplay();
-const searchHasFocus = ref(false);
+import { api } from '@/plugins/api';
 
 store.topBarTitle = store.defaultTopBarTitle;
 store.topBarContextMenuItems = [
@@ -112,10 +105,6 @@ store.topBarContextMenuItems = [
 ];
 onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
-});
-
-const thumbSize = computed(() => {
-  return mobile.value ? 100 : 150;
 });
 
 const cards = ref([

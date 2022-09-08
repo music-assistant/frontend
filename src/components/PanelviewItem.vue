@@ -34,7 +34,9 @@
       "
     >
       <v-tooltip bottom>
+        <!-- eslint-disable vue/no-template-shadow -->
         <template #activator="{ props }">
+          <!-- eslint-enable vue/no-template-shadow -->
           <img
             :src="iconHiRes"
             height="35"
@@ -64,35 +66,27 @@
           v-if="'artists' in item && item.artists"
           class="line-clamp-2"
           style="margin-bottom: 8px"
-          v-text="getArtistsString(item.artists)"
-        />
+          >{{ getArtistsString(item.artists) }}</v-list-item-subtitle
+        >
         <v-list-item-subtitle
           v-else-if="'owner' in item && item.owner"
           class="line-clamp-2"
           style="margin-bottom: 8px"
-          v-text="item.owner"
-        />
+          >{{ item.owner }}</v-list-item-subtitle
+        >
       </v-list-item-content>
     </v-list-item>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { mdiCheckboxMarkedOutline, mdiDotsVertical } from '@mdi/js';
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useTheme } from 'vuetify';
+import { computed } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 
 import { iconHiRes } from './ProviderIcons.vue';
 
-import type {
-  Artist,
-  ItemMapping,
-  MediaItem,
-  MediaItemType,
-} from '../plugins/api';
-import { MediaType, MediaQuality } from '../plugins/api';
+import type { MediaItem, MediaItemType } from '../plugins/api';
+import { MediaQuality } from '../plugins/api';
 import { getArtistsString } from '../utils';
 
 // properties
@@ -106,11 +100,6 @@ const props = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
 });
-
-// global refs
-const router = useRouter();
-const actionInProgress = ref(false);
-const theme = useTheme();
 
 // computed properties
 const isHiRes = computed(() => {
@@ -134,27 +123,11 @@ const isHiRes = computed(() => {
 });
 
 // emits
+
+/* eslint-disable no-unused-vars */
 const emit = defineEmits<{
   (e: 'menu', value: MediaItem): void;
   (e: 'click', value: MediaItem): void;
   (e: 'select', value: MediaItem, selected: boolean): void;
 }>();
-
-// methods
-
-const artistClick = function (item: Artist | ItemMapping) {
-  // album entry clicked
-  if (actionInProgress.value) return;
-  actionInProgress.value = true;
-  router.push({
-    name: 'artist',
-    params: {
-      item_id: item.item_id,
-      provider: item.provider,
-    },
-  });
-  setTimeout(() => {
-    actionInProgress.value = false;
-  }, 500);
-};
 </script>

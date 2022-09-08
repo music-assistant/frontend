@@ -5,6 +5,7 @@
       :key="prov.prov_id"
       location="bottom"
     >
+      <!-- eslint-disable vue/no-template-shadow -->
       <template #activator="{ props }">
         <img
           v-bind="props"
@@ -16,6 +17,7 @@
           @click="enableLink ? provClicked(prov) : ''"
         />
       </template>
+      <!-- eslint-enable vue/no-template-shadow -->
       <span>{{ $t('providers.' + prov.prov_type.toString()) }}</span>
     </v-tooltip>
   </div>

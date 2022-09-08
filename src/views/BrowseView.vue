@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, watchEffect } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 import { useI18n } from 'vue-i18n';
 import { RecycleScroller } from 'vue-virtual-scroller';
@@ -63,7 +63,6 @@ const loading = ref(false);
 const loadData = async function () {
   loading.value = true;
   browseItem.value = await api.browse(props.path);
-  console.log(browseItem.value);
 
   // set header title to browse title
   if (!browseItem.value || !props.path) store.topBarTitle = t('browse');

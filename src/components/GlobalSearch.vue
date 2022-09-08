@@ -134,12 +134,10 @@ import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
 import MediaItemContextMenu from './MediaItemContextMenu.vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { api } from '../plugins/api';
 
 // global refs
 const router = useRouter();
-const i18n = useI18n();
 const { mobile } = useDisplay();
 
 // local refs
@@ -199,7 +197,7 @@ const onClick = function (mediaItem: MediaItemType) {
 // watchers
 watch(
   () => search.value,
-  (newVal) => {
+  () => {
     clearTimeout(throttleId.value);
     throttleId.value = setTimeout(() => {
       loadSearchResults();
