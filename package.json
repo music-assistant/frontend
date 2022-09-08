@@ -1,10 +1,21 @@
 {
   "name": "frontend",
   "version": "0.0.1",
+  "type": "module",
+  "files": ["mass_frontend"],
+  "description": "The Music Assistant frontend/panel developed in Vue.",
+  "main": "./mass_frontend/mass.js",
+  "module": "./mass_frontend/mass.umd.cjs",
+  "exports": {
+    ".": {
+      "import": "./mass_frontend/mass.js",
+      "require": "./mass_frontend/mass.umd.js"
+    }
+  },
   "scripts": {
     "serve": "vite preview",
     "build": "vite build && yarn run build:finish",
-    "build:finish": "replace-in-file '/src/main.ts' 'mass.iife.js' 'dist/index.html'",
+    "build:finish": "replace-in-file '/src/main.ts' 'mass.umd.js' 'mass_frontend/index.html'",
     "https-preview": "serve dist",
     "test:unit": "vitest --environment jsdom",
     "lint:check": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore",
@@ -52,7 +63,5 @@
     "vue-cli-plugin-vuetify": "~2.5.5",
     "vue-tsc": "^0.40.1",
     "webpack-plugin-vuetify": "^2.0.0-alpha.12"
-  },
-  "description": "The Music Assistant frontend/panel developed in Vue.",
-  "main": "vue.config.js"
+  }
 }

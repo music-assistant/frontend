@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name         = "music-assistant-frontend"
-version      = "20220908.0"
+version      = "20220908.1"
 license      = {text = "Apache-2.0"}
 description  = "The Music Assistant frontend"
 readme       = "README.md"
@@ -22,4 +22,4 @@ zip-safe  = false
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["mass_frontend*"]
+include = ["mass_frontend"]
