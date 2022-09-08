@@ -53,6 +53,6 @@
     "vue-tsc": "^0.40.1",
     "webpack-plugin-vuetify": "^2.0.0-alpha.12"
   },
-  "description": "The Music Assistant frontend/panel is developed in Vue, development instructions below.",
+  "description": "The Music Assistant frontend/panel developed in Vue.",
   "main": "vue.config.js"
 }

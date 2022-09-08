@@ -9,7 +9,8 @@ cd "$(dirname "$0")/.."
 # Install node modules
 yarn install
 
-script/build_frontend
+# Run build
+yarn build
 
 rm -rf dist music_assistant_frontend.egg-info
 python3 -m build
