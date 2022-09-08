@@ -500,7 +500,7 @@ const curQueueItemTime = computed(() => {
 const itemClick = function (item: MediaItemType) {
   router.push({
     name: item.media_type,
-    params: { item_id: item.item_id, provider: item.provider },
+    params: { itemId: item.item_id, provider: item.provider },
   });
 };
 

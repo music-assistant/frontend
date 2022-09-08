@@ -445,19 +445,19 @@ const onMenu = function (item: MediaItemType) {
 
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
-  const force_provider_version = props.itemtype.includes('versions').toString();
+  const forceProviderVersion = props.itemtype.includes('versions').toString();
 
   if (
     ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
-    force_provider_version == 'true' ||
+    forceProviderVersion == 'true' ||
     !store.selectedPlayer?.available
   ) {
     router.push({
       name: mediaItem.media_type,
       params: {
-        item_id: mediaItem.item_id,
+        itemId: mediaItem.item_id,
         provider: mediaItem.provider,
-        force_provider_version,
+        forceProviderVersion,
       },
     });
   } else if (store.selectedPlayer) {
