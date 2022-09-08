@@ -87,3 +87,38 @@ coverage
 
 /cypress/videos/
 /cypress/screenshots/
+
+
+# build
+build
+hass_frontend/*
+dist
+
+# yarn
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+node_modules/*
+yarn-error.log
+npm-debug.log
+
+# Python stuff
+*.py[cod]
+*.egg
+*.egg-info
+
+# venv stuff
+pyvenv.cfg
+pip-selfcheck.json
+venv/*
+.venv
+
+# vscode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
