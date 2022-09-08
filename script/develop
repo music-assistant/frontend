@@ -1,0 +1,11 @@
+#!/bin/sh
+# Run the frontend development server
+
+# Stop on errors
+set -e
+
+cd "$(dirname "$0")/.."
+
+# nvm use node
+yarn install
+yarn dev
