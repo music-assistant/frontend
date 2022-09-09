@@ -9,6 +9,9 @@ interface Store {
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
   darkTheme: boolean;
+  primaryColor: string;
+  primaryTextColor: string;
+  primaryBackgroundColor: string;
   topBarTitle?: string;
   topBarColor: string;
   topBarTextColor: string;
@@ -32,6 +35,9 @@ export const store: Store = reactive({
   isInStandaloneMode: false,
   showPlayersMenu: false,
   darkTheme: false,
+  primaryColor: 'primary',
+  primaryTextColor: '#fff',
+  primaryBackgroundColor: '#fff',
   topBarColor: '#424242',
   topBarTextColor: '#ffffff',
   topBarHeight: 55,

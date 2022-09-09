@@ -26,9 +26,9 @@ app.mount('#app');
 
 export type HassData = {
   connection?: Connection;
-  selectedTheme?: {
-    primaryColor?: string;
-    accentColor?: string;
+  selectedTheme: {
+    primaryColor: string;
+    accentColor: string;
   };
   themes?: {
     theme: string;

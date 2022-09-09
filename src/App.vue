@@ -87,7 +87,6 @@ document.addEventListener('forward-panel-prop', function (e) {
 // set theme colors based on HA theme
 // TODO: we can set the entire vuetify theme based on HA theme
 const theme = useTheme();
-const lastTheme = '';
 const setTheme = async function (hassData: HassData) {
   // determine if dark theme active
   const curTheme = hassData.themes?.theme || 'default';
@@ -96,35 +95,34 @@ const setTheme = async function (hassData: HassData) {
 
   if (curTheme == 'default') {
     // default theme
-    const defaultPrimaryColor =
-      hassData.selectedTheme?.primaryColor || '#03A9F4';
+    store.primaryColor = hassData.selectedTheme?.primaryColor || '#03A9F4';
     store.topBarColor = '#101e24';
     store.topBarTextColor = '#ffffff';
-    store.topBarColor = darkMode ? '#101e24' : defaultPrimaryColor;
+    store.topBarColor = darkMode ? '#101e24' : store.primaryColor;
   } else {
     // custom theme
-    const theme = hassData.themes?.themes[hassData.themes.theme];
+    const customTheme = hassData.themes?.themes[hassData.themes.theme];
     let themeCurMode;
 
-    if (theme && theme?.modes) {
-      themeCurMode = theme?.modes[darkMode ? 'dark' : 'light'];
+    if (customTheme && customTheme?.modes) {
+      themeCurMode = customTheme?.modes[darkMode ? 'dark' : 'light'];
     } else {
-      themeCurMode = theme;
+      themeCurMode = customTheme;
     }
-
+    if (themeCurMode && 'primary-color' in themeCurMode)
+      store.primaryColor = themeCurMode['primary-color'];
+    if (themeCurMode && 'primary-text-color' in themeCurMode)
+      store.primaryTextColor = themeCurMode['primary-text-color'];
+    if (themeCurMode && 'primary-background-color' in themeCurMode)
+      store.primaryBackgroundColor = themeCurMode['primary-background-color'];
     if (themeCurMode && 'app-header-background-color' in themeCurMode)
       store.topBarColor = themeCurMode['app-header-background-color'];
     if (themeCurMode && 'app-header-text-color' in themeCurMode)
       store.topBarTextColor = themeCurMode['app-header-text-color'];
-
-    /*if (!darkMode && themeCurMode) {
-      const bgColor =
-        themeCurMode['primary-background-color'] || store.topBarColor;
-      store.darkTheme = isColorDark(bgColor);
-    }*/
   }
   store.topBarHeight = theme['header-height'] || 55;
-  theme.name.value = store.darkTheme ? 'dark' : 'light';
+
+  theme.name.value = darkMode ? 'dark' : 'light';
 };
 
 setTimeout(() => {

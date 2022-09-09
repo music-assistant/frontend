@@ -10,9 +10,7 @@
     :border="0"
     style="z-index: 99999"
   >
-    <v-card-title
-      :style="`color: ${store.topBarTextColor}; background: rgb(var(--v-theme-primary)); height: ${store.topBarHeight}`"
-    >
+    <v-card-title :style="`height: ${store.topBarHeight}`">
       <b>{{ $t('players') }}</b>
     </v-card-title>
     <v-btn
@@ -37,7 +35,7 @@
           class="playerrow"
           :style="
             store.selectedPlayer?.player_id == player.player_id
-              ? 'padding:0; background-color:rgba(50, 115, 220, 0.2);'
+              ? `padding:0; background-color: #EFEFEF;`
               : 'padding:0'
           "
           :expand-icon="mdiChevronDown"
@@ -52,7 +50,7 @@
               <v-icon
                 size="50"
                 :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
-                color="accent"
+                :color="store.primaryColor"
                 style="
                   padding-left: 0px;
                   padding-right: 0px;
