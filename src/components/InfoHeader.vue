@@ -147,7 +147,7 @@
             <v-menu location="bottom">
               <template #activator="{ props }">
                 <v-btn
-                  color="primary"
+                  color="accent"
                   v-bind="props"
                   :prepend-icon="mdiPlayCircle"
                   :disabled="
@@ -181,7 +181,7 @@
             <v-btn
               v-if="!$vuetify.display.mobile && !item.in_library"
               style="margin-left: 10px"
-              color="primary"
+              color="accent"
               tile
               :prepend-icon="mdiHeartOutline"
               @click="api.addToLibrary([item])"
@@ -191,7 +191,7 @@
             <v-btn
               v-if="!$vuetify.display.mobile && item.in_library"
               style="margin-left: 10px"
-              color="primary"
+              color="accent"
               tile
               :prepend-icon="mdiHeart"
               @click="api.removeFromLibrary([item])"

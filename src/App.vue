@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { ref } from 'vue';
+import { getCurrentInstance, ref } from 'vue';
 import { api } from './plugins/api';
 import { store } from './plugins/store';
 import { isColorDark } from './utils';
@@ -84,9 +84,44 @@ document.addEventListener('forward-panel-prop', function (e) {
   store.defaultTopBarTitle = (e as HassPanelPropEvent).detail.config.title;
 });
 
+const verifyThemeVar = function (
+  theme: any,
+  key: any,
+  extendedTheme: any,
+  recoveryValue: any
+) {
+  if (theme && key in theme) return theme[key];
+  else if (extendedTheme && key in extendedTheme) return extendedTheme[key];
+  return recoveryValue[key];
+};
+
 // set theme colors based on HA theme
 // TODO: we can set the entire vuetify theme based on HA theme
 const theme = useTheme();
+let lightTheme = theme.themes.value.light.colors;
+let darkTheme = theme.themes.value.dark.colors;
+
+const defaultThemeColor = function () {
+  lightTheme['background'] = '#fafafa';
+  lightTheme['primary'] = '#03a9f4';
+  lightTheme['secondary'] = '#ff9800';
+  lightTheme['accent'] = '#03a9f4';
+  lightTheme['error'] = '#db4437';
+  lightTheme['info'] = '#039be5';
+  lightTheme['success'] = '#43a047';
+  lightTheme['warning'] = '#ffa600';
+
+  darkTheme['background'] = '#121212';
+  darkTheme['primary'] = '#0288d1';
+  darkTheme['secondary'] = '#ff9800';
+  darkTheme['accent'] = '#0288d1';
+  darkTheme['error'] = '#db4437';
+  darkTheme['info'] = '#039be5';
+  darkTheme['success'] = '#43a047';
+  darkTheme['warning'] = '#ffa600';
+};
+
+defaultThemeColor();
 const setTheme = async function (hassData: HassData) {
   // determine if dark theme active
   const curTheme = hassData.themes?.theme || 'default';
@@ -95,33 +130,49 @@ const setTheme = async function (hassData: HassData) {
 
   if (curTheme == 'default') {
     // default theme
-    store.primaryColor = hassData.selectedTheme?.primaryColor || '#03A9F4';
-    store.topBarColor = '#101e24';
-    store.topBarTextColor = '#ffffff';
-    store.topBarColor = darkMode ? '#101e24' : store.primaryColor;
+    const curThemeMode = darkMode ? darkTheme : lightTheme;
+    curThemeMode['primary'] = hassData.selectedTheme?.primaryColor || '#03A9F4';
+    curThemeMode['secondary'] =
+      hassData.selectedTheme?.accentColor || '#ff9800';
+    curThemeMode['accent'] = isColorDark(curThemeMode['primary'])
+      ? curThemeMode['secondary']
+      : curThemeMode['primary'];
   } else {
     // custom theme
     const customTheme = hassData.themes?.themes[hassData.themes.theme];
-    let themeCurMode;
+    let availThemeModes: any;
+    const curThemeMode = darkMode ? darkTheme : lightTheme;
 
     if (customTheme && customTheme?.modes) {
-      themeCurMode = customTheme?.modes[darkMode ? 'dark' : 'light'];
+      availThemeModes = customTheme?.modes[darkMode ? 'dark' : 'light'];
     } else {
-      themeCurMode = customTheme;
+      availThemeModes = customTheme;
     }
-    if (themeCurMode && 'primary-color' in themeCurMode)
-      store.primaryColor = themeCurMode['primary-color'];
-    if (themeCurMode && 'primary-text-color' in themeCurMode)
-      store.primaryTextColor = themeCurMode['primary-text-color'];
-    if (themeCurMode && 'primary-background-color' in themeCurMode)
-      store.primaryBackgroundColor = themeCurMode['primary-background-color'];
-    if (themeCurMode && 'app-header-background-color' in themeCurMode)
-      store.topBarColor = themeCurMode['app-header-background-color'];
-    if (themeCurMode && 'app-header-text-color' in themeCurMode)
-      store.topBarTextColor = themeCurMode['app-header-text-color'];
-  }
-  store.topBarHeight = theme['header-height'] || 55;
 
+    const themeVarArray = [
+      'primary-color',
+      'accent-color',
+      'error-color',
+      'info-color',
+      'success-color',
+      'warning-color',
+      'background',
+    ];
+
+    themeVarArray.forEach((themeVar) => {
+      curThemeMode[themeVar.replace('-color', '')] = verifyThemeVar(
+        availThemeModes,
+        themeVar,
+        customTheme,
+        curThemeMode
+      );
+    });
+
+    curThemeMode['accent'] = isColorDark(curThemeMode['primary'])
+      ? curThemeMode['secondary']
+      : curThemeMode['primary'];
+    darkMode ? (darkTheme = curThemeMode) : (lightTheme = curThemeMode);
+  }
   theme.name.value = darkMode ? 'dark' : 'light';
 };
 
@@ -227,7 +278,6 @@ div.v-slide-group__prev {
   box-shadow: none;
   border-width: var(--ha-card-border-width, 1px);
   border-style: solid;
-  border-color: var(--ha-card-border-color, var(--divider-color, #e0e0e0));
 }
 .text-caption {
   z-index: 3;

@@ -228,14 +228,18 @@
             {{ $t('try_global_search') }}
           </v-btn>
         </v-alert>
-        <v-alert v-else-if="!loading && items.length == 0" type="info">
+        <v-alert
+          v-else-if="!loading && items.length == 0"
+          color="accent"
+          type="info"
+        >
           {{ $t('no_content') }}
         </v-alert>
       </div>
       <v-snackbar :model-value="selectedItems.length > 1">
         <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
         <template #actions>
-          <v-btn color="primary" variant="text" @click="showContextMenu = true">
+          <v-btn color="accent" variant="text" @click="showContextMenu = true">
             {{ $t('actions') }}
           </v-btn>
         </template>

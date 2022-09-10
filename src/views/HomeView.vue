@@ -52,12 +52,12 @@
                 <v-list-item-content>
                   <v-row>
                     <v-col>
-                      <v-card style="border: none;" class="pa-2" tile>
+                      <v-card style="border: none" class="pa-2" tile>
                         <v-btn variant="plain" :ripple="false" icon height="75">
                           <v-icon
                             :icon="card.icon"
                             size="75"
-                            style="align: center;"
+                            style="align: center"
                           />
                         </v-btn>
                       </v-card>

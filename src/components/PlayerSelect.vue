@@ -17,7 +17,6 @@
       variant="plain"
       style="position: absolute; right: 10px; top: 0px"
       :icon="mdiClose"
-      :color="store.topBarTextColor"
       dark
       text
       @click="store.showPlayersMenu = !store.showPlayersMenu"
@@ -33,11 +32,7 @@
       >
         <v-expansion-panel-title
           class="playerrow"
-          :style="
-            store.selectedPlayer?.player_id == player.player_id
-              ? `padding:0; background-color: #EFEFEF;`
-              : 'padding:0'
-          "
+          :style="'padding:0'"
           :expand-icon="mdiChevronDown"
           :collapse-icon="mdiChevronUp"
           @click="
@@ -50,7 +45,7 @@
               <v-icon
                 size="50"
                 :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
-                :color="store.primaryColor"
+                color="accent"
                 style="
                   padding-left: 0px;
                   padding-right: 0px;

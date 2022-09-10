@@ -1,16 +1,11 @@
 <template>
-  <v-app-bar
-    :color="store.topBarColor"
-    elevation="0"
-    :height="store.topBarHeight"
-  >
+  <v-app-bar color="primary" elevation="0" :height="store.topBarHeight">
     <template #prepend>
       <v-app-bar-nav-icon
         v-if="
           store.prevRoutes.length > 0 && router.currentRoute.value.path != '/'
         "
         :icon="mdiArrowLeft"
-        :color="store.topBarTextColor"
         @click="backButton"
       ></v-app-bar-nav-icon>
 
@@ -19,14 +14,12 @@
           ($vuetify.display.mobile || store.alwaysShowMenuButton) &&
           store.prevRoutes.length === 0
         "
-        :color="store.topBarTextColor"
         @click="toggleHAMenu"
       ></v-app-bar-nav-icon>
     </template>
 
     <v-toolbar-title
       :class="'line-clamp-1'"
-      :style="`color: ${store.topBarTextColor}`"
       v-html="truncateString(store.topBarTitle || '', 70)"
     />
     <template #append>
@@ -38,7 +31,6 @@
                 <v-btn v-if="jobsInProgress.length > 0" icon>
                   <v-progress-circular
                     indeterminate
-                    :color="store.topBarTextColor"
                     v-bind="mergeProps(menu, tooltip)"
                   />
                 </v-btn>
@@ -47,16 +39,9 @@
             </v-tooltip>
           </template>
           <v-card min-width="300">
-            <v-toolbar dark :color="store.topBarColor">
-              <v-icon
-                :color="store.topBarTextColor"
-                style="margin-left: 16px"
-                :icon="mdiReload"
-              />
-              <v-toolbar-title
-                :style="`color: ${store.topBarTextColor}`"
-                :text="$t('jobs')"
-              />
+            <v-toolbar color="primary" dark>
+              <v-icon style="margin-left: 16px" :icon="mdiReload" />
+              <v-toolbar-title :text="$t('jobs')" />
             </v-toolbar>
             <v-list>
               <v-list-item
@@ -74,12 +59,12 @@
 
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <v-btn v-if="store.topBarContextMenuItems.length > 0" icon>
-              <v-icon
-                :color="store.topBarTextColor"
-                :icon="mdiDotsVertical"
-                v-bind="props"
-              />
+            <v-btn
+              v-if="store.topBarContextMenuItems.length > 0"
+              v-bind="props"
+              icon
+            >
+              <v-icon :icon="mdiDotsVertical" />
             </v-btn>
           </template>
 
@@ -99,15 +84,7 @@
       </div>
     </template>
     <template #extension>
-      <v-tabs
-        v-model="tabs"
-        :background-color="store.topBarColor"
-        :style="`color: ${store.topBarTextColor} !important`"
-        dark
-        show-arrows
-        centered
-        style="width: 100%"
-      >
+      <v-tabs v-model="tabs" dark show-arrows centered style="width: 100%">
         <v-tab to="/">Home</v-tab>
         <v-tab to="/artists">Artists</v-tab>
         <v-tab to="/albums">Albums</v-tab>

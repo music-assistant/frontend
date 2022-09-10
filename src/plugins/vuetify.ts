@@ -2,8 +2,6 @@
 import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/lib/iconsets/mdi-svg';
 
-import colors from 'vuetify/lib/util/colors';
-
 export default createVuetify(
   // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
   {
@@ -14,6 +12,9 @@ export default createVuetify(
         mdi,
       },
     },
+    theme: {
+      options: { customProperties: true },
+    },
     display: {
       mobileBreakpoint: 'md',
       thresholds: {
@@ -22,25 +23,6 @@ export default createVuetify(
         md: 540,
         lg: 800,
         xl: 1280,
-      },
-    },
-    theme: {
-      defaultTheme: 'light',
-      themes: {
-        light: {
-          dark: false,
-          colors: {
-            primary: colors.blue.base,
-            accent: colors.blue.darken2,
-          },
-        },
-        dark: {
-          dark: true,
-          colors: {
-            primary: colors.blue.darken4,
-            accent: colors.blue.lighten2,
-          },
-        },
       },
     },
   }
