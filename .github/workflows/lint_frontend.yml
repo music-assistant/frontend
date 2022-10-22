@@ -37,7 +37,8 @@ jobs:
         run: yarn lint:check
         env:
           CI: true
-      - name: Typecheck
-        run: yarn typecheck
-        env:
-          CI: true
+      # disable typecheck for now
+      # - name: Typecheck
+      #   run: yarn typecheck
+      #   env:
+      #     CI: true

@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+env:
+  PYTHON_VERSION: "3.10"
+  NODE_VERSION: 16
+  NODE_OPTIONS: --max_old_space_size=6144
+
+# Set default workflow permissions
+# All scopes not mentioned here are set to no access
+# https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+permissions:
+  actions: none
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to upload release assets
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Verify version
+        uses: home-assistant/actions/helpers/verify-version@master
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build and release package
+        run: |
+          python3 -m pip install twine build
+          export TWINE_USERNAME="__token__"
+          export TWINE_PASSWORD="${{ secrets.PYPI_TOKEN }}"
+          script/release
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
