@@ -9,36 +9,22 @@
         background: rgb(var(--primary-background-color));
       "
     />
-    <player-select />
+    <PlayerSelect />
     <TopBar />
-    <v-main v-if="store.apiInitialized" id="cont">
+    <v-main v-if="store.apiInitialized">
       <v-container fluid style="padding: 0">
-        <router-view v-slot="{ Component }" app>
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
-        <!-- white space to reserve space for footer -->
-        <div style="height: 150px" />
+        <perfect-scrollbar ref="scroll">
+          <router-view v-slot="{ Component }" app>
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </perfect-scrollbar>
       </v-container>
     </v-main>
-    <v-footer
-      bottom
-      fixed
-      class="d-flex flex-column"
-      :elevation="6"
-      style="
-        width: 100%;
-        box-shadow: var(
-          --ha-card-box-shadow,
-          0px 2px -1px 1px rgba(0, 0, 0, 0.2),
-          0px 1px 0px 1px rgba(0, 0, 0, 0.14),
-          0px 1px 0px 3px rgba(0, 0, 0, 0.12)
-        ) !important;
-      "
-      app
-    >
-      <player-o-s-d />
+    <v-footer style="padding: 0px" bottom fixed class="d-flex flex-column" app>
+      <PlayerOSD />
+      <BottomBar />
     </v-footer>
     <ReloadPrompt v-if="store.isInStandaloneMode" />
   </v-app>
@@ -46,19 +32,19 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { getCurrentInstance, ref } from 'vue';
 import { api } from './plugins/api';
 import { store } from './plugins/store';
 import { isColorDark } from './utils';
 import { useTheme } from 'vuetify';
 import TopBar from './components/TopBar.vue';
-import PlayerOSD from './components/PlayerOSD.vue';
+import PlayerOSD from './components/PlayerOSD/Player.vue';
 import PlayerSelect from './components/PlayerSelect.vue';
 import ReloadPrompt from './components/ReloadPrompt.vue';
 import 'vuetify/styles';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import type { HassPanelData, HassData } from './main';
 import { useI18n } from 'vue-i18n';
+import BottomBar from './components/BottomBar.vue';
 
 const { locale } = useI18n({ useScope: 'global' });
 
@@ -74,7 +60,7 @@ document.addEventListener('forward-hass-prop', function (e) {
   if (!hass) return;
   if (!store.apiInitialized) {
     api.initialize(hass.connection);
-    locale.value = hass.selectedLanguage;
+    locale.value = hass.selectedLanguage || navigator.language;
   }
   store.alwaysShowMenuButton = hass.dockedSidebar == 'always_hidden';
   setTheme(hass);
@@ -86,7 +72,7 @@ document.addEventListener('forward-panel-prop', function (e) {
 
 const verifyThemeVar = function (
   theme: any,
-  key: any,
+  key: string,
   extendedTheme: any,
   recoveryValue: any
 ) {
@@ -186,9 +172,27 @@ setTimeout(() => {
 </script>
 
 <style>
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.selectable {
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -o-user-select: text;
+  user-select: text;
+}
+
 a {
   cursor: pointer;
 }
+
 .vertical-btn {
   display: flex;
   flex-direction: column;
@@ -214,6 +218,11 @@ div.v-navigation-drawer__scrim {
   padding-bottom: 0px;
 }
 
+.v-slider.v-input--horizontal {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
 .volumerow .v-slider .v-slider__container {
   margin-left: 57px;
   margin-right: 15px;
@@ -226,16 +235,23 @@ div.v-navigation-drawer__scrim {
 }
 
 div.v-slide-group__next {
-  margin-top: 15px;
+  margin-bottom: 5px;
 }
 
 div.v-slide-group__prev {
-  margin-top: 15px;
+  margin-bottom: 5px;
 }
 
 .v-tabs {
   padding-right: 45px;
   padding-left: 45px;
+  align-items: center;
+}
+
+.v-slide-group {
+  align-items: self-end;
+  padding-left: 30px;
+  padding-right: 30px;
 }
 
 .hiresicon {
@@ -249,6 +265,7 @@ div.v-slide-group__prev {
 .padded-overlay .v-overlay__content {
   padding: 50px;
 }
+
 .v-overlay__scrim {
   opacity: 65%;
 }
@@ -263,9 +280,11 @@ div.v-slide-group__prev {
   padding: 0px;
   padding-right: 0px;
 }
+
 .listitem-action {
   padding-left: 5px;
 }
+
 .listitem-thumb {
   padding-left: 0px;
   margin-right: 10px;
@@ -274,28 +293,35 @@ div.v-slide-group__prev {
   width: 50px;
   height: 50px;
 }
+
 .v-card {
   box-shadow: none;
   border-width: var(--ha-card-border-width, 1px);
   border-style: solid;
 }
+
 .text-caption {
   z-index: 3;
 }
+
 .v-list-item-subtitle {
   font-size: 0.6875rem;
 }
+
 .v-list-item-title {
   font-size: 0.875rem;
 }
+
 .v-footer {
   padding: 10px 10px;
 }
+
 .line-clamp-1 {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
+
 .line-clamp-2 {
   white-space: pre-line;
   overflow: hidden;

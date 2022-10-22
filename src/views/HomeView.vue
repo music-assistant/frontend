@@ -38,40 +38,17 @@
         <v-row dense align-content="start" :align="'start'">
           <v-col v-for="card in cards" :key="card.label" align-self="start">
             <v-card
-              class="mx-auto"
+              :ripple="true"
+              class="mx-auto home-card"
               outlined
-              :align="'center'"
-              min-width="150"
-              max-width="350"
               @click="$router.push(card.path)"
             >
-              <v-list-item
-                two-line
-                style="padding-left: 8px; padding-right: 8px"
-              >
-                <v-list-item-content>
-                  <v-row>
-                    <v-col>
-                      <v-card style="border: none" class="pa-2" tile>
-                        <v-btn variant="plain" :ripple="false" icon height="75">
-                          <v-icon
-                            :icon="card.icon"
-                            size="75"
-                            style="align: center"
-                          />
-                        </v-btn>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                  <v-row style="padding-bottom: 20px">
-                    <v-col>
-                      <v-toolbar-subtitle>{{
-                        $t(card.label)
-                      }}</v-toolbar-subtitle>
-                    </v-col>
-                  </v-row>
-                </v-list-item-content>
-              </v-list-item>
+              <v-btn variant="plain" :ripple="false" icon height="75">
+                <v-icon :icon="card.icon" size="75" />
+              </v-btn>
+              <v-card-title class="home-card-title">{{
+                $t(card.label)
+              }}</v-card-title>
             </v-card>
           </v-col>
         </v-row>
@@ -85,21 +62,18 @@ import {
   mdiAccountMusic,
   mdiAlbum,
   mdiFileMusic,
-  mdiMagnify,
   mdiPlaylistMusic,
   mdiRadio,
   mdiFolder,
   mdiFileSync,
   mdiCached,
 } from '@mdi/js';
-import { ref, computed, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 import { store } from '../plugins/store';
-import PanelviewItem from '../components/PanelviewItem.vue';
 import GlobalSearch from '../components/GlobalSearch.vue';
 
-import { api, type MediaItemType } from '@/plugins/api';
+import { api } from '@/plugins/api';
 import { useDisplay } from 'vuetify';
-import { useI18n } from 'vue-i18n';
 
 const { mobile } = useDisplay();
 const searchHasFocus = ref(false);
@@ -166,6 +140,19 @@ const cards = ref([
 </script>
 
 <style>
+.home-card {
+  min-width: 150px;
+  text-align: center;
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+
+.home-card-title {
+  line-height: 1.5;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
 div.v-slide-group__next {
   position: absolute;
   right: -5px;

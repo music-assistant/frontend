@@ -63,8 +63,6 @@ const loading = ref(false);
 const loadData = async function () {
   loading.value = true;
   browseItem.value = await api.browse(props.path);
-  console.log(browseItem.value);
-
   // set header title to browse title
   if (!browseItem.value || !props.path) store.topBarTitle = t('browse');
   else {

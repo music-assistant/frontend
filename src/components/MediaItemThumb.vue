@@ -19,6 +19,7 @@
         :min-width="minSize"
         :cover="cover"
         :src="imgData"
+        :lazy-src="$vuetify.theme.current.dark ? darkCoverImg : lightCoverImg"
       >
         <template #placeholder>
           <div class="d-flex align-center justify-center fill-height">
@@ -43,9 +44,9 @@ import { store } from '../plugins/store';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
-  size?: number;
-  minSize?: number;
-  maxSize?: number;
+  size?: number | string;
+  minSize?: number | string;
+  maxSize?: number | string;
   tile?: boolean;
   cover?: boolean;
   fallback?: string;
@@ -58,6 +59,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const imgData = ref<string>();
+const lightCoverImg = new URL('../assets/cover_light.png', import.meta.url)
+  .href;
+const darkCoverImg = new URL('../assets/cover_dark.png', import.meta.url).href;
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;

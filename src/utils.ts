@@ -79,9 +79,11 @@ export const kebabize = (str: string) => {
     .join('');
 };
 
-export const getArtistsString = function (artists: Artist[]) {
+export const getArtistsString = function (artists: Artist[], limit?: number) {
   if (!artists) return '';
+  if (!limit) limit = 100;
   return artists
+    .slice(0, limit)
     .map((x) => {
       return x.name;
     })
@@ -100,4 +102,18 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
     browseTitle = browseItem.path || '';
   }
   return browseTitle;
+};
+
+//Is in the process of calibration. A sorting of the values is therefore pending.
+export const getResponsiveBreakpoints = {
+  breakpoint_1: 575,
+  breakpoint_2: 715,
+  breakpoint_3: 960,
+  breakpoint_4: 1100,
+  breakpoint_5: 1500,
+  breakpoint_6: 1700,
+  breakpoint_7: 800,
+  breakpoint_8: 375,
+  breakpoint_9: 1900,
+  breakpoint_10: 540,
 };

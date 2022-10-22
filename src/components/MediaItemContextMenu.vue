@@ -131,11 +131,12 @@
                 <v-list-item ripple>
                   <template #prepend>
                     <div class="listitem-thumb">
-                      <img
+                      <IconBase
                         v-bind="props"
-                        :height="40"
-                        :src="getProviderIcon(prov.type)"
                         style="margin-left: 5px; margin-top: 5px"
+                        :height="'40px'"
+                        :width="'50px'"
+                        :name="getProviderIcon(prov.type)"
                       />
                     </div>
                   </template>
@@ -183,19 +184,22 @@ import {
   mdiRadioTower,
 } from '@mdi/js';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ProviderIcons from './ProviderIcons.vue';
-import { getProviderIcon } from './ProviderIcons.vue';
-import {
+import ProviderIcons, { getProviderIcon } from './ProviderIcons.vue';
+import api, {
   MediaType,
   ProviderType,
   QueueOption,
+  MusicProviderFeature,
   type Album,
+  type MediaItem,
+  type MediaItemType,
+  type Playlist,
+  type Track,
 } from '../plugins/api';
-import type { MediaItem, MediaItemType, Playlist, Track } from '../plugins/api';
 import { computed, ref, watch } from 'vue';
-import api, { MusicProviderFeature } from '../plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '../plugins/store';
+import IconBase from './Icons/IconBase.vue';
 
 // properties
 export interface Props {

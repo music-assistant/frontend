@@ -50,38 +50,38 @@
       </v-tooltip>
     </div>
 
-    <v-list-item two-line style="padding-left: 8px; padding-right: 8px">
-      <v-list-item-content>
-        <v-list-item-text>
-          <p
-            class="font-weight-bold line-clamp-1"
-            style="color: primary; margin-top: 8px; margin-bottom: 8px"
-          >
-            {{ item.name }}
-          </p>
-        </v-list-item-text>
-        <v-list-item-subtitle
-          v-if="'artists' in item && item.artists"
-          class="line-clamp-2"
-          style="margin-bottom: 8px"
-          >{{ getArtistsString(item.artists) }}</v-list-item-subtitle
+    <v-list-item style="padding-left: 8px; padding-right: 8px">
+      <v-list-item-title>
+        <p
+          class="font-weight-bold line-clamp-1"
+          style="color: primary; margin-top: 8px; margin-bottom: 8px"
         >
-        <v-list-item-subtitle
-          v-else-if="'owner' in item && item.owner"
-          class="line-clamp-2"
-          style="margin-bottom: 8px"
-          >{{ item.owner }}</v-list-item-subtitle
-        >
-      </v-list-item-content>
+          {{ item.name }}
+        </p>
+      </v-list-item-title>
+
+      <v-list-item-subtitle
+        v-if="'artists' in item && item.artists"
+        class="line-clamp-2"
+        style="margin-bottom: 8px"
+        @click="artistClick(item)"
+      >
+        {{ getArtistsString(item.artists) }}</v-list-item-subtitle
+      >
+      <v-list-item-subtitle
+        v-else-if="'owner' in item && item.owner"
+        class="line-clamp-2"
+        style="margin-bottom: 8px"
+      >
+        {{ item.owner }}</v-list-item-subtitle
+      >
     </v-list-item>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { mdiCheckboxMarkedOutline, mdiDotsVertical } from '@mdi/js';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useTheme } from 'vuetify';
 import MediaItemThumb from './MediaItemThumb.vue';
 
 import { iconHiRes } from './ProviderIcons.vue';
@@ -92,7 +92,7 @@ import type {
   MediaItem,
   MediaItemType,
 } from '../plugins/api';
-import { MediaType, MediaQuality } from '../plugins/api';
+import { MediaQuality } from '../plugins/api';
 import { getArtistsString } from '../utils';
 
 // properties
@@ -110,7 +110,6 @@ const props = withDefaults(defineProps<Props>(), {
 // global refs
 const router = useRouter();
 const actionInProgress = ref(false);
-const theme = useTheme();
 
 // computed properties
 const isHiRes = computed(() => {

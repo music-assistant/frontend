@@ -6,12 +6,13 @@
       location="bottom"
     >
       <template #activator="{ props }">
-        <img
+        <IconBase
           v-bind="props"
           :key="prov.prov_type"
+          :width="'1.75em'"
           class="provider-icon"
-          :height="height"
-          :src="getProviderIcon(prov.prov_type)"
+          :height="height.toString()"
+          :name="getProviderIcon(prov.prov_type)"
           :style="enableLink ? 'cursor: pointer' : ''"
           @click="enableLink ? provClicked(prov) : ''"
         />
@@ -25,6 +26,7 @@
 import type { MediaItemProviderId } from '../plugins/api';
 import { MediaQuality } from '../plugins/api';
 import { computed } from 'vue';
+import IconBase from './Icons/IconBase.vue';
 
 export interface Props {
   providerIds: MediaItemProviderId[];
@@ -55,51 +57,32 @@ const provClicked = function (prov: MediaItemProviderId) {
 <script lang="ts">
 import { ContentType, ProviderType } from '../plugins/api';
 
-export const iconSpotify = new URL('../assets/spotify.png', import.meta.url)
-  .href;
-export const iconQobuz = new URL('../assets/qobuz.png', import.meta.url).href;
-export const iconFilesystem = new URL(
-  '../assets/filesystem.png',
-  import.meta.url
-).href;
-export const iconTuneIn = new URL('../assets/tunein.png', import.meta.url).href;
-export const iconYTMusic = new URL('../assets/ytmusic.png', import.meta.url)
-  .href;
-export const iconFallback = new URL('../assets/fallback.png', import.meta.url)
-  .href;
-
-export const iconAac = new URL('../assets/aac.png', import.meta.url).href;
-export const iconFlac = new URL('../assets/flac.png', import.meta.url).href;
-export const iconMp3 = new URL('../assets/mp3.png', import.meta.url).href;
-export const iconOgg = new URL('../assets/ogg.png', import.meta.url).href;
-export const iconVorbis = new URL('../assets/vorbis.png', import.meta.url).href;
-export const iconM4a = new URL('../assets/m4a.png', import.meta.url).href;
 export const iconHiRes = new URL('../assets/hires.png', import.meta.url).href;
 
 export const getProviderIcon = function (provider: ProviderType) {
-  if (provider == ProviderType.SPOTIFY) return iconSpotify;
-  if (provider == ProviderType.QOBUZ) return iconQobuz;
-  if (provider == ProviderType.TUNEIN) return iconTuneIn;
-  if (provider == ProviderType.YTMUSIC) return iconYTMusic;
-  return iconFilesystem;
+  if (provider == ProviderType.SPOTIFY) return 'spotify';
+  if (provider == ProviderType.QOBUZ) return 'qobuz';
+  if (provider == ProviderType.TUNEIN) return 'tunein';
+  if (provider == ProviderType.YTMUSIC) return 'ytmusic';
+  return 'filesystem';
 };
 export const getContentTypeIcon = function (contentType: ContentType) {
-  if (contentType == ContentType.AAC) return iconAac;
-  if (contentType == ContentType.FLAC) return iconFlac;
-  if (contentType == ContentType.MP3) return iconMp3;
-  if (contentType == ContentType.MPEG) return iconMp3;
-  if (contentType == ContentType.OGG) return iconOgg;
-  if (contentType == ContentType.M4A) return iconM4a;
-  return iconFallback;
+  if (contentType == ContentType.AAC) return 'aac';
+  if (contentType == ContentType.FLAC) return 'flac';
+  if (contentType == ContentType.MP3) return 'mp3';
+  if (contentType == ContentType.MPEG) return 'mp3';
+  if (contentType == ContentType.OGG) return 'ogg';
+  if (contentType == ContentType.M4A) return 'm4a';
+  return 'fallback';
 };
 export const getQualityIcon = function (quality?: MediaQuality) {
-  if (!quality) return iconFallback;
-  if (quality == MediaQuality.LOSSY_AAC) return iconAac;
-  if (quality == MediaQuality.LOSSY_MP3) return iconMp3;
-  if (quality == MediaQuality.LOSSY_OGG) return iconOgg;
-  if (quality == MediaQuality.LOSSY_M4A) return iconM4a;
-  if (quality >= MediaQuality.LOSSLESS) return iconFlac;
-  return iconFallback;
+  if (!quality) return 'fallback';
+  if (quality == MediaQuality.LOSSY_AAC) return 'aac';
+  if (quality == MediaQuality.LOSSY_MP3) return 'mp3';
+  if (quality == MediaQuality.LOSSY_OGG) return 'ogg';
+  if (quality == MediaQuality.LOSSY_M4A) return 'm4a';
+  if (quality >= MediaQuality.LOSSLESS) return 'flac';
+  return 'fallback';
 };
 
 export const getQualityDesc = function (provDetails: MediaItemProviderId) {
@@ -124,6 +107,7 @@ export const getQualityDesc = function (provDetails: MediaItemProviderId) {
   align-items: center;
   padding: 0px;
 }
+
 .provider-icon {
   float: inherit;
   padding-left: 5px;

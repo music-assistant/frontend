@@ -10,17 +10,19 @@
     "node_modules"
   ],
   "compilerOptions": {
-    "target": "es6",
-    "module": "esnext",
+    "target": "esnext",
+    "types": ["node"],
+    "module": "NodeNext",
     "strict": true,
     "composite": true,
     "jsx": "preserve",
     "lib": [
-      "esnext",
+      "es6",
       "dom",
       "dom.iterable",
       "scripthost"
     ],
+    "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
     "moduleResolution": "node",
     "skipLibCheck": true,

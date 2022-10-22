@@ -1,10 +1,14 @@
 // Vuetify
 import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/lib/iconsets/mdi-svg';
+import VueHorizontal from 'vue-horizontal';
 
 export default createVuetify(
   // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
   {
+    components: {
+      VueHorizontal,
+    },
     icons: {
       defaultSet: 'mdi',
       aliases,

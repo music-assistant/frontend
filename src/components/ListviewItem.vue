@@ -215,12 +215,10 @@
               <v-divider />
               <!-- provider icon + name -->
               <div style="height: 50px; display: flex; align-items: center">
-                <img
-                  height="30"
-                  width="50"
-                  center
-                  :src="getProviderIcon(item.provider)"
-                  style="object-fit: contain"
+                <IconBase
+                  :height="'30px'"
+                  :width="'50px'"
+                  :name="getProviderIcon(item.provider)"
                 />
                 {{
                   truncateString(
@@ -259,15 +257,11 @@
 
               <!-- quality details -->
               <div style="height: 50px; display: flex; align-items: center">
-                <img
-                  height="30"
-                  width="50"
-                  :src="getQualityIcon(item.provider_ids[0].quality)"
-                  :style="
-                    $vuetify.theme.current.dark
-                      ? 'object-fit: contain;'
-                      : 'object-fit: contain;filter: invert(100%);'
-                  "
+                <IconBase
+                  :height="'30px'"
+                  :width="'50px'"
+                  :dark-mode="true"
+                  :name="getQualityIcon(item.provider_ids[0].quality)"
                 />
                 {{ getQualityDesc(item.provider_ids[0]) }}
               </div>
@@ -329,20 +323,17 @@ import {
   mdiIdentifier,
   mdiLinkVariant,
 } from '@mdi/js';
-import { ref, computed, reactive } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, reactive } from 'vue';
 import { VTooltip } from 'vuetify/components';
 
 import MediaItemThumb from './MediaItemThumb.vue';
-import ProviderIcons from './ProviderIcons.vue';
-import {
+import ProviderIcons, {
   iconHiRes,
   getProviderIcon,
   getQualityIcon,
   getQualityDesc,
 } from './ProviderIcons.vue';
 import type {
-  Artist,
   BrowseFolder,
   MediaItem,
   MediaItemType,
@@ -356,8 +347,8 @@ import {
   getBrowseFolderName,
   truncateString,
 } from '../utils';
-import { useTheme } from 'vuetify';
 import { useI18n } from 'vue-i18n';
+import IconBase from './Icons/IconBase.vue';
 
 // properties
 export interface Props {
@@ -374,10 +365,7 @@ export interface Props {
 }
 
 // global refs
-const router = useRouter();
 const { t } = useI18n();
-const actionInProgress = ref(false);
-const theme = useTheme();
 const previewUrls = reactive<Record<string, string>>({});
 
 const props = withDefaults(defineProps<Props>(), {

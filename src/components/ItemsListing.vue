@@ -170,7 +170,8 @@
         <v-col
           v-for="item in items"
           :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          class="col"
+          :data-responsive="panelViewItemResponsive($vuetify.display.width)"
         >
           <PanelviewItem
             :item="item"
@@ -267,15 +268,12 @@ import {
 
 import {
   ref,
-  computed,
   onBeforeUnmount,
   nextTick,
   onMounted,
   watch,
   mergeProps,
-  watchEffect,
 } from 'vue';
-import { useDisplay } from 'vuetify';
 import {
   MassEventType,
   type Album,
@@ -283,6 +281,7 @@ import {
   type MediaItemType,
   type PagedItems,
   type Track,
+  api,
 } from '../plugins/api';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
@@ -291,10 +290,9 @@ import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
 import MediaItemContextMenu from './MediaItemContextMenu.vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
+import { getResponsiveBreakpoints } from '@/utils';
 
 // properties
 export interface Props {
@@ -328,7 +326,6 @@ const defaultLimit = 100;
 
 // global refs
 const router = useRouter();
-const i18n = useI18n();
 
 // local refs
 const viewMode = ref('list');
@@ -350,21 +347,39 @@ const albumArtistsOnlyFilter = ref(false);
 
 // computed properties
 const panelViewItemResponsive = function (displaySize: any) {
-  if (displaySize < 500) {
+  if (displaySize < getResponsiveBreakpoints.breakpoint_1) {
     return 2;
-  } else if (displaySize <= 500) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_1 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_2
+  ) {
     return 3;
-  } else if (displaySize <= 700) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_2 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_3
+  ) {
     return 4;
-  } else if (displaySize <= 1000) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_3 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_4
+  ) {
     return 5;
-  } else if (displaySize <= 1200) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_4 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_5
+  ) {
     return 6;
-  } else if (displaySize <= 1500) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_5 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_6
+  ) {
     return 7;
-  } else if (displaySize <= 1700) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_6 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_9
+  ) {
     return 8;
-  } else if (displaySize > 1700) {
+  } else if (displaySize >= getResponsiveBreakpoints.breakpoint_9) {
     return 9;
   } else {
     return 0;
@@ -441,7 +456,7 @@ const toggleCheckboxes = function () {
   }
 };
 
-const onDelete = function (item: MediaItemType) {
+const onDelete = function () {
   loadData(true);
 };
 
@@ -473,7 +488,7 @@ const onClick = function (mediaItem: MediaItemType) {
   }
 };
 
-const changeSort = function (sort_key?: string, sort_desc?: boolean) {
+const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     sortBy.value = sort_key;
   }
@@ -747,42 +762,42 @@ export const filteredItems = function (
 .scroller {
   height: 100%;
 }
-.col-2 {
+.col[data-responsive='2'] {
   width: 50%;
   max-width: 50%;
   flex-basis: 50%;
 }
-.col-3 {
+.col[data-responsive='3'] {
   width: 33.3%;
   max-width: 33.3%;
   flex-basis: 33.3%;
 }
-.col-4 {
+.col[data-responsive='4'] {
   width: 25%;
   max-width: 25%;
   flex-basis: 25%;
 }
-.col-5 {
+.col[data-responsive='5'] {
   width: 20%;
   max-width: 20%;
   flex-basis: 20%;
 }
-.col-6 {
+.col[data-responsive='6'] {
   width: 16.6%;
   max-width: 16.6%;
   flex-basis: 16.6%;
 }
-.col-7 {
+.col[data-responsive='7'] {
   width: 14.2%;
   max-width: 14.2%;
   flex-basis: 14.2%;
 }
-.col-8 {
+.col[data-responsive='8'] {
   width: 12.5%;
   max-width: 12.5%;
   flex-basis: 12.5%;
 }
-.col-9 {
+.col[data-responsive='9'] {
   width: 11.1%;
   max-width: 11.1%;
   flex-basis: 11.1%;

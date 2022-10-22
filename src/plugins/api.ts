@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable indent */
 import { store } from './store';
 /* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -958,17 +960,17 @@ export class MusicAssistantApi {
     const storeAuth = true;
     const authOptions = storeAuth
       ? {
-        async loadTokens() {
-          try {
-            return JSON.parse(localStorage.hassTokens);
-          } catch (err) {
-            return undefined;
-          }
-        },
-        saveTokens: (tokens: any) => {
-          localStorage.hassTokens = JSON.stringify(tokens);
-        },
-      }
+          async loadTokens() {
+            try {
+              return JSON.parse(localStorage.hassTokens);
+            } catch (err) {
+              return undefined;
+            }
+          },
+          saveTokens: (tokens: any) => {
+            localStorage.hassTokens = JSON.stringify(tokens);
+          },
+        }
       : {};
     try {
       auth = await getAuth(authOptions);

@@ -692,7 +692,6 @@ import {
   CrossFadeMode,
   MassEventType,
   MediaType,
-  ContentType,
 } from '../plugins/api';
 import api from '../plugins/api';
 import { computed, onBeforeUnmount, watchEffect } from 'vue';

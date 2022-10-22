@@ -3,44 +3,51 @@
   <v-navigation-drawer
     v-model="store.showPlayersMenu"
     location="right"
+    width="300"
     app
     clipped
     temporary
-    width="300"
-    :border="0"
-    style="z-index: 99999"
   >
-    <v-card-title :style="`height: ${store.topBarHeight}`">
-      <b>{{ $t('players') }}</b>
-    </v-card-title>
-    <v-btn
-      variant="plain"
-      style="position: absolute; right: 10px; top: 0px"
-      :icon="mdiClose"
-      dark
-      text
-      @click="store.showPlayersMenu = !store.showPlayersMenu"
-    />
-    <v-divider />
-    <v-expansion-panels v-model="panelItem" focusable accordion flat>
-      <v-expansion-panel
-        v-for="player in sortedPlayers"
-        :id="player.player_id"
-        :key="player.player_id"
-        :disabled="!player.available"
-        flat
-      >
-        <v-expansion-panel-title
-          class="playerrow"
-          :style="'padding:0'"
-          :expand-icon="mdiChevronDown"
-          :collapse-icon="mdiChevronUp"
-          @click="
-            store.selectedPlayer = player;
-            scrollToTop(player.player_id);
-          "
-        >
-          <v-list-item density="compact">
+    <template #prepend>
+      <v-btn
+        v-if="windowPage === 1"
+        variant="plain"
+        :icon="mdiChevronLeft"
+        @click="windowPageSwitch"
+      ></v-btn>
+      <v-card-title v-else>
+        {{ $t('players') }}
+      </v-card-title>
+      <v-btn
+        variant="plain"
+        style="position: absolute; right: 10px; top: 0px"
+        :icon="mdiClose"
+        dark
+        text
+        @click="store.showPlayersMenu = !store.showPlayersMenu"
+      />
+    </template>
+
+    <v-divider></v-divider>
+
+    <v-window v-model="windowPage" touchless>
+      <v-window-item>
+        <v-list>
+          <v-list-item
+            v-for="player in sortedPlayers"
+            :key="player.player_id"
+            :disabled="!player.available"
+            active-color="accent"
+            two-line
+            :active="store.selectedPlayer?.player_id === player.player_id"
+            :title="player.group_name"
+            :subtitle="$t('state.' + player.state)"
+            style="padding-right: 0px"
+            @click="
+              store.selectedPlayer = player;
+              scrollToTop(player.player_id);
+            "
+          >
             <template #prepend>
               <v-icon
                 size="50"
@@ -56,27 +63,20 @@
                 "
               />
             </template>
-            <template #title>
-              <div class="text-subtitle-1">
-                <b>{{ player.group_name.substring(0, 25) }}</b>
-              </div>
-            </template>
-            <template #subtitle>
-              <div
-                :key="player.state"
-                class="text-body-2"
-                style="line-height: 1em"
-              >
-                {{ $t('state.' + player.state) }}
-              </div>
+            <template #append>
+              <v-btn
+                :icon="mdiChevronRight"
+                variant="plain"
+                @click="windowPageSwitch()"
+              ></v-btn>
             </template>
           </v-list-item>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text variant="contain">
-          <VolumeControl :player="player" />
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-    </v-expansion-panels>
+        </v-list>
+      </v-window-item>
+      <v-window-item v-for="n in 2" :key="`item-${n}`">
+        <VolumeControl :player="store.selectedPlayer" />
+      </v-window-item>
+    </v-window>
   </v-navigation-drawer>
 </template>
 
@@ -86,8 +86,8 @@ import {
   mdiSpeaker,
   mdiClose,
   mdiSpeakerMultiple,
-  mdiChevronUp,
-  mdiChevronDown,
+  mdiChevronRight,
+  mdiChevronLeft,
 } from '@mdi/js';
 import type { Player } from '../plugins/api';
 import { store } from '../plugins/store';
@@ -121,6 +121,7 @@ watch(
 
 const shadowRoot = ref<ShadowRoot>();
 const lastClicked = ref();
+const windowPage = ref(0);
 onMounted(() => {
   shadowRoot.value = getCurrentInstance()?.vnode?.el?.getRootNode();
 });
@@ -132,25 +133,17 @@ const scrollToTop = function (playerId: string) {
     elmnt?.scrollIntoView({ behavior: 'smooth' });
   }, 0);
 };
+const windowPageSwitch = function () {
+  windowPage.value = windowPage.value === 1 ? 0 : 1;
+};
 </script>
 
 <style>
-.playerrow {
-  height: 60px;
+.v-list-group__items .v-list-item {
+  padding-inline-start: 0px !important;
 }
 
-div.v-expansion-panel-text__wrapper {
-  padding-left: 0px;
-  padding-right: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-
-div.v-expansion-panel--active:not(:first-child),
-.v-expansion-panel--active + .v-expansion-panel {
-  margin-top: 0px;
-}
-div.v-expansion-panel__shadow {
-  box-shadow: none;
+.v-list-item__prepend > .v-icon {
+  margin-inline-end: 15px;
 }
 </style>

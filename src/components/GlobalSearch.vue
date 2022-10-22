@@ -126,7 +126,7 @@ import {
   watchEffect,
 } from 'vue';
 import { useDisplay } from 'vuetify';
-import { MediaType, type MediaItemType } from '../plugins/api';
+import { api, MediaType, type MediaItemType } from '../plugins/api';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
@@ -134,12 +134,8 @@ import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
 import MediaItemContextMenu from './MediaItemContextMenu.vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { api } from '../plugins/api';
-
 // global refs
 const router = useRouter();
-const i18n = useI18n();
 const { mobile } = useDisplay();
 
 // local refs
@@ -199,7 +195,7 @@ const onClick = function (mediaItem: MediaItemType) {
 // watchers
 watch(
   () => search.value,
-  (newVal) => {
+  () => {
     clearTimeout(throttleId.value);
     throttleId.value = setTimeout(() => {
       loadSearchResults();

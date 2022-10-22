@@ -44,13 +44,13 @@ import { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { ref } from 'vue';
 import {
+  api,
   MassEventType,
   type Artist,
   type ProviderType,
   type MassEvent,
   type MediaItemType,
 } from '../plugins/api';
-import { api } from '../plugins/api';
 import { onBeforeUnmount, onMounted, watchEffect } from 'vue';
 
 export interface Props {

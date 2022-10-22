@@ -17,11 +17,18 @@
         @click="toggleHAMenu"
       ></v-app-bar-nav-icon>
     </template>
-
-    <v-toolbar-title
-      :class="'line-clamp-1'"
-      v-html="truncateString(store.topBarTitle || '', 70)"
-    />
+    <v-toolbar-title :class="'line-clamp-1'">
+      <!-- eslint-disable vue/no-v-html -->
+      <div
+        v-html="
+          truncateString(
+            store.topBarTitle || '',
+            $vuetify.display.mobile ? 25 : 150
+          )
+        "
+      />
+      <!-- eslint-enable vue/no-v-html -->
+    </v-toolbar-title>
     <template #append>
       <div style="align-items: right; display: flex">
         <v-menu v-model="dialog" dark :close-on-content-click="false">
@@ -83,15 +90,14 @@
         </v-menu>
       </div>
     </template>
-    <template #extension>
-      <v-tabs v-model="tabs" dark show-arrows centered style="width: 100%">
-        <v-tab to="/">Home</v-tab>
-        <v-tab to="/artists">Artists</v-tab>
-        <v-tab to="/albums">Albums</v-tab>
-        <v-tab to="/tracks">Tracks</v-tab>
-        <v-tab to="/playlists">Playlists</v-tab>
-        <v-tab to="/radios">Radio</v-tab>
-        <v-tab to="/browse">Browse</v-tab>
+    <template
+      v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1"
+      #extension
+    >
+      <v-tabs show-arrows centered style="width: 100%">
+        <v-tab v-for="tab in tabs" :key="tab.label" :to="tab.path">{{
+          $t(tab.label)
+        }}</v-tab>
       </v-tabs>
     </template>
   </v-app-bar>
@@ -106,20 +112,16 @@ import {
   mdiCheckOutline,
   mdiAlertCircle,
   mdiReload,
-  mdiClose,
-  mdiMenu,
 } from '@mdi/js';
 
 import { computed, mergeProps, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { api } from '../plugins/api';
-import { JobStatus } from '../plugins/api';
+import { api, JobStatus } from '../plugins/api';
 import { store } from '../plugins/store';
-import { truncateString } from '../utils';
+import { getResponsiveBreakpoints, truncateString } from '../utils';
 
 const router = useRouter();
 const dialog = ref(false);
-const tabs = ref(null);
 
 const jobsInProgress = computed(() => {
   return api.jobs.value.filter((x) =>
@@ -152,6 +154,37 @@ const backButton = function () {
   }
 };
 
+const tabs = ref([
+  {
+    label: 'home',
+    path: '/',
+  },
+  {
+    label: 'artists',
+    path: '/artists',
+  },
+  {
+    label: 'albums',
+    path: '/albums',
+  },
+  {
+    label: 'tracks',
+    path: '/tracks',
+  },
+  {
+    label: 'playlists',
+    path: '/playlists',
+  },
+  {
+    label: 'radios',
+    path: '/radios',
+  },
+  {
+    label: 'browse',
+    path: '/browse',
+  },
+]);
+
 const getJobStatusIcon = function (status: JobStatus) {
   if (status == JobStatus.PENDING) return mdiProgressClock;
   if (status == JobStatus.CANCELLED) return mdiCancel;
@@ -165,6 +198,7 @@ const getJobStatusIcon = function (status: JobStatus) {
 .padded-overlay .v-overlay__content {
   padding: 50px;
 }
+
 .v-overlay__scrim {
   opacity: 65%;
 }

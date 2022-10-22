@@ -1,245 +1,220 @@
 <template>
   <div>
     <v-card
-      flat
-      :img="imgGradient"
-      style="margin-top: -10px; z-index: 0"
-      height="30vh"
-      max-height="500px"
-      min-height="340px"
+      v-if="item"
+      class="header-card"
+      :style="`background-image: linear-gradient(${
+        $vuetify.theme.current.dark
+          ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
+          : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
+      } 100%), url(${fanartImage});`"
     >
-      <!-- loading animation -->
-      <v-progress-linear v-if="!item" indeterminate />
-      <v-img
-        width="100%"
-        height="100%"
-        cover
-        class="background-image"
-        :src="fanartImage"
-        :gradient="
-          store.darkTheme
-            ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
-            : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
-        "
-      />
-      <v-layout
-        v-if="item"
-        style="
-          margin: 0;
-          position: absolute;
-          top: 50%;
-          -ms-transform: translateY(-50%);
-          transform: translateY(-50%);
-          padding-left: 15px;
-          align-items: center;
-          padding-right: 15px;
-        "
-      >
-        <!-- left side: cover image -->
-        <div v-if="!$vuetify.display.mobile" xs5 pa-5>
-          <div v-if="'artists' in item && item.media_type">
-            <MediaItemThumb
-              :item="item"
-              :minSize="192"
-              style="margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
-            />
-          </div>
-          <div v-else-if="'owner' in item && item.media_type">
-            <MediaItemThumb
-              :item="item"
-              :minSize="192"
-              style="margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
-            />
-          </div>
-          <div v-else>
-            <MediaItemThumb
-              :item="item"
-              :tile="false"
-              :minSize="192"
-              style="margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
-            />
-          </div>
-        </div>
+      <!-- provider icons -->
+      <div style="position: absolute; float: right; right: 15px; top: 15px">
+        <ProviderIcons
+          :provider-ids="item.provider_ids"
+          :height="25"
+          :enable-link="true"
+        />
+      </div>
 
-        <div>
-          <!-- Main title -->
-          <v-card-title>
-            {{ item.name }}
-          </v-card-title>
+      <div style="align-self: center">
+        <v-row style="height: -webkit-fill-available" :align="'center'">
+          <!-- left side: cover image -->
+          <v-col
+            v-if="
+              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_10
+            "
+            :align-self="'center'"
+            cols="auto"
+          >
+            <div v-if="'artists' in item && item.media_type">
+              <MediaItemThumb :item="item" :minSize="192" />
+            </div>
+            <div v-else-if="'owner' in item && item.media_type">
+              <MediaItemThumb :item="item" :minSize="192" />
+            </div>
+            <div v-else>
+              <MediaItemThumb :item="item" :tile="false" :minSize="192" />
+            </div>
+          </v-col>
+          <v-col>
+            <v-card :border="0" color="transparent">
+              <v-card-item>
+                <!-- Main title -->
+                <v-card-title>
+                  {{ item.name }}
+                </v-card-title>
 
-          <!-- other details -->
-          <div style="padding-bottom: 10px">
-            <!-- version -->
-            <v-card-subtitle
-              v-if="'version' in item && item.version"
-              class="caption"
-            >
-              {{ item.version }}
-            </v-card-subtitle>
-
-            <!-- item artists -->
-            <v-card-subtitle
-              v-if="'artists' in item && item.artists"
-              class="title accent--text"
-            >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                :icon="mdiAccountMusic"
-              />
-              <span
-                v-for="(artist, artistindex) in item.artists"
-                :key="artist.item_id"
-              >
-                <a style="color: accent" @click="artistClick(artist)">{{
-                  artist.name
-                }}</a>
-                <span
-                  v-if="artistindex + 1 < item.artists.length"
-                  :key="artistindex"
-                  style="color: accent"
-                  >{{ ' / ' }}</span
-                >
-              </span>
-            </v-card-subtitle>
-
-            <!-- album artist -->
-            <v-card-subtitle
-              v-if="'artist' in item && item.artist"
-              class="title"
-            >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                :icon="mdiAccountMusic"
-              />
-              <a @click="artistClick(item.artist)">{{ item.artist.name }}</a>
-            </v-card-subtitle>
-
-            <!-- playlist owner -->
-            <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
-              <v-icon
-                color="primary"
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                :icon="mdiAccountMusic"
-              />
-              <a style="color: primary">{{ item.owner }}</a>
-            </v-card-subtitle>
-
-            <v-card-subtitle v-if="'album' in item && item.album">
-              <v-icon
-                color="primary"
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                :icon="mdiAlbum"
-              />
-              <a style="color: secondary" @click="albumClick(item.album)">{{
-                item.album.name
-              }}</a>
-            </v-card-subtitle>
-          </div>
-
-          <!-- play/info buttons -->
-          <div style="display: flex; margin-left: 14px; padding-bottom: 10px">
-            <v-menu location="bottom">
-              <template #activator="{ props }">
-                <v-btn
-                  color="accent"
-                  v-bind="props"
-                  :prepend-icon="mdiPlayCircle"
-                  :disabled="
-                    !store.selectedPlayer?.available ||
-                    store.blockGlobalPlayMenu
-                  "
-                >
-                  {{ $t('play') }}
-                </v-btn>
-              </template>
-
-              <v-card min-width="300">
-                <v-list lines="one" density="comfortable">
-                  <!-- play now -->
-                  <v-list-item
-                    v-for="menuItem in getPlayMenuItems([item])"
-                    :key="menuItem.label"
-                    :title="$t(menuItem.label, menuItem.labelArgs)"
-                    @click="menuItem.action ? menuItem.action() : ''"
+                <!-- other details -->
+                <div style="padding-bottom: 10px">
+                  <!-- version -->
+                  <v-card-subtitle
+                    v-if="'version' in item && item.version"
+                    class="caption"
                   >
-                    <template #prepend>
-                      <v-avatar style="padding-right: 10px">
-                        <v-icon :icon="menuItem.icon" />
-                      </v-avatar>
-                    </template>
-                  </v-list-item>
-                </v-list>
-              </v-card>
-            </v-menu>
+                    {{ item.version }}
+                  </v-card-subtitle>
 
-            <v-btn
-              v-if="!$vuetify.display.mobile && !item.in_library"
-              style="margin-left: 10px"
-              color="accent"
-              tile
-              :prepend-icon="mdiHeartOutline"
-              @click="api.addToLibrary([item])"
-            >
-              {{ $t('add_library') }}
-            </v-btn>
-            <v-btn
-              v-if="!$vuetify.display.mobile && item.in_library"
-              style="margin-left: 10px"
-              color="accent"
-              tile
-              :prepend-icon="mdiHeart"
-              @click="api.removeFromLibrary([item])"
-            >
-              {{ $t('remove_library') }}
-            </v-btn>
-          </div>
+                  <!-- item artists -->
+                  <v-card-subtitle
+                    v-if="'artists' in item && item.artists"
+                    class="title accent--text"
+                  >
+                    <v-icon
+                      style="margin-left: -3px; margin-right: 3px"
+                      small
+                      color="primary"
+                      :icon="mdiAccountMusic"
+                    />
+                    <span
+                      v-for="(artist, artistindex) in item.artists"
+                      :key="artist.item_id"
+                    >
+                      <a style="color: accent" @click="artistClick(artist)">{{
+                        artist.name
+                      }}</a>
+                      <span
+                        v-if="artistindex + 1 < item.artists.length"
+                        :key="artistindex"
+                        style="color: accent"
+                        >{{ ' / ' }}</span
+                      >
+                    </span>
+                  </v-card-subtitle>
 
-          <!-- Description/metadata -->
-          <v-card-subtitle
-            v-if="description"
-            class="body-2 justify-left"
-            style="padding-bottom: 10px; white-space: pre-line; cursor: pointer"
-            @click="showFullInfo = !showFullInfo"
-            >{{ description }}</v-card-subtitle
-          >
-          <!-- genres/tags -->
-          <div
-            v-if="item && item.metadata.genres"
-            class="justify-center"
-            style="margin-left: 15px; padding-bottom: 20px"
-          >
-            <v-chip
-              v-for="tag of item.metadata.genres"
-              :key="tag"
-              color="blue-grey lighten-1"
-              style="margin-right: 5px; margin-bottom: 5px"
-              small
-              outlined
-            >
-              {{ tag }}
-            </v-chip>
-          </div>
-        </div>
-      </v-layout>
-      <v-layout
-        v-if="item"
-        style="z-index: 800; height: 100%; padding-left: 15px"
-      >
-        <!-- provider icons -->
-        <div style="position: absolute; float: right; right: 15px; top: 15px">
-          <ProviderIcons
-            :provider-ids="item.provider_ids"
-            :height="25"
-            :enable-link="true"
-          />
-        </div>
-      </v-layout>
+                  <!-- album artist -->
+                  <v-card-subtitle
+                    v-if="'artist' in item && item.artist"
+                    class="title"
+                  >
+                    <v-icon
+                      style="margin-left: -3px; margin-right: 3px"
+                      small
+                      color="primary"
+                      :icon="mdiAccountMusic"
+                    />
+                    <a @click="artistClick(item.artist)">{{
+                      item.artist.name
+                    }}</a>
+                  </v-card-subtitle>
+
+                  <!-- playlist owner -->
+                  <v-card-subtitle
+                    v-if="'owner' in item && item.owner"
+                    class="title"
+                  >
+                    <v-icon
+                      color="primary"
+                      style="margin-left: -3px; margin-right: 3px"
+                      small
+                      :icon="mdiAccountMusic"
+                    />
+                    <a style="color: primary">{{ item.owner }}</a>
+                  </v-card-subtitle>
+
+                  <v-card-subtitle v-if="'album' in item && item.album">
+                    <v-icon
+                      color="primary"
+                      style="margin-left: -3px; margin-right: 3px"
+                      small
+                      :icon="mdiAlbum"
+                    />
+                    <a
+                      style="color: secondary"
+                      @click="albumClick(item.album)"
+                      >{{ item.album.name }}</a
+                    >
+                  </v-card-subtitle>
+                </div>
+              </v-card-item>
+              <!-- play/info buttons -->
+              <div style="margin-left: 14px; padding-bottom: 16px">
+                <v-row>
+                  <v-col style="padding: 7px" cols="auto">
+                    <v-menu location="bottom">
+                      <template #activator="{ props }">
+                        <v-btn
+                          color="accent"
+                          v-bind="props"
+                          :prepend-icon="mdiPlayCircle"
+                          :disabled="
+                            !store.selectedPlayer?.available ||
+                            store.blockGlobalPlayMenu
+                          "
+                        >
+                          {{ $t('play') }}
+                        </v-btn>
+                      </template>
+
+                      <v-card min-width="300">
+                        <v-list lines="one" density="comfortable">
+                          <!-- play now -->
+                          <v-list-item
+                            v-for="menuItem in getPlayMenuItems([item])"
+                            :key="menuItem.label"
+                            :title="$t(menuItem.label, menuItem.labelArgs)"
+                            @click="menuItem.action ? menuItem.action() : ''"
+                          >
+                            <template #prepend>
+                              <v-avatar style="padding-right: 10px">
+                                <v-icon :icon="menuItem.icon" />
+                              </v-avatar>
+                            </template>
+                          </v-list-item>
+                        </v-list>
+                      </v-card>
+                    </v-menu>
+                  </v-col>
+                  <v-col style="padding: 7px" cols="auto">
+                    <v-btn
+                      v-if="!item.in_library"
+                      color="accent"
+                      tile
+                      :prepend-icon="mdiHeartOutline"
+                      @click="api.addToLibrary([item])"
+                    >
+                      {{ $t('add_library') }}
+                    </v-btn>
+                    <v-btn
+                      v-if="item.in_library"
+                      color="accent"
+                      tile
+                      :prepend-icon="mdiHeart"
+                      @click="api.removeFromLibrary([item])"
+                    >
+                      {{ $t('remove_library') }}
+                    </v-btn>
+                  </v-col>
+                  <v-spacer />
+                </v-row>
+              </div>
+              <v-card-subtitle
+                v-if="description"
+                class="description-text selectable"
+                @mouseup="showFullInfo = !showFullInfo"
+                v-html="description"
+              />
+              <!-- genres/tags -->
+              <div
+                v-if="item && item.metadata.genres"
+                style="padding-bottom: 10px; padding-top: 10px"
+              >
+                <v-chip
+                  v-for="tag of item.metadata.genres"
+                  :key="tag"
+                  color="blue-grey lighten-1"
+                  style="margin-right: 5px; margin-bottom: 5px"
+                  small
+                  outlined
+                >
+                  {{ tag }}
+                </v-chip>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
     </v-card>
   </div>
 </template>
@@ -260,11 +235,10 @@ import { api } from '../plugins/api';
 import { ImageType } from '../plugins/api';
 import type { Album, Artist, ItemMapping, MediaItemType } from '../plugins/api';
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue';
-import MediaItemThumb from './MediaItemThumb.vue';
-import { getImageThumbForItem } from './MediaItemThumb.vue';
+import MediaItemThumb, { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { truncateString } from '@/utils';
+import { getResponsiveBreakpoints, truncateString } from '@/utils';
 import {
   getPlayMenuItems,
   getContextMenuItems,
@@ -279,18 +253,8 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
 
-const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url)
-  .href;
-
 const { t } = useI18n();
 const router = useRouter();
-
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_queue];
-  }
-  return undefined;
-});
 
 watchEffect(async () => {
   if (props.item) {
@@ -365,11 +329,26 @@ const description = computed(() => {
 </script>
 
 <style>
-.background-image {
-  position: absolute;
+.description-text {
+  cursor: text;
+  overflow: auto;
+  max-height: 14vh;
+  white-space: pre-line;
+  max-width: 750px;
 }
-
-.background-image .v-img__img--cover {
-  object-position: 50% 20%;
+.description-text::-webkit-scrollbar {
+  display: none;
+}
+.header-card {
+  padding: 15px 24px 15px 24px;
+  padding-right: 15px;
+  background-size: cover;
+  background-position: 50% 20%;
+  border: 0px !important;
+  max-height: 500px;
+  min-height: 340px;
+  overflow: auto;
+  display: flex;
+  border-radius: 0px;
 }
 </style>
