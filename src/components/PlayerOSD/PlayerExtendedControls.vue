@@ -9,8 +9,9 @@
         icon
         variant="plain"
         @click="
-          $router.push('/playerqueue/');
-          store.showFullscreenPlayer = false;
+          props.showQueueDialog
+            ? (showQueueDialog = true)
+            : $router.push('/playerqueue/')
         "
       >
         <v-icon :size="props.smallBtnIcon.icon">
@@ -50,17 +51,15 @@
               !responsiveVolumeSize
             "
           >
-            <v-slider
-              :style="`width: ${volumeSize}px; margin-right: 0px`"
+            <PlayerVolume
+              :style="'margin-right: 0px;'"
+              :width="volumeSize"
+              :is-powered="true"
               :model-value="
                 store.selectedPlayer?.is_group
                   ? Math.round(store.selectedPlayer?.group_volume_level)
                   : Math.round(store.selectedPlayer?.volume_level)
               "
-              hide-details
-              :track-size="4"
-              :thumb-size="10"
-              :step="2"
               @update:model-value="
                 store.selectedPlayer?.is_group
                   ? api.queueCommandGroupVolume(
@@ -94,7 +93,7 @@
                   </div>
                 </v-btn>
               </template>
-            </v-slider>
+            </PlayerVolume>
           </div>
           <div v-else>
             <v-btn
@@ -116,7 +115,7 @@
           </div>
         </template>
 
-        <v-card min-width="300">
+        <v-card min-width="350">
           <v-list style="overflow: hidden" lines="two">
             <v-list-item
               density="compact"
@@ -177,13 +176,16 @@ import { store } from '@/plugins/store';
 import { ref } from 'vue';
 import VolumeControl from '../VolumeControl.vue';
 import { getResponsiveBreakpoints } from '@/utils';
+import PlayerVolume from './PlayerVolume.vue';
+import { showQueueDialog } from '../PlayerQueue.vue';
 
 // properties
 export interface Props {
   // eslint-disable-next-line vue/require-default-prop
   activePlayerQueue?: PlayerQueue;
-  volumeSize?: number | string;
+  volumeSize?: string;
   responsiveVolumeSize?: boolean;
+  showQueueDialog?: boolean;
   buttonVisibility?: {
     queue: boolean;
     player: boolean;
@@ -197,8 +199,9 @@ export interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   smallBtnIcon: () => ({ button: 40, icon: 24 }),
-  volumeSize: 150,
+  volumeSize: '150px',
   responsiveVolumeSize: true,
+  showQueueDialog: false,
   buttonVisibility: () => ({
     queue: true,
     player: true,
@@ -213,10 +216,6 @@ const showVolume = ref(false);
 .player-extended-controls {
   display: contents;
   width: 100%;
-}
-
-.player-extended-controls > div {
-  padding-right: 5px;
 }
 
 .player-extended-controls > div {

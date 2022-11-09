@@ -10,6 +10,7 @@
       "
     />
     <PlayerSelect />
+    <PlayerQueueContextMenu />
     <TopBar />
     <v-main v-if="store.apiInitialized">
       <v-container fluid style="padding: 0">
@@ -40,6 +41,7 @@ import TopBar from './components/TopBar.vue';
 import PlayerOSD from './components/PlayerOSD/Player.vue';
 import PlayerSelect from './components/PlayerSelect.vue';
 import ReloadPrompt from './components/ReloadPrompt.vue';
+import PlayerQueueContextMenu from './components/PlayerQueueDialog.vue';
 import 'vuetify/styles';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import type { HassPanelData, HassData } from './main';
@@ -71,10 +73,10 @@ document.addEventListener('forward-panel-prop', function (e) {
 });
 
 const verifyThemeVar = function (
-  theme: any,
+  theme: { [x: string]: object },
   key: string,
-  extendedTheme: any,
-  recoveryValue: any
+  extendedTheme: Record<string, string> | undefined,
+  recoveryValue: { [x: string]: object }
 ) {
   if (theme && key in theme) return theme[key];
   else if (extendedTheme && key in extendedTheme) return extendedTheme[key];
@@ -126,7 +128,7 @@ const setTheme = async function (hassData: HassData) {
   } else {
     // custom theme
     const customTheme = hassData.themes?.themes[hassData.themes.theme];
-    let availThemeModes: any;
+    let availThemeModes: Record<string, string> | any;
     const curThemeMode = darkMode ? darkTheme : lightTheme;
 
     if (customTheme && customTheme?.modes) {
@@ -223,29 +225,12 @@ div.v-navigation-drawer__scrim {
   margin-right: 0px;
 }
 
-.volumerow .v-slider .v-slider__container {
-  margin-left: 57px;
-  margin-right: 15px;
-  margin-top: -10px;
-}
-
-.slider .div.v-input__append {
-  padding-top: 0px;
-  margin-top: -10px;
-}
-
 div.v-slide-group__next {
   margin-bottom: 5px;
 }
 
 div.v-slide-group__prev {
   margin-bottom: 5px;
-}
-
-.v-tabs {
-  padding-right: 45px;
-  padding-left: 45px;
-  align-items: center;
 }
 
 .v-slide-group {
@@ -279,10 +264,6 @@ div.v-slide-group__prev {
   align-items: center;
   padding: 0px;
   padding-right: 0px;
-}
-
-.listitem-action {
-  padding-left: 5px;
 }
 
 .listitem-thumb {
@@ -344,5 +325,14 @@ div.v-slide-group__prev {
 
 .citl > div > div {
   white-space: nowrap;
+}
+
+.list-item-subtitle-slider {
+  min-height: 20px;
+  padding: 8px 11px 8px;
+}
+
+.hover {
+  background-color: rgb(0 0 0 / 2%);
 }
 </style>

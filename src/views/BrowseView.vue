@@ -9,7 +9,7 @@
       "
     >
       <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate></v-progress-linear>
+      <v-progress-linear v-if="loading" indeterminate />
 
       <RecycleScroller
         v-slot="{ item }"
@@ -25,14 +25,14 @@
           :show-providers="false"
           :is-selected="false"
           @click="onClick"
-        ></ListviewItem>
+        />
       </RecycleScroller>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, watchEffect } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 import { useI18n } from 'vue-i18n';
 import { RecycleScroller } from 'vue-virtual-scroller';
@@ -48,11 +48,6 @@ import { store } from '../plugins/store';
 import { useRouter } from 'vue-router';
 import { getBrowseFolderName } from '../utils';
 
-export interface Props {
-  path?: string;
-}
-const props = defineProps<Props>();
-
 const { t } = useI18n();
 const router = useRouter();
 const { mobile } = useDisplay();
@@ -62,25 +57,29 @@ const loading = ref(false);
 
 const loadData = async function () {
   loading.value = true;
-  browseItem.value = await api.browse(props.path);
+  browseItem.value = await api.browse(page.value);
   // set header title to browse title
-  if (!browseItem.value || !props.path) store.topBarTitle = t('browse');
+  if (!browseItem.value || !page.value) store.topBarTitle = t('browse');
   else {
     if (mobile.value)
       store.topBarTitle = getBrowseFolderName(browseItem.value, t);
     else
-      store.topBarTitle =
-        t('browse') + ' | ' + getBrowseFolderName(browseItem.value, t);
+      store.topBarTitle = `${t('browse')} | ${getBrowseFolderName(
+        browseItem.value,
+        t
+      )}`;
   }
   loading.value = false;
 };
+
+const page = ref('');
 
 onMounted(() => {
   loadData();
 });
 
 watch(
-  () => props.path,
+  () => page.value,
   () => {
     loadData();
   }
@@ -88,10 +87,7 @@ watch(
 
 const onClick = function (mediaItem: MediaItemType) {
   if (mediaItem.media_type === MediaType.FOLDER) {
-    router.push({
-      name: 'browse',
-      params: { path: mediaItem.path },
-    });
+    page.value = mediaItem.path;
   } else {
     router.push({
       name: mediaItem.media_type,

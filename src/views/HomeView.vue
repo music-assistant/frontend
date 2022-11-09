@@ -67,16 +67,15 @@ import {
   mdiFolder,
   mdiFileSync,
   mdiCached,
+  mdiCogOutline,
 } from '@mdi/js';
-import { ref, computed, onBeforeUnmount } from 'vue';
+import { ref, onBeforeUnmount } from 'vue';
 import { store } from '../plugins/store';
 import GlobalSearch from '../components/GlobalSearch.vue';
 
 import { api } from '@/plugins/api';
 import { useDisplay } from 'vuetify';
-
-const { mobile } = useDisplay();
-const searchHasFocus = ref(false);
+import router from '@/plugins/router';
 
 store.topBarTitle = store.defaultTopBarTitle;
 store.topBarContextMenuItems = [
@@ -96,13 +95,17 @@ store.topBarContextMenuItems = [
     },
     icon: mdiCached,
   },
+  {
+    label: 'settings',
+    labelArgs: [],
+    action: () => {
+      router.push('/settings/');
+    },
+    icon: mdiCogOutline,
+  },
 ];
 onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
-});
-
-const thumbSize = computed(() => {
-  return mobile.value ? 100 : 150;
 });
 
 const cards = ref([

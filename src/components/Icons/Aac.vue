@@ -45,3 +45,15 @@ L174,276.01H185.82z"
     </g>
   </svg>
 </template>
+
+<script lang="ts">
+export default {
+  props: {
+    darkMode: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
+  },
+};
+</script>

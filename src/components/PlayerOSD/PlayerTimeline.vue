@@ -27,10 +27,7 @@
     <template #prepend>
       <!-- current time detail -->
       <div
-        v-if="
-          streamDetails &&
-          curQueueItem.media_item?.media_type !== MediaType.RADIO
-        "
+        v-if="curQueueItem.media_item?.media_type !== MediaType.RADIO"
         class="text-caption"
         style="cursor: pointer"
         @click="
@@ -39,20 +36,17 @@
             : (showRemainingTime = true)
         "
       >
-        {{ playerCurTimeStr }}
+        {{ playerCurTimeStr || '00:00' }}
       </div>
     </template>
 
     <template #append>
       <!-- end time detail -->
       <div
-        v-if="
-          streamDetails &&
-          curQueueItem.media_item?.media_type !== MediaType.RADIO
-        "
+        v-if="curQueueItem.media_item?.media_type !== MediaType.RADIO"
         class="text-caption"
       >
-        {{ playerTotalTimeStr }}
+        {{ playerTotalTimeStr || '00:00' }}
       </div>
     </template>
   </v-slider>

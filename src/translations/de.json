@@ -95,5 +95,7 @@
     "qobuz": "Qobuz",
     "file": "Dateisystem",
     "tunein": "Tune-in"
-  }
+  },
+  "goto_artist": "Zum Künstler {0}",
+  "goto_album": "Zum Album {0}"
 }

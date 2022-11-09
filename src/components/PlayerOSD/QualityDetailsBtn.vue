@@ -10,7 +10,7 @@
           v-bind="props"
           variant="plain"
         >
-          <IconBase :dark-mode="true" name="ogg" />
+          <IconBase name="ogg" />
         </v-btn>
         <v-img
           v-else
@@ -52,7 +52,6 @@
               <IconBase
                 :height="'25px'"
                 :width="'45px'"
-                :dark-mode="true"
                 :name="getContentTypeIcon(streamDetails.content_type)"
               />
             </template>
@@ -71,12 +70,7 @@
             class="list-item"
           >
             <template #prepend>
-              <IconBase
-                :height="'25px'"
-                :width="'45px'"
-                :dark-mode="true"
-                :name="'crossfade'"
-              />
+              <IconBase :height="'25px'" :width="'45px'" :name="'crossfade'" />
             </template>
             <v-list-item-title class="text-subtitle-1">
               {{ $t('crossfade_enabled') }}
@@ -89,12 +83,7 @@
             class="list-item"
           >
             <template #prepend>
-              <IconBase
-                :height="'25px'"
-                :width="'45px'"
-                :dark-mode="true"
-                :name="'level'"
-              />
+              <IconBase :height="'25px'" :width="'45px'" :name="'level'" />
             </template>
             <v-list-item-title class="text-subtitle-1">
               {{ streamDetails.gain_correct }} dB

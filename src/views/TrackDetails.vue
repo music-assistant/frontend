@@ -26,16 +26,15 @@
 <script setup lang="ts">
 import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
-import { ref, reactive } from 'vue';
+import { ref, onBeforeUnmount, onMounted, watchEffect } from 'vue';
 import {
   MassEventType,
   type ProviderType,
   type Track,
   type MassEvent,
   type MediaItemType,
+  api,
 } from '../plugins/api';
-import { api } from '../plugins/api';
-import { onBeforeUnmount, onMounted, watchEffect } from 'vue';
 
 export interface Props {
   item_id: string;

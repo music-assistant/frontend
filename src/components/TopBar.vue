@@ -35,7 +35,10 @@
           <template #activator="{ props: menu }">
             <v-tooltip location="top end" origin="end center">
               <template #activator="{ props: tooltip }">
-                <v-btn v-if="jobsInProgress.length > 0" icon>
+                <v-btn
+                  v-if="jobsInProgress.length > 0 && store.showBackgroundJobs"
+                  icon
+                >
                   <v-progress-circular
                     indeterminate
                     v-bind="mergeProps(menu, tooltip)"
@@ -94,7 +97,7 @@
       v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1"
       #extension
     >
-      <v-tabs show-arrows centered style="width: 100%">
+      <v-tabs show-arrows align-tabs="center" style="width: 100%">
         <v-tab v-for="tab in tabs" :key="tab.label" :to="tab.path">{{
           $t(tab.label)
         }}</v-tab>

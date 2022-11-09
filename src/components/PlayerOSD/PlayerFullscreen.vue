@@ -30,6 +30,7 @@
           <PlayerExtendedControls
             :small-btn-icon="{ button: 48, icon: 24 }"
             :active-player-queue="activePlayerQueue"
+            :show-queue-dialog="true"
             :button-visibility="{
               queue:
                 $vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1,
@@ -54,7 +55,8 @@
               width: min(calc(100vw - 40px), calc(100vh - 330px));
             "
             :item="curQueueItem.media_item || curQueueItem"
-            :max-size="256"
+            :max-size="640"
+            :size="512"
           />
         </div>
 
@@ -161,6 +163,7 @@
                     :small-btn-icon="smallBtnIcon"
                     :active-player-queue="activePlayerQueue"
                     :responsive-volume-size="true"
+                    :show-queue-dialog="true"
                   />
                 </div>
               </div>

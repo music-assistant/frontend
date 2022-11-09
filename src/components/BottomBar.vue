@@ -3,7 +3,12 @@
     v-if="$vuetify.display.width < getResponsiveBreakpoints.breakpoint_1"
     style="padding-top: 10px; width: 100%"
   >
-    <v-tabs show-arrows stacked centered style="width: 100%; height: auto">
+    <v-tabs
+      show-arrows
+      stacked
+      align-tabs="center"
+      style="width: 100%; height: auto"
+    >
       <v-tab
         v-for="tab in tabs"
         :key="tab.label"
@@ -30,6 +35,7 @@ import {
   mdiPlaylistMusic,
   mdiRadio,
   mdiFolder,
+  mdiCogOutline,
 } from '@mdi/js';
 import { ref } from 'vue';
 
@@ -68,6 +74,11 @@ const tabs = ref([
     label: 'browse',
     icon: mdiFolder,
     path: '/browse',
+  },
+  {
+    label: 'settings',
+    icon: mdiCogOutline,
+    path: '/settings',
   },
 ]);
 </script>

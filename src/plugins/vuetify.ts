@@ -2,12 +2,14 @@
 import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/lib/iconsets/mdi-svg';
 import VueHorizontal from 'vue-horizontal';
+import Vue3TouchEvents from 'vue3-touch-events';
 
 export default createVuetify(
   // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
   {
     components: {
       VueHorizontal,
+      Vue3TouchEvents,
     },
     icons: {
       defaultSet: 'mdi',

@@ -1,21 +1,23 @@
 <template>
-  <div class="provider-icons" :style="`height: ${height};`">
+  <div class="provider-icons">
     <v-tooltip
       v-for="prov of uniqueProviders"
       :key="prov.prov_id"
       location="bottom"
     >
       <template #activator="{ props }">
-        <IconBase
-          v-bind="props"
-          :key="prov.prov_type"
-          :width="'1.75em'"
-          class="provider-icon"
-          :height="height.toString()"
-          :name="getProviderIcon(prov.prov_type)"
-          :style="enableLink ? 'cursor: pointer' : ''"
-          @click="enableLink ? provClicked(prov) : ''"
-        />
+        <v-btn icon v-bind="props" variant="plain">
+          <IconBase
+            v-bind="props"
+            :key="prov.prov_type"
+            :width="size || width"
+            :height="size || height"
+            class="provider-icon"
+            :name="getProviderIcon(prov.prov_type)"
+            :style="enableLink ? 'cursor: pointer' : ''"
+            @click="enableLink ? provClicked(prov) : ''"
+          />
+        </v-btn>
       </template>
       <span>{{ $t('providers.' + prov.prov_type.toString()) }}</span>
     </v-tooltip>
@@ -28,12 +30,20 @@ import { MediaQuality } from '../plugins/api';
 import { computed } from 'vue';
 import IconBase from './Icons/IconBase.vue';
 
+// properties
 export interface Props {
   providerIds: MediaItemProviderId[];
-  height: number;
+  height?: string;
+  width?: string;
+  size?: string;
   enableLink?: boolean;
 }
-const props = defineProps<Props>();
+
+const props = withDefaults(defineProps<Props>(), {
+  height: '',
+  width: '',
+  size: '1.4em',
+});
 
 const uniqueProviders = computed(() => {
   const output: MediaItemProviderId[] = [];
@@ -102,7 +112,6 @@ export const getQualityDesc = function (provDetails: MediaItemProviderId) {
 
 <style scoped>
 .provider-icons {
-  width: auto;
   vertical-align: middle;
   align-items: center;
   padding: 0px;
@@ -110,7 +119,6 @@ export const getQualityDesc = function (provDetails: MediaItemProviderId) {
 
 .provider-icon {
   float: inherit;
-  padding-left: 5px;
   display: flex;
   margin: 5px;
 }

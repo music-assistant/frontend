@@ -19,7 +19,13 @@
         :min-width="minSize"
         :cover="cover"
         :src="imgData"
-        :lazy-src="$vuetify.theme.current.dark ? darkCoverImg : lightCoverImg"
+        :lazy-src="
+          !lazySrc
+            ? $vuetify.theme.current.dark
+              ? darkCoverImg
+              : lightCoverImg
+            : lazySrc
+        "
       >
         <template #placeholder>
           <div class="d-flex align-center justify-center fill-height">
@@ -50,6 +56,7 @@ export interface Props {
   tile?: boolean;
   cover?: boolean;
   fallback?: string;
+  lazySrc?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -82,7 +89,18 @@ watchEffect(async () => {
 <script lang="ts">
 //// utility functions for images
 
-export const getMediaItemImage = function (
+function getMeta(url: string) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = url;
+    img.onload = function (meta) {
+      resolve({ width: meta.path[0].width, height: meta.path[0].height });
+    };
+    img.onerror = () => reject();
+  });
+}
+
+export const getMediaItemImage = async function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
   includeFileBased = false
@@ -91,10 +109,17 @@ export const getMediaItemImage = function (
   if (!mediaItem) return undefined;
   if ('image' in mediaItem && mediaItem.image) return mediaItem.image; // queueItem
   if ('metadata' in mediaItem && mediaItem.metadata.images) {
-    for (const img of mediaItem.metadata.images) {
-      if (img.is_file && !includeFileBased) continue;
-      if (img.type == type) return img;
+    let img: MediaItemImage | undefined;
+    let refImgSize = 0;
+    for (const imgEntity of mediaItem.metadata.images) {
+      if (imgEntity.is_file && !includeFileBased) continue;
+      const imgMeta: any = await getMeta(imgEntity.url);
+      if (imgMeta.height > refImgSize) {
+        refImgSize = imgMeta.height;
+        img = imgEntity;
+      }
     }
+    if (img && img.type == type) return img;
   }
   // retry with album of track
   if (
@@ -140,7 +165,7 @@ export const getImageThumbForItem = async function (
   size?: number
 ): Promise<string | undefined> {
   if (!mediaItem) return;
-  const img = getMediaItemImage(mediaItem, type, true);
+  const img = await getMediaItemImage(mediaItem, type, true);
   if (!img) return undefined;
   if (!img.is_file && size) {
     // get url to resized image(thumb) from weserv service

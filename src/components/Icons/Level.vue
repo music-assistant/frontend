@@ -49,3 +49,15 @@
     </g>
   </svg>
 </template>
+
+<script lang="ts">
+export default {
+  props: {
+    darkMode: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
+  },
+};
+</script>

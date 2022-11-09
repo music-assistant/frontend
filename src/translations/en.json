@@ -72,6 +72,8 @@
   "stream_type": "Codec/type to use for the audio stream to the player",
   "announce_volume_increase": "Relative volume increase for announcements",
   "max_sample_rate": "Maximum sample rate to send to the player",
+  "muted": "Muted",
+  "unmuted": "Unmuted",
   "metadata_mode": {
      "title": "ICY Metadata mode",
      "disabled": "Disabled: Do not report ICY metadata support to player",
@@ -124,9 +126,8 @@
     "tunein": "Tune-in",
     "ytmusic": "Youtube Music"
   },
-  
-  "goto_artist": "Goto artist {0}",
-  "goto_album": "Goto album {0}",
+  "goto_artist": "Go to artist {0}",
+  "goto_album": "Go to album {0}",
   "show_select_boxes": "Show selection boxes",
   "perform_action": "Perform action on {0} item(s)",
   "album_type": {

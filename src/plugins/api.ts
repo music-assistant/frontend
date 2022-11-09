@@ -876,7 +876,10 @@ export class MusicAssistantApi {
     }, 200);
   }
 
-  public playerQueueSettings(queueId: string, settings: QueueSettingsUpdate) {
+  public playerQueueSettings(
+    queueId: string | undefined,
+    settings: QueueSettingsUpdate
+  ) {
     this.executeCmd('playerqueue/settings', { queue_id: queueId, settings });
   }
 

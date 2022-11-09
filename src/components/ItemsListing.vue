@@ -189,7 +189,7 @@
         <RecycleScroller
           v-slot="{ item }"
           :items="items"
-          :item-size="60"
+          :min-item-size="60"
           key-field="item_id"
           page-mode
         >

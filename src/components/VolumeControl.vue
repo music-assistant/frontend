@@ -1,129 +1,164 @@
 <template>
   <v-list style="overflow: hidden" lines="2">
     <!-- special group volume -->
-    <div
-      v-if="player.is_group"
-      class="volumerow"
-      :style="player.group_powered ? 'opacity: 0.75' : 'opacity: 0.5'"
-    >
-      <v-btn
-        icon
-        variant="plain"
-        width="60"
-        height="30"
-        size="x-large"
-        @click="
-          api.queueCommandGroupPower(player.player_id, !player.group_powered)
-        "
-      >
-        <v-icon :icon="mdiPower" />
-      </v-btn>
-      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
-        truncateString(player.group_name, 27)
-      }}</span>
-      <div
-        class="text-caption"
-        style="
-          position: absolute;
-          width: 60px;
-          text-align: center;
-          margin-left: 0px;
-        "
-      >
-        {{ player.group_volume_level }}
-      </div>
-
-      <v-slider
-        lazy
-        density="compact"
-        step="2"
-        track-size="2"
-        thumb-size="10"
-        thumb-label
-        :disabled="!player.group_powered"
-        :model-value="Math.round(player.group_volume_level)"
-        style="margin-left: 5px"
-        @update:model-value="
-          api.queueCommandGroupVolume(player.player_id, $event)
-        "
-      />
+    <div v-if="player.is_group">
+      <v-list-item density="compact" two-line style="padding-left: 0px">
+        <template #title>
+          <div
+            class="line-clamp-1"
+            style="padding-left: 10px; padding-right: 10px"
+          >
+            {{ player.group_name }}
+          </div>
+        </template>
+        <template #subtitle>
+          <PlayerVolume
+            :disabled="!player.group_powered"
+            :model-value="Math.round(player.group_volume_level)"
+            class="list-item-subtitle-slider"
+            @update:model-value="
+              api.queueCommandGroupVolume(player.player_id, $event)
+            "
+          />
+        </template>
+        <template #prepend>
+          <div :style="player.group_powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+            <div>
+              <v-btn
+                icon
+                variant="plain"
+                width="50"
+                height="30"
+                size="x-large"
+                @click="
+                  api.queueCommandGroupPower(
+                    player.player_id,
+                    !player.group_powered
+                  )
+                "
+              >
+                <v-icon :icon="mdiPower" />
+              </v-btn>
+            </div>
+            <div class="text-caption" style="text-align: center">
+              {{ player.group_volume_level }}
+            </div>
+          </div>
+          <div
+            :style="player.group_powered ? 'opacity: 0.75' : 'opacity: 0.5;'"
+          >
+            <div>
+              <v-btn icon variant="plain" width="50" height="30" size="x-large">
+                <v-icon
+                  :icon="
+                    player.group_volume_level == 0
+                      ? mdiVolumeMute
+                      : mdiVolumeHigh
+                  "
+                />
+              </v-btn>
+            </div>
+            <div class="text-caption" style="text-align: center">
+              {{ player.group_volume_level == 0 ? $t('muted') : $t('unmuted') }}
+            </div>
+          </div>
+        </template>
+      </v-list-item>
     </div>
-    <v-divider
-      v-if="player.is_group"
-      style="margin-top: 10px; margin-bottom: 10px"
-    />
-
+    <v-divider v-if="player.is_group" />
     <div
       v-for="childPlayer in getVolumePlayers(player)"
       :key="childPlayer.player_id"
-      class="volumerow"
-      :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
     >
-      <span class="text-body-2">
-        <v-btn
-          icon
-          variant="plain"
-          width="60"
-          height="30"
-          size="x-large"
-          style=""
-          @click="api.queueCommandPowerToggle(childPlayer.player_id)"
-        >
-          <v-icon :icon="mdiPower" />
-        </v-btn>
-        <span
-          v-if="player.group_members.includes(childPlayer.player_id)"
-          class="text-body-2"
-          style="position: absolute; margin-top: 3px"
-          >{{ truncateString(childPlayer.name, 27) }}</span
-        >
-        <span
-          v-else
-          class="text-body-2"
-          style="position: absolute; margin-top: 3px"
-          >{{ truncateString(childPlayer.group_name, 27) }}</span
-        >
-      </span>
-      <div
-        class="text-caption"
-        style="
-          position: absolute;
-          width: 60px;
-          text-align: center;
-          margin-left: 0px;
-        "
-      >
-        {{ childPlayer.volume_level }}
-      </div>
-
-      <v-slider
-        lazy
-        density="compact"
-        step="2"
-        track-size="2"
-        thumb-size="10"
-        thumb-label
-        :disabled="!childPlayer.powered"
-        :model-value="Math.round(childPlayer.volume_level)"
-        style="margin-left: 5px"
-        @update:model-value="
-          api.queueCommandVolume(childPlayer.player_id, $event)
-        "
-      />
+      <v-list-item density="compact" two-line style="padding-left: 0px">
+        <template #title>
+          <div
+            class="line-clamp-1"
+            style="padding-left: 10px; padding-right: 10px"
+          >
+            {{
+              player.group_members.includes(childPlayer.player_id)
+                ? childPlayer.name
+                : childPlayer.group_name
+            }}
+          </div>
+        </template>
+        <template #subtitle>
+          <PlayerVolume
+            :disabled="!childPlayer.powered"
+            :model-value="Math.round(childPlayer.volume_level)"
+            class="list-item-subtitle-slider"
+            @update:model-value="
+              api.queueCommandVolume(childPlayer.player_id, $event)
+            "
+          />
+        </template>
+        <template #prepend>
+          <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+            <div>
+              <v-btn
+                icon
+                variant="plain"
+                width="50"
+                height="30"
+                size="x-large"
+                @click="
+                  api.queueCommandGroupPower(
+                    player.player_id,
+                    !player.group_powered
+                  )
+                "
+              >
+                <v-icon :icon="mdiPower" />
+              </v-btn>
+            </div>
+            <div class="text-caption" style="text-align: center">
+              {{ Math.round(childPlayer.volume_level) }}
+            </div>
+          </div>
+          <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5;'">
+            <div>
+              <v-btn icon variant="plain" width="50" height="30" size="x-large">
+                <v-icon
+                  :icon="
+                    player.group_volume_level == 0
+                      ? mdiVolumeMute
+                      : mdiVolumeHigh
+                  "
+                />
+              </v-btn>
+            </div>
+            <div class="text-caption" style="text-align: center">
+              {{ player.group_volume_level == 0 ? $t('muted') : $t('unmuted') }}
+            </div>
+          </div>
+        </template>
+      </v-list-item>
     </div>
   </v-list>
 </template>
 
 <script setup lang="ts">
 import type { Player } from '../plugins/api';
-import { mdiPower } from '@mdi/js';
+import { mdiPower, mdiVolumeHigh, mdiVolumeMute } from '@mdi/js';
 import { api } from '../plugins/api';
 import { truncateString } from '../utils';
+import { store } from '@/plugins/store';
+import PlayerVolume from './PlayerOSD/PlayerVolume.vue';
 
+// properties
 export interface Props {
+  // eslint-disable-next-line vue/require-default-prop
   player: Player;
+  smallBtnIcon: {
+    button: number;
+    icon: number;
+  };
 }
-defineProps<Props>();
+
+const props = withDefaults(defineProps<Props>(), {
+  smallBtnIcon: () => ({ button: 40, icon: 24 }),
+});
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];

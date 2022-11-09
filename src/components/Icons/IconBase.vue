@@ -4,7 +4,11 @@
     role="img"
     class="inline-block fill-current"
     :fill="
-      darkMode ? ($vuetify.theme.current.dark ? darkColor : lightColor) : color
+      isDarkMode
+        ? $vuetify.theme.current.dark
+          ? darkColor
+          : lightColor
+        : color
     "
     :style="`height: ${height}; width: ${width}`"
   />
@@ -87,6 +91,15 @@ export default {
   computed: {
     iconComponent() {
       return icons[this.name];
+    },
+    isDarkMode() {
+      if (
+        this.darkMode ||
+        (icons[this.name].props && icons[this.name].props.darkMode)
+      ) {
+        return true;
+      }
+      return false;
     },
   },
 };

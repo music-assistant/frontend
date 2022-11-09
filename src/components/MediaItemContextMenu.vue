@@ -1,22 +1,36 @@
+<!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <v-overlay
-    :model-value="modelValue"
-    class="align-center justify-center"
+  <v-dialog
+    v-model="modelValue"
+    fullscreen
     :scrim="false"
+    transition="dialog-bottom-transition"
   >
-    <v-menu class="fullscreen-menu" :model-value="modelValue">
-      <v-card>
-        <v-toolbar density="default" dark color="primary">
+    <v-card style="border: none">
+      <v-toolbar dark color="accent">
+        <div style="margin-left: 16px">
           <v-icon :icon="mdiPlayCircleOutline" />
-          <v-toolbar-title v-if="showPlaylistsMenu" style="padding-left: 10px">
-            <b>{{ $t('add_playlist') }}</b>
-            <span v-if="!$vuetify.display.mobile"> | {{ header }} </span>
-          </v-toolbar-title>
-          <v-toolbar-title v-else style="padding-left: 10px">
-            <b>{{ header }}</b>
-          </v-toolbar-title>
-          <v-btn :icon="mdiClose" dark text @click="close()" />
-        </v-toolbar>
+        </div>
+        <v-toolbar-title v-if="showPlaylistsMenu">
+          {{ $t('add_playlist') }}
+          <span v-if="!$vuetify.display.mobile"> | {{ header }} </span>
+        </v-toolbar-title>
+        <v-toolbar-title v-else>
+          {{ header }}
+        </v-toolbar-title>
+
+        <v-spacer />
+        <v-btn style="margin-right: 16px" icon mdiClose @click="close()">
+          <v-icon :icon="mdiClose" />
+        </v-btn>
+      </v-toolbar>
+
+      <div
+        style="
+          transition: transform 1s cubic-bezier(0.18, 0, 0, 1), opacity 1s ease,
+            filter 0.5s ease;
+        "
+      >
         <!-- play contextmenu items -->
         <v-card-text
           v-if="
@@ -29,8 +43,8 @@
             :items="availablePlayers"
             hide-details
             @update:model-value="
-              (newVal) => {
-                store.selectedPlayer = api.players[newVal];
+              (playerId: string) => {
+                store.selectedPlayer = api.players[playerId];
               }
             "
           />
@@ -59,7 +73,6 @@
             !showPlaylistsMenu &&
             actionMenuItems.length > 0
           "
-          style="padding-top: 0; margin-top: -10px; padding-bottom: 0"
         >
           <v-list-item-subtitle style="margin-left: 10px">
             {{ $t('actions') }}
@@ -111,7 +124,7 @@
                     <ProviderIcons
                       v-if="playlist.provider_ids"
                       :provider-ids="playlist.provider_ids"
-                      :height="20"
+                      :height="'20'"
                       class="listitem-actions"
                     />
                   </div>
@@ -147,7 +160,7 @@
                       variant="plain"
                       hide-details
                       @update:model-value="
-                        (txt) => {
+                        (txt: string) => {
                           newPlaylistName = txt;
                         }
                       "
@@ -161,9 +174,9 @@
             </div>
           </v-list>
         </v-card-text>
-      </v-card>
-    </v-menu>
-  </v-overlay>
+      </div>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -630,12 +643,3 @@ export const getContextMenuItems = function (
   return contextMenuItems;
 };
 </script>
-
-<style>
-.fullscreen-menu .v-overlay__content {
-  left: 0px;
-  right: 0px;
-  top: 0px;
-  bottom: 0px;
-}
-</style>

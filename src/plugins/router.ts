@@ -12,6 +12,7 @@ import TrackDetails from '@/views/TrackDetails.vue';
 import RadioDetails from '@/views/RadioDetails.vue';
 import PlaylistDetails from '@/views/PlaylistDetails.vue';
 import PlayerQueue from '@/views/PlayerQueue.vue';
+import SettingsView from '@/views/SettingsView.vue';
 import { store } from './store';
 
 declare module 'vue-router' {
@@ -87,6 +88,12 @@ const routes = [
     name: 'playerqueue',
     path: '/playerqueue',
     component: PlayerQueue,
+    props: true,
+  },
+  {
+    name: 'settings',
+    path: '/settings',
+    component: SettingsView,
     props: true,
   },
 ];

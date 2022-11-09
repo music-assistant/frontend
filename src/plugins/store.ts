@@ -9,6 +9,8 @@ interface Store {
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
   showFullscreenPlayer: boolean;
+  showContextMenu: boolean;
+  showBackgroundJobs: boolean;
   darkTheme: boolean;
   topBarTitle?: string;
   topBarHeight: number;
@@ -24,6 +26,10 @@ interface Store {
     query: LocationQuery;
     meta: RouteMeta;
   }>;
+  prevVolume: Array<{
+    playerId: string;
+    playerVolume: number;
+  }>;
 }
 
 export const store: Store = reactive({
@@ -31,6 +37,8 @@ export const store: Store = reactive({
   isInStandaloneMode: false,
   showPlayersMenu: false,
   showFullscreenPlayer: false,
+  showContextMenu: false,
+  showBackgroundJobs: false,
   darkTheme: false,
   topBarHeight: 55,
   defaultTopBarTitle: 'Music Assistant',
@@ -40,4 +48,5 @@ export const store: Store = reactive({
   apiInitialized: false,
   apiBaseUrl: '',
   prevRoutes: [],
+  prevVolume: [],
 });

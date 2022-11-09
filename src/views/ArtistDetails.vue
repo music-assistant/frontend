@@ -1,7 +1,13 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <v-tabs v-model="activeTab" show-arrows grow>
+    <v-tabs
+      v-model="activeTab"
+      show-arrows
+      align-tabs="center"
+      grow
+      style="width: 100%; height: auto"
+    >
       <v-tab
         :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
         value="tracks"
