@@ -11,6 +11,7 @@ interface Store {
   showFullscreenPlayer: boolean;
   showContextMenu: boolean;
   showBackgroundJobs: boolean;
+  showSettings: boolean;
   darkTheme: boolean;
   topBarTitle?: string;
   topBarHeight: number;
@@ -39,6 +40,7 @@ export const store: Store = reactive({
   showFullscreenPlayer: false,
   showContextMenu: false,
   showBackgroundJobs: false,
+  showSettings: true,
   darkTheme: false,
   topBarHeight: 55,
   defaultTopBarTitle: 'Music Assistant',

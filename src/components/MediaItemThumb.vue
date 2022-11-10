@@ -87,8 +87,7 @@ watchEffect(async () => {
 </script>
 
 <script lang="ts">
-//// utility functions for images
-
+// utility functions for images
 function getMeta(url: string) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -104,22 +103,32 @@ export const getMediaItemImage = async function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
   includeFileBased = false
-): MediaItemImage | undefined {
+): Promise<MediaItemImage | undefined> {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
   if ('image' in mediaItem && mediaItem.image) return mediaItem.image; // queueItem
   if ('metadata' in mediaItem && mediaItem.metadata.images) {
     let img: MediaItemImage | undefined;
     let refImgSize = 0;
+    const agent = window.navigator.userAgent;
+
     for (const imgEntity of mediaItem.metadata.images) {
       if (imgEntity.is_file && !includeFileBased) continue;
+      if (
+        imgEntity.type == type &&
+        (imgEntity.is_file || agent.includes('Home Assistant'))
+      )
+        return imgEntity;
       const imgMeta: any = await getMeta(imgEntity.url);
-      if (imgMeta.height > refImgSize) {
+      if ((!imgMeta || !imgMeta.height) && imgEntity.type == type) {
+        return imgEntity;
+      }
+      if (imgMeta.height > refImgSize && imgEntity.type == type) {
         refImgSize = imgMeta.height;
         img = imgEntity;
       }
     }
-    if (img && img.type == type) return img;
+    return img;
   }
   // retry with album of track
   if (

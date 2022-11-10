@@ -1,9 +1,10 @@
 <template>
   <div>
     <v-list-item
-      ripple
+      link
       :disabled="!itemIsAvailable(item)"
       style="padding-right: 0px"
+      density="compact"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
     >
@@ -13,7 +14,7 @@
             :model-value="isSelected"
             @click.stop
             @update:model-value="
-              (x) => {
+              (x: boolean) => {
                 emit('select', item, x);
               }
             "
@@ -144,76 +145,88 @@
       <template #append>
         <div class="listitem-actions">
           <!-- hi res icon -->
-          <v-img
-            v-if="highResDetails"
-            class="listitem-action"
-            :src="iconHiRes"
-            width="35"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'margin-top:5px;'
-                : 'margin-top:5px;filter: invert(100%);'
-            "
-          >
-            <v-tooltip activator="parent" location="bottom">
-              {{ highResDetails }}
-            </v-tooltip>
-          </v-img>
+          <div v-if="highResDetails" class="listitem-action">
+            <div>
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-img
+                    width="22"
+                    v-bind="props"
+                    :style="
+                      $vuetify.theme.current.dark
+                        ? 'margin-top:5px;'
+                        : 'margin-top:5px;filter: invert(100%);'
+                    "
+                    :src="iconHiRes"
+                  ></v-img>
+                </template>
+                <span>{{ highResDetails }}</span>
+              </v-tooltip>
+            </div>
+          </div>
 
           <!-- provider icons -->
-          <ProviderIcons
+          <div
             v-if="
               item.provider_ids &&
               showProviders &&
               $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_2
             "
-            :provider-ids="item.provider_ids"
-            class="listitem-actions"
-          />
+            class="listitem-action"
+          >
+            <div>
+              <ProviderIcons :provider-ids="item.provider_ids" />
+            </div>
+          </div>
 
           <!-- in library (heart) icon -->
           <div
             v-if="
               'in_library' in item &&
               showLibrary &&
-              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1
+              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
+              showMenu
             "
             class="listitem-action"
           >
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <v-btn
-                  variant="plain"
-                  ripple
-                  v-bind="props"
-                  :icon="item.in_library ? mdiHeart : mdiHeartOutline"
-                  @click="api.toggleLibrary(item)"
-                  @click.prevent
-                  @click.stop
-                />
-              </template>
-              <span>{{ $t('tooltip.library') }}</span>
-            </v-tooltip>
+            <div>
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-btn
+                    :icon="item.in_library ? mdiHeart : mdiHeartOutline"
+                    v-bind="props"
+                    variant="plain"
+                    @click="api.toggleLibrary(item)"
+                    @click.prevent
+                    @click.stop
+                  ></v-btn>
+                </template>
+                <span>{{ $t('tooltip.library') }}</span>
+              </v-tooltip>
+            </div>
           </div>
 
           <!-- islinked icon -->
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <v-icon
-                v-if="
-                  parentItem &&
-                  parentItem.provider_ids.find(
-                    (x) => x.item_id === item.item_id
-                  )
-                "
-                v-bind="props"
-                class="listitem-action"
-                :icon="mdiLinkVariant"
-                size="30"
-              />
-            </template>
-            <span>{{ $t('tooltip.linked') }}</span>
-          </v-tooltip>
+          <div
+            v-if="
+              parentItem &&
+              parentItem.provider_ids.find((x) => x.item_id === item.item_id)
+            "
+            class="listitem-action"
+          >
+            <div>
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-btn
+                    :icon="mdiLinkVariant"
+                    v-bind="props"
+                    variant="plain"
+                  ></v-btn>
+                </template>
+                <span>{{ $t('tooltip.linked') }}</span>
+              </v-tooltip>
+            </div>
+          </div>
 
           <!-- track duration -->
           <div
@@ -225,117 +238,142 @@
             "
             class="listitem-action"
           >
-            <span class="text-caption">{{
-              formatDuration(item.duration)
-            }}</span>
+            <div>
+              <span
+                class="text-caption"
+                style="padding-right: 10px; padding-left: 10px"
+                >{{ formatDuration(item.duration) }}</span
+              >
+            </div>
           </div>
         </div>
 
-        <v-menu v-if="showDetails" location="bottom end" @click:outside.stop>
+        <v-menu
+          v-if="showDetails"
+          :close-on-content-click="false"
+          location="top end"
+          @click:outside.stop
+        >
           <template #activator="{ props }">
-            <v-icon
-              :icon="mdiInformationOutline"
-              size="30"
-              class="listitem-action"
-              style="margin-left: 10px; margin-right: 5px"
-              v-bind="props"
-            />
+            <div class="listitem-action">
+              <v-btn
+                :icon="mdiInformationOutline"
+                v-bind="props"
+                variant="plain"
+              ></v-btn>
+            </div>
           </template>
-          <v-card class="mx-auto" min-width="300">
-            <v-list style="overflow: hidden">
-              <span class="text-h5" style="padding: 10px">{{
-                $t('provider_details')
-              }}</span>
-              <v-divider />
+
+          <v-card class="mx-auto" width="300">
+            <v-list>
+              <v-list-item :min-height="5" class="list-item">
+                <v-list-item-title class="text-h5 mb-1">
+                  {{ $t('stream_details') }}
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+
+            <v-divider></v-divider>
+
+            <v-list>
               <!-- provider icon + name -->
-              <div style="height: 50px; display: flex; align-items: center">
-                <IconBase
-                  :height="'30px'"
-                  :width="'50px'"
-                  :name="getProviderIcon(item.provider)"
-                />
-                {{
-                  truncateString(
-                    api.providers[item.provider_ids[0].prov_id].name,
-                    25
-                  )
-                }}
-              </div>
-
+              <v-list-item :min-height="40" :max-height="40" class="list-item">
+                <template #prepend>
+                  <IconBase
+                    :height="'25px'"
+                    :width="'45px'"
+                    :name="getProviderIcon(item.provider)"
+                  />
+                </template>
+                <v-list-item-title class="text-subtitle-1">
+                  {{ $t('providers.' + item.provider) }}
+                </v-list-item-title>
+              </v-list-item>
               <!-- item ID -->
-              <div style="height: 50px; display: flex; align-items: center">
-                <v-icon
-                  size="40"
-                  :icon="mdiIdentifier"
-                  style="margin-left: 10px; padding-right: 10px"
-                />
-                {{ truncateString(item.item_id, 30) }}
-              </div>
-
+              <v-list-item :min-height="40" :max-height="40" class="list-item">
+                <template #prepend>
+                  <v-icon style="margin: 0px" size="40" :icon="mdiIdentifier" />
+                </template>
+                <v-list-item-title class="text-subtitle-1">
+                  {{ item.item_id }}
+                </v-list-item-title>
+              </v-list-item>
               <!-- link to web location of item (provider share link -->
-              <div
+              <v-list-item
                 v-if="
                   item.provider_ids[0].url && !item.provider.includes('file')
                 "
-                style="height: 50px; display: flex; align-items: center"
+                :min-height="40"
+                :max-height="40"
+                class="list-item"
               >
-                <v-icon
-                  size="40"
-                  :icon="mdiShareOutline"
-                  style="margin-left: 10px; padding-right: 5px"
-                />
-                <a :href="item.provider_ids[0].url" target="_blank">{{
-                  truncateString(item.provider_ids[0].url, 25)
-                }}</a>
-              </div>
-
+                <template #prepend>
+                  <v-icon
+                    style="margin: 0px"
+                    size="35"
+                    :icon="mdiShareOutline"
+                  />
+                </template>
+                <v-list-item-title class="text-subtitle-1">
+                  <a :href="item.provider_ids[0].url" target="_blank">{{
+                    item.provider_ids[0].url
+                  }}</a>
+                </v-list-item-title>
+              </v-list-item>
               <!-- quality details -->
-              <div style="height: 50px; display: flex; align-items: center">
-                <IconBase
-                  :height="'30px'"
-                  :width="'50px'"
-                  :name="getQualityIcon(item.provider_ids[0].quality)"
-                />
-                {{ getQualityDesc(item.provider_ids[0]) }}
-              </div>
+              <v-list-item :min-height="40" :max-height="40" class="list-item">
+                <template #prepend>
+                  <IconBase
+                    :height="'25px'"
+                    :width="'45px'"
+                    :name="getQualityIcon(item.provider_ids[0].quality)"
+                  />
+                </template>
+                <v-list-item-title class="text-subtitle-1">
+                  {{ getQualityDesc(item.provider_ids[0]) }}
+                </v-list-item-title>
+              </v-list-item>
 
               <!-- track preview -->
-              <div v-if="item.media_type == MediaType.TRACK">
-                <div style="height: 50px; display: flex; align-items: center">
-                  <v-icon
-                    :icon="mdiHeadphones"
-                    size="40"
-                    style="margin-left: 10px; padding-right: 15px"
-                  />
-                  Preview
-                </div>
-                <div
-                  style="
-                    height: 50px;
-                    display: flex;
-                    align-items: center;
-                    margin-left: 10px;
-                    margin-right: 10px;
-                  "
-                  @mouseover="fetchPreviewUrl(item.provider, item.item_id)"
-                >
-                  <audio
-                    controls
-                    :src="previewUrls[`${item.provider}.${item.item_id}`]"
-                  />
-                </div>
-              </div>
+              <v-list-item
+                v-if="item.media_type == MediaType.TRACK"
+                :min-height="40"
+                class="list-item"
+              >
+                <template #prepend>
+                  <v-icon style="margin: 0px" size="30" :icon="mdiHeadphones" />
+                </template>
+                <v-list-item-title class="text-subtitle-1">
+                  <div
+                    style="height: 50px; align-items: center; margin-left: 10px"
+                    @mouseover="fetchPreviewUrl(item.provider, item.item_id)"
+                  >
+                    <audio
+                      controls
+                      :src="previewUrls[`${item.provider}.${item.item_id}`]"
+                    />
+                  </div>
+                </v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-card>
         </v-menu>
-
         <!-- menu button/icon -->
-        <v-btn
-          v-if="showMenu"
-          :icon="mdiDotsVertical"
-          variant="plain"
-          @click.stop="emit('menu', item)"
-        />
+        <div v-if="showMenu" class="listitem-action">
+          <div>
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <v-btn
+                  :icon="mdiDotsVertical"
+                  v-bind="props"
+                  variant="plain"
+                  @click.stop="emit('menu', item)"
+                ></v-btn>
+              </template>
+              <span>{{ $t('tooltip.library') }}</span>
+            </v-tooltip>
+          </div>
+        </div>
       </template>
     </v-list-item>
 
@@ -378,7 +416,6 @@ import {
   parseBool,
   getArtistsString,
   getBrowseFolderName,
-  truncateString,
   getResponsiveBreakpoints,
 } from '../utils';
 import { useI18n } from 'vue-i18n';

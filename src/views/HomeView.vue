@@ -9,29 +9,6 @@
       "
     >
       <GlobalSearch />
-      <!-- search artists -->
-      <!-- <v-card
-        v-if="searchArtists.length > 0"
-        style="margin-top: 20px; margin-bottom: 20px"
-      >
-        <v-card-title style="margin-left: 15px">{{
-          $t("artists")
-        }}</v-card-title>
-        <v-slide-group
-          show-arrows="always"
-          style="margin-left: 5px; margin-right: 5px; margin-bottom: 10px"
-        >
-          <v-slide-group-item v-for="item in searchArtists" :key="item.uri">
-            <PanelviewItem
-              :item="item"
-              :size="thumbSize"
-              :is-selected="false"
-              :show-checkboxes="false"
-              style="margin: 5px"
-            />
-          </v-slide-group-item>
-        </v-slide-group>
-      </v-card> -->
 
       <!-- regular menu items -->
       <div style="margin-top: 20px">
@@ -65,48 +42,12 @@ import {
   mdiPlaylistMusic,
   mdiRadio,
   mdiFolder,
-  mdiFileSync,
-  mdiCached,
-  mdiCogOutline,
 } from '@mdi/js';
-import { ref, onBeforeUnmount } from 'vue';
+import { ref } from 'vue';
 import { store } from '../plugins/store';
 import GlobalSearch from '../components/GlobalSearch.vue';
 
-import { api } from '@/plugins/api';
-import { useDisplay } from 'vuetify';
-import router from '@/plugins/router';
-
 store.topBarTitle = store.defaultTopBarTitle;
-store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
-    action: () => {
-      api.startSync(undefined, undefined);
-    },
-    icon: mdiFileSync,
-  },
-  {
-    label: 'sync_full',
-    labelArgs: [],
-    action: () => {
-      api.startSync(undefined, undefined, true);
-    },
-    icon: mdiCached,
-  },
-  {
-    label: 'settings',
-    labelArgs: [],
-    action: () => {
-      router.push('/settings/');
-    },
-    icon: mdiCogOutline,
-  },
-];
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
-});
 
 const cards = ref([
   {

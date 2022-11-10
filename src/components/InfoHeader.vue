@@ -7,13 +7,13 @@
         $vuetify.theme.current.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
-      } 100%), url(${fanartImage});`"
+      } 100%), ${fanartImage ? `url(${fanartImage})` : ''};`"
     >
       <!-- provider icons -->
       <div style="position: absolute; float: right; right: 15px; top: 15px">
         <ProviderIcons
           :provider-ids="item.provider_ids"
-          :height="25"
+          :height="'25'"
           :enable-link="true"
         />
       </div>

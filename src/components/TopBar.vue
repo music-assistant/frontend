@@ -67,6 +67,14 @@
           </v-card>
         </v-menu>
 
+        <v-btn
+          v-if="store.showSettings"
+          icon
+          @click="router.push('/settings/')"
+        >
+          <v-icon :icon="mdiCogOutline" />
+        </v-btn>
+
         <v-menu location="bottom end">
           <template #activator="{ props }">
             <v-btn
@@ -115,6 +123,7 @@ import {
   mdiCheckOutline,
   mdiAlertCircle,
   mdiReload,
+  mdiCogOutline,
 } from '@mdi/js';
 
 import { computed, mergeProps, ref } from 'vue';

@@ -29,9 +29,9 @@ import { ref } from 'vue';
 
 // properties
 export interface Props {
-  width: string;
-  height: string;
-  isPowered: boolean;
+  width?: string;
+  height?: string;
+  isPowered?: boolean;
   style?: string;
 }
 

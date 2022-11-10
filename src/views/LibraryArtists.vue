@@ -14,11 +14,10 @@
 </template>
 
 <script setup lang="ts">
-import { mdiFileSync } from '@mdi/js';
-import { onBeforeUnmount, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ItemsListing from '../components/ItemsListing.vue';
-import { api, MediaType, type Artist } from '../plugins/api';
+import { api, type Artist } from '../plugins/api';
 import { store } from '../plugins/store';
 
 const { t } = useI18n();
@@ -44,17 +43,4 @@ const loadItems = async function (
 };
 
 store.topBarTitle = t('artists');
-store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
-    action: () => {
-      api.startSync(MediaType.ARTIST);
-    },
-    icon: mdiFileSync,
-  },
-];
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
-});
 </script>

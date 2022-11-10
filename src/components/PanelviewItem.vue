@@ -18,7 +18,7 @@
         :model-value="isSelected"
         @click.stop
         @update:model-value="
-          (x) => {
+          (x: boolean) => {
             emit('select', item, x);
           }
         "

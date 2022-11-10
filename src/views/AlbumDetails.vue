@@ -38,16 +38,16 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing from '../components/ItemsListing.vue';
-import { filteredItems } from '../components/ItemsListing.vue';
+import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import {
+  api,
+  ProviderType,
   MassEventType,
   type Album,
   type MassEvent,
   type MediaItemType,
 } from '../plugins/api';
-import { api, ProviderType } from '../plugins/api';
 import { watchEffect, ref, onMounted, onBeforeUnmount } from 'vue';
 import { parseBool } from '@/utils';
 

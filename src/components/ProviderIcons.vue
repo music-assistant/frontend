@@ -40,9 +40,10 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  height: '',
-  width: '',
   size: '1.4em',
+  height: '1.4em',
+  width: '1.4em',
+  enableLink: false,
 });
 
 const uniqueProviders = computed(() => {

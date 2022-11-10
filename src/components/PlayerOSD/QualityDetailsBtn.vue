@@ -10,7 +10,7 @@
           v-bind="props"
           variant="plain"
         >
-          <IconBase name="ogg" />
+          <IconBase :name="getContentTypeIcon(streamDetails.content_type)" />
         </v-btn>
         <v-img
           v-else

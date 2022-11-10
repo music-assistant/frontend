@@ -85,8 +85,8 @@
         <template #activator="{ props: menu }">
           <v-tooltip location="bottom">
             <template #activator="{ props: tooltip }">
-              <v-btn icon v-bind="props">
-                <v-icon v-bind="mergeProps(menu, tooltip)" :icon="mdiSort" />
+              <v-btn icon v-bind="mergeProps(menu, tooltip)">
+                <v-icon :icon="mdiSort" />
               </v-btn>
             </template>
             <span>{{ $t('tooltip.sort_options') }}</span>
@@ -471,7 +471,7 @@ const onClick = function (mediaItem: MediaItemType) {
 
   if (
     ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
-    force_provider_version == 'true' ||
+    (force_provider_version == 'true' && mediaItem.provider != 'file') ||
     !store.selectedPlayer?.available
   ) {
     router.push({
@@ -662,11 +662,6 @@ export const filteredItems = function (
   inLibraryOnly = true
 ) {
   let result = [];
-
-  // console.log(
-  //   `filteredItems items: ${items.length} - offset: ${offset} - limit: ${limit} - sortBy: ${sortBy} - search: ${search} - inLibraryOnly: ${inLibraryOnly}`
-  // );
-
   // search
   if (search) {
     const searchStr = search.toLowerCase();

@@ -27,10 +27,9 @@
 <script setup lang="ts">
 import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import type { ProviderType, Radio } from '../plugins/api';
 import { api } from '../plugins/api';
-import { watchEffect } from 'vue';
 
 export interface Props {
   item_id: string;

@@ -18,7 +18,7 @@
             <!-- shuffle -->
             <v-list-item
               :title="$t('shuffle')"
-              subtitle="Activate the shuffle mode"
+              :subtitle="$t('shuffle_description')"
             >
               <template #append>
                 <v-select
@@ -46,7 +46,7 @@
             <!-- repeat -->
             <v-list-item
               :title="$t('repeat')"
-              subtitle="Set the number of repeats"
+              :subtitle="$t('repeat_description')"
             >
               <template #append>
                 <v-select
@@ -82,7 +82,7 @@
             <!-- crossfade mode -->
             <v-list-item
               :title="$t('crossfade')"
-              :subtitle="t('Enable crossfade between songs')"
+              :subtitle="$t('crossfade_description')"
             >
               <template #append>
                 <v-select
@@ -122,7 +122,7 @@
             <!-- crossfade duration -->
             <v-list-item
               :title="$t('crossfade_duration')"
-              :subtitle="t('Time of crossfading between songs')"
+              :subtitle="$t('crossfade_duration_description')"
               :disabled="
                 activePlayerQueue?.settings.crossfade_mode ==
                 CrossFadeMode.DISABLED
@@ -158,7 +158,7 @@
             <!-- announce volume increase -->
             <v-list-item
               :title="$t('announce_volume_increase')"
-              subtitle="Set the announce volume increase"
+              :subtitle="$t('announce_volume_increase_description')"
               :disabled="
                 activePlayerQueue?.settings.crossfade_mode ==
                 CrossFadeMode.DISABLED
@@ -205,7 +205,7 @@
                 <!-- volume normalization enabled -->
                 <v-list-item
                   :title="$t('volume_normalization')"
-                  subtitle="Set the same volume for songs"
+                  :subtitle="$t('volume_normalization_description')"
                 >
                   <template #append>
                     <v-select
@@ -233,7 +233,7 @@
                 <!-- volume normalization target -->
                 <v-list-item
                   :title="$t('volume_normalization_target')"
-                  subtitle="Adjustment of the normalized volume."
+                  :subtitle="$t('volume_normalization_target_description')"
                   :disabled="
                     !activePlayerQueue?.settings.volume_normalization_enabled
                   "
@@ -269,7 +269,10 @@
                 </v-list-item>
 
                 <!-- stream type -->
-                <v-list-item title="Codecs" :subtitle="$t('stream_type')">
+                <v-list-item
+                  :title="$t('codecs')"
+                  :subtitle="$t('stream_type')"
+                >
                   <template #append>
                     <v-select
                       :style="`min-width: 100px; max-width: ${calMaxWidth(
@@ -290,8 +293,8 @@
 
                 <!-- max sample rate -->
                 <v-list-item
-                  title="Max sample rate"
-                  :subtitle="$t('max_sample_rate')"
+                  :title="$t('max_sample_rate')"
+                  :subtitle="$t('max_sample_rate_description')"
                 >
                   <template #append>
                     <v-select
@@ -323,7 +326,7 @@
                 <!-- metadata mode -->
                 <v-list-item
                   :title="$t('metadata_mode.title')"
-                  subtitle="Set the ICV Mode"
+                  :subtitle="$t('metadata_mode_description')"
                 >
                   <template #append>
                     <v-select
@@ -357,8 +360,8 @@
                 </v-list-item>
 
                 <v-list-item
-                  title="Background process circle"
-                  subtitle="Showing background processes"
+                  :title="$t('background_jobs')"
+                  :subtitle="$t('background_jobs_description')"
                 >
                   <template #append>
                     <v-switch
@@ -371,7 +374,10 @@
                 </v-list-item>
 
                 <!-- sync mode -->
-                <v-list-item :title="'Sync Mode'" subtitle="Set the Sync Mode">
+                <v-list-item
+                  :title="$t('sync_mode')"
+                  :subtitle="$t('sync_mode_description')"
+                >
                   <template #append>
                     <v-select
                       :style="`min-width: 100px; max-width: ${calMaxWidth(
@@ -412,7 +418,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount } from 'vue';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import api, { RepeatMode, CrossFadeMode } from '../plugins/api';
 import { store } from '../plugins/store';
@@ -424,6 +430,10 @@ const { t } = useI18n();
 
 // local refs
 store.topBarTitle = t('settings');
+store.showSettings = false;
+onBeforeUnmount(() => {
+  store.showSettings = true;
+});
 
 const calMaxWidth = function (DisplayWidth: number) {
   return DisplayWidth - 310;

@@ -50,7 +50,7 @@
           <!-- title -->
           <template v-if="activePlayerQueue?.active && curQueueItem" #title>
             <span
-              v-if="curQueueItem.media_item"
+              v-if="curQueueItem && curQueueItem.media_item"
               style="cursor: pointer"
               @click="
                 curQueueItem?.media_item
@@ -76,7 +76,10 @@
           <template v-if="activePlayerQueue?.active && curQueueItem" #subtitle>
             <!-- track: artists(s) -->
             <div
-              v-if="curQueueItem.media_item?.media_type == MediaType.TRACK"
+              v-if="
+                curQueueItem &&
+                curQueueItem.media_item?.media_type == MediaType.TRACK
+              "
               style="cursor: pointer"
               @click="
                 curQueueItem?.media_item
@@ -96,6 +99,7 @@
             <!-- track/album falback: artist present -->
             <div
               v-else-if="
+                curQueueItem &&
                 curQueueItem.media_item &&
                 'artist' in curQueueItem.media_item &&
                 curQueueItem.media_item.artist
@@ -108,7 +112,11 @@
               {{ curQueueItem?.streamdetails?.stream_title }}
             </div>
             <!-- other description -->
-            <div v-else-if="curQueueItem.media_item?.metadata.description">
+            <div
+              v-else-if="
+                curQueueItem && curQueueItem.media_item?.metadata.description
+              "
+            >
               {{ curQueueItem.media_item.metadata.description }}
             </div>
           </template>
@@ -204,7 +212,6 @@ const curQueueItem = computed(() => {
 
 // methods
 const itemClick = function (item: MediaItemType) {
-  console.log(item);
   router.push({
     name: item.media_type,
     params: { item_id: item.item_id, provider: item.provider },

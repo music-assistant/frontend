@@ -11,9 +11,8 @@
         $vuetify.theme.current.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
-      } 100%), url(${
-        curQueueItem?.image?.url
-      }); background-size: cover; background-position: center; border: none;`"
+      } 100%), ${fanartImage ? `url(${fanartImage})` : ''};
+    background-size: cover; background-position: center; border: none;`"
     >
       <v-toolbar dark color="transparent">
         <v-btn
@@ -221,13 +220,6 @@ watch(
           ImageType.THUMB
         ));
     }
-  }
-);
-
-watch(
-  () => store.selectedPlayer,
-  (newVal) => {
-    if (newVal) localStorage.setItem('mass.LastPlayerId', newVal.player_id);
   }
 );
 

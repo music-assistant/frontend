@@ -75,10 +75,5 @@ const tabs = ref([
     icon: mdiFolder,
     path: '/browse',
   },
-  {
-    label: 'settings',
-    icon: mdiCogOutline,
-    path: '/settings',
-  },
 ]);
 </script>

@@ -7,7 +7,7 @@
     transition="dialog-bottom-transition"
   >
     <v-card style="border: none">
-      <v-toolbar dark color="accent">
+      <v-toolbar dark color="primary">
         <div style="margin-left: 16px">
           <v-icon :icon="mdiPlayCircleOutline" />
         </div>

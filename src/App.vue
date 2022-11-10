@@ -14,13 +14,11 @@
     <TopBar />
     <v-main v-if="store.apiInitialized">
       <v-container fluid style="padding: 0">
-        <perfect-scrollbar ref="scroll">
-          <router-view v-slot="{ Component }" app>
-            <transition name="fade" mode="out-in">
-              <component :is="Component" />
-            </transition>
-          </router-view>
-        </perfect-scrollbar>
+        <router-view v-slot="{ Component }" app>
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </v-container>
     </v-main>
     <v-footer style="padding: 0px" bottom fixed class="d-flex flex-column" app>
@@ -84,7 +82,6 @@ const verifyThemeVar = function (
 };
 
 // set theme colors based on HA theme
-// TODO: we can set the entire vuetify theme based on HA theme
 const theme = useTheme();
 let lightTheme = theme.themes.value.light.colors;
 let darkTheme = theme.themes.value.dark.colors;
@@ -130,7 +127,6 @@ const setTheme = async function (hassData: HassData) {
     const customTheme = hassData.themes?.themes[hassData.themes.theme];
     let availThemeModes: Record<string, string> | any;
     const curThemeMode = darkMode ? darkTheme : lightTheme;
-
     if (customTheme && customTheme?.modes) {
       availThemeModes = customTheme?.modes[darkMode ? 'dark' : 'light'];
     } else {
@@ -258,7 +254,7 @@ div.v-slide-group__prev {
 .listitem-actions {
   display: flex;
   justify-content: end;
-  width: auto;
+  width: 40px;
   height: 50px;
   vertical-align: middle;
   align-items: center;
@@ -330,9 +326,5 @@ div.v-slide-group__prev {
 .list-item-subtitle-slider {
   min-height: 20px;
   padding: 8px 11px 8px;
-}
-
-.hover {
-  background-color: rgb(0 0 0 / 2%);
 }
 </style>
