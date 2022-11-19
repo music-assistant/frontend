@@ -138,13 +138,7 @@
             :button-visibility="buttonPCResponsive($vuetify.display)"
           />
           <!-- progress bar -->
-          <PlayerTimeline
-            v-if="
-              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1
-            "
-            :active-player-queue="activePlayerQueue"
-            :color="'accent'"
-          />
+          <PlayerTimeline :active-player-queue="activePlayerQueue" />
         </div>
       </div>
       <div class="player-dr">

@@ -107,10 +107,7 @@
         </div>
         <div style="padding-top: 3vh">
           <!-- progress bar -->
-          <PlayerTimeline
-            :small-btn-icon="smallBtnIcon"
-            :active-player-queue="activePlayerQueue"
-          />
+          <PlayerTimeline :active-player-queue="activePlayerQueue" />
           <!-- player control buttons -->
           <PlayerExtendedControls
             v-if="

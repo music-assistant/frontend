@@ -11,7 +11,7 @@
 
       <v-app-bar-nav-icon
         v-if="
-          ($vuetify.display.mobile || store.alwaysShowMenuButton) &&
+          (getWindowWidth() <= 870 || store.alwaysShowMenuButton) &&
           store.prevRoutes.length === 0
         "
         @click="toggleHAMenu"
@@ -164,6 +164,10 @@ const backButton = function () {
       }, 400);
     });
   }
+};
+
+const getWindowWidth = function () {
+  return window.innerWidth;
 };
 
 const tabs = ref([

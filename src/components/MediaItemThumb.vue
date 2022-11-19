@@ -15,6 +15,7 @@
     >
       <v-img
         :key="item?.uri"
+        ondragstart="return false;"
         :min-height="minSize"
         :min-width="minSize"
         :cover="cover"
