@@ -234,6 +234,7 @@ import { useDisplay } from 'vuetify';
 import { api } from '../plugins/api';
 import { ImageType } from '../plugins/api';
 import type { Album, Artist, ItemMapping, MediaItemType } from '../plugins/api';
+import gsap from '../plugins/gsap';
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue';
 import MediaItemThumb, { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useI18n } from 'vue-i18n';
@@ -276,6 +277,18 @@ watchEffect(async () => {
       props.item
     );
   }
+});
+
+gsap.timeline({
+  scrollTrigger: {
+    trigger: '.header-card',
+    start: 'top -5',
+    end: 99999,
+    toggleClass: {
+      className: 'header-card--scrolled',
+      targets: '.header-card',
+    },
+  },
 });
 
 onBeforeUnmount(() => {
@@ -345,10 +358,14 @@ const description = computed(() => {
   background-size: cover;
   background-position: 50% 20%;
   border: 0px !important;
+  height: 340px;
   max-height: 500px;
-  min-height: 340px;
   overflow: auto;
   display: flex;
   border-radius: 0px;
+  transition: ease 1s;
+}
+.header-card--scrolled {
+  height: 240px;
 }
 </style>

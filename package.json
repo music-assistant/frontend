@@ -27,6 +27,7 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false"
   },
   "dependencies": {
+    "gsap": "^3.11.3",
     "hammerjs": "^2.0.8",
     "home-assistant-js-websocket": "^8.0.0",
     "v3-infinite-loading": "^1.2.2",

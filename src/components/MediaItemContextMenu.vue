@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
   <v-dialog
-    v-model="modelValue"
+    :model-value="modelValue"
     fullscreen
     :scrim="false"
     transition="dialog-bottom-transition"
