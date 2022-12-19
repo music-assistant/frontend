@@ -1,5 +1,17 @@
 <template>
-  <v-app-bar color="primary" elevation="0" :height="store.topBarHeight">
+  <v-app-bar
+    :class="
+      isMobile()
+        ? 'v-mobile-toolbar'
+        : 'v-toolbar'
+    "
+    :color="
+      isMobile()
+        ? undefined
+        : 'primary'
+    "
+    elevation="0"
+  >
     <template #prepend>
       <v-app-bar-nav-icon
         v-if="
@@ -11,7 +23,7 @@
 
       <v-app-bar-nav-icon
         v-if="
-          (getWindowWidth() <= 870 || store.alwaysShowMenuButton) &&
+          ($vuetify.display.width <= 870 || store.alwaysShowMenuButton) &&
           store.prevRoutes.length === 0
         "
         @click="toggleHAMenu"
@@ -68,7 +80,18 @@
         </v-menu>
 
         <v-btn
-          v-if="store.showSettings"
+          v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1"
+          icon
+          @click="router.push('/search/')"
+        >
+          <v-icon :icon="mdiMagnify" />
+        </v-btn>
+
+        <v-btn
+          v-if="
+            $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
+            store.showSettings
+          "
           icon
           @click="router.push('/settings/')"
         >
@@ -102,10 +125,36 @@
       </div>
     </template>
     <template
-      v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1"
+      v-if="
+        $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 ||
+        store.showTabsNav
+      "
       #extension
     >
-      <v-tabs show-arrows align-tabs="center" style="width: 100%">
+      <v-sheet v-if="isMobile()" :max-width="$vuetify.display.width">
+        <v-slide-group class="chip-slider">
+          <v-slide-group-item
+            v-for="tab in tabs.filter((word) => {  if (isPhone()) { return word.label != 'home' } else { return ' ' } })"
+            :key="tab.label"
+          >
+            <v-chip
+              class="ma-1"
+              :value="tab.label"
+              color="primary"
+              variant="outlined"
+              @click="$router.push(tab.path)"
+            >
+              {{ $t(tab.label) }}
+            </v-chip>
+          </v-slide-group-item>
+        </v-slide-group>
+      </v-sheet>
+      <v-tabs
+        v-else-if="!isMobile()"
+        show-arrows
+        align-tabs="center"
+        style="width: 100%"
+      >
         <v-tab v-for="tab in tabs" :key="tab.label" :to="tab.path">{{
           $t(tab.label)
         }}</v-tab>
@@ -124,13 +173,14 @@ import {
   mdiAlertCircle,
   mdiReload,
   mdiCogOutline,
+  mdiMagnify,
 } from '@mdi/js';
 
 import { computed, mergeProps, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api, JobStatus } from '../plugins/api';
 import { store } from '../plugins/store';
-import { getResponsiveBreakpoints, truncateString } from '../utils';
+import { getResponsiveBreakpoints, truncateString, isMobile, isPhone } from '../utils';
 
 const router = useRouter();
 const dialog = ref(false);
@@ -164,10 +214,6 @@ const backButton = function () {
       }, 400);
     });
   }
-};
-
-const getWindowWidth = function () {
-  return window.innerWidth;
 };
 
 const tabs = ref([
@@ -217,5 +263,36 @@ const getJobStatusIcon = function (status: JobStatus) {
 
 .v-overlay__scrim {
   opacity: 65%;
+}
+
+.v-toolbar__content {
+  height: var(--header-height, 56px) !important;
+}
+
+.v-mobile-toolbar {
+  width: calc(100% - 0px) !important;
+  padding: 0px 10px 5px 10px !important;
+}
+
+.v-mobile-toolbar > .v-toolbar__content {
+  --v-theme-overlay-multiplier: var(--v-theme-primary-overlay-multiplier);
+  background: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
+  top: 5px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  width: calc((100% - 0px) - 0px) !important;
+}
+
+.chip-slider {
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+}
+
+.v-sheet {
+  background: rgb(
+    var(--primary-background-color, var(--v-theme-surface))
+  ) !important;
+  width: calc((100% - 0px) - 0px) !important;
 }
 </style>

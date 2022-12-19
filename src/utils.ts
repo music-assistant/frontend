@@ -1,4 +1,20 @@
 import type { Artist, BrowseFolder } from './plugins/api';
+import MobileDetect from 'mobile-detect';
+import { store } from './plugins/store';
+
+const md = new MobileDetect(window.navigator.userAgent);
+
+export const isMobile = () => {
+  return md.mobile() ? true : false || store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
+};
+
+export const isPhone = () => {
+  return md.phone() ? true : false || store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
+};
+
+export const isTablet = () => {
+  return md.tablet() ? true : false || store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean) => {

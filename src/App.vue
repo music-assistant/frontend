@@ -66,6 +66,14 @@ document.addEventListener('forward-hass-prop', function (e) {
   setTheme(hass);
 });
 
+store.getDisplaySize = { height: window.innerHeight, width: window.innerWidth };
+window.addEventListener('resize', function (e) {
+  store.getDisplaySize = {
+    height: window.innerHeight,
+    width: window.innerWidth,
+  };
+});
+
 document.addEventListener('forward-panel-prop', function (e) {
   store.defaultTopBarTitle = (e as HassPanelPropEvent).detail.config.title;
 });
@@ -254,21 +262,10 @@ div.v-slide-group__prev {
 .listitem-actions {
   display: flex;
   justify-content: end;
-  width: 40px;
   height: 50px;
   vertical-align: middle;
   align-items: center;
-  padding: 0px;
-  padding-right: 0px;
-}
-
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -15px;
-  margin-top: 2px;
-  width: 50px;
-  height: 50px;
+  padding: 0px 0px 0px 10px;
 }
 
 .v-card {
@@ -326,5 +323,13 @@ div.v-slide-group__prev {
 .list-item-subtitle-slider {
   min-height: 20px;
   padding: 8px 11px 8px;
+}
+
+.v-select__selection-text {
+  font-size: 0.875rem;
+}
+
+.v-main {
+  padding-top: calc(var(--v-layout-top) - 5px);
 }
 </style>

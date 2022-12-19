@@ -4,14 +4,11 @@
       style="
         margin-left: 10px;
         margin-right: 10px;
-        margin-top: 20px;
-        margin-bottom: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
       "
     >
-      <GlobalSearch />
-
-      <!-- regular menu items -->
-      <div style="margin-top: 20px">
+      <div>
         <v-row dense align-content="start" :align="'start'">
           <v-col v-for="card in cards" :key="card.label" align-self="start">
             <v-card
@@ -43,11 +40,18 @@ import {
   mdiRadio,
   mdiFolder,
 } from '@mdi/js';
-import { ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { store } from '../plugins/store';
-import GlobalSearch from '../components/GlobalSearch.vue';
 
 store.topBarTitle = store.defaultTopBarTitle;
+
+onMounted(() => {
+  store.showTabsNav = false;
+});
+
+onBeforeUnmount(() => {
+  store.showTabsNav = true;
+});
 
 const cards = ref([
   {
@@ -92,9 +96,9 @@ const cards = ref([
 }
 
 .home-card-title {
-  line-height: 1.5;
-  font-size: 1rem;
-  font-weight: 400;
+  line-height: 1.5 !important;
+  font-size: 1rem !important;
+  font-weight: 400 !important;
 }
 
 div.v-slide-group__next {

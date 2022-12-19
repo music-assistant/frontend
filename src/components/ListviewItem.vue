@@ -3,7 +3,7 @@
     <v-list-item
       link
       :disabled="!itemIsAvailable(item)"
-      style="padding-right: 0px"
+      class="listitem"
       density="compact"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
@@ -376,8 +376,6 @@
         </div>
       </template>
     </v-list-item>
-
-    <v-divider />
   </div>
 </template>
 
@@ -506,5 +504,19 @@ const fetchPreviewUrl = async function (
 <style>
 .v-slider.v-input--horizontal .v-input__control {
   min-height: 5px;
+}
+
+.listitem {
+  padding-right: 0px;
+  border-radius: 4px;
+}
+
+.listitem-thumb {
+  padding-left: 0px;
+  margin-right: 10px;
+  margin-left: -10px;
+  margin-top: 2px;
+  width: 50px;
+  height: 50px;
 }
 </style>

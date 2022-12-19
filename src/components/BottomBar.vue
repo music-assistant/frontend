@@ -4,8 +4,10 @@
     style="padding-top: 10px; width: 100%"
   >
     <v-tabs
+      grow
       show-arrows
       stacked
+      optional
       align-tabs="center"
       style="width: 100%; height: auto"
     >
@@ -29,15 +31,10 @@
 import { getResponsiveBreakpoints } from '@/utils';
 import {
   mdiHome,
-  mdiAccountMusic,
-  mdiAlbum,
-  mdiFileMusic,
-  mdiPlaylistMusic,
-  mdiRadio,
-  mdiFolder,
+  mdiMagnify,
   mdiCogOutline,
 } from '@mdi/js';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const tabs = ref([
   {
@@ -46,34 +43,14 @@ const tabs = ref([
     path: '/',
   },
   {
-    label: 'artists',
-    icon: mdiAccountMusic,
-    path: '/artists',
+    label: 'search',
+    icon: mdiMagnify,
+    path: '/search',
   },
   {
-    label: 'albums',
-    icon: mdiAlbum,
-    path: '/albums',
-  },
-  {
-    label: 'tracks',
-    icon: mdiFileMusic,
-    path: '/tracks',
-  },
-  {
-    label: 'playlists',
-    icon: mdiPlaylistMusic,
-    path: '/playlists',
-  },
-  {
-    label: 'radios',
-    icon: mdiRadio,
-    path: '/radios',
-  },
-  {
-    label: 'browse',
-    icon: mdiFolder,
-    path: '/browse',
+    label: 'settings',
+    icon: mdiCogOutline,
+    path: '/settings',
   },
 ]);
 </script>
