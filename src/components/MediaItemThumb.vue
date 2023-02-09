@@ -37,8 +37,8 @@ import type {
   MediaItemImage,
   MediaItemType,
   QueueItem,
-} from '../plugins/api';
-import { ImageType } from '../plugins/api';
+} from '../plugins/api/interfaces';
+import { ImageType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 
 export interface Props {

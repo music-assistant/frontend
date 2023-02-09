@@ -1,4 +1,4 @@
-import type { Player } from './api';
+import type { Player } from './api/interfaces';
 import { reactive } from 'vue';
 import type { LocationQuery, RouteParams, RouteMeta } from 'vue-router';
 

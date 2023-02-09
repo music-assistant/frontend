@@ -39,14 +39,14 @@ import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import ListviewItem from '../components/ListviewItem.vue';
 import {
-  api,
   MediaType,
   type BrowseFolder,
   type MediaItemType,
-} from '../plugins/api';
+} from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 import { useRouter } from 'vue-router';
 import { getBrowseFolderName } from '../utils';
+import api from '../plugins/api';
 
 export interface Props {
   path?: string;
@@ -91,12 +91,12 @@ const onClick = function (mediaItem: MediaItemType) {
   if (mediaItem.media_type === MediaType.FOLDER) {
     router.push({
       name: 'browse',
-      params: { path: mediaItem.path },
+      query: { path: mediaItem.path },
     });
   } else {
     router.push({
       name: mediaItem.media_type,
-      params: { item_id: mediaItem.item_id, provider: mediaItem.provider },
+      query: { item_id: mediaItem.item_id, provider: mediaItem.provider },
     });
   }
 };

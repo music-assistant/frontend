@@ -6,13 +6,13 @@
         :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
         value="tracks"
       >
-        {{ $t('tracks') }}
+        {{ $t("tracks") }}
       </v-tab>
       <v-tab
         :class="activeTab == 'albums' ? 'active-tab' : 'inactive-tab'"
         value="albums"
       >
-        {{ $t('albums') }}
+        {{ $t("albums") }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -39,35 +39,31 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing from '../components/ItemsListing.vue';
-import { filteredItems } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
-import { ref } from 'vue';
+import ItemsListing from "../components/ItemsListing.vue";
+import { filteredItems } from "../components/ItemsListing.vue";
+import InfoHeader from "../components/InfoHeader.vue";
+import { ref } from "vue";
 import {
-  MassEventType,
+  EventType,
   type Artist,
-  type ProviderType,
-  type MassEvent,
+  type EventMessage,
   type MediaItemType,
-} from '../plugins/api';
-import { api } from '../plugins/api';
-import { onBeforeUnmount, onMounted, watchEffect } from 'vue';
+} from "../plugins/api/interfaces";
+import { api } from "../plugins/api";
+import { onBeforeUnmount, onMounted, watchEffect } from "vue";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref('');
+const activeTab = ref("");
 
 const itemDetails = ref<Artist>();
 
 const loadItemDetails = async function () {
-  itemDetails.value = await api.getArtist(
-    props.provider as ProviderType,
-    props.itemId
-  );
-  activeTab.value = 'tracks';
+  itemDetails.value = await api.getArtist(props.itemId, props.provider);
+  activeTab.value = "tracks";
 };
 
 watchEffect(() => {
@@ -78,16 +74,16 @@ watchEffect(() => {
 onMounted(() => {
   //reload if/when item updates
   const unsub = api.subscribe_multi(
-    [MassEventType.MEDIA_ITEM_ADDED, MassEventType.MEDIA_ITEM_UPDATED],
-    (evt: MassEvent) => {
+    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED],
+    (evt: EventMessage) => {
       // refresh info if we receive an update for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
         loadItemDetails();
       } else {
-        for (const provId of updatedItem.provider_ids) {
+        for (const provId of updatedItem.provider_mappings) {
           if (
-            provId.prov_type == itemDetails.value?.provider &&
+            provId.provider_domain == itemDetails.value?.provider &&
             provId.item_id == itemDetails.value?.item_id
           ) {
             loadItemDetails();
@@ -107,10 +103,7 @@ const loadArtistAlbums = async function (
   search?: string,
   inLibraryOnly = true
 ) {
-  const artistAlbums = await api.getArtistAlbums(
-    props.provider as ProviderType,
-    props.itemId
-  );
+  const artistAlbums = await api.getArtistAlbums(props.itemId, props.provider);
   return filteredItems(
     artistAlbums,
     offset,
@@ -128,8 +121,8 @@ const loadArtistTracks = async function (
   inLibraryOnly = true
 ) {
   const artistTopTracks = await api.getArtistTracks(
-    props.provider as ProviderType,
-    props.itemId
+    props.itemId,
+    props.provider
   );
   return filteredItems(
     artistTopTracks,

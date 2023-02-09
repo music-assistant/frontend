@@ -186,7 +186,7 @@
               color="primary"
               tile
               :prepend-icon="mdiHeartOutline"
-              @click="api.addToLibrary([item])"
+              @click="api.addItemsToLibrary([item!])"
             >
               {{ $t('add_library') }}
             </v-btn>
@@ -196,7 +196,7 @@
               color="primary"
               tile
               :prepend-icon="mdiHeart"
-              @click="api.removeFromLibrary([item])"
+              @click="api.removeItemsFromLibrary([item!])"
             >
               {{ $t('remove_library') }}
             </v-btn>
@@ -240,7 +240,7 @@
         <!-- provider icons -->
         <div style="position: absolute; float: right; right: 15px; top: 15px">
           <ProviderIcons
-            :provider-ids="item.provider_ids"
+            :provider-mappings="item.provider_mappings"
             :height="25"
             :enable-link="true"
           />
@@ -263,8 +263,8 @@ import {
 import { store } from '../plugins/store';
 import { useDisplay } from 'vuetify';
 import { api } from '../plugins/api';
-import { ImageType } from '../plugins/api';
-import type { Album, Artist, ItemMapping, MediaItemType } from '../plugins/api';
+import { ImageType } from '../plugins/api/interfaces';
+import type { Album, Artist, ItemMapping, MediaItemType } from '../plugins/api/interfaces';
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';

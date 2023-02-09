@@ -109,8 +109,8 @@
                 <template #append>
                   <div class="listitem-actions">
                     <ProviderIcons
-                      v-if="playlist.provider_ids"
-                      :provider-ids="playlist.provider_ids"
+                      v-if="playlist.provider_mappings"
+                      :provider-mappings="playlist.provider_mappings"
                       :height="20"
                       class="listitem-actions"
                     />
@@ -120,11 +120,11 @@
               <v-divider />
             </div>
             <!-- create playlist row(s) -->
-            <div v-for="prov of api.providers" :key="prov.id">
+            <div v-for="prov of api.providers" :key="prov.instance_id">
               <div
                 v-if="
                   prov.supported_features.includes(
-                    MusicProviderFeature.PLAYLIST_CREATE
+                    ProviderFeature.PLAYLIST_CREATE
                   )
                 "
               >
@@ -150,8 +150,8 @@
                           newPlaylistName = txt;
                         }
                       "
-                      @click:append="newPlaylist(prov.id)"
-                      @keydown.enter="newPlaylist(prov.id)"
+                      @click:append="newPlaylist(prov.instance_id)"
+                      @keydown.enter="newPlaylist(prov.instance_id)"
                     />
                   </template>
                 </v-list-item>
@@ -185,15 +185,16 @@ import {
 import MediaItemThumb from './MediaItemThumb.vue';
 import ProviderIcons from './ProviderIcons.vue';
 import { getProviderIcon } from './ProviderIcons.vue';
-import {
-  MediaType,
-  ProviderType,
-  QueueOption,
-  type Album,
-} from '../plugins/api';
-import type { MediaItem, MediaItemType, Playlist, Track } from '../plugins/api';
+import { MediaType, QueueOption, type Album } from '../plugins/api/interfaces';
+import type {
+  MediaItem,
+  MediaItemType,
+  Playlist,
+  Track,
+} from '../plugins/api/interfaces';
 import { computed, ref, watch } from 'vue';
-import api, { MusicProviderFeature } from '../plugins/api';
+import { ProviderFeature } from '../plugins/api/interfaces';
+import api from '../plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '../plugins/store';
 
@@ -252,12 +253,18 @@ const showContextMenu = async function () {
   }
 
   // grab the full (lazy) fullItem so we have details about in-library etc.
-  let firstItem: MediaItem = props.items[0];
-  const orgPosition = firstItem.position || 0;
-  if (firstItem.provider !== ProviderType.DATABASE) {
-    firstItem = await api.getItem(props.items[0].uri);
+  let firstItem: MediaItemType = props.items[0];
+  let orgPosition: number | undefined = 0;
+
+  if ('position' in firstItem) {
+    orgPosition = firstItem.position;
+  }
+  if (firstItem.provider !== 'database') {
+    firstItem = await api.getItemByUri(props.items[0].uri);
     // restore original position for playtlist tracks usage
-    firstItem.position = orgPosition;
+    if ('position' in firstItem) {
+      firstItem.position = orgPosition;
+    }
     const items = props.items;
     items[0] = firstItem;
     emit('update:items', items);
@@ -269,7 +276,8 @@ const fetchPlaylists = async function () {
   // get all editable playlists
   playlists.value = [];
   const playlistResults = await api.getPlaylists();
-  for (const playlist of playlistResults.items) {
+  
+  for (const playlist of playlistResults.items as Playlist[]) {
     if (
       playlist.is_editable &&
       !(
@@ -322,8 +330,8 @@ const availablePlayers = computed(() => {
   const res: { title: string; value: string }[] = [];
   for (const player_id in api?.players) {
     const player = api?.players[player_id];
-    if (player.is_passive) continue;
-    res.push({ title: player.group_name, value: player.player_id });
+    if (player.synced_to) continue;
+    res.push({ title: player.name, value: player.player_id });
   }
   return res
     .slice()
@@ -343,17 +351,17 @@ export interface ContextMenuItem {
 }
 
 export const itemIsAvailable = function (item: MediaItem) {
-  for (const x of item.provider_ids) {
+  for (const x of item.provider_mappings) {
     if (x.available) return true;
   }
   return false;
 };
 
 export const radioSupported = function (item: MediaItemType) {
-  for (const provId of item.provider_ids) {
+  for (const provId of item.provider_mappings) {
     if (
-      api.providers[provId.prov_id].supported_features.includes(
-        MusicProviderFeature.SIMILAR_TRACKS
+      api.getProvider(provId.provider_instance)!.supported_features.includes(
+        ProviderFeature.SIMILAR_TRACKS
       )
     )
       return true;
@@ -387,7 +395,7 @@ export const getPlayMenuItems = function (
     playMenuItems.push({
       label: 'play_playlist_from',
       action: () => {
-        api.playPlaylistFromIndex(parentItem as Playlist, items[0].position);
+        api.playPlaylistFromIndex(parentItem as Playlist, (items[0] as Track).position || 0);
       },
       icon: mdiPlayCircleOutline,
       labelArgs: [],
@@ -525,13 +533,13 @@ export const getContextMenuItems = function (
   ) {
     contextMenuItems.push({
       label: 'goto_album',
-      labelArgs: [items[0].album.name],
+      labelArgs: [(items[0] as Track).album.name],
       action: () => {
         router.push({
           name: 'album',
           params: {
-            item_id: items[0].album.item_id,
-            provider: items[0].album.provider,
+            item_id: (items[0] as Track).album.item_id,
+            provider: (items[0] as Track).album.provider,
           },
         });
       },
@@ -545,7 +553,7 @@ export const getContextMenuItems = function (
       label: 'refresh_item',
       labelArgs: [],
       action: () => {
-        api.getItem(items[0].uri, false, true);
+        api.getItemByUri(items[0].uri, false, true);
       },
       icon: mdiRefresh,
     });
@@ -556,7 +564,7 @@ export const getContextMenuItems = function (
       label: 'add_library',
       labelArgs: [],
       action: () => {
-        api.addToLibrary(items);
+        api.addItemsToLibrary(items);
       },
       icon: mdiHeartOutline,
     });
@@ -567,7 +575,7 @@ export const getContextMenuItems = function (
       label: 'remove_library',
       labelArgs: [],
       action: () => {
-        api.removeFromLibrary(items);
+        api.removeItemsFromLibrary(items);
       },
       icon: mdiHeart,
     });
@@ -599,7 +607,7 @@ export const getContextMenuItems = function (
     });
   }
   // delete from db
-  if (items.length == 1 && items[0].provider == ProviderType.DATABASE) {
+  if (items.length == 1 && items[0].provider == 'database') {
     contextMenuItems.push({
       label: 'delete_db',
       labelArgs: [],

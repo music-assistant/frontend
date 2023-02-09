@@ -23,3 +23,5 @@ declare module 'virtual:pwa-register/vue' {
 }
 
 declare module 'v3-infinite-loading';
+declare module 'vue-virtual-scroller';
+declare module 'vuetify/lib/util/colors';

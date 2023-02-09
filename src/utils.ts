@@ -1,4 +1,4 @@
-import type { Artist, BrowseFolder } from './plugins/api';
+import type { Artist, BrowseFolder, ItemMapping } from '@/plugins/api/interfaces';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean) => {
@@ -79,7 +79,7 @@ export const kebabize = (str: string) => {
     .join('');
 };
 
-export const getArtistsString = function (artists: Artist[]) {
+export const getArtistsString = function (artists: Array<Artist | ItemMapping>) {
   if (!artists) return '';
   return artists
     .map((x) => {

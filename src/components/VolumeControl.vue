@@ -1,10 +1,10 @@
 <template>
-  <v-list style="overflow: hidden" lines="2">
+  <v-list style="overflow: hidden" lines="two">
     <!-- special group volume -->
     <div
-      v-if="player.is_group"
+      v-if="player.group_childs.length > 0"
       class="volumerow"
-      :style="player.group_powered ? 'opacity: 0.75' : 'opacity: 0.5'"
+      :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
     >
       <v-btn
         icon
@@ -12,15 +12,15 @@
         width="60"
         height="30"
         size="x-large"
-        @click="
-          api.queueCommandGroupPower(player.player_id, !player.group_powered)
-        "
+        @click="api.playerCommandPower(player.player_id, !player.powered)"
       >
-        <v-icon :icon="mdiPower" />
+        <v-icon icon="mdi-power" />
       </v-btn>
-      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
-        truncateString(player.group_name, 27)
-      }}</span>
+      <span class="text-body-2" style="position: absolute; margin-top: 3px"
+        >{{ truncateString(player.display_name, 24) }} +{{
+          player.group_childs.length
+        }}</span
+      >
       <div
         class="text-caption"
         style="
@@ -30,7 +30,7 @@
           margin-left: 0px;
         "
       >
-        {{ player.group_volume_level }}
+        {{ player.group_volume }}
       </div>
 
       <v-slider
@@ -40,8 +40,8 @@
         track-size="2"
         thumb-size="10"
         thumb-label
-        :disabled="!player.group_powered"
-        :model-value="Math.round(player.group_volume_level)"
+        :disabled="!player.powered"
+        :model-value="Math.round(player.group_volume)"
         style="margin-left: 5px"
         @update:model-value="
           api.queueCommandGroupVolume(player.player_id, $event)
@@ -49,7 +49,7 @@
       />
     </div>
     <v-divider
-      v-if="player.is_group"
+      v-if="player.group_childs.length > 0"
       style="margin-top: 10px; margin-bottom: 10px"
     />
 
@@ -67,12 +67,12 @@
           height="30"
           size="x-large"
           style=""
-          @click="api.queueCommandPowerToggle(childPlayer.player_id)"
+          @click="api.playerCommandPowerToggle(childPlayer.player_id)"
         >
-          <v-icon :icon="mdiPower" />
+          <v-icon icon="mdi-power" />
         </v-btn>
         <span
-          v-if="player.group_members.includes(childPlayer.player_id)"
+          v-if="player.group_childs.includes(childPlayer.player_id)"
           class="text-body-2"
           style="position: absolute; margin-top: 3px"
           >{{ truncateString(childPlayer.name, 27) }}</span
@@ -81,7 +81,7 @@
           v-else
           class="text-body-2"
           style="position: absolute; margin-top: 3px"
-          >{{ truncateString(childPlayer.group_name, 27) }}</span
+          >{{ truncateString(childPlayer.display_name, 27) }}</span
         >
       </span>
       <div
@@ -107,7 +107,7 @@
         :model-value="Math.round(childPlayer.volume_level)"
         style="margin-left: 5px"
         @update:model-value="
-          api.queueCommandVolume(childPlayer.player_id, $event)
+          api.playerCommandVolumeSet(childPlayer.player_id, $event)
         "
       />
     </div>
@@ -115,10 +115,9 @@
 </template>
 
 <script setup lang="ts">
-import type { Player } from '../plugins/api';
-import { mdiPower } from '@mdi/js';
-import { api } from '../plugins/api';
-import { truncateString } from '../utils';
+import type { Player } from "../plugins/api/interfaces";
+import { api } from "../plugins/api";
+import { truncateString } from "../utils";
 
 export interface Props {
   player: Player;
@@ -127,10 +126,10 @@ defineProps<Props>();
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
-  if (!player.is_group) {
+  if (player.group_childs.length == 0) {
     return [player];
   }
-  for (const groupChildId of player.group_members) {
+  for (const groupChildId of player.group_childs) {
     const volumeChild = api?.players[groupChildId];
 
     if (volumeChild && volumeChild.available) {

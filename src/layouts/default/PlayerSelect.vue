@@ -10,12 +10,12 @@
     style="z-index: 99999"
   >
     <v-card-title class="headline">
-      <b>{{ $t('players') }}</b>
+      <b>{{ $t("players") }}</b>
     </v-card-title>
     <v-btn
       variant="plain"
       style="position: absolute; right: 10px; top: 0px"
-      :icon="mdiClose"
+      icon="mdi-close"
       dark
       text
       @click="store.showPlayersMenu = !store.showPlayersMenu"
@@ -36,8 +36,8 @@
               ? 'padding:0;background-color:rgba(50, 115, 220, 0.2);'
               : 'padding:0'
           "
-          :expand-icon="mdiChevronDown"
-          :collapse-icon="mdiChevronUp"
+          expand-icon="mdi-chevronDown"
+          collapse-icon="mdi-chevronUp"
           @click="
             store.selectedPlayer = player;
             scrollToTop(player.player_id);
@@ -47,7 +47,11 @@
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
+                :icon="
+                  player.group_childs.length > 0
+                    ? 'mdi-speaker-multiple'
+                    : 'mdi-speaker'
+                "
                 color="accent"
                 style="
                   padding-left: 0px;
@@ -61,7 +65,7 @@
             </template>
             <template #title>
               <div class="text-subtitle-1">
-                <b>{{ player.group_name.substring(0, 25) }}</b>
+                <b>{{ player.display_name.substring(0, 25) }}</b>
               </div>
             </template>
             <template #subtitle>
@@ -70,7 +74,7 @@
                 class="text-body-2"
                 style="line-height: 1em"
               >
-                {{ $t('state.' + player.state) }}
+                {{ $t("state." + player.state) }}
               </div>
             </template>
           </v-list-item>
@@ -84,18 +88,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
-import {
-  mdiSpeaker,
-  mdiClose,
-  mdiSpeakerMultiple,
-  mdiChevronUp,
-  mdiChevronDown,
-} from '@mdi/js';
-import type { Player } from '../plugins/api';
-import { store } from '../plugins/store';
-import VolumeControl from './VolumeControl.vue';
-import { api } from '../plugins/api';
+import { computed, getCurrentInstance, onMounted, ref, watch } from "vue";
+import type { Player } from "../../plugins/api/interfaces";
+import { store } from "../../plugins/store";
+import VolumeControl from "../../components/VolumeControl.vue";
+import { api } from "../../plugins/api";
 
 const panelItem = ref<number | undefined>(undefined);
 
@@ -104,7 +101,7 @@ const sortedPlayers = computed(() => {
   const res: Player[] = [];
   for (const player_id in api?.players) {
     const player = api?.players[player_id];
-    if (player.is_passive) continue;
+    if (player.synced_to) continue;
     res.push(player);
   }
   return res
@@ -132,7 +129,7 @@ const scrollToTop = function (playerId: string) {
   lastClicked.value = playerId;
   setTimeout(() => {
     const elmnt = shadowRoot.value?.getElementById(playerId);
-    elmnt?.scrollIntoView({ behavior: 'smooth' });
+    elmnt?.scrollIntoView({ behavior: "smooth" });
   }, 0);
 };
 </script>

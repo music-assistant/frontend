@@ -13,7 +13,8 @@ import { mdiFileSync } from '@mdi/js';
 import { onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ItemsListing from '../components/ItemsListing.vue';
-import { api, MediaType, type Album } from '../plugins/api';
+import api from '../plugins/api';
+import { MediaType, type Album } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 
 const { t } = useI18n();
@@ -42,6 +43,6 @@ const loadItems = async function (
   inLibraryOnly = true
 ) {
   const library = inLibraryOnly || undefined;
-  return await api.getAlbums(offset, limit, sort, library, search);
+  return await api.getAlbums(library, search, limit, offset, sort);
 };
 </script>

@@ -1,114 +1,25 @@
 <template>
-  <v-app>
-    <!-- override background color set in iframe by HASS -->
-    <div
-      style="
-        position: fixed;
-        height: 100%;
-        width: 100%;
-        background: rgb(var(--v-theme-background));
-      "
-    />
-    <player-select />
-    <TopBar />
-    <v-main v-if="store.apiInitialized" id="cont">
-      <v-container fluid style="padding: 0">
-        <router-view v-slot="{ Component }" app>
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
-        <!-- white space to reserve space for footer -->
-        <div style="height: 150px" />
-      </v-container>
-    </v-main>
-    <player-o-s-d />
-    <ReloadPrompt v-if="store.isInStandaloneMode" />
-  </v-app>
+  <router-view />
 </template>
 
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { api } from './plugins/api';
-import { store } from './plugins/store';
-import { isColorDark } from './utils';
-import { useTheme } from 'vuetify';
-import TopBar from './components/TopBar.vue';
-import PlayerOSD from './components/PlayerOSD.vue';
-import PlayerSelect from './components/PlayerSelect.vue';
-import ReloadPrompt from './components/ReloadPrompt.vue';
-import 'vuetify/styles';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-import type { HassPanelData, HassData } from './main';
-import { useI18n } from 'vue-i18n';
+import { onMounted } from 'vue';
 
-const { locale } = useI18n({ useScope: 'global' });
 
-interface HassPropEvent extends Event {
-  detail: HassData;
-}
-interface HassPanelPropEvent extends Event {
-  detail: HassPanelData;
-}
-
-document.addEventListener('forward-hass-prop', function (e) {
-  const hass = (e as HassPropEvent).detail;
-  if (!hass) return;
-  if (!store.apiInitialized) {
-    api.initialize(hass.connection);
-    locale.value = hass.selectedLanguage;
-  }
-  store.alwaysShowMenuButton = hass.dockedSidebar == 'always_hidden';
-  setTheme(hass);
-});
-
-document.addEventListener('forward-panel-prop', function (e) {
-  store.defaultTopBarTitle = (e as HassPanelPropEvent).detail.config.title;
-});
-
-// set theme colors based on HA theme
-// TODO: we can set the entire vuetify theme based on HA theme
-const theme = useTheme();
-let lastTheme = '';
-const setTheme = async function (hassData: HassData) {
-  // determine if dark theme active
-  const curTheme = hassData.themes?.theme || 'default';
-  const darkMode = hassData?.themes?.darkMode || false;
-  const checkKey = `${curTheme}.${darkMode}`;
-  if (lastTheme == checkKey) return;
-  lastTheme = checkKey;
-
-  if (curTheme == 'default') {
-    // default theme
-    const defaultPrimaryColor =
-      hassData.selectedTheme?.primaryColor || '#03A9F4';
-    store.topBarColor = '#101e24';
-    store.topBarTextColor = '#ffffff';
-    store.darkTheme = darkMode;
-    store.topBarColor = darkMode ? '#101e24' : defaultPrimaryColor;
+onMounted(() => {
+  // Initialize API Connection
+  // TODO: retrieve serveraddress through discovery and/or user settings ?
+  let serverAddress = ''
+  if (process.env.NODE_ENV === 'production') {
+    const loc = window.location
+    serverAddress = loc.origin + loc.pathname
   } else {
-    // custom theme
-    const theme = hassData.themes?.themes[hassData.themes.theme];
-    if (theme && 'app-header-background-color' in theme)
-      store.topBarColor = theme['app-header-background-color'];
-    if (theme && 'app-header-text-color' in theme)
-      store.topBarTextColor = theme['app-header-text-color'];
-    // determine if dark theme is active
-    if (darkMode) store.darkTheme = true;
-    else if (theme) {
-      const bgColor = theme['primary-background-color'] || store.topBarColor;
-      store.darkTheme = isColorDark(bgColor);
-    }
+    serverAddress = 'http://localhost:8095/'
   }
-  theme.name.value = store.darkTheme ? 'dark' : 'light';
-};
+  api.initialize(serverAddress);
+})
 
-setTimeout(() => {
-  if (!store.apiInitialized) {
-    store.isInStandaloneMode = true;
-    api.initialize();
-  }
-}, 1000);
 </script>
 
 <style>

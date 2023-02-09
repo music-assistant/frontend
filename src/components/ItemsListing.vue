@@ -2,17 +2,18 @@
 <template>
   <section>
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar dense flat color="transparent" height="35">
+    <v-toolbar dense flat color="transparent">
       <v-tooltip location="bottom">
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
             :icon="
               selectedItems.length > 0
-                ? mdiCheckboxMultipleOutline
-                : mdiCheckboxMultipleBlankOutline
+                ? 'mdi-checkbox-multiple-outline'
+                : 'mdi-checkbox-multiple-blank-outline'
             "
             @click="toggleCheckboxes"
+            variant="plain"
           />
           <span v-if="!$vuetify.display.mobile">
             <span
@@ -34,15 +35,16 @@
 
       <v-spacer />
 
-      <v-tooltip location="bottom">
+      <v-tooltip location="bottom" close-on-content-click>
         <template #activator="{ props }">
           <v-btn
             v-if="showLibrary !== false"
             v-bind="props"
             icon
             @click="toggleLibraryFilter"
+            variant="plain"
           >
-            <v-icon :icon="inLibraryOnly ? mdiHeart : mdiHeartOutline" />
+            <v-icon :icon="inLibraryOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
           </v-btn>
         </template>
         <span>{{ $t('tooltip.filter_library') }}</span>
@@ -50,12 +52,12 @@
 
       <v-tooltip v-if="showAlbumArtistsOnlyFilter" location="bottom">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon @click="toggleAlbumArtistsFilter">
+          <v-btn v-bind="props" icon @click="toggleAlbumArtistsFilter" variant="plain">
             <v-icon
               :icon="
                 albumArtistsOnlyFilter
-                  ? mdiAccountMusic
-                  : mdiAccountMusicOutline
+                  ? 'mdi-account-music'
+                  : 'mdi-account-music-outline'
               "
             />
           </v-btn>
@@ -65,9 +67,9 @@
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon @click="loadData(true)">
+          <v-btn v-bind="props" icon @click="loadData(true)" variant="plain">
             <v-badge v-model="newContentAvailable" color="error" dot>
-              <v-icon :icon="mdiRefresh" />
+              <v-icon icon="mdi-refresh" />
             </v-badge>
           </v-btn>
         </template>
@@ -86,8 +88,8 @@
         <template #activator="{ props: menu }">
           <v-tooltip location="bottom">
             <template #activator="{ props: tooltip }">
-              <v-btn icon v-bind="props">
-                <v-icon v-bind="mergeProps(menu, tooltip)" :icon="mdiSort" />
+              <v-btn icon v-bind="props" variant="plain">
+                <v-icon v-bind="mergeProps(menu, tooltip)" icon="mdi-sort" />
               </v-btn>
             </template>
             <span>{{ $t('tooltip.sort_options') }}</span>
@@ -99,7 +101,7 @@
               <v-list-item @click="changeSort(key)">
                 <v-list-item-title>{{ $t('sort.' + key) }}</v-list-item-title>
                 <template #append>
-                  <v-icon v-if="sortBy == key" :icon="mdiCheck" />
+                  <v-icon v-if="sortBy == key" icon="mdi-check" />
                 </template>
               </v-list-item>
               <v-divider />
@@ -110,8 +112,8 @@
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon @click="toggleSearch()">
-            <v-icon :icon="mdiMagnify" />
+          <v-btn v-bind="props" icon @click="toggleSearch()" variant="plain">
+            <v-icon icon="mdi-magnify" />
           </v-btn>
         </template>
         <span>{{ $t('tooltip.search') }}</span>
@@ -121,8 +123,9 @@
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
-            :icon="viewMode == 'panel' ? mdiViewList : mdiGrid"
+            :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
             @click="toggleViewMode()"
+            variant="plain"
           />
         </template>
         <span>{{ $t('tooltip.toggle_view_mode') }}</span>
@@ -140,7 +143,7 @@
       id="searchInput"
       v-model="search"
       clearable
-      :prepend-inner-icon="mdiMagnify"
+      prepend-inner-icon="mdi-magnify"
       :label="$t('search')"
       hide-details
       variant="filled"
@@ -247,20 +250,6 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import {
-  mdiMagnify,
-  mdiSort,
-  mdiGrid,
-  mdiViewList,
-  mdiCheck,
-  mdiHeart,
-  mdiHeartOutline,
-  mdiRefresh,
-  mdiCheckboxMultipleOutline,
-  mdiCheckboxMultipleBlankOutline,
-  mdiAccountMusic,
-  mdiAccountMusicOutline,
-} from '@mdi/js';
 
 import {
   ref,
@@ -271,13 +260,13 @@ import {
   mergeProps,
 } from 'vue';
 import {
-  MassEventType,
+  EventType,
   type Album,
-  type MassEvent,
+  type EventMessage,
   type MediaItemType,
   type PagedItems,
   type Track,
-} from '../plugins/api';
+} from '../plugins/api/interfaces';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
@@ -515,9 +504,10 @@ const loadData = async function (clear = false, limit = defaultLimit) {
     offset.value,
     limit,
     sortBy.value,
-    search.value,
+    search.value || '',
     inLibraryOnly.value
   );
+  console.log('nextItems', nextItems)
   if (offset.value) {
     items.value.push(...nextItems.items);
   } else {
@@ -585,19 +575,19 @@ onMounted(() => {
   //reload if/when parent item updates
   const unsub = api.subscribe_multi(
     [
-      MassEventType.MEDIA_ITEM_ADDED,
-      MassEventType.MEDIA_ITEM_UPDATED,
-      MassEventType.MEDIA_ITEM_DELETED,
+      EventType.MEDIA_ITEM_ADDED,
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
     ],
-    (evt: MassEvent) => {
-      if (evt.type == MassEventType.MEDIA_ITEM_ADDED) {
+    (evt: EventMessage) => {
+      if (evt.event == EventType.MEDIA_ITEM_ADDED) {
         if (props.itemtype.includes((evt.data as MediaItemType).media_type)) {
           // signal that there is new content
           newContentAvailable.value = true;
         }
-      } else if (evt.type == MassEventType.MEDIA_ITEM_DELETED) {
+      } else if (evt.event == EventType.MEDIA_ITEM_DELETED) {
         items.value = items.value.filter((x) => x.uri != evt.object_id);
-      } else if (evt.type == MassEventType.MEDIA_ITEM_UPDATED) {
+      } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
         // update listing if relevant item changes
         const updatedItem = evt.data as MediaItemType;
         items.value = items.value.map((x) =>
@@ -641,9 +631,8 @@ export const filteredItems = function (
 ) {
   let result = [];
 
-  // console.log(
-  //   `filteredItems items: ${items.length} - offset: ${offset} - limit: ${limit} - sortBy: ${sortBy} - search: ${search} - inLibraryOnly: ${inLibraryOnly}`
-  // );
+
+  
 
   // search
   if (search) {

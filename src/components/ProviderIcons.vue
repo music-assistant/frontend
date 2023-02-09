@@ -1,62 +1,51 @@
 <template>
   <div class="provider-icons" :style="`height: ${height};`">
-    <v-tooltip
-      v-for="prov of uniqueProviders"
-      :key="prov.prov_id"
-      location="bottom"
-    >
+    <v-tooltip v-for="prov of uniqueProviders" :key="prov.provider_instance" location="bottom">
       <!-- eslint-disable vue/no-template-shadow -->
       <template #activator="{ props }">
-        <img
-          v-bind="props"
-          :key="prov.prov_type"
-          class="provider-icon"
-          :height="height"
-          :src="getProviderIcon(prov.prov_type)"
-          :style="enableLink ? 'cursor: pointer' : ''"
-          @click="enableLink ? provClicked(prov) : ''"
-        />
+        <img v-bind="props" :key="prov.provider_domain" class="provider-icon" :height="height"
+          :src="getProviderIcon(prov.provider_domain)" :style="enableLink ? 'cursor: pointer' : ''"
+          @click="enableLink ? provClicked(prov) : ''" />
       </template>
       <!-- eslint-enable vue/no-template-shadow -->
-      <span>{{ $t('providers.' + prov.prov_type.toString()) }}</span>
+      <span>{{ $t('providers.' + prov.provider_domain) }}</span>
     </v-tooltip>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { MediaItemProviderId } from '../plugins/api';
-import { MediaQuality } from '../plugins/api';
+import type { ProviderMapping } from '../plugins/api/interfaces';
+
 import { computed } from 'vue';
 
 export interface Props {
-  providerIds: MediaItemProviderId[];
+  providerMappings: ProviderMapping[];
   height: number;
   enableLink?: boolean;
 }
 const props = defineProps<Props>();
 
 const uniqueProviders = computed(() => {
-  const output: MediaItemProviderId[] = [];
+  const output: ProviderMapping[] = [];
   const keys: string[] = [];
-  if (!props.providerIds) return [];
-  props.providerIds.forEach(function (prov: MediaItemProviderId) {
-    const key = prov.prov_type;
-    if (keys.indexOf(key) === -1) {
-      keys.push(key);
+  if (!props.providerMappings) return [];
+  props.providerMappings.forEach(function (prov: ProviderMapping) {
+    const domain = prov.provider_domain;
+    if (keys.indexOf(domain) === -1) {
+      keys.push(domain);
       output.push(prov);
     }
   });
-  return output.sort((a, b) => a.prov_type.localeCompare(b.prov_type));
+  return output.sort((a, b) => a.provider_domain.localeCompare(b.provider_domain));
 });
 
-const provClicked = function (prov: MediaItemProviderId) {
+const provClicked = function (prov: ProviderMapping) {
   window.open(prov.url, '_blank');
 };
 </script>
 
 <script lang="ts">
-import { ContentType, ProviderType } from '../plugins/api';
-
+import { ContentType } from '../plugins/api/interfaces';
 export const iconSpotify = new URL('../assets/spotify.png', import.meta.url)
   .href;
 export const iconQobuz = new URL('../assets/qobuz.png', import.meta.url).href;
@@ -78,11 +67,11 @@ export const iconVorbis = new URL('../assets/vorbis.png', import.meta.url).href;
 export const iconM4a = new URL('../assets/m4a.png', import.meta.url).href;
 export const iconHiRes = new URL('../assets/hires.png', import.meta.url).href;
 
-export const getProviderIcon = function (provider: ProviderType) {
-  if (provider == ProviderType.SPOTIFY) return iconSpotify;
-  if (provider == ProviderType.QOBUZ) return iconQobuz;
-  if (provider == ProviderType.TUNEIN) return iconTuneIn;
-  if (provider == ProviderType.YTMUSIC) return iconYTMusic;
+export const getProviderIcon = function (providerDomain: string) {
+  if (providerDomain == "spotify") return iconSpotify;
+  if (providerDomain == "qobuz") return iconQobuz;
+  if (providerDomain == "tunein") return iconTuneIn;
+  if (providerDomain == "ytmusic") return iconYTMusic;
   return iconFilesystem;
 };
 export const getContentTypeIcon = function (contentType: ContentType) {
@@ -94,27 +83,16 @@ export const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.M4A) return iconM4a;
   return iconFallback;
 };
-export const getQualityIcon = function (quality?: MediaQuality) {
-  if (!quality) return iconFallback;
-  if (quality == MediaQuality.LOSSY_AAC) return iconAac;
-  if (quality == MediaQuality.LOSSY_MP3) return iconMp3;
-  if (quality == MediaQuality.LOSSY_OGG) return iconOgg;
-  if (quality == MediaQuality.LOSSY_M4A) return iconM4a;
-  if (quality >= MediaQuality.LOSSLESS) return iconFlac;
-  return iconFallback;
-};
 
-export const getQualityDesc = function (provDetails: MediaItemProviderId) {
-  if (provDetails.details && !provDetails.details.includes('http')) {
-    return provDetails.details;
+export const getQualityDesc = function (provDetails: ProviderMapping) {
+  if (!(provDetails.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV])) {
+    // lossless
+    if (provDetails.sample_rate > 48000 || provDetails.bit_depth > 16) {
+      // hi res
+      return `Lossless Hi-Res ${provDetails.content_type}`;
+    }
+    return `Lossless ${provDetails.content_type}`;
   }
-  if (!provDetails.quality) provDetails.quality = 0;
-  if (provDetails.quality == MediaQuality.LOSSY_AAC) return 'Lossy aac';
-  if (provDetails.quality == MediaQuality.LOSSY_MP3) return 'Lossy mp3';
-  if (provDetails.quality == MediaQuality.LOSSY_OGG) return 'Lossy ogg';
-  if (provDetails.quality == MediaQuality.LOSSY_M4A) return 'Lossy m4a';
-  if (provDetails.quality > MediaQuality.LOSSLESS) return 'Lossless Hi-Res';
-  if (provDetails.quality >= MediaQuality.LOSSLESS) return 'Lossless';
   return 'Unknown media quality ';
 };
 </script>
@@ -126,6 +104,7 @@ export const getQualityDesc = function (provDetails: MediaItemProviderId) {
   align-items: center;
   padding: 0px;
 }
+
 .provider-icon {
   float: inherit;
   padding-left: 5px;

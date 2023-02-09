@@ -15,7 +15,8 @@ import { mdiFileSync } from '@mdi/js';
 import { onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ItemsListing from '../components/ItemsListing.vue';
-import { api, MediaType, type Playlist } from '../plugins/api';
+import api from '../plugins/api';
+import { MediaType, type Playlist } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 
 const { t } = useI18n();

@@ -126,7 +126,7 @@ import {
   watchEffect,
 } from 'vue';
 import { useDisplay } from 'vuetify';
-import { MediaType, type MediaItemType } from '../plugins/api';
+import { MediaType, type MediaItemType } from '../plugins/api/interfaces';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
