@@ -16,7 +16,6 @@
   "search": "Search",
   "try_global_search": "Try global search",
   "topresult": "Top result",
-  "settings": "Settings",
   "basic_settings": "Basic settings",
   "advanced_settings": "Advanced settings",
   "queue": "Queue",
@@ -151,5 +150,19 @@
   },
   "create_playlist": "Create new playlist on {0}",
   "queue_radio_enabled": "Radio mode is enabled",
-  "queue_radio_based_on": "The queue is dynamically filled with tracks based on {0}:"
+  "queue_radio_based_on": "The queue is dynamically filled with tracks based on {0}:",
+  "settings": {
+    "settings": "Settings",
+    "players": "Players",
+    "musicproviders": "Music providers",
+    "no_providers": "Setup Music Providers",
+    "no_providers_detail": "Start your Music Assistant experience by adding your Music providers below.",
+    "documentation": "Documentation",
+    "configure": "Configure",
+    "disable": "Disable",
+    "enable": "Enable",
+    "delete": "Delete",
+    "sync": "Synchronize now",
+    "sync_running": "This provider is now being synchronized"
+  }
 }

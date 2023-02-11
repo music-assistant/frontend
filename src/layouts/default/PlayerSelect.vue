@@ -9,18 +9,23 @@
     width="300"
     style="z-index: 99999"
   >
+    <!-- heading with Players as title-->
     <v-card-title class="headline">
       <b>{{ $t("players") }}</b>
     </v-card-title>
+
+    <!-- close button in the top right (accessibility reasons)-->
     <v-btn
       variant="plain"
-      style="position: absolute; right: 10px; top: 0px"
+      style="position: absolute; right: -10px; top: 0px"
       icon="mdi-close"
       dark
       text
       @click="store.showPlayersMenu = !store.showPlayersMenu"
     />
     <v-divider />
+
+    <!-- collapsable player rows-->
     <v-expansion-panels v-model="panelItem" focusable accordion flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"
@@ -36,8 +41,8 @@
               ? 'padding:0;background-color:rgba(50, 115, 220, 0.2);'
               : 'padding:0'
           "
-          expand-icon="mdi-chevronDown"
-          collapse-icon="mdi-chevronUp"
+          expand-icon="mdi-chevron-down"
+          collapse-icon="mdi-chevron-up"
           @click="
             store.selectedPlayer = player;
             scrollToTop(player.player_id);
@@ -65,7 +70,7 @@
             </template>
             <template #title>
               <div class="text-subtitle-1">
-                <b>{{ player.display_name.substring(0, 25) }}</b>
+                <b>{{ player.display_name.substring(0, 26) }}</b>
               </div>
             </template>
             <template #subtitle>
@@ -137,6 +142,7 @@ const scrollToTop = function (playerId: string) {
 <style>
 .playerrow {
   height: 60px;
+  margin-right: 15px;
 }
 
 div.v-expansion-panel-text__wrapper {
@@ -152,5 +158,16 @@ div.v-expansion-panel--active:not(:first-child),
 }
 div.v-expansion-panel__shadow {
   box-shadow: none;
+}
+/* .v-expansion-panel-title.v-expansion-panel-title__icon {
+  margin-right: 15px;
+} */
+.v-expansion-panel-title__icon {
+    display: inline-flex;
+    margin-bottom: -4px;
+    margin-top: -4px;
+    user-select: none;
+    margin-inline-start: auto;
+    margin-right: 5px;
 }
 </style>

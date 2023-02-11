@@ -65,8 +65,10 @@ const loadData = async function () {
   browseItem.value = await api.browse(props.path);
 
   // set header title to browse title
-  if (!browseItem.value || !props.path) store.topBarTitle = t('browse');
-  else {
+  if (!browseItem.value || !props.path) {
+    store.topBarTitle = t('browse')
+    store.topBarSubTitle = '';
+  } else {
     if (mobile.value)
       store.topBarTitle = getBrowseFolderName(browseItem.value, t);
     else
@@ -91,7 +93,7 @@ const onClick = function (mediaItem: MediaItemType) {
   if (mediaItem.media_type === MediaType.FOLDER) {
     router.push({
       name: 'browse',
-      query: { path: mediaItem.path },
+      query: { path: (mediaItem as BrowseFolder).path },
     });
   } else {
     router.push({

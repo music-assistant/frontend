@@ -46,7 +46,7 @@ const provClicked = function (prov: ProviderMapping) {
 
 <script lang="ts">
 import { ContentType } from '../plugins/api/interfaces';
-export const iconSpotify = new URL('../assets/spotify.png', import.meta.url)
+export const iconSpotify = new URL('@/assets/spotify.png', import.meta.url)
   .href;
 export const iconQobuz = new URL('../assets/qobuz.png', import.meta.url).href;
 export const iconFilesystem = new URL(

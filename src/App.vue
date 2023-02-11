@@ -15,7 +15,7 @@ onMounted(() => {
     const loc = window.location
     serverAddress = loc.origin + loc.pathname
   } else {
-    serverAddress = 'http://localhost:8095/'
+    serverAddress = 'http://192.168.1.170:8095/'
   }
   api.initialize(serverAddress);
 })

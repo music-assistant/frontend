@@ -27,7 +27,7 @@
           class="listitem-thumb"
         >
           <v-btn variant="plain" icon>
-            <v-icon :icon="mdiFolder" size="60" style="align: center" />
+            <v-icon icon="mdi-folder" size="60" style="align: center" />
           </v-btn>
         </div>
         <div v-else class="listitem-thumb">
@@ -53,7 +53,7 @@
               v-if="parseBool(item.metadata.explicit || false)"
               v-bind="props"
               class="listitem-action"
-              :icon="mdiAlphaEBox"
+              icon="mdi-alpha-e-box"
               width="35"
             />
           </template>
@@ -150,7 +150,7 @@
           </v-img>
 
           <!-- provider icons -->
-          <ProviderIcons
+          <provider-icons
             v-if="
               item.provider_mappings &&
               showProviders &&
@@ -174,7 +174,7 @@
                   variant="plain"
                   ripple
                   v-bind="props"
-                  :icon="item.in_library ? mdiHeart : mdiHeartOutline"
+                  :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
                   @click="api.toggleLibrary(item)"
                   @click.prevent
                   @click.stop
@@ -196,7 +196,7 @@
                 "
                 v-bind="props"
                 class="listitem-action"
-                :icon="mdiLinkVariant"
+                icon="mdi-link-variant"
                 size="30"
               />
             </template>
@@ -221,7 +221,7 @@
         <v-menu v-if="showDetails" location="bottom end" @click:outside.stop>
           <template #activator="{ props }">
             <v-icon
-              :icon="mdiInformationOutline"
+              icon="mdi-information-outline"
               size="30"
               class="listitem-action"
               style="margin-left: 10px; margin-right: 5px"
@@ -256,7 +256,7 @@
               <div style="height: 50px; display: flex; align-items: center">
                 <v-icon
                   size="40"
-                  :icon="mdiIdentifier"
+                  icon="mdi-identifier"
                   style="margin-left: 10px; padding-right: 10px"
                 />
                 {{ truncateString(item.item_id, 30) }}
@@ -272,7 +272,7 @@
               >
                 <v-icon
                   size="40"
-                  :icon="mdiShareOutline"
+                  icon="mdi-share-outline"
                   style="margin-left: 10px; padding-right: 5px"
                 />
                 <a :href="item.provider_mappings[0].url" target="_blank">{{
@@ -301,7 +301,7 @@
               <div v-if="item.media_type == MediaType.TRACK">
                 <div style="height: 50px; display: flex; align-items: center">
                   <v-icon
-                    :icon="mdiHeadphones"
+                    icon="mdi-headphones"
                     size="40"
                     style="margin-left: 10px; padding-right: 15px"
                   />
@@ -330,7 +330,7 @@
         <!-- menu button/icon -->
         <v-btn
           v-if="showMenu"
-          :icon="mdiDotsVertical"
+          icon="mdi-dots-vertical"
           variant="plain"
           style="position: absolute; right: -3px; width: 10px"
           @click.stop="emit('menu', item)"
@@ -342,21 +342,9 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiHeart,
-  mdiHeartOutline,
-  mdiDotsVertical,
-  mdiShareOutline,
-  mdiAlphaEBox,
-  mdiFolder,
-  mdiInformationOutline,
-  mdiHeadphones,
-  mdiIdentifier,
-  mdiLinkVariant,
-} from "@mdi/js";
 import { computed, reactive } from "vue";
 import { VTooltip } from "vuetify/components";
-
+import ProviderIcons from "./ProviderIcons.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import {
   iconHiRes,
@@ -443,7 +431,11 @@ const itemIsAvailable = function (item: MediaItem) {
   if (item.media_type == MediaType.FOLDER) return true;
   if (!props.item.provider_mappings) return true;
   for (const x of item.provider_mappings) {
-    if (x.available && x.provider_instance in api.providers) return true;
+    if (
+      x.available &&
+      api.providers.value.filter((y) => y.instance_id == x.provider_instance)
+    )
+      return true;
   }
   return false;
 };

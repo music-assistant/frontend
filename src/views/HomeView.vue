@@ -46,7 +46,6 @@
               @click="$router.push(card.path)"
             >
               <v-list-item two-line>
-                <v-list-item-content>
                   <v-btn variant="plain" icon height="80">
                     <v-icon
                       :icon="card.icon"
@@ -57,7 +56,6 @@
                   <div class="mb-4">
                     {{ $t(card.label) }}
                   </div>
-                </v-list-item-content>
               </v-list-item>
             </v-card>
           </v-col>
@@ -85,6 +83,7 @@ import GlobalSearch from '../components/GlobalSearch.vue';
 import { api } from '@/plugins/api';
 
 store.topBarTitle = store.defaultTopBarTitle;
+store.topBarSubTitle = '';
 store.topBarContextMenuItems = [
   {
     label: 'sync',
@@ -98,7 +97,7 @@ store.topBarContextMenuItems = [
     label: 'sync_full',
     labelArgs: [],
     action: () => {
-      api.startSync(undefined, undefined, true);
+      api.startSync(undefined, undefined);
     },
     icon: mdiCached,
   },

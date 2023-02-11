@@ -432,24 +432,20 @@
 import { watchEffect, ref, computed, watch } from "vue";
 
 import type { MediaItemType, Track } from "../../plugins/api/interfaces";
-import api from "../../plugins/api";
-import {
-  PlayerState,
-  MediaType,
-  ImageType,
-} from "../../plugins/api/interfaces";
-import { store } from "../../plugins/store";
-import VolumeControl from "../../components/VolumeControl.vue";
+import api from "@/plugins/api";
+import { PlayerState, MediaType, ImageType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import VolumeControl from "@/components/VolumeControl.vue";
 import MediaItemThumb, {
   getImageThumbForItem,
-} from "../../components/MediaItemThumb.vue";
-import { formatDuration, getArtistsString } from "../../utils";
+} from "@/components/MediaItemThumb.vue";
+import { formatDuration, getArtistsString } from "@/utils";
 import { useRouter } from "vue-router";
 import {
   getContentTypeIcon,
   iconHiRes,
   getProviderIcon,
-} from "../../components/ProviderIcons.vue";
+} from "@/components/ProviderIcons.vue";
 
 const router = useRouter();
 

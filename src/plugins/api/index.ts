@@ -38,6 +38,7 @@ import {
   type SuccessResultMessage,
   type ErrorResultMessage,
   type CommandMessage,
+  type SyncTask,
 } from "./interfaces";
 
 const DEBUG = true;
@@ -71,7 +72,8 @@ export class MusicAssistantApi {
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
-  public providers = reactive<ProviderInstance[]>([]);
+  public providers = ref<ProviderInstance[]>([]);
+  public syncTasks = ref<SyncTask[]>([]);
   private eventCallbacks: Array<[string, CallableFunction]>;
   private commands: Map<
     number,
@@ -164,7 +166,7 @@ export class MusicAssistantApi {
     provDomainOrInstance: string
   ): ProviderInstance | undefined {
     // Get provider by domain or instance id
-    return this.providers.find(
+    return this.providers.value.find(
       (x) =>
         x.domain == provDomainOrInstance ||
         x.instance_id == provDomainOrInstance
@@ -882,6 +884,8 @@ export class MusicAssistantApi {
       if (player.player_id in this.players)
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
+    } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
+      this.syncTasks.value = msg.data as SyncTask[]
     }
     // signal + log all events
     if (msg.event !== EventType.QUEUE_TIME_UPDATED) {
@@ -895,6 +899,9 @@ export class MusicAssistantApi {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
     if (!resultPromise) return;
+    if (DEBUG) {
+      console.log("[resultMessage]", msg);
+    }
     if ("error_code" in msg) {
       msg = msg as ErrorResultMessage;
       resultPromise.reject(msg.details || msg.error_code);
@@ -907,6 +914,9 @@ export class MusicAssistantApi {
 
   private handleServerInfoMessage(msg: ServerInfoMessage) {
     // Handle ServerInfo message which is sent as first message on connect
+    if (DEBUG) {
+      console.log("[serverInfo]", msg);
+    }
     this.state.value = ConnectionState.CONNECTED;
     this.serverInfo.value = msg;
     // trigger fetch of full state
@@ -922,7 +932,7 @@ export class MusicAssistantApi {
     }
   }
 
-  private getData<Result>(
+  public getData<Result>(
     command: string,
     args?: Record<string, any>
   ): Promise<Result> {
@@ -934,7 +944,7 @@ export class MusicAssistantApi {
     });
   }
 
-  private sendCommand(
+  public sendCommand(
     command: string,
     args?: Record<string, any>,
     msgId?: number
@@ -969,8 +979,9 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     }
 
-    const providers = await this.getData<ProviderInstance>("providers");
-    Object.assign(this.providers, providers);
+    this.providers.value = await this.getData<ProviderInstance[]>("providers");
+
+    this.syncTasks.value = await this.getData<SyncTask[]>("music/synctasks");
   }
 
   private _genCmdId() {

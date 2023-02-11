@@ -21,12 +21,13 @@ const { t } = useI18n();
 const items = ref<Album[]>([]);
 
 store.topBarTitle = t('albums');
+store.topBarSubTitle = '';
 store.topBarContextMenuItems = [
   {
     label: 'sync',
     labelArgs: [],
     action: () => {
-      api.startSync(MediaType.ALBUM);
+      api.startSync([MediaType.ALBUM]);
     },
     icon: mdiFileSync,
   },

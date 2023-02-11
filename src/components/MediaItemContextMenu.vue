@@ -108,7 +108,7 @@
                 </template>
                 <template #append>
                   <div class="listitem-actions">
-                    <ProviderIcons
+                    <provider-icons
                       v-if="playlist.provider_mappings"
                       :provider-mappings="playlist.provider_mappings"
                       :height="20"
@@ -120,7 +120,7 @@
               <v-divider />
             </div>
             <!-- create playlist row(s) -->
-            <div v-for="prov of api.providers" :key="prov.instance_id">
+            <div v-for="prov of api.providers.value" :key="prov.instance_id">
               <div
                 v-if="
                   prov.supported_features.includes(

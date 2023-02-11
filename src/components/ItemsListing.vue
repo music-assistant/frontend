@@ -507,7 +507,6 @@ const loadData = async function (clear = false, limit = defaultLimit) {
     search.value || '',
     inLibraryOnly.value
   );
-  console.log('nextItems', nextItems)
   if (offset.value) {
     items.value.push(...nextItems.items);
   } else {

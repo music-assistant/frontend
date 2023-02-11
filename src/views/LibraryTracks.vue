@@ -28,6 +28,7 @@ const { t } = useI18n();
 const items = ref<Track[]>([]);
 
 store.topBarTitle = t("tracks");
+store.topBarSubTitle = '';
 store.topBarContextMenuItems = [
   {
     label: "sync",

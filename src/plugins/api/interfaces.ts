@@ -121,7 +121,9 @@ export enum EventType {
   MEDIA_ITEM_DELETED = "media_item_deleted",
   PROVIDER_CONFIG_UPDATED = "provider_config_updated",
   PROVIDER_CONFIG_CREATED = "provider_config_created",
+  PROVIDER_LOADED = "provider_loaded",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
+  SYNC_TASKS_UPDATED = "sync_tasks_updated",
   // special types for local subscriptions only
   ALL = "*",
 }
@@ -525,6 +527,7 @@ export interface ProviderManifest {
   type: ProviderType;
   domain: string;
   name: string;
+  description: string;
   codeowners: string[];
   // config_entries: list of config entries required to configure/setup this provider
   config_entries: ConfigEntry[];
@@ -546,4 +549,12 @@ export interface ProviderInstance {
   name: string;
   instance_id: string;
   supported_features: ProviderFeature[];
+  available: boolean;
+}
+
+export interface SyncTask {
+  // Description of a Sync task/job of a musicprovider.
+  provider_domain: string;
+  provider_instance: string;
+  media_types: MediaType[];
 }

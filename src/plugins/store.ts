@@ -10,8 +10,7 @@ interface Store {
   showPlayersMenu: boolean;
   darkTheme: boolean;
   topBarTitle?: string;
-  topBarColor: string;
-  topBarTextColor: string;
+  topBarSubTitle?: string;
   defaultTopBarTitle: string;
   topBarContextMenuItems: ContextMenuItem[];
   blockGlobalPlayMenu: boolean;
@@ -24,6 +23,7 @@ interface Store {
     query: LocationQuery;
     meta: RouteMeta;
   }>;
+  loading: boolean;
 }
 
 export const store: Store = reactive({
@@ -31,8 +31,6 @@ export const store: Store = reactive({
   isInStandaloneMode: false,
   showPlayersMenu: false,
   darkTheme: false,
-  topBarColor: '#424242',
-  topBarTextColor: '#ffffff',
   defaultTopBarTitle: 'Music Assistant',
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,
@@ -40,4 +38,5 @@ export const store: Store = reactive({
   apiInitialized: false,
   apiBaseUrl: '',
   prevRoutes: [],
+  loading: false
 });

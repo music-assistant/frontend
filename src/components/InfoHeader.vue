@@ -99,7 +99,7 @@
                   v-if="artistindex + 1 < item.artists.length"
                   :key="artistindex"
                   style="color: accent"
-                  >{{ ' / ' }}</span
+                  >{{ " / " }}</span
                 >
               </span>
             </v-card-subtitle>
@@ -136,7 +136,7 @@
                 small
                 :icon="mdiAlbum"
               />
-              <a style="color: secondary" @click="albumClick(item.album)">{{
+              <a style="color: secondary" @click="albumClick((item as Track)?.album)">{{
                 item.album.name
               }}</a>
             </v-card-subtitle>
@@ -157,7 +157,7 @@
                     store.blockGlobalPlayMenu
                   "
                 >
-                  {{ $t('play') }}
+                  {{ $t("play") }}
                 </v-btn>
               </template>
 
@@ -188,7 +188,7 @@
               :prepend-icon="mdiHeartOutline"
               @click="api.addItemsToLibrary([item!])"
             >
-              {{ $t('add_library') }}
+              {{ $t("add_library") }}
             </v-btn>
             <v-btn
               v-if="!$vuetify.display.mobile && item.in_library"
@@ -198,7 +198,7 @@
               :prepend-icon="mdiHeart"
               @click="api.removeItemsFromLibrary([item!])"
             >
-              {{ $t('remove_library') }}
+              {{ $t("remove_library") }}
             </v-btn>
           </div>
 
@@ -239,7 +239,7 @@
       >
         <!-- provider icons -->
         <div style="position: absolute; float: right; right: 15px; top: 15px">
-          <ProviderIcons
+          <provider-icons
             :provider-mappings="item.provider_mappings"
             :height="25"
             :enable-link="true"
@@ -251,30 +251,36 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcons from './ProviderIcons.vue';
+import ProviderIcons from "./ProviderIcons.vue";
 import {
   mdiHeart,
   mdiHeartOutline,
   mdiAccountMusic,
   mdiAlbum,
   mdiPlayCircle,
-} from '@mdi/js';
+} from "@mdi/js";
 
-import { store } from '../plugins/store';
-import { useDisplay } from 'vuetify';
-import { api } from '../plugins/api';
-import { ImageType } from '../plugins/api/interfaces';
-import type { Album, Artist, ItemMapping, MediaItemType } from '../plugins/api/interfaces';
-import { computed, ref, watchEffect, onBeforeUnmount } from 'vue';
-import MediaItemThumb from './MediaItemThumb.vue';
-import { getImageThumbForItem } from './MediaItemThumb.vue';
-import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
-import { truncateString } from '@/utils';
+import { store } from "@/plugins/store";
+import { useDisplay } from "vuetify";
+import { api } from "@/plugins/api";
+import { ImageType, Track } from "@/plugins/api/interfaces";
+import type {
+  Album,
+  Artist,
+  ItemMapping,
+  MediaItemType,
+} from "@/plugins/api/interfaces";
+import { computed, ref, watchEffect, onBeforeUnmount } from "vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import { getImageThumbForItem } from "./MediaItemThumb.vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import { truncateString } from "@/utils";
 import {
   getPlayMenuItems,
   getContextMenuItems,
-} from './MediaItemContextMenu.vue';
+} from "./MediaItemContextMenu.vue";
+import { transform } from "@vue/compiler-core";
 
 // properties
 export interface Props {
@@ -285,7 +291,7 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
 
-const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url)
+const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
 const { t } = useI18n();
@@ -293,14 +299,8 @@ const router = useRouter();
 
 watchEffect(async () => {
   if (props.item) {
-    if (mobile.value) {
-      store.topBarTitle = truncateString(props.item.name, 30);
-    } else {
-      store.topBarTitle =
-        '<span style="opacity:0.5">' +
-        t(props.item.media_type + 's') +
-        ` | </span>${props.item.name}`;
-    }
+    store.topBarTitle =  t(props.item.media_type + "s");
+    store.topBarSubTitle = props.item.name;
 
     fanartImage.value =
       (await getImageThumbForItem(props.item, ImageType.FANART)) ||
@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
 const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked
   router.push({
-    name: 'album',
+    name: "album",
     params: {
       item_id: item.item_id,
       provider: item.provider,
@@ -330,7 +330,7 @@ const albumClick = function (item: Album | ItemMapping) {
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
   router.push({
-    name: 'artist',
+    name: "artist",
     params: {
       item_id: item.item_id,
       provider: item.provider,
@@ -338,26 +338,26 @@ const artistClick = function (item: Artist | ItemMapping) {
   });
 };
 const description = computed(() => {
-  let desc = '';
-  if (!props.item) return '';
+  let desc = "";
+  if (!props.item) return "";
   if (props.item.metadata && props.item.metadata.description) {
     desc = props.item.metadata.description;
   } else if (props.item.metadata && props.item.metadata.copyright) {
     desc = props.item.metadata.copyright;
-  } else if ('artists' in props.item) {
+  } else if ("artists" in props.item) {
     props.item.artists.forEach(function (artist: Artist | ItemMapping) {
-      if ('metadata' in artist && artist.metadata.description) {
+      if ("metadata" in artist && artist.metadata.description) {
         desc = artist.metadata.description;
       }
     });
   }
   const maxChars = mobile.value ? 160 : 260;
-  desc = desc.replace('\r\n', '<br /><br /><br />');
-  desc = desc.replace('\r', '<br /><br />');
-  desc = desc.replace('\n', '<br /><br />');
+  desc = desc.replace("\r\n", "<br /><br /><br />");
+  desc = desc.replace("\r", "<br /><br />");
+  desc = desc.replace("\n", "<br /><br />");
   if (showFullInfo.value) return desc;
   if (desc.length > maxChars) {
-    return desc.substring(0, maxChars) + '...';
+    return desc.substring(0, maxChars) + "...";
   }
   return desc;
 });
