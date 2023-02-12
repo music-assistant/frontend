@@ -2,11 +2,8 @@
   <section>
     <v-tabs
       v-model="activeTab"
-      show-arrows
-      centered
-      grow
-      stacked
-      slider-color="primary"
+      show-arrows grow hide-slider
+      style="margin-top:8px"
     >
       <v-tab value="musicproviders">
         {{ $t("settings.musicproviders") }}

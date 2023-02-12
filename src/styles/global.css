@@ -2,14 +2,14 @@
 
   /* active tab */
   .v-btn.v-slide-group-item--active.v-tab--selected {
-    background: rgba(var(--v-theme-on-surface), 0.6);
-    color: rgb(var(--v-theme-surface));
+    background: rgb(var(--v-theme-primary));
+    color: rgb(var(--v-theme-on-primary));
   }
 
   /* inactive tab */
   .v-tabs--grow .v-tab {
-    background: rgba(var(--v-theme-on-surface), 0.3);
-    color: rgba(var(--v-theme-surface), 0.6);
+    background: rgba(var(--v-theme-primary), 0.3);
+    color: rgb(var(--v-theme-text-color));
   }
 
   a {
