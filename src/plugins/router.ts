@@ -148,6 +148,10 @@ const routes = [
               import(/* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"),
             props: true,
           },
+          {
+            path: '',
+            redirect: 'settings/musicproviders', // default child path
+          }
         ]
       },
     ],

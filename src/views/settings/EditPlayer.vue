@@ -11,22 +11,15 @@
             config.name || api.players[config.player_id].name,
           ])
         }}</v-card-title>
+        <v-card-subtitle><b>{{ $t("settings.player_id") }}: </b>{{ config.player_id }}</v-card-subtitle>
         <v-card-subtitle
-          >{{
-            $t("settings.player_provider", [
-              providerManifests[config.provider].name,
-            ])
-          }}
+          ><b>{{ $t("settings.player_provider") }}: </b>{{ providerManifests[config.provider].name }}
           (
           {{ providerManifests[config.provider].description }})</v-card-subtitle
         >
-        <v-card-subtitle v-if="providerManifests[config.provider].documentation"
-          ><a
-            :href="providerManifests[config.provider].documentation"
-            target="_blank"
-            >{{ $t("settings.documentation") }}</a
-          ></v-card-subtitle
-        >
+        <v-card-subtitle v-if="api.players[config.player_id]"><b>{{ $t("settings.player_model") }}: </b>{{ api.players[config.player_id].device_info.manufacturer }} / {{ api.players[config.player_id].device_info.model }}</v-card-subtitle>
+        <v-card-subtitle v-if="api.players[config.player_id]"><b>{{ $t("settings.player_address") }}: </b>{{ api.players[config.player_id].device_info.address }}</v-card-subtitle>
+        
       </div>
       <br />
       <v-divider />

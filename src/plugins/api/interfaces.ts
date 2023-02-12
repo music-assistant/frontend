@@ -164,10 +164,9 @@ export enum ConfigEntryType {
   BOOLEAN = "boolean",
   STRING = "string",
   PASSWORD = "password",
-  INT = "integer",
+  INTEGER = "integer",
   FLOAT = "float",
   LABEL = "label",
-  DICT = "dict",
 }
 
 //// api
@@ -220,12 +219,7 @@ export type MessageType =
 
 // config entries
 
-export type ConfigValueType =
-  | string
-  | number
-  | boolean
-  | Record<string, any>
-  | null;
+export type ConfigValueType = string | number | boolean | null;
 
 export interface ConfigValueOption {
   // Model for a value with seperated name/value.

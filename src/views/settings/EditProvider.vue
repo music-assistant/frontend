@@ -7,26 +7,21 @@
         style="margin-left: -5px; margin-right: -5px"
       >
         <v-card-title>{{
-          $t("settings.add_music_provider", [availableProviders[config.domain].name])
+          $t("settings.setup_music_provider", [availableProviders[config.domain].name])
         }}</v-card-title>
         <v-card-subtitle>{{
           availableProviders[config.domain].description
-        }}</v-card-subtitle>
+        }}</v-card-subtitle><br/>
         <v-card-subtitle v-if="availableProviders[config.domain].codeowners.length"
           ><b>{{ $t("settings.codeowners") }}: </b
-          ><span v-for="codeowner in availableProviders[config.domain].codeowners"
-            ><a :href="getCodeOwnerLink(codeowner)" target="_blank"
-              >{{ codeowner }}
-            </a>
-          </span></v-card-subtitle
+          >{{ availableProviders[config.domain].codeowners.join(' / ') }}</v-card-subtitle
         >
+
         <v-card-subtitle v-if="availableProviders[config.domain].documentation"
-          ><a
-            :href="availableProviders[config.domain].documentation"
-            target="_blank"
-            >{{ $t("settings.documentation") }}</a
-          ></v-card-subtitle
+          ><b>{{ $t("settings.need_help_setup_provider") }} </b
+          > <a :href="availableProviders[config.domain].documentation" target="_blank">{{ $t("settings.check_docs") }}</a></v-card-subtitle
         >
+
       </div>
       <br />
       <v-divider />
@@ -92,16 +87,6 @@ watchEffect(async () => {
 const onSubmit = async function (value: ProviderConfig) {
   api.sendCommand("config/providers/set", { config: value });
   router.push({ name: "musicprovidersettings" });
-};
-const getCodeOwnerLink = function (value: string) {
-  if (value.startsWith("@")) {
-    return `https://github.com/${value.replace("@", "")}`;
-  } else if (value.startsWith("http")) {
-    return value;
-  } else if (value.includes(".")) {
-    return `https://${value}`;
-  }
-  return "";
 };
 </script>
 

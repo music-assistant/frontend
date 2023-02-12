@@ -56,6 +56,9 @@ export const iconFilesystem = new URL(
 export const iconTuneIn = new URL('../assets/tunein.png', import.meta.url).href;
 export const iconYTMusic = new URL('../assets/ytmusic.png', import.meta.url)
   .href;
+export const iconSlimProto = new URL('../assets/slimproto.png', import.meta.url)
+  .href;
+
 export const iconFallback = new URL('../assets/fallback.png', import.meta.url)
   .href;
 
@@ -72,6 +75,7 @@ export const getProviderIcon = function (providerDomain: string) {
   if (providerDomain == "qobuz") return iconQobuz;
   if (providerDomain == "tunein") return iconTuneIn;
   if (providerDomain == "ytmusic") return iconYTMusic;
+  if (providerDomain == "slimproto") return iconSlimProto;
   return iconFilesystem;
 };
 export const getContentTypeIcon = function (contentType: ContentType) {

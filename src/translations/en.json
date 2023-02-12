@@ -166,7 +166,7 @@
     "sync": "Synchronize now",
     "sync_running": "This provider is now being synchronized",
     "not_loaded": "The provider is not (yet) loaded",
-    "add_music_provider": "Add Music provider: {0}",
+    "setup_music_provider": "Setup Music provider: {0}",
     "save": "Save",
     "invalid_input": "The input is invalid",
     "username": "Username",
@@ -180,8 +180,13 @@
     "player_disabled": "This player is disabled",
     "enable_provider": "Enable this provider entry",
     "enable_player": "Enable this player",
-    "config_player": "Configure player {0}",
-    "player_provider": "Provider: {0}",
-    "advanced_settings": "Advanced settings"
+    "config_player": "Configure player: {0}",
+    "player_provider": "Provider",
+    "player_id": "Player ID",
+    "player_model": "Model",
+    "player_address": "Address",
+    "advanced_settings": "Advanced settings",
+    "need_help_setup_provider": "Need help setting up this provider ?",
+    "check_docs": "Checkout the documentation"
   }
 }

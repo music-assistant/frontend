@@ -54,9 +54,15 @@
               :key="conf_item_value.key"
             >
               <div class="configcolumnleft">
+                <!-- label value -->
+                <v-label
+                  v-if="conf_item_value.type == ConfigEntryType.LABEL"
+                  :text="conf_item_value.value?.toString()"
+                ></v-label>
+
                 <!-- boolean value: toggle switch -->
                 <v-switch
-                  v-if="conf_item_value.type == ConfigEntryType.BOOLEAN"
+                  v-else-if="conf_item_value.type == ConfigEntryType.BOOLEAN"
                   v-model="conf_item_value.value"
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -67,16 +73,14 @@
                     !conf.values[conf_item_value.depends_on].value
                   "
                 ></v-switch>
-                <!-- textbox with single value -->
-                <v-text-field
-                  v-if="
-                    (conf_item_value.type == ConfigEntryType.STRING ||
-                      conf_item_value.type == ConfigEntryType.INT ||
+
+                <!-- int/float value in range: slider control -->
+                <v-slider
+                v-else-if="(conf_item_value.type == ConfigEntryType.INTEGER ||
                       conf_item_value.type == ConfigEntryType.FLOAT) &&
-                    !conf_item_value.options
+                    conf_item_value.range && conf_item_value.range.length == 2
                   "
-                  v-model="conf_item_value.value"
-                  :placeholder="conf_item_value.default_value?.toString()"
+                  v-model="(conf_item_value.value as number)"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
                     !conf.values[conf_item_value.depends_on].value
@@ -85,17 +89,29 @@
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
                   "
                   :required="conf_item_value.required"
-                  :rules="[
-                    (v) =>
-                      !(!v && conf_item_value.required) ||
-                      $t('settings.invalid_input'),
-                  ]"
-                  variant="outlined"
-                  :clearable="!conf_item_value.required"
-                ></v-text-field>
+                  class="align-center"
+                  :max="conf_item_value.range[0]"
+                  :min="conf_item_value.range[1]"
+                  :step-size="conf_item_value.type == ConfigEntryType.FLOAT ? 0.5 : 1"
+                  hide-details
+                  style="margin-top:10px;margin-bottom:25px"
+                  color="primary"
+                >
+                  <template v-slot:append>
+                    <v-text-field
+                    v-model="(conf_item_value.value as number)"
+                      hide-details
+                      single-line
+                      density="compact"
+                      type="number"
+                      style="width: 70px"
+                    ></v-text-field>
+                  </template>
+                </v-slider>
+
                 <!-- password value -->
                 <v-text-field
-                  v-if="conf_item_value.type == ConfigEntryType.PASSWORD"
+                  v-else-if="conf_item_value.type == ConfigEntryType.PASSWORD"
                   v-model="conf_item_value.value"
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -114,12 +130,13 @@
                   variant="outlined"
                   clearable
                 ></v-text-field>
+
                 <!-- value with dropdown -->
                 <v-select
                   :chips="conf_item_value.multi_value"
                   :clearable="conf_item_value.multi_value"
                   :multiple="conf_item_value.multi_value"
-                  v-if="
+                  v-else-if="
                     conf_item_value.options &&
                     conf_item_value.options.length > 0
                   "
@@ -141,15 +158,38 @@
                   ]"
                   variant="outlined"
                 ></v-select>
+
+                <!-- all other: textbox with single value -->
+                <v-text-field
+                  v-else
+                  v-model="conf_item_value.value"
+                  :placeholder="conf_item_value.default_value?.toString()"
+                  :disabled="
+                    conf_item_value.depends_on != undefined &&
+                    !conf.values[conf_item_value.depends_on].value
+                  "
+                  :label="
+                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
+                  "
+                  :required="conf_item_value.required"
+                  :rules="[
+                    (v) =>
+                      !(!v && conf_item_value.required) ||
+                      $t('settings.invalid_input'),
+                  ]"
+                  variant="outlined"
+                  :clearable="!conf_item_value.required"
+                ></v-text-field>
               </div>
-              <div class="configcolumnright">
+              <div class="configcolumnright" v-if="conf_item_value.description">
                 <!-- right side of control: help icon with description-->
                 <v-tooltip
+                  activator="parent"
                   location="start"
-                  origin="end center"
                   :close-on-back="true"
-                  :open-on-click="true"
+                  open-on-click
                   :open-on-hover="true"
+                  close-on-content-click
                 >
                   <template #activator="{ props: tooltip }">
                     <v-icon
@@ -157,14 +197,31 @@
                       v-bind="tooltip"
                       size="x-large"
                       color="grey-lighten-1"
+                      @click="
+                        conf_item_value.help_link
+                          ? openLink(conf_item_value.help_link!)
+                          : ''
+                      "
                       >mdi-help-box</v-icon
                     >
                   </template>
-                  <div v-if="conf_item_value.description">
+                  <div>
                     {{ conf_item_value.description }}
                   </div>
-                  <div v-else>{{ $t("settings.not_loaded") }}</div>
                 </v-tooltip>
+              </div>
+              <div
+                class="configcolumnright"
+                v-else-if="conf_item_value.help_link"
+              >
+                <!-- right side of control: help icon with link to docs-->
+                <v-icon
+                  class="helpicon"
+                  size="x-large"
+                  color="grey-lighten-1"
+                  @click="openLink(conf_item_value.help_link!)"
+                  >mdi-help-box</v-icon
+                >
               </div>
             </div>
           </v-expansion-panel-text>
@@ -245,7 +302,7 @@ const onSave = async function (this: any) {
     emit("update:modelValue", conf.value);
   }
 };
-const clickLink = function (url: string) {
+const openLink = function (url: string) {
   window.open(url, "_blank");
 };
 </script>
