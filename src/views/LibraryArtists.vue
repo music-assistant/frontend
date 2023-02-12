@@ -43,8 +43,6 @@ const loadItems = async function (
   }
 };
 
-store.topBarTitle = t("artists");
-store.topBarSubTitle = '';
 store.topBarContextMenuItems = [
   {
     label: "sync",

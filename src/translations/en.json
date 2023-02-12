@@ -14,6 +14,7 @@
   "radios": "Radio",
   "browse": "Browse",
   "search": "Search",
+  "addprovider": "Add provider",
   "try_global_search": "Try global search",
   "topresult": "Top result",
   "basic_settings": "Basic settings",
@@ -22,6 +23,7 @@
   "tasks": "Tasks",
   "sync": "Run sync",
   "sync_full": "Force full sync",
+  "page_back": "Go back to the previous page",
   "artist_toptracks": "Top tracks",
   "artist_albums": "Albums",
   "album_tracks": "Album tracks",
@@ -163,6 +165,18 @@
     "enable": "Enable",
     "delete": "Delete",
     "sync": "Synchronize now",
-    "sync_running": "This provider is now being synchronized"
+    "sync_running": "This provider is now being synchronized",
+    "not_loaded": "The provider is not (yet) loaded",
+    "add_music_provider": "Add Music provider: {0}",
+    "save": "Save",
+    "invalid_input": "The input is invalid",
+    "username": "Username",
+    "password": "Password",
+    "codeowners": "Authors/credits",
+    "name": "Name",
+    "name_desc": "A custom name/title for this provider entry.",
+    "enabled": "Enable",
+    "close": "Close",
+    "provider_disabled": "This provider entry is disabled"
   }
 }

@@ -1,13 +1,51 @@
 <template>
-  <v-app-bar color="grey-darken-3" density="compact" style="height: 56px">
+  <v-app-bar
+    color="grey-darken-3"
+    density="compact"
+    style="height: 56px"
+    :elevation="2"
+  >
     <template v-slot:prepend>
-      <v-icon size="40">mdi-play-circle</v-icon>
+      <v-menu location="bottom end">
+        <template #activator="{ props }">
+          <v-btn
+            style="margin-left: -8px; margin-right: -20px"
+            v-bind="props"
+            variant="plain"
+            ><v-icon size="40">mdi-play-circle</v-icon>
+          </v-btn>
+        </template>
+
+        <v-list>
+          <v-list-item
+            v-if="store.prevRoutes.length > 0"
+            :title="$t('page_back')"
+            @click="backButton()"
+            prepend-icon="mdi-arrow-left"
+          />
+          <v-list-item
+            v-if="router.currentRoute.value.name != 'home'"
+            :title="$t('home')"
+            @click="router.push({ name: 'home' })"
+            prepend-icon="mdi-home"
+          />
+        <v-list-item
+            v-for="menuItem of menuItems"
+            :key="menuItem.path"
+            :title="$t(menuItem.label)"
+            :prepend-icon="menuItem.icon"
+            @click="router.push(menuItem.path)"
+          />
+        </v-list>
+      </v-menu>
     </template>
     <v-app-bar-title
-      >{{ store.topBarTitle || "Music Assistant" }}
-      <span v-if="store.topBarSubTitle" style="opacity: 0.5"> | {{
-        store.topBarSubTitle
-      }}</span></v-app-bar-title
+      ><span @click="heading.mainLink">{{
+        heading.mainTitle
+      }}</span>
+      <span v-if="heading.subTitle" style="opacity: 0.5">
+        | {{ heading.subTitle }}</span
+      ></v-app-bar-title
     >
 
     <template v-slot:append>
@@ -20,7 +58,9 @@
               v-bind="tooltip"
             />
           </template>
-          <span v-if="api.syncTasks.value.length > 0">{{ $t("jobs_running", [api.syncTasks.value.length]) }}</span>
+          <span v-if="api.syncTasks.value.length > 0">{{
+            $t("jobs_running", [api.syncTasks.value.length])
+          }}</span>
         </v-tooltip>
       </div>
       <div style="align-items: right; display: flex">
@@ -54,13 +94,118 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { store } from "@/plugins/store";
 import { api } from "@/plugins/api";
+import { useI18n } from "vue-i18n";
 
 const router = useRouter();
 const dialog = ref(false);
+const { t } = useI18n();
+
+const menuItems = [
+  {
+    label: 'artists',
+    icon: 'mdi-account-music',
+    path: '/artists',
+  },
+  {
+    label: 'albums',
+    icon: 'mdi-album',
+    path: '/albums',
+  },
+  {
+    label: 'tracks',
+    icon: 'mdi-file-music',
+    path: '/tracks',
+  },
+  {
+    label: 'radios',
+    icon: 'mdi-radio',
+    path: '/radios',
+  },
+  {
+    label: 'playlists',
+    icon: 'mdi-playlist-music',
+    path: '/playlists',
+  },
+  {
+    label: 'browse',
+    icon: 'mdi-folder',
+    path: '/browse',
+  },
+  {
+    label: 'settings.settings',
+    icon: 'mdi-cog',
+    path: '/settings',
+  },
+]
+
+interface Heading {
+  mainTitle: string;
+  mainLink?: Function;
+  subTitle?: string;
+}
+
+const heading = computed<Heading>(() => {
+  // we create a (two level only) breadcrumb in the title/header
+  // based on the route and loaded item
+
+  if (router.currentRoute.value.name == "home") {
+    // home
+    return {
+      mainTitle: t("mass"),
+      subTitle: t("home"),
+    };
+  }
+
+  if (router.currentRoute.value.name != "home" && !store.topBarTitle) {
+    // root page, like settings, albums, artists etc.
+    return {
+      mainTitle: t("mass"),
+      mainLink: () => {router.push({ name: 'home' })},
+      subTitle: t(router.currentRoute.value.name!.toString()),
+    };
+  }
+  if (router.currentRoute.value.name != "home" && store.topBarTitle) {
+    // item details from root level (e.g. artists --> artist)
+    if (prevRoute.value && router.currentRoute.value.path.includes(prevRoute.value.path)) {
+      // previous route exists, prefer that for the breadcrumb link
+      // to keep history like scroll position
+      return {
+        mainTitle: t(prevRoute.value.name.replace('home', 'mass')),
+        mainLink: () => {backButton()},
+        subTitle: store.topBarTitle,
+      };
+    }
+    // extract parent from path
+    const parent = router.currentRoute.value.path.split('/')[1]
+    return {
+      mainTitle: t(parent),
+      mainLink: () => {router.push(`/${parent}`)},
+      subTitle: store.topBarTitle,
+    };
+  }
+  if (router.currentRoute.value) {
+    return {
+      mainTitle: t(router.currentRoute.value.name!.toString()),
+    };
+  }
+  return {
+    // fallback if everything else fails...
+    mainTitle: t("mass"),
+  };
+});
+
+const prevRoute = computed(() => {
+  if (store.prevRoutes.length > 0) {
+    const prev = store.prevRoutes[store.prevRoutes.length - 1];
+    return prev;
+  }
+  return undefined;
+})
+
 
 const backButton = function () {
   const prevRoute = store.prevRoutes.pop();

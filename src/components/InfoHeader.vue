@@ -299,8 +299,7 @@ const router = useRouter();
 
 watchEffect(async () => {
   if (props.item) {
-    store.topBarTitle =  t(props.item.media_type + "s");
-    store.topBarSubTitle = props.item.name;
+    store.topBarTitle = props.item.name;
 
     fanartImage.value =
       (await getImageThumbForItem(props.item, ImageType.FANART)) ||

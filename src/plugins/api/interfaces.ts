@@ -119,9 +119,7 @@ export enum EventType {
   MEDIA_ITEM_ADDED = "media_item_added",
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
-  PROVIDER_CONFIG_UPDATED = "provider_config_updated",
-  PROVIDER_CONFIG_CREATED = "provider_config_created",
-  PROVIDER_LOADED = "provider_loaded",
+  PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   // special types for local subscriptions only
@@ -550,6 +548,7 @@ export interface ProviderInstance {
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
+  last_error?: string;
 }
 
 export interface SyncTask {

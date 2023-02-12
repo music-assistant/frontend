@@ -82,8 +82,6 @@ import GlobalSearch from '../components/GlobalSearch.vue';
 
 import { api } from '@/plugins/api';
 
-store.topBarTitle = store.defaultTopBarTitle;
-store.topBarSubTitle = '';
 store.topBarContextMenuItems = [
   {
     label: 'sync',
@@ -109,32 +107,32 @@ onBeforeUnmount(() => {
 const cards = ref([
   {
     label: 'artists',
-    icon: mdiAccountMusic,
+    icon: 'mdi-account-music',
     path: '/artists',
   },
   {
     label: 'albums',
-    icon: mdiAlbum,
+    icon: 'mdi-album',
     path: '/albums',
   },
   {
     label: 'tracks',
-    icon: mdiFileMusic,
+    icon: 'mdi-file-music',
     path: '/tracks',
   },
   {
     label: 'radios',
-    icon: mdiRadio,
+    icon: 'mdi-radio',
     path: '/radios',
   },
   {
     label: 'playlists',
-    icon: mdiPlaylistMusic,
+    icon: 'mdi-playlist-music',
     path: '/playlists',
   },
   {
     label: 'browse',
-    icon: mdiFolder,
+    icon: 'mdi-folder',
     path: '/browse',
   },
 ]);

@@ -777,12 +777,12 @@ onBeforeUnmount(() => {
 const loadItems = async function () {
   loading.value = true;
   if (activePlayerQueue.value) {
-    store.topBarTitle = t('queue') + ': ' + activePlayerQueue.value.display_name;
+    store.topBarTitle = activePlayerQueue.value.display_name;
     items.value = await api.getPlayerQueueItems(
       activePlayerQueue.value.queue_id
     );
   } else {
-    store.topBarTitle = t('queue');
+    store.topBarTitle = undefined;
     items.value = [];
   }
   loading.value = false;

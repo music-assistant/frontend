@@ -32,21 +32,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import { useDisplay } from 'vuetify';
-import { useI18n } from 'vue-i18n';
-import { RecycleScroller } from 'vue-virtual-scroller';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-import ListviewItem from '../components/ListviewItem.vue';
+import { onMounted, ref, watch } from "vue";
+import { useDisplay } from "vuetify";
+import { useI18n } from "vue-i18n";
+import { RecycleScroller } from "vue-virtual-scroller";
+import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
+import ListviewItem from "../components/ListviewItem.vue";
 import {
   MediaType,
   type BrowseFolder,
   type MediaItemType,
-} from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
-import { useRouter } from 'vue-router';
-import { getBrowseFolderName } from '../utils';
-import api from '../plugins/api';
+} from "../plugins/api/interfaces";
+import { store } from "../plugins/store";
+import { useRouter } from "vue-router";
+import { getBrowseFolderName } from "../utils";
+import api from "../plugins/api";
 
 export interface Props {
   path?: string;
@@ -66,14 +66,9 @@ const loadData = async function () {
 
   // set header title to browse title
   if (!browseItem.value || !props.path) {
-    store.topBarTitle = t('browse')
-    store.topBarSubTitle = '';
+    store.topBarTitle = undefined;
   } else {
-    if (mobile.value)
-      store.topBarTitle = getBrowseFolderName(browseItem.value, t);
-    else
-      store.topBarTitle =
-        t('browse') + ' | ' + getBrowseFolderName(browseItem.value, t);
+    store.topBarTitle = getBrowseFolderName(browseItem.value, t);
   }
   loading.value = false;
 };
@@ -92,7 +87,7 @@ watch(
 const onClick = function (mediaItem: MediaItemType) {
   if (mediaItem.media_type === MediaType.FOLDER) {
     router.push({
-      name: 'browse',
+      name: "browse",
       query: { path: (mediaItem as BrowseFolder).path },
     });
   } else {

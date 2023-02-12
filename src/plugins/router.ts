@@ -14,7 +14,7 @@ const routes = [
     children: [
       {
         path: "",
-        name: "Home",
+        name: "home",
         // route level code-splitting
         // this generates a separate chunk (about.[hash].js) for this route
         // which is lazy-loaded when the route is visited.
@@ -86,7 +86,7 @@ const routes = [
         props: true,
       },
       {
-        path: "/radio/:provider/:itemId",
+        path: "/radios/:provider/:itemId",
         name: "radio",
         component: () =>
           import(/* webpackChunkName: "radio" */ "@/views/RadioDetails.vue"),
@@ -110,7 +110,21 @@ const routes = [
         path: "/settings",
         name: "settings",
         component: () =>
-          import(/* webpackChunkName: "settings" */ "@/views/Settings.vue"),
+          import(/* webpackChunkName: "settings" */ "@/views/settings/Settings.vue"),
+        props: true,
+      },
+      {
+        path: "/settings/providers/add/:domain",
+        name: "addprovider",
+        component: () =>
+          import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
+        props: true,
+      },
+      {
+        path: "/settings/providers/:instanceId",
+        name: "editprovider",
+        component: () =>
+          import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
         props: true,
       },
     ],
@@ -123,11 +137,14 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from) => {
+  store.topBarTitle = undefined;
+  store.topBarContextMenuItems = [];
   if (!from.name) return;
   if (to.params["backnav"]) return;
   from.meta.scrollPos = window.scrollY;
   store.prevRoutes.push({
     name: from.name as string,
+    path: from.path,
     query: from.query,
     params: from.params,
     meta: from.meta,

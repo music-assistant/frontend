@@ -10,8 +10,6 @@ interface Store {
   showPlayersMenu: boolean;
   darkTheme: boolean;
   topBarTitle?: string;
-  topBarSubTitle?: string;
-  defaultTopBarTitle: string;
   topBarContextMenuItems: ContextMenuItem[];
   blockGlobalPlayMenu: boolean;
   alwaysShowMenuButton: boolean;
@@ -19,6 +17,7 @@ interface Store {
   apiBaseUrl: string;
   prevRoutes: Array<{
     name: string;
+    path: string;
     params: RouteParams;
     query: LocationQuery;
     meta: RouteMeta;
@@ -31,7 +30,6 @@ export const store: Store = reactive({
   isInStandaloneMode: false,
   showPlayersMenu: false,
   darkTheme: false,
-  defaultTopBarTitle: 'Music Assistant',
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,
   alwaysShowMenuButton: false,

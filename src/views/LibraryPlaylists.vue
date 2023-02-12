@@ -22,8 +22,6 @@ import { store } from "../plugins/store";
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
 
-store.topBarTitle = t("playlists");
-store.topBarSubTitle = '';
 store.topBarContextMenuItems = [
   {
     label: "sync",

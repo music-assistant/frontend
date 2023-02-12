@@ -72,7 +72,7 @@ export class MusicAssistantApi {
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
-  public providers = ref<ProviderInstance[]>([]);
+  public providers = reactive<{ [instance_id: string]: ProviderInstance }>({});
   public syncTasks = ref<SyncTask[]>([]);
   private eventCallbacks: Array<[string, CallableFunction]>;
   private commands: Map<
@@ -160,17 +160,6 @@ export class MusicAssistantApi {
       }
     };
     return removeCallback;
-  }
-
-  public getProvider(
-    provDomainOrInstance: string
-  ): ProviderInstance | undefined {
-    // Get provider by domain or instance id
-    return this.providers.value.find(
-      (x) =>
-        x.domain == provDomainOrInstance ||
-        x.instance_id == provDomainOrInstance
-    );
   }
 
   public getTracks(
@@ -886,6 +875,12 @@ export class MusicAssistantApi {
       else this.players[player.player_id] = player;
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
       this.syncTasks.value = msg.data as SyncTask[]
+    } else if (msg.event == EventType.PROVIDERS_UPDATED) {
+      const providers: {[instance_id: string]: ProviderInstance} = {};
+      for (const prov of msg.data as ProviderInstance[]) {
+        providers[prov.instance_id] = prov;
+      }
+      this.providers = providers;
     }
     // signal + log all events
     if (msg.event !== EventType.QUEUE_TIME_UPDATED) {
@@ -979,7 +974,9 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     }
 
-    this.providers.value = await this.getData<ProviderInstance[]>("providers");
+    for (const prov of await this.getData<ProviderInstance[]>("providers")) {
+      this.providers[prov.instance_id] = prov;
+    }
 
     this.syncTasks.value = await this.getData<SyncTask[]>("music/synctasks");
   }

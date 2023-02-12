@@ -431,10 +431,7 @@ const itemIsAvailable = function (item: MediaItem) {
   if (item.media_type == MediaType.FOLDER) return true;
   if (!props.item.provider_mappings) return true;
   for (const x of item.provider_mappings) {
-    if (
-      x.available &&
-      api.providers.value.filter((y) => y.instance_id == x.provider_instance)
-    )
+    if (x.available && api.providers[x.provider_instance]?.available)
       return true;
   }
   return false;

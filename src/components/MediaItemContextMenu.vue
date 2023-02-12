@@ -120,7 +120,7 @@
               <v-divider />
             </div>
             <!-- create playlist row(s) -->
-            <div v-for="prov of api.providers.value" :key="prov.instance_id">
+            <div v-for="prov of api.providers" :key="prov.instance_id">
               <div
                 v-if="
                   prov.supported_features.includes(
@@ -360,7 +360,7 @@ export const itemIsAvailable = function (item: MediaItem) {
 export const radioSupported = function (item: MediaItemType) {
   for (const provId of item.provider_mappings) {
     if (
-      api.getProvider(provId.provider_instance)!.supported_features.includes(
+      api.providers[provId.provider_instance]!.supported_features.includes(
         ProviderFeature.SIMILAR_TRACKS
       )
     )
