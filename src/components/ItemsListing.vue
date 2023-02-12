@@ -222,6 +222,7 @@
         <v-alert
           v-if="!loading && items.length == 0 && (search || inLibraryOnly)"
           type="info"
+          color="grey"
         >
           {{ $t('no_content_filter')
           }}<v-btn

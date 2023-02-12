@@ -159,7 +159,7 @@ const heading = computed<Heading>(() => {
       subTitle: t("home"),
     };
   }
-  if (router.currentRoute.value.name == "settings") {
+  if (router.currentRoute.value.path.includes("settings")) {
     // home
     return {
       mainTitle: t("mass"),

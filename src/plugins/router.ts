@@ -112,20 +112,36 @@ const routes = [
         component: () =>
           import(/* webpackChunkName: "settings" */ "@/views/settings/Settings.vue"),
         props: true,
-      },
-      {
-        path: "/settings/providers/add/:domain",
-        name: "addprovider",
-        component: () =>
-          import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
-        props: true,
-      },
-      {
-        path: "/settings/providers/:instanceId",
-        name: "editprovider",
-        component: () =>
-          import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
-        props: true,
+        children: [
+          {
+            path: "musicproviders",
+            name: "musicprovidersettings",
+            component: () =>
+              import(/* webpackChunkName: "musicprovidersettings" */ "@/views/settings/MusicProviders.vue"),
+            props: true,
+          },
+          {
+            path: "players",
+            name: "playersettings",
+            component: () =>
+              import(/* webpackChunkName: "playersettings" */ "@/views/settings/Players.vue"),
+            props: true,
+          },
+          {
+            path: "addprovider/:domain",
+            name: "addprovider",
+            component: () =>
+              import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
+            props: true,
+          },
+          {
+            path: "editprovider/:instanceId",
+            name: "editprovider",
+            component: () =>
+              import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
+            props: true,
+          },
+        ]
       },
     ],
   },
