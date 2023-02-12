@@ -29,11 +29,7 @@
 
 <script setup lang="ts">
 import { getResponsiveBreakpoints } from '@/utils';
-import {
-  mdiHome,
-  mdiMagnify,
-  mdiCogOutline,
-} from '@mdi/js';
+import { mdiHome, mdiMagnify, mdiCogOutline } from '@mdi/js';
 import { onMounted, ref } from 'vue';
 
 const tabs = ref([

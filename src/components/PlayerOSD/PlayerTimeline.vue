@@ -1,95 +1,94 @@
 <template>
-  <div
-    v-if="
-      props.activePlayerQueue &&
-      $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
-      !isMobile
-    "
-  >
-    <v-slider
-      :disabled="
-        !props.activePlayerQueue ||
-        !curQueueItem ||
-        props.activePlayerQueue?.items == 0
-      "
-      color="accent"
-      style="width: 100%"
-      :model-value="curQueueItemTime"
-      :min="0"
-      :max="curQueueItem && curQueueItem.duration"
-      hide-details
-      :track-size="2"
-      :thumb-size="isThumbHidden ? 0 : 10"
-      @touchstart="isThumbHidden = false"
-      @touchend="isThumbHidden = true"
-      @mouseenter="isThumbHidden = false"
-      @mouseleave="isThumbHidden = true"
-      @update:model-value="
-        api.queueCommandSeek(
-          props.activePlayerQueue?.queue_id || '',
-          Math.round($event)
-        )
-      "
-    >
-      <template #prepend>
-        <!-- current time detail -->
-        <div
-          class="text-caption"
-          style="cursor: pointer"
-          @click="
-            showRemainingTime
-              ? (showRemainingTime = false)
-              : (showRemainingTime = true)
-          "
-        >
-          {{ playerCurTimeStr }}
-        </div>
-      </template>
+  <div v-if="!props.isHidden" style="width: 100%">
+    <div v-if="props.activePlayerQueue && !isProgressBar">
+      <v-slider
+        :disabled="
+          !props.activePlayerQueue ||
+          !curQueueItem ||
+          props.activePlayerQueue?.items == 0
+        "
+        color="accent"
+        style="width: 100%"
+        :model-value="curQueueItemTime"
+        :min="0"
+        :max="curQueueItem && curQueueItem.duration"
+        hide-details
+        :track-size="2"
+        :thumb-size="isThumbHidden ? 0 : 10"
+        @touchstart="isThumbHidden = false"
+        @touchend="isThumbHidden = true"
+        @mouseenter="isThumbHidden = false"
+        @mouseleave="isThumbHidden = true"
+        @update:model-value="
+          api.queueCommandSeek(
+            props.activePlayerQueue?.queue_id || '',
+            Math.round($event)
+          )
+        "
+      >
+        <template #prepend>
+          <!-- current time detail -->
+          <div
+            class="text-caption"
+            style="cursor: pointer"
+            @click="
+              showRemainingTime
+                ? (showRemainingTime = false)
+                : (showRemainingTime = true)
+            "
+          >
+            {{ playerCurTimeStr }}
+          </div>
+        </template>
 
-      <template #append>
-        <!-- end time detail -->
-        <div class="text-caption">
-          {{ playerTotalTimeStr }}
-        </div>
-      </template>
-    </v-slider>
-  </div>
-  <div
-    v-else-if="
-      props.activePlayerQueue &&
-      $vuetify.display.width < getResponsiveBreakpoints.breakpoint_1
-    "
-    style="width: 100%; padding-bottom: 5px"
-  >
-    <v-progress-linear
-      :disabled="
-        !props.activePlayerQueue ||
-        !curQueueItem ||
-        props.activePlayerQueue?.items == 0
-      "
-      color="accent"
-      :model-value="curQueueItemTime"
-      :height="2"
-      :min="0"
-      :max="curQueueItem && curQueueItem.duration"
+        <template #append>
+          <!-- end time detail -->
+          <div class="text-caption">
+            {{ playerTotalTimeStr }}
+          </div>
+        </template>
+      </v-slider>
+    </div>
+    <div
+      v-else-if="props.activePlayerQueue && isProgressBar"
+      style="width: 100%; padding-bottom: 5px"
     >
-    </v-progress-linear>
+      <v-progress-linear
+        :disabled="
+          !props.activePlayerQueue ||
+          !curQueueItem ||
+          props.activePlayerQueue?.items == 0
+        "
+        color="accent"
+        :model-value="curQueueItemTime"
+        :height="2"
+        :min="0"
+        :max="curQueueItem && curQueueItem.duration"
+      >
+      </v-progress-linear>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { api, MediaType, type PlayerQueue } from '../../plugins/api';
-import { formatDuration, getResponsiveBreakpoints } from '../../utils';
+import {
+  formatDuration,
+  getResponsiveBreakpoints,
+  isMobile,
+} from '../../utils';
 
 // properties
 export interface Props {
   activePlayerQueue?: PlayerQueue;
-  isMobile?: boolean;
+  isProgressBar?: boolean;
+  isHidden?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isMobile: false,
+  isProgressBar: false,
+  isHidden: false,
 });
 
 // local refs

@@ -2,6 +2,7 @@
   <v-slider
     :style="`width: ${props.width}; height:${props.height}; ${props.style}`"
     hide-details
+    class="player-volume"
     :track-size="2"
     :thumb-size="isThumbHidden ? 0 : 10"
     :step="2"
@@ -15,11 +16,11 @@
     <template v-if="$slots.content" #content>
       <slot></slot>
     </template>
-    <template v-if="$slots.prepend" #prepend>
+    <template v-if="$slots.prepend" #prepend class="player-volume__prepend">
       <slot name="prepend"></slot>
     </template>
-    <template v-if="$slots.appred" #appred>
-      <slot name="appred"></slot>
+    <template v-if="$slots.append" #append class="player-volume__append">
+      <slot name="append"></slot>
     </template>
   </v-slider>
 </template>

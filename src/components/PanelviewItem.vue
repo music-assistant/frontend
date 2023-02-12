@@ -34,17 +34,8 @@
       "
     >
       <v-tooltip bottom>
-        <template #activator="{ props }">
-          <img
-            :src="iconHiRes"
-            height="35"
-            v-bind="props"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
+        <template>
+          <IconBase :height="'35px'" :width="'35px'" name="hiResAudio" />
         </template>
         <span>{{ isHiRes }}</span>
       </v-tooltip>
@@ -84,8 +75,6 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import MediaItemThumb from './MediaItemThumb.vue';
 
-import { iconHiRes } from './ProviderIcons.vue';
-
 import type {
   Artist,
   ItemMapping,
@@ -94,6 +83,7 @@ import type {
 } from '../plugins/api';
 import { MediaQuality } from '../plugins/api';
 import { getArtistsString } from '../utils';
+import IconBase from './Icons/IconBase.vue';
 
 // properties
 export interface Props {

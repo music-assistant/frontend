@@ -5,15 +5,24 @@ import { store } from './plugins/store';
 const md = new MobileDetect(window.navigator.userAgent);
 
 export const isMobile = () => {
-  return md.mobile() ? true : false || store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
+  return md.mobile()
+    ? true
+    : false ||
+        store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
 };
 
 export const isPhone = () => {
-  return md.phone() ? true : false || store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
+  return md.phone()
+    ? true
+    : false ||
+        store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
 };
 
 export const isTablet = () => {
-  return md.tablet() ? true : false || store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
+  return md.tablet()
+    ? true
+    : false ||
+        store.getDisplaySize.width < getResponsiveBreakpoints.breakpoint_1;
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

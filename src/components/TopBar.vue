@@ -1,21 +1,13 @@
 <template>
   <v-app-bar
-    :class="
-      isMobile()
-        ? 'v-mobile-toolbar'
-        : 'v-toolbar'
-    "
-    :color="
-      isMobile()
-        ? undefined
-        : 'primary'
-    "
+    :class="isMobile() ? 'v-mobile-toolbar' : 'v-toolbar'"
+    :color="isMobile() ? undefined : 'primary'"
     elevation="0"
   >
     <template #prepend>
       <v-app-bar-nav-icon
         v-if="
-          store.prevRoutes.length > 0 && router.currentRoute.value.path != '/'
+          store.prevRoutes.length > 0 && router.currentRoute.value.path != '/' && router.currentRoute.value.path != '/settings' && router.currentRoute.value.path != '/search'
         "
         :icon="mdiArrowLeft"
         @click="backButton"
@@ -79,19 +71,12 @@
           </v-card>
         </v-menu>
 
-        <v-btn
-          v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1"
-          icon
-          @click="router.push('/search/')"
-        >
+        <v-btn v-if="!isPhone()" icon @click="router.push('/search/')">
           <v-icon :icon="mdiMagnify" />
         </v-btn>
 
         <v-btn
-          v-if="
-            $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
-            store.showSettings
-          "
+          v-if="!isPhone() && store.showSettings"
           icon
           @click="router.push('/settings/')"
         >
@@ -134,7 +119,13 @@
       <v-sheet v-if="isMobile()" :max-width="$vuetify.display.width">
         <v-slide-group class="chip-slider">
           <v-slide-group-item
-            v-for="tab in tabs.filter((word) => {  if (isPhone()) { return word.label != 'home' } else { return ' ' } })"
+            v-for="tab in tabs.filter((word) => {
+              if (isPhone()) {
+                return word.label != 'home';
+              } else {
+                return ' ';
+              }
+            })"
             :key="tab.label"
           >
             <v-chip
@@ -180,7 +171,12 @@ import { computed, mergeProps, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api, JobStatus } from '../plugins/api';
 import { store } from '../plugins/store';
-import { getResponsiveBreakpoints, truncateString, isMobile, isPhone } from '../utils';
+import {
+  getResponsiveBreakpoints,
+  truncateString,
+  isMobile,
+  isPhone,
+} from '../utils';
 
 const router = useRouter();
 const dialog = ref(false);

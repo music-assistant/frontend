@@ -148,17 +148,12 @@
           <div v-if="highResDetails" class="listitem-action">
             <div>
               <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-img
-                    width="22"
-                    v-bind="props"
-                    :style="
-                      $vuetify.theme.current.dark
-                        ? 'margin-top:5px;'
-                        : 'margin-top:5px;filter: invert(100%);'
-                    "
-                    :src="iconHiRes"
-                  ></v-img>
+                <template>
+                  <IconBase
+                    :height="'25px'"
+                    :width="'45px'"
+                    name="hiResAudio"
+                  />
                 </template>
                 <span>{{ highResDetails }}</span>
               </v-tooltip>
@@ -397,7 +392,6 @@ import { VTooltip } from 'vuetify/components';
 
 import MediaItemThumb from './MediaItemThumb.vue';
 import ProviderIcons, {
-  iconHiRes,
   getProviderIcon,
   getQualityIcon,
   getQualityDesc,

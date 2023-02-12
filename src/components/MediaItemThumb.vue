@@ -19,7 +19,7 @@
         :min-height="minSize"
         :min-width="minSize"
         :cover="cover"
-        :src="imgData"
+        :src="img || imgData"
         :lazy-src="
           !lazySrc
             ? $vuetify.theme.current.dark
@@ -56,6 +56,7 @@ export interface Props {
   maxSize?: number | string;
   tile?: boolean;
   cover?: boolean;
+  img?: string;
   fallback?: string;
   lazySrc?: string;
 }
@@ -67,9 +68,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const imgData = ref<string>();
-const lightCoverImg = new URL('../assets/cover_light.png', import.meta.url)
-  .href;
-const darkCoverImg = new URL('../assets/cover_dark.png', import.meta.url).href;
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
@@ -99,6 +97,14 @@ function getMeta(url: string) {
     img.onerror = () => reject();
   });
 }
+
+export const lightCoverImg = new URL(
+  '../assets/cover_light.png',
+  import.meta.url
+).href;
+
+export const darkCoverImg = new URL('../assets/cover_dark.png', import.meta.url)
+  .href;
 
 export const getMediaItemImage = async function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,

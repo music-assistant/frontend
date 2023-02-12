@@ -4,9 +4,9 @@
     <div
       style="
         position: fixed;
-        height: 100%;
         width: 100%;
         background: rgb(var(--primary-background-color));
+        height: 100%;
       "
     />
     <PlayerSelect />
@@ -21,7 +21,16 @@
         </router-view>
       </v-container>
     </v-main>
-    <v-footer style="padding: 0px" bottom fixed class="d-flex flex-column" app>
+    <v-footer
+      :style="`
+      border-top: 1px rgba(var(--v-border-color), var(--v-border-opacity)) solid;
+      ${!isMobile() ? 'padding: 5px 0px;' : 'padding: 0px;'}
+      `"
+      bottom
+      fixed
+      class="d-flex flex-column"
+      app
+    >
       <PlayerOSD />
       <BottomBar />
     </v-footer>
@@ -33,7 +42,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { api } from './plugins/api';
 import { store } from './plugins/store';
-import { isColorDark } from './utils';
+import { isColorDark, isMobile } from './utils';
 import { useTheme } from 'vuetify';
 import TopBar from './components/TopBar.vue';
 import PlayerOSD from './components/PlayerOSD/Player.vue';
@@ -247,7 +256,8 @@ div.v-slide-group__prev {
   position: absolute;
   margin-left: 5px;
   margin-top: -20px;
-  height: 30px;
+  height: 35px;
+  width: 35px;
   border-radius: 5px;
 }
 
@@ -331,5 +341,9 @@ div.v-slide-group__prev {
 
 .v-main {
   padding-top: calc(var(--v-layout-top) - 5px);
+}
+
+svg:focus {
+  outline: 0px;
 }
 </style>

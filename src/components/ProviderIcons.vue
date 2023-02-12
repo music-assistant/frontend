@@ -68,8 +68,6 @@ const provClicked = function (prov: MediaItemProviderId) {
 <script lang="ts">
 import { ContentType, ProviderType } from '../plugins/api';
 
-export const iconHiRes = new URL('../assets/hires.png', import.meta.url).href;
-
 export const getProviderIcon = function (provider: ProviderType) {
   if (provider == ProviderType.SPOTIFY) return 'spotify';
   if (provider == ProviderType.QOBUZ) return 'qobuz';

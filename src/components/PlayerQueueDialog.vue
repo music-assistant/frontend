@@ -1,37 +1,26 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <v-dialog
-    v-model="showQueueDialog"
-    fullscreen
-    :scrim="false"
-    transition="dialog-bottom-transition"
-  >
+  <v-dialog v-model="showQueueDialog" fullscreen :scrim="false" transition="dialog-bottom-transition">
     <v-card style="border: none">
       <v-toolbar dark color="primary">
-        <div style="margin-left: 16px">
-          <v-icon :icon="mdiPlayCircleOutline" />
-        </div>
-        <v-toolbar-title>
+        <template #prepend>
+          <v-app-bar-nav-icon :icon="mdiPlayCircleOutline"></v-app-bar-nav-icon>
+        </template>
+
+        <v-toolbar-title :class="'line-clamp-1'">
           {{ ContextMenuTitle }}
         </v-toolbar-title>
 
-        <v-spacer></v-spacer>
-        <v-btn
-          style="margin-right: 16px"
-          icon
-          mdiClose
-          @click="api.queueCommandClear(activePlayerQueue?.queue_id)"
-        >
-          <v-icon :icon="mdiDelete" />
-        </v-btn>
-        <v-btn
-          style="margin-right: 16px"
-          icon
-          mdiClose
-          @click="showQueueDialog = false"
-        >
-          <v-icon :icon="mdiClose" />
-        </v-btn>
+        <template #append>
+          <div style="align-items: right; display: flex">
+            <v-btn icon @click="api.queueCommandClear(activePlayerQueue?.queue_id)">
+              <v-icon :icon="mdiDelete" />
+            </v-btn>
+            <v-btn icon @click="showQueueDialog = false">
+              <v-icon :icon="mdiClose" />
+            </v-btn>
+          </div>
+        </template>
       </v-toolbar>
       <PlayerQueue />
     </v-card>

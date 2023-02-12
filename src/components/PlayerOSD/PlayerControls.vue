@@ -8,7 +8,7 @@
         props.buttonVisibility.shuffle
       "
       :disabled="!props.activePlayerQueue || !props.activePlayerQueue?.active"
-      :max-width="props.smallBtnIcon.button"
+      :size="props.smallBtnIcon.button"
       variant="plain"
       icon
       @click="
@@ -39,7 +39,7 @@
         !props.activePlayerQueue?.active ||
         props.activePlayerQueue?.items == 0
       "
-      :max-width="props.smallBtnIcon.button"
+      :size="props.smallBtnIcon.button"
       icon
       variant="plain"
       @click="api.queueCommandPrevious(props.activePlayerQueue?.queue_id)"
@@ -54,7 +54,8 @@
         props.buttonVisibility.play
       "
       :disabled="props.activePlayerQueue && props.activePlayerQueue?.items == 0"
-      :max-width="props.smallBtnIcon.button"
+      :size="props.smallBtnIcon.button"
+      style="align-content: center"
       icon
       variant="plain"
       @click="api.queueCommandPlayPause(props.activePlayerQueue?.queue_id)"
@@ -69,7 +70,7 @@
         store.selectedPlayer?.state == PlayerState.PLAYING &&
         props.buttonVisibility.play
       "
-      :max-width="props.largeBtnIcon.button"
+      :size="props.largeBtnIcon.button"
       icon
       variant="plain"
       @click="api.queueCommandStop(props.activePlayerQueue?.queue_id)"
@@ -82,7 +83,8 @@
     <v-btn
       v-else-if="props.buttonVisibility.play"
       :disabled="props.activePlayerQueue && props.activePlayerQueue?.items == 0"
-      :max-width="props.largeBtnIcon.button"
+      :size="props.largeBtnIcon.button"
+      style="align-content: center"
       variant="plain"
       @click="api.queueCommandPlay(props.activePlayerQueue?.queue_id)"
     >
@@ -102,7 +104,7 @@
         !props.activePlayerQueue?.active ||
         props.activePlayerQueue?.items == 0
       "
-      :max-width="props.smallBtnIcon.button"
+      :size="props.smallBtnIcon.button"
       icon
       small
       variant="plain"
@@ -117,7 +119,7 @@
         props.activePlayerQueue?.active &&
         props.buttonVisibility.repeat
       "
-      :max-width="props.smallBtnIcon.button"
+      :size="props.smallBtnIcon.button"
       variant="plain"
       small
       icon

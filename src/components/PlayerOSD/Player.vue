@@ -4,21 +4,19 @@
     class="bg-image"
     width="100%"
     cover
-    :src="fanartImage"
+    :src="activePlayerQueue?.active ? fanartImage : undefined"
     :gradient="
       $vuetify.theme.current.dark
         ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
         : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
     "
-    style="
-      position: absolute;
-      background-size: 100%;
-      padding: 0;
-      margin-top: -10px;
-    "
   />
 
-  <PlayerTimeline :active-player-queue="activePlayerQueue" :isMobile="true" />
+  <PlayerTimeline
+    :activePlayerQueue="activePlayerQueue"
+    :isProgressBar="true"
+    :isHidden="!isMobile()"
+  />
 
   <div class="player-table">
     <div class="player-tr">
@@ -34,14 +32,18 @@
           <!-- image -->
           <template #prepend>
             <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" />
-            <div
-              v-if="activePlayerQueue?.active && curQueueItem"
-              class="listitem-thumb"
-            >
+            <div v-if="curQueueItem" class="listitem-thumb">
               <MediaItemThumb
                 :item="curQueueItem.media_item || curQueueItem"
                 :min-size="'calc(30vw - 50px), calc(100vh - max(100px, 12vw))'"
                 style="cursor: pointer"
+                :img="
+                  !activePlayerQueue?.active
+                    ? $vuetify.theme.current.dark
+                      ? darkCoverImg
+                      : lightCoverImg
+                    : ''
+                "
                 @click="store.showFullscreenPlayer = true"
               />
             </div>
@@ -138,12 +140,16 @@
             :button-visibility="buttonPCResponsive($vuetify.display)"
           />
           <!-- progress bar -->
-          <PlayerTimeline :active-player-queue="activePlayerQueue" />
+          <PlayerTimeline
+            :activePlayerQueue="activePlayerQueue"
+            :isProgressBar="false"
+            :isHidden="isMobile()"
+          />
         </div>
       </div>
       <div class="player-dr">
         <div class="player-dr-inline">
-          <!-- player control buttons -->
+          <!-- player mobile control buttons -->
           <PlayerControls
             style="padding-right: 5px"
             :small-btn-icon="smallBtnIcon"
@@ -176,9 +182,17 @@ import { watchEffect, ref, computed, watch } from 'vue';
 import type { MediaItemType } from '../../plugins/api';
 import { api, PlayerState, MediaType, ImageType } from '../../plugins/api';
 import { store } from '../../plugins/store';
-import MediaItemThumb, { getImageThumbForItem } from '../MediaItemThumb.vue';
+import MediaItemThumb, {
+  darkCoverImg,
+  getImageThumbForItem,
+  lightCoverImg,
+} from '../MediaItemThumb.vue';
 import PlayerTimeline from '../../components/PlayerOSD/PlayerTimeline.vue';
-import { getArtistsString, getResponsiveBreakpoints } from '../../utils';
+import {
+  getArtistsString,
+  getResponsiveBreakpoints,
+  isMobile,
+} from '../../utils';
 import { useRouter } from 'vue-router';
 
 import PlayerControls from './PlayerControls.vue';
@@ -298,6 +312,9 @@ watchEffect(async () => {
   /* Center and scale the image nicely */
   background-position: center;
   background-size: cover;
+  position: absolute;
+  background-size: 100%;
+  padding: 0;
 }
 
 .player-table {

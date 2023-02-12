@@ -8,23 +8,24 @@
   >
     <v-card style="border: none">
       <v-toolbar dark color="primary">
-        <div style="margin-left: 16px">
-          <v-icon :icon="mdiPlayCircleOutline" />
-        </div>
-        <v-toolbar-title v-if="showPlaylistsMenu">
+        <template #prepend>
+          <v-app-bar-nav-icon :icon="mdiPlayCircleOutline"></v-app-bar-nav-icon>
+        </template>
+        <v-toolbar-title v-if="showPlaylistsMenu" :class="'line-clamp-1'">
           {{ $t('add_playlist') }}
           <span v-if="!$vuetify.display.mobile"> | {{ header }} </span>
         </v-toolbar-title>
-        <v-toolbar-title v-else>
+        <v-toolbar-title v-else :class="'line-clamp-1'">
           {{ header }}
         </v-toolbar-title>
-
-        <v-spacer />
-        <v-btn style="margin-right: 16px" icon mdiClose @click="close()">
-          <v-icon :icon="mdiClose" />
-        </v-btn>
+        <template #append>
+          <div style="align-items: right; display: flex">
+            <v-btn icon @click="close()">
+              <v-icon :icon="mdiClose" />
+            </v-btn>
+          </div>
+        </template>
       </v-toolbar>
-
       <div
         style="
           transition: transform 1s cubic-bezier(0.18, 0, 0, 1), opacity 1s ease,

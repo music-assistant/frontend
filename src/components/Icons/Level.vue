@@ -1,5 +1,11 @@
 <template>
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525 507.5">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 525 507.5"
+    :fill="
+      darkMode ? ($vuetify.theme.current.dark ? lightColor : darkColor) : ''
+    "
+  >
     <g id="Layer_2" data-name="Layer 2">
       <g id="Layer_1-2" data-name="Layer 1">
         <path d="M227.5,455h70v17.5h-70Z" />
@@ -56,7 +62,17 @@ export default {
     darkMode: {
       type: Boolean,
       required: false,
-      default: true,
+      default: false,
+    },
+    darkColor: {
+      type: String,
+      required: false,
+      default: '#000',
+    },
+    lightColor: {
+      type: String,
+      required: false,
+      default: '#fff',
     },
   },
 };

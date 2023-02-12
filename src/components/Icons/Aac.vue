@@ -7,6 +7,9 @@
     y="0px"
     viewBox="0 0 303.31 368.5"
     xml:space="preserve"
+    :fill="
+      darkMode ? ($vuetify.theme.current.dark ? lightColor : darkColor) : ''
+    "
   >
     <path
       d="M179.54,287.66l-12.52,34.64h24.59L179.54,287.66z M185.82,276.01l28.45,78.49H202.8l-8.17-23.51h-30.77l-8.5,23.51h-10.88
@@ -52,7 +55,17 @@ export default {
     darkMode: {
       type: Boolean,
       required: false,
-      default: true,
+      default: false,
+    },
+    darkColor: {
+      type: String,
+      required: false,
+      default: '#000',
+    },
+    lightColor: {
+      type: String,
+      required: false,
+      default: '#fff',
     },
   },
 };
