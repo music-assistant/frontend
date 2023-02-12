@@ -111,7 +111,7 @@ const sortedPlayers = computed(() => {
   }
   return res
     .slice()
-    .sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
+    .sort((a, b) => (a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1));
 });
 
 //watchers

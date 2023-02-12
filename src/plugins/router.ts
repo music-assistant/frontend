@@ -141,6 +141,13 @@ const routes = [
               import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
             props: true,
           },
+          {
+            path: "editplayer/:playerId",
+            name: "editplayer",
+            component: () =>
+              import(/* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"),
+            props: true,
+          },
         ]
       },
     ],

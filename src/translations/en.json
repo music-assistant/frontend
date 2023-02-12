@@ -18,7 +18,6 @@
   "try_global_search": "Try global search",
   "topresult": "Top result",
   "basic_settings": "Basic settings",
-  "advanced_settings": "Advanced settings",
   "queue": "Queue",
   "tasks": "Tasks",
   "sync": "Run sync",
@@ -173,10 +172,16 @@
     "username": "Username",
     "password": "Password",
     "codeowners": "Authors/credits",
-    "name": "Name",
-    "name_desc": "A custom name/title for this provider entry.",
+    "player_name": "Custom player name",
+    "provider_name": "Custom name for this provider entry",
     "enabled": "Enable",
     "close": "Close",
-    "provider_disabled": "This provider entry is disabled"
+    "provider_disabled": "This provider entry is disabled",
+    "player_disabled": "This player is disabled",
+    "enable_provider": "Enable this provider entry",
+    "enable_player": "Enable this player",
+    "config_player": "Configure player {0}",
+    "player_provider": "Provider: {0}",
+    "advanced_settings": "Advanced settings"
   }
 }

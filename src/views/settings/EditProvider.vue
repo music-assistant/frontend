@@ -91,7 +91,7 @@ watchEffect(async () => {
 // methods
 const onSubmit = async function (value: ProviderConfig) {
   api.sendCommand("config/providers/set", { config: value });
-  router.push({ name: "settings" });
+  router.push({ name: "musicprovidersettings" });
 };
 const getCodeOwnerLink = function (value: string) {
   if (value.startsWith("@")) {

@@ -33,7 +33,7 @@ const router = useRouter();
 
 // computed properties
 const activeTab = computed(() => {
-  if (router.currentRoute.value.name == 'playersettings') {
+  if (router.currentRoute.value.name?.toString().includes('player')) {
     return "players"
   }
   return "musicproviders";

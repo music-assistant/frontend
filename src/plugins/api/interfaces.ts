@@ -229,7 +229,7 @@ export type ConfigValueType =
 
 export interface ConfigValueOption {
   // Model for a value with seperated name/value.
-  text: string;
+  title: string;
   value: ConfigValueType;
 }
 
