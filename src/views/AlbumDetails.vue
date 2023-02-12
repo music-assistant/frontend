@@ -135,3 +135,7 @@ const loadAlbumVersions = async function (
   );
 };
 </script>
+
+<style lang="scss">
+
+</style>

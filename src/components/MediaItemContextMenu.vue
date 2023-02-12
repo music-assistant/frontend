@@ -7,15 +7,15 @@
     <v-menu class="fullscreen-menu" :model-value="modelValue">
       <v-card>
         <v-toolbar density="default" dark color="primary">
-          <v-icon :icon="mdiPlayCircleOutline" />
+          <v-icon icon="mdi-play-circle-outline" />
           <v-toolbar-title v-if="showPlaylistsMenu" style="padding-left: 10px">
-            <b>{{ $t('add_playlist') }}</b>
+            <b>{{ $t("add_playlist") }}</b>
             <span v-if="!$vuetify.display.mobile"> | {{ header }} </span>
           </v-toolbar-title>
           <v-toolbar-title v-else style="padding-left: 10px">
             <b>{{ header }}</b>
           </v-toolbar-title>
-          <v-btn :icon="mdiClose" dark text @click="close()" />
+          <v-btn icon="mdi-close" dark text @click="close()" />
         </v-toolbar>
         <!-- play contextmenu items -->
         <v-card-text
@@ -62,7 +62,7 @@
           style="padding-top: 0; margin-top: -10px; padding-bottom: 0"
         >
           <v-list-item-subtitle style="margin-left: 10px">
-            {{ $t('actions') }}
+            {{ $t("actions") }}
           </v-list-item-subtitle>
           <v-list>
             <div v-for="item of actionMenuItems" :key="item.label">
@@ -142,7 +142,7 @@
                   <template #title>
                     <v-text-field
                       :label="$t('create_playlist', [prov.name])"
-                      :append-icon="mdiPlaylistPlus"
+                      append-icon="mdi-playlist-plus"
                       variant="plain"
                       hide-details
                       @update:model-value="
@@ -166,37 +166,21 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiHeart,
-  mdiHeartOutline,
-  mdiPlayCircleOutline,
-  mdiSkipNextCircleOutline,
-  mdiPlaylistPlus,
-  mdiInformationOutline,
-  mdiMinusCircleOutline,
-  mdiPlusCircleOutline,
-  mdiClose,
-  mdiRefresh,
-  mdiCancel,
-  mdiAccountMusic,
-  mdiAlbum,
-  mdiRadioTower,
-} from '@mdi/js';
-import MediaItemThumb from './MediaItemThumb.vue';
-import ProviderIcons from './ProviderIcons.vue';
-import { getProviderIcon } from './ProviderIcons.vue';
-import { MediaType, QueueOption, type Album } from '../plugins/api/interfaces';
+import MediaItemThumb from "./MediaItemThumb.vue";
+import ProviderIcons from "./ProviderIcons.vue";
+import { getProviderIcon } from "./ProviderIcons.vue";
+import { MediaType, QueueOption, type Album } from "../plugins/api/interfaces";
 import type {
   MediaItem,
   MediaItemType,
   Playlist,
   Track,
-} from '../plugins/api/interfaces';
-import { computed, ref, watch } from 'vue';
-import { ProviderFeature } from '../plugins/api/interfaces';
-import api from '../plugins/api';
-import { useI18n } from 'vue-i18n';
-import { store } from '../plugins/store';
+} from "../plugins/api/interfaces";
+import { computed, ref, watch } from "vue";
+import { ProviderFeature } from "../plugins/api/interfaces";
+import api from "../plugins/api";
+import { useI18n } from "vue-i18n";
+import { store } from "../plugins/store";
 
 // properties
 export interface Props {
@@ -218,16 +202,16 @@ const { t } = useI18n();
 
 const actionMenuItems = ref<ContextMenuItem[]>([]);
 const playMenuItems = ref<ContextMenuItem[]>([]);
-const header = ref('');
+const header = ref("");
 const playlists = ref<Playlist[]>([]);
 const showPlaylistsMenu = ref(false);
-const newPlaylistName = ref('');
+const newPlaylistName = ref("");
 
 const emit = defineEmits<{
-  (e: 'refresh', value: MediaItemType): void;
-  (e: 'clear'): void;
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'update:items', value: MediaItemType[]): void;
+  (e: "refresh", value: MediaItemType): void;
+  (e: "clear"): void;
+  (e: "update:modelValue", value: boolean): void;
+  (e: "update:items", value: MediaItemType[]): void;
 }>();
 
 watch(
@@ -244,7 +228,7 @@ const showContextMenu = async function () {
   if (!props.items) return;
 
   if (props.items.length === 1) header.value = props.items[0].name;
-  else header.value = t('items_selected', [props.items.length]).toString();
+  else header.value = t("items_selected", [props.items.length]).toString();
 
   if (store.selectedPlayer && store.selectedPlayer.available) {
     playMenuItems.value = getPlayMenuItems(props.items, props.parentItem);
@@ -256,18 +240,18 @@ const showContextMenu = async function () {
   let firstItem: MediaItemType = props.items[0];
   let orgPosition: number | undefined = 0;
 
-  if ('position' in firstItem) {
+  if ("position" in firstItem) {
     orgPosition = firstItem.position;
   }
-  if (firstItem.provider !== 'database') {
+  if (firstItem.provider !== "database") {
     firstItem = await api.getItemByUri(props.items[0].uri);
     // restore original position for playtlist tracks usage
-    if ('position' in firstItem) {
+    if ("position" in firstItem) {
       firstItem.position = orgPosition;
     }
     const items = props.items;
     items[0] = firstItem;
-    emit('update:items', items);
+    emit("update:items", items);
   }
   actionMenuItems.value = getContextMenuItems(props.items, props.parentItem);
   fetchPlaylists();
@@ -276,7 +260,7 @@ const fetchPlaylists = async function () {
   // get all editable playlists
   playlists.value = [];
   const playlistResults = await api.getPlaylists();
-  
+
   for (const playlist of playlistResults.items as Playlist[]) {
     if (
       playlist.is_editable &&
@@ -304,14 +288,14 @@ const newPlaylist = async function (provId: string) {
 };
 
 const itemClicked = async function (item: ContextMenuItem) {
-  if (item.actionStr == 'add_playlist') {
+  if (item.actionStr == "add_playlist") {
     showPlaylistsMenu.value = true;
-  } else if (item.actionStr == 'clear') {
-    emit('clear');
+  } else if (item.actionStr == "clear") {
+    emit("clear");
     close();
-  } else if (item.action && item.actionStr == 'play') {
+  } else if (item.action && item.actionStr == "play") {
     item.action();
-    emit('clear');
+    emit("clear");
     close();
   } else if (item.action) {
     close();
@@ -321,9 +305,9 @@ const itemClicked = async function (item: ContextMenuItem) {
 
 const close = function () {
   if (props.items.length == 1) {
-    emit('clear');
+    emit("clear");
   }
-  emit('update:modelValue', false);
+  emit("update:modelValue", false);
 };
 
 const availablePlayers = computed(() => {
@@ -340,7 +324,7 @@ const availablePlayers = computed(() => {
 </script>
 
 <script lang="ts">
-import router from '@/plugins/router';
+import router from "@/plugins/router";
 
 export interface ContextMenuItem {
   label: string;
@@ -393,13 +377,16 @@ export const getPlayMenuItems = function (
     parentItem.media_type == MediaType.PLAYLIST
   ) {
     playMenuItems.push({
-      label: 'play_playlist_from',
+      label: "play_playlist_from",
       action: () => {
-        api.playPlaylistFromIndex(parentItem as Playlist, (items[0] as Track).position || 0);
+        api.playPlaylistFromIndex(
+          parentItem as Playlist,
+          (items[0] as Track).position || 0
+        );
       },
-      icon: mdiPlayCircleOutline,
+      icon: "mdi-play-circle-outline",
       labelArgs: [],
-      actionStr: 'play',
+      actionStr: "play",
     });
   }
   // Play from here (album track)
@@ -409,61 +396,61 @@ export const getPlayMenuItems = function (
     parentItem.media_type == MediaType.ALBUM
   ) {
     playMenuItems.push({
-      label: 'play_album_from',
+      label: "play_album_from",
       action: () => {
         api.playAlbumFromItem(parentItem as Album, items[0] as Track);
       },
-      icon: mdiPlayCircleOutline,
+      icon: "mdi-play-circle-outline",
       labelArgs: [],
-      actionStr: 'play',
+      actionStr: "play",
     });
   }
 
   // Play NOW
   playMenuItems.push({
-    label: 'play_now',
+    label: "play_now",
     action: () => {
       api.playMedia(items, queueOptPlay);
     },
-    icon: mdiPlayCircleOutline,
+    icon: "mdi-play-circle-outline",
     labelArgs: [],
-    actionStr: 'play',
+    actionStr: "play",
   });
 
   // Start Radio
   if (radioSupported(items[0])) {
     playMenuItems.push({
-      label: 'play_radio',
+      label: "play_radio",
       action: () => {
         api.playMedia(items, queueOptPlay, true);
       },
-      icon: mdiRadioTower,
+      icon: "mdi-radio-tower",
       labelArgs: [],
-      actionStr: 'play',
+      actionStr: "play",
     });
   }
 
   // Play NEXT
   if (items.length === 1 || items[0].media_type === MediaType.TRACK) {
     playMenuItems.push({
-      label: 'play_next',
+      label: "play_next",
       action: () => {
         api.playMedia(items, queueOptNext);
       },
-      icon: mdiSkipNextCircleOutline,
+      icon: "mdi-skip-next-circle-outline",
       labelArgs: [],
-      actionStr: 'play',
+      actionStr: "play",
     });
   }
   // Add to Queue
   playMenuItems.push({
-    label: 'add_queue',
+    label: "add_queue",
     action: () => {
       api.playMedia(items, QueueOption.ADD);
     },
-    icon: mdiPlaylistPlus,
+    icon: "mdi-playlist-plus",
     labelArgs: [],
-    actionStr: 'play',
+    actionStr: "play",
   });
 
   return playMenuItems;
@@ -485,7 +472,7 @@ export const getContextMenuItems = function (
     itemIsAvailable(items[0])
   ) {
     contextMenuItems.push({
-      label: 'show_info',
+      label: "show_info",
       labelArgs: [],
       action: () => {
         router.push({
@@ -496,7 +483,7 @@ export const getContextMenuItems = function (
           },
         });
       },
-      icon: mdiInformationOutline,
+      icon: "mdi-information-outline",
     });
   }
 
@@ -504,23 +491,23 @@ export const getContextMenuItems = function (
   if (
     items.length === 1 &&
     itemIsAvailable(items[0]) &&
-    'artists' in items[0] &&
+    "artists" in items[0] &&
     (items[0] as Track | Album).artists.length === 1
   ) {
     for (const artist of (items[0] as Track).artists) {
       contextMenuItems.push({
-        label: 'goto_artist',
+        label: "goto_artist",
         labelArgs: [artist.name],
         action: () => {
           router.push({
-            name: 'artist',
+            name: "artist",
             params: {
               item_id: artist.item_id,
               provider: artist.provider,
             },
           });
         },
-        icon: mdiAccountMusic,
+        icon: "mdi-account-music",
       });
     }
   }
@@ -528,56 +515,56 @@ export const getContextMenuItems = function (
   if (
     items.length === 1 &&
     itemIsAvailable(items[0]) &&
-    'album' in items[0] &&
+    "album" in items[0] &&
     (items[0] as Track).album
   ) {
     contextMenuItems.push({
-      label: 'goto_album',
+      label: "goto_album",
       labelArgs: [(items[0] as Track).album.name],
       action: () => {
         router.push({
-          name: 'album',
+          name: "album",
           params: {
             item_id: (items[0] as Track).album.item_id,
             provider: (items[0] as Track).album.provider,
           },
         });
       },
-      icon: mdiAlbum,
+      icon: "mdi-album",
     });
   }
 
   // refresh item
   if (items.length === 1 && items[0] == parentItem) {
     contextMenuItems.push({
-      label: 'refresh_item',
+      label: "refresh_item",
       labelArgs: [],
       action: () => {
         api.getItemByUri(items[0].uri, false, true);
       },
-      icon: mdiRefresh,
+      icon: "mdi-refresh",
     });
   }
   // add to library
   if (!items[0].in_library && itemIsAvailable(items[0])) {
     contextMenuItems.push({
-      label: 'add_library',
+      label: "add_library",
       labelArgs: [],
       action: () => {
         api.addItemsToLibrary(items);
       },
-      icon: mdiHeartOutline,
+      icon: "mdi-heart-outline",
     });
   }
   // remove from library
   if (items[0].in_library) {
     contextMenuItems.push({
-      label: 'remove_library',
+      label: "remove_library",
       labelArgs: [],
       action: () => {
         api.removeItemsFromLibrary(items);
       },
-      icon: mdiHeart,
+      icon: "mdi-heart",
     });
   }
   // remove from playlist (playlist tracks only)
@@ -585,7 +572,7 @@ export const getContextMenuItems = function (
     const playlist = parentItem as Playlist;
     if (items[0].media_type === MediaType.TRACK && playlist.is_editable) {
       contextMenuItems.push({
-        label: 'remove_playlist',
+        label: "remove_playlist",
         labelArgs: [],
         action: () => {
           api.removePlaylistTracks(
@@ -593,23 +580,23 @@ export const getContextMenuItems = function (
             items.map((x) => (x as Track).position as number)
           );
         },
-        icon: mdiMinusCircleOutline,
+        icon: "mdi-minus-circle-outline",
       });
     }
   }
   // add to playlist action (tracks only)
-  if (items[0].media_type === 'track') {
+  if (items[0].media_type === "track") {
     contextMenuItems.push({
-      label: 'add_playlist',
+      label: "add_playlist",
       labelArgs: [],
-      actionStr: 'add_playlist',
-      icon: mdiPlusCircleOutline,
+      actionStr: "add_playlist",
+      icon: "mdi-plus-circle-outline",
     });
   }
   // delete from db
-  if (items.length == 1 && items[0].provider == 'database') {
+  if (items.length == 1 && items[0].provider == "database") {
     contextMenuItems.push({
-      label: 'delete_db',
+      label: "delete_db",
       labelArgs: [],
       action: () => {
         api.deleteDbItem(items[0].media_type, items[0].item_id, true);
@@ -620,16 +607,16 @@ export const getContextMenuItems = function (
           });
         }
       },
-      icon: mdiCancel,
+      icon: "mdi-cancel",
     });
   }
   // clear selection
   if (items.length > 1) {
     contextMenuItems.push({
-      label: 'clear_selection',
+      label: "clear_selection",
       labelArgs: [],
-      actionStr: 'clear',
-      icon: mdiCancel,
+      actionStr: "clear",
+      icon: "mdi-cancel",
     });
   }
   return contextMenuItems;

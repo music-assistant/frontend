@@ -53,14 +53,14 @@
     </div>
 
     <v-list-item two-line style="padding-left: 8px; padding-right: 8px">
-      <v-list-item-text>
+      <div>
         <p
           class="font-weight-bold line-clamp-1"
           style="color: primary; margin-top: 8px; margin-bottom: 8px"
         >
           {{ item.name }}
         </p>
-      </v-list-item-text>
+      </div>
       <v-list-item-subtitle
         v-if="'artists' in item && item.artists"
         class="line-clamp-2"

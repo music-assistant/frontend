@@ -1,7 +1,7 @@
 <template>
   <section>
     <v-tabs
-      v-model="activePanel"
+      v-model="activeTab"
       show-arrows
       centered
       grow
@@ -17,7 +17,7 @@
     </v-tabs>
     <v-divider />
     <v-card-text>
-      <v-window v-model="activePanel">
+      <v-window v-model="activeTab">
         <!-- Musicproviders-->
         <v-window-item value="musicproviders">
           <!-- show alert if no music providers configured-->
@@ -252,7 +252,7 @@ const { t } = useI18n();
 const router = useRouter();
 
 // local refs
-const activePanel = ref(0);
+const activeTab = ref("musicproviders");
 const loading = ref(true);
 const playerConfigs = ref<PlayerConfig[]>([]);
 const providerConfigs = ref<ProviderConfig[]>([]);
@@ -323,6 +323,7 @@ watchEffect(() => {
 </script>
 
 <style scoped>
+
 .listitem-action {
   align-items: right;
   width: 40px;

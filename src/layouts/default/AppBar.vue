@@ -12,7 +12,7 @@
             style="margin-left: -8px; margin-right: -20px"
             v-bind="props"
             variant="plain"
-            ><v-icon size="40">mdi-play-circle</v-icon>
+            ><v-icon size="40">mdi-playlist-play</v-icon>
           </v-btn>
         </template>
 
@@ -157,6 +157,13 @@ const heading = computed<Heading>(() => {
     return {
       mainTitle: t("mass"),
       subTitle: t("home"),
+    };
+  }
+  if (router.currentRoute.value.name == "settings") {
+    // home
+    return {
+      mainTitle: t("mass"),
+      subTitle: t("settings.settings"),
     };
   }
 

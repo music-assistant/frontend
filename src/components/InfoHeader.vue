@@ -86,7 +86,7 @@
                 style="margin-left: -3px; margin-right: 3px"
                 small
                 color="primary"
-                :icon="mdiAccountMusic"
+                icon="mdi-account-music"
               />
               <span
                 v-for="(artist, artistindex) in item.artists"
@@ -113,9 +113,9 @@
                 style="margin-left: -3px; margin-right: 3px"
                 small
                 color="primary"
-                :icon="mdiAccountMusic"
+                icon="mdi-account-music"
               />
-              <a @click="artistClick(item.artist)">{{ item.artist.name }}</a>
+              <a @click="artistClick((item as Album).artist)">{{ item.artist.name }}</a>
             </v-card-subtitle>
 
             <!-- playlist owner -->
@@ -124,7 +124,7 @@
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
                 small
-                :icon="mdiAccountMusic"
+                icon="mdi-account-music"
               />
               <a style="color: primary">{{ item.owner }}</a>
             </v-card-subtitle>
@@ -134,7 +134,7 @@
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
                 small
-                :icon="mdiAlbum"
+                icon="mdi-album"
               />
               <a style="color: secondary" @click="albumClick((item as Track)?.album)">{{
                 item.album.name
@@ -151,7 +151,7 @@
                 <v-btn
                   color="primary"
                   v-bind="props"
-                  :prepend-icon="mdiPlayCircle"
+                  prepend-icon="mdi-play-circle"
                   :disabled="
                     !store.selectedPlayer?.available ||
                     store.blockGlobalPlayMenu
@@ -185,7 +185,7 @@
               style="margin-left: 10px"
               color="primary"
               tile
-              :prepend-icon="mdiHeartOutline"
+              prepend-icon="mdi-heart-outline"
               @click="api.addItemsToLibrary([item!])"
             >
               {{ $t("add_library") }}
@@ -195,7 +195,7 @@
               style="margin-left: 10px"
               color="primary"
               tile
-              :prepend-icon="mdiHeart"
+              prepend-icon="mdi-heart"
               @click="api.removeItemsFromLibrary([item!])"
             >
               {{ $t("remove_library") }}
@@ -252,14 +252,6 @@
 
 <script setup lang="ts">
 import ProviderIcons from "./ProviderIcons.vue";
-import {
-  mdiHeart,
-  mdiHeartOutline,
-  mdiAccountMusic,
-  mdiAlbum,
-  mdiPlayCircle,
-} from "@mdi/js";
-
 import { store } from "@/plugins/store";
 import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
