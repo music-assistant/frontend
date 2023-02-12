@@ -11,7 +11,7 @@
         $vuetify.theme.current.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
-      } 100%), ${fanartImage ? `url(${fanartImage})` : ''};
+      } 100%), ${activePlayerQueue?.active ? `url(${fanartImage})` : undefined};
     background-size: cover; background-position: center; border: none;`"
     >
       <v-toolbar dark color="transparent">
@@ -53,6 +53,13 @@
               height: min(calc(100vw - 40px), calc(100vh - 330px));
               width: min(calc(100vw - 40px), calc(100vh - 330px));
             "
+            :img="
+              !activePlayerQueue?.active
+                ? $vuetify.theme.current.dark
+                  ? darkCoverImg
+                  : lightCoverImg
+                : ''
+            "
             :item="curQueueItem.media_item || curQueueItem"
             :max-size="640"
             :size="512"
@@ -87,7 +94,16 @@
                 />
               </div>
             </div>
-            <h1 class="title">
+            <h1
+              v-if="activePlayerQueue?.active && curQueueItem"
+              style="cursor: pointer; width: fit-content; display: inline"
+              class="title"
+              @click="
+                curQueueItem?.media_item
+                  ? itemClick(curQueueItem.media_item)
+                  : ''
+              "
+            >
               {{
                 `${curQueueItem.media_item.name} ${
                   curQueueItem.media_item.version
@@ -99,15 +115,33 @@
           </div>
           <!-- subtitle -->
           <!-- track: artists(s) -->
-          <div v-if="curQueueItem.media_item?.media_type == MediaType.TRACK">
-            <h4 class="subtitle">
+          <div
+            v-if="
+              activePlayerQueue?.active &&
+              curQueueItem &&
+              curQueueItem.media_item?.media_type == MediaType.TRACK
+            "
+          >
+            <h4
+              style="cursor: pointer; width: fit-content; display: inline"
+              class="subtitle"
+              @click="
+                curQueueItem?.media_item
+                  ? itemClick(curQueueItem.media_item.artists[0])
+                  : ''
+              "
+            >
               {{ getArtistsString(curQueueItem.media_item.artists, 3) }}
             </h4>
           </div>
         </div>
         <div style="padding-top: 3vh">
           <!-- progress bar -->
-          <PlayerTimeline :active-player-queue="activePlayerQueue" />
+          <PlayerTimeline
+            :activePlayerQueue="activePlayerQueue"
+            :isProgressBar="false"
+            :isHidden="false"
+          />
           <!-- player control buttons -->
           <PlayerExtendedControls
             v-if="
@@ -176,14 +210,25 @@
 import { mdiChevronDown } from '@mdi/js';
 
 import { watchEffect, ref, computed, watch } from 'vue';
-import { api, PlayerState, MediaType, ImageType } from '../../plugins/api';
+import {
+  api,
+  PlayerState,
+  MediaType,
+  ImageType,
+  type MediaItemType,
+} from '../../plugins/api';
 import { store } from '../../plugins/store';
-import MediaItemThumb, { getImageThumbForItem } from '../MediaItemThumb.vue';
+import MediaItemThumb, {
+  darkCoverImg,
+  getImageThumbForItem,
+  lightCoverImg,
+} from '../MediaItemThumb.vue';
 import PlayerTimeline from '../../components/PlayerOSD/PlayerTimeline.vue';
 import { getArtistsString, getResponsiveBreakpoints } from '../../utils';
 import PlayerControls from './PlayerControls.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import QualityDetailsBtn from './QualityDetailsBtn.vue';
+import router from '@/plugins/router';
 
 // local refs
 const fanartImage = ref();
@@ -201,6 +246,15 @@ const curQueueItem = computed(() => {
   if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
   return undefined;
 });
+
+// methods
+const itemClick = function (item: MediaItemType) {
+  router.push({
+    name: item.media_type,
+    params: { item_id: item.item_id, provider: item.provider },
+  });
+  store.showFullscreenPlayer = false;
+};
 
 // watchers
 watch(

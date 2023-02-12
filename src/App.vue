@@ -4,9 +4,9 @@
     <div
       style="
         position: fixed;
-        height: 100%;
         width: 100%;
         background: rgb(var(--primary-background-color));
+        height: 100%;
       "
     />
     <PlayerSelect />
@@ -21,7 +21,16 @@
         </router-view>
       </v-container>
     </v-main>
-    <v-footer style="padding: 0px" bottom fixed class="d-flex flex-column" app>
+    <v-footer
+      :style="`
+      border-top: 1px rgba(var(--v-border-color), var(--v-border-opacity)) solid;
+      ${!isMobile() ? 'padding: 5px 0px;' : 'padding: 0px;'}
+      `"
+      bottom
+      fixed
+      class="d-flex flex-column"
+      app
+    >
       <PlayerOSD />
       <BottomBar />
     </v-footer>
@@ -33,7 +42,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { api } from './plugins/api';
 import { store } from './plugins/store';
-import { isColorDark } from './utils';
+import { isColorDark, isMobile } from './utils';
 import { useTheme } from 'vuetify';
 import TopBar from './components/TopBar.vue';
 import PlayerOSD from './components/PlayerOSD/Player.vue';
@@ -64,6 +73,14 @@ document.addEventListener('forward-hass-prop', function (e) {
   }
   store.alwaysShowMenuButton = hass.dockedSidebar == 'always_hidden';
   setTheme(hass);
+});
+
+store.getDisplaySize = { height: window.innerHeight, width: window.innerWidth };
+window.addEventListener('resize', function (e) {
+  store.getDisplaySize = {
+    height: window.innerHeight,
+    width: window.innerWidth,
+  };
 });
 
 document.addEventListener('forward-panel-prop', function (e) {
@@ -239,7 +256,8 @@ div.v-slide-group__prev {
   position: absolute;
   margin-left: 5px;
   margin-top: -20px;
-  height: 30px;
+  height: 35px;
+  width: 35px;
   border-radius: 5px;
 }
 
@@ -254,21 +272,10 @@ div.v-slide-group__prev {
 .listitem-actions {
   display: flex;
   justify-content: end;
-  width: 40px;
   height: 50px;
   vertical-align: middle;
   align-items: center;
-  padding: 0px;
-  padding-right: 0px;
-}
-
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -15px;
-  margin-top: 2px;
-  width: 50px;
-  height: 50px;
+  padding: 0px 0px 0px 10px;
 }
 
 .v-card {
@@ -326,5 +333,17 @@ div.v-slide-group__prev {
 .list-item-subtitle-slider {
   min-height: 20px;
   padding: 8px 11px 8px;
+}
+
+.v-select__selection-text {
+  font-size: 0.875rem;
+}
+
+.v-main {
+  padding-top: calc(var(--v-layout-top) - 5px);
+}
+
+svg:focus {
+  outline: 0px;
 }
 </style>

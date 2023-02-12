@@ -12,9 +12,10 @@ interface Store {
   showContextMenu: boolean;
   showBackgroundJobs: boolean;
   showSettings: boolean;
+  showTabsNav: boolean;
+  getDisplaySize: { height: number; width: number };
   darkTheme: boolean;
   topBarTitle?: string;
-  topBarHeight: number;
   defaultTopBarTitle: string;
   topBarContextMenuItems: ContextMenuItem[];
   blockGlobalPlayMenu: boolean;
@@ -41,8 +42,9 @@ export const store: Store = reactive({
   showContextMenu: false,
   showBackgroundJobs: false,
   showSettings: true,
+  showTabsNav: true,
+  getDisplaySize: { height: 0, width: 0 },
   darkTheme: false,
-  topBarHeight: 55,
   defaultTopBarTitle: 'Music Assistant',
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,

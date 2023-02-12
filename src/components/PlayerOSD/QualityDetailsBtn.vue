@@ -12,15 +12,9 @@
         >
           <IconBase :name="getContentTypeIcon(streamDetails.content_type)" />
         </v-btn>
-        <v-img
-          v-else
-          contain
-          :src="iconHiRes"
-          height="25"
-          :style="$vuetify.theme.current.dark ? '' : 'filter: invert(100%)'"
-          class="v-list-item-subtitle mediadetails-streamdetails"
-          v-bind="props"
-        />
+        <v-btn v-else icon v-bind="props" variant="plain">
+          <IconBase name="hiResAudio" />
+        </v-btn>
       </template>
 
       <v-card class="mx-auto" width="300">
@@ -98,13 +92,9 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import type { PlayerQueue } from '@/plugins/api';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
-import {
-  getContentTypeIcon,
-  getProviderIcon,
-  iconHiRes,
-} from '../ProviderIcons.vue';
+import { getContentTypeIcon, getProviderIcon } from '../ProviderIcons.vue';
 import IconBase from '../Icons/IconBase.vue';
 
 // properties

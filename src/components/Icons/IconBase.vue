@@ -3,13 +3,6 @@
     :is="iconComponent"
     role="img"
     class="inline-block fill-current"
-    :fill="
-      isDarkMode
-        ? $vuetify.theme.current.dark
-          ? darkColor
-          : lightColor
-        : color
-    "
     :style="`height: ${height}; width: ${width}`"
   />
 </template>
@@ -21,6 +14,7 @@ import DefaultArtist from './DefaultArtist.vue';
 import Fallback from './Fallback.vue';
 import Filesystem from './Filesystem.vue';
 import Flac from './Flac.vue';
+import HiResAudio from './HiResAudio.vue';
 import Level from './Level.vue';
 import M4a from './M4a.vue';
 import Mp3 from './Mp3.vue';
@@ -37,6 +31,7 @@ const icons: any = {
   fallback: Fallback,
   filesystem: Filesystem,
   flac: Flac,
+  hiResAudio: HiResAudio,
   level: Level,
   m4a: M4a,
   mp3: Mp3,
@@ -50,24 +45,10 @@ const icons: any = {
 export default {
   props: {
     // eslint-disable-next-line vue/require-default-prop
-    color: {
-      type: String,
-      required: false,
-    },
     darkMode: {
       type: Boolean,
       required: false,
-      default: false,
-    },
-    darkColor: {
-      type: String,
-      required: false,
-      default: '#fff',
-    },
-    lightColor: {
-      type: String,
-      required: false,
-      default: '#000',
+      default: true,
     },
     height: {
       type: String,
@@ -90,16 +71,14 @@ export default {
 
   computed: {
     iconComponent() {
-      return icons[this.name];
-    },
-    isDarkMode() {
       if (
-        this.darkMode ||
-        (icons[this.name].props && icons[this.name].props.darkMode)
+        this.darkMode &&
+        icons[this.name].props &&
+        icons[this.name].props.darkMode
       ) {
-        return true;
+        icons[this.name].props.darkMode.default = true;
       }
-      return false;
+      return icons[this.name];
     },
   },
 };

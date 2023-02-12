@@ -6,8 +6,8 @@
         style="
           margin-left: 10px;
           margin-right: 10px;
-          margin-top: 20px;
-          margin-bottom: 20px;
+          margin-top: 10px;
+          margin-bottom: 10px;
         "
       >
         <v-card>
@@ -418,7 +418,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from 'vue';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import api, { RepeatMode, CrossFadeMode } from '../plugins/api';
 import { store } from '../plugins/store';
@@ -430,9 +430,12 @@ const { t } = useI18n();
 
 // local refs
 store.topBarTitle = t('settings');
-store.showSettings = false;
+onMounted(() => {
+  store.showTabsNav = false;
+});
+
 onBeforeUnmount(() => {
-  store.showSettings = true;
+  store.showTabsNav = true;
 });
 
 const calMaxWidth = function (DisplayWidth: number) {

@@ -1,25 +1,30 @@
 <template>
+  <v-text-field
+    id="searchInput"
+    v-model="search"
+    hide-details
+    clearable
+    :prepend-inner-icon="mdiMagnify"
+    :label="$t('type_to_search')"
+    variant="solo"
+    @focus="searchHasFocus = true"
+    @blur="searchHasFocus = false"
+  />
   <v-card>
-    <v-text-field
-      id="searchInput"
-      v-model="search"
-      clearable
-      :prepend-inner-icon="mdiMagnify"
-      :label="$t('type_to_search')"
-      hide-details
-      variant="filled"
-      style="width: auto; margin: 10px"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
-
     <div v-if="search">
       <v-chip-group
         v-model="viewFilter"
         column
         style="margin-top: 15px; margin-left: 10px"
       >
-        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
+        <v-chip
+          v-for="item in viewFilters"
+          :key="item"
+          filter
+          variant="outlined"
+          class="ma-1"
+          color="primary"
+        >
           {{ $t(item) }}
         </v-chip>
       </v-chip-group>
@@ -94,7 +99,7 @@
           </RecycleScroller>
         </div>
       </div>
-      <v-toolbar dense flat color="transparent" height="45">
+      <v-toolbar style="padding: 10px" height="45">
         <span>{{ $t('items_total', [filteredItems.length]) }}</span>
         <v-spacer />
 

@@ -9,38 +9,41 @@
       style="width: 100%; height: auto"
     >
       <v-tab
-        :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
         value="tracks"
+        :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
+        >{{ $t('tracks') }}</v-tab
       >
-        {{ $t('tracks') }}
-      </v-tab>
       <v-tab
-        :class="activeTab == 'albums' ? 'active-tab' : 'inactive-tab'"
         value="albums"
+        :class="activeTab == 'albums' ? 'active-tab' : 'inactive-tab'"
+        >{{ $t('albums') }}</v-tab
       >
-        {{ $t('albums') }}
-      </v-tab>
     </v-tabs>
-    <v-divider />
-    <ItemsListing
-      v-if="activeTab == 'tracks'"
-      itemtype="artisttracks"
-      :parent-item="itemDetails"
-      :show-providers="true"
-      :show-track-number="false"
-      :show-library="false"
-      :load-data="loadArtistTracks"
-      :sort-keys="['timestamp DESC', 'sort_name', 'sort_album']"
-    />
-    <ItemsListing
-      v-if="activeTab == 'albums'"
-      itemtype="artistalbums"
-      :parent-item="itemDetails"
-      :show-providers="true"
-      :show-library="false"
-      :load-data="loadArtistAlbums"
-      :sort-keys="['timestamp DESC', 'sort_name', 'year']"
-    />
+
+    <v-window v-model="activeTab">
+      <v-window-item value="tracks">
+        <ItemsListing
+          itemtype="artisttracks"
+          :parent-item="itemDetails"
+          :show-providers="true"
+          :show-track-number="false"
+          :show-library="false"
+          :load-data="loadArtistTracks"
+          :sort-keys="['timestamp DESC', 'sort_name', 'sort_album']"
+        />
+      </v-window-item>
+
+      <v-window-item value="albums">
+        <ItemsListing
+          itemtype="artistalbums"
+          :parent-item="itemDetails"
+          :show-providers="true"
+          :show-library="false"
+          :load-data="loadArtistAlbums"
+          :sort-keys="['timestamp DESC', 'sort_name', 'year']"
+        />
+      </v-window-item>
+    </v-window>
   </section>
 </template>
 

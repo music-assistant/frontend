@@ -13,6 +13,7 @@ import RadioDetails from '@/views/RadioDetails.vue';
 import PlaylistDetails from '@/views/PlaylistDetails.vue';
 import PlayerQueue from '@/views/PlayerQueue.vue';
 import SettingsView from '@/views/SettingsView.vue';
+import SearchView from '@/views/SearchView.vue';
 import { store } from './store';
 
 declare module 'vue-router' {
@@ -94,6 +95,12 @@ const routes = [
     name: 'settings',
     path: '/settings',
     component: SettingsView,
+    props: true,
+  },
+  {
+    name: 'search',
+    path: '/search',
+    component: SearchView,
     props: true,
   },
 ];

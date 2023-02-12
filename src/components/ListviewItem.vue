@@ -3,7 +3,7 @@
     <v-list-item
       link
       :disabled="!itemIsAvailable(item)"
-      style="padding-right: 0px"
+      class="listitem"
       density="compact"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
@@ -148,17 +148,12 @@
           <div v-if="highResDetails" class="listitem-action">
             <div>
               <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-img
-                    width="22"
-                    v-bind="props"
-                    :style="
-                      $vuetify.theme.current.dark
-                        ? 'margin-top:5px;'
-                        : 'margin-top:5px;filter: invert(100%);'
-                    "
-                    :src="iconHiRes"
-                  ></v-img>
+                <template>
+                  <IconBase
+                    :height="'25px'"
+                    :width="'45px'"
+                    name="hiResAudio"
+                  />
                 </template>
                 <span>{{ highResDetails }}</span>
               </v-tooltip>
@@ -376,8 +371,6 @@
         </div>
       </template>
     </v-list-item>
-
-    <v-divider />
   </div>
 </template>
 
@@ -399,7 +392,6 @@ import { VTooltip } from 'vuetify/components';
 
 import MediaItemThumb from './MediaItemThumb.vue';
 import ProviderIcons, {
-  iconHiRes,
   getProviderIcon,
   getQualityIcon,
   getQualityDesc,
@@ -506,5 +498,19 @@ const fetchPreviewUrl = async function (
 <style>
 .v-slider.v-input--horizontal .v-input__control {
   min-height: 5px;
+}
+
+.listitem {
+  padding-right: 0px;
+  border-radius: 4px;
+}
+
+.listitem-thumb {
+  padding-left: 0px;
+  margin-right: 10px;
+  margin-left: -10px;
+  margin-top: 2px;
+  width: 50px;
+  height: 50px;
 }
 </style>
