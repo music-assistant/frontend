@@ -3,10 +3,7 @@
     <InfoHeader :item="itemDetails" />
 
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab
-        :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
-        value="tracks"
-      >
+      <v-tab value="tracks">
         {{ $t("playlist_tracks") }}
       </v-tab>
     </v-tabs>

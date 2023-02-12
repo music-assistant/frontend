@@ -2,10 +2,7 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab
-        :class="activeTab == 'versions' ? 'active-tab' : 'inactive-tab'"
-        value="details"
-      >
+      <v-tab value="details">
         {{ $t("track_versions") }}
       </v-tab>
     </v-tabs>

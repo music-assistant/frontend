@@ -478,7 +478,7 @@ export const getContextMenuItems = function (
         router.push({
           name: items[0].media_type,
           params: {
-            item_id: items[0].item_id,
+            itemId: items[0].item_id,
             provider: items[0].provider,
           },
         });
@@ -502,7 +502,7 @@ export const getContextMenuItems = function (
           router.push({
             name: "artist",
             params: {
-              item_id: artist.item_id,
+              itemId: artist.item_id,
               provider: artist.provider,
             },
           });
@@ -525,7 +525,7 @@ export const getContextMenuItems = function (
         router.push({
           name: "album",
           params: {
-            item_id: (items[0] as Track).album.item_id,
+            itemId: (items[0] as Track).album.item_id,
             provider: (items[0] as Track).album.provider,
           },
         });

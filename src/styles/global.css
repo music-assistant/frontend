@@ -1,15 +1,5 @@
 /* Various global styles used throughout the app */
 
-.active-tab {
-    background: rgba(var(--v-theme-on-surface), 0.6);
-    color: rgb(var(--v-theme-surface));
-  }
-  .inactive-tab {
-    background: rgba(var(--v-theme-on-surface), 0.3);
-    color: rgba(var(--v-theme-surface), 0.6);
-  }
-
-  
   /* active tab */
   .v-btn.v-slide-group-item--active.v-tab--selected {
     background: rgba(var(--v-theme-on-surface), 0.6);
@@ -22,8 +12,6 @@
     color: rgba(var(--v-theme-surface), 0.6);
   }
 
-
-    v-btn v-btn--stacked v-theme--light v-btn--density-default rounded-0 v-btn--size-default v-btn--variant-text v-tab
   a {
     cursor: pointer;
   }

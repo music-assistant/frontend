@@ -184,7 +184,7 @@ const onClick = function (mediaItem: MediaItemType) {
     router.push({
       name: mediaItem.media_type,
       params: {
-        item_id: mediaItem.item_id,
+        itemId: mediaItem.item_id,
         provider: mediaItem.provider,
       },
     });

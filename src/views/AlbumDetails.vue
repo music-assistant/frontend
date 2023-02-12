@@ -3,13 +3,11 @@
     <InfoHeader :item="itemDetails" />
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
       <v-tab
-        :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
         value="tracks"
       >
         {{ $t("tracks") }}
       </v-tab>
       <v-tab
-        :class="activeTab == 'versions' ? 'active-tab' : 'inactive-tab'"
         value="versions"
       >
         {{ $t("album_versions") }}
@@ -66,8 +64,8 @@ const loadItemDetails = async function () {
     props.itemId,
     props.provider,
     undefined,
-    true,
-    false,
+    undefined,
+    undefined,
     parseBool(props.forceProviderVersion || "")
   );
   activeTab.value = "tracks";

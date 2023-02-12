@@ -313,17 +313,18 @@ const albumClick = function (item: Album | ItemMapping) {
   router.push({
     name: "album",
     params: {
-      item_id: item.item_id,
+      itemId: item.item_id,
       provider: item.provider,
     },
   });
 };
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
+  console.log('artistClick', item)
   router.push({
     name: "artist",
     params: {
-      item_id: item.item_id,
+      itemId: item.item_id,
       provider: item.provider,
     },
   });

@@ -2,16 +2,10 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab
-        :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
-        value="tracks"
-      >
+      <v-tab value="tracks">
         {{ $t("tracks") }}
       </v-tab>
-      <v-tab
-        :class="activeTab == 'albums' ? 'active-tab' : 'inactive-tab'"
-        value="albums"
-      >
+      <v-tab value="albums">
         {{ $t("albums") }}
       </v-tab>
     </v-tabs>

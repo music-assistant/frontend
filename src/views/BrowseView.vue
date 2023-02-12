@@ -93,7 +93,7 @@ const onClick = function (mediaItem: MediaItemType) {
   } else {
     router.push({
       name: mediaItem.media_type,
-      query: { item_id: mediaItem.item_id, provider: mediaItem.provider },
+      query: { itemId: mediaItem.item_id, provider: mediaItem.provider },
     });
   }
 };
