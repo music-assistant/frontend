@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-card
-      flat
+      variant="flat"
       :img="imgGradient"
       style="margin-top: -10px; z-index: 0"
       height="30vh"
@@ -17,7 +17,7 @@
         class="background-image"
         :src="fanartImage"
         :gradient="
-          store.darkTheme
+          $vuetify.theme.current.dark
             ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
             : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
         "

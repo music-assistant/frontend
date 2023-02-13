@@ -44,13 +44,13 @@ const loadItems = async function (
 };
 
 store.topBarContextMenuItems = [
-  {
-    label: "sync",
-    labelArgs: [],
+{
+    label: 'sync_now',
+    labelArgs: [t('artists')],
     action: () => {
       api.startSync([MediaType.ARTIST]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {

@@ -23,13 +23,13 @@ const { t } = useI18n();
 const items = ref<Radio[]>([]);
 
 store.topBarContextMenuItems = [
-  {
-    label: "sync",
-    labelArgs: [],
+{
+    label: 'sync_now',
+    labelArgs: [t('radios')],
     action: () => {
       api.startSync([MediaType.RADIO]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {

@@ -28,13 +28,13 @@ const { t } = useI18n();
 const items = ref<Track[]>([]);
 
 store.topBarContextMenuItems = [
-  {
-    label: "sync",
-    labelArgs: [],
+{
+    label: 'sync_now',
+    labelArgs: [t('tracks')],
     action: () => {
       api.startSync([MediaType.TRACK]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {

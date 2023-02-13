@@ -39,8 +39,10 @@ import type {
   QueueItem,
 } from "../plugins/api/interfaces";
 import { ImageType } from "../plugins/api/interfaces";
-import { store } from "../plugins/store";
 import { api } from "../plugins/api";
+import { useTheme } from "vuetify";
+
+
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -63,10 +65,11 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const imgData = ref<string>();
+  const theme = useTheme();
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
-  if (store.darkTheme)
+  if (theme.current.value.dark)
     return `https://ui-avatars.com/api/?name=${props.item.name}&size=${props.maxSize}&bold=true&background=1d1d1d&color=383838`;
   else
     return `https://ui-avatars.com/api/?name=${props.item.name}&size=${props.maxSize}&bold=true&background=a0a0a0&color=cccccc`;

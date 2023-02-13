@@ -2,7 +2,7 @@
 <template>
   <section>
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar dense flat color="transparent">
+    <v-toolbar density="compact" variant="flat" color="transparent">
       <v-tooltip location="bottom">
         <template #activator="{ props }">
           <v-btn

@@ -20,7 +20,7 @@
         <br />
         {{ $t("settings.no_providers_detail") }}
       </v-alert>
-      <v-list lines="two" density="compact">
+      <div>
         <v-list-item
           v-for="config in providerConfigs.filter(
             (x) =>
@@ -158,7 +158,7 @@
             </div>
           </template>
         </v-list-item>
-      </v-list>
+      </div>
 
       <!-- float action button to add a new provider config-->
       <v-menu location="bottom end">

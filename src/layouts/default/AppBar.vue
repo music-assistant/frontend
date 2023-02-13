@@ -40,7 +40,7 @@
       </v-menu>
     </template>
     <v-app-bar-title
-      ><span @click="heading.mainLink">{{
+      ><span @click="heading.mainLink" style="cursor: pointer">{{
         heading.mainTitle
       }}</span>
       <span v-if="heading.subTitle" style="opacity: 0.5">
@@ -49,7 +49,8 @@
     >
 
     <template v-slot:append>
-      <div style="align-items: right; display: flex">
+      <div class="listitem-actions">
+
         
         <v-tooltip location="top end" origin="end center">
           <template #activator="{ props: tooltip }">
@@ -72,7 +73,7 @@
             <v-btn
               v-if="store.topBarContextMenuItems.length > 0"
               icon="mdi-dots-vertical"
-              style="margin-right: -18px"
+              style="margin-right: -6px"
               v-bind="props"
               variant="plain"
             />

@@ -94,7 +94,7 @@
           </RecycleScroller>
         </div>
       </div>
-      <v-toolbar dense flat color="transparent" height="45">
+      <v-toolbar density="compact" variant="flat" color="transparent" height="45">
         <span>{{ $t("items_total", [filteredItems.length]) }}</span>
         <v-spacer />
 

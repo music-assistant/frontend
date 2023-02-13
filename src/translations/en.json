@@ -21,6 +21,7 @@
   "queue": "Queue",
   "tasks": "Tasks",
   "sync": "Run sync",
+  "sync_now": "Synchronize {0} now",
   "sync_full": "Force full sync",
   "page_back": "Go back to the previous page",
   "sync_running": "One or more music providers are being synchronized.",

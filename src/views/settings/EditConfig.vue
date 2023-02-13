@@ -329,6 +329,10 @@ const openLink = function (url: string) {
   margin-left: 8px;
 }
 
+div.v-expansion-panel {
+  background-color: transparent;
+}
+
 .v-expansion-panel-title__icon {
   margin-right: -20px;
 }
@@ -337,25 +341,5 @@ const openLink = function (url: string) {
   margin-left: -20px;
   font-weight: 500;
   font-size: larger;
-}
-
-.listitem-action {
-  align-items: right;
-  width: 40px;
-  display: flex;
-}
-.listitem-actions {
-  align-items: right;
-  width: 400px;
-  height: 50px;
-  display: flex;
-  margin-right: -20px;
-}
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -15px;
-  width: 50px;
-  height: 50px;
 }
 </style>

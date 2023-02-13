@@ -22,12 +22,12 @@ const items = ref<Album[]>([]);
 
 store.topBarContextMenuItems = [
   {
-    label: 'sync',
-    labelArgs: [],
+    label: 'sync_now',
+    labelArgs: [t('albums')],
     action: () => {
       api.startSync([MediaType.ALBUM]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {

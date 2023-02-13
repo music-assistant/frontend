@@ -13,7 +13,7 @@
         <br />
         {{ $t("settings.no_providers_detail") }}
       </v-alert>
-      <v-list lines="two" density="compact">
+      <div>
         <v-list-item
           v-for="config in playerConfigs"
           :key="config.player_id"
@@ -112,7 +112,7 @@
             </div>
           </template>
         </v-list-item>
-      </v-list>
+      </div>
 
     </v-card-text>
   </section>

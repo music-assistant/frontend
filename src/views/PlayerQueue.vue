@@ -17,7 +17,6 @@
         padding-bottom: 20px;
       "
     >
-      <v-progress-linear v-if="loading" indeterminate />
       <v-alert
         v-if="activePlayerQueue && activePlayerQueue?.radio_source.length > 0"
         color="primary"
@@ -161,7 +160,7 @@
         </div>
       </RecycleScroller>
       <v-alert
-        v-if="!loading && items.length == 0"
+        v-if="items.length == 0"
         type="info"
         style="margin: 20px"
       >
@@ -288,25 +287,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiSkipNextCircleOutline,
-  mdiPlayCircleOutline,
-  mdiClose,
-  mdiArrowUp,
-  mdiArrowDown,
-  mdiInformationOutline,
-  mdiShuffle,
-  mdiRepeat,
-  mdiChartBar,
-  mdiCameraTimer,
-  mdiDelete,
-  mdiCancel,
-  mdiCogOutline,
-  mdiCastConnected,
-  mdiVolumePlus,
-  mdiRadioTower,
-} from "@mdi/js";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { RecycleScroller } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import type {
@@ -333,7 +314,6 @@ const selectedItem = ref<QueueItem>();
 const showContextMenu = ref(false);
 
 const items = ref<QueueItem[]>([]);
-const loading = ref(true);
 const panel = ref(0);
 
 // computed properties
@@ -364,23 +344,25 @@ const tabItems = computed(() => {
 });
 
 // listen for item updates to refresh items when that happens
-const unsub = api.subscribe(
-  EventType.QUEUE_ITEMS_UPDATED,
-  (evt: EventMessage) => {
-    if (evt.object_id == activePlayerQueue.value?.queue_id) {
-      loadItems();
-    }
-  }
-);
-onBeforeUnmount(unsub);
 
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
+onMounted(() => {
+  const unsub = api.subscribe_multi(
+    [EventType.QUEUE_UPDATED, EventType.QUEUE_ITEMS_UPDATED],
+    (evt: EventMessage) => {
+      if (evt.object_id != activePlayerQueue.value?.queue_id) return;
+
+      if (evt.event == EventType.QUEUE_ITEMS_UPDATED) {
+        loadItems();
+      } else {
+        setMenuItems();
+      }
+    }
+  );
+  onBeforeUnmount(unsub);
 });
 
 // methods
 const loadItems = async function () {
-  loading.value = true;
   if (activePlayerQueue.value) {
     store.topBarTitle = activePlayerQueue.value.display_name;
     items.value = await api.getPlayerQueueItems(
@@ -390,7 +372,6 @@ const loadItems = async function () {
     store.topBarTitle = undefined;
     items.value = [];
   }
-  loading.value = false;
 };
 
 const onClick = function (item: QueueItem) {
@@ -493,31 +474,14 @@ const closeContextMenu = function () {
 watch(
   () => activePlayerQueue.value,
   (val) => {
-    loadItems();
-    setMenuItems();
+    if (val) {
+      loadItems();
+      setMenuItems();
+    }
   },
   { immediate: true }
 );
 </script>
 
 <style scoped>
-.listitem-actions {
-  display: flex;
-  justify-content: end;
-  width: auto;
-  height: 50px;
-  vertical-align: middle;
-  align-items: center;
-  padding: 0px;
-}
-.listitem-action {
-  padding-left: 5px;
-}
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -15px;
-  width: 50px;
-  height: 50px;
-}
 </style>

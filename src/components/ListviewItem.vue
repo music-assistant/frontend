@@ -245,7 +245,7 @@
                 />
                 {{
                   truncateString(
-                    api.getProvider(item.provider_mappings[0].provider_domain)!
+                    api.providers[item.provider_mappings[0].provider_domain]!
                       .name,
                     25
                   )
