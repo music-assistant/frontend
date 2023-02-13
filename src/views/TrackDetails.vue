@@ -16,6 +16,11 @@
       :show-track-number="false"
       :load-data="loadTrackVersions"
       :sort-keys="['provider', 'sort_name', 'duration']"
+      :update-available="updateAvailable"
+      @refresh-clicked="
+        loadItemDetails();
+        updateAvailable = false;
+      "
     />
   </section>
 </template>
@@ -31,7 +36,7 @@ import {
   type MediaItemType,
 } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
-import { onBeforeUnmount, onMounted, watchEffect } from "vue";
+import { onBeforeUnmount, onMounted, watch } from "vue";
 
 export interface Props {
   itemId: string;
@@ -39,7 +44,7 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const activeTab = ref("");
-
+const updateAvailable = ref(false);
 const itemDetails = ref<Track>();
 
 const loadItemDetails = async function () {
@@ -47,27 +52,29 @@ const loadItemDetails = async function () {
   activeTab.value = "versions";
 };
 
-watchEffect(() => {
-  // load info
-  loadItemDetails();
-});
+watch(
+  () => props.itemId,
+  (val) => {
+    if (val) loadItemDetails();
+  },
+  { immediate: true }
+);
 
 onMounted(() => {
-  //reload if/when item updates
   const unsub = api.subscribe_multi(
     [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED],
     (evt: EventMessage) => {
-      // refresh info if we receive an update for this item
+      // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        loadItemDetails();
+        updateAvailable.value = true;
       } else {
         for (const provId of updatedItem.provider_mappings) {
           if (
             provId.provider_domain == itemDetails.value?.provider &&
             provId.item_id == itemDetails.value?.item_id
           ) {
-            loadItemDetails();
+            updateAvailable.value = true;
             break;
           }
         }

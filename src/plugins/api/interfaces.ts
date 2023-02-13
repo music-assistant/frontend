@@ -333,6 +333,7 @@ export interface MediaItemMetadata {
   preview?: string;
   replaygain?: number;
   popularity?: number;
+  checksum?: string;
 }
 
 export interface MediaItem {

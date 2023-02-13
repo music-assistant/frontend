@@ -539,8 +539,9 @@ export const getContextMenuItems = function (
     contextMenuItems.push({
       label: "refresh_item",
       labelArgs: [],
-      action: () => {
-        api.getItemByUri(items[0].uri, false, true);
+      action: async () => {
+        await api.getItemByUri(items[0].uri, true, false);
+        router.go(0);
       },
       icon: "mdi-refresh",
     });

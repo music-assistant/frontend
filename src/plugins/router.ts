@@ -150,7 +150,8 @@ const routes = [
           },
           {
             path: '',
-            redirect: 'settings/musicproviders', // default child path
+            redirect: '/settings/musicproviders', // default child path
+            name: 'settingsredirect'
           }
         ]
       },

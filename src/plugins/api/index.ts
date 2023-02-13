@@ -39,6 +39,7 @@ import {
   type ErrorResultMessage,
   type CommandMessage,
   type SyncTask,
+  RepeatMode,
 } from "./interfaces";
 
 const DEBUG = true;
@@ -74,6 +75,7 @@ export class MusicAssistantApi {
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
   public providers = reactive<{ [instance_id: string]: ProviderInstance }>({});
   public syncTasks = ref<SyncTask[]>([]);
+  public fetchesInProgress = ref<number[]>([]);
   private eventCallbacks: Array<[string, CallableFunction]>;
   private commands: Map<
     number,
@@ -666,6 +668,29 @@ export class MusicAssistantApi {
   public queueCommandSkipBack(queueId: string) {
     this.queueCommandSkip(queueId, -10);
   }
+  public queueCommandShuffle(queueId: string, shuffle_enabled: boolean) {
+    // Configure shuffle setting on the the queue.
+    this.playerQueueCommand(queueId, "shuffle", { shuffle_enabled });
+  }
+  public queueCommandShuffleToggle(queueId: string) {
+    // Toggle shuffle mode for a queue
+    this.queueCommandShuffle(queueId, !this.queues[queueId].shuffle_enabled);
+  }
+  public queueCommandRepeat(queueId: string, repeat_mode: RepeatMode) {
+    // Configure repeat setting on the the queue.
+    this.playerQueueCommand(queueId, "repeat", { repeat_mode });
+  }
+  public queueCommandRepeatToggle(queueId: string) {
+    // Toggle repeat mode of a queue
+    const queue = this.queues[queueId];
+    if (this.queues[queueId].repeat_mode == RepeatMode.OFF) {
+      this.queueCommandRepeat(queueId, RepeatMode.ONE);
+    } else if (this.queues[queueId].repeat_mode == RepeatMode.ONE) {
+      this.queueCommandRepeat(queueId, RepeatMode.ALL);
+    } else {
+      this.queueCommandRepeat(queueId, RepeatMode.OFF);
+    }
+  }
 
   // player commands
 
@@ -874,9 +899,9 @@ export class MusicAssistantApi {
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
-      this.syncTasks.value = msg.data as SyncTask[]
+      this.syncTasks.value = msg.data as SyncTask[];
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
-      const providers: {[instance_id: string]: ProviderInstance} = {};
+      const providers: { [instance_id: string]: ProviderInstance } = {};
       for (const prov of msg.data as ProviderInstance[]) {
         providers[prov.instance_id] = prov;
       }
@@ -897,6 +922,12 @@ export class MusicAssistantApi {
     if (DEBUG) {
       console.log("[resultMessage]", msg);
     }
+
+    this.commands.delete(msg.message_id as number);
+    this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
+      (x) => x != msg.message_id
+    );
+    
     if ("error_code" in msg) {
       msg = msg as ErrorResultMessage;
       resultPromise.reject(msg.details || msg.error_code);
@@ -904,7 +935,7 @@ export class MusicAssistantApi {
       msg = msg as SuccessResultMessage;
       resultPromise.resolve(msg.result);
     }
-    this.commands.delete(msg.message_id as number);
+    
   }
 
   private handleServerInfoMessage(msg: ServerInfoMessage) {
@@ -935,6 +966,7 @@ export class MusicAssistantApi {
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
       this.commands.set(cmdId, { resolve, reject });
+      this.fetchesInProgress.value.push(cmdId);
       this.sendCommand(command, args, cmdId);
     });
   }

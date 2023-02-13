@@ -95,7 +95,7 @@
         </div>
       </div>
       <v-toolbar dense flat color="transparent" height="45">
-        <span>{{ $t('items_total', [filteredItems.length]) }}</span>
+        <span>{{ $t("items_total", [filteredItems.length]) }}</span>
         <v-spacer />
 
         <v-tooltip location="bottom">
@@ -106,7 +106,7 @@
               @click="toggleViewMode()"
             />
           </template>
-          <span>{{ $t('tooltip.toggle_view_mode') }}</span>
+          <span>{{ $t("tooltip.toggle_view_mode") }}</span>
         </v-tooltip>
       </v-toolbar>
     </div>
@@ -115,35 +115,28 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { mdiMagnify, mdiGrid, mdiViewList } from '@mdi/js';
+import { mdiMagnify, mdiGrid, mdiViewList } from "@mdi/js";
 
-import {
-  ref,
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  watch,
-  watchEffect,
-} from 'vue';
-import { useDisplay } from 'vuetify';
-import { MediaType, type MediaItemType } from '../plugins/api/interfaces';
-import { RecycleScroller } from 'vue-virtual-scroller';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-import { store } from '../plugins/store';
-import ListviewItem from './ListviewItem.vue';
-import PanelviewItem from './PanelviewItem.vue';
-import MediaItemContextMenu from './MediaItemContextMenu.vue';
-import { useRouter } from 'vue-router';
-import { api } from '../plugins/api';
+import { ref, computed, onBeforeUnmount, onMounted, watch } from "vue";
+import { useDisplay } from "vuetify";
+import { MediaType, type MediaItemType } from "../plugins/api/interfaces";
+import { RecycleScroller } from "vue-virtual-scroller";
+import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
+import { store } from "../plugins/store";
+import ListviewItem from "./ListviewItem.vue";
+import PanelviewItem from "./PanelviewItem.vue";
+import MediaItemContextMenu from "./MediaItemContextMenu.vue";
+import { useRouter } from "vue-router";
+import { api } from "../plugins/api";
 
 // global refs
 const router = useRouter();
 const { mobile } = useDisplay();
 
 // local refs
-const viewMode = ref('list');
+const viewMode = ref("list");
 const viewFilter = ref(0);
-const search = ref('');
+const search = ref("");
 const searchHasFocus = ref(false);
 const items = ref<MediaItemType[]>([]);
 const loading = ref(false);
@@ -151,7 +144,7 @@ const showContextMenu = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const throttleId = ref();
 
-const viewFilters = ['topresult', 'artists', 'albums', 'tracks', 'playlists'];
+const viewFilters = ["topresult", "artists", "albums", "tracks", "playlists"];
 
 // computed properties
 const thumbSize = computed(() => {
@@ -161,8 +154,8 @@ const thumbSize = computed(() => {
 // methods
 
 const toggleViewMode = function () {
-  if (viewMode.value === 'panel') viewMode.value = 'list';
-  else viewMode.value = 'panel';
+  if (viewMode.value === "panel") viewMode.value = "list";
+  else viewMode.value = "panel";
   localStorage.setItem(
     `viewMode.search.${viewFilterStr.value}`,
     viewMode.value
@@ -178,7 +171,7 @@ const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
 
   if (
-    ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
+    ["artist", "album", "playlist"].includes(mediaItem.media_type) ||
     !store.selectedPlayer?.available
   ) {
     router.push({
@@ -207,7 +200,7 @@ watch(
 
 const loadSearchResults = async function () {
   loading.value = true;
-  localStorage.setItem('globalsearch', search.value);
+  localStorage.setItem("globalsearch", search.value);
 
   if (search.value) {
     items.value = await api.search(search.value);
@@ -222,44 +215,49 @@ const viewFilterStr = computed(() => {
 });
 
 const filteredItems = computed(() => {
-  if (viewFilterStr.value == 'artists') {
+  if (viewFilterStr.value == "artists") {
     return items.value.filter((x) => x.media_type == MediaType.ARTIST);
   }
-  if (viewFilterStr.value == 'albums') {
+  if (viewFilterStr.value == "albums") {
     return items.value.filter((x) => x.media_type == MediaType.ALBUM);
   }
-  if (viewFilterStr.value == 'tracks') {
+  if (viewFilterStr.value == "tracks") {
     return items.value.filter((x) => x.media_type == MediaType.TRACK);
   }
-  if (viewFilterStr.value == 'playlists') {
+  if (viewFilterStr.value == "playlists") {
     return items.value.filter((x) => x.media_type == MediaType.PLAYLIST);
   }
-  if (viewFilterStr.value == 'radios') {
+  if (viewFilterStr.value == "radios") {
     return items.value.filter((x) => x.media_type == MediaType.RADIO);
   }
 
   return items.value;
 });
 
-// get/set default settings at load
-watchEffect(() => {
-  // get stored/default viewMode for this itemtype
-  const savedViewMode = localStorage.getItem(
-    `viewMode.search.${viewFilterStr.value}`
-  );
-  if (savedViewMode) {
-    viewMode.value = savedViewMode;
-  } else if (viewFilterStr.value == 'artists') {
-    viewMode.value = 'panel';
-  } else if (viewFilterStr.value == 'albums') {
-    viewMode.value = 'panel';
-  } else {
-    viewMode.value = 'list';
-  }
-});
+watch(
+  () => viewFilterStr.value,
+  (val) => {
+    if (val) {
+      // get stored/default viewMode for this itemtype
+      const savedViewMode = localStorage.getItem(
+        `viewMode.search.${viewFilterStr.value}`
+      );
+      if (savedViewMode) {
+        viewMode.value = savedViewMode;
+      } else if (viewFilterStr.value == "artists") {
+        viewMode.value = "panel";
+      } else if (viewFilterStr.value == "albums") {
+        viewMode.value = "panel";
+      } else {
+        viewMode.value = "list";
+      }
+    }
+  },
+  { immediate: true }
+);
 
 onMounted(() => {
-  const savedSearch = localStorage.getItem('globalsearch');
+  const savedSearch = localStorage.getItem("globalsearch");
   if (savedSearch) {
     search.value = savedSearch;
   }
@@ -268,19 +266,19 @@ onMounted(() => {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (showContextMenu.value) return;
-  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+  if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = items.value;
-  } else if (!searchHasFocus.value && e.key == 'Backspace') {
+  } else if (!searchHasFocus.value && e.key == "Backspace") {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
     search.value += e.key;
   }
 };
 
-document.addEventListener('keydown', keyListener);
+document.addEventListener("keydown", keyListener);
 
 onBeforeUnmount(() => {
-  document.removeEventListener('keydown', keyListener);
+  document.removeEventListener("keydown", keyListener);
 });
 </script>

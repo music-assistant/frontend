@@ -27,7 +27,7 @@ import InfoHeader from "../components/InfoHeader.vue";
 import { ref } from "vue";
 import type { Radio } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
-import { watchEffect } from "vue";
+import { watch } from "vue";
 
 export interface Props {
   itemId: string;
@@ -43,10 +43,13 @@ const loadItemDetails = async function () {
   activeTab.value = "versions";
 };
 
-watchEffect(() => {
-  // load info
-  loadItemDetails();
-});
+watch(
+  () => props.itemId,
+  (val) => {
+    if (val) loadItemDetails();
+  },
+  { immediate: true }
+);
 
 const loadRadioVersions = async function (
   offset: number,

@@ -1,6 +1,6 @@
 <template>
   <section>
-    <v-form v-model="valid" v-if="conf" ref="form">
+    <v-form v-model="valid" v-if="conf" ref="form" style="margin-right: 10px">
       <!-- name field -->
       <v-text-field
         v-if="'name' in conf"
@@ -252,7 +252,7 @@ import {
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { getProviderIcon } from "@/components/ProviderIcons.vue";
-import { computed, onBeforeUnmount, watchEffect } from "vue";
+import { computed, onBeforeUnmount, watch } from "vue";
 import { store } from "@/plugins/store";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -288,9 +288,13 @@ const panels = computed(() => {
 });
 
 // watchers
-watchEffect(async () => {
-  conf.value = props.modelValue;
-});
+watch(
+  () => props.modelValue,
+  (val) => {
+    conf.value = props.modelValue;
+  },
+  { immediate: true }
+);
 
 // methods
 const validate = async function (this: any) {

@@ -4,7 +4,6 @@
       <!-- show alert if no music providers configured-->
       <v-alert
         v-if="
-          !store.loading &&
           providerConfigs.filter(
             (x) =>
               x.type == ProviderType.MUSIC &&
@@ -208,7 +207,7 @@ import {
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { getProviderIcon } from "@/components/ProviderIcons.vue";
-import { computed, onBeforeUnmount, watchEffect } from "vue";
+import { computed, onBeforeUnmount, watch } from "vue";
 import { store } from "@/plugins/store";
 import { useRouter } from "vue-router";
 
@@ -241,7 +240,6 @@ onBeforeUnmount(unsub);
 
 // methods
 const loadItems = async function () {
-  store.loading = true;
   providerConfigs.value = await api.getData("config/providers");
   const manifests: ProviderManifest[] = await api.getData(
     "providers/available"
@@ -249,7 +247,6 @@ const loadItems = async function () {
   for (const prov of manifests) {
     providerManifests[prov.domain] = prov;
   }
-  store.loading = false;
 };
 
 const deleteProvider = function (providerInstanceId: string) {
@@ -272,31 +269,15 @@ const addProvider = function (provider: ProviderManifest) {
 };
 
 // watchers
-watchEffect(() => {
-  if (api.providers) {
-    loadItems();
-  }
-});
+watch(
+  () => api.providers,
+  (val) => {
+    if (val) loadItems();
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
-.listitem-action {
-  align-items: right;
-  width: 40px;
-  display: flex;
-}
-.listitem-actions {
-  align-items: right;
-  width: 400px;
-  height: 50px;
-  display: flex;
-  margin-right: -20px;
-}
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -15px;
-  width: 50px;
-  height: 50px;
-}
+
 </style>

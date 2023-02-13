@@ -3,7 +3,7 @@
     <v-card-text>
       <!-- show alert if no players found -->
       <v-alert
-        v-if="!store.loading && playerConfigs.length == 0"
+        v-if="playerConfigs.length == 0"
         color="primary"
         theme="dark"
         icon="mdi-radio-tower"
@@ -129,9 +129,8 @@ import {
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { getProviderIcon } from "@/components/ProviderIcons.vue";
-import { computed, onBeforeUnmount, watchEffect } from "vue";
+import { onBeforeUnmount, watch } from "vue";
 import { store } from "@/plugins/store";
-import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 // global refs
@@ -153,7 +152,6 @@ onBeforeUnmount(unsub);
 
 // methods
 const loadItems = async function () {
-  store.loading = true;
   playerConfigs.value = await api.getData("config/players");
   const manifests: ProviderManifest[] = await api.getData(
     "providers/available"
@@ -161,7 +159,6 @@ const loadItems = async function () {
   for (const prov of manifests) {
     providerManifests[prov.domain] = prov;
   }
-  store.loading = false;
 };
 
 const deletePlayerConfig = function (playerId: string) {
@@ -178,31 +175,15 @@ const editPlayer = function (playerId: string) {
 };
 
 // watchers
-watchEffect(() => {
-  if (api.players) {
-    loadItems();
-  }
-});
+watch(
+  () => api.players,
+  (val) => {
+    if (val) loadItems();
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
-.listitem-action {
-  align-items: right;
-  width: 40px;
-  display: flex;
-}
-.listitem-actions {
-  align-items: right;
-  width: 400px;
-  height: 50px;
-  display: flex;
-  margin-right: -20px;
-}
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -15px;
-  width: 50px;
-  height: 50px;
-}
+
 </style>

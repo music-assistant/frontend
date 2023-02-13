@@ -115,7 +115,9 @@
                 color="primary"
                 icon="mdi-account-music"
               />
-              <a @click="artistClick((item as Album).artist)">{{ item.artist.name }}</a>
+              <a @click="artistClick((item as Album).artist)">{{
+                item.artist.name
+              }}</a>
             </v-card-subtitle>
 
             <!-- playlist owner -->
@@ -136,9 +138,11 @@
                 small
                 icon="mdi-album"
               />
-              <a style="color: secondary" @click="albumClick((item as Track)?.album)">{{
-                item.album.name
-              }}</a>
+              <a
+                style="color: secondary"
+                @click="albumClick((item as Track)?.album)"
+                >{{ item.album.name }}</a
+              >
             </v-card-subtitle>
           </div>
 
@@ -262,7 +266,7 @@ import type {
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
-import { computed, ref, watchEffect, onBeforeUnmount } from "vue";
+import { computed, ref, watch, onBeforeUnmount } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useI18n } from "vue-i18n";
@@ -289,20 +293,21 @@ const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
 const { t } = useI18n();
 const router = useRouter();
 
-watchEffect(async () => {
-  if (props.item) {
-    store.topBarTitle = props.item.name;
+watch(
+  () => props.item,
+  async (val) => {
+    if (val) {
+      store.topBarTitle = val.name;
 
-    fanartImage.value =
-      (await getImageThumbForItem(props.item, ImageType.FANART)) ||
-      (await getImageThumbForItem(props.item, ImageType.THUMB));
+      fanartImage.value =
+        (await getImageThumbForItem(props.item, ImageType.FANART)) ||
+        (await getImageThumbForItem(props.item, ImageType.THUMB));
 
-    store.topBarContextMenuItems = getContextMenuItems(
-      [props.item],
-      props.item
-    );
-  }
-});
+      store.topBarContextMenuItems = getContextMenuItems([val], val);
+    }
+  },
+  { immediate: true }
+);
 
 onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
@@ -320,7 +325,7 @@ const albumClick = function (item: Album | ItemMapping) {
 };
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
-  console.log('artistClick', item)
+  console.log("artistClick", item);
   router.push({
     name: "artist",
     params: {

@@ -50,20 +50,23 @@
 
     <template v-slot:append>
       <div style="align-items: right; display: flex">
+        
         <v-tooltip location="top end" origin="end center">
           <template #activator="{ props: tooltip }">
             <v-progress-circular
-              v-if="api.syncTasks.value.length > 0 || store.loading"
+              v-if="api.syncTasks.value.length > 0 || api.fetchesInProgress.value.length > 0"
               indeterminate
               v-bind="tooltip"
             />
           </template>
           <span v-if="api.syncTasks.value.length > 0">{{
-            $t("jobs_running", [api.syncTasks.value.length])
+            $t("sync_running")
+          }}</span>
+          <span v-else>{{
+            $t("loading")
           }}</span>
         </v-tooltip>
-      </div>
-      <div style="align-items: right; display: flex">
+
         <v-menu location="bottom end">
           <template #activator="{ props }">
             <v-btn
@@ -233,5 +236,9 @@ const backButton = function () {
 }
 .v-overlay__scrim {
   opacity: 65%;
+}
+div.v-toolbar__append {
+  /* align appbar contextmenu as far right as possible, in line with listitems */
+  margin-inline-end: 2px;
 }
 </style>

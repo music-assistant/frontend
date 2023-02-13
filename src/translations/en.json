@@ -23,6 +23,8 @@
   "sync": "Run sync",
   "sync_full": "Force full sync",
   "page_back": "Go back to the previous page",
+  "sync_running": "One or more music providers are being synchronized.",
+  "loading": "Data is being retrieved from the server.",
   "artist_toptracks": "Top tracks",
   "artist_albums": "Albums",
   "album_tracks": "Album tracks",
@@ -61,7 +63,9 @@
   "read_more": "read more",
   "stream_details": "Streamdetails",
   "shuffle": "Shuffle",
-  "repeat": "Repeat",
+  "repeat_mode": "Repeat mode: {0}",
+  "shuffle_enabled": "Shuffle is enabled",
+  "shuffle_disabled": "Shuffle is disabled",
   "volume_normalization": "Volume normalization",
   "volume_normalization_target": "Volume normalization target volume",
   "volume_normalization_lufs": "{0} LUFS",
@@ -122,7 +126,12 @@
     "qobuz": "Qobuz",
     "file": "Filesystem",
     "tunein": "Tune-in",
-    "ytmusic": "Youtube Music"
+    "ytmusic": "Youtube Music",
+    "hass": "Home Assistant",
+    "slimproto": "Slimproto",
+    "chromecast": "chromecast",
+    "filesystem_local": "Local Filesystem",
+    "filesystem_smb": "SMB Filesystem"
   },
   
   "goto_artist": "Goto artist {0}",
@@ -155,6 +164,7 @@
   "settings": {
     "settings": "Settings",
     "players": "Players",
+    "player_settings": "Player settings",
     "musicproviders": "Music providers",
     "no_providers": "Setup Music Providers",
     "no_providers_detail": "Start your Music Assistant experience by adding your Music providers below.",

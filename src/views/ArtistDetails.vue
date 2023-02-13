@@ -19,6 +19,8 @@
       :show-library="false"
       :load-data="loadArtistTracks"
       :sort-keys="['timestamp DESC', 'sort_name', 'sort_album']"
+      :update-available="updateAvailable"
+      @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
     <ItemsListing
       v-if="activeTab == 'albums'"
@@ -28,6 +30,8 @@
       :show-library="false"
       :load-data="loadArtistAlbums"
       :sort-keys="['timestamp DESC', 'sort_name', 'year']"
+      :update-available="updateAvailable"
+      @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
   </section>
 </template>
@@ -36,7 +40,7 @@
 import ItemsListing from "../components/ItemsListing.vue";
 import { filteredItems } from "../components/ItemsListing.vue";
 import InfoHeader from "../components/InfoHeader.vue";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import {
   EventType,
   type Artist,
@@ -44,7 +48,7 @@ import {
   type MediaItemType,
 } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
-import { onBeforeUnmount, onMounted, watchEffect } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 
 export interface Props {
   itemId: string;
@@ -52,6 +56,7 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const activeTab = ref("");
+const updateAvailable = ref(false);
 
 const itemDetails = ref<Artist>();
 
@@ -60,27 +65,30 @@ const loadItemDetails = async function () {
   activeTab.value = "tracks";
 };
 
-watchEffect(() => {
-  // load info
-  loadItemDetails();
-});
+
+watch(
+  () => props.itemId,
+  (val) => {
+    if (val) loadItemDetails();
+  }, { immediate: true }
+);
 
 onMounted(() => {
-  //reload if/when item updates
+
   const unsub = api.subscribe_multi(
     [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED],
     (evt: EventMessage) => {
-      // refresh info if we receive an update for this item
+      // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        loadItemDetails();
+        updateAvailable.value = true;
       } else {
         for (const provId of updatedItem.provider_mappings) {
           if (
             provId.provider_domain == itemDetails.value?.provider &&
             provId.item_id == itemDetails.value?.item_id
           ) {
-            loadItemDetails();
+            updateAvailable.value = true;
             break;
           }
         }

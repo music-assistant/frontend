@@ -33,6 +33,13 @@
     opacity: 0.8;
     background: grey;
   }
+
+  .padded-overlay .v-overlay__content {
+    padding: 50px;
+  }
+  .v-overlay__scrim {
+    opacity: 65%;
+  }
   
   .volumerow {
     height: 60px;
@@ -60,13 +67,6 @@
     border-radius: 5px;
   }
   
-  .padded-overlay .v-overlay__content {
-    padding: 50px;
-  }
-  .v-overlay__scrim {
-    opacity: 65%;
-  }
-  
   .listitem-actions {
     display: flex;
     justify-content: end;
@@ -76,6 +76,7 @@
     align-items: center;
     padding: 0px;
     padding-right: 0px;
+    margin-right: 0px;
   }
   .listitem-action {
     padding-left: 5px;
@@ -108,4 +109,8 @@
     box-sizing: border-box;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+  }
+  .v-card-text {
+    /* align listitem contextmenu as far right as possible */
+    padding-right: 0;
   }

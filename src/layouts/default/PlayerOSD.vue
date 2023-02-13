@@ -220,11 +220,7 @@
 
     <!-- progress bar -->
     <div
-      v-if="
-        activePlayerQueue?.active &&
-        curQueueItem &&
-        curQueueItem.media_item?.media_type == MediaType.TRACK
-      "
+      v-if="activePlayerQueue?.active && curQueueItem"
       style="width: 100%; height: 5px; padding-bottom: 20px; margin-top: -10px"
     >
       <v-slider
@@ -235,6 +231,7 @@
         :max="curQueueItem.duration"
         :thumb-size="10"
         style="margin-left: 0; margin-right: 0"
+        :disabled="curQueueItem.media_item?.media_type != MediaType.TRACK"
         @update:model-value="
           api.queueCommandSeek(
             activePlayerQueue?.queue_id || '',
@@ -429,7 +426,7 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, ref, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
 
 import type { MediaItemType, Track } from "../../plugins/api/interfaces";
 import api from "@/plugins/api";
@@ -511,43 +508,44 @@ watch(
 watch(
   () => store.selectedPlayer,
   (newVal) => {
-    if (newVal) localStorage.setItem("mass.LastPlayerId", newVal.player_id);
-  }
+    if (newVal) {
+      localStorage.setItem("mass.LastPlayerId", newVal.player_id);
+    } else {
+      // pick default/start player at startup
+      const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
+      if (lastPlayerId) {
+        if (lastPlayerId in api.players) {
+          store.selectedPlayer = api.players[lastPlayerId];
+          return;
+        }
+      }
+      if (api?.players && !store.selectedPlayer) {
+        // prefer playing player
+        for (const playerId in api?.players) {
+          const player = api.players[playerId];
+          if (player.state == PlayerState.PLAYING) {
+            store.selectedPlayer = player;
+            return;
+          }
+        }
+        // fallback to just a player with item in queue
+        for (const playerId in api?.queues) {
+          const player = api.players[playerId];
+          if (player.elapsed_time) {
+            store.selectedPlayer = player;
+            return;
+          }
+        }
+        // last resort: just the first queue
+        for (const playerId in api?.queues) {
+          store.selectedPlayer = api.players[playerId];
+          return;
+        }
+      }
+    }
+  },
+  { immediate: true }
 );
-
-watchEffect(async () => {
-  // pick default/start player at startup
-  const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
-  if (lastPlayerId) {
-    if (lastPlayerId in api.players) {
-      store.selectedPlayer = api.players[lastPlayerId];
-      return;
-    }
-  }
-  if (api?.players && !store.selectedPlayer) {
-    // prefer playing player
-    for (const playerId in api?.players) {
-      const player = api.players[playerId];
-      if (player.state == PlayerState.PLAYING) {
-        store.selectedPlayer = player;
-        return;
-      }
-    }
-    // fallback to just a player with item in queue
-    for (const playerId in api?.queues) {
-      const player = api.players[playerId];
-      if (player.elapsed_time) {
-        store.selectedPlayer = player;
-        return;
-      }
-    }
-    // last resort: just the first queue
-    for (const playerId in api?.queues) {
-      store.selectedPlayer = api.players[playerId];
-      return;
-    }
-  }
-});
 </script>
 
 <style scoped>

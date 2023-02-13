@@ -7,21 +7,30 @@
         style="margin-left: -5px; margin-right: -5px"
       >
         <v-card-title>{{
-          $t("settings.setup_music_provider", [availableProviders[config.domain].name])
+          $t("settings.setup_music_provider", [
+            availableProviders[config.domain].name,
+          ])
         }}</v-card-title>
         <v-card-subtitle>{{
           availableProviders[config.domain].description
-        }}</v-card-subtitle><br/>
-        <v-card-subtitle v-if="availableProviders[config.domain].codeowners.length"
+        }}</v-card-subtitle
+        ><br />
+        <v-card-subtitle
+          v-if="availableProviders[config.domain].codeowners.length"
           ><b>{{ $t("settings.codeowners") }}: </b
-          >{{ availableProviders[config.domain].codeowners.join(' / ') }}</v-card-subtitle
+          >{{
+            availableProviders[config.domain].codeowners.join(" / ")
+          }}</v-card-subtitle
         >
 
         <v-card-subtitle v-if="availableProviders[config.domain].documentation"
-          ><b>{{ $t("settings.need_help_setup_provider") }} </b
-          > <a :href="availableProviders[config.domain].documentation" target="_blank">{{ $t("settings.check_docs") }}</a></v-card-subtitle
+          ><b>{{ $t("settings.need_help_setup_provider") }} </b>
+          <a
+            :href="availableProviders[config.domain].documentation"
+            target="_blank"
+            >{{ $t("settings.check_docs") }}</a
+          ></v-card-subtitle
         >
-
       </div>
       <br />
       <v-divider />
@@ -42,7 +51,7 @@ import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { ProviderConfig, ProviderManifest } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
-import { watchEffect } from "vue";
+import { watch } from "vue";
 import { store } from "@/plugins/store";
 
 // global refs
@@ -59,29 +68,37 @@ const props = defineProps<{
 }>();
 
 // watchers
-watchEffect(async () => {
-  if (props.domain || props.instanceId) {
-    store.loading = true;
-    const manifests: ProviderManifest[] = await api.getData(
-      "providers/available"
-    );
-    for (const prov of manifests) {
-      availableProviders[prov.domain] = prov;
-    }
-    if (props.domain) {
+
+watch(
+  () => props.domain,
+  async (val) => {
+    if (val) {
+      const manifests: ProviderManifest[] = await api.getData(
+        "providers/available"
+      );
       // create a default config using the helper on the server
       config.value = await api.getData("config/providers/create", {
         provider_domain: props.domain,
       });
-    } else {
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.instanceId,
+  async (val) => {
+    if (val) {
+      const manifests: ProviderManifest[] = await api.getData(
+        "providers/available"
+      );
       config.value = await api.getData("config/providers/get", {
         instance_id: props.instanceId,
       });
     }
-
-    store.loading = false;
-  }
-});
+  },
+  { immediate: true }
+);
 
 // methods
 const onSubmit = async function (value: ProviderConfig) {

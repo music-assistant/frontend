@@ -22,7 +22,6 @@ interface Store {
     query: LocationQuery;
     meta: RouteMeta;
   }>;
-  loading: boolean;
 }
 
 export const store: Store = reactive({
@@ -36,5 +35,4 @@ export const store: Store = reactive({
   apiInitialized: false,
   apiBaseUrl: '',
   prevRoutes: [],
-  loading: false
 });
