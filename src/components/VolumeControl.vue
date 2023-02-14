@@ -44,7 +44,7 @@
         :model-value="Math.round(player.group_volume)"
         style="margin-left: 5px"
         @update:model-value="
-          api.queueCommandGroupVolume(player.player_id, $event)
+          api.playerCommandGroupVolume(player.player_id, $event)
         "
       />
     </div>

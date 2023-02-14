@@ -578,10 +578,7 @@ export class MusicAssistantApi {
     return this.getData("music/search", { search_query, media_types, limit });
   }
 
-  public async getPlayers(): Promise<Player[]> {
-    // Get all registered players.
-    return this.getData("players/all");
-  }
+  // PlayerQueue related functions/commands
 
   public async getPlayerQueues(): Promise<PlayerQueue[]> {
     // Get all registered PlayerQueues
@@ -691,8 +688,30 @@ export class MusicAssistantApi {
       this.queueCommandRepeat(queueId, RepeatMode.OFF);
     }
   }
+  public playerQueueCommand(
+    queue_id: string,
+    command: string,
+    args?: Record<string, any>
+  ) {
+    /*
+      Handle (throttled) command to player 
+    */
+    clearTimeout(this._throttleId);
+    // apply a bit of throttling here
+    this._throttleId = setTimeout(() => {
+      this.sendCommand(`players/queue/${command}`, {
+        queue_id,
+        ...args,
+      });
+    }, 200);
+  }
 
-  // player commands
+  // Player related functions/commands
+
+  public async getPlayers(): Promise<Player[]> {
+    // Get all registered players.
+    return this.getData("players/all");
+  }
 
   public playerCommandPower(playerId: string, powered: boolean) {
     this.playerCommand(playerId, "power", { powered });
@@ -720,27 +739,55 @@ export class MusicAssistantApi {
       this.players[playerId].volume_level - 5
     );
   }
+  public playerCommandVolumeMute(playerId: string, muted: boolean) {
+    this.playerCommand(playerId, "volume_mute", {
+      muted,
+    });
+    this.players[playerId].volume_muted = muted;
+  }
 
-  public queueCommandGroupVolume(queueId: string, newVolume: number) {
+  public playerCommandGroupVolume(queueId: string, newVolume: number) {
+    /*
+      Send VOLUME_SET command to given playergroup.
+
+      Will send the new (average) volume level to group childs.
+        - player_id: player_id of the playergroup to handle the command.
+        - volume_level: volume level (0..100) to set on the player.
+    */
     this.playerCommand(queueId, "group_volume", {
       volume_level: newVolume,
     });
     this.players[queueId].group_volume = newVolume;
   }
 
-  public playerQueueCommand(
-    queue_id: string,
-    command: string,
-    args?: Record<string, any>
-  ) {
-    // apply a bit of throttling here (for the volume and seek sliders especially)
-    clearTimeout(this._throttleId);
-    this._throttleId = setTimeout(() => {
-      this.sendCommand(`players/queue/${command}`, {
-        queue_id,
-        ...args,
-      });
-    }, 200);
+  public playerCommandSync(playerId: string, target_player: string) {
+    /*
+      Handle SYNC command for given player.
+
+      Join/add the given player(id) to the given (master) player/sync group.
+      If the player is already synced to another player, it will be unsynced there first.
+      If the target player itself is already synced to another player, this will fail.
+      If the player can not be synced with the given target player, this will fail.
+
+          - player_id: player_id of the player to handle the command.
+          - target_player: player_id of the syncgroup master or group player.
+    */
+    this.playerCommand(playerId, "sync", {
+      target_player,
+    });
+  }
+
+  public playerCommandUnSync(playerId: string) {
+    /*
+      Handle UNSYNC command for given player.
+
+      Remove the given player from any syncgroups it currently is synced to.
+      If the player is not currently synced to any other player,
+      this will silently be ignored.
+
+          - player_id: player_id of the player to handle the command.
+    */
+    this.playerCommand(playerId, "unsync");
   }
 
   public playerCommand(
@@ -748,8 +795,11 @@ export class MusicAssistantApi {
     command: string,
     args?: Record<string, any>
   ) {
-    // apply a bit of throttling here (for the volume and seek sliders especially)
+    /*
+      Handle (throttled) command to player 
+    */
     clearTimeout(this._throttleId);
+    // apply a bit of throttling here (for the volume and seek sliders especially)
     this._throttleId = setTimeout(() => {
       this.sendCommand(`players/cmd/${command}`, {
         player_id,
@@ -757,6 +807,52 @@ export class MusicAssistantApi {
       });
     }, 200);
   }
+
+  // PlayerGroup related functions/commands
+
+  public setPlayerGroupMembers(player_id: string, members: string[]) {
+    /*
+      Update the memberlist of the given PlayerGroup.
+
+          - player_id: player_id of the groupplayer to handle the command.
+          - members: list of player ids to set as members.
+    */
+    this.sendCommand(`players/cmd/set_members`, {
+      player_id,
+      members,
+    });
+  }
+
+  public createPlayerGroup(provider: string, name: string): Promise<Player> {
+    /*
+      Handle CREATE_GROUP command on the given player provider.
+
+        - name: name for the new group.
+        - provider: provider domain or instance id of the player provider.
+          defaults to the `universal_group` provider
+
+
+        Returns the newly created PlayerGroup.
+    */
+    return this.getData(`players/cmd/create_group`, {
+      name,
+      provider,
+    });
+  }
+
+  public deletePlayerGroup(provider: string, name: string) {
+    /*
+      Handle DELETE_GROUP command on the given player provider.
+
+        - player_id: id of the group player to remove.
+    */
+    this.sendCommand(`players/cmd/delete_group`, {
+      name,
+      provider,
+    });
+  }
+
+  // Play Media related functions
 
   public playMedia(
     media: string | string[] | MediaItemType | MediaItemType[],
@@ -825,6 +921,8 @@ export class MusicAssistantApi {
       queue_id
     );
   }
+
+  // Other (utility) functions
 
   public startSync(media_types?: MediaType[], providers?: string[]) {
     // Start running the sync of (all or selected) musicproviders.
@@ -927,7 +1025,7 @@ export class MusicAssistantApi {
     this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
       (x) => x != msg.message_id
     );
-    
+
     if ("error_code" in msg) {
       msg = msg as ErrorResultMessage;
       resultPromise.reject(msg.details || msg.error_code);
@@ -935,7 +1033,6 @@ export class MusicAssistantApi {
       msg = msg as SuccessResultMessage;
       resultPromise.resolve(msg.result);
     }
-    
   }
 
   private handleServerInfoMessage(msg: ServerInfoMessage) {
@@ -945,7 +1042,7 @@ export class MusicAssistantApi {
     }
     this.state.value = ConnectionState.CONNECTED;
     this.serverInfo.value = msg;
-    // trigger fetch of full state
+    // trigger fetch of full state once we are connected to the server
     this._fetchState();
   }
 

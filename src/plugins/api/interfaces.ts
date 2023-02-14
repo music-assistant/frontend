@@ -151,6 +151,9 @@ export enum ProviderFeature {
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
   PLAYLIST_CREATE = "playlist_create",
+  // player provider specific features
+  CREATE_GROUP = "create_group",
+  DELETE_GROUP = "delete_group",
 }
 
 export enum ProviderType {
