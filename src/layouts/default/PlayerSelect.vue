@@ -7,7 +7,7 @@
     clipped
     temporary
     width="300"
-    style="z-index: 99999"
+    style="z-index: 9999"
   >
     <!-- heading with Players as title-->
     <v-card-title class="headline">
@@ -70,7 +70,7 @@
             </template>
             <template #title>
               <div class="text-subtitle-1">
-                <b>{{ player.display_name.substring(0, 26) }}</b>
+                <b>{{ getPlayerName(player) }}</b>
               </div>
             </template>
             <template #subtitle>
@@ -94,10 +94,11 @@
 
 <script setup lang="ts">
 import { computed, getCurrentInstance, onMounted, ref, watch } from "vue";
-import type { Player } from "../../plugins/api/interfaces";
+import { Player, PlayerType } from "../../plugins/api/interfaces";
 import { store } from "../../plugins/store";
 import VolumeControl from "../../components/VolumeControl.vue";
 import { api } from "../../plugins/api";
+import { getPlayerName } from "@/utils";
 
 const panelItem = ref<number | undefined>(undefined);
 
@@ -111,7 +112,9 @@ const sortedPlayers = computed(() => {
   }
   return res
     .slice()
-    .sort((a, b) => (a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1));
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1
+    );
 });
 
 //watchers
@@ -137,6 +140,8 @@ const scrollToTop = function (playerId: string) {
     elmnt?.scrollIntoView({ behavior: "smooth" });
   }, 0);
 };
+
+
 </script>
 
 <style>
@@ -163,11 +168,11 @@ div.v-expansion-panel__shadow {
   margin-right: 15px;
 } */
 .v-expansion-panel-title__icon {
-    display: inline-flex;
-    margin-bottom: -4px;
-    margin-top: -4px;
-    user-select: none;
-    margin-inline-start: auto;
-    margin-right: 5px;
+  display: inline-flex;
+  margin-bottom: -4px;
+  margin-top: -4px;
+  user-select: none;
+  margin-inline-start: auto;
+  margin-right: 5px;
 }
 </style>

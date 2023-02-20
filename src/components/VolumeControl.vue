@@ -1,6 +1,6 @@
 <template>
   <v-list style="overflow: hidden" lines="two">
-    <!-- special group volume -->
+    <!-- special group volume/power -->
     <div
       v-if="player.group_childs.length > 0"
       class="volumerow"
@@ -12,15 +12,13 @@
         width="60"
         height="30"
         size="x-large"
-        @click="api.playerCommandPower(player.player_id, !player.powered)"
+        @click="setGroupPower(player, !player.powered)"
       >
         <v-icon icon="mdi-power" />
       </v-btn>
-      <span class="text-body-2" style="position: absolute; margin-top: 3px"
-        >{{ truncateString(player.display_name, 24) }} +{{
-          player.group_childs.length
-        }}</span
-      >
+      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
+        getPlayerName(player, 30)
+      }}</span>
       <div
         class="text-caption"
         style="
@@ -66,23 +64,64 @@
           width="60"
           height="30"
           size="x-large"
-          style=""
           @click="api.playerCommandPowerToggle(childPlayer.player_id)"
         >
           <v-icon icon="mdi-power" />
         </v-btn>
-        <span
-          v-if="player.group_childs.includes(childPlayer.player_id)"
-          class="text-body-2"
-          style="position: absolute; margin-top: 3px"
-          >{{ truncateString(childPlayer.name, 27) }}</span
+        <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
+          truncateString(childPlayer.display_name, 27)
+        }}</span>
+
+        <!-- sync button -->
+        <div
+          class="syncbtn"
+          v-if="
+            !childPlayer.synced_to &&
+            !childPlayer.group_childs.length &&
+            Object.values(api.players).filter(
+              (x) =>
+                !x.synced_to && x.can_sync_with.includes(childPlayer.player_id)
+            ).length > 0
+          "
         >
-        <span
-          v-else
-          class="text-body-2"
-          style="position: absolute; margin-top: 3px"
-          >{{ truncateString(childPlayer.display_name, 27) }}</span
-        >
+          <v-menu location="bottom end" style="z-index: 999999">
+            <template v-slot:activator="{ props: menu }">
+              <v-btn icon v-bind="menu" variant="plain">
+                <v-icon>mdi-link-variant</v-icon>
+              </v-btn>
+            </template>
+            <v-list>
+              <v-card-subtitle>{{ $t("sync_player_to") }}</v-card-subtitle>
+              <v-list-item
+                :title="parentPlayer.display_name"
+                v-for="parentPlayer of Object.values(api.players).filter(
+                  (x) =>
+                    !x.synced_to &&
+                    x.can_sync_with.includes(childPlayer.player_id)
+                )"
+                :key="parentPlayer.player_id"
+                @click="
+                  api.playerCommandSync(
+                    childPlayer.player_id,
+                    parentPlayer.player_id
+                  )
+                "
+              >
+              </v-list-item>
+              <v-divider />
+            </v-list>
+          </v-menu>
+        </div>
+        <!-- unsync button -->
+        <div class="syncbtn" v-if="childPlayer.synced_to">
+          <v-btn
+            icon
+            variant="plain"
+            @click="api.playerCommandUnSync(childPlayer.player_id)"
+          >
+            <v-icon>mdi-link-variant-off</v-icon>
+          </v-btn>
+        </div>
       </span>
       <div
         class="text-caption"
@@ -115,9 +154,9 @@
 </template>
 
 <script setup lang="ts">
-import type { Player } from "../plugins/api/interfaces";
+import { Player, PlayerType } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
-import { truncateString } from "../utils";
+import { truncateString, getPlayerName } from "../utils";
 
 export interface Props {
   player: Player;
@@ -126,8 +165,8 @@ defineProps<Props>();
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
-  if (player.group_childs.length == 0) {
-    return [player];
+  if (player.type != PlayerType.GROUP) {
+    items.push(player);
   }
   for (const groupChildId of player.group_childs) {
     const volumeChild = api?.players[groupChildId];
@@ -136,7 +175,47 @@ const getVolumePlayers = function (player: Player) {
       items.push(volumeChild);
     }
   }
-  items.sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
+  items.sort((a, b) =>
+    a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1
+  );
   return items;
 };
+const setGroupPower = function (player: Player, powered: boolean) {
+  // send power command to all group child players
+  for (const childPlayer of getVolumePlayers(player)) {
+    for (const childPlayer of getVolumePlayers(player)) {
+      // bypass api throttling by sending the command directly
+      api.sendCommand(`players/cmd/power`, {
+        player_id: childPlayer.player_id,
+        powered,
+      });
+    }
+  }
+};
 </script>
+
+<style>
+.syncbtn {
+  position: absolute;
+  /* top: 0; */
+  display: flex;
+  justify-content: end;
+  width: 30px;
+  height: 30px;
+  vertical-align: middle;
+  right: 0;
+  margin-right: 3px;
+  margin-top: -40px;
+}
+.volumerow {
+  height: 60px;
+  padding-top: 5px;
+  padding-bottom: 0px;
+}
+
+.volumerow .v-slider .v-slider__container {
+  margin-left: 57px;
+  margin-right: 15px;
+  margin-top: -10px;
+}
+</style>

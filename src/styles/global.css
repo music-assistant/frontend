@@ -41,23 +41,6 @@
     opacity: 65%;
   }
   
-  .volumerow {
-    height: 60px;
-    padding-top: 5px;
-    padding-bottom: 0px;
-  }
-  
-  .volumerow .v-slider .v-slider__container {
-    margin-left: 57px;
-    margin-right: 15px;
-    margin-top: -10px;
-  }
-  
-  .slider .div.v-input__append {
-    padding-top: 0px;
-    margin-top: -10px;
-  }
-  
   
   .hiresicon {
     position: absolute;

@@ -162,6 +162,7 @@
   "create_playlist": "Create new playlist on {0}",
   "queue_radio_enabled": "Radio mode is enabled",
   "queue_radio_based_on": "The queue is dynamically filled with tracks based on {0}:",
+  "sync_player_to": "Sync this player to:",
   "settings": {
     "settings": "Settings",
     "players": "Players",
@@ -198,6 +199,7 @@
     "player_address": "Address",
     "advanced_settings": "Advanced settings",
     "need_help_setup_provider": "Need help setting up this provider ?",
-    "check_docs": "Checkout the documentation"
+    "check_docs": "Checkout the documentation",
+    "player_not_available": "This player is currently not (yet) available"
   }
 }

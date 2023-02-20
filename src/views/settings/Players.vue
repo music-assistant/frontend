@@ -17,13 +17,13 @@
         <v-list-item
           v-for="config in playerConfigs"
           :key="config.player_id"
-          :title="config.name || api.players[config.player_id].name"
-          :subtitle="config.player_id"
+          :title="config.name || api.players[config.player_id]?.name || config.player_id"
+          :subtitle="api.providers[config.provider].name"
           @click="editPlayer(config.player_id)"
         >
           <template v-slot:prepend>
             <v-img
-              contain
+              scale
               width="36px"
               class="listitem-thumb"
               :src="getProviderIcon(config.provider)"
@@ -38,7 +38,7 @@
                   <template #activator="{ props: tooltip }">
                     <v-icon v-bind="tooltip" color="grey">mdi-cancel</v-icon>
                   </template>
-                  <span>{{ $t("settings.provider_disabled") }}</span>
+                  <span>{{ $t("settings.player_disabled") }}</span>
                 </v-tooltip>
               </div>
 
@@ -66,7 +66,7 @@
                   <template #activator="{ props: tooltip }">
                     <v-icon v-bind="tooltip">mdi-timer-sand</v-icon>
                   </template>
-                  <span>{{ $t("settings.not_loaded") }}</span>
+                  <span>{{ $t("settings.player_not_available") }}</span>
                 </v-tooltip>
               </div>
 

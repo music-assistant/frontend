@@ -55,10 +55,14 @@
             >
               <div class="configcolumnleft">
                 <!-- label value -->
-                <v-label
-                  v-if="conf_item_value.type == ConfigEntryType.LABEL"
-                  :text="conf_item_value.value?.toString()"
-                ></v-label>
+                
+                <div v-if="conf_item_value.type == ConfigEntryType.LABEL">
+                  <br />
+                  <v-divider/>
+                <v-label style="margin-left:8px;margin-top:10px;margin-bottom:10px;"
+                  ><b>{{ conf_item_value.value?.toString() }}</b></v-label>
+                  <br />
+                </div>
 
                 <!-- boolean value: toggle switch -->
                 <v-switch

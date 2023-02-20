@@ -324,7 +324,7 @@
       >
         <v-icon icon="mdi-speaker" />
         <div v-if="activePlayerQueue">
-          {{ activePlayerQueue.display_name }}
+          {{ getPlayerName(api.players[activePlayerQueue.queue_id]) }}
         </div>
       </v-btn>
       <!-- active player volume -->
@@ -436,7 +436,7 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import MediaItemThumb, {
   getImageThumbForItem,
 } from "@/components/MediaItemThumb.vue";
-import { formatDuration, getArtistsString } from "@/utils";
+import { formatDuration, getArtistsString, getPlayerName } from "@/utils";
 import { useRouter } from "vue-router";
 import {
   getContentTypeIcon,

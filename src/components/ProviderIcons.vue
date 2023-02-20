@@ -70,7 +70,7 @@ export const iconYTMusic = new URL("@/assets/ytmusic.png", import.meta.url)
   .href;
 export const iconSlimProto = new URL("@/assets/slimproto.png", import.meta.url)
   .href;
-export const iconAirPlay = new URL("@/assets/airplay.svg", import.meta.url)
+export const iconAirPlay = new URL("@/assets/airplay.png", import.meta.url)
   .href;
 export const iconChromeCast = new URL(
   "@/assets/chromecast.png",
