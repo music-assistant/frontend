@@ -11,25 +11,25 @@
 </template>
 
 <script setup lang="ts">
-import { mdiFileSync } from '@mdi/js';
-import { onBeforeUnmount, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
-import { api, MediaType, type Playlist } from '../plugins/api';
-import { store } from '../plugins/store';
+import { mdiFileSync } from "@mdi/js";
+import { onBeforeUnmount, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import ItemsListing from "../components/ItemsListing.vue";
+import api from "../plugins/api";
+import { MediaType, type Playlist } from "../plugins/api/interfaces";
+import { store } from "../plugins/store";
 
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
 
-store.topBarTitle = t('playlists');
 store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
+{
+    label: 'sync_now',
+    labelArgs: [t('playlists')],
     action: () => {
-      api.startSync(MediaType.ALBUM);
+      api.startSync([MediaType.PLAYLIST]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {
@@ -44,6 +44,6 @@ const loadItems = async function (
   inLibraryOnly = true
 ) {
   const library = inLibraryOnly || undefined;
-  return await api.getPlaylists(offset, limit, sort, library, search);
+  return await api.getPlaylists(library, search, limit, offset, sort);
 };
 </script>

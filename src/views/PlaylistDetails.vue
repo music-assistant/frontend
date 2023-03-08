@@ -3,11 +3,8 @@
     <InfoHeader :item="itemDetails" />
 
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab
-        :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
-        value="tracks"
-      >
-        {{ $t('playlist_tracks') }}
+      <v-tab value="tracks">
+        {{ $t("playlist_tracks") }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -20,61 +17,62 @@
       :show-track-number="false"
       :load-data="loadPlaylistTracks"
       :sort-keys="['position', 'sort_name', 'sort_artist', 'sort_album']"
+      :update-available="updateAvailable"
+      @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
   </section>
 </template>
 
 <script setup lang="ts">
-import ItemsListing from '../components/ItemsListing.vue';
-import { filteredItems } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
+import ItemsListing from "../components/ItemsListing.vue";
+import { filteredItems } from "../components/ItemsListing.vue";
+import InfoHeader from "../components/InfoHeader.vue";
 import {
-  MassEventType,
+  EventType,
   type Playlist,
-  type MassEvent,
+  type EventMessage,
   type MediaItemType,
-} from '../plugins/api';
-import { api, ProviderType } from '../plugins/api';
-import { watchEffect, ref, onMounted, onBeforeUnmount } from 'vue';
+} from "../plugins/api/interfaces";
+import { api } from "../plugins/api";
+import { watch, ref, onMounted, onBeforeUnmount } from "vue";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref('');
-
+const activeTab = ref("");
+const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
 
 const loadItemDetails = async function () {
-  itemDetails.value = await api.getPlaylist(
-    props.provider as ProviderType,
-    props.itemId
-  );
-  activeTab.value = 'tracks';
+  itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
+  activeTab.value = "tracks";
 };
 
-watchEffect(() => {
-  // load info
-  loadItemDetails();
-});
+watch(
+  () => props.itemId,
+  (val) => {
+    if (val) loadItemDetails();
+  }, { immediate: true }
+);
 
 onMounted(() => {
-  //reload if/when item updates
+
   const unsub = api.subscribe_multi(
-    [MassEventType.MEDIA_ITEM_ADDED, MassEventType.MEDIA_ITEM_UPDATED],
-    (evt: MassEvent) => {
-      // refresh info if we receive an update for this item
+    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED],
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        loadItemDetails();
+        updateAvailable.value = true;
       } else {
-        for (const provId of updatedItem.provider_ids) {
+        for (const provId of updatedItem.provider_mappings) {
           if (
-            provId.prov_type == itemDetails.value?.provider &&
+            provId.provider_domain == itemDetails.value?.provider &&
             provId.item_id == itemDetails.value?.item_id
           ) {
-            loadItemDetails();
+            updateAvailable.value = true;
             break;
           }
         }
@@ -92,8 +90,8 @@ const loadPlaylistTracks = async function (
   inLibraryOnly = true
 ) {
   const playlistTracks = await api.getPlaylistTracks(
-    props.provider as ProviderType,
-    props.itemId
+    props.itemId,
+    props.provider
   );
   return filteredItems(
     playlistTracks,

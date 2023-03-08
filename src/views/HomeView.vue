@@ -8,10 +8,9 @@
         margin-bottom: 20px;
       "
     >
-      <GlobalSearch />
-      <!-- search artists -->
+      <!-- recent artists -->
       <!-- <v-card
-        v-if="searchArtists.length > 0"
+        v-if="recentArtists.length > 0"
         style="margin-top: 20px; margin-bottom: 20px"
       >
         <v-card-title style="margin-left: 15px">{{
@@ -21,10 +20,10 @@
           show-arrows="always"
           style="margin-left: 5px; margin-right: 5px; margin-bottom: 10px"
         >
-          <v-slide-group-item v-for="item in searchArtists" :key="item.uri">
+          <v-slide-group-item v-for="item in recentArtists" :key="item.uri">
             <PanelviewItem
               :item="item"
-              :size="thumbSize"
+              :size="150"
               :is-selected="false"
               :show-checkboxes="false"
               style="margin: 5px"
@@ -46,7 +45,6 @@
               @click="$router.push(card.path)"
             >
               <v-list-item two-line>
-                <v-list-item-content>
                   <v-btn variant="plain" icon height="80">
                     <v-icon
                       :icon="card.icon"
@@ -57,7 +55,6 @@
                   <div class="mb-4">
                     {{ $t(card.label) }}
                   </div>
-                </v-list-item-content>
               </v-list-item>
             </v-card>
           </v-col>
@@ -68,74 +65,49 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiAccountMusic,
-  mdiAlbum,
-  mdiFileMusic,
-  mdiPlaylistMusic,
-  mdiRadio,
-  mdiFolder,
-  mdiFileSync,
-  mdiCached,
-} from '@mdi/js';
-import { ref, onBeforeUnmount } from 'vue';
-import { store } from '../plugins/store';
-import GlobalSearch from '../components/GlobalSearch.vue';
+import { ref, onMounted } from 'vue';
 
 import { api } from '@/plugins/api';
+import { Artist } from '@/plugins/api/interfaces';
 
-store.topBarTitle = store.defaultTopBarTitle;
-store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
-    action: () => {
-      api.startSync(undefined, undefined);
-    },
-    icon: mdiFileSync,
-  },
-  {
-    label: 'sync_full',
-    labelArgs: [],
-    action: () => {
-      api.startSync(undefined, undefined, true);
-    },
-    icon: mdiCached,
-  },
-];
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
+import PanelviewItem from "@/components/PanelviewItem.vue";
+
+const recentArtists = ref<Artist[]>([]);
+
+onMounted(async () => {
+  const result = await api.getAlbumArtists(undefined, undefined, 25, 0, "timestamp");
+  recentArtists.value = result.items as Artist[];
 });
 
 const cards = ref([
   {
     label: 'artists',
-    icon: mdiAccountMusic,
+    icon: 'mdi-account-music',
     path: '/artists',
   },
   {
     label: 'albums',
-    icon: mdiAlbum,
+    icon: 'mdi-album',
     path: '/albums',
   },
   {
     label: 'tracks',
-    icon: mdiFileMusic,
+    icon: 'mdi-file-music',
     path: '/tracks',
   },
   {
     label: 'radios',
-    icon: mdiRadio,
+    icon: 'mdi-radio',
     path: '/radios',
   },
   {
     label: 'playlists',
-    icon: mdiPlaylistMusic,
+    icon: 'mdi-playlist-music',
     path: '/playlists',
   },
   {
     label: 'browse',
-    icon: mdiFolder,
+    icon: 'mdi-folder',
     path: '/browse',
   },
 ]);

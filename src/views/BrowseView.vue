@@ -32,21 +32,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import { useDisplay } from 'vuetify';
-import { useI18n } from 'vue-i18n';
-import { RecycleScroller } from 'vue-virtual-scroller';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-import ListviewItem from '../components/ListviewItem.vue';
+import { onMounted, ref, watch } from "vue";
+import { useDisplay } from "vuetify";
+import { useI18n } from "vue-i18n";
+import { RecycleScroller } from "vue-virtual-scroller";
+import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
+import ListviewItem from "../components/ListviewItem.vue";
 import {
-  api,
   MediaType,
   type BrowseFolder,
   type MediaItemType,
-} from '../plugins/api';
-import { store } from '../plugins/store';
-import { useRouter } from 'vue-router';
-import { getBrowseFolderName } from '../utils';
+} from "../plugins/api/interfaces";
+import { store } from "../plugins/store";
+import { useRouter } from "vue-router";
+import { getBrowseFolderName } from "../utils";
+import api from "../plugins/api";
 
 export interface Props {
   path?: string;
@@ -65,13 +65,10 @@ const loadData = async function () {
   browseItem.value = await api.browse(props.path);
 
   // set header title to browse title
-  if (!browseItem.value || !props.path) store.topBarTitle = t('browse');
-  else {
-    if (mobile.value)
-      store.topBarTitle = getBrowseFolderName(browseItem.value, t);
-    else
-      store.topBarTitle =
-        t('browse') + ' | ' + getBrowseFolderName(browseItem.value, t);
+  if (!browseItem.value || !props.path) {
+    store.topBarTitle = undefined;
+  } else {
+    store.topBarTitle = getBrowseFolderName(browseItem.value, t);
   }
   loading.value = false;
 };
@@ -90,13 +87,13 @@ watch(
 const onClick = function (mediaItem: MediaItemType) {
   if (mediaItem.media_type === MediaType.FOLDER) {
     router.push({
-      name: 'browse',
-      params: { path: mediaItem.path },
+      name: "browse",
+      query: { path: (mediaItem as BrowseFolder).path },
     });
   } else {
     router.push({
       name: mediaItem.media_type,
-      params: { item_id: mediaItem.item_id, provider: mediaItem.provider },
+      query: { itemId: mediaItem.item_id, provider: mediaItem.provider },
     });
   }
 };

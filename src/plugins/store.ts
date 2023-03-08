@@ -1,4 +1,4 @@
-import type { Player } from './api';
+import type { Player } from './api/interfaces';
 import { reactive } from 'vue';
 import type { LocationQuery, RouteParams, RouteMeta } from 'vue-router';
 
@@ -10,9 +10,6 @@ interface Store {
   showPlayersMenu: boolean;
   darkTheme: boolean;
   topBarTitle?: string;
-  topBarColor: string;
-  topBarTextColor: string;
-  defaultTopBarTitle: string;
   topBarContextMenuItems: ContextMenuItem[];
   blockGlobalPlayMenu: boolean;
   alwaysShowMenuButton: boolean;
@@ -20,6 +17,7 @@ interface Store {
   apiBaseUrl: string;
   prevRoutes: Array<{
     name: string;
+    path: string;
     params: RouteParams;
     query: LocationQuery;
     meta: RouteMeta;
@@ -31,9 +29,6 @@ export const store: Store = reactive({
   isInStandaloneMode: false,
   showPlayersMenu: false,
   darkTheme: false,
-  topBarColor: '#424242',
-  topBarTextColor: '#ffffff',
-  defaultTopBarTitle: 'Music Assistant',
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,
   alwaysShowMenuButton: false,

@@ -18,14 +18,14 @@
         :model-value="isSelected"
         @click.stop
         @update:model-value="
-          (x) => {
-            emit('select', item, x);
-          }
-        "
+        (x: boolean) => {
+          emit('select', item, x);
+        }
+      "
       />
     </div>
     <div
-      v-if="isHiRes"
+      v-if="HiResDetails"
       class="hiresicon"
       :style="
         $vuetify.theme.current.dark
@@ -48,46 +48,47 @@
             "
           />
         </template>
-        <span>{{ isHiRes }}</span>
+        <span>{{ HiResDetails }}</span>
       </v-tooltip>
     </div>
 
     <v-list-item two-line style="padding-left: 8px; padding-right: 8px">
-      <v-list-item-content>
-        <v-list-item-text>
-          <p
-            class="font-weight-bold line-clamp-1"
-            style="color: primary; margin-top: 8px; margin-bottom: 8px"
-          >
-            {{ item.name }}
-          </p>
-        </v-list-item-text>
-        <v-list-item-subtitle
-          v-if="'artists' in item && item.artists"
-          class="line-clamp-2"
-          style="margin-bottom: 8px"
-          >{{ getArtistsString(item.artists) }}</v-list-item-subtitle
+      <div>
+        <p
+          class="font-weight-bold line-clamp-1"
+          style="color: primary; margin-top: 8px; margin-bottom: 8px"
         >
-        <v-list-item-subtitle
-          v-else-if="'owner' in item && item.owner"
-          class="line-clamp-2"
-          style="margin-bottom: 8px"
-          >{{ item.owner }}</v-list-item-subtitle
-        >
-      </v-list-item-content>
+          {{ item.name }}
+        </p>
+      </div>
+      <v-list-item-subtitle
+        v-if="'artists' in item && item.artists"
+        class="line-clamp-2"
+        style="margin-bottom: 8px"
+        >{{ getArtistsString(item.artists) }}</v-list-item-subtitle
+      >
+      <v-list-item-subtitle
+        v-else-if="'owner' in item && item.owner"
+        class="line-clamp-2"
+        style="margin-bottom: 8px"
+        >{{ item.owner }}</v-list-item-subtitle
+      >
     </v-list-item>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import MediaItemThumb from './MediaItemThumb.vue';
+import { computed } from "vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
 
-import { iconHiRes } from './ProviderIcons.vue';
+import { iconHiRes } from "./ProviderIcons.vue";
 
-import type { MediaItem, MediaItemType } from '../plugins/api';
-import { MediaQuality } from '../plugins/api';
-import { getArtistsString } from '../utils';
+import {
+  ContentType,
+  type MediaItem,
+  type MediaItemType,
+} from "../plugins/api/interfaces";
+import { getArtistsString } from "../utils";
 
 // properties
 export interface Props {
@@ -102,32 +103,29 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
-const isHiRes = computed(() => {
-  for (const prov of props.item.provider_ids) {
-    if (prov.quality == undefined) continue;
-    if (prov.quality >= MediaQuality.LOSSLESS_HI_RES_1) {
-      if (prov.details) {
-        return prov.details;
-      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_1) {
-        return '44.1/48khz 24 bits';
-      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_2) {
-        return '88.2/96khz 24 bits';
-      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_3) {
-        return '176/192khz 24 bits';
-      } else {
-        return '+192kHz 24 bits';
-      }
+const HiResDetails = computed(() => {
+  for (const prov of props.item.provider_mappings) {
+    if (prov.content_type == undefined) continue;
+    if (
+      !(
+        prov.content_type in
+        [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]
+      )
+    )
+      continue;
+    if (prov.sample_rate > 48000 || prov.bit_depth > 16) {
+      return `${prov.sample_rate}kHz ${prov.bit_depth} bits`;
     }
   }
-  return '';
+  return "";
 });
 
 // emits
 
 /* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: 'menu', value: MediaItem): void;
-  (e: 'click', value: MediaItem): void;
-  (e: 'select', value: MediaItem, selected: boolean): void;
+  (e: "menu", value: MediaItem): void;
+  (e: "click", value: MediaItem): void;
+  (e: "select", value: MediaItem, selected: boolean): void;
 }>();
 </script>

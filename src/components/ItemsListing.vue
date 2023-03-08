@@ -2,79 +2,91 @@
 <template>
   <section>
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar dense flat color="transparent" height="35">
+    <v-toolbar density="compact" variant="flat" color="transparent">
       <v-tooltip location="bottom">
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
             :icon="
               selectedItems.length > 0
-                ? mdiCheckboxMultipleOutline
-                : mdiCheckboxMultipleBlankOutline
+                ? 'mdi-checkbox-multiple-outline'
+                : 'mdi-checkbox-multiple-blank-outline'
             "
             @click="toggleCheckboxes"
+            variant="plain"
           />
           <span v-if="!$vuetify.display.mobile">
             <span
               v-if="!selectedItems.length && totalItems"
               style="cursor: pointer"
               @click="toggleCheckboxes"
-              >{{ $t('items_total', [totalItems]) }}</span
+              >{{ $t("items_total", [totalItems]) }}</span
             >
             <span
               v-else-if="selectedItems.length"
               style="cursor: pointer"
               @click="toggleCheckboxes"
-              >{{ $t('items_selected', [selectedItems.length]) }}</span
+              >{{ $t("items_selected", [selectedItems.length]) }}</span
             >
           </span>
         </template>
-        <span>{{ $t('tooltip.select_items') }}</span>
+        <span>{{ $t("tooltip.select_items") }}</span>
       </v-tooltip>
 
       <v-spacer />
 
-      <v-tooltip location="bottom">
+      <v-tooltip location="bottom" close-on-content-click>
         <template #activator="{ props }">
           <v-btn
             v-if="showLibrary !== false"
             v-bind="props"
             icon
             @click="toggleLibraryFilter"
+            variant="plain"
           >
-            <v-icon :icon="inLibraryOnly ? mdiHeart : mdiHeartOutline" />
+            <v-icon :icon="inLibraryOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
           </v-btn>
         </template>
-        <span>{{ $t('tooltip.filter_library') }}</span>
+        <span>{{ $t("tooltip.filter_library") }}</span>
       </v-tooltip>
 
       <v-tooltip v-if="showAlbumArtistsOnlyFilter" location="bottom">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon @click="toggleAlbumArtistsFilter">
+          <v-btn
+            v-bind="props"
+            icon
+            @click="toggleAlbumArtistsFilter"
+            variant="plain"
+          >
             <v-icon
               :icon="
                 albumArtistsOnlyFilter
-                  ? mdiAccountMusic
-                  : mdiAccountMusicOutline
+                  ? 'mdi-account-music'
+                  : 'mdi-account-music-outline'
               "
             />
           </v-btn>
         </template>
-        <span>{{ $t('tooltip.album_artist_filter') }}</span>
+        <span>{{ $t("tooltip.album_artist_filter") }}</span>
       </v-tooltip>
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon @click="loadData(true)">
-            <v-badge v-model="newContentAvailable" color="error" dot>
-              <v-icon :icon="mdiRefresh" />
+          <v-btn
+            v-bind="props"
+            icon
+            @click="onRefreshClicked()"
+            variant="plain"
+          >
+            <v-badge :model-value="updateAvailable" color="error" dot>
+              <v-icon icon="mdi-refresh" />
             </v-badge>
           </v-btn>
         </template>
-        <span v-if="newContentAvailable">{{
-          $t('tooltip.refresh_new_content')
+        <span v-if="updateAvailable">{{
+          $t("tooltip.refresh_new_content")
         }}</span>
-        <span v-else>{{ $t('tooltip.refresh') }}</span>
+        <span v-else>{{ $t("tooltip.refresh") }}</span>
       </v-tooltip>
 
       <v-menu
@@ -86,20 +98,20 @@
         <template #activator="{ props: menu }">
           <v-tooltip location="bottom">
             <template #activator="{ props: tooltip }">
-              <v-btn icon v-bind="props">
-                <v-icon v-bind="mergeProps(menu, tooltip)" :icon="mdiSort" />
+              <v-btn icon v-bind="props" variant="plain">
+                <v-icon v-bind="mergeProps(menu, tooltip)" icon="mdi-sort" />
               </v-btn>
             </template>
-            <span>{{ $t('tooltip.sort_options') }}</span>
+            <span>{{ $t("tooltip.sort_options") }}</span>
           </v-tooltip>
         </template>
         <v-card>
           <v-list>
             <div v-for="key of sortKeys" :key="key">
               <v-list-item @click="changeSort(key)">
-                <v-list-item-title>{{ $t('sort.' + key) }}</v-list-item-title>
+                <v-list-item-title>{{ $t("sort." + key) }}</v-list-item-title>
                 <template #append>
-                  <v-icon v-if="sortBy == key" :icon="mdiCheck" />
+                  <v-icon v-if="sortBy == key" icon="mdi-check" />
                 </template>
               </v-list-item>
               <v-divider />
@@ -110,22 +122,23 @@
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon @click="toggleSearch()">
-            <v-icon :icon="mdiMagnify" />
+          <v-btn v-bind="props" icon @click="toggleSearch()" variant="plain">
+            <v-icon icon="mdi-magnify" />
           </v-btn>
         </template>
-        <span>{{ $t('tooltip.search') }}</span>
+        <span>{{ $t("tooltip.search") }}</span>
       </v-tooltip>
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
-            :icon="viewMode == 'panel' ? mdiViewList : mdiGrid"
+            :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
             @click="toggleViewMode()"
+            variant="plain"
           />
         </template>
-        <span>{{ $t('tooltip.toggle_view_mode') }}</span>
+        <span>{{ $t("tooltip.toggle_view_mode") }}</span>
       </v-tooltip>
     </v-toolbar>
     <MediaItemContextMenu
@@ -140,7 +153,7 @@
       id="searchInput"
       v-model="search"
       clearable
-      :prepend-inner-icon="mdiMagnify"
+      prepend-inner-icon="mdi-magnify"
       :label="$t('search')"
       hide-details
       variant="filled"
@@ -219,25 +232,26 @@
         <v-alert
           v-if="!loading && items.length == 0 && (search || inLibraryOnly)"
           type="info"
+          color="grey"
         >
-          {{ $t('no_content_filter')
+          {{ $t("no_content_filter")
           }}<v-btn
             v-if="search"
             style="margin-top: 15px"
             @click="redirectSearch"
           >
-            {{ $t('try_global_search') }}
+            {{ $t("try_global_search") }}
           </v-btn>
         </v-alert>
         <v-alert v-else-if="!loading && items.length == 0" type="info">
-          {{ $t('no_content') }}
+          {{ $t("no_content") }}
         </v-alert>
       </div>
       <v-snackbar :model-value="selectedItems.length > 1">
-        <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
+        <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
           <v-btn color="primary" variant="text" @click="showContextMenu = true">
-            {{ $t('actions') }}
+            {{ $t("actions") }}
           </v-btn>
         </template>
       </v-snackbar>
@@ -247,20 +261,6 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import {
-  mdiMagnify,
-  mdiSort,
-  mdiGrid,
-  mdiViewList,
-  mdiCheck,
-  mdiHeart,
-  mdiHeartOutline,
-  mdiRefresh,
-  mdiCheckboxMultipleOutline,
-  mdiCheckboxMultipleBlankOutline,
-  mdiAccountMusic,
-  mdiAccountMusicOutline,
-} from '@mdi/js';
 
 import {
   ref,
@@ -269,25 +269,25 @@ import {
   onMounted,
   watch,
   mergeProps,
-} from 'vue';
+} from "vue";
 import {
-  MassEventType,
+  EventType,
   type Album,
-  type MassEvent,
+  type EventMessage,
   type MediaItemType,
   type PagedItems,
   type Track,
-} from '../plugins/api';
-import { RecycleScroller } from 'vue-virtual-scroller';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-import { store } from '../plugins/store';
-import ListviewItem from './ListviewItem.vue';
-import PanelviewItem from './PanelviewItem.vue';
-import MediaItemContextMenu from './MediaItemContextMenu.vue';
-import { useRouter } from 'vue-router';
-import { api } from '../plugins/api';
-import InfiniteLoading from 'v3-infinite-loading';
-import 'v3-infinite-loading/lib/style.css';
+} from "../plugins/api/interfaces";
+import { RecycleScroller } from "vue-virtual-scroller";
+import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
+import { store } from "../plugins/store";
+import ListviewItem from "./ListviewItem.vue";
+import PanelviewItem from "./PanelviewItem.vue";
+import MediaItemContextMenu from "./MediaItemContextMenu.vue";
+import { useRouter } from "vue-router";
+import { api } from "../plugins/api";
+import InfiniteLoading from "v3-infinite-loading";
+import "v3-infinite-loading/lib/style.css";
 
 // properties
 export interface Props {
@@ -300,6 +300,7 @@ export interface Props {
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
+  updateAvailable?: boolean;
   loadData: (
     offset: number,
     limit: number,
@@ -309,7 +310,7 @@ export interface Props {
   ) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ['sort_name', 'timestamp DESC'],
+  sortKeys: () => ["sort_name", "timestamp DESC"],
   showTrackNumber: true,
   showProviders: Object.keys(api.providers).length > 1,
   showMenu: true,
@@ -324,9 +325,9 @@ const defaultLimit = 100;
 const router = useRouter();
 
 // local refs
-const viewMode = ref('list');
-const search = ref('');
-const sortBy = ref<string>('sort_name');
+const viewMode = ref("list");
+const search = ref("");
+const sortBy = ref<string>("sort_name");
 const showSortMenu = ref(false);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
@@ -365,7 +366,8 @@ const panelViewItemResponsive = function (displaySize: number) {
 };
 
 const emit = defineEmits<{
-  (e: 'toggleAlbumArtistsOnly', value: boolean): void;
+  (e: "toggleAlbumArtistsOnly", value: boolean): void;
+  (e: "refreshClicked"): void;
 }>();
 
 // methods
@@ -374,32 +376,32 @@ const toggleSearch = function () {
   else {
     showSearch.value = true;
     nextTick(() => {
-      document.getElementById('searchInput')?.focus();
+      document.getElementById("searchInput")?.focus();
     });
   }
 };
 
 const toggleViewMode = function () {
-  if (viewMode.value === 'panel') viewMode.value = 'list';
-  else viewMode.value = 'panel';
+  if (viewMode.value === "panel") viewMode.value = "list";
+  else viewMode.value = "panel";
   localStorage.setItem(`viewMode.${props.itemtype}`, viewMode.value);
 };
 
 const toggleLibraryFilter = function () {
   inLibraryOnly.value = !inLibraryOnly.value;
-  const inLibraryOnlyStr = inLibraryOnly.value ? 'true' : 'false';
+  const inLibraryOnlyStr = inLibraryOnly.value ? "true" : "false";
   localStorage.setItem(`libraryFilter.${props.itemtype}`, inLibraryOnlyStr);
   loadData(true);
 };
 
 const toggleAlbumArtistsFilter = function () {
   albumArtistsOnlyFilter.value = !albumArtistsOnlyFilter.value;
-  const albumArtistsOnlyStr = albumArtistsOnlyFilter.value ? 'true' : 'false';
+  const albumArtistsOnlyStr = albumArtistsOnlyFilter.value ? "true" : "false";
   localStorage.setItem(
     `albumArtistsFilter.${props.itemtype}`,
     albumArtistsOnlyStr
   );
-  emit('toggleAlbumArtistsOnly', albumArtistsOnlyFilter.value);
+  emit("toggleAlbumArtistsOnly", albumArtistsOnlyFilter.value);
   loadData(true);
 };
 
@@ -443,13 +445,18 @@ const onMenu = function (item: MediaItemType) {
   showContextMenu.value = true;
 };
 
+const onRefreshClicked = function () {
+  loadData(true);
+  emit("refreshClicked");
+};
+
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
-  const forceProviderVersion = props.itemtype.includes('versions').toString();
+  const forceProviderVersion = props.itemtype.includes("versions").toString();
 
   if (
-    ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
-    forceProviderVersion == 'true' ||
+    ["artist", "album", "playlist"].includes(mediaItem.media_type) ||
+    forceProviderVersion == "true" ||
     !store.selectedPlayer?.available
   ) {
     router.push({
@@ -491,8 +498,8 @@ const loadNextPage = function ($state: any) {
 };
 
 const redirectSearch = function () {
-  localStorage.setItem('globalsearch', search.value);
-  router.push({ name: 'home' });
+  localStorage.setItem("globalsearch", search.value);
+  router.push({ name: "home" });
 };
 
 // watchers
@@ -515,7 +522,7 @@ const loadData = async function (clear = false, limit = defaultLimit) {
     offset.value,
     limit,
     sortBy.value,
-    search.value,
+    search.value || "",
     inLibraryOnly.value
   );
   if (offset.value) {
@@ -534,18 +541,18 @@ const loadData = async function (clear = false, limit = defaultLimit) {
 onMounted(() => {
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
-  if (savedViewMode) {
+  if (savedViewMode && savedViewMode !== "null") {
     viewMode.value = savedViewMode;
-  } else if (props.itemtype == 'artists') {
-    viewMode.value = 'panel';
-  } else if (props.itemtype == 'albums') {
-    viewMode.value = 'panel';
+  } else if (props.itemtype == "artists") {
+    viewMode.value = "panel";
+  } else if (props.itemtype == "albums") {
+    viewMode.value = "panel";
   } else {
-    viewMode.value = 'list';
+    viewMode.value = "list";
   }
   // get stored/default sortBy for this itemtype
   const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
-  if (savedSortBy) {
+  if (savedSortBy && savedSortBy !== "null") {
     sortBy.value = savedSortBy;
   } else {
     sortBy.value = props.sortKeys[0];
@@ -556,7 +563,7 @@ onMounted(() => {
     const savedInLibraryOnlyStr = localStorage.getItem(
       `libraryFilter.${props.itemtype}`
     );
-    if (savedInLibraryOnlyStr && savedInLibraryOnlyStr == 'true') {
+    if (savedInLibraryOnlyStr && savedInLibraryOnlyStr == "true") {
       inLibraryOnly.value = true;
     }
   }
@@ -566,16 +573,18 @@ onMounted(() => {
     const albumArtistsOnlyStr = localStorage.getItem(
       `albumArtistsFilter.${props.itemtype}`
     );
-    if (albumArtistsOnlyStr && albumArtistsOnlyStr == 'true') {
+    if (albumArtistsOnlyStr && albumArtistsOnlyStr == "true") {
       albumArtistsOnlyFilter.value = true;
-      emit('toggleAlbumArtistsOnly', albumArtistsOnlyFilter.value);
+      emit("toggleAlbumArtistsOnly", albumArtistsOnlyFilter.value);
     }
   }
   // get stored searchquery
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
   const savedSearch = localStorage.getItem(storKey);
-  if (savedSearch) {
+  
+  if (savedSearch && savedSearch !== "null") {
+    console.log("savedSearch", savedSearch)
     search.value = savedSearch;
   }
   loadData(true);
@@ -583,49 +592,44 @@ onMounted(() => {
 
 onMounted(() => {
   //reload if/when parent item updates
-  const unsub = api.subscribe_multi(
-    [
-      MassEventType.MEDIA_ITEM_ADDED,
-      MassEventType.MEDIA_ITEM_UPDATED,
-      MassEventType.MEDIA_ITEM_DELETED,
-    ],
-    (evt: MassEvent) => {
-      if (evt.type == MassEventType.MEDIA_ITEM_ADDED) {
-        if (props.itemtype.includes((evt.data as MediaItemType).media_type)) {
-          // signal that there is new content
-          newContentAvailable.value = true;
-        }
-      } else if (evt.type == MassEventType.MEDIA_ITEM_DELETED) {
-        items.value = items.value.filter((x) => x.uri != evt.object_id);
-      } else if (evt.type == MassEventType.MEDIA_ITEM_UPDATED) {
-        // update listing if relevant item changes
-        const updatedItem = evt.data as MediaItemType;
-        items.value = items.value.map((x) =>
-          x.uri == updatedItem.uri ? updatedItem : x
-        );
-      }
-    }
-  );
-  onBeforeUnmount(unsub);
+  // const unsub = api.subscribe_multi(
+  //   [
+  //     EventType.MEDIA_ITEM_ADDED,
+  //     EventType.MEDIA_ITEM_UPDATED,
+  //     EventType.MEDIA_ITEM_DELETED,
+  //   ],
+  //   (evt: EventMessage) => {
+  //     if (evt.event == EventType.MEDIA_ITEM_DELETED) {
+  //       items.value = items.value.filter((x) => x.uri != evt.object_id);
+  //     } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
+  //       // update listing if relevant item changes
+  //       const updatedItem = evt.data as MediaItemType;
+  //       items.value = items.value.map((x) =>
+  //         x.uri == updatedItem.uri ? updatedItem : x
+  //       );
+  //     }
+  //   }
+  // );
+  // onBeforeUnmount(unsub);
 });
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (showContextMenu.value) return;
-  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+  if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = items.value;
-  } else if (!searchHasFocus.value && e.key == 'Backspace') {
+  } else if (!searchHasFocus.value && e.key == "Backspace") {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
     search.value += e.key;
     showSearch.value = true;
   }
 };
-document.addEventListener('keydown', keyListener);
+document.addEventListener("keydown", keyListener);
 
 onBeforeUnmount(() => {
-  document.removeEventListener('keydown', keyListener);
+  document.removeEventListener("keydown", keyListener);
 });
 </script>
 
@@ -641,10 +645,6 @@ export const filteredItems = function (
 ) {
   let result = [];
 
-  // console.log(
-  //   `filteredItems items: ${items.length} - offset: ${offset} - limit: ${limit} - sortBy: ${sortBy} - search: ${search} - inLibraryOnly: ${inLibraryOnly}`
-  // );
-
   // search
   if (search) {
     const searchStr = search.toLowerCase();
@@ -652,17 +652,17 @@ export const filteredItems = function (
       if (item.name.toLowerCase().includes(searchStr)) {
         result.push(item);
       } else if (
-        'artist' in item &&
+        "artist" in item &&
         item.artist?.name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
       } else if (
-        'album' in item &&
+        "album" in item &&
         item.album?.name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
       } else if (
-        'artists' in item &&
+        "artists" in item &&
         item.artists &&
         item.artists[0].name.toLowerCase().includes(searchStr)
       ) {
@@ -673,22 +673,22 @@ export const filteredItems = function (
     result = items;
   }
   // sort
-  if (sortBy == 'sort_name') {
+  if (sortBy == "sort_name") {
     result.sort((a, b) =>
       (a.sort_name || a.name).localeCompare(b.sort_name || b.name)
     );
   }
-  if (sortBy == 'sort_album') {
+  if (sortBy == "sort_album") {
     result.sort((a, b) =>
       (a as Track).album?.name.localeCompare((b as Track).album?.name)
     );
   }
-  if (sortBy == 'sort_artist') {
+  if (sortBy == "sort_artist") {
     result.sort((a, b) =>
       (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name)
     );
   }
-  if (sortBy == 'track_number') {
+  if (sortBy == "track_number") {
     result.sort(
       (a, b) =>
         ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
@@ -698,25 +698,25 @@ export const filteredItems = function (
         ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
     );
   }
-  if (sortBy == 'position') {
+  if (sortBy == "position") {
     result.sort(
       (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0)
     );
   }
-  if (sortBy == 'year') {
+  if (sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }
-  if (sortBy == 'timestamp DESC') {
+  if (sortBy == "timestamp DESC") {
     result.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }
 
-  if (sortBy == 'duration') {
+  if (sortBy == "duration") {
     result.sort(
       (a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0)
     );
   }
 
-  if (sortBy == 'provider') {
+  if (sortBy == "provider") {
     result.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 

@@ -14,12 +14,13 @@
 </template>
 
 <script setup lang="ts">
-import { mdiFileSync } from '@mdi/js';
-import { onBeforeUnmount, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
-import { api, MediaType, type Artist } from '../plugins/api';
-import { store } from '../plugins/store';
+import { mdiFileSync } from "@mdi/js";
+import { onBeforeUnmount, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import ItemsListing from "../components/ItemsListing.vue";
+import api from "../plugins/api";
+import { MediaType, type Artist } from "../plugins/api/interfaces";
+import { store } from "../plugins/store";
 
 const { t } = useI18n();
 const items = ref<Artist[]>([]);
@@ -33,25 +34,23 @@ const loadItems = async function (
   inLibraryOnly = true
 ) {
   const library = inLibraryOnly || undefined;
-  return await api.getArtists(
-    offset,
-    limit,
-    sort,
-    library,
-    search,
-    albumArtistsOnly.value
-  );
+  if (albumArtistsOnly.value) {
+    return await api.getAlbumArtists(library, search, limit, offset, sort);
+  } else {
+    const items = await api.getArtists(library, search, limit, offset, sort);
+    console.log("items", items)
+    return items
+  }
 };
 
-store.topBarTitle = t('artists');
 store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
+{
+    label: 'sync_now',
+    labelArgs: [t('artists')],
     action: () => {
-      api.startSync(MediaType.ARTIST);
+      api.startSync([MediaType.ARTIST]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {

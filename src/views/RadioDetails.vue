@@ -2,11 +2,8 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab
-        :class="activeTab == 'versions' ? 'active-tab' : 'inactive-tab'"
-        value="details"
-      >
-        {{ $t('track_versions') }}
+      <v-tab value="details">
+        {{ $t("track_versions") }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -25,34 +22,34 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
-import { ref } from 'vue';
-import type { ProviderType, Radio } from '../plugins/api';
-import { api } from '../plugins/api';
-import { watchEffect } from 'vue';
+import ItemsListing, { filteredItems } from "../components/ItemsListing.vue";
+import InfoHeader from "../components/InfoHeader.vue";
+import { ref } from "vue";
+import type { Radio } from "../plugins/api/interfaces";
+import { api } from "../plugins/api";
+import { watch } from "vue";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref('');
+const activeTab = ref("");
 
 const itemDetails = ref<Radio>();
 
 const loadItemDetails = async function () {
-  itemDetails.value = await api.getRadio(
-    props.provider as ProviderType,
-    props.itemId
-  );
-  activeTab.value = 'versions';
+  itemDetails.value = await api.getRadio(props.itemId, props.provider);
+  activeTab.value = "versions";
 };
 
-watchEffect(() => {
-  // load info
-  loadItemDetails();
-});
+watch(
+  () => props.itemId,
+  (val) => {
+    if (val) loadItemDetails();
+  },
+  { immediate: true }
+);
 
 const loadRadioVersions = async function (
   offset: number,
@@ -62,8 +59,8 @@ const loadRadioVersions = async function (
   inLibraryOnly = true
 ) {
   const radioVersions = await api.getRadioVersions(
-    props.provider as ProviderType,
-    props.itemId
+    props.itemId,
+    props.provider
   );
   return filteredItems(
     radioVersions,

@@ -16,25 +16,25 @@
 </template>
 
 <script setup lang="ts">
-import { mdiFileSync } from '@mdi/js';
-import { onBeforeUnmount, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
-import { api, MediaType, type Track } from '../plugins/api';
-import { store } from '../plugins/store';
+import { mdiFileSync } from "@mdi/js";
+import { onBeforeUnmount, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import ItemsListing from "../components/ItemsListing.vue";
+import api from "../plugins/api";
+import { MediaType, type Track } from "../plugins/api/interfaces";
+import { store } from "../plugins/store";
 
 const { t } = useI18n();
 const items = ref<Track[]>([]);
 
-store.topBarTitle = t('tracks');
 store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
+{
+    label: 'sync_now',
+    labelArgs: [t('tracks')],
     action: () => {
-      api.startSync(MediaType.TRACK);
+      api.startSync([MediaType.TRACK]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {
@@ -49,6 +49,6 @@ const loadItems = async function (
   inLibraryOnly = true
 ) {
   const library = inLibraryOnly || undefined;
-  return await api.getTracks(offset, limit, sort, library, search);
+  return await api.getTracks(library, search, limit, offset, sort);
 };
 </script>

@@ -16,10 +16,10 @@
             :model-value="isSelected"
             @click.stop
             @update:model-value="
-              (x) => {
-                emit('select', item, x);
-              }
-            "
+            (x: boolean) => {
+              emit('select', item, x);
+            }
+          "
           />
         </div>
         <div
@@ -27,7 +27,7 @@
           class="listitem-thumb"
         >
           <v-btn variant="plain" icon>
-            <v-icon :icon="mdiFolder" size="60" style="align: center" />
+            <v-icon icon="mdi-folder" size="60" style="align: center" />
           </v-btn>
         </div>
         <div v-else class="listitem-thumb">
@@ -53,11 +53,11 @@
               v-if="parseBool(item.metadata.explicit || false)"
               v-bind="props"
               class="listitem-action"
-              :icon="mdiAlphaEBox"
+              icon="mdi-alpha-e-box"
               width="35"
             />
           </template>
-          <span>{{ $t('tooltip.explicit') }}</span>
+          <span>{{ $t("tooltip.explicit") }}</span>
         </v-tooltip>
       </template>
 
@@ -66,7 +66,10 @@
         <!-- track: artists(s) + album -->
         <div
           v-if="
-            item.media_type == MediaType.TRACK && item.album && !showTrackNumber
+            item.media_type == MediaType.TRACK &&
+            'album' in item &&
+            item.album &&
+            !showTrackNumber
           "
         >
           {{ getArtistsString(item.artists) }} • {{ item.album.name }}
@@ -75,6 +78,7 @@
         <div
           v-else-if="
             item.media_type == MediaType.TRACK &&
+            'track_number' in item &&
             item.track_number &&
             showTrackNumber
           "
@@ -86,15 +90,27 @@
         <!-- album: albumtype + artists + year -->
         <div
           v-else-if="
-            item.media_type == MediaType.ALBUM && item.artists && item.year
+            item.media_type == MediaType.ALBUM &&
+            'artists' in item &&
+            item.artists &&
+            'year' in item &&
+            item.year &&
+            'album_type' in item
           "
         >
-          {{ $t('album_type.' + item.album_type) }} •
+          {{ $t("album_type." + item.album_type) }} •
           {{ getArtistsString(item.artists) }} • {{ item.year }}
         </div>
         <!-- album: albumtype + artists -->
-        <div v-else-if="item.media_type == MediaType.ALBUM && item.artists">
-          {{ $t('album_type.' + item.album_type) }} •
+        <div
+          v-else-if="
+            item.media_type == MediaType.ALBUM &&
+            'artists' in item &&
+            item.artists &&
+            'album_type' in item
+          "
+        >
+          {{ $t("album_type." + item.album_type) }} •
           {{ getArtistsString(item.artists) }}
         </div>
         <!-- track/album falback: artist present -->
@@ -118,7 +134,7 @@
         <div class="listitem-actions">
           <!-- hi res icon -->
           <v-img
-            v-if="highResDetails"
+            v-if="HiResDetails"
             class="listitem-action"
             :src="iconHiRes"
             width="35"
@@ -129,16 +145,18 @@
             "
           >
             <v-tooltip activator="parent" location="bottom">
-              {{ highResDetails }}
+              {{ HiResDetails }}
             </v-tooltip>
           </v-img>
 
           <!-- provider icons -->
-          <ProviderIcons
+          <provider-icons
             v-if="
-              item.provider_ids && showProviders && !$vuetify.display.mobile
+              item.provider_mappings &&
+              showProviders &&
+              !$vuetify.display.mobile
             "
-            :provider-ids="item.provider_ids"
+            :provider-mappings="item.provider_mappings"
             :height="20"
             class="listitem-actions"
           />
@@ -156,13 +174,13 @@
                   variant="plain"
                   ripple
                   v-bind="props"
-                  :icon="item.in_library ? mdiHeart : mdiHeartOutline"
+                  :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
                   @click="api.toggleLibrary(item)"
                   @click.prevent
                   @click.stop
                 />
               </template>
-              <span>{{ $t('tooltip.library') }}</span>
+              <span>{{ $t("tooltip.library") }}</span>
             </v-tooltip>
           </div>
 
@@ -172,17 +190,17 @@
               <v-icon
                 v-if="
                   parentItem &&
-                  parentItem.provider_ids.find(
+                  parentItem.provider_mappings.find(
                     (x) => x.item_id === item.item_id
                   )
                 "
                 v-bind="props"
                 class="listitem-action"
-                :icon="mdiLinkVariant"
+                icon="mdi-link-variant"
                 size="30"
               />
             </template>
-            <span>{{ $t('tooltip.linked') }}</span>
+            <span>{{ $t("tooltip.linked") }}</span>
           </v-tooltip>
 
           <!-- track duration -->
@@ -190,6 +208,8 @@
             v-if="
               showDuration &&
               item.media_type == MediaType.TRACK &&
+              'duration' in item &&
+              item.duration != undefined &&
               !$vuetify.display.mobile
             "
             class="listitem-action"
@@ -201,7 +221,7 @@
         <v-menu v-if="showDetails" location="bottom end" @click:outside.stop>
           <template #activator="{ props }">
             <v-icon
-              :icon="mdiInformationOutline"
+              icon="mdi-information-outline"
               size="30"
               class="listitem-action"
               style="margin-left: 10px; margin-right: 5px"
@@ -211,7 +231,7 @@
           <v-card class="mx-auto" min-width="300">
             <v-list style="overflow: hidden">
               <span class="text-h5" style="padding: 10px">{{
-                $t('provider_details')
+                $t("provider_details")
               }}</span>
               <v-divider />
               <!-- provider icon + name -->
@@ -225,7 +245,8 @@
                 />
                 {{
                   truncateString(
-                    api.providers[item.provider_ids[0].prov_id].name,
+                    api.providers[item.provider_mappings[0].provider_domain]!
+                      .name,
                     25
                   )
                 }}
@@ -235,7 +256,7 @@
               <div style="height: 50px; display: flex; align-items: center">
                 <v-icon
                   size="40"
-                  :icon="mdiIdentifier"
+                  icon="mdi-identifier"
                   style="margin-left: 10px; padding-right: 10px"
                 />
                 {{ truncateString(item.item_id, 30) }}
@@ -244,17 +265,18 @@
               <!-- link to web location of item (provider share link -->
               <div
                 v-if="
-                  item.provider_ids[0].url && !item.provider.includes('file')
+                  item.provider_mappings[0].url &&
+                  !item.provider.includes('file')
                 "
                 style="height: 50px; display: flex; align-items: center"
               >
                 <v-icon
                   size="40"
-                  :icon="mdiShareOutline"
+                  icon="mdi-share-outline"
                   style="margin-left: 10px; padding-right: 5px"
                 />
-                <a :href="item.provider_ids[0].url" target="_blank">{{
-                  truncateString(item.provider_ids[0].url, 25)
+                <a :href="item.provider_mappings[0].url" target="_blank">{{
+                  truncateString(item.provider_mappings[0].url, 25)
                 }}</a>
               </div>
 
@@ -263,21 +285,23 @@
                 <img
                   height="30"
                   width="50"
-                  :src="getQualityIcon(item.provider_ids[0].quality)"
+                  :src="
+                    getContentTypeIcon(item.provider_mappings[0].content_type)
+                  "
                   :style="
                     $vuetify.theme.current.dark
                       ? 'object-fit: contain;'
                       : 'object-fit: contain;filter: invert(100%);'
                   "
                 />
-                {{ getQualityDesc(item.provider_ids[0]) }}
+                {{ getQualityDesc(item.provider_mappings[0]) }}
               </div>
 
               <!-- track preview -->
               <div v-if="item.media_type == MediaType.TRACK">
                 <div style="height: 50px; display: flex; align-items: center">
                   <v-icon
-                    :icon="mdiHeadphones"
+                    icon="mdi-headphones"
                     size="40"
                     style="margin-left: 10px; padding-right: 15px"
                   />
@@ -306,7 +330,7 @@
         <!-- menu button/icon -->
         <v-btn
           v-if="showMenu"
-          :icon="mdiDotsVertical"
+          icon="mdi-dots-vertical"
           variant="plain"
           style="position: absolute; right: -3px; width: 10px"
           @click.stop="emit('menu', item)"
@@ -318,44 +342,32 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiHeart,
-  mdiHeartOutline,
-  mdiDotsVertical,
-  mdiShareOutline,
-  mdiAlphaEBox,
-  mdiFolder,
-  mdiInformationOutline,
-  mdiHeadphones,
-  mdiIdentifier,
-  mdiLinkVariant,
-} from '@mdi/js';
-import { computed, reactive } from 'vue';
-import { VTooltip } from 'vuetify/components';
-
-import MediaItemThumb from './MediaItemThumb.vue';
-import ProviderIcons from './ProviderIcons.vue';
+import { computed, reactive } from "vue";
+import { VTooltip } from "vuetify/components";
+import ProviderIcons from "./ProviderIcons.vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
 import {
   iconHiRes,
   getProviderIcon,
-  getQualityIcon,
+  getContentTypeIcon,
   getQualityDesc,
-} from './ProviderIcons.vue';
-import type {
-  BrowseFolder,
-  MediaItem,
-  MediaItemType,
-  ProviderType,
-} from '../plugins/api';
-import { api, MediaQuality, MediaType } from '../plugins/api';
+} from "./ProviderIcons.vue";
+import {
+  ContentType,
+  type BrowseFolder,
+  type MediaItem,
+  type MediaItemType,
+} from "../plugins/api/interfaces";
+import { api } from "../plugins/api";
+import { MediaType } from "../plugins/api/interfaces";
 import {
   formatDuration,
   parseBool,
   getArtistsString,
   getBrowseFolderName,
   truncateString,
-} from '../utils';
-import { useI18n } from 'vue-i18n';
+} from "../utils";
+import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -387,33 +399,29 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
-const highResDetails = computed(() => {
-  if (!props.item.provider_ids) return '';
-  for (const prov of props.item.provider_ids) {
-    if (!prov.quality) continue;
-    if (prov.quality >= MediaQuality.LOSSLESS_HI_RES_1) {
-      if (prov.details) {
-        return prov.details;
-      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_1) {
-        return '44.1/48khz 24 bits';
-      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_2) {
-        return '88.2/96khz 24 bits';
-      } else if (prov.quality === MediaQuality.LOSSLESS_HI_RES_3) {
-        return '176/192khz 24 bits';
-      } else {
-        return '+192kHz 24 bits';
-      }
+const HiResDetails = computed(() => {
+  for (const prov of props.item.provider_mappings) {
+    if (prov.content_type == undefined) continue;
+    if (
+      !(
+        prov.content_type in
+        [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]
+      )
+    )
+      continue;
+    if (prov.sample_rate > 48000 || prov.bit_depth > 16) {
+      return `${prov.sample_rate}kHz ${prov.bit_depth} bits`;
     }
   }
-  return '';
+  return "";
 });
 
 // emits
 /* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: 'menu', value: MediaItemType): void;
-  (e: 'click', value: MediaItemType): void;
-  (e: 'select', value: MediaItemType, selected: boolean): void;
+  (e: "menu", value: MediaItemType): void;
+  (e: "click", value: MediaItemType): void;
+  (e: "select", value: MediaItemType, selected: boolean): void;
 }>();
 /* eslint-enable no-unused-vars */
 
@@ -421,17 +429,15 @@ const emit = defineEmits<{
 
 const itemIsAvailable = function (item: MediaItem) {
   if (item.media_type == MediaType.FOLDER) return true;
-  if (!props.item.provider_ids) return true;
-  for (const x of item.provider_ids) {
-    if (x.available && x.prov_id in api.providers) return true;
+  if (!props.item.provider_mappings) return true;
+  for (const x of item.provider_mappings) {
+    if (x.available && api.providers[x.provider_instance]?.available)
+      return true;
   }
   return false;
 };
 
-const fetchPreviewUrl = async function (
-  provider: ProviderType,
-  item_id: string
-) {
+const fetchPreviewUrl = async function (provider: string, item_id: string) {
   const key = `${provider}.${item_id}`;
   if (key in previewUrls) return;
   const url = await api.getTrackPreviewUrl(provider, item_id);

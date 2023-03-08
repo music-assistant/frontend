@@ -91,7 +91,7 @@ coverage
 
 # build
 build
-mass_frontend/*
+music_assistant_frontend/*
 dist/
 
 # yarn

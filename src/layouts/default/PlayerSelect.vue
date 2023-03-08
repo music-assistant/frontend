@@ -7,20 +7,25 @@
     clipped
     temporary
     width="300"
-    style="z-index: 99999"
+    style="z-index: 9999"
   >
+    <!-- heading with Players as title-->
     <v-card-title class="headline">
-      <b>{{ $t('players') }}</b>
+      <b>{{ $t("players") }}</b>
     </v-card-title>
+
+    <!-- close button in the top right (accessibility reasons)-->
     <v-btn
       variant="plain"
-      style="position: absolute; right: 10px; top: 0px"
-      :icon="mdiClose"
+      style="position: absolute; right: -10px; top: 0px"
+      icon="mdi-close"
       dark
       text
       @click="store.showPlayersMenu = !store.showPlayersMenu"
     />
     <v-divider />
+
+    <!-- collapsable player rows-->
     <v-expansion-panels v-model="panelItem" focusable accordion flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"
@@ -36,8 +41,8 @@
               ? 'padding:0;background-color:rgba(50, 115, 220, 0.2);'
               : 'padding:0'
           "
-          :expand-icon="mdiChevronDown"
-          :collapse-icon="mdiChevronUp"
+          expand-icon="mdi-chevron-down"
+          collapse-icon="mdi-chevron-up"
           @click="
             store.selectedPlayer = player;
             scrollToTop(player.player_id);
@@ -47,7 +52,11 @@
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="player.is_group ? mdiSpeakerMultiple : mdiSpeaker"
+                :icon="
+                  player.group_childs.length > 0
+                    ? 'mdi-speaker-multiple'
+                    : 'mdi-speaker'
+                "
                 color="accent"
                 style="
                   padding-left: 0px;
@@ -61,7 +70,7 @@
             </template>
             <template #title>
               <div class="text-subtitle-1">
-                <b>{{ player.group_name.substring(0, 25) }}</b>
+                <b>{{ getPlayerName(player) }}</b>
               </div>
             </template>
             <template #subtitle>
@@ -70,7 +79,7 @@
                 class="text-body-2"
                 style="line-height: 1em"
               >
-                {{ $t('state.' + player.state) }}
+                {{ $t("state." + player.state) }}
               </div>
             </template>
           </v-list-item>
@@ -84,18 +93,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
-import {
-  mdiSpeaker,
-  mdiClose,
-  mdiSpeakerMultiple,
-  mdiChevronUp,
-  mdiChevronDown,
-} from '@mdi/js';
-import type { Player } from '../plugins/api';
-import { store } from '../plugins/store';
-import VolumeControl from './VolumeControl.vue';
-import { api } from '../plugins/api';
+import { computed, getCurrentInstance, onMounted, ref, watch } from "vue";
+import { Player, PlayerType } from "../../plugins/api/interfaces";
+import { store } from "../../plugins/store";
+import VolumeControl from "../../components/VolumeControl.vue";
+import { api } from "../../plugins/api";
+import { getPlayerName } from "@/utils";
 
 const panelItem = ref<number | undefined>(undefined);
 
@@ -104,12 +107,14 @@ const sortedPlayers = computed(() => {
   const res: Player[] = [];
   for (const player_id in api?.players) {
     const player = api?.players[player_id];
-    if (player.is_passive) continue;
+    if (player.synced_to) continue;
     res.push(player);
   }
   return res
     .slice()
-    .sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1
+    );
 });
 
 //watchers
@@ -132,14 +137,17 @@ const scrollToTop = function (playerId: string) {
   lastClicked.value = playerId;
   setTimeout(() => {
     const elmnt = shadowRoot.value?.getElementById(playerId);
-    elmnt?.scrollIntoView({ behavior: 'smooth' });
+    elmnt?.scrollIntoView({ behavior: "smooth" });
   }, 0);
 };
+
+
 </script>
 
 <style>
 .playerrow {
   height: 60px;
+  margin-right: 15px;
 }
 
 div.v-expansion-panel-text__wrapper {
@@ -155,5 +163,16 @@ div.v-expansion-panel--active:not(:first-child),
 }
 div.v-expansion-panel__shadow {
   box-shadow: none;
+}
+/* .v-expansion-panel-title.v-expansion-panel-title__icon {
+  margin-right: 15px;
+} */
+.v-expansion-panel-title__icon {
+  display: inline-flex;
+  margin-bottom: -4px;
+  margin-top: -4px;
+  user-select: none;
+  margin-inline-start: auto;
+  margin-right: 5px;
 }
 </style>

@@ -1,0 +1,99 @@
+/* Various global styles used throughout the app */
+
+  /* active tab */
+  .v-btn.v-slide-group-item--active.v-tab--selected {
+    background: rgb(var(--v-theme-primary));
+    color: rgb(var(--v-theme-on-primary));
+  }
+
+  /* inactive tab */
+  .v-tabs--grow .v-tab {
+    background: rgba(var(--v-theme-primary), 0.3);
+    color: rgb(var(--v-theme-text-color));
+  }
+
+  a {
+    cursor: pointer;
+  }
+  .vertical-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .right {
+    float: right;
+  }
+  
+  .left {
+    float: left;
+  }
+  
+  div.v-navigation-drawer__scrim {
+    opacity: 0.8;
+    background: grey;
+  }
+
+  .padded-overlay .v-overlay__content {
+    padding: 50px;
+  }
+  .v-overlay__scrim {
+    opacity: 65%;
+  }
+  
+  
+  .hiresicon {
+    position: absolute;
+    margin-left: 5px;
+    margin-top: -20px;
+    height: 30px;
+    border-radius: 5px;
+  }
+  
+  .listitem-actions {
+    display: flex;
+    justify-content: end;
+    width: auto;
+    height: 50px;
+    vertical-align: middle;
+    align-items: center;
+    padding: 0px;
+    padding-right: 0px;
+    margin-right: 0px;
+  }
+  .listitem-action {
+    padding-left: 5px;
+  }
+  .listitem-thumb {
+    padding-left: 0px;
+    margin-right: 10px;
+    margin-left: -15px;
+    margin-top: 2px;
+    width: 50px;
+    height: 50px;
+  }
+  .v-card--variant-elevated {
+    box-shadow: none;
+    border-width: var(--ha-card-border-width, 1px);
+    border-style: solid;
+    border-color: var(--ha-card-border-color, var(--divider-color, #e0e0e0));
+  }
+  .line-clamp-1 {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  .line-clamp-2 {
+    white-space: pre-line;
+    overflow: hidden;
+    line-height: 1.5em;
+    height: 3em;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+  }
+  .v-card-text {
+    /* align listitem contextmenu as far right as possible */
+    padding-right: 0;
+  }

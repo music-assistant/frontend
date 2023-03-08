@@ -3,16 +3,14 @@
     <InfoHeader :item="itemDetails" />
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
       <v-tab
-        :class="activeTab == 'tracks' ? 'active-tab' : 'inactive-tab'"
         value="tracks"
       >
-        {{ $t('tracks') }}
+        {{ $t("tracks") }}
       </v-tab>
       <v-tab
-        :class="activeTab == 'versions' ? 'active-tab' : 'inactive-tab'"
         value="versions"
       >
-        {{ $t('album_versions') }}
+        {{ $t("album_versions") }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -24,6 +22,8 @@
       :show-library="true"
       :load-data="loadAlbumTracks"
       :sort-keys="['track_number', 'sort_name', 'duration']"
+      :update-available="updateAvailable"
+      @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
     <ItemsListing
       v-if="activeTab == 'versions'"
@@ -33,23 +33,25 @@
       :show-library="false"
       :load-data="loadAlbumVersions"
       :sort-keys="['provider', 'sort_name', 'year']"
+      :update-available="updateAvailable"
+      @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
   </section>
 </template>
 
 <script setup lang="ts">
-import ItemsListing from '../components/ItemsListing.vue';
-import { filteredItems } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
+import ItemsListing from "../components/ItemsListing.vue";
+import { filteredItems } from "../components/ItemsListing.vue";
+import InfoHeader from "../components/InfoHeader.vue";
 import {
-  MassEventType,
+  EventType,
   type Album,
-  type MassEvent,
+  type EventMessage,
   type MediaItemType,
-} from '../plugins/api';
-import { api, ProviderType } from '../plugins/api';
-import { watchEffect, ref, onMounted, onBeforeUnmount } from 'vue';
-import { parseBool } from '@/utils';
+} from "../plugins/api/interfaces";
+import { api } from "../plugins/api";
+import { ref, onMounted, onBeforeUnmount, watch } from "vue";
+import { parseBool } from "@/utils";
 
 export interface Props {
   itemId: string;
@@ -57,42 +59,46 @@ export interface Props {
   forceProviderVersion?: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref('');
-
+const activeTab = ref("");
+const updateAvailable = ref(false);
 const itemDetails = ref<Album>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(
-    props.provider as ProviderType,
     props.itemId,
-    true,
-    false,
-    parseBool(props.forceProviderVersion || '')
+    props.provider,
+    undefined,
+    undefined,
+    undefined,
+    parseBool(props.forceProviderVersion || "")
   );
-  activeTab.value = 'tracks';
+  activeTab.value = "tracks";
 };
 
-watchEffect(() => {
-  // load info
-  loadItemDetails();
-});
+watch(
+  () => props.itemId,
+  (val) => {
+    if (val) loadItemDetails();
+  }, { immediate: true }
+);
+
 
 onMounted(() => {
   //reload if/when item updates
   const unsub = api.subscribe_multi(
-    [MassEventType.MEDIA_ITEM_ADDED, MassEventType.MEDIA_ITEM_UPDATED],
-    (evt: MassEvent) => {
-      // refresh info if we receive an update for this item
+    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED],
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
-        loadItemDetails();
+        updateAvailable.value = true;
       } else {
-        for (const provId of updatedItem.provider_ids) {
+        for (const provId of updatedItem.provider_mappings) {
           if (
-            provId.prov_type == itemDetails.value?.provider &&
+            provId.provider_domain == itemDetails.value?.provider &&
             provId.item_id == itemDetails.value?.item_id
           ) {
-            loadItemDetails();
+            updateAvailable.value = true;
             break;
           }
         }
@@ -109,10 +115,7 @@ const loadAlbumTracks = async function (
   search?: string,
   inLibraryOnly = true
 ) {
-  const albumTracks = await api.getAlbumTracks(
-    props.provider as ProviderType,
-    props.itemId
-  );
+  const albumTracks = await api.getAlbumTracks(props.itemId, props.provider);
   return filteredItems(albumTracks, offset, limit, sort, search, inLibraryOnly);
 };
 
@@ -124,8 +127,8 @@ const loadAlbumVersions = async function (
   inLibraryOnly = true
 ) {
   const albumVersions = await api.getAlbumVersions(
-    props.provider as ProviderType,
-    props.itemId
+    props.itemId,
+    props.provider
   );
   return filteredItems(
     albumVersions,
@@ -137,3 +140,7 @@ const loadAlbumVersions = async function (
   );
 };
 </script>
+
+<style lang="scss">
+
+</style>

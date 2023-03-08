@@ -11,25 +11,25 @@
 </template>
 
 <script setup lang="ts">
-import { mdiFileSync } from '@mdi/js';
-import { onBeforeUnmount, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
-import { api, MediaType, type Radio } from '../plugins/api';
-import { store } from '../plugins/store';
+import { mdiFileSync } from "@mdi/js";
+import { onBeforeUnmount, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import ItemsListing from "../components/ItemsListing.vue";
+import api from "../plugins/api";
+import { MediaType, type Radio } from "../plugins/api/interfaces";
+import { store } from "../plugins/store";
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
 
-store.topBarTitle = t('radios');
 store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
+{
+    label: 'sync_now',
+    labelArgs: [t('radios')],
     action: () => {
-      api.startSync(MediaType.RADIO);
+      api.startSync([MediaType.RADIO]);
     },
-    icon: mdiFileSync,
+    icon: 'mdi-sync',
   },
 ];
 onBeforeUnmount(() => {
@@ -44,6 +44,6 @@ const loadItems = async function (
   inLibraryOnly = true
 ) {
   const library = inLibraryOnly || undefined;
-  return await api.getRadios(offset, limit, sort, library, search);
+  return await api.getRadios(library, search, limit, offset, sort);
 };
 </script>

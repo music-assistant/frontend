@@ -1,16 +1,21 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import vuetify from 'vite-plugin-vuetify';
+import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { VitePWA } from 'vite-plugin-pwa';
-import path from 'path';
+import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    vue(),
+    vue({ 
+      template: { transformAssetUrls }
+    }),
     vuetify({
       autoImport: true,
+      styles: {
+        configFile: 'src/styles/settings.scss',
+      },
     }),
     VitePWA({
       includeAssets: [
@@ -48,32 +53,8 @@ export default defineConfig({
   define: { 'process.env': {} },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     },
-  },
-  build: {
-    outDir: './mass_frontend',
-    // inject css into lib only works in umd/iife mode
-    // https://github.com/vitejs/vite/issues/1579
-    cssCodeSplit: true,
-    lib: {
-      entry: path.resolve(__dirname, 'src/main.ts'),
-      name: 'MusicAssistant',
-      fileName: (format) => `mass.${format}.js`,
-      formats: ['iife', 'umd'],
-    },
-    rollupOptions: {
-      output: {
-        inlineDynamicImports: true,
-      },
-    },
-  },
-  server: {
-    host: true,
-    open: '/public/index.html',
-  },
-  /* remove the need to specify .vue files https://vitejs.dev/config/#resolve-extensions
-  resolve: {
     extensions: [
       '.js',
       '.json',
@@ -82,7 +63,13 @@ export default defineConfig({
       '.ts',
       '.tsx',
       '.vue',
-    ]
+    ],
   },
-  */
-});
+  server: {
+    port: 3000,
+    host: true,
+  },
+  build: {
+    outDir: './music_assistant_frontend'
+  }
+})
