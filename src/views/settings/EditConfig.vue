@@ -94,8 +94,8 @@
                   "
                   :required="conf_item_value.required"
                   class="align-center"
-                  :max="conf_item_value.range[0]"
-                  :min="conf_item_value.range[1]"
+                  :min="conf_item_value.range[0]"
+                  :max="conf_item_value.range[1]"
                   :step-size="conf_item_value.type == ConfigEntryType.FLOAT ? 0.5 : 1"
                   hide-details
                   style="margin-top:10px;margin-bottom:25px"

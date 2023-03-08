@@ -10,7 +10,6 @@ import { useTheme } from "vuetify";
 const theme = useTheme();
 
 onMounted(() => {
-  
   // enable dark mode based on OS/browser config
   window
     .matchMedia("(prefers-color-scheme: dark)")
@@ -30,11 +29,19 @@ onMounted(() => {
   // Initialize API Connection
   // TODO: retrieve serveraddress through discovery and/or user settings ?
   let serverAddress = "";
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "development") {
+    serverAddress = localStorage.getItem("mass_debug_address") || "";
+    if (!serverAddress) {
+      serverAddress =
+        prompt(
+          "Enter location of the Music Assistant server",
+          window.location.origin.replace("3000", "8095")
+        ) || "";
+      localStorage.setItem("mass_debug_address", serverAddress);
+    }
+  } else {
     const loc = window.location;
     serverAddress = loc.origin + loc.pathname;
-  } else {
-    serverAddress = window.location.origin.replace('3000','8095');
   }
   api.initialize(serverAddress);
 });

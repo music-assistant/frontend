@@ -27,7 +27,6 @@
     />
     <!-- now playing media -->
     <v-list-item
-      v-if="activePlayerQueue?.active && curQueueItem"
       style="
         height: 60px;
         width: 100%;
@@ -40,6 +39,7 @@
       <template #prepend>
         <div class="listitem-thumb">
           <MediaItemThumb
+            v-if="curQueueItem"
             :item="curQueueItem.media_item || curQueueItem"
             :size="50"
             style="cursor: pointer"
@@ -47,13 +47,14 @@
               curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
             "
           />
+          <v-img v-else height="50" :src="iconFallback" style="opacity: 50%;" />
         </div>
       </template>
 
       <!-- title -->
       <template #title>
         <span
-          v-if="curQueueItem.media_item"
+          v-if="curQueueItem && curQueueItem.media_item"
           style="cursor: pointer"
           @click="
             curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
@@ -78,7 +79,7 @@
         <!-- track: artists(s) + album -->
         <div
           v-if="
-            curQueueItem.media_item?.media_type == MediaType.TRACK &&
+            curQueueItem && curQueueItem.media_item?.media_type == MediaType.TRACK &&
             'album' in curQueueItem.media_item &&
             curQueueItem.media_item.album
           "
@@ -93,9 +94,9 @@
         <!-- track/album falback: artist present -->
         <div
           v-else-if="
-            curQueueItem.media_item &&
+            curQueueItem && curQueueItem.media_item &&
             'artists' in curQueueItem.media_item &&
-            curQueueItem.media_item.artists
+            curQueueItem.media_item.artists.length > 0
           "
         >
           {{ curQueueItem.media_item.artists[0].name }}
@@ -105,9 +106,10 @@
           {{ curQueueItem?.streamdetails?.stream_title }}
         </div>
         <!-- other description -->
-        <div v-else-if="curQueueItem.media_item?.metadata.description">
+        <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description">
           {{ curQueueItem.media_item.metadata.description }}
         </div>
+        <div v-else-if="!curQueueItem">{{ activePlayerQueue?.display_name }}</div>
       </template>
       <template #append>
         <div class="listitem-actions">
@@ -164,7 +166,7 @@
                 <div
                   v-if="
                     activePlayerQueue &&
-                    activePlayerQueue.settings.crossfade_duration > 0
+                    activePlayerQueue.crossfade_enabled
                   "
                   style="height: 50px; display: flex; align-items: center"
                 >
@@ -208,7 +210,7 @@
             v-if="
               !$vuetify.display.mobile &&
               streamDetails &&
-              curQueueItem.media_item?.media_type !== MediaType.RADIO
+              curQueueItem && curQueueItem.media_item?.media_type !== MediaType.RADIO
             "
             class="mediadetails-time text-caption"
           >
@@ -220,7 +222,7 @@
 
     <!-- progress bar -->
     <div
-      v-if="activePlayerQueue?.active && curQueueItem"
+      v-if="curQueueItem"
       style="width: 100%; height: 5px; padding-bottom: 20px; margin-top: -10px"
     >
       <v-slider
@@ -229,9 +231,9 @@
         color="primary"
         :min="0"
         :max="curQueueItem.duration"
-        :thumb-size="10"
+        :thumb-size="4"
         style="margin-left: 0; margin-right: 0"
-        :disabled="curQueueItem.media_item?.media_type != MediaType.TRACK"
+        :disabled="!curQueueItem || curQueueItem.media_item?.media_type != MediaType.TRACK"
         @update:model-value="
           api.queueCommandSeek(
             activePlayerQueue?.queue_id || '',
@@ -442,6 +444,7 @@ import {
   getContentTypeIcon,
   iconHiRes,
   getProviderIcon,
+  iconFallback,
 } from "@/components/ProviderIcons.vue";
 
 const router = useRouter();

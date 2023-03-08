@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
@@ -7,3 +8,4 @@ declare module '*.vue' {
 }
 
 declare module 'v3-infinite-loading';
+declare module 'vuetify/lib/util/colors';

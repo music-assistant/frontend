@@ -45,6 +45,7 @@
               <!-- sync task running -->
               <div
                 class="listitem-action"
+                style="margin-right:15px;"
                 v-if="
                   api.syncTasks.value.filter(
                     (x) => x.provider_instance == config.instance_id
@@ -60,7 +61,7 @@
               </div>
 
               <!-- provider disabled -->
-              <div class="listitem-action" v-if="!config.enabled">
+              <div class="listitem-action" style="margin-right:15px;" v-if="!config.enabled">
                 <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
                     <v-icon v-bind="tooltip" color="grey">mdi-cancel</v-icon>
@@ -72,6 +73,7 @@
               <!-- provider has errors -->
               <div
                 class="listitem-action"
+                style="margin-right:15px;"
                 v-else-if="api.providers[config.instance_id]?.last_error"
               >
                 <v-tooltip location="top end" origin="end center">
@@ -89,6 +91,7 @@
               <!-- loading (provider not yet available) -->
               <div
                 class="listitem-action"
+                style="margin-right:15px;"
                 v-else-if="!api.providers[config.instance_id]?.available"
               >
                 <v-tooltip location="top end" origin="end center">
@@ -169,7 +172,8 @@
             size="x-large"
             position="fixed"
             location="bottom right"
-            style="margin-bottom: 100px; margin-right: 15px"
+            elevation="8"
+            style="margin-bottom: 115px; margin-right: 15px;z-index:9999"
             v-bind="props"
           />
         </template>

@@ -69,6 +69,7 @@ const imgData = ref<string>();
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
+  if (!props.item) return '';
   if (theme.current.value.dark)
     return `https://ui-avatars.com/api/?name=${props.item.name}&size=${props.maxSize}&bold=true&background=1d1d1d&color=383838`;
   else

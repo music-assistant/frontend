@@ -8,10 +8,9 @@
         margin-bottom: 20px;
       "
     >
-      <GlobalSearch />
-      <!-- search artists -->
+      <!-- recent artists -->
       <!-- <v-card
-        v-if="searchArtists.length > 0"
+        v-if="recentArtists.length > 0"
         style="margin-top: 20px; margin-bottom: 20px"
       >
         <v-card-title style="margin-left: 15px">{{
@@ -21,10 +20,10 @@
           show-arrows="always"
           style="margin-left: 5px; margin-right: 5px; margin-bottom: 10px"
         >
-          <v-slide-group-item v-for="item in searchArtists" :key="item.uri">
+          <v-slide-group-item v-for="item in recentArtists" :key="item.uri">
             <PanelviewItem
               :item="item"
-              :size="thumbSize"
+              :size="150"
               :is-selected="false"
               :show-checkboxes="false"
               style="margin: 5px"
@@ -66,42 +65,18 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiAccountMusic,
-  mdiAlbum,
-  mdiFileMusic,
-  mdiPlaylistMusic,
-  mdiRadio,
-  mdiFolder,
-  mdiFileSync,
-  mdiCached,
-} from '@mdi/js';
-import { ref, onBeforeUnmount } from 'vue';
-import { store } from '../plugins/store';
-import GlobalSearch from '../components/GlobalSearch.vue';
+import { ref, onMounted } from 'vue';
 
 import { api } from '@/plugins/api';
+import { Artist } from '@/plugins/api/interfaces';
 
-store.topBarContextMenuItems = [
-  {
-    label: 'sync',
-    labelArgs: [],
-    action: () => {
-      api.startSync(undefined, undefined);
-    },
-    icon: mdiFileSync,
-  },
-  {
-    label: 'sync_full',
-    labelArgs: [],
-    action: () => {
-      api.startSync(undefined, undefined);
-    },
-    icon: mdiCached,
-  },
-];
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
+import PanelviewItem from "@/components/PanelviewItem.vue";
+
+const recentArtists = ref<Artist[]>([]);
+
+onMounted(async () => {
+  const result = await api.getAlbumArtists(undefined, undefined, 25, 0, "timestamp");
+  recentArtists.value = result.items as Artist[];
 });
 
 const cards = ref([

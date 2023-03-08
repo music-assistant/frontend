@@ -541,7 +541,7 @@ const loadData = async function (clear = false, limit = defaultLimit) {
 onMounted(() => {
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
-  if (savedViewMode) {
+  if (savedViewMode && savedViewMode !== "null") {
     viewMode.value = savedViewMode;
   } else if (props.itemtype == "artists") {
     viewMode.value = "panel";
@@ -552,7 +552,7 @@ onMounted(() => {
   }
   // get stored/default sortBy for this itemtype
   const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
-  if (savedSortBy) {
+  if (savedSortBy && savedSortBy !== "null") {
     sortBy.value = savedSortBy;
   } else {
     sortBy.value = props.sortKeys[0];
@@ -582,7 +582,9 @@ onMounted(() => {
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
   const savedSearch = localStorage.getItem(storKey);
-  if (savedSearch) {
+  
+  if (savedSearch && savedSearch !== "null") {
+    console.log("savedSearch", savedSearch)
     search.value = savedSearch;
   }
   loadData(true);

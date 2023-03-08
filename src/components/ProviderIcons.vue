@@ -41,7 +41,7 @@ const uniqueProviders = computed(() => {
   if (!props.providerMappings) return [];
   props.providerMappings.forEach(function (prov: ProviderMapping) {
     const domain = prov.provider_domain;
-    if (keys.indexOf(domain) === -1) {
+    if (keys.indexOf(domain) === -1 && prov.provider_instance in api.providers) {
       keys.push(domain);
       output.push(prov);
     }

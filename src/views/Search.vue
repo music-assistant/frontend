@@ -123,9 +123,9 @@ import { MediaType, type MediaItemType } from "../plugins/api/interfaces";
 import { RecycleScroller } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import { store } from "../plugins/store";
-import ListviewItem from "./ListviewItem.vue";
-import PanelviewItem from "./PanelviewItem.vue";
-import MediaItemContextMenu from "./MediaItemContextMenu.vue";
+import ListviewItem from "../components/ListviewItem.vue";
+import PanelviewItem from "../components/PanelviewItem.vue";
+import MediaItemContextMenu from "../components/MediaItemContextMenu.vue";
 import { useRouter } from "vue-router";
 import { api } from "../plugins/api";
 

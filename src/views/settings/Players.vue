@@ -15,10 +15,12 @@
       </v-alert>
       <div>
         <v-list-item
-          v-for="config in playerConfigs"
+          v-for="config in playerConfigs.sort((a, b) =>
+            getPlayerName(a) > getPlayerName(b) ? 1 : -1
+          )"
           :key="config.player_id"
-          :title="config.name || api.players[config.player_id]?.name || config.player_id"
-          :subtitle="api.providers[config.provider].name"
+          :title="getPlayerName(config)"
+          :subtitle="api.providers[config.provider]?.name || config.provider"
           @click="editPlayer(config.player_id)"
         >
           <template v-slot:prepend>
@@ -113,7 +115,6 @@
           </template>
         </v-list-item>
       </div>
-
     </v-card-text>
   </section>
 </template>
@@ -174,6 +175,14 @@ const editPlayer = function (playerId: string) {
   router.push(`/settings/editplayer/${playerId}`);
 };
 
+const getPlayerName = function (playerConfig: PlayerConfig) {
+  return (
+    playerConfig.name ||
+    api.players[playerConfig.player_id]?.name ||
+    playerConfig.player_id
+  );
+};
+
 // watchers
 watch(
   () => api.players,
@@ -184,6 +193,4 @@ watch(
 );
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -471,6 +471,7 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
+  crossfade_enabled: boolean;
   repeat_mode: RepeatMode;
   current_index?: number;
   index_in_buffer?: number;
