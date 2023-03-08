@@ -47,7 +47,12 @@
               curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
             "
           />
-          <v-img v-else height="50" :src="iconFallback" style="opacity: 50%;" />
+          <v-img
+            v-else
+            height="50"
+            :src="iconFallback"
+            style="opacity: 50%;"
+          />
         </div>
       </template>
 
@@ -64,10 +69,9 @@
           <span
             v-if="
               'version' in curQueueItem.media_item &&
-              curQueueItem.media_item.version
+                curQueueItem.media_item.version
             "
-            >({{ curQueueItem.media_item.version }})</span
-          >
+          >({{ curQueueItem.media_item.version }})</span>
         </span>
         <span v-else-if="curQueueItem">
           {{ curQueueItem.name }}
@@ -80,8 +84,8 @@
         <div
           v-if="
             curQueueItem && curQueueItem.media_item?.media_type == MediaType.TRACK &&
-            'album' in curQueueItem.media_item &&
-            curQueueItem.media_item.album
+              'album' in curQueueItem.media_item &&
+              curQueueItem.media_item.album
           "
           style="cursor: pointer"
           @click="
@@ -95,8 +99,8 @@
         <div
           v-else-if="
             curQueueItem && curQueueItem.media_item &&
-            'artists' in curQueueItem.media_item &&
-            curQueueItem.media_item.artists.length > 0
+              'artists' in curQueueItem.media_item &&
+              curQueueItem.media_item.artists.length > 0
           "
         >
           {{ curQueueItem.media_item.artists[0].name }}
@@ -109,12 +113,17 @@
         <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description">
           {{ curQueueItem.media_item.metadata.description }}
         </div>
-        <div v-else-if="!curQueueItem">{{ activePlayerQueue?.display_name }}</div>
+        <div v-else-if="!curQueueItem">
+          {{ activePlayerQueue?.display_name }}
+        </div>
       </template>
       <template #append>
         <div class="listitem-actions">
           <!-- streaming quality details -->
-          <v-menu v-if="streamDetails" location="bottom end">
+          <v-menu
+            v-if="streamDetails"
+            location="bottom end"
+          >
             <template #activator="{ props }">
               <v-img
                 contain
@@ -131,9 +140,15 @@
                 v-bind="props"
               />
             </template>
-            <v-card class="mx-auto" width="300">
+            <v-card
+              class="mx-auto"
+              width="300"
+            >
               <v-list style="overflow: hidden">
-                <span class="text-h5" style="padding: 10px">{{
+                <span
+                  class="text-h5"
+                  style="padding: 10px"
+                >{{
                   $t("stream_details")
                 }}</span>
                 <v-divider />
@@ -144,7 +159,7 @@
                     center
                     :src="getProviderIcon(streamDetails.provider)"
                     style="object-fit: contain"
-                  />
+                  >
                   {{ $t("providers." + streamDetails.provider) }}
                 </div>
 
@@ -158,7 +173,7 @@
                         ? 'object-fit: contain;'
                         : 'object-fit: contain;filter: invert(100%);'
                     "
-                  />
+                  >
                   {{ streamDetails.sample_rate / 1000 }} kHz /
                   {{ streamDetails.bit_depth }} bits
                 </div>
@@ -166,7 +181,7 @@
                 <div
                   v-if="
                     activePlayerQueue &&
-                    activePlayerQueue.crossfade_enabled
+                      activePlayerQueue.crossfade_enabled
                   "
                   style="height: 50px; display: flex; align-items: center"
                 >
@@ -180,7 +195,7 @@
                         ? 'object-fit: contain;'
                         : 'object-fit: contain;filter: invert(100%);'
                     "
-                  />
+                  >
                   {{ $t("crossfade_enabled") }}
                 </div>
 
@@ -198,7 +213,7 @@
                         ? 'object-fit: contain;'
                         : 'object-fit: contain;filter: invert(100%);'
                     "
-                  />
+                  >
                   {{ streamDetails.gain_correct }} dB
                 </div>
               </v-list>
@@ -209,8 +224,8 @@
           <div
             v-if="
               !$vuetify.display.mobile &&
-              streamDetails &&
-              curQueueItem && curQueueItem.media_item?.media_type !== MediaType.RADIO
+                streamDetails &&
+                curQueueItem && curQueueItem.media_item?.media_type !== MediaType.RADIO
             "
             class="mediadetails-time text-caption"
           >
@@ -257,8 +272,8 @@
           variant="plain"
           :disabled="
             !activePlayerQueue ||
-            !activePlayerQueue?.active ||
-            activePlayerQueue?.items == 0
+              !activePlayerQueue?.active ||
+              activePlayerQueue?.items == 0
           "
           @click="api.queueCommandPrevious(activePlayerQueue!.queue_id)"
         >
@@ -287,7 +302,9 @@
           variant="plain"
           @click="api.queueCommandStop(activePlayerQueue!.queue_id)"
         >
-          <v-icon size="50"> mdi-stop </v-icon>
+          <v-icon size="50">
+            mdi-stop
+          </v-icon>
         </v-btn>
         <!-- play button: all other situations - resume the queue (disabled if queue is empty)-->
         <v-btn
@@ -298,7 +315,9 @@
           :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
           @click="api.queueCommandPlay(activePlayerQueue!.queue_id)"
         >
-          <v-icon size="50"> mdi-play </v-icon>
+          <v-icon size="50">
+            mdi-play
+          </v-icon>
         </v-btn>
         <v-btn
           icon
@@ -306,8 +325,8 @@
           variant="plain"
           :disabled="
             !activePlayerQueue ||
-            !activePlayerQueue?.active ||
-            activePlayerQueue?.items == 0
+              !activePlayerQueue?.active ||
+              activePlayerQueue?.items == 0
           "
           @click="api.queueCommandNext(activePlayerQueue!.queue_id)"
         >
@@ -353,7 +372,10 @@
           </template>
 
           <v-card min-width="300">
-            <v-list style="overflow: hidden" lines="two">
+            <v-list
+              style="overflow: hidden"
+              lines="two"
+            >
               <v-list-item density="compact">
                 <template #prepend>
                   <v-icon

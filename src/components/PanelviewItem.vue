@@ -4,7 +4,10 @@
     @click="emit('click', item)"
     @click.right.prevent="emit('menu', item)"
   >
-    <MediaItemThumb :item="item" :size="size" />
+    <MediaItemThumb
+      :item="item"
+      :size="size"
+    />
     <div
       v-if="showCheckboxes"
       style="
@@ -18,10 +21,10 @@
         :model-value="isSelected"
         @click.stop
         @update:model-value="
-        (x: boolean) => {
-          emit('select', item, x);
-        }
-      "
+          (x: boolean) => {
+            emit('select', item, x);
+          }
+        "
       />
     </div>
     <div
@@ -46,13 +49,16 @@
                 ? 'object-fit: contain;'
                 : 'object-fit: contain;filter: invert(100%);'
             "
-          />
+          >
         </template>
         <span>{{ HiResDetails }}</span>
       </v-tooltip>
     </div>
 
-    <v-list-item two-line style="padding-left: 8px; padding-right: 8px">
+    <v-list-item
+      two-line
+      style="padding-left: 8px; padding-right: 8px"
+    >
       <div>
         <p
           class="font-weight-bold line-clamp-1"
@@ -65,14 +71,16 @@
         v-if="'artists' in item && item.artists"
         class="line-clamp-2"
         style="margin-bottom: 8px"
-        >{{ getArtistsString(item.artists) }}</v-list-item-subtitle
       >
+        {{ getArtistsString(item.artists) }}
+      </v-list-item-subtitle>
       <v-list-item-subtitle
         v-else-if="'owner' in item && item.owner"
         class="line-clamp-2"
         style="margin-bottom: 8px"
-        >{{ item.owner }}</v-list-item-subtitle
       >
+        {{ item.owner }}
+      </v-list-item-subtitle>
     </v-list-item>
   </v-card>
 </template>

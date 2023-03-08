@@ -1,6 +1,11 @@
 <template>
   <section>
-    <v-form v-model="valid" v-if="conf" ref="form" style="margin-right: 10px">
+    <v-form
+      v-if="conf"
+      ref="form"
+      v-model="valid"
+      style="margin-right: 10px"
+    >
       <!-- name field -->
       <v-text-field
         v-if="'name' in conf"
@@ -13,7 +18,7 @@
         "
         variant="outlined"
         clearable
-      ></v-text-field>
+      />
 
       <!-- enable field -->
       <v-switch
@@ -25,43 +30,47 @@
             : $t('settings.enable_provider')
         "
         color="primary"
-      ></v-switch>
+      />
       <v-divider />
       <!-- config rows for all config entries -->
       <v-expansion-panels
+        v-if="conf.enabled"
         v-model="activePanel"
         variant="accordion"
         multiple
-        v-if="conf.enabled"
       >
         <!-- 
           we split up the config settings in basic and advanced settings,
           using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
         -->
-        <v-expansion-panel v-for="panel of panels" :value="panel">
-          <v-expansion-panel-title v-if="panel == 'advanced'"
-            ><div class="expansion-panel-text">
+        <v-expansion-panel
+          v-for="panel of panels"
+          :value="panel"
+        >
+          <v-expansion-panel-title v-if="panel == 'advanced'">
+            <div class="expansion-panel-text">
               {{ $t("settings.advanced_settings") }}
-            </div></v-expansion-panel-title
-          >
-          <br />
+            </div>
+          </v-expansion-panel-title>
+          <br>
           <v-expansion-panel-text>
             <div
-              class="configrow"
               v-for="conf_item_value of Object.values(conf.values).filter(
                 (x) => x.advanced == (panel == 'advanced') && !x.hidden
               )"
               :key="conf_item_value.key"
+              class="configrow"
             >
               <div class="configcolumnleft">
                 <!-- label value -->
                 
                 <div v-if="conf_item_value.type == ConfigEntryType.LABEL">
-                  <br />
-                  <v-divider/>
-                <v-label style="margin-left:8px;margin-top:10px;margin-bottom:10px;"
-                  ><b>{{ conf_item_value.value?.toString() }}</b></v-label>
-                  <br />
+                  <br>
+                  <v-divider />
+                  <v-label style="margin-left:8px;margin-top:10px;margin-bottom:10px;">
+                    <b>{{ conf_item_value.value?.toString() }}</b>
+                  </v-label>
+                  <br>
                 </div>
 
                 <!-- boolean value: toggle switch -->
@@ -74,20 +83,20 @@
                   color="primary"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                    !conf.values[conf_item_value.depends_on].value
+                      !conf.values[conf_item_value.depends_on].value
                   "
-                ></v-switch>
+                />
 
                 <!-- int/float value in range: slider control -->
                 <v-slider
-                v-else-if="(conf_item_value.type == ConfigEntryType.INTEGER ||
-                      conf_item_value.type == ConfigEntryType.FLOAT) &&
+                  v-else-if="(conf_item_value.type == ConfigEntryType.INTEGER ||
+                    conf_item_value.type == ConfigEntryType.FLOAT) &&
                     conf_item_value.range && conf_item_value.range.length == 2
                   "
                   v-model="(conf_item_value.value as number)"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                    !conf.values[conf_item_value.depends_on].value
+                      !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -101,15 +110,15 @@
                   style="margin-top:10px;margin-bottom:25px"
                   color="primary"
                 >
-                  <template v-slot:append>
+                  <template #append>
                     <v-text-field
-                    v-model="(conf_item_value.value as number)"
+                      v-model="(conf_item_value.value as number)"
                       hide-details
                       single-line
                       density="compact"
                       type="number"
                       style="width: 70px"
-                    ></v-text-field>
+                    />
                   </template>
                 </v-slider>
 
@@ -123,7 +132,7 @@
                   :required="conf_item_value.required"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                    !conf.values[conf_item_value.depends_on].value
+                      !conf.values[conf_item_value.depends_on].value
                   "
                   :rules="[
                     (v) =>
@@ -133,23 +142,23 @@
                   type="password"
                   variant="outlined"
                   clearable
-                ></v-text-field>
+                />
 
                 <!-- value with dropdown -->
                 <v-select
+                  v-else-if="
+                    conf_item_value.options &&
+                      conf_item_value.options.length > 0
+                  "
+                  v-model="conf_item_value.value"
                   :chips="conf_item_value.multi_value"
                   :clearable="conf_item_value.multi_value"
                   :multiple="conf_item_value.multi_value"
-                  v-else-if="
-                    conf_item_value.options &&
-                    conf_item_value.options.length > 0
-                  "
                   :items="conf_item_value.options"
-                  v-model="conf_item_value.value"
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                    !conf.values[conf_item_value.depends_on].value
+                      !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -161,7 +170,7 @@
                       $t('settings.invalid_input'),
                   ]"
                   variant="outlined"
-                ></v-select>
+                />
 
                 <!-- all other: textbox with single value -->
                 <v-text-field
@@ -170,7 +179,7 @@
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                    !conf.values[conf_item_value.depends_on].value
+                      !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -183,9 +192,12 @@
                   ]"
                   variant="outlined"
                   :clearable="!conf_item_value.required"
-                ></v-text-field>
+                />
               </div>
-              <div class="configcolumnright" v-if="conf_item_value.description">
+              <div
+                v-if="conf_item_value.description"
+                class="configcolumnright"
+              >
                 <!-- right side of control: help icon with description-->
                 <v-tooltip
                   activator="parent"
@@ -206,8 +218,9 @@
                           ? openLink(conf_item_value.help_link!)
                           : ''
                       "
-                      >mdi-help-box</v-icon
                     >
+                      mdi-help-box
+                    </v-icon>
                   </template>
                   <div>
                     {{ conf_item_value.description }}
@@ -215,8 +228,8 @@
                 </v-tooltip>
               </div>
               <div
-                class="configcolumnright"
                 v-else-if="conf_item_value.help_link"
+                class="configcolumnright"
               >
                 <!-- right side of control: help icon with link to docs-->
                 <v-icon
@@ -224,20 +237,32 @@
                   size="x-large"
                   color="grey-lighten-1"
                   @click="openLink(conf_item_value.help_link!)"
-                  >mdi-help-box</v-icon
                 >
+                  mdi-help-box
+                </v-icon>
               </div>
             </div>
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
-      <br />
-      <v-btn block color="primary" @click="onSave">{{
-        $t("settings.save")
-      }}</v-btn>
+      <br>
+      <v-btn
+        block
+        color="primary"
+        @click="onSave"
+      >
+        {{
+          $t("settings.save")
+        }}
+      </v-btn>
     </v-form>
-    <br />
-    <v-btn block @click="$router.back()">{{ $t("settings.close") }}</v-btn>
+    <br>
+    <v-btn
+      block
+      @click="$router.back()"
+    >
+      {{ $t("settings.close") }}
+    </v-btn>
   </section>
 </template>
 

@@ -6,39 +6,41 @@
         v-if="config && config.domain in availableProviders"
         style="margin-left: -5px; margin-right: -5px"
       >
-        <v-card-title>{{
-          $t("settings.setup_music_provider", [
-            availableProviders[config.domain].name,
-          ])
-        }}</v-card-title>
-        <v-card-subtitle>{{
-          availableProviders[config.domain].description
-        }}</v-card-subtitle
-        ><br />
+        <v-card-title>
+          {{
+            $t("settings.setup_music_provider", [
+              availableProviders[config.domain].name,
+            ])
+          }}
+        </v-card-title>
+        <v-card-subtitle>
+          {{
+            availableProviders[config.domain].description
+          }}
+        </v-card-subtitle><br>
         <v-card-subtitle
           v-if="availableProviders[config.domain].codeowners.length"
-          ><b>{{ $t("settings.codeowners") }}: </b
-          >{{
-            availableProviders[config.domain].codeowners.join(" / ")
-          }}</v-card-subtitle
         >
+          <b>{{ $t("settings.codeowners") }}: </b>{{
+            availableProviders[config.domain].codeowners.join(" / ")
+          }}
+        </v-card-subtitle>
 
-        <v-card-subtitle v-if="availableProviders[config.domain].documentation"
-          ><b>{{ $t("settings.need_help_setup_provider") }} </b>
+        <v-card-subtitle v-if="availableProviders[config.domain].documentation">
+          <b>{{ $t("settings.need_help_setup_provider") }} </b>
           <a
             :href="availableProviders[config.domain].documentation"
             target="_blank"
-            >{{ $t("settings.check_docs") }}</a
-          ></v-card-subtitle
-        >
+          >{{ $t("settings.check_docs") }}</a>
+        </v-card-subtitle>
       </div>
-      <br />
+      <br>
       <v-divider />
-      <br />
-      <br />
+      <br>
+      <br>
       <edit-config
         v-if="config"
-        :modelValue="config"
+        :model-value="config"
         @update:modelValue="onSubmit($event as ProviderConfig)"
       />
     </v-card-text>

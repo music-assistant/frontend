@@ -1,5 +1,8 @@
 <template>
-  <div class="provider-icons" :style="`height: ${height};`">
+  <div
+    class="provider-icons"
+    :style="`height: ${height};`"
+  >
     <v-tooltip
       v-for="prov of uniqueProviders"
       :key="prov.provider_instance"
@@ -15,7 +18,7 @@
           :src="getProviderIcon(prov.provider_domain)"
           :style="enableLink ? 'cursor: pointer' : ''"
           @click="enableLink ? provClicked(prov) : ''"
-        />
+        >
       </template>
       <!-- eslint-enable vue/no-template-shadow -->
       <span>{{ $t(`providers.${prov.provider_domain}`, api.providers[prov.provider_instance].name) }}</span>

@@ -34,7 +34,7 @@ jobs:
         env:
           CI: true
       - name: Lint
-        run: yarn lint:check
+        run: yarn lint
         env:
           CI: true
       # disable typecheck for now

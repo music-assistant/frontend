@@ -2,7 +2,11 @@
 <template>
   <section>
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar density="compact" variant="flat" color="transparent">
+    <v-toolbar
+      density="compact"
+      variant="flat"
+      color="transparent"
+    >
       <v-tooltip location="bottom">
         <template #activator="{ props }">
           <v-btn
@@ -12,22 +16,20 @@
                 ? 'mdi-checkbox-multiple-outline'
                 : 'mdi-checkbox-multiple-blank-outline'
             "
-            @click="toggleCheckboxes"
             variant="plain"
+            @click="toggleCheckboxes"
           />
           <span v-if="!$vuetify.display.mobile">
             <span
               v-if="!selectedItems.length && totalItems"
               style="cursor: pointer"
               @click="toggleCheckboxes"
-              >{{ $t("items_total", [totalItems]) }}</span
-            >
+            >{{ $t("items_total", [totalItems]) }}</span>
             <span
               v-else-if="selectedItems.length"
               style="cursor: pointer"
               @click="toggleCheckboxes"
-              >{{ $t("items_selected", [selectedItems.length]) }}</span
-            >
+            >{{ $t("items_selected", [selectedItems.length]) }}</span>
           </span>
         </template>
         <span>{{ $t("tooltip.select_items") }}</span>
@@ -35,14 +37,17 @@
 
       <v-spacer />
 
-      <v-tooltip location="bottom" close-on-content-click>
+      <v-tooltip
+        location="bottom"
+        close-on-content-click
+      >
         <template #activator="{ props }">
           <v-btn
             v-if="showLibrary !== false"
             v-bind="props"
             icon
-            @click="toggleLibraryFilter"
             variant="plain"
+            @click="toggleLibraryFilter"
           >
             <v-icon :icon="inLibraryOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
           </v-btn>
@@ -50,13 +55,16 @@
         <span>{{ $t("tooltip.filter_library") }}</span>
       </v-tooltip>
 
-      <v-tooltip v-if="showAlbumArtistsOnlyFilter" location="bottom">
+      <v-tooltip
+        v-if="showAlbumArtistsOnlyFilter"
+        location="bottom"
+      >
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
             icon
-            @click="toggleAlbumArtistsFilter"
             variant="plain"
+            @click="toggleAlbumArtistsFilter"
           >
             <v-icon
               :icon="
@@ -75,10 +83,14 @@
           <v-btn
             v-bind="props"
             icon
-            @click="onRefreshClicked()"
             variant="plain"
+            @click="onRefreshClicked()"
           >
-            <v-badge :model-value="updateAvailable" color="error" dot>
+            <v-badge
+              :model-value="updateAvailable"
+              color="error"
+              dot
+            >
               <v-icon icon="mdi-refresh" />
             </v-badge>
           </v-btn>
@@ -98,8 +110,15 @@
         <template #activator="{ props: menu }">
           <v-tooltip location="bottom">
             <template #activator="{ props: tooltip }">
-              <v-btn icon v-bind="props" variant="plain">
-                <v-icon v-bind="mergeProps(menu, tooltip)" icon="mdi-sort" />
+              <v-btn
+                icon
+                v-bind="props"
+                variant="plain"
+              >
+                <v-icon
+                  v-bind="mergeProps(menu, tooltip)"
+                  icon="mdi-sort"
+                />
               </v-btn>
             </template>
             <span>{{ $t("tooltip.sort_options") }}</span>
@@ -107,11 +126,17 @@
         </template>
         <v-card>
           <v-list>
-            <div v-for="key of sortKeys" :key="key">
+            <div
+              v-for="key of sortKeys"
+              :key="key"
+            >
               <v-list-item @click="changeSort(key)">
                 <v-list-item-title>{{ $t("sort." + key) }}</v-list-item-title>
                 <template #append>
-                  <v-icon v-if="sortBy == key" icon="mdi-check" />
+                  <v-icon
+                    v-if="sortBy == key"
+                    icon="mdi-check"
+                  />
                 </template>
               </v-list-item>
               <v-divider />
@@ -122,7 +147,12 @@
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon @click="toggleSearch()" variant="plain">
+          <v-btn
+            v-bind="props"
+            icon
+            variant="plain"
+            @click="toggleSearch()"
+          >
             <v-icon icon="mdi-magnify" />
           </v-btn>
         </template>
@@ -134,8 +164,8 @@
           <v-btn
             v-bind="props"
             :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-            @click="toggleViewMode()"
             variant="plain"
+            @click="toggleViewMode()"
           />
         </template>
         <span>{{ $t("tooltip.toggle_view_mode") }}</span>
@@ -177,7 +207,10 @@
       "
     >
       <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate />
+      <v-progress-linear
+        v-if="loading"
+        indeterminate
+      />
 
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
@@ -243,14 +276,21 @@
             {{ $t("try_global_search") }}
           </v-btn>
         </v-alert>
-        <v-alert v-else-if="!loading && items.length == 0" type="info">
+        <v-alert
+          v-else-if="!loading && items.length == 0"
+          type="info"
+        >
           {{ $t("no_content") }}
         </v-alert>
       </div>
       <v-snackbar :model-value="selectedItems.length > 1">
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
-          <v-btn color="primary" variant="text" @click="showContextMenu = true">
+          <v-btn
+            color="primary"
+            variant="text"
+            @click="showContextMenu = true"
+          >
             {{ $t("actions") }}
           </v-btn>
         </template>

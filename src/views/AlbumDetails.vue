@@ -1,7 +1,12 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <v-tabs v-model="activeTab" show-arrows grow hide-slider>
+    <v-tabs
+      v-model="activeTab"
+      show-arrows
+      grow
+      hide-slider
+    >
       <v-tab
         value="tracks"
       >

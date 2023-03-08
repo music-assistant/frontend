@@ -4,18 +4,36 @@
     class="align-center justify-center"
     :scrim="false"
   >
-    <v-menu class="fullscreen-menu" :model-value="modelValue">
+    <v-menu
+      class="fullscreen-menu"
+      :model-value="modelValue"
+    >
       <v-card>
-        <v-toolbar density="default" dark color="primary">
+        <v-toolbar
+          density="default"
+          dark
+          color="primary"
+        >
           <v-icon icon="mdi-play-circle-outline" />
-          <v-toolbar-title v-if="showPlaylistsMenu" style="padding-left: 10px">
+          <v-toolbar-title
+            v-if="showPlaylistsMenu"
+            style="padding-left: 10px"
+          >
             <b>{{ $t("add_playlist") }}</b>
             <span v-if="!$vuetify.display.mobile"> | {{ header }} </span>
           </v-toolbar-title>
-          <v-toolbar-title v-else style="padding-left: 10px">
+          <v-toolbar-title
+            v-else
+            style="padding-left: 10px"
+          >
             <b>{{ header }}</b>
           </v-toolbar-title>
-          <v-btn icon="mdi-close" dark text @click="close()" />
+          <v-btn
+            icon="mdi-close"
+            dark
+            text
+            @click="close()"
+          />
         </v-toolbar>
         <!-- play contextmenu items -->
         <v-card-text
@@ -36,7 +54,10 @@
           />
 
           <v-list>
-            <div v-for="item of playMenuItems" :key="item.label">
+            <div
+              v-for="item of playMenuItems"
+              :key="item.label"
+            >
               <v-list-item
                 :title="$t(item.label, item.labelArgs)"
                 density="default"
@@ -56,8 +77,8 @@
         <v-card-text
           v-if="
             enableActionMenuItems &&
-            !showPlaylistsMenu &&
-            actionMenuItems.length > 0
+              !showPlaylistsMenu &&
+              actionMenuItems.length > 0
           "
           style="padding-top: 0; margin-top: -10px; padding-bottom: 0"
         >
@@ -65,7 +86,10 @@
             {{ $t("actions") }}
           </v-list-item-subtitle>
           <v-list>
-            <div v-for="item of actionMenuItems" :key="item.label">
+            <div
+              v-for="item of actionMenuItems"
+              :key="item.label"
+            >
               <v-list-item
                 :title="$t(item.label, item.labelArgs)"
                 density="default"
@@ -84,7 +108,10 @@
         <!-- playlists selection -->
         <v-card-text v-if="showPlaylistsMenu">
           <v-list>
-            <div v-for="playlist of playlists" :key="playlist.item_id">
+            <div
+              v-for="playlist of playlists"
+              :key="playlist.item_id"
+            >
               <v-list-item
                 ripple
                 density="default"
@@ -120,7 +147,10 @@
               <v-divider />
             </div>
             <!-- create playlist row(s) -->
-            <div v-for="prov of api.providers" :key="prov.instance_id">
+            <div
+              v-for="prov of api.providers"
+              :key="prov.instance_id"
+            >
               <div
                 v-if="
                   prov.supported_features.includes(
@@ -136,7 +166,7 @@
                         :height="40"
                         :src="getProviderIcon(prov.type)"
                         style="margin-left: 5px; margin-top: 5px"
-                      />
+                      >
                     </div>
                   </template>
                   <template #title>

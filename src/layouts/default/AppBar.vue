@@ -5,14 +5,17 @@
     style="height: 56px"
     :elevation="2"
   >
-    <template v-slot:prepend>
+    <template #prepend>
       <v-menu location="bottom end">
         <template #activator="{ props }">
           <v-btn
             style="margin-left: -8px; margin-right: -20px"
             v-bind="props"
             variant="plain"
-            ><v-icon size="40">mdi-playlist-play</v-icon>
+          >
+            <v-icon size="40">
+              mdi-playlist-play
+            </v-icon>
           </v-btn>
         </template>
 
@@ -20,16 +23,16 @@
           <v-list-item
             v-if="store.prevRoutes.length > 0"
             :title="$t('page_back')"
-            @click="backButton()"
             prepend-icon="mdi-arrow-left"
+            @click="backButton()"
           />
           <v-list-item
             v-if="router.currentRoute.value.name != 'home'"
             :title="$t('home')"
-            @click="router.push({ name: 'home' })"
             prepend-icon="mdi-home"
+            @click="router.push({ name: 'home' })"
           />
-        <v-list-item
+          <v-list-item
             v-for="menuItem of menuItems"
             :key="menuItem.path"
             :title="$t(menuItem.label)"
@@ -39,20 +42,26 @@
         </v-list>
       </v-menu>
     </template>
-    <v-app-bar-title
-      ><span @click="heading.mainLink" style="cursor: pointer">{{
+    <v-app-bar-title>
+      <span
+        style="cursor: pointer"
+        @click="heading.mainLink"
+      >{{
         heading.mainTitle
       }}</span>
-      <span v-if="heading.subTitle" style="opacity: 0.5">
-        | {{ heading.subTitle }}</span
-      ></v-app-bar-title
-    >
+      <span
+        v-if="heading.subTitle"
+        style="opacity: 0.5"
+      >
+        | {{ heading.subTitle }}</span>
+    </v-app-bar-title>
 
-    <template v-slot:append>
+    <template #append>
       <div class="listitem-actions">
-
-        
-        <v-tooltip location="top end" origin="end center">
+        <v-tooltip
+          location="top end"
+          origin="end center"
+        >
           <template #activator="{ props: tooltip }">
             <v-progress-circular
               v-if="api.syncTasks.value.length > 0 || api.fetchesInProgress.value.length > 0"

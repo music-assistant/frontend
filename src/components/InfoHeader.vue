@@ -9,7 +9,10 @@
       min-height="340px"
     >
       <!-- loading animation -->
-      <v-progress-linear v-if="!item" indeterminate />
+      <v-progress-linear
+        v-if="!item"
+        indeterminate
+      />
       <v-img
         width="100%"
         height="100%"
@@ -36,18 +39,22 @@
         "
       >
         <!-- left side: cover image -->
-        <div v-if="!$vuetify.display.mobile" xs5 pa-5>
+        <div
+          v-if="!$vuetify.display.mobile"
+          xs5
+          pa-5
+        >
           <div v-if="'artists' in item && item.media_type">
             <MediaItemThumb
               :item="item"
-              :minSize="192"
+              :min-size="192"
               style="margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
             />
           </div>
           <div v-else-if="'owner' in item && item.media_type">
             <MediaItemThumb
               :item="item"
-              :minSize="192"
+              :min-size="192"
               style="margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
             />
           </div>
@@ -55,7 +62,7 @@
             <MediaItemThumb
               :item="item"
               :tile="false"
-              :minSize="192"
+              :min-size="192"
               style="margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
             />
           </div>
@@ -92,15 +99,17 @@
                 v-for="(artist, artistindex) in item.artists"
                 :key="artist.item_id"
               >
-                <a style="color: accent" @click="artistClick(artist)">{{
+                <a
+                  style="color: accent"
+                  @click="artistClick(artist)"
+                >{{
                   artist.name
                 }}</a>
                 <span
                   v-if="artistindex + 1 < item.artists.length"
                   :key="artistindex"
                   style="color: accent"
-                  >{{ " / " }}</span
-                >
+                >{{ " / " }}</span>
               </span>
             </v-card-subtitle>
 
@@ -121,7 +130,10 @@
             </v-card-subtitle>
 
             <!-- playlist owner -->
-            <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
+            <v-card-subtitle
+              v-if="'owner' in item && item.owner"
+              class="title"
+            >
               <v-icon
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
@@ -141,8 +153,7 @@
               <a
                 style="color: secondary"
                 @click="albumClick((item as Track)?.album)"
-                >{{ item.album.name }}</a
-              >
+              >{{ item.album.name }}</a>
             </v-card-subtitle>
           </div>
 
@@ -158,7 +169,7 @@
                   prepend-icon="mdi-play-circle"
                   :disabled="
                     !store.selectedPlayer?.available ||
-                    store.blockGlobalPlayMenu
+                      store.blockGlobalPlayMenu
                   "
                 >
                   {{ $t("play") }}
@@ -166,7 +177,10 @@
               </template>
 
               <v-card min-width="300">
-                <v-list lines="one" density="comfortable">
+                <v-list
+                  lines="one"
+                  density="comfortable"
+                >
                   <!-- play now -->
                   <v-list-item
                     v-for="menuItem in getPlayMenuItems([item])"

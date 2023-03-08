@@ -11,27 +11,43 @@
       @click.right.prevent="emit('menu', item)"
     >
       <template #prepend>
-        <div v-if="showCheckboxes" class="listitem-thumb">
+        <div
+          v-if="showCheckboxes"
+          class="listitem-thumb"
+        >
           <v-checkbox
             :model-value="isSelected"
             @click.stop
             @update:model-value="
-            (x: boolean) => {
-              emit('select', item, x);
-            }
-          "
+              (x: boolean) => {
+                emit('select', item, x);
+              }
+            "
           />
         </div>
         <div
           v-else-if="item.media_type == MediaType.FOLDER"
           class="listitem-thumb"
         >
-          <v-btn variant="plain" icon>
-            <v-icon icon="mdi-folder" size="60" style="align: center" />
+          <v-btn
+            variant="plain"
+            icon
+          >
+            <v-icon
+              icon="mdi-folder"
+              size="60"
+              style="align: center"
+            />
           </v-btn>
         </div>
-        <div v-else class="listitem-thumb">
-          <MediaItemThumb :item="item" :size="50" />
+        <div
+          v-else
+          class="listitem-thumb"
+        >
+          <MediaItemThumb
+            :item="item"
+            :size="50"
+          />
         </div>
       </template>
 
@@ -42,9 +58,7 @@
         </span>
         <span v-else>
           {{ item.name }}
-          <span v-if="'version' in item && item.version"
-            >({{ item.version }})</span
-          >
+          <span v-if="'version' in item && item.version">({{ item.version }})</span>
         </span>
         <!-- explicit icon -->
         <v-tooltip location="bottom">
@@ -67,9 +81,9 @@
         <div
           v-if="
             item.media_type == MediaType.TRACK &&
-            'album' in item &&
-            item.album &&
-            !showTrackNumber
+              'album' in item &&
+              item.album &&
+              !showTrackNumber
           "
         >
           {{ getArtistsString(item.artists) }} • {{ item.album.name }}
@@ -78,9 +92,9 @@
         <div
           v-else-if="
             item.media_type == MediaType.TRACK &&
-            'track_number' in item &&
-            item.track_number &&
-            showTrackNumber
+              'track_number' in item &&
+              item.track_number &&
+              showTrackNumber
           "
         >
           {{ getArtistsString(item.artists) }} • disc
@@ -91,11 +105,11 @@
         <div
           v-else-if="
             item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'year' in item &&
-            item.year &&
-            'album_type' in item
+              'artists' in item &&
+              item.artists &&
+              'year' in item &&
+              item.year &&
+              'album_type' in item
           "
         >
           {{ $t("album_type." + item.album_type) }} •
@@ -105,9 +119,9 @@
         <div
           v-else-if="
             item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'album_type' in item
+              'artists' in item &&
+              item.artists &&
+              'album_type' in item
           "
         >
           {{ $t("album_type." + item.album_type) }} •
@@ -144,7 +158,10 @@
                 : 'margin-top:5px;filter: invert(100%);'
             "
           >
-            <v-tooltip activator="parent" location="bottom">
+            <v-tooltip
+              activator="parent"
+              location="bottom"
+            >
               {{ HiResDetails }}
             </v-tooltip>
           </v-img>
@@ -153,8 +170,8 @@
           <provider-icons
             v-if="
               item.provider_mappings &&
-              showProviders &&
-              !$vuetify.display.mobile
+                showProviders &&
+                !$vuetify.display.mobile
             "
             :provider-mappings="item.provider_mappings"
             :height="20"
@@ -190,9 +207,9 @@
               <v-icon
                 v-if="
                   parentItem &&
-                  parentItem.provider_mappings.find(
-                    (x) => x.item_id === item.item_id
-                  )
+                    parentItem.provider_mappings.find(
+                      (x) => x.item_id === item.item_id
+                    )
                 "
                 v-bind="props"
                 class="listitem-action"
@@ -207,10 +224,10 @@
           <div
             v-if="
               showDuration &&
-              item.media_type == MediaType.TRACK &&
-              'duration' in item &&
-              item.duration != undefined &&
-              !$vuetify.display.mobile
+                item.media_type == MediaType.TRACK &&
+                'duration' in item &&
+                item.duration != undefined &&
+                !$vuetify.display.mobile
             "
             class="listitem-action"
           >
@@ -218,7 +235,11 @@
           </div>
         </div>
 
-        <v-menu v-if="showDetails" location="bottom end" @click:outside.stop>
+        <v-menu
+          v-if="showDetails"
+          location="bottom end"
+          @click:outside.stop
+        >
           <template #activator="{ props }">
             <v-icon
               icon="mdi-information-outline"
@@ -228,9 +249,15 @@
               v-bind="props"
             />
           </template>
-          <v-card class="mx-auto" min-width="300">
+          <v-card
+            class="mx-auto"
+            min-width="300"
+          >
             <v-list style="overflow: hidden">
-              <span class="text-h5" style="padding: 10px">{{
+              <span
+                class="text-h5"
+                style="padding: 10px"
+              >{{
                 $t("provider_details")
               }}</span>
               <v-divider />
@@ -242,7 +269,7 @@
                   center
                   :src="getProviderIcon(item.provider)"
                   style="object-fit: contain"
-                />
+                >
                 {{
                   truncateString(
                     api.providers[item.provider_mappings[0].provider_domain]!
@@ -266,7 +293,7 @@
               <div
                 v-if="
                   item.provider_mappings[0].url &&
-                  !item.provider.includes('file')
+                    !item.provider.includes('file')
                 "
                 style="height: 50px; display: flex; align-items: center"
               >
@@ -275,7 +302,10 @@
                   icon="mdi-share-outline"
                   style="margin-left: 10px; padding-right: 5px"
                 />
-                <a :href="item.provider_mappings[0].url" target="_blank">{{
+                <a
+                  :href="item.provider_mappings[0].url"
+                  target="_blank"
+                >{{
                   truncateString(item.provider_mappings[0].url, 25)
                 }}</a>
               </div>
@@ -293,7 +323,7 @@
                       ? 'object-fit: contain;'
                       : 'object-fit: contain;filter: invert(100%);'
                   "
-                />
+                >
                 {{ getQualityDesc(item.provider_mappings[0]) }}
               </div>
 

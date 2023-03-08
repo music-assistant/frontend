@@ -5,21 +5,33 @@
       grow
       hide-slider
       style="margin-top: 8px"
-     :model-value="activeTab"
+      :model-value="activeTab"
     >
-      <v-tab value="musicproviders" :to="{name: 'musicprovidersettings'}">
+      <v-tab
+        value="musicproviders"
+        :to="{name: 'musicprovidersettings'}"
+      >
         {{ $t("settings.musicproviders") }}
       </v-tab>
-      <v-tab value="players" :to="{name: 'playersettings'}">
+      <v-tab
+        value="players"
+        :to="{name: 'playersettings'}"
+      >
         {{ $t("settings.players") }}
       </v-tab>
     </v-tabs>
     <v-divider />
-      <router-view v-slot="{ Component }" app>
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+    <router-view
+      v-slot="{ Component }"
+      app
+    >
+      <transition
+        name="fade"
+        mode="out-in"
+      >
+        <component :is="Component" />
+      </transition>
+    </router-view>
   </section>
 </template>
 

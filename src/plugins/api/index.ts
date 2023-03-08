@@ -112,7 +112,7 @@ export class MusicAssistantApi {
       })
       .onMessage((i, ev) => {
         // Message retrieved on the websocket
-        var msg = JSON.parse(ev.data);
+        const msg = JSON.parse(ev.data);
         if ("event" in msg) {
           this.handleEventMessage(msg as EventMessage);
         } else if ("server_version" in msg) {

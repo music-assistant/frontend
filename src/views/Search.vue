@@ -19,7 +19,12 @@
         column
         style="margin-top: 15px; margin-left: 10px"
       >
-        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
+        <v-chip
+          v-for="item in viewFilters"
+          :key="item"
+          filter
+          outlined
+        >
           {{ $t(item) }}
         </v-chip>
       </v-chip-group>
@@ -44,7 +49,10 @@
         "
       >
         <!-- loading animation -->
-        <v-progress-linear v-if="loading" indeterminate />
+        <v-progress-linear
+          v-if="loading"
+          indeterminate
+        />
 
         <!-- panel view -->
         <v-row
@@ -94,7 +102,12 @@
           </RecycleScroller>
         </div>
       </div>
-      <v-toolbar density="compact" variant="flat" color="transparent" height="45">
+      <v-toolbar
+        density="compact"
+        variant="flat"
+        color="transparent"
+        height="45"
+      >
         <span>{{ $t("items_total", [filteredItems.length]) }}</span>
         <v-spacer />
 

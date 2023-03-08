@@ -1,5 +1,8 @@
 <template>
-  <v-list style="overflow: hidden" lines="two">
+  <v-list
+    style="overflow: hidden"
+    lines="two"
+  >
     <!-- special group volume/power -->
     <div
       v-if="player.group_childs.length > 0"
@@ -16,7 +19,10 @@
       >
         <v-icon icon="mdi-power" />
       </v-btn>
-      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
+      <span
+        class="text-body-2"
+        style="position: absolute; margin-top: 3px"
+      >{{
         getPlayerName(player, 30)
       }}</span>
       <div
@@ -68,52 +74,64 @@
         >
           <v-icon icon="mdi-power" />
         </v-btn>
-        <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
+        <span
+          class="text-body-2"
+          style="position: absolute; margin-top: 3px"
+        >{{
           truncateString(childPlayer.display_name, 27)
         }}</span>
 
         <!-- sync button -->
         <div
-          class="syncbtn"
           v-if="
             !childPlayer.synced_to &&
-            !childPlayer.group_childs.length &&
-            Object.values(api.players).filter(
-              (x) =>
-                !x.synced_to && x.can_sync_with.includes(childPlayer.player_id)
-            ).length > 0
+              !childPlayer.group_childs.length &&
+              Object.values(api.players).filter(
+                (x) =>
+                  !x.synced_to && x.can_sync_with.includes(childPlayer.player_id)
+              ).length > 0
           "
+          class="syncbtn"
         >
-          <v-menu location="bottom end" style="z-index: 999999">
-            <template v-slot:activator="{ props: menu }">
-              <v-btn icon v-bind="menu" variant="plain">
+          <v-menu
+            location="bottom end"
+            style="z-index: 999999"
+          >
+            <template #activator="{ props: menu }">
+              <v-btn
+                icon
+                v-bind="menu"
+                variant="plain"
+              >
                 <v-icon>mdi-link-variant</v-icon>
               </v-btn>
             </template>
             <v-list>
               <v-card-subtitle>{{ $t("sync_player_to") }}</v-card-subtitle>
               <v-list-item
-                :title="parentPlayer.display_name"
                 v-for="parentPlayer of Object.values(api.players).filter(
                   (x) =>
                     !x.synced_to &&
                     x.can_sync_with.includes(childPlayer.player_id)
                 )"
                 :key="parentPlayer.player_id"
+                :title="parentPlayer.display_name"
                 @click="
                   api.playerCommandSync(
                     childPlayer.player_id,
                     parentPlayer.player_id
                   )
                 "
-              >
-              </v-list-item>
+              />
               <v-divider />
             </v-list>
           </v-menu>
         </div>
         <!-- unsync button -->
-        <div class="syncbtn" v-if="childPlayer.synced_to">
+        <div
+          v-if="childPlayer.synced_to"
+          class="syncbtn"
+        >
           <v-btn
             icon
             variant="plain"

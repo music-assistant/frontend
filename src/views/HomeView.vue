@@ -34,8 +34,16 @@
 
       <!-- regular menu items -->
       <div style="margin-top: 20px">
-        <v-row dense align-content="start" align="start">
-          <v-col v-for="card in cards" :key="card.label" align-self="start">
+        <v-row
+          dense
+          align-content="start"
+          align="start"
+        >
+          <v-col
+            v-for="card in cards"
+            :key="card.label"
+            align-self="start"
+          >
             <v-card
               class="mx-auto"
               align="center"
@@ -45,16 +53,20 @@
               @click="$router.push(card.path)"
             >
               <v-list-item two-line>
-                  <v-btn variant="plain" icon height="80">
-                    <v-icon
-                      :icon="card.icon"
-                      size="80"
-                      style="align: center; padding: 10px"
-                    />
-                  </v-btn>
-                  <div class="mb-4">
-                    {{ $t(card.label) }}
-                  </div>
+                <v-btn
+                  variant="plain"
+                  icon
+                  height="80"
+                >
+                  <v-icon
+                    :icon="card.icon"
+                    size="80"
+                    style="align: center; padding: 10px"
+                  />
+                </v-btn>
+                <div class="mb-4">
+                  {{ $t(card.label) }}
+                </div>
               </v-list-item>
             </v-card>
           </v-col>

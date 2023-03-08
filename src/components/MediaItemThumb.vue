@@ -22,7 +22,10 @@
       >
         <template #placeholder>
           <div class="d-flex align-center justify-center fill-height">
-            <v-progress-circular indeterminate color="grey-lighten-4" />
+            <v-progress-circular
+              indeterminate
+              color="grey-lighten-4"
+            />
           </div>
         </template>
       </v-img>

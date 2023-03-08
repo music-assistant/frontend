@@ -9,7 +9,10 @@
       "
     >
       <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate />
+      <v-progress-linear
+        v-if="loading"
+        indeterminate
+      />
 
       <RecycleScroller
         v-slot="{ item }"

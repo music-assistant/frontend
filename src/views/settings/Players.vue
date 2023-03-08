@@ -10,7 +10,7 @@
         prominent
       >
         <b>{{ $t("settings.no_providers") }}</b>
-        <br />
+        <br>
         {{ $t("settings.no_providers_detail") }}
       </v-alert>
       <div>
@@ -23,22 +23,33 @@
           :subtitle="api.providers[config.provider]?.name || config.provider"
           @click="editPlayer(config.player_id)"
         >
-          <template v-slot:prepend>
+          <template #prepend>
             <v-img
               scale
               width="36px"
               class="listitem-thumb"
               :src="getProviderIcon(config.provider)"
-            ></v-img>
+            />
           </template>
 
-          <template v-slot:append>
+          <template #append>
             <div class="listitem-actions">
               <!-- player disabled -->
-              <div class="listitem-action" v-if="!config.enabled">
-                <v-tooltip location="top end" origin="end center">
+              <div
+                v-if="!config.enabled"
+                class="listitem-action"
+              >
+                <v-tooltip
+                  location="top end"
+                  origin="end center"
+                >
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="grey">mdi-cancel</v-icon>
+                    <v-icon
+                      v-bind="tooltip"
+                      color="grey"
+                    >
+                      mdi-cancel
+                    </v-icon>
                   </template>
                   <span>{{ $t("settings.player_disabled") }}</span>
                 </v-tooltip>
@@ -46,14 +57,20 @@
 
               <!-- playerprovider has errors -->
               <div
-                class="listitem-action"
                 v-else-if="api.providers[config.provider]?.last_error"
+                class="listitem-action"
               >
-                <v-tooltip location="top end" origin="end center">
+                <v-tooltip
+                  location="top end"
+                  origin="end center"
+                >
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="red"
-                      >mdi-alert-circle</v-icon
+                    <v-icon
+                      v-bind="tooltip"
+                      color="red"
                     >
+                      mdi-alert-circle
+                    </v-icon>
                   </template>
                   <span>{{ api.providers[config.provider]?.last_error }}</span>
                 </v-tooltip>
@@ -61,12 +78,17 @@
 
               <!-- player not (yet) available -->
               <div
-                class="listitem-action"
                 v-else-if="!api.players[config.player_id]?.available"
+                class="listitem-action"
               >
-                <v-tooltip location="top end" origin="end center">
+                <v-tooltip
+                  location="top end"
+                  origin="end center"
+                >
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip">mdi-timer-sand</v-icon>
+                    <v-icon v-bind="tooltip">
+                      mdi-timer-sand
+                    </v-icon>
                   </template>
                   <span>{{ $t("settings.player_not_available") }}</span>
                 </v-tooltip>
@@ -91,23 +113,20 @@
                       :title="$t('settings.configure')"
                       prepend-icon="mdi-cog"
                       @click="editPlayer(config.player_id)"
-                    >
-                    </v-list-item>
+                    />
                     <v-list-item
                       v-if="providerManifests[config.provider].documentation"
                       :title="$t('settings.documentation')"
                       prepend-icon="mdi-bookshelf"
                       :href="providerManifests[config.provider].documentation"
                       target="_blank"
-                    >
-                    </v-list-item>
+                    />
                     <v-list-item
                       v-if="!api.players[config.player_id]?.available"
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"
                       @click="deletePlayerConfig(config.player_id)"
-                    >
-                    </v-list-item>
+                    />
                   </v-list>
                 </v-menu>
               </div>
