@@ -1,21 +1,9 @@
 <template>
   <section>
     <v-card-text>
-      <!-- show alert if no players found -->
-      <v-alert
-        v-if="playerConfigs.length == 0"
-        color="primary"
-        theme="dark"
-        icon="mdi-radio-tower"
-        prominent
-      >
-        <b>{{ $t("settings.no_providers") }}</b>
-        <br>
-        {{ $t("settings.no_providers_detail") }}
-      </v-alert>
       <div>
         <v-list-item
-          v-for="config in playerConfigs.sort((a, b) =>
+          v-for="config in [...playerConfigs].sort((a, b) =>
             getPlayerName(a) > getPlayerName(b) ? 1 : -1
           )"
           :key="config.player_id"

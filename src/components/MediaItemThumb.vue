@@ -168,11 +168,14 @@ export const getImageThumbForItem = async function (
     return img.url;
   }
   // use image proxy to grab thumb
-  const encUrl = encodeURIComponent(img.url);
+  const encUrl = encodeURIComponent(encodeURIComponent(img.url));
+  
   const checksum = "metadata" in mediaItem ? mediaItem.metadata?.checksum : "";
-  return `${api.baseUrl}/imageproxy?size=${
+  const proxyUrl = `${api.baseUrl}/imageproxy?size=${
     size || 0
   }&path=${encUrl}&checksum=${checksum}`;
+  console.log("proxyUrl", proxyUrl)
+  return proxyUrl
 };
 </script>
 
