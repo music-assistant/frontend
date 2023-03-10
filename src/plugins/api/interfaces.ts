@@ -515,6 +515,7 @@ export interface Player {
   enabled: boolean;
   group_volume: number;
   display_name: string;
+  hidden_by: string[];
 }
 
 // provider

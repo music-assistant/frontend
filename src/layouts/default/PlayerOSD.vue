@@ -452,7 +452,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 
-import type { MediaItemType, Track } from "../../plugins/api/interfaces";
+import type { MediaItemType } from "../../plugins/api/interfaces";
 import api from "@/plugins/api";
 import { PlayerState, MediaType, ImageType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -512,7 +512,6 @@ const itemClick = function (item: MediaItemType) {
 };
 
 // watchers
-
 watch(
   () => curQueueItem.value?.queue_item_id,
   async () => {
@@ -530,47 +529,6 @@ watch(
   }
 );
 
-watch(
-  () => store.selectedPlayer,
-  (newVal) => {
-    if (newVal) {
-      localStorage.setItem("mass.LastPlayerId", newVal.player_id);
-    } else {
-      // pick default/start player at startup
-      const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
-      if (lastPlayerId) {
-        if (lastPlayerId in api.players) {
-          store.selectedPlayer = api.players[lastPlayerId];
-          return;
-        }
-      }
-      if (api?.players && !store.selectedPlayer) {
-        // prefer playing player
-        for (const playerId in api?.players) {
-          const player = api.players[playerId];
-          if (player.state == PlayerState.PLAYING) {
-            store.selectedPlayer = player;
-            return;
-          }
-        }
-        // fallback to just a player with item in queue
-        for (const playerId in api?.queues) {
-          const player = api.players[playerId];
-          if (player.elapsed_time) {
-            store.selectedPlayer = player;
-            return;
-          }
-        }
-        // last resort: just the first queue
-        for (const playerId in api?.queues) {
-          store.selectedPlayer = api.players[playerId];
-          return;
-        }
-      }
-    }
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped>
