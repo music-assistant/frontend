@@ -3,7 +3,7 @@
     <v-card-text>
       <!-- header -->
       <div
-        v-if="config && config.domain in availableProviders"
+        v-if="config && availableProviders[config.domain]"
         style="margin-left: -5px; margin-right: -5px"
       >
         <v-card-title>
@@ -27,7 +27,7 @@
         </v-card-subtitle>
 
         <v-card-subtitle v-if="availableProviders[config.domain].documentation">
-          <b>{{ $t("settings.need_help_setup_provider") }} </b>
+          <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
             :href="availableProviders[config.domain].documentation"
             target="_blank"
@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { ProviderConfig, ProviderManifest } from "@/plugins/api/interfaces";
@@ -69,15 +69,21 @@ const props = defineProps<{
   instanceId?: string;
 }>();
 
+onMounted( async () => {
+  const manifests: ProviderManifest[] = await api.getData(
+        "providers/available"
+      );
+  for (const provManifest of manifests) {
+    availableProviders[provManifest.domain] = provManifest;
+  }
+});
+
 // watchers
 
 watch(
   () => props.domain,
   async (val) => {
     if (val) {
-      const manifests: ProviderManifest[] = await api.getData(
-        "providers/available"
-      );
       // create a default config using the helper on the server
       config.value = await api.getData("config/providers/create", {
         provider_domain: props.domain,
@@ -91,9 +97,6 @@ watch(
   () => props.instanceId,
   async (val) => {
     if (val) {
-      const manifests: ProviderManifest[] = await api.getData(
-        "providers/available"
-      );
       config.value = await api.getData("config/providers/get", {
         instance_id: props.instanceId,
       });
@@ -107,6 +110,7 @@ const onSubmit = async function (value: ProviderConfig) {
   api.sendCommand("config/providers/set", { config: value });
   router.push({ name: "musicprovidersettings" });
 };
+
 </script>
 
 <style scoped></style>

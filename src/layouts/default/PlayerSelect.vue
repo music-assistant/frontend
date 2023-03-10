@@ -26,12 +26,7 @@
     <v-divider />
 
     <!-- collapsable player rows-->
-    <v-expansion-panels
-      v-model="panelItem"
-      focusable
-      accordion
-      flat
-    >
+    <v-expansion-panels v-model="panelItem" focusable accordion flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"
         :id="player.player_id"
@@ -99,7 +94,7 @@
 
 <script setup lang="ts">
 import { computed, getCurrentInstance, onMounted, ref, watch } from "vue";
-import { Player, PlayerType } from "../../plugins/api/interfaces";
+import { Player, PlayerState, PlayerType } from "../../plugins/api/interfaces";
 import { store } from "../../plugins/store";
 import VolumeControl from "../../components/VolumeControl.vue";
 import { api } from "../../plugins/api";
@@ -112,7 +107,8 @@ const sortedPlayers = computed(() => {
   const res: Player[] = [];
   for (const player_id in api?.players) {
     const player = api?.players[player_id];
-    if (player.synced_to) continue;
+    // ignore disabled/hidden/synced players
+    if (!playerActive(player, true)) continue;
     res.push(player);
   }
   return res
@@ -131,11 +127,21 @@ watch(
     }
   }
 );
+watch(
+  () => store.selectedPlayer,
+  (newVal) => {
+    if (newVal) {
+      // remember last selected playerId
+      localStorage.setItem("mass.LastPlayerId", newVal.player_id);
+    }
+  },
+);
 
 const shadowRoot = ref<ShadowRoot>();
 const lastClicked = ref();
 onMounted(() => {
   shadowRoot.value = getCurrentInstance()?.vnode?.el?.getRootNode();
+  selectDefaultPlayer();
 });
 const scrollToTop = function (playerId: string) {
   if (lastClicked.value == playerId) return;
@@ -146,7 +152,59 @@ const scrollToTop = function (playerId: string) {
   }, 0);
 };
 
+const playerActive = function (
+  player: Player,
+  allowUnavailable: boolean = true,
+  allowSyncChild: boolean = false,
+  allowHidden: boolean = false
+): boolean {
+  // perform some basic checks if we may use/show the player
+  if (!player.enabled) return false;
+  if (!player.available && !allowUnavailable) return false;
+  if (player.synced_to && !allowSyncChild) return false;
+  if (player.hidden_by.length && !allowHidden) return false;
+  return true;
+};
 
+const selectDefaultPlayer = function () {
+  // abort early if we already have an active player which is available
+  if (store.selectedPlayer && playerActive(store.selectedPlayer)) return;
+  // check if we have a player stored that was last used
+  const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
+  if (lastPlayerId) {
+    if (
+      lastPlayerId in api.players &&
+      playerActive(api.players[lastPlayerId])
+    ) {
+      store.selectedPlayer = api.players[lastPlayerId];
+      return;
+    }
+  }
+  // select a (new) default active player
+  if (api?.players) {
+    // prefer the first playing player
+    for (const playerId in api?.players) {
+      const player = api.players[playerId];
+      if (player.state == PlayerState.PLAYING) {
+        store.selectedPlayer = player;
+        return;
+      }
+    }
+    // fallback to just a player with item in queue
+    for (const queueId in api?.queues) {
+      const queue = api.queues[queueId];
+      if (queue.items) {
+        store.selectedPlayer = api.players[queueId];
+        return;
+      }
+    }
+    // last resort: just the first queue
+    for (const playerId in api?.queues) {
+      store.selectedPlayer = api.players[playerId];
+      return;
+    }
+  }
+};
 </script>
 
 <style>

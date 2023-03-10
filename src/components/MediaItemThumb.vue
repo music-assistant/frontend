@@ -171,11 +171,9 @@ export const getImageThumbForItem = async function (
   const encUrl = encodeURIComponent(encodeURIComponent(img.url));
   
   const checksum = "metadata" in mediaItem ? mediaItem.metadata?.checksum : "";
-  const proxyUrl = `${api.baseUrl}/imageproxy?size=${
+  return `${api.baseUrl}/imageproxy?size=${
     size || 0
   }&path=${encUrl}&checksum=${checksum}`;
-  console.log("proxyUrl", proxyUrl)
-  return proxyUrl
 };
 </script>
 
