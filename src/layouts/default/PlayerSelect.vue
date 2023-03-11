@@ -134,14 +134,22 @@ watch(
       // remember last selected playerId
       localStorage.setItem("mass.LastPlayerId", newVal.player_id);
     }
-  },
+  }
+);
+watch(
+  () => api.players,
+  (newVal) => {
+    if (newVal) {
+      checkDefaultPlayer();
+    }
+  }
 );
 
 const shadowRoot = ref<ShadowRoot>();
 const lastClicked = ref();
 onMounted(() => {
   shadowRoot.value = getCurrentInstance()?.vnode?.el?.getRootNode();
-  selectDefaultPlayer();
+  checkDefaultPlayer();
 });
 const scrollToTop = function (playerId: string) {
   if (lastClicked.value == playerId) return;
@@ -166,18 +174,31 @@ const playerActive = function (
   return true;
 };
 
+const checkDefaultPlayer = function () {
+  if (
+    store.selectedPlayer &&
+    playerActive(store.selectedPlayer, false, false, false)
+  )
+    return;
+  const newDefaultPlayer = selectDefaultPlayer();
+  if (newDefaultPlayer) {
+    store.selectedPlayer = newDefaultPlayer;
+    console.log(
+      "Selected new default player: ",
+      newDefaultPlayer.display_name
+    );
+  }
+};
+
 const selectDefaultPlayer = function () {
-  // abort early if we already have an active player which is available
-  if (store.selectedPlayer && playerActive(store.selectedPlayer)) return;
   // check if we have a player stored that was last used
   const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
   if (lastPlayerId) {
     if (
       lastPlayerId in api.players &&
-      playerActive(api.players[lastPlayerId])
+      playerActive(api.players[lastPlayerId], false, false, false)
     ) {
-      store.selectedPlayer = api.players[lastPlayerId];
-      return;
+      return api.players[lastPlayerId];
     }
   }
   // select a (new) default active player
@@ -186,22 +207,21 @@ const selectDefaultPlayer = function () {
     for (const playerId in api?.players) {
       const player = api.players[playerId];
       if (player.state == PlayerState.PLAYING) {
-        store.selectedPlayer = player;
-        return;
+        return player;
       }
     }
     // fallback to just a player with item in queue
     for (const queueId in api?.queues) {
       const queue = api.queues[queueId];
+      if (!playerActive(api.players[queueId], false, false, false)) continue;
       if (queue.items) {
-        store.selectedPlayer = api.players[queueId];
-        return;
+        return api.players[queueId];
       }
     }
     // last resort: just the first queue
     for (const playerId in api?.queues) {
-      store.selectedPlayer = api.players[playerId];
-      return;
+      if (!playerActive(api.players[playerId], false, false, false)) continue;
+      return api.players[playerId];
     }
   }
 };
