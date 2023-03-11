@@ -191,7 +191,7 @@
       </div>
 
       <!-- float action button to add a new provider config-->
-      <v-menu location="bottom end">
+      <v-menu location="bottom end" min-width="500">
         <template #activator="{ props }">
           <v-btn
             color="primary"
@@ -200,7 +200,7 @@
             position="fixed"
             location="bottom right"
             elevation="8"
-            style="margin-bottom: 115px; margin-right: 15px;z-index:9999"
+            style="margin-bottom: 180px; margin-right: 15px;z-index:9999"
             v-bind="props"
           />
         </template>
