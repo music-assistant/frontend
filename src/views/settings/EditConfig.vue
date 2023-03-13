@@ -126,7 +126,9 @@
 
                 <!-- password value -->
                 <v-text-field
-                  v-else-if="conf_item_value.type == ConfigEntryType.SECURE_STRING"
+                  v-else-if="
+                    conf_item_value.type == ConfigEntryType.SECURE_STRING
+                  "
                   v-model="conf_item_value.value"
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -142,7 +144,14 @@
                       $t('settings.invalid_input'),
                   ]"
                   :type="showPasswordValues ? 'text' : 'password'"
-                  :append-inner-icon="showPasswordValues ? 'mdi-eye' : conf_item_value.value != SECURE_STRING_SUBSTITUTE ? 'mdi-eye-off': ''"
+                  :append-inner-icon="
+                    showPasswordValues
+                      ? 'mdi-eye'
+                      : typeof conf_item_value.value == 'string' &&
+                        conf_item_value.value.includes(SECURE_STRING_SUBSTITUTE)
+                      ? ''
+                      : 'mdi-eye-off'
+                  "
                   @click:append-inner="showPasswordValues = !showPasswordValues"
                   variant="outlined"
                   clearable
@@ -268,7 +277,7 @@ import {
   ProviderConfig,
   ConfigUpdate,
   ConfigValueType,
-SECURE_STRING_SUBSTITUTE,
+  SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 
 import { computed, watch } from "vue";

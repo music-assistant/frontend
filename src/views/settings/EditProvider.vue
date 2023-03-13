@@ -41,7 +41,7 @@
       <edit-config
         v-if="config"
         :model-value="config"
-        @update:modelValue="onSubmit($event as ProviderConfig)"
+        @update:modelValue="onSubmit($event as ConfigUpdate)"
       />
     </v-card-text>
   </section>

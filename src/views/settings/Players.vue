@@ -98,9 +98,15 @@
 
                   <v-list>
                     <v-list-item
+                      v-if="config.enabled && config.player_id in api.players"
                       :title="$t('settings.configure')"
                       prepend-icon="mdi-cog"
                       @click="editPlayer(config.player_id)"
+                    />
+                    <v-list-item
+                      :title="config.enabled ? $t('settings.disable') : $t('settings.enable')"
+                      prepend-icon="mdi-cog"
+                      @click="toggleEnabled(config)"
                     />
                     <v-list-item
                       v-if="providerManifests[config.provider].documentation"
@@ -134,12 +140,13 @@ import {
   EventType,
   PlayerConfig,
   ProviderManifest,
-  ProviderType,
+  ConfigUpdate,
 } from "@/plugins/api/interfaces";
 import { getProviderIcon } from "@/components/ProviderIcons.vue";
 import { onBeforeUnmount, watch } from "vue";
-import { store } from "@/plugins/store";
+
 import { useRouter } from "vue-router";
+
 
 // global refs
 const router = useRouter();
@@ -179,7 +186,17 @@ const deletePlayerConfig = function (playerId: string) {
 };
 
 const editPlayer = function (playerId: string) {
-  router.push(`/settings/editplayer/${playerId}`);
+  if (playerId in api.players) {
+    // only allow edit if player is alive/available
+    router.push(`/settings/editplayer/${playerId}`);
+  }
+};
+
+const toggleEnabled = function (config: PlayerConfig) {
+  const update: ConfigUpdate = {
+    enabled: !config.enabled
+  }
+  api.sendCommand("config/players/update", { player_id: config.player_id, update });
 };
 
 const getPlayerName = function (playerConfig: PlayerConfig) {

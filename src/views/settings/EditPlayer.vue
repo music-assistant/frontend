@@ -19,7 +19,11 @@
         <v-card-subtitle>
           <b>{{ $t("settings.player_provider") }}: </b>{{ providerManifests[config.provider].name }}
           (
-          {{ providerManifests[config.provider].description }})
+          {{ providerManifests[config.provider].description }}) <a
+            v-if="providerManifests[config.provider].documentation"
+            :href="providerManifests[config.provider].documentation"
+            target="_blank"
+          >{{ $t("settings.check_docs") }}</a>
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
           <b>{{ $t("settings.player_model") }}: </b>{{ api.players[config.player_id].device_info.manufacturer }} /
@@ -38,7 +42,7 @@
       <edit-config
         v-if="config"
         :model-value="config"
-        @update:modelValue="onSubmit($event as PlayerConfig)"
+        @update:modelValue="onSubmit($event as ConfigUpdate)"
       />
     </v-card-text>
   </section>
@@ -95,7 +99,7 @@ watch(
 
 // methods
 const onSubmit = async function (update: ConfigUpdate) {
-  api.sendCommand("config/players/set", { player_id: props.playerId, update });
+  api.sendCommand("config/players/update", { player_id: props.playerId, update });
   router.push({ name: "playersettings" });
 };
 </script>
