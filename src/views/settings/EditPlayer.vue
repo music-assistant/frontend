@@ -48,7 +48,7 @@
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { PlayerConfig, ProviderManifest } from "@/plugins/api/interfaces";
+import { ConfigUpdate, PlayerConfig, ProviderManifest } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 
@@ -94,8 +94,8 @@ watch(
 );
 
 // methods
-const onSubmit = async function (value: PlayerConfig) {
-  api.sendCommand("config/players/set", { config: value });
+const onSubmit = async function (update: ConfigUpdate) {
+  api.sendCommand("config/players/set", { player_id: props.playerId, update });
   router.push({ name: "playersettings" });
 };
 </script>

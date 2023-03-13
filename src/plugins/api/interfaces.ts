@@ -1,3 +1,7 @@
+/// constants
+export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted"
+export const MASS_LOGO_ONLINE = "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png"
+
 /// enums
 
 export enum MediaType {
@@ -166,7 +170,7 @@ export enum ProviderType {
 export enum ConfigEntryType {
   BOOLEAN = "boolean",
   STRING = "string",
-  PASSWORD = "password",
+  SECURE_STRING = "secure_string",
   INTEGER = "integer",
   FLOAT = "float",
   LABEL = "label",
@@ -288,6 +292,12 @@ export interface PlayerConfig extends Config {
   enabled: boolean;
   // name: an (optional) custom name for this player
   name?: string;
+}
+
+export interface ConfigUpdate {
+  enabled?: boolean;
+  name?: string;
+  values?: Record<string, ConfigValueType>;
 }
 
 //// media_items

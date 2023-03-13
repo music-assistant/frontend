@@ -1,11 +1,6 @@
 <template>
   <section>
-    <v-form
-      v-if="conf"
-      ref="form"
-      v-model="valid"
-      style="margin-right: 10px"
-    >
+    <v-form v-if="conf" ref="form" v-model="valid" style="margin-right: 10px">
       <!-- name field -->
       <v-text-field
         v-if="'name' in conf"
@@ -43,16 +38,13 @@
           we split up the config settings in basic and advanced settings,
           using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
         -->
-        <v-expansion-panel
-          v-for="panel of panels"
-          :value="panel"
-        >
+        <v-expansion-panel v-for="panel of panels" :value="panel">
           <v-expansion-panel-title v-if="panel == 'advanced'">
             <div class="expansion-panel-text">
               {{ $t("settings.advanced_settings") }}
             </div>
           </v-expansion-panel-title>
-          <br>
+          <br />
           <v-expansion-panel-text>
             <div
               v-for="conf_item_value of Object.values(conf.values).filter(
@@ -63,14 +55,20 @@
             >
               <div class="configcolumnleft">
                 <!-- label value -->
-                
+
                 <div v-if="conf_item_value.type == ConfigEntryType.LABEL">
-                  <br>
+                  <br />
                   <v-divider />
-                  <v-label style="margin-left:8px;margin-top:10px;margin-bottom:10px;">
+                  <v-label
+                    style="
+                      margin-left: 8px;
+                      margin-top: 10px;
+                      margin-bottom: 10px;
+                    "
+                  >
                     <b>{{ conf_item_value.value?.toString() }}</b>
                   </v-label>
-                  <br>
+                  <br />
                 </div>
 
                 <!-- boolean value: toggle switch -->
@@ -83,20 +81,22 @@
                   color="primary"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                 />
 
                 <!-- int/float value in range: slider control -->
                 <v-slider
-                  v-else-if="(conf_item_value.type == ConfigEntryType.INTEGER ||
-                    conf_item_value.type == ConfigEntryType.FLOAT) &&
-                    conf_item_value.range && conf_item_value.range.length == 2
+                  v-else-if="
+                    (conf_item_value.type == ConfigEntryType.INTEGER ||
+                      conf_item_value.type == ConfigEntryType.FLOAT) &&
+                    conf_item_value.range &&
+                    conf_item_value.range.length == 2
                   "
                   v-model="(conf_item_value.value as number)"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -105,9 +105,11 @@
                   class="align-center"
                   :min="conf_item_value.range[0]"
                   :max="conf_item_value.range[1]"
-                  :step-size="conf_item_value.type == ConfigEntryType.FLOAT ? 0.5 : 1"
+                  :step-size="
+                    conf_item_value.type == ConfigEntryType.FLOAT ? 0.5 : 1
+                  "
                   hide-details
-                  style="margin-top:10px;margin-bottom:25px"
+                  style="margin-top: 10px; margin-bottom: 25px"
                   color="primary"
                 >
                   <template #append>
@@ -124,7 +126,7 @@
 
                 <!-- password value -->
                 <v-text-field
-                  v-else-if="conf_item_value.type == ConfigEntryType.PASSWORD"
+                  v-else-if="conf_item_value.type == ConfigEntryType.SECURE_STRING"
                   v-model="conf_item_value.value"
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -132,14 +134,16 @@
                   :required="conf_item_value.required"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :rules="[
                     (v) =>
                       !(!v && conf_item_value.required) ||
                       $t('settings.invalid_input'),
                   ]"
-                  type="password"
+                  :type="showPasswordValues ? 'text' : 'password'"
+                  :append-inner-icon="showPasswordValues ? 'mdi-eye' : conf_item_value.value != SECURE_STRING_SUBSTITUTE ? 'mdi-eye-off': ''"
+                  @click:append-inner="showPasswordValues = !showPasswordValues"
                   variant="outlined"
                   clearable
                 />
@@ -148,7 +152,7 @@
                 <v-select
                   v-else-if="
                     conf_item_value.options &&
-                      conf_item_value.options.length > 0
+                    conf_item_value.options.length > 0
                   "
                   v-model="conf_item_value.value"
                   :chips="conf_item_value.multi_value"
@@ -158,7 +162,7 @@
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -179,7 +183,7 @@
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -194,10 +198,7 @@
                   :clearable="!conf_item_value.required"
                 />
               </div>
-              <div
-                v-if="conf_item_value.description"
-                class="configcolumnright"
-              >
+              <div v-if="conf_item_value.description" class="configcolumnright">
                 <!-- right side of control: help icon with description-->
                 <v-tooltip
                   activator="parent"
@@ -245,53 +246,39 @@
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
-      <br>
-      <v-btn
-        block
-        color="primary"
-        @click="onSave"
-      >
-        {{
-          $t("settings.save")
-        }}
+      <br />
+      <v-btn block color="primary" @click="onSave">
+        {{ $t("settings.save") }}
       </v-btn>
     </v-form>
-    <br>
-    <v-btn
-      block
-      @click="$router.back()"
-    >
+    <br />
+    <v-btn block @click="$router.back()">
       {{ $t("settings.close") }}
     </v-btn>
   </section>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, VNodeRef } from "vue";
+import { ref, VNodeRef } from "vue";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
-import { api, ConnectionState } from "@/plugins/api";
 import {
   ConfigEntryType,
-  EventMessage,
-  EventType,
   PlayerConfig,
   ProviderConfig,
-  ProviderManifest,
-  ProviderType,
+  ConfigUpdate,
+  ConfigValueType,
+SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
-import { getProviderIcon } from "@/components/ProviderIcons.vue";
-import { computed, onBeforeUnmount, watch } from "vue";
-import { store } from "@/plugins/store";
-import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+
+import { computed, watch } from "vue";
 
 export interface Props {
   modelValue?: PlayerConfig | ProviderConfig;
 }
 
 const emit = defineEmits<{
-  (e: "update:modelValue", value: PlayerConfig | ProviderConfig): void;
+  (e: "update:modelValue", value: ConfigUpdate): void;
 }>();
 
 // global refs
@@ -299,6 +286,7 @@ const conf = ref<ProviderConfig | PlayerConfig>();
 const valid = ref(false);
 const form = ref<VNodeRef>();
 const activePanel = ref<string>("basic");
+const showPasswordValues = ref(false);
 
 // props
 const props = defineProps<Props>();
@@ -332,7 +320,28 @@ const validate = async function (this: any) {
 };
 const onSave = async function (this: any) {
   if ((await validate()) && conf.value) {
-    emit("update:modelValue", conf.value);
+    const updatedValues: Record<string, ConfigValueType> = {};
+    for (const key in conf.value.values) {
+      if (
+        conf.value.values[key].type == ConfigEntryType.SECURE_STRING &&
+        conf.value.values[key].value == SECURE_STRING_SUBSTITUTE
+      ) {
+        continue;
+      }
+      const value = conf.value.values[key].value;
+      if (value !== undefined) {
+        // TODO: only store actually updated values
+        updatedValues[key] = value;
+      }
+    }
+
+    const update: ConfigUpdate = {
+      enabled: conf.value.enabled,
+      name: conf.value.name,
+      values: updatedValues,
+    };
+
+    emit("update:modelValue", update);
   }
 };
 const openLink = function (url: string) {
