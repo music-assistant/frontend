@@ -161,6 +161,11 @@
                       @click="editProvider(config.instance_id)"
                     />
                     <v-list-item
+                      :title="config.enabled ? $t('settings.disable') : $t('settings.enable')"
+                      prepend-icon="mdi-cog"
+                      @click="toggleEnabled(config)"
+                    />
+                    <v-list-item
                       v-if="providerManifests[config.domain].documentation"
                       :title="$t('settings.documentation')"
                       prepend-icon="mdi-bookshelf"
@@ -191,7 +196,7 @@
       </div>
 
       <!-- float action button to add a new provider config-->
-      <v-menu location="bottom end">
+      <v-menu location="bottom end" min-width="500">
         <template #activator="{ props }">
           <v-btn
             color="primary"
@@ -200,7 +205,7 @@
             position="fixed"
             location="bottom right"
             elevation="8"
-            style="margin-bottom: 115px; margin-right: 15px;z-index:9999"
+            style="margin-bottom: 180px; margin-right: 15px;z-index:9999"
             v-bind="props"
           />
         </template>
@@ -233,6 +238,7 @@ import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
 import { api } from "@/plugins/api";
 import {
+ConfigUpdate,
   EventType,
   ProviderConfig,
   ProviderManifest,
@@ -298,6 +304,13 @@ const editProvider = function (providerInstanceId: string) {
 const addProvider = function (provider: ProviderManifest) {
   console.log("addProvider", provider);
   router.push(`/settings/addprovider/${provider.domain}`);
+};
+
+const toggleEnabled = function (config: ProviderConfig) {
+  const update: ConfigUpdate = {
+    enabled: !config.enabled
+  }
+  api.sendCommand("config/providers/update", { instance_id: config.instance_id, update });
 };
 
 // watchers

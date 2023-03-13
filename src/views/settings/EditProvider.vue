@@ -41,7 +41,7 @@
       <edit-config
         v-if="config"
         :model-value="config"
-        @update:modelValue="onSubmit($event as ProviderConfig)"
+        @update:modelValue="onSubmit($event as ConfigUpdate)"
       />
     </v-card-text>
   </section>
@@ -51,7 +51,7 @@
 import { reactive, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { ProviderConfig, ProviderManifest } from "@/plugins/api/interfaces";
+import { ProviderConfig, ProviderManifest, ConfigUpdate } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 import { store } from "@/plugins/store";
@@ -106,8 +106,8 @@ watch(
 );
 
 // methods
-const onSubmit = async function (value: ProviderConfig) {
-  api.sendCommand("config/providers/set", { config: value });
+const onSubmit = async function (update: ConfigUpdate) {
+  api.sendCommand("config/providers/update", { instance_id: config.value?.instance_id, update });
   router.push({ name: "musicprovidersettings" });
 };
 
