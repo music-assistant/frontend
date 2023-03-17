@@ -43,27 +43,6 @@
                 </v-tooltip>
               </div>
 
-              <!-- playerprovider has errors -->
-              <div
-                v-else-if="api.providers[config.provider]?.last_error"
-                class="listitem-action"
-              >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
-                  <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="red"
-                    >
-                      mdi-alert-circle
-                    </v-icon>
-                  </template>
-                  <span>{{ api.providers[config.provider]?.last_error }}</span>
-                </v-tooltip>
-              </div>
-
               <!-- player not (yet) available -->
               <div
                 v-else-if="!api.players[config.player_id]?.available"
