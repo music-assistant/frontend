@@ -470,7 +470,7 @@ export interface QueueItem {
   sort_index: number;
   streamdetails?: StreamDetails;
   media_item?: Track | Radio;
-  image?: MediaItemImage;
+  image_url?: string;
 }
 
 // player_queue

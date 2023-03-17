@@ -22,10 +22,7 @@
       >
         <template #placeholder>
           <div class="d-flex align-center justify-center fill-height">
-            <v-progress-circular
-              indeterminate
-              color="grey-lighten-4"
-            />
+            <v-progress-circular indeterminate color="grey-lighten-4" />
           </div>
         </template>
       </v-img>
@@ -44,8 +41,6 @@ import type {
 import { ImageType } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
 import { useTheme } from "vuetify";
-
-
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -68,11 +63,11 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const imgData = ref<string>();
-  const theme = useTheme();
+const theme = useTheme();
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
-  if (!props.item) return '';
+  if (!props.item) return "";
   if (theme.current.value.dark)
     return `https://ui-avatars.com/api/?name=${props.item.name}&size=${props.maxSize}&bold=true&background=1d1d1d&color=383838`;
   else
@@ -84,13 +79,11 @@ watch(
   async (newVal) => {
     if (newVal) {
       imgData.value =
-        (await getImageThumbForItem(
-          newVal,
-          ImageType.THUMB,
-          props.maxSize
-        )) || fallbackImage.value;
+        (await getImageThumbForItem(newVal, ImageType.THUMB, props.maxSize)) ||
+        fallbackImage.value;
     }
-  }, { immediate: true }
+  },
+  { immediate: true }
 );
 </script>
 
@@ -104,7 +97,6 @@ export const getMediaItemImage = function (
 ): MediaItemImage | undefined {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
-  if ("image" in mediaItem && mediaItem.image) return mediaItem.image; // queueItem
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
       if (img.is_file && !includeFileBased) continue;
@@ -155,25 +147,32 @@ export const getImageThumbForItem = async function (
   size?: number
 ): Promise<string | undefined> {
   if (!mediaItem) return;
-  const img = getMediaItemImage(mediaItem, type, true);
-  if (!img) return undefined;
-  if (!img.is_file && !size) {
-    return img.url;
+  let imageUrl = "";
+  if ("image_url" in mediaItem && mediaItem.image_url) {
+    // queueItem with already resolved url
+    imageUrl = mediaItem.image_url;
+  } else {
+    // find image in mediaitem
+    const img = getMediaItemImage(mediaItem, type, true);
+    if (!img) return undefined;
+    if (img.is_file) {
+      // use imageproxy for embedded images
+      const encUrl = encodeURIComponent(encodeURIComponent(img.url));
+      const checksum =
+        "metadata" in mediaItem ? mediaItem.metadata?.checksum : "";
+      return `${api.baseUrl}/imageproxy?size=${
+        size || 0
+      }&path=${encUrl}&checksum=${checksum}`;
+    }
+    imageUrl = img.url;
   }
-  if (!img.is_file && size) {
+
+  if (!size) {
+    return imageUrl;
+  } else {
     // get url to resized image(thumb) from weserv service
-    return `https://images.weserv.nl/?url=${img.url}&w=${size}&h=${size}&fit=cover&a=attention`;
+    return `https://images.weserv.nl/?url=${imageUrl}&w=${size}&h=${size}&fit=cover&a=attention`;
   }
-  if (img.url.startsWith("https://")) {
-    return img.url;
-  }
-  // use image proxy to grab thumb
-  const encUrl = encodeURIComponent(encodeURIComponent(img.url));
-  
-  const checksum = "metadata" in mediaItem ? mediaItem.metadata?.checksum : "";
-  return `${api.baseUrl}/imageproxy?size=${
-    size || 0
-  }&path=${encUrl}&checksum=${checksum}`;
 };
 </script>
 
