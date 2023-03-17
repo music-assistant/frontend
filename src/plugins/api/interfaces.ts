@@ -282,6 +282,7 @@ export interface ProviderConfig extends Config {
   enabled: boolean;
   // name: an (optional) custom name for this provider instance/config
   name?: string;
+  last_error?: string;
 }
 
 export interface PlayerConfig extends Config {
@@ -558,7 +559,6 @@ export interface ProviderInstance {
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
-  last_error?: string;
 }
 
 export interface SyncTask {

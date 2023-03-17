@@ -131,7 +131,7 @@ const routes = [
             path: "addprovider/:domain",
             name: "addprovider",
             component: () =>
-              import(/* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"),
+              import(/* webpackChunkName: "addprovider" */ "@/views/settings/AddProvider.vue"),
             props: true,
           },
           {

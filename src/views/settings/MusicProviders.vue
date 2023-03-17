@@ -17,14 +17,13 @@
         prominent
       >
         <b>{{ $t("settings.no_providers") }}</b>
-        <br>
+        <br />
         {{ $t("settings.no_providers_detail") }}
       </v-alert>
       <div>
         <v-list-item
           v-for="config in providerConfigs.filter(
-            (x) =>
-              x.type == ProviderType.MUSIC && x.domain in providerManifests
+            (x) => x.type == ProviderType.MUSIC && x.domain in providerManifests
           )"
           :key="config.instance_id"
           :title="config.name || providerManifests[config.domain].name"
@@ -50,19 +49,11 @@
                   ).length > 0
                 "
                 class="listitem-action"
-                style="margin-right:15px;"
+                style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="grey"
-                    >
-                      mdi-sync
-                    </v-icon>
+                    <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
                   </template>
                   <span>{{ $t("settings.sync_running") }}</span>
                 </v-tooltip>
@@ -72,19 +63,11 @@
               <div
                 v-if="!config.enabled"
                 class="listitem-action"
-                style="margin-right:15px;"
+                style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="grey"
-                    >
-                      mdi-cancel
-                    </v-icon>
+                    <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
                   </template>
                   <span>{{ $t("settings.provider_disabled") }}</span>
                 </v-tooltip>
@@ -92,25 +75,17 @@
 
               <!-- provider has errors -->
               <div
-                v-else-if="api.providers[config.instance_id]?.last_error"
+                v-else-if="config.last_error"
                 class="listitem-action"
-                style="margin-right:15px;"
+                style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="red"
-                    >
+                    <v-icon v-bind="tooltip" color="red">
                       mdi-alert-circle
                     </v-icon>
                   </template>
-                  <span>{{
-                    api.providers[config.instance_id]?.last_error
-                  }}</span>
+                  <span>{{ config.last_error }}</span>
                 </v-tooltip>
               </div>
 
@@ -118,21 +93,13 @@
               <div
                 v-else-if="!api.providers[config.instance_id]?.available"
                 class="listitem-action"
-                style="margin-right:15px;"
+                style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip">
-                      mdi-timer-sand
-                    </v-icon>
+                    <v-icon v-bind="tooltip"> mdi-timer-sand </v-icon>
                   </template>
-                  <span v-if="api.providers[config.instance_id]?.last_error">{{
-                    api.providers[config.instance_id]?.last_error
-                  }}</span>
-                  <span v-else>{{ $t("settings.not_loaded") }}</span>
+                  <span>{{ $t("settings.not_loaded") }}</span>
                 </v-tooltip>
               </div>
 
@@ -154,16 +121,17 @@
                     <v-list-item
                       :title="$t('settings.configure')"
                       prepend-icon="mdi-cog"
-                      :disabled="
-                        providerManifests[config.domain].config_entries
-                          .length == 0
-                      "
                       @click="editProvider(config.instance_id)"
                     />
                     <v-list-item
-                      :title="config.enabled ? $t('settings.disable') : $t('settings.enable')"
-                      prepend-icon="mdi-cog"
+                      :title="
+                        config.enabled
+                          ? $t('settings.disable')
+                          : $t('settings.enable')
+                      "
+                      prepend-icon="mdi-cancel"
                       @click="toggleEnabled(config)"
+                      :disabled="providerManifests[config.domain].builtin"
                     />
                     <v-list-item
                       v-if="providerManifests[config.domain].documentation"
@@ -173,19 +141,21 @@
                       target="_blank"
                     />
                     <v-list-item
-                      v-if="providerManifests[config.domain].documentation"
+                      v-if="api.providers[config.instance_id]?.available"
                       :title="$t('settings.sync')"
                       prepend-icon="mdi-sync"
                       @click="api.startSync(undefined, [config.instance_id])"
                     />
                     <v-list-item
-                      v-if="
-                        !providerManifests[config.domain].builtin &&
-                          !providerManifests[config.domain].load_by_default
-                      "
+                      v-if="!providerManifests[config.domain].builtin"
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"
                       @click="deleteProvider(config.instance_id)"
+                    />
+                    <v-list-item
+                      :title="$t('settings.reload')"
+                      prepend-icon="mdi-refresh"
+                      @click="reloadProvider(config.instance_id)"
                     />
                   </v-list>
                 </v-menu>
@@ -205,7 +175,7 @@
             position="fixed"
             location="bottom right"
             elevation="8"
-            style="margin-bottom: 180px; margin-right: 15px;z-index:9999"
+            style="margin-bottom: 180px; margin-right: 15px; z-index: 9999"
             v-bind="props"
           />
         </template>
@@ -238,7 +208,7 @@ import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
 import { api } from "@/plugins/api";
 import {
-ConfigUpdate,
+  ConfigUpdate,
   EventType,
   ProviderConfig,
   ProviderManifest,
@@ -246,7 +216,6 @@ ConfigUpdate,
 } from "@/plugins/api/interfaces";
 import { getProviderIcon } from "@/components/ProviderIcons.vue";
 import { computed, onBeforeUnmount, watch } from "vue";
-import { store } from "@/plugins/store";
 import { useRouter } from "vue-router";
 
 // global refs
@@ -308,9 +277,18 @@ const addProvider = function (provider: ProviderManifest) {
 
 const toggleEnabled = function (config: ProviderConfig) {
   const update: ConfigUpdate = {
-    enabled: !config.enabled
-  }
-  api.sendCommand("config/providers/update", { instance_id: config.instance_id, update });
+    enabled: !config.enabled,
+  };
+  api.sendCommand("config/providers/update", {
+    instance_id: config.instance_id,
+    update,
+  });
+};
+
+const reloadProvider = function (providerInstanceId: string) {
+  api.getData("config/providers/reload", {
+    instance_id: providerInstanceId,
+  }).catch((err) => alert(err));
 };
 
 // watchers
@@ -323,6 +301,4 @@ watch(
 );
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
