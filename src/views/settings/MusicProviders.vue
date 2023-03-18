@@ -166,7 +166,9 @@
       </div>
 
       <!-- float action button to add a new provider config-->
-      <v-menu location="bottom end" min-width="500">
+      <v-dialog
+        :scrim="true"
+      >
         <template #activator="{ props }">
           <v-btn
             color="primary"
@@ -179,6 +181,13 @@
             v-bind="props"
           />
         </template>
+
+        <v-toolbar dark>
+        <v-btn icon="mdi-play-circle-outline" />
+        <v-toolbar-title style="padding-left: 10px">
+          <b>{{ $t('settings.add_provider') }}</b>
+        </v-toolbar-title>
+      </v-toolbar>
 
         <v-list>
           <v-list-item
@@ -197,7 +206,7 @@
             </template>
           </v-list-item>
         </v-list>
-      </v-menu>
+      </v-dialog>
     </v-card-text>
   </section>
 </template>
@@ -286,9 +295,11 @@ const toggleEnabled = function (config: ProviderConfig) {
 };
 
 const reloadProvider = function (providerInstanceId: string) {
-  api.getData("config/providers/reload", {
-    instance_id: providerInstanceId,
-  }).catch((err) => alert(err));
+  api
+    .getData("config/providers/reload", {
+      instance_id: providerInstanceId,
+    })
+    .catch((err) => alert(err));
 };
 
 // watchers

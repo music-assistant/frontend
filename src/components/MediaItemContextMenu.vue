@@ -1,7 +1,7 @@
 <template>
   <v-dialog
-    :fullscreen="$vuetify.display.mobile"
     :model-value="modelValue"
+    :fullscreen="$vuetify.display.mobile"
     min-height="80%"
     :scrim="true"
   >

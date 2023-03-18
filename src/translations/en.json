@@ -167,7 +167,7 @@
     "players": "Players",
     "player_settings": "Player settings",
     "musicproviders": "Music providers",
-    "no_providers": "Setup Music Providers",
+    "no_providers": "No Music Providers configured",
     "no_providers_detail": "Start your Music Assistant experience by adding your Music providers below.",
     "documentation": "Documentation",
     "configure": "Configure",
@@ -200,6 +200,7 @@
     "advanced_settings": "Advanced settings",
     "need_help_setup_provider": "Need help setting up this provider ?",
     "check_docs": "Checkout the documentation",
-    "player_not_available": "This player is currently not (yet) available"
+    "player_not_available": "This player is currently not (yet) available",
+    "add_provider": "Add a new provider"
   }
 }
