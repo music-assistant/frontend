@@ -1,8 +1,9 @@
 <template>
   <v-main id="cont">
+    <navigation-menu />
     <v-container
       fluid
-      style="padding: 0"
+      style="padding-left: 0;padding-right: 0"
     >
       <router-view
         v-slot="{ Component }"
@@ -23,4 +24,5 @@
 
 <script lang="ts" setup>
   //
+  import NavigationMenu from "./NavigationMenu.vue";
 </script>

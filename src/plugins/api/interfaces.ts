@@ -441,6 +441,14 @@ export interface PagedItems {
   total?: number;
 }
 
+export interface SearchResults {
+  artists: Artist[];
+  albums: Album[];
+  tracks: Track[];
+  playlists: Playlist[];
+  radio: Radio[];
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;

@@ -123,3 +123,7 @@ export const getPlayerName = function (player: Player, truncate: number = 26) {
   }
   return truncateString(player.display_name, truncate);
 };
+
+export const numberRange = function (start: number, end: number): number[] {
+  return Array(end - start + 1).fill(start).map((x, y) => x + y);
+}

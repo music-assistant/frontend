@@ -40,6 +40,7 @@ import {
   type CommandMessage,
   type SyncTask,
   RepeatMode,
+  SearchResults,
 } from "./interfaces";
 
 const DEBUG = true;
@@ -573,7 +574,7 @@ export class MusicAssistantApi {
     search_query: string,
     media_types?: MediaType[],
     limit?: number
-  ): Promise<MediaItemType[]> {
+  ): Promise<SearchResults> {
     // Perform global search for media items on all providers.
     return this.getData("music/search", { search_query, media_types, limit });
   }
