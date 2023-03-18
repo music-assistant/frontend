@@ -175,22 +175,20 @@
     </div>
 
     <!-- contextmenu -->
-    <v-overlay
+    <v-dialog
       v-model="showContextMenu"
-      class="align-center justify-center"
-      :scrim="false"
+      :fullscreen="$vuetify.display.mobile"
+      min-height="80%"
+    :scrim="true"
     >
-      <v-menu
-        v-model="showContextMenu"
-        class="fullscreen-menu"
-      >
+
         <v-card>
           <v-toolbar
             sense
             dark
             color="primary"
           >
-            <v-icon icon="mdi-play-circle-outline" />
+            <v-btn icon="mdi-play-circle-outline" />
             <v-toolbar-title
               v-if="selectedItem"
               style="padding-left: 10px"
@@ -305,8 +303,7 @@
             </v-list>
           </v-card-text>
         </v-card>
-      </v-menu>
-    </v-overlay>
+    </v-dialog>
   </section>
 </template>
 
