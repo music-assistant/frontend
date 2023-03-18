@@ -283,7 +283,7 @@
           {{ $t("no_content") }}
         </v-alert>
       </div>
-      <v-snackbar :model-value="selectedItems.length > 1">
+      <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom:120px">
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
           <v-btn
