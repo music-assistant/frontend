@@ -323,7 +323,7 @@ import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import { store } from "../plugins/store";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
-import MediaItemContextMenu from "./MediaItemContextMenu.vue";
+import MediaItemContextMenu, { itemIsAvailable } from "./MediaItemContextMenu.vue";
 import { useRouter } from "vue-router";
 import { api } from "../plugins/api";
 import InfiniteLoading from "v3-infinite-loading";
@@ -493,6 +493,10 @@ const onRefreshClicked = function () {
 
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
+  if (!itemIsAvailable(mediaItem)) {
+    onMenu(mediaItem);
+    return
+  }
   const forceProviderVersion = props.itemtype.includes("versions").toString();
 
   if (
