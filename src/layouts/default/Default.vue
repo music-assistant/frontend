@@ -2,6 +2,7 @@
   <v-app>
     <player-select />
     <app-bar />
+    <player-o-s-d />
     <main-view v-if="api.state.value == ConnectionState.CONNECTED" />
     <v-overlay v-else>
       <v-progress-circular
@@ -9,7 +10,7 @@
         size="64"
       />
     </v-overlay>
-    <player-o-s-d />
+   
     <reload-prompt v-if="store.isInStandaloneMode" />
   </v-app>
 </template>

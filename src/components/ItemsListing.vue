@@ -236,11 +236,12 @@
           v-slot="{ item }"
           :items="items"
           :item-size="60"
-          key-field="item_id"
+          key-field="uri"
           page-mode
         >
           <ListviewItem
             :item="item"
+            :key="item.uri"
             :show-track-number="showTrackNumber"
             :show-duration="showDuration"
             :show-library="showLibrary !== false && !inLibraryOnly"
@@ -266,9 +267,8 @@
           v-if="!loading && items.length == 0 && (search || inLibraryOnly)"
           type="info"
           color="grey"
-        >
-          {{ $t("no_content_filter")
-          }}<v-btn
+          :title="$t('no_content_filter')"
+        ><v-btn
             v-if="search"
             style="margin-top: 15px"
             @click="redirectSearch"
@@ -383,6 +383,23 @@ const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(false);
 
 // computed properties
+
+// emitters
+const emit = defineEmits<{
+  (e: "toggleAlbumArtistsOnly", value: boolean): void;
+  (e: "refreshClicked"): void;
+}>();
+
+// methods
+const toggleSearch = function () {
+  if (showSearch.value) showSearch.value = false;
+  else {
+    showSearch.value = true;
+    nextTick(() => {
+      document.getElementById("searchInput")?.focus();
+    });
+  }
+};
 const panelViewItemResponsive = function (displaySize: number) {
   if (displaySize < 500) {
     return 2;
@@ -402,22 +419,6 @@ const panelViewItemResponsive = function (displaySize: number) {
     return 9;
   } else {
     return 0;
-  }
-};
-
-const emit = defineEmits<{
-  (e: "toggleAlbumArtistsOnly", value: boolean): void;
-  (e: "refreshClicked"): void;
-}>();
-
-// methods
-const toggleSearch = function () {
-  if (showSearch.value) showSearch.value = false;
-  else {
-    showSearch.value = true;
-    nextTick(() => {
-      document.getElementById("searchInput")?.focus();
-    });
   }
 };
 
@@ -539,7 +540,7 @@ const loadNextPage = function ($state: any) {
 
 const redirectSearch = function () {
   localStorage.setItem("globalsearch", search.value);
-  router.push({ name: "home" });
+  router.push({ name: "search", params: {initSearch: search.value} });
 };
 
 // watchers
@@ -632,25 +633,25 @@ onMounted(() => {
 
 onMounted(() => {
   //reload if/when parent item updates
-  // const unsub = api.subscribe_multi(
-  //   [
-  //     EventType.MEDIA_ITEM_ADDED,
-  //     EventType.MEDIA_ITEM_UPDATED,
-  //     EventType.MEDIA_ITEM_DELETED,
-  //   ],
-  //   (evt: EventMessage) => {
-  //     if (evt.event == EventType.MEDIA_ITEM_DELETED) {
-  //       items.value = items.value.filter((x) => x.uri != evt.object_id);
-  //     } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
-  //       // update listing if relevant item changes
-  //       const updatedItem = evt.data as MediaItemType;
-  //       items.value = items.value.map((x) =>
-  //         x.uri == updatedItem.uri ? updatedItem : x
-  //       );
-  //     }
-  //   }
-  // );
-  // onBeforeUnmount(unsub);
+  const unsub = api.subscribe_multi(
+    [
+      EventType.MEDIA_ITEM_ADDED,
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
+    ],
+    (evt: EventMessage) => {
+      if (evt.event == EventType.MEDIA_ITEM_DELETED) {
+        items.value = items.value.filter((x) => x.uri != evt.object_id);
+      } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
+        // update listing if relevant item changes
+        const updatedItem = evt.data as MediaItemType;
+        items.value = items.value.map((x) =>
+          x.uri == updatedItem.uri ? updatedItem : x
+        );
+      }
+    }
+  );
+  onBeforeUnmount(unsub);
 });
 
 // lifecycle hooks

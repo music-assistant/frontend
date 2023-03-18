@@ -13,13 +13,22 @@ const routes = [
     component: () => import("@/layouts/default/Default.vue"),
     children: [
       {
-        path: "",
+        path: '',
+        redirect: '/home',
+        name: 'homeredirect'
+      },
+      {
+        path: "/home",
         name: "home",
-        // route level code-splitting
-        // this generates a separate chunk (about.[hash].js) for this route
-        // which is lazy-loaded when the route is visited.
         component: () =>
           import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
+        props: true,
+      },
+      {
+        path: "/search",
+        name: "search",
+        component: () =>
+          import(/* webpackChunkName: "search" */ "@/views/Search.vue"),
         props: true,
       },
       {
@@ -27,7 +36,7 @@ const routes = [
         name: "browse",
         component: () =>
           import(/* webpackChunkName: "browse" */ "@/views/BrowseView.vue"),
-        props: true,
+          props: (route: { query: { path: any; }; }) => ({ path: route.query.path }),
       },
       {
         path: "/artists",

@@ -1,30 +1,24 @@
 <template>
-  <v-card>
+  <div>
     <v-text-field
       id="searchInput"
       v-model="search"
       clearable
-      :prepend-inner-icon="mdiMagnify"
+      prepend-inner-icon="mdi-magnify"
       :label="$t('type_to_search')"
       hide-details
       variant="filled"
-      style="width: auto; margin: 10px"
       @focus="searchHasFocus = true"
       @blur="searchHasFocus = false"
     />
 
-    <div v-if="search">
+    <div>
       <v-chip-group
         v-model="viewFilter"
         column
         style="margin-top: 15px; margin-left: 10px"
       >
-        <v-chip
-          v-for="item in viewFilters"
-          :key="item"
-          filter
-          outlined
-        >
+        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
           {{ $t(item) }}
         </v-chip>
       </v-chip-group>
@@ -49,22 +43,14 @@
         "
       >
         <!-- loading animation -->
-        <v-progress-linear
-          v-if="loading"
-          indeterminate
-        />
+        <v-progress-linear v-if="loading" indeterminate />
 
         <!-- panel view -->
-        <v-row
-          v-if="viewMode == 'panel'"
-          dense
-          align-content="start"
-          align="start"
-        >
+        <v-row v-if="viewMode == 'panel'">
           <v-col
             v-for="item in filteredItems"
             :key="item.uri"
-            align-self="start"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
           >
             <PanelviewItem
               :item="item"
@@ -108,31 +94,36 @@
         color="transparent"
         height="45"
       >
-        <span>{{ $t("items_total", [filteredItems.length]) }}</span>
+        <span style="margin-left: 15px">{{
+          $t("items_total", [filteredItems.length])
+        }}</span>
         <v-spacer />
 
         <v-tooltip location="bottom">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"
-              :icon="viewMode == 'panel' ? mdiViewList : mdiGrid"
+              :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
               @click="toggleViewMode()"
+              variant="plain"
             />
           </template>
           <span>{{ $t("tooltip.toggle_view_mode") }}</span>
         </v-tooltip>
       </v-toolbar>
     </div>
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { mdiMagnify, mdiGrid, mdiViewList } from "@mdi/js";
-
 import { ref, computed, onBeforeUnmount, onMounted, watch } from "vue";
 import { useDisplay } from "vuetify";
-import { MediaType, type MediaItemType } from "../plugins/api/interfaces";
+import {
+  MediaType,
+  SearchResults,
+  type MediaItemType,
+} from "../plugins/api/interfaces";
 import { RecycleScroller } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import { store } from "../plugins/store";
@@ -141,6 +132,12 @@ import PanelviewItem from "../components/PanelviewItem.vue";
 import MediaItemContextMenu from "../components/MediaItemContextMenu.vue";
 import { useRouter } from "vue-router";
 import { api } from "../plugins/api";
+import { numberRange } from "@/utils";
+
+export interface Props {
+  initSearch?: string;
+}
+const props = defineProps<Props>();
 
 // global refs
 const router = useRouter();
@@ -151,7 +148,7 @@ const viewMode = ref("list");
 const viewFilter = ref(0);
 const search = ref("");
 const searchHasFocus = ref(false);
-const items = ref<MediaItemType[]>([]);
+const searchResult = ref<SearchResults>();
 const loading = ref(false);
 const showContextMenu = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
@@ -211,14 +208,36 @@ watch(
   }
 );
 
+const panelViewItemResponsive = function (displaySize: number) {
+  if (displaySize < 500) {
+    return 2;
+  } else if (displaySize <= 500) {
+    return 3;
+  } else if (displaySize <= 700) {
+    return 4;
+  } else if (displaySize <= 1000) {
+    return 5;
+  } else if (displaySize <= 1200) {
+    return 6;
+  } else if (displaySize <= 1500) {
+    return 7;
+  } else if (displaySize <= 1700) {
+    return 8;
+  } else if (displaySize > 1700) {
+    return 9;
+  } else {
+    return 0;
+  }
+};
+
 const loadSearchResults = async function () {
   loading.value = true;
   localStorage.setItem("globalsearch", search.value);
 
   if (search.value) {
-    items.value = await api.search(search.value);
+    searchResult.value = await api.search(search.value);
   } else {
-    items.value = [];
+    searchResult.value = undefined;
   }
   loading.value = false;
 };
@@ -228,23 +247,45 @@ const viewFilterStr = computed(() => {
 });
 
 const filteredItems = computed(() => {
+  if (!searchResult.value) return [];
+
   if (viewFilterStr.value == "artists") {
-    return items.value.filter((x) => x.media_type == MediaType.ARTIST);
+    return searchResult.value.artists;
   }
   if (viewFilterStr.value == "albums") {
-    return items.value.filter((x) => x.media_type == MediaType.ALBUM);
+    return searchResult.value.albums;
   }
   if (viewFilterStr.value == "tracks") {
-    return items.value.filter((x) => x.media_type == MediaType.TRACK);
+    return searchResult.value.tracks;
   }
   if (viewFilterStr.value == "playlists") {
-    return items.value.filter((x) => x.media_type == MediaType.PLAYLIST);
+    return searchResult.value.playlists;
   }
   if (viewFilterStr.value == "radios") {
-    return items.value.filter((x) => x.media_type == MediaType.RADIO);
+    return searchResult.value.radio;
+  }
+  if (viewFilterStr.value == "topresult") {
+    const result: MediaItemType[] = [];
+
+    for (const results of [
+      searchResult.value.tracks,
+      searchResult.value.artists,
+      searchResult.value.albums,
+      searchResult.value.playlists,
+      searchResult.value.radio,
+    ]) {
+      const seenProviders: string[] = [];
+      for (const item of results) {
+        if (!seenProviders.includes(item.provider)) {
+          result.push(item);
+          seenProviders.push(item.provider);
+        }
+      }
+    }
+    return result;
   }
 
-  return items.value;
+  return [];
 });
 
 watch(
@@ -270,9 +311,13 @@ watch(
 );
 
 onMounted(() => {
-  const savedSearch = localStorage.getItem("globalsearch");
-  if (savedSearch) {
-    search.value = savedSearch;
+  if (props.initSearch) {
+    search.value = props.initSearch;
+  } else {
+    const savedSearch = localStorage.getItem("globalsearch");
+    if (savedSearch && savedSearch !== "null") {
+      search.value = savedSearch;
+    }
   }
 });
 

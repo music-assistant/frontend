@@ -9,10 +9,10 @@
       "
     >
       <!-- loading animation -->
-      <v-progress-linear
-        v-if="loading"
-        indeterminate
-      />
+      <v-progress-linear v-if="loading" indeterminate />
+
+      <!-- back button -->
+      <v-btn variant="plain" v-if="props.path" icon="mdi-arrow-left" :to="{ name: 'browse', query: { path: backPath } }"/>
 
       <RecycleScroller
         v-slot="{ item }"
@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useDisplay } from "vuetify";
 import { useI18n } from "vue-i18n";
 import { RecycleScroller } from "vue-virtual-scroller";
@@ -62,6 +62,17 @@ const { mobile } = useDisplay();
 
 const browseItem = ref<BrowseFolder>();
 const loading = ref(false);
+
+const backPath = computed(() => {
+  if (props.path) {
+    const backPath = props.path.substring(0, props.path.lastIndexOf("/") + 1);
+    if (backPath.endsWith('://')) {
+      return "";
+    }
+    return backPath;
+  }
+  return "";
+});
 
 const loadData = async function () {
   loading.value = true;
@@ -96,7 +107,7 @@ const onClick = function (mediaItem: MediaItemType) {
   } else {
     router.push({
       name: mediaItem.media_type,
-      query: { itemId: mediaItem.item_id, provider: mediaItem.provider },
+      params: { itemId: mediaItem.item_id, provider: mediaItem.provider },
     });
   }
 };

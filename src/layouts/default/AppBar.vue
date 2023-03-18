@@ -6,42 +6,17 @@
     :elevation="2"
   >
     <template #prepend>
-      <v-menu location="bottom end">
-        <template #activator="{ props }">
+
           <v-btn
             style="margin-left: -8px; margin-right: -20px"
-            v-bind="props"
+            @click="store.showNavigationMenu = !store.showNavigationMenu"
             variant="plain"
           >
             <v-icon size="40">
               mdi-playlist-play
             </v-icon>
           </v-btn>
-        </template>
-
-        <v-list>
-          <v-list-item
-            v-if="store.prevRoutes.length > 0"
-            :title="$t('page_back')"
-            prepend-icon="mdi-arrow-left"
-            @click="backButton()"
-          />
-          <v-list-item
-            v-if="router.currentRoute.value.name != 'home'"
-            :title="$t('home')"
-            prepend-icon="mdi-home"
-            @click="router.push({ name: 'home' })"
-          />
-          <v-list-item
-            v-for="menuItem of menuItems"
-            :key="menuItem.path"
-            :title="$t(menuItem.label)"
-            :prepend-icon="menuItem.icon"
-            @click="router.push(menuItem.path)"
-          />
-        </v-list>
-      </v-menu>
-    </template>
+</template>
     <v-app-bar-title>
       <span
         style="cursor: pointer"
@@ -118,6 +93,11 @@ const dialog = ref(false);
 const { t } = useI18n();
 
 const menuItems = [
+{
+    label: 'search',
+    icon: 'mdi-search',
+    path: '/search',
+  },
   {
     label: 'artists',
     icon: 'mdi-account-music',

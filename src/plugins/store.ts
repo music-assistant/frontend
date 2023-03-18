@@ -8,6 +8,7 @@ interface Store {
   selectedPlayer?: Player;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
+  showNavigationMenu: boolean;
   darkTheme: boolean;
   topBarTitle?: string;
   topBarContextMenuItems: ContextMenuItem[];
@@ -28,6 +29,7 @@ export const store: Store = reactive({
   selectedPlayer: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
+  showNavigationMenu: true,
   darkTheme: false,
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,
