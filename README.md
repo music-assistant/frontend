@@ -34,8 +34,9 @@ yarn install
 yarn dev
 ```
 
-This will launch an auto-reload development environment (usually at http://localhost:5173)
-Open the url in the browser and authenticate against Home Assistant.
+This will launch an auto-reload development environment (usually at http://localhost:3000)
+Open the url in the browser and a popup will ask the location of the MA server.
+You can either connect to a locally launched dev server or an existing running server on port 8095.
 
 ### Type-Check, Compile and Minify for Production
 
@@ -48,14 +49,3 @@ yarn build
 ```sh
 yarn lint
 ```
-
-### Test with Home Assistant integration (panel)
-
-To test a new version of the frontend live with the Home Assistant integartion without the need of building it all the time,
-it is possible to load the hot-reload dev version right into the HA panel using the environmental variable `MASS_DEBUG_URL`
-
-- Create an environmental variable `MASS_DEBUG_URL`
-- Set its contents to the location of your hot-reload URL: `http://localhost:5173/src/main.ts`
-- Adjust the url above if you run it on another port.
-- Make sur ethat the dev environment is running.
-- Start Home Assistant.
