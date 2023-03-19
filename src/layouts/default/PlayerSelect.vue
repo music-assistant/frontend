@@ -6,6 +6,7 @@
     app
     clipped
     temporary
+    touchless
     width="300"
     style="z-index: 9999"
   >
