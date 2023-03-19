@@ -6,17 +6,16 @@
     :elevation="2"
   >
     <template #prepend>
-
-          <v-btn
-            style="margin-left: -8px; margin-right: -20px"
-            @click="store.showNavigationMenu = !store.showNavigationMenu"
-            variant="plain"
-          >
-            <v-icon size="40">
-              mdi-playlist-play
-            </v-icon>
-          </v-btn>
-</template>
+      <v-btn
+        style="margin-left: -8px; margin-right: -20px"
+        variant="plain"
+        @click="store.showNavigationMenu = !store.showNavigationMenu"
+      >
+        <v-icon size="40">
+          mdi-playlist-play
+        </v-icon>
+      </v-btn>
+    </template>
     <v-app-bar-title>
       <span
         style="cursor: pointer"

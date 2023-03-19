@@ -283,14 +283,11 @@ import type {
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import { getImageThumbForItem } from "./MediaItemThumb.vue";
-import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { truncateString } from "@/utils";
 import {
   getPlayMenuItems,
   getContextMenuItems,
 } from "./MediaItemContextMenu.vue";
-import { transform } from "@vue/compiler-core";
 
 // properties
 export interface Props {
@@ -304,7 +301,6 @@ const { mobile } = useDisplay();
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
-const { t } = useI18n();
 const router = useRouter();
 
 watch(

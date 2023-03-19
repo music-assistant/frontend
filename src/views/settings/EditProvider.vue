@@ -41,8 +41,8 @@
       <edit-config
         v-if="config"
         :model-value="config"
-        @update:modelValue="onSubmit($event as ConfigUpdate)"
         :is-builtin="availableProviders[config.domain]?.builtin"
+        @update:modelValue="onSubmit($event as ConfigUpdate)"
       />
     </v-card-text>
   </section>

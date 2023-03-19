@@ -65,7 +65,6 @@ export enum ConnectionState {
 }
 
 export class MusicAssistantApi {
-  // eslint-disable-next-line prettier/prettier
   private ws?: Websocket;
   private commandId: number;
   private _throttleId?: any;

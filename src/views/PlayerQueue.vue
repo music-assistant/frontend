@@ -179,130 +179,129 @@
       v-model="showContextMenu"
       :fullscreen="$vuetify.display.mobile"
       min-height="80%"
-    :scrim="true"
+      :scrim="true"
     >
-
-        <v-card>
-          <v-toolbar
-            sense
-            dark
-            color="primary"
+      <v-card>
+        <v-toolbar
+          sense
+          dark
+          color="primary"
+        >
+          <v-btn icon="mdi-play-circle-outline" />
+          <v-toolbar-title
+            v-if="selectedItem"
+            style="padding-left: 10px"
           >
-            <v-btn icon="mdi-play-circle-outline" />
-            <v-toolbar-title
-              v-if="selectedItem"
-              style="padding-left: 10px"
+            <b>{{
+              truncateString(
+                selectedItem?.name || "",
+                $vuetify.display.mobile ? 20 : 150
+              )
+            }}</b>
+          </v-toolbar-title>
+          <v-toolbar-title
+            v-else
+            style="padding-left: 10px"
+          >
+            <b>{{ $t("settings") }}</b> |
+            {{ activePlayerQueue?.display_name }}
+          </v-toolbar-title>
+          <v-btn
+            icon="mdi-close"
+            dark
+            text
+            @click="closeContextMenu()"
+          />
+        </v-toolbar>
+
+        <!-- QueueItem related content menu -->
+        <v-card-text v-if="selectedItem">
+          <v-list>
+            <!-- play now -->
+            <v-list-item
+              :title="$t('play_now')"
+              @click="queueCommand(selectedItem, 'play_now')"
             >
-              <b>{{
-                truncateString(
-                  selectedItem?.name || "",
-                  $vuetify.display.mobile ? 20 : 150
-                )
-              }}</b>
-            </v-toolbar-title>
-            <v-toolbar-title
-              v-else
-              style="padding-left: 10px"
+              <template #prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon icon="mdi-play-circle-outline" />
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider />
+
+            <!-- play next (move to next in line) -->
+            <v-list-item
+              :title="$t('play_next')"
+              @click="queueCommand(selectedItem, 'move_next')"
             >
-              <b>{{ $t("settings") }}</b> |
-              {{ activePlayerQueue?.display_name }}
-            </v-toolbar-title>
-            <v-btn
-              icon="mdi-close"
-              dark
-              text
-              @click="closeContextMenu()"
-            />
-          </v-toolbar>
+              <template #prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon icon="mdi-skip-next-circle-outline" />
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider />
 
-          <!-- QueueItem related content menu -->
-          <v-card-text v-if="selectedItem">
-            <v-list>
-              <!-- play now -->
-              <v-list-item
-                :title="$t('play_now')"
-                @click="queueCommand(selectedItem, 'play_now')"
-              >
-                <template #prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon icon="mdi-play-circle-outline" />
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider />
+            <!-- move up -->
+            <v-list-item
+              :title="$t('queue_move_up')"
+              @click="queueCommand(selectedItem, 'up')"
+            >
+              <template #prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon icon="mdi-arrow-up" />
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider />
 
-              <!-- play next (move to next in line) -->
-              <v-list-item
-                :title="$t('play_next')"
-                @click="queueCommand(selectedItem, 'move_next')"
-              >
-                <template #prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon icon="mdi-skip-next-circle-outline" />
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider />
+            <!-- move down -->
+            <v-list-item
+              :title="$t('queue_move_down')"
+              @click="queueCommand(selectedItem, 'down')"
+            >
+              <template #prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon icon="mdi-arrow-down" />
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider />
 
-              <!-- move up -->
-              <v-list-item
-                :title="$t('queue_move_up')"
-                @click="queueCommand(selectedItem, 'up')"
-              >
-                <template #prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon icon="mdi-arrow-up" />
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider />
+            <!-- delete -->
+            <v-list-item
+              :title="$t('queue_delete')"
+              @click="queueCommand(selectedItem, 'delete')"
+            >
+              <template #prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon icon="mdi-delete" />
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider />
 
-              <!-- move down -->
-              <v-list-item
-                :title="$t('queue_move_down')"
-                @click="queueCommand(selectedItem, 'down')"
-              >
-                <template #prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon icon="mdi-arrow-down" />
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider />
-
-              <!-- delete -->
-              <v-list-item
-                :title="$t('queue_delete')"
-                @click="queueCommand(selectedItem, 'delete')"
-              >
-                <template #prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon icon="mdi-delete" />
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider />
-
-              <!-- show info (track only) -->
-              <v-list-item
-                v-if="selectedItem?.media_item?.media_type == MediaType.TRACK"
-                :title="$t('show_info')"
-                @click="
-                  selectedItem?.media_item
-                    ? gotoItem(selectedItem.media_item)
-                    : ''
-                "
-              >
-                <template #prepend>
-                  <v-avatar style="padding-right: 10px">
-                    <v-icon icon="mdi-information-outline" />
-                  </v-avatar>
-                </template>
-              </v-list-item>
-              <v-divider />
-            </v-list>
-          </v-card-text>
-        </v-card>
+            <!-- show info (track only) -->
+            <v-list-item
+              v-if="selectedItem?.media_item?.media_type == MediaType.TRACK"
+              :title="$t('show_info')"
+              @click="
+                selectedItem?.media_item
+                  ? gotoItem(selectedItem.media_item)
+                  : ''
+              "
+            >
+              <template #prepend>
+                <v-avatar style="padding-right: 10px">
+                  <v-icon icon="mdi-information-outline" />
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider />
+          </v-list>
+        </v-card-text>
+      </v-card>
     </v-dialog>
   </section>
 </template>

@@ -1,23 +1,30 @@
 <template>
   <v-navigation-drawer
-        app
-        :permanent="!$vuetify.display.mobile"
-        :rail="!$vuetify.display.mobile && !store.showNavigationMenu"
-        :model-value="($vuetify.display.mobile && store.showNavigationMenu) || !$vuetify.display.mobile"
-        @update:model-value="(e) => { if ($vuetify.display.mobile)store.showNavigationMenu = e}"
-        :width="220"
-      >
-        <div style="height:20px"></div>
-        <v-list lines="one" density="compact" nav>
-          <v-list-item nav  density="compact" :height="15"
-            v-for="menuItem of menuItems"
-            :key="menuItem.path"
-            :title="$t(menuItem.label)"
-            :prepend-icon="menuItem.icon"
-            :to="menuItem.path"
-          />
-        </v-list>
-      </v-navigation-drawer>
+    app
+    :permanent="!$vuetify.display.mobile"
+    :rail="!$vuetify.display.mobile && !store.showNavigationMenu"
+    :model-value="($vuetify.display.mobile && store.showNavigationMenu) || !$vuetify.display.mobile"
+    :width="220"
+    @update:model-value="(e) => { if ($vuetify.display.mobile)store.showNavigationMenu = e}"
+  >
+    <div style="height:20px" />
+    <v-list
+      lines="one"
+      density="compact"
+      nav
+    >
+      <v-list-item
+        v-for="menuItem of menuItems"
+        :key="menuItem.path"
+        nav
+        density="compact"
+        :height="15"
+        :title="$t(menuItem.label)"
+        :prepend-icon="menuItem.icon"
+        :to="menuItem.path"
+      />
+    </v-list>
+  </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">

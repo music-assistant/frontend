@@ -9,10 +9,18 @@
       "
     >
       <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate />
+      <v-progress-linear
+        v-if="loading"
+        indeterminate
+      />
 
       <!-- back button -->
-      <v-btn variant="plain" v-if="props.path" icon="mdi-arrow-left" :to="{ name: 'browse', query: { path: backPath } }"/>
+      <v-btn
+        v-if="props.path"
+        variant="plain"
+        icon="mdi-arrow-left"
+        :to="{ name: 'browse', query: { path: backPath } }"
+      />
 
       <RecycleScroller
         v-slot="{ item }"

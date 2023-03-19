@@ -240,8 +240,8 @@
           page-mode
         >
           <ListviewItem
-            :item="item"
             :key="item.uri"
+            :item="item"
             :show-track-number="showTrackNumber"
             :show-duration="showDuration"
             :show-library="showLibrary !== false && !inLibraryOnly"
@@ -268,7 +268,8 @@
           type="info"
           color="grey"
           :title="$t('no_content_filter')"
-        ><v-btn
+        >
+          <v-btn
             v-if="search"
             style="margin-top: 15px"
             @click="redirectSearch"
@@ -283,7 +284,11 @@
           {{ $t("no_content") }}
         </v-alert>
       </div>
-      <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom:120px">
+      <v-snackbar
+        :model-value="selectedItems.length > 1"
+        :timeout="-1"
+        style="margin-bottom:120px"
+      >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
           <v-btn

@@ -18,7 +18,12 @@
         column
         style="margin-top: 15px; margin-left: 10px"
       >
-        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
+        <v-chip
+          v-for="item in viewFilters"
+          :key="item"
+          filter
+          outlined
+        >
           {{ $t(item) }}
         </v-chip>
       </v-chip-group>
@@ -43,7 +48,10 @@
         "
       >
         <!-- loading animation -->
-        <v-progress-linear v-if="loading" indeterminate />
+        <v-progress-linear
+          v-if="loading"
+          indeterminate
+        />
 
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
@@ -104,8 +112,8 @@
             <v-btn
               v-bind="props"
               :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-              @click="toggleViewMode()"
               variant="plain"
+              @click="toggleViewMode()"
             />
           </template>
           <span>{{ $t("tooltip.toggle_view_mode") }}</span>
@@ -326,7 +334,7 @@ const keyListener = function (e: KeyboardEvent) {
   if (showContextMenu.value) return;
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    selectedItems.value = items.value;
+    selectedItems.value = filteredItems.value;
   } else if (!searchHasFocus.value && e.key == "Backspace") {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {

@@ -14,13 +14,12 @@
           }}
         </v-card-title>
         <v-card-subtitle>
-          {{ availableProviders[config.domain].description }} </v-card-subtitle
-        ><br />
+          {{ availableProviders[config.domain].description }}
+        </v-card-subtitle><br>
         <v-card-subtitle
           v-if="availableProviders[config.domain].codeowners.length"
         >
-          <b>{{ $t("settings.codeowners") }}: </b
-          >{{ availableProviders[config.domain].codeowners.join(" / ") }}
+          <b>{{ $t("settings.codeowners") }}: </b>{{ availableProviders[config.domain].codeowners.join(" / ") }}
         </v-card-subtitle>
 
         <v-card-subtitle v-if="availableProviders[config.domain].documentation">
@@ -28,14 +27,13 @@
           <a
             :href="availableProviders[config.domain].documentation"
             target="_blank"
-            >{{ $t("settings.check_docs") }}</a
-          >
+          >{{ $t("settings.check_docs") }}</a>
         </v-card-subtitle>
       </div>
-      <br />
+      <br>
       <v-divider />
-      <br />
-      <br />
+      <br>
+      <br>
       <edit-config
         v-if="config"
         :model-value="config"
