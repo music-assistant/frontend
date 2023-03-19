@@ -8,7 +8,7 @@
       hide-slider
     >
       <v-tab value="details">
-        {{ $t("track_versions") }}
+        {{ $t("other_versions") }}
       </v-tab>
     </v-tabs>
     <v-divider />

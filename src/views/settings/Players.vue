@@ -182,6 +182,7 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
   return (
     playerConfig.name ||
     api.players[playerConfig.player_id]?.name ||
+    playerConfig.default_name ||
     playerConfig.player_id
   );
 };

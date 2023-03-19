@@ -265,8 +265,8 @@
       <div v-if="!loading && items.length == 0">
         <v-alert
           v-if="!loading && items.length == 0 && (search || inLibraryOnly)"
-          type="info"
-          color="grey"
+          density=“compact”
+          variant="outlined"
           :title="$t('no_content_filter')"
         >
           <v-btn
@@ -279,7 +279,8 @@
         </v-alert>
         <v-alert
           v-else-if="!loading && items.length == 0"
-          type="info"
+          density=“compact”
+          variant="outlined"
         >
           {{ $t("no_content") }}
         </v-alert>

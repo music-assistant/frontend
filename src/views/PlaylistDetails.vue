@@ -3,18 +3,16 @@
     <InfoHeader :item="itemDetails" />
 
     <v-tabs
-      v-model="activeTab"
       show-arrows
       grow
       hide-slider
     >
-      <v-tab value="tracks">
+      <v-tab>
         {{ $t("playlist_tracks") }}
       </v-tab>
     </v-tabs>
     <v-divider />
     <ItemsListing
-      v-if="activeTab == 'tracks'"
       itemtype="playlisttracks"
       :parent-item="itemDetails"
       :show-providers="false"
@@ -46,13 +44,11 @@ export interface Props {
   provider: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref("");
 const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
-  activeTab.value = "tracks";
 };
 
 watch(

@@ -293,6 +293,8 @@ export interface PlayerConfig extends Config {
   enabled: boolean;
   // name: an (optional) custom name for this player
   name?: string;
+  // default_name: default name to use when there is name available
+  default_name?: string;
 }
 
 export interface ConfigUpdate {

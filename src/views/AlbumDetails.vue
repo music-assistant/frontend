@@ -15,7 +15,7 @@
       <v-tab
         value="versions"
       >
-        {{ $t("album_versions") }}
+        {{ $t("other_versions") }}
       </v-tab>
     </v-tabs>
     <v-divider />

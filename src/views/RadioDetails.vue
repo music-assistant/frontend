@@ -2,18 +2,16 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <v-tabs
-      v-model="activeTab"
       show-arrows
       grow
       hide-slider
     >
-      <v-tab value="details">
-        {{ $t("track_versions") }}
+      <v-tab>
+        {{ $t("other_versions") }}
       </v-tab>
     </v-tabs>
     <v-divider />
     <ItemsListing
-      v-if="activeTab == 'versions'"
       itemtype="radioversions"
       :parent-item="itemDetails"
       :show-providers="true"
@@ -39,13 +37,10 @@ export interface Props {
   provider: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref("");
-
 const itemDetails = ref<Radio>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getRadio(props.itemId, props.provider);
-  activeTab.value = "versions";
 };
 
 watch(

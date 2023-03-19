@@ -260,7 +260,8 @@
           <provider-icons
             :provider-mappings="item.provider_mappings"
             :height="25"
-            :enable-link="true"
+            :enable-details="true"
+            :enable-preview="item.media_type == MediaType.TRACK"
           />
         </div>
       </v-layout>
@@ -273,7 +274,7 @@ import ProviderIcons from "./ProviderIcons.vue";
 import { store } from "@/plugins/store";
 import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
-import { ImageType, Track } from "@/plugins/api/interfaces";
+import { ImageType, Track, MediaType } from "@/plugins/api/interfaces";
 import type {
   Album,
   Artist,

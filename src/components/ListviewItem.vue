@@ -175,6 +175,8 @@
             "
             :provider-mappings="item.provider_mappings"
             :height="20"
+            :enable-details="showDetails"
+            :enable-preview="item.media_type == MediaType.TRACK"
             class="listitem-actions"
           />
 
@@ -201,25 +203,6 @@
             </v-tooltip>
           </div>
 
-          <!-- islinked icon -->
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <v-icon
-                v-if="
-                  parentItem &&
-                    parentItem.provider_mappings.find(
-                      (x) => x.item_id === item.item_id
-                    )
-                "
-                v-bind="props"
-                class="listitem-action"
-                icon="mdi-link-variant"
-                size="30"
-              />
-            </template>
-            <span>{{ $t("tooltip.linked") }}</span>
-          </v-tooltip>
-
           <!-- track duration -->
           <div
             v-if="
@@ -234,128 +217,6 @@
             <span>{{ formatDuration(item.duration) }}</span>
           </div>
         </div>
-
-        <v-menu
-          v-if="showDetails"
-          location="bottom end"
-          @click:outside.stop
-        >
-          <template #activator="{ props }">
-            <v-icon
-              icon="mdi-information-outline"
-              size="30"
-              class="listitem-action"
-              style="margin-left: 10px; margin-right: 5px"
-              v-bind="props"
-            />
-          </template>
-          <v-card
-            class="mx-auto"
-            min-width="300"
-          >
-            <v-list style="overflow: hidden">
-              <span
-                class="text-h5"
-                style="padding: 10px"
-              >{{
-                $t("provider_details")
-              }}</span>
-              <v-divider />
-              <!-- provider icon + name -->
-              <div style="height: 50px; display: flex; align-items: center">
-                <img
-                  height="30"
-                  width="50"
-                  center
-                  :src="getProviderIcon(item.provider)"
-                  style="object-fit: contain"
-                >
-                {{
-                  truncateString(
-                    api.providers[item.provider_mappings[0].provider_domain]!
-                      .name,
-                    25
-                  )
-                }}
-              </div>
-
-              <!-- item ID -->
-              <div style="height: 50px; display: flex; align-items: center">
-                <v-icon
-                  size="40"
-                  icon="mdi-identifier"
-                  style="margin-left: 10px; padding-right: 10px"
-                />
-                {{ truncateString(item.item_id, 30) }}
-              </div>
-
-              <!-- link to web location of item (provider share link -->
-              <div
-                v-if="
-                  item.provider_mappings[0].url &&
-                    !item.provider.includes('file')
-                "
-                style="height: 50px; display: flex; align-items: center"
-              >
-                <v-icon
-                  size="40"
-                  icon="mdi-share-outline"
-                  style="margin-left: 10px; padding-right: 5px"
-                />
-                <a
-                  :href="item.provider_mappings[0].url"
-                  target="_blank"
-                >{{
-                  truncateString(item.provider_mappings[0].url, 25)
-                }}</a>
-              </div>
-
-              <!-- quality details -->
-              <div style="height: 50px; display: flex; align-items: center">
-                <img
-                  height="30"
-                  width="50"
-                  :src="
-                    getContentTypeIcon(item.provider_mappings[0].content_type)
-                  "
-                  :style="
-                    $vuetify.theme.current.dark
-                      ? 'object-fit: contain;'
-                      : 'object-fit: contain;filter: invert(100%);'
-                  "
-                >
-                {{ getQualityDesc(item.provider_mappings[0]) }}
-              </div>
-
-              <!-- track preview -->
-              <div v-if="item.media_type == MediaType.TRACK">
-                <div style="height: 50px; display: flex; align-items: center">
-                  <v-icon
-                    icon="mdi-headphones"
-                    size="40"
-                    style="margin-left: 10px; padding-right: 15px"
-                  />
-                  Preview
-                </div>
-                <div
-                  style="
-                    height: 50px;
-                    display: flex;
-                    align-items: center;
-                    margin-left: 10px;
-                    margin-right: 10px;
-                  "
-                  @mouseover="fetchPreviewUrl(item.provider, item.item_id)"
-                >
-                  <audio
-                    controls
-                    :src="previewUrls[`${item.provider}.${item.item_id}`]"
-                  />
-                </div>
-              </div>
-            </v-list>
-          </v-card>
-        </v-menu>
 
         <!-- menu button/icon -->
         <v-btn
@@ -378,9 +239,6 @@ import ProviderIcons from "./ProviderIcons.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import {
   iconHiRes,
-  getProviderIcon,
-  getContentTypeIcon,
-  getQualityDesc,
 } from "./ProviderIcons.vue";
 import {
   ContentType,
@@ -395,7 +253,6 @@ import {
   parseBool,
   getArtistsString,
   getBrowseFolderName,
-  truncateString,
 } from "../utils";
 import { useI18n } from "vue-i18n";
 
@@ -415,8 +272,6 @@ export interface Props {
 
 // global refs
 const { t } = useI18n();
-
-const previewUrls = reactive<Record<string, string>>({});
 
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
@@ -467,12 +322,6 @@ const itemIsAvailable = function (item: MediaItem) {
   return false;
 };
 
-const fetchPreviewUrl = async function (provider: string, item_id: string) {
-  const key = `${provider}.${item_id}`;
-  if (key in previewUrls) return;
-  const url = await api.getTrackPreviewUrl(provider, item_id);
-  previewUrls[key] = url;
-};
 </script>
 
 <style scoped>
