@@ -20,10 +20,13 @@
         <br />
         {{ $t("settings.no_providers_detail") }}
       </v-alert>
-      <div>
+
+      <!-- show section per providertpe -->
+      <div v-for="provType in ProviderType">
+        <v-toolbar :title="$t(`settings.${provType}providers`)" density="compact"></v-toolbar>
         <v-list-item
           v-for="config in providerConfigs.filter(
-            (x) => x.type == ProviderType.MUSIC && x.domain in providerManifests
+            (x) => x.type == provType && x.domain in providerManifests
           )"
           :key="config.instance_id"
           :title="config.name || providerManifests[config.domain].name"
@@ -141,13 +144,13 @@
                       target="_blank"
                     />
                     <v-list-item
-                      v-if="api.providers[config.instance_id]?.available"
+                      v-if="api.providers[config.instance_id]?.available && provType == ProviderType.MUSIC"
                       :title="$t('settings.sync')"
                       prepend-icon="mdi-sync"
                       @click="api.startSync(undefined, [config.instance_id])"
                     />
                     <v-list-item
-                      v-if="!providerManifests[config.domain].builtin"
+                      v-if="!providerManifests[config.domain].builtin && !providerManifests[config.domain].load_by_default"
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"
                       @click="deleteProvider(config.instance_id)"
@@ -163,12 +166,11 @@
             </div>
           </template>
         </v-list-item>
+        <br />
       </div>
 
       <!-- float action button to add a new provider config-->
-      <v-dialog
-        :scrim="true"
-      >
+      <v-dialog :scrim="true">
         <template #activator="{ props }">
           <v-btn
             color="primary"
@@ -183,15 +185,15 @@
         </template>
 
         <v-toolbar dark>
-        <v-btn icon="mdi-play-circle-outline" />
-        <v-toolbar-title style="padding-left: 10px">
-          <b>{{ $t('settings.add_provider') }}</b>
-        </v-toolbar-title>
-      </v-toolbar>
+          <v-btn icon="mdi-play-circle-outline" />
+          <v-toolbar-title style="padding-left: 10px">
+            <b>{{ $t("settings.add_provider") }}</b>
+          </v-toolbar-title>
+        </v-toolbar>
 
         <v-list>
           <v-list-item
-            v-for="provider in availableMusicProviders"
+            v-for="provider in availableProviders"
             :key="provider.domain"
             :title="provider.name"
             @click="addProvider(provider)"
@@ -237,14 +239,25 @@ const providerManifests = reactive<{
 }>({});
 
 // computed properties
-const availableMusicProviders = computed(() => {
-  // music providers available for setup
+const availableProviders = computed(() => {
+  // providers available for setup
   // filter out builtin providers
   // filter out providers that are already setup (and multi instance not allowed)
   return Object.values(providerManifests).filter(
     (x) =>
       !x.builtin &&
       (x.multi_instance || !providerConfigs.value.find((x) => x.domain))
+  );
+});
+
+const musicProviders = computed(() => {
+  return providerConfigs.value.filter(
+    (x) => x.type == ProviderType.MUSIC && x.domain in providerManifests
+  );
+});
+const playerProviders = computed(() => {
+  return providerConfigs.value.filter(
+    (x) => x.type == ProviderType.PLAYER && x.domain in providerManifests
   );
 });
 
@@ -275,12 +288,10 @@ const deleteProvider = function (providerInstanceId: string) {
 };
 
 const editProvider = function (providerInstanceId: string) {
-  console.log("editProvider", providerInstanceId);
   router.push(`/settings/editprovider/${providerInstanceId}`);
 };
 
 const addProvider = function (provider: ProviderManifest) {
-  console.log("addProvider", provider);
   router.push(`/settings/addprovider/${provider.domain}`);
 };
 

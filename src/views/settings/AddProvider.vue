@@ -8,7 +8,7 @@
       >
         <v-card-title>
           {{
-            $t("settings.setup_music_provider", [
+            $t("settings.setup_provider", [
               availableProviders[config.domain].name,
             ])
           }}
@@ -106,7 +106,7 @@ const onSubmit = async function (update: ConfigUpdate) {
       config: config.value,
     })
     .then(() => {
-      router.push({ name: "musicprovidersettings" });
+      router.push({ name: "providersettings" });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday

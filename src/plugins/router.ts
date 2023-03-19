@@ -123,10 +123,10 @@ const routes = [
         props: true,
         children: [
           {
-            path: "musicproviders",
-            name: "musicprovidersettings",
+            path: "providers",
+            name: "providersettings",
             component: () =>
-              import(/* webpackChunkName: "musicprovidersettings" */ "@/views/settings/MusicProviders.vue"),
+              import(/* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"),
             props: true,
           },
           {
@@ -159,7 +159,7 @@ const routes = [
           },
           {
             path: '',
-            redirect: '/settings/musicproviders', // default child path
+            redirect: '/settings/providers', // default child path
             name: 'settingsredirect'
           }
         ]
