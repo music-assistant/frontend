@@ -3,8 +3,8 @@
   <div>
     <v-list-item
       ripple
+      :class="itemIsAvailable(item) ? '' : 'unavailable'"
       style="height: 60px"
-      :disabled="!itemIsAvailable(item)"
       lines="two"
       density="compact"
       @click.stop="emit('click', item)"
@@ -474,3 +474,10 @@ const fetchPreviewUrl = async function (provider: string, item_id: string) {
   previewUrls[key] = url;
 };
 </script>
+
+<style scoped>
+
+.unavailable {
+  opacity: 50%
+}
+</style>

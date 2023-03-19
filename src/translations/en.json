@@ -166,8 +166,12 @@
     "settings": "Settings",
     "players": "Players",
     "player_settings": "Player settings",
+    "providers": "Providers",
     "musicproviders": "Music providers",
-    "no_providers": "Setup Music Providers",
+    "playerproviders": "Player providers",
+    "metadataproviders": "Metadata providers",
+    "pluginproviders": "Plugin providers",
+    "no_providers": "No Music Providers configured",
     "no_providers_detail": "Start your Music Assistant experience by adding your Music providers below.",
     "documentation": "Documentation",
     "configure": "Configure",
@@ -178,7 +182,7 @@
     "sync": "Synchronize now",
     "sync_running": "This provider is now being synchronized",
     "not_loaded": "The provider is not (yet) loaded",
-    "setup_music_provider": "Setup Music provider: {0}",
+    "setup_provider": "Setup provider: {0}",
     "save": "Save",
     "invalid_input": "The input is invalid",
     "username": "Username",
@@ -200,6 +204,7 @@
     "advanced_settings": "Advanced settings",
     "need_help_setup_provider": "Need help setting up this provider ?",
     "check_docs": "Checkout the documentation",
-    "player_not_available": "This player is currently not (yet) available"
+    "player_not_available": "This player is currently not (yet) available",
+    "add_provider": "Add a new provider"
   }
 }

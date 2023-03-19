@@ -119,9 +119,9 @@ export const getContentTypeIcon = function (contentType: ContentType) {
 
 export const getQualityDesc = function (provDetails: ProviderMapping) {
   if (
-    !(
+    (
       provDetails.content_type in
-      [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]
+      [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV, ContentType.ALAC]
     )
   ) {
     // lossless
@@ -131,7 +131,7 @@ export const getQualityDesc = function (provDetails: ProviderMapping) {
     }
     return `Lossless ${provDetails.content_type}`;
   }
-  return "Unknown media quality ";
+  return `Lossy ${provDetails.content_type}`;
 };
 </script>
 

@@ -8,7 +8,7 @@
       >
         <v-card-title>
           {{
-            $t("settings.setup_music_provider", [
+            $t("settings.setup_provider", [
               availableProviders[config.domain].name,
             ])
           }}
@@ -42,6 +42,7 @@
         v-if="config"
         :model-value="config"
         @update:modelValue="onSubmit($event as ConfigUpdate)"
+        :is-builtin="availableProviders[config.domain]?.builtin"
       />
     </v-card-text>
   </section>
@@ -97,7 +98,7 @@ const onSubmit = async function (update: ConfigUpdate) {
       instance_id: config.value?.instance_id, update
     })
     .then(() => {
-      router.push({ name: "musicprovidersettings" });
+      router.push({ name: "providersettings" });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday

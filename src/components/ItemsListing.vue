@@ -283,7 +283,7 @@
           {{ $t("no_content") }}
         </v-alert>
       </div>
-      <v-snackbar :model-value="selectedItems.length > 1">
+      <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom:120px">
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
           <v-btn
@@ -323,7 +323,7 @@ import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import { store } from "../plugins/store";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
-import MediaItemContextMenu from "./MediaItemContextMenu.vue";
+import MediaItemContextMenu, { itemIsAvailable } from "./MediaItemContextMenu.vue";
 import { useRouter } from "vue-router";
 import { api } from "../plugins/api";
 import InfiniteLoading from "v3-infinite-loading";
@@ -493,6 +493,10 @@ const onRefreshClicked = function () {
 
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
+  if (!itemIsAvailable(mediaItem)) {
+    onMenu(mediaItem);
+    return
+  }
   const forceProviderVersion = props.itemtype.includes("versions").toString();
 
   if (
@@ -781,44 +785,5 @@ export const filteredItems = function (
 .scroller {
   height: 100%;
 }
-.col-2 {
-  width: 50%;
-  max-width: 50%;
-  flex-basis: 50%;
-}
-.col-3 {
-  width: 33.3%;
-  max-width: 33.3%;
-  flex-basis: 33.3%;
-}
-.col-4 {
-  width: 25%;
-  max-width: 25%;
-  flex-basis: 25%;
-}
-.col-5 {
-  width: 20%;
-  max-width: 20%;
-  flex-basis: 20%;
-}
-.col-6 {
-  width: 16.6%;
-  max-width: 16.6%;
-  flex-basis: 16.6%;
-}
-.col-7 {
-  width: 14.2%;
-  max-width: 14.2%;
-  flex-basis: 14.2%;
-}
-.col-8 {
-  width: 12.5%;
-  max-width: 12.5%;
-  flex-basis: 12.5%;
-}
-.col-9 {
-  width: 11.1%;
-  max-width: 11.1%;
-  flex-basis: 11.1%;
-}
+
 </style>

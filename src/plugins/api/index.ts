@@ -886,8 +886,8 @@ export class MusicAssistantApi {
     queue_id?: string
   ) {
     const tracks = await this.getPlaylistTracks(
+      playlist.item_id,
       playlist.provider,
-      playlist.item_id
     );
     // to account for shuffle, we play the first track and append the rest
     this.playMedia(
@@ -909,7 +909,7 @@ export class MusicAssistantApi {
     startItem: Track,
     queue_id?: string
   ) {
-    const tracks = await this.getAlbumTracks(album.provider, album.item_id);
+    const tracks = await this.getAlbumTracks(album.item_id, album.provider);
     let startIndex = 0;
     tracks.forEach(function (track, i) {
       if (track.item_id == startItem.item_id) {

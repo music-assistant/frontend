@@ -25,6 +25,7 @@
             : $t('settings.enable_provider')
         "
         color="primary"
+        :disabled="isBuiltin"
       />
       <v-divider />
       <!-- config rows for all config entries -->
@@ -284,6 +285,7 @@ import { computed, watch } from "vue";
 
 export interface Props {
   modelValue?: PlayerConfig | ProviderConfig;
+  isBuiltin?: boolean
 }
 
 const emit = defineEmits<{

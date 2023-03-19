@@ -8,10 +8,10 @@
       :model-value="activeTab"
     >
       <v-tab
-        value="musicproviders"
-        :to="{name: 'musicprovidersettings'}"
+        value="providers"
+        :to="{name: 'providersettings'}"
       >
-        {{ $t("settings.musicproviders") }}
+        {{ $t("settings.providers") }}
       </v-tab>
       <v-tab
         value="players"
@@ -47,7 +47,7 @@ const activeTab = computed(() => {
   if (router.currentRoute.value.name?.toString().includes('player')) {
     return "players"
   }
-  return "musicproviders";
+  return "providers";
 });
 
 </script>
