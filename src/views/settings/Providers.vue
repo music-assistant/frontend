@@ -250,17 +250,6 @@ const availableProviders = computed(() => {
   );
 });
 
-const musicProviders = computed(() => {
-  return providerConfigs.value.filter(
-    (x) => x.type == ProviderType.MUSIC && x.domain in providerManifests
-  );
-});
-const playerProviders = computed(() => {
-  return providerConfigs.value.filter(
-    (x) => x.type == ProviderType.PLAYER && x.domain in providerManifests
-  );
-});
-
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
   loadItems();
