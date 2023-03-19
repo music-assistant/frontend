@@ -7,13 +7,13 @@
       grow
       hide-slider
     >
-      <v-tab value="details">
+      <v-tab v-if="showVersionsTab" value="details">
         {{ $t("other_versions") }}
       </v-tab>
     </v-tabs>
     <v-divider />
     <ItemsListing
-      v-if="activeTab == 'versions'"
+      v-if="showVersionsTab && activeTab == 'versions'"
       itemtype="trackversions"
       :parent-item="itemDetails"
       :show-providers="true"
@@ -51,10 +51,15 @@ const props = defineProps<Props>();
 const activeTab = ref("");
 const updateAvailable = ref(false);
 const itemDetails = ref<Track>();
+const showVersionsTab = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getTrack(props.itemId, props.provider);
   activeTab.value = "versions";
+  // we only show the versions tab if we actually have other versions
+  // to avoid confusion
+  const versions = await loadTrackVersions(0, 2, 'name');
+  showVersionsTab.value = versions.count > 0;
 };
 
 watch(

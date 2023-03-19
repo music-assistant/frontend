@@ -241,14 +241,13 @@ export const getContentTypeIcon = function (contentType: ContentType) {
 
 export const getQualityDesc = function (provDetails: ProviderMapping) {
   if (
-    provDetails.content_type in
     [
       ContentType.DSF,
       ContentType.FLAC,
       ContentType.AIFF,
       ContentType.WAV,
       ContentType.ALAC,
-    ]
+    ].includes(provDetails.content_type)
   ) {
     // lossless
     if (provDetails.sample_rate > 48000 || provDetails.bit_depth > 16) {

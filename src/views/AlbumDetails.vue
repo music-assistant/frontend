@@ -14,6 +14,7 @@
       </v-tab>
       <v-tab
         value="versions"
+        v-if="showVersionsTab"
       >
         {{ $t("other_versions") }}
       </v-tab>
@@ -31,7 +32,7 @@
       @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
     <ItemsListing
-      v-if="activeTab == 'versions'"
+      v-if="showVersionsTab && activeTab == 'versions'"
       itemtype="albumversions"
       :parent-item="itemDetails"
       :show-providers="true"
@@ -67,6 +68,7 @@ const props = defineProps<Props>();
 const activeTab = ref("");
 const updateAvailable = ref(false);
 const itemDetails = ref<Album>();
+const showVersionsTab = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(
@@ -78,6 +80,10 @@ const loadItemDetails = async function () {
     parseBool(props.forceProviderVersion || "")
   );
   activeTab.value = "tracks";
+  // we only show the versions tab if we actually have other versions
+  // to avoid confusion
+  const versions = await loadAlbumVersions(0, 2, 'name');
+  showVersionsTab.value = versions.count > 0;
 };
 
 watch(

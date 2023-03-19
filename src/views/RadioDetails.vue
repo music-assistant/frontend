@@ -6,12 +6,13 @@
       grow
       hide-slider
     >
-      <v-tab>
+      <v-tab v-if="showVersionsTab">
         {{ $t("other_versions") }}
       </v-tab>
     </v-tabs>
     <v-divider />
     <ItemsListing
+      v-if="showVersionsTab"
       itemtype="radioversions"
       :parent-item="itemDetails"
       :show-providers="true"
@@ -38,9 +39,14 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Radio>();
+const showVersionsTab = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getRadio(props.itemId, props.provider);
+  // we only show the versions tab if we actually have other versions
+  // to avoid confusion
+  const versions = await loadRadioVersions(0, 2, 'name');
+  showVersionsTab.value = versions.count > 0;
 };
 
 watch(
