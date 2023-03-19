@@ -15,6 +15,7 @@
         theme="dark"
         icon="mdi-radio-tower"
         prominent
+        style="margin-bottom:15px;"
       >
         <b>{{ $t("settings.no_providers") }}</b>
         <br>
