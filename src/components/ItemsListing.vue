@@ -561,6 +561,13 @@ watch(
     loadData(true);
   }
 );
+watch(
+  () => props.updateAvailable,
+  (newVal) => {
+    if (newVal && items.value.length == 0)
+    loadData(true);
+  }
+);
 
 const loadData = async function (clear = false, limit = defaultLimit) {
   if (clear) {
