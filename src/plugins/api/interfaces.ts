@@ -1,6 +1,7 @@
 /// constants
-export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted"
-export const MASS_LOGO_ONLINE = "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png"
+export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
+export const MASS_LOGO_ONLINE =
+  "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png";
 
 /// enums
 
@@ -95,8 +96,8 @@ export enum PlayerState {
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
-  SYNC_CHILD = "sync_child", // Player that is synced to another (platform-specific) player.
   GROUP = "group", // A (dedicated) group player or playergroup.
+  STEREO_PAIR = "stereo_pair", // Two speakers playing as one stereo pair.
 }
 
 export enum PlayerFeature {
