@@ -160,7 +160,7 @@
   },
   "create_playlist": "Utwórz nową playlistę na {0}",
   "queue_radio_enabled": "Tryb radiowy aktywny",
-  "queue_radio_based_on": "Kolejka jest automatycznie wypełniana utworami na podstawie {0}:"
+  "queue_radio_based_on": "Kolejka jest automatycznie wypełniana utworami na podstawie {0}:",
   "sync_player_to": "Synchronizuj ten odtwarzacz do:",
   "settings": {
     "settings": "Ustawienia",
