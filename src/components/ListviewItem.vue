@@ -11,10 +11,7 @@
       @click.right.prevent="emit('menu', item)"
     >
       <template #prepend>
-        <div
-          v-if="showCheckboxes"
-          class="listitem-thumb"
-        >
+        <div v-if="showCheckboxes" class="listitem-thumb">
           <v-checkbox
             :model-value="isSelected"
             @click.stop
@@ -29,26 +26,12 @@
           v-else-if="item.media_type == MediaType.FOLDER"
           class="listitem-thumb"
         >
-          <v-btn
-            variant="plain"
-            icon
-          >
-            <v-icon
-              icon="mdi-folder"
-              size="60"
-              style="align: center"
-            />
+          <v-btn variant="plain" icon>
+            <v-icon icon="mdi-folder" size="60" style="align: center" />
           </v-btn>
         </div>
-        <div
-          v-else
-          class="listitem-thumb"
-        >
-          <MediaItemThumb
-            :item="item"
-            :width="'50px'"
-            :height="'50px'"
-          />
+        <div v-else class="listitem-thumb">
+          <MediaItemThumb :item="item" :width="'50px'" :height="'50px'" />
         </div>
       </template>
 
@@ -59,7 +42,9 @@
         </span>
         <span v-else>
           {{ item.name }}
-          <span v-if="'version' in item && item.version">({{ item.version }})</span>
+          <span v-if="'version' in item && item.version"
+            >({{ item.version }})</span
+          >
         </span>
         <!-- explicit icon -->
         <v-tooltip location="bottom">
@@ -82,9 +67,9 @@
         <div
           v-if="
             item.media_type == MediaType.TRACK &&
-              'album' in item &&
-              item.album &&
-              !showTrackNumber
+            'album' in item &&
+            item.album &&
+            !showTrackNumber
           "
         >
           {{ getArtistsString(item.artists) }} • {{ item.album.name }}
@@ -93,22 +78,33 @@
         <span
           v-else-if="
             item.media_type == MediaType.TRACK &&
-              'track_number' in item &&
-              item.track_number &&
-              showTrackNumber
+            'track_number' in item &&
+            item.track_number &&
+            showTrackNumber
           "
         >
-          {{ getArtistsString(item.artists) }} <span v-if="item.disc_number">&nbsp;&nbsp;<v-icon icon="mdi-album"/><span style="margin-left:2px;margin-top:3px">{{ item.disc_number }}</span></span><span v-if="item.track_number">&nbsp;<v-icon icon="mdi-music-circle-outline"/><span style="margin-left:2px;margin-top:3px">{{ item.track_number }}</span></span>
-      </span>
+          {{ getArtistsString(item.artists) }}
+          <span v-if="item.disc_number"
+            >&nbsp;&nbsp;<v-icon icon="mdi-album" /><span
+              style="margin-left: 2px; margin-top: 3px"
+              >{{ item.disc_number }}</span
+            ></span
+          ><span v-if="item.track_number"
+            >&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
+              style="margin-left: 2px; margin-top: 3px"
+              >{{ item.track_number }}</span
+            ></span
+          >
+        </span>
         <!-- album: albumtype + artists + year -->
         <div
           v-else-if="
             item.media_type == MediaType.ALBUM &&
-              'artists' in item &&
-              item.artists &&
-              'year' in item &&
-              item.year &&
-              'album_type' in item
+            'artists' in item &&
+            item.artists &&
+            'year' in item &&
+            item.year &&
+            'album_type' in item
           "
         >
           {{ $t("album_type." + item.album_type) }} •
@@ -118,9 +114,9 @@
         <div
           v-else-if="
             item.media_type == MediaType.ALBUM &&
-              'artists' in item &&
-              item.artists &&
-              'album_type' in item
+            'artists' in item &&
+            item.artists &&
+            'album_type' in item
           "
         >
           {{ $t("album_type." + item.album_type) }} •
@@ -157,10 +153,7 @@
                 : 'margin-top:5px;filter: invert(100%);'
             "
           >
-            <v-tooltip
-              activator="parent"
-              location="bottom"
-            >
+            <v-tooltip activator="parent" location="bottom">
               {{ HiResDetails }}
             </v-tooltip>
           </v-img>
@@ -169,8 +162,8 @@
           <provider-icons
             v-if="
               item.provider_mappings &&
-                showProviders &&
-                !$vuetify.display.mobile
+              showProviders &&
+              !$vuetify.display.mobile
             "
             :provider-mappings="item.provider_mappings"
             :height="20"
@@ -206,10 +199,10 @@
           <div
             v-if="
               showDuration &&
-                item.media_type == MediaType.TRACK &&
-                'duration' in item &&
-                item.duration != undefined &&
-                !$vuetify.display.mobile
+              item.media_type == MediaType.TRACK &&
+              'duration' in item &&
+              item.duration != undefined &&
+              !$vuetify.display.mobile
             "
             class="listitem-action"
           >
@@ -236,9 +229,7 @@ import { computed, reactive } from "vue";
 import { VTooltip } from "vuetify/components";
 import ProviderIcons from "./ProviderIcons.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
-import {
-  iconHiRes,
-} from "./ProviderIcons.vue";
+import { iconHiRes } from "./ProviderIcons.vue";
 import {
   ContentType,
   type BrowseFolder,
@@ -320,12 +311,10 @@ const itemIsAvailable = function (item: MediaItem) {
   }
   return false;
 };
-
 </script>
 
 <style scoped>
-
 .unavailable {
-  opacity: 50%
+  opacity: 50%;
 }
 </style>
