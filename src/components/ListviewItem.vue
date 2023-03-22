@@ -97,9 +97,7 @@
               showTrackNumber
           "
         >
-          {{ getArtistsString(item.artists) }} • disc
-          {{ item.disc_number }} track
-          {{ item.track_number }}
+          {{ getArtistsString(item.artists) }} • {{ $t('track_number', [item.disc_number, item.track_number]) }}
         </div>
         <!-- album: albumtype + artists + year -->
         <div
