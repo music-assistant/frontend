@@ -41,7 +41,7 @@
           <MediaItemThumb
             v-if="curQueueItem"
             :item="curQueueItem.media_item || curQueueItem"
-            :size="50"
+            :width="50"
             style="cursor: pointer"
             @click="
               curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''

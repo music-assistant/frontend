@@ -424,7 +424,7 @@ const panelViewItemResponsive = function (displaySize: number) {
   } else if (displaySize > 1700) {
     return 9;
   } else {
-    return 0;
+    return 8;
   }
 };
 
@@ -793,10 +793,3 @@ export const filteredItems = function (
   };
 };
 </script>
-
-<style scoped>
-.scroller {
-  height: 100%;
-}
-
-</style>

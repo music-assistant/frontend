@@ -281,7 +281,7 @@
       block
       @click="$router.back()"
     >
-      {{ $t("settings.close") }}
+      {{ $t("close") }}
     </v-btn>
   </section>
 </template>

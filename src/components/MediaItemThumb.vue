@@ -1,36 +1,27 @@
 <template>
-  <div
-    :max-height="maxSize"
-    :max-width="maxSize"
-    :min-height="minSize || size"
-    :min-width="minSize || size"
-    :height="'auto'"
-    :width="'100%'"
+  <v-img
+    :key="'uri' in item! ? item?.uri : item?.queue_item_id"
+    :style="`height:${height}`"
+    :cover="cover"
+    :src="imgData"
+    :width="width"
+    :aspect-ratio="aspectRatio"
+    v-on:error="
+      () => {
+        imgData = fallbackImage;
+      }
+    "
   >
-    <v-avatar
-      :size="size"
-      :min-height="minSize"
-      :min-width="minSize"
-      :rounded="tile ? 0 : undefined"
-    >
-      <v-img
-        :key="'uri' in item! ? item?.uri : item?.queue_item_id"
-        :min-height="minSize"
-        :min-width="minSize"
-        :cover="cover"
-        :src="imgData"
-      >
-        <template #placeholder>
-          <div class="d-flex align-center justify-center fill-height">
-            <v-progress-circular
-              indeterminate
-              color="grey-lighten-4"
-            />
-          </div>
-        </template>
-      </v-img>
-    </v-avatar>
-  </div>
+    <template #placeholder>
+      <div class="d-flex align-center justify-center fill-height">
+        <v-progress-circular
+          indeterminate
+          color="grey-lighten-4"
+          :size="width"
+        />
+      </div>
+    </template>
+  </v-img>
 </template>
 
 <script setup lang="ts">
@@ -47,20 +38,17 @@ import { useTheme } from "vuetify";
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
-  size?: number;
-  minSize?: number;
-  maxSize?: number;
-  tile?: boolean;
+  width?: string | number;
+  height?: string | number;
+  aspectRatio?: string | number;
   cover?: boolean;
   fallback?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  item: undefined,
-  size: undefined,
-  minSize: undefined,
-  maxSize: 256,
-  tile: true,
+  width: "100%",
+  height: "auto",
+  aspectRatio: "1/1",
   cover: true,
   fallback: undefined,
 });

@@ -189,7 +189,7 @@
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcons from "./ProviderIcons.vue";
 import { getProviderIcon } from "./ProviderIcons.vue";
-import { MediaType, QueueOption, type Album } from "../plugins/api/interfaces";
+import { ItemMapping, MediaType, QueueOption, type Album } from "../plugins/api/interfaces";
 import type {
   MediaItem,
   MediaItemType,
@@ -354,9 +354,9 @@ export interface ContextMenuItem {
   actionStr?: string;
 }
 
-export const itemIsAvailable = function (item: MediaItem) {
+export const itemIsAvailable = function (item: MediaItemType) {
   for (const x of item.provider_mappings) {
-    if (x.available) return true;
+    if (x.available && api.providers[x.provider_instance]?.available) return true;
   }
   return false;
 };

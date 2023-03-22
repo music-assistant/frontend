@@ -46,7 +46,8 @@
         >
           <MediaItemThumb
             :item="item"
-            :size="50"
+            :width="'50px'"
+            :height="'50px'"
           />
         </div>
       </template>
@@ -89,7 +90,7 @@
           {{ getArtistsString(item.artists) }} • {{ item.album.name }}
         </div>
         <!-- albumtrack: artists(s) + disc/track number -->
-        <div
+        <span
           v-else-if="
             item.media_type == MediaType.TRACK &&
               'track_number' in item &&
@@ -97,8 +98,8 @@
               showTrackNumber
           "
         >
-          {{ getArtistsString(item.artists) }} • {{ $t('track_number', [item.disc_number, item.track_number]) }}
-        </div>
+          {{ getArtistsString(item.artists) }} <span v-if="item.disc_number">&nbsp;&nbsp;<v-icon icon="mdi-album"/><span style="margin-left:2px;margin-top:3px">{{ item.disc_number }}</span></span><span v-if="item.track_number">&nbsp;<v-icon icon="mdi-music-circle-outline"/><span style="margin-left:2px;margin-top:3px">{{ item.track_number }}</span></span>
+      </span>
         <!-- album: albumtype + artists + year -->
         <div
           v-else-if="
