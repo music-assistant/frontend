@@ -85,12 +85,12 @@
         >
           {{ getArtistsString(item.artists) }}
           <span v-if="item.disc_number"
-            >&nbsp;&nbsp;<v-icon icon="mdi-album" /><span
+            >&nbsp;&nbsp;<v-icon class="material-icons-outlined" style="justify-content: normal;" icon="md:album" /><span
               style="margin-left: 2px; margin-top: 3px"
               >{{ item.disc_number }}</span
             ></span
           ><span v-if="item.track_number"
-            >&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
+            >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
               style="margin-left: 2px; margin-top: 3px"
               >{{ item.track_number }}</span
             ></span
