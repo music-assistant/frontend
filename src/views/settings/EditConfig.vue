@@ -1,11 +1,6 @@
 <template>
   <section>
-    <v-form
-      v-if="conf"
-      ref="form"
-      v-model="valid"
-      style="margin-right: 10px"
-    >
+    <v-form v-if="conf" ref="form" v-model="valid" style="margin-right: 10px">
       <!-- name field -->
       <v-text-field
         v-if="'name' in conf"
@@ -44,16 +39,13 @@
           we split up the config settings in basic and advanced settings,
           using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
         -->
-        <v-expansion-panel
-          v-for="panel of panels"
-          :value="panel"
-        >
+        <v-expansion-panel v-for="panel of panels" :value="panel">
           <v-expansion-panel-title v-if="panel == 'advanced'">
             <div class="expansion-panel-text">
               {{ $t("settings.advanced_settings") }}
             </div>
           </v-expansion-panel-title>
-          <br>
+          <br />
           <v-expansion-panel-text>
             <div
               v-for="conf_item_value of Object.values(conf.values).filter(
@@ -66,7 +58,7 @@
                 <!-- label value -->
 
                 <div v-if="conf_item_value.type == ConfigEntryType.LABEL">
-                  <br>
+                  <br />
                   <v-divider />
                   <v-label
                     style="
@@ -77,7 +69,7 @@
                   >
                     <b>{{ conf_item_value.value?.toString() }}</b>
                   </v-label>
-                  <br>
+                  <br />
                 </div>
 
                 <!-- boolean value: toggle switch -->
@@ -90,7 +82,7 @@
                   color="primary"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                 />
 
@@ -99,13 +91,13 @@
                   v-else-if="
                     (conf_item_value.type == ConfigEntryType.INTEGER ||
                       conf_item_value.type == ConfigEntryType.FLOAT) &&
-                      conf_item_value.range &&
-                      conf_item_value.range.length == 2
+                    conf_item_value.range &&
+                    conf_item_value.range.length == 2
                   "
                   v-model="(conf_item_value.value as number)"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -145,7 +137,7 @@
                   :required="conf_item_value.required"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :rules="[
                     (v) =>
@@ -158,8 +150,8 @@
                       ? 'mdi-eye'
                       : typeof conf_item_value.value == 'string' &&
                         conf_item_value.value.includes(SECURE_STRING_SUBSTITUTE)
-                        ? ''
-                        : 'mdi-eye-off'
+                      ? ''
+                      : 'mdi-eye-off'
                   "
                   variant="outlined"
                   clearable
@@ -170,7 +162,7 @@
                 <v-select
                   v-else-if="
                     conf_item_value.options &&
-                      conf_item_value.options.length > 0
+                    conf_item_value.options.length > 0
                   "
                   v-model="conf_item_value.value"
                   :chips="conf_item_value.multi_value"
@@ -180,7 +172,7 @@
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -201,7 +193,7 @@
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -216,73 +208,51 @@
                   :clearable="!conf_item_value.required"
                 />
               </div>
-              <div
-                v-if="conf_item_value.description"
-                class="configcolumnright"
-              >
+              <div v-if="conf_item_value.description || conf_item_value.help_link" class="configcolumnright">
                 <!-- right side of control: help icon with description-->
-                <v-tooltip
-                  activator="parent"
-                  location="start"
-                  :close-on-back="true"
-                  open-on-click
-                  :open-on-hover="true"
-                  close-on-content-click
-                >
-                  <template #activator="{ props: tooltip }">
-                    <v-icon
-                      class="helpicon"
-                      v-bind="tooltip"
-                      size="x-large"
-                      color="grey-lighten-1"
-                      @click="
-                        conf_item_value.help_link
-                          ? openLink(conf_item_value.help_link!)
-                          : ''
-                      "
-                    >
-                      mdi-help-box
-                    </v-icon>
-                  </template>
-                  <div>
-                    {{ conf_item_value.description }}
-                  </div>
-                </v-tooltip>
-              </div>
-              <div
-                v-else-if="conf_item_value.help_link"
-                class="configcolumnright"
-              >
-                <!-- right side of control: help icon with link to docs-->
-                <v-icon
+                <v-btn
+                  icon="mdi-help-box"
+                  variant="plain"
                   class="helpicon"
                   size="x-large"
-                  color="grey-lighten-1"
-                  @click="openLink(conf_item_value.help_link!)"
+                  @click="
+                    conf_item_value.description
+                      ? showHelpInfo = conf_item_value
+                      : openLink(conf_item_value.help_link!)
+                  "
                 >
-                  mdi-help-box
-                </v-icon>
+                </v-btn>
               </div>
             </div>
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
-      <br>
-      <v-btn
-        block
-        color="primary"
-        @click="onSave"
-      >
+      <br />
+      <v-btn block color="primary" @click="onSave">
         {{ $t("settings.save") }}
       </v-btn>
     </v-form>
-    <br>
-    <v-btn
-      block
-      @click="$router.back()"
-    >
+    <br />
+    <v-btn block @click="$router.back()">
       {{ $t("close") }}
     </v-btn>
+    <v-dialog
+      :model-value="showHelpInfo !== undefined"
+      width="auto"
+      v-on:update:model-value="showHelpInfo = undefined"
+    >
+      <v-card>
+        <v-card-text v-text="showHelpInfo?.description" />
+        <v-card-actions>
+          <v-btn v-if="showHelpInfo?.help_link" color="primary" block @click="openLink(showHelpInfo!.help_link!)">{{
+            $t("close")
+          }}</v-btn>
+          <v-btn color="primary" block @click="showHelpInfo = undefined">{{
+            $t("close")
+          }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </section>
 </template>
 
@@ -296,6 +266,7 @@ import {
   ProviderConfig,
   ConfigUpdate,
   ConfigValueType,
+  ConfigEntryValue,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 
@@ -303,7 +274,7 @@ import { computed, watch } from "vue";
 
 export interface Props {
   modelValue?: PlayerConfig | ProviderConfig;
-  isBuiltin?: boolean
+  isBuiltin?: boolean;
 }
 
 const emit = defineEmits<{
@@ -316,6 +287,7 @@ const valid = ref(false);
 const form = ref<VNodeRef>();
 const activePanel = ref<string>("basic");
 const showPasswordValues = ref(false);
+const showHelpInfo = ref<ConfigEntryValue>();
 
 // props
 const props = defineProps<Props>();
@@ -392,8 +364,8 @@ const openLink = function (url: string) {
   vertical-align: middle;
 }
 .helpicon {
-  margin-top: 10px;
-  margin-left: 8px;
+  margin-top: 0px;
+  margin-right: -10px
 }
 
 div.v-expansion-panel {
