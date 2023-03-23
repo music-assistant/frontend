@@ -55,7 +55,7 @@
             "
           >
             <v-avatar size="192">
-              <MediaItemThumb :item="item" height="192px" width="192px" />
+              <MediaItemThumb :item="item" height="230px" width="230px" />
             </v-avatar>
           </div>
           <div v-else>
