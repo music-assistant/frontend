@@ -1,7 +1,7 @@
 <template>
   <v-img
     :key="'uri' in item! ? item?.uri : item?.queue_item_id"
-    :style="`height:${height}`"
+    :style="`height:${height};`"
     :cover="cover"
     :src="imgData"
     :width="width"
@@ -16,8 +16,6 @@
       <div class="d-flex align-center justify-center fill-height">
         <v-progress-circular
           indeterminate
-          color="grey-lighten-4"
-          :size="width"
         />
       </div>
     </template>
@@ -43,6 +41,7 @@ export interface Props {
   aspectRatio?: string | number;
   cover?: boolean;
   fallback?: string;
+  thumb?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -51,6 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
   aspectRatio: "1/1",
   cover: true,
   fallback: undefined,
+  thumb: true
 });
 
 const imgData = ref<string>();
@@ -59,10 +59,17 @@ const theme = useTheme();
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
   if (!props.item) return "";
+
   if (theme.current.value.dark)
-    return `https://ui-avatars.com/api/?name=${props.item.name}&size=${props.maxSize}&bold=true&background=1d1d1d&color=383838`;
+    return `https://ui-avatars.com/api/?name=${props.item.name}&size=${thumbSize.value || 256}&bold=true&background=1d1d1d&color=383838`;
   else
-    return `https://ui-avatars.com/api/?name=${props.item.name}&size=${props.maxSize}&bold=true&background=a0a0a0&color=cccccc`;
+    return `https://ui-avatars.com/api/?name=${props.item.name}&size=${thumbSize.value || 256}&bold=true&background=a0a0a0&color=cccccc`;
+});
+
+const thumbSize = computed(() => {
+  if (typeof props.width == 'number') return props.width;
+  else if (props.thumb) return 256;
+  return 0
 });
 
 watch(
@@ -70,7 +77,7 @@ watch(
   async (newVal) => {
     if (newVal) {
       imgData.value =
-        (await getImageThumbForItem(newVal, ImageType.THUMB, props.maxSize)) ||
+        (await getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value)) ||
         fallbackImage.value;
     }
   },
