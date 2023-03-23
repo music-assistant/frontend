@@ -96,9 +96,9 @@
   }
   .v-card--variant-elevated {
     box-shadow: none;
-    border-width: var(--ha-card-border-width, 1px);
+    border-width: 1px;
     border-style: solid;
-    border-color: var(--ha-card-border-color, var(--divider-color, #e0e0e0));
+    font-size: smaller;
   }
   .line-clamp-1 {
     white-space: nowrap;

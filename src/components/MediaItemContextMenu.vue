@@ -4,6 +4,7 @@
     :fullscreen="$vuetify.display.mobile"
     min-height="80%"
     :scrim="true"
+    v-on:update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card>
       <v-toolbar dark>
@@ -151,14 +152,7 @@
             >
               <v-list-item ripple>
                 <template #prepend>
-                  <div class="listitem-thumb">
-                    <img
-                      v-bind="props"
-                      :height="40"
-                      :src="getProviderIcon(prov.type)"
-                      style="margin-left: 5px; margin-top: 5px"
-                    >
-                  </div>
+                  <provider-icon :domain="prov.domain" :size="'40px'" class="listitem-thumb"/>
                 </template>
                 <template #title>
                   <v-text-field
@@ -188,8 +182,8 @@
 <script setup lang="ts">
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcons from "./ProviderIcons.vue";
-import { getProviderIcon } from "./ProviderIcons.vue";
-import { ItemMapping, MediaType, QueueOption, type Album } from "../plugins/api/interfaces";
+import ProviderIcon from "./ProviderIcon.vue";
+import {  MediaType, QueueOption, type Album } from "../plugins/api/interfaces";
 import type {
   MediaItem,
   MediaItemType,

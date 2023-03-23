@@ -7,12 +7,20 @@
       :key="providerDomain"
     >
       <template #activator="{ props }">
-        <img
+        <!-- <img
           v-bind="props"
           :key="providerDomain"
           class="provider-icon"
           :height="height"
           :src="getProviderIcon(providerDomain)"
+          :style="enableDetails == true ? 'cursor: pointer' : ''"
+        /> -->
+        <provider-icon
+          v-bind="props"
+          :key="providerDomain"
+          :domain="providerDomain"
+          :size="height"
+          class="provider-icon"
           :style="enableDetails == true ? 'cursor: pointer' : ''"
         />
       </template>
@@ -29,13 +37,7 @@
             <v-divider />
             <!-- provider icon + name -->
             <div style="height: 50px; display: flex; align-items: center">
-              <img
-                height="30"
-                width="50"
-                center
-                :src="getProviderIcon(providerDomain)"
-                style="object-fit: contain"
-              />
+              <provider-icon :domain="providerDomain" :size="'35px'" class="provider-icon"/>
               {{
                 truncateString(
                   api.providers[mapping.provider_instance]!.name,
@@ -126,6 +128,7 @@ import type { ProviderMapping } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
 import { computed, reactive } from "vue";
 import { truncateString } from "@/utils";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 
 export interface Props {
   providerMappings: ProviderMapping[];
@@ -135,25 +138,6 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const previewUrls = reactive<Record<string, string>>({});
-
-// const uniqueProviders = computed(() => {
-//   const output: ProviderMapping[] = [];
-//   const keys: string[] = [];
-//   if (!props.providerMappings) return [];
-//   props.providerMappings.forEach(function (prov: ProviderMapping) {
-//     const domain = prov.provider_domain;
-//     if (
-//       keys.indexOf(domain) === -1 &&
-//       prov.provider_instance in api.providers
-//     ) {
-//       keys.push(domain);
-//       output.push(prov);
-//     }
-//   });
-//   return output.sort((a, b) =>
-//     a.provider_domain.localeCompare(b.provider_domain)
-//   );
-// });
 
 const uniqueProviders = computed(() => {
   const keys: string[] = [];
@@ -184,27 +168,7 @@ const fetchPreviewUrl = async function (provider: string, item_id: string) {
 
 <script lang="ts">
 import { ContentType } from "../plugins/api/interfaces";
-export const iconSpotify = new URL("@/assets/spotify.png", import.meta.url)
-  .href;
-export const iconQobuz = new URL("@/assets/qobuz.png", import.meta.url).href;
-export const iconFilesystem = new URL(
-  "@/assets/filesystem.png",
-  import.meta.url
-).href;
-export const iconTuneIn = new URL("@/assets/tunein.png", import.meta.url).href;
-export const iconYTMusic = new URL("@/assets/ytmusic.png", import.meta.url)
-  .href;
-export const iconSlimProto = new URL("@/assets/slimproto.png", import.meta.url)
-  .href;
-export const iconAirPlay = new URL("@/assets/airplay.png", import.meta.url)
-  .href;
-export const iconChromeCast = new URL(
-  "@/assets/chromecast.png",
-  import.meta.url
-).href;
-export const iconSonos = new URL("@/assets/sonos.png", import.meta.url).href;
-export const iconHass = new URL("@/assets/hass.png", import.meta.url).href;
-export const iconDLNA = new URL("@/assets/dlna.png", import.meta.url).href;
+
 export const iconFallback = new URL("@/assets/logo.png", import.meta.url).href;
 
 export const iconAac = new URL("@/assets/aac.png", import.meta.url).href;
@@ -215,20 +179,6 @@ export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
 export const iconM4a = new URL("@/assets/m4a.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
 
-export const getProviderIcon = function (providerDomain: string) {
-  if (providerDomain == "spotify") return iconSpotify;
-  if (providerDomain == "qobuz") return iconQobuz;
-  if (providerDomain == "tunein") return iconTuneIn;
-  if (providerDomain == "ytmusic") return iconYTMusic;
-  if (providerDomain == "slimproto") return iconSlimProto;
-  if (providerDomain == "airplay") return iconAirPlay;
-  if (providerDomain == "chromecast") return iconChromeCast;
-  if (providerDomain == "sonos") return iconSonos;
-  if (providerDomain == "hass") return iconHass;
-  if (providerDomain == "dlna") return iconDLNA;
-  if (providerDomain.includes("filesystem")) return iconFilesystem;
-  return iconFallback;
-};
 export const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;
   if (contentType == ContentType.FLAC) return iconFlac;

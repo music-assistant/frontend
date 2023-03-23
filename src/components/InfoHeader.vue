@@ -41,8 +41,8 @@
           xs5
           pa-5
           style="
-            width: 192px;
-            height: 192px;
+            width: 230px;
+            height: 230px;
             margin-top: 15px;
             margin-bottom: 15px;
             margin-right: 24px;
@@ -59,7 +59,7 @@
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb :item="item" />
+            <MediaItemThumb width="230px" :item="item" />
           </div>
         </div>
 

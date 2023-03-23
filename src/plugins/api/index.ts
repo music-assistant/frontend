@@ -41,6 +41,7 @@ import {
   type SyncTask,
   RepeatMode,
   SearchResults,
+  ProviderManifest,
 } from "./interfaces";
 
 const DEBUG = true;
@@ -74,6 +75,9 @@ export class MusicAssistantApi {
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
   public providers = reactive<{ [instance_id: string]: ProviderInstance }>({});
+  public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
+    {}
+  );
   public syncTasks = ref<SyncTask[]>([]);
   public fetchesInProgress = ref<number[]>([]);
   private eventCallbacks: Array<[string, CallableFunction]>;
@@ -683,7 +687,10 @@ export class MusicAssistantApi {
   }
   public queueCommandCrossfadeToggle(queueId: string) {
     // Toggle crossfade mode for a queue
-    this.queueCommandCrossfade(queueId, !this.queues[queueId].crossfade_enabled);
+    this.queueCommandCrossfade(
+      queueId,
+      !this.queues[queueId].crossfade_enabled
+    );
   }
   public queueCommandRepeatToggle(queueId: string) {
     // Toggle repeat mode of a queue
@@ -886,7 +893,7 @@ export class MusicAssistantApi {
   ) {
     const tracks = await this.getPlaylistTracks(
       playlist.item_id,
-      playlist.provider,
+      playlist.provider
     );
     // to account for shuffle, we play the first track and append the rest
     this.playMedia(
@@ -1109,6 +1116,10 @@ export class MusicAssistantApi {
     }
     for (const queue of await this.getPlayerQueues()) {
       this.queues[queue.queue_id] = queue;
+    }
+
+    for (const prov of await this.getData<ProviderManifest[]>("providers/available")) {
+      this.providerManifests[prov.domain] = prov;
     }
 
     for (const prov of await this.getData<ProviderInstance[]>("providers")) {

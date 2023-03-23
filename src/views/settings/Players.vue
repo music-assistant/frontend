@@ -12,12 +12,7 @@
           @click="editPlayer(config.player_id)"
         >
           <template #prepend>
-            <v-img
-              scale
-              width="36px"
-              class="listitem-thumb"
-              :src="getProviderIcon(config.provider)"
-            />
+            <provider-icon :domain="config.provider" :size="'40px'" class="listitem-thumb"/>
           </template>
 
           <template #append>
@@ -88,10 +83,10 @@
                       @click="toggleEnabled(config)"
                     />
                     <v-list-item
-                      v-if="providerManifests[config.provider].documentation"
+                      v-if="api.providerManifests[config.provider].documentation"
                       :title="$t('settings.documentation')"
                       prepend-icon="mdi-bookshelf"
-                      :href="providerManifests[config.provider].documentation"
+                      :href="api.providerManifests[config.provider].documentation"
                       target="_blank"
                     />
                     <v-list-item
@@ -121,7 +116,7 @@ import {
   ProviderManifest,
   ConfigUpdate,
 } from "@/plugins/api/interfaces";
-import { getProviderIcon } from "@/components/ProviderIcons.vue";
+import ProviderIcon  from "@/components/ProviderIcon.vue";
 import { onBeforeUnmount, watch } from "vue";
 
 import { useRouter } from "vue-router";
@@ -132,9 +127,6 @@ const router = useRouter();
 
 // local refs
 const playerConfigs = ref<PlayerConfig[]>([]);
-const providerManifests = reactive<{
-  [provider_domain: string]: ProviderManifest;
-}>({});
 
 // computed properties
 
@@ -147,12 +139,6 @@ onBeforeUnmount(unsub);
 // methods
 const loadItems = async function () {
   playerConfigs.value = await api.getData("config/players");
-  const manifests: ProviderManifest[] = await api.getData(
-    "providers/available"
-  );
-  for (const prov of manifests) {
-    providerManifests[prov.domain] = prov;
-  }
 };
 
 const deletePlayerConfig = function (playerId: string) {

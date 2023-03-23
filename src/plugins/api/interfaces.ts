@@ -560,6 +560,8 @@ export interface ProviderManifest {
   builtin: boolean;
   // load_by_default: load this provider by default (mostly used together with `builtin`)
   load_by_default: boolean;
+  // icon: url or image data
+  icon?: string;
 }
 
 export interface ProviderInstance {

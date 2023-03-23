@@ -153,13 +153,7 @@
                 }}</span>
                 <v-divider />
                 <div style="height: 50px; display: flex; align-items: center">
-                  <img
-                    height="30"
-                    width="50"
-                    center
-                    :src="getProviderIcon(streamDetails.provider)"
-                    style="object-fit: contain"
-                  >
+                  <provider-icon :domain="streamDetails.provider" :size="'35px'" style="object-fit: contain;margin-left:10px;margin-right:5px"/>
                   {{ $t("providers." + streamDetails.provider) }}
                 </div>
 
@@ -465,9 +459,9 @@ import { useRouter } from "vue-router";
 import {
   getContentTypeIcon,
   iconHiRes,
-  getProviderIcon,
   iconFallback,
 } from "@/components/ProviderIcons.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 
 const router = useRouter();
 

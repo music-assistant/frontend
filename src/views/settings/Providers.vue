@@ -7,7 +7,7 @@
           providerConfigs.filter(
             (x) =>
               x.type == ProviderType.MUSIC &&
-              x.domain in providerManifests &&
+              x.domain in api.providerManifests &&
               x.domain != 'url'
           ).length == 0
         "
@@ -30,20 +30,16 @@
         />
         <v-list-item
           v-for="config in providerConfigs.filter(
-            (x) => x.type == provType && x.domain in providerManifests
+            (x) => x.type == provType && x.domain in api.providerManifests
           )"
           :key="config.instance_id"
-          :title="config.name || providerManifests[config.domain].name"
-          :subtitle="providerManifests[config.domain].description"
+          :title="config.name || api.providerManifests[config.domain].name"
+          :subtitle="api.providerManifests[config.domain].description"
           @click="editProvider(config.instance_id)"
         >
           <template #prepend>
-            <v-img
-              contain
-              width="36px"
-              class="listitem-thumb"
-              :src="getProviderIcon(config.domain)"
-            />
+            <provider-icon :domain="config.domain" :size="'40px'" class="listitem-thumb"/>
+            
           </template>
 
           <template #append>
@@ -164,14 +160,14 @@
                           : $t('settings.enable')
                       "
                       prepend-icon="mdi-cancel"
-                      :disabled="providerManifests[config.domain].builtin"
+                      :disabled="api.providerManifests[config.domain].builtin"
                       @click="toggleEnabled(config)"
                     />
                     <v-list-item
-                      v-if="providerManifests[config.domain].documentation"
+                      v-if="api.providerManifests[config.domain].documentation"
                       :title="$t('settings.documentation')"
                       prepend-icon="mdi-bookshelf"
-                      :href="providerManifests[config.domain].documentation"
+                      :href="api.providerManifests[config.domain].documentation"
                       target="_blank"
                     />
                     <v-list-item
@@ -181,7 +177,7 @@
                       @click="api.startSync(undefined, [config.instance_id])"
                     />
                     <v-list-item
-                      v-if="!providerManifests[config.domain].builtin && !providerManifests[config.domain].load_by_default"
+                      v-if="!api.providerManifests[config.domain].builtin && !api.providerManifests[config.domain].load_by_default"
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"
                       @click="deleteProvider(config.instance_id)"
@@ -230,12 +226,7 @@
             @click="addProvider(provider)"
           >
             <template #prepend>
-              <v-img
-                contain
-                width="26px"
-                style="margin-right: 20px"
-                :src="getProviderIcon(provider.domain)"
-              />
+              <provider-icon :domain="provider.domain" :size="26" class="listitem-thumb" style="margin-left:10px"/>
             </template>
           </v-list-item>
         </v-list>
@@ -256,7 +247,7 @@ import {
   ProviderManifest,
   ProviderType,
 } from "@/plugins/api/interfaces";
-import { getProviderIcon } from "@/components/ProviderIcons.vue";
+import ProviderIcon  from "@/components/ProviderIcon.vue";
 import { computed, onBeforeUnmount, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -265,16 +256,13 @@ const router = useRouter();
 
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
-const providerManifests = reactive<{
-  [provider_domain: string]: ProviderManifest;
-}>({});
 
 // computed properties
 const availableProviders = computed(() => {
   // providers available for setup
   // filter out builtin providers
   // filter out providers that are already setup (and multi instance not allowed)
-  return Object.values(providerManifests).filter(
+  return Object.values(api.providerManifests).filter(
     (x) =>
       !x.builtin &&
       (x.multi_instance || !providerConfigs.value.find((x) => x.domain))
@@ -294,7 +282,7 @@ const loadItems = async function () {
     "providers/available"
   );
   for (const prov of manifests) {
-    providerManifests[prov.domain] = prov;
+    api.providerManifests[prov.domain] = prov;
   }
 };
 
