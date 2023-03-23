@@ -4,7 +4,7 @@
       <div>
         <v-list-item
           v-for="config in [...playerConfigs].sort((a, b) =>
-            getPlayerName(a) > getPlayerName(b) ? 1 : -1
+            getPlayerName(a).toUpperCase() > getPlayerName(b).toUpperCase() ? 1 : -1
           )"
           :key="config.player_id"
           :title="getPlayerName(config)"
@@ -167,7 +167,7 @@ const toggleEnabled = function (config: PlayerConfig) {
 const getPlayerName = function (playerConfig: PlayerConfig) {
   return (
     playerConfig.name ||
-    api.players[playerConfig.player_id]?.name ||
+    api.players[playerConfig.player_id]?.display_name ||
     playerConfig.default_name ||
     playerConfig.player_id
   );

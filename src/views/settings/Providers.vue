@@ -15,10 +15,10 @@
         theme="dark"
         icon="mdi-radio-tower"
         prominent
-        style="margin-bottom:15px;"
+        style="margin-bottom: 15px"
       >
         <b>{{ $t("settings.no_providers") }}</b>
-        <br>
+        <br />
         {{ $t("settings.no_providers_detail") }}
       </v-alert>
 
@@ -29,17 +29,27 @@
           density="compact"
         />
         <v-list-item
-          v-for="config in providerConfigs.filter(
-            (x) => x.type == provType && x.domain in api.providerManifests
-          )"
+          v-for="config in providerConfigs
+            .filter(
+              (x) => x.type == provType && x.domain in api.providerManifests
+            )
+            .sort((a, b) =>
+              (a.name || api.providerManifests[a.domain].name).toUpperCase() >
+              (b.name || api.providerManifests[b.domain].name).toUpperCase()
+                ? 1
+                : -1
+            )"
           :key="config.instance_id"
           :title="config.name || api.providerManifests[config.domain].name"
           :subtitle="api.providerManifests[config.domain].description"
           @click="editProvider(config.instance_id)"
         >
           <template #prepend>
-            <provider-icon :domain="config.domain" :size="'40px'" class="listitem-thumb"/>
-            
+            <provider-icon
+              :domain="config.domain"
+              :size="'40px'"
+              class="listitem-thumb"
+            />
           </template>
 
           <template #append>
@@ -54,17 +64,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="grey"
-                    >
-                      mdi-sync
-                    </v-icon>
+                    <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
                   </template>
                   <span>{{ $t("settings.sync_running") }}</span>
                 </v-tooltip>
@@ -76,17 +78,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="grey"
-                    >
-                      mdi-cancel
-                    </v-icon>
+                    <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
                   </template>
                   <span>{{ $t("settings.provider_disabled") }}</span>
                 </v-tooltip>
@@ -98,15 +92,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="red"
-                    >
+                    <v-icon v-bind="tooltip" color="red">
                       mdi-alert-circle
                     </v-icon>
                   </template>
@@ -120,14 +108,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip">
-                      mdi-timer-sand
-                    </v-icon>
+                    <v-icon v-bind="tooltip"> mdi-timer-sand </v-icon>
                   </template>
                   <span>{{ $t("settings.not_loaded") }}</span>
                 </v-tooltip>
@@ -171,13 +154,19 @@
                       target="_blank"
                     />
                     <v-list-item
-                      v-if="api.providers[config.instance_id]?.available && provType == ProviderType.MUSIC"
+                      v-if="
+                        api.providers[config.instance_id]?.available &&
+                        provType == ProviderType.MUSIC
+                      "
                       :title="$t('settings.sync')"
                       prepend-icon="mdi-sync"
                       @click="api.startSync(undefined, [config.instance_id])"
                     />
                     <v-list-item
-                      v-if="!api.providerManifests[config.domain].builtin && !api.providerManifests[config.domain].load_by_default"
+                      v-if="
+                        !api.providerManifests[config.domain].builtin &&
+                        !api.providerManifests[config.domain].load_by_default
+                      "
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"
                       @click="deleteProvider(config.instance_id)"
@@ -193,7 +182,7 @@
             </div>
           </template>
         </v-list-item>
-        <br>
+        <br />
       </div>
 
       <!-- float action button to add a new provider config-->
@@ -226,7 +215,12 @@
             @click="addProvider(provider)"
           >
             <template #prepend>
-              <provider-icon :domain="provider.domain" :size="26" class="listitem-thumb" style="margin-left:10px"/>
+              <provider-icon
+                :domain="provider.domain"
+                :size="26"
+                class="listitem-thumb"
+                style="margin-left: 10px"
+              />
             </template>
           </v-list-item>
         </v-list>
@@ -247,7 +241,7 @@ import {
   ProviderManifest,
   ProviderType,
 } from "@/plugins/api/interfaces";
-import ProviderIcon  from "@/components/ProviderIcon.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import { computed, onBeforeUnmount, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -262,11 +256,18 @@ const availableProviders = computed(() => {
   // providers available for setup
   // filter out builtin providers
   // filter out providers that are already setup (and multi instance not allowed)
-  return Object.values(api.providerManifests).filter(
-    (x) =>
-      !x.builtin &&
-      (x.multi_instance || !providerConfigs.value.find((x) => x.domain))
-  );
+  return Object.values(api.providerManifests)
+    .filter(
+      (x) =>
+        !x.builtin &&
+        (x.multi_instance || !providerConfigs.value.find((x) => x.domain))
+    )
+    .sort((a, b) =>
+      (a.name || api.providerManifests[a.domain].name).toUpperCase() >
+      (b.name || api.providerManifests[b.domain].name).toUpperCase()
+        ? 1
+        : -1
+    );
 });
 
 // listen for item updates to refresh items when that happens
