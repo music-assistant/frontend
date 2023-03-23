@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue';
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url'
+import webfontDownload from 'vite-plugin-webfont-dl';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,6 +13,9 @@ export default defineConfig({
     vue({ 
       template: { transformAssetUrls }
     }),
+    webfontDownload([
+      'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap'
+    ]),
     vuetify({
       autoImport: true,
       styles: {

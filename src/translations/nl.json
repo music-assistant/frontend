@@ -185,5 +185,6 @@
     "check_docs": "Bekijk de documentatie",
     "player_not_available": "Deze speler is momenteel (nog) niet beschikbaar",
     "add_provider": "Een nieuwe provider toevoegen"
-  }
+  },
+  "close": "Sluiten"
 }

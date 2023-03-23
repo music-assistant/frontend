@@ -169,7 +169,6 @@
     "player_name": "Custom player name",
     "provider_name": "Custom name for this provider entry",
     "enabled": "Enable",
-    "close": "Close",
     "provider_disabled": "This provider entry is disabled",
     "player_disabled": "This player is disabled",
     "enable_provider": "Enable this provider entry",
@@ -185,5 +184,6 @@
     "player_not_available": "This player is currently not (yet) available",
     "add_provider": "Add a new provider"
   },
-  "track_number": "Disc {0} Track {1}"
+  "track_number": "Disc {0} Track {1}",
+  "close": "Close"
 }

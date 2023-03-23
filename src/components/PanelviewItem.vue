@@ -3,10 +3,12 @@
     outlined
     @click="emit('click', item)"
     @click.right.prevent="emit('menu', item)"
+    style="height:100%"
   >
     <MediaItemThumb
       :item="item"
-      :size="size"
+      :width="'100%'"
+      :height="'60%'"
     />
     <div
       v-if="showCheckboxes"

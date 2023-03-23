@@ -63,7 +63,6 @@
               <div class="listitem-thumb">
                 <MediaItemThumb
                   :item="item"
-                  :size="50"
                   width="50px"
                   height="50px"
                 />
