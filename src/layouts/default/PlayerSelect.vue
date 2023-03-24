@@ -27,12 +27,7 @@
     <v-divider />
 
     <!-- collapsable player rows-->
-    <v-expansion-panels
-      v-model="panelItem"
-      focusable
-      accordion
-      flat
-    >
+    <v-expansion-panels v-model="panelItem" focusable accordion flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"
         :id="player.player_id"
@@ -148,7 +143,8 @@ watch(
     if (newVal) {
       checkDefaultPlayer();
     }
-  }
+  },
+  { deep: true }
 );
 
 const shadowRoot = ref<ShadowRoot>();
@@ -189,10 +185,7 @@ const checkDefaultPlayer = function () {
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
     store.selectedPlayer = newDefaultPlayer;
-    console.log(
-      "Selected new default player: ",
-      newDefaultPlayer.display_name
-    );
+    console.log("Selected new default player: ", newDefaultPlayer.display_name);
   }
 };
 

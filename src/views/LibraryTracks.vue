@@ -7,7 +7,7 @@
     :load-data="loadItems"
     :sort-keys="[
       'sort_name',
-      'timestamp DESC',
+      'timestamp_added DESC',
       'sort_artist',
       'sort_album',
       'duration',

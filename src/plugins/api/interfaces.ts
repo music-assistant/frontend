@@ -48,6 +48,8 @@ export enum AlbumType {
   SINGLE = "single",
   COMPILATION = "compilation",
   EP = "ep",
+  PODCAST = "podcast",
+  AUDIOBOOK = "audiobook",
   UNKNOWN = "unknown",
 }
 
@@ -61,6 +63,7 @@ export enum ContentType {
   WAV = "wav",
   AIFF = "aiff",
   WMA = "wma",
+  M4B = "m4b",
   M4A = "m4a",
   DSF = "dsf",
   WAVPACK = "wv",
@@ -331,7 +334,7 @@ export interface MediaItemLink {
 export interface MediaItemImage {
   type: ImageType;
   url: string;
-  is_file: boolean;
+  source: string; // set to instance_id of file provider if path is local, otherwise http
 }
 
 export interface MediaItemMetadata {
@@ -364,7 +367,8 @@ export interface MediaItem {
   media_type: MediaType;
   sort_name?: string;
   uri: string;
-  timestamp: number;
+  timestamp_added: number;
+  timestamp_modified: number;
 }
 
 export interface ItemMapping {

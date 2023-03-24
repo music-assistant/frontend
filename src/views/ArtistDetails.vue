@@ -23,7 +23,7 @@
       :show-track-number="false"
       :show-library="false"
       :load-data="loadArtistTracks"
-      :sort-keys="['timestamp DESC', 'sort_name', 'sort_album']"
+      :sort-keys="['timestamp_added DESC', 'sort_name', 'sort_album']"
       :update-available="updateAvailable"
       @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
@@ -34,7 +34,7 @@
       :show-providers="true"
       :show-library="false"
       :load-data="loadArtistAlbums"
-      :sort-keys="['timestamp DESC', 'sort_name', 'year']"
+      :sort-keys="['timestamp_added DESC', 'sort_name', 'year']"
       :update-available="updateAvailable"
       @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />

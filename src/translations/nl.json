@@ -81,7 +81,7 @@
     "year": "Verschijningsdatum/jaar",
     "position": "Positie",
     "track_number": "Tracknummer",
-    "timestamp DESC": "Onlangs toegevoegd",
+    "timestamp_added DESC": "Onlangs toegevoegd",
     "duration": "Duur",
     "provider": "Provider"
   },

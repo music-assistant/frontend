@@ -6,7 +6,7 @@
     :show-providers="true"
     :show-library="true"
     :load-data="loadItems"
-    :sort-keys="['sort_name', 'timestamp DESC']"
+    :sort-keys="['sort_name', 'timestamp_added DESC']"
   />
 </template>
 

@@ -98,7 +98,7 @@
     "year": "Année de sortie",
     "position": "Position",
     "track_number": "Numéro de piste",
-    "timestamp DESC": "Récemment ajouté",
+    "timestamp_added DESC": "Récemment ajouté",
     "duration": "Durée",
     "provider": "Fournisseur"
   },

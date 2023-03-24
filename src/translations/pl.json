@@ -107,7 +107,7 @@
     "year": "Rok wydania",
     "position": "Pozycjan",
     "track_number": "NUmer albumu",
-    "timestamp DESC": "Najnowsze dodane",
+    "timestamp_added DESC": "Najnowsze dodane",
     "duration": "Czas",
     "provider": "Dostawca"
   },

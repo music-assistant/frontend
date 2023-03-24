@@ -87,7 +87,7 @@ import PanelviewItem from "@/components/PanelviewItem.vue";
 const recentArtists = ref<Artist[]>([]);
 
 onMounted(async () => {
-  const result = await api.getAlbumArtists(undefined, undefined, 25, 0, "timestamp");
+  const result = await api.getAlbumArtists(undefined, undefined, 25, 0, "timestamp_added");
   recentArtists.value = result.items as Artist[];
 });
 

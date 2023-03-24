@@ -4,7 +4,7 @@
     :items="items"
     :show-providers="true"
     :load-data="loadItems"
-    :sort-keys="['sort_name', 'timestamp DESC', 'sort_artist', 'year']"
+    :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'year']"
   />
 </template>
 
