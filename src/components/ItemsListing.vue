@@ -356,7 +356,7 @@ export interface Props {
   ) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ["sort_name", "timestamp DESC"],
+  sortKeys: () => ["sort_name", "timestamp_added DESC"],
   showTrackNumber: true,
   showProviders: Object.keys(api.providers).length > 1,
   showMenu: true,
@@ -764,8 +764,8 @@ export const filteredItems = function (
   if (sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }
-  if (sortBy == "timestamp DESC") {
-    result.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  if (sortBy == "timestamp_added DESC") {
+    result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
   }
 
   if (sortBy == "duration") {
