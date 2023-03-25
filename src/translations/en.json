@@ -80,7 +80,7 @@
     "year": "Release year",
     "position": "Position",
     "track_number": "Track number",
-    "timestamp DESC": "Recently added",
+    "timestamp_added DESC": "Recently added",
     "duration": "Duration",
     "provider": "Provider"
   },

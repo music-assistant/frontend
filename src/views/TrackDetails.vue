@@ -51,15 +51,11 @@ const props = defineProps<Props>();
 const activeTab = ref("");
 const updateAvailable = ref(false);
 const itemDetails = ref<Track>();
-const showVersionsTab = ref(false);
+const showVersionsTab = ref(true);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getTrack(props.itemId, props.provider);
   activeTab.value = "versions";
-  // we only show the versions tab if we actually have other versions
-  // to avoid confusion
-  const versions = await loadTrackVersions(0, 2, 'name');
-  showVersionsTab.value = versions.count > 0;
 };
 
 watch(
@@ -105,6 +101,7 @@ const loadTrackVersions = async function (
     props.itemId,
     props.provider
   );
+  showVersionsTab.value = trackVersions.length > 0
   return filteredItems(
     trackVersions,
     offset,

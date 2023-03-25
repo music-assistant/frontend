@@ -68,7 +68,7 @@ const props = defineProps<Props>();
 const activeTab = ref("");
 const updateAvailable = ref(false);
 const itemDetails = ref<Album>();
-const showVersionsTab = ref(false);
+const showVersionsTab = ref(true);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(
@@ -80,10 +80,6 @@ const loadItemDetails = async function () {
     parseBool(props.forceProviderVersion || "")
   );
   activeTab.value = "tracks";
-  // we only show the versions tab if we actually have other versions
-  // to avoid confusion
-  const versions = await loadAlbumVersions(0, 2, 'name');
-  showVersionsTab.value = versions.count > 0;
 };
 
 watch(
@@ -141,6 +137,7 @@ const loadAlbumVersions = async function (
     props.itemId,
     props.provider
   );
+  showVersionsTab.value = albumVersions.length > 0
   return filteredItems(
     albumVersions,
     offset,
