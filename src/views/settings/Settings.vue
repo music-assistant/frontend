@@ -1,11 +1,10 @@
 <template>
   <section>
     <v-tabs
-      show-arrows
-      grow
       hide-slider
       style="margin-top: 8px"
       :model-value="activeTab"
+      align-tabs="end"
     >
       <v-tab
         value="providers"

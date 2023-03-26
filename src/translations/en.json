@@ -182,7 +182,8 @@
     "need_help_setup_provider": "Need help setting up this provider ?",
     "check_docs": "Checkout the documentation",
     "player_not_available": "This player is currently not (yet) available",
-    "add_provider": "Add a new provider"
+    "add_provider": "Add a new provider",
+    "add_new": "Add new"
   },
   "track_number": "Disc {0} Track {1}",
   "close": "Close",

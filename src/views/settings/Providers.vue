@@ -1,33 +1,66 @@
 <template>
   <section>
-    <v-card-text>
+    <v-card-text style="margin-right:15px">
       <!-- show alert if no music providers configured-->
-      <v-alert
-        v-if="
-          providerConfigs.filter(
-            (x) =>
-              x.type == ProviderType.MUSIC &&
-              x.domain in api.providerManifests &&
-              x.domain != 'url'
-          ).length == 0
-        "
-        color="primary"
-        theme="dark"
-        icon="mdi-radio-tower"
-        prominent
-        style="margin-bottom: 15px"
-      >
-        <b>{{ $t("settings.no_providers") }}</b>
-        <br />
-        {{ $t("settings.no_providers_detail") }}
-      </v-alert>
 
       <!-- show section per providertpe -->
-      <div v-for="provType in ProviderType">
+      <v-card v-for="provType in ProviderType" style="margin-bottom:15px">
         <v-toolbar
           :title="$t(`settings.${provType}providers`)"
           density="compact"
-        />
+        >
+          <template #append>
+            <v-menu
+              v-if="availableProviders.filter((x) => x.type == provType).length"
+            >
+              <template #activator="{ props }">
+                <v-btn variant="text" v-bind="props">{{
+                  $t("settings.add_new")
+                }}</v-btn>
+              </template>
+
+              <v-card>
+                <v-list-item
+                  v-for="provider in availableProviders.filter(
+                    (x) => x.type == provType
+                  )"
+                  :key="provider.domain"
+                  :title="provider.name"
+                  @click="addProvider(provider)"
+                >
+                  <template #prepend>
+                    <provider-icon
+                      :domain="provider.domain"
+                      :size="26"
+                      class="listitem-thumb"
+                      style="margin-left: 10px"
+                    />
+                  </template>
+                </v-list-item>
+              </v-card>
+            </v-menu>
+          </template>
+        </v-toolbar>
+        <v-alert
+          v-if="
+            provType == ProviderType.MUSIC &&
+            providerConfigs.filter(
+              (x) =>
+                x.type == ProviderType.MUSIC &&
+                x.domain in api.providerManifests &&
+                x.domain != 'url'
+            ).length == 0
+          "
+          color="primary"
+          theme="dark"
+          icon="mdi-radio-tower"
+          prominent
+          style="margin-bottom: 15px"
+        >
+          <b>{{ $t("settings.no_providers") }}</b>
+          <br />
+          {{ $t("settings.no_providers_detail") }}
+        </v-alert>
         <v-list-item
           v-for="config in providerConfigs
             .filter(
@@ -49,6 +82,7 @@
               :domain="config.domain"
               :size="'40px'"
               class="listitem-thumb"
+              style="margin-left:-5px"
             />
           </template>
 
@@ -183,48 +217,7 @@
           </template>
         </v-list-item>
         <br />
-      </div>
-
-      <!-- float action button to add a new provider config-->
-      <v-dialog :scrim="true">
-        <template #activator="{ props }">
-          <v-btn
-            color="primary"
-            icon="mdi-plus"
-            size="x-large"
-            position="fixed"
-            location="bottom right"
-            elevation="8"
-            style="margin-bottom: 180px; margin-right: 15px; z-index: 9999"
-            v-bind="props"
-          />
-        </template>
-
-        <v-toolbar dark>
-          <v-btn icon="mdi-play-circle-outline" />
-          <v-toolbar-title style="padding-left: 10px">
-            <b>{{ $t("settings.add_provider") }}</b>
-          </v-toolbar-title>
-        </v-toolbar>
-
-        <v-list>
-          <v-list-item
-            v-for="provider in availableProviders"
-            :key="provider.domain"
-            :title="provider.name"
-            @click="addProvider(provider)"
-          >
-            <template #prepend>
-              <provider-icon
-                :domain="provider.domain"
-                :size="26"
-                class="listitem-thumb"
-                style="margin-left: 10px"
-              />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-dialog>
+      </v-card>
     </v-card-text>
   </section>
 </template>
