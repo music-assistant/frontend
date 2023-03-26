@@ -441,7 +441,8 @@ export class MusicAssistantApi {
     provider_domain?: string,
     provider_instance?: string,
     force_refresh?: boolean,
-    lazy?: boolean
+    lazy?: boolean,
+    force_provider_item?: boolean
   ): Promise<Radio> {
     return this.getData("music/radio", {
       item_id,
@@ -449,6 +450,7 @@ export class MusicAssistantApi {
       provider_instance,
       force_refresh,
       lazy,
+      force_provider_item
     });
   }
 

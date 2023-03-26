@@ -36,6 +36,14 @@ store.topBarContextMenuItems = [
     },
     icon: 'mdi-sync',
   },
+  {
+    label: 'add_url_item',
+    labelArgs: [],
+    action: () => {
+      addUrl();
+    },
+    icon: 'mdi-link-plus',
+  },
 ];
 onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
@@ -50,5 +58,12 @@ const loadItems = async function (
 ) {
   const library = inLibraryOnly || undefined;
   return await api.getTracks(library, search, limit, offset, sort);
+};
+
+const addUrl = function (
+) {
+  const url = prompt(t('enter_url'));
+  if (!url) return;
+  api.getTrack(url, 'url' ).then(() => location.reload()).catch((e) => alert(e));
 };
 </script>
