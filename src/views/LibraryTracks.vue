@@ -9,14 +9,13 @@
       'sort_name',
       'timestamp_added DESC',
       'sort_artist',
-      'sort_album',
       'duration',
     ]"
+    :show-album="false"
   />
 </template>
 
 <script setup lang="ts">
-import { mdiFileSync } from "@mdi/js";
 import { onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ItemsListing from "../components/ItemsListing.vue";

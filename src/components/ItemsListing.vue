@@ -247,6 +247,7 @@
             :show-library="showLibrary !== false && !inLibraryOnly"
             :show-menu="showMenu"
             :show-providers="showProviders"
+            :show-album="showAlbum"
             :show-checkboxes="showCheckboxes"
             :is-selected="isSelected(item)"
             :show-details="itemtype.includes('versions')"
@@ -341,6 +342,7 @@ export interface Props {
   sortKeys?: string[];
   showTrackNumber?: boolean;
   showProviders?: boolean;
+  showAlbum?: boolean;
   showMenu?: boolean;
   showLibrary?: boolean;
   showDuration?: boolean;
@@ -359,6 +361,7 @@ const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["sort_name", "timestamp_added DESC"],
   showTrackNumber: true,
   showProviders: Object.keys(api.providers).length > 1,
+  showAlbum: true,
   showMenu: true,
   showLibrary: true,
   showDuration: true,

@@ -3,12 +3,9 @@
     outlined
     @click="emit('click', item)"
     @click.right.prevent="emit('menu', item)"
-    style="height:100%"
+    style="height: 100%"
   >
-    <MediaItemThumb
-      :item="item"
-      :width="'100%'"
-    />
+    <MediaItemThumb :item="item" :width="'100%'" />
     <div
       v-if="showCheckboxes"
       style="
@@ -50,16 +47,19 @@
                 ? 'object-fit: contain;'
                 : 'object-fit: contain;filter: invert(100%);'
             "
-          >
+          />
         </template>
         <span>{{ HiResDetails }}</span>
       </v-tooltip>
     </div>
+    <v-icon
+      v-if="parseBool(item.metadata.explicit || false)"
+      icon="mdi-alpha-e-box"
+      size="30"
+      style="position: absolute; right: 2px; top: 2px; height: 30px; width:30px;background-color: black;"
+    />
 
-    <v-list-item
-      two-line
-      style="padding-left: 8px; padding-right: 8px"
-    >
+    <v-list-item two-line style="padding-left: 8px; padding-right: 8px">
       <div>
         <p
           class="font-weight-bold line-clamp-1"
@@ -82,6 +82,12 @@
       >
         {{ item.owner }}
       </v-list-item-subtitle>
+      <span
+        v-if="'version' in item && item.version"
+        style="margin-bottom: 8px;font-size: x-small;"
+      >
+        {{ item.version }}
+    </span>
     </v-list-item>
   </v-card>
 </template>
@@ -97,7 +103,7 @@ import {
   type MediaItem,
   type MediaItemType,
 } from "../plugins/api/interfaces";
-import { getArtistsString } from "../utils";
+import { getArtistsString, parseBool } from "../utils";
 
 // properties
 export interface Props {

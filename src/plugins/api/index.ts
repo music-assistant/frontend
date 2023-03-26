@@ -216,6 +216,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getTrackAlbums(
+    item_id: string,
+    provider_domain?: string,
+    provider_instance?: string
+  ): Promise<Album[]> {
+    return this.getData("music/track/albums", {
+      item_id,
+      provider_domain,
+      provider_instance,
+    });
+  }
+
   public getTrackPreviewUrl(
     provider_domain: string,
     item_id: string

@@ -191,5 +191,6 @@
   "close": "Sluiten",
   "add_url_item": "Voeg hanmatig een URL toe",
   "enter_url": "Geef de URL op die je handmatig wilt toevoegen aan de database",
-  "new_playlist_name": "Geef een naam op voor de nieuwe playlist"
+  "new_playlist_name": "Geef een naam op voor de nieuwe playlist",
+  "appears_on": "Verschenen op"
 }

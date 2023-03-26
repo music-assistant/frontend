@@ -1,14 +1,12 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <v-tabs
-      v-model="activeTab"
-      show-arrows
-      grow
-      hide-slider
-    >
-      <v-tab v-if="showVersionsTab" value="details">
+    <v-tabs v-model="activeTab" show-arrows grow hide-slider>
+      <v-tab v-if="showVersionsTab" value="versions">
         {{ $t("other_versions") }}
+      </v-tab>
+      <v-tab v-if="showVersionsTab" value="appears_on">
+        {{ $t("appears_on") }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -17,9 +15,24 @@
       itemtype="trackversions"
       :parent-item="itemDetails"
       :show-providers="true"
-      :show-library="false"
+      :show-library="true"
       :show-track-number="false"
       :load-data="loadTrackVersions"
+      :sort-keys="['provider', 'sort_name', 'duration']"
+      :update-available="updateAvailable"
+      @refresh-clicked="
+        loadItemDetails();
+        updateAvailable = false;
+      "
+    />
+    <ItemsListing
+      v-if="activeTab == 'appears_on'"
+      itemtype="trackalbums"
+      :parent-item="itemDetails"
+      :show-providers="true"
+      :show-library="true"
+      :show-track-number="false"
+      :load-data="loadTrackAlbums"
       :sort-keys="['provider', 'sort_name', 'duration']"
       :update-available="updateAvailable"
       @refresh-clicked="
@@ -39,6 +52,7 @@ import {
   type Track,
   type EventMessage,
   type MediaItemType,
+  Album,
 } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
 import { onBeforeUnmount, onMounted, watch } from "vue";
@@ -55,8 +69,15 @@ const itemDetails = ref<Track>();
 const showVersionsTab = ref(true);
 
 const loadItemDetails = async function () {
-  console.log("props", props)
-  itemDetails.value = await api.getTrack(props.itemId, props.provider, undefined, undefined, undefined, props.album);
+  console.log("props", props);
+  itemDetails.value = await api.getTrack(
+    props.itemId,
+    props.provider,
+    undefined,
+    undefined,
+    undefined,
+    props.album
+  );
   activeTab.value = "versions";
 };
 
@@ -103,7 +124,7 @@ const loadTrackVersions = async function (
     props.itemId,
     props.provider
   );
-  showVersionsTab.value = trackVersions.length > 0
+  showVersionsTab.value = trackVersions.length > 0;
   return filteredItems(
     trackVersions,
     offset,
@@ -112,5 +133,20 @@ const loadTrackVersions = async function (
     search,
     inLibraryOnly
   );
+};
+
+const loadTrackAlbums = async function (
+  offset: number,
+  limit: number,
+  sort: string,
+  search?: string,
+  inLibraryOnly = true
+) {
+  let trackAlbums = await api.getTrackAlbums(props.itemId, props.provider);
+
+  if (trackAlbums.length == 0 && itemDetails.value?.album)
+    trackAlbums = [itemDetails.value?.album as Album];
+
+  return filteredItems(trackAlbums, offset, limit, sort, search, inLibraryOnly);
 };
 </script>

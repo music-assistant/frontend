@@ -189,5 +189,6 @@
   "close": "Close",
   "add_url_item": "Add item from URL",
   "enter_url": "Enter the URL you want to manually add to the database",
-  "new_playlist_name": "Enter a new for the new playlist"
+  "new_playlist_name": "Enter a new for the new playlist",
+  "appears_on": "Appears on"
 }

@@ -72,7 +72,7 @@
             !showTrackNumber
           "
         >
-          {{ getArtistsString(item.artists) }} • {{ item.album.name }}
+          {{ getArtistsString(item.artists) }}<span v-if="showAlbum"> • {{ item.album.name }}</span>
         </div>
         <!-- albumtrack: artists(s) + disc/track number -->
         <span
@@ -251,6 +251,7 @@ export interface Props {
   item: MediaItemType;
   showTrackNumber?: boolean;
   showProviders?: boolean;
+  showAlbum?: boolean;
   showMenu?: boolean;
   showLibrary?: boolean;
   showDuration?: boolean;
@@ -266,6 +267,7 @@ const { t } = useI18n();
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showProviders: true,
+  showAlbum: true,
   showMenu: true,
   showLibrary: true,
   showDuration: true,
