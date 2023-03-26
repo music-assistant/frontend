@@ -190,7 +190,8 @@ export class MusicAssistantApi {
     provider_instance?: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    force_provider_item?: boolean
+    album?: string,
+    add_to_db: boolean = false,
   ): Promise<Track> {
     return this.getData("music/track", {
       item_id,
@@ -198,7 +199,8 @@ export class MusicAssistantApi {
       provider_instance,
       force_refresh,
       lazy,
-      force_provider_item,
+      album_uri:album,
+      add_to_db,
     });
   }
 
@@ -262,7 +264,7 @@ export class MusicAssistantApi {
     provider_instance?: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    force_provider_item?: boolean
+    add_to_db: boolean = false
   ): Promise<Artist> {
     return this.getData("music/artist", {
       item_id,
@@ -270,7 +272,7 @@ export class MusicAssistantApi {
       provider_instance,
       force_refresh,
       lazy,
-      force_provider_item,
+      add_to_db,
     });
   }
 
@@ -320,7 +322,7 @@ export class MusicAssistantApi {
     provider_instance?: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    force_provider_item?: boolean
+    add_to_db: boolean = false
   ): Promise<Album> {
     return this.getData("music/album", {
       item_id,
@@ -328,7 +330,7 @@ export class MusicAssistantApi {
       provider_instance,
       force_refresh,
       lazy,
-      force_provider_item,
+      add_to_db,
     });
   }
 
@@ -378,7 +380,7 @@ export class MusicAssistantApi {
     provider_instance?: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    force_provider_item?: boolean
+    add_to_db: boolean = false
   ): Promise<Playlist> {
     return this.getData("music/playlist", {
       item_id,
@@ -386,7 +388,7 @@ export class MusicAssistantApi {
       provider_instance,
       force_refresh,
       lazy,
-      force_provider_item,
+      add_to_db,
     });
   }
 
@@ -442,7 +444,7 @@ export class MusicAssistantApi {
     provider_instance?: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    force_provider_item?: boolean
+    add_to_db: boolean = false
   ): Promise<Radio> {
     return this.getData("music/radio", {
       item_id,
@@ -450,7 +452,7 @@ export class MusicAssistantApi {
       provider_instance,
       force_refresh,
       lazy,
-      force_provider_item
+      add_to_db,
     });
   }
 
@@ -476,6 +478,15 @@ export class MusicAssistantApi {
       uri,
       force_refresh,
       lazy,
+    });
+  }
+
+  public refreshItem(
+    media_item: MediaItemType
+  ): Promise<MediaItemType> {
+    // Try to refresh a mediaitem by requesting it's full object or search for substitutes.
+    return this.getData("music/refresh_item", {
+      media_item
     });
   }
 
@@ -1120,7 +1131,9 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     }
 
-    for (const prov of await this.getData<ProviderManifest[]>("providers/available")) {
+    for (const prov of await this.getData<ProviderManifest[]>(
+      "providers/available"
+    )) {
       this.providerManifests[prov.domain] = prov;
     }
 

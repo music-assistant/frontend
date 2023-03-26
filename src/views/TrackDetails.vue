@@ -46,6 +46,7 @@ import { onBeforeUnmount, onMounted, watch } from "vue";
 export interface Props {
   itemId: string;
   provider: string;
+  album?: string;
 }
 const props = defineProps<Props>();
 const activeTab = ref("");
@@ -54,7 +55,8 @@ const itemDetails = ref<Track>();
 const showVersionsTab = ref(true);
 
 const loadItemDetails = async function () {
-  itemDetails.value = await api.getTrack(props.itemId, props.provider);
+  console.log("props", props)
+  itemDetails.value = await api.getTrack(props.itemId, props.provider, undefined, undefined, undefined, props.album);
   activeTab.value = "versions";
 };
 

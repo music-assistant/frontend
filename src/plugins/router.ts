@@ -92,7 +92,7 @@ const routes = [
         name: "track",
         component: () =>
           import(/* webpackChunkName: "track" */ "@/views/TrackDetails.vue"),
-        props: true,
+          props: (route: { params: any; query: any; } ) => ({ ...route.params, ...route.query }),
       },
       {
         path: "/radios/:provider/:itemId",

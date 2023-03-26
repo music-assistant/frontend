@@ -18,7 +18,7 @@
   "topresult": "Top resultaat",
   "queue": "Wachtrij",
   "sync_now": "{0} nu synchroniseren",
-  "sync_running": "Een of meerdere providers wordne nu gesynchroniseerd.",
+  "sync_running": "Een of meerdere providers worden nu gesynchroniseerd.",
   "loading": "Er wordt data opgehaald bij de server.",
   "artist_toptracks": "Top nummers",
   "artist_albums": "Albums",
@@ -184,7 +184,12 @@
     "need_help_setup_provider": "Hulp nodig bij het configureren van deze provider ?",
     "check_docs": "Bekijk de documentatie",
     "player_not_available": "Deze speler is momenteel (nog) niet beschikbaar",
-    "add_provider": "Een nieuwe provider toevoegen"
+    "add_provider": "Een nieuwe provider toevoegen",
+    "add_new": "Toevoegen"
   },
-  "close": "Sluiten"
+  "track_number": "Disc {0} Track {1}",
+  "close": "Sluiten",
+  "add_url_item": "Voeg hanmatig een URL toe",
+  "enter_url": "Geef de URL op die je handmatig wilt toevoegen aan de database",
+  "new_playlist_name": "Geef een naam op voor de nieuwe playlist"
 }

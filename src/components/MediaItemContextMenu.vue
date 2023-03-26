@@ -9,25 +9,14 @@
     <v-card>
       <v-toolbar dark>
         <v-btn icon="mdi-play-circle-outline" />
-        <v-toolbar-title
-          v-if="showPlaylistsMenu"
-          style="padding-left: 10px"
-        >
+        <v-toolbar-title v-if="showPlaylistsMenu" style="padding-left: 10px">
           <b>{{ $t("add_playlist") }}</b>
           <span v-if="!$vuetify.display.mobile"> | {{ header }} </span>
         </v-toolbar-title>
-        <v-toolbar-title
-          v-else
-          style="padding-left: 10px"
-        >
+        <v-toolbar-title v-else style="padding-left: 10px">
           <b>{{ header }}</b>
         </v-toolbar-title>
-        <v-btn
-          icon="mdi-close"
-          dark
-          text
-          @click="close()"
-        />
+        <v-btn icon="mdi-close" dark text @click="close()" />
       </v-toolbar>
       <!-- play contextmenu items -->
       <v-card-text
@@ -46,10 +35,7 @@
         />
 
         <v-list>
-          <div
-            v-for="item of playMenuItems"
-            :key="item.label"
-          >
+          <div v-for="item of playMenuItems" :key="item.label">
             <v-list-item
               :title="$t(item.label, item.labelArgs)"
               density="default"
@@ -69,8 +55,8 @@
       <v-card-text
         v-if="
           enableActionMenuItems &&
-            !showPlaylistsMenu &&
-            actionMenuItems.length > 0
+          !showPlaylistsMenu &&
+          actionMenuItems.length > 0
         "
         style="padding-top: 0; margin-top: -10px; padding-bottom: 0"
       >
@@ -78,10 +64,7 @@
           {{ $t("actions") }}
         </v-list-item-subtitle>
         <v-list>
-          <div
-            v-for="item of actionMenuItems"
-            :key="item.label"
-          >
+          <div v-for="item of actionMenuItems" :key="item.label">
             <v-list-item
               :title="$t(item.label, item.labelArgs)"
               density="default"
@@ -100,10 +83,7 @@
       <!-- playlists selection -->
       <v-card-text v-if="showPlaylistsMenu">
         <v-list>
-          <div
-            v-for="playlist of playlists"
-            :key="playlist.item_id"
-          >
+          <div v-for="playlist of playlists" :key="playlist.item_id">
             <v-list-item
               ripple
               density="default"
@@ -139,10 +119,7 @@
             <v-divider />
           </div>
           <!-- create playlist row(s) -->
-          <div
-            v-for="prov of api.providers"
-            :key="prov.instance_id"
-          >
+          <div v-for="prov of api.providers" :key="prov.instance_id">
             <div
               v-if="
                 prov.supported_features.includes(
@@ -152,7 +129,11 @@
             >
               <v-list-item ripple>
                 <template #prepend>
-                  <provider-icon :domain="prov.domain" :size="'40px'" class="listitem-thumb"/>
+                  <provider-icon
+                    :domain="prov.domain"
+                    :size="'40px'"
+                    class="listitem-thumb"
+                  />
                 </template>
                 <template #title>
                   <v-text-field
@@ -183,7 +164,7 @@
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcons from "./ProviderIcons.vue";
 import ProviderIcon from "./ProviderIcon.vue";
-import {  MediaType, QueueOption, type Album } from "../plugins/api/interfaces";
+import { MediaType, QueueOption, type Album } from "../plugins/api/interfaces";
 import type {
   MediaItem,
   MediaItemType,
@@ -350,7 +331,8 @@ export interface ContextMenuItem {
 
 export const itemIsAvailable = function (item: MediaItemType) {
   for (const x of item.provider_mappings) {
-    if (x.available && api.providers[x.provider_instance]?.available) return true;
+    if (x.available && api.providers[x.provider_instance]?.available)
+      return true;
   }
   return false;
 };
@@ -495,6 +477,9 @@ export const getContextMenuItems = function (
             itemId: items[0].item_id,
             provider: items[0].provider,
           },
+          query: {
+            album: "album" in items[0] ? (items[0].album as Album).uri : "",
+          },
         });
       },
       icon: "mdi-information-outline",
@@ -549,12 +534,15 @@ export const getContextMenuItems = function (
   }
 
   // refresh item
-  if (items.length === 1 && items[0] == parentItem) {
+  if (
+    items.length === 1 &&
+    (items[0] == parentItem || !itemIsAvailable(items[0]))
+  ) {
     contextMenuItems.push({
       label: "refresh_item",
       labelArgs: [],
       action: async () => {
-        await api.getItemByUri(items[0].uri, true, false);
+        await api.refreshItem(items[0]);
         router.go(0);
       },
       icon: "mdi-refresh",

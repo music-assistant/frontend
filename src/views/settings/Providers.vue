@@ -10,6 +10,8 @@
           density="compact"
         >
           <template #append>
+
+            <!-- ADD provider button + contextmenu -->
             <v-menu
               v-if="availableProviders.filter((x) => x.type == provType).length"
             >
@@ -19,8 +21,8 @@
                 }}</v-btn>
               </template>
 
-              <v-card>
-                <v-list-item
+              <v-card density="compact">
+                <v-list-item density="compact" style="padding-top: 0;padding-bottom: 0;margin-bottom:0"
                   v-for="provider in availableProviders.filter(
                     (x) => x.type == provType
                   )"
@@ -41,6 +43,8 @@
             </v-menu>
           </template>
         </v-toolbar>
+
+        <!-- alert if no providers configured -->
         <v-alert
           v-if="
             provType == ProviderType.MUSIC &&
