@@ -185,7 +185,29 @@
                   ]"
                   variant="outlined"
                 />
-
+                <!-- int value withour range -->
+                <v-text-field
+                  v-else-if="(conf_item_value.type == ConfigEntryType.INTEGER ||
+                      conf_item_value.type == ConfigEntryType.FLOAT)"
+                  v-model="conf_item_value.value"
+                  :placeholder="conf_item_value.default_value?.toString()"
+                  :disabled="
+                    conf_item_value.depends_on != undefined &&
+                    !conf.values[conf_item_value.depends_on].value
+                  "
+                  :label="
+                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
+                  "
+                  :required="conf_item_value.required"
+                  :rules="[
+                    (v) =>
+                      !(!v && conf_item_value.required) ||
+                      $t('settings.invalid_input'),
+                  ]"
+                  variant="outlined"
+                  :clearable="!conf_item_value.required"
+                  type="number"
+                />
                 <!-- all other: textbox with single value -->
                 <v-text-field
                   v-else
