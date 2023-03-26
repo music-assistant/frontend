@@ -64,6 +64,6 @@ const addUrl = function (
 ) {
   const url = prompt(t('enter_url'));
   if (!url) return;
-  api.getTrack(url, 'url' ).then(() => location.reload()).catch((e) => alert(e));
+  api.getTrack(url, 'url', undefined, undefined, false, undefined, true ).then(() => location.reload()).catch((e) => alert(e));
 };
 </script>
