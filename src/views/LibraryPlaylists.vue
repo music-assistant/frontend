@@ -12,11 +12,12 @@
 
 <script setup lang="ts">
 import { mdiFileSync } from "@mdi/js";
+import { pid } from "process";
 import { onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ItemsListing from "../components/ItemsListing.vue";
 import api from "../plugins/api";
-import { MediaType, type Playlist } from "../plugins/api/interfaces";
+import { MediaType, ProviderFeature, type Playlist } from "../plugins/api/interfaces";
 import { store } from "../plugins/store";
 
 const { t } = useI18n();
@@ -32,6 +33,20 @@ store.topBarContextMenuItems = [
     icon: 'mdi-sync',
   },
 ];
+
+for (const prov of Object.values(api.providers).filter(x => x.available && x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE))) {
+  store.topBarContextMenuItems.push(
+    {
+    label: 'create_playlist',
+    labelArgs: [prov.name],
+    action: () => {
+      newPlaylist(prov.instance_id);
+    },
+    icon: 'mdi-sync',
+  }
+  )
+}
+
 onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
 });
@@ -45,5 +60,11 @@ const loadItems = async function (
 ) {
   const library = inLibraryOnly || undefined;
   return await api.getPlaylists(library, search, limit, offset, sort);
+};
+
+const newPlaylist = async function (provId: string) {
+  const name = prompt(t('new_playlist_name'));
+  if (!name) return;
+  const newPlaylist = await api.createPlaylist(name, provId).then(() => location.reload()).catch((e) => alert(e));
 };
 </script>

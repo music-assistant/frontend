@@ -187,5 +187,6 @@
   "track_number": "Disc {0} Track {1}",
   "close": "Close",
   "add_url_item": "Add item from URL",
-  "enter_url": "Enter the URL you want to manually add to the database"
+  "enter_url": "Enter the URL you want to manually add to the database",
+  "new_playlist_name": "Enter a new for the new playlist"
 }
