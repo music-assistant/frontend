@@ -96,6 +96,7 @@
                 />
 
                 <!-- int/float value in range: slider control -->
+                <!-- eslint-disable vue/valid-v-model -->
                 <v-slider
                   v-else-if="
                     (conf_item_value.type == ConfigEntryType.INTEGER ||
@@ -103,7 +104,7 @@
                       conf_item_value.range &&
                       conf_item_value.range.length == 2
                   "
-                  v-model="conf_item_value.value"
+                  v-model="conf_item_value.value as number"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
                       !conf.values[conf_item_value.depends_on].value
@@ -133,6 +134,7 @@
                     />
                   </template>
                 </v-slider>
+                <!-- eslint-enable vue/valid-v-model -->
 
                 <!-- password value -->
                 <v-text-field
