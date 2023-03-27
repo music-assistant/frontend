@@ -266,7 +266,7 @@
       <div v-if="!loading && items.length == 0">
         <v-alert
           v-if="!loading && items.length == 0 && (search || inLibraryOnly)"
-          :density="&quot;compact&quot;"
+          density="compact"
           variant="outlined"
           :title="$t('no_content_filter')"
         >
@@ -280,7 +280,7 @@
         </v-alert>
         <v-alert
           v-else-if="!loading && items.length == 0"
-          :density="&quot;compact&quot;"
+          density="compact"
           variant="outlined"
         >
           {{ $t("no_content") }}
