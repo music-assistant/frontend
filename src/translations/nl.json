@@ -80,6 +80,7 @@
     "sort_album": "Album",
     "year": "Verschijningsdatum/jaar",
     "position": "Positie",
+    "position DESC": "Position (aflopend)",
     "track_number": "Tracknummer",
     "timestamp_added DESC": "Onlangs toegevoegd",
     "duration": "Duur",
@@ -189,7 +190,7 @@
   },
   "track_number": "Disc {0} Track {1}",
   "close": "Sluiten",
-  "add_url_item": "Voeg hanmatig een URL toe",
+  "add_url_item": "Voeg handmatig een URL toe",
   "enter_url": "Geef de URL op die je handmatig wilt toevoegen aan de database",
   "new_playlist_name": "Geef een naam op voor de nieuwe playlist",
   "appears_on": "Verschenen op"

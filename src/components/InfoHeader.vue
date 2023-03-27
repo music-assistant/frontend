@@ -227,7 +227,7 @@
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <v-chip
-              v-for="tag of item.metadata.genres"
+              v-for="tag of item.metadata.genres.slice(0, $vuetify.display.mobile ? 15 : 25)"
               :key="tag"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"

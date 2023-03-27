@@ -64,38 +64,39 @@
       <!-- subtitle -->
       <template #subtitle>
         <!-- track: artists(s) + album -->
-        <div
-          v-if="
-            item.media_type == MediaType.TRACK &&
-            'album' in item &&
-            item.album &&
-            !showTrackNumber
-          "
-        >
-          {{ getArtistsString(item.artists) }}<span v-if="showAlbum"> • {{ item.album.name }}</span>
-        </div>
-        <!-- albumtrack: artists(s) + disc/track number -->
-        <span
-          v-else-if="
-            item.media_type == MediaType.TRACK &&
-            'track_number' in item &&
-            item.track_number &&
-            showTrackNumber
-          "
-        >
-          {{ getArtistsString(item.artists) }}
-          <span v-if="item.disc_number"
-            >&nbsp;&nbsp;<v-icon class="material-icons-outlined" style="justify-content: normal;" icon="md:album" /><span
-              style="margin-left: 2px; margin-top: 3px"
-              >{{ item.disc_number }}</span
-            ></span
-          ><span v-if="item.track_number"
+        <div v-if="item.media_type == MediaType.TRACK">
+          <span v-if="'artists' in item">{{
+            getArtistsString(item.artists)
+          }}</span>
+          <span v-if="showAlbum && 'album' in item && item.album">
+            • {{ item.album.name }}</span
+          >
+          <span
+            v-if="'disc_number' in item && item.disc_number && showTrackNumber"
+            >&nbsp;&nbsp;<v-icon
+              class="material-icons-outlined"
+              style="justify-content: normal"
+              icon="md:album"
+            /><span style="margin-left: 2px; margin-top: 3px">{{
+              item.disc_number
+            }}</span></span
+          ><span
+            v-if="
+              'track_number' in item && item.track_number && showTrackNumber
+            "
             >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
               style="margin-left: 2px; margin-top: 3px"
               >{{ item.track_number }}</span
             ></span
           >
-        </span>
+          <span v-if="'position' in item && item.position"
+            >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
+              style="margin-left: 2px; margin-top: 3px"
+              >{{ item.position }}</span
+            ></span
+          >
+        </div>
+
         <!-- album: albumtype + artists + year -->
         <div
           v-else-if="

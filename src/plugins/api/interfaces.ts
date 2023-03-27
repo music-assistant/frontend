@@ -202,6 +202,14 @@ export interface SuccessResultMessage extends ResultMessageBase {
   result: any;
 }
 
+export interface ChunkedResultMessage extends ResultMessageBase {
+  // Message sent when the result of a command is sent in multiple chunks.
+
+  result: any;
+  is_last_chunk: boolean
+}
+
+
 export interface ErrorResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 
@@ -333,8 +341,10 @@ export interface MediaItemLink {
 
 export interface MediaItemImage {
   type: ImageType;
-  url: string;
-  source: string; // set to instance_id of file provider if path is local, otherwise http
+  path: string;
+  // set to instance_id of provider if the path needs to be resolved
+  // if the path is just a plain (remotely accessible) URL, set it to 'url'
+  provider: string; 
 }
 
 export interface MediaItemMetadata {

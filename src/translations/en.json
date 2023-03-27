@@ -79,6 +79,7 @@
     "sort_album": "Album",
     "year": "Release year",
     "position": "Position",
+    "position DESC": "Position (descending)",
     "track_number": "Track number",
     "timestamp_added DESC": "Recently added",
     "duration": "Duration",

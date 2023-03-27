@@ -764,6 +764,11 @@ export const filteredItems = function (
       (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0)
     );
   }
+  if (sortBy == "position DESC") {
+    result.sort(
+      (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0)
+    );
+  }
   if (sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }

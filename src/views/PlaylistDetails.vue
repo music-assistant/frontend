@@ -19,7 +19,7 @@
       :show-library="false"
       :show-track-number="false"
       :load-data="loadPlaylistTracks"
-      :sort-keys="['position', 'sort_name', 'sort_artist', 'sort_album']"
+      :sort-keys="['position', 'position DESC', 'sort_name', 'sort_artist', 'sort_album']"
       :update-available="updateAvailable"
       @refresh-clicked="loadItemDetails();updateAvailable=false;"
     />
@@ -35,6 +35,7 @@ import {
   type Playlist,
   type EventMessage,
   type MediaItemType,
+Track,
 } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
@@ -90,9 +91,14 @@ const loadPlaylistTracks = async function (
   search?: string,
   inLibraryOnly = true
 ) {
-  const playlistTracks = await api.getPlaylistTracks(
+
+  const playlistTracks:Track[] = [];
+
+  await api.getPlaylistTracks(
     props.itemId,
-    props.provider
+    props.provider,
+    undefined,
+    (data: Track[]) => {console.log("chunk", data.length);playlistTracks.push(...data)}
   );
   return filteredItems(
     playlistTracks,

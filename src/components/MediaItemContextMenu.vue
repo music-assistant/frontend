@@ -239,8 +239,13 @@ const showContextMenu = async function () {
     orgPosition = firstItem.position;
   }
   if (firstItem.provider !== "database") {
-    firstItem = await api.getItemByUri(props.items[0].uri);
-    // restore original position for playtlist tracks usage
+    try {
+      firstItem = await api.getItemByUri(props.items[0].uri);
+    } catch (error) {
+      firstItem = props.items[0];
+    }
+    
+    // restore original position for playlist tracks usage
     if ("position" in firstItem) {
       firstItem.position = orgPosition;
     }
@@ -310,7 +315,7 @@ const availablePlayers = computed(() => {
   for (const player_id in api?.players) {
     const player = api?.players[player_id];
     if (player.synced_to) continue;
-    res.push({ title: player.name, value: player.player_id });
+    res.push({ title: player.display_name, value: player.player_id });
   }
   return res
     .slice()

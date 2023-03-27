@@ -97,7 +97,7 @@ export const getMediaItemImage = function (
   if (!mediaItem) return undefined;
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (img.source == 'http' && !includeFileBased) continue;
+      if (img.provider == 'http' && !includeFileBased) continue;
       if (img.type == type) return img;
     }
   }
@@ -110,7 +110,7 @@ export const getMediaItemImage = function (
     mediaItem.album.metadata.images
   ) {
     for (const img of mediaItem.album.metadata.images) {
-      if (img.source == 'http' && !includeFileBased) continue;
+      if (img.provider == 'http' && !includeFileBased) continue;
       if (img.type == type) return img;
     }
   }
@@ -122,7 +122,7 @@ export const getMediaItemImage = function (
     mediaItem.artist.metadata.images
   ) {
     for (const img of mediaItem.artist.metadata.images) {
-      if (img.source == 'http' && !includeFileBased) continue;
+      if (img.provider == 'http' && !includeFileBased) continue;
       if (img.type == type) return img;
     }
   }
@@ -131,7 +131,7 @@ export const getMediaItemImage = function (
     for (const artist of mediaItem.artists) {
       if ("metadata" in artist && artist.metadata.images) {
         for (const img of artist.metadata.images) {
-          if (img.source == 'http' && !includeFileBased) continue;
+          if (img.provider == 'http' && !includeFileBased) continue;
           if (img.type == type) return img;
         }
       }
@@ -153,16 +153,16 @@ export const getImageThumbForItem = async function (
     // find image in mediaitem
     const img = getMediaItemImage(mediaItem, type, true);
     if (!img) return undefined;
-    if (img.source !== 'http') {
+    if (img.provider !== 'url') {
       // use imageproxy for embedded images
-      const encUrl = encodeURIComponent(encodeURIComponent(img.url));
+      const encUrl = encodeURIComponent(encodeURIComponent(img.path));
       const checksum =
         "metadata" in mediaItem ? mediaItem.metadata?.checksum : "";
       return `${api.baseUrl}/imageproxy?size=${
         size || 0
-      }&path=${encUrl}&source=${img.source}&checksum=${checksum}`;
+      }&path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
     }
-    imageUrl = img.url;
+    imageUrl = img.path;
   }
 
   if (!size) {
