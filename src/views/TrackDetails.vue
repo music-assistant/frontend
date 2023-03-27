@@ -1,11 +1,22 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab v-if="showVersionsTab" value="versions">
+    <v-tabs
+      v-model="activeTab"
+      show-arrows
+      grow
+      hide-slider
+    >
+      <v-tab
+        v-if="showVersionsTab"
+        value="versions"
+      >
         {{ $t("other_versions") }}
       </v-tab>
-      <v-tab v-if="showVersionsTab" value="appears_on">
+      <v-tab
+        v-if="showVersionsTab"
+        value="appears_on"
+      >
         {{ $t("appears_on") }}
       </v-tab>
     </v-tabs>

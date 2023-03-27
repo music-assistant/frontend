@@ -11,7 +11,10 @@
       @click.right.prevent="emit('menu', item)"
     >
       <template #prepend>
-        <div v-if="showCheckboxes" class="listitem-thumb">
+        <div
+          v-if="showCheckboxes"
+          class="listitem-thumb"
+        >
           <v-checkbox
             :model-value="isSelected"
             @click.stop
@@ -26,12 +29,26 @@
           v-else-if="item.media_type == MediaType.FOLDER"
           class="listitem-thumb"
         >
-          <v-btn variant="plain" icon>
-            <v-icon icon="mdi-folder" size="60" style="align: center" />
+          <v-btn
+            variant="plain"
+            icon
+          >
+            <v-icon
+              icon="mdi-folder"
+              size="60"
+              style="align: center"
+            />
           </v-btn>
         </div>
-        <div v-else class="listitem-thumb">
-          <MediaItemThumb :item="item" :width="'50px'" :height="'50px'" />
+        <div
+          v-else
+          class="listitem-thumb"
+        >
+          <MediaItemThumb
+            :item="item"
+            :width="'50px'"
+            :height="'50px'"
+          />
         </div>
       </template>
 
@@ -42,9 +59,7 @@
         </span>
         <span v-else>
           {{ item.name }}
-          <span v-if="'version' in item && item.version"
-            >({{ item.version }})</span
-          >
+          <span v-if="'version' in item && item.version">({{ item.version }})</span>
         </span>
         <!-- explicit icon -->
         <v-tooltip location="bottom">
@@ -69,43 +84,36 @@
             getArtistsString(item.artists)
           }}</span>
           <span v-if="showAlbum && 'album' in item && item.album">
-            • {{ item.album.name }}</span
-          >
+            • {{ item.album.name }}</span>
           <span
             v-if="'disc_number' in item && item.disc_number && showTrackNumber"
-            >&nbsp;&nbsp;<v-icon
-              class="material-icons-outlined"
-              style="justify-content: normal"
-              icon="md:album"
-            /><span style="margin-left: 2px; margin-top: 3px">{{
-              item.disc_number
-            }}</span></span
-          ><span
+          >&nbsp;&nbsp;<v-icon
+            class="material-icons-outlined"
+            style="justify-content: normal"
+            icon="md:album"
+          /><span style="margin-left: 2px; margin-top: 3px">{{
+            item.disc_number
+          }}</span></span><span
             v-if="
               'track_number' in item && item.track_number && showTrackNumber
             "
-            >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
-              style="margin-left: 2px; margin-top: 3px"
-              >{{ item.track_number }}</span
-            ></span
-          >
-          <span v-if="'position' in item && item.position"
-            >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
-              style="margin-left: 2px; margin-top: 3px"
-              >{{ item.position }}</span
-            ></span
-          >
+          >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
+            style="margin-left: 2px; margin-top: 3px"
+          >{{ item.track_number }}</span></span>
+          <span v-if="'position' in item && item.position">&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
+            style="margin-left: 2px; margin-top: 3px"
+          >{{ item.position }}</span></span>
         </div>
 
         <!-- album: albumtype + artists + year -->
         <div
           v-else-if="
             item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'year' in item &&
-            item.year &&
-            'album_type' in item
+              'artists' in item &&
+              item.artists &&
+              'year' in item &&
+              item.year &&
+              'album_type' in item
           "
         >
           {{ $t("album_type." + item.album_type) }} •
@@ -115,9 +123,9 @@
         <div
           v-else-if="
             item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'album_type' in item
+              'artists' in item &&
+              item.artists &&
+              'album_type' in item
           "
         >
           {{ $t("album_type." + item.album_type) }} •
@@ -154,7 +162,10 @@
                 : 'margin-top:5px;filter: invert(100%);'
             "
           >
-            <v-tooltip activator="parent" location="bottom">
+            <v-tooltip
+              activator="parent"
+              location="bottom"
+            >
               {{ HiResDetails }}
             </v-tooltip>
           </v-img>
@@ -163,8 +174,8 @@
           <provider-icons
             v-if="
               item.provider_mappings &&
-              showProviders &&
-              !$vuetify.display.mobile
+                showProviders &&
+                !$vuetify.display.mobile
             "
             :provider-mappings="item.provider_mappings"
             :height="20"
@@ -200,10 +211,10 @@
           <div
             v-if="
               showDuration &&
-              item.media_type == MediaType.TRACK &&
-              'duration' in item &&
-              item.duration != undefined &&
-              !$vuetify.display.mobile
+                item.media_type == MediaType.TRACK &&
+                'duration' in item &&
+                item.duration != undefined &&
+                !$vuetify.display.mobile
             "
             class="listitem-action"
           >

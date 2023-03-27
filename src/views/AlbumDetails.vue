@@ -13,8 +13,8 @@
         {{ $t("tracks") }}
       </v-tab>
       <v-tab
-        value="versions"
         v-if="showVersionsTab"
+        value="versions"
       >
         {{ $t("other_versions") }}
       </v-tab>

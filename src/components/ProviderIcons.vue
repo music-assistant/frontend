@@ -1,10 +1,13 @@
 <template>
-  <div class="provider-icons" :style="`height: ${height};`">
+  <div
+    class="provider-icons"
+    :style="`height: ${height};`"
+  >
     <v-menu
-      location="bottom end"
-      @click:outside.stop
       v-for="providerDomain of uniqueProviders"
       :key="providerDomain"
+      location="bottom end"
+      @click:outside.stop
     >
       <template #activator="{ props }">
         <!-- <img
@@ -24,9 +27,16 @@
           :style="enableDetails == true ? 'cursor: pointer' : ''"
         />
       </template>
-      <v-card class="mx-auto" min-width="300" v-if="enableDetails">
+      <v-card
+        v-if="enableDetails"
+        class="mx-auto"
+        min-width="300"
+      >
         <v-list style="overflow: hidden">
-          <span class="text-h5" style="padding: 10px">{{
+          <span
+            class="text-h5"
+            style="padding: 10px"
+          >{{
             $t("provider_details")
           }}</span>
           <div
@@ -37,7 +47,11 @@
             <v-divider />
             <!-- provider icon + name -->
             <div style="height: 50px; display: flex; align-items: center">
-              <provider-icon :domain="providerDomain" :size="'35px'" class="provider-icon"/>
+              <provider-icon
+                :domain="providerDomain"
+                :size="'35px'"
+                class="provider-icon"
+              />
               {{
                 truncateString(
                   api.providers[mapping.provider_instance]!.name,
@@ -66,7 +80,10 @@
                 icon="mdi-share-outline"
                 style="margin-left: 10px; padding-right: 5px"
               />
-              <a :href="mapping.url" target="_blank">{{
+              <a
+                :href="mapping.url"
+                target="_blank"
+              >{{
                 truncateString(mapping.url, 25)
               }}</a>
             </div>
@@ -82,7 +99,7 @@
                     ? 'object-fit: contain;'
                     : 'object-fit: contain;filter: invert(100%);'
                 "
-              />
+              >
               {{ getQualityDesc(mapping) }}
             </div>
 

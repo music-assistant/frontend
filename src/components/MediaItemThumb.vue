@@ -6,7 +6,7 @@
     :src="imgData"
     :width="width"
     :aspect-ratio="aspectRatio"
-    v-on:error="
+    @error="
       () => {
         imgData = fallbackImage;
       }

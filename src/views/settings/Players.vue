@@ -12,7 +12,11 @@
           @click="editPlayer(config.player_id)"
         >
           <template #prepend>
-            <provider-icon :domain="config.provider" :size="'40px'" class="listitem-thumb"/>
+            <provider-icon
+              :domain="config.provider"
+              :size="'40px'"
+              class="listitem-thumb"
+            />
           </template>
 
           <template #append>

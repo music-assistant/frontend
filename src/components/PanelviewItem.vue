@@ -1,11 +1,14 @@
 <template>
   <v-card
     outlined
+    style="height: 100%"
     @click="emit('click', item)"
     @click.right.prevent="emit('menu', item)"
-    style="height: 100%"
   >
-    <MediaItemThumb :item="item" :width="'100%'" />
+    <MediaItemThumb
+      :item="item"
+      :width="'100%'"
+    />
     <div
       v-if="showCheckboxes"
       style="
@@ -47,7 +50,7 @@
                 ? 'object-fit: contain;'
                 : 'object-fit: contain;filter: invert(100%);'
             "
-          />
+          >
         </template>
         <span>{{ HiResDetails }}</span>
       </v-tooltip>
@@ -59,7 +62,10 @@
       style="position: absolute; right: 2px; top: 2px; height: 30px; width:30px;background-color: black;"
     />
 
-    <v-list-item two-line style="padding-left: 8px; padding-right: 8px">
+    <v-list-item
+      two-line
+      style="padding-left: 8px; padding-right: 8px"
+    >
       <div>
         <p
           class="font-weight-bold line-clamp-1"
@@ -87,7 +93,7 @@
         style="margin-bottom: 8px;font-size: x-small;"
       >
         {{ item.version }}
-    </span>
+      </span>
     </v-list-item>
   </v-card>
 </template>

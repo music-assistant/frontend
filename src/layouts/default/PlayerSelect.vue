@@ -27,7 +27,12 @@
     <v-divider />
 
     <!-- collapsable player rows-->
-    <v-expansion-panels v-model="panelItem" focusable accordion flat>
+    <v-expansion-panels
+      v-model="panelItem"
+      focusable
+      accordion
+      flat
+    >
       <v-expansion-panel
         v-for="player in sortedPlayers"
         :id="player.player_id"

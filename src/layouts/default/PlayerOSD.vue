@@ -153,7 +153,11 @@
                 }}</span>
                 <v-divider />
                 <div style="height: 50px; display: flex; align-items: center">
-                  <provider-icon :domain="streamDetails.provider" :size="'35px'" style="object-fit: contain;margin-left:10px;margin-right:5px"/>
+                  <provider-icon
+                    :domain="streamDetails.provider"
+                    :size="'35px'"
+                    style="object-fit: contain;margin-left:10px;margin-right:5px"
+                  />
                   {{ $t("providers." + streamDetails.provider) }}
                 </div>
 
