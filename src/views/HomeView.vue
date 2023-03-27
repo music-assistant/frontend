@@ -82,7 +82,7 @@ import { ref, onMounted } from 'vue';
 import { api } from '@/plugins/api';
 import { Artist } from '@/plugins/api/interfaces';
 
-import PanelviewItem from "@/components/PanelviewItem.vue";
+// import PanelviewItem from "@/components/PanelviewItem.vue";
 
 const recentArtists = ref<Artist[]>([]);
 

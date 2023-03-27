@@ -81,58 +81,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { store } from "@/plugins/store";
 import { api } from "@/plugins/api";
 import { useI18n } from "vue-i18n";
 
 const router = useRouter();
-const dialog = ref(false);
 const { t } = useI18n();
-
-const menuItems = [
-{
-    label: 'search',
-    icon: 'mdi-search',
-    path: '/search',
-  },
-  {
-    label: 'artists',
-    icon: 'mdi-account-music',
-    path: '/artists',
-  },
-  {
-    label: 'albums',
-    icon: 'mdi-album',
-    path: '/albums',
-  },
-  {
-    label: 'tracks',
-    icon: 'mdi-file-music',
-    path: '/tracks',
-  },
-  {
-    label: 'radios',
-    icon: 'mdi-radio',
-    path: '/radios',
-  },
-  {
-    label: 'playlists',
-    icon: 'mdi-playlist-music',
-    path: '/playlists',
-  },
-  {
-    label: 'browse',
-    icon: 'mdi-folder',
-    path: '/browse',
-  },
-  {
-    label: 'settings.settings',
-    icon: 'mdi-cog',
-    path: '/settings',
-  },
-]
 
 interface Heading {
   mainTitle: string;

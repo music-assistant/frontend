@@ -100,7 +100,7 @@
 
 <script setup lang="ts">
 import { computed, getCurrentInstance, onMounted, ref, watch } from "vue";
-import { Player, PlayerState, PlayerType } from "../../plugins/api/interfaces";
+import { Player, PlayerState } from "../../plugins/api/interfaces";
 import { store } from "../../plugins/store";
 import VolumeControl from "../../components/VolumeControl.vue";
 import { api } from "../../plugins/api";

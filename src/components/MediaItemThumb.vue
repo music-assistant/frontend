@@ -45,6 +45,7 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  item: undefined,
   width: "100%",
   height: "auto",
   aspectRatio: "1/1",

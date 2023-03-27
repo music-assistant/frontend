@@ -39,5 +39,4 @@ export interface Props {
 }
 defineProps<Props>();
 
-const iconFallback = new URL("@/assets/logo.png", import.meta.url).href;
 </script>

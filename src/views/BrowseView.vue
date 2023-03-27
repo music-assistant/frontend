@@ -44,7 +44,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { useDisplay } from "vuetify";
 import { useI18n } from "vue-i18n";
 import { RecycleScroller } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
@@ -66,7 +65,6 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 const router = useRouter();
-const { mobile } = useDisplay();
 
 const browseItem = ref<BrowseFolder>();
 const loading = ref(false);

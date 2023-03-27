@@ -314,11 +314,11 @@ import type {
   EventMessage,
   MediaItemType,
 } from "../plugins/api/interfaces";
-import { RepeatMode, EventType, MediaType } from "../plugins/api/interfaces";
+import { EventType, MediaType } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
 import { computed, onBeforeUnmount, watch } from "vue";
 import { store } from "../plugins/store";
-import { formatDuration, parseBool, truncateString } from "../utils";
+import { formatDuration, truncateString } from "../utils";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import MediaItemThumb from "../components/MediaItemThumb.vue";
@@ -333,7 +333,6 @@ const selectedItem = ref<QueueItem>();
 const showContextMenu = ref(false);
 
 const items = ref<QueueItem[]>([]);
-const panel = ref(0);
 
 // computed properties
 const activePlayerQueue = computed(() => {

@@ -277,8 +277,10 @@
     >
       <v-card>
         <!-- eslint-disable vue/no-v-html -->
+        <!-- eslint-disable vue/no-v-text-v-html-on-component -->
         <v-card-text v-html="fullDescription" />
         <!-- eslint-enable vue/no-v-html -->
+        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <v-card-actions>
           <v-btn
             color="primary"
@@ -385,7 +387,6 @@ const fullDescription = computed(() => {
       }
     });
   }
-  const maxChars = mobile.value ? 160 : 260;
   desc = desc.replace("\r\n", "<br /><br /><br />");
   desc = desc.replace("\r", "<br /><br />");
   desc = desc.replace("\n", "<br /><br />");

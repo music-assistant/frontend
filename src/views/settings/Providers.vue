@@ -6,6 +6,7 @@
       <!-- show section per providertpe -->
       <v-card
         v-for="provType in ProviderType"
+        :key="provType"
         style="margin-bottom:15px"
       >
         <v-toolbar
@@ -263,7 +264,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { ref } from "vue";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
 import { api } from "@/plugins/api";

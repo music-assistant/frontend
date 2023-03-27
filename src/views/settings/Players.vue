@@ -111,13 +111,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { ref } from "vue";
 
 import { api } from "@/plugins/api";
 import {
   EventType,
   PlayerConfig,
-  ProviderManifest,
   ConfigUpdate,
 } from "@/plugins/api/interfaces";
 import ProviderIcon  from "@/components/ProviderIcon.vue";

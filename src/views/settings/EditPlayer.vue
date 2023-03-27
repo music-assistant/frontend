@@ -42,7 +42,7 @@
       <edit-config
         v-if="config"
         :model-value="config"
-        @update:modelValue="onSubmit($event as ConfigUpdate)"
+        @update:model-value="onSubmit($event as ConfigUpdate)"
       />
     </v-card-text>
   </section>

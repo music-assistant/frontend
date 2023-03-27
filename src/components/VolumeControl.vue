@@ -72,7 +72,9 @@
           size="x-large"
           @click="api.playerCommandPowerToggle(childPlayer.player_id)"
         >
-          <v-icon :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
+          <v-icon
+            :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'"
+          />
         </v-btn>
         <span
           class="text-body-2"
@@ -202,13 +204,11 @@ const setGroupPower = function (player: Player, powered: boolean) {
   if (player.type != PlayerType.GROUP && player.group_childs.length > 0) {
     // send power command to all group child players
     for (const childPlayer of getVolumePlayers(player)) {
-      for (const childPlayer of getVolumePlayers(player)) {
-        // bypass api throttling by sending the command directly
-        api.sendCommand(`players/cmd/power`, {
-          player_id: childPlayer.player_id,
-          powered,
-        });
-      }
+      // bypass api throttling by sending the command directly
+      api.sendCommand(`players/cmd/power`, {
+        player_id: childPlayer.player_id,
+        powered,
+      });
     }
   }
   // regular power command to single player (or special group player)

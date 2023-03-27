@@ -237,7 +237,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from "vue";
+import { computed } from "vue";
 import { VTooltip } from "vuetify/components";
 import ProviderIcons from "./ProviderIcons.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";

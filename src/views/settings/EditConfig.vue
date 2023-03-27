@@ -46,6 +46,7 @@
         -->
         <v-expansion-panel
           v-for="panel of panels"
+          :key="panel"
           :value="panel"
         >
           <v-expansion-panel-title v-if="panel == 'advanced'">
@@ -102,7 +103,7 @@
                       conf_item_value.range &&
                       conf_item_value.range.length == 2
                   "
-                  v-model="(conf_item_value.value as number)"
+                  v-model="conf_item_value.value"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
                       !conf.values[conf_item_value.depends_on].value
@@ -123,7 +124,7 @@
                 >
                   <template #append>
                     <v-text-field
-                      v-model="(conf_item_value.value as number)"
+                      v-model="conf_item_value.value"
                       hide-details
                       single-line
                       density="compact"
@@ -281,7 +282,7 @@
       @update:model-value="showHelpInfo = undefined"
     >
       <v-card>
-        <v-card-text v-text="showHelpInfo?.description" />
+        <v-card-text>{{ showHelpInfo?.description }}</v-card-text>
         <v-card-actions>
           <v-btn
             v-if="showHelpInfo?.help_link"
@@ -360,7 +361,7 @@ const panels = computed(() => {
 // watchers
 watch(
   () => props.modelValue,
-  (val) => {
+  () => {
     conf.value = props.modelValue;
   },
   { immediate: true }

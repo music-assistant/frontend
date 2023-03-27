@@ -11,8 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { mdiFileSync } from "@mdi/js";
-import { pid } from "process";
 import { onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ItemsListing from "../components/ItemsListing.vue";
@@ -65,6 +63,6 @@ const loadItems = async function (
 const newPlaylist = async function (provId: string) {
   const name = prompt(t('new_playlist_name'));
   if (!name) return;
-  const newPlaylist = await api.createPlaylist(name, provId).then(() => location.reload()).catch((e) => alert(e));
+  await api.createPlaylist(name, provId).then(() => location.reload()).catch((e) => alert(e));
 };
 </script>

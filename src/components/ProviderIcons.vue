@@ -43,6 +43,7 @@
             v-for="mapping of providerMappings.filter(
               (x) => x.provider_domain == providerDomain
             )"
+            :key="mapping.item_id"
           >
             <v-divider />
             <!-- provider icon + name -->
@@ -153,13 +154,13 @@ export interface Props {
   enableDetails?: boolean;
   enablePreview?: boolean;
 }
-const props = defineProps<Props>();
+const compProps = defineProps<Props>();
 const previewUrls = reactive<Record<string, string>>({});
 
 const uniqueProviders = computed(() => {
   const keys: string[] = [];
-  if (!props.providerMappings) return [];
-  props.providerMappings.forEach(function (prov: ProviderMapping) {
+  if (!compProps.providerMappings) return [];
+  compProps.providerMappings.forEach(function (prov: ProviderMapping) {
     const domain = prov.provider_domain;
     if (
       keys.indexOf(domain) === -1 &&
@@ -171,9 +172,9 @@ const uniqueProviders = computed(() => {
   return keys.sort();
 });
 
-const provClicked = function (prov: ProviderMapping) {
-  window.open(prov.url, "_blank");
-};
+// const provClicked = function (prov: ProviderMapping) {
+//   window.open(prov.url, "_blank");
+// };
 
 const fetchPreviewUrl = async function (provider: string, item_id: string) {
   const key = `${provider}.${item_id}`;

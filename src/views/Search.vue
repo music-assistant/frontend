@@ -145,7 +145,7 @@ import { numberRange } from "@/utils";
 export interface Props {
   initSearch?: string;
 }
-const props = defineProps<Props>();
+const compProps = defineProps<Props>();
 
 // global refs
 const router = useRouter();
@@ -319,8 +319,8 @@ watch(
 );
 
 onMounted(() => {
-  if (props.initSearch) {
-    search.value = props.initSearch;
+  if (compProps.initSearch) {
+    search.value = compProps.initSearch;
   } else {
     const savedSearch = localStorage.getItem("globalsearch");
     if (savedSearch && savedSearch !== "null") {
