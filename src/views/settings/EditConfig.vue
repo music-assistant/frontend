@@ -288,17 +288,16 @@
         <v-card-actions>
           <v-btn
             v-if="showHelpInfo?.help_link"
-            color="primary"
-            block
             @click="openLink(showHelpInfo!.help_link!)"
           >
             {{
-              $t("close")
+              $t("read_more")
             }}
           </v-btn>
+          <v-spacer />
           <v-btn
             color="primary"
-            block
+            
             @click="showHelpInfo = undefined"
           >
             {{
