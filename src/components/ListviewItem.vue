@@ -100,7 +100,7 @@
           >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
             style="margin-left: 2px; margin-top: 3px"
           >{{ item.track_number }}</span></span>
-          <span v-if="'position' in item && item.position">&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
+          <span v-else-if="'position' in item && item.position">&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
             style="margin-left: 2px; margin-top: 3px"
           >{{ item.position }}</span></span>
         </div>
