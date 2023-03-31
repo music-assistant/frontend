@@ -193,54 +193,46 @@ export class MusicAssistantApi {
 
   public getTrack(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string,
+    provider_instance_id_or_domain: string,
     force_refresh?: boolean,
     lazy?: boolean,
     album?: string,
-    add_to_db: boolean = false,
   ): Promise<Track> {
     return this.getData("music/track", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
       force_refresh,
       lazy,
       album_uri:album,
-      add_to_db,
     });
   }
 
   public getTrackVersions(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ): Promise<Track[]> {
     return this.getData("music/track/versions", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
     });
   }
 
   public getTrackAlbums(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ): Promise<Album[]> {
     return this.getData("music/track/albums", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
     });
   }
 
   public getTrackPreviewUrl(
-    provider_domain: string,
+    provider_instance_id_or_domain: string,
     item_id: string
   ): Promise<string> {
     return this.getData("music/track/preview", {
-      provider_domain,
+      provider_instance_id_or_domain,
       item_id,
     });
   }
@@ -279,43 +271,35 @@ export class MusicAssistantApi {
 
   public getArtist(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string,
+    provider_instance_id_or_domain: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    add_to_db: boolean = false
   ): Promise<Artist> {
     return this.getData("music/artist", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
       force_refresh,
       lazy,
-      add_to_db,
     });
   }
 
   public getArtistTracks(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ): Promise<Track[]> {
     return this.getData("music/artist/tracks", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
     });
   }
 
   public getArtistAlbums(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ): Promise<Album[]> {
     return this.getData("music/artist/albums", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain
     });
   }
 
@@ -337,43 +321,35 @@ export class MusicAssistantApi {
 
   public getAlbum(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string,
+    provider_instance_id_or_domain: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    add_to_db: boolean = false
   ): Promise<Album> {
     return this.getData("music/album", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
       force_refresh,
       lazy,
-      add_to_db,
     });
   }
 
   public getAlbumTracks(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ): Promise<Track[]> {
     return this.getData("music/album/tracks", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain
     });
   }
 
   public getAlbumVersions(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ): Promise<Album[]> {
     return this.getData("music/album/versions", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain
     });
   }
 
@@ -395,32 +371,26 @@ export class MusicAssistantApi {
 
   public getPlaylist(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string,
+    provider_instance_id_or_domain: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    add_to_db: boolean = false
   ): Promise<Playlist> {
     return this.getData("music/playlist", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
       force_refresh,
       lazy,
-      add_to_db,
     });
   }
 
   public getPlaylistTracks(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string,
+    provider_instance_id_or_domain: string,
     chunkCallback?: chunkCallback
   ): Promise<Track[]> {
     return this.getData("music/playlist/tracks", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain
     }, chunkCallback);
   }
 
@@ -460,31 +430,25 @@ export class MusicAssistantApi {
 
   public getRadio(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string,
+    provider_instance_id_or_domain: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    add_to_db: boolean = false
   ): Promise<Radio> {
     return this.getData("music/radio", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
       force_refresh,
       lazy,
-      add_to_db,
     });
   }
 
   public getRadioVersions(
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ): Promise<Radio[]> {
     return this.getData("music/radio/versions", {
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -513,8 +477,7 @@ export class MusicAssistantApi {
   public getItem(
     media_type: MediaType,
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string,
+    provider_instance_id_or_domain: string,
     force_refresh?: boolean,
     lazy?: boolean
   ): Promise<MediaItemType> {
@@ -522,8 +485,7 @@ export class MusicAssistantApi {
     return this.getData("music/item", {
       media_type,
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
       force_refresh,
       lazy,
     });
@@ -532,15 +494,13 @@ export class MusicAssistantApi {
   public async addToLibrary(
     media_type: MediaType,
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ) {
     // Add an item to the library.
     this.sendCommand("music/library/add", {
       media_type,
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain
     });
   }
   public async addItemsToLibrary(items: Array<MediaItemType | string>) {
@@ -557,15 +517,13 @@ export class MusicAssistantApi {
   public async removeFromLibrary(
     media_type: MediaType,
     item_id: string,
-    provider_domain?: string,
-    provider_instance?: string
+    provider_instance_id_or_domain: string,
   ) {
     // Remove an item from the library.
     this.sendCommand("music/library/remove", {
       media_type,
       item_id,
-      provider_domain,
-      provider_instance,
+      provider_instance_id_or_domain,
     });
   }
   public async removeItemsFromLibrary(items: Array<MediaItemType | string>) {

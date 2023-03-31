@@ -97,7 +97,6 @@ const loadPlaylistTracks = async function (
   await api.getPlaylistTracks(
     props.itemId,
     props.provider,
-    undefined,
     (data: Track[]) => {console.log("chunk", data.length);playlistTracks.push(...data)}
   );
   return filteredItems(

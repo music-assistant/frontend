@@ -9,10 +9,7 @@
       min-height="340px"
     >
       <!-- loading animation -->
-      <v-progress-linear
-        v-if="!item"
-        indeterminate
-      />
+      <v-progress-linear v-if="!item" indeterminate />
       <v-img
         width="100%"
         height="100%"
@@ -54,22 +51,15 @@
           <div
             v-if="
               item.media_type &&
-                (item.media_type == MediaType.ARTIST || 'owner' in item)
+              (item.media_type == MediaType.ARTIST || 'owner' in item)
             "
           >
             <v-avatar size="192">
-              <MediaItemThumb
-                :item="item"
-                height="230px"
-                width="230px"
-              />
+              <MediaItemThumb :item="item" height="230px" width="230px" />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb
-              width="230px"
-              :item="item"
-            />
+            <MediaItemThumb width="230px" :item="item" />
           </div>
         </div>
 
@@ -87,6 +77,19 @@
               class="caption"
             >
               {{ item.version }}
+              <!-- explicit icon -->
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-icon
+                    v-if="parseBool(item.metadata.explicit || false)"
+                    v-bind="props"
+                    class="listitem-action"
+                    icon="mdi-alpha-e-box"
+                    width="35"
+                  />
+                </template>
+                <span>{{ $t("tooltip.explicit") }}</span>
+              </v-tooltip>
             </v-card-subtitle>
 
             <!-- item artists -->
@@ -104,17 +107,15 @@
                 v-for="(artist, artistindex) in item.artists"
                 :key="artist.item_id"
               >
-                <a
-                  style="color: accent"
-                  @click="artistClick(artist)"
-                >{{
+                <a style="color: accent" @click="artistClick(artist)">{{
                   artist.name
                 }}</a>
                 <span
                   v-if="artistindex + 1 < item.artists.length"
                   :key="artistindex"
                   style="color: accent"
-                >{{ " / " }}</span>
+                  >{{ " / " }}</span
+                >
               </span>
             </v-card-subtitle>
 
@@ -135,10 +136,7 @@
             </v-card-subtitle>
 
             <!-- playlist owner -->
-            <v-card-subtitle
-              v-if="'owner' in item && item.owner"
-              class="title"
-            >
+            <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
               <v-icon
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
@@ -158,7 +156,8 @@
               <a
                 style="color: secondary"
                 @click="albumClick((item as Track)?.album)"
-              >{{ item.album.name }}</a>
+                >{{ item.album.name }}</a
+              >
             </v-card-subtitle>
           </div>
 
@@ -174,7 +173,7 @@
                   prepend-icon="mdi-play-circle"
                   :disabled="
                     !store.selectedPlayer?.available ||
-                      store.blockGlobalPlayMenu
+                    store.blockGlobalPlayMenu
                   "
                 >
                   {{ $t("play") }}
@@ -182,10 +181,7 @@
               </template>
 
               <v-card min-width="300">
-                <v-list
-                  lines="one"
-                  density="comfortable"
-                >
+                <v-list lines="one" density="comfortable">
                   <!-- play now -->
                   <v-list-item
                     v-for="menuItem in getPlayMenuItems([item])"
@@ -244,7 +240,10 @@
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <v-chip
-              v-for="tag of item.metadata.genres.slice(0, $vuetify.display.mobile ? 15 : 25)"
+              v-for="tag of item.metadata.genres.slice(
+                0,
+                $vuetify.display.mobile ? 15 : 25
+              )"
               :key="tag"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"
@@ -271,10 +270,7 @@
         </div>
       </v-layout>
     </v-card>
-    <v-dialog
-      v-model="showFullInfo"
-      width="auto"
-    >
+    <v-dialog v-model="showFullInfo" width="auto">
       <v-card>
         <!-- eslint-disable vue/no-v-html -->
         <!-- eslint-disable vue/no-v-text-v-html-on-component -->
@@ -282,14 +278,8 @@
         <!-- eslint-enable vue/no-v-html -->
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <v-card-actions>
-          <v-btn
-            color="primary"
-            block
-            @click="showFullInfo = false"
-          >
-            {{
-              $t("close")
-            }}
+          <v-btn color="primary" block @click="showFullInfo = false">
+            {{ $t("close") }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -313,6 +303,7 @@ import { computed, ref, watch, onBeforeUnmount } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useRouter } from "vue-router";
+import { parseBool } from "../utils";
 import {
   getPlayMenuItems,
   getContextMenuItems,
