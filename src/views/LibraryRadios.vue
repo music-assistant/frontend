@@ -58,6 +58,6 @@ const addUrl = function (
 ) {
   const url = prompt(t('enter_url'));
   if (!url) return;
-  api.getRadio(url, 'url', undefined, undefined, false, true ).then(() => location.reload()).catch((e) => alert(e));
+  api.getRadio(url, 'url', undefined, false ).then(() => location.reload()).catch((e) => alert(e));
 };
 </script>

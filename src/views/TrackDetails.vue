@@ -86,7 +86,6 @@ const loadItemDetails = async function () {
     props.provider,
     undefined,
     undefined,
-    undefined,
     props.album
   );
   activeTab.value = "versions";

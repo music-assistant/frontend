@@ -71,11 +71,7 @@ const itemDetails = ref<Album>();
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(
     props.itemId,
-    props.provider,
-    undefined,
-    undefined,
-    undefined,
-    parseBool(props.forceProviderVersion || "")
+    props.provider
   );
   activeTab.value = "tracks";
 };
