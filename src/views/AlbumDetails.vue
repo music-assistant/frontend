@@ -56,7 +56,6 @@ import {
 } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
 import { ref, onMounted, onBeforeUnmount, watch } from "vue";
-import { parseBool } from "@/utils";
 
 export interface Props {
   itemId: string;

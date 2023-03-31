@@ -9,7 +9,10 @@
       min-height="340px"
     >
       <!-- loading animation -->
-      <v-progress-linear v-if="!item" indeterminate />
+      <v-progress-linear
+        v-if="!item"
+        indeterminate
+      />
       <v-img
         width="100%"
         height="100%"
@@ -51,15 +54,22 @@
           <div
             v-if="
               item.media_type &&
-              (item.media_type == MediaType.ARTIST || 'owner' in item)
+                (item.media_type == MediaType.ARTIST || 'owner' in item)
             "
           >
             <v-avatar size="192">
-              <MediaItemThumb :item="item" height="230px" width="230px" />
+              <MediaItemThumb
+                :item="item"
+                height="230px"
+                width="230px"
+              />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb width="230px" :item="item" />
+            <MediaItemThumb
+              width="230px"
+              :item="item"
+            />
           </div>
         </div>
 
@@ -107,15 +117,17 @@
                 v-for="(artist, artistindex) in item.artists"
                 :key="artist.item_id"
               >
-                <a style="color: accent" @click="artistClick(artist)">{{
+                <a
+                  style="color: accent"
+                  @click="artistClick(artist)"
+                >{{
                   artist.name
                 }}</a>
                 <span
                   v-if="artistindex + 1 < item.artists.length"
                   :key="artistindex"
                   style="color: accent"
-                  >{{ " / " }}</span
-                >
+                >{{ " / " }}</span>
               </span>
             </v-card-subtitle>
 
@@ -136,7 +148,10 @@
             </v-card-subtitle>
 
             <!-- playlist owner -->
-            <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
+            <v-card-subtitle
+              v-if="'owner' in item && item.owner"
+              class="title"
+            >
               <v-icon
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
@@ -156,8 +171,7 @@
               <a
                 style="color: secondary"
                 @click="albumClick((item as Track)?.album)"
-                >{{ item.album.name }}</a
-              >
+              >{{ item.album.name }}</a>
             </v-card-subtitle>
           </div>
 
@@ -173,7 +187,7 @@
                   prepend-icon="mdi-play-circle"
                   :disabled="
                     !store.selectedPlayer?.available ||
-                    store.blockGlobalPlayMenu
+                      store.blockGlobalPlayMenu
                   "
                 >
                   {{ $t("play") }}
@@ -181,7 +195,10 @@
               </template>
 
               <v-card min-width="300">
-                <v-list lines="one" density="comfortable">
+                <v-list
+                  lines="one"
+                  density="comfortable"
+                >
                   <!-- play now -->
                   <v-list-item
                     v-for="menuItem in getPlayMenuItems([item])"
@@ -270,7 +287,10 @@
         </div>
       </v-layout>
     </v-card>
-    <v-dialog v-model="showFullInfo" width="auto">
+    <v-dialog
+      v-model="showFullInfo"
+      width="auto"
+    >
       <v-card>
         <!-- eslint-disable vue/no-v-html -->
         <!-- eslint-disable vue/no-v-text-v-html-on-component -->
@@ -278,7 +298,11 @@
         <!-- eslint-enable vue/no-v-html -->
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <v-card-actions>
-          <v-btn color="primary" block @click="showFullInfo = false">
+          <v-btn
+            color="primary"
+            block
+            @click="showFullInfo = false"
+          >
             {{ $t("close") }}
           </v-btn>
         </v-card-actions>
@@ -313,7 +337,7 @@ import {
 export interface Props {
   item?: MediaItemType;
 }
-const props = defineProps<Props>();
+const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
@@ -324,14 +348,14 @@ const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
 const router = useRouter();
 
 watch(
-  () => props.item,
+  () => compProps.item,
   async (val) => {
     if (val) {
       store.topBarTitle = val.name;
 
       fanartImage.value =
-        (await getImageThumbForItem(props.item, ImageType.FANART)) ||
-        (await getImageThumbForItem(props.item, ImageType.THUMB));
+        (await getImageThumbForItem(compProps.item, ImageType.FANART)) ||
+        (await getImageThumbForItem(compProps.item, ImageType.THUMB));
 
       store.topBarContextMenuItems = getContextMenuItems([val], val);
     }
@@ -366,13 +390,13 @@ const artistClick = function (item: Artist | ItemMapping) {
 };
 const fullDescription = computed(() => {
   let desc = "";
-  if (!props.item) return "";
-  if (props.item.metadata && props.item.metadata.description) {
-    desc = props.item.metadata.description;
-  } else if (props.item.metadata && props.item.metadata.copyright) {
-    desc = props.item.metadata.copyright;
-  } else if ("artists" in props.item) {
-    props.item.artists.forEach(function (artist: Artist | ItemMapping) {
+  if (!compProps.item) return "";
+  if (compProps.item.metadata && compProps.item.metadata.description) {
+    desc = compProps.item.metadata.description;
+  } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
+    desc = compProps.item.metadata.copyright;
+  } else if ("artists" in compProps.item) {
+    compProps.item.artists.forEach(function (artist: Artist | ItemMapping) {
       if ("metadata" in artist && artist.metadata.description) {
         desc = artist.metadata.description;
       }
