@@ -96,6 +96,7 @@ export const getMediaItemImage = function (
 ): MediaItemImage | undefined {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
+  if ("image" in mediaItem && mediaItem.image) return mediaItem.image;
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
       if (img.provider == 'http' && !includeFileBased) continue;
@@ -147,27 +148,24 @@ export const getImageThumbForItem = async function (
 ): Promise<string | undefined> {
   if (!mediaItem) return;
   let imageUrl = "";
-  if ("image_url" in mediaItem && mediaItem.image_url) {
-    // queueItem with already resolved url
-    imageUrl = mediaItem.image_url;
-  } else {
-    // find image in mediaitem
-    const img = getMediaItemImage(mediaItem, type, true);
-    if (!img) return undefined;
-    if (img.provider !== 'url') {
-      // use imageproxy for embedded images
-      const encUrl = encodeURIComponent(encodeURIComponent(img.path));
-      const checksum =
-        "metadata" in mediaItem ? mediaItem.metadata?.checksum : "";
-      return `${api.baseUrl}/imageproxy?size=${
-        size || 0
-      }&path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
-    }
-    imageUrl = img.path;
+  // find image in mediaitem
+  const img = getMediaItemImage(mediaItem, type, true);
+  if (!img) return undefined;
+  if (img.provider !== 'url') {
+    // use imageproxy for embedded images
+    const encUrl = encodeURIComponent(encodeURIComponent(img.path));
+    const checksum =
+      "metadata" in mediaItem ? mediaItem.metadata?.checksum : "";
+    return `${api.baseUrl}/imageproxy?size=${
+      size || 0
+    }&path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
   }
-
+  imageUrl = img.path;
+  
   if (!size) {
     return imageUrl;
+  } else if (imageUrl.includes('imageproxy')) {
+    return imageUrl + `&size=${size}`;
   } else {
     // get url to resized image(thumb) from weserv service
     return `https://images.weserv.nl/?url=${imageUrl}&w=${size}&h=${size}&fit=cover&a=attention`;

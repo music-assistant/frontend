@@ -495,7 +495,7 @@ export interface QueueItem {
   sort_index: number;
   streamdetails?: StreamDetails;
   media_item?: Track | Radio;
-  image_url?: string;
+  image?: MediaItemImage;
 }
 
 // player_queue

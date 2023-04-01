@@ -158,7 +158,7 @@
                     :size="'35px'"
                     style="object-fit: contain;margin-left:10px;margin-right:5px"
                   />
-                  {{ $t("providers." + streamDetails.provider) }}
+                  {{ api.providerManifests[streamDetails.provider]?.name || api.providers[streamDetails.provider]?.name }}
                 </div>
 
                 <div style="height: 50px; display: flex; align-items: center">
