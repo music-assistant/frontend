@@ -1,11 +1,6 @@
 <template>
   <section>
-    <v-form
-      v-if="conf"
-      ref="form"
-      v-model="valid"
-      style="margin-right: 10px"
-    >
+    <v-form v-if="conf" ref="form" v-model="valid" style="margin-right: 10px">
       <!-- name field -->
       <v-text-field
         v-if="'name' in conf"
@@ -44,17 +39,13 @@
           we split up the config settings in basic and advanced settings,
           using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
         -->
-        <v-expansion-panel
-          v-for="panel of panels"
-          :key="panel"
-          :value="panel"
-        >
+        <v-expansion-panel v-for="panel of panels" :key="panel" :value="panel">
           <v-expansion-panel-title v-if="panel == 'advanced'">
             <div class="expansion-panel-text">
               {{ $t("settings.advanced_settings") }}
             </div>
           </v-expansion-panel-title>
-          <br>
+          <br />
           <v-expansion-panel-text>
             <div
               v-for="conf_item_value of Object.values(conf.values).filter(
@@ -64,11 +55,26 @@
               class="configrow"
             >
               <div class="configcolumnleft">
-                <!-- label value -->
-
-                <div v-if="conf_item_value.type == ConfigEntryType.LABEL">
-                  <br>
+                <!-- divider value -->
+                <div v-if="conf_item_value.type == ConfigEntryType.DIVIDER">
+                  <br />
                   <v-divider />
+                  <v-label
+                    v-if="conf_item_value.value"
+                    style="
+                      margin-left: 8px;
+                      margin-top: 10px;
+                      margin-bottom: 10px;
+                    "
+                  >
+                    <b>{{ conf_item_value.value.toString() }}</b>
+                  </v-label>
+                  <br />
+                </div>
+
+                <!-- label value -->
+                <div v-if="conf_item_value.type == ConfigEntryType.LABEL">
+                  <br />
                   <v-label
                     style="
                       margin-left: 8px;
@@ -76,9 +82,8 @@
                       margin-bottom: 10px;
                     "
                   >
-                    <b>{{ conf_item_value.value?.toString() }}</b>
+                    {{ conf_item_value.value?.toString() }}
                   </v-label>
-                  <br>
                 </div>
 
                 <!-- boolean value: toggle switch -->
@@ -91,7 +96,7 @@
                   color="primary"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                 />
 
@@ -101,13 +106,13 @@
                   v-else-if="
                     (conf_item_value.type == ConfigEntryType.INTEGER ||
                       conf_item_value.type == ConfigEntryType.FLOAT) &&
-                      conf_item_value.range &&
-                      conf_item_value.range.length == 2
+                    conf_item_value.range &&
+                    conf_item_value.range.length == 2
                   "
                   v-model="conf_item_value.value as number"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -148,7 +153,7 @@
                   :required="conf_item_value.required"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :rules="[
                     (v) =>
@@ -161,8 +166,8 @@
                       ? 'mdi-eye'
                       : typeof conf_item_value.value == 'string' &&
                         conf_item_value.value.includes(SECURE_STRING_SUBSTITUTE)
-                        ? ''
-                        : 'mdi-eye-off'
+                      ? ''
+                      : 'mdi-eye-off'
                   "
                   variant="outlined"
                   clearable
@@ -173,7 +178,7 @@
                 <v-select
                   v-else-if="
                     conf_item_value.options &&
-                      conf_item_value.options.length > 0
+                    conf_item_value.options.length > 0
                   "
                   v-model="conf_item_value.value"
                   :chips="conf_item_value.multi_value"
@@ -183,7 +188,7 @@
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -198,13 +203,15 @@
                 />
                 <!-- int value withour range -->
                 <v-text-field
-                  v-else-if="(conf_item_value.type == ConfigEntryType.INTEGER ||
-                    conf_item_value.type == ConfigEntryType.FLOAT)"
+                  v-else-if="
+                    conf_item_value.type == ConfigEntryType.INTEGER ||
+                    conf_item_value.type == ConfigEntryType.FLOAT
+                  "
                   v-model="conf_item_value.value"
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -226,7 +233,7 @@
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     conf_item_value.depends_on != undefined &&
-                      !conf.values[conf_item_value.depends_on].value
+                    !conf.values[conf_item_value.depends_on].value
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -253,7 +260,7 @@
                   size="x-large"
                   @click="
                     conf_item_value.description
-                      ? showHelpInfo = conf_item_value
+                      ? (showHelpInfo = conf_item_value)
                       : openLink(conf_item_value.help_link!)
                   "
                 />
@@ -262,20 +269,13 @@
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
-      <br>
-      <v-btn
-        block
-        color="primary"
-        @click="onSave"
-      >
+      <br />
+      <v-btn block color="primary" @click="onSave">
         {{ $t("settings.save") }}
       </v-btn>
     </v-form>
-    <br>
-    <v-btn
-      block
-      @click="$router.back()"
-    >
+    <br />
+    <v-btn block @click="$router.back()">
       {{ $t("close") }}
     </v-btn>
     <v-dialog
@@ -290,19 +290,11 @@
             v-if="showHelpInfo?.help_link"
             @click="openLink(showHelpInfo!.help_link!)"
           >
-            {{
-              $t("read_more")
-            }}
+            {{ $t("read_more") }}
           </v-btn>
           <v-spacer />
-          <v-btn
-            color="primary"
-            
-            @click="showHelpInfo = undefined"
-          >
-            {{
-              $t("close")
-            }}
+          <v-btn color="primary" @click="showHelpInfo = undefined">
+            {{ $t("close") }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -419,7 +411,7 @@ const openLink = function (url: string) {
 }
 .helpicon {
   margin-top: 0px;
-  margin-right: -10px
+  margin-right: -10px;
 }
 
 div.v-expansion-panel {

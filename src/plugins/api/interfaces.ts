@@ -178,6 +178,7 @@ export enum ConfigEntryType {
   INTEGER = "integer",
   FLOAT = "float",
   LABEL = "label",
+  DIVIDER = "divider",
 }
 
 //// api
