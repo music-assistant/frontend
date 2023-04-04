@@ -552,7 +552,7 @@ export class MusicAssistantApi {
     recursive = false
   ) {
     // Remove item from the database.
-    this.sendCommand("music/delete_db_item", {
+    this.sendCommand("music/delete", {
       media_type,
       db_item_id,
       recursive,
