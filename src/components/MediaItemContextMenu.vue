@@ -368,7 +368,7 @@ export const itemIsAvailable = function (item: MediaItemType) {
 export const radioSupported = function (item: MediaItemType) {
   for (const provId of item.provider_mappings) {
     if (
-      api.providers[provId.provider_instance]!.supported_features.includes(
+      api.providers[provId.provider_instance]?.supported_features.includes(
         ProviderFeature.SIMILAR_TRACKS
       )
     )
