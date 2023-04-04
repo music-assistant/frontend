@@ -67,7 +67,9 @@ export enum ConnectionState {
   CONNECTED = 2,
 }
 
-export interface chunkCallback { (data: Array<any>): void }
+export interface chunkCallback {
+  (data: Array<any>): void;
+}
 
 export class MusicAssistantApi {
   private ws?: Websocket;
@@ -196,20 +198,20 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
     lazy?: boolean,
-    album?: string,
+    album?: string
   ): Promise<Track> {
     return this.getData("music/track", {
       item_id,
       provider_instance_id_or_domain,
       force_refresh,
       lazy,
-      album_uri:album,
+      album_uri: album,
     });
   }
 
   public getTrackVersions(
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ): Promise<Track[]> {
     return this.getData("music/track/versions", {
       item_id,
@@ -219,7 +221,7 @@ export class MusicAssistantApi {
 
   public getTrackAlbums(
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ): Promise<Album[]> {
     return this.getData("music/track/albums", {
       item_id,
@@ -273,7 +275,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-    lazy?: boolean,
+    lazy?: boolean
   ): Promise<Artist> {
     return this.getData("music/artist", {
       item_id,
@@ -285,7 +287,7 @@ export class MusicAssistantApi {
 
   public getArtistTracks(
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ): Promise<Track[]> {
     return this.getData("music/artist/tracks", {
       item_id,
@@ -295,11 +297,11 @@ export class MusicAssistantApi {
 
   public getArtistAlbums(
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ): Promise<Album[]> {
     return this.getData("music/artist/albums", {
       item_id,
-      provider_instance_id_or_domain
+      provider_instance_id_or_domain,
     });
   }
 
@@ -323,7 +325,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-    lazy?: boolean,
+    lazy?: boolean
   ): Promise<Album> {
     return this.getData("music/album", {
       item_id,
@@ -335,21 +337,21 @@ export class MusicAssistantApi {
 
   public getAlbumTracks(
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ): Promise<Track[]> {
     return this.getData("music/album/tracks", {
       item_id,
-      provider_instance_id_or_domain
+      provider_instance_id_or_domain,
     });
   }
 
   public getAlbumVersions(
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ): Promise<Album[]> {
     return this.getData("music/album/versions", {
       item_id,
-      provider_instance_id_or_domain
+      provider_instance_id_or_domain,
     });
   }
 
@@ -373,7 +375,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-    lazy?: boolean,
+    lazy?: boolean
   ): Promise<Playlist> {
     return this.getData("music/playlist", {
       item_id,
@@ -388,10 +390,14 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     chunkCallback?: chunkCallback
   ): Promise<Track[]> {
-    return this.getData("music/playlist/tracks", {
-      item_id,
-      provider_instance_id_or_domain
-    }, chunkCallback);
+    return this.getData(
+      "music/playlist/tracks",
+      {
+        item_id,
+        provider_instance_id_or_domain,
+      },
+      chunkCallback
+    );
   }
 
   public addPlaylistTracks(db_playlist_id: string | number, uris: string[]) {
@@ -432,7 +438,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-    lazy?: boolean,
+    lazy?: boolean
   ): Promise<Radio> {
     return this.getData("music/radio", {
       item_id,
@@ -444,7 +450,7 @@ export class MusicAssistantApi {
 
   public getRadioVersions(
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ): Promise<Radio[]> {
     return this.getData("music/radio/versions", {
       item_id,
@@ -465,12 +471,10 @@ export class MusicAssistantApi {
     });
   }
 
-  public refreshItem(
-    media_item: MediaItemType
-  ): Promise<MediaItemType> {
+  public refreshItem(media_item: MediaItemType): Promise<MediaItemType> {
     // Try to refresh a mediaitem by requesting it's full object or search for substitutes.
     return this.getData("music/refresh_item", {
-      media_item
+      media_item,
     });
   }
 
@@ -494,13 +498,13 @@ export class MusicAssistantApi {
   public async addToLibrary(
     media_type: MediaType,
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ) {
     // Add an item to the library.
     this.sendCommand("music/library/add", {
       media_type,
       item_id,
-      provider_instance_id_or_domain
+      provider_instance_id_or_domain,
     });
   }
   public async addItemsToLibrary(items: Array<MediaItemType | string>) {
@@ -517,7 +521,7 @@ export class MusicAssistantApi {
   public async removeFromLibrary(
     media_type: MediaType,
     item_id: string,
-    provider_instance_id_or_domain: string,
+    provider_instance_id_or_domain: string
   ) {
     // Remove an item from the library.
     this.sendCommand("music/library/remove", {
@@ -580,9 +584,18 @@ export class MusicAssistantApi {
     return this.getData("players/queue/all");
   }
 
-  public async getPlayerQueueItems(queue_id: string): Promise<QueueItem[]> {
+  public getPlayerQueueItems(
+    queue_id: string,
+    chunkCallback?: chunkCallback
+  ): Promise<Track[]> {
     // Get all QueueItems for given PlayerQueue
-    return this.getData("players/queue/items", { queue_id });
+    return this.getData(
+      "players/queue/items",
+      {
+        queue_id,
+      },
+      chunkCallback
+    );
   }
 
   public queueCommandPlay(queueId: string) {
@@ -1019,7 +1032,9 @@ export class MusicAssistantApi {
     this.signalEvent(msg);
   }
 
-  private handleResultMessage(msg: SuccessResultMessage | ChunkedResultMessage | ErrorResultMessage) {
+  private handleResultMessage(
+    msg: SuccessResultMessage | ChunkedResultMessage | ErrorResultMessage
+  ) {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
     if (!resultPromise) return;
@@ -1031,7 +1046,7 @@ export class MusicAssistantApi {
     this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
       (x) => x != msg.message_id
     );
-    
+
     if ("error_code" in msg) {
       msg = msg as ErrorResultMessage;
       resultPromise.reject(msg.details || msg.error_code);
@@ -1041,7 +1056,9 @@ export class MusicAssistantApi {
     }
   }
 
-  private handleChunkedResultMessage(msg: ChunkedResultMessage | ErrorResultMessage) {
+  private handleChunkedResultMessage(
+    msg: ChunkedResultMessage | ErrorResultMessage
+  ) {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
     if (!resultPromise) return;
@@ -1057,12 +1074,12 @@ export class MusicAssistantApi {
         (x) => x != msg.message_id
       );
     }
-    
+
     if ("error_code" in msg) {
       msg = msg as ErrorResultMessage;
       resultPromise.reject(msg.details || msg.error_code);
     } else {
-      if(resultPromise.chunkCallback) resultPromise.chunkCallback(msg.result);
+      if (resultPromise.chunkCallback) resultPromise.chunkCallback(msg.result);
       if (lastChunk) resultPromise.resolve([]);
     }
   }
