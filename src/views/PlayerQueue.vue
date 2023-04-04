@@ -308,7 +308,7 @@ const items = ref<QueueItem[]>([]);
 // computed properties
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_queue];
+    return api.queues[store.selectedPlayer.active_source];
   }
   return undefined;
 });

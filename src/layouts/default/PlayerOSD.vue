@@ -76,6 +76,14 @@
         <span v-else-if="curQueueItem">
           {{ curQueueItem.name }}
         </span>
+         <!-- queue name -->
+         <div v-else-if="activePlayerQueue">
+          {{ activePlayerQueue?.display_name }}
+        </div>
+        <!-- player name -->
+        <div v-else-if="store.selectedPlayer">
+          {{ store.selectedPlayer?.display_name }}
+        </div>
       </template>
 
       <!-- subtitle -->
@@ -113,8 +121,13 @@
         <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description">
           {{ curQueueItem.media_item.metadata.description }}
         </div>
-        <div v-else-if="!curQueueItem">
-          {{ activePlayerQueue?.display_name }}
+        <!-- queue empty message -->
+        <div v-else-if="activePlayerQueue">
+          {{ $t('queue_empty') }}
+        </div>
+        <!-- 3rd party source active -->
+        <div v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id">
+          {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
         </div>
       </template>
       <template #append>
@@ -235,10 +248,10 @@
 
     <!-- progress bar -->
     <div
-      v-if="curQueueItem"
       style="width: 100%; height: 5px; padding-bottom: 20px; margin-top: -10px"
     >
       <v-slider
+        v-if="curQueueItem"
         :model-value="curQueueItemTime"
         height="3"
         color="primary"
@@ -260,7 +273,7 @@
     <div class="mediacontrols">
       <!-- left side: playback buttons -->
       <div
-        v-if="activePlayerQueue && activePlayerQueue.available"
+        v-if="store.selectedPlayer && store.selectedPlayer.available"
         class="mediacontrols-left"
       >
         <!-- prev track -->
@@ -298,7 +311,7 @@
           icon
           x-large
           variant="plain"
-          @click="api.queueCommandStop(activePlayerQueue!.queue_id)"
+          @click="api.playerCommandStop(store.selectedPlayer!.player_id)"
         >
           <v-icon size="50">
             mdi-stop
@@ -311,7 +324,7 @@
           x-large
           variant="plain"
           :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
-          @click="api.queueCommandPlay(activePlayerQueue!.queue_id)"
+          @click="api.queueCommandPlay(activePlayerQueue?.queue_id || store.selectedPlayer!.player_id)"
         >
           <v-icon size="50">
             mdi-play
@@ -342,12 +355,12 @@
         @click="store.showPlayersMenu = true"
       >
         <v-icon icon="mdi-speaker" />
-        <div v-if="activePlayerQueue">
-          {{ getPlayerName(api.players[activePlayerQueue.queue_id]) }}
+        <div v-if="store.selectedPlayer">
+          {{ getPlayerName(store.selectedPlayer) }}
         </div>
       </v-btn>
       <!-- active player volume -->
-      <div v-if="!$vuetify.display.mobile && activePlayerQueue">
+      <div v-if="!$vuetify.display.mobile && store.selectedPlayer">
         <v-menu
           v-model="showVolume"
           location="bottom end"
@@ -476,7 +489,7 @@ const showVolume = ref(false);
 // computed properties
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_queue];
+    return api.queues[store.selectedPlayer.active_source];
   }
   return undefined;
 });

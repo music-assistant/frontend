@@ -81,11 +81,18 @@
             </template>
             <template #subtitle>
               <div
-                :key="player.state"
+                v-if="player.active_source != player.player_id && api.queues[player.active_source]"
                 class="text-body-2"
                 style="line-height: 1em"
               >
-                {{ $t("state." + player.state) }}
+                {{ $t("state." + api.queues[player.active_source].state) }} ({{ api.queues[player.active_source].display_name }})
+              </div>
+              <div
+                v-else
+                class="text-body-2"
+                style="line-height: 1em"
+              >
+                {{ player.state }}
               </div>
             </template>
           </v-list-item>

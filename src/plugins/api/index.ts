@@ -652,9 +652,9 @@ export class MusicAssistantApi {
   public queueCommandMoveNext(queueId: string, queue_item_id: string) {
     this.queueCommandMoveItem(queueId, queue_item_id, 0);
   }
-  public queueCommandDelete(queueId: string, queue_item_id: string) {
+  public queueCommandDelete(queueId: string, item_id_or_index: number | string) {
     // Delete item (by id or index) from the queue.
-    this.playerQueueCommand(queueId, "delete_item", { queue_item_id });
+    this.playerQueueCommand(queueId, "delete_item", { item_id_or_index });
   }
 
   public queueCommandSeek(queueId: string, position: number) {
@@ -730,6 +730,10 @@ export class MusicAssistantApi {
   public async getPlayers(): Promise<Player[]> {
     // Get all registered players.
     return this.getData("players/all");
+  }
+
+  public playerCommandStop(playerId: string) {
+    this.playerCommand(playerId, "stop");
   }
 
   public playerCommandPower(playerId: string, powered: boolean) {
@@ -880,7 +884,7 @@ export class MusicAssistantApi {
     queue_id?: string
   ) {
     if (!queue_id) {
-      queue_id = store.selectedPlayer?.active_queue;
+      queue_id = store.selectedPlayer?.active_source;
     }
     this.sendCommand("players/queue/play_media", {
       queue_id,

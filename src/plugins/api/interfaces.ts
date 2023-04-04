@@ -540,12 +540,13 @@ export interface Player {
   elapsed_time: number;
   elapsed_time_last_updated: number;
   current_url: string;
+  current_item: string;
   state: PlayerState;
 
   volume_level: number;
   volume_muted: boolean;
   group_childs: string[];
-  active_queue: string;
+  active_source: string;
   can_sync_with: string[];
   synced_to: string;
   max_sample_rate: number;

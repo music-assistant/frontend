@@ -164,12 +164,20 @@
     "check_docs": "Checkout the documentation",
     "player_not_available": "This player is currently not (yet) available",
     "add_provider": "Add a new provider",
-    "add_new": "Add new"
+    "add_new": "Add new",
+    "player_type_label": "Player type"
   },
   "track_number": "Disc {0} Track {1}",
   "close": "Close",
   "add_url_item": "Add item from URL",
   "enter_url": "Enter the URL you want to manually add to the database",
   "new_playlist_name": "Enter a new for the new playlist",
-  "appears_on": "Appears on"
+  "appears_on": "Appears on",
+  "external_source_active": "External source active: {0}",
+  "queue_empty": "No items in the queue",
+  "player_type": {
+    "player": "Player",
+    "stereo_pair": "Stereo Pair",
+    "group": "Group"
+  }
 }

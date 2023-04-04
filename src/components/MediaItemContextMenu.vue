@@ -506,7 +506,7 @@ export const getContextMenuItems = function (
             provider: items[0].provider,
           },
           query: {
-            album: "album" in items[0] ? (items[0].album as Album).uri : "",
+            album: "album" in items[0] ? (items[0].album as Album)?.uri : "",
           },
         });
       },

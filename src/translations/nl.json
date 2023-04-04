@@ -173,5 +173,7 @@
   "add_url_item": "Voeg handmatig een URL toe",
   "enter_url": "Geef de URL op die je handmatig wilt toevoegen aan de database",
   "new_playlist_name": "Geef een naam op voor de nieuwe playlist",
-  "appears_on": "Verschenen op"
+  "appears_on": "Verschenen op",
+  "external_source_active": "Externe bron actief: {0}",
+  "queue_empty": "Er zijn geen items aanwezig in de queue"
 }

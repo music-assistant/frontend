@@ -34,6 +34,11 @@
             api.players[config.player_id].device_info.address
           }}
         </v-card-subtitle>
+        <v-card-subtitle>
+          <b>{{ $t("settings.player_type_label") }}: </b>{{
+            $t(`player_type.${api.players[config.player_id].type}`)
+          }}
+        </v-card-subtitle>
       </div>
       <br>
       <v-divider />
