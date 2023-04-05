@@ -102,7 +102,9 @@
     "album": "Album",
     "single": "Single",
     "compilation": "Compilation",
-    "ep": "EP"
+    "ep": "EP",
+    "audiobook": "Audiobook",
+    "podcast": "Podcast"
   },
   "tooltip": {
     "explicit": "Explicit",
