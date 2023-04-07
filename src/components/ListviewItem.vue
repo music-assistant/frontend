@@ -2,10 +2,9 @@
 <template>
   <div>
     <v-list-item
-      ripple
-      :class="itemIsAvailable(item) ? '' : 'unavailable'"
-      style="height: 60px"
-      lines="two"
+      link
+      :disabled="!itemIsAvailable(item)"
+      class="listitem"
       density="compact"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
@@ -46,8 +45,7 @@
         >
           <MediaItemThumb
             :item="item"
-            :width="'50px'"
-            :height="'50px'"
+            :size="50"
           />
         </div>
       </template>
@@ -80,29 +78,42 @@
       <template #subtitle>
         <!-- track: artists(s) + album -->
         <div v-if="item.media_type == MediaType.TRACK">
-          <span v-if="'artists' in item">{{
-            getArtistsString(item.artists)
-          }}</span>
-          <span v-if="showAlbum && 'album' in item && item.album">
-            • {{ item.album.name }}</span>
-          <span
-            v-if="'disc_number' in item && item.disc_number && showTrackNumber"
-          >&nbsp;&nbsp;<v-icon
-            class="material-icons-outlined"
-            style="justify-content: normal"
-            icon="md:album"
-          /><span style="margin-left: 2px; margin-top: 3px">{{
-            item.disc_number
-          }}</span></span><span
-            v-if="
-              'track_number' in item && item.track_number && showTrackNumber
-            "
-          >&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
-            style="margin-left: 2px; margin-top: 3px"
-          >{{ item.track_number }}</span></span>
-          <span v-else-if="'position' in item && item.position">&nbsp;&nbsp;<v-icon icon="mdi-music-circle-outline" /><span
-            style="margin-left: 2px; margin-top: 3px"
-          >{{ item.position }}</span></span>
+          <v-item-group>
+            <v-item v-if="'artists' in item">
+              {{
+                getArtistsString(item.artists)
+              }}
+            </v-item>
+            <v-item v-if="showAlbum && 'album' in item && item.album">
+              • {{ item.album.name }}
+            </v-item>
+            <v-item v-if="'disc_number' in item && item.disc_number && showTrackNumber">
+              <v-icon
+                style="margin-left: 5px;"
+                icon="md:album"
+              /> {{
+                item.disc_number
+              }}
+            </v-item>
+            <v-item
+              v-if="
+                'track_number' in item && item.track_number && showTrackNumber
+              "
+            >
+              <v-icon
+                style="margin-left: 5px;"
+                icon="mdi-music-circle-outline"
+              /> {{
+                item.track_number
+              }}
+            </v-item>
+            <v-item v-else-if="'position' in item && item.position">
+              <v-icon
+                style="margin-left: 5px;"
+                icon="mdi-music-circle-outline"
+              /> {{ item.position }}
+            </v-item>
+          </v-item-group>
         </div>
 
         <!-- album: albumtype + artists + year -->
@@ -140,9 +151,7 @@
           {{ item.owner }}
         </div>
         <!-- radio description -->
-        <div
-          v-if="item.media_type == MediaType.RADIO && item.metadata.description"
-        >
+        <div v-if="item.media_type == MediaType.RADIO && item.metadata.description">
           {{ item.metadata.description }}
         </div>
       </template>
@@ -179,15 +188,14 @@
             "
             :provider-mappings="item.provider_mappings"
             :height="20"
-            :enable-details="showDetails"
-            :enable-preview="item.media_type == MediaType.TRACK"
             class="listitem-actions"
           />
 
           <!-- in library (heart) icon -->
           <div
             v-if="
-              'in_library' in item && showLibrary && !$vuetify.display.mobile
+              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
+                'in_library' in item && showLibrary && !$vuetify.display.mobile
             "
             class="listitem-action"
           >
@@ -218,45 +226,60 @@
             "
             class="listitem-action"
           >
-            <span>{{ formatDuration(item.duration) }}</span>
+            <div>
+              <span
+                class="text-caption"
+                style="padding-right: 10px; padding-left: 10px"
+              >{{ formatDuration(item.duration)
+              }}</span>
+            </div>
+          </div>
+
+          <!-- menu button/icon -->
+          <div
+            v-if="
+              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
+                showMenu
+            "
+            class="listitem-action"
+          >
+            <v-btn
+              variant="plain"
+              ripple
+              v-bind="props"
+              icon="mdi-dots-vertical"
+              @click.stop="emit('menu', item)"
+            />
           </div>
         </div>
-
-        <!-- menu button/icon -->
-        <v-btn
-          v-if="showMenu"
-          icon="mdi-dots-vertical"
-          variant="plain"
-          style="position: absolute; right: -3px; width: 10px"
-          @click.stop="emit('menu', item)"
-        />
       </template>
     </v-list-item>
-    <v-divider />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { VTooltip } from "vuetify/components";
-import ProviderIcons from "./ProviderIcons.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
-import { iconHiRes } from "./ProviderIcons.vue";
+import ProviderIcons, {
+  iconHiRes,
+} from "./ProviderIcons.vue";
 import {
   ContentType,
   type BrowseFolder,
   type MediaItem,
   type MediaItemType,
+  MediaType,
 } from "../plugins/api/interfaces";
-import { api } from "../plugins/api";
-import { MediaType } from "../plugins/api/interfaces";
 import {
   formatDuration,
   parseBool,
   getArtistsString,
   getBrowseFolderName,
+  getResponsiveBreakpoints,
 } from "../utils";
 import { useI18n } from "vue-i18n";
+import api from "@/plugins/api";
 
 // properties
 export interface Props {
@@ -327,8 +350,22 @@ const itemIsAvailable = function (item: MediaItem) {
 };
 </script>
 
-<style scoped>
-.unavailable {
-  opacity: 50%;
+<style>
+.v-slider.v-input--horizontal .v-input__control {
+  min-height: 5px;
+}
+
+.listitem {
+  padding-right: 0px;
+  border-radius: 4px;
+}
+
+.listitem-thumb {
+  padding-left: 0px;
+  margin-right: 10px;
+  margin-left: -10px;
+  margin-top: 2px;
+  width: 50px;
+  height: 50px;
 }
 </style>

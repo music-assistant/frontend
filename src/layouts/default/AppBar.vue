@@ -1,21 +1,25 @@
 <template>
   <v-app-bar
-    color="grey-darken-3"
     density="compact"
     style="height: 56px"
     :elevation="2"
   >
     <template #prepend>
-      <v-btn
-        style="margin-left: -8px; margin-right: -20px"
-        variant="plain"
-        @click="store.showNavigationMenu = !store.showNavigationMenu"
-      >
-        <v-icon size="40">
-          mdi-playlist-play
-        </v-icon>
-      </v-btn>
+      <v-menu location="bottom end">
+        <template #activator="{ props }">
+          <v-btn
+            icon="mdi-playlist-play"
+            variant="plain"
+            @click="store.showNavigationMenu = !store.showNavigationMenu"
+          > 
+            <v-icon>
+              mdi-playlist-play
+            </v-icon>
+          </v-btn>
+        </template>
+      </v-menu>
     </template>
+
     <v-app-bar-title>
       <span
         style="cursor: pointer"
@@ -29,6 +33,7 @@
       >
         | {{ heading.subTitle }}</span>
     </v-app-bar-title>
+
 
     <template #append>
       <div class="listitem-actions">
@@ -56,7 +61,6 @@
             <v-btn
               v-if="store.topBarContextMenuItems.length > 0"
               icon="mdi-dots-vertical"
-              style="margin-right: -6px"
               v-bind="props"
               variant="plain"
             />
