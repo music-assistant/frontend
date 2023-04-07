@@ -345,7 +345,7 @@ export interface MediaItemImage {
   path: string;
   // set to instance_id of provider if the path needs to be resolved
   // if the path is just a plain (remotely accessible) URL, set it to 'url'
-  provider: string; 
+  provider: string;
 }
 
 export interface MediaItemMetadata {
@@ -595,4 +595,10 @@ export interface SyncTask {
   provider_domain: string;
   provider_instance: string;
   media_types: MediaType[];
+}
+
+export enum MobileDeviceType {
+  ALL,
+  TABLET,
+  PHONE
 }

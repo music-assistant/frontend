@@ -2,9 +2,11 @@ import {
   Artist,
   BrowseFolder,
   ItemMapping,
+  MobileDeviceType,
   Player,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import MobileDetect from 'mobile-detect';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean) => {
@@ -127,3 +129,40 @@ export const getPlayerName = function (player: Player, truncate: number = 26) {
 export const numberRange = function (start: number, end: number): number[] {
   return Array(end - start + 1).fill(start).map((x, y) => x + y);
 }
+
+//Is in the process of calibration. A sorting of the values is therefore pending.
+export const getResponsiveBreakpoints = {
+  breakpoint_1: 575,
+  breakpoint_2: 715,
+  breakpoint_3: 960,
+  breakpoint_4: 1100,
+  breakpoint_5: 1500,
+  breakpoint_6: 1700,
+  breakpoint_7: 800,
+  breakpoint_8: 375,
+  breakpoint_9: 1900,
+  breakpoint_10: 540,
+};
+
+const md = new MobileDetect(window.navigator.userAgent);
+
+export const isMobileDevice = (device: MobileDeviceType, displaySize: {
+  height: number;
+  width: number;
+}) => {
+  if (device == MobileDeviceType.ALL) {
+    return md.mobile()
+    ? true
+    : displaySize.width < getResponsiveBreakpoints.breakpoint_1;
+  }
+  if (device == MobileDeviceType.PHONE) {
+    return md.phone()
+    ? true
+    : displaySize.width < getResponsiveBreakpoints.breakpoint_1;
+  }
+  if (device == MobileDeviceType.TABLET) {
+    return md.tablet()
+    ? true
+    : displaySize.width < getResponsiveBreakpoints.breakpoint_1;
+  }
+};

@@ -191,6 +191,7 @@ export const iconFallback = new URL("@/assets/logo.png", import.meta.url).href;
 
 export const iconAac = new URL("@/assets/aac.png", import.meta.url).href;
 export const iconFlac = new URL("@/assets/flac.png", import.meta.url).href;
+export const iconSmallFlac = new URL("@/assets/flac_small.png", import.meta.url).href;
 export const iconMp3 = new URL("@/assets/mp3.png", import.meta.url).href;
 export const iconOgg = new URL("@/assets/ogg.png", import.meta.url).href;
 export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
