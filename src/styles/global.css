@@ -161,3 +161,68 @@
     max-width: 11.1%;
     flex-basis: 11.1%;
   }
+
+.line-clamp-1 {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  white-space: pre-line;
+  overflow: hidden;
+  line-height: 1.5em;
+  height: 3em;
+  word-wrap: break-word;
+  box-sizing: border-box;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+}
+
+.small-icon {
+  font-size: 22px;
+  height: 22px;
+  width: 22px;
+}
+
+.small-btn {
+  font-size: 40px;
+  height: 40px;
+  width: 40px;
+}
+
+.large-icon {
+  font-size: 40px;
+  height: 40px;
+  width: 40px;
+}
+
+.large-btn {
+  font-size: 50px;
+  height: 50px;
+  width: 50px;
+}
+
+.v-list-item-subtitle {
+font-weight: 400;
+font-size: 0.6875rem;
+line-height: 17.6px;
+}
+
+.v-list-item-title {
+font-weight: 400;
+font-size: 0.875rem;
+line-height: 22.4px;
+}
+
+.v-input--horizontal .v-input__prepend {
+  margin-inline-end: 8px;
+}
+
+.v-list-item--density-default:not(.v-list-item--nav).v-list-item--two-line {
+  padding-inline-start: 8px;
+}
+
+.v-toolbar__content {
+  height: 100% !important;
+}

@@ -2,7 +2,7 @@
   <v-app>
     <player-select />
     <app-bar />
-    <player-o-s-d />
+    <playerOSD/>
     <main-view v-if="api.state.value == ConnectionState.CONNECTED" />
     <v-overlay v-else>
       <v-progress-circular
@@ -18,7 +18,7 @@
 <script lang="ts" setup>
 import AppBar from "./AppBar.vue";
 import MainView from "./View.vue";
-import PlayerOSD from "./PlayerOSD.vue";
+import PlayerOSD from "./PlayerOSD/Player.vue";
 import PlayerSelect from "./PlayerSelect.vue";
 import ReloadPrompt from "./ReloadPrompt.vue";
 import { api, ConnectionState } from "@/plugins/api";

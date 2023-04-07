@@ -4,40 +4,15 @@
       style="
         margin-left: 10px;
         margin-right: 10px;
-        margin-top: 20px;
-        margin-bottom: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
       "
     >
-      <!-- recent artists -->
-      <!-- <v-card
-        v-if="recentArtists.length > 0"
-        style="margin-top: 20px; margin-bottom: 20px"
-      >
-        <v-card-title style="margin-left: 15px">{{
-          $t("artists")
-        }}</v-card-title>
-        <v-slide-group
-          show-arrows="always"
-          style="margin-left: 5px; margin-right: 5px; margin-bottom: 10px"
-        >
-          <v-slide-group-item v-for="item in recentArtists" :key="item.uri">
-            <PanelviewItem
-              :item="item"
-              :size="150"
-              :is-selected="false"
-              :show-checkboxes="false"
-              style="margin: 5px"
-            />
-          </v-slide-group-item>
-        </v-slide-group>
-      </v-card> -->
-
-      <!-- regular menu items -->
-      <div style="margin-top: 20px">
+      <div>
         <v-row
           dense
           align-content="start"
-          align="start"
+          :align="'start'"
         >
           <v-col
             v-for="card in cards"
@@ -45,17 +20,16 @@
             align-self="start"
           >
             <v-card
-              class="mx-auto"
-              align="center"
+              :ripple="true"
+              class="mx-auto home-card"
               outlined
-              min-width="150"
-              max-width="344"
               @click="$router.push(card.path)"
             >
               <v-list-item two-line>
                 <v-btn
                   variant="plain"
                   icon
+                  :ripple="false"
                   height="80"
                 >
                   <v-icon
@@ -75,14 +49,11 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 
 import { api } from '@/plugins/api';
 import { Artist } from '@/plugins/api/interfaces';
-
-// import PanelviewItem from "@/components/PanelviewItem.vue";
 
 const recentArtists = ref<Artist[]>([]);
 
@@ -126,6 +97,19 @@ const cards = ref([
 </script>
 
 <style>
+.home-card {
+  min-width: 150px;
+  text-align: center;
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+
+.home-card-title {
+  line-height: 1.5 !important;
+  font-size: 1rem !important;
+  font-weight: 400 !important;
+}
+
 div.v-slide-group__next {
   position: absolute;
   right: -5px;
