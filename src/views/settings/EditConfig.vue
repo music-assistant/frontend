@@ -370,6 +370,8 @@ const requiredValuesPresent = computed(() => {
       !(
         !isNullOrUndefined(entry.value) ||
         !isNullOrUndefined(entry.default_value)
+        || entry.type == ConfigEntryType.DIVIDER
+        || entry.type == ConfigEntryType.LABEL
       )
     )
       return false;
