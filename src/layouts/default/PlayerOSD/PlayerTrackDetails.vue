@@ -161,7 +161,7 @@ import { getResponsiveBreakpoints } from "@/utils";
 const router = useRouter();
 
 // properties
-export interface Props {
+interface Props {
   showOnlyArtist?: boolean;
 }
 
