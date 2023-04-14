@@ -139,19 +139,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { computed } from "vue";
 
 import api from "@/plugins/api";
 import {
   MediaType,
-  ImageType,
   MediaItemType,
   ItemMapping,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import MediaItemThumb, {
-  getImageThumbForItem,
-} from "@/components/MediaItemThumb.vue";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { getArtistsString } from "@/utils";
 import { useRouter } from "vue-router";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
@@ -188,5 +185,4 @@ const itemClick = function (item: MediaItemType | ItemMapping) {
     params: { itemId: item.item_id, provider: item.provider },
   });
 };
-
 </script>
