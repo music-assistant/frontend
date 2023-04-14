@@ -169,9 +169,6 @@ const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
 });
 
-// local refs
-const fanartImage = ref();
-
 // computed properties
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
@@ -192,21 +189,4 @@ const itemClick = function (item: MediaItemType | ItemMapping) {
   });
 };
 
-// watchers
-watch(
-  () => curQueueItem.value?.queue_item_id,
-  async () => {
-    if (curQueueItem.value?.media_item) {
-      fanartImage.value =
-        (getImageThumbForItem(
-          curQueueItem.value.media_item,
-          ImageType.FANART
-        )) ||
-        (getImageThumbForItem(
-          curQueueItem.value.media_item,
-          ImageType.THUMB
-        ));
-    }
-  }
-);
 </script>
