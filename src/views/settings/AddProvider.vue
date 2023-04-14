@@ -3,77 +3,87 @@
     <v-card-text>
       <!-- header -->
       <div
-        v-if="config && availableProviders[config.domain]"
+        v-if="api.providerManifests[domain]"
         style="margin-left: -5px; margin-right: -5px"
       >
         <v-card-title>
           {{
-            $t("settings.setup_provider", [
-              availableProviders[config.domain].name,
-            ])
+            $t("settings.setup_provider", [api.providerManifests[domain].name])
           }}
         </v-card-title>
         <v-card-subtitle>
-          {{ availableProviders[config.domain].description }}
-        </v-card-subtitle><br>
-        <v-card-subtitle
-          v-if="availableProviders[config.domain].codeowners.length"
-        >
-          <b>{{ $t("settings.codeowners") }}: </b>{{ availableProviders[config.domain].codeowners.join(" / ") }}
+          {{ api.providerManifests[domain].description }} </v-card-subtitle
+        ><br />
+        <v-card-subtitle v-if="api.providerManifests[domain].codeowners.length">
+          <b>{{ $t("settings.codeowners") }}: </b
+          >{{ api.providerManifests[domain].codeowners.join(" / ") }}
         </v-card-subtitle>
 
-        <v-card-subtitle v-if="availableProviders[config.domain].documentation">
+        <v-card-subtitle v-if="api.providerManifests[domain].documentation">
           <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
-            :href="availableProviders[config.domain].documentation"
+            :href="api.providerManifests[domain].documentation"
             target="_blank"
-          >{{ $t("settings.check_docs") }}</a>
+            >{{ $t("settings.check_docs") }}</a
+          >
         </v-card-subtitle>
       </div>
-      <br>
+      <br />
       <v-divider />
-      <br>
-      <br>
+      <br />
+      <br />
       <edit-config
-        v-if="config"
-        :model-value="config"
-        @update:model-value="onSubmit($event as ConfigUpdate)"
+        :config-entries="config_entries"
+        :disabled="false"
+        @submit="onSubmit"
+        @action="onAction"
       />
     </v-card-text>
+    <v-overlay scrim="true" v-model="loading" persistent style="display: flex;align-items: center;justify-content: center">
+        <v-progress-circular
+        indeterminate
+        size="64"
+        color="primary"
+      />
+    </v-overlay>
   </section>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { nanoid } from "nanoid";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import {
-  ProviderConfig,
-  ProviderManifest,
-  ConfigUpdate,
+  ConfigValueType,
+  ConfigEntry,
+  EventType,
+  EventMessage,
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 
 // global refs
 const router = useRouter();
-const config = ref<ProviderConfig>();
-const availableProviders = reactive<{
-  [provider_domain: string]: ProviderManifest;
-}>({});
+const config_entries = ref<ConfigEntry[]>([]);
+const sessionId = nanoid(11);
+const loading = ref(false);
 
 // props
 const props = defineProps<{
-  domain?: string;
+  domain: string;
 }>();
 
-onMounted(async () => {
-  const manifests: ProviderManifest[] = await api.getData(
-    "providers/available"
-  );
-  for (const provManifest of manifests) {
-    availableProviders[provManifest.domain] = provManifest;
-  }
+onMounted(() => {
+  //reload if/when item updates
+  const unsub = api.subscribe(EventType.AUTH_SESSION, (evt: EventMessage) => {
+    // handle AUTH_SESSION event (used for auth flows to open the auth url)
+    // ignore any events that not match our session id.
+    if (evt.object_id !== sessionId) return;
+    const url = evt.data as string;
+    window.open(url, "_blank")!.focus();
+  });
+  onBeforeUnmount(unsub);
 });
 
 // watchers
@@ -82,33 +92,59 @@ watch(
   () => props.domain,
   async (val) => {
     if (val) {
-      // create a default config using the helper on the server
-      config.value = await api.getData("config/providers/add", {
-        provider_domain: props.domain,
-      });
+      // fetch initial config entries (without any action) but pass along our session id
+      config_entries.value = await api.getProviderConfigEntries(
+        props.domain,
+        undefined,
+        undefined,
+        { session_id: sessionId }
+      );
     }
   },
   { immediate: true }
 );
 
 // methods
-const onSubmit = async function (update: ConfigUpdate) {
-  config.value!.enabled = update.enabled as boolean;
-  config.value!.name = update.name as string;
-  for (const key in update.values) {
-    config.value!.values[key].value = update.values[key];
-  }
+const onSubmit = async function (values: Record<string, ConfigValueType>) {
+  // save new provider config
+  loading.value = true;
   api
-    .getData("config/providers/add", {
-      provider_domain: props.domain,
-      config: config.value,
-    })
+    .saveProviderConfig(props.domain, values)
     .then(() => {
+      loading.value = false;
       router.push({ name: "providersettings" });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
       alert(err);
+      loading.value = false;
+    });
+};
+
+const onAction = async function (
+  action: string,
+  values: Record<string, ConfigValueType>
+) {
+  loading.value = true;
+  // append existing ConfigEntry values to allow
+  // values be passed between flow steps
+  for (const entry of config_entries.value) {
+    if (entry.value !== undefined && values[entry.key] == undefined) {
+      values[entry.key] = entry.value;
+    }
+  }
+  // ensure the session id is passed along
+  values["session_id"] = sessionId;
+  api
+    .getProviderConfigEntries(props.domain, undefined, action, values)
+    .then((entries) => {
+      config_entries.value = entries;
+      loading.value = false;
+    })
+    .catch((err) => {
+      // TODO: make this a bit more fancy someday
+      alert(err);
+      loading.value = false;
     });
 };
 </script>

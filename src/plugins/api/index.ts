@@ -44,6 +44,11 @@ import {
   SearchResults,
   ProviderManifest,
   ChunkedResultMessage,
+  ProviderType,
+  ProviderConfig,
+  ConfigValueType,
+  ConfigEntry,
+  PlayerConfig,
 } from "./interfaces";
 
 const DEBUG = true;
@@ -652,7 +657,10 @@ export class MusicAssistantApi {
   public queueCommandMoveNext(queueId: string, queue_item_id: string) {
     this.queueCommandMoveItem(queueId, queue_item_id, 0);
   }
-  public queueCommandDelete(queueId: string, item_id_or_index: number | string) {
+  public queueCommandDelete(
+    queueId: string,
+    item_id_or_index: number | string
+  ) {
     // Delete item (by id or index) from the queue.
     this.playerQueueCommand(queueId, "delete_item", { item_id_or_index });
   }
@@ -945,6 +953,109 @@ export class MusicAssistantApi {
     );
   }
 
+  // ProviderConfig related functions
+
+  public async getProviderConfigs(
+    provider_type?: ProviderType,
+    provider_domain?: string
+  ): Promise<ProviderConfig[]> {
+    // Return all known provider configurations, optionally filtered by ProviderType or domain.
+    return this.getData("config/providers", { provider_type, provider_domain });
+  }
+
+  public async getProviderConfig(instance_id: string): Promise<ProviderConfig> {
+    // Return configuration for a single provider.
+    return this.getData("config/providers/get", { instance_id });
+  }
+
+  public async getProviderConfigEntries(
+    provider_domain: string,
+    instance_id?: string,
+    action?: string,
+    values?: Record<string, ConfigValueType>
+  ): Promise<ConfigEntry[]> {
+    // Return Config entries to setup/configure a provider.
+    // provider_domain: (mandatory) domain of the provider.
+    // instance_id: id of an existing provider instance (None for new instance setup).
+    // action: [optional] action key called from config entries UI.
+    // values: the (intermediate) raw values for config entries sent with the action.
+    return this.getData("config/providers/get_entries", {
+      provider_domain,
+      instance_id,
+      action,
+      values,
+    });
+  }
+
+  public async saveProviderConfig(
+    provider_domain: string,
+    values: Record<string, ConfigValueType>,
+    instance_id?: string
+  ): Promise<ProviderConfig> {
+    // Save Provider(instance) Config.
+    // provider_domain: (mandatory) domain of the provider.
+    // values: the raw values for config entries that need to be stored/updated.
+    // instance_id: id of an existing provider instance (None for new instance setup).
+    // action: [optional] action key called from config entries UI.
+    return this.getData("config/providers/save", {
+      provider_domain,
+      values,
+      instance_id,
+    });
+  }
+
+  public removeProviderConfig(instance_id: string) {
+    // Remove ProviderConfig.
+    this.sendCommand("config/providers/remove", {
+      instance_id,
+    });
+  }
+
+  public reloadProvider(instance_id: string) {
+    // Reload Provider(instance).
+    this.sendCommand("config/providers/reload", {
+      instance_id,
+    });
+  }
+
+  // PlayerConfig related functions
+
+  public async getPlayerConfigs(provider?: string): Promise<PlayerConfig[]> {
+    // Return all known player configurations, optionally filtered by provider domain.
+    return this.getData("config/players", { provider });
+  }
+
+  public async getPlayerConfig(player_id: string): Promise<PlayerConfig> {
+    // Return configuration for a single player.
+    return this.getData("config/players/get", { player_id });
+  }
+
+  public async getPlayerConfigValue(
+    player_id: string,
+    key: string
+  ): Promise<PlayerConfig> {
+    // Return single configentry value for a player.
+    return this.getData("config/players/get_value", { player_id, key });
+  }
+
+  public async savePlayerConfig(
+    player_id: string,
+    values: Record<string, ConfigValueType>
+  ): Promise<PlayerConfig> {
+    // Save/update PlayerConfig.
+    return this.getData("config/players/save", {
+      player_id,
+      values,
+    });
+  }
+
+  public removePlayerConfig(player_id: string) {
+    // remove the configuration of a player
+    this.sendCommand("config/players/remove", {
+      player_id,
+    });
+  }
+
   // Other (utility) functions
 
   public startSync(media_types?: MediaType[], providers?: string[]) {
@@ -952,11 +1063,6 @@ export class MusicAssistantApi {
     // media_types: only sync these media types. omit for all.
     // providers: only sync these provider domains. omit for all.
     this.sendCommand("music/sync", { media_types, providers });
-  }
-
-  public getLocalThumb(path: string, size?: number): Promise<string> {
-    // TODO
-    return this.getData("thumb", { path, size });
   }
 
   private async connectHass() {

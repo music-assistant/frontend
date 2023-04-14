@@ -1,13 +1,13 @@
 <template>
   <section>
-    <v-card-text style="margin-right:15px">
+    <v-card-text style="margin-right: 15px">
       <!-- show alert if no music providers configured-->
 
       <!-- show section per providertpe -->
       <v-card
         v-for="provType in ProviderType"
         :key="provType"
-        style="margin-bottom:15px"
+        style="margin-bottom: 15px"
       >
         <v-toolbar
           :title="$t(`settings.${provType}providers`)"
@@ -19,13 +19,8 @@
               v-if="availableProviders.filter((x) => x.type == provType).length"
             >
               <template #activator="{ props }">
-                <v-btn
-                  variant="text"
-                  v-bind="props"
-                >
-                  {{
-                    $t("settings.add_new")
-                  }}
+                <v-btn variant="text" v-bind="props">
+                  {{ $t("settings.add_new") }}
                 </v-btn>
               </template>
 
@@ -36,7 +31,7 @@
                   )"
                   :key="provider.domain"
                   density="compact"
-                  style="padding-top: 0;padding-bottom: 0;margin-bottom:0"
+                  style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
                   :title="provider.name"
                   @click="addProvider(provider)"
                 >
@@ -58,12 +53,12 @@
         <v-alert
           v-if="
             provType == ProviderType.MUSIC &&
-              providerConfigs.filter(
-                (x) =>
-                  x.type == ProviderType.MUSIC &&
-                  x.domain in api.providerManifests &&
-                  x.domain != 'url'
-              ).length == 0
+            providerConfigs.filter(
+              (x) =>
+                x.type == ProviderType.MUSIC &&
+                x.domain in api.providerManifests &&
+                x.domain != 'url'
+            ).length == 0
           "
           color="primary"
           theme="dark"
@@ -72,7 +67,7 @@
           style="margin-bottom: 15px"
         >
           <b>{{ $t("settings.no_providers") }}</b>
-          <br>
+          <br />
           {{ $t("settings.no_providers_detail") }}
         </v-alert>
         <v-list-item
@@ -96,7 +91,7 @@
               :domain="config.domain"
               :size="'40px'"
               class="listitem-thumb"
-              style="margin-left:-5px"
+              style="margin-left: -5px"
             />
           </template>
 
@@ -112,17 +107,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="grey"
-                    >
-                      mdi-sync
-                    </v-icon>
+                    <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
                   </template>
                   <span>{{ $t("settings.sync_running") }}</span>
                 </v-tooltip>
@@ -134,17 +121,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="grey"
-                    >
-                      mdi-cancel
-                    </v-icon>
+                    <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
                   </template>
                   <span>{{ $t("settings.provider_disabled") }}</span>
                 </v-tooltip>
@@ -156,15 +135,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="red"
-                    >
+                    <v-icon v-bind="tooltip" color="red">
                       mdi-alert-circle
                     </v-icon>
                   </template>
@@ -178,14 +151,9 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip">
-                      mdi-timer-sand
-                    </v-icon>
+                    <v-icon v-bind="tooltip"> mdi-timer-sand </v-icon>
                   </template>
                   <span>{{ $t("settings.not_loaded") }}</span>
                 </v-tooltip>
@@ -231,7 +199,7 @@
                     <v-list-item
                       v-if="
                         api.providers[config.instance_id]?.available &&
-                          provType == ProviderType.MUSIC
+                        provType == ProviderType.MUSIC
                       "
                       :title="$t('settings.sync')"
                       prepend-icon="mdi-sync"
@@ -240,11 +208,11 @@
                     <v-list-item
                       v-if="
                         !api.providerManifests[config.domain].builtin &&
-                          !api.providerManifests[config.domain].load_by_default
+                        !api.providerManifests[config.domain].load_by_default
                       "
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"
-                      @click="deleteProvider(config.instance_id)"
+                      @click="removeProvider(config.instance_id)"
                     />
                     <v-list-item
                       :title="$t('settings.reload')"
@@ -257,7 +225,7 @@
             </div>
           </template>
         </v-list-item>
-        <br>
+        <br />
       </v-card>
     </v-card-text>
   </section>
@@ -269,7 +237,6 @@ import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
 import { api } from "@/plugins/api";
 import {
-  ConfigUpdate,
   EventType,
   ProviderConfig,
   ProviderManifest,
@@ -312,19 +279,11 @@ onBeforeUnmount(unsub);
 
 // methods
 const loadItems = async function () {
-  providerConfigs.value = await api.getData("config/providers");
-  const manifests: ProviderManifest[] = await api.getData(
-    "providers/available"
-  );
-  for (const prov of manifests) {
-    api.providerManifests[prov.domain] = prov;
-  }
+  providerConfigs.value = await api.getProviderConfigs();
 };
 
-const deleteProvider = function (providerInstanceId: string) {
-  api.sendCommand("config/providers/remove", {
-    instance_id: providerInstanceId,
-  });
+const removeProvider = function (providerInstanceId: string) {
+  api.removeProviderConfig(providerInstanceId);
   providerConfigs.value = providerConfigs.value.filter(
     (x) => x.instance_id != providerInstanceId
   );
@@ -339,13 +298,14 @@ const addProvider = function (provider: ProviderManifest) {
 };
 
 const toggleEnabled = function (config: ProviderConfig) {
-  const update: ConfigUpdate = {
-    enabled: !config.enabled,
-  };
-  api.sendCommand("config/providers/update", {
-    instance_id: config.instance_id,
-    update,
-  });
+  config.enabled = !config.enabled;
+  api.saveProviderConfig(
+    config.domain,
+    {
+      enabled: config.enabled,
+    },
+    config.instance_id
+  );
 };
 
 const reloadProvider = function (providerInstanceId: string) {
