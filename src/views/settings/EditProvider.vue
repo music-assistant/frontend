@@ -61,7 +61,7 @@
       <v-divider />
       <edit-config
         v-if="config"
-        :config_entries="Object.values(config.values)"
+        :config-entries="Object.values(config.values)"
         :disabled="!config.enabled"
         @submit="onSubmit"
         @action="onAction"

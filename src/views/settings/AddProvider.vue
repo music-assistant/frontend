@@ -33,7 +33,7 @@
       <br />
       <br />
       <edit-config
-        :config_entries="config_entries"
+        :config-entries="config_entries"
         :disabled="false"
         @submit="onSubmit"
         @action="onAction"

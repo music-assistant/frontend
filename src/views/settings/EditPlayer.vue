@@ -69,7 +69,7 @@
       <edit-config
         v-if="config"
         :disabled="!config.enabled"
-        :config_entries="Object.values(config.values)"
+        :config-entries="Object.values(config.values)"
         @submit="onSubmit"
       />
     </v-card-text>
