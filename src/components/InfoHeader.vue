@@ -354,8 +354,8 @@ watch(
       store.topBarTitle = val.name;
 
       fanartImage.value =
-        (await getImageThumbForItem(compProps.item, ImageType.FANART)) ||
-        (await getImageThumbForItem(compProps.item, ImageType.THUMB));
+        (getImageThumbForItem(compProps.item, ImageType.FANART)) ||
+        (getImageThumbForItem(compProps.item, ImageType.THUMB));
 
       store.topBarContextMenuItems = getContextMenuItems([val], val);
     }

@@ -138,7 +138,7 @@ watch(
   async () => {
     if (curQueueItem.value?.media_item) {
       img.src =
-        (await getImageThumbForItem(
+        (getImageThumbForItem(
           curQueueItem.value.media_item,
           ImageType.THUMB
         )) || "";

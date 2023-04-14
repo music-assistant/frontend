@@ -198,11 +198,11 @@ watch(
   async () => {
     if (curQueueItem.value?.media_item) {
       fanartImage.value =
-        (await getImageThumbForItem(
+        (getImageThumbForItem(
           curQueueItem.value.media_item,
           ImageType.FANART
         )) ||
-        (await getImageThumbForItem(
+        (getImageThumbForItem(
           curQueueItem.value.media_item,
           ImageType.THUMB
         ));

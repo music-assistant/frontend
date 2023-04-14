@@ -232,14 +232,13 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { mdiChevronDown } from "@mdi/js";
 
 import { watchEffect, ref, computed, watch } from "vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import QualityDetailsBtn from "./QualityDetailsBtn.vue";
 import router from "@/plugins/router";
-import MediaItemThumb, {
+import {
   getImageThumbForItem,
 } from "@/components/MediaItemThumb.vue";
 import api from "@/plugins/api";
@@ -285,11 +284,11 @@ watch(
   async () => {
     if (curQueueItem.value?.media_item) {
       fanartImage.value =
-        (await getImageThumbForItem(
+        (getImageThumbForItem(
           curQueueItem.value.media_item,
           ImageType.FANART
         )) ||
-        (await getImageThumbForItem(
+        (getImageThumbForItem(
           curQueueItem.value.media_item,
           ImageType.THUMB
         ));

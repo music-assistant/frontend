@@ -78,7 +78,7 @@ watch(
   async (newVal) => {
     if (newVal) {
       imgData.value =
-        (await getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value)) ||
+        (getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value)) ||
         fallbackImage.value;
     }
   },
@@ -141,11 +141,11 @@ export const getMediaItemImage = function (
   }
 };
 
-export const getImageThumbForItem = async function (
+export const getImageThumbForItem = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
   size?: number
-): Promise<string | undefined> {
+): string | undefined {
   if (!mediaItem) return;
   let imageUrl = "";
   // find image in mediaitem
