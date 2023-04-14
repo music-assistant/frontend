@@ -6,7 +6,7 @@
   >
     <template #prepend>
       <v-menu location="bottom end">
-        <template #activator="{ props }">
+        <template #activator="{}">
           <v-btn
             icon="mdi-playlist-play"
             variant="plain"

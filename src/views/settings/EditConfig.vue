@@ -333,7 +333,7 @@ import {
 import { computed, watch } from "vue";
 
 export interface Props {
-  config_entries: ConfigEntry[];
+  configEntries: ConfigEntry[];
   disabled: boolean;
 }
 
@@ -378,7 +378,7 @@ const requiredValuesPresent = computed(() => {
 });
 const currentValues = computed(() => {
   const values: Record<string, ConfigValueType> = {};
-  for (const entry of props.config_entries!) {
+  for (const entry of props.configEntries!) {
     // filter out undefined values
     if (entry.value == undefined) continue;
     // filter out obfuscated strings
@@ -395,7 +395,7 @@ const currentValues = computed(() => {
 
 // watchers
 watch(
-  () => props.config_entries,
+  () => props.configEntries,
   (val) => {
     entries.value = [];
     for (const entry of val || []) {
