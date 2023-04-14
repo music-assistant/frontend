@@ -97,7 +97,7 @@
                       v-if="!api.players[config.player_id]?.available"
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"
-                      @click="deletePlayerConfig(config.player_id)"
+                      @click="removePlayerConfig(config.player_id)"
                     />
                   </v-list>
                 </v-menu>
@@ -117,7 +117,6 @@ import { api } from "@/plugins/api";
 import {
   EventType,
   PlayerConfig,
-  ConfigUpdate,
 } from "@/plugins/api/interfaces";
 import ProviderIcon  from "@/components/ProviderIcon.vue";
 import { onBeforeUnmount, watch } from "vue";
@@ -141,13 +140,11 @@ onBeforeUnmount(unsub);
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = await api.getData("config/players");
+  playerConfigs.value = await api.getPlayerConfigs();
 };
 
-const deletePlayerConfig = function (playerId: string) {
-  api.sendCommand("config/players/remove", {
-    player_id: playerId,
-  });
+const removePlayerConfig = function (playerId: string) {
+  api.removePlayerConfig(playerId);
   playerConfigs.value = playerConfigs.value.filter(
     (x) => x.player_id != playerId
   );
@@ -161,10 +158,8 @@ const editPlayer = function (playerId: string) {
 };
 
 const toggleEnabled = function (config: PlayerConfig) {
-  const update: ConfigUpdate = {
-    enabled: !config.enabled
-  }
-  api.sendCommand("config/players/update", { player_id: config.player_id, update });
+  config.enabled = !config.enabled;
+  api.savePlayerConfig(config.player_id, {enabled: config.enabled })
 };
 
 const getPlayerName = function (playerConfig: PlayerConfig) {

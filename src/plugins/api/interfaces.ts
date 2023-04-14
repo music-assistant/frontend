@@ -130,6 +130,7 @@ export enum EventType {
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
+  AUTH_SESSION = "auth_session",
   // special types for local subscriptions only
   ALL = "*",
 }
@@ -179,6 +180,7 @@ export enum ConfigEntryType {
   FLOAT = "float",
   LABEL = "label",
   DIVIDER = "divider",
+  ACTION = "action",
 }
 
 //// api
@@ -207,9 +209,8 @@ export interface ChunkedResultMessage extends ResultMessageBase {
   // Message sent when the result of a command is sent in multiple chunks.
 
   result: any;
-  is_last_chunk: boolean
+  is_last_chunk: boolean;
 }
-
 
 export interface ErrorResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
@@ -274,16 +275,17 @@ export interface ConfigEntry {
   hidden: boolean;
   // advanced: this is an advanced setting (frontend hides it in some corner)
   advanced: boolean;
-}
+  // action: (configentry)action that is needed to get the value for this entry
+  action?: string;
+  // action_label: default label for the action when no translation for the action is present
+  action_label?: string;
 
-export interface ConfigEntryValue extends ConfigEntry {
-  // Config Entry with its value parsed.
   value?: ConfigValueType;
 }
 
 export interface Config {
   // Base Configuration object.
-  values: Record<string, ConfigEntryValue>;
+  values: Record<string, ConfigEntry>;
 }
 
 export interface ProviderConfig extends Config {
@@ -308,12 +310,6 @@ export interface PlayerConfig extends Config {
   name?: string;
   // default_name: default name to use when there is name available
   default_name?: string;
-}
-
-export interface ConfigUpdate {
-  enabled?: boolean;
-  name?: string;
-  values?: Record<string, ConfigValueType>;
 }
 
 //// media_items
@@ -600,5 +596,5 @@ export interface SyncTask {
 export enum MobileDeviceType {
   ALL,
   TABLET,
-  PHONE
+  PHONE,
 }
