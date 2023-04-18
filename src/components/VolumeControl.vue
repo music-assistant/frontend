@@ -77,7 +77,7 @@
         <!-- sync button -->
         <div
           v-if="
-            childPlayer.hidden_by.length == 0 &&
+            childPlayer.player_id == player.player_id &&
             !childPlayer.synced_to &&
             !childPlayer.group_childs.length &&
             Object.values(api.players).filter(
@@ -116,7 +116,9 @@
         </div>
         <!-- unsync button -->
         <div
-          v-if="childPlayer.synced_to && childPlayer.hidden_by.length == 0"
+          v-if="
+            childPlayer.synced_to && childPlayer.synced_to == player.player_id
+          "
           class="syncbtn"
         >
           <v-btn
