@@ -238,6 +238,6 @@ const setGroupPower = function (player: Player, powered: boolean) {
 .volumerow .v-slider .v-slider__container {
   margin-left: 57px;
   margin-right: 15px;
-  margin-top: -10px;
+  margin-top: 7px;
 }
 </style>
