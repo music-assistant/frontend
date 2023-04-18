@@ -51,7 +51,6 @@
           collapse-icon="mdi-chevron-up"
           @click="
             store.selectedPlayer = player;
-            scrollToTop(player.player_id);
           "
         >
           <v-list-item density="compact">
@@ -146,6 +145,7 @@ watch(
     if (newVal) {
       // remember last selected playerId
       localStorage.setItem("mass.LastPlayerId", newVal.player_id);
+      scrollToTop(newVal.player_id);
     }
   }
 );

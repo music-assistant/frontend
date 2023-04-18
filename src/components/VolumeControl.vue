@@ -107,7 +107,7 @@
                   api.playerCommandSync(
                     childPlayer.player_id,
                     parentPlayer.player_id
-                  )
+                  );store.selectedPlayer = parentPlayer;
                 "
               />
               <v-divider />
@@ -163,6 +163,7 @@
 <script setup lang="ts">
 import { Player, PlayerType } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
+import { store } from "@/plugins/store";
 import { truncateString, getPlayerName } from "../utils";
 
 export interface Props {
