@@ -55,16 +55,6 @@
       </div>
     </template>
 
-    <!-- append -->
-    <template #append>
-      <!-- format -->
-      <v-img
-        v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_3"
-        style="margin-left: 15px"
-        :src="iconSmallFlac"
-        width="30"
-      />
-    </template>
     <!-- subtitle -->
     <template #subtitle>
       <!-- track: artists(s) + album -->
