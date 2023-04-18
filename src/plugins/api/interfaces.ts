@@ -240,7 +240,7 @@ export type MessageType =
 
 // config entries
 
-export type ConfigValueType = string | number | boolean | null;
+export type ConfigValueType = string | number | boolean | string[] | number[] | null;
 
 export interface ConfigValueOption {
   // Model for a value with seperated name/value.
