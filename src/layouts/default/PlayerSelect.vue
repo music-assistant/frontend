@@ -87,7 +87,7 @@
                 {{ $t("state." + api.queues[player.active_source].state) }} ({{ api.queues[player.active_source].display_name }})
               </div>
               <div
-                v-else
+                v-else-if="api.queues[player.player_id]"
                 class="text-body-2"
                 style="line-height: 1em"
               >
