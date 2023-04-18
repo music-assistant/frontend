@@ -92,7 +92,7 @@
                 class="text-body-2"
                 style="line-height: 1em"
               >
-                {{ player.state }}
+                {{ $t("state." + api.queues[player.player_id].state) }}
               </div>
             </template>
           </v-list-item>
