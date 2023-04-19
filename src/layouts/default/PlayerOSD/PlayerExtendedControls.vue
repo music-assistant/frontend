@@ -4,12 +4,7 @@
     v-if="activePlayerQueue && componentProps.buttonVisibility.queue"
     icon
     variant="plain"
-    @click="
-      componentProps.showQueueDialog
-        ? // eslint-disable-next-line vue/no-mutating-props
-          (componentProps.showQueueDialog = true)
-        : $router.push('/playerqueue/')
-    "
+    @click="store.showFullscreenPlayer = false;$router.push('/playerqueue/')"
   >
     <v-icon icon="mdi-playlist-music" />
   </v-btn>
@@ -149,7 +144,6 @@ export interface Props {
   // eslint-disable-next-line vue/require-default-prop
   volumeSize?: string;
   responsiveVolumeSize?: boolean;
-  showQueueDialog?: boolean;
   buttonVisibility?: {
     queue?: boolean;
     player?: boolean;
@@ -160,7 +154,6 @@ export interface Props {
 const componentProps = withDefaults(defineProps<Props>(), {
   volumeSize: "150px",
   responsiveVolumeSize: true,
-  showQueueDialog: false,
   buttonVisibility: () => ({
     queue: true,
     player: true,

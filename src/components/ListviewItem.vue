@@ -242,6 +242,7 @@
                 showMenu
             "
             class="listitem-action"
+            style="margin-right:-13px"
           >
             <v-btn
               variant="plain"

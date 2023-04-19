@@ -7,28 +7,14 @@
   >
     <template #activator="{ props }">
       <v-btn
-        icon
         :ripple="false"
         v-bind="props"
-        variant="plain"
         height="25"
         width="40"
-        class="v-list-item-subtitle mediadetails-streamdetails small-btn"
+        class="mediadetails-streamdetails"
+        elevation="0"
       >
-        <v-img
-          contain
-          :src="
-            streamDetails.bit_depth > 16
-              ? iconHiRes
-              : getContentTypeIcon(streamDetails.content_type)
-          "
-          height="25"
-          :style="
-            $vuetify.theme.current.dark ? '' : 'filter: invert(100%)'
-          "
-          class="v-list-item-subtitle mediadetails-streamdetails"
-          v-bind="props"
-        />
+      {{ streamDetails.content_type.toUpperCase() }}
       </v-btn>
     </template>
     <v-card
@@ -138,5 +124,15 @@ const streamDetails = computed(() => {
 
 .list-item>div.v-list-item__prepend {
     padding-right: 10px;
+}
+.mediadetails-streamdetails {
+  width: 30px;
+  height: 14px;
+  border-radius: 2px;
+  font-size: x-small;
+  font-weight: 800;
+  min-width: 55px;
+  padding: 0;
+  box-shadow: none;
 }
 </style>

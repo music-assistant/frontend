@@ -1,8 +1,5 @@
 <template>
-  <v-list
-    style="overflow: hidden"
-    lines="two"
-  >
+  <v-list style="overflow: hidden" lines="two">
     <!-- special group volume/power -->
     <div
       v-if="player.group_childs.length > 0"
@@ -19,10 +16,7 @@
       >
         <v-icon icon="mdi-power" />
       </v-btn>
-      <span
-        class="text-body-2"
-        style="position: absolute; margin-top: 3px"
-      >{{
+      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
         getPlayerName(player, 30)
       }}</span>
       <div
@@ -76,35 +70,26 @@
             :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'"
           />
         </v-btn>
-        <span
-          class="text-body-2"
-          style="position: absolute; margin-top: 3px"
-        >{{
+        <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
           truncateString(childPlayer.display_name, 27)
         }}</span>
 
         <!-- sync button -->
         <div
           v-if="
+            childPlayer.player_id == player.player_id &&
             !childPlayer.synced_to &&
-              !childPlayer.group_childs.length &&
-              Object.values(api.players).filter(
-                (x) =>
-                  !x.synced_to && x.can_sync_with.includes(childPlayer.player_id)
-              ).length > 0
+            !childPlayer.group_childs.length &&
+            Object.values(api.players).filter(
+              (x) =>
+                !x.synced_to && x.can_sync_with.includes(childPlayer.player_id)
+            ).length > 0
           "
           class="syncbtn"
         >
-          <v-menu
-            location="bottom end"
-            style="z-index: 999999"
-          >
+          <v-menu location="bottom end" style="z-index: 999999">
             <template #activator="{ props: menu }">
-              <v-btn
-                icon
-                v-bind="menu"
-                variant="plain"
-              >
+              <v-btn icon v-bind="menu" variant="plain">
                 <v-icon>mdi-link-variant</v-icon>
               </v-btn>
             </template>
@@ -122,7 +107,7 @@
                   api.playerCommandSync(
                     childPlayer.player_id,
                     parentPlayer.player_id
-                  )
+                  );store.selectedPlayer = parentPlayer;
                 "
               />
               <v-divider />
@@ -131,7 +116,9 @@
         </div>
         <!-- unsync button -->
         <div
-          v-if="childPlayer.synced_to"
+          v-if="
+            childPlayer.synced_to && childPlayer.synced_to == player.player_id
+          "
           class="syncbtn"
         >
           <v-btn
@@ -176,6 +163,7 @@
 <script setup lang="ts">
 import { Player, PlayerType } from "../plugins/api/interfaces";
 import { api } from "../plugins/api";
+import { store } from "@/plugins/store";
 import { truncateString, getPlayerName } from "../utils";
 
 export interface Props {
@@ -238,6 +226,6 @@ const setGroupPower = function (player: Player, powered: boolean) {
 .volumerow .v-slider .v-slider__container {
   margin-left: 57px;
   margin-right: 15px;
-  margin-top: -10px;
+  margin-top: 7px;
 }
 </style>

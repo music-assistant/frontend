@@ -891,8 +891,11 @@ export class MusicAssistantApi {
     radio_mode?: boolean,
     queue_id?: string
   ) {
-    if (!queue_id) {
+    if (!queue_id && store.selectedPlayer && store.selectedPlayer?.active_source in this.players) {
       queue_id = store.selectedPlayer?.active_source;
+    }
+    else if (!queue_id) {
+      queue_id = store.selectedPlayer?.player_id;
     }
     this.sendCommand("players/queue/play_media", {
       queue_id,

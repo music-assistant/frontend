@@ -51,7 +51,6 @@
           collapse-icon="mdi-chevron-up"
           @click="
             store.selectedPlayer = player;
-            scrollToTop(player.player_id);
           "
         >
           <v-list-item density="compact">
@@ -88,11 +87,11 @@
                 {{ $t("state." + api.queues[player.active_source].state) }} ({{ api.queues[player.active_source].display_name }})
               </div>
               <div
-                v-else
+                v-else-if="api.queues[player.player_id]"
                 class="text-body-2"
                 style="line-height: 1em"
               >
-                {{ player.state }}
+                {{ $t("state." + api.queues[player.player_id].state) }}
               </div>
             </template>
           </v-list-item>
@@ -146,6 +145,7 @@ watch(
     if (newVal) {
       // remember last selected playerId
       localStorage.setItem("mass.LastPlayerId", newVal.player_id);
+      scrollToTop(newVal.player_id);
     }
   }
 );

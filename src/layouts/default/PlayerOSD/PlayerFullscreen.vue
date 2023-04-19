@@ -10,7 +10,9 @@
         $vuetify.theme.current.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
-      } 100%), ${activePlayerQueue?.active ? `url(${fanartImage})` : undefined};
+      } 100%), ${
+        activePlayerQueue?.active ? `url(${backgroundImage})` : undefined
+      };
                                           background-size: cover; background-position: center; border: none;`"
     >
       <v-toolbar dark color="transparent">
@@ -39,16 +41,14 @@
       <div class="main">
         <div style="margin-top: 10px; text-align: -webkit-center">
           <img
-            v-if="curQueueItem"
+            v-if="coverImage"
             style="
               height: min(calc(100vw - 40px), calc(100vh - 330px));
               width: min(calc(100vw - 40px), calc(100vh - 330px));
             "
             alt="cover"
-            :src="fanartImage"
+            :src="coverImage"
           />
-
-          <IconBase v-else style="opacity: 50%" height="50" name="fallback" />
         </div>
 
         <div style="padding-top: 3vh; text-align: center">
@@ -83,7 +83,8 @@
                   ? itemClick(curQueueItem.media_item)
                   : ''
               "
-            ><!-- name + version (if present) -->
+            >
+              <!-- name + version (if present) -->
               {{
                 `${curQueueItem.media_item.name} ${
                   "version" in curQueueItem.media_item &&
@@ -119,7 +120,8 @@
                   : ''
               "
             >
-              {{ getArtistsString((curQueueItem.media_item as Track).artists) }} •
+              {{ getArtistsString((curQueueItem.media_item as Track).artists) }}
+              •
               {{ (curQueueItem.media_item as Track).album.name }}
             </h4>
             <!-- track/album falback: artist present -->
@@ -218,7 +220,6 @@
                   <!-- player control buttons -->
                   <PlayerExtendedControls
                     :responsive-volume-size="true"
-                    :show-queue-dialog="true"
                   />
                 </div>
               </div>
@@ -233,29 +234,26 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import { watchEffect, ref, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import QualityDetailsBtn from "./QualityDetailsBtn.vue";
 import router from "@/plugins/router";
-import {
-  getImageThumbForItem,
-} from "@/components/MediaItemThumb.vue";
+import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
 import api from "@/plugins/api";
 import {
   MediaItemType,
   ImageType,
-  PlayerState,
   MediaType,
-ItemMapping,
-Track,
+  ItemMapping,
+  Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { getArtistsString, getResponsiveBreakpoints } from "@/utils";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 // local refs
-const fanartImage = ref();
+const fullTrackDetails = ref<Track>();
 
 // computed properties
 const activePlayerQueue = computed(() => {
@@ -269,6 +267,27 @@ const curQueueItem = computed(() => {
   return undefined;
 });
 
+const coverImage = computed(() => {
+  // return the default cover/thumb image for the active queueItem
+  if (curQueueItem.value) {
+    return getImageThumbForItem(curQueueItem.value, ImageType.THUMB);
+  }
+  return undefined;
+});
+const backgroundImage = computed(() => {
+  // prefer fanart from full track details
+  if (fullTrackDetails.value) {
+    // prefer artist fanart image
+    const artistFanart = getImageThumbForItem(fullTrackDetails.value, ImageType.FANART);
+    if (artistFanart) return artistFanart;
+    // fallback to artist thumb
+    const artistThumb = getImageThumbForItem(fullTrackDetails.value.artists[0], ImageType.THUMB);
+    if (artistThumb) return artistThumb;
+  }
+  // fallback to just the cover image
+  return coverImage.value;
+});
+
 // methods
 const itemClick = function (item: MediaItemType | ItemMapping) {
   router.push({
@@ -280,55 +299,19 @@ const itemClick = function (item: MediaItemType | ItemMapping) {
 
 // watchers
 watch(
-  () => curQueueItem.value?.queue_item_id,
-  async () => {
-    if (curQueueItem.value?.media_item) {
-      fanartImage.value =
-        (getImageThumbForItem(
-          curQueueItem.value.media_item,
-          ImageType.FANART
-        )) ||
-        (getImageThumbForItem(
-          curQueueItem.value.media_item,
-          ImageType.THUMB
-        ));
+  () => curQueueItem.value,
+  async (newValue) => {
+    if (
+      newValue &&
+      newValue.media_item &&
+      newValue.media_item.media_type == MediaType.TRACK
+    ) {
+      fullTrackDetails.value = (await api.getItemByUri(
+        newValue.media_item.uri, undefined, false
+      )) as Track;
     }
   }
 );
-
-watchEffect(async () => {
-  // pick default/start player at startup
-  const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
-  if (lastPlayerId) {
-    if (lastPlayerId in api.players) {
-      store.selectedPlayer = api.players[lastPlayerId];
-      return;
-    }
-  }
-  if (api?.players && !store.selectedPlayer) {
-    // prefer playing player
-    for (const playerId in api?.players) {
-      const player = api.players[playerId];
-      if (player.state == PlayerState.PLAYING) {
-        store.selectedPlayer = player;
-        return;
-      }
-    }
-    // fallback to just a player with item in queue
-    for (const playerId in api?.queues) {
-      const player = api.players[playerId];
-      if (player.elapsed_time) {
-        store.selectedPlayer = player;
-        return;
-      }
-    }
-    // last resort: just the first queue
-    for (const playerId in api?.queues) {
-      store.selectedPlayer = api.players[playerId];
-      return;
-    }
-  }
-});
 </script>
 
 <style scoped>

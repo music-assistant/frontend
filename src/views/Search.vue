@@ -162,7 +162,7 @@ const showContextMenu = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const throttleId = ref();
 
-const viewFilters = ["topresult", "artists", "albums", "tracks", "playlists"];
+const viewFilters = ["topresult", "artists", "albums", "tracks", "playlists", "radios"];
 
 // computed properties
 const thumbSize = computed(() => {
