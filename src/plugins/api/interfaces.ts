@@ -572,8 +572,10 @@ export interface ProviderManifest {
   builtin: boolean;
   // load_by_default: load this provider by default (mostly used together with `builtin`)
   load_by_default: boolean;
-  // icon: url or image data
+  // icon: material design icon (starts with md: or mdi:) or base64 encoded image
   icon?: string;
+  // icon_dark: same as icon but seperate dark icon if needed.
+  icon_dark?: string;
 }
 
 export interface ProviderInstance {

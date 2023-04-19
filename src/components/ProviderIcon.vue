@@ -22,8 +22,12 @@
       :icon="api.providerManifests[domain]!.icon"
     />
     <v-img
+      v-else-if="$vuetify.theme.current.dark && api.providerManifests[domain]!.icon_dark"
+      :width="size"
+      :src="api.providerManifests[domain]!.icon_dark"
+    />
+    <v-img
       v-else
-      dark
       :width="size"
       :src="api.providerManifests[domain]!.icon"
     />
