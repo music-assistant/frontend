@@ -49,3 +49,14 @@ yarn build
 ```sh
 yarn lint
 ```
+
+# Translation Management
+
+We use Lokalise to manage the translation files for the Music Assistant frontend
+
+[<img src="https://github.com/lokalise/i18n-ally/raw/screenshots/lokalise-logo.png?raw=true" alt="Lokalise logo" width="275px">](https://lokalise.com)
+
+### Contributing
+
+If you wish to assist in translating Music Assistant into a language that it currently does not support,
+please reach out on our Discord channel for details on how you can contribute.
