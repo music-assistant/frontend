@@ -57,7 +57,7 @@
               (x) =>
                 x.type == ProviderType.MUSIC &&
                 x.domain in api.providerManifests &&
-                x.domain != 'url'
+                !api.providerManifests[x.domain].hidden
             ).length == 0
           "
           color="primary"
@@ -73,7 +73,10 @@
         <v-list-item
           v-for="config in providerConfigs
             .filter(
-              (x) => x.type == provType && x.domain in api.providerManifests
+              (x) =>
+                x.type == provType &&
+                x.domain in api.providerManifests &&
+                !api.providerManifests[x.domain].hidden
             )
             .sort((a, b) =>
               (a.name || api.providerManifests[a.domain].name).toUpperCase() >
@@ -255,13 +258,14 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 // computed properties
 const availableProviders = computed(() => {
   // providers available for setup
-  // filter out builtin providers
+  // filter out hidden providers
   // filter out providers that are already setup (and multi instance not allowed)
   return Object.values(api.providerManifests)
     .filter(
       (x) =>
-        !x.builtin &&
-        (x.multi_instance || !providerConfigs.value.find((x) => x.domain))
+        !x.hidden &&
+        // provider is either multi instance or does not exist at all
+        (x.multi_instance || !providerConfigs.value.find((y) => y.domain == x.domain))
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >
