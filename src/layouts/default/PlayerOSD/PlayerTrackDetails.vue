@@ -110,7 +110,7 @@
         {{ curQueueItem.media_item.metadata.description }}
       </div>
       <!-- queue empty message -->
-      <div class="line-clamp-1" v-else-if="activePlayerQueue">
+      <div class="line-clamp-1" v-else-if="activePlayerQueue && activePlayerQueue.items == 0">
         {{ $t("queue_empty") }}
       </div>
       <!-- 3rd party source active -->

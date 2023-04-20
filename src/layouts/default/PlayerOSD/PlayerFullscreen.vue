@@ -100,15 +100,13 @@
           <div
             v-if="
               activePlayerQueue?.active &&
-              curQueueItem &&
-              curQueueItem.media_item?.media_type == MediaType.TRACK
+              curQueueItem
             "
             @click="itemClick((curQueueItem!.media_item as Track).artists[0])"
           >
             <!-- track: artists(s) + album -->
             <h4
               v-if="
-                curQueueItem &&
                 curQueueItem.media_item?.media_type == MediaType.TRACK &&
                 'album' in curQueueItem.media_item &&
                 curQueueItem.media_item.album
@@ -127,7 +125,6 @@
             <!-- track/album falback: artist present -->
             <h4
               v-else-if="
-                curQueueItem &&
                 curQueueItem.media_item &&
                 curQueueItem.media_item?.media_type == MediaType.TRACK &&
                 (curQueueItem.media_item as Track).artists.length > 0
@@ -158,7 +155,7 @@
               {{ curQueueItem.media_item.metadata.description }}
             </h4>
             <!-- queue empty message -->
-            <h4 v-else-if="activePlayerQueue" class="subtitle">
+            <h4 v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="subtitle">
               {{ $t("queue_empty") }}
             </h4>
             <!-- 3rd party source active -->
