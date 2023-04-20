@@ -64,7 +64,7 @@
             v-bind="props"
             icon
             variant="plain"
-            @click="toggleAlbumArtistsFilter"
+            @click="emit('toggleAlbumArtistsOnly');loadData(true);"
           >
             <v-icon
               :icon="
@@ -348,6 +348,7 @@ export interface Props {
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
+  albumArtistsOnlyFilter?: boolean;
   updateAvailable?: boolean;
   loadData: (
     offset: number,
@@ -389,13 +390,12 @@ const selectedItems = ref<MediaItemType[]>([]);
 const showContextMenu = ref(false);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
-const albumArtistsOnlyFilter = ref(false);
 
 // computed properties
 
 // emitters
 const emit = defineEmits<{
-  (e: "toggleAlbumArtistsOnly", value: boolean): void;
+  (e: "toggleAlbumArtistsOnly"): void;
   (e: "refreshClicked"): void;
 }>();
 
@@ -441,17 +441,6 @@ const toggleLibraryFilter = function () {
   inLibraryOnly.value = !inLibraryOnly.value;
   const inLibraryOnlyStr = inLibraryOnly.value ? "true" : "false";
   localStorage.setItem(`libraryFilter.${props.itemtype}`, inLibraryOnlyStr);
-  loadData(true);
-};
-
-const toggleAlbumArtistsFilter = function () {
-  albumArtistsOnlyFilter.value = !albumArtistsOnlyFilter.value;
-  const albumArtistsOnlyStr = albumArtistsOnlyFilter.value ? "true" : "false";
-  localStorage.setItem(
-    `albumArtistsFilter.${props.itemtype}`,
-    albumArtistsOnlyStr
-  );
-  emit("toggleAlbumArtistsOnly", albumArtistsOnlyFilter.value);
   loadData(true);
 };
 
@@ -629,16 +618,6 @@ onMounted(() => {
     }
   }
 
-  // get stored/default albumArtistsOnlyFilter for this itemtype
-  if (props.showAlbumArtistsOnlyFilter !== false) {
-    const albumArtistsOnlyStr = localStorage.getItem(
-      `albumArtistsFilter.${props.itemtype}`
-    );
-    if (albumArtistsOnlyStr && albumArtistsOnlyStr == "true") {
-      albumArtistsOnlyFilter.value = true;
-      emit("toggleAlbumArtistsOnly", albumArtistsOnlyFilter.value);
-    }
-  }
   // get stored searchquery
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;

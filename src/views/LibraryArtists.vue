@@ -5,11 +5,8 @@
     :show-providers="true"
     :load-data="loadItems"
     :show-album-artists-only-filter="true"
-    @toggle-album-artists-only="
-      (e) => {
-        albumArtistsOnly = e;
-      }
-    "
+    :album-artists-only-filter="albumArtistsOnly"
+    @toggle-album-artists-only="toggleAlbumArtistsFilter"
   />
 </template>
 
@@ -23,7 +20,13 @@ import { store } from "../plugins/store";
 
 const { t } = useI18n();
 const items = ref<Artist[]>([]);
-const albumArtistsOnly = ref(false);
+const albumArtistsOnly = ref(true);
+
+// load album artists filter from storage
+const albumArtistsOnlyStr = localStorage.getItem("albumArtistsFilter");
+if (albumArtistsOnlyStr) {
+  albumArtistsOnly.value = albumArtistsOnlyStr == "true";
+}
 
 const loadItems = async function (
   offset: number,
@@ -37,19 +40,25 @@ const loadItems = async function (
     return await api.getAlbumArtists(library, search, limit, offset, sort);
   } else {
     const items = await api.getArtists(library, search, limit, offset, sort);
-    console.log("items", items)
-    return items
+    console.log("items", items);
+    return items;
   }
 };
 
+const toggleAlbumArtistsFilter = function () {
+  albumArtistsOnly.value = !albumArtistsOnly.value;
+  const albumArtistsOnlyStr = albumArtistsOnly.value ? "true" : "false";
+  localStorage.setItem("albumArtistsFilter", albumArtistsOnlyStr);
+};
+
 store.topBarContextMenuItems = [
-{
-    label: 'sync_now',
-    labelArgs: [t('artists')],
+  {
+    label: "sync_now",
+    labelArgs: [t("artists")],
     action: () => {
       api.startSync([MediaType.ARTIST]);
     },
-    icon: 'mdi-sync',
+    icon: "mdi-sync",
   },
 ];
 onBeforeUnmount(() => {
