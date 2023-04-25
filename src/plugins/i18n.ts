@@ -20,7 +20,7 @@ const messages = {
 export const i18n = createI18n({
   legacy: false,
   globalInjection: true,
-  locale: navigator.language.split("-")[0],
+  locale: navigator.language.split('-')[0],
   fallbackLocale: 'en',
   messages,
 });

@@ -6,28 +6,11 @@
       class="volumerow"
       :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
     >
-      <v-btn
-        icon
-        variant="plain"
-        width="60"
-        height="30"
-        size="x-large"
-        @click="setGroupPower(player, !player.powered)"
-      >
+      <v-btn icon variant="plain" width="60" height="30" size="x-large" @click="setGroupPower(player, !player.powered)">
         <v-icon icon="mdi-power" />
       </v-btn>
-      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
-        getPlayerName(player, 30)
-      }}</span>
-      <div
-        class="text-caption"
-        style="
-          position: absolute;
-          width: 60px;
-          text-align: center;
-          margin-left: 0px;
-        "
-      >
+      <span class="text-body-2" style="position: absolute; margin-top: 3px">{{ getPlayerName(player, 30) }}</span>
+      <div class="text-caption" style="position: absolute; width: 60px; text-align: center; margin-left: 0px">
         {{ player.group_volume }}
       </div>
 
@@ -41,15 +24,10 @@
         :disabled="!player.powered"
         :model-value="Math.round(player.group_volume)"
         style="margin-left: 5px"
-        @update:model-value="
-          api.playerCommandGroupVolume(player.player_id, $event)
-        "
+        @update:model-value="api.playerCommandGroupVolume(player.player_id, $event)"
       />
     </div>
-    <v-divider
-      v-if="player.group_childs.length > 0"
-      style="margin-top: 10px; margin-bottom: 10px"
-    />
+    <v-divider v-if="player.group_childs.length > 0" style="margin-top: 10px; margin-bottom: 10px" />
 
     <div
       v-for="childPlayer in getVolumePlayers(player)"
@@ -66,9 +44,7 @@
           size="x-large"
           @click="api.playerCommandPowerToggle(childPlayer.player_id)"
         >
-          <v-icon
-            :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'"
-          />
+          <v-icon :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
         </v-btn>
         <span class="text-body-2" style="position: absolute; margin-top: 3px">{{
           truncateString(childPlayer.display_name, 27)
@@ -77,13 +53,10 @@
         <!-- sync button -->
         <div
           v-if="
-            childPlayer.player_id == player.player_id &&
             !childPlayer.synced_to &&
             !childPlayer.group_childs.length &&
-            Object.values(api.players).filter(
-              (x) =>
-                !x.synced_to && x.can_sync_with.includes(childPlayer.player_id)
-            ).length > 0
+            Object.values(api.players).filter((x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id))
+              .length > 0
           "
           class="syncbtn"
         >
@@ -94,51 +67,27 @@
               </v-btn>
             </template>
             <v-list>
-              <v-card-subtitle>{{ $t("sync_player_to") }}</v-card-subtitle>
+              <v-card-subtitle>{{ $t('sync_player_to') }}</v-card-subtitle>
               <v-list-item
                 v-for="parentPlayer of Object.values(api.players).filter(
-                  (x) =>
-                    !x.synced_to &&
-                    x.can_sync_with.includes(childPlayer.player_id)
+                  (x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id),
                 )"
                 :key="parentPlayer.player_id"
                 :title="parentPlayer.display_name"
-                @click="
-                  api.playerCommandSync(
-                    childPlayer.player_id,
-                    parentPlayer.player_id
-                  );store.selectedPlayer = parentPlayer;
-                "
+                @click="api.playerCommandSync(childPlayer.player_id, parentPlayer.player_id)"
               />
               <v-divider />
             </v-list>
           </v-menu>
         </div>
         <!-- unsync button -->
-        <div
-          v-if="
-            childPlayer.synced_to && childPlayer.synced_to == player.player_id
-          "
-          class="syncbtn"
-        >
-          <v-btn
-            icon
-            variant="plain"
-            @click="api.playerCommandUnSync(childPlayer.player_id)"
-          >
+        <div v-if="childPlayer.synced_to" class="syncbtn">
+          <v-btn icon variant="plain" @click="api.playerCommandUnSync(childPlayer.player_id)">
             <v-icon>mdi-link-variant-off</v-icon>
           </v-btn>
         </div>
       </span>
-      <div
-        class="text-caption"
-        style="
-          position: absolute;
-          width: 60px;
-          text-align: center;
-          margin-left: 0px;
-        "
-      >
+      <div class="text-caption" style="position: absolute; width: 60px; text-align: center; margin-left: 0px">
         {{ childPlayer.volume_level }}
       </div>
 
@@ -152,19 +101,16 @@
         :disabled="!childPlayer.powered"
         :model-value="Math.round(childPlayer.volume_level)"
         style="margin-left: 5px"
-        @update:model-value="
-          api.playerCommandVolumeSet(childPlayer.player_id, $event)
-        "
+        @update:model-value="api.playerCommandVolumeSet(childPlayer.player_id, $event)"
       />
     </div>
   </v-list>
 </template>
 
 <script setup lang="ts">
-import { Player, PlayerType } from "../plugins/api/interfaces";
-import { api } from "../plugins/api";
-import { store } from "@/plugins/store";
-import { truncateString, getPlayerName } from "../utils";
+import { Player, PlayerType } from '../plugins/api/interfaces';
+import { api } from '../plugins/api';
+import { truncateString, getPlayerName } from '../utils';
 
 export interface Props {
   player: Player;
@@ -183,9 +129,7 @@ const getVolumePlayers = function (player: Player) {
       items.push(volumeChild);
     }
   }
-  items.sort((a, b) =>
-    a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1
-  );
+  items.sort((a, b) => (a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1));
   return items;
 };
 const setGroupPower = function (player: Player, powered: boolean) {
@@ -193,7 +137,7 @@ const setGroupPower = function (player: Player, powered: boolean) {
     // send power command to all group child players
     for (const childPlayer of getVolumePlayers(player)) {
       // bypass api throttling by sending the command directly
-      api.sendCommand(`players/cmd/power`, {
+      api.sendCommand('players/cmd/power', {
         player_id: childPlayer.player_id,
         powered,
       });
@@ -226,6 +170,6 @@ const setGroupPower = function (player: Player, powered: boolean) {
 .volumerow .v-slider .v-slider__container {
   margin-left: 57px;
   margin-right: 15px;
-  margin-top: 7px;
+  margin-top: -10px;
 }
 </style>

@@ -2,141 +2,77 @@
 <template>
   <section>
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar
-      density="compact"
-      variant="flat"
-      color="transparent"
-    >
+    <v-toolbar density="compact" variant="flat" color="transparent">
       <v-tooltip location="bottom">
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
-            :icon="
-              selectedItems.length > 0
-                ? 'mdi-checkbox-multiple-outline'
-                : 'mdi-checkbox-multiple-blank-outline'
-            "
+            :icon="selectedItems.length > 0 ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
             variant="plain"
             @click="toggleCheckboxes"
           />
           <span v-if="!$vuetify.display.mobile">
-            <span
-              v-if="!selectedItems.length && totalItems"
-              style="cursor: pointer"
-              @click="toggleCheckboxes"
-            >{{ $t("items_total", [totalItems]) }}</span>
-            <span
-              v-else-if="selectedItems.length"
-              style="cursor: pointer"
-              @click="toggleCheckboxes"
-            >{{ $t("items_selected", [selectedItems.length]) }}</span>
+            <span v-if="!selectedItems.length && totalItems" style="cursor: pointer" @click="toggleCheckboxes">{{
+              $t('items_total', [totalItems])
+            }}</span>
+            <span v-else-if="selectedItems.length" style="cursor: pointer" @click="toggleCheckboxes">{{
+              $t('items_selected', [selectedItems.length])
+            }}</span>
           </span>
         </template>
-        <span>{{ $t("tooltip.select_items") }}</span>
+        <span>{{ $t('tooltip.select_items') }}</span>
       </v-tooltip>
 
       <v-spacer />
 
-      <v-tooltip
-        location="bottom"
-        close-on-content-click
-      >
+      <v-tooltip location="bottom" close-on-content-click>
         <template #activator="{ props }">
-          <v-btn
-            v-if="showLibrary !== false"
-            v-bind="props"
-            icon
-            variant="plain"
-            @click="toggleLibraryFilter"
-          >
+          <v-btn v-if="showLibrary !== false" v-bind="props" icon variant="plain" @click="toggleLibraryFilter">
             <v-icon :icon="inLibraryOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
           </v-btn>
         </template>
-        <span>{{ $t("tooltip.filter_library") }}</span>
+        <span>{{ $t('tooltip.filter_library') }}</span>
       </v-tooltip>
 
-      <v-tooltip
-        v-if="showAlbumArtistsOnlyFilter"
-        location="bottom"
-      >
+      <v-tooltip v-if="showAlbumArtistsOnlyFilter" location="bottom">
         <template #activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon
-            variant="plain"
-            @click="emit('toggleAlbumArtistsOnly');loadData(true);"
-          >
-            <v-icon
-              :icon="
-                albumArtistsOnlyFilter
-                  ? 'mdi-account-music'
-                  : 'mdi-account-music-outline'
-              "
-            />
+          <v-btn v-bind="props" icon variant="plain" @click="toggleAlbumArtistsFilter">
+            <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
           </v-btn>
         </template>
-        <span>{{ $t("tooltip.album_artist_filter") }}</span>
+        <span>{{ $t('tooltip.album_artist_filter') }}</span>
       </v-tooltip>
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon
-            variant="plain"
-            @click="onRefreshClicked()"
-          >
-            <v-badge
-              :model-value="updateAvailable"
-              color="error"
-              dot
-            >
+          <v-btn v-bind="props" icon variant="plain" @click="onRefreshClicked()">
+            <v-badge :model-value="updateAvailable" color="error" dot>
               <v-icon icon="mdi-refresh" />
             </v-badge>
           </v-btn>
         </template>
-        <span v-if="updateAvailable">{{
-          $t("tooltip.refresh_new_content")
-        }}</span>
-        <span v-else>{{ $t("tooltip.refresh") }}</span>
+        <span v-if="updateAvailable">{{ $t('tooltip.refresh_new_content') }}</span>
+        <span v-else>{{ $t('tooltip.refresh') }}</span>
       </v-tooltip>
 
-      <v-menu
-        v-if="sortKeys.length > 1"
-        v-model="showSortMenu"
-        location="bottom end"
-        :close-on-content-click="true"
-      >
+      <v-menu v-if="sortKeys.length > 1" v-model="showSortMenu" location="bottom end" :close-on-content-click="true">
         <template #activator="{ props: menu }">
           <v-tooltip location="bottom">
             <template #activator="{ props: tooltip }">
-              <v-btn
-                icon
-                v-bind="props"
-                variant="plain"
-              >
-                <v-icon
-                  v-bind="mergeProps(menu, tooltip)"
-                  icon="mdi-sort"
-                />
+              <v-btn icon v-bind="props" variant="plain">
+                <v-icon v-bind="mergeProps(menu, tooltip)" icon="mdi-sort" />
               </v-btn>
             </template>
-            <span>{{ $t("tooltip.sort_options") }}</span>
+            <span>{{ $t('tooltip.sort_options') }}</span>
           </v-tooltip>
         </template>
         <v-card>
           <v-list>
-            <div
-              v-for="key of sortKeys"
-              :key="key"
-            >
+            <div v-for="key of sortKeys" :key="key">
               <v-list-item @click="changeSort(key)">
-                <v-list-item-title>{{ $t("sort." + key) }}</v-list-item-title>
+                <v-list-item-title>{{ $t('sort.' + key) }}</v-list-item-title>
                 <template #append>
-                  <v-icon
-                    v-if="sortBy == key"
-                    icon="mdi-check"
-                  />
+                  <v-icon v-if="sortBy == key" icon="mdi-check" />
                 </template>
               </v-list-item>
               <v-divider />
@@ -147,16 +83,11 @@
 
       <v-tooltip location="bottom">
         <template #activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon
-            variant="plain"
-            @click="toggleSearch()"
-          >
+          <v-btn v-bind="props" icon variant="plain" @click="toggleSearch()">
             <v-icon icon="mdi-magnify" />
           </v-btn>
         </template>
-        <span>{{ $t("tooltip.search") }}</span>
+        <span>{{ $t('tooltip.search') }}</span>
       </v-tooltip>
 
       <v-tooltip location="bottom">
@@ -168,7 +99,7 @@
             @click="toggleViewMode()"
           />
         </template>
-        <span>{{ $t("tooltip.toggle_view_mode") }}</span>
+        <span>{{ $t('tooltip.toggle_view_mode') }}</span>
       </v-tooltip>
     </v-toolbar>
     <MediaItemContextMenu
@@ -187,42 +118,23 @@
       :label="$t('search')"
       hide-details
       variant="filled"
-      style="
-        width: auto;
-        margin-left: 15px;
-        margin-right: 15px;
-        margin-top: 10px;
-      "
+      style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
       @focus="searchHasFocus = true"
       @blur="searchHasFocus = false"
     />
 
-    <div
-      style="
-        margin-left: 15px;
-        margin-right: 15px;
-        margin-top: 20px;
-        margin-bottom: 20px;
-        padding: 0;
-      "
-    >
+    <div style="margin-left: 15px; margin-right: 15px; margin-top: 20px; margin-bottom: 20px; padding: 0">
       <!-- loading animation -->
-      <v-progress-linear
-        v-if="loading"
-        indeterminate
-      />
+      <v-progress-linear v-if="loading" indeterminate />
 
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
-        <v-col
-          v-for="item in items"
-          :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-        >
+        <v-col v-for="item in items" :key="item.uri" :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
           <PanelviewItem
             :item="item"
             :is-selected="isSelected(item)"
             :show-checkboxes="showCheckboxes"
+            :show-track-number="showTrackNumber"
             @select="onSelect"
             @menu="onMenu"
             @click="onClick"
@@ -232,13 +144,7 @@
 
       <!-- list view -->
       <div v-if="viewMode == 'list'">
-        <RecycleScroller
-          v-slot="{ item }"
-          :items="items"
-          :item-size="60"
-          key-field="uri"
-          page-mode
-        >
+        <RecycleScroller v-slot="{ item }" :items="items" :item-size="60" key-field="uri" page-mode>
           <ListviewItem
             :key="item.uri"
             :item="item"
@@ -270,35 +176,19 @@
           variant="outlined"
           :title="$t('no_content_filter')"
         >
-          <v-btn
-            v-if="search"
-            style="margin-top: 15px"
-            @click="redirectSearch"
-          >
-            {{ $t("try_global_search") }}
+          <v-btn v-if="search" style="margin-top: 15px" @click="redirectSearch">
+            {{ $t('try_global_search') }}
           </v-btn>
         </v-alert>
-        <v-alert
-          v-else-if="!loading && items.length == 0"
-          density="compact"
-          variant="outlined"
-        >
-          {{ $t("no_content") }}
+        <v-alert v-else-if="!loading && items.length == 0" density="compact" variant="outlined">
+          {{ $t('no_content') }}
         </v-alert>
       </div>
-      <v-snackbar
-        :model-value="selectedItems.length > 1"
-        :timeout="-1"
-        style="margin-bottom:120px"
-      >
-        <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
+      <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom: 120px">
+        <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
         <template #actions>
-          <v-btn
-            color="primary"
-            variant="text"
-            @click="showContextMenu = true"
-          >
-            {{ $t("actions") }}
+          <v-btn color="primary" variant="text" @click="showContextMenu = true">
+            {{ $t('actions') }}
           </v-btn>
         </template>
       </v-snackbar>
@@ -309,14 +199,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import {
-  ref,
-  onBeforeUnmount,
-  nextTick,
-  onMounted,
-  watch,
-  mergeProps,
-} from "vue";
+import { ref, onBeforeUnmount, nextTick, onMounted, watch, mergeProps } from 'vue';
 import {
   EventType,
   type Album,
@@ -324,17 +207,18 @@ import {
   type MediaItemType,
   type PagedItems,
   type Track,
-} from "../plugins/api/interfaces";
-import { RecycleScroller } from "vue-virtual-scroller";
-import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
-import { store } from "../plugins/store";
-import ListviewItem from "./ListviewItem.vue";
-import PanelviewItem from "./PanelviewItem.vue";
-import MediaItemContextMenu, { itemIsAvailable } from "./MediaItemContextMenu.vue";
-import { useRouter } from "vue-router";
-import { api } from "../plugins/api";
-import InfiniteLoading from "v3-infinite-loading";
-import "v3-infinite-loading/lib/style.css";
+} from '../plugins/api/interfaces';
+import { RecycleScroller } from 'vue-virtual-scroller';
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+import { store } from '../plugins/store';
+import ListviewItem from './ListviewItem.vue';
+import PanelviewItem from './PanelviewItem.vue';
+import MediaItemContextMenu, { itemIsAvailable } from './MediaItemContextMenu.vue';
+import { useRouter } from 'vue-router';
+import { api } from '../plugins/api';
+import InfiniteLoading from 'v3-infinite-loading';
+import 'v3-infinite-loading/lib/style.css';
+import { getResponsiveBreakpoints } from '@/utils';
 
 // properties
 export interface Props {
@@ -348,18 +232,11 @@ export interface Props {
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
-  albumArtistsOnlyFilter?: boolean;
   updateAvailable?: boolean;
-  loadData: (
-    offset: number,
-    limit: number,
-    sort: string,
-    search: string,
-    library?: boolean
-  ) => Promise<PagedItems>;
+  loadData: (offset: number, limit: number, sort: string, search: string, library?: boolean) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ["sort_name", "timestamp_added DESC"],
+  sortKeys: () => ['sort_name', 'timestamp_added DESC'],
   showTrackNumber: true,
   showProviders: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -375,9 +252,9 @@ const defaultLimit = 100;
 const router = useRouter();
 
 // local refs
-const viewMode = ref("list");
-const search = ref("");
-const sortBy = ref<string>("sort_name");
+const viewMode = ref('list');
+const search = ref('');
+const sortBy = ref<string>('sort_name');
 const showSortMenu = ref(false);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
@@ -390,13 +267,14 @@ const selectedItems = ref<MediaItemType[]>([]);
 const showContextMenu = ref(false);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
+const albumArtistsOnlyFilter = ref(false);
 
 // computed properties
 
 // emitters
 const emit = defineEmits<{
-  (e: "toggleAlbumArtistsOnly"): void;
-  (e: "refreshClicked"): void;
+  (e: 'toggleAlbumArtistsOnly', value: boolean): void;
+  (e: 'refreshClicked'): void;
 }>();
 
 // methods
@@ -405,42 +283,69 @@ const toggleSearch = function () {
   else {
     showSearch.value = true;
     nextTick(() => {
-      document.getElementById("searchInput")?.focus();
+      document.getElementById('searchInput')?.focus();
     });
   }
 };
+
 const panelViewItemResponsive = function (displaySize: number) {
-  if (displaySize < 500) {
+  if (displaySize < getResponsiveBreakpoints.breakpoint_0) {
     return 2;
-  } else if (displaySize <= 500) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_0 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_2
+  ) {
     return 3;
-  } else if (displaySize <= 700) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_2 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_3
+  ) {
     return 4;
-  } else if (displaySize <= 1000) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_3 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_4
+  ) {
     return 5;
-  } else if (displaySize <= 1200) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_4 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_5
+  ) {
     return 6;
-  } else if (displaySize <= 1500) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_5 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_6
+  ) {
     return 7;
-  } else if (displaySize <= 1700) {
+  } else if (
+    displaySize >= getResponsiveBreakpoints.breakpoint_6 &&
+    displaySize < getResponsiveBreakpoints.breakpoint_9
+  ) {
     return 8;
-  } else if (displaySize > 1700) {
+  } else if (displaySize >= getResponsiveBreakpoints.breakpoint_9) {
     return 9;
   } else {
-    return 8;
+    return 0;
   }
 };
 
 const toggleViewMode = function () {
-  if (viewMode.value === "panel") viewMode.value = "list";
-  else viewMode.value = "panel";
+  if (viewMode.value === 'panel') viewMode.value = 'list';
+  else viewMode.value = 'panel';
   localStorage.setItem(`viewMode.${props.itemtype}`, viewMode.value);
 };
 
 const toggleLibraryFilter = function () {
   inLibraryOnly.value = !inLibraryOnly.value;
-  const inLibraryOnlyStr = inLibraryOnly.value ? "true" : "false";
+  const inLibraryOnlyStr = inLibraryOnly.value ? 'true' : 'false';
   localStorage.setItem(`libraryFilter.${props.itemtype}`, inLibraryOnlyStr);
+  loadData(true);
+};
+
+const toggleAlbumArtistsFilter = function () {
+  albumArtistsOnlyFilter.value = !albumArtistsOnlyFilter.value;
+  const albumArtistsOnlyStr = albumArtistsOnlyFilter.value ? 'true' : 'false';
+  localStorage.setItem(`albumArtistsFilter.${props.itemtype}`, albumArtistsOnlyStr);
+  emit('toggleAlbumArtistsOnly', albumArtistsOnlyFilter.value);
   loadData(true);
 };
 
@@ -486,20 +391,20 @@ const onMenu = function (item: MediaItemType) {
 
 const onRefreshClicked = function () {
   loadData(true);
-  emit("refreshClicked");
+  emit('refreshClicked');
 };
 
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(mediaItem)) {
     onMenu(mediaItem);
-    return
+    return;
   }
-  const forceProviderVersion = props.itemtype.includes("versions").toString();
+  const forceProviderVersion = props.itemtype.includes('versions').toString();
 
   if (
-    ["artist", "album", "playlist"].includes(mediaItem.media_type) ||
-    forceProviderVersion == "true" ||
+    ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
+    forceProviderVersion == 'true' ||
     !store.selectedPlayer?.available
   ) {
     router.push({
@@ -541,8 +446,8 @@ const loadNextPage = function ($state: any) {
 };
 
 const redirectSearch = function () {
-  localStorage.setItem("globalsearch", search.value);
-  router.push({ name: "search", params: {initSearch: search.value} });
+  localStorage.setItem('globalsearch', search.value);
+  router.push({ name: 'search', params: { initSearch: search.value } });
 };
 
 // watchers
@@ -551,14 +456,13 @@ watch(
   (newVal) => {
     if (newVal) showSearch.value = true;
     loadData(true);
-  }
+  },
 );
 watch(
   () => props.updateAvailable,
   (newVal) => {
-    if (newVal && items.value.length == 0)
-    loadData(true);
-  }
+    if (newVal && items.value.length == 0) loadData(true);
+  },
 );
 
 const loadData = async function (clear = false, limit = defaultLimit) {
@@ -568,13 +472,7 @@ const loadData = async function (clear = false, limit = defaultLimit) {
   }
   loading.value = true;
 
-  const nextItems = await props.loadData(
-    offset.value,
-    limit,
-    sortBy.value,
-    search.value || "",
-    inLibraryOnly.value
-  );
+  const nextItems = await props.loadData(offset.value, limit, sortBy.value, search.value || '', inLibraryOnly.value);
   if (offset.value) {
     items.value.push(...nextItems.items);
   } else {
@@ -591,18 +489,18 @@ const loadData = async function (clear = false, limit = defaultLimit) {
 onMounted(() => {
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
-  if (savedViewMode && savedViewMode !== "null") {
+  if (savedViewMode && savedViewMode !== 'null') {
     viewMode.value = savedViewMode;
-  } else if (props.itemtype == "artists") {
-    viewMode.value = "panel";
-  } else if (props.itemtype == "albums") {
-    viewMode.value = "panel";
+  } else if (props.itemtype == 'artists') {
+    viewMode.value = 'panel';
+  } else if (props.itemtype == 'albums') {
+    viewMode.value = 'panel';
   } else {
-    viewMode.value = "list";
+    viewMode.value = 'list';
   }
   // get stored/default sortBy for this itemtype
   const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
-  if (savedSortBy && savedSortBy !== "null") {
+  if (savedSortBy && savedSortBy !== 'null') {
     sortBy.value = savedSortBy;
   } else {
     sortBy.value = props.sortKeys[0];
@@ -610,21 +508,27 @@ onMounted(() => {
 
   // get stored/default libraryOnlyFilter for this itemtype
   if (props.showLibrary !== false) {
-    const savedInLibraryOnlyStr = localStorage.getItem(
-      `libraryFilter.${props.itemtype}`
-    );
-    if (savedInLibraryOnlyStr && savedInLibraryOnlyStr == "true") {
+    const savedInLibraryOnlyStr = localStorage.getItem(`libraryFilter.${props.itemtype}`);
+    if (savedInLibraryOnlyStr && savedInLibraryOnlyStr == 'true') {
       inLibraryOnly.value = true;
     }
   }
 
+  // get stored/default albumArtistsOnlyFilter for this itemtype
+  if (props.showAlbumArtistsOnlyFilter !== false) {
+    const albumArtistsOnlyStr = localStorage.getItem(`albumArtistsFilter.${props.itemtype}`);
+    if (albumArtistsOnlyStr && albumArtistsOnlyStr == 'true') {
+      albumArtistsOnlyFilter.value = true;
+      emit('toggleAlbumArtistsOnly', albumArtistsOnlyFilter.value);
+    }
+  }
   // get stored searchquery
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
   const savedSearch = localStorage.getItem(storKey);
-  
-  if (savedSearch && savedSearch !== "null") {
-    console.log("savedSearch", savedSearch)
+
+  if (savedSearch && savedSearch !== 'null') {
+    console.log('savedSearch', savedSearch);
     search.value = savedSearch;
   }
   loadData(true);
@@ -633,22 +537,16 @@ onMounted(() => {
 onMounted(() => {
   //reload if/when parent item updates
   const unsub = api.subscribe_multi(
-    [
-      EventType.MEDIA_ITEM_ADDED,
-      EventType.MEDIA_ITEM_UPDATED,
-      EventType.MEDIA_ITEM_DELETED,
-    ],
+    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],
     (evt: EventMessage) => {
       if (evt.event == EventType.MEDIA_ITEM_DELETED) {
         items.value = items.value.filter((x) => x.uri != evt.object_id);
       } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
         // update listing if relevant item changes
         const updatedItem = evt.data as MediaItemType;
-        items.value = items.value.map((x) =>
-          x.uri == updatedItem.uri ? updatedItem : x
-        );
+        items.value = items.value.map((x) => (x.uri == updatedItem.uri ? updatedItem : x));
       }
-    }
+    },
   );
   onBeforeUnmount(unsub);
 });
@@ -656,20 +554,20 @@ onMounted(() => {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (showContextMenu.value) return;
-  if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
+  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = items.value;
-  } else if (!searchHasFocus.value && e.key == "Backspace") {
+  } else if (!searchHasFocus.value && e.key == 'Backspace') {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
     search.value += e.key;
     showSearch.value = true;
   }
 };
-document.addEventListener("keydown", keyListener);
+document.addEventListener('keydown', keyListener);
 
 onBeforeUnmount(() => {
-  document.removeEventListener("keydown", keyListener);
+  document.removeEventListener('keydown', keyListener);
 });
 </script>
 
@@ -681,7 +579,7 @@ export const filteredItems = function (
   limit: number,
   sortBy: string,
   search?: string,
-  inLibraryOnly = true
+  inLibraryOnly = true,
 ) {
   let result = [];
 
@@ -691,21 +589,11 @@ export const filteredItems = function (
     for (const item of items) {
       if (item.name.toLowerCase().includes(searchStr)) {
         result.push(item);
-      } else if (
-        "artist" in item &&
-        item.artist?.name.toLowerCase().includes(searchStr)
-      ) {
+      } else if ('artist' in item && item.artist?.name.toLowerCase().includes(searchStr)) {
         result.push(item);
-      } else if (
-        "album" in item &&
-        item.album?.name.toLowerCase().includes(searchStr)
-      ) {
+      } else if ('album' in item && item.album?.name.toLowerCase().includes(searchStr)) {
         result.push(item);
-      } else if (
-        "artists" in item &&
-        item.artists &&
-        item.artists[0].name.toLowerCase().includes(searchStr)
-      ) {
+      } else if ('artists' in item && item.artists && item.artists[0].name.toLowerCase().includes(searchStr)) {
         result.push(item);
       }
     }
@@ -713,55 +601,37 @@ export const filteredItems = function (
     result = items;
   }
   // sort
-  if (sortBy == "sort_name") {
-    result.sort((a, b) =>
-      (a.sort_name || a.name).localeCompare(b.sort_name || b.name)
-    );
+  if (sortBy == 'sort_name') {
+    result.sort((a, b) => (a.sort_name || a.name).localeCompare(b.sort_name || b.name));
   }
-  if (sortBy == "sort_album") {
-    result.sort((a, b) =>
-      (a as Track).album?.name.localeCompare((b as Track).album?.name)
-    );
+  if (sortBy == 'sort_album') {
+    result.sort((a, b) => (a as Track).album?.name.localeCompare((b as Track).album?.name));
   }
-  if (sortBy == "sort_artist") {
-    result.sort((a, b) =>
-      (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name)
-    );
+  if (sortBy == 'sort_artist') {
+    result.sort((a, b) => (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name));
   }
-  if (sortBy == "track_number") {
-    result.sort(
-      (a, b) =>
-        ((a as Track).track_number || 0) - ((b as Track).track_number || 0)
-    );
-    result.sort(
-      (a, b) =>
-        ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0)
-    );
+  if (sortBy == 'track_number') {
+    result.sort((a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0));
+    result.sort((a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0));
   }
-  if (sortBy == "position") {
-    result.sort(
-      (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0)
-    );
+  if (sortBy == 'position') {
+    result.sort((a, b) => ((a as Track).position || 0) - ((b as Track).position || 0));
   }
-  if (sortBy == "position DESC") {
-    result.sort(
-      (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0)
-    );
+  if (sortBy == 'position DESC') {
+    result.sort((a, b) => ((b as Track).position || 0) - ((a as Track).position || 0));
   }
-  if (sortBy == "year") {
+  if (sortBy == 'year') {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }
-  if (sortBy == "timestamp_added DESC") {
+  if (sortBy == 'timestamp_added DESC') {
     result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
   }
 
-  if (sortBy == "duration") {
-    result.sort(
-      (a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0)
-    );
+  if (sortBy == 'duration') {
+    result.sort((a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0));
   }
 
-  if (sortBy == "provider") {
+  if (sortBy == 'provider') {
     result.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 

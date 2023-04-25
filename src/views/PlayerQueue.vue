@@ -2,21 +2,14 @@
   <section>
     <v-tabs v-model="activePanel" show-arrows grow>
       <v-tab :value="0">
-        {{ $t("queue_next_items") + " (" + nextItems.length + ")" }}
+        {{ $t('queue_next_items') + ' (' + nextItems.length + ')' }}
       </v-tab>
       <v-tab :value="1">
-        {{ $t("queue_previous_items") + " (" + previousItems.length + ")" }}
+        {{ $t('queue_previous_items') + ' (' + previousItems.length + ')' }}
       </v-tab>
     </v-tabs>
 
-    <div
-      style="
-        padding-left: 15px;
-        padding-right: -15px;
-        padding-top: 10px;
-        padding-bottom: 20px;
-      "
-    >
+    <div style="padding-left: 15px; padding-right: -15px; padding-top: 10px; padding-bottom: 20px">
       <v-alert
         v-if="activePlayerQueue && activePlayerQueue?.radio_source.length > 0"
         color="primary"
@@ -25,33 +18,18 @@
         prominent
         style="margin-right: 10px"
       >
-        <b>{{ $t("queue_radio_enabled") }}</b>
+        <b>{{ $t('queue_radio_enabled') }}</b>
         <br />
-        {{
-          $t("queue_radio_based_on", [
-            $t(activePlayerQueue?.radio_source[0].media_type),
-          ])
-        }}
+        {{ $t('queue_radio_based_on', [$t(activePlayerQueue?.radio_source[0].media_type)]) }}
         <b
-          ><a
-            @click="
-              activePlayerQueue
-                ? gotoItem(activePlayerQueue?.radio_source[0])
-                : ''
-            "
-            >{{ activePlayerQueue?.radio_source[0].name }}</a
-          ></b
+          ><a @click="activePlayerQueue ? gotoItem(activePlayerQueue?.radio_source[0]) : ''">{{
+            activePlayerQueue?.radio_source[0].name
+          }}</a></b
         ><span v-if="activePlayerQueue?.radio_source.length > 1">
           (+{{ activePlayerQueue?.radio_source.length - 1 }})</span
         >
       </v-alert>
-      <RecycleScroller
-        v-slot="{ item }"
-        :items="tabItems"
-        :item-size="66"
-        key-field="queue_item_id"
-        page-mode
-      >
+      <RecycleScroller v-slot="{ item }" :items="tabItems" :item-size="70" key-field="queue_item_id" page-mode>
         <div>
           <v-list-item
             ripple
@@ -60,7 +38,7 @@
             @click.right.prevent="onClick(item)"
           >
             <template #prepend>
-              <div class="listitem-thumb">
+              <div style="margin-right: 10px" class="media-thumb">
                 <MediaItemThumb :item="item" width="50px" height="50px" />
               </div>
             </template>
@@ -72,13 +50,7 @@
 
             <!-- subtitle -->
             <template #subtitle>
-              <div
-                v-if="
-                  item.media_item &&
-                  'artists' in item.media_item &&
-                  item.media_item.artists.length > 0
-                "
-              >
+              <div v-if="item.media_item && 'artists' in item.media_item && item.media_item.artists.length > 0">
                 {{ item.media_item.artists[0].name }}
               </div>
               <div v-else-if="item.media_item">
@@ -93,13 +65,7 @@
             <template #append>
               <div class="listitem-actions">
                 <!-- item duration -->
-                <div
-                  v-if="
-                    item.duration &&
-                    item.media_item?.media_type != MediaType.RADIO
-                  "
-                  class="listitem-action"
-                >
+                <div v-if="item.duration && item.media_item?.media_type != MediaType.RADIO" class="listitem-action">
                   <span>{{ formatDuration(item.duration) }}</span>
                 </div>
 
@@ -112,17 +78,12 @@
                         ripple
                         v-bind="props"
                         icon="mdi-arrow-up"
-                        @click="
-                          api.queueCommandMoveUp(
-                            activePlayerQueue!.queue_id,
-                            item.queue_item_id
-                          )
-                        "
+                        @click="api.queueCommandMoveUp(activePlayerQueue!.queue_id, item.queue_item_id)"
                         @click.prevent
                         @click.stop
                       />
                     </template>
-                    <span>{{ $t("queue_move_up") }}</span>
+                    <span>{{ $t('queue_move_up') }}</span>
                   </v-tooltip>
                 </div>
 
@@ -135,17 +96,12 @@
                         ripple
                         v-bind="props"
                         icon="mdi-arrow-down"
-                        @click="
-                          api.queueCommandMoveDown(
-                            activePlayerQueue!.queue_id,
-                            item.queue_item_id
-                          )
-                        "
+                        @click="api.queueCommandMoveDown(activePlayerQueue!.queue_id, item.queue_item_id)"
                         @click.prevent
                         @click.stop
                       />
                     </template>
-                    <span>{{ $t("queue_move_down") }}</span>
+                    <span>{{ $t('queue_move_down') }}</span>
                   </v-tooltip>
                 </div>
               </div>
@@ -155,30 +111,20 @@
         </div>
       </RecycleScroller>
       <v-alert v-if="items.length == 0" type="info" style="margin: 20px">
-        {{ $t("no_content") }}
+        {{ $t('no_content') }}
       </v-alert>
     </div>
 
     <!-- contextmenu -->
-    <v-dialog
-      v-model="showContextMenu"
-      :fullscreen="$vuetify.display.mobile"
-      min-height="80%"
-      :scrim="true"
-    >
+    <v-dialog v-model="showContextMenu" :fullscreen="$vuetify.display.mobile" min-height="80%" :scrim="true">
       <v-card>
         <v-toolbar sense dark color="primary">
           <v-btn icon="mdi-play-circle-outline" />
           <v-toolbar-title v-if="selectedItem" style="padding-left: 10px">
-            <b>{{
-              truncateString(
-                selectedItem?.name || "",
-                $vuetify.display.mobile ? 20 : 150
-              )
-            }}</b>
+            <b>{{ truncateString(selectedItem?.name || '', $vuetify.display.mobile ? 20 : 150) }}</b>
           </v-toolbar-title>
           <v-toolbar-title v-else style="padding-left: 10px">
-            <b>{{ $t("settings") }}</b> |
+            <b>{{ $t('settings') }}</b> |
             {{ activePlayerQueue?.display_name }}
           </v-toolbar-title>
           <v-btn icon="mdi-close" dark text @click="closeContextMenu()" />
@@ -188,10 +134,7 @@
         <v-card-text v-if="selectedItem">
           <v-list>
             <!-- play now -->
-            <v-list-item
-              :title="$t('play_now')"
-              @click="queueCommand(selectedItem, 'play_now')"
-            >
+            <v-list-item :title="$t('play_now')" @click="queueCommand(selectedItem, 'play_now')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-play-circle-outline" />
@@ -201,10 +144,7 @@
             <v-divider />
 
             <!-- play next (move to next in line) -->
-            <v-list-item
-              :title="$t('play_next')"
-              @click="queueCommand(selectedItem, 'move_next')"
-            >
+            <v-list-item :title="$t('play_next')" @click="queueCommand(selectedItem, 'move_next')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-skip-next-circle-outline" />
@@ -214,10 +154,7 @@
             <v-divider />
 
             <!-- move up -->
-            <v-list-item
-              :title="$t('queue_move_up')"
-              @click="queueCommand(selectedItem, 'up')"
-            >
+            <v-list-item :title="$t('queue_move_up')" @click="queueCommand(selectedItem, 'up')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-arrow-up" />
@@ -227,10 +164,7 @@
             <v-divider />
 
             <!-- move down -->
-            <v-list-item
-              :title="$t('queue_move_down')"
-              @click="queueCommand(selectedItem, 'down')"
-            >
+            <v-list-item :title="$t('queue_move_down')" @click="queueCommand(selectedItem, 'down')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-arrow-down" />
@@ -240,10 +174,7 @@
             <v-divider />
 
             <!-- delete -->
-            <v-list-item
-              :title="$t('queue_delete')"
-              @click="queueCommand(selectedItem, 'delete')"
-            >
+            <v-list-item :title="$t('queue_delete')" @click="queueCommand(selectedItem, 'delete')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-delete" />
@@ -256,11 +187,7 @@
             <v-list-item
               v-if="selectedItem?.media_item?.media_type == MediaType.TRACK"
               :title="$t('show_info')"
-              @click="
-                selectedItem?.media_item
-                  ? gotoItem(selectedItem.media_item)
-                  : ''
-              "
+              @click="selectedItem?.media_item ? gotoItem(selectedItem.media_item) : ''"
             >
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
@@ -277,22 +204,18 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { RecycleScroller } from "vue-virtual-scroller";
-import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
-import type {
-  QueueItem,
-  EventMessage,
-  MediaItemType,
-} from "../plugins/api/interfaces";
-import { EventType, MediaType } from "../plugins/api/interfaces";
-import { api } from "../plugins/api";
-import { computed, onBeforeUnmount, watch } from "vue";
-import { store } from "../plugins/store";
-import { formatDuration, truncateString } from "../utils";
-import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
-import MediaItemThumb from "../components/MediaItemThumb.vue";
+import { onMounted, ref } from 'vue';
+import { RecycleScroller } from 'vue-virtual-scroller';
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+import type { QueueItem, EventMessage, MediaItemType } from '../plugins/api/interfaces';
+import { EventType, MediaType } from '../plugins/api/interfaces';
+import { api } from '../plugins/api';
+import { computed, onBeforeUnmount, watch } from 'vue';
+import { store } from '../plugins/store';
+import { formatDuration, truncateString } from '../utils';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
+import MediaItemThumb from '../components/MediaItemThumb.vue';
 
 // global refs
 const { t } = useI18n();
@@ -335,18 +258,15 @@ const tabItems = computed(() => {
 // listen for item updates to refresh items when that happens
 
 onMounted(() => {
-  const unsub = api.subscribe_multi(
-    [EventType.QUEUE_UPDATED, EventType.QUEUE_ITEMS_UPDATED],
-    (evt: EventMessage) => {
-      if (evt.object_id != activePlayerQueue.value?.queue_id) return;
+  const unsub = api.subscribe_multi([EventType.QUEUE_UPDATED, EventType.QUEUE_ITEMS_UPDATED], (evt: EventMessage) => {
+    if (evt.object_id != activePlayerQueue.value?.queue_id) return;
 
-      if (evt.event == EventType.QUEUE_ITEMS_UPDATED) {
-        loadItems();
-      } else {
-        setMenuItems();
-      }
+    if (evt.event == EventType.QUEUE_ITEMS_UPDATED) {
+      loadItems();
+    } else {
+      setMenuItems();
     }
-  );
+  });
   onBeforeUnmount(unsub);
 });
 
@@ -355,13 +275,10 @@ const loadItems = async function () {
   if (activePlayerQueue.value) {
     store.topBarTitle = activePlayerQueue.value.display_name;
     items.value = [];
-    await api.getPlayerQueueItems(
-      activePlayerQueue.value.queue_id,
-      (data: QueueItem[]) => {
-        console.log("chunk", data.length);
-        items.value.push(...data);
-      }
-    );
+    await api.getPlayerQueueItems(activePlayerQueue.value.queue_id, (data: QueueItem[]) => {
+      console.log('chunk', data.length);
+      items.value.push(...data);
+    });
   } else {
     store.topBarTitle = undefined;
     items.value = [];
@@ -385,31 +302,16 @@ const gotoItem = function (item: MediaItemType) {
 const queueCommand = function (item: QueueItem | undefined, command: string) {
   closeContextMenu();
   if (!item || !activePlayerQueue.value) return;
-  if (command == "play_now") {
-    api.queueCommandPlayIndex(
-      activePlayerQueue?.value.queue_id,
-      item.queue_item_id
-    );
-  } else if (command == "move_next") {
-    api.queueCommandMoveNext(
-      activePlayerQueue?.value.queue_id,
-      item.queue_item_id
-    );
-  } else if (command == "up") {
-    api.queueCommandMoveUp(
-      activePlayerQueue?.value.queue_id,
-      item.queue_item_id
-    );
-  } else if (command == "down") {
-    api.queueCommandMoveDown(
-      activePlayerQueue?.value.queue_id,
-      item.queue_item_id
-    );
-  } else if (command == "delete") {
-    api.queueCommandDelete(
-      activePlayerQueue?.value.queue_id,
-      item.queue_item_id
-    );
+  if (command == 'play_now') {
+    api.queueCommandPlayIndex(activePlayerQueue?.value.queue_id, item.queue_item_id);
+  } else if (command == 'move_next') {
+    api.queueCommandMoveNext(activePlayerQueue?.value.queue_id, item.queue_item_id);
+  } else if (command == 'up') {
+    api.queueCommandMoveUp(activePlayerQueue?.value.queue_id, item.queue_item_id);
+  } else if (command == 'down') {
+    api.queueCommandMoveDown(activePlayerQueue?.value.queue_id, item.queue_item_id);
+  } else if (command == 'delete') {
+    api.queueCommandDelete(activePlayerQueue?.value.queue_id, item.queue_item_id);
   }
 };
 
@@ -417,56 +319,44 @@ const setMenuItems = function () {
   // set items in topbar contextmenu
   store.topBarContextMenuItems = [
     {
-      label: "settings.player_settings",
+      label: 'settings.player_settings',
       labelArgs: [],
       action: () => {
-        router.push(
-          `/settings/editplayer/${activePlayerQueue.value!.queue_id}`
-        );
+        router.push(`/settings/editplayer/${activePlayerQueue.value!.queue_id}`);
       },
-      icon: "mdi-cog-outline",
+      icon: 'mdi-cog-outline',
     },
     {
-      label: "queue_clear",
+      label: 'queue_clear',
       labelArgs: [],
       action: () => {
         api.queueCommandClear(activePlayerQueue.value!.queue_id);
       },
-      icon: "mdi-cancel",
+      icon: 'mdi-cancel',
     },
     {
-      label: activePlayerQueue.value!.shuffle_enabled
-        ? "shuffle_enabled"
-        : "shuffle_disabled",
+      label: activePlayerQueue.value!.shuffle_enabled ? 'shuffle_enabled' : 'shuffle_disabled',
       labelArgs: [],
       action: () => {
         api.queueCommandShuffleToggle(activePlayerQueue.value!.queue_id);
       },
-      icon: activePlayerQueue.value!.shuffle_enabled
-        ? "mdi-shuffle"
-        : "mdi-shuffle-disabled",
+      icon: activePlayerQueue.value!.shuffle_enabled ? 'mdi-shuffle' : 'mdi-shuffle-disabled',
     },
     {
-      label: "repeat_mode",
+      label: 'repeat_mode',
       labelArgs: [t(`repeatmode.${activePlayerQueue.value!.repeat_mode}`)],
       action: () => {
         api.queueCommandRepeatToggle(activePlayerQueue.value!.queue_id);
       },
-      icon: activePlayerQueue.value!.shuffle_enabled
-        ? "mdi-repeat"
-        : "mdi-repeat-off",
+      icon: activePlayerQueue.value!.shuffle_enabled ? 'mdi-repeat' : 'mdi-repeat-off',
     },
     {
-      label: activePlayerQueue.value!.crossfade_enabled
-        ? "crossfade_enabled"
-        : "crossfade_disabled",
+      label: activePlayerQueue.value!.crossfade_enabled ? 'crossfade_enabled' : 'crossfade_disabled',
       labelArgs: [],
       action: () => {
         api.queueCommandCrossfadeToggle(activePlayerQueue.value!.queue_id);
       },
-      icon: activePlayerQueue.value!.crossfade_enabled
-        ? "mdi-swap-horizontal-bold"
-        : "mdi-swap-horizontal",
+      icon: activePlayerQueue.value!.crossfade_enabled ? 'mdi-swap-horizontal-bold' : 'mdi-swap-horizontal',
     },
   ];
 };
@@ -485,7 +375,7 @@ watch(
       setMenuItems();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 

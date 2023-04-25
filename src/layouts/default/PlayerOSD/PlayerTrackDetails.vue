@@ -1,26 +1,21 @@
 <template>
   <!-- now playing media -->
-  <v-list-item
-    style="
-      height: 60px;
-      width: fit-content;
-      margin-top: -5px;
-      padding-bottom: 30px;
-      padding-top: 5px;
-    "
-    lines="two"
-  >
+  <v-list-item style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
     <template #prepend>
-      <div class="listitem-thumb">
+      <div
+        class="media-thumb player-media-thumb"
+        :style="`height: ${isMobileDevice(MobileDeviceType.PHONE, $vuetify.display) ? 50 : 64}px; width: ${
+          isMobileDevice(MobileDeviceType.PHONE, $vuetify.display) ? 50 : 64
+        }px; `"
+      >
         <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" />
         <MediaItemThumb
           v-if="curQueueItem"
           :item="curQueueItem.media_item || curQueueItem"
-          :width="50"
           style="cursor: pointer"
           @click="store.showFullscreenPlayer = true"
         />
-        <v-img v-else height="50" :src="iconFallback" style="opacity: 50%" />
+        <v-img v-else :src="iconFallback" style="opacity: 50%" />
       </div>
     </template>
 
@@ -29,16 +24,10 @@
       <span
         v-if="curQueueItem && curQueueItem.media_item"
         style="cursor: pointer"
-        @click="
-          curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
-        "
+        @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
       >
         {{ curQueueItem.media_item.name }}
-        <span
-          v-if="
-            'version' in curQueueItem.media_item &&
-            curQueueItem.media_item.version
-          "
+        <span v-if="'version' in curQueueItem.media_item && curQueueItem.media_item.version"
           >({{ curQueueItem.media_item.version }})</span
         >
       </span>
@@ -54,7 +43,23 @@
         {{ store.selectedPlayer?.display_name }}
       </div>
     </template>
-
+    <!-- append -->
+    <template #append>
+      <!-- format -->
+      <v-chip
+        v-if="curQueueItem?.streamdetails && !isMobileDevice(MobileDeviceType.PHONE, $vuetify.display)"
+        :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+        class="player-track-content-type"
+        :style="$vuetify.theme.current.dark ? 'color: #000; background: #fff;' : 'color: #fff; background: #000;'"
+        label
+        :ripple="false"
+        v-bind="props"
+      >
+        <div class="d-flex justify-center" style="width: 100%">
+          {{ curQueueItem?.streamdetails.content_type.toUpperCase() }}
+        </div>
+      </v-chip>
+    </template>
     <!-- subtitle -->
     <template #subtitle>
       <!-- track: artists(s) + album -->
@@ -68,9 +73,7 @@
         "
         style="cursor: pointer"
         class="line-clamp-1"
-        @click="
-          curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
-        "
+        @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
       >
         {{ getArtistsString(curQueueItem.media_item.artists) }} •
         {{ curQueueItem.media_item.album.name }}
@@ -94,56 +97,37 @@
         {{ curQueueItem.media_item.artists[0].name }}
       </div>
       <!-- radio live metadata -->
-      <div
-        class="line-clamp-1"
-        v-else-if="curQueueItem?.streamdetails?.stream_title"
-      >
+      <div class="line-clamp-1" v-else-if="curQueueItem?.streamdetails?.stream_title">
         {{ curQueueItem?.streamdetails?.stream_title }}
       </div>
       <!-- other description -->
-      <div
-        class="line-clamp-1"
-        v-else-if="
-          curQueueItem && curQueueItem.media_item?.metadata.description
-        "
-      >
+      <div class="line-clamp-1" v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description">
         {{ curQueueItem.media_item.metadata.description }}
       </div>
       <!-- queue empty message -->
       <div class="line-clamp-1" v-else-if="activePlayerQueue && activePlayerQueue.items == 0">
-        {{ $t("queue_empty") }}
+        {{ $t('queue_empty') }}
       </div>
       <!-- 3rd party source active -->
-      <div
-        class="line-clamp-1"
-        v-else-if="
-          store.selectedPlayer?.active_source != store.selectedPlayer?.player_id
-        "
-      >
-        {{
-          $t("external_source_active", [store.selectedPlayer?.active_source])
-        }}
+      <div class="line-clamp-1" v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id">
+        {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
       </div>
     </template>
   </v-list-item>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue';
 
-import api from "@/plugins/api";
-import {
-  MediaType,
-  MediaItemType,
-  ItemMapping,
-} from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import { getArtistsString } from "@/utils";
-import { useRouter } from "vue-router";
-import PlayerFullscreen from "./PlayerFullscreen.vue";
-import { iconFallback, iconSmallFlac } from "@/components/ProviderIcons.vue";
-import { getResponsiveBreakpoints } from "@/utils";
+import api from '@/plugins/api';
+import { MediaType, MediaItemType, ItemMapping, MobileDeviceType } from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
+import MediaItemThumb from '@/components/MediaItemThumb.vue';
+import { getArtistsString, isMobileDevice } from '@/utils';
+import { useRouter } from 'vue-router';
+import PlayerFullscreen from './PlayerFullscreen.vue';
+import { iconFallback } from '@/components/ProviderIcons.vue';
+import { ref } from 'vue';
 
 const router = useRouter();
 
@@ -155,6 +139,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
 });
+
+//ref
+const showOverlay = ref(false);
 
 // computed properties
 const activePlayerQueue = computed(() => {
@@ -176,3 +163,21 @@ const itemClick = function (item: MediaItemType | ItemMapping) {
   });
 };
 </script>
+
+<style>
+.player-media-thumb {
+  margin-right: 10px;
+}
+
+.player-track-content-type {
+  height: 20px !important;
+  padding: 5px !important;
+  padding-right: 9px !important;
+  padding-left: 9px !important;
+  font-weight: 500;
+  font-size: 10px !important;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  margin-left: 16px;
+}
+</style>

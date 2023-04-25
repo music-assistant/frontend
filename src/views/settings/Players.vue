@@ -4,7 +4,7 @@
       <div>
         <v-list-item
           v-for="config in [...playerConfigs].sort((a, b) =>
-            getPlayerName(a).toUpperCase() > getPlayerName(b).toUpperCase() ? 1 : -1
+            getPlayerName(a).toUpperCase() > getPlayerName(b).toUpperCase() ? 1 : -1,
           )"
           :key="config.player_id"
           :title="getPlayerName(config)"
@@ -12,51 +12,28 @@
           @click="editPlayer(config.player_id)"
         >
           <template #prepend>
-            <provider-icon
-              :domain="config.provider"
-              :size="'40px'"
-              class="listitem-thumb"
-            />
+            <provider-icon :domain="config.provider" :size="'40px'" class="media-thumb" />
           </template>
 
           <template #append>
             <div class="listitem-actions">
               <!-- player disabled -->
-              <div
-                v-if="!config.enabled"
-                class="listitem-action"
-              >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+              <div v-if="!config.enabled" class="listitem-action">
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon
-                      v-bind="tooltip"
-                      color="grey"
-                    >
-                      mdi-cancel
-                    </v-icon>
+                    <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
                   </template>
-                  <span>{{ $t("settings.player_disabled") }}</span>
+                  <span>{{ $t('settings.player_disabled') }}</span>
                 </v-tooltip>
               </div>
 
               <!-- player not (yet) available -->
-              <div
-                v-else-if="!api.players[config.player_id]?.available"
-                class="listitem-action"
-              >
-                <v-tooltip
-                  location="top end"
-                  origin="end center"
-                >
+              <div v-else-if="!api.players[config.player_id]?.available" class="listitem-action">
+                <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip">
-                      mdi-timer-sand
-                    </v-icon>
+                    <v-icon v-bind="tooltip"> mdi-timer-sand </v-icon>
                   </template>
-                  <span>{{ $t("settings.player_not_available") }}</span>
+                  <span>{{ $t('settings.player_not_available') }}</span>
                 </v-tooltip>
               </div>
 
@@ -111,18 +88,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from 'vue';
 
-import { api } from "@/plugins/api";
-import {
-  EventType,
-  PlayerConfig,
-} from "@/plugins/api/interfaces";
-import ProviderIcon  from "@/components/ProviderIcon.vue";
-import { onBeforeUnmount, watch } from "vue";
+import { api } from '@/plugins/api';
+import { EventType, PlayerConfig } from '@/plugins/api/interfaces';
+import ProviderIcon from '@/components/ProviderIcon.vue';
+import { onBeforeUnmount, watch } from 'vue';
 
-import { useRouter } from "vue-router";
-
+import { useRouter } from 'vue-router';
 
 // global refs
 const router = useRouter();
@@ -145,9 +118,7 @@ const loadItems = async function () {
 
 const removePlayerConfig = function (playerId: string) {
   api.removePlayerConfig(playerId);
-  playerConfigs.value = playerConfigs.value.filter(
-    (x) => x.player_id != playerId
-  );
+  playerConfigs.value = playerConfigs.value.filter((x) => x.player_id != playerId);
 };
 
 const editPlayer = function (playerId: string) {
@@ -159,7 +130,7 @@ const editPlayer = function (playerId: string) {
 
 const toggleEnabled = function (config: PlayerConfig) {
   config.enabled = !config.enabled;
-  api.savePlayerConfig(config.player_id, {enabled: config.enabled })
+  api.savePlayerConfig(config.player_id, { enabled: config.enabled });
 };
 
 const getPlayerName = function (playerConfig: PlayerConfig) {
@@ -177,7 +148,7 @@ watch(
   (val) => {
     if (val) loadItems();
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 

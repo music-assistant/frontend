@@ -1,18 +1,10 @@
 <template>
   <v-main id="cont">
     <navigation-menu />
-    <v-container
-      fluid
-      style="padding-left: 0;padding-right: 0"
-    >
-      <router-view
-        v-slot="{ Component }"
-        app
-      >
-        <transition
-          name="fade"
-          mode="out-in"
-        >
+    <app-bar />
+    <v-container fluid style="padding-left: 0; padding-right: 0">
+      <router-view v-slot="{ Component }" app>
+        <transition name="fade" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
@@ -23,6 +15,6 @@
 </template>
 
 <script lang="ts" setup>
-  //
-  import NavigationMenu from "./NavigationMenu.vue";
+import NavigationMenu from './NavigationMenu.vue';
+import AppBar from './AppBar.vue';
 </script>

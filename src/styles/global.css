@@ -22,6 +22,20 @@
   -webkit-font-smoothing: antialiased;
 }
 
+* {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
   /* active tab */
   .v-btn.v-slide-group-item--active.v-tab--selected {
     background: rgb(var(--v-theme-primary));
@@ -32,6 +46,7 @@
   .v-tabs--grow .v-tab {
     background: rgba(var(--v-theme-primary), 0.3);
     color: rgb(var(--v-theme-text-color));
+    border-radius: 0px;
   }
 
   a {
@@ -63,7 +78,6 @@
     opacity: 65%;
   }
   
-  
   .hiresicon {
     position: absolute;
     margin-left: 5px;
@@ -86,13 +100,14 @@
   .listitem-action {
     padding-left: 5px;
   }
-  .listitem-thumb {
+  .listitem {
+    padding-right: 0px;
     padding-left: 0px;
-    margin-right: 10px;
-    margin-left: -15px;
-    margin-top: 2px;
-    width: 50px;
-    height: 50px;
+    border-radius: 4px;
+  }
+  .media-thumb {
+    width: 64px;
+    height: 64px;
   }
   .v-card--variant-elevated {
     box-shadow: none;
@@ -108,8 +123,6 @@
   .line-clamp-2 {
     white-space: pre-line;
     overflow: hidden;
-    line-height: 1.5em;
-    height: 3em;
     word-wrap: break-word;
     box-sizing: border-box;
     display: -webkit-box;
@@ -203,16 +216,60 @@
   width: 50px;
 }
 
+  /* text */
+
+  .title {
+    font-weight: 500;
+  }
+  
+  .subtitle {
+    font-weight: 400;
+  }
+  
 .v-list-item-subtitle {
-font-weight: 400;
-font-size: 0.6875rem;
-line-height: 17.6px;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 20px;
 }
 
 .v-list-item-title {
-font-weight: 400;
-font-size: 0.875rem;
-line-height: 22.4px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 24px;
+  }
+
+.v-toolbar-title {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 24px;
+  }
+
+  .v-list-item--nav .v-list-item-title {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 24px;
+}
+
+div.v-slide-group__next {
+  position: absolute;
+  right: -5px;
+  min-width: 40px;
+  height: 30px;
+  align-items: start;
+  margin-top: -35px;
+}
+
+div.v-slide-group__prev {
+  position: absolute;
+  left: -5px;
+  min-width: 40px;
+  height: 30px;
+  align-items: start;
+  margin-top: -35px;
+}
+
+.v-expansion-panel-title {
+  border-radius: 0px;
 }
 
 .v-input--horizontal .v-input__prepend {
@@ -225,4 +282,62 @@ line-height: 22.4px;
 
 .v-toolbar__content {
   height: 100% !important;
+}
+
+.v-container {
+  padding: 20px;
+}
+
+@media (min-width: 1920px) {
+  .v-container {
+    max-width: unset;
+}
+}
+
+@media (min-width: 1280px) {
+  .v-container {
+    max-width: unset;
+}
+}
+
+@media (min-width: 960px) {
+  .v-container {
+    max-width: unset;
+}
+}
+
+h1 {
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 38px;
+}
+
+h2 {
+  font-weight: 500;
+  font-size: 22px;
+  line-height: 34px;
+}
+
+h3 {
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 30px;
+}
+
+h4 {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 28px;
+}
+
+h5 {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 24px;
+}
+
+h6 {
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 20px;
 }
