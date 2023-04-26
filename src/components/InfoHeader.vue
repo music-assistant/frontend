@@ -44,11 +44,11 @@
         >
           <div v-if="item.media_type && (item.media_type == MediaType.ARTIST || 'owner' in item)">
             <v-avatar size="192">
-              <MediaItemThumb :item="item" height="230px" width="230px" />
+              <MediaItemThumb :item="item" :height="230" :width="230" />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb width="230px" :item="item" />
+            <MediaItemThumb :width="230" :item="item" />
           </div>
         </div>
 

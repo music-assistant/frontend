@@ -123,7 +123,7 @@
       @blur="searchHasFocus = false"
     />
 
-    <div style="margin-left: 15px; margin-right: 15px; margin-top: 20px; margin-bottom: 20px; padding: 0">
+    <v-container>
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
@@ -149,6 +149,7 @@
             :key="item.uri"
             :item="item"
             :show-track-number="showTrackNumber"
+            :show-disc-number="showTrackNumber"
             :show-duration="showDuration"
             :show-library="showLibrary !== false && !inLibraryOnly"
             :show-menu="showMenu"
@@ -192,7 +193,7 @@
           </v-btn>
         </template>
       </v-snackbar>
-    </div>
+    </v-container>
   </section>
 </template>
 

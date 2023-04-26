@@ -1,5 +1,6 @@
 import { Artist, BrowseFolder, ItemMapping, MobileDeviceType, Player, PlayerType } from '@/plugins/api/interfaces';
 import MobileDetect from 'mobile-detect';
+import { store } from './plugins/store';
 //@ts-ignore
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -139,22 +140,49 @@ export const getResponsiveBreakpoints = {
   breakpoint_10: 540,
 };
 
+//WIP
+export const getResponsiveBreakpointsNew = {
+  breakpoint_0: 500 + store.sizeNavigationMenu,
+  breakpoint_1: 575 + store.sizeNavigationMenu,
+  breakpoint_2: 715 + store.sizeNavigationMenu,
+  breakpoint_3: 960 + store.sizeNavigationMenu,
+  breakpoint_4: 1100 + store.sizeNavigationMenu,
+  breakpoint_5: 1500 + store.sizeNavigationMenu,
+  breakpoint_6: 1700 + store.sizeNavigationMenu,
+  breakpoint_7: 800 + store.sizeNavigationMenu,
+  breakpoint_8: 375 + store.sizeNavigationMenu,
+  breakpoint_9: 1900 + store.sizeNavigationMenu,
+  breakpoint_10: 540 + store.sizeNavigationMenu,
+};
+
 const md = new MobileDetect(window.navigator.userAgent);
 
 export const isMobileDevice = (
   device: MobileDeviceType,
-  displaySize: {
+  displaySize?: {
     height: number;
     width: number;
   },
 ) => {
   if (device == MobileDeviceType.ALL) {
-    return md.mobile() ? true : displaySize.width < getResponsiveBreakpoints.breakpoint_1;
+    const isMobileDevice = md.mobile() ? true : false;
+    if (!displaySize) {
+      return isMobileDevice;
+    }
+    return isMobileDevice ? true : displaySize!.width < getResponsiveBreakpoints.breakpoint_1;
   }
   if (device == MobileDeviceType.PHONE) {
-    return md.phone() ? true : displaySize.width < getResponsiveBreakpoints.breakpoint_1;
+    const isPhoneDevice = md.phone() ? true : false;
+    if (!displaySize) {
+      return isPhoneDevice;
+    }
+    return isPhoneDevice ? true : displaySize!.width < getResponsiveBreakpoints.breakpoint_1;
   }
   if (device == MobileDeviceType.TABLET) {
-    return md.tablet() ? true : displaySize.width < getResponsiveBreakpoints.breakpoint_1;
+    const isTabletDevice = md.tablet() ? true : false;
+    if (!displaySize) {
+      return isTabletDevice;
+    }
+    return isTabletDevice ? true : displaySize!.width < getResponsiveBreakpoints.breakpoint_1;
   }
 };

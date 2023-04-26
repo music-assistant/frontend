@@ -3,10 +3,11 @@
   <ButtonIcon
     v-if="props.buttonVisibility.queue"
     @click="
+      store.showFullscreenPlayer = false;
       props.showQueueDialog
         ? // eslint-disable-next-line vue/no-mutating-props
           (props.showQueueDialog = true)
-        : $router.push('/playerqueue/')
+        : $router.push('/playerqueue/');
     "
   >
     <v-icon icon="mdi-playlist-play" />

@@ -13,17 +13,8 @@
     />
 
     <div>
-      <v-chip-group
-        v-model="viewFilter"
-        column
-        style="margin-top: 15px; margin-left: 10px"
-      >
-        <v-chip
-          v-for="item in viewFilters"
-          :key="item"
-          filter
-          outlined
-        >
+      <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
+        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
           {{ $t(item) }}
         </v-chip>
       </v-chip-group>
@@ -38,20 +29,9 @@
         "
       />
 
-      <div
-        style="
-          margin-left: 15px;
-          margin-right: 15px;
-          margin-top: 20px;
-          margin-bottom: 20px;
-          padding: 0;
-        "
-      >
+      <v-container>
         <!-- loading animation -->
-        <v-progress-linear
-          v-if="loading"
-          indeterminate
-        />
+        <v-progress-linear v-if="loading" indeterminate />
 
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
@@ -73,13 +53,7 @@
 
         <!-- list view -->
         <div v-if="viewMode == 'list'">
-          <RecycleScroller
-            v-slot="{ item }"
-            :items="filteredItems"
-            :item-size="60"
-            key-field="item_id"
-            page-mode
-          >
+          <RecycleScroller v-slot="{ item }" :items="filteredItems" :item-size="60" key-field="item_id" page-mode>
             <ListviewItem
               :item="item"
               :show-track-number="false"
@@ -95,16 +69,9 @@
             />
           </RecycleScroller>
         </div>
-      </div>
-      <v-toolbar
-        density="compact"
-        variant="flat"
-        color="transparent"
-        height="45"
-      >
-        <span style="margin-left: 15px">{{
-          $t("items_total", [filteredItems.length])
-        }}</span>
+      </v-container>
+      <v-toolbar density="compact" variant="flat" color="transparent" height="45">
+        <span style="margin-left: 15px">{{ $t('items_total', [filteredItems.length]) }}</span>
         <v-spacer />
 
         <v-tooltip location="bottom">
@@ -116,7 +83,7 @@
               @click="toggleViewMode()"
             />
           </template>
-          <span>{{ $t("tooltip.toggle_view_mode") }}</span>
+          <span>{{ $t('tooltip.toggle_view_mode') }}</span>
         </v-tooltip>
       </v-toolbar>
     </div>
@@ -125,22 +92,18 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { ref, computed, onBeforeUnmount, onMounted, watch } from "vue";
-import { useDisplay } from "vuetify";
-import {
-  MediaType,
-  SearchResults,
-  type MediaItemType,
-} from "../plugins/api/interfaces";
-import { RecycleScroller } from "vue-virtual-scroller";
-import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
-import { store } from "../plugins/store";
-import ListviewItem from "../components/ListviewItem.vue";
-import PanelviewItem from "../components/PanelviewItem.vue";
-import MediaItemContextMenu from "../components/MediaItemContextMenu.vue";
-import { useRouter } from "vue-router";
-import { api } from "../plugins/api";
-import { numberRange } from "@/utils";
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
+import { useDisplay } from 'vuetify';
+import { MediaType, SearchResults, type MediaItemType } from '../plugins/api/interfaces';
+import { RecycleScroller } from 'vue-virtual-scroller';
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+import { store } from '../plugins/store';
+import ListviewItem from '../components/ListviewItem.vue';
+import PanelviewItem from '../components/PanelviewItem.vue';
+import MediaItemContextMenu from '../components/MediaItemContextMenu.vue';
+import { useRouter } from 'vue-router';
+import { api } from '../plugins/api';
+import { numberRange } from '@/utils';
 
 export interface Props {
   initSearch?: string;
@@ -152,9 +115,9 @@ const router = useRouter();
 const { mobile } = useDisplay();
 
 // local refs
-const viewMode = ref("list");
+const viewMode = ref('list');
 const viewFilter = ref(0);
-const search = ref("");
+const search = ref('');
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
@@ -162,7 +125,7 @@ const showContextMenu = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const throttleId = ref();
 
-const viewFilters = ["topresult", "artists", "albums", "tracks", "playlists", "radios"];
+const viewFilters = ['topresult', 'artists', 'albums', 'tracks', 'playlists', 'radios'];
 
 // computed properties
 const thumbSize = computed(() => {
@@ -172,12 +135,9 @@ const thumbSize = computed(() => {
 // methods
 
 const toggleViewMode = function () {
-  if (viewMode.value === "panel") viewMode.value = "list";
-  else viewMode.value = "panel";
-  localStorage.setItem(
-    `viewMode.search.${viewFilterStr.value}`,
-    viewMode.value
-  );
+  if (viewMode.value === 'panel') viewMode.value = 'list';
+  else viewMode.value = 'panel';
+  localStorage.setItem(`viewMode.search.${viewFilterStr.value}`, viewMode.value);
 };
 
 const onMenu = function (item: MediaItemType) {
@@ -188,10 +148,7 @@ const onMenu = function (item: MediaItemType) {
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
 
-  if (
-    ["artist", "album", "playlist"].includes(mediaItem.media_type) ||
-    !store.selectedPlayer?.available
-  ) {
+  if (['artist', 'album', 'playlist'].includes(mediaItem.media_type) || !store.selectedPlayer?.available) {
     router.push({
       name: mediaItem.media_type,
       params: {
@@ -213,7 +170,7 @@ watch(
     throttleId.value = setTimeout(() => {
       loadSearchResults();
     }, 200);
-  }
+  },
 );
 
 const panelViewItemResponsive = function (displaySize: number) {
@@ -240,7 +197,7 @@ const panelViewItemResponsive = function (displaySize: number) {
 
 const loadSearchResults = async function () {
   loading.value = true;
-  localStorage.setItem("globalsearch", search.value);
+  localStorage.setItem('globalsearch', search.value);
 
   if (search.value) {
     searchResult.value = await api.search(search.value);
@@ -257,22 +214,22 @@ const viewFilterStr = computed(() => {
 const filteredItems = computed(() => {
   if (!searchResult.value) return [];
 
-  if (viewFilterStr.value == "artists") {
+  if (viewFilterStr.value == 'artists') {
     return searchResult.value.artists;
   }
-  if (viewFilterStr.value == "albums") {
+  if (viewFilterStr.value == 'albums') {
     return searchResult.value.albums;
   }
-  if (viewFilterStr.value == "tracks") {
+  if (viewFilterStr.value == 'tracks') {
     return searchResult.value.tracks;
   }
-  if (viewFilterStr.value == "playlists") {
+  if (viewFilterStr.value == 'playlists') {
     return searchResult.value.playlists;
   }
-  if (viewFilterStr.value == "radios") {
+  if (viewFilterStr.value == 'radios') {
     return searchResult.value.radio;
   }
-  if (viewFilterStr.value == "topresult") {
+  if (viewFilterStr.value == 'topresult') {
     const result: MediaItemType[] = [];
 
     for (const results of [
@@ -301,29 +258,27 @@ watch(
   (val) => {
     if (val) {
       // get stored/default viewMode for this itemtype
-      const savedViewMode = localStorage.getItem(
-        `viewMode.search.${viewFilterStr.value}`
-      );
+      const savedViewMode = localStorage.getItem(`viewMode.search.${viewFilterStr.value}`);
       if (savedViewMode) {
         viewMode.value = savedViewMode;
-      } else if (viewFilterStr.value == "artists") {
-        viewMode.value = "panel";
-      } else if (viewFilterStr.value == "albums") {
-        viewMode.value = "panel";
+      } else if (viewFilterStr.value == 'artists') {
+        viewMode.value = 'panel';
+      } else if (viewFilterStr.value == 'albums') {
+        viewMode.value = 'panel';
       } else {
-        viewMode.value = "list";
+        viewMode.value = 'list';
       }
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(() => {
   if (compProps.initSearch) {
     search.value = compProps.initSearch;
   } else {
-    const savedSearch = localStorage.getItem("globalsearch");
-    if (savedSearch && savedSearch !== "null") {
+    const savedSearch = localStorage.getItem('globalsearch');
+    if (savedSearch && savedSearch !== 'null') {
       search.value = savedSearch;
     }
   }
@@ -332,19 +287,19 @@ onMounted(() => {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (showContextMenu.value) return;
-  if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
+  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = filteredItems.value;
-  } else if (!searchHasFocus.value && e.key == "Backspace") {
+  } else if (!searchHasFocus.value && e.key == 'Backspace') {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
     search.value += e.key;
   }
 };
 
-document.addEventListener("keydown", keyListener);
+document.addEventListener('keydown', keyListener);
 
 onBeforeUnmount(() => {
-  document.removeEventListener("keydown", keyListener);
+  document.removeEventListener('keydown', keyListener);
 });
 </script>

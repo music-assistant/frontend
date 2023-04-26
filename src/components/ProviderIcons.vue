@@ -134,6 +134,9 @@ export const iconVorbis = new URL('@/assets/vorbis.png', import.meta.url).href;
 export const iconM4a = new URL('@/assets/m4a.png', import.meta.url).href;
 export const iconHiRes = new URL('@/assets/hires.png', import.meta.url).href;
 
+export const imgCoverDark = new URL('@/assets/cover_dark.png', import.meta.url).href;
+export const imgCoverLight = new URL('@/assets/cover_light.png', import.meta.url).href;
+
 export const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;
   if (contentType == ContentType.FLAC) return iconFlac;

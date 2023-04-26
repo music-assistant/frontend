@@ -47,7 +47,11 @@
     <template #append>
       <!-- format -->
       <v-chip
-        v-if="curQueueItem?.streamdetails && !isMobileDevice(MobileDeviceType.PHONE, $vuetify.display)"
+        v-if="
+          curQueueItem?.streamdetails &&
+          !isMobileDevice(MobileDeviceType.PHONE, $vuetify.display) &&
+          showQualityDetailsBtn
+        "
         :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
         class="player-track-content-type"
         :style="$vuetify.theme.current.dark ? 'color: #000; background: #fff;' : 'color: #fff; background: #000;'"
@@ -134,10 +138,12 @@ const router = useRouter();
 // properties
 interface Props {
   showOnlyArtist?: boolean;
+  showQualityDetailsBtn?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
+  showQualityDetailsBtn: true,
 });
 
 //ref

@@ -5,7 +5,7 @@
         $vuetify.theme.current.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
-      } 100%), ${activePlayerQueue?.active ? `url(${fanartImage})` : undefined};
+      } 100%), ${activePlayerQueue?.active ? `url(${backgroundImage})` : undefined};
                                           background-size: cover; background-position: center; border: none;`"
     >
       <v-toolbar dark color="transparent">
@@ -27,19 +27,27 @@
       </v-toolbar>
       <div class="main">
         <div style="margin-top: 10px; text-align: -webkit-center">
-          <img
-            v-if="coverImage"
+          <MediaItemThumb
+            v-if="curQueueItem"
+            :item="curQueueItem.media_item || curQueueItem"
+            :width="$vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1 ? 512 : 1024"
+            :height="$vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1 ? 512 : 1024"
             style="
               height: min(calc(100vw - 40px), calc(100vh - 330px));
               width: min(calc(100vw - 40px), calc(100vh - 330px));
             "
-            alt="cover"
-            :src="fanartImage"
+          />
+          <v-img
+            v-else
+            :src="$vuetify.theme.current.dark ? imgCoverDark : imgCoverLight"
+            style="
+              height: min(calc(100vw - 40px), calc(100vh - 330px));
+              width: min(calc(100vw - 40px), calc(100vh - 330px));
+            "
           />
         </div>
 
         <div style="padding-top: 3vh; text-align: center">
-          <!-- title -->
           <div v-if="curQueueItem && curQueueItem.media_item">
             <div v-if="$vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1">
               <div style="float: right">
@@ -57,10 +65,11 @@
                 <QualityDetailsBtn />
               </div>
             </div>
+            <!-- title -->
             <h1
               v-if="activePlayerQueue?.active && curQueueItem"
               style="cursor: pointer; width: fit-content; display: inline"
-              class="title"
+              class="title line-clamp-1"
               @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
             >
               <!-- name + version (if present) -->
@@ -169,10 +178,11 @@ import { MediaItemType, ImageType, MediaType, ItemMapping, Track } from '@/plugi
 import { store } from '@/plugins/store';
 import { getArtistsString, getResponsiveBreakpoints } from '@/utils';
 import PlayerTimeline from './PlayerTimeline.vue';
+import MediaItemThumb from '@/components/MediaItemThumb.vue';
+import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
 
 // local refs
 const fullTrackDetails = ref<Track>();
-const fanartImage = ref();
 
 // computed properties
 const activePlayerQueue = computed(() => {
@@ -187,7 +197,6 @@ const curQueueItem = computed(() => {
 });
 
 const coverImage = computed(() => {
-  //doesn't worked
   // return the default cover/thumb image for the active queueItem
   if (curQueueItem.value) {
     return getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB);
@@ -206,8 +215,7 @@ const backgroundImage = computed(() => {
     if (artistThumb) return artistThumb;
   }
   // fallback to just the cover image
-  //return coverImage.value; <- doesn't worked
-  return fanartImage.value;
+  return coverImage.value;
 });
 
 // methods
@@ -225,11 +233,6 @@ watch(
   async (result) => {
     if (result && result.media_item && result.media_item.media_type == MediaType.TRACK) {
       fullTrackDetails.value = (await api.getItemByUri(result.media_item.uri, undefined, false)) as Track;
-    }
-    if (result?.media_item) {
-      fanartImage.value =
-        (await getImageThumbForItem(result.media_item, ImageType.FANART)) ||
-        (await getImageThumbForItem(result.media_item, ImageType.THUMB));
     }
   },
 );

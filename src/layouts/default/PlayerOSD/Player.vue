@@ -23,7 +23,10 @@
       }px;`"
     >
       <div :class="`mediacontrols-left-${$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 ? '1' : '2'}`">
-        <PlayerTrackDetails :show-only-artist="true" />
+        <PlayerTrackDetails
+          :show-quality-details-btn="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_7 ? true : false"
+          :show-only-artist="true"
+        />
       </div>
       <div
         :class="`mediacontrols-buttom-center-${

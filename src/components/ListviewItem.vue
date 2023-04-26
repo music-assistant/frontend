@@ -3,11 +3,12 @@
   <div>
     <v-list-item
       link
-      :disabled="!itemIsAvailable(item)"
+      :disabled="!itemIsAvailable(item) || isDisabled"
       class="listitem"
       density="compact"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
+      v-hold="() => emit('menu', item)"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -64,13 +65,13 @@
               {{ getArtistsString(item.artists, 2) }}
             </v-item>
             <v-item v-if="showAlbum && 'album' in item && item.album"> • {{ item.album.name }} </v-item>
-            <v-item v-if="'disc_number' in item && item.disc_number && showTrackNumber">
+            <v-item v-if="'disc_number' in item && item.disc_number && showDiscNumber">
               <v-icon style="margin-left: 5px" icon="md:album" /> {{ item.disc_number }}
             </v-item>
             <v-item v-if="'track_number' in item && item.track_number && showTrackNumber">
               <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" /> {{ item.track_number }}
             </v-item>
-            <v-item v-else-if="'position' in item && item.position">
+            <v-item v-else-if="'position' in item && item.position && showPosition">
               <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" /> {{ item.position }}
             </v-item>
           </v-item-group>
@@ -128,7 +129,11 @@
 
           <!-- provider icons -->
           <provider-icons
-            v-if="item.provider_mappings && showProviders && !$vuetify.display.mobile"
+            v-if="
+              item.provider_mappings &&
+              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_10 &&
+              showProviders
+            "
             :provider-mappings="item.provider_mappings"
             :height="20"
             class="listitem-actions"
@@ -167,7 +172,7 @@
               item.media_type == MediaType.TRACK &&
               'duration' in item &&
               item.duration != undefined &&
-              !$vuetify.display.mobile
+              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_10
             "
             class="listitem-action"
           >
@@ -177,10 +182,10 @@
               }}</span>
             </div>
           </div>
-
+          <slot name="append"></slot>
           <!-- menu button/icon -->
           <div
-            v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 && showMenu"
+            v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_0 && showMenu"
             class="listitem-action"
           >
             <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
@@ -211,12 +216,15 @@ import api from '@/plugins/api';
 export interface Props {
   item: MediaItemType;
   showTrackNumber?: boolean;
+  showDiscNumber?: boolean;
+  showPosition?: boolean;
   showProviders?: boolean;
   showAlbum?: boolean;
   showMenu?: boolean;
   showLibrary?: boolean;
   showDuration?: boolean;
   isSelected: boolean;
+  isDisabled?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
   parentItem?: MediaItemType;
@@ -227,13 +235,16 @@ const { t } = useI18n();
 
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
+  showDiscNumber: true,
   showProviders: true,
+  showPosition: true,
   showAlbum: true,
   showMenu: true,
   showLibrary: true,
   showDuration: true,
   showCheckboxes: false,
   parentItem: undefined,
+  isDisabled: false,
 });
 
 // computed properties
@@ -272,10 +283,6 @@ const itemIsAvailable = function (item: MediaItem) {
 </script>
 
 <style>
-.v-slider.v-input--horizontal .v-input__control {
-  min-height: 5px;
-}
-
 .listitem-media-thumb {
   height: 50px;
   width: 50px;

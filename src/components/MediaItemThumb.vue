@@ -1,10 +1,11 @@
 <template>
   <v-img
     :key="'uri' in item! ? item?.uri : item?.queue_item_id"
-    :style="`height:${height}px; width:${width}px;`"
+    :style="`height:${size || height}px; width:${size || width}px;`"
     :cover="cover"
     :src="imgData"
     :aspect-ratio="aspectRatio"
+    :lazy-src="!lazySrc ? ($vuetify.theme.current.dark ? imgCoverDark : imgCoverLight) : lazySrc"
     @error="
       () => {
         imgData = fallbackImage;
@@ -25,19 +26,21 @@ import type { ItemMapping, MediaItemImage, MediaItemType, QueueItem } from '../p
 import { ImageType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { useTheme } from 'vuetify';
+import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
   width?: string | number;
   height?: string | number;
+  size?: string | number;
   aspectRatio?: string | number;
   cover?: boolean;
   fallback?: string;
   thumb?: boolean;
+  lazySrc?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  item: undefined,
   width: '100%',
   height: 'auto',
   aspectRatio: '1/1',
@@ -64,8 +67,14 @@ const fallbackImage = computed(() => {
 });
 
 const thumbSize = computed(() => {
-  if (typeof props.width == 'number') return props.width;
-  else if (props.thumb) return 256;
+  if (typeof props.size == 'number') return props.size;
+  else if (typeof props.width == 'number' && typeof props.height == 'number') {
+    if (props.height > props.width) {
+      return props.height;
+    } else {
+      return props.width;
+    }
+  } else if (props.thumb) return 256;
   return 0;
 });
 
@@ -135,11 +144,11 @@ export const getMediaItemImage = function (
   }
 };
 
-export const getImageThumbForItem = async function (
+export const getImageThumbForItem = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
   size?: number,
-): Promise<string | undefined> {
+): string | undefined {
   if (!mediaItem) return;
   let imageUrl = '';
   // find image in mediaitem

@@ -66,6 +66,10 @@
     float: left;
   }
   
+  .v-slider.v-input--horizontal .v-input__control {
+    min-height: 5px;
+  }
+
   div.v-navigation-drawer__scrim {
     opacity: 0.8;
     background: grey;
