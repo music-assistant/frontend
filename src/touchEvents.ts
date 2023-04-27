@@ -2,6 +2,7 @@ import { App } from 'vue';
 
 interface CustomTouchEventsOptions {
   holdDuration?: number;
+  holdThreshold?: number;
   swipeThreshold?: number;
   doubleTapThreshold?: number;
 }
@@ -11,6 +12,7 @@ const CustomTouchEvents = {
     const holdDuration = options?.holdDuration || 500;
     const swipeThreshold = options?.swipeThreshold || 50;
     const doubleTapThreshold = options?.doubleTapThreshold || 300;
+    const holdThreshold = options?.holdThreshold || 10;
 
     const touchStartEvent = 'touchstart';
     const touchEndEvent = 'touchend';
@@ -19,31 +21,59 @@ const CustomTouchEvents = {
     // Hold Directive
     app.directive('hold', {
       mounted(el, binding) {
-        let holdTimeout: ReturnType<typeof setTimeout> | null = null;
+        const touchStartEvent = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+        const touchEndEvent = 'ontouchstart' in window ? 'touchend' : 'mouseup';
+        const touchMoveEvent = 'ontouchstart' in window ? 'touchmove' : 'mousemove';
+        let holdTimeout: number | null = null;
+        let startX: number | null = null;
+        let startY: number | null = null;
 
-        const handleTouchStart = () => {
-          holdTimeout = setTimeout(() => {
-            binding.value();
-            window.navigator.vibrate(150);
+        const handleTouchStart = (event: TouchEvent) => {
+          startX = event.touches[0].clientX;
+          startY = event.touches[0].clientY;
+
+          holdTimeout = window.setTimeout(() => {
+            binding.value(event);
+            holdTimeout = null;
           }, holdDuration);
         };
 
+        const handleTouchMove = (event: TouchEvent) => {
+          if (!startX || !startY || !holdTimeout) {
+            return;
+          }
+
+          const x = event.touches[0].clientX;
+          const y = event.touches[0].clientY;
+
+          if (Math.abs(x - startX) > holdThreshold || Math.abs(y - startY) > holdThreshold) {
+            window.clearTimeout(holdTimeout);
+            holdTimeout = null;
+          }
+        };
+
         const handleTouchEnd = () => {
-          if (holdTimeout) clearTimeout(holdTimeout);
+          if (holdTimeout) {
+            window.clearTimeout(holdTimeout);
+            holdTimeout = null;
+          }
         };
 
         el.addEventListener(touchStartEvent, handleTouchStart);
         el.addEventListener(touchEndEvent, handleTouchEnd);
+        el.addEventListener(touchMoveEvent, handleTouchMove);
 
         el._hold = {
           handleTouchStart,
           handleTouchEnd,
+          handleTouchMove,
         };
       },
       unmounted(el) {
         if (el._hold) {
           el.removeEventListener(touchStartEvent, el._hold.handleTouchStart);
           el.removeEventListener(touchEndEvent, el._hold.handleTouchEnd);
+          el.removeEventListener(touchMoveEvent, el._hold.handleTouchMove);
         }
       },
     });

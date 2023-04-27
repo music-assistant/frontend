@@ -1,203 +1,211 @@
 <template>
-  <section>
-    <v-card-text style="margin-right: 15px">
-      <!-- show alert if no music providers configured-->
+  <v-container>
+    <!-- show alert if no music providers configured-->
+    <!-- show section per providertype -->
+    <v-card v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
+      <v-toolbar density="compact" class="titlebar">
+        <template #title>
+          <h2 class="line-clamp-1">{{ $t(`settings.${provType}providers`) }}</h2>
+        </template>
+        <template #append>
+          <!-- ADD provider button + contextmenu -->
+          <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
+            <template #activator="{ props }">
+              <v-btn variant="text" v-bind="props">
+                {{ $t('settings.add_new') }}
+              </v-btn>
+            </template>
 
-      <!-- show section per providertpe -->
-      <v-card v-for="provType in ProviderType" :key="provType" style="margin-bottom: 15px">
-        <v-toolbar :title="$t(`settings.${provType}providers`)" density="compact">
-          <template #append>
-            <!-- ADD provider button + contextmenu -->
-            <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
-              <template #activator="{ props }">
-                <v-btn variant="text" v-bind="props">
-                  {{ $t('settings.add_new') }}
-                </v-btn>
-              </template>
+            <v-card density="compact">
+              <v-list-item
+                v-for="provider in availableProviders.filter((x) => x.type == provType)"
+                :key="provider.domain"
+                density="compact"
+                style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
+                :title="provider.name"
+                @click="addProvider(provider)"
+              >
+                <template #prepend>
+                  <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
+                </template>
+              </v-list-item>
+            </v-card>
+          </v-menu>
+        </template>
+      </v-toolbar>
 
-              <v-card density="compact">
-                <v-list-item
-                  v-for="provider in availableProviders.filter((x) => x.type == provType)"
-                  :key="provider.domain"
-                  density="compact"
-                  style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
-                  :title="provider.name"
-                  @click="addProvider(provider)"
-                >
-                  <template #prepend>
-                    <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
-                  </template>
-                </v-list-item>
-              </v-card>
-            </v-menu>
-          </template>
-        </v-toolbar>
+      <!-- alert if no providers configured -->
+      <v-alert
+        v-if="
+          provType == ProviderType.MUSIC &&
+          providerConfigs.filter(
+            (x) =>
+              x.type == ProviderType.MUSIC &&
+              x.domain in api.providerManifests &&
+              !api.providerManifests[x.domain].hidden,
+          ).length == 0
+        "
+        color="primary"
+        theme="dark"
+        icon="mdi-radio-tower"
+        prominent
+        style="margin-bottom: 15px"
+      >
+        <b>{{ $t('settings.no_providers') }}</b>
+        <br />
+        {{ $t('settings.no_providers_detail') }}
+      </v-alert>
 
-        <!-- alert if no providers configured -->
-        <v-alert
-          v-if="
-            provType == ProviderType.MUSIC &&
-            providerConfigs.filter(
-              (x) =>
-                x.type == ProviderType.MUSIC &&
-                x.domain in api.providerManifests &&
-                !api.providerManifests[x.domain].hidden,
-            ).length == 0
-          "
-          color="primary"
-          theme="dark"
-          icon="mdi-radio-tower"
-          prominent
-          style="margin-bottom: 15px"
-        >
-          <b>{{ $t('settings.no_providers') }}</b>
-          <br />
-          {{ $t('settings.no_providers_detail') }}
-        </v-alert>
+      <RecycleScroller
+        v-slot="{ item }"
+        :items="providerConfigs.filter((x) => x.type == provType)"
+        :item-size="60"
+        key-field="instance_id"
+        page-mode
+      >
         <v-list-item
-          v-for="config in providerConfigs
-            .filter(
-              (x) => x.type == provType && x.domain in api.providerManifests && !api.providerManifests[x.domain].hidden,
-            )
-            .sort((a, b) =>
-              (a.name || api.providerManifests[a.domain].name).toUpperCase() >
-              (b.name || api.providerManifests[b.domain].name).toUpperCase()
-                ? 1
-                : -1,
-            )"
-          :key="config.instance_id"
-          :title="config.name || api.providerManifests[config.domain].name"
-          :subtitle="api.providerManifests[config.domain].description"
-          @click="editProvider(config.instance_id)"
+          link
+          class="listitem"
+          density="compact"
+          @click="editProvider(item.instance_id)"
+          v-hold="
+            () => {
+              editProvider(item.instance_id);
+            }
+          "
         >
           <template #prepend>
-            <provider-icon :domain="config.domain" :size="'40px'" class="media-thumb" style="margin-left: -5px" />
+            <provider-icon :domain="item.domain" :size="'40px'" class="listitem-media-thumb" />
           </template>
 
+          <!-- title -->
+          <template #title>
+            <div class="line-clamp-1">{{ item.name || api.providerManifests[item.domain].name }}</div>
+          </template>
+
+          <!-- subtitle -->
+          <template #subtitle>
+            <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div></template
+          >
+          <!-- append -->
           <template #append>
             <div class="listitem-actions">
-              <!-- sync task running -->
+              <!-- start -->
               <div
-                v-if="api.syncTasks.value.filter((x) => x.provider_instance == config.instance_id).length > 0"
+                v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0"
                 class="listitem-action"
-                style="margin-right: 15px"
               >
                 <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
+                    <ButtonIcon v-bind="tooltip">
+                      <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
+                    </ButtonIcon>
                   </template>
                   <span>{{ $t('settings.sync_running') }}</span>
                 </v-tooltip>
               </div>
 
               <!-- provider disabled -->
-              <div v-if="!config.enabled" class="listitem-action" style="margin-right: 15px">
+              <div v-if="!item.enabled" class="listitem-action">
                 <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
+                    <ButtonIcon v-bind="tooltip">
+                      <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
+                    </ButtonIcon>
                   </template>
                   <span>{{ $t('settings.provider_disabled') }}</span>
                 </v-tooltip>
               </div>
 
               <!-- provider has errors -->
-              <div v-else-if="config.last_error" class="listitem-action" style="margin-right: 15px">
+              <div v-else-if="item.last_error" class="listitem-action">
                 <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
+                    <ButtonIcon v-bind="tooltip">
+                      <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
+                    </ButtonIcon>
                   </template>
-                  <span>{{ config.last_error }}</span>
+                  <span>{{ item.last_error }}</span>
                 </v-tooltip>
               </div>
 
               <!-- loading (provider not yet available) -->
-              <div
-                v-else-if="!api.providers[config.instance_id]?.available"
-                class="listitem-action"
-                style="margin-right: 15px"
-              >
+              <div v-else-if="!api.providers[item.instance_id]?.available" class="listitem-action">
                 <v-tooltip location="top end" origin="end center">
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip"> mdi-timer-sand </v-icon>
+                    <ButtonIcon v-bind="tooltip">
+                      <v-icon icon="mdi-timer-sand" />
+                    </ButtonIcon>
                   </template>
                   <span>{{ $t('settings.not_loaded') }}</span>
                 </v-tooltip>
               </div>
-
+              <!-- end -->
               <!-- contextmenu-->
-              <div class="listitem-action">
-                <v-menu location="bottom end">
-                  <template #activator="{ props }">
-                    <v-btn
-                      color="grey-darken-1"
-                      icon="mdi-dots-vertical"
-                      variant="text"
-                      v-bind="props"
-                      size="x-large"
-                      style="margin-right: -70px"
-                    />
-                  </template>
-
-                  <v-list>
-                    <v-list-item
-                      :title="$t('settings.configure')"
-                      prepend-icon="mdi-cog"
-                      @click="editProvider(config.instance_id)"
-                    />
-                    <v-list-item
-                      :title="config.enabled ? $t('settings.disable') : $t('settings.enable')"
-                      prepend-icon="mdi-cancel"
-                      :disabled="api.providerManifests[config.domain].builtin"
-                      @click="toggleEnabled(config)"
-                    />
-                    <v-list-item
-                      v-if="api.providerManifests[config.domain].documentation"
-                      :title="$t('settings.documentation')"
-                      prepend-icon="mdi-bookshelf"
-                      :href="api.providerManifests[config.domain].documentation"
-                      target="_blank"
-                    />
-                    <v-list-item
-                      v-if="api.providers[config.instance_id]?.available && provType == ProviderType.MUSIC"
-                      :title="$t('settings.sync')"
-                      prepend-icon="mdi-sync"
-                      @click="api.startSync(undefined, [config.instance_id])"
-                    />
-                    <v-list-item
-                      v-if="
-                        !api.providerManifests[config.domain].builtin &&
-                        !api.providerManifests[config.domain].load_by_default
-                      "
-                      :title="$t('settings.delete')"
-                      prepend-icon="mdi-delete"
-                      @click="removeProvider(config.instance_id)"
-                    />
-                    <v-list-item
-                      :title="$t('settings.reload')"
-                      prepend-icon="mdi-refresh"
-                      @click="reloadProvider(config.instance_id)"
-                    />
-                  </v-list>
-                </v-menu>
-              </div>
+              <v-menu location="bottom end">
+                <template #activator="{ props }">
+                  <ButtonIcon v-bind="props">
+                    <v-icon icon="mdi-dots-vertical" />
+                  </ButtonIcon>
+                </template>
+                <v-list>
+                  <v-list-item
+                    :title="$t('settings.configure')"
+                    prepend-icon="mdi-cog"
+                    @click="editProvider(item.instance_id)"
+                  />
+                  <v-list-item
+                    :title="item.enabled ? $t('settings.disable') : $t('settings.enable')"
+                    prepend-icon="mdi-cancel"
+                    :disabled="api.providerManifests[item.domain].builtin"
+                    @click="toggleEnabled(item)"
+                  />
+                  <v-list-item
+                    v-if="api.providerManifests[item.domain].documentation"
+                    :title="$t('settings.documentation')"
+                    prepend-icon="mdi-bookshelf"
+                    :href="api.providerManifests[item.domain].documentation"
+                    target="_blank"
+                  />
+                  <v-list-item
+                    v-if="api.providers[item.instance_id]?.available && provType == ProviderType.MUSIC"
+                    :title="$t('settings.sync')"
+                    prepend-icon="mdi-sync"
+                    @click="api.startSync(undefined, [item.instance_id])"
+                  />
+                  <v-list-item
+                    v-if="
+                      !api.providerManifests[item.domain].builtin && !api.providerManifests[item.domain].load_by_default
+                    "
+                    :title="$t('settings.delete')"
+                    prepend-icon="mdi-delete"
+                    @click="removeProvider(item.instance_id)"
+                  />
+                  <v-list-item
+                    :title="$t('settings.reload')"
+                    prepend-icon="mdi-refresh"
+                    @click="reloadProvider(item.instance_id)"
+                  />
+                </v-list>
+              </v-menu>
             </div>
           </template>
         </v-list-item>
-        <br />
-      </v-card>
-    </v-card-text>
-  </section>
+      </RecycleScroller>
+    </v-card>
+  </v-container>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-
+import { RecycleScroller } from 'vue-virtual-scroller';
 import { api } from '@/plugins/api';
 import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import ButtonIcon from '@/components/ButtonIcon.vue';
 
 // global refs
 const router = useRouter();
@@ -278,4 +286,8 @@ watch(
 );
 </script>
 
-<style scoped></style>
+<style>
+.titlebar {
+  padding: 10px 0px;
+}
+</style>
