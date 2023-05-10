@@ -17,29 +17,24 @@
           <b>{{ $t("settings.player_id") }}: </b>{{ config.player_id }}
         </v-card-subtitle>
         <v-card-subtitle>
-          <b>{{ $t("settings.player_provider") }}: </b
-          >{{ api.providerManifests[config.provider].name }}
+          <b>{{ $t("settings.player_provider") }}: </b>{{ api.providerManifests[config.provider].name }}
           (
           {{ api.providerManifests[config.provider].description }})
           <a
             v-if="api.providerManifests[config.provider].documentation"
             :href="api.providerManifests[config.provider].documentation"
             target="_blank"
-            >{{ $t("settings.check_docs") }}</a
-          >
+          >{{ $t("settings.check_docs") }}</a>
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t("settings.player_model") }}: </b
-          >{{ api.players[config.player_id].device_info.manufacturer }} /
+          <b>{{ $t("settings.player_model") }}: </b>{{ api.players[config.player_id].device_info.manufacturer }} /
           {{ api.players[config.player_id].device_info.model }}
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t("settings.player_address") }}: </b
-          >{{ api.players[config.player_id].device_info.address }}
+          <b>{{ $t("settings.player_address") }}: </b>{{ api.players[config.player_id].device_info.address }}
         </v-card-subtitle>
         <v-card-subtitle>
-          <b>{{ $t("settings.player_type_label") }}: </b
-          >{{ $t(`player_type.${api.players[config.player_id].type}`) }}
+          <b>{{ $t("settings.player_type_label") }}: </b>{{ $t(`player_type.${api.players[config.player_id].type}`) }}
         </v-card-subtitle>
         <br />
         <v-divider />

@@ -8,12 +8,20 @@
       :disabled="disabled"
     >
       <!-- config rows for all config entries -->
-      <v-expansion-panels v-model="activePanel" variant="accordion" multiple>
+      <v-expansion-panels
+        v-model="activePanel"
+        variant="accordion"
+        multiple
+      >
         <!-- 
           we split up the config settings in basic and advanced settings,
           using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
         -->
-        <v-expansion-panel v-for="panel of panels" :key="panel" :value="panel">
+        <v-expansion-panel
+          v-for="panel of panels"
+          :key="panel"
+          :value="panel"
+        >
           <v-expansion-panel-title v-if="panel == 'advanced'">
             <div class="expansion-panel-text">
               {{ $t("settings.advanced_settings") }}
@@ -70,7 +78,7 @@
                 <div
                   v-else-if="
                     conf_item_value.type == ConfigEntryType.ACTION ||
-                    (conf_item_value.action && !conf_item_value.value)
+                      (conf_item_value.action && !conf_item_value.value)
                   "
                 >
                   <br />
@@ -78,7 +86,7 @@
                     class="actionbutton"
                     :disabled="
                       !!conf_item_value.depends_on &&
-                      !getValue(conf_item_value.depends_on)
+                        !getValue(conf_item_value.depends_on)
                     "
                     @click="
                       action(conf_item_value.action || conf_item_value.key);
@@ -108,7 +116,7 @@
                   color="primary"
                   :disabled="
                     !!conf_item_value.depends_on &&
-                    !getValue(conf_item_value.depends_on)
+                      !getValue(conf_item_value.depends_on)
                   "
                 />
 
@@ -118,13 +126,13 @@
                   v-else-if="
                     (conf_item_value.type == ConfigEntryType.INTEGER ||
                       conf_item_value.type == ConfigEntryType.FLOAT) &&
-                    conf_item_value.range &&
-                    conf_item_value.range.length == 2
+                      conf_item_value.range &&
+                      conf_item_value.range.length == 2
                   "
                   v-model="conf_item_value.value as number"
                   :disabled="
                     !!conf_item_value.depends_on &&
-                    !getValue(conf_item_value.depends_on)
+                      !getValue(conf_item_value.depends_on)
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -165,7 +173,7 @@
                   :required="conf_item_value.required"
                   :disabled="
                     !!conf_item_value.depends_on &&
-                    !getValue(conf_item_value.depends_on)
+                      !getValue(conf_item_value.depends_on)
                   "
                   :rules="[
                     (v) =>
@@ -178,8 +186,8 @@
                       ? 'mdi-eye'
                       : typeof conf_item_value.value == 'string' &&
                         conf_item_value.value.includes(SECURE_STRING_SUBSTITUTE)
-                      ? ''
-                      : 'mdi-eye-off'
+                        ? ''
+                        : 'mdi-eye-off'
                   "
                   variant="outlined"
                   clearable
@@ -191,7 +199,7 @@
                 <v-select
                   v-else-if="
                     conf_item_value.options &&
-                    conf_item_value.options.length > 0
+                      conf_item_value.options.length > 0
                   "
                   v-model="conf_item_value.value"
                   :chips="conf_item_value.multi_value"
@@ -200,7 +208,7 @@
                   :items="conf_item_value.options"
                   :disabled="
                     !!conf_item_value.depends_on &&
-                    !getValue(conf_item_value.depends_on)
+                      !getValue(conf_item_value.depends_on)
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -217,13 +225,13 @@
                 <v-text-field
                   v-else-if="
                     conf_item_value.type == ConfigEntryType.INTEGER ||
-                    conf_item_value.type == ConfigEntryType.FLOAT
+                      conf_item_value.type == ConfigEntryType.FLOAT
                   "
                   v-model="conf_item_value.value"
                   :placeholder="conf_item_value.default_value?.toString()"
                   :disabled="
                     !!conf_item_value.depends_on &&
-                    !getValue(conf_item_value.depends_on)
+                      !getValue(conf_item_value.depends_on)
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -246,7 +254,7 @@
                   clearable
                   :disabled="
                     !!conf_item_value.depends_on &&
-                    !getValue(conf_item_value.depends_on)
+                      !getValue(conf_item_value.depends_on)
                   "
                   :label="
                     $t(`settings.${conf_item_value.key}`, conf_item_value.label)
@@ -286,14 +294,17 @@
       <v-btn
         block
         color="primary"
-        @click="submit"
         :disabled="!requiredValuesPresent"
+        @click="submit"
       >
         {{ $t("settings.save") }}
       </v-btn>
     </v-form>
     <br />
-    <v-btn block @click="$router.back()">
+    <v-btn
+      block
+      @click="$router.back()"
+    >
       {{ $t("close") }}
     </v-btn>
     <v-dialog
@@ -311,7 +322,10 @@
             {{ $t("read_more") }}
           </v-btn>
           <v-spacer />
-          <v-btn color="primary" @click="showHelpInfo = undefined">
+          <v-btn
+            color="primary"
+            @click="showHelpInfo = undefined"
+          >
             {{ $t("close") }}
           </v-btn>
         </v-card-actions>
@@ -401,7 +415,7 @@ watch(
   (val) => {
     entries.value = [];
     for (const entry of val || []) {
-      if (!!entry.value) oldValues.value[entry.key] = entry.value;
+      if (entry.value) oldValues.value[entry.key] = entry.value;
       if (!entry.value) entry.value = entry.default_value;
       entries.value.push(entry);
     }

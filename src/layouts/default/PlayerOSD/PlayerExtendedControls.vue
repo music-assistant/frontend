@@ -30,7 +30,7 @@
         <div
           v-if="
             $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_7 ||
-            !responsiveVolumeSize
+              !responsiveVolumeSize
           "
         >
           <PlayerVolume
@@ -45,18 +45,22 @@
             @update:model-value="
               store.selectedPlayer!.group_childs.length > 0
                 ? api.playerCommandGroupVolume(
-                    store.selectedPlayer?.player_id || '',
-                    $event
-                  )
+                  store.selectedPlayer?.player_id || '',
+                  $event
+                )
                 : api.playerCommandVolumeSet(
-                    store.selectedPlayer?.player_id || '',
-                    $event
-                  )
+                  store.selectedPlayer?.player_id || '',
+                  $event
+                )
             "
           >
             <template #prepend>
               <!-- select player -->
-              <v-btn icon variant="plain" v-bind="props">
+              <v-btn
+                icon
+                variant="plain"
+                v-bind="props"
+              >
                 <v-icon icon="mdi-volume-high" />
                 <div class="text-caption">
                   {{
@@ -70,7 +74,11 @@
           </PlayerVolume>
         </div>
         <div v-else>
-          <v-btn icon variant="plain" v-bind="props">
+          <v-btn
+            icon
+            variant="plain"
+            v-bind="props"
+          >
             <v-icon icon="mdi-volume-high" />
             <div class="text-caption">
               {{
@@ -84,7 +92,10 @@
       </template>
 
       <v-card min-width="350">
-        <v-list style="overflow: hidden" lines="two">
+        <v-list
+          style="overflow: hidden"
+          lines="two"
+        >
           <v-list-item
             density="compact"
             two-line

@@ -1,6 +1,10 @@
 <template>
   <section>
-    <v-tabs v-model="activePanel" show-arrows grow>
+    <v-tabs
+      v-model="activePanel"
+      show-arrows
+      grow
+    >
       <v-tab :value="0">
         {{ $t("queue_next_items") + " (" + nextItems.length + ")" }}
       </v-tab>
@@ -32,18 +36,14 @@
             $t(activePlayerQueue?.radio_source[0].media_type),
           ])
         }}
-        <b
-          ><a
-            @click="
-              activePlayerQueue
-                ? gotoItem(activePlayerQueue?.radio_source[0])
-                : ''
-            "
-            >{{ activePlayerQueue?.radio_source[0].name }}</a
-          ></b
-        ><span v-if="activePlayerQueue?.radio_source.length > 1">
-          (+{{ activePlayerQueue?.radio_source.length - 1 }})</span
-        >
+        <b><a
+          @click="
+            activePlayerQueue
+              ? gotoItem(activePlayerQueue?.radio_source[0])
+              : ''
+          "
+        >{{ activePlayerQueue?.radio_source[0].name }}</a></b><span v-if="activePlayerQueue?.radio_source.length > 1">
+          (+{{ activePlayerQueue?.radio_source.length - 1 }})</span>
       </v-alert>
       <RecycleScroller
         v-slot="{ item }"
@@ -61,7 +61,11 @@
           >
             <template #prepend>
               <div class="listitem-thumb">
-                <MediaItemThumb :item="item" width="50px" height="50px" />
+                <MediaItemThumb
+                  :item="item"
+                  width="50px"
+                  height="50px"
+                />
               </div>
             </template>
 
@@ -75,8 +79,8 @@
               <div
                 v-if="
                   item.media_item &&
-                  'artists' in item.media_item &&
-                  item.media_item.artists.length > 0
+                    'artists' in item.media_item &&
+                    item.media_item.artists.length > 0
                 "
               >
                 {{ item.media_item.artists[0].name }}
@@ -96,7 +100,7 @@
                 <div
                   v-if="
                     item.duration &&
-                    item.media_item?.media_type != MediaType.RADIO
+                      item.media_item?.media_type != MediaType.RADIO
                   "
                   class="listitem-action"
                 >
@@ -104,7 +108,10 @@
                 </div>
 
                 <!-- move up -->
-                <div v-if="!$vuetify.display.mobile" class="listitem-action">
+                <div
+                  v-if="!$vuetify.display.mobile"
+                  class="listitem-action"
+                >
                   <v-tooltip location="bottom">
                     <template #activator="{ props }">
                       <v-btn
@@ -127,7 +134,10 @@
                 </div>
 
                 <!-- move down -->
-                <div v-if="!$vuetify.display.mobile" class="listitem-action">
+                <div
+                  v-if="!$vuetify.display.mobile"
+                  class="listitem-action"
+                >
                   <v-tooltip location="bottom">
                     <template #activator="{ props }">
                       <v-btn
@@ -154,7 +164,11 @@
           <v-divider />
         </div>
       </RecycleScroller>
-      <v-alert v-if="items.length == 0" type="info" style="margin: 20px">
+      <v-alert
+        v-if="items.length == 0"
+        type="info"
+        style="margin: 20px"
+      >
         {{ $t("no_content") }}
       </v-alert>
     </div>
@@ -167,9 +181,16 @@
       :scrim="true"
     >
       <v-card>
-        <v-toolbar sense dark color="primary">
+        <v-toolbar
+          sense
+          dark
+          color="primary"
+        >
           <v-btn icon="mdi-play-circle-outline" />
-          <v-toolbar-title v-if="selectedItem" style="padding-left: 10px">
+          <v-toolbar-title
+            v-if="selectedItem"
+            style="padding-left: 10px"
+          >
             <b>{{
               truncateString(
                 selectedItem?.name || "",
@@ -177,11 +198,18 @@
               )
             }}</b>
           </v-toolbar-title>
-          <v-toolbar-title v-else style="padding-left: 10px">
+          <v-toolbar-title
+            v-else
+            style="padding-left: 10px"
+          >
             <b>{{ $t("settings") }}</b> |
             {{ activePlayerQueue?.display_name }}
           </v-toolbar-title>
-          <v-btn icon="mdi-close" dark text @click="closeContextMenu()" />
+          <v-btn
+            icon="mdi-close"
+            dark
+            @click="closeContextMenu()"
+          />
         </v-toolbar>
 
         <!-- QueueItem related content menu -->

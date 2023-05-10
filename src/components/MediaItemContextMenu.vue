@@ -25,7 +25,6 @@
         <v-btn
           icon="mdi-close"
           dark
-          text
           @click="close()"
         />
       </v-toolbar>

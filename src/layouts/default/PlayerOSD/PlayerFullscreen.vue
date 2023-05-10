@@ -15,7 +15,10 @@
       };
                                           background-size: cover; background-position: center; border: none;`"
     >
-      <v-toolbar dark color="transparent">
+      <v-toolbar
+        dark
+        color="transparent"
+      >
         <v-btn
           style="margin-left: 16px"
           icon
@@ -100,7 +103,7 @@
           <div
             v-if="
               activePlayerQueue?.active &&
-              curQueueItem
+                curQueueItem
             "
             @click="itemClick((curQueueItem!.media_item as Track).artists[0])"
           >
@@ -108,8 +111,8 @@
             <h4
               v-if="
                 curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                'album' in curQueueItem.media_item &&
-                curQueueItem.media_item.album
+                  'album' in curQueueItem.media_item &&
+                  curQueueItem.media_item.album
               "
               class="subtitle"
               @click="
@@ -126,8 +129,8 @@
             <h4
               v-else-if="
                 curQueueItem.media_item &&
-                curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                (curQueueItem.media_item as Track).artists.length > 0
+                  curQueueItem.media_item?.media_type == MediaType.TRACK &&
+                  (curQueueItem.media_item as Track).artists.length > 0
               "
               class="subtitle"
               @click="
@@ -155,14 +158,17 @@
               {{ curQueueItem.media_item.metadata.description }}
             </h4>
             <!-- queue empty message -->
-            <h4 v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="subtitle">
+            <h4
+              v-else-if="activePlayerQueue && activePlayerQueue.items == 0"
+              class="subtitle"
+            >
               {{ $t("queue_empty") }}
             </h4>
             <!-- 3rd party source active -->
             <h4
               v-else-if="
                 store.selectedPlayer?.active_source !=
-                store.selectedPlayer?.player_id
+                  store.selectedPlayer?.player_id
               "
               class="subtitle"
             >
@@ -176,7 +182,10 @@
         </div>
         <div style="padding-top: 3vh">
           <!-- progress bar -->
-          <PlayerTimeline :is-progress-bar="false" :is-hidden="false" />
+          <PlayerTimeline
+            :is-progress-bar="false"
+            :is-hidden="false"
+          />
           <!-- player control buttons -->
           <PlayerExtendedControls
             v-if="

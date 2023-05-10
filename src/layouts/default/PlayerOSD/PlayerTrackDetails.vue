@@ -20,7 +20,12 @@
           style="cursor: pointer"
           @click="store.showFullscreenPlayer = true"
         />
-        <v-img v-else height="50" :src="iconFallback" style="opacity: 50%" />
+        <v-img
+          v-else
+          height="50"
+          :src="iconFallback"
+          style="opacity: 50%"
+        />
       </div>
     </template>
 
@@ -37,10 +42,9 @@
         <span
           v-if="
             'version' in curQueueItem.media_item &&
-            curQueueItem.media_item.version
+              curQueueItem.media_item.version
           "
-          >({{ curQueueItem.media_item.version }})</span
-        >
+        >({{ curQueueItem.media_item.version }})</span>
       </span>
       <span v-else-if="curQueueItem">
         {{ curQueueItem.name }}
@@ -61,10 +65,10 @@
       <div
         v-if="
           curQueueItem &&
-          curQueueItem.media_item?.media_type == MediaType.TRACK &&
-          'album' in curQueueItem.media_item &&
-          curQueueItem.media_item.album &&
-          !props.showOnlyArtist
+            curQueueItem.media_item?.media_type == MediaType.TRACK &&
+            'album' in curQueueItem.media_item &&
+            curQueueItem.media_item.album &&
+            !props.showOnlyArtist
         "
         style="cursor: pointer"
         class="line-clamp-1"
@@ -79,9 +83,9 @@
       <div
         v-else-if="
           curQueueItem &&
-          curQueueItem.media_item &&
-          'artists' in curQueueItem.media_item &&
-          curQueueItem.media_item.artists.length > 0
+            curQueueItem.media_item &&
+            'artists' in curQueueItem.media_item &&
+            curQueueItem.media_item.artists.length > 0
         "
         class="line-clamp-1"
         style="cursor: pointer"
@@ -95,30 +99,33 @@
       </div>
       <!-- radio live metadata -->
       <div
-        class="line-clamp-1"
         v-else-if="curQueueItem?.streamdetails?.stream_title"
+        class="line-clamp-1"
       >
         {{ curQueueItem?.streamdetails?.stream_title }}
       </div>
       <!-- other description -->
       <div
-        class="line-clamp-1"
         v-else-if="
           curQueueItem && curQueueItem.media_item?.metadata.description
         "
+        class="line-clamp-1"
       >
         {{ curQueueItem.media_item.metadata.description }}
       </div>
       <!-- queue empty message -->
-      <div class="line-clamp-1" v-else-if="activePlayerQueue && activePlayerQueue.items == 0">
+      <div
+        v-else-if="activePlayerQueue && activePlayerQueue.items == 0"
+        class="line-clamp-1"
+      >
         {{ $t("queue_empty") }}
       </div>
       <!-- 3rd party source active -->
       <div
-        class="line-clamp-1"
         v-else-if="
           store.selectedPlayer?.active_source != store.selectedPlayer?.player_id
         "
+        class="line-clamp-1"
       >
         {{
           $t("external_source_active", [store.selectedPlayer?.active_source])
@@ -142,8 +149,7 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { getArtistsString } from "@/utils";
 import { useRouter } from "vue-router";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
-import { iconFallback, iconSmallFlac } from "@/components/ProviderIcons.vue";
-import { getResponsiveBreakpoints } from "@/utils";
+import { iconFallback } from "@/components/ProviderIcons.vue";
 
 const router = useRouter();
 

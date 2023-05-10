@@ -14,7 +14,7 @@
         class="mediadetails-streamdetails"
         elevation="0"
       >
-      {{ streamDetails.content_type.toUpperCase() }}
+        {{ streamDetails.content_type.toUpperCase() }}
       </v-btn>
     </template>
     <v-card
@@ -100,7 +100,7 @@
   
 <script setup lang="ts">
 import { computed } from 'vue';
-import { getContentTypeIcon, iconHiRes } from '@/components/ProviderIcons.vue';
+import { getContentTypeIcon } from '@/components/ProviderIcons.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';

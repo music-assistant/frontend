@@ -19,7 +19,10 @@
               v-if="availableProviders.filter((x) => x.type == provType).length"
             >
               <template #activator="{ props }">
-                <v-btn variant="text" v-bind="props">
+                <v-btn
+                  variant="text"
+                  v-bind="props"
+                >
                   {{ $t("settings.add_new") }}
                 </v-btn>
               </template>
@@ -53,12 +56,12 @@
         <v-alert
           v-if="
             provType == ProviderType.MUSIC &&
-            providerConfigs.filter(
-              (x) =>
-                x.type == ProviderType.MUSIC &&
-                x.domain in api.providerManifests &&
-                !api.providerManifests[x.domain].hidden
-            ).length == 0
+              providerConfigs.filter(
+                (x) =>
+                  x.type == ProviderType.MUSIC &&
+                  x.domain in api.providerManifests &&
+                  !api.providerManifests[x.domain].hidden
+              ).length == 0
           "
           color="primary"
           theme="dark"
@@ -110,9 +113,17 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip location="top end" origin="end center">
+                <v-tooltip
+                  location="top end"
+                  origin="end center"
+                >
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
+                    <v-icon
+                      v-bind="tooltip"
+                      color="grey"
+                    >
+                      mdi-sync
+                    </v-icon>
                   </template>
                   <span>{{ $t("settings.sync_running") }}</span>
                 </v-tooltip>
@@ -124,9 +135,17 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip location="top end" origin="end center">
+                <v-tooltip
+                  location="top end"
+                  origin="end center"
+                >
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
+                    <v-icon
+                      v-bind="tooltip"
+                      color="grey"
+                    >
+                      mdi-cancel
+                    </v-icon>
                   </template>
                   <span>{{ $t("settings.provider_disabled") }}</span>
                 </v-tooltip>
@@ -138,9 +157,15 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip location="top end" origin="end center">
+                <v-tooltip
+                  location="top end"
+                  origin="end center"
+                >
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip" color="red">
+                    <v-icon
+                      v-bind="tooltip"
+                      color="red"
+                    >
                       mdi-alert-circle
                     </v-icon>
                   </template>
@@ -154,9 +179,14 @@
                 class="listitem-action"
                 style="margin-right: 15px"
               >
-                <v-tooltip location="top end" origin="end center">
+                <v-tooltip
+                  location="top end"
+                  origin="end center"
+                >
                   <template #activator="{ props: tooltip }">
-                    <v-icon v-bind="tooltip"> mdi-timer-sand </v-icon>
+                    <v-icon v-bind="tooltip">
+                      mdi-timer-sand
+                    </v-icon>
                   </template>
                   <span>{{ $t("settings.not_loaded") }}</span>
                 </v-tooltip>
@@ -202,7 +232,7 @@
                     <v-list-item
                       v-if="
                         api.providers[config.instance_id]?.available &&
-                        provType == ProviderType.MUSIC
+                          provType == ProviderType.MUSIC
                       "
                       :title="$t('settings.sync')"
                       prepend-icon="mdi-sync"
@@ -211,7 +241,7 @@
                     <v-list-item
                       v-if="
                         !api.providerManifests[config.domain].builtin &&
-                        !api.providerManifests[config.domain].load_by_default
+                          !api.providerManifests[config.domain].load_by_default
                       "
                       :title="$t('settings.delete')"
                       prepend-icon="mdi-delete"

@@ -12,11 +12,10 @@
           }}
         </v-card-title>
         <v-card-subtitle>
-          {{ api.providerManifests[domain].description }} </v-card-subtitle
-        ><br />
+          {{ api.providerManifests[domain].description }}
+        </v-card-subtitle><br />
         <v-card-subtitle v-if="api.providerManifests[domain].codeowners.length">
-          <b>{{ $t("settings.codeowners") }}: </b
-          >{{ api.providerManifests[domain].codeowners.join(" / ") }}
+          <b>{{ $t("settings.codeowners") }}: </b>{{ api.providerManifests[domain].codeowners.join(" / ") }}
         </v-card-subtitle>
 
         <v-card-subtitle v-if="api.providerManifests[domain].documentation">
@@ -24,8 +23,7 @@
           <a
             :href="api.providerManifests[domain].documentation"
             target="_blank"
-            >{{ $t("settings.check_docs") }}</a
-          >
+          >{{ $t("settings.check_docs") }}</a>
         </v-card-subtitle>
       </div>
       <br />
@@ -39,8 +37,13 @@
         @action="onAction"
       />
     </v-card-text>
-    <v-overlay scrim="true" v-model="loading" persistent style="display: flex;align-items: center;justify-content: center">
-        <v-progress-circular
+    <v-overlay
+      v-model="loading"
+      scrim="true"
+      persistent
+      style="display: flex;align-items: center;justify-content: center"
+    >
+      <v-progress-circular
         indeterminate
         size="64"
         color="primary"

@@ -2,7 +2,7 @@
   <v-app>
     <player-select />
     <app-bar />
-    <playerOSD/>
+    <playerOSD />
     <main-view v-if="api.state.value == ConnectionState.CONNECTED" />
     <v-overlay v-else>
       <v-progress-circular

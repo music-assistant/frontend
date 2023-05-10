@@ -21,7 +21,6 @@
       style="position: absolute; right: -10px; top: 0px"
       icon="mdi-close"
       dark
-      text
       @click="store.showPlayersMenu = !store.showPlayersMenu"
     />
     <v-divider />
