@@ -35,7 +35,7 @@
     "eslint": "^8.37.0",
     "eslint-plugin-vue": "^9.10.0",
     "https-localhost": "^4.7.1",
-    "jsdom": "^21.1.1",
+    "jsdom": "^22.0.0",
     "material-design-icons-iconfont": "^6.7.0",
     "replace-in-file": "^6.3.5",
     "sass": "^1.60.0",
@@ -44,6 +44,6 @@
     "vite-plugin-pwa": "^0.14.7",
     "vite-plugin-vuetify": "^1.0.2",
     "vite-plugin-webfont-dl": "^3.7.0",
-    "vue-tsc": "^1.2.0"
+    "vue-tsc": "^1.6.4"
   }
 }
