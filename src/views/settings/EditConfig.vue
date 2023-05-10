@@ -133,7 +133,7 @@
                   class="align-center"
                   :min="conf_item_value.range[0]"
                   :max="conf_item_value.range[1]"
-                  :step-size="
+                  :step="
                     conf_item_value.type == ConfigEntryType.FLOAT ? 0.5 : 1
                   "
                   hide-details
@@ -213,7 +213,7 @@
                   ]"
                   variant="outlined"
                 />
-                <!-- int value within range -->
+                <!-- int value without range -->
                 <v-text-field
                   v-else-if="
                     conf_item_value.type == ConfigEntryType.INTEGER ||
