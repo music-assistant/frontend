@@ -40,7 +40,7 @@
     "replace-in-file": "^6.3.5",
     "sass": "^1.60.0",
     "typescript": "^5.0.3",
-    "vite": "^4.2.1",
+    "vite": "^4.3.5",
     "vite-plugin-pwa": "^0.14.7",
     "vite-plugin-vuetify": "^1.0.2",
     "vite-plugin-webfont-dl": "^3.7.0",
