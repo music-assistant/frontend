@@ -415,8 +415,9 @@ watch(
   (val) => {
     entries.value = [];
     for (const entry of val || []) {
-      if (entry.value) oldValues.value[entry.key] = entry.value;
-      if (!entry.value) entry.value = entry.default_value;
+      // handle missing values (undefined or null)
+      if (entry.value !== undefined && entry.value !== null) oldValues.value[entry.key] = entry.value;
+      if (entry.value == undefined || entry.value == null) entry.value = entry.default_value;
       entries.value.push(entry);
     }
   },
