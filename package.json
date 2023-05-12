@@ -17,7 +17,7 @@
     "mobile-detect": "^1.4.5",
     "nanoid": "^4.0.2",
     "v3-infinite-loading": "^1.2.2",
-    "vue": "^3.2.47",
+    "vue": "^3.3.1",
     "vue-i18n": "^9.2.2",
     "vue-router": "^4.1.6",
     "vue-virtual-scroller": "2.0.0-beta.8",
