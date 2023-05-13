@@ -53,7 +53,7 @@
         >
           <template #append>
             <!-- move up -->
-            <div v-if="!$vuetify.display.mobile" class="listitem-action">
+            <div v-if="!$vuetify.display.mobile">
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
                   <v-btn
@@ -71,7 +71,7 @@
             </div>
 
             <!-- move down -->
-            <div v-if="!$vuetify.display.mobile" class="listitem-action">
+            <div v-if="!$vuetify.display.mobile">
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
                   <v-btn
@@ -115,57 +115,57 @@
         <v-card-text v-if="selectedItem">
           <v-list>
             <!-- play now -->
-            <v-list-item :title="$t('play_now')" @click="queueCommand(selectedItem, 'play_now')">
+            <ListItem :title="$t('play_now')" @click="queueCommand(selectedItem, 'play_now')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-play-circle-outline" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
             <v-divider />
 
             <!-- play next (move to next in line) -->
-            <v-list-item :title="$t('play_next')" @click="queueCommand(selectedItem, 'move_next')">
+            <ListItem :title="$t('play_next')" @click="queueCommand(selectedItem, 'move_next')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-skip-next-circle-outline" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
             <v-divider />
 
             <!-- move up -->
-            <v-list-item :title="$t('queue_move_up')" @click="queueCommand(selectedItem, 'up')">
+            <ListItem :title="$t('queue_move_up')" @click="queueCommand(selectedItem, 'up')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-arrow-up" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
             <v-divider />
 
             <!-- move down -->
-            <v-list-item :title="$t('queue_move_down')" @click="queueCommand(selectedItem, 'down')">
+            <ListItem :title="$t('queue_move_down')" @click="queueCommand(selectedItem, 'down')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-arrow-down" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
             <v-divider />
 
             <!-- delete -->
-            <v-list-item :title="$t('queue_delete')" @click="queueCommand(selectedItem, 'delete')">
+            <ListItem :title="$t('queue_delete')" @click="queueCommand(selectedItem, 'delete')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-delete" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
             <v-divider />
 
             <!-- show info (track only) -->
-            <v-list-item
+            <ListItem
               v-if="selectedItem?.media_item?.media_type == MediaType.TRACK"
               :title="$t('show_info')"
               @click="selectedItem?.media_item ? gotoItem(selectedItem.media_item) : ''"
@@ -175,7 +175,7 @@
                   <v-icon icon="mdi-information-outline" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
             <v-divider />
           </v-list>
         </v-card-text>
@@ -196,6 +196,7 @@ import { truncateString } from '../utils';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import ListviewItem from '@/components/ListviewItem.vue';
+import ListItem from '@/components/ListItem.vue';
 
 // global refs
 const { t } = useI18n();

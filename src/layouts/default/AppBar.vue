@@ -16,59 +16,7 @@
 
     <template #append>
       <!-- eslint-disable vue/no-template-shadow -->
-      <div v-if="false" style="max-height: 38px">
-        <div
-          class="search-text-input"
-          style="display: inline-flex; vertical-align: middle; min-width: 250px; max-height: 30px"
-        >
-          <v-text-field
-            density="compact"
-            variant="underlined"
-            :label="$t('search')"
-            append-inner-icon="mdi-magnify"
-            hide-details
-          ></v-text-field>
-        </div>
-        <v-tooltip location="bottom" close-on-content-click>
-          <template #activator="{ props }">
-            <ButtonIcon v-bind="props">
-              <v-icon icon="mdi-heart-outline" />
-            </ButtonIcon>
-          </template>
-          <span>None</span>
-        </v-tooltip>
-        <v-tooltip location="bottom" close-on-content-click>
-          <template #activator="{ props }">
-            <ButtonIcon v-bind="props">
-              <v-icon icon="mdi-account-outline" />
-            </ButtonIcon>
-          </template>
-          <span>None</span>
-        </v-tooltip>
-        <v-tooltip location="bottom" close-on-content-click>
-          <template #activator="{ props }">
-            <ButtonIcon v-bind="props">
-              <v-icon icon="mdi-refresh" />
-            </ButtonIcon>
-          </template>
-          <span>None</span>
-        </v-tooltip>
-        <v-tooltip location="bottom" close-on-content-click>
-          <template #activator="{ props }">
-            <ButtonIcon v-bind="props">
-              <v-icon icon="mdi-sort" />
-            </ButtonIcon>
-          </template>
-          <span>None</span>
-        </v-tooltip>
-        <v-tooltip location="bottom" close-on-content-click>
-          <template #activator="{ props }">
-            <ButtonIcon v-bind="props">
-              <v-icon icon="mdi-grid" />
-            </ButtonIcon>
-          </template>
-          <span>None</span>
-        </v-tooltip>
+      <div>
         <v-tooltip location="top end" origin="end center">
           <template #activator="{ props: tooltip }">
             <v-progress-circular
@@ -80,7 +28,6 @@
           <span v-if="api.syncTasks.value.length > 0">{{ $t('sync_running') }}</span>
           <span v-else>{{ $t('loading') }}</span>
         </v-tooltip>
-
         <v-menu location="bottom end">
           <template #activator="{ props }">
             <ButtonIcon
@@ -91,9 +38,8 @@
               <v-icon icon="mdi-dots-vertical" />
             </ButtonIcon>
           </template>
-
           <v-list>
-            <v-list-item
+            <ListItem
               v-for="(item, index) in store.topBarContextMenuItems"
               :key="index"
               :title="$t(item.label, item.labelArgs)"
@@ -102,7 +48,7 @@
               <template #prepend>
                 <v-avatar :icon="item.icon" />
               </template>
-            </v-list-item>
+            </ListItem>
           </v-list>
         </v-menu>
       </div>
@@ -117,6 +63,9 @@ import { store } from '@/plugins/store';
 import { api } from '@/plugins/api';
 import { useI18n } from 'vue-i18n';
 import ButtonIcon from '@/components/ButtonIcon.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import { ref } from 'vue';
+import ListItem from '@/components/ListItem.vue';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -213,16 +162,6 @@ const backButton = function () {
 </script>
 
 <style>
-.padded-overlay .v-overlay__content {
-  padding: 50px;
-}
-.v-overlay__scrim {
-  opacity: 65%;
-}
-div.v-toolbar__append {
-  /* align appbar contextmenu as far right as possible, in line with listitems */
-  margin-inline-end: 2px;
-}
 .main-app-bar {
   height: 80px;
   padding-left: 0;
@@ -230,17 +169,16 @@ div.v-toolbar__append {
   background: linear-gradient(rgb(var(--v-theme-surface)) 73.79%, rgba(var(--v-theme-surface), 0) 96%) !important;
 }
 
-.main-app-bar > div {
-  align-items: start;
-  padding-top: 10px;
-}
-
 .search-text-input {
   align-items: center;
   padding: 10px 10px 10px 12px;
 }
 
-.main-app-bar > div > div.v-toolbar__prepend {
-  height: 38px !important;
+.main-app-bar > div.v-toolbar__content {
+  height: 55px !important;
+}
+
+.main-app-bar > div > div.v-toolbar__append {
+  flex: none;
 }
 </style>

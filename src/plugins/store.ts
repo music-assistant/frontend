@@ -6,6 +6,7 @@ import type { ContextMenuItem } from '../components/MediaItemContextMenu.vue';
 
 interface Store {
   selectedPlayer?: Player;
+  currentItemType?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
   showNavigationMenu: boolean;
@@ -29,6 +30,7 @@ interface Store {
 
 export const store: Store = reactive({
   selectedPlayer: undefined,
+  currentItemType: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
   showNavigationMenu: true,

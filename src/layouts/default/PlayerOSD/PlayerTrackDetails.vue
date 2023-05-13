@@ -1,11 +1,11 @@
 <template>
   <!-- now playing media -->
-  <v-list-item style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
+  <ListItem style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
     <template #prepend>
       <div
         class="media-thumb player-media-thumb"
-        :style="`height: ${isMobileDevice(MobileDeviceType.PHONE, $vuetify.display) ? 50 : 64}px; width: ${
-          isMobileDevice(MobileDeviceType.PHONE, $vuetify.display) ? 50 : 64
+        :style="`height: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64}px; width: ${
+          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
         }px; `"
       >
         <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" />
@@ -47,11 +47,7 @@
     <template #append>
       <!-- format -->
       <v-chip
-        v-if="
-          curQueueItem?.streamdetails &&
-          !isMobileDevice(MobileDeviceType.PHONE, $vuetify.display) &&
-          showQualityDetailsBtn
-        "
+        v-if="curQueueItem?.streamdetails && !getBreakpointValue({ breakpoint: 'phone' }) && showQualityDetailsBtn"
         :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
         class="player-track-content-type"
         :style="$vuetify.theme.current.dark ? 'color: #000; background: #fff;' : 'color: #fff; background: #000;'"
@@ -117,7 +113,7 @@
         {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
       </div>
     </template>
-  </v-list-item>
+  </ListItem>
 </template>
 
 <script setup lang="ts">
@@ -127,11 +123,13 @@ import api from '@/plugins/api';
 import { MediaType, MediaItemType, ItemMapping, MobileDeviceType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { getArtistsString, isMobileDevice } from '@/utils';
+import { getArtistsString } from '@/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { iconFallback } from '@/components/ProviderIcons.vue';
 import { ref } from 'vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import ListItem from '@/components/ListItem.vue';
 
 const router = useRouter();
 

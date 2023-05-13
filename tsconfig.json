@@ -16,6 +16,7 @@
     "sourceMap": true,
     "noEmit": true,
     "types": ["webpack-env", "vuetify"],
+    "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": ["src/*"]
     },

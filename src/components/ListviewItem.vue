@@ -1,11 +1,9 @@
 <!-- eslint-disable vue/no-template-shadow -->
 <template>
   <div>
-    <v-list-item
+    <ListItem
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
-      class="listitem"
-      density="compact"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
       v-hold="() => emit('menu', item)"
@@ -47,7 +45,6 @@
             <v-icon
               v-if="parseBool(item.metadata.explicit || false)"
               v-bind="props"
-              class="listitem-action"
               icon="mdi-alpha-e-box"
               width="35"
             />
@@ -113,86 +110,66 @@
 
       <!-- actions -->
       <template #append>
-        <div class="listitem-actions">
-          <!-- hi res icon -->
-          <v-img
-            v-if="HiResDetails"
-            class="listitem-action"
-            :src="iconHiRes"
-            width="35"
-            :style="$vuetify.theme.current.dark ? 'margin-top:5px;' : 'margin-top:5px;filter: invert(100%);'"
-          >
-            <v-tooltip activator="parent" location="bottom">
-              {{ HiResDetails }}
-            </v-tooltip>
-          </v-img>
+        <!-- hi res icon -->
+        <v-img
+          v-if="HiResDetails"
+          :src="iconHiRes"
+          width="35"
+          :style="$vuetify.theme.current.dark ? 'margin-top:5px;' : 'margin-top:5px;filter: invert(100%);'"
+        >
+          <v-tooltip activator="parent" location="bottom">
+            {{ HiResDetails }}
+          </v-tooltip>
+        </v-img>
 
-          <!-- provider icons -->
-          <provider-icons
-            v-if="
-              item.provider_mappings &&
-              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_10 &&
-              showProviders
-            "
-            :provider-mappings="item.provider_mappings"
-            :height="20"
-            class="listitem-actions"
-          />
+        <!-- provider icons -->
+        <provider-icons
+          v-if="item.provider_mappings && getBreakpointValue('bp2') && showProviders"
+          :provider-mappings="item.provider_mappings"
+          :height="20"
+        />
 
-          <!-- in library (heart) icon -->
-          <div
-            v-if="
-              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
-              'in_library' in item &&
-              showLibrary &&
-              !$vuetify.display.mobile
-            "
-            class="listitem-action"
-          >
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <v-btn
-                  variant="plain"
-                  ripple
-                  v-bind="props"
-                  :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
-                  @click="api.toggleLibrary(item)"
-                  @click.prevent
-                  @click.stop
-                />
-              </template>
-              <span>{{ $t('tooltip.library') }}</span>
-            </v-tooltip>
-          </div>
+        <!-- in library (heart) icon -->
+        <div v-if="getBreakpointValue('bp3') && 'in_library' in item && showLibrary && !$vuetify.display.mobile">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                variant="plain"
+                ripple
+                v-bind="props"
+                :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
+                @click="api.toggleLibrary(item)"
+                @click.prevent
+                @click.stop
+              />
+            </template>
+            <span>{{ $t('tooltip.library') }}</span>
+          </v-tooltip>
+        </div>
 
-          <!-- track duration -->
-          <div
-            v-if="
-              showDuration &&
-              item.media_type == MediaType.TRACK &&
-              'duration' in item &&
-              item.duration != undefined &&
-              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_10
-            "
-            class="listitem-action"
-          >
-            <div>
-              <span class="text-caption" style="padding-right: 10px; padding-left: 10px">{{
-                formatDuration(item.duration)
-              }}</span>
-            </div>
-          </div>
-          <slot name="append"></slot>
-          <!-- menu button/icon -->
-          <div
-            v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_0 && showMenu"
-            class="listitem-action"
-          >
-            <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
+        <!-- track duration -->
+        <div
+          v-if="
+            showDuration &&
+            item.media_type == MediaType.TRACK &&
+            'duration' in item &&
+            item.duration != undefined &&
+            getBreakpointValue('bp2')
+          "
+        >
+          <div>
+            <span class="text-caption" style="padding-right: 10px; padding-left: 10px">{{
+              formatDuration(item.duration)
+            }}</span>
           </div>
         </div>
+        <slot name="append"></slot>
+        <!-- menu button/icon -->
+        <div v-if="getBreakpointValue('bp1') && showMenu">
+          <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
+        </div>
       </template>
-    </v-list-item>
+    </ListItem>
   </div>
 </template>
 
@@ -208,9 +185,11 @@ import {
   type MediaItemType,
   MediaType,
 } from '../plugins/api/interfaces';
-import { formatDuration, parseBool, getArtistsString, getBrowseFolderName, getResponsiveBreakpoints } from '../utils';
+import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from '../utils';
 import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import ListItem from '@/components/ListItem.vue';
 
 // properties
 export interface Props {
@@ -281,12 +260,3 @@ const itemIsAvailable = function (item: MediaItem) {
   return false;
 };
 </script>
-
-<style>
-.listitem-media-thumb {
-  height: 50px;
-  width: 50px;
-  margin-right: 10px;
-  margin-left: 5px;
-}
-</style>

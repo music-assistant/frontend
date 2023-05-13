@@ -69,12 +69,12 @@
         <v-card>
           <v-list>
             <div v-for="key of sortKeys" :key="key">
-              <v-list-item @click="changeSort(key)">
-                <v-list-item-title>{{ $t('sort.' + key) }}</v-list-item-title>
+              <ListItem @click="changeSort(key)">
+                <template #title>{{ $t('sort.' + key) }}</template>
                 <template #append>
                   <v-icon v-if="sortBy == key" icon="mdi-check" />
                 </template>
-              </v-list-item>
+              </ListItem>
               <v-divider />
             </div>
           </v-list>
@@ -219,7 +219,8 @@ import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
-import { getResponsiveBreakpoints } from '@/utils';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import ListItem from '@/components/ListItem.vue';
 
 // properties
 export interface Props {
@@ -290,39 +291,39 @@ const toggleSearch = function () {
 };
 
 const panelViewItemResponsive = function (displaySize: number) {
-  if (displaySize < getResponsiveBreakpoints.breakpoint_0) {
+  if (getBreakpointValue({ breakpoint: 'bp1', condition: 'lt', offset: store.sizeNavigationMenu })) {
     return 2;
   } else if (
-    displaySize >= getResponsiveBreakpoints.breakpoint_0 &&
-    displaySize < getResponsiveBreakpoints.breakpoint_2
+    getBreakpointValue({ breakpoint: 'bp1', condition: 'gt', offset: store.sizeNavigationMenu }) &&
+    getBreakpointValue({ breakpoint: 'bp4', condition: 'lt', offset: store.sizeNavigationMenu })
   ) {
     return 3;
   } else if (
-    displaySize >= getResponsiveBreakpoints.breakpoint_2 &&
-    displaySize < getResponsiveBreakpoints.breakpoint_3
+    getBreakpointValue({ breakpoint: 'bp4', condition: 'gt', offset: store.sizeNavigationMenu }) &&
+    getBreakpointValue({ breakpoint: 'bp6', condition: 'lt', offset: store.sizeNavigationMenu })
   ) {
     return 4;
   } else if (
-    displaySize >= getResponsiveBreakpoints.breakpoint_3 &&
-    displaySize < getResponsiveBreakpoints.breakpoint_4
+    getBreakpointValue({ breakpoint: 'bp6', condition: 'gt', offset: store.sizeNavigationMenu }) &&
+    getBreakpointValue({ breakpoint: 'bp7', condition: 'lt', offset: store.sizeNavigationMenu })
   ) {
     return 5;
   } else if (
-    displaySize >= getResponsiveBreakpoints.breakpoint_4 &&
-    displaySize < getResponsiveBreakpoints.breakpoint_5
+    getBreakpointValue({ breakpoint: 'bp7', condition: 'gt', offset: store.sizeNavigationMenu }) &&
+    getBreakpointValue({ breakpoint: 'bp8', condition: 'lt', offset: store.sizeNavigationMenu })
   ) {
     return 6;
   } else if (
-    displaySize >= getResponsiveBreakpoints.breakpoint_5 &&
-    displaySize < getResponsiveBreakpoints.breakpoint_6
+    getBreakpointValue({ breakpoint: 'bp8', condition: 'gt', offset: store.sizeNavigationMenu }) &&
+    getBreakpointValue({ breakpoint: 'bp9', condition: 'lt', offset: store.sizeNavigationMenu })
   ) {
     return 7;
   } else if (
-    displaySize >= getResponsiveBreakpoints.breakpoint_6 &&
-    displaySize < getResponsiveBreakpoints.breakpoint_9
+    getBreakpointValue({ breakpoint: 'bp9', condition: 'gt', offset: store.sizeNavigationMenu }) &&
+    getBreakpointValue({ breakpoint: 'bp10', condition: 'lt', offset: store.sizeNavigationMenu })
   ) {
     return 8;
-  } else if (displaySize >= getResponsiveBreakpoints.breakpoint_9) {
+  } else if (getBreakpointValue({ breakpoint: 'bp10', condition: 'gt', offset: store.sizeNavigationMenu })) {
     return 9;
   } else {
     return 0;

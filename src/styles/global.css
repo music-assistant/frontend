@@ -66,6 +66,12 @@ a {
   float: left;
 }
 
+.listitem-media-thumb {
+  height: 50px;
+  width: 50px;
+  margin-right: 10px;
+}
+
 .v-slider.v-input--horizontal .v-input__control {
   min-height: 5px;
 }
@@ -89,36 +95,6 @@ div.v-navigation-drawer__scrim {
   height: 30px;
   border-radius: 5px;
 }
-
-.listitem-actions {
-  display: flex;
-  justify-content: end;
-  width: auto;
-  height: 50px;
-  vertical-align: middle;
-  align-items: center;
-  padding: 0px;
-  padding-right: 0px;
-  margin-right: 0px;
-}
-.listitem-action {
-  padding-left: 5px;
-}
-.listitem {
-  padding-right: 0px;
-  padding-left: 0px;
-  border-radius: 4px;
-}
-.media-thumb {
-  width: 64px;
-  height: 64px;
-}
-.listitem-media-thumb {
-  height: 50px;
-  width: 50px;
-  margin-right: 10px;
-  margin-left: 5px;
-}
 .v-card--variant-elevated {
   box-shadow: none;
   border-width: 1px;
@@ -141,6 +117,10 @@ div.v-navigation-drawer__scrim {
 .v-card-text {
   /* align listitem contextmenu as far right as possible */
   padding-right: 0;
+}
+
+.v-expansion-panel--active > .v-expansion-panel-title {
+  min-height: 48px;
 }
 
 /* ThumbView panel columns */
@@ -252,10 +232,6 @@ div.v-slide-group__prev {
   margin-inline-end: 8px;
 }
 
-.v-list-item--density-default:not(.v-list-item--nav).v-list-item--two-line {
-  padding-inline-start: 8px;
-}
-
 .v-toolbar__content {
   height: 100% !important;
 }
@@ -293,6 +269,10 @@ div.v-slide-group__prev {
 }
 .v-overlay__scrim {
   opacity: 65%;
+}
+
+.v-expansion-panel-title {
+  padding: 10px;
 }
 
 /* font */

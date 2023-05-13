@@ -18,9 +18,9 @@
   </ButtonIcon>
   <!-- active player volume -->
   <div v-if="props.buttonVisibility.volume">
-    <v-menu v-if="activePlayerQueue" v-model="showVolume" location="top end" :close-on-content-click="false">
+    <v-menu v-if="activePlayerQueue" class="volume-control-dialog" v-model="showVolume" :close-on-content-click="false">
       <template #activator="{ props }">
-        <div v-if="$vuetify.display.width >= getResponsiveBreakpoints.breakpoint_7 || !responsiveVolumeSize">
+        <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
           <PlayerVolume
             :style="'margin-right: 0px; margin-left: 0px;'"
             :width="volumeSize"
@@ -38,7 +38,7 @@
           >
             <template #prepend>
               <!-- select player -->
-              <ButtonIcon style="padding-left: 11px" v-bind="props">
+              <ButtonIcon v-bind="props">
                 <v-icon icon="mdi-volume-high" />
                 <div class="text-caption">
                   {{
@@ -65,14 +65,13 @@
         </div>
       </template>
 
-      <v-card min-width="350">
+      <v-card :min-width="300">
         <v-list style="overflow: hidden" lines="two">
-          <v-list-item
+          <ListItem
             density="compact"
             two-line
             :title="store.selectedPlayer?.name.substring(0, 25)"
             :subtitle="$t('state.' + store.selectedPlayer?.state)"
-            style="padding-right: 0px"
           >
             <template #prepend>
               <v-icon
@@ -83,14 +82,6 @@
                   : 'mdi-speaker'
               "
                 color="accent"
-                style="
-                  padding-left: 0px;
-                  padding-right: 0px;
-                  margin-left: -10px;
-                  margin-right: 10px;
-                  width: 42px;
-                  height: 50px;
-                "
               />
             </template>
             <v-btn
@@ -100,7 +91,7 @@
               dark
               @click="showVolume = !showVolume"
             />
-          </v-list-item>
+          </ListItem>
           <v-divider />
           <VolumeControl v-if="store.selectedPlayer" :player="store.selectedPlayer" />
         </v-list>
@@ -114,10 +105,11 @@ import { computed, ref } from 'vue';
 
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
-import { getResponsiveBreakpoints } from '@/utils';
 import PlayerVolume from './PlayerVolume.vue';
 import VolumeControl from '@/components/VolumeControl.vue';
 import ButtonIcon from '@/components/ButtonIcon.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import ListItem from '@/components/ListItem.vue';
 
 // properties
 export interface Props {
@@ -154,3 +146,12 @@ const activePlayerQueue = computed(() => {
   return undefined;
 });
 </script>
+
+<style>
+.volume-control-dialog > .v-overlay__content {
+  bottom: 90px !important;
+  right: 10px !important;
+  left: unset !important;
+  top: unset !important;
+}
+</style>

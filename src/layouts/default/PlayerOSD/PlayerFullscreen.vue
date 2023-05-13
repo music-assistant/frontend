@@ -18,7 +18,7 @@
         <v-toolbar-items style="align-items: center">
           <PlayerExtendedControls
             :button-visibility="{
-              queue: $vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1,
+              queue: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
               player: false,
               volume: false,
             }"
@@ -30,8 +30,8 @@
           <MediaItemThumb
             v-if="curQueueItem"
             :item="curQueueItem.media_item || curQueueItem"
-            :width="$vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1 ? 512 : 1024"
-            :height="$vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1 ? 512 : 1024"
+            :width="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
+            :height="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
             style="
               height: min(calc(100vw - 40px), calc(100vh - 330px));
               width: min(calc(100vw - 40px), calc(100vh - 330px));
@@ -49,7 +49,7 @@
 
         <div style="padding-top: 3vh; text-align: center">
           <div v-if="curQueueItem && curQueueItem.media_item">
-            <div v-if="$vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1">
+            <div v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })">
               <div style="float: right">
                 <PlayerExtendedControls
                   :responsive-volume-size="true"
@@ -120,10 +120,10 @@
         </div>
         <div style="padding-top: 3vh">
           <!-- progress bar -->
-          <PlayerTimeline :is-progress-bar="false" :is-hidden="false" />
+          <PlayerTimeline :is-progress-bar="false" />
           <!-- player control buttons -->
           <PlayerExtendedControls
-            v-if="$vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1"
+            v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
             :responsive-volume-size="false"
             :button-visibility="{ player: false, volume: true, queue: false }"
             :volume-size="'100%'"
@@ -133,10 +133,7 @@
         <div style="padding-top: 1vh">
           <div class="mediacontrols">
             <div class="mediacontrols-top-right">
-              <div
-                v-if="$vuetify.display.width > getResponsiveBreakpoints.breakpoint_1"
-                class="mediacontrols-buttom-left"
-              >
+              <div v-if="getBreakpointValue('bp3')" class="mediacontrols-buttom-left">
                 <div>
                   <QualityDetailsBtn />
                 </div>
@@ -147,10 +144,7 @@
                   <PlayerControls />
                 </div>
               </div>
-              <div
-                v-if="$vuetify.display.width > getResponsiveBreakpoints.breakpoint_1"
-                class="mediacontrols-buttom-right"
-              >
+              <div v-if="getBreakpointValue('bp3')" class="mediacontrols-buttom-right">
                 <div>
                   <!-- player control buttons -->
                   <PlayerExtendedControls :responsive-volume-size="true" />
@@ -176,10 +170,10 @@ import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
 import api from '@/plugins/api';
 import { MediaItemType, ImageType, MediaType, ItemMapping, Track } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import { getArtistsString, getResponsiveBreakpoints } from '@/utils';
 import PlayerTimeline from './PlayerTimeline.vue';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 // local refs
 const fullTrackDetails = ref<Track>();

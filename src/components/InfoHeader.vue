@@ -69,7 +69,6 @@
                   <v-icon
                     v-if="parseBool(item.metadata.explicit || false)"
                     v-bind="props"
-                    class="listitem-action"
                     icon="mdi-alpha-e-box"
                     width="35"
                   />
@@ -126,7 +125,7 @@
               <v-card min-width="300">
                 <v-list lines="one" density="comfortable">
                   <!-- play now -->
-                  <v-list-item
+                  <ListItem
                     v-for="menuItem in getPlayMenuItems([item])"
                     :key="menuItem.label"
                     :title="$t(menuItem.label, menuItem.labelArgs)"
@@ -137,7 +136,7 @@
                         <v-icon :icon="menuItem.icon" />
                       </v-avatar>
                     </template>
-                  </v-list-item>
+                  </ListItem>
                 </v-list>
               </v-card>
             </v-menu>
@@ -237,6 +236,7 @@ import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
 import { parseBool } from '../utils';
 import { getPlayMenuItems, getContextMenuItems } from './MediaItemContextMenu.vue';
+import ListItem from '@/components/ListItem.vue';
 
 // properties
 export interface Props {

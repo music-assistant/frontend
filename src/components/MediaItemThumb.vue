@@ -1,7 +1,7 @@
 <template>
   <v-img
     :key="'uri' in item! ? item?.uri : item?.queue_item_id"
-    :style="`height:${size || height}px; width:${size || width}px;`"
+    :style="`height:${size || height}px; width:${size || width}px; ${rounded ? 'border-radius: 4px;' : ''}`"
     :cover="cover"
     :src="imgData"
     :aspect-ratio="aspectRatio"
@@ -38,6 +38,7 @@ export interface Props {
   fallback?: string;
   thumb?: boolean;
   lazySrc?: string;
+  rounded?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -47,6 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
   cover: true,
   fallback: undefined,
   thumb: true,
+  rounded: true,
 });
 
 const imgData = ref<string>();

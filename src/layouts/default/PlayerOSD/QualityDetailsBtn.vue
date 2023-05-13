@@ -17,11 +17,11 @@
     </template>
     <v-card class="mx-auto" width="300">
       <v-list style="overflow: hidden">
-        <v-list-item :min-height="5" class="list-item">
+        <ListItem :min-height="5" class="list-item">
           <v-list-item-title class="text-h5 mb-1">
             {{ $t('stream_details') }}
           </v-list-item-title>
-        </v-list-item>
+        </ListItem>
         <v-divider />
         <div style="height: 50px; display: flex; align-items: center">
           <ProviderIcon
@@ -77,6 +77,7 @@ import { getContentTypeIcon, iconHiRes } from '@/components/ProviderIcons.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
+import ListItem from '@/components/ListItem.vue';
 
 // computed properties
 const activePlayerQueue = computed(() => {
@@ -95,7 +96,7 @@ const streamDetails = computed(() => {
   padding: 0px 8px 0px 8px !important;
 }
 
-.list-item > div.v-list-item__prepend {
+.list-item > div.ListItem__prepend {
   padding-right: 10px;
 }
 .mediadetails-streamdetails {

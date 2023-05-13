@@ -5,7 +5,7 @@
     :permanent="!$vuetify.display.mobile"
     :rail="!$vuetify.display.mobile && !store.showNavigationMenu"
     :model-value="($vuetify.display.mobile && store.showNavigationMenu) || !$vuetify.display.mobile"
-    :width="isMobileDevice(MobileDeviceType.ALL, $vuetify.display) ? 200 : newWidth"
+    :width="!getBreakpointValue('mobile') ? 200 : newWidth"
     @update:model-value="
       (e) => {
         if ($vuetify.display.mobile) store.showNavigationMenu = e;
@@ -30,15 +30,17 @@
 </template>
 
 <script setup lang="ts">
-import { MobileDeviceType } from '@/plugins/api/interfaces';
+import ItemsListing from '@/components/ItemsListing.vue';
+import api from '@/plugins/api';
+import { Playlist } from '@/plugins/api/interfaces';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 import { store } from '@/plugins/store';
-import { isMobileDevice } from '@/utils';
-import { ref } from 'vue';
+import { watch, ref } from 'vue';
 
 const menuItems = [
   {
     label: 'home',
-    icon: 'mdi-home',
+    icon: 'mdi-home-outline',
     path: '/home',
   },
   {
@@ -48,7 +50,7 @@ const menuItems = [
   },
   {
     label: 'artists',
-    icon: 'mdi-account-music',
+    icon: 'mdi-account-outline',
     path: '/artists',
   },
   {
@@ -58,33 +60,35 @@ const menuItems = [
   },
   {
     label: 'tracks',
-    icon: 'mdi-file-music',
+    icon: 'mdi-music-note',
     path: '/tracks',
   },
   {
-    label: 'radios',
-    icon: 'mdi-radio',
-    path: '/radios',
-  },
-  {
     label: 'playlists',
-    icon: 'mdi-playlist-music',
+    icon: 'mdi-playlist-play',
     path: '/playlists',
   },
   {
+    label: 'radios',
+    icon: 'mdi-access-point',
+    path: '/radios',
+  },
+  {
     label: 'browse',
-    icon: 'mdi-folder',
+    icon: 'mdi-folder-outline',
     path: '/browse',
   },
   {
     label: 'settings.settings',
-    icon: 'mdi-cog',
+    icon: 'mdi-cog-outline',
     path: '/settings',
   },
 ];
 
+//refs
 const resizer = ref<HTMLElement | null>(null);
 const resizeComponent = ref<HTMLElement | null>(null);
+
 let oldWidth = 300;
 let newWidth = ref(300);
 const maxWidth = 520;
@@ -111,12 +115,20 @@ const mouseMoveHandler = (e: MouseEvent) => {
     return;
   }
   newWidth.value = oldWidth + dx;
+  store.sizeNavigationMenu = newWidth.value;
 };
 
 const mouseUpHandler = () => {
   document.removeEventListener('mousemove', mouseMoveHandler);
   document.removeEventListener('mouseup', mouseUpHandler);
 };
+
+watch(
+  () => store.showNavigationMenu,
+  (isShown) => {
+    isShown ? (store.sizeNavigationMenu = newWidth.value) : (store.sizeNavigationMenu = 55);
+  },
+);
 </script>
 
 <style>

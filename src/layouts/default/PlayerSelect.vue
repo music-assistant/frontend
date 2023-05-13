@@ -21,7 +21,6 @@
       style="position: absolute; right: -10px; top: 0px"
       icon="mdi-close"
       dark
-      text
       @click="store.showPlayersMenu = !store.showPlayersMenu"
     />
     <v-divider />
@@ -49,20 +48,12 @@
             scrollToTop(player.player_id);
           "
         >
-          <v-list-item density="compact">
+          <ListItem>
             <template #prepend>
               <v-icon
                 size="50"
                 :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
                 color="accent"
-                style="
-                  padding-left: 0px;
-                  padding-right: 0px;
-                  margin-left: -10px;
-                  margin-right: 10px;
-                  width: 42px;
-                  height: 50px;
-                "
               />
             </template>
             <template #title>
@@ -84,7 +75,7 @@
                 {{ player.state }}
               </div>
             </template>
-          </v-list-item>
+          </ListItem>
         </v-expansion-panel-title>
         <v-expansion-panel-text variant="contain">
           <VolumeControl :player="player" />
@@ -101,6 +92,7 @@ import { store } from '../../plugins/store';
 import VolumeControl from '../../components/VolumeControl.vue';
 import { api } from '../../plugins/api';
 import { getPlayerName } from '@/utils';
+import ListItem from '@/components/ListItem.vue';
 
 const panelItem = ref<number | undefined>(undefined);
 
@@ -236,9 +228,7 @@ div.v-expansion-panel--active:not(:first-child),
 div.v-expansion-panel__shadow {
   box-shadow: none;
 }
-/* .v-expansion-panel-title.v-expansion-panel-title__icon {
-  margin-right: 15px;
-} */
+
 .v-expansion-panel-title__icon {
   display: inline-flex;
   margin-bottom: -4px;

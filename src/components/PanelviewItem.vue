@@ -3,6 +3,8 @@
     class="panel-item"
     @click="showCheckboxes ? null : emit('click', item)"
     @click.right.prevent="showCheckboxes ? null : emit('menu', item)"
+    @mouseover="showSettingDots = true"
+    @mouseleave="showSettingDots = true"
   >
     <v-overlay
       v-if="showCheckboxes"
@@ -20,7 +22,7 @@
 
     <MediaItemThumb :item="item" :width="'100%'" />
 
-    <v-list-item style="padding-left: 0px; padding-right: 0px; padding-top: 10px; padding-bottom: 0px">
+    <ListItem style="padding-left: 0px !important; padding-right: 0px !important; padding-top: 10px !important">
       <v-list-item-title class="line-clamp-1">
         {{ item.name }} {{ 'version' in item && item.version ? `- ${item.version}` : '' }}
       </v-list-item-title>
@@ -53,16 +55,18 @@
           <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" /> {{ item.track_number }}
         </v-item>
       </v-item-group>
-    </v-list-item>
+    </ListItem>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-
+import ListItem from '@/components/ListItem.vue';
 import { ContentType, type MediaItem, type MediaItemType } from '../plugins/api/interfaces';
 import { getArtistsString, parseBool } from '../utils';
+import ButtonIcon from './ButtonIcon.vue';
+import { ref } from 'vue';
 
 // properties
 export interface Props {
@@ -77,6 +81,10 @@ const props = withDefaults(defineProps<Props>(), {
   showCheckboxes: false,
   showTrackNumber: true,
 });
+
+// refs
+
+const showSettingDots = ref(false);
 
 // computed properties
 const HiResDetails = computed(() => {
