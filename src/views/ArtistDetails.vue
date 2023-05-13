@@ -7,12 +7,13 @@
       grow
       hide-slider
     >
+      <v-tab value="albums">
+        {{ $t("albums") }}
+      </v-tab>  
       <v-tab value="tracks">
         {{ $t("tracks") }}
       </v-tab>
-      <v-tab value="albums">
-        {{ $t("albums") }}
-      </v-tab>
+      
     </v-tabs>
     <v-divider />
     <ItemsListing
@@ -67,7 +68,7 @@ const itemDetails = ref<Artist>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getArtist(props.itemId, props.provider);
-  activeTab.value = "tracks";
+  activeTab.value = "albums";
 };
 
 
