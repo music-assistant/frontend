@@ -5,15 +5,13 @@
     :permanent="!$vuetify.display.mobile"
     :rail="!$vuetify.display.mobile && !store.showNavigationMenu"
     :model-value="($vuetify.display.mobile && store.showNavigationMenu) || !$vuetify.display.mobile"
-    :width="!getBreakpointValue('mobile') ? 200 : newWidth"
+    :width="!getBreakpointValue('mobile') ? 200 : 250"
     @update:model-value="
       (e) => {
         if ($vuetify.display.mobile) store.showNavigationMenu = e;
       }
     "
   >
-    <div style="height: 20px" />
-    <div ref="resizer" class="resize" @mousedown="mouseDownHandler"></div>
     <v-list lines="one" density="compact" nav>
       <v-list-item
         v-for="menuItem of menuItems"
@@ -30,12 +28,9 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing from '@/components/ItemsListing.vue';
-import api from '@/plugins/api';
-import { Playlist } from '@/plugins/api/interfaces';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { store } from '@/plugins/store';
-import { watch, ref } from 'vue';
+import { watch } from 'vue';
 
 const menuItems = [
   {
@@ -85,63 +80,10 @@ const menuItems = [
   },
 ];
 
-//refs
-const resizer = ref<HTMLElement | null>(null);
-const resizeComponent = ref<HTMLElement | null>(null);
-
-let oldWidth = 300;
-let newWidth = ref(300);
-const maxWidth = 520;
-const minWidth = 55;
-let x = 0;
-let y = 0;
-
-const mouseDownHandler = (e: MouseEvent) => {
-  x = e.clientX;
-  y = e.clientY;
-
-  //@ts-ignore
-  oldWidth = resizeComponent.value?.width || 0;
-  document.addEventListener('mousemove', mouseMoveHandler);
-  document.addEventListener('mouseup', mouseUpHandler);
-};
-
-const mouseMoveHandler = (e: MouseEvent) => {
-  const dx = e.clientX - x;
-  if (newWidth.value >= maxWidth && dx > 0) {
-    return;
-  }
-  if (newWidth.value <= minWidth && dx < 0) {
-    return;
-  }
-  newWidth.value = oldWidth + dx;
-  store.sizeNavigationMenu = newWidth.value;
-};
-
-const mouseUpHandler = () => {
-  document.removeEventListener('mousemove', mouseMoveHandler);
-  document.removeEventListener('mouseup', mouseUpHandler);
-};
-
 watch(
   () => store.showNavigationMenu,
   (isShown) => {
-    isShown ? (store.sizeNavigationMenu = newWidth.value) : (store.sizeNavigationMenu = 55);
+    isShown ? (store.sizeNavigationMenu = !getBreakpointValue('mobile') ? 200 : 250) : (store.sizeNavigationMenu = 55);
   },
 );
 </script>
-
-<style>
-.resize {
-  height: 100%;
-  width: 8px;
-  z-index: 1;
-  position: absolute;
-  top: 0px;
-  right: 0px;
-}
-
-.resize:hover {
-  cursor: col-resize;
-}
-</style>
