@@ -34,7 +34,7 @@ export default {
 <style>
 .list-item-main {
   border-radius: 4px !important;
-  padding: 4px 4px !important;
+  padding: 10px !important;
 }
 
 .list-item-main > div.v-list-item__append {
@@ -51,22 +51,18 @@ export default {
 
 .list-item-main > div.v-list-item__prepend > .v-icon {
   margin-inline-end: 10px !important;
-  width: 50px !important;
 }
 
 .list-item-main > div.v-list-item__append > .v-icon {
   margin-inline-start: 10px !important;
-  width: 50px !important;
 }
 
 .list-item-main > div.v-list-item__prepend > button {
   margin-inline-end: 10px !important;
-  width: 50px !important;
 }
 
 .list-item-main > div.v-list-item__append > button {
   margin-inline-start: 10px !important;
-  width: 50px !important;
 }
 
 .v-list-item--density-default:not(.v-list-item--nav).v-list-item--two-line {

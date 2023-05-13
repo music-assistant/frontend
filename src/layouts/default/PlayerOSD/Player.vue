@@ -137,7 +137,7 @@ watch(
 .mediacontrols-bg-1 {
   position: absolute;
   width: 20%;
-  height: 100px;
+  height: 100%;
   left: 0px;
   top: 0px;
 }
@@ -145,7 +145,7 @@ watch(
 .mediacontrols-bg-2 {
   position: absolute;
   width: 40%;
-  height: 100px;
+  height: 100%;
   left: 0px;
   top: 0px;
 }
@@ -163,6 +163,13 @@ watch(
 .mediacontrols-left-2 {
   display: table-cell;
   vertical-align: middle;
+}
+
+.mediacontrols-left-1 > div {
+  padding: 0px !important;
+}
+.mediacontrols-left-2 > div {
+  padding: 0px !important;
 }
 
 .mediacontrols-buttom-center-1 {

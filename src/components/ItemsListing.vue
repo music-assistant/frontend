@@ -144,7 +144,7 @@
 
       <!-- list view -->
       <div v-if="viewMode == 'list'">
-        <RecycleScroller v-slot="{ item }" :items="items" :item-size="60" key-field="uri" page-mode>
+        <RecycleScroller v-slot="{ item }" :items="items" :item-size="70" key-field="uri" page-mode>
           <ListviewItem
             :key="item.uri"
             :item="item"
