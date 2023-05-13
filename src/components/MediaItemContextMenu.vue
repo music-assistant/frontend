@@ -7,7 +7,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card>
-      <v-toolbar dark>
+      <v-toolbar color="transparent" style="padding: 10px 0px" density="compact" class="titlebar">
         <v-btn icon="mdi-play-circle-outline" />
         <v-toolbar-title v-if="showPlaylistsMenu" style="padding-left: 10px">
           <b>{{ $t('add_playlist') }}</b>
@@ -16,8 +16,10 @@
         <v-toolbar-title v-else style="padding-left: 10px">
           <b>{{ header }}</b>
         </v-toolbar-title>
-        <v-btn icon="mdi-close" dark text @click="close()" />
+        <v-btn icon="mdi-close" dark @click="close()" />
       </v-toolbar>
+      <v-divider />
+
       <!-- play contextmenu items -->
       <v-card-text v-if="enablePlayItems && !showPlaylistsMenu && playMenuItems.length > 0">
         <v-select

@@ -3,6 +3,7 @@
     class="panel-item"
     @click="showCheckboxes ? null : emit('click', item)"
     @click.right.prevent="showCheckboxes ? null : emit('menu', item)"
+    v-hold="() => (showCheckboxes ? null : emit('menu', item))"
     @mouseover="showSettingDots = true"
     @mouseleave="showSettingDots = true"
   >

@@ -117,6 +117,7 @@ const streamDetails = computed(() => {
   font-size: 10px !important;
   letter-spacing: 0.1em;
   border-radius: 2px;
-  margin-left: 16px;
+  margin-left: 5px;
+  flex-flow: column;
 }
 </style>
