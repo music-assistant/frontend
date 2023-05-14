@@ -1,35 +1,35 @@
 <template>
   <div>
-    <v-text-field
-      id="searchInput"
-      v-model="search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('type_to_search')"
-      hide-details
-      variant="filled"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
-
-    <div>
-      <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
-        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
-          {{ $t(item) }}
-        </v-chip>
-      </v-chip-group>
-
-      <MediaItemContextMenu
-        v-model="showContextMenu"
-        :items="selectedItems"
-        @clear="
-          () => {
-            selectedItems = [];
-          }
-        "
+    <v-container>
+      <v-text-field
+        id="searchInput"
+        v-model="search"
+        clearable
+        prepend-inner-icon="mdi-magnify"
+        :label="$t('type_to_search')"
+        hide-details
+        variant="filled"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
       />
 
-      <v-container>
+      <div>
+        <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
+          <v-chip v-for="item in viewFilters" :key="item" filter outlined>
+            {{ $t(item) }}
+          </v-chip>
+        </v-chip-group>
+
+        <MediaItemContextMenu
+          v-model="showContextMenu"
+          :items="selectedItems"
+          @clear="
+            () => {
+              selectedItems = [];
+            }
+          "
+        />
+
         <!-- loading animation -->
         <v-progress-linear v-if="loading" indeterminate />
 
@@ -69,24 +69,25 @@
             />
           </RecycleScroller>
         </div>
-      </v-container>
-      <v-toolbar density="compact" variant="flat" color="transparent" height="45">
-        <span style="margin-left: 15px">{{ $t('items_total', [filteredItems.length]) }}</span>
-        <v-spacer />
 
-        <v-tooltip location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-              variant="plain"
-              @click="toggleViewMode()"
-            />
-          </template>
-          <span>{{ $t('tooltip.toggle_view_mode') }}</span>
-        </v-tooltip>
-      </v-toolbar>
-    </div>
+        <v-toolbar density="compact" variant="flat" color="transparent" height="45">
+          <span style="margin-left: 15px">{{ $t('items_total', [filteredItems.length]) }}</span>
+          <v-spacer />
+
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
+                variant="plain"
+                @click="toggleViewMode()"
+              />
+            </template>
+            <span>{{ $t('tooltip.toggle_view_mode') }}</span>
+          </v-tooltip>
+        </v-toolbar>
+      </div>
+    </v-container>
   </div>
 </template>
 

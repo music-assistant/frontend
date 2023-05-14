@@ -64,8 +64,4 @@ export default {
 .list-item-main > div.v-list-item__append > button {
   margin-inline-start: 10px !important;
 }
-
-.v-list-item--density-default:not(.v-list-item--nav).v-list-item--two-line {
-  padding-inline-end: 8px !important;
-}
 </style>

@@ -9,92 +9,90 @@
       </v-tab>
     </v-tabs>
 
-    <v-container>
-      <v-alert
-        v-if="activePlayerQueue && activePlayerQueue?.radio_source.length > 0"
-        color="primary"
-        theme="dark"
-        icon="mdi-radio-tower"
-        prominent
-        style="margin-right: 10px"
+    <v-alert
+      v-if="activePlayerQueue && activePlayerQueue?.radio_source.length > 0"
+      color="primary"
+      theme="dark"
+      icon="mdi-radio-tower"
+      prominent
+      style="margin-right: 10px"
+    >
+      <b>{{ $t('queue_radio_enabled') }}</b>
+      <br />
+      {{ $t('queue_radio_based_on', [$t(activePlayerQueue?.radio_source[0].media_type)]) }}
+      <b
+        ><a @click="activePlayerQueue ? gotoItem(activePlayerQueue?.radio_source[0]) : ''">{{
+          activePlayerQueue?.radio_source[0].name
+        }}</a></b
+      ><span v-if="activePlayerQueue?.radio_source.length > 1">
+        (+{{ activePlayerQueue?.radio_source.length - 1 }})</span
       >
-        <b>{{ $t('queue_radio_enabled') }}</b>
-        <br />
-        {{ $t('queue_radio_based_on', [$t(activePlayerQueue?.radio_source[0].media_type)]) }}
-        <b
-          ><a @click="activePlayerQueue ? gotoItem(activePlayerQueue?.radio_source[0]) : ''">{{
-            activePlayerQueue?.radio_source[0].name
-          }}</a></b
-        ><span v-if="activePlayerQueue?.radio_source.length > 1">
-          (+{{ activePlayerQueue?.radio_source.length - 1 }})</span
-        >
-      </v-alert>
+    </v-alert>
 
-      <RecycleScroller v-slot="{ item }" :items="tabItems" :item-size="60" key-field="queue_item_id" page-mode>
-        <ListviewItem
-          :key="item.uri"
-          :item="item.media_item"
-          :show-disc-number="false"
-          :show-track-number="false"
-          :show-duration="true"
-          :show-library="true"
-          :show-menu="true"
-          :show-providers="false"
-          :show-album="false"
-          :show-checkboxes="false"
-          :is-selected="false"
-          :show-details="false"
-          :parent-item="item"
-          :is-disabled="item.queue_item_id == curQueueItem?.queue_item_id"
-          ripple
-          @menu="onClick(item)"
-          @click="queueCommand(item, 'play_now')"
-          @click.right.prevent="onClick(item)"
-        >
-          <template #append>
-            <!-- move up -->
-            <div v-if="!$vuetify.display.mobile">
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-btn
-                    variant="plain"
-                    ripple
-                    v-bind="props"
-                    icon="mdi-arrow-up"
-                    @click="api.queueCommandMoveUp(activePlayerQueue!.queue_id, item.queue_item_id)"
-                    @click.prevent
-                    @click.stop
-                  />
-                </template>
-                <span>{{ $t('queue_move_up') }}</span>
-              </v-tooltip>
-            </div>
+    <RecycleScroller v-slot="{ item }" :items="tabItems" :item-size="60" key-field="queue_item_id" page-mode>
+      <ListviewItem
+        :key="item.uri"
+        :item="item.media_item"
+        :show-disc-number="false"
+        :show-track-number="false"
+        :show-duration="true"
+        :show-library="true"
+        :show-menu="true"
+        :show-providers="false"
+        :show-album="false"
+        :show-checkboxes="false"
+        :is-selected="false"
+        :show-details="false"
+        :parent-item="item"
+        :is-disabled="item.queue_item_id == curQueueItem?.queue_item_id"
+        ripple
+        @menu="onClick(item)"
+        @click="queueCommand(item, 'play_now')"
+        @click.right.prevent="onClick(item)"
+      >
+        <template #append>
+          <!-- move up -->
+          <div v-if="!$vuetify.display.mobile">
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <v-btn
+                  variant="plain"
+                  ripple
+                  v-bind="props"
+                  icon="mdi-arrow-up"
+                  @click="api.queueCommandMoveUp(activePlayerQueue!.queue_id, item.queue_item_id)"
+                  @click.prevent
+                  @click.stop
+                />
+              </template>
+              <span>{{ $t('queue_move_up') }}</span>
+            </v-tooltip>
+          </div>
 
-            <!-- move down -->
-            <div v-if="!$vuetify.display.mobile">
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-btn
-                    variant="plain"
-                    ripple
-                    v-bind="props"
-                    icon="mdi-arrow-down"
-                    @click="api.queueCommandMoveDown(activePlayerQueue!.queue_id, item.queue_item_id)"
-                    @click.prevent
-                    @click.stop
-                  />
-                </template>
-                <span>{{ $t('queue_move_down') }}</span>
-              </v-tooltip>
-            </div>
-          </template>
-        </ListviewItem>
-      </RecycleScroller>
+          <!-- move down -->
+          <div v-if="!$vuetify.display.mobile">
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <v-btn
+                  variant="plain"
+                  ripple
+                  v-bind="props"
+                  icon="mdi-arrow-down"
+                  @click="api.queueCommandMoveDown(activePlayerQueue!.queue_id, item.queue_item_id)"
+                  @click.prevent
+                  @click.stop
+                />
+              </template>
+              <span>{{ $t('queue_move_down') }}</span>
+            </v-tooltip>
+          </div>
+        </template>
+      </ListviewItem>
+    </RecycleScroller>
 
-      <v-alert v-if="items.length == 0" type="info" style="margin: 20px">
-        {{ $t('no_content') }}
-      </v-alert>
-    </v-container>
+    <v-alert v-if="items.length == 0" type="info" style="margin: 20px">
+      {{ $t('no_content') }}
+    </v-alert>
 
     <!-- contextmenu -->
     <v-dialog v-model="showContextMenu" :fullscreen="$vuetify.display.mobile" min-height="80%" :scrim="true">
@@ -108,7 +106,7 @@
             <b>{{ $t('settings') }}</b> |
             {{ activePlayerQueue?.display_name }}
           </v-toolbar-title>
-          <v-btn icon="mdi-close" dark text @click="closeContextMenu()" />
+          <v-btn icon="mdi-close" dark @click="closeContextMenu()" />
         </v-toolbar>
 
         <!-- QueueItem related content menu -->

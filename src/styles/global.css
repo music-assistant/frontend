@@ -22,6 +22,10 @@
   -webkit-font-smoothing: antialiased;
 }
 
+html {
+  overflow: hidden;
+}
+
 * {
   -webkit-user-drag: none; /* iOS Safari */
   -khtml-user-drag: none; /* Konqueror HTML */

@@ -1,93 +1,91 @@
 <template>
-  <v-container>
-    <RecycleScroller v-slot="{ item }" :items="playerConfigs" :item-size="60" key-field="player_id" page-mode>
-      <ListItem
-        link
-        @click="editPlayer(item.player_id)"
-        v-hold="
-          () => {
-            editPlayer(item.player_id);
-          }
-        "
-      >
-        <template #prepend>
-          <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" />
-        </template>
+  <RecycleScroller v-slot="{ item }" :items="playerConfigs" :item-size="60" key-field="player_id" page-mode>
+    <ListItem
+      link
+      @click="editPlayer(item.player_id)"
+      v-hold="
+        () => {
+          editPlayer(item.player_id);
+        }
+      "
+    >
+      <template #prepend>
+        <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" />
+      </template>
 
-        <!-- title -->
-        <template #title>
-          <div class="line-clamp-1">{{ getPlayerName(item) }}</div>
-        </template>
+      <!-- title -->
+      <template #title>
+        <div class="line-clamp-1">{{ getPlayerName(item) }}</div>
+      </template>
 
-        <!-- subtitle -->
-        <template #subtitle
-          ><div class="line-clamp-1">{{ api.providers[item.provider]?.name || item.provider }}</div>
-        </template>
-        <!-- append -->
-        <template #append>
-          <!-- player disabled -->
-          <div v-if="!item.enabled">
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <ButtonIcon v-bind="props">
-                  <v-icon icon="mdi-cancel" />
-                </ButtonIcon>
-              </template>
-              <span>{{ $t('settings.player_disabled') }}</span>
-            </v-tooltip>
-          </div>
-
-          <!-- player not (yet) available -->
-          <div v-else-if="!api.players[item.player_id]?.available">
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <ButtonIcon v-bind="props">
-                  <v-icon icon="mdi-cancel" />
-                </ButtonIcon>
-              </template>
-              <span>{{ $t('settings.player_not_available') }}</span>
-            </v-tooltip>
-          </div>
-
-          <!-- contextmenu-->
-          <v-menu location="bottom end">
+      <!-- subtitle -->
+      <template #subtitle
+        ><div class="line-clamp-1">{{ api.providers[item.provider]?.name || item.provider }}</div>
+      </template>
+      <!-- append -->
+      <template #append>
+        <!-- player disabled -->
+        <div v-if="!item.enabled">
+          <v-tooltip location="bottom">
             <template #activator="{ props }">
               <ButtonIcon v-bind="props">
-                <v-icon icon="mdi-dots-vertical" />
+                <v-icon icon="mdi-cancel" />
               </ButtonIcon>
             </template>
+            <span>{{ $t('settings.player_disabled') }}</span>
+          </v-tooltip>
+        </div>
 
-            <v-list>
-              <ListItem
-                v-if="item.enabled && item.player_id in api.players"
-                :title="$t('settings.configure')"
-                prepend-icon="mdi-cog"
-                @click="editPlayer(item.player_id)"
-              />
-              <ListItem
-                :title="item.enabled ? $t('settings.disable') : $t('settings.enable')"
-                prepend-icon="mdi-cog"
-                @click="toggleEnabled(item)"
-              />
-              <ListItem
-                v-if="api.providerManifests[item.provider].documentation"
-                :title="$t('settings.documentation')"
-                prepend-icon="mdi-bookshelf"
-                :href="api.providerManifests[item.provider].documentation"
-                target="_blank"
-              />
-              <ListItem
-                v-if="!api.players[item.player_id]?.available"
-                :title="$t('settings.delete')"
-                prepend-icon="mdi-delete"
-                @click="removePlayerConfig(item.player_id)"
-              />
-            </v-list>
-          </v-menu>
-        </template>
-      </ListItem>
-    </RecycleScroller>
-  </v-container>
+        <!-- player not (yet) available -->
+        <div v-else-if="!api.players[item.player_id]?.available">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <ButtonIcon v-bind="props">
+                <v-icon icon="mdi-cancel" />
+              </ButtonIcon>
+            </template>
+            <span>{{ $t('settings.player_not_available') }}</span>
+          </v-tooltip>
+        </div>
+
+        <!-- contextmenu-->
+        <v-menu location="bottom end">
+          <template #activator="{ props }">
+            <ButtonIcon v-bind="props">
+              <v-icon icon="mdi-dots-vertical" />
+            </ButtonIcon>
+          </template>
+
+          <v-list>
+            <ListItem
+              v-if="item.enabled && item.player_id in api.players"
+              :title="$t('settings.configure')"
+              prepend-icon="mdi-cog"
+              @click="editPlayer(item.player_id)"
+            />
+            <ListItem
+              :title="item.enabled ? $t('settings.disable') : $t('settings.enable')"
+              prepend-icon="mdi-cog"
+              @click="toggleEnabled(item)"
+            />
+            <ListItem
+              v-if="api.providerManifests[item.provider].documentation"
+              :title="$t('settings.documentation')"
+              prepend-icon="mdi-bookshelf"
+              :href="api.providerManifests[item.provider].documentation"
+              target="_blank"
+            />
+            <ListItem
+              v-if="!api.players[item.player_id]?.available"
+              :title="$t('settings.delete')"
+              prepend-icon="mdi-delete"
+              @click="removePlayerConfig(item.player_id)"
+            />
+          </v-list>
+        </v-menu>
+      </template>
+    </ListItem>
+  </RecycleScroller>
 </template>
 
 <script setup lang="ts">

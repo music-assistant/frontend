@@ -1,8 +1,8 @@
 <template>
   <v-app>
-    <player-select />
-    <playerOSD />
-    <main-view v-if="api.state.value == ConnectionState.CONNECTED" />
+    <PlayerSelect />
+    <PlayerOSD />
+    <MainView v-if="api.state.value == ConnectionState.CONNECTED" />
     <v-overlay v-else>
       <v-progress-circular indeterminate size="64" />
     </v-overlay>
@@ -12,7 +12,6 @@
 </template>
 
 <script lang="ts" setup>
-import AppBar from './AppBar.vue';
 import MainView from './View.vue';
 import PlayerOSD from './PlayerOSD/Player.vue';
 import PlayerSelect from './PlayerSelect.vue';
