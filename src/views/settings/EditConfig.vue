@@ -8,20 +8,12 @@
       :disabled="disabled"
     >
       <!-- config rows for all config entries -->
-      <v-expansion-panels
-        v-model="activePanel"
-        variant="accordion"
-        multiple
-      >
+      <v-expansion-panels v-model="activePanel" variant="accordion" multiple>
         <!-- 
           we split up the config settings in basic and advanced settings,
           using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
         -->
-        <v-expansion-panel
-          v-for="panel of panels"
-          :key="panel"
-          :value="panel"
-        >
+        <v-expansion-panel v-for="panel of panels" :key="panel" :value="panel">
           <v-expansion-panel-title v-if="panel == 'advanced'">
             <div class="expansion-panel-text">
               {{ $t("settings.advanced_settings") }}
@@ -30,33 +22,33 @@
           <br />
           <v-expansion-panel-text>
             <div
-              v-for="conf_item_value of entries.filter(
+              v-for="conf_entry of entries.filter(
                 (x) => x.advanced == (panel == 'advanced') && !x.hidden
               )"
-              :key="conf_item_value.key"
+              :key="conf_entry.key"
               class="configrow"
             >
               <div class="configcolumnleft">
                 <!-- divider value -->
-                <div v-if="conf_item_value.type == ConfigEntryType.DIVIDER">
+                <div v-if="conf_entry.type == ConfigEntryType.DIVIDER">
                   <br />
                   <v-divider />
                   <v-label
-                    v-if="conf_item_value.label"
+                    v-if="conf_entry.label"
                     style="
                       margin-left: 8px;
                       margin-top: 10px;
                       margin-bottom: 10px;
                     "
                   >
-                    <b>{{ conf_item_value.label }}</b>
+                    <b>{{ conf_entry.label }}</b>
                   </v-label>
                   <br />
                   <br />
                 </div>
 
                 <!-- label value -->
-                <div v-else-if="conf_item_value.type == ConfigEntryType.LABEL">
+                <div v-else-if="conf_entry.type == ConfigEntryType.LABEL">
                   <br />
                   <v-label
                     style="
@@ -65,42 +57,32 @@
                       margin-bottom: 10px;
                     "
                   >
-                    {{
-                      $t(
-                        `settings.${conf_item_value.key}`,
-                        conf_item_value.label
-                      )
-                    }}
+                    {{ $t(`settings.${conf_entry.key}`, conf_entry.label) }}
                   </v-label>
                 </div>
 
                 <!-- action type -->
                 <div
                   v-else-if="
-                    conf_item_value.type == ConfigEntryType.ACTION ||
-                      (conf_item_value.action && !conf_item_value.value)
+                    conf_entry.type == ConfigEntryType.ACTION ||
+                    (conf_entry.action && !conf_entry.value)
                   "
                 >
                   <br />
                   <v-btn
                     class="actionbutton"
-                    :disabled="
-                      !!conf_item_value.depends_on &&
-                        !getValue(conf_item_value.depends_on)
-                    "
+                    :disabled="checkDisabled(conf_entry)"
                     @click="
-                      action(conf_item_value.action || conf_item_value.key);
-                      conf_item_value.value = conf_item_value.action
+                      action(conf_entry.action || conf_entry.key);
+                      conf_entry.value = conf_entry.action
                         ? null
-                        : conf_item_value.key;
+                        : conf_entry.key;
                     "
                   >
                     {{
                       $t(
-                        `settings.${
-                          conf_item_value.action || conf_item_value.key
-                        }`,
-                        conf_item_value.action_label || conf_item_value.label
+                        `settings.${conf_entry.action || conf_entry.key}`,
+                        conf_entry.action_label || conf_entry.label
                       )
                     }}
                   </v-btn>
@@ -108,49 +90,37 @@
 
                 <!-- boolean value: toggle switch -->
                 <v-switch
-                  v-else-if="conf_item_value.type == ConfigEntryType.BOOLEAN"
-                  v-model="conf_item_value.value"
-                  :label="
-                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
-                  "
+                  v-else-if="conf_entry.type == ConfigEntryType.BOOLEAN"
+                  v-model="conf_entry.value"
+                  :label="$t(`settings.${conf_entry.key}`, conf_entry.label)"
                   color="primary"
-                  :disabled="
-                    !!conf_item_value.depends_on &&
-                      !getValue(conf_item_value.depends_on)
-                  "
+                  :disabled="checkDisabled(conf_entry)"
                 />
 
                 <!-- int/float value in range: slider control -->
                 <!-- eslint-disable vue/valid-v-model -->
                 <v-slider
                   v-else-if="
-                    (conf_item_value.type == ConfigEntryType.INTEGER ||
-                      conf_item_value.type == ConfigEntryType.FLOAT) &&
-                      conf_item_value.range &&
-                      conf_item_value.range.length == 2
+                    (conf_entry.type == ConfigEntryType.INTEGER ||
+                      conf_entry.type == ConfigEntryType.FLOAT) &&
+                    conf_entry.range &&
+                    conf_entry.range.length == 2
                   "
-                  v-model="conf_item_value.value as number"
-                  :disabled="
-                    !!conf_item_value.depends_on &&
-                      !getValue(conf_item_value.depends_on)
-                  "
-                  :label="
-                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
-                  "
-                  :required="conf_item_value.required"
+                  v-model="conf_entry.value as number"
+                  :disabled="checkDisabled(conf_entry)"
+                  :label="$t(`settings.${conf_entry.key}`, conf_entry.label)"
+                  :required="conf_entry.required"
                   class="align-center"
-                  :min="conf_item_value.range[0]"
-                  :max="conf_item_value.range[1]"
-                  :step="
-                    conf_item_value.type == ConfigEntryType.FLOAT ? 0.5 : 1
-                  "
+                  :min="conf_entry.range[0]"
+                  :max="conf_entry.range[1]"
+                  :step="conf_entry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
                   hide-details
                   style="margin-top: 10px; margin-bottom: 25px"
                   color="primary"
                 >
                   <template #append>
                     <v-text-field
-                      v-model="conf_item_value.value"
+                      v-model="conf_entry.value"
                       hide-details
                       single-line
                       density="compact"
@@ -163,60 +133,47 @@
 
                 <!-- password value -->
                 <v-text-field
-                  v-else-if="
-                    conf_item_value.type == ConfigEntryType.SECURE_STRING
-                  "
-                  v-model="conf_item_value.value"
-                  :label="
-                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
-                  "
-                  :required="conf_item_value.required"
-                  :disabled="
-                    !!conf_item_value.depends_on &&
-                      !getValue(conf_item_value.depends_on)
-                  "
+                  v-else-if="conf_entry.type == ConfigEntryType.SECURE_STRING"
+                  v-model="conf_entry.value"
+                  :label="$t(`settings.${conf_entry.key}`, conf_entry.label)"
+                  :required="conf_entry.required"
+                  :disabled="checkDisabled(conf_entry)"
                   :rules="[
                     (v) =>
-                      !(!v && conf_item_value.required) ||
+                      !(!v && conf_entry.required) ||
                       $t('settings.invalid_input'),
                   ]"
                   :type="showPasswordValues ? 'text' : 'password'"
                   :append-inner-icon="
                     showPasswordValues
                       ? 'mdi-eye'
-                      : typeof conf_item_value.value == 'string' &&
-                        conf_item_value.value.includes(SECURE_STRING_SUBSTITUTE)
-                        ? ''
-                        : 'mdi-eye-off'
+                      : typeof conf_entry.value == 'string' &&
+                        conf_entry.value.includes(SECURE_STRING_SUBSTITUTE)
+                      ? ''
+                      : 'mdi-eye-off'
                   "
                   variant="outlined"
                   clearable
-                  :readonly="!!conf_item_value.action"
+                  :readonly="!!conf_entry.action"
                   @click:append-inner="showPasswordValues = !showPasswordValues"
                 />
 
                 <!-- value with dropdown -->
                 <v-select
                   v-else-if="
-                    conf_item_value.options &&
-                      conf_item_value.options.length > 0
+                    conf_entry.options && conf_entry.options.length > 0
                   "
-                  v-model="conf_item_value.value"
-                  :chips="conf_item_value.multi_value"
-                  :clearable="conf_item_value.multi_value"
-                  :multiple="conf_item_value.multi_value"
-                  :items="conf_item_value.options"
-                  :disabled="
-                    !!conf_item_value.depends_on &&
-                      !getValue(conf_item_value.depends_on)
-                  "
-                  :label="
-                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
-                  "
-                  :required="conf_item_value.required"
+                  v-model="conf_entry.value"
+                  :chips="conf_entry.multi_value"
+                  :clearable="conf_entry.multi_value"
+                  :multiple="conf_entry.multi_value"
+                  :items="conf_entry.options"
+                  :disabled="checkDisabled(conf_entry)"
+                  :label="$t(`settings.${conf_entry.key}`, conf_entry.label)"
+                  :required="conf_entry.required"
                   :rules="[
                     (v) =>
-                      !(!v && conf_item_value.required) ||
+                      !(!v && conf_entry.required) ||
                       $t('settings.invalid_input'),
                   ]"
                   variant="outlined"
@@ -224,54 +181,44 @@
                 <!-- int value without range -->
                 <v-text-field
                   v-else-if="
-                    conf_item_value.type == ConfigEntryType.INTEGER ||
-                      conf_item_value.type == ConfigEntryType.FLOAT
+                    conf_entry.type == ConfigEntryType.INTEGER ||
+                    conf_entry.type == ConfigEntryType.FLOAT
                   "
-                  v-model="conf_item_value.value"
-                  :placeholder="conf_item_value.default_value?.toString()"
-                  :disabled="
-                    !!conf_item_value.depends_on &&
-                      !getValue(conf_item_value.depends_on)
-                  "
-                  :label="
-                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
-                  "
-                  :required="conf_item_value.required"
+                  v-model="conf_entry.value"
+                  :placeholder="conf_entry.default_value?.toString()"
+                  :disabled="checkDisabled(conf_entry)"
+                  :label="$t(`settings.${conf_entry.key}`, conf_entry.label)"
+                  :required="conf_entry.required"
                   :rules="[
                     (v) =>
-                      !(!v && conf_item_value.required) ||
+                      !(!v && conf_entry.required) ||
                       $t('settings.invalid_input'),
                   ]"
                   variant="outlined"
-                  :clearable="!conf_item_value.required"
+                  :clearable="!conf_entry.required"
                   type="number"
                 />
                 <!-- all other: textbox with single value -->
                 <v-text-field
                   v-else
-                  v-model="conf_item_value.value"
-                  :placeholder="conf_item_value.default_value?.toString()"
+                  v-model="conf_entry.value"
+                  :placeholder="conf_entry.default_value?.toString()"
                   clearable
-                  :disabled="
-                    !!conf_item_value.depends_on &&
-                      !getValue(conf_item_value.depends_on)
-                  "
-                  :label="
-                    $t(`settings.${conf_item_value.key}`, conf_item_value.label)
-                  "
-                  :required="conf_item_value.required"
+                  :disabled="checkDisabled(conf_entry)"
+                  :label="$t(`settings.${conf_entry.key}`, conf_entry.label)"
+                  :required="conf_entry.required"
                   :rules="[
                     (v) =>
-                      !(!v && conf_item_value.required) ||
+                      !(!v && conf_entry.required) ||
                       $t('settings.invalid_input'),
                   ]"
                   variant="outlined"
-                  :readonly="!!conf_item_value.action"
+                  :readonly="!!conf_entry.action"
                 />
               </div>
               <!-- right side of control: help icon with description-->
               <div
-                v-if="conf_item_value.description || conf_item_value.help_link"
+                v-if="conf_entry.description || conf_entry.help_link"
                 class="configcolumnright"
               >
                 <v-btn
@@ -280,9 +227,9 @@
                   class="helpicon"
                   size="x-large"
                   @click="
-                    conf_item_value.description
-                      ? (showHelpInfo = conf_item_value)
-                      : openLink(conf_item_value.help_link!)
+                    conf_entry.description
+                      ? (showHelpInfo = conf_entry)
+                      : openLink(conf_entry.help_link!)
                   "
                 />
               </div>
@@ -301,10 +248,7 @@
       </v-btn>
     </v-form>
     <br />
-    <v-btn
-      block
-      @click="$router.back()"
-    >
+    <v-btn block @click="$router.back()">
       {{ $t("close") }}
     </v-btn>
     <v-dialog
@@ -322,10 +266,7 @@
             {{ $t("read_more") }}
           </v-btn>
           <v-spacer />
-          <v-btn
-            color="primary"
-            @click="showHelpInfo = undefined"
-          >
+          <v-btn color="primary" @click="showHelpInfo = undefined">
             {{ $t("close") }}
           </v-btn>
         </v-card-actions>
@@ -383,9 +324,9 @@ const requiredValuesPresent = computed(() => {
       entry.required &&
       !(
         !isNullOrUndefined(entry.value) ||
-        !isNullOrUndefined(entry.default_value)
-        || entry.type == ConfigEntryType.DIVIDER
-        || entry.type == ConfigEntryType.LABEL
+        !isNullOrUndefined(entry.default_value) ||
+        entry.type == ConfigEntryType.DIVIDER ||
+        entry.type == ConfigEntryType.LABEL
       )
     )
       return false;
@@ -416,8 +357,10 @@ watch(
     entries.value = [];
     for (const entry of val || []) {
       // handle missing values (undefined or null)
-      if (entry.value !== undefined && entry.value !== null) oldValues.value[entry.key] = entry.value;
-      if (entry.value == undefined || entry.value == null) entry.value = entry.default_value;
+      if (entry.value !== undefined && entry.value !== null)
+        oldValues.value[entry.key] = entry.value;
+      if (entry.value == undefined || entry.value == null)
+        entry.value = entry.default_value;
       entries.value.push(entry);
     }
   },
@@ -442,11 +385,20 @@ const action = async function (action: string) {
 const openLink = function (url: string) {
   window.open(url, "_blank");
 };
-const getValue = function (key: string) {
-  return entries.value?.find((x) => x.key == key)?.value || undefined;
-};
 const isNullOrUndefined = function (value: any) {
   return value === null || value === undefined;
+};
+const hasValidInput = function (entry: ConfigEntry) {
+  if (entry.required && isNullOrUndefined(entry.value)) return false;
+  return true;
+};
+const checkDisabled = function (entry: ConfigEntry) {
+  // check if the UI element should be disabled due to conditions
+  if (!isNullOrUndefined(entry.depends_on)) {
+    const dependent = entries.value?.find((x) => x.key == entry.depends_on);
+    if (dependent && !hasValidInput(dependent)) return true;
+  }
+  return false;
 };
 </script>
 
