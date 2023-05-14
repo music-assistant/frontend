@@ -25,7 +25,7 @@
           />
         </div>
         <div
-          v-else-if="item.media_type == MediaType.FOLDER"
+          v-else-if="item.media_type == MediaType.FOLDER && !item.metadata.images"
           class="listitem-thumb"
         >
           <v-btn
@@ -38,6 +38,15 @@
               style="align: center"
             />
           </v-btn>
+        </div>
+        <div
+          v-else-if="item.media_type == MediaType.FOLDER && item.metadata.images"
+          class="listitem-thumb"
+        >
+          <MediaItemThumb
+            :item="item"
+            :size="50"
+          />
         </div>
         <div
           v-else
