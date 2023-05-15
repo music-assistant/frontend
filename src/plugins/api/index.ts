@@ -592,7 +592,7 @@ export class MusicAssistantApi {
   public getPlayerQueueItems(
     queue_id: string,
     chunkCallback?: chunkCallback
-  ): Promise<Track[]> {
+  ): Promise<QueueItem[]> {
     // Get all QueueItems for given PlayerQueue
     return this.getData(
       "players/queue/items",
@@ -759,16 +759,10 @@ export class MusicAssistantApi {
     this.players[playerId].volume_level = newVolume;
   }
   public playerCommandVolumeUp(playerId: string) {
-    this.playerCommandVolumeSet(
-      playerId,
-      this.players[playerId].volume_level + 5
-    );
+    this.playerCommand(playerId, "volume_up");
   }
   public playerCommandVolumeDown(playerId: string) {
-    this.playerCommandVolumeSet(
-      playerId,
-      this.players[playerId].volume_level - 5
-    );
+    this.playerCommand(playerId, "volume_down");
   }
   public playerCommandVolumeMute(playerId: string, muted: boolean) {
     this.playerCommand(playerId, "volume_mute", {
@@ -777,21 +771,7 @@ export class MusicAssistantApi {
     this.players[playerId].volume_muted = muted;
   }
 
-  public playerCommandGroupVolume(queueId: string, newVolume: number) {
-    /*
-      Send VOLUME_SET command to given playergroup.
-
-      Will send the new (average) volume level to group childs.
-        - player_id: player_id of the playergroup to handle the command.
-        - volume_level: volume level (0..100) to set on the player.
-    */
-    this.playerCommand(queueId, "group_volume", {
-      volume_level: newVolume,
-    });
-    this.players[queueId].group_volume = newVolume;
-  }
-
-  public playerCommandSync(playerId: string, target_player: string) {
+    public playerCommandSync(playerId: string, target_player: string) {
     /*
       Handle SYNC command for given player.
 
@@ -841,6 +821,20 @@ export class MusicAssistantApi {
 
   // PlayerGroup related functions/commands
 
+  public playerCommandGroupVolume(playerId: string, newVolume: number) {
+    /*
+      Send VOLUME_SET command to given playergroup.
+
+      Will send the new (average) volume level to group childs.
+        - playerId: player_id of the playergroup to handle the command.
+        - newVolume: volume level (0..100) to set on the player.
+    */
+    this.playerCommand(playerId, "group_volume", {
+      volume_level: newVolume,
+    });
+    this.players[playerId].group_volume = newVolume;
+  }
+
   public setPlayerGroupMembers(player_id: string, members: string[]) {
     /*
       Update the memberlist of the given PlayerGroup.
@@ -851,35 +845,6 @@ export class MusicAssistantApi {
     this.sendCommand(`players/cmd/set_members`, {
       player_id,
       members,
-    });
-  }
-
-  public createPlayerGroup(provider: string, name: string): Promise<Player> {
-    /*
-      Handle CREATE_GROUP command on the given player provider.
-
-        - name: name for the new group.
-        - provider: provider domain or instance id of the player provider.
-          defaults to the `universal_group` provider
-
-
-        Returns the newly created PlayerGroup.
-    */
-    return this.getData(`players/cmd/create_group`, {
-      name,
-      provider,
-    });
-  }
-
-  public deletePlayerGroup(provider: string, name: string) {
-    /*
-      Handle DELETE_GROUP command on the given player provider.
-
-        - player_id: id of the group player to remove.
-    */
-    this.sendCommand(`players/cmd/delete_group`, {
-      name,
-      provider,
     });
   }
 
