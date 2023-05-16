@@ -15,6 +15,7 @@
     "colorthief": "^2.4.0",
     "home-assistant-js-websocket": "^8.0.1",
     "mobile-detect": "^1.4.5",
+    "nanoid": "^4.0.2",
     "v3-infinite-loading": "^1.2.2",
     "vue": "^3.3.2",
     "vue-audio-better": "^3.0.1",
