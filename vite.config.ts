@@ -5,6 +5,8 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 import webfontDownload from 'vite-plugin-webfont-dl';
+import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -48,6 +50,9 @@ export default defineConfig({
         ],
       },
     }),
+    VueI18nPlugin({
+      include: [path.resolve(__dirname, './src/translations/**')],
+    })
   ],
   define: { 'process.env': {} },
   resolve: {

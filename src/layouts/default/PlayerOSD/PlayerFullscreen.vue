@@ -92,8 +92,8 @@
             <h4
               v-if="
                 curQueueItem.media_item &&
-                curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                (curQueueItem.media_item as Track).artists.length > 0
+                  curQueueItem.media_item?.media_type == MediaType.TRACK &&
+                  (curQueueItem.media_item as Track).artists.length > 0
               "
               class="subtitle"
               @click="curQueueItem?.media_item ? itemClick((curQueueItem.media_item as Track).artists[0]) : ''"

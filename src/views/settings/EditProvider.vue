@@ -16,13 +16,12 @@
         <v-card-subtitle>
           {{
             api.providerManifests[config.domain].description
-          }} </v-card-subtitle
-        ><br />
+          }}
+        </v-card-subtitle><br />
         <v-card-subtitle
           v-if="api.providerManifests[config.domain].codeowners.length"
         >
-          <b>{{ $t("settings.codeowners") }}: </b
-          >{{ api.providerManifests[config.domain].codeowners.join(" / ") }}
+          <b>{{ $t("settings.codeowners") }}: </b>{{ api.providerManifests[config.domain].codeowners.join(" / ") }}
         </v-card-subtitle>
 
         <v-card-subtitle
@@ -32,8 +31,7 @@
           <a
             :href="api.providerManifests[config.domain].documentation"
             target="_blank"
-            >{{ $t("settings.check_docs") }}</a
-          >
+          >{{ $t("settings.check_docs") }}</a>
         </v-card-subtitle>
         <br />
         <v-divider />
@@ -68,12 +66,16 @@
       />
     </v-card-text>
     <v-overlay
-      scrim="true"
       v-model="loading"
+      scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
+      <v-progress-circular
+        indeterminate
+        size="64"
+        color="primary"
+      />
     </v-overlay>
   </section>
 </template>

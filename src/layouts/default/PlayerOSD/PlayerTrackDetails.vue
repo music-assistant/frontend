@@ -66,10 +66,10 @@
       <div
         v-if="
           curQueueItem &&
-          curQueueItem.media_item?.media_type == MediaType.TRACK &&
-          'album' in curQueueItem.media_item &&
-          curQueueItem.media_item.album &&
-          !props.showOnlyArtist
+            curQueueItem.media_item?.media_type == MediaType.TRACK &&
+            'album' in curQueueItem.media_item &&
+            curQueueItem.media_item.album &&
+            !props.showOnlyArtist
         "
         style="cursor: pointer"
         class="line-clamp-1"
@@ -82,9 +82,9 @@
       <div
         v-else-if="
           curQueueItem &&
-          curQueueItem.media_item &&
-          'artists' in curQueueItem.media_item &&
-          curQueueItem.media_item.artists.length > 0
+            curQueueItem.media_item &&
+            'artists' in curQueueItem.media_item &&
+            curQueueItem.media_item.artists.length > 0
         "
         class="line-clamp-1"
         style="cursor: pointer"
