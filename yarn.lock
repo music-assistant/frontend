@@ -5044,10 +5044,10 @@ vue@^3.3.1:
     "@vue/server-renderer" "3.3.1"
     "@vue/shared" "3.3.1"
 
-vuetify@3.2.4:
-  version "3.2.4"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.2.4.tgz#e31e23305b23d2a08ccbb845e295ff07d4c1a71f"
-  integrity sha512-Lj3fXSTY/lLXpuzAM0n2B/9o7WKpHsqv2USanXyFVXbePsl9kx7XY4HPrMqTDEYRlY9AyMjF9ilTbkQ8IovPmQ==
+vuetify@3.2.5:
+  version "3.2.5"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.2.5.tgz#b37cb4d6decafd5be7b5c29346555d6161ea9972"
+  integrity sha512-HuLIydRkigGIfqDbwEjFw5LEtWCw8lV4K1isMv/7vAt8n5fns+8kKqVnktIQkfzSxQgPD6Lve/58j4dEKA/vTA==
 
 w3c-xmlserializer@^4.0.0:
   version "4.0.0"
