@@ -12,7 +12,7 @@
   >
     <!-- heading with Players as title-->
     <v-card-title class="headline">
-      <b>{{ $t("players") }}</b>
+      <b>{{ $t('players') }}</b>
     </v-card-title>
 
     <!-- close button in the top right (accessibility reasons)-->
@@ -26,12 +26,7 @@
     <v-divider />
 
     <!-- collapsable player rows-->
-    <v-expansion-panels
-      v-model="panelItem"
-      focusable
-      accordion
-      flat
-    >
+    <v-expansion-panels v-model="panelItem" focusable accordion flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"
         :id="player.player_id"
@@ -50,26 +45,15 @@
           collapse-icon="mdi-chevron-up"
           @click="
             store.selectedPlayer = player;
+            scrollToTop(player.player_id);
           "
         >
-          <v-list-item density="compact">
+          <ListItem>
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="
-                  player.group_childs.length > 0
-                    ? 'mdi-speaker-multiple'
-                    : 'mdi-speaker'
-                "
+                :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
                 color="accent"
-                style="
-                  padding-left: 0px;
-                  padding-right: 0px;
-                  margin-left: -10px;
-                  margin-right: 10px;
-                  width: 42px;
-                  height: 50px;
-                "
               />
             </template>
             <template #title>
@@ -83,17 +67,15 @@
                 class="text-body-2"
                 style="line-height: 1em"
               >
-                {{ $t("state." + api.queues[player.active_source].state) }} ({{ api.queues[player.active_source].display_name }})
+                {{ $t('state.' + api.queues[player.active_source].state) }} ({{
+                  api.queues[player.active_source].display_name
+                }})
               </div>
-              <div
-                v-else-if="api.queues[player.player_id]"
-                class="text-body-2"
-                style="line-height: 1em"
-              >
-                {{ $t("state." + api.queues[player.player_id].state) }}
+              <div v-else class="text-body-2" style="line-height: 1em">
+                {{ player.state }}
               </div>
             </template>
-          </v-list-item>
+          </ListItem>
         </v-expansion-panel-title>
         <v-expansion-panel-text variant="contain">
           <VolumeControl :player="player" />
@@ -104,12 +86,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, ref, watch } from "vue";
-import { Player, PlayerState } from "../../plugins/api/interfaces";
-import { store } from "../../plugins/store";
-import VolumeControl from "../../components/VolumeControl.vue";
-import { api } from "../../plugins/api";
-import { getPlayerName } from "@/utils";
+import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
+import { Player, PlayerState } from '../../plugins/api/interfaces';
+import { store } from '../../plugins/store';
+import VolumeControl from '../../components/VolumeControl.vue';
+import { api } from '../../plugins/api';
+import { getPlayerName } from '@/utils';
+import ListItem from '@/components/ListItem.vue';
 
 const panelItem = ref<number | undefined>(undefined);
 
@@ -122,11 +105,7 @@ const sortedPlayers = computed(() => {
     if (!playerActive(player, true)) continue;
     res.push(player);
   }
-  return res
-    .slice()
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1
-    );
+  return res.slice().sort((a, b) => (a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1));
 });
 
 //watchers
@@ -136,17 +115,16 @@ watch(
     if (!newVal) {
       panelItem.value = undefined;
     }
-  }
+  },
 );
 watch(
   () => store.selectedPlayer,
   (newVal) => {
     if (newVal) {
       // remember last selected playerId
-      localStorage.setItem("mass.LastPlayerId", newVal.player_id);
-      scrollToTop(newVal.player_id);
+      localStorage.setItem('mass.LastPlayerId', newVal.player_id);
     }
-  }
+  },
 );
 watch(
   () => api.players,
@@ -155,7 +133,7 @@ watch(
       checkDefaultPlayer();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 const shadowRoot = ref<ShadowRoot>();
@@ -169,15 +147,15 @@ const scrollToTop = function (playerId: string) {
   lastClicked.value = playerId;
   setTimeout(() => {
     const elmnt = shadowRoot.value?.getElementById(playerId);
-    elmnt?.scrollIntoView({ behavior: "smooth" });
+    elmnt?.scrollIntoView({ behavior: 'smooth' });
   }, 0);
 };
 
 const playerActive = function (
   player: Player,
-  allowUnavailable: boolean = true,
-  allowSyncChild: boolean = false,
-  allowHidden: boolean = false
+  allowUnavailable = true,
+  allowSyncChild = false,
+  allowHidden = false,
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
@@ -188,26 +166,19 @@ const playerActive = function (
 };
 
 const checkDefaultPlayer = function () {
-  if (
-    store.selectedPlayer &&
-    playerActive(store.selectedPlayer, false, false, false)
-  )
-    return;
+  if (store.selectedPlayer && playerActive(store.selectedPlayer, false, false, false)) return;
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
     store.selectedPlayer = newDefaultPlayer;
-    console.log("Selected new default player: ", newDefaultPlayer.display_name);
+    console.log('Selected new default player: ', newDefaultPlayer.display_name);
   }
 };
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
+  const lastPlayerId = localStorage.getItem('mass.LastPlayerId');
   if (lastPlayerId) {
-    if (
-      lastPlayerId in api.players &&
-      playerActive(api.players[lastPlayerId], false, false, false)
-    ) {
+    if (lastPlayerId in api.players && playerActive(api.players[lastPlayerId], false, false, false)) {
       return api.players[lastPlayerId];
     }
   }
@@ -257,9 +228,7 @@ div.v-expansion-panel--active:not(:first-child),
 div.v-expansion-panel__shadow {
   box-shadow: none;
 }
-/* .v-expansion-panel-title.v-expansion-panel-title__icon {
-  margin-right: 15px;
-} */
+
 .v-expansion-panel-title__icon {
   display: inline-flex;
   margin-bottom: -4px;

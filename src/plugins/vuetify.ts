@@ -5,15 +5,15 @@
  */
 
 // Styles
-import "@mdi/font/css/materialdesignicons.css";
-import 'material-design-icons-iconfont/dist/material-design-icons.css'
-import "vuetify/styles";
+import '@mdi/font/css/materialdesignicons.css';
+import 'material-design-icons-iconfont/dist/material-design-icons.css';
+import 'vuetify/styles';
 import colors from 'vuetify/lib/util/colors';
-import { aliases, mdi } from 'vuetify/iconsets/mdi'
-import { md } from 'vuetify/iconsets/md'
+import { aliases, mdi } from 'vuetify/iconsets/mdi';
+import { md } from 'vuetify/iconsets/md';
 
 // Composables
-import { createVuetify } from "vuetify";
+import { createVuetify } from 'vuetify';
 export default createVuetify(
   // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
   {
@@ -22,11 +22,11 @@ export default createVuetify(
       aliases,
       sets: {
         md,
-        mdi
+        mdi,
       },
     },
     display: {
-      mobileBreakpoint: "md",
+      mobileBreakpoint: 'md',
       thresholds: {
         xs: 0,
         sm: 340,
@@ -36,7 +36,7 @@ export default createVuetify(
       },
     },
     theme: {
-      defaultTheme: "light",
+      defaultTheme: 'light',
       themes: {
         light: {
           dark: false,
@@ -54,5 +54,5 @@ export default createVuetify(
         },
       },
     },
-  }
+  },
 );

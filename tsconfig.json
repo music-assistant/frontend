@@ -12,14 +12,16 @@
     "esModuleInterop": true,
     "lib": ["ESNext", "DOM"],
     "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
     "noEmit": true,
+    "types": ["vuetify", "node"],
+    "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@/*": [
-       "src/*"
-      ]
-     }
+      "@/*": ["src/*"]
+    },
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/**/*.vue", "tests/**/*.ts", "tests/**/*.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }],
   "exclude": ["node_modules"]
 }
