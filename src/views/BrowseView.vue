@@ -1,26 +1,28 @@
 <template>
   <section>
-    <!-- loading animation -->
-    <v-progress-linear v-if="loading" indeterminate />
+    <v-container>
+      <!-- loading animation -->
+      <v-progress-linear v-if="loading" indeterminate />
 
-    <!-- back button -->
-    <v-btn
-      v-if="props.path"
-      variant="plain"
-      icon="mdi-arrow-left"
-      :to="{ name: 'browse', query: { path: backPath } }"
-    />
-
-    <RecycleScroller v-slot="{ item }" :items="browseItem?.items || []" :item-size="66" key-field="uri" page-mode>
-      <ListviewItem
-        :item="item"
-        :show-library="false"
-        :show-menu="false"
-        :show-providers="false"
-        :is-selected="false"
-        @click="onClick"
+      <!-- back button -->
+      <v-btn
+        v-if="props.path"
+        variant="plain"
+        icon="mdi-arrow-left"
+        :to="{ name: 'browse', query: { path: backPath } }"
       />
-    </RecycleScroller>
+
+      <RecycleScroller v-slot="{ item }" :items="browseItem?.items || []" :item-size="66" key-field="uri" page-mode>
+        <ListviewItem
+          :item="item"
+          :show-library="false"
+          :show-menu="false"
+          :show-providers="false"
+          :is-selected="false"
+          @click="onClick"
+        />
+      </RecycleScroller>
+    </v-container>
   </section>
 </template>
 

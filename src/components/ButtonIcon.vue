@@ -1,33 +1,36 @@
 <template>
-  <v-btn class="icon-btn" :ripple="false" icon variant="plain">
-    <template v-if="$slots.default" #default>
-      <slot></slot>
-    </template>
-    <template v-if="$slots.prepend" #prepend>
-      <slot name="prepend"></slot>
-    </template>
-    <template v-if="$slots.append" #append>
-      <slot name="append"></slot>
-    </template>
-    <template v-if="$slots.loader" #loader>
-      <slot name="loader"></slot>
+  <v-btn v-bind="btnProps" variant="plain" class="btn-icon" @input="(v: any) => $emit('input', v)">
+    <!-- Dynamically inherit slots from parent -->
+    <template v-for="slot in parentSlots" #[slot]>
+      <slot :name="slot"></slot>
     </template>
   </v-btn>
 </template>
 
-<script setup lang="ts">
-// properties
-/*
-export interface Props {
-  type: 'onlyIcon' | 'button' | 'text';
-}
-const props = withDefaults(defineProps<Props>(), {
-  type: 'onlyIcon',
-});*/
+<script lang="ts">
+import { computed } from 'vue';
+
+export default {
+  setup(props, ctx) {
+    const parentSlots = computed(() => Object.keys(ctx.slots));
+
+    const btnDefaults = computed(() => ({
+      ripple: false,
+      icon: true,
+    }));
+
+    const btnProps = computed(() => ({
+      ...btnDefaults.value,
+      ...ctx.attrs,
+    }));
+
+    return { parentSlots, btnProps };
+  },
+};
 </script>
 
 <style>
-.icon-btn {
+.btn-icon {
   width: calc(var(--v-btn-height) + 10px) !important;
   height: calc(var(--v-btn-height) + 10px) !important;
 }

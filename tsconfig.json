@@ -15,7 +15,7 @@
     "experimentalDecorators": true,
     "sourceMap": true,
     "noEmit": true,
-    "types": ["webpack-env", "vuetify", "node"],
+    "types": ["vuetify", "node"],
     "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": ["src/*"]
