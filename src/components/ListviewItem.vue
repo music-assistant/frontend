@@ -126,7 +126,7 @@
         <provider-icons
           v-if="item.provider_mappings && getBreakpointValue('bp2') && showProviders"
           :provider-mappings="item.provider_mappings"
-          :height="20"
+          :height="24"
         />
 
         <!-- in library (heart) icon -->

@@ -2,7 +2,6 @@
   <v-slider
     :style="`width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`"
     hide-details
-    class="player-volume"
     :track-size="2"
     :thumb-size="isThumbHidden ? 0 : 10"
     :step="2"

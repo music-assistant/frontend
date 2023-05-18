@@ -1,43 +1,22 @@
 <template>
   <v-list style="overflow: hidden" lines="two">
-    <list-item>
+    <!-- group volume/power -->
+    <ListItem v-if="player.group_childs.length > 0">
       <template #prepend>
-        <!-- special group volume/power -->
-        <div v-if="player.group_childs.length > 0" :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
-          <v-btn
-            icon
-            variant="plain"
-            width="60"
-            height="30"
-            size="x-large"
-            @click="setGroupPower(player, !player.powered)"
-          >
-            <v-icon icon="mdi-power" />
-          </v-btn>
-          <div class="text-caption" style="position: absolute; width: 60px; text-align: center; margin-left: 0px">
-            {{ player.group_volume }}
-          </div>
-        </div>
-        <v-divider v-if="player.group_childs.length > 0" style="margin-top: 10px; margin-bottom: 10px" />
-
-        <div
-          v-for="childPlayer in getVolumePlayers(player)"
-          :key="childPlayer.player_id"
-          :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
-        >
+        <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center" style="padding-right: 5px">
-            <button-icon @click="api.playerCommandPowerToggle(childPlayer.player_id)">
-              <v-icon :size="30" :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
+            <button-icon style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
+              <v-icon :size="25" :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
             </button-icon>
-            <div class="text-caption">{{ childPlayer.volume_level }}</div>
+            <div class="text-caption">{{ player.group_volume }}</div>
           </div>
         </div>
       </template>
 
       <template #default>
-        <!-- special group volume/power -->
-        <div v-if="player.group_childs.length > 0" :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+        <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           {{ getPlayerName(player, 30) }}
+
           <PlayerVolume
             class="vc-slider"
             :is-powered="true"
@@ -46,13 +25,29 @@
             @update:model-value="api.playerCommandGroupVolume(player.player_id, $event)"
           ></PlayerVolume>
         </div>
-        <v-divider v-if="player.group_childs.length > 0" />
+      </template>
+    </ListItem>
+    <v-divider v-if="player.group_childs.length > 0" style="margin-top: 10px; margin-bottom: 10px" />
 
-        <div
-          v-for="childPlayer in getVolumePlayers(player)"
-          :key="childPlayer.player_id"
-          :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
-        >
+    <!-- group children -->
+    <ListItem
+      v-for="childPlayer in getVolumePlayers(player)"
+      :key="childPlayer.player_id"
+      :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
+    >
+      <template #prepend>
+        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+          <div class="text-center">
+            <button-icon style="height: 25px !important" @click="api.playerCommandPowerToggle(childPlayer.player_id)">
+              <v-icon :size="25" :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
+            </button-icon>
+            <div class="text-caption">{{ childPlayer.volume_level }}</div>
+          </div>
+        </div>
+      </template>
+
+      <template #default>
+        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           {{ truncateString(childPlayer.display_name, 27) }}
 
           <PlayerVolume
@@ -67,11 +62,7 @@
       </template>
 
       <template #append>
-        <div
-          v-for="childPlayer in getVolumePlayers(player)"
-          :key="childPlayer.player_id"
-          :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
-        >
+        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <!-- sync button -->
           <div
             v-if="
@@ -80,7 +71,6 @@
               Object.values(api.players).filter((x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id))
                 .length > 0
             "
-            class="vc-sync-btn"
           >
             <v-menu location="bottom end" style="z-index: 999999">
               <template #activator="{ props: menu }">
@@ -90,7 +80,7 @@
               </template>
               <v-list>
                 <v-card-subtitle>{{ $t('sync_player_to') }}</v-card-subtitle>
-                <v-list-item
+                <list-item
                   v-for="parentPlayer of Object.values(api.players).filter(
                     (x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id),
                   )"
@@ -110,17 +100,18 @@
           </div>
         </div>
       </template>
-    </list-item>
+    </ListItem>
   </v-list>
 </template>
 
 <script setup lang="ts">
 import { Player, PlayerType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
+import { store } from '@/plugins/store';
 import { truncateString, getPlayerName } from '../utils';
-import ButtonIcon from './ButtonIcon.vue';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
 import ListItem from './ListItem.vue';
+import ButtonIcon from './ButtonIcon.vue';
 
 export interface Props {
   player: Player;
@@ -147,7 +138,7 @@ const setGroupPower = function (player: Player, powered: boolean) {
     // send power command to all group child players
     for (const childPlayer of getVolumePlayers(player)) {
       // bypass api throttling by sending the command directly
-      api.sendCommand('players/cmd/power', {
+      api.sendCommand(`players/cmd/power`, {
         player_id: childPlayer.player_id,
         powered,
       });
@@ -159,15 +150,9 @@ const setGroupPower = function (player: Player, powered: boolean) {
 </script>
 
 <style>
-.vc-sync-btn {
-  padding-left: 5px;
-}
-
 .vc-slider {
   padding-top: 13px;
   margin-inline-start: 0px !important;
   margin-inline-end: 0px !important;
-  padding-left: 5px !important;
-  padding-right: 5px !important;
 }
 </style>

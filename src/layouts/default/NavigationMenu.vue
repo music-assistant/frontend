@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import ListItem from '@/components/ListItem.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { store } from '@/plugins/store';
 import { watch } from 'vue';
