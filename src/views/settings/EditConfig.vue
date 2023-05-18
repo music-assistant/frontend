@@ -182,7 +182,7 @@
       </v-btn>
     </v-form>
     <br />
-    <v-btn block @click="$router.back()">
+    <v-btn block @click="router.back()">
       {{ $t('close') }}
     </v-btn>
     <v-dialog :model-value="showHelpInfo !== undefined" width="auto" @update:model-value="showHelpInfo = undefined">
@@ -203,11 +203,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, VNodeRef } from 'vue';
-
+import { ref, VNodeRef, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { ConfigEntryType, ConfigValueType, SECURE_STRING_SUBSTITUTE, ConfigEntry } from '@/plugins/api/interfaces';
 
-import { computed, watch } from 'vue';
+const router = useRouter();
 
 export interface Props {
   configEntries: ConfigEntry[];

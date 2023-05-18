@@ -7,7 +7,7 @@
       props.showQueueDialog
         ? // eslint-disable-next-line vue/no-mutating-props
           (props.showQueueDialog = true)
-        : $router.push('/playerqueue/');
+        : router.push('/playerqueue/');
     "
   >
     <v-icon icon="mdi-playlist-play" />
@@ -102,6 +102,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
@@ -110,6 +111,8 @@ import VolumeControl from '@/components/VolumeControl.vue';
 import ButtonIcon from '@/components/ButtonIcon.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/ListItem.vue';
+
+const router = useRouter();
 
 // properties
 export interface Props {
