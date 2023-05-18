@@ -1,19 +1,15 @@
 <!-- eslint-disable vue/no-template-shadow -->
 <template>
   <div>
-    <v-list-item
+    <ListItem
       link
-      :disabled="!itemIsAvailable(item)"
-      class="listitem"
-      density="compact"
+      :disabled="!itemIsAvailable(item) || isDisabled"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
+      v-hold="() => emit('menu', item)"
     >
       <template #prepend>
-        <div
-          v-if="showCheckboxes"
-          class="listitem-thumb"
-        >
+        <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
           <v-checkbox
             :model-value="isSelected"
             @click.stop
@@ -24,29 +20,13 @@
             "
           />
         </div>
-        <div
-          v-else-if="item.media_type == MediaType.FOLDER && !item.metadata.images"
-          class="listitem-thumb"
-        >
-          <v-btn
-            variant="plain"
-            icon
-          >
-            <v-icon
-              icon="mdi-folder"
-              size="60"
-              style="align: center"
-            />
+        <div v-else-if="item.media_type == MediaType.FOLDER && !item.metadata.images" class="media-thumb listitem-media-thumb">
+          <v-btn variant="plain" icon>
+            <v-icon icon="mdi-folder" size="60" style="align: center" />
           </v-btn>
         </div>
-        <div
-          v-else
-          class="listitem-thumb"
-        >
-          <MediaItemThumb
-            :item="item"
-            :size="50"
-          />
+        <div v-else class="media-thumb listitem-media-thumb">
+          <MediaItemThumb height="50" width="50" :item="item" />
         </div>
       </template>
 
@@ -60,58 +40,36 @@
           <span v-if="'version' in item && item.version">({{ item.version }})</span>
         </span>
         <!-- explicit icon -->
-        <v-tooltip location="bottom">
+        <v-tooltip v-if="item && item.metadata" location="bottom">
           <template #activator="{ props }">
             <v-icon
               v-if="parseBool(item.metadata.explicit || false)"
               v-bind="props"
-              class="listitem-action"
               icon="mdi-alpha-e-box"
               width="35"
             />
           </template>
-          <span>{{ $t("tooltip.explicit") }}</span>
+          <span>{{ $t('tooltip.explicit') }}</span>
         </v-tooltip>
       </template>
 
       <!-- subtitle -->
       <template #subtitle>
         <!-- track: artists(s) + album -->
-        <div v-if="item.media_type == MediaType.TRACK">
+        <div class="line-clamp-1" v-if="item.media_type == MediaType.TRACK">
           <v-item-group>
             <v-item v-if="'artists' in item">
-              {{
-                getArtistsString(item.artists)
-              }}
+              {{ getArtistsString(item.artists, 2) }}
             </v-item>
-            <v-item v-if="showAlbum && 'album' in item && item.album">
-              • {{ item.album.name }}
+            <v-item v-if="showAlbum && 'album' in item && item.album"> • {{ item.album.name }} </v-item>
+            <v-item v-if="'disc_number' in item && item.disc_number && showDiscNumber">
+              <v-icon style="margin-left: 5px" icon="md:album" /> {{ item.disc_number }}
             </v-item>
-            <v-item v-if="'disc_number' in item && item.disc_number && showTrackNumber">
-              <v-icon
-                style="margin-left: 5px;"
-                icon="md:album"
-              /> {{
-                item.disc_number
-              }}
+            <v-item v-if="'track_number' in item && item.track_number && showTrackNumber">
+              <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" /> {{ item.track_number }}
             </v-item>
-            <v-item
-              v-if="
-                'track_number' in item && item.track_number && showTrackNumber
-              "
-            >
-              <v-icon
-                style="margin-left: 5px;"
-                icon="mdi-music-circle-outline"
-              /> {{
-                item.track_number
-              }}
-            </v-item>
-            <v-item v-else-if="'position' in item && item.position">
-              <v-icon
-                style="margin-left: 5px;"
-                icon="mdi-music-circle-outline"
-              /> {{ item.position }}
+            <v-item v-else-if="'position' in item && item.position && showPosition">
+              <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" /> {{ item.position }}
             </v-item>
           </v-item-group>
         </div>
@@ -120,26 +78,20 @@
         <div
           v-else-if="
             item.media_type == MediaType.ALBUM &&
-              'artists' in item &&
-              item.artists &&
-              'year' in item &&
-              item.year &&
-              'album_type' in item
+            'artists' in item &&
+            item.artists &&
+            'year' in item &&
+            item.year &&
+            'album_type' in item
           "
         >
-          {{ $t("album_type." + item.album_type) }} •
-          {{ getArtistsString(item.artists) }} • {{ item.year }}
+          {{ $t('album_type.' + item.album_type) }} • {{ getArtistsString(item.artists) }} • {{ item.year }}
         </div>
         <!-- album: albumtype + artists -->
         <div
-          v-else-if="
-            item.media_type == MediaType.ALBUM &&
-              'artists' in item &&
-              item.artists &&
-              'album_type' in item
-          "
+          v-else-if="item.media_type == MediaType.ALBUM && 'artists' in item && item.artists && 'album_type' in item"
         >
-          {{ $t("album_type." + item.album_type) }} •
+          {{ $t('album_type.' + item.album_type) }} •
           {{ getArtistsString(item.artists) }}
         </div>
         <!-- track/album falback: artist present -->
@@ -158,140 +110,100 @@
 
       <!-- actions -->
       <template #append>
-        <div class="listitem-actions">
-          <!-- hi res icon -->
-          <v-img
-            v-if="HiResDetails"
-            class="listitem-action"
-            :src="iconHiRes"
-            width="35"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'margin-top:5px;'
-                : 'margin-top:5px;filter: invert(100%);'
-            "
-          >
-            <v-tooltip
-              activator="parent"
-              location="bottom"
-            >
-              {{ HiResDetails }}
-            </v-tooltip>
-          </v-img>
+        <!-- hi res icon -->
+        <v-img
+          v-if="HiResDetails"
+          :src="iconHiRes"
+          width="35"
+          :style="$vuetify.theme.current.dark ? 'margin-top:5px;' : 'margin-top:5px;filter: invert(100%);'"
+        >
+          <v-tooltip activator="parent" location="bottom">
+            {{ HiResDetails }}
+          </v-tooltip>
+        </v-img>
 
-          <!-- provider icons -->
-          <provider-icons
-            v-if="
-              item.provider_mappings &&
-                showProviders &&
-                !$vuetify.display.mobile
-            "
-            :provider-mappings="item.provider_mappings"
-            :height="20"
-            class="listitem-actions"
-          />
+        <!-- provider icons -->
+        <provider-icons
+          v-if="item.provider_mappings && getBreakpointValue('bp2') && showProviders"
+          :provider-mappings="item.provider_mappings"
+          :height="24"
+        />
 
-          <!-- in library (heart) icon -->
-          <div
-            v-if="
-              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
-                'in_library' in item && showLibrary && !$vuetify.display.mobile
-            "
-            class="listitem-action"
-          >
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <v-btn
-                  variant="plain"
-                  ripple
-                  v-bind="props"
-                  :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
-                  @click="api.toggleLibrary(item)"
-                  @click.prevent
-                  @click.stop
-                />
-              </template>
-              <span>{{ $t("tooltip.library") }}</span>
-            </v-tooltip>
-          </div>
+        <!-- in library (heart) icon -->
+        <div v-if="getBreakpointValue('bp3') && 'in_library' in item && showLibrary && !$vuetify.display.mobile">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                variant="plain"
+                ripple
+                v-bind="props"
+                :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
+                @click="api.toggleLibrary(item)"
+                @click.prevent
+                @click.stop
+              />
+            </template>
+            <span>{{ $t('tooltip.library') }}</span>
+          </v-tooltip>
+        </div>
 
-          <!-- track duration -->
-          <div
-            v-if="
-              showDuration &&
-                item.media_type == MediaType.TRACK &&
-                'duration' in item &&
-                item.duration != undefined &&
-                !$vuetify.display.mobile
-            "
-            class="listitem-action"
-          >
-            <div>
-              <span
-                class="text-caption"
-                style="padding-right: 10px; padding-left: 10px"
-              >{{ formatDuration(item.duration)
-              }}</span>
-            </div>
-          </div>
-
-          <!-- menu button/icon -->
-          <div
-            v-if="
-              $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1 &&
-                showMenu
-            "
-            class="listitem-action"
-            style="margin-right:-13px"
-          >
-            <v-btn
-              variant="plain"
-              ripple
-              v-bind="props"
-              icon="mdi-dots-vertical"
-              @click.stop="emit('menu', item)"
-            />
+        <!-- track duration -->
+        <div
+          v-if="
+            showDuration &&
+            item.media_type == MediaType.TRACK &&
+            'duration' in item &&
+            item.duration != undefined &&
+            getBreakpointValue('bp2')
+          "
+        >
+          <div>
+            <span class="text-caption" style="padding-right: 10px; padding-left: 10px">{{
+              formatDuration(item.duration)
+            }}</span>
           </div>
         </div>
+        <slot name="append"></slot>
+        <!-- menu button/icon -->
+        <div v-if="getBreakpointValue('bp1') && showMenu">
+          <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
+        </div>
       </template>
-    </v-list-item>
+    </ListItem>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { VTooltip } from "vuetify/components";
-import MediaItemThumb from "./MediaItemThumb.vue";
-import ProviderIcons, {
-  iconHiRes,
-} from "./ProviderIcons.vue";
+import { computed } from 'vue';
+import { VTooltip } from 'vuetify/components';
+import MediaItemThumb from './MediaItemThumb.vue';
+import ProviderIcons, { iconHiRes } from './ProviderIcons.vue';
 import {
   ContentType,
   type BrowseFolder,
   type MediaItem,
   type MediaItemType,
   MediaType,
-} from "../plugins/api/interfaces";
-import {
-  formatDuration,
-  parseBool,
-  getArtistsString,
-  getBrowseFolderName,
-  getResponsiveBreakpoints,
-} from "../utils";
-import { useI18n } from "vue-i18n";
-import api from "@/plugins/api";
+} from '../plugins/api/interfaces';
+import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from '../utils';
+import { useI18n } from 'vue-i18n';
+import api from '@/plugins/api';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import ListItem from '@/components/ListItem.vue';
 
 // properties
 export interface Props {
   item: MediaItemType;
   showTrackNumber?: boolean;
+  showDiscNumber?: boolean;
+  showPosition?: boolean;
   showProviders?: boolean;
   showAlbum?: boolean;
   showMenu?: boolean;
   showLibrary?: boolean;
   showDuration?: boolean;
   isSelected: boolean;
+  isDisabled?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
   parentItem?: MediaItemType;
@@ -302,39 +214,38 @@ const { t } = useI18n();
 
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
+  showDiscNumber: true,
   showProviders: true,
+  showPosition: true,
   showAlbum: true,
   showMenu: true,
   showLibrary: true,
   showDuration: true,
   showCheckboxes: false,
   parentItem: undefined,
+  isDisabled: false,
 });
 
 // computed properties
 const HiResDetails = computed(() => {
-  for (const prov of props.item.provider_mappings) {
-    if (prov.content_type == undefined) continue;
-    if (
-      !(
-        prov.content_type in
-        [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]
-      )
-    )
-      continue;
-    if (prov.sample_rate > 48000 || prov.bit_depth > 16) {
-      return `${prov.sample_rate}kHz ${prov.bit_depth} bits`;
+  if (props.item.provider_mappings) {
+    for (const prov of props.item.provider_mappings) {
+      if (prov.content_type == undefined) continue;
+      if (!(prov.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV])) continue;
+      if (prov.sample_rate > 48000 || prov.bit_depth > 16) {
+        return `${prov.sample_rate}kHz ${prov.bit_depth} bits`;
+      }
     }
   }
-  return "";
+  return '';
 });
 
 // emits
 /* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: "menu", value: MediaItemType): void;
-  (e: "click", value: MediaItemType): void;
-  (e: "select", value: MediaItemType, selected: boolean): void;
+  (e: 'menu', value: MediaItemType): void;
+  (e: 'click', value: MediaItemType): void;
+  (e: 'select', value: MediaItemType, selected: boolean): void;
 }>();
 /* eslint-enable no-unused-vars */
 
@@ -344,29 +255,8 @@ const itemIsAvailable = function (item: MediaItem) {
   if (item.media_type == MediaType.FOLDER) return true;
   if (!props.item.provider_mappings) return true;
   for (const x of item.provider_mappings) {
-    if (x.available && api.providers[x.provider_instance]?.available)
-      return true;
+    if (x.available && api.providers[x.provider_instance]?.available) return true;
   }
   return false;
 };
 </script>
-
-<style>
-.v-slider.v-input--horizontal .v-input__control {
-  min-height: 5px;
-}
-
-.listitem {
-  padding-right: 0px;
-  border-radius: 4px;
-}
-
-.listitem-thumb {
-  padding-left: 0px;
-  margin-right: 10px;
-  margin-left: -10px;
-  margin-top: 2px;
-  width: 50px;
-  height: 50px;
-}
-</style>

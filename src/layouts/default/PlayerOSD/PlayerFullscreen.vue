@@ -1,29 +1,15 @@
 <template>
-  <v-dialog
-    v-model="store.showFullscreenPlayer"
-    fullscreen
-    :scrim="false"
-    transition="dialog-bottom-transition"
-  >
+  <v-dialog v-model="store.showFullscreenPlayer" fullscreen :scrim="false" transition="dialog-bottom-transition">
     <v-card
       :style="`background-image: linear-gradient(${
         $vuetify.theme.current.dark
           ? 'to bottom, rgba(0,0,0,.80), rgba(0,0,0,.75)'
           : 'to bottom, rgba(255,255,255,.85), rgba(255,255,255,.65)'
-      } 100%), ${
-        activePlayerQueue?.active ? `url(${backgroundImage})` : undefined
-      };
+      } 100%), ${activePlayerQueue?.active ? `url(${backgroundImage})` : undefined};
                                           background-size: cover; background-position: center; border: none;`"
     >
-      <v-toolbar
-        dark
-        color="transparent"
-      >
-        <v-btn
-          style="margin-left: 16px"
-          icon
-          @click="store.showFullscreenPlayer = false"
-        >
+      <v-toolbar dark color="transparent">
+        <v-btn style="margin-left: 16px" icon @click="store.showFullscreenPlayer = false">
           <v-icon icon="mdi-chevron-down" />
         </v-btn>
         <v-toolbar-title></v-toolbar-title>
@@ -31,10 +17,8 @@
         <v-spacer></v-spacer>
         <v-toolbar-items style="align-items: center">
           <PlayerExtendedControls
-            :show-queue-dialog="true"
             :button-visibility="{
-              queue:
-                $vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1,
+              queue: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
               player: false,
               volume: false,
             }"
@@ -43,25 +27,29 @@
       </v-toolbar>
       <div class="main">
         <div style="margin-top: 10px; text-align: -webkit-center">
-          <img
-            v-if="coverImage"
+          <MediaItemThumb
+            v-if="curQueueItem"
+            :item="curQueueItem.media_item || curQueueItem"
+            :width="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
+            :height="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
             style="
               height: min(calc(100vw - 40px), calc(100vh - 330px));
               width: min(calc(100vw - 40px), calc(100vh - 330px));
             "
-            alt="cover"
-            :src="coverImage"
+          />
+          <v-img
+            v-else
+            :src="$vuetify.theme.current.dark ? imgCoverDark : imgCoverLight"
+            style="
+              height: min(calc(100vw - 40px), calc(100vh - 330px));
+              width: min(calc(100vw - 40px), calc(100vh - 330px));
+            "
           />
         </div>
 
         <div style="padding-top: 3vh; text-align: center">
-          <!-- title -->
           <div v-if="curQueueItem && curQueueItem.media_item">
-            <div
-              v-if="
-                $vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1
-              "
-            >
+            <div v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })">
               <div style="float: right">
                 <PlayerExtendedControls
                   :responsive-volume-size="true"
@@ -77,23 +65,19 @@
                 <QualityDetailsBtn />
               </div>
             </div>
+            <!-- title -->
             <h1
               v-if="activePlayerQueue?.active && curQueueItem"
               style="cursor: pointer; width: fit-content; display: inline"
-              class="title"
-              @click="
-                curQueueItem?.media_item
-                  ? itemClick(curQueueItem.media_item)
-                  : ''
-              "
+              class="title line-clamp-1"
+              @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
             >
               <!-- name + version (if present) -->
               {{
                 `${curQueueItem.media_item.name} ${
-                  "version" in curQueueItem.media_item &&
-                  curQueueItem.media_item.version
-                    ? "(" + curQueueItem.media_item.version + ")"
-                    : ""
+                  'version' in curQueueItem.media_item && curQueueItem.media_item.version
+                    ? '(' + curQueueItem.media_item.version + ')'
+                    : ''
                 }`
               }}
             </h1>
@@ -101,96 +85,45 @@
           <!-- subtitle -->
           <!-- track: artists(s) -->
           <div
-            v-if="
-              activePlayerQueue?.active &&
-                curQueueItem
-            "
+            v-if="activePlayerQueue?.active && curQueueItem"
             @click="itemClick((curQueueItem!.media_item as Track).artists[0])"
           >
-            <!-- track: artists(s) + album -->
-            <h4
-              v-if="
-                curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                  'album' in curQueueItem.media_item &&
-                  curQueueItem.media_item.album
-              "
-              class="subtitle"
-              @click="
-                curQueueItem?.media_item
-                  ? itemClick(curQueueItem.media_item)
-                  : ''
-              "
-            >
-              {{ getArtistsString((curQueueItem.media_item as Track).artists) }}
-              •
-              {{ (curQueueItem.media_item as Track).album.name }}
-            </h4>
             <!-- track/album falback: artist present -->
             <h4
-              v-else-if="
+              v-if="
                 curQueueItem.media_item &&
                   curQueueItem.media_item?.media_type == MediaType.TRACK &&
                   (curQueueItem.media_item as Track).artists.length > 0
               "
               class="subtitle"
-              @click="
-                curQueueItem?.media_item
-                  ? itemClick((curQueueItem.media_item as Track).artists[0])
-                  : ''
-              "
+              @click="curQueueItem?.media_item ? itemClick((curQueueItem.media_item as Track).artists[0]) : ''"
             >
               {{ (curQueueItem.media_item as Track).artists[0].name }}
             </h4>
             <!-- radio live metadata -->
-            <h4
-              v-else-if="curQueueItem?.streamdetails?.stream_title"
-              class="subtitle"
-            >
+            <h4 v-else-if="curQueueItem?.streamdetails?.stream_title" class="subtitle">
               {{ curQueueItem?.streamdetails?.stream_title }}
             </h4>
             <!-- other description -->
-            <h4
-              v-else-if="
-                curQueueItem && curQueueItem.media_item?.metadata.description
-              "
-              class="subtitle"
-            >
+            <h4 v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description" class="subtitle">
               {{ curQueueItem.media_item.metadata.description }}
             </h4>
             <!-- queue empty message -->
-            <h4
-              v-else-if="activePlayerQueue && activePlayerQueue.items == 0"
-              class="subtitle"
-            >
-              {{ $t("queue_empty") }}
+            <h4 v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="subtitle">
+              {{ $t('queue_empty') }}
             </h4>
             <!-- 3rd party source active -->
-            <h4
-              v-else-if="
-                store.selectedPlayer?.active_source !=
-                  store.selectedPlayer?.player_id
-              "
-              class="subtitle"
-            >
-              {{
-                $t("external_source_active", [
-                  store.selectedPlayer?.active_source,
-                ])
-              }}
+            <h4 v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id" class="subtitle">
+              {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
             </h4>
           </div>
         </div>
         <div style="padding-top: 3vh">
           <!-- progress bar -->
-          <PlayerTimeline
-            :is-progress-bar="false"
-            :is-hidden="false"
-          />
+          <PlayerTimeline :is-progress-bar="false" />
           <!-- player control buttons -->
           <PlayerExtendedControls
-            v-if="
-              $vuetify.display.width <= getResponsiveBreakpoints.breakpoint_1
-            "
+            v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
             :responsive-volume-size="false"
             :button-visibility="{ player: false, volume: true, queue: false }"
             :volume-size="'100%'"
@@ -200,12 +133,7 @@
         <div style="padding-top: 1vh">
           <div class="mediacontrols">
             <div class="mediacontrols-top-right">
-              <div
-                v-if="
-                  $vuetify.display.width > getResponsiveBreakpoints.breakpoint_1
-                "
-                class="mediacontrols-buttom-left"
-              >
+              <div v-if="getBreakpointValue('bp3')" class="mediacontrols-buttom-left">
                 <div>
                   <QualityDetailsBtn />
                 </div>
@@ -216,17 +144,10 @@
                   <PlayerControls />
                 </div>
               </div>
-              <div
-                v-if="
-                  $vuetify.display.width > getResponsiveBreakpoints.breakpoint_1
-                "
-                class="mediacontrols-buttom-right"
-              >
+              <div v-if="getBreakpointValue('bp3')" class="mediacontrols-buttom-right">
                 <div>
                   <!-- player control buttons -->
-                  <PlayerExtendedControls
-                    :responsive-volume-size="true"
-                  />
+                  <PlayerExtendedControls :responsive-volume-size="true" />
                 </div>
               </div>
             </div>
@@ -240,23 +161,19 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import { ref, computed, watch } from "vue";
-import PlayerControls from "./PlayerControls.vue";
-import PlayerExtendedControls from "./PlayerExtendedControls.vue";
-import QualityDetailsBtn from "./QualityDetailsBtn.vue";
-import router from "@/plugins/router";
-import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
-import api from "@/plugins/api";
-import {
-  MediaItemType,
-  ImageType,
-  MediaType,
-  ItemMapping,
-  Track,
-} from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import { getArtistsString, getResponsiveBreakpoints } from "@/utils";
-import PlayerTimeline from "./PlayerTimeline.vue";
+import { ref, computed, watch } from 'vue';
+import PlayerControls from './PlayerControls.vue';
+import PlayerExtendedControls from './PlayerExtendedControls.vue';
+import QualityDetailsBtn from './QualityDetailsBtn.vue';
+import router from '@/plugins/router';
+import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
+import api from '@/plugins/api';
+import { MediaItemType, ImageType, MediaType, ItemMapping, Track } from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
+import PlayerTimeline from './PlayerTimeline.vue';
+import MediaItemThumb from '@/components/MediaItemThumb.vue';
+import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 // local refs
 const fullTrackDetails = ref<Track>();
@@ -276,10 +193,11 @@ const curQueueItem = computed(() => {
 const coverImage = computed(() => {
   // return the default cover/thumb image for the active queueItem
   if (curQueueItem.value) {
-    return getImageThumbForItem(curQueueItem.value, ImageType.THUMB);
+    return getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB);
   }
   return undefined;
 });
+
 const backgroundImage = computed(() => {
   // prefer fanart from full track details
   if (fullTrackDetails.value) {
@@ -306,17 +224,11 @@ const itemClick = function (item: MediaItemType | ItemMapping) {
 // watchers
 watch(
   () => curQueueItem.value,
-  async (newValue) => {
-    if (
-      newValue &&
-      newValue.media_item &&
-      newValue.media_item.media_type == MediaType.TRACK
-    ) {
-      fullTrackDetails.value = (await api.getItemByUri(
-        newValue.media_item.uri, undefined, false
-      )) as Track;
+  async (result) => {
+    if (result && result.media_item && result.media_item.media_type == MediaType.TRACK) {
+      fullTrackDetails.value = (await api.getItemByUri(result.media_item.uri, undefined, false)) as Track;
     }
-  }
+  },
 );
 </script>
 
@@ -370,8 +282,7 @@ watch(
 .main {
   background: transparent;
   padding: 0px max(15px, 3vw);
-  transition: transform 1s cubic-bezier(0.18, 0, 0, 1), opacity 1s ease,
-    filter 0.5s ease;
+  transition: transform 1s cubic-bezier(0.18, 0, 0, 1), opacity 1s ease, filter 0.5s ease;
   position: absolute;
   top: 50%;
   left: 50%;

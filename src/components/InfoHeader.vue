@@ -9,10 +9,7 @@
       min-height="340px"
     >
       <!-- loading animation -->
-      <v-progress-linear
-        v-if="!item"
-        indeterminate
-      />
+      <v-progress-linear v-if="!item" indeterminate />
       <v-img
         width="100%"
         height="100%"
@@ -43,33 +40,15 @@
           v-if="!$vuetify.display.mobile"
           xs5
           pa-5
-          style="
-            width: 230px;
-            height: 230px;
-            margin-top: 15px;
-            margin-bottom: 15px;
-            margin-right: 24px;
-          "
+          style="width: 230px; height: 230px; margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
         >
-          <div
-            v-if="
-              item.media_type &&
-                (item.media_type == MediaType.ARTIST || 'owner' in item)
-            "
-          >
+          <div v-if="item.media_type && (item.media_type == MediaType.ARTIST || 'owner' in item)">
             <v-avatar size="192">
-              <MediaItemThumb
-                :item="item"
-                height="230px"
-                width="230px"
-              />
+              <MediaItemThumb :item="item" :height="230" :width="230" />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb
-              width="230px"
-              :item="item"
-            />
+            <MediaItemThumb :width="230" :item="item" />
           </div>
         </div>
 
@@ -82,10 +61,7 @@
           <!-- other details -->
           <div style="padding-bottom: 10px">
             <!-- version -->
-            <v-card-subtitle
-              v-if="'version' in item && item.version"
-              class="caption"
-            >
+            <v-card-subtitle v-if="'version' in item && item.version" class="caption">
               {{ item.version }}
               <!-- explicit icon -->
               <v-tooltip location="bottom">
@@ -93,85 +69,40 @@
                   <v-icon
                     v-if="parseBool(item.metadata.explicit || false)"
                     v-bind="props"
-                    class="listitem-action"
                     icon="mdi-alpha-e-box"
                     width="35"
                   />
                 </template>
-                <span>{{ $t("tooltip.explicit") }}</span>
+                <span>{{ $t('tooltip.explicit') }}</span>
               </v-tooltip>
             </v-card-subtitle>
 
             <!-- item artists -->
-            <v-card-subtitle
-              v-if="'artists' in item && item.artists"
-              class="title accent--text"
-            >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-account-music"
-              />
-              <span
-                v-for="(artist, artistindex) in item.artists"
-                :key="artist.item_id"
-              >
-                <a
-                  style="color: accent"
-                  @click="artistClick(artist)"
-                >{{
-                  artist.name
-                }}</a>
-                <span
-                  v-if="artistindex + 1 < item.artists.length"
-                  :key="artistindex"
-                  style="color: accent"
-                >{{ " / " }}</span>
+            <v-card-subtitle v-if="'artists' in item && item.artists" class="title accent--text">
+              <v-icon style="margin-left: -3px; margin-right: 3px" small color="primary" icon="mdi-account-music" />
+              <span v-for="(artist, artistindex) in item.artists" :key="artist.item_id">
+                <a style="color: accent" @click="artistClick(artist)">{{ artist.name }}</a>
+                <span v-if="artistindex + 1 < item.artists.length" :key="artistindex" style="color: accent">{{
+                  ' / '
+                }}</span>
               </span>
             </v-card-subtitle>
 
             <!-- album artist -->
-            <v-card-subtitle
-              v-if="'artist' in item && item.artist"
-              class="title"
-            >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-account-music"
-              />
-              <a @click="artistClick((item as Album).artist)">{{
-                item.artist.name
-              }}</a>
+            <v-card-subtitle v-if="'artist' in item && item.artist" class="title">
+              <v-icon style="margin-left: -3px; margin-right: 3px" small color="primary" icon="mdi-account-music" />
+              <a @click="artistClick((item as Album).artist)">{{ item.artist.name }}</a>
             </v-card-subtitle>
 
             <!-- playlist owner -->
-            <v-card-subtitle
-              v-if="'owner' in item && item.owner"
-              class="title"
-            >
-              <v-icon
-                color="primary"
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                icon="mdi-account-music"
-              />
+            <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
+              <v-icon color="primary" style="margin-left: -3px; margin-right: 3px" small icon="mdi-account-music" />
               <a style="color: primary">{{ item.owner }}</a>
             </v-card-subtitle>
 
             <v-card-subtitle v-if="'album' in item && item.album">
-              <v-icon
-                color="primary"
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                icon="mdi-album"
-              />
-              <a
-                style="color: secondary"
-                @click="albumClick((item as Track)?.album)"
-              >{{ item.album.name }}</a>
+              <v-icon color="primary" style="margin-left: -3px; margin-right: 3px" small icon="mdi-album" />
+              <a style="color: secondary" @click="albumClick((item as Track)?.album)">{{ item.album.name }}</a>
             </v-card-subtitle>
           </div>
 
@@ -185,22 +116,16 @@
                   color="primary"
                   v-bind="props"
                   prepend-icon="mdi-play-circle"
-                  :disabled="
-                    !store.selectedPlayer?.available ||
-                      store.blockGlobalPlayMenu
-                  "
+                  :disabled="!store.selectedPlayer?.available || store.blockGlobalPlayMenu"
                 >
-                  {{ $t("play") }}
+                  {{ $t('play') }}
                 </v-btn>
               </template>
 
               <v-card min-width="300">
-                <v-list
-                  lines="one"
-                  density="comfortable"
-                >
+                <v-list lines="one" density="comfortable">
                   <!-- play now -->
-                  <v-list-item
+                  <ListItem
                     v-for="menuItem in getPlayMenuItems([item])"
                     :key="menuItem.label"
                     :title="$t(menuItem.label, menuItem.labelArgs)"
@@ -211,7 +136,7 @@
                         <v-icon :icon="menuItem.icon" />
                       </v-avatar>
                     </template>
-                  </v-list-item>
+                  </ListItem>
                 </v-list>
               </v-card>
             </v-menu>
@@ -224,7 +149,7 @@
               prepend-icon="mdi-heart-outline"
               @click="api.addItemsToLibrary([item!])"
             >
-              {{ $t("add_library") }}
+              {{ $t('add_library') }}
             </v-btn>
             <v-btn
               v-if="!$vuetify.display.mobile && item.in_library"
@@ -234,7 +159,7 @@
               prepend-icon="mdi-heart"
               @click="api.removeItemsFromLibrary([item!])"
             >
-              {{ $t("remove_library") }}
+              {{ $t('remove_library') }}
             </v-btn>
           </div>
 
@@ -257,10 +182,7 @@
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <v-chip
-              v-for="tag of item.metadata.genres.slice(
-                0,
-                $vuetify.display.mobile ? 15 : 25
-              )"
+              v-for="tag of item.metadata.genres.slice(0, $vuetify.display.mobile ? 15 : 25)"
               :key="tag"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"
@@ -272,10 +194,7 @@
           </div>
         </div>
       </v-layout>
-      <v-layout
-        v-if="item"
-        style="z-index: 800; height: 100%; padding-left: 15px"
-      >
+      <v-layout v-if="item" style="z-index: 800; height: 100%; padding-left: 15px">
         <!-- provider icons -->
         <div style="position: absolute; float: right; right: 15px; top: 15px">
           <provider-icons
@@ -287,10 +206,7 @@
         </div>
       </v-layout>
     </v-card>
-    <v-dialog
-      v-model="showFullInfo"
-      width="auto"
-    >
+    <v-dialog v-model="showFullInfo" max-width="975" width="auto">
       <v-card>
         <!-- eslint-disable vue/no-v-html -->
         <!-- eslint-disable vue/no-v-text-v-html-on-component -->
@@ -298,12 +214,8 @@
         <!-- eslint-enable vue/no-v-html -->
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <v-card-actions>
-          <v-btn
-            color="primary"
-            block
-            @click="showFullInfo = false"
-          >
-            {{ $t("close") }}
+          <v-btn color="primary" block @click="showFullInfo = false">
+            {{ $t('close') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -312,26 +224,19 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcons from "./ProviderIcons.vue";
-import { store } from "@/plugins/store";
-import { useDisplay } from "vuetify";
-import { api } from "@/plugins/api";
-import { ImageType, Track, MediaType } from "@/plugins/api/interfaces";
-import type {
-  Album,
-  Artist,
-  ItemMapping,
-  MediaItemType,
-} from "@/plugins/api/interfaces";
-import { computed, ref, watch, onBeforeUnmount } from "vue";
-import MediaItemThumb from "./MediaItemThumb.vue";
-import { getImageThumbForItem } from "./MediaItemThumb.vue";
-import { useRouter } from "vue-router";
-import { parseBool } from "../utils";
-import {
-  getPlayMenuItems,
-  getContextMenuItems,
-} from "./MediaItemContextMenu.vue";
+import ProviderIcons from './ProviderIcons.vue';
+import { store } from '@/plugins/store';
+import { useDisplay } from 'vuetify';
+import { api } from '@/plugins/api';
+import { ImageType, Track, MediaType } from '@/plugins/api/interfaces';
+import type { Album, Artist, ItemMapping, MediaItemType } from '@/plugins/api/interfaces';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
+import MediaItemThumb from './MediaItemThumb.vue';
+import { getImageThumbForItem } from './MediaItemThumb.vue';
+import { useRouter } from 'vue-router';
+import { parseBool } from '../utils';
+import { getPlayMenuItems, getContextMenuItems } from './MediaItemContextMenu.vue';
+import ListItem from '@/components/ListItem.vue';
 
 // properties
 export interface Props {
@@ -342,8 +247,7 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
 
-const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
-  .href;
+const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url).href;
 
 const router = useRouter();
 
@@ -354,13 +258,13 @@ watch(
       store.topBarTitle = val.name;
 
       fanartImage.value =
-        (getImageThumbForItem(compProps.item, ImageType.FANART)) ||
-        (getImageThumbForItem(compProps.item, ImageType.THUMB));
+        (await getImageThumbForItem(compProps.item, ImageType.FANART)) ||
+        (await getImageThumbForItem(compProps.item, ImageType.THUMB));
 
       store.topBarContextMenuItems = getContextMenuItems([val], val);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onBeforeUnmount(() => {
@@ -370,7 +274,7 @@ onBeforeUnmount(() => {
 const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked
   router.push({
-    name: "album",
+    name: 'album',
     params: {
       itemId: item.item_id,
       provider: item.provider,
@@ -379,9 +283,9 @@ const albumClick = function (item: Album | ItemMapping) {
 };
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
-  console.log("artistClick", item);
+  console.log('artistClick', item);
   router.push({
-    name: "artist",
+    name: 'artist',
     params: {
       itemId: item.item_id,
       provider: item.provider,
@@ -389,28 +293,28 @@ const artistClick = function (item: Artist | ItemMapping) {
   });
 };
 const fullDescription = computed(() => {
-  let desc = "";
-  if (!compProps.item) return "";
+  let desc = '';
+  if (!compProps.item) return '';
   if (compProps.item.metadata && compProps.item.metadata.description) {
     desc = compProps.item.metadata.description;
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     desc = compProps.item.metadata.copyright;
-  } else if ("artists" in compProps.item) {
+  } else if ('artists' in compProps.item) {
     compProps.item.artists.forEach(function (artist: Artist | ItemMapping) {
-      if ("metadata" in artist && artist.metadata.description) {
+      if ('metadata' in artist && artist.metadata.description) {
         desc = artist.metadata.description;
       }
     });
   }
-  desc = desc.replace("\r\n", "<br /><br /><br />");
-  desc = desc.replace("\r", "<br /><br />");
-  desc = desc.replace("\n", "<br /><br />");
+  desc = desc.replace('\r\n', '<br /><br /><br />');
+  desc = desc.replace('\r', '<br /><br />');
+  desc = desc.replace('\n', '<br /><br />');
   return desc;
 });
 const shortDescription = computed(() => {
   const maxChars = mobile.value ? 160 : 260;
   if (fullDescription.value.length > maxChars) {
-    return fullDescription.value.substring(0, maxChars) + "...";
+    return fullDescription.value.substring(0, maxChars) + '...';
   }
   return fullDescription.value;
 });

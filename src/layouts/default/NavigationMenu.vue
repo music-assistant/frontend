@@ -1,18 +1,18 @@
 <template>
   <v-navigation-drawer
+    ref="resizeComponent"
     app
     :permanent="!$vuetify.display.mobile"
     :rail="!$vuetify.display.mobile && !store.showNavigationMenu"
     :model-value="($vuetify.display.mobile && store.showNavigationMenu) || !$vuetify.display.mobile"
-    :width="220"
-    @update:model-value="(e) => { if ($vuetify.display.mobile)store.showNavigationMenu = e}"
+    :width="!getBreakpointValue('mobile') ? 200 : 250"
+    @update:model-value="
+      (e) => {
+        if ($vuetify.display.mobile) store.showNavigationMenu = e;
+      }
+    "
   >
-    <div style="height:20px" />
-    <v-list
-      lines="one"
-      density="compact"
-      nav
-    >
+    <v-list lines="one" density="compact" nav>
       <v-list-item
         v-for="menuItem of menuItems"
         :key="menuItem.path"
@@ -28,22 +28,25 @@
 </template>
 
 <script setup lang="ts">
-import { store } from "@/plugins/store";
+import ListItem from '@/components/ListItem.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import { store } from '@/plugins/store';
+import { watch } from 'vue';
 
 const menuItems = [
-{
+  {
     label: 'home',
-    icon: 'mdi-home',
+    icon: 'mdi-home-outline',
     path: '/home',
   },
-{
+  {
     label: 'search',
     icon: 'mdi-magnify',
     path: '/search',
   },
   {
     label: 'artists',
-    icon: 'mdi-account-music',
+    icon: 'mdi-account-outline',
     path: '/artists',
   },
   {
@@ -53,33 +56,35 @@ const menuItems = [
   },
   {
     label: 'tracks',
-    icon: 'mdi-file-music',
+    icon: 'mdi-music-note',
     path: '/tracks',
   },
   {
-    label: 'radios',
-    icon: 'mdi-radio',
-    path: '/radios',
-  },
-  {
     label: 'playlists',
-    icon: 'mdi-playlist-music',
+    icon: 'mdi-playlist-play',
     path: '/playlists',
   },
   {
+    label: 'radios',
+    icon: 'mdi-access-point',
+    path: '/radios',
+  },
+  {
     label: 'browse',
-    icon: 'mdi-folder',
+    icon: 'mdi-folder-outline',
     path: '/browse',
   },
   {
     label: 'settings.settings',
-    icon: 'mdi-cog',
+    icon: 'mdi-cog-outline',
     path: '/settings',
   },
-]
+];
 
+watch(
+  () => store.showNavigationMenu,
+  (isShown) => {
+    isShown ? (store.sizeNavigationMenu = !getBreakpointValue('mobile') ? 200 : 250) : (store.sizeNavigationMenu = 55);
+  },
+);
 </script>
-
-<style>
-
-</style>

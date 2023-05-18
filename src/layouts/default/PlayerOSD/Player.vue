@@ -9,59 +9,39 @@
   >
     <div
       v-if="colorCode"
-      :class="`mediacontrols-bg-${
-        $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1
-          ? '1'
-          : '2'
-      }`"
-      :style="`background: linear-gradient(90deg, rgba(${colorCode[0]}, ${
-        colorCode[1]
-      }, ${colorCode[2]}, ${
+      :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
+      :style="`background: linear-gradient(90deg, rgba(${colorCode[0]}, ${colorCode[1]}, ${colorCode[2]}, ${
         $vuetify.theme.current.dark ? '0.3' : '0.7'
       }) 0%, rgba(${colorCode[0]}, ${colorCode[1]}, ${colorCode[2]}, 0) 100%);`"
     />
-    <PlayerTimeline
-      :is-progress-bar="true"
-      :is-hidden="!isMobileDevice(MobileDeviceType.ALL, $vuetify.display)"
-    />
+    <PlayerTimeline v-breakpoint="'mobile'" :is-progress-bar="true" />
 
-    <div class="mediacontrols">
-      <div
-        :class="`mediacontrols-left-${
-          $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1
-            ? '1'
-            : '2'
-        }`"
-      >
-        <PlayerTrackDetails :show-only-artist="true" />
+    <div
+      class="mediacontrols"
+      :style="`padding: ${getBreakpointValue({ breakpoint: 'phone' }) ? 3 : 10}px ${
+        getBreakpointValue({ breakpoint: 'phone' }) ? 10 : 10
+      }px;`"
+    >
+      <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
+        <PlayerTrackDetails
+          :show-quality-details-btn="getBreakpointValue('bp5') ? true : false"
+          :show-only-artist="true"
+        />
       </div>
-      <div
-        :class="`mediacontrols-buttom-center-${
-          $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1
-            ? '1'
-            : '2'
-        }`"
-      >
+      <div :class="`mediacontrols-buttom-center-${getBreakpointValue('bp3') ? '1' : '2'}`">
         <div style="width: 100%">
           <!-- player control buttons -->
           <PlayerControls
             :button-visibility="{
-              repeat:
-                $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1,
-              shuffle:
-                $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1,
+              repeat: getBreakpointValue('bp3'),
+              shuffle: getBreakpointValue('bp3'),
               play: true,
-              previous:
-                $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1,
-              next:
-                $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1,
+              previous: getBreakpointValue('bp3'),
+              next: getBreakpointValue('bp3'),
             }"
           />
           <!-- progress bar -->
-          <PlayerTimeline
-            :is-progress-bar="false"
-            :is-hidden="isMobileDevice(MobileDeviceType.ALL, $vuetify.display)"
-          />
+          <PlayerTimeline v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }" :is-progress-bar="false" />
         </div>
       </div>
       <div class="mediacontrols-buttom-right">
@@ -72,8 +52,7 @@
             :button-visibility="{
               repeat: false,
               shuffle: false,
-              play:
-                $vuetify.display.width < getResponsiveBreakpoints.breakpoint_1,
+              play: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
               previous: false,
               next: false,
             }"
@@ -81,11 +60,9 @@
           <!-- player extended control buttons -->
           <PlayerExtendedControls
             :button-visibility="{
-              queue:
-                $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_1,
+              queue: getBreakpointValue('bp3'),
               player: true,
-              volume:
-                $vuetify.display.width >= getResponsiveBreakpoints.breakpoint_8,
+              volume: getBreakpointValue('bp0'),
             }"
           />
         </div>
@@ -95,28 +72,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch } from 'vue';
 //@ts-ignore
-import ColorThief from "colorthief";
+import ColorThief from 'colorthief';
 
-import api from "@/plugins/api";
-import { ImageType, MobileDeviceType } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
-import { getResponsiveBreakpoints, isMobileDevice } from "@/utils";
-import PlayerTimeline from "./PlayerTimeline.vue";
-import PlayerControls from "./PlayerControls.vue";
-import PlayerTrackDetails from "./PlayerTrackDetails.vue";
-import PlayerExtendedControls from "./PlayerExtendedControls.vue";
+import api from '@/plugins/api';
+import { ImageType, MobileDeviceType } from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
+import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
+import PlayerTimeline from './PlayerTimeline.vue';
+import PlayerControls from './PlayerControls.vue';
+import PlayerTrackDetails from './PlayerTrackDetails.vue';
+import PlayerExtendedControls from './PlayerExtendedControls.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 // local refs
+const fanartImage = ref();
 const colorCode = ref();
 
 const colorThief = new ColorThief();
 const img = new Image();
-img.crossOrigin = "Anonymous";
+img.crossOrigin = 'Anonymous';
 
-img.addEventListener("load", function () {
+img.addEventListener('load', function () {
   colorCode.value = colorThief.getColor(img);
 });
 
@@ -137,13 +115,12 @@ watch(
   () => curQueueItem.value?.queue_item_id,
   async () => {
     if (curQueueItem.value?.media_item) {
-      img.src =
-        (getImageThumbForItem(
-          curQueueItem.value.media_item,
-          ImageType.THUMB
-        )) || "";
+      fanartImage.value =
+        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.FANART)) ||
+        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB));
+      img.src = fanartImage.value;
     }
-  }
+  },
 );
 </script>
 
@@ -155,13 +132,12 @@ watch(
 .mediacontrols {
   display: table;
   width: 100%;
-  padding: 5px 15px 5px 15px;
 }
 
 .mediacontrols-bg-1 {
   position: absolute;
   width: 20%;
-  height: 100px;
+  height: 100%;
   left: 0px;
   top: 0px;
 }
@@ -169,7 +145,7 @@ watch(
 .mediacontrols-bg-2 {
   position: absolute;
   width: 40%;
-  height: 100px;
+  height: 100%;
   left: 0px;
   top: 0px;
 }
@@ -187,6 +163,13 @@ watch(
 .mediacontrols-left-2 {
   display: table-cell;
   vertical-align: middle;
+}
+
+.mediacontrols-left-1 > div {
+  padding: 0px !important;
+}
+.mediacontrols-left-2 > div {
+  padding: 0px !important;
 }
 
 .mediacontrols-buttom-center-1 {
