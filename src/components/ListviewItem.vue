@@ -20,7 +20,7 @@
             "
           />
         </div>
-        <div v-else-if="item.media_type == MediaType.FOLDER" class="media-thumb listitem-media-thumb">
+        <div v-else-if="item.media_type == MediaType.FOLDER && !item.metadata.images" class="media-thumb listitem-media-thumb">
           <v-btn variant="plain" icon>
             <v-icon icon="mdi-folder" size="60" style="align: center" />
           </v-btn>
