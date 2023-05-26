@@ -57,18 +57,13 @@
         {{ $t('settings.no_providers_detail') }}
       </v-alert>
 
-      <v-container>
-        <RecycleScroller
-          v-slot="{ item }"
-          :items="providerConfigs.filter((x) => x.type == provType)"
-          :item-size="60"
-          key-field="instance_id"
-          page-mode
-        >
+        <v-list>
           <ListItem
             link
             density="compact"
             @click="editProvider(item.instance_id)"
+            v-for="item in providerConfigs.filter((x) => x.type == provType)"
+            :key="item.instance_id"
             v-hold="
               () => {
                 editProvider(item.instance_id);
@@ -76,7 +71,7 @@
             "
           >
             <template #prepend>
-              <provider-icon :domain="item.domain" :size="'40px'" class="listitem-media-thumb" />
+              <provider-icon :domain="item.domain" :size="'40px'" class="listitem-media-thumb" style="margin-left: 10px" />
             </template>
 
             <!-- title -->
@@ -90,7 +85,7 @@
             >
             <!-- append -->
             <template #append>
-              <div>
+              <div class="list-actions">
                 <!-- start -->
                 <div v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0">
                   <v-tooltip location="top end" origin="end center">
@@ -190,16 +185,14 @@
               </div>
             </template>
           </ListItem>
-        </RecycleScroller>
-      </v-container>
+        </v-list>
+
     </v-card>
   </v-container>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-import { RecycleScroller } from 'vue-virtual-scroller';
 import { api } from '@/plugins/api';
 import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
@@ -290,5 +283,12 @@ watch(
 <style>
 .titlebar {
   padding: 10px 0px;
+}
+.list-actions {
+  display: inline-flex;
+  width: auto;
+  vertical-align: middle;
+  align-items: center;
+  padding: 0px;
 }
 </style>
