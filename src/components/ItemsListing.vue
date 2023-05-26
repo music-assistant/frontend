@@ -123,7 +123,7 @@
       @blur="searchHasFocus = false"
     />
 
-    <v-container>
+    <v-container style="padding-left:15px;padding-right:10px;">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 

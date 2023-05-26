@@ -165,7 +165,7 @@
         </div>
         <slot name="append"></slot>
         <!-- menu button/icon -->
-        <div v-if="getBreakpointValue('bp1') && showMenu">
+        <div v-if="getBreakpointValue('bp1') && showMenu" style="margin-right:-15px">
           <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
         </div>
       </template>
