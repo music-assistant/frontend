@@ -32,7 +32,7 @@
           <template #activator="{ props }">
             <ButtonIcon
               v-if="store.topBarContextMenuItems.length > 0"
-              style="height: 50px; height: 38px !important"
+              style="height: 50px; height: 38px !important;margin-right: -14px;"
               v-bind="props"
             >
               <v-icon icon="mdi-dots-vertical" />
