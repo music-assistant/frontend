@@ -1,6 +1,6 @@
 <template>
-  <v-container>
-    <RecycleScroller v-slot="{ item }" :items="playerConfigs" :item-size="60" key-field="player_id" page-mode>
+  <v-container style="padding-right:0">
+    <v-list>
       <ListItem
         link
         @click="editPlayer(item.player_id)"
@@ -9,6 +9,7 @@
             editPlayer(item.player_id);
           }
         "
+        v-for="item in playerConfigs.sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)))"
       >
         <template #prepend>
           <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" />
@@ -86,7 +87,7 @@
           </v-menu>
         </template>
       </ListItem>
-    </RecycleScroller>
+    </v-list>
   </v-container>
 </template>
 
