@@ -11,6 +11,7 @@
           }
         "
         v-for="item in playerConfigs.sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)))"
+        :key="item.player_id"
       >
         <template #prepend>
           <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" style="margin-left: 10px" />
