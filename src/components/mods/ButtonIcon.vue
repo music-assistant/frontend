@@ -1,5 +1,5 @@
 <template>
-  <v-btn v-bind="btnProps" variant="plain" class="btn-icon" @input="(v: any) => $emit('input', v)">
+  <v-btn v-bind="btnProps" variant="plain">
     <!-- Dynamically inherit slots from parent -->
     <template v-for="slot in parentSlots" #[slot]>
       <slot :name="slot"></slot>
@@ -16,11 +16,17 @@ export default {
 
     const btnDefaults = computed(() => ({
       ripple: false,
+      variant: '',
+    }));
+
+    const btnIconDefaults = computed(() => ({
+      ripple: false,
       icon: true,
+      variant: '',
     }));
 
     const btnProps = computed(() => ({
-      ...btnDefaults.value,
+      ...(ctx.attrs.variant === 'icon' ? btnIconDefaults.value : btnDefaults.value),
       ...ctx.attrs,
     }));
 
@@ -30,7 +36,7 @@ export default {
 </script>
 
 <style>
-.btn-icon {
+.v-btn--variant-icon {
   width: calc(var(--v-btn-height) + 10px) !important;
   height: calc(var(--v-btn-height) + 10px) !important;
 }

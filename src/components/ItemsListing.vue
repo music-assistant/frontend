@@ -220,7 +220,7 @@ import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // properties
 export interface Props {

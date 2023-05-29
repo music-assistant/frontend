@@ -36,11 +36,11 @@
       </span>
       <!-- queue name -->
       <div v-else-if="activePlayerQueue">
-        {{ activePlayerQueue?.display_name }}
+        {{ activePlayerQueue?.display_name || '' }}
       </div>
       <!-- player name -->
       <div v-else-if="store.selectedPlayer">
-        {{ store.selectedPlayer?.display_name }}
+        {{ store.selectedPlayer?.display_name || '' }}
       </div>
     </template>
     <!-- append -->
@@ -66,10 +66,10 @@
       <div
         v-if="
           curQueueItem &&
-            curQueueItem.media_item?.media_type == MediaType.TRACK &&
-            'album' in curQueueItem.media_item &&
-            curQueueItem.media_item.album &&
-            !props.showOnlyArtist
+          curQueueItem.media_item?.media_type == MediaType.TRACK &&
+          'album' in curQueueItem.media_item &&
+          curQueueItem.media_item.album &&
+          !props.showOnlyArtist
         "
         style="cursor: pointer"
         class="line-clamp-1"
@@ -82,9 +82,9 @@
       <div
         v-else-if="
           curQueueItem &&
-            curQueueItem.media_item &&
-            'artists' in curQueueItem.media_item &&
-            curQueueItem.media_item.artists.length > 0
+          curQueueItem.media_item &&
+          'artists' in curQueueItem.media_item &&
+          curQueueItem.media_item.artists.length > 0
         "
         class="line-clamp-1"
         style="cursor: pointer"
@@ -129,7 +129,7 @@ import PlayerFullscreen from './PlayerFullscreen.vue';
 import { iconFallback } from '@/components/ProviderIcons.vue';
 import { ref } from 'vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 const router = useRouter();
 
@@ -182,6 +182,6 @@ const itemClick = function (item: MediaItemType | ItemMapping) {
   font-size: 10px !important;
   letter-spacing: 0.1em;
   border-radius: 2px;
-  margin-left: 16px;
+  margin-right: 30px;
 }
 </style>

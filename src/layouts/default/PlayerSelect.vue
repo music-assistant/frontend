@@ -92,7 +92,7 @@ import { store } from '../../plugins/store';
 import VolumeControl from '../../components/VolumeControl.vue';
 import { api } from '../../plugins/api';
 import { getPlayerName } from '@/utils';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 const panelItem = ref<number | undefined>(undefined);
 

@@ -1,6 +1,15 @@
 <template>
   <div style="width: 100%">
-    <div v-if="activePlayerQueue && !isProgressBar">
+    <div v-if="activePlayerQueue && !isProgressBar" style="display: flex; flex: 1 1 auto; align-items: center">
+      <!-- current time detail -->
+      <div
+        class="text-caption"
+        style="cursor: pointer; z-index: 1"
+        @click="showRemainingTime ? (showRemainingTime = false) : (showRemainingTime = true)"
+      >
+        {{ playerCurTimeStr }}
+      </div>
+
       <v-slider
         v-model="curTimeValue"
         :disabled="!curQueueItem || curQueueItem.media_item?.media_type != MediaType.TRACK"
@@ -18,24 +27,12 @@
         @mousedown="startDragging"
         @mouseup="stopDragging"
       >
-        <template #prepend>
-          <!-- current time detail -->
-          <div
-            class="text-caption"
-            style="cursor: pointer; z-index: 1"
-            @click="showRemainingTime ? (showRemainingTime = false) : (showRemainingTime = true)"
-          >
-            {{ playerCurTimeStr }}
-          </div>
-        </template>
-
-        <template #append>
-          <!-- end time detail -->
-          <div style="z-index: 1" class="text-caption">
-            {{ playerTotalTimeStr }}
-          </div>
-        </template>
       </v-slider>
+
+      <!-- end time detail -->
+      <div style="z-index: 1" class="text-caption">
+        {{ playerTotalTimeStr }}
+      </div>
     </div>
     <div v-else-if="activePlayerQueue && isProgressBar" style="width: 100%; padding-bottom: 0px">
       <v-progress-linear

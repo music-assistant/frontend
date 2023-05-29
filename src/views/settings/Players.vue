@@ -29,7 +29,7 @@
           <div v-if="!item.enabled">
             <v-tooltip location="bottom">
               <template #activator="{ props }">
-                <ButtonIcon v-bind="props">
+                <ButtonIcon variant="icon" v-bind="props">
                   <v-icon icon="mdi-cancel" />
                 </ButtonIcon>
               </template>
@@ -41,7 +41,7 @@
           <div v-else-if="!api.players[item.player_id]?.available">
             <v-tooltip location="bottom">
               <template #activator="{ props }">
-                <ButtonIcon v-bind="props">
+                <ButtonIcon variant="icon" v-bind="props">
                   <v-icon icon="mdi-timer-sand" />
                 </ButtonIcon>
               </template>
@@ -52,7 +52,7 @@
           <!-- contextmenu-->
           <v-menu location="bottom end">
             <template #activator="{ props }">
-              <ButtonIcon v-bind="props">
+              <ButtonIcon variant="icon" v-bind="props">
                 <v-icon icon="mdi-dots-vertical" />
               </ButtonIcon>
             </template>
@@ -97,8 +97,8 @@ import { EventType, PlayerConfig } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import { useRouter } from 'vue-router';
-import ButtonIcon from '@/components/ButtonIcon.vue';
-import ListItem from '@/components/ListItem.vue';
+import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // global refs
 const router = useRouter();

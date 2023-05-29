@@ -236,8 +236,7 @@ import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
 import { parseBool } from '../utils';
 import { getPlayMenuItems, getContextMenuItems } from './MediaItemContextMenu.vue';
-import ListItem from '@/components/ListItem.vue';
-
+import ListItem from '@/components/mods/ListItem.vue';
 // properties
 export interface Props {
   item?: MediaItemType;

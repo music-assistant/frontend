@@ -189,7 +189,7 @@ import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from
 import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // properties
 export interface Props {

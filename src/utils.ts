@@ -1,5 +1,8 @@
 import { Artist, BrowseFolder, ItemMapping, Player, PlayerType } from '@/plugins/api/interfaces';
+import Color from 'color';
 //@ts-ignore
+import ColorThief from 'colorthief';
+const colorThief = new ColorThief();
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean) => {
@@ -122,3 +125,82 @@ export const numberRange = function (start: number, end: number): number[] {
     .fill(start)
     .map((x, y) => x + y);
 };
+
+//Get correct colour
+type RGBColor = [number, number, number];
+
+export interface ColorCoverPalette {
+  [key: number]: string;
+  lightColor: string;
+  darkColor: string;
+}
+
+export function getContrastRatio(color1: string, color2: string): number {
+  const c1 = Color(color1);
+  const c2 = Color(color2);
+  return c1.contrast(c2);
+}
+
+export function rgbToHex(rgb: RGBColor): string {
+  const [red, green, blue] = rgb;
+  const hex = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue
+    .toString(16)
+    .padStart(2, '0')}`;
+  return hex;
+}
+
+export function findLightColor(colors: RGBColor[]): string {
+  let mostPleasantColor = '';
+  let highestContrastRatio = 0;
+
+  colors.forEach((rgb) => {
+    const hexColor = rgbToHex(rgb);
+    const contrastRatio = getContrastRatio('#000000', hexColor);
+
+    if (
+      (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
+      (contrastRatio > highestContrastRatio && contrastRatio >= highestContrastRatio * 0.7)
+    ) {
+      highestContrastRatio = contrastRatio;
+      mostPleasantColor = hexColor;
+    }
+  });
+
+  return mostPleasantColor;
+}
+
+export function findDarkColor(colors: RGBColor[]): string {
+  let mostPleasantColor = '';
+  let highestContrastRatio = 0;
+
+  colors.forEach((rgb) => {
+    const hexColor = rgbToHex(rgb);
+    const contrastRatio = getContrastRatio('#FFFFFF', hexColor);
+
+    if (
+      (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
+      (contrastRatio > highestContrastRatio && contrastRatio >= highestContrastRatio * 0.7)
+    ) {
+      highestContrastRatio = contrastRatio;
+      mostPleasantColor = hexColor;
+    }
+  });
+
+  return mostPleasantColor;
+}
+
+export function getColorCode(img: HTMLImageElement): ColorCoverPalette {
+  const colorThief = new ColorThief();
+  const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
+  const colorHexPalette: string[] = colorNumberPalette.map((color) => rgbToHex(color));
+
+  return {
+    0: colorHexPalette[0],
+    1: colorHexPalette[1],
+    2: colorHexPalette[2],
+    3: colorHexPalette[3],
+    4: colorHexPalette[4],
+    lightColor: findLightColor(colorNumberPalette),
+    darkColor: findDarkColor(colorNumberPalette),
+  };
+}

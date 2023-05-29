@@ -8,12 +8,21 @@
     app
   >
     <div
-      v-if="colorCode"
+      v-if="coverImageColorCode"
       :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
-      :style="`background: linear-gradient(90deg, rgba(${colorCode[0]}, ${colorCode[1]}, ${colorCode[2]}, ${
-        $vuetify.theme.current.dark ? '0.3' : '0.7'
-      }) 0%, rgba(${colorCode[0]}, ${colorCode[1]}, ${colorCode[2]}, 0) 100%);`"
-    />
+      :style="`background: linear-gradient(90deg, ${coverImageColorCode}${
+        $vuetify.theme.current.dark ? '4D' : 'B3'
+      } 0%, ${coverImageColorCode}00 100%);`"
+    ></div>
+    <div
+      v-if="coverImageColorCode"
+      :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
+      :style="`background: linear-gradient(90deg, rgba(${coverImageColorCode[0]}, ${coverImageColorCode[1]}, ${
+        coverImageColorCode[2]
+      }, ${$vuetify.theme.current.dark ? '0.3' : '0.7'}) 0%, rgba(${coverImageColorCode[0]}, ${
+        coverImageColorCode[1]
+      }, ${coverImageColorCode[2]}, 0) 100%);`"
+    ></div>
     <PlayerTimeline v-breakpoint="'mobile'" :is-progress-bar="true" />
 
     <div
@@ -74,10 +83,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 //@ts-ignore
-import ColorThief from 'colorthief';
 
 import api from '@/plugins/api';
-import { ImageType, MobileDeviceType } from '@/plugins/api/interfaces';
+import { ImageType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
 import PlayerTimeline from './PlayerTimeline.vue';
@@ -85,17 +93,21 @@ import PlayerControls from './PlayerControls.vue';
 import PlayerTrackDetails from './PlayerTrackDetails.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
+import vuetify from '@/plugins/vuetify';
+import { getColorCode } from '@/utils';
 
 // local refs
 const fanartImage = ref();
-const colorCode = ref();
+const coverImageColorCode = ref();
 
-const colorThief = new ColorThief();
 const img = new Image();
 img.crossOrigin = 'Anonymous';
 
 img.addEventListener('load', function () {
-  colorCode.value = colorThief.getColor(img);
+  store.coverImageColorCode = getColorCode(img);
+  coverImageColorCode.value = vuetify.theme.current.value.dark
+    ? store.coverImageColorCode.lightColor
+    : store.coverImageColorCode.darkColor;
 });
 
 // computed properties
@@ -113,11 +125,11 @@ const curQueueItem = computed(() => {
 // watchers
 watch(
   () => curQueueItem.value?.queue_item_id,
-  async () => {
+  () => {
     if (curQueueItem.value?.media_item) {
       fanartImage.value =
-        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.FANART)) ||
-        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB));
+        getImageThumbForItem(curQueueItem.value.media_item, ImageType.FANART) ||
+        getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB);
       img.src = fanartImage.value;
     }
   },

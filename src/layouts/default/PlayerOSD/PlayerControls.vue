@@ -2,6 +2,7 @@
   <div style="display: inline-flex">
     <!-- shuffle button -->
     <ButtonIcon
+      variant="icon"
       v-if="props.buttonVisibility.shuffle"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
       @click="
@@ -12,6 +13,7 @@
     /></ButtonIcon>
     <!-- prev button -->
     <ButtonIcon
+      variant="icon"
       v-if="props.buttonVisibility.previous"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
       @click="api.queueCommandPrevious(activePlayerQueue!.queue_id)"
@@ -20,6 +22,7 @@
     /></ButtonIcon>
     <!-- play/pause button: only when MA queue is active -->
     <ButtonIcon
+      variant="icon"
       v-if="activePlayerQueue && activePlayerQueue?.active && props.buttonVisibility.play"
       :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
       @click="api.queueCommandPlayPause(activePlayerQueue!.queue_id)"
@@ -30,6 +33,7 @@
     </ButtonIcon>
     <!-- stop button: player is playing other source (not MA)-->
     <ButtonIcon
+      variant="icon"
       v-else-if="store.selectedPlayer?.state == PlayerState.PLAYING && props.buttonVisibility.play"
       @click="api.queueCommandStop(store.selectedPlayer!.player_id)"
     >
@@ -37,6 +41,7 @@
     </ButtonIcon>
     <!-- play button: all other situations - resume the queue (disabled if queue is empty)-->
     <ButtonIcon
+      variant="icon"
       v-else-if="props.buttonVisibility.play"
       :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
       @click="api.queueCommandPlay(activePlayerQueue?.queue_id || store.selectedPlayer!.player_id)"
@@ -45,6 +50,7 @@
     </ButtonIcon>
     <!-- next button -->
     <ButtonIcon
+      variant="icon"
       v-if="props.buttonVisibility.next"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
       @click="api.queueCommandNext(activePlayerQueue!.queue_id)"
@@ -53,6 +59,7 @@
     </ButtonIcon>
     <!-- repeat button -->
     <ButtonIcon
+      variant="icon"
       v-if="props.buttonVisibility.repeat"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
       @click="
@@ -88,7 +95,7 @@ import { computed } from 'vue';
 import api from '@/plugins/api';
 import { PlayerState, RepeatMode } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import ButtonIcon from '@/components/ButtonIcon.vue';
+import ButtonIcon from '@/components/mods/ButtonIcon.vue';
 
 // properties
 export interface Props {

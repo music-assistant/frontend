@@ -2,7 +2,7 @@
   <div class="provider-icons" style="display: inline-flex" :style="`height: ${height};`">
     <v-menu v-for="providerDomain of uniqueProviders" :key="providerDomain" location="bottom end" @click:outside.stop>
       <template #activator="{ props }">
-        <button-icon v-bind="props" :key="providerDomain">
+        <button-icon variant="icon" v-bind="props" :key="providerDomain">
           <provider-icon
             :domain="providerDomain"
             :size="height"
@@ -115,7 +115,7 @@ const fetchPreviewUrl = async function (provider: string, item_id: string) {
 
 <script lang="ts">
 import { ContentType } from '../plugins/api/interfaces';
-import ButtonIcon from './ButtonIcon.vue';
+import ButtonIcon from '@/components/mods/ButtonIcon.vue';
 
 export const iconFallback = new URL('@/assets/logo.png', import.meta.url).href;
 

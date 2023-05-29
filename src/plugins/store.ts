@@ -3,6 +3,7 @@ import { reactive } from 'vue';
 import type { LocationQuery, RouteParams, RouteMeta } from 'vue-router';
 
 import type { ContextMenuItem } from '../components/MediaItemContextMenu.vue';
+import { ColorCoverPalette } from '@/utils';
 
 interface Store {
   selectedPlayer?: Player;
@@ -12,7 +13,7 @@ interface Store {
   showNavigationMenu: boolean;
   sizeNavigationMenu: number;
   showFullscreenPlayer: boolean;
-  darkTheme: boolean;
+  coverImageColorCode: ColorCoverPalette;
   topBarTitle?: string;
   topBarContextMenuItems: ContextMenuItem[];
   blockGlobalPlayMenu: boolean;
@@ -36,7 +37,16 @@ export const store: Store = reactive({
   showNavigationMenu: true,
   sizeNavigationMenu: 300,
   showFullscreenPlayer: false,
-  darkTheme: false,
+  coverImageColorCode: {
+    '0': '#fff',
+    '1': '#fff',
+    '2': '#fff',
+    '3': '#fff',
+    '4': '#fff',
+    '5': '#fff',
+    lightColor: '#fff',
+    darkColor: '#fff',
+  },
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,
   alwaysShowMenuButton: false,

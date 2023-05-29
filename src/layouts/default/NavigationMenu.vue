@@ -1,34 +1,19 @@
 <template>
-  <v-navigation-drawer
-    ref="resizeComponent"
-    app
-    :permanent="!$vuetify.display.mobile"
+  <v-navigation-drawer ref="resizeComponent" app :permanent="!$vuetify.display.mobile"
     :rail="!$vuetify.display.mobile && !store.showNavigationMenu"
     :model-value="($vuetify.display.mobile && store.showNavigationMenu) || !$vuetify.display.mobile"
-    :width="!getBreakpointValue('mobile') ? 200 : 250"
-    @update:model-value="
-      (e) => {
-        if ($vuetify.display.mobile) store.showNavigationMenu = e;
-      }
-    "
-  >
+    :width="!getBreakpointValue('mobile') ? 200 : 250" @update:model-value="(e) => {
+      if ($vuetify.display.mobile) store.showNavigationMenu = e;
+    }
+      ">
     <v-list lines="one" density="compact" nav>
-      <v-list-item
-        v-for="menuItem of menuItems"
-        :key="menuItem.path"
-        nav
-        density="compact"
-        :height="15"
-        :title="$t(menuItem.label)"
-        :prepend-icon="menuItem.icon"
-        :to="menuItem.path"
-      />
+      <v-list-item v-for="menuItem of menuItems" :key="menuItem.path" nav density="compact" :height="15"
+        :title="$t(menuItem.label)" :prepend-icon="menuItem.icon" :to="menuItem.path" />
     </v-list>
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
-import ListItem from '@/components/ListItem.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { store } from '@/plugins/store';
 import { watch } from 'vue';

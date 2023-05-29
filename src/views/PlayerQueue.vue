@@ -194,7 +194,7 @@ import { truncateString } from '../utils';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import ListviewItem from '@/components/ListviewItem.vue';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // global refs
 const { t } = useI18n();

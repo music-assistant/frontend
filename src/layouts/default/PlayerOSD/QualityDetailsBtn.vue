@@ -77,7 +77,7 @@ import { getContentTypeIcon } from '@/components/ProviderIcons.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // computed properties
 const activePlayerQueue = computed(() => {

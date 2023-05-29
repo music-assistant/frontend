@@ -3,7 +3,7 @@
     <template #prepend>
       <v-menu location="bottom end">
         <template #activator="{ props }">
-          <ButtonIcon v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
+          <ButtonIcon variant="icon" v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
             <v-icon> mdi-playlist-play </v-icon>
           </ButtonIcon>
         </template>
@@ -31,6 +31,7 @@
         <v-menu location="bottom end">
           <template #activator="{ props }">
             <ButtonIcon
+              variant="icon"
               v-if="store.topBarContextMenuItems.length > 0"
               style="height: 50px; height: 38px !important"
               v-bind="props"
@@ -62,10 +63,8 @@ import { useRouter } from 'vue-router';
 import { store } from '@/plugins/store';
 import { api } from '@/plugins/api';
 import { useI18n } from 'vue-i18n';
-import ButtonIcon from '@/components/ButtonIcon.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { ref } from 'vue';
-import ListItem from '@/components/ListItem.vue';
+import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 const router = useRouter();
 const { t } = useI18n();

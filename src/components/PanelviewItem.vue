@@ -61,13 +61,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 import { ContentType, type MediaItem, type MediaItemType } from '../plugins/api/interfaces';
 import { getArtistsString, parseBool } from '../utils';
-import ButtonIcon from './ButtonIcon.vue';
-import { ref } from 'vue';
 
 // properties
 export interface Props {

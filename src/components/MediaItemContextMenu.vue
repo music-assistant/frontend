@@ -133,7 +133,7 @@ import { ProviderFeature } from '../plugins/api/interfaces';
 import api from '../plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '../plugins/store';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // properties
 export interface Props {

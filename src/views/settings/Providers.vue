@@ -95,7 +95,7 @@
                 <div v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <ButtonIcon variant="icon" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
                       </ButtonIcon>
                     </template>
@@ -107,7 +107,7 @@
                 <div v-if="!item.enabled">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <ButtonIcon variant="icon" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
                       </ButtonIcon>
                     </template>
@@ -119,7 +119,7 @@
                 <div v-else-if="item.last_error">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <ButtonIcon variant="icon" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
                       </ButtonIcon>
                     </template>
@@ -131,7 +131,7 @@
                 <div v-else-if="!api.providers[item.instance_id]?.available">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <ButtonIcon variant="icon" v-bind="tooltip">
                         <v-icon icon="mdi-timer-sand" />
                       </ButtonIcon>
                     </template>
@@ -142,7 +142,7 @@
                 <!-- contextmenu-->
                 <v-menu location="bottom end">
                   <template #activator="{ props }">
-                    <ButtonIcon v-bind="props">
+                    <ButtonIcon variant="icon" v-bind="props">
                       <v-icon icon="mdi-dots-vertical" />
                     </ButtonIcon>
                   </template>
@@ -205,8 +205,8 @@ import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plu
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import ButtonIcon from '@/components/ButtonIcon.vue';
-import ListItem from '@/components/ListItem.vue';
+import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // global refs
 const router = useRouter();

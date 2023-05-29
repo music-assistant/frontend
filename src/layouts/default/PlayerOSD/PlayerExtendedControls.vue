@@ -1,6 +1,7 @@
 <template>
   <!-- active player queue button -->
   <ButtonIcon
+    variant="icon"
     v-if="props.buttonVisibility.queue"
     @click="
       store.showFullscreenPlayer = false;
@@ -13,7 +14,12 @@
     <v-icon icon="mdi-playlist-play" />
   </ButtonIcon>
   <!-- active player btn -->
-  <ButtonIcon v-if="props.buttonVisibility.player" class="mediacontrols-right" @click="store.showPlayersMenu = true">
+  <ButtonIcon
+    variant="icon"
+    v-if="props.buttonVisibility.player"
+    class="mediacontrols-right"
+    @click="store.showPlayersMenu = true"
+  >
     <v-icon icon="mdi-speaker" />
   </ButtonIcon>
   <!-- active player volume -->
@@ -38,7 +44,7 @@
           >
             <template #prepend>
               <!-- select player -->
-              <ButtonIcon v-bind="props">
+              <ButtonIcon variant="icon" v-bind="props">
                 <v-icon icon="mdi-volume-high" />
                 <div class="text-caption">
                   {{
@@ -52,7 +58,7 @@
           </PlayerVolume>
         </div>
         <div v-else>
-          <ButtonIcon v-bind="props">
+          <ButtonIcon variant="icon" v-bind="props">
             <v-icon icon="mdi-volume-high" />
             <div class="text-caption">
               {{
@@ -108,9 +114,9 @@ import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import PlayerVolume from './PlayerVolume.vue';
 import VolumeControl from '@/components/VolumeControl.vue';
-import ButtonIcon from '@/components/ButtonIcon.vue';
+import ButtonIcon from '@/components/mods/ButtonIcon.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
+import ListItem from '@/components/mods/ListItem.vue';
 
 const router = useRouter();
 

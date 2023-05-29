@@ -5,7 +5,7 @@
       <template #prepend>
         <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center" style="padding-right: 5px">
-            <button-icon style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
+            <button-icon variant="icon" style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
               <v-icon :size="25" :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
             </button-icon>
             <div class="text-caption">{{ player.group_volume }}</div>
@@ -38,7 +38,11 @@
       <template #prepend>
         <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center">
-            <button-icon style="height: 25px !important" @click="api.playerCommandPowerToggle(childPlayer.player_id)">
+            <button-icon
+              variant="icon"
+              style="height: 25px !important"
+              @click="api.playerCommandPowerToggle(childPlayer.player_id)"
+            >
               <v-icon :size="25" :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
             </button-icon>
             <div class="text-caption">{{ childPlayer.volume_level }}</div>
@@ -74,7 +78,7 @@
           >
             <v-menu location="bottom end" style="z-index: 999999">
               <template #activator="{ props: menu }">
-                <button-icon v-bind="menu">
+                <button-icon variant="icon" v-bind="menu">
                   <v-icon>mdi-link-variant</v-icon>
                 </button-icon>
               </template>
@@ -94,7 +98,7 @@
           </div>
           <!-- unsync button -->
           <div v-if="childPlayer.synced_to" class="syncbtn">
-            <button-icon @click="api.playerCommandUnSync(childPlayer.player_id)">
+            <button-icon variant="icon" @click="api.playerCommandUnSync(childPlayer.player_id)">
               <v-icon>mdi-link-variant-off</v-icon>
             </button-icon>
           </div>
@@ -110,8 +114,8 @@ import { api } from '../plugins/api';
 import { store } from '@/plugins/store';
 import { truncateString, getPlayerName } from '../utils';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
-import ListItem from './ListItem.vue';
-import ButtonIcon from './ButtonIcon.vue';
+import ListItem from '@/components/mods/ListItem.vue';
+import ButtonIcon from '@/components/mods/ButtonIcon.vue';
 
 export interface Props {
   player: Player;

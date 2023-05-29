@@ -41,22 +41,14 @@ html {
   user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
-/* active tab */
-.v-btn.v-slide-group-item--active.v-tab--selected {
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-}
-
-/* inactive tab */
-.v-tabs--grow .v-tab {
-  background: rgba(var(--v-theme-primary), 0.3);
-  color: rgb(var(--v-theme-text-color));
-  border-radius: 0px;
-}
-
 a {
   cursor: pointer;
 }
+
+.v-btn--size-default {
+  padding: 0 8px;
+}
+
 .vertical-btn {
   display: flex;
   flex-direction: column;
@@ -333,7 +325,7 @@ h3 {
 h4 {
   font-size: 1rem;
   line-height: 1.25rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 h5 {

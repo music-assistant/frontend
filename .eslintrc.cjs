@@ -37,6 +37,15 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars-experimental': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
+    "vue/html-self-closing": ["error", {
+      "html": {
+        "void": "always",
+        "normal": "never",
+        "component": "always"
+      },
+      "svg": "always",
+      "math": "always"
+    }]
   },
   ignorePatterns: ['dist'],
 };
