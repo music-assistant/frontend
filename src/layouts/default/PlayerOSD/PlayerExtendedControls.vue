@@ -1,6 +1,6 @@
 <template>
   <!-- active player queue button -->
-  <ButtonIcon
+  <Button
     variant="icon"
     v-if="props.buttonVisibility.queue"
     @click="
@@ -12,16 +12,16 @@
     "
   >
     <v-icon icon="mdi-playlist-play" />
-  </ButtonIcon>
+  </Button>
   <!-- active player btn -->
-  <ButtonIcon
+  <Button
     variant="icon"
     v-if="props.buttonVisibility.player"
     class="mediacontrols-right"
     @click="store.showPlayersMenu = true"
   >
     <v-icon icon="mdi-speaker" />
-  </ButtonIcon>
+  </Button>
   <!-- active player volume -->
   <div v-if="props.buttonVisibility.volume">
     <v-menu v-if="activePlayerQueue" class="volume-control-dialog" v-model="showVolume" :close-on-content-click="false">
@@ -44,7 +44,7 @@
           >
             <template #prepend>
               <!-- select player -->
-              <ButtonIcon variant="icon" v-bind="props">
+              <Button variant="icon" v-bind="props">
                 <v-icon icon="mdi-volume-high" />
                 <div class="text-caption">
                   {{
@@ -53,12 +53,12 @@
                       : Math.round(store.selectedPlayer?.volume_level || 0)
                   }}
                 </div>
-              </ButtonIcon>
+              </Button>
             </template>
           </PlayerVolume>
         </div>
         <div v-else>
-          <ButtonIcon variant="icon" v-bind="props">
+          <Button variant="icon" v-bind="props">
             <v-icon icon="mdi-volume-high" />
             <div class="text-caption">
               {{
@@ -67,7 +67,7 @@
                   : Math.round(store.selectedPlayer?.volume_level || 0)
               }}
             </div>
-          </ButtonIcon>
+          </Button>
         </div>
       </template>
 
@@ -114,7 +114,7 @@ import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import PlayerVolume from './PlayerVolume.vue';
 import VolumeControl from '@/components/VolumeControl.vue';
-import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import Button from '@/components/mods/Button.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 

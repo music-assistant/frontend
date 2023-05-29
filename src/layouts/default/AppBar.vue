@@ -3,9 +3,9 @@
     <template #prepend>
       <v-menu location="bottom end">
         <template #activator="{ props }">
-          <ButtonIcon variant="icon" v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
+          <Button variant="icon" v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
             <v-icon> mdi-playlist-play </v-icon>
-          </ButtonIcon>
+          </Button>
         </template>
       </v-menu>
     </template>
@@ -30,14 +30,14 @@
         </v-tooltip>
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <ButtonIcon
+            <Button
               variant="icon"
               v-if="store.topBarContextMenuItems.length > 0"
               style="height: 50px; height: 38px !important"
               v-bind="props"
             >
               <v-icon icon="mdi-dots-vertical" />
-            </ButtonIcon>
+            </Button>
           </template>
           <v-list>
             <ListItem
@@ -63,7 +63,7 @@ import { useRouter } from 'vue-router';
 import { store } from '@/plugins/store';
 import { api } from '@/plugins/api';
 import { useI18n } from 'vue-i18n';
-import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 
 const router = useRouter();

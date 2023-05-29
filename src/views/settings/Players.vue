@@ -29,9 +29,9 @@
           <div v-if="!item.enabled">
             <v-tooltip location="bottom">
               <template #activator="{ props }">
-                <ButtonIcon variant="icon" v-bind="props">
+                <Button variant="icon" v-bind="props">
                   <v-icon icon="mdi-cancel" />
-                </ButtonIcon>
+                </Button>
               </template>
               <span>{{ $t('settings.player_disabled') }}</span>
             </v-tooltip>
@@ -41,9 +41,9 @@
           <div v-else-if="!api.players[item.player_id]?.available">
             <v-tooltip location="bottom">
               <template #activator="{ props }">
-                <ButtonIcon variant="icon" v-bind="props">
+                <Button variant="icon" v-bind="props">
                   <v-icon icon="mdi-timer-sand" />
-                </ButtonIcon>
+                </Button>
               </template>
               <span>{{ $t('settings.player_not_available') }}</span>
             </v-tooltip>
@@ -52,9 +52,9 @@
           <!-- contextmenu-->
           <v-menu location="bottom end">
             <template #activator="{ props }">
-              <ButtonIcon variant="icon" v-bind="props">
+              <Button variant="icon" v-bind="props">
                 <v-icon icon="mdi-dots-vertical" />
-              </ButtonIcon>
+              </Button>
             </template>
 
             <v-list>
@@ -97,7 +97,7 @@ import { EventType, PlayerConfig } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import { useRouter } from 'vue-router';
-import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 
 // global refs

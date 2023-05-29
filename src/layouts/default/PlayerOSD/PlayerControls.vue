@@ -1,7 +1,7 @@
 <template>
   <div style="display: inline-flex">
     <!-- shuffle button -->
-    <ButtonIcon
+    <Button
       variant="icon"
       v-if="props.buttonVisibility.shuffle"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
@@ -10,18 +10,18 @@
       "
     >
       <v-icon :color="activePlayerQueue?.shuffle_enabled ? 'primary' : ''" icon="mdi-shuffle-variant"
-    /></ButtonIcon>
+    /></Button>
     <!-- prev button -->
-    <ButtonIcon
+    <Button
       variant="icon"
       v-if="props.buttonVisibility.previous"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
       @click="api.queueCommandPrevious(activePlayerQueue!.queue_id)"
     >
       <v-icon icon="mdi-skip-previous-outline"
-    /></ButtonIcon>
+    /></Button>
     <!-- play/pause button: only when MA queue is active -->
-    <ButtonIcon
+    <Button
       variant="icon"
       v-if="activePlayerQueue && activePlayerQueue?.active && props.buttonVisibility.play"
       :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
@@ -30,35 +30,35 @@
       <v-icon size="50">
         {{ activePlayerQueue?.state == 'playing' ? 'mdi-pause-circle' : 'mdi-play-circle' }}
       </v-icon>
-    </ButtonIcon>
+    </Button>
     <!-- stop button: player is playing other source (not MA)-->
-    <ButtonIcon
+    <Button
       variant="icon"
       v-else-if="store.selectedPlayer?.state == PlayerState.PLAYING && props.buttonVisibility.play"
       @click="api.queueCommandStop(store.selectedPlayer!.player_id)"
     >
       <v-icon size="50"> mdi-stop </v-icon>
-    </ButtonIcon>
+    </Button>
     <!-- play button: all other situations - resume the queue (disabled if queue is empty)-->
-    <ButtonIcon
+    <Button
       variant="icon"
       v-else-if="props.buttonVisibility.play"
       :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
       @click="api.queueCommandPlay(activePlayerQueue?.queue_id || store.selectedPlayer!.player_id)"
     >
       <v-icon size="50" icon="mdi-play-circle"></v-icon>
-    </ButtonIcon>
+    </Button>
     <!-- next button -->
-    <ButtonIcon
+    <Button
       variant="icon"
       v-if="props.buttonVisibility.next"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
       @click="api.queueCommandNext(activePlayerQueue!.queue_id)"
     >
       <v-icon icon="mdi-skip-next-outline"></v-icon>
-    </ButtonIcon>
+    </Button>
     <!-- repeat button -->
-    <ButtonIcon
+    <Button
       variant="icon"
       v-if="props.buttonVisibility.repeat"
       :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
@@ -85,7 +85,7 @@
             : 'mdi-repeat-off'
         "
       />
-    </ButtonIcon>
+    </Button>
   </div>
 </template>
 
@@ -95,7 +95,7 @@ import { computed } from 'vue';
 import api from '@/plugins/api';
 import { PlayerState, RepeatMode } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import Button from '@/components/mods/Button.vue';
 
 // properties
 export interface Props {

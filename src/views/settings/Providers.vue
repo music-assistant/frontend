@@ -95,9 +95,9 @@
                 <div v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon variant="icon" v-bind="tooltip">
+                      <Button variant="icon" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
-                      </ButtonIcon>
+                      </Button>
                     </template>
                     <span>{{ $t('settings.sync_running') }}</span>
                   </v-tooltip>
@@ -107,9 +107,9 @@
                 <div v-if="!item.enabled">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon variant="icon" v-bind="tooltip">
+                      <Button variant="icon" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
-                      </ButtonIcon>
+                      </Button>
                     </template>
                     <span>{{ $t('settings.provider_disabled') }}</span>
                   </v-tooltip>
@@ -119,9 +119,9 @@
                 <div v-else-if="item.last_error">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon variant="icon" v-bind="tooltip">
+                      <Button variant="icon" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
-                      </ButtonIcon>
+                      </Button>
                     </template>
                     <span>{{ item.last_error }}</span>
                   </v-tooltip>
@@ -131,9 +131,9 @@
                 <div v-else-if="!api.providers[item.instance_id]?.available">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon variant="icon" v-bind="tooltip">
+                      <Button variant="icon" v-bind="tooltip">
                         <v-icon icon="mdi-timer-sand" />
-                      </ButtonIcon>
+                      </Button>
                     </template>
                     <span>{{ $t('settings.not_loaded') }}</span>
                   </v-tooltip>
@@ -142,9 +142,9 @@
                 <!-- contextmenu-->
                 <v-menu location="bottom end">
                   <template #activator="{ props }">
-                    <ButtonIcon variant="icon" v-bind="props">
+                    <Button variant="icon" v-bind="props">
                       <v-icon icon="mdi-dots-vertical" />
-                    </ButtonIcon>
+                    </Button>
                   </template>
                   <v-list>
                     <ListItem
@@ -205,7 +205,7 @@ import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plu
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 
 // global refs

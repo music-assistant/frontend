@@ -7,9 +7,9 @@
     >
       <v-toolbar color="transparent">
         <template #prepend>
-          <ButtonIcon variant="icon" @click="store.showFullscreenPlayer = false">
+          <Button variant="icon" @click="store.showFullscreenPlayer = false">
             <v-icon icon="mdi-chevron-down" />
-          </ButtonIcon>
+          </Button>
         </template>
 
         <template #default>
@@ -17,9 +17,9 @@
         </template>
 
         <template #append>
-          <ButtonIcon variant="icon">
+          <Button variant="icon">
             <v-icon icon="mdi-dots-vertical" />
-          </ButtonIcon>
+          </Button>
         </template>
       </v-toolbar>
 
@@ -204,12 +204,12 @@
         </div>
         <div class="fullscreen-media-controls-bottom">
           <div>
-            <ButtonIcon if="activePlayerQueue">
+            <Button if="activePlayerQueue">
               <v-badge content="2" color="primary">
                 <v-icon :size="30">mdi-speaker</v-icon>
               </v-badge>
               <div class="line-clamp-1">{{ activePlayerQueue?.display_name }}</div>
-            </ButtonIcon>
+            </Button>
           </div>
           <div style="text-align: end">
             <PlayerExtendedControls
@@ -238,7 +238,7 @@ import PlayerTimeline from './PlayerTimeline.vue';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import Button from '@/components/mods/Button.vue';
 import TextAnimation from '@/components/TextAnimation.vue';
 import ResponsiveIcon from '@/components/mods/ResponsiveIcon.vue';
 import vuetify from '@/plugins/vuetify';

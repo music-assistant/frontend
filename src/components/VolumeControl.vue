@@ -5,9 +5,9 @@
       <template #prepend>
         <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center" style="padding-right: 5px">
-            <button-icon variant="icon" style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
+            <Button variant="icon" style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
               <v-icon :size="25" :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
-            </button-icon>
+            </Button>
             <div class="text-caption">{{ player.group_volume }}</div>
           </div>
         </div>
@@ -38,13 +38,13 @@
       <template #prepend>
         <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center">
-            <button-icon
+            <Button
               variant="icon"
               style="height: 25px !important"
               @click="api.playerCommandPowerToggle(childPlayer.player_id)"
             >
               <v-icon :size="25" :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
-            </button-icon>
+            </Button>
             <div class="text-caption">{{ childPlayer.volume_level }}</div>
           </div>
         </div>
@@ -78,9 +78,9 @@
           >
             <v-menu location="bottom end" style="z-index: 999999">
               <template #activator="{ props: menu }">
-                <button-icon variant="icon" v-bind="menu">
+                <Button variant="icon" v-bind="menu">
                   <v-icon>mdi-link-variant</v-icon>
-                </button-icon>
+                </Button>
               </template>
               <v-list>
                 <v-card-subtitle>{{ $t('sync_player_to') }}</v-card-subtitle>
@@ -98,9 +98,9 @@
           </div>
           <!-- unsync button -->
           <div v-if="childPlayer.synced_to" class="syncbtn">
-            <button-icon variant="icon" @click="api.playerCommandUnSync(childPlayer.player_id)">
+            <Button variant="icon" @click="api.playerCommandUnSync(childPlayer.player_id)">
               <v-icon>mdi-link-variant-off</v-icon>
-            </button-icon>
+            </Button>
           </div>
         </div>
       </template>
@@ -115,7 +115,7 @@ import { store } from '@/plugins/store';
 import { truncateString, getPlayerName } from '../utils';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
 import ListItem from '@/components/mods/ListItem.vue';
-import ButtonIcon from '@/components/mods/ButtonIcon.vue';
+import Button from '@/components/mods/Button.vue';
 
 export interface Props {
   player: Player;
