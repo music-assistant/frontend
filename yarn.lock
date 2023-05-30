@@ -5196,10 +5196,10 @@ vue@^3.3.4:
     "@vue/server-renderer" "3.3.4"
     "@vue/shared" "3.3.4"
 
-vuetify@3.2.5:
-  version "3.2.5"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.2.5.tgz#b37cb4d6decafd5be7b5c29346555d6161ea9972"
-  integrity sha512-HuLIydRkigGIfqDbwEjFw5LEtWCw8lV4K1isMv/7vAt8n5fns+8kKqVnktIQkfzSxQgPD6Lve/58j4dEKA/vTA==
+vuetify@3.3.2:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.3.2.tgz#8682486eb36b5d9d64c8f1c2bdfe36119f6ffbc6"
+  integrity sha512-m/R42di8FlyMaoktUe6k8JbF+A0vbJMpjQrZK7nH1ptK8VinVVQcaw+9m94wlO74IMR+LubxLh5t9I2ZtVCvjw==
 
 w3c-xmlserializer@^4.0.0:
   version "4.0.0"
