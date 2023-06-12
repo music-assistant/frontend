@@ -92,12 +92,6 @@
               </v-list>
             </v-menu>
           </div>
-          <!-- unsync button -->
-          <div v-if="childPlayer.synced_to" class="syncbtn">
-            <button-icon @click="api.playerCommandUnSync(childPlayer.player_id)">
-              <v-icon>mdi-link-variant-off</v-icon>
-            </button-icon>
-          </div>
         </div>
       </template>
     </ListItem>
