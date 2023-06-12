@@ -44,7 +44,7 @@
     "material-design-icons-iconfont": "^6.7.0",
     "nanoid": "^4.0.2",
     "prettier": "^2.8.8",
-    "replace-in-file": "^6.3.5",
+    "replace-in-file": "^7.0.1",
     "sass": "^1.62.1",
     "typescript": "^5.0.4",
     "vite": "^4.3.8",
