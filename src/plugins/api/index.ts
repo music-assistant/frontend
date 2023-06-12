@@ -1093,6 +1093,8 @@ export class MusicAssistantApi {
       if (player.player_id in this.players)
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
+    } else if (msg.event == EventType.PLAYER_REMOVED) {
+      delete this.players[msg.object_id!];
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
       this.syncTasks.value = msg.data as SyncTask[];
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
