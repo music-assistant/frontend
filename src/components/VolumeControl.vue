@@ -64,7 +64,7 @@
 
       <template #append>
         <!-- sync/unsync buttons -->
-        <div v-if="player.type != PlayerType.GROUP" :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+        <div style="width: 30px; right:-5px" v-if="player.type != PlayerType.GROUP" :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <!-- sync button -->
           <div
             v-if="
