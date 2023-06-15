@@ -17,7 +17,7 @@
             </template>
 
             <v-card density="compact">
-              <ListItem
+              <v-list-item class="list-item-main"
                 v-for="provider in availableProviders.filter((x) => x.type == provType)"
                 :key="provider.domain"
                 density="compact"
@@ -28,7 +28,7 @@
                 <template #prepend>
                   <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
                 </template>
-              </ListItem>
+              </v-list-item>
             </v-card>
           </v-menu>
         </template>
@@ -58,7 +58,7 @@
       </v-alert>
 
         <v-list>
-          <ListItem
+          <v-list-item class="list-item-main"
             link
             density="compact"
             @click="editProvider(item.instance_id)"
@@ -90,9 +90,9 @@
                 <div v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
-                      </ButtonIcon>
+                      </v-btn>
                     </template>
                     <span>{{ $t('settings.sync_running') }}</span>
                   </v-tooltip>
@@ -102,9 +102,9 @@
                 <div v-if="!item.enabled">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
-                      </ButtonIcon>
+                      </v-btn>
                     </template>
                     <span>{{ $t('settings.provider_disabled') }}</span>
                   </v-tooltip>
@@ -114,9 +114,9 @@
                 <div v-else-if="item.last_error">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
-                      </ButtonIcon>
+                      </v-btn>
                     </template>
                     <span>{{ item.last_error }}</span>
                   </v-tooltip>
@@ -126,9 +126,9 @@
                 <div v-else-if="!api.providers[item.instance_id]?.available">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <ButtonIcon v-bind="tooltip">
+                      <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="tooltip">
                         <v-icon icon="mdi-timer-sand" />
-                      </ButtonIcon>
+                      </v-btn>
                     </template>
                     <span>{{ $t('settings.not_loaded') }}</span>
                   </v-tooltip>
@@ -137,36 +137,36 @@
                 <!-- contextmenu-->
                 <v-menu location="bottom end">
                   <template #activator="{ props }">
-                    <ButtonIcon v-bind="props">
+                    <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="props">
                       <v-icon icon="mdi-dots-vertical" />
-                    </ButtonIcon>
+                    </v-btn>
                   </template>
                   <v-list>
-                    <ListItem
+                    <v-list-item class="list-item-main"
                       :title="$t('settings.configure')"
                       prepend-icon="mdi-cog"
                       @click="editProvider(item.instance_id)"
                     />
-                    <ListItem
+                    <v-list-item class="list-item-main"
                       :title="item.enabled ? $t('settings.disable') : $t('settings.enable')"
                       prepend-icon="mdi-cancel"
                       :disabled="api.providerManifests[item.domain].builtin"
                       @click="toggleEnabled(item)"
                     />
-                    <ListItem
+                    <v-list-item class="list-item-main"
                       v-if="api.providerManifests[item.domain].documentation"
                       :title="$t('settings.documentation')"
                       prepend-icon="mdi-bookshelf"
                       :href="api.providerManifests[item.domain].documentation"
                       target="_blank"
                     />
-                    <ListItem
+                    <v-list-item class="list-item-main"
                       v-if="api.providers[item.instance_id]?.available && provType == ProviderType.MUSIC"
                       :title="$t('settings.sync')"
                       prepend-icon="mdi-sync"
                       @click="api.startSync(undefined, [item.instance_id])"
                     />
-                    <ListItem
+                    <v-list-item class="list-item-main"
                       v-if="
                         !api.providerManifests[item.domain].builtin &&
                         !api.providerManifests[item.domain].load_by_default
@@ -175,7 +175,7 @@
                       prepend-icon="mdi-delete"
                       @click="removeProvider(item.instance_id)"
                     />
-                    <ListItem
+                    <v-list-item class="list-item-main"
                       :title="$t('settings.reload')"
                       prepend-icon="mdi-refresh"
                       @click="reloadProvider(item.instance_id)"
@@ -184,7 +184,7 @@
                 </v-menu>
               </div>
             </template>
-          </ListItem>
+          </v-list-item>
         </v-list>
 
     </v-card>
@@ -198,8 +198,7 @@ import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plu
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import ButtonIcon from '@/components/ButtonIcon.vue';
-import ListItem from '@/components/ListItem.vue';
+
 
 // global refs
 const router = useRouter();

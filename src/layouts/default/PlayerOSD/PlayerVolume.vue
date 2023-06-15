@@ -12,8 +12,8 @@
     @mouseenter="isThumbHidden = false"
     @mouseleave="isThumbHidden = true"
   >
-    <template v-if="$slots.content" #content>
-      <slot></slot>
+    <template v-if="$slots.details" #details>
+      <slot name="details"></slot>
     </template>
     <template v-if="$slots.prepend" #prepend>
       <slot name="prepend"></slot>

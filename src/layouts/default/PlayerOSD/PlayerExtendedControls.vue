@@ -1,6 +1,6 @@
 <template>
   <!-- active player queue button -->
-  <ButtonIcon
+  <v-btn class="buttonicon" variant="plain" :ripple="false" icon
     v-if="props.buttonVisibility.queue"
     @click="
       store.showFullscreenPlayer = false;
@@ -11,11 +11,11 @@
     "
   >
     <v-icon icon="mdi-playlist-play" />
-  </ButtonIcon>
+  </v-btn>
   <!-- active player btn -->
-  <ButtonIcon v-if="props.buttonVisibility.player" class="mediacontrols-right" @click="store.showPlayersMenu = true">
+  <v-btn class="buttonicon mediacontrols-right" variant="plain" ripple icon v-if="props.buttonVisibility.player" @click="store.showPlayersMenu = true">
     <v-icon icon="mdi-speaker" />
-  </ButtonIcon>
+  </v-btn>
   <!-- active player volume -->
   <div v-if="props.buttonVisibility.volume">
     <v-menu v-if="activePlayerQueue" class="volume-control-dialog" v-model="showVolume" :close-on-content-click="false">
@@ -38,7 +38,7 @@
           >
             <template #prepend>
               <!-- select player -->
-              <ButtonIcon v-bind="props">
+              <v-btn class="buttonicon" variant="plain" :ripple="false" icon v-bind="props">
                 <v-icon icon="mdi-volume-high" />
                 <div class="text-caption">
                   {{
@@ -47,12 +47,12 @@
                       : Math.round(store.selectedPlayer?.volume_level || 0)
                   }}
                 </div>
-              </ButtonIcon>
+              </v-btn>
             </template>
           </PlayerVolume>
         </div>
         <div v-else>
-          <ButtonIcon v-bind="props">
+          <v-btn class="buttonicon" variant="plain" :ripple="false" icon v-bind="props">
             <v-icon icon="mdi-volume-high" />
             <div class="text-caption">
               {{
@@ -61,13 +61,13 @@
                   : Math.round(store.selectedPlayer?.volume_level || 0)
               }}
             </div>
-          </ButtonIcon>
+          </v-btn>
         </div>
       </template>
 
       <v-card :min-width="300">
         <v-list style="overflow: hidden" lines="two">
-          <ListItem
+          <v-list-item class="list-item-main"
             density="compact"
             two-line
             :title="store.selectedPlayer?.name.substring(0, 25)"
@@ -91,7 +91,7 @@
               dark
               @click="showVolume = !showVolume"
             />
-          </ListItem>
+          </v-list-item>
           <v-divider />
           <VolumeControl v-if="store.selectedPlayer" :player="store.selectedPlayer" />
         </v-list>
@@ -108,9 +108,7 @@ import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import PlayerVolume from './PlayerVolume.vue';
 import VolumeControl from '@/components/VolumeControl.vue';
-import ButtonIcon from '@/components/ButtonIcon.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
 
 const router = useRouter();
 

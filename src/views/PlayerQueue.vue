@@ -113,57 +113,57 @@
         <v-card-text v-if="selectedItem">
           <v-list>
             <!-- play now -->
-            <ListItem :title="$t('play_now')" @click="queueCommand(selectedItem, 'play_now')">
+            <v-list-item class="list-item-main" :title="$t('play_now')" @click="queueCommand(selectedItem, 'play_now')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-play-circle-outline" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
             <v-divider />
 
             <!-- play next (move to next in line) -->
-            <ListItem :title="$t('play_next')" @click="queueCommand(selectedItem, 'move_next')">
+            <v-list-item class="list-item-main" :title="$t('play_next')" @click="queueCommand(selectedItem, 'move_next')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-skip-next-circle-outline" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
             <v-divider />
 
             <!-- move up -->
-            <ListItem :title="$t('queue_move_up')" @click="queueCommand(selectedItem, 'up')">
+            <v-list-item class="list-item-main" :title="$t('queue_move_up')" @click="queueCommand(selectedItem, 'up')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-arrow-up" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
             <v-divider />
 
             <!-- move down -->
-            <ListItem :title="$t('queue_move_down')" @click="queueCommand(selectedItem, 'down')">
+            <v-list-item class="list-item-main" :title="$t('queue_move_down')" @click="queueCommand(selectedItem, 'down')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-arrow-down" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
             <v-divider />
 
             <!-- delete -->
-            <ListItem :title="$t('queue_delete')" @click="queueCommand(selectedItem, 'delete')">
+            <v-list-item class="list-item-main" :title="$t('queue_delete')" @click="queueCommand(selectedItem, 'delete')">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-delete" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
             <v-divider />
 
             <!-- show info (track only) -->
-            <ListItem
+            <v-list-item class="list-item-main"
               v-if="selectedItem?.media_item?.media_type == MediaType.TRACK"
               :title="$t('show_info')"
               @click="selectedItem?.media_item ? gotoItem(selectedItem.media_item) : ''"
@@ -173,7 +173,7 @@
                   <v-icon icon="mdi-information-outline" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
             <v-divider />
           </v-list>
         </v-card-text>
@@ -194,7 +194,7 @@ import { truncateString } from '../utils';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import ListviewItem from '@/components/ListviewItem.vue';
-import ListItem from '@/components/ListItem.vue';
+
 
 // global refs
 const { t } = useI18n();

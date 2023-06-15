@@ -69,12 +69,12 @@
         <v-card>
           <v-list>
             <div v-for="key of sortKeys" :key="key">
-              <ListItem @click="changeSort(key)">
+              <v-list-item class="list-item-main" @click="changeSort(key)">
                 <template #title>{{ $t('sort.' + key) }}</template>
                 <template #append>
                   <v-icon v-if="sortBy == key" icon="mdi-check" />
                 </template>
-              </ListItem>
+              </v-list-item>
               <v-divider />
             </div>
           </v-list>
@@ -220,7 +220,7 @@ import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
+
 
 // properties
 export interface Props {

@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-template-shadow -->
 <template>
   <div>
-    <ListItem
+    <v-list-item class="list-item-main"
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
       @click.stop="emit('click', item)"
@@ -169,7 +169,7 @@
           <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
         </div>
       </template>
-    </ListItem>
+    </v-list-item>
   </div>
 </template>
 
@@ -189,7 +189,7 @@ import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from
 import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
+
 
 // properties
 export interface Props {

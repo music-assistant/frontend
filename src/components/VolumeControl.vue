@@ -1,13 +1,13 @@
 <template>
   <v-list style="overflow: hidden" lines="two">
     <!-- group volume/power -->
-    <ListItem v-if="player.group_childs.length > 0">
+    <v-list-item class="list-item-main" v-if="player.group_childs.length > 0">
       <template #prepend>
         <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center" style="padding-right: 5px">
-            <button-icon style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
+            <v-btn class="buttonicon" variant="plain" icon :ripple="false" style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
               <v-icon :size="25" :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
-            </button-icon>
+            </v-btn>
             <div class="text-caption">{{ player.group_volume }}</div>
           </div>
         </div>
@@ -26,11 +26,12 @@
           ></PlayerVolume>
         </div>
       </template>
-    </ListItem>
+    </v-list-item>
     <v-divider v-if="player.group_childs.length > 0" style="margin-top: 10px; margin-bottom: 10px" />
 
     <!-- group children -->
-    <ListItem
+    <v-list-item
+      class="list-item-main"
       v-for="childPlayer in getVolumePlayers(player)"
       :key="childPlayer.player_id"
       :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
@@ -38,9 +39,9 @@
       <template #prepend>
         <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center">
-            <button-icon style="height: 25px !important" @click="api.playerCommandPowerToggle(childPlayer.player_id)">
+            <v-btn class="buttonicon" variant="plain" icon :ripple="false" style="height: 25px !important" @click="api.playerCommandPowerToggle(childPlayer.player_id)">
               <v-icon :size="25" :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
-            </button-icon>
+            </v-btn>
             <div class="text-caption">{{ childPlayer.volume_level }}</div>
           </div>
         </div>
@@ -62,25 +63,26 @@
       </template>
 
       <template #append>
-        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+        <!-- sync/unsync buttons -->
+        <div v-if="player.type != PlayerType.GROUP" :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <!-- sync button -->
           <div
             v-if="
               !childPlayer.synced_to &&
-              !childPlayer.group_childs.length &&
+              childPlayer.can_sync_with.length &&
               Object.values(api.players).filter((x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id))
                 .length > 0
             "
           >
             <v-menu location="bottom end" style="z-index: 999999">
               <template #activator="{ props: menu }">
-                <button-icon v-bind="menu">
+                <v-btn class="buttonicon" variant="plain" icon :ripple="false" v-bind="menu">
                   <v-icon>mdi-link-variant</v-icon>
-                </button-icon>
+                </v-btn>
               </template>
-              <v-list>
+              <v-list class="list-item-main">
                 <v-card-subtitle>{{ $t('sync_player_to') }}</v-card-subtitle>
-                <list-item
+                <v-list-item
                   v-for="parentPlayer of Object.values(api.players).filter(
                     (x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id),
                   )"
@@ -92,20 +94,23 @@
               </v-list>
             </v-menu>
           </div>
+          <!-- unsync button -->
+          <div v-if="childPlayer.synced_to" class="syncbtn">
+            <v-btn class="buttonicon" variant="plain" icon :ripple="false" @click="api.playerCommandUnSync(childPlayer.player_id)">
+              <v-icon>mdi-link-variant-off</v-icon>
+            </v-btn>
+          </div>
         </div>
       </template>
-    </ListItem>
+    </v-list-item>
   </v-list>
 </template>
 
 <script setup lang="ts">
 import { Player, PlayerType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
-import { store } from '@/plugins/store';
 import { truncateString, getPlayerName } from '../utils';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
-import ListItem from './ListItem.vue';
-import ButtonIcon from './ButtonIcon.vue';
 
 export interface Props {
   player: Player;

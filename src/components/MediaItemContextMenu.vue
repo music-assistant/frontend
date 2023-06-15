@@ -36,13 +36,13 @@
 
         <v-list>
           <div v-for="item of playMenuItems" :key="item.label">
-            <ListItem :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
+            <v-list-item class="list-item-main" :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
           </div>
         </v-list>
       </v-card-text>
@@ -56,13 +56,13 @@
         </v-list-item-subtitle>
         <v-list>
           <div v-for="item of actionMenuItems" :key="item.label">
-            <ListItem :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
+            <v-list-item class="list-item-main" :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
                 </v-avatar>
               </template>
-            </ListItem>
+            </v-list-item>
           </div>
         </v-list>
       </v-card-text>
@@ -70,7 +70,7 @@
       <v-card-text v-if="showPlaylistsMenu">
         <v-list>
           <div v-for="playlist of playlists" :key="playlist.item_id">
-            <ListItem ripple density="default" @click="addToPlaylist(playlist)">
+            <v-list-item class="list-item-main" ripple density="default" @click="addToPlaylist(playlist)">
               <template #prepend>
                 <div class="media-thumb">
                   <MediaItemThumb :item="playlist" :size="50" width="50px" height="50px" />
@@ -89,12 +89,12 @@
                   :height="20"
                 />
               </template>
-            </ListItem>
+            </v-list-item>
           </div>
           <!-- create playlist row(s) -->
           <div v-for="prov of api.providers" :key="prov.instance_id">
             <div v-if="prov.supported_features.includes(ProviderFeature.PLAYLIST_CREATE)">
-              <ListItem ripple>
+              <v-list-item class="list-item-main" ripple>
                 <template #prepend>
                   <provider-icon :domain="prov.domain" :size="'40px'" class="media-thumb" />
                 </template>
@@ -113,7 +113,7 @@
                     @keydown.enter="newPlaylist(prov.instance_id)"
                   />
                 </template>
-              </ListItem>
+              </v-list-item>
             </div>
           </div>
         </v-list>
@@ -133,7 +133,7 @@ import { ProviderFeature } from '../plugins/api/interfaces';
 import api from '../plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '../plugins/store';
-import ListItem from '@/components/ListItem.vue';
+
 
 // properties
 export interface Props {

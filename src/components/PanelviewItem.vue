@@ -23,7 +23,7 @@
 
     <MediaItemThumb :item="item" :width="'100%'" />
 
-    <ListItem style="padding-left: 0px !important; padding-right: 0px !important; padding-top: 10px !important">
+    <v-list-item class="list-item-main" style="padding-left: 0px !important; padding-right: 0px !important; padding-top: 10px !important">
       <v-list-item-title class="line-clamp-1">
         {{ item.name }} {{ 'version' in item && item.version ? `- ${item.version}` : '' }}
       </v-list-item-title>
@@ -56,17 +56,16 @@
           <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" /> {{ item.track_number }}
         </v-item>
       </v-item-group>
-    </ListItem>
+    </v-list-item>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ListItem from '@/components/ListItem.vue';
+
 import { ContentType, type MediaItem, type MediaItemType } from '../plugins/api/interfaces';
 import { getArtistsString, parseBool } from '../utils';
-import ButtonIcon from './ButtonIcon.vue';
 import { ref } from 'vue';
 
 // properties
