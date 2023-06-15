@@ -48,7 +48,7 @@
             scrollToTop(player.player_id);
           "
         >
-          <ListItem>
+          <v-list-item class="list-item-main">
             <template #prepend>
               <v-icon
                 size="50"
@@ -75,7 +75,7 @@
                 {{ player.state }}
               </div>
             </template>
-          </ListItem>
+          </v-list-item>
         </v-expansion-panel-title>
         <v-expansion-panel-text variant="contain">
           <VolumeControl :player="player" />
@@ -92,7 +92,7 @@ import { store } from '../../plugins/store';
 import VolumeControl from '../../components/VolumeControl.vue';
 import { api } from '../../plugins/api';
 import { getPlayerName } from '@/utils';
-import ListItem from '@/components/ListItem.vue';
+
 
 const panelItem = ref<number | undefined>(undefined);
 

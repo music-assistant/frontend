@@ -63,6 +63,11 @@ a {
   align-items: center;
 }
 
+.buttonicon {
+  width: calc(var(--v-btn-height) + 10px) !important;
+  height: calc(var(--v-btn-height) + 10px) !important;
+}
+
 .right {
   float: right;
 }
@@ -75,6 +80,40 @@ a {
   height: 50px;
   width: 50px;
   margin-right: 10px;
+}
+
+.list-item-main {
+  border-radius: 4px !important;
+  padding: 7px !important;
+}
+
+.list-item-main > div.v-list-item__append {
+  display: flex;
+  justify-content: end;
+  vertical-align: middle;
+  align-items: center;
+  padding: 0px;
+}
+
+.list-item-main > div.v-list-item__prepend > .v-icon {
+  margin-inline-end: 5px !important;
+}
+
+.list-item-main > div.v-list-item__append > .v-icon {
+  margin-inline-start: 5px !important;
+}
+
+.list-item-main > div.v-list-item__prepend > button {
+  margin-inline-end: 5px !important;
+}
+
+.list-item-main > div.v-list-item__append > button {
+  margin-inline-start: 5px !important;
+}
+
+.list-item-main > div.v-list-item__content > div {
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .v-slider.v-input--horizontal .v-input__control {

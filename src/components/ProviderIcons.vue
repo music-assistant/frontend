@@ -2,14 +2,14 @@
   <div class="provider-icons" style="display: inline-flex" :style="`height: ${height};`">
     <v-menu v-for="providerDomain of uniqueProviders" :key="providerDomain" location="bottom end" @click:outside.stop>
       <template #activator="{ props }">
-        <button-icon v-bind="props" :key="providerDomain">
+        <v-btn class="buttonicon" variant="plain" icon :ripple="false" v-bind="props" :key="providerDomain">
           <provider-icon
             :domain="providerDomain"
             :size="height"
             class="provider-icon"
             :style="enableDetails == true ? 'cursor: pointer' : ''"
           />
-        </button-icon>
+        </v-btn>
       </template>
       <v-card v-if="enableDetails" class="mx-auto" min-width="300">
         <v-list style="overflow: hidden">
@@ -115,7 +115,6 @@ const fetchPreviewUrl = async function (provider: string, item_id: string) {
 
 <script lang="ts">
 import { ContentType } from '../plugins/api/interfaces';
-import ButtonIcon from './ButtonIcon.vue';
 
 export const iconFallback = new URL('@/assets/logo.png', import.meta.url).href;
 

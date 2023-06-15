@@ -125,7 +125,7 @@
               <v-card min-width="300">
                 <v-list lines="one" density="comfortable">
                   <!-- play now -->
-                  <ListItem
+                  <v-list-item class="list-item-main"
                     v-for="menuItem in getPlayMenuItems([item])"
                     :key="menuItem.label"
                     :title="$t(menuItem.label, menuItem.labelArgs)"
@@ -136,7 +136,7 @@
                         <v-icon :icon="menuItem.icon" />
                       </v-avatar>
                     </template>
-                  </ListItem>
+                  </v-list-item>
                 </v-list>
               </v-card>
             </v-menu>
@@ -236,7 +236,7 @@ import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
 import { parseBool } from '../utils';
 import { getPlayMenuItems, getContextMenuItems } from './MediaItemContextMenu.vue';
-import ListItem from '@/components/ListItem.vue';
+
 
 // properties
 export interface Props {

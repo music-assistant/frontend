@@ -3,9 +3,9 @@
     <template #prepend>
       <v-menu location="bottom end">
         <template #activator="{ props }">
-          <ButtonIcon v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
+          <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
             <v-icon> mdi-playlist-play </v-icon>
-          </ButtonIcon>
+          </v-btn>
         </template>
       </v-menu>
     </template>
@@ -30,16 +30,16 @@
         </v-tooltip>
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <ButtonIcon
+            <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true"
               v-if="store.topBarContextMenuItems.length > 0"
               style="height: 50px; height: 38px !important;margin-right: -14px;"
               v-bind="props"
             >
               <v-icon icon="mdi-dots-vertical" />
-            </ButtonIcon>
+          </v-btn>
           </template>
           <v-list>
-            <ListItem
+            <v-list-item class="list-item-main"
               v-for="(item, index) in store.topBarContextMenuItems"
               :key="index"
               :title="$t(item.label, item.labelArgs)"
@@ -48,7 +48,7 @@
               <template #prepend>
                 <v-avatar :icon="item.icon" />
               </template>
-            </ListItem>
+            </v-list-item>
           </v-list>
         </v-menu>
       </div>
@@ -62,10 +62,7 @@ import { useRouter } from 'vue-router';
 import { store } from '@/plugins/store';
 import { api } from '@/plugins/api';
 import { useI18n } from 'vue-i18n';
-import ButtonIcon from '@/components/ButtonIcon.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { ref } from 'vue';
-import ListItem from '@/components/ListItem.vue';
+
 
 const router = useRouter();
 const { t } = useI18n();

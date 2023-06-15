@@ -1,6 +1,6 @@
 <template>
   <!-- now playing media -->
-  <ListItem style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
+  <v-list-item class="list-item-main" style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
     <template #prepend>
       <div
         class="media-thumb player-media-thumb"
@@ -113,7 +113,7 @@
         {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
       </div>
     </template>
-  </ListItem>
+  </v-list-item>
 </template>
 
 <script setup lang="ts">
@@ -129,7 +129,7 @@ import PlayerFullscreen from './PlayerFullscreen.vue';
 import { iconFallback } from '@/components/ProviderIcons.vue';
 import { ref } from 'vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/ListItem.vue';
+
 
 const router = useRouter();
 
