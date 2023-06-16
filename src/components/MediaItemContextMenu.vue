@@ -36,7 +36,12 @@
 
         <v-list>
           <div v-for="item of playMenuItems" :key="item.label">
-            <v-list-item class="list-item-main" :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
+            <v-list-item
+              class="list-item-main"
+              :title="$t(item.label, item.labelArgs)"
+              density="default"
+              @click="itemClicked(item)"
+            >
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
@@ -56,7 +61,12 @@
         </v-list-item-subtitle>
         <v-list>
           <div v-for="item of actionMenuItems" :key="item.label">
-            <v-list-item class="list-item-main" :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
+            <v-list-item
+              class="list-item-main"
+              :title="$t(item.label, item.labelArgs)"
+              density="default"
+              @click="itemClicked(item)"
+            >
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
@@ -133,7 +143,6 @@ import { ProviderFeature } from '../plugins/api/interfaces';
 import api from '../plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '../plugins/store';
-
 
 // properties
 export interface Props {
@@ -341,16 +350,38 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
     });
   }
 
-  // Play NOW
-  playMenuItems.push({
-    label: 'play_now',
+  // Play NOW (keep queue) first + REPLACE second
+  if (items.length < 10) {
+    playMenuItems.push({
+      label: 'play_now',
+      action: () => {
+        api.playMedia(items, QueueOption.PLAY);
+      },
+      icon: 'mdi-play-circle-outline',
+      labelArgs: [],
+      actionStr: 'play',
+    });
+
+    playMenuItems.push({
+    label: 'play_now_replace',
     action: () => {
-      api.playMedia(items, queueOptPlay);
+      api.playMedia(items, QueueOption.REPLACE);
     },
     icon: 'mdi-play-circle-outline',
     labelArgs: [],
     actionStr: 'play',
   });
+  } else {
+    playMenuItems.push({
+      label: 'play_now',
+      action: () => {
+        api.playMedia(items, QueueOption.REPLACE);
+      },
+      icon: 'mdi-play-circle-outline',
+      labelArgs: [],
+      actionStr: 'play',
+    });
+  }
 
   // Start Radio
   if (radioSupported(items[0])) {
