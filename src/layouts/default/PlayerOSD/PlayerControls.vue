@@ -21,7 +21,7 @@
     <!-- play/pause button: only when MA queue is active -->
     <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true"
       v-if="activePlayerQueue && activePlayerQueue?.active && props.buttonVisibility.play"
-      :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
+      :disabled="!activePlayerQueue || activePlayerQueue?.items == 0"
       @click="api.queueCommandPlayPause(activePlayerQueue!.queue_id)"
     >
       <v-icon size="50">
@@ -38,7 +38,7 @@
     <!-- play button: all other situations - resume the queue (disabled if queue is empty)-->
     <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true"
       v-else-if="props.buttonVisibility.play"
-      :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
+      :disabled="!activePlayerQueue || activePlayerQueue?.items == 0"
       @click="api.queueCommandPlay(activePlayerQueue?.queue_id || store.selectedPlayer!.player_id)"
     >
       <v-icon size="50" icon="mdi-play-circle"></v-icon>
