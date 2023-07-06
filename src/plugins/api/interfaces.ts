@@ -463,14 +463,20 @@ export interface SearchResults {
   radio: Radio[];
 }
 
+export interface AudioFormat {
+    content_type: ContentType;
+    sample_rate: number;
+    bit_depth: number;
+    channels: number;
+    output_format_str: string;
+    bit_rate: number;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
-  content_type: ContentType;
+  audio_format: AudioFormat;
   media_type: MediaType;
-  sample_rate: number;
-  bit_depth: number;
-  channels: number;
   stream_title?: string;
   duration?: number;
   size?: number;
