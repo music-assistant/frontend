@@ -11,7 +11,7 @@
         v-bind="props"
       >
         <div class="d-flex justify-center" style="width: 100%">
-          {{ streamDetails.content_type.toUpperCase() }}
+          {{ streamDetails.audio_format.content_type.toUpperCase() }}
         </div>
       </v-chip>
     </template>
@@ -36,10 +36,10 @@
           <img
             height="30"
             width="50"
-            :src="getContentTypeIcon(streamDetails.content_type)"
+            :src="getContentTypeIcon(streamDetails.audio_format.content_type)"
             :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
           />
-          {{ streamDetails.sample_rate / 1000 }} kHz / {{ streamDetails.bit_depth }} bits
+          {{ streamDetails.audio_format.sample_rate / 1000 }} kHz / {{ streamDetails.audio_format.bit_depth }} bits
         </div>
 
         <div
