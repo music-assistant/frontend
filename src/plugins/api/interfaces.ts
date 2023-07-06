@@ -312,6 +312,13 @@ export interface PlayerConfig extends Config {
   default_name?: string;
 }
 
+export interface CoreConfig extends Config {
+  // Core(controller) Configuration.
+  module: string;
+  friendly_name: string;
+  last_error?: string;
+}
+
 //// media_items
 
 export interface ProviderMapping {
@@ -321,10 +328,7 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   // quality details (streamable content only)
-  content_type: ContentType;
-  sample_rate: number;
-  bit_depth: number;
-  bit_rate: number;
+  audio_format: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists
@@ -463,14 +467,20 @@ export interface SearchResults {
   radio: Radio[];
 }
 
+export interface AudioFormat {
+    content_type: ContentType;
+    sample_rate: number;
+    bit_depth: number;
+    channels: number;
+    output_format_str: string;
+    bit_rate: number;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
-  content_type: ContentType;
+  audio_format: AudioFormat;
   media_type: MediaType;
-  sample_rate: number;
-  bit_depth: number;
-  channels: number;
   stream_title?: string;
   duration?: number;
   size?: number;

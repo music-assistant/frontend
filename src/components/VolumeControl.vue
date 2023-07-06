@@ -119,7 +119,7 @@ defineProps<Props>();
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
-  if (player.type != PlayerType.GROUP) {
+  if (player.type != PlayerType.GROUP && !player.group_childs.includes(player.player_id)) {
     items.push(player);
   }
   for (const groupChildId of player.group_childs) {

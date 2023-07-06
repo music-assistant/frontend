@@ -56,7 +56,7 @@
         v-bind="props"
       >
         <div class="d-flex justify-center" style="width: 100%">
-          {{ curQueueItem?.streamdetails.content_type.toUpperCase() }}
+          {{ curQueueItem?.streamdetails.audio_format.content_type.toUpperCase() }}
         </div>
       </v-chip>
     </template>
