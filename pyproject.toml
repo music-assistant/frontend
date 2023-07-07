@@ -4,7 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name         = "music-assistant-frontend"
-version      = "20230707.1"
+# The version is set by GH action on release
+version = "0.0.0"
 license      = {text = "Apache-2.0"}
 description  = "The Music Assistant frontend"
 readme       = "README.md"
