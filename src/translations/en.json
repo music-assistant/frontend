@@ -132,7 +132,8 @@
     "setup_provider": "Setup provider: {0}",
     "sync": "Synchronize now",
     "sync_running": "This provider is now being synchronized",
-    "username": "Username"
+    "username": "Username",
+    "core": "Core"
   },
   "show_info": "Show info",
   "show_select_boxes": "Show selection boxes",

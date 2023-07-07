@@ -293,6 +293,7 @@ export interface ProviderConfig extends Config {
   type: ProviderType;
   domain: string;
   instance_id: string;
+  manifest: ProviderManifest; // copied here for the UI only
   // enabled: boolean to indicate if the provider is enabled
   enabled: boolean;
   // name: an (optional) custom name for this provider instance/config
@@ -314,8 +315,8 @@ export interface PlayerConfig extends Config {
 
 export interface CoreConfig extends Config {
   // Core(controller) Configuration.
-  module: string;
-  friendly_name: string;
+  domain: string;
+  manifest: ProviderManifest; // copied here for the UI only
   last_error?: string;
 }
 

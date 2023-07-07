@@ -7,6 +7,9 @@
       <v-tab value="players" :to="{ name: 'playersettings' }">
         {{ $t('settings.players') }}
       </v-tab>
+      <v-tab value="core" :to="{ name: 'coresettings' }">
+        {{ $t('settings.core') }}
+      </v-tab>
     </v-tabs>
     <v-divider />
     <router-view v-slot="{ Component }" app>
@@ -28,6 +31,9 @@ const router = useRouter();
 const activeTab = computed(() => {
   if (router.currentRoute.value.name?.toString().includes('player')) {
     return 'players';
+  }
+  if (router.currentRoute.value.name?.toString().includes('core')) {
+    return 'core';
   }
   return 'providers';
 });
