@@ -1,31 +1,42 @@
 <template>
   <div :style="`width:${size};justify-content: center;display:inherit;padding:0px;display:flex;flex-direction:column`">
-    <v-icon v-if="!domain || !api.providerManifests[domain]?.icon" :size="size" icon="mdi-playlist-play" />
+    <v-icon v-if="manifest.icon == undefined" :size="size" icon="mdi-playlist-play" />
     <v-icon
       v-else-if="
-        api.providerManifests[domain].icon!.startsWith('md:')
+        manifest.icon!.startsWith('md:')
       "
       class="material-icons-outlined"
       :size="size"
-      :icon="api.providerManifests[domain]!.icon"
+      :icon="manifest.icon"
     />
     <v-icon
       v-else-if="
-        api.providerManifests[domain].icon!.startsWith('mdi')
+        manifest.icon!.startsWith('mdi')
       "
       :size="size"
-      :icon="api.providerManifests[domain]!.icon"
+      :icon="manifest.icon"
     />
-    <v-img v-else dark :width="size" :src="api.providerManifests[domain]!.icon" />
+    <v-img v-else dark :width="size" :src="manifest.icon" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ProviderManifest } from '@/plugins/api/interfaces';
 import { api } from '../plugins/api';
+import { computed } from 'vue';
 
 export interface Props {
-  domain: string;
+  domain?: string;
+  manifest?: ProviderManifest;
   size: number | string;
 }
-defineProps<Props>();
+const props = defineProps<Props>();
+
+const manifest = computed(() => {
+  if (props.manifest){
+    return props.manifest;
+  }
+  return api.providerManifests[props.domain!];
+});
+
 </script>
