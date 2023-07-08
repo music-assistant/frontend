@@ -1,21 +1,23 @@
 <template>
   <div
+    ref="responsiveIconHolder"
     :class="hover ? 'responsive-icon-holder-hover' : 'responsive-icon-holder'"
     :style="{
-      width: props.width,
-      height: props.width,
-      maxHeight: props.maxHeight,
-      maxWidth: props.maxWidth,
-      minHeight: props.minHeight,
-      minWidth: props.minWidth,
+      width: props.staticWidth ? props.staticWidth : props.width,
+      height: props.staticWidth ? props.staticWidth : props.height,
+      maxHeight: props.staticHeight ? props.staticHeight : props.maxHeight,
+      maxWidth: props.staticWidth ? props.staticWidth : props.maxWidth,
+      minHeight: props.staticHeight ? props.staticHeight : props.minHeight,
+      minWidth: props.staticWidth ? props.staticWidth : props.minWidth,
     }"
-    ref="responsiveIconHolder"
   >
     <v-icon
       ref="responsiveIcon"
       class="responsive-icon"
-      :color="color ? color : isDark ? '#fff' : '#000'"
+      :color="color ? color : ''"
       :icon="props.icon ? props.icon : 'mdi-check'"
+      :width="props.staticWidth ? props.staticWidth : null"
+      :height="props.staticHeight ? props.staticHeight : null"
       ><template v-if="$slots.default" #default> <slot name="default"></slot> </template
     ></v-icon>
   </div>
@@ -25,9 +27,11 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 
 // properties
-interface Props {
+export interface ResponsiveIconProps {
   width?: string;
   height?: string;
+  staticWidth?: string;
+  staticHeight?: string;
   maxWidth?: string;
   maxHeight?: string;
   minWidth?: string;
@@ -35,9 +39,8 @@ interface Props {
   icon?: string;
   hover?: boolean;
   color?: string;
-  isDark?: boolean;
 }
-const props = withDefaults(defineProps<Props>(), { minWidth: '24px', minHeight: '24px' });
+const props = withDefaults(defineProps<ResponsiveIconProps>(), { minWidth: '24px', minHeight: '24px' });
 
 const adjustIconSize = () => {
   if (responsiveIconHolder.value) {

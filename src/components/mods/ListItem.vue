@@ -1,8 +1,8 @@
 <template>
   <v-list-item v-bind="listItemProps" class="list-item-main" @input="(v: any) => $emit('input', v)">
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="slot in parentSlots" #[slot]>
-      <slot :name="slot"></slot>
+    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+      <slot :name="name"></slot>
     </template>
 
     <!-- append -->
@@ -17,8 +17,6 @@ import { computed } from 'vue';
 
 export default {
   setup(props, ctx) {
-    const parentSlots = computed(() => Object.keys(ctx.slots));
-
     const listItemDefaults = computed(() => ({}));
 
     const listItemProps = computed(() => ({
@@ -26,7 +24,7 @@ export default {
       ...ctx.attrs,
     }));
 
-    return { parentSlots, listItemProps };
+    return { listItemProps };
   },
 };
 </script>

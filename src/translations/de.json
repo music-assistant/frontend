@@ -179,5 +179,6 @@
   "tracks": "Tracks",
   "try_global_search": "Testen Sie die globale Suche",
   "type_to_search": "Tippe hier zum suchen...",
-  "volume_normalization": "Lautstärke normalisieren"
+  "volume_normalization": "Lautstärke normalisieren",
+  "currently_playing": "Wird grade abgespielt"
 }

@@ -3,7 +3,7 @@
     <template #prepend>
       <v-menu location="bottom end">
         <template #activator="{ props }">
-          <Button variant="icon" v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
+          <Button icon v-bind="props" @click="store.showNavigationMenu = !store.showNavigationMenu">
             <v-icon> mdi-playlist-play </v-icon>
           </Button>
         </template>
@@ -31,7 +31,7 @@
         <v-menu location="bottom end">
           <template #activator="{ props }">
             <Button
-              variant="icon"
+              icon
               v-if="store.topBarContextMenuItems.length > 0"
               style="height: 50px; height: 38px !important"
               v-bind="props"

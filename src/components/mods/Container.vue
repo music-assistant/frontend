@@ -1,8 +1,8 @@
 <template>
   <v-container v-bind="containerProps" class="container">
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="slot in parentSlots" #[slot]>
-      <slot :name="slot"></slot>
+    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+      <slot :name="name"></slot>
     </template>
   </v-container>
 </template>
@@ -11,17 +11,7 @@
 import { computed } from 'vue';
 
 export default {
-  // properties
-  /*
-export interface Props {
-  type: 'onlyIcon' | 'button' | 'text';
-}
-const props = withDefaults(defineProps<Props>(), {
-  type: 'onlyIcon',
-});*/
   setup(props, ctx) {
-    const parentSlots = computed(() => Object.keys(ctx.slots));
-
     const containerDefaults = computed(() => ({}));
 
     const containerProps = computed(() => ({
@@ -29,9 +19,31 @@ const props = withDefaults(defineProps<Props>(), {
       ...ctx.attrs,
     }));
 
-    return { parentSlots, containerProps };
+    return { containerProps };
   },
 };
 </script>
 
-<style></style>
+<style>
+.container {
+  padding: 20px;
+}
+
+@media (min-width: 1920px) {
+  .container {
+    max-width: unset !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: unset !important;
+  }
+}
+
+@media (min-width: 960px) {
+  .container {
+    max-width: unset !important;
+  }
+}
+</style>

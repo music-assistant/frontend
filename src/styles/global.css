@@ -233,28 +233,6 @@ div.v-slide-group__prev {
   height: 100% !important;
 }
 
-.v-container {
-  padding: 20px;
-}
-
-@media (min-width: 1920px) {
-  .v-container {
-    max-width: unset;
-  }
-}
-
-@media (min-width: 1280px) {
-  .v-container {
-    max-width: unset;
-  }
-}
-
-@media (min-width: 960px) {
-  .v-container {
-    max-width: unset;
-  }
-}
-
 .content-spacing {
   display: flex;
   flex-flow: column;
@@ -270,6 +248,10 @@ div.v-slide-group__prev {
 
 .v-expansion-panel-title {
   padding: 10px;
+}
+
+.flicking-camera {
+  display: flex !important;
 }
 
 /* font */

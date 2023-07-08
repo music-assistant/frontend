@@ -1,6 +1,6 @@
 <template>
   <section>
-    <v-container>
+    <Container>
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
@@ -22,7 +22,7 @@
           @click="onClick"
         />
       </RecycleScroller>
-    </v-container>
+    </Container>
   </section>
 </template>
 
@@ -37,6 +37,7 @@ import { store } from '../plugins/store';
 import { useRouter } from 'vue-router';
 import { getBrowseFolderName } from '../utils';
 import api from '../plugins/api';
+import Container from '@/components/mods/Container.vue';
 
 export interface Props {
   path?: string;

@@ -171,7 +171,7 @@
             @click="showFullInfo = !showFullInfo"
           >
             <!-- eslint-disable vue/no-v-html -->
-            <div v-html="shortDescription" />
+            <div v-html="shortDescription"></div>
             <!-- eslint-enable vue/no-v-html -->
           </v-card-subtitle>
 

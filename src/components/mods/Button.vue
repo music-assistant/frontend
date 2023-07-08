@@ -1,8 +1,8 @@
 <template>
   <v-btn v-bind="btnProps" variant="plain">
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="slot in parentSlots" #[slot]>
-      <slot :name="slot"></slot>
+    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+      <slot :name="name"></slot>
     </template>
   </v-btn>
 </template>
@@ -11,9 +11,10 @@
 import { computed } from 'vue';
 
 export default {
+  props: {
+    variant: String,
+  },
   setup(props, ctx) {
-    const parentSlots = computed(() => Object.keys(ctx.slots));
-
     const btnDefaults = computed(() => ({
       ripple: false,
       variant: '',
@@ -30,7 +31,7 @@ export default {
       ...ctx.attrs,
     }));
 
-    return { parentSlots, btnProps };
+    return { btnProps };
   },
 };
 </script>
@@ -39,5 +40,15 @@ export default {
 .v-btn--variant-icon {
   width: calc(var(--v-btn-height) + 10px) !important;
   height: calc(var(--v-btn-height) + 10px) !important;
+}
+
+.v-btn {
+  opacity: 0.62;
+  cursor: pointer;
+}
+
+.v-btn:focus,
+.v-btn:hover {
+  opacity: 1;
 }
 </style>

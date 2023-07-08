@@ -7,7 +7,7 @@
     clipped
     temporary
     touchless
-    width="300"
+    width="250"
     style="z-index: 9999"
   >
     <!-- heading with Players as title-->
@@ -36,11 +36,7 @@
       >
         <v-expansion-panel-title
           class="playerrow"
-          :style="
-            store.selectedPlayer?.player_id == player.player_id
-              ? 'padding:0;background-color:rgba(50, 115, 220, 0.2);'
-              : 'padding:0'
-          "
+          :style="store.selectedPlayer?.player_id == player.player_id ? 'padding:0;' : 'padding:0'"
           expand-icon="mdi-chevron-down"
           collapse-icon="mdi-chevron-up"
           @click="
@@ -53,12 +49,12 @@
               <v-icon
                 size="50"
                 :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
-                color="accent"
+                color="primary"
               />
             </template>
             <template #title>
-              <div class="text-subtitle-1">
-                <b>{{ getPlayerName(player) }}</b>
+              <div>
+                <b>{{ truncateString(getPlayerName(player), 16) }}</b>
               </div>
             </template>
             <template #subtitle>
@@ -91,7 +87,7 @@ import { Player, PlayerState } from '../../plugins/api/interfaces';
 import { store } from '../../plugins/store';
 import VolumeControl from '../../components/VolumeControl.vue';
 import { api } from '../../plugins/api';
-import { getPlayerName } from '@/utils';
+import { getPlayerName, truncateString } from '@/utils';
 import ListItem from '@/components/mods/ListItem.vue';
 
 const panelItem = ref<number | undefined>(undefined);

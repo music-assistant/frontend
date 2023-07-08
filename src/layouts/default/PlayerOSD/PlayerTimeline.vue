@@ -13,7 +13,7 @@
       <v-slider
         v-model="curTimeValue"
         :disabled="!curQueueItem || curQueueItem.media_item?.media_type != MediaType.TRACK"
-        color="accent"
+        :color="props.color"
         style="width: 100%"
         :min="0"
         :max="curQueueItem && curQueueItem.duration"
@@ -38,7 +38,7 @@
       <v-progress-linear
         v-model="curTimeValue"
         :disabled="!activePlayerQueue || !curQueueItem || activePlayerQueue?.items == 0"
-        color="accent"
+        :color="props.color"
         :height="2"
         :min="0"
         :max="curQueueItem && curQueueItem.duration"
@@ -57,10 +57,12 @@ import { ref, computed, watch } from 'vue';
 // properties
 export interface Props {
   isProgressBar?: boolean;
+  color?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isProgressBar: false,
+  color: 'accent',
 });
 
 // local refs

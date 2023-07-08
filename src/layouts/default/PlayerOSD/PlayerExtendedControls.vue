@@ -1,8 +1,9 @@
 <template>
-  <!-- active player queue button -->
+  <!-- active queue -->
   <Button
-    variant="icon"
-    v-if="props.buttonVisibility.queue"
+    icon
+    v-if="props.visibleComponents && props.visibleComponents.queue?.isVisible"
+    v-bind="props.visibleComponents.queue.icon"
     @click="
       store.showFullscreenPlayer = false;
       props.showQueueDialog
@@ -13,19 +14,20 @@
   >
     <v-icon icon="mdi-playlist-play" />
   </Button>
-  <!-- active player btn -->
+  <!-- active player -->
   <Button
-    variant="icon"
-    v-if="props.buttonVisibility.player"
+    icon
+    v-if="props.visibleComponents && props.visibleComponents.player?.isVisible"
+    v-bind="props.visibleComponents.player.icon"
     class="mediacontrols-right"
     @click="store.showPlayersMenu = true"
   >
     <v-icon icon="mdi-speaker" />
   </Button>
   <!-- active player volume -->
-  <div v-if="props.buttonVisibility.volume">
+  <div v-if="props.visibleComponents && props.visibleComponents.volume?.isVisible">
     <v-menu v-if="activePlayerQueue" class="volume-control-dialog" v-model="showVolume" :close-on-content-click="false">
-      <template #activator="{ props }">
+      <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
           <PlayerVolume
             :style="'margin-right: 0px; margin-left: 0px;'"
@@ -44,7 +46,7 @@
           >
             <template #prepend>
               <!-- select player -->
-              <Button variant="icon" v-bind="props">
+              <Button icon v-bind="{ ...menu, ...props.visibleComponents.volume.icon }">
                 <v-icon icon="mdi-volume-high" />
                 <div class="text-caption">
                   {{
@@ -58,7 +60,7 @@
           </PlayerVolume>
         </div>
         <div v-else>
-          <Button variant="icon" v-bind="props">
+          <Button v-bind="{ ...menu, ...props.visibleComponents.volume.icon }" icon>
             <v-icon icon="mdi-volume-high" />
             <div class="text-caption">
               {{
@@ -87,7 +89,7 @@
                   ? 'mdi-speaker-multiple'
                   : 'mdi-speaker'
               "
-                color="accent"
+                color="primary"
               />
             </template>
             <v-btn
@@ -114,9 +116,11 @@ import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import PlayerVolume from './PlayerVolume.vue';
 import VolumeControl from '@/components/VolumeControl.vue';
-import Button from '@/components/mods/Button.vue';
+
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
+import Button from '@/components/mods/Button.vue';
+import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
 
 const router = useRouter();
 
@@ -126,10 +130,19 @@ export interface Props {
   volumeSize?: string;
   responsiveVolumeSize?: boolean;
   showQueueDialog?: boolean;
-  buttonVisibility?: {
-    queue?: boolean;
-    player?: boolean;
-    volume?: boolean;
+  visibleComponents?: {
+    queue?: {
+      isVisible?: boolean;
+      icon?: ResponsiveIconProps;
+    };
+    player?: {
+      isVisible?: boolean;
+      icon?: ResponsiveIconProps;
+    };
+    volume?: {
+      isVisible?: boolean;
+      icon?: ResponsiveIconProps;
+    };
   };
 }
 
@@ -137,10 +150,10 @@ const props = withDefaults(defineProps<Props>(), {
   volumeSize: '150px',
   responsiveVolumeSize: true,
   showQueueDialog: false,
-  buttonVisibility: () => ({
-    queue: true,
-    player: true,
-    volume: true,
+  visibleComponents: () => ({
+    queue: { isVisible: true },
+    player: { isVisible: true },
+    volume: { isVisible: true },
   }),
 });
 

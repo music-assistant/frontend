@@ -1,9 +1,9 @@
 <template>
   <v-card
+    v-hold="() => (showCheckboxes ? null : emit('menu', item))"
     class="panel-item"
     @click="showCheckboxes ? null : emit('click', item)"
     @click.right.prevent="showCheckboxes ? null : emit('menu', item)"
-    v-hold="() => (showCheckboxes ? null : emit('menu', item))"
     @mouseover="showSettingDots = true"
     @mouseleave="showSettingDots = true"
   >
@@ -23,14 +23,14 @@
 
     <MediaItemThumb :item="item" :width="'100%'" />
 
-    <ListItem style="padding-left: 0px !important; padding-right: 0px !important; padding-top: 10px !important">
-      <v-list-item-title class="line-clamp-1">
+    <ListItem class="panel-item-details" style="padding-top: 10px !important">
+      <v-list-item-title class="line-clamp-1 panel-item-details">
         {{ item.name }} {{ 'version' in item && item.version ? `- ${item.version}` : '' }}
       </v-list-item-title>
-      <v-list-item-subtitle v-if="'artists' in item && item.artists" class="line-clamp-1">
+      <v-list-item-subtitle v-if="'artists' in item && item.artists" class="line-clamp-1 panel-item-details">
         {{ getArtistsString(item.artists, 1) }}
       </v-list-item-subtitle>
-      <v-list-item-subtitle v-else-if="'owner' in item && item.owner" class="line-clamp-1">
+      <v-list-item-subtitle v-else-if="'owner' in item && item.owner" class="line-clamp-1 panel-item-details">
         {{ item.owner }}
       </v-list-item-subtitle>
 
@@ -117,5 +117,10 @@ const emit = defineEmits<{
   position: absolute;
   left: 0px;
   top: 0px;
+}
+
+.panel-item-details {
+  padding-left: 0px !important;
+  padding-right: 0px !important;
 }
 </style>

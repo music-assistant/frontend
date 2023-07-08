@@ -123,7 +123,7 @@
       @blur="searchHasFocus = false"
     />
 
-    <v-container>
+    <Container>
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
@@ -171,19 +171,14 @@
 
       <!-- show alert if no items found -->
       <div v-if="!loading && items.length == 0">
-        <v-alert
-          v-if="!loading && items.length == 0 && (search || inLibraryOnly)"
-          density="compact"
-          variant="outlined"
-          :title="$t('no_content_filter')"
-        >
+        <Alert v-if="!loading && items.length == 0 && (search || inLibraryOnly)" :title="$t('no_content_filter')">
           <v-btn v-if="search" style="margin-top: 15px" @click="redirectSearch">
             {{ $t('try_global_search') }}
           </v-btn>
-        </v-alert>
-        <v-alert v-else-if="!loading && items.length == 0" density="compact" variant="outlined">
+        </Alert>
+        <Alert v-else-if="!loading && items.length == 0">
           {{ $t('no_content') }}
-        </v-alert>
+        </Alert>
       </div>
       <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom: 120px">
         <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
@@ -193,7 +188,7 @@
           </v-btn>
         </template>
       </v-snackbar>
-    </v-container>
+    </Container>
   </section>
 </template>
 
@@ -221,6 +216,8 @@ import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
+import Alert from './mods/Alert.vue';
+import Container from './mods/Container.vue';
 
 // properties
 export interface Props {

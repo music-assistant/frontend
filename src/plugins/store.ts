@@ -1,4 +1,4 @@
-import type { Player } from './api/interfaces';
+import type { Player, QueueItem } from './api/interfaces';
 import { reactive } from 'vue';
 import type { LocationQuery, RouteParams, RouteMeta } from 'vue-router';
 
@@ -38,14 +38,14 @@ export const store: Store = reactive({
   sizeNavigationMenu: 300,
   showFullscreenPlayer: false,
   coverImageColorCode: {
-    '0': '#fff',
-    '1': '#fff',
-    '2': '#fff',
-    '3': '#fff',
-    '4': '#fff',
-    '5': '#fff',
-    lightColor: '#fff',
-    darkColor: '#fff',
+    '0': '',
+    '1': '',
+    '2': '',
+    '3': '',
+    '4': '',
+    '5': '',
+    lightColor: '',
+    darkColor: '',
   },
   topBarContextMenuItems: [],
   blockGlobalPlayMenu: false,

@@ -1,33 +1,64 @@
 <template>
-  <v-dialog v-model="store.showFullscreenPlayer" fullscreen :scrim="false" transition="dialog-bottom-transition">
-    <v-card
-      :style="{
-        backgroundColor: `${coverImageColorCode}`,
-      }"
-    >
+  <v-dialog
+    v-model="store.showFullscreenPlayer"
+    fullscreen
+    :scrim="false"
+    style="overflow: hidden"
+    transition="dialog-bottom-transition"
+  >
+    <v-card :color="coverImageColorCode">
       <v-toolbar color="transparent">
         <template #prepend>
-          <Button variant="icon" @click="store.showFullscreenPlayer = false">
+          <Button icon @click="store.showFullscreenPlayer = false">
             <v-icon icon="mdi-chevron-down" />
           </Button>
         </template>
 
         <template #default>
-          <h3>Currently Playing</h3>
+          <h3>{{ $t('currently_playing') }}</h3>
         </template>
 
         <template #append>
-          <Button variant="icon">
+          <Button icon>
             <v-icon icon="mdi-dots-vertical" />
           </Button>
         </template>
       </v-toolbar>
 
-      <v-container class="fullscreen-container">
+      <Container class="fullscreen-container">
         <div class="fullscreen-media-space"></div>
         <div class="fullscreen-row-centered">
+          <Flicking
+            v-if="
+              curQueueItem &&
+              getBreakpointValue({ breakpoint: 'mobile' }) &&
+              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
+              false
+            "
+            :options="{
+              align: 'center',
+              defaultIndex: 1,
+              moveType: 'strict',
+              panelsPerView: 1,
+              useResizeObserver: true,
+              circular: true,
+            }"
+            @moveEnd="handleFlickingMoveEnd"
+          >
+            <div v-for="config in 3" :key="config" style="margin-right: 10px; margin-left: 10px; display: flex">
+              <MediaItemThumb
+                :item="curQueueItem?.media_item || curQueueItem"
+                :width="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
+                :height="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
+                style="
+                  height: min(calc(100vw - 40px), calc(100vh - 340px));
+                  width: min(calc(100vw - 40px), calc(100vh - 340px));
+                "
+              />
+            </div>
+          </Flicking>
           <MediaItemThumb
-            v-if="curQueueItem"
+            v-else-if="curQueueItem"
             :item="curQueueItem.media_item || curQueueItem"
             :width="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
             :height="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? 512 : 1024"
@@ -46,23 +77,35 @@
           />
         </div>
         <div class="fullscreen-row">
-          <div class="fullscreen-track-info" v-if="curQueueItem && curQueueItem.media_item">
+          <div v-if="curQueueItem && curQueueItem.media_item" class="fullscreen-track-info">
             <!-- title -->
-            <h2 style="cursor: pointer; width: fit-content; display: inline" class="title line-clamp-1">
+            <h2
+              style="cursor: pointer; width: fit-content; display: inline"
+              class="title line-clamp-1"
+              @click="curQueueItem?.media_item ? trackClick(curQueueItem.media_item as Track) : ''"
+            >
               <!-- name + version (if present) -->
-              <TextAnimation
-                :duration="20"
-                :text="`${curQueueItem.media_item.name} ${
+              {{
+                `${curQueueItem.media_item.name} ${
                   'version' in curQueueItem.media_item && curQueueItem.media_item.version
                     ? '(' + curQueueItem.media_item.version + ')'
                     : ''
-                }`"
-              />
+                }`
+              }}
             </h2>
 
             <!-- subtitle -->
             <!-- track: artists(s) -->
-            <div v-if="curQueueItem">
+            <div
+              v-if="
+                curQueueItem.media_item?.media_type == MediaType.TRACK &&
+                'album' in curQueueItem.media_item &&
+                curQueueItem.media_item.album
+              "
+              style="cursor: pointer"
+              class="line-clamp-1"
+              @click="curQueueItem?.media_item ? artistClick((curQueueItem.media_item as Track).artists[0]) : ''"
+            >
               <!-- track/album falback: artist present -->
               <h4
                 v-if="
@@ -99,8 +142,13 @@
             </div>
           </div>
         </div>
-        <div class="fullscreen-row" style="margin-right: 8px">
-          <PlayerTimeline :is-progress-bar="false" />
+        <div class="fullscreen-row" style="margin: 0 10px">
+          <PlayerTimeline
+            :is-progress-bar="false"
+            :color="
+              $vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor
+            "
+          />
         </div>
         <div v-if="false">
           <div
@@ -157,71 +205,111 @@
           <PlayerExtendedControls
             v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
             :responsive-volume-size="false"
-            :button-visibility="{ player: false, volume: true, queue: false }"
+            :visible-components="{
+              player: { isVisible: false },
+              volume: { isVisible: true },
+              queue: { isVisible: false },
+            }"
             :volume-size="'100%'"
           />
         </div>
-        <div class="fullscreen-media-controls">
-          <ResponsiveIcon
-            class="media-controls-item"
-            :hover="true"
-            :is-dark="$vuetify.theme.current.dark"
-            max-height="24px"
-            icon="mdi-shuffle"
-          ></ResponsiveIcon>
+        <div v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })" class="fullscreen-media-controls">
+          <ShuffleBtn class="media-controls-item" max-height="24px" />
 
-          <ResponsiveIcon
-            class="media-controls-item"
-            :hover="true"
-            :is-dark="$vuetify.theme.current.dark"
-            max-height="35px"
-            icon="mdi-skip-previous-outline"
-          ></ResponsiveIcon>
+          <PreviousBtn class="media-controls-item" max-height="35px" />
 
-          <ResponsiveIcon
-            class="media-controls-item"
-            :hover="true"
-            :is-dark="$vuetify.theme.current.dark"
-            max-height="80px"
-            icon="mdi-play-circle"
-          ></ResponsiveIcon>
+          <PlayBtn class="media-controls-item" max-height="80px" />
 
-          <ResponsiveIcon
-            class="media-controls-item"
-            :hover="true"
-            :is-dark="$vuetify.theme.current.dark"
-            max-height="35px"
-            icon="mdi-skip-next-outline"
-          ></ResponsiveIcon>
+          <NextBtn class="media-controls-item" max-height="35px" />
 
-          <ResponsiveIcon
-            class="media-controls-item"
-            :is-dark="$vuetify.theme.current.dark"
-            :hover="true"
-            max-height="24px"
-            icon="mdi-repeat-variant"
-          ></ResponsiveIcon>
+          <RepeatBtn class="media-controls-item" max-height="24px" />
         </div>
-        <div class="fullscreen-media-controls-bottom">
-          <div>
-            <Button if="activePlayerQueue">
-              <v-badge content="2" color="primary">
+        <div
+          v-else
+          class="fullscreen-media-controls"
+          :style="{
+            paddingTop: '1vh',
+            flex: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? '1 1 auto' : '0 1 auto',
+          }"
+        >
+          <div class="media-controls-item" style="display: grid; align-content: center">
+            <QualityDetailsBtn />
+          </div>
+          <div class="media-controls-item fullscreen-row-centered">
+            <div style="width: 100%">
+              <!-- player control buttons -->
+              <PlayerControls
+                :visible-components="{
+                  repeat: { isVisible: getBreakpointValue('bp3') },
+                  shuffle: { isVisible: getBreakpointValue('bp3') },
+                  play: {
+                    isVisible: true,
+                    icon: {
+                      staticWidth: '50px',
+                      staticHeight: '50px',
+                    },
+                  },
+                  previous: { isVisible: getBreakpointValue('bp3') },
+                  next: { isVisible: getBreakpointValue('bp3') },
+                }"
+              />
+            </div>
+          </div>
+          <div class="fullscreen-mediacontrols-right media-controls-item">
+            <div>
+              <!-- player mobile control buttons -->
+              <PlayerControls
+                style="padding-right: 5px"
+                :visible-components="{
+                  repeat: { isVisible: false },
+                  shuffle: { isVisible: false },
+                  play: { isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) },
+                  previous: { isVisible: false },
+                  next: { isVisible: false },
+                }"
+              />
+              <!-- player extended control buttons -->
+              <PlayerExtendedControls
+                :visible-components="{
+                  queue: { isVisible: getBreakpointValue('bp3') },
+                  player: { isVisible: true },
+                  volume: { isVisible: getBreakpointValue('bp0') },
+                }"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="fullscreen-media-controls-bottom" if="activePlayerQueue">
+          <div v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })">
+            <Button @click="store.showPlayersMenu = true">
+              <v-badge
+                v-if="curGroupPlayers && curGroupPlayers.length > 0"
+                :content="store.selectedPlayer?.group_childs.length"
+                :color="
+                  $vuetify.theme.current.dark
+                    ? store.coverImageColorCode.lightColor
+                    : store.coverImageColorCode.darkColor
+                "
+              >
                 <v-icon :size="30">mdi-speaker</v-icon>
               </v-badge>
+              <v-icon v-else :size="30">mdi-speaker</v-icon>
               <div class="line-clamp-1">{{ activePlayerQueue?.display_name }}</div>
             </Button>
           </div>
           <div style="text-align: end">
             <PlayerExtendedControls
-              :button-visibility="{
-                queue: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
-                player: false,
-                volume: false,
+              :visible-components="{
+                queue: {
+                  isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
+                },
+                player: { isVisible: false },
+                volume: { isVisible: false },
               }"
             />
           </div>
         </div>
-      </v-container>
+      </Container>
     </v-card>
   </v-dialog>
 </template>
@@ -230,20 +318,25 @@
 import { ref, computed, watch } from 'vue';
 
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
-import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
+import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import api from '@/plugins/api';
-import { MediaItemType, ImageType, MediaType, ItemMapping, Track } from '@/plugins/api/interfaces';
+import { Artist, ItemMapping, MediaType, Track } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import PlayerTimeline from './PlayerTimeline.vue';
-import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+import Breakpoint, { getBreakpointValue } from '@/plugins/breakpoint';
 import Button from '@/components/mods/Button.vue';
-import TextAnimation from '@/components/TextAnimation.vue';
-import ResponsiveIcon from '@/components/mods/ResponsiveIcon.vue';
 import vuetify from '@/plugins/vuetify';
+import Container from '@/components/mods/Container.vue';
+import PlayBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue';
+import NextBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue';
+import PreviousBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue';
+import ShuffleBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue';
+import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
+import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
+import PlayerControls from './PlayerControls.vue';
+import QualityDetailsBtn from './QualityDetailsBtn.vue';
 import router from '@/plugins/router';
-import { rgbToHex } from '@/utils';
+import Flicking from '@egjs/vue3-flicking';
 
 const coverImageColorCode = ref(
   vuetify.theme.current.value.dark ? store.coverImageColorCode.darkColor : store.coverImageColorCode.lightColor,
@@ -259,38 +352,49 @@ const activePlayerQueue = computed(() => {
   return undefined;
 });
 
+const curGroupPlayers = computed(() => {
+  if (store.selectedPlayer) {
+    return store.selectedPlayer.group_childs;
+  }
+  return undefined;
+});
+
 const curQueueItem = computed(() => {
   if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
   return undefined;
-});
-
-const coverImage = computed(() => {
-  // return the default cover/thumb image for the active queueItem
-  if (curQueueItem.value) {
-    return getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB);
-  }
-  return undefined;
-});
-
-const backgroundImage = computed(() => {
-  // prefer fanart from full track details
-  if (fullTrackDetails.value) {
-    // prefer artist fanart image
-    const artistFanart = getImageThumbForItem(fullTrackDetails.value, ImageType.FANART);
-    if (artistFanart) return artistFanart;
-    // fallback to artist thumb
-    const artistThumb = getImageThumbForItem(fullTrackDetails.value.artists[0], ImageType.THUMB);
-    if (artistThumb) return artistThumb;
-  }
-  // fallback to just the cover image
-  return coverImage.value;
 });
 
 const defaultImage = computed(() => {
   return vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
 });
 
-// Watchers
+// methods
+const trackClick = function (item: Track | ItemMapping) {
+  router.push({
+    name: 'track',
+    params: { itemId: item.item_id, provider: item.provider },
+  });
+  store.showFullscreenPlayer = false;
+};
+
+const handleFlickingMoveEnd = function (event: { currentTarget: any }) {
+  const flicking = event.currentTarget;
+  const status = flicking.getStatus();
+};
+
+const artistClick = function (item: Artist | ItemMapping) {
+  // album entry clicked
+  router.push({
+    name: 'artist',
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
+  store.showFullscreenPlayer = false;
+};
+
+// watchers
 watch(
   () => curQueueItem.value,
   async (result) => {
@@ -303,7 +407,11 @@ watch(
 watch(
   () => store.coverImageColorCode,
   (result) => {
-    coverImageColorCode.value = vuetify.theme.current.value.dark ? result.darkColor : result.lightColor;
+    if (!result.darkColor || !result.lightColor) {
+      coverImageColorCode.value = vuetify.theme.current.value.dark ? '#000' : '#fff';
+    } else {
+      coverImageColorCode.value = vuetify.theme.current.value.dark ? result.darkColor : result.lightColor;
+    }
   },
 );
 </script>
@@ -319,6 +427,9 @@ watch(
 .fullscreen-track-info {
   margin-top: 10px;
   margin-bottom: 10px;
+  padding-top: 2vh;
+  padding-bottom: 2vh;
+  text-align: center;
 }
 
 .fullscreen-track-info-subtitle {
@@ -372,5 +483,20 @@ watch(
   flex-basis: 0;
   flex-grow: 1;
   max-width: 100%;
+}
+
+.fullscreen-media-controls > div {
+  width: calc(100% / 3);
+}
+
+.fullscreen-mediacontrols-right {
+  display: table-cell;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.fullscreen-mediacontrols-right > div {
+  display: inline-flex;
+  align-items: center;
 }
 </style>

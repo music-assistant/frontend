@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <Container>
     <RecycleScroller v-slot="{ item }" :items="playerConfigs" :item-size="60" key-field="player_id" page-mode>
       <ListItem
         link
@@ -29,7 +29,7 @@
           <div v-if="!item.enabled">
             <v-tooltip location="bottom">
               <template #activator="{ props }">
-                <Button variant="icon" v-bind="props">
+                <Button icon v-bind="props">
                   <v-icon icon="mdi-cancel" />
                 </Button>
               </template>
@@ -41,7 +41,7 @@
           <div v-else-if="!api.players[item.player_id]?.available">
             <v-tooltip location="bottom">
               <template #activator="{ props }">
-                <Button variant="icon" v-bind="props">
+                <Button icon v-bind="props">
                   <v-icon icon="mdi-timer-sand" />
                 </Button>
               </template>
@@ -52,7 +52,7 @@
           <!-- contextmenu-->
           <v-menu location="bottom end">
             <template #activator="{ props }">
-              <Button variant="icon" v-bind="props">
+              <Button icon v-bind="props">
                 <v-icon icon="mdi-dots-vertical" />
               </Button>
             </template>
@@ -87,7 +87,7 @@
         </template>
       </ListItem>
     </RecycleScroller>
-  </v-container>
+  </Container>
 </template>
 
 <script setup lang="ts">
@@ -99,6 +99,7 @@ import { RecycleScroller } from 'vue-virtual-scroller';
 import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
+import Container from '@/components/mods/Container.vue';
 
 // global refs
 const router = useRouter();

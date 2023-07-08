@@ -2,7 +2,7 @@
   <div class="provider-icons" style="display: inline-flex" :style="`height: ${height};`">
     <v-menu v-for="providerDomain of uniqueProviders" :key="providerDomain" location="bottom end" @click:outside.stop>
       <template #activator="{ props }">
-        <Button variant="icon" v-bind="props" :key="providerDomain">
+        <Button icon v-bind="props" :key="providerDomain">
           <provider-icon
             :domain="providerDomain"
             :size="height"

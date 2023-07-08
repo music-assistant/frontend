@@ -8,22 +8,17 @@
     app
   >
     <div
-      v-if="coverImageColorCode"
+      v-if="coverImageColorCode && curQueueItem"
       :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
       :style="`background: linear-gradient(90deg, ${coverImageColorCode}${
         $vuetify.theme.current.dark ? '4D' : 'B3'
       } 0%, ${coverImageColorCode}00 100%);`"
     ></div>
-    <div
-      v-if="coverImageColorCode"
-      :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
-      :style="`background: linear-gradient(90deg, rgba(${coverImageColorCode[0]}, ${coverImageColorCode[1]}, ${
-        coverImageColorCode[2]
-      }, ${$vuetify.theme.current.dark ? '0.3' : '0.7'}) 0%, rgba(${coverImageColorCode[0]}, ${
-        coverImageColorCode[1]
-      }, ${coverImageColorCode[2]}, 0) 100%);`"
-    ></div>
-    <PlayerTimeline v-breakpoint="'mobile'" :is-progress-bar="true" />
+    <PlayerTimeline
+      v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
+      :color="$vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor"
+      :is-progress-bar="true"
+    />
 
     <div
       class="mediacontrols"
@@ -41,16 +36,28 @@
         <div style="width: 100%">
           <!-- player control buttons -->
           <PlayerControls
-            :button-visibility="{
-              repeat: getBreakpointValue('bp3'),
-              shuffle: getBreakpointValue('bp3'),
-              play: true,
-              previous: getBreakpointValue('bp3'),
-              next: getBreakpointValue('bp3'),
+            :visible-components="{
+              repeat: { isVisible: getBreakpointValue('bp3') },
+              shuffle: { isVisible: getBreakpointValue('bp3') },
+              play: {
+                isVisible: true,
+                icon: {
+                  staticWidth: '50px',
+                  staticHeight: '50px',
+                },
+              },
+              previous: { isVisible: getBreakpointValue('bp3') },
+              next: { isVisible: getBreakpointValue('bp3') },
             }"
           />
           <!-- progress bar -->
-          <PlayerTimeline v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }" :is-progress-bar="false" />
+          <PlayerTimeline
+            v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
+            :color="
+              $vuetify.theme.current.dark ? store.coverImageColorCode.darkColor : store.coverImageColorCode.lightColor
+            "
+            :is-progress-bar="false"
+          />
         </div>
       </div>
       <div class="mediacontrols-buttom-right">
@@ -58,20 +65,20 @@
           <!-- player mobile control buttons -->
           <PlayerControls
             style="padding-right: 5px"
-            :button-visibility="{
-              repeat: false,
-              shuffle: false,
-              play: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
-              previous: false,
-              next: false,
+            :visible-components="{
+              repeat: { isVisible: false },
+              shuffle: { isVisible: false },
+              play: { isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) },
+              previous: { isVisible: false },
+              next: { isVisible: false },
             }"
           />
           <!-- player extended control buttons -->
           <PlayerExtendedControls
-            :button-visibility="{
-              queue: getBreakpointValue('bp3'),
-              player: true,
-              volume: getBreakpointValue('bp0'),
+            :visible-components="{
+              queue: { isVisible: getBreakpointValue('bp3') },
+              player: { isVisible: true },
+              volume: { isVisible: getBreakpointValue('bp0') },
             }"
           />
         </div>
@@ -106,8 +113,8 @@ img.crossOrigin = 'Anonymous';
 img.addEventListener('load', function () {
   store.coverImageColorCode = getColorCode(img);
   coverImageColorCode.value = vuetify.theme.current.value.dark
-    ? store.coverImageColorCode.lightColor
-    : store.coverImageColorCode.darkColor;
+    ? store.coverImageColorCode.darkColor
+    : store.coverImageColorCode.lightColor;
 });
 
 // computed properties

@@ -1,9 +1,9 @@
 <template>
   <!-- streaming quality details -->
-  <v-menu v-if="streamDetails" location="bottom end" :close-on-content-click="false">
+  <v-menu v-if="currentItem && currentItem.provider_mappings[0]" location="bottom end" :close-on-content-click="false">
     <template #activator="{ props }">
       <v-chip
-        v-if="streamDetails"
+        v-if="currentItem && currentItem.provider_mappings[0] && currentItem.provider_mappings[0].content_type"
         :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
         class="mediadetails-content-type-btn"
         label
@@ -11,7 +11,7 @@
         v-bind="props"
       >
         <div class="d-flex justify-center" style="width: 100%">
-          {{ streamDetails.content_type.toUpperCase() }}
+          {{ currentItem.provider_mappings[0].content_type.toUpperCase() }}
         </div>
       </v-chip>
     </template>
@@ -25,21 +25,25 @@
         <v-divider />
         <div style="height: 50px; display: flex; align-items: center">
           <ProviderIcon
-            :domain="streamDetails.provider"
+            :domain="currentItem.provider_mappings[0].provider_domain"
             :size="'35px'"
             style="object-fit: contain; margin-left: 10px; margin-right: 5px"
           />
-          {{ api.providerManifests[streamDetails.provider]?.name || api.providers[streamDetails.provider]?.name }}
+          {{
+            api.providerManifests[currentItem.provider_mappings[0].provider_domain]?.name ||
+            api.providers[currentItem.provider_mappings[0].provider_domain]?.name
+          }}
         </div>
 
         <div style="height: 50px; display: flex; align-items: center">
           <img
             height="30"
             width="50"
-            :src="getContentTypeIcon(streamDetails.content_type)"
+            :src="getContentTypeIcon(currentItem.provider_mappings[0].content_type)"
             :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
           />
-          {{ streamDetails.sample_rate / 1000 }} kHz / {{ streamDetails.bit_depth }} bits
+          {{ currentItem.provider_mappings[0].sample_rate / 1000 }} kHz /
+          {{ currentItem.provider_mappings[0].bit_depth }} bits
         </div>
 
         <div
@@ -56,7 +60,7 @@
           {{ $t('crossfade_enabled') }}
         </div>
 
-        <div v-if="streamDetails.gain_correct" style="height: 50px; display: flex; align-items: center">
+        <div v-if="currentItem.provider_mappings[0].details" style="height: 50px; display: flex; align-items: center">
           <img
             height="30"
             width="50"
@@ -64,7 +68,7 @@
             src="@/assets/level.png"
             :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
           />
-          {{ streamDetails.gain_correct }} dB
+          {{ currentItem.provider_mappings[0].details }} dB
         </div>
       </v-list>
     </v-card>
@@ -86,8 +90,8 @@ const activePlayerQueue = computed(() => {
   }
   return undefined;
 });
-const streamDetails = computed(() => {
-  return activePlayerQueue.value?.current_item?.streamdetails;
+const currentItem = computed(() => {
+  return activePlayerQueue.value?.current_item?.media_item;
 });
 </script>
 
@@ -119,5 +123,6 @@ const streamDetails = computed(() => {
   border-radius: 2px;
   margin-left: 5px;
   flex-flow: column;
+  margin: 0px;
 }
 </style>

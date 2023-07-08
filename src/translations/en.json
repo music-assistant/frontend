@@ -13,7 +13,7 @@
     "single": "Single",
     "unknown": "Unknown album type"
   },
-  
+
   "albums": "Albums",
   "appears_on": "Appears on",
   "artist": "Artist",
@@ -180,5 +180,6 @@
   "tracks": "Tracks",
   "try_global_search": "Try global search",
   "type_to_search": "Type here to search...",
-  "volume_normalization": "Volume normalization"
+  "volume_normalization": "Volume normalization",
+  "currently_playing": "Currently playing"
 }

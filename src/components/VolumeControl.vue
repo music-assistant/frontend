@@ -5,7 +5,7 @@
       <template #prepend>
         <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center" style="padding-right: 5px">
-            <Button variant="icon" style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
+            <Button icon style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
               <v-icon :size="25" :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
             </Button>
             <div class="text-caption">{{ player.group_volume }}</div>
@@ -15,7 +15,7 @@
 
       <template #default>
         <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
-          {{ getPlayerName(player, 30) }}
+          <h6>{{ getPlayerName(player, 27) }}</h6>
 
           <PlayerVolume
             class="vc-slider"
@@ -23,7 +23,7 @@
             :disabled="!player.powered"
             :model-value="Math.round(player.group_volume)"
             @update:model-value="api.playerCommandGroupVolume(player.player_id, $event)"
-          ></PlayerVolume>
+          />
         </div>
       </template>
     </ListItem>
@@ -38,11 +38,7 @@
       <template #prepend>
         <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center">
-            <Button
-              variant="icon"
-              style="height: 25px !important"
-              @click="api.playerCommandPowerToggle(childPlayer.player_id)"
-            >
+            <Button icon style="height: 25px !important" @click="api.playerCommandPowerToggle(childPlayer.player_id)">
               <v-icon :size="25" :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
             </Button>
             <div class="text-caption">{{ childPlayer.volume_level }}</div>
@@ -52,16 +48,14 @@
 
       <template #default>
         <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
-          {{ truncateString(childPlayer.display_name, 27) }}
-
+          <h6>{{ truncateString(childPlayer.display_name, 27) }}</h6>
           <PlayerVolume
             class="vc-slider"
             :is-powered="true"
             :disabled="!childPlayer.powered"
             :model-value="Math.round(childPlayer.volume_level)"
             @update:model-value="api.playerCommandVolumeSet(childPlayer.player_id, $event)"
-          >
-          </PlayerVolume>
+          />
         </div>
       </template>
 
@@ -78,7 +72,7 @@
           >
             <v-menu location="bottom end" style="z-index: 999999">
               <template #activator="{ props: menu }">
-                <Button variant="icon" v-bind="menu">
+                <Button icon v-bind="menu">
                   <v-icon>mdi-link-variant</v-icon>
                 </Button>
               </template>
@@ -98,7 +92,7 @@
           </div>
           <!-- unsync button -->
           <div v-if="childPlayer.synced_to" class="syncbtn">
-            <Button variant="icon" @click="api.playerCommandUnSync(childPlayer.player_id)">
+            <Button icon @click="api.playerCommandUnSync(childPlayer.player_id)">
               <v-icon>mdi-link-variant-off</v-icon>
             </Button>
           </div>

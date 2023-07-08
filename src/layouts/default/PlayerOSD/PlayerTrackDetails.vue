@@ -47,7 +47,11 @@
     <template #append>
       <!-- format -->
       <v-chip
-        v-if="curQueueItem?.streamdetails && !getBreakpointValue({ breakpoint: 'phone' }) && showQualityDetailsBtn"
+        v-if="
+          curQueueItem?.media_item?.provider_mappings[0].content_type &&
+          !getBreakpointValue({ breakpoint: 'phone' }) &&
+          showQualityDetailsBtn
+        "
         :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
         class="player-track-content-type"
         :style="$vuetify.theme.current.dark ? 'color: #000; background: #fff;' : 'color: #fff; background: #000;'"
@@ -56,7 +60,7 @@
         v-bind="props"
       >
         <div class="d-flex justify-center" style="width: 100%">
-          {{ curQueueItem?.streamdetails.content_type.toUpperCase() }}
+          {{ curQueueItem?.media_item?.provider_mappings[0].content_type.toUpperCase() }}
         </div>
       </v-chip>
     </template>
@@ -127,7 +131,6 @@ import { getArtistsString } from '@/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { iconFallback } from '@/components/ProviderIcons.vue';
-import { ref } from 'vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 
@@ -143,9 +146,6 @@ const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
   showQualityDetailsBtn: true,
 });
-
-//ref
-const showOverlay = ref(false);
 
 // computed properties
 const activePlayerQueue = computed(() => {

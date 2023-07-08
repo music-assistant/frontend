@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <Container>
     <!-- show alert if no music providers configured-->
     <!-- show section per providertype -->
     <v-card v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
@@ -36,7 +36,7 @@
       <v-divider />
 
       <!-- alert if no providers configured -->
-      <v-alert
+      <Alert
         v-if="
           provType == ProviderType.MUSIC &&
           providerConfigs.filter(
@@ -46,18 +46,14 @@
               !api.providerManifests[x.domain].hidden,
           ).length == 0
         "
-        color="primary"
-        theme="dark"
         icon="mdi-radio-tower"
-        prominent
-        style="margin-bottom: 15px"
       >
         <b>{{ $t('settings.no_providers') }}</b>
         <br />
         {{ $t('settings.no_providers_detail') }}
-      </v-alert>
+      </Alert>
 
-      <v-container>
+      <Container>
         <RecycleScroller
           v-slot="{ item }"
           :items="providerConfigs.filter((x) => x.type == provType)"
@@ -95,7 +91,7 @@
                 <div v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <Button variant="icon" v-bind="tooltip">
+                      <Button icon v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
                       </Button>
                     </template>
@@ -107,7 +103,7 @@
                 <div v-if="!item.enabled">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <Button variant="icon" v-bind="tooltip">
+                      <Button icon v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
                       </Button>
                     </template>
@@ -119,7 +115,7 @@
                 <div v-else-if="item.last_error">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <Button variant="icon" v-bind="tooltip">
+                      <Button icon v-bind="tooltip">
                         <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
                       </Button>
                     </template>
@@ -131,7 +127,7 @@
                 <div v-else-if="!api.providers[item.instance_id]?.available">
                   <v-tooltip location="top end" origin="end center">
                     <template #activator="{ props: tooltip }">
-                      <Button variant="icon" v-bind="tooltip">
+                      <Button icon v-bind="tooltip">
                         <v-icon icon="mdi-timer-sand" />
                       </Button>
                     </template>
@@ -142,7 +138,7 @@
                 <!-- contextmenu-->
                 <v-menu location="bottom end">
                   <template #activator="{ props }">
-                    <Button variant="icon" v-bind="props">
+                    <Button icon v-bind="props">
                       <v-icon icon="mdi-dots-vertical" />
                     </Button>
                   </template>
@@ -191,9 +187,9 @@
             </template>
           </ListItem>
         </RecycleScroller>
-      </v-container>
+      </Container>
     </v-card>
-  </v-container>
+  </Container>
 </template>
 
 <script setup lang="ts">
@@ -207,6 +203,8 @@ import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
+import Alert from '@/components/mods/Alert.vue';
+import Container from '@/components/mods/Container.vue';
 
 // global refs
 const router = useRouter();
