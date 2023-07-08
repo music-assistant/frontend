@@ -1,4 +1,5 @@
 import { Artist, BrowseFolder, ItemMapping, Player, PlayerType } from '@/plugins/api/interfaces';
+
 import Color from 'color';
 //@ts-ignore
 import ColorThief from 'colorthief';
@@ -112,10 +113,10 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
 
 export const getPlayerName = function (player: Player, truncate = 26) {
   if (!player) return '';
-  if (player.type != PlayerType.GROUP && player.group_childs.length > 0) {
+  if (player.type != PlayerType.GROUP && player.group_childs.length > 1) {
     // create pretty name for syncgroup (e.g. playername +2)
-    // TODO: move to APi and only count available players
-    return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length}`;
+    // TODO: move to API and only count available players
+    return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length-1}`;
   }
   return truncateString(player.display_name, truncate);
 };

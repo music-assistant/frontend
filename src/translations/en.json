@@ -51,6 +51,7 @@
   "play_album_from": "Play Album from here",
   "play_next": "Play Next",
   "play_now": "Play Now",
+  "play_now_replace": "Play Now (clear queue)",
   "play_on": "Play on: {0}",
   "play_playlist_from": "Play Playlist from here",
   "play_radio": "Start Radio",
@@ -131,7 +132,8 @@
     "setup_provider": "Setup provider: {0}",
     "sync": "Synchronize now",
     "sync_running": "This provider is now being synchronized",
-    "username": "Username"
+    "username": "Username",
+    "core": "Core"
   },
   "show_info": "Show info",
   "show_select_boxes": "Show selection boxes",

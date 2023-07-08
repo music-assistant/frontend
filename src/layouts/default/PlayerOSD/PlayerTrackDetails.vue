@@ -48,7 +48,7 @@
       <!-- format -->
       <v-chip
         v-if="
-          curQueueItem?.media_item?.provider_mappings[0].content_type &&
+          streamDetails?.audio_format.content_type &&
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
         "
@@ -60,7 +60,7 @@
         v-bind="props"
       >
         <div class="d-flex justify-center" style="width: 100%">
-          {{ curQueueItem?.media_item?.provider_mappings[0].content_type.toUpperCase() }}
+          {{ streamDetails.audio_format.content_type.toUpperCase() }}
         </div>
       </v-chip>
     </template>
@@ -157,6 +157,9 @@ const activePlayerQueue = computed(() => {
 const curQueueItem = computed(() => {
   if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
   return undefined;
+});
+const streamDetails = computed(() => {
+  return activePlayerQueue.value?.current_item?.streamdetails;
 });
 
 // methods

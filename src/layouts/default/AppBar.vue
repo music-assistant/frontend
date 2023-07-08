@@ -41,6 +41,7 @@
           </template>
           <v-list>
             <ListItem
+
               v-for="(item, index) in store.topBarContextMenuItems"
               :key="index"
               :title="$t(item.label, item.labelArgs)"

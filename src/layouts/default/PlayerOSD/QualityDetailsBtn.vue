@@ -1,9 +1,9 @@
 <template>
   <!-- streaming quality details -->
-  <v-menu v-if="currentItem && currentItem.provider_mappings[0]" location="bottom end" :close-on-content-click="false">
+  <v-menu v-if="streamDetails" location="bottom end" :close-on-content-click="false">
     <template #activator="{ props }">
       <v-chip
-        v-if="currentItem && currentItem.provider_mappings[0] && currentItem.provider_mappings[0].content_type"
+        v-if="streamDetails"
         :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
         class="mediadetails-content-type-btn"
         label
@@ -11,39 +11,35 @@
         v-bind="props"
       >
         <div class="d-flex justify-center" style="width: 100%">
-          {{ currentItem.provider_mappings[0].content_type.toUpperCase() }}
+          {{ streamDetails.audio_format.content_type.toUpperCase() }}
         </div>
       </v-chip>
     </template>
     <v-card class="mx-auto" width="300">
       <v-list style="overflow: hidden">
-        <ListItem :min-height="5" class="list-item">
+        <v-list-item class="list-item list-item-main" :min-height="5">
           <v-list-item-title class="text-h5 mb-1">
             {{ $t('stream_details') }}
           </v-list-item-title>
-        </ListItem>
+        </v-list-item>
         <v-divider />
         <div style="height: 50px; display: flex; align-items: center">
           <ProviderIcon
-            :domain="currentItem.provider_mappings[0].provider_domain"
+            :domain="streamDetails.provider"
             :size="'35px'"
             style="object-fit: contain; margin-left: 10px; margin-right: 5px"
           />
-          {{
-            api.providerManifests[currentItem.provider_mappings[0].provider_domain]?.name ||
-            api.providers[currentItem.provider_mappings[0].provider_domain]?.name
-          }}
+          {{ api.providerManifests[streamDetails.provider]?.name || api.providers[streamDetails.provider]?.name }}
         </div>
 
         <div style="height: 50px; display: flex; align-items: center">
           <img
             height="30"
             width="50"
-            :src="getContentTypeIcon(currentItem.provider_mappings[0].content_type)"
+            :src="getContentTypeIcon(streamDetails.audio_format.content_type)"
             :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
           />
-          {{ currentItem.provider_mappings[0].sample_rate / 1000 }} kHz /
-          {{ currentItem.provider_mappings[0].bit_depth }} bits
+          {{ streamDetails.audio_format.sample_rate / 1000 }} kHz / {{ streamDetails.audio_format.bit_depth }} bits
         </div>
 
         <div
@@ -60,7 +56,7 @@
           {{ $t('crossfade_enabled') }}
         </div>
 
-        <div v-if="currentItem.provider_mappings[0].details" style="height: 50px; display: flex; align-items: center">
+        <div v-if="streamDetails.gain_correct" style="height: 50px; display: flex; align-items: center">
           <img
             height="30"
             width="50"
@@ -68,7 +64,7 @@
             src="@/assets/level.png"
             :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
           />
-          {{ currentItem.provider_mappings[0].details }} dB
+          {{ streamDetails.gain_correct }} dB
         </div>
       </v-list>
     </v-card>
@@ -81,7 +77,7 @@ import { getContentTypeIcon } from '@/components/ProviderIcons.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
-import ListItem from '@/components/mods/ListItem.vue';
+
 
 // computed properties
 const activePlayerQueue = computed(() => {
@@ -90,8 +86,8 @@ const activePlayerQueue = computed(() => {
   }
   return undefined;
 });
-const currentItem = computed(() => {
-  return activePlayerQueue.value?.current_item?.media_item;
+const streamDetails = computed(() => {
+  return activePlayerQueue.value?.current_item?.streamdetails;
 });
 </script>
 

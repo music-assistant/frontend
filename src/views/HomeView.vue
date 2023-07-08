@@ -1,91 +1,80 @@
 <template>
-  <Container>
-    <div class="content-spacing">
-      <HomeArea :title="$t('currently_playing')">
-        <v-row row="6">
-          <v-col v-if="currentPlayingPlayers.length <= 0" style="text-align: center">
-            <div>No media is playing</div>
-          </v-col>
-          <v-col v-for="player in currentPlayingPlayers" :key="player.player_id">
-            <MediaItemCard :queue-id="player.player_id" />
+  <div>
+    <div style="margin-left: 10px; margin-right: 10px; margin-top: 10px; margin-bottom: 10px">
+      <div>
+        <v-row dense align-content="start" :align="'start'">
+          <v-col v-for="card in cards" :key="card.label" align-self="start">
+            <v-card :ripple="true" class="mx-auto home-card" outlined @click="router.push(card.path)">
+              <v-list-item two-line>
+                <v-btn variant="plain" icon :ripple="false" height="80">
+                  <v-icon :icon="card.icon" size="80" style="align: center; padding: 10px" />
+                </v-btn>
+                <div class="mb-4">
+                  <h5>{{ $t(card.label) }}</h5>
+                </div>
+              </v-list-item>
+            </v-card>
           </v-col>
         </v-row>
-      </HomeArea>
-
-      <HomeArea title="Recently Played" />
-
-      <HomeArea
-        v-for="config in providerConfigs
-          .filter((x) => x.domain in api.providers)
-          .filter((x) => x.type === ProviderType.MUSIC)
-          .sort((a, b) =>
-            (a.name || api.providers[a.domain].name).toUpperCase() >
-            (b.name || api.providers[b.domain].name).toUpperCase()
-              ? 1
-              : -1,
-          )"
-        :key="config.instance_id"
-        :title="`Popular on ${config.name}`"
-      />
+      </div>
     </div>
-  </Container>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { api } from '@/plugins/api';
-import { EventType, Player, ProviderConfig, ProviderManifest, ProviderType, Artist } from '@/plugins/api/interfaces';
-import MediaItemCard from '@/components/MediaItemCard.vue';
-import HomeArea from '@/components/HomeArea.vue';
-import Container from '@/components/mods/Container.vue';
+import { Artist } from '@/plugins/api/interfaces';
 
-// local refs
-const providerConfigs = ref<ProviderConfig[]>([]);
+const router = useRouter();
 const recentArtists = ref<Artist[]>([]);
-const currentPlayingPlayers = ref<Player[]>([]);
 
 onMounted(async () => {
   const result = await api.getAlbumArtists(undefined, undefined, 25, 0, 'timestamp_added');
   recentArtists.value = result.items as Artist[];
 });
 
-// listen for item updates to refresh items when that happens
-const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-  loadItems();
-});
-onBeforeUnmount(unsub);
-
-// methods
-const loadItems = async function () {
-  providerConfigs.value = await api.getData('config/providers');
-  const manifests: ProviderManifest[] = await api.getData('providers/available');
-  for (const prov of manifests) {
-    api.providerManifests[prov.domain] = prov;
-  }
-};
-
-// watchers
-watch(
-  () => api.providers,
-  (val) => {
-    if (val) loadItems();
+const cards = ref([
+  {
+    label: 'artists',
+    icon: 'mdi-account-music',
+    path: '/artists',
   },
-  { immediate: true },
-);
-
-watch(
-  () => api.providers,
-  async () => {
-    const players = await api.getPlayers();
-    for (const player of players) {
-      if (player.state === 'playing') {
-        if (!currentPlayingPlayers.value.find(({ player_id }) => player_id === player.player_id))
-          currentPlayingPlayers.value.push(player);
-      }
-    }
+  {
+    label: 'albums',
+    icon: 'mdi-album',
+    path: '/albums',
   },
-  { immediate: true },
-);
+  {
+    label: 'tracks',
+    icon: 'mdi-file-music',
+    path: '/tracks',
+  },
+  {
+    label: 'radios',
+    icon: 'mdi-radio',
+    path: '/radios',
+  },
+  {
+    label: 'playlists',
+    icon: 'mdi-playlist-music',
+    path: '/playlists',
+  },
+  {
+    label: 'browse',
+    icon: 'mdi-folder',
+    path: '/browse',
+  },
+]);
 </script>
+
+<style>
+.home-card {
+  min-width: 150px;
+  text-align: center;
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+</style>

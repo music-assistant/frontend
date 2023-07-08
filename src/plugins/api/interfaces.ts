@@ -91,10 +91,9 @@ export enum RepeatMode {
 }
 
 export enum PlayerState {
-  IDLE = 'idle',
-  PAUSED = 'paused',
-  PLAYING = 'playing',
-  OFF = 'off',
+  IDLE = "idle",
+  PAUSED = "paused",
+  PLAYING = "playing",
 }
 
 export enum PlayerType {
@@ -227,8 +226,12 @@ export interface EventMessage {
 export type MassEvent = EventMessage;
 
 export interface ServerInfoMessage {
+  server_id: string;
   server_version: string;
   schema_version: number;
+  min_supported_schema_version: number;
+  base_url: string;
+  homeassistant_addon: boolean;
 }
 
 export type MessageType = CommandMessage | EventMessage | SuccessResultMessage | ErrorResultMessage | ServerInfoMessage;
@@ -288,6 +291,7 @@ export interface ProviderConfig extends Config {
   type: ProviderType;
   domain: string;
   instance_id: string;
+  manifest: ProviderManifest; // copied here for the UI only
   // enabled: boolean to indicate if the provider is enabled
   enabled: boolean;
   // name: an (optional) custom name for this provider instance/config
@@ -307,6 +311,13 @@ export interface PlayerConfig extends Config {
   default_name?: string;
 }
 
+export interface CoreConfig extends Config {
+  // Core(controller) Configuration.
+  domain: string;
+  manifest: ProviderManifest; // copied here for the UI only
+  last_error?: string;
+}
+
 //// media_items
 
 export interface ProviderMapping {
@@ -316,10 +327,7 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   // quality details (streamable content only)
-  content_type: ContentType;
-  sample_rate: number;
-  bit_depth: number;
-  bit_rate: number;
+  audio_format: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists
@@ -452,14 +460,20 @@ export interface SearchResults {
   radio: Radio[];
 }
 
+export interface AudioFormat {
+    content_type: ContentType;
+    sample_rate: number;
+    bit_depth: number;
+    channels: number;
+    output_format_str: string;
+    bit_rate: number;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
-  content_type: ContentType;
+  audio_format: AudioFormat;
   media_type: MediaType;
-  sample_rate: number;
-  bit_depth: number;
-  channels: number;
   stream_title?: string;
   duration?: number;
   size?: number;

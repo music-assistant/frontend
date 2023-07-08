@@ -3,7 +3,6 @@
     <Container>
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
-
       <!-- back button -->
       <v-btn
         v-if="props.path"

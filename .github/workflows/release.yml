@@ -1,12 +1,10 @@
-name: Release
+name: Publish releases
 
 on:
   release:
-    types:
-      - published
-
+    types: [published]
 env:
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: '3.10'
   NODE_VERSION: 16
   NODE_OPTIONS: --max_old_space_size=6144
 
@@ -26,8 +24,9 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v3
 
-      - name: Verify version
-        uses: home-assistant/actions/helpers/verify-version@master
+      - name: Get tag
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
@@ -41,16 +40,38 @@ jobs:
           cache: yarn
 
       - name: Install dependencies
-        run: yarn install
+        run: |
+          yarn install
+          python3 -m pip install build tomli tomli-w
+
+      - name: Set Python project version from tag
+        shell: python
+        run: |-
+          import tomli
+          import tomli_w
+
+          with open("pyproject.toml", "rb") as f:
+            pyproject = tomli.load(f)
+
+          pyproject["project"]["version"] = "${{ steps.vars.outputs.tag }}"
+
+          with open("pyproject.toml", "wb") as f:
+            tomli_w.dump(pyproject, f)
 
       - name: Build and release package
         run: |
-          python3 -m pip install twine build
-          export TWINE_USERNAME="__token__"
-          export TWINE_PASSWORD="${{ secrets.PYPI_TOKEN }}"
-          script/release
+          yarn build
+          rm -rf dist music_assistant_frontend.egg-info
+          python3 -m build
+
+      - name: Publish release to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.8.7
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+
       - name: Upload release assets
-        uses: softprops/action-gh-release@v0.1.14
+        uses: softprops/action-gh-release@v0.1.15
         with:
           files: |
             dist/*.whl

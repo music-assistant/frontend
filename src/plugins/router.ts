@@ -120,6 +120,13 @@ const routes = [
             props: true,
           },
           {
+
+            path: 'core',
+            name: 'coresettings',
+            component: () => import(/* webpackChunkName: "coresettings" */ '@/views/settings/CoreConfigs.vue'),
+            props: true,
+          },
+          {
             path: 'addprovider/:domain',
             name: 'addprovider',
             component: () => import(/* webpackChunkName: "addprovider" */ '@/views/settings/AddProvider.vue'),
@@ -135,6 +142,12 @@ const routes = [
             path: 'editplayer/:playerId',
             name: 'editplayer',
             component: () => import(/* webpackChunkName: "editplayer" */ '@/views/settings/EditPlayer.vue'),
+            props: true,
+          },
+          {
+            path: 'editcore/:domain',
+            name: 'editcore',
+            component: () => import(/* webpackChunkName: "editcore" */ '@/views/settings/EditCoreConfig.vue'),
             props: true,
           },
           {

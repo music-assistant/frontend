@@ -39,6 +39,7 @@ import {
   ConfigValueType,
   ConfigEntry,
   PlayerConfig,
+  CoreConfig,
 } from './interfaces';
 
 const DEBUG = true;
@@ -570,7 +571,7 @@ export class MusicAssistantApi {
     // Play item at index (or item_id) X in queue.
     this.playerQueueCommand(queueId, 'play_index', { index });
   }
-  public queueCommandMoveItem(queueId: string, queue_item_id: string, pos_shift = 1) {
+  public queueCommandMoveItem(queueId: string, queue_item_id: string, pos_shift: number = 1) {
     // Move queue item x up/down the queue.
     // - queue_id: id of the queue to process this request.
     // - queue_item_id: the item_id of the queueitem that needs to be moved.
@@ -900,6 +901,52 @@ export class MusicAssistantApi {
     });
   }
 
+  // Core Config related functions
+
+  public async getCoreConfigs(): Promise<CoreConfig[]> {
+    // Return all known core configurations
+    return this.getData('config/core');
+  }
+
+  public async getCoreConfig(domain: string): Promise<ProviderConfig> {
+    // Return configuration for a single core controller.
+    return this.getData('config/core/get', { domain });
+  }
+
+  public async getCoreConfigEntries(
+    domain: string,
+    action?: string,
+    values?: Record<string, ConfigValueType>,
+  ): Promise<ConfigEntry[]> {
+    // Return Config entries to configure a core controller.
+    // domain: (mandatory) domain of the core module.
+    // action: [optional] action key called from config entries UI.
+    // values: the (intermediate) raw values for config entries sent with the action.
+    return this.getData('config/core/get_entries', {
+      domain,
+      action,
+      values,
+    });
+  }
+
+  public async saveCoreConfig(domain: string, values: Record<string, ConfigValueType>): Promise<ProviderConfig> {
+    // Save Core controller Config.
+    // domain: (mandatory) domain of the provider.
+    // values: the raw values for config entries that need to be stored/updated.
+    // action: [optional] action key called from config entries UI.
+    return this.getData('config/core/save', {
+      domain,
+      values,
+    });
+  }
+
+  public reloadCoreController(domain: string) {
+    // Reload Core controller.
+    this.sendCommand('config/core/reload', {
+      domain,
+    });
+  }
+
   // Other (utility) functions
 
   public startSync(media_types?: MediaType[], providers?: string[]) {
@@ -962,6 +1009,8 @@ export class MusicAssistantApi {
       const player = msg.data as Player;
       if (player.player_id in this.players) Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
+    } else if (msg.event == EventType.PLAYER_REMOVED) {
+      delete this.players[msg.object_id!];
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
       this.syncTasks.value = msg.data as SyncTask[];
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {

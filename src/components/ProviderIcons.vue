@@ -45,7 +45,7 @@
               <img
                 height="30"
                 width="50"
-                :src="getContentTypeIcon(mapping.content_type)"
+                :src="getContentTypeIcon(mapping.audio_format.content_type)"
                 :style="
                   $vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'
                 "
@@ -143,17 +143,17 @@ export const getContentTypeIcon = function (contentType: ContentType) {
 export const getQualityDesc = function (provDetails: ProviderMapping) {
   if (
     [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV, ContentType.ALAC].includes(
-      provDetails.content_type,
+      provDetails.audio_format.content_type,
     )
   ) {
     // lossless
-    if (provDetails.sample_rate > 48000 || provDetails.bit_depth > 16) {
+    if (provDetails.audio_format.sample_rate > 48000 || provDetails.audio_format.bit_depth > 16) {
       // hi res
-      return `Lossless Hi-Res ${provDetails.content_type}`;
+      return `Lossless Hi-Res ${provDetails.audio_format.content_type}`;
     }
-    return `Lossless ${provDetails.content_type}`;
+    return `Lossless ${provDetails.audio_format.content_type}`;
   }
-  return `Lossy ${provDetails.content_type}`;
+  return `Lossy ${provDetails.audio_format.content_type}`;
 };
 </script>
 

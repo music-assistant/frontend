@@ -119,6 +119,7 @@
                   clearable
                   :readonly="!!conf_entry.action"
                   @click:append-inner="showPasswordValues = !showPasswordValues"
+                  @click:clear="conf_entry.value = '#CLEAR#'"
                 />
 
                 <!-- value with dropdown -->
@@ -126,7 +127,7 @@
                   v-else-if="conf_entry.options && conf_entry.options.length > 0"
                   v-model="conf_entry.value"
                   :chips="conf_entry.multi_value"
-                  :clearable="conf_entry.multi_value"
+                  :clearable="true"
                   :multiple="conf_entry.multi_value"
                   :items="conf_entry.options"
                   :disabled="checkDisabled(conf_entry)"
@@ -134,6 +135,7 @@
                   :required="conf_entry.required"
                   :rules="[(v) => !(!v && conf_entry.required) || $t('settings.invalid_input')]"
                   variant="outlined"
+                  @click:clear="conf_entry.value = null"
                 />
                 <!-- int value without range -->
                 <v-text-field
@@ -147,6 +149,7 @@
                   variant="outlined"
                   :clearable="!conf_entry.required"
                   type="number"
+                  @click:clear="conf_entry.value = null"
                 />
                 <!-- all other: textbox with single value -->
                 <v-text-field
@@ -160,6 +163,7 @@
                   :rules="[(v) => !(!v && conf_entry.required) || $t('settings.invalid_input')]"
                   variant="outlined"
                   :readonly="!!conf_entry.action"
+                  @click:clear="conf_entry.value = null"
                 />
               </div>
               <!-- right side of control: help icon with description-->
@@ -255,6 +259,7 @@ const requiredValuesPresent = computed(() => {
   }
   return true;
 });
+
 const currentValues = computed(() => {
   const values: Record<string, ConfigValueType> = {};
   for (const entry of props.configEntries!) {
@@ -291,13 +296,14 @@ const validate = async function (this: any) {
 };
 const submit = async function () {
   // submit button is pressed
+  console.log('submit', getCurrentValues());
   if (await validate()) {
-    emit('submit', currentValues.value);
+    emit('submit', getCurrentValues());
   }
 };
 const action = async function (action: string) {
   // call config entries action
-  emit('action', action, currentValues.value);
+  emit('action', action, getCurrentValues());
 };
 const openLink = function (url: string) {
   window.open(url, '_blank');
@@ -313,9 +319,23 @@ const checkDisabled = function (entry: ConfigEntry) {
   // check if the UI element should be disabled due to conditions
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependent = entries.value?.find((x) => x.key == entry.depends_on);
-    if (dependent && !hasValidInput(dependent)) return true;
+    if (dependent && dependent.required && isNullOrUndefined(dependent)) return true;
+    if (dependent && dependent.type == ConfigEntryType.BOOLEAN && !dependent.value) return true;
   }
   return false;
+};
+const getCurrentValues = function () {
+  const values: Record<string, ConfigValueType> = {};
+  for (const entry of props.configEntries!) {
+    // filter out undefined values
+    if (entry.value == undefined) entry.value = null;
+    // filter out obfuscated strings
+    if (entry.type == ConfigEntryType.SECURE_STRING && entry.value == SECURE_STRING_SUBSTITUTE) {
+      continue;
+    }
+    values[entry.key] = entry.value;
+  }
+  return values;
 };
 </script>
 
