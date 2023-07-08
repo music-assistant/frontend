@@ -47,7 +47,7 @@
     "replace-in-file": "^7.0.1",
     "sass": "^1.63.6",
     "typescript": "^5.1.6",
-    "vite": "^4.4.1",
+    "vite": "^4.4.2",
     "vite-plugin-pwa": "^0.16.4",
     "vite-plugin-vuetify": "^1.0.2",
     "vite-plugin-webfont-dl": "^3.7.6",
