@@ -94,7 +94,6 @@ export enum PlayerState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
-  OFF = "off",
 }
 
 export enum PlayerType {
