@@ -71,7 +71,7 @@
             density="compact"
             two-line
             :title="store.selectedPlayer?.name.substring(0, 25)"
-            :subtitle="$t('state.' + store.selectedPlayer?.state)"
+            :subtitle="store.selectedPlayer?.powered ? $t('state.' + store.selectedPlayer?.state) : $t('state.off')"
           >
             <template #prepend>
               <v-icon

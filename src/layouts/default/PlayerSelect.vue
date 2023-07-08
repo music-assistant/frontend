@@ -71,8 +71,11 @@
                   api.queues[player.active_source].display_name
                 }})
               </div>
+              <div v-else-if="!player.powered" class="text-body-2" style="line-height: 1em">
+                {{ $t('state.off') }}
+              </div>
               <div v-else class="text-body-2" style="line-height: 1em">
-                {{ player.state }}
+                {{ $t(`state.${player.state}`) }}
               </div>
             </template>
           </v-list-item>
