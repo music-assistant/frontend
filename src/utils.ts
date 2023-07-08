@@ -116,7 +116,7 @@ export const getPlayerName = function (player: Player, truncate = 26) {
   if (player.type != PlayerType.GROUP && player.group_childs.length > 1) {
     // create pretty name for syncgroup (e.g. playername +2)
     // TODO: move to API and only count available players
-    return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length-1}`;
+    return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length - 1}`;
   }
   return truncateString(player.display_name, truncate);
 };

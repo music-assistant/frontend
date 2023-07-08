@@ -91,9 +91,9 @@ export enum RepeatMode {
 }
 
 export enum PlayerState {
-  IDLE = "idle",
-  PAUSED = "paused",
-  PLAYING = "playing",
+  IDLE = 'idle',
+  PAUSED = 'paused',
+  PLAYING = 'playing',
 }
 
 export enum PlayerType {
@@ -461,12 +461,12 @@ export interface SearchResults {
 }
 
 export interface AudioFormat {
-    content_type: ContentType;
-    sample_rate: number;
-    bit_depth: number;
-    channels: number;
-    output_format_str: string;
-    bit_rate: number;
+  content_type: ContentType;
+  sample_rate: number;
+  bit_depth: number;
+  channels: number;
+  output_format_str: string;
+  bit_rate: number;
 }
 
 export interface StreamDetails {

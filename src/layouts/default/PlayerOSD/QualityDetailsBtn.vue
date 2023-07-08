@@ -78,7 +78,6 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 
-
 // computed properties
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {

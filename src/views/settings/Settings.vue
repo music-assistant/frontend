@@ -6,11 +6,9 @@
       </v-tab>
       <v-tab value="players" :to="{ name: 'playersettings' }">
         {{ $t('settings.players') }}
-
       </v-tab>
       <v-tab value="core" :to="{ name: 'coresettings' }">
         {{ $t('settings.core') }}
-
       </v-tab>
     </v-tabs>
     <v-divider />

@@ -120,7 +120,6 @@ const routes = [
             props: true,
           },
           {
-
             path: 'core',
             name: 'coresettings',
             component: () => import(/* webpackChunkName: "coresettings" */ '@/views/settings/CoreConfigs.vue'),

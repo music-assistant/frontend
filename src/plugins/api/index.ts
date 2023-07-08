@@ -571,7 +571,7 @@ export class MusicAssistantApi {
     // Play item at index (or item_id) X in queue.
     this.playerQueueCommand(queueId, 'play_index', { index });
   }
-  public queueCommandMoveItem(queueId: string, queue_item_id: string, pos_shift: number = 1) {
+  public queueCommandMoveItem(queueId: string, queue_item_id: string, pos_shift = 1) {
     // Move queue item x up/down the queue.
     // - queue_id: id of the queue to process this request.
     // - queue_item_id: the item_id of the queueitem that needs to be moved.

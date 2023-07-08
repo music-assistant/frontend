@@ -107,7 +107,6 @@ import { api } from '../plugins/api';
 import { numberRange } from '@/utils';
 import Container from '@/components/mods/Container.vue';
 
-
 export interface Props {
   initSearch?: string;
 }
