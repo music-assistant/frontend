@@ -1,8 +1,8 @@
 <template>
   <!-- active queue -->
   <Button
-    icon
     v-if="props.visibleComponents && props.visibleComponents.queue?.isVisible"
+    icon
     v-bind="props.visibleComponents.queue.icon"
     @click="
       store.showFullscreenPlayer = false;
@@ -16,8 +16,8 @@
   </Button>
   <!-- active player -->
   <Button
-    icon
     v-if="props.visibleComponents && props.visibleComponents.player?.isVisible"
+    icon
     v-bind="props.visibleComponents.player.icon"
     class="mediacontrols-right"
     @click="store.showPlayersMenu = true"
@@ -26,7 +26,7 @@
   </Button>
   <!-- active player volume -->
   <div v-if="props.visibleComponents && props.visibleComponents.volume?.isVisible">
-    <v-menu v-if="activePlayerQueue" class="volume-control-dialog" v-model="showVolume" :close-on-content-click="false">
+    <v-menu v-if="activePlayerQueue" v-model="showVolume" class="volume-control-dialog" :close-on-content-click="false">
       <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
           <PlayerVolume

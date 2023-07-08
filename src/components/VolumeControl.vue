@@ -136,7 +136,7 @@ const setGroupPower = function (player: Player, powered: boolean) {
     // send power command to all group child players
     for (const childPlayer of getVolumePlayers(player)) {
       // bypass api throttling by sending the command directly
-      api.sendCommand(`players/cmd/power`, {
+      api.sendCommand('players/cmd/power', {
         player_id: childPlayer.player_id,
         powered,
       });

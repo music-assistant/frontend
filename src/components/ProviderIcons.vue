@@ -2,7 +2,7 @@
   <div class="provider-icons" style="display: inline-flex" :style="`height: ${height};`">
     <v-menu v-for="providerDomain of uniqueProviders" :key="providerDomain" location="bottom end" @click:outside.stop>
       <template #activator="{ props }">
-        <Button icon v-bind="props" :key="providerDomain">
+        <Button v-bind="props" :key="providerDomain" icon>
           <provider-icon
             :domain="providerDomain"
             :size="height"
@@ -63,7 +63,7 @@
                 style="height: 50px; display: flex; align-items: center; margin-left: 10px; margin-right: 10px"
                 @mouseover="fetchPreviewUrl(mapping.provider_domain, mapping.item_id)"
               >
-                <audio controls :src="previewUrls[`${mapping.provider_domain}.${mapping.item_id}`]" />
+                <audio controls :src="previewUrls[`${mapping.provider_domain}.${mapping.item_id}`]"></audio>
               </div>
             </div>
           </div>

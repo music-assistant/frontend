@@ -25,8 +25,8 @@
       <template #append>
         <!-- format -->
         <Button
-          icon
           v-if="activePlayerQueue && activePlayerQueue?.active"
+          icon
           :disabled="activePlayerQueue && activePlayerQueue?.items == 0"
           @click="api.queueCommandPlayPause(activePlayerQueue!.queue_id)"
         >

@@ -31,8 +31,8 @@
         <v-menu location="bottom end">
           <template #activator="{ props }">
             <Button
-              icon
               v-if="store.topBarContextMenuItems.length > 0"
+              icon
               style="height: 50px; height: 38px !important"
               v-bind="props"
             >

@@ -5,7 +5,7 @@
 
     <router-view v-slot="{ Component }" app>
       <transition name="fade" mode="out-in">
-        <component v-scroll:#cont="onScroll" :is="Component" />
+        <component :is="Component" v-scroll:#cont="onScroll" />
       </transition>
     </router-view>
   </v-main>

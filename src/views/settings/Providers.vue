@@ -62,14 +62,14 @@
           page-mode
         >
           <ListItem
-            link
-            density="compact"
-            @click="editProvider(item.instance_id)"
             v-hold="
               () => {
                 editProvider(item.instance_id);
               }
             "
+            link
+            density="compact"
+            @click="editProvider(item.instance_id)"
           >
             <template #prepend>
               <provider-icon :domain="item.domain" :size="'40px'" class="listitem-media-thumb" />

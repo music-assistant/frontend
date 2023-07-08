@@ -101,19 +101,19 @@
         {{ curQueueItem.media_item.artists[0].name }}
       </div>
       <!-- radio live metadata -->
-      <div class="line-clamp-1" v-else-if="curQueueItem?.streamdetails?.stream_title">
+      <div v-else-if="curQueueItem?.streamdetails?.stream_title" class="line-clamp-1">
         {{ curQueueItem?.streamdetails?.stream_title }}
       </div>
       <!-- other description -->
-      <div class="line-clamp-1" v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description">
+      <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description" class="line-clamp-1">
         {{ curQueueItem.media_item.metadata.description }}
       </div>
       <!-- queue empty message -->
-      <div class="line-clamp-1" v-else-if="activePlayerQueue && activePlayerQueue.items == 0">
+      <div v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="line-clamp-1">
         {{ $t('queue_empty') }}
       </div>
       <!-- 3rd party source active -->
-      <div class="line-clamp-1" v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id">
+      <div v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id" class="line-clamp-1">
         {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
       </div>
     </template>

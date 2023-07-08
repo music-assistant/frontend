@@ -2,13 +2,13 @@
   <Container>
     <RecycleScroller v-slot="{ item }" :items="playerConfigs" :item-size="60" key-field="player_id" page-mode>
       <ListItem
-        link
-        @click="editPlayer(item.player_id)"
         v-hold="
           () => {
             editPlayer(item.player_id);
           }
         "
+        link
+        @click="editPlayer(item.player_id)"
       >
         <template #prepend>
           <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" />

@@ -2,11 +2,11 @@
 <template>
   <div>
     <ListItem
+      v-hold="() => emit('menu', item)"
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
-      v-hold="() => emit('menu', item)"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -56,7 +56,7 @@
       <!-- subtitle -->
       <template #subtitle>
         <!-- track: artists(s) + album -->
-        <div class="line-clamp-1" v-if="item.media_type == MediaType.TRACK">
+        <div v-if="item.media_type == MediaType.TRACK" class="line-clamp-1">
           <v-item-group>
             <v-item v-if="'artists' in item">
               {{ getArtistsString(item.artists, 2) }}

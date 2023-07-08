@@ -26,8 +26,7 @@
         @mouseleave="isThumbHidden = true"
         @mousedown="startDragging"
         @mouseup="stopDragging"
-      >
-      </v-slider>
+      />
 
       <!-- end time detail -->
       <div style="z-index: 1" class="text-caption">
