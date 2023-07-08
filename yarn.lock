@@ -1183,10 +1183,10 @@
   resolved "https://registry.npmjs.org/@intlify/shared/-/shared-9.3.0-beta.16.tgz"
   integrity sha512-kXbm4svALe3lX+EjdJxfnabOphqS4yQ1Ge/iIlR8tvUiYRCoNz3hig1M4336iY++Dfx5ytEQJPNjIcknNIuvig==
 
-"@intlify/unplugin-vue-i18n@^0.12.0":
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-0.12.0.tgz#6991323d03296093982a3ab80b2e26b7621a8230"
-  integrity sha512-L155p03eZpzYUIU1YKbb38xq++GcaW6bsqo800GdonmkQXY8nc4/HsKQRQY5lRoAOkbhO0Vyt7yrsU11vVrqnw==
+"@intlify/unplugin-vue-i18n@^0.12.1":
+  version "0.12.1"
+  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-0.12.1.tgz#e36a9e3baa334c8ad86e707b87ce9f2d7ef66e4a"
+  integrity sha512-gdWRdlOWC8x/OyvVk5qnGnvScMj+PRZaTB4LBf24l7X1dhGYVrQVt2dAZt97tSpEwRRxy4vBaL/qBqKN4kkaRw==
   dependencies:
     "@intlify/bundle-utils" "^7.0.0"
     "@intlify/shared" "9.3.0-beta.20"
