@@ -227,8 +227,12 @@ export interface EventMessage {
 export type MassEvent = EventMessage;
 
 export interface ServerInfoMessage {
+  server_id: string;
   server_version: string;
   schema_version: number;
+  min_supported_schema_version: number;
+  base_url: string;
+  homeassistant_addon: boolean;
 }
 
 export type MessageType =
