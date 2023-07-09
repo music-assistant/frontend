@@ -41,12 +41,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
 import { CoreConfig, ConfigValueType } from '@/plugins/api/interfaces';
 import EditConfig from './EditConfig.vue';
-import { watch } from 'vue';
 import { nanoid } from 'nanoid';
 
 // global refs
@@ -115,5 +114,3 @@ const onAction = async function (action: string, values: Record<string, ConfigVa
     });
 };
 </script>
-
-<style scoped></style>

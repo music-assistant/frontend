@@ -1,7 +1,7 @@
 <template>
   <div
     ref="responsiveIconHolder"
-    :class="hover ? 'responsive-icon-holder-hover' : 'responsive-icon-holder'"
+    :class="[props.type == 'btn' ? 'responsive-icon-holder-btn' : 'responsive-icon-holder', { disabled: disabled }]"
     :style="{
       width: props.staticWidth ? props.staticWidth : props.width,
       height: props.staticWidth ? props.staticWidth : props.height,
@@ -12,14 +12,34 @@
     }"
   >
     <v-icon
+      v-if="type === 'icon'"
       ref="responsiveIcon"
       class="responsive-icon"
       :color="color ? color : ''"
       :icon="props.icon ? props.icon : 'mdi-check'"
       :width="props.staticWidth ? props.staticWidth : null"
       :height="props.staticHeight ? props.staticHeight : null"
-      ><template v-if="$slots.default" #default> <slot name="default"></slot> </template
-    ></v-icon>
+    >
+      <!-- Dynamically inherit slots from parent -->
+      <template v-for="(value, name) in ($slots as unknown)" #[name]>
+        <slot :name="name"></slot>
+      </template>
+    </v-icon>
+    <v-icon
+      v-else-if="type === 'btn'"
+      ref="responsiveIcon"
+      class="responsive-icon"
+      :color="color ? color : ''"
+      :icon="props.icon ? props.icon : 'mdi-check'"
+      :width="props.staticWidth ? props.staticWidth : null"
+      :height="props.staticHeight ? props.staticHeight : null"
+      :disabled="disabled"
+    >
+      <!-- Dynamically inherit slots from parent -->
+      <template v-for="(value, name) in ($slots as unknown)" #[name]>
+        <slot :name="name"></slot>
+      </template>
+    </v-icon>
   </div>
 </template>
 
@@ -37,10 +57,11 @@ export interface ResponsiveIconProps {
   minWidth?: string;
   minHeight?: string;
   icon?: string;
-  hover?: boolean;
+  type?: 'icon' | 'btn';
   color?: string;
+  disabled?: boolean;
 }
-const props = withDefaults(defineProps<ResponsiveIconProps>(), { minWidth: '24px', minHeight: '24px' });
+const props = withDefaults(defineProps<ResponsiveIconProps>(), { minWidth: '24px', minHeight: '24px', type: 'icon' });
 
 const adjustIconSize = () => {
   if (responsiveIconHolder.value) {
@@ -72,7 +93,7 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.responsive-icon-holder-hover {
+.responsive-icon-holder-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,9 +101,22 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-.responsive-icon-holder-hover:focus,
-.responsive-icon-holder-hover:hover {
+.responsive-icon-holder-btn:focus,
+.responsive-icon-holder-btn:hover {
   opacity: 1;
+}
+.responsive-icon-holder-btn:focus {
+  outline: none;
+  color: #00ff00;
+}
+
+.responsive-icon-holder-btn:active {
+  opacity: 1;
+}
+
+.responsive-icon-holder-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .responsive-icon {

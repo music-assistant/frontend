@@ -245,19 +245,22 @@ const panels = computed(() => {
   return ['basic', 'advanced'];
 });
 const requiredValuesPresent = computed(() => {
-  for (const entry of entries.value!) {
-    if (
-      entry.required &&
-      !(
-        !isNullOrUndefined(entry.value) ||
-        !isNullOrUndefined(entry.default_value) ||
-        entry.type == ConfigEntryType.DIVIDER ||
-        entry.type == ConfigEntryType.LABEL
+  if (entries.value) {
+    for (const entry of entries.value) {
+      if (
+        entry.required &&
+        !(
+          !isNullOrUndefined(entry.value) ||
+          !isNullOrUndefined(entry.default_value) ||
+          entry.type == ConfigEntryType.DIVIDER ||
+          entry.type == ConfigEntryType.LABEL
+        )
       )
-    )
-      return false;
+        return false;
+    }
+    return true;
   }
-  return true;
+  return false;
 });
 
 const currentValues = computed(() => {
@@ -308,7 +311,7 @@ const action = async function (action: string) {
 const openLink = function (url: string) {
   window.open(url, '_blank');
 };
-const isNullOrUndefined = function (value: any) {
+const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
 const hasValidInput = function (entry: ConfigEntry) {

@@ -29,7 +29,7 @@ import { useTheme } from 'vuetify';
 import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
 
 export interface Props {
-  item?: MediaItemType | ItemMapping | QueueItem;
+  item: MediaItemType | ItemMapping | QueueItem;
   width?: string | number;
   height?: string | number;
   size?: string | number;
@@ -49,6 +49,7 @@ const props = withDefaults(defineProps<Props>(), {
   fallback: undefined,
   thumb: true,
   rounded: true,
+  lazySrc: '',
 });
 
 const imgData = ref<string>();

@@ -61,12 +61,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
 import { ProviderConfig, ConfigValueType, EventMessage, EventType } from '@/plugins/api/interfaces';
 import EditConfig from './EditConfig.vue';
-import { watch } from 'vue';
 import { nanoid } from 'nanoid';
 
 // global refs

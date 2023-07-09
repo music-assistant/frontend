@@ -16,7 +16,7 @@
         >
           <template #prepend>
             <provider-icon
-              :manifest="item.manifest"
+              :domain="item.domain"
               :size="'40px'"
               class="listitem-media-thumb"
               style="margin-left: 10px"

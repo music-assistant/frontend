@@ -5,7 +5,7 @@
     v-bind="props.icon"
     :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
     icon="mdi-skip-previous-outline"
-    :hover="true"
+    :type="'btn'"
     @click="api.queueCommandPrevious(activePlayerQueue!.queue_id)"
   />
 </template>

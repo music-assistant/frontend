@@ -16,9 +16,10 @@
         [activePlayerQueue?.repeat_mode == RepeatMode.OFF, 'mdi-repeat-off'],
         [activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'mdi-repeat'],
         [activePlayerQueue?.repeat_mode == RepeatMode.ONE, 'mdi-repeat-once'],
+        [true, 'mdi-repeat-off'],
       ])
     "
-    :hover="true"
+    :type="'btn'"
     @click="
       api.queueCommandRepeat(
         activePlayerQueue?.queue_id || '',
@@ -46,7 +47,6 @@ export interface Props {
   isVisible?: boolean;
   icon?: ResponsiveIconProps;
 }
-
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
 });

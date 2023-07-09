@@ -228,13 +228,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 // computed properties
 const HiResDetails = computed(() => {
-  if (props.item.provider_mappings) {
-    for (const prov of props.item.provider_mappings) {
-      if (prov.content_type == undefined) continue;
-      if (!(prov.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV])) continue;
-      if (prov.sample_rate > 48000 || prov.bit_depth > 16) {
-        return `${prov.sample_rate}kHz ${prov.bit_depth} bits`;
-      }
+  for (const prov of props.item.provider_mappings) {
+    if (prov.audio_format.content_type == undefined) continue;
+    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]))
+      continue;
+    if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
+      return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';

@@ -19,14 +19,7 @@
       <PreviousBtn class="media-controls-item" :icon="props.visibleComponents.previous.icon" />
     </div>
     <!-- play/pause button: only when MA queue is active -->
-    <div
-      v-if="
-        activePlayerQueue &&
-        activePlayerQueue?.active &&
-        props.visibleComponents &&
-        props.visibleComponents.play?.isVisible
-      "
-    >
+    <div v-if="props.visibleComponents && props.visibleComponents.play?.isVisible">
       <PlayBtn class="media-controls-item" :icon="props.visibleComponents.play.icon" />
     </div>
     <!-- next button -->

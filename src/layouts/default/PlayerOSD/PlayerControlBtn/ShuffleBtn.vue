@@ -9,9 +9,10 @@
       getValueFromSources(props.icon?.icon, [
         [activePlayerQueue?.shuffle_enabled, 'mdi-shuffle'],
         [activePlayerQueue?.shuffle_enabled == false, 'mdi-shuffle-disabled'],
+        [true, 'mdi-shuffle'],
       ])
     "
-    :hover="true"
+    :type="'btn'"
     @click="
       api.queueCommandShuffle(activePlayerQueue?.queue_id || '', activePlayerQueue?.shuffle_enabled ? false : true)
     "
