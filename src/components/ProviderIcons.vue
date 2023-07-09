@@ -61,9 +61,8 @@
               </div>
               <div
                 style="height: 50px; display: flex; align-items: center; margin-left: 10px; margin-right: 10px"
-                @mouseover="fetchPreviewUrl(mapping.provider_domain, mapping.item_id)"
               >
-                <audio controls :src="previewUrls[`${mapping.provider_domain}.${mapping.item_id}`]" />
+                <audio controls :src="getPreviewUrl(mapping.provider_domain, mapping.item_id)" />
               </div>
             </div>
           </div>
@@ -87,7 +86,6 @@ export interface Props {
   enablePreview?: boolean;
 }
 const compProps = defineProps<Props>();
-const previewUrls = reactive<Record<string, string>>({});
 
 const uniqueProviders = computed(() => {
   const keys: string[] = [];
@@ -105,11 +103,8 @@ const uniqueProviders = computed(() => {
 //   window.open(prov.url, "_blank");
 // };
 
-const fetchPreviewUrl = async function (provider: string, item_id: string) {
-  const key = `${provider}.${item_id}`;
-  if (key in previewUrls) return;
-  const url = await api.getTrackPreviewUrl(provider, item_id);
-  previewUrls[key] = url;
+const getPreviewUrl = function (provider: string, item_id: string) {
+  return `/preview?provider=${provider}&item_id=${encodeURIComponent(item_id)}`
 };
 </script>
 
