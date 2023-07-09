@@ -1,47 +1,48 @@
 <template>
   <v-slider
-    :style="`width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`"
-    hide-details
-    :track-size="2"
-    :thumb-size="isThumbHidden ? 0 : 10"
-    :step="2"
-    :elevation="0"
-    :disabled="props.isPowered ? false : true"
+    v-bind="playerVolumeProps"
     @touchstart="isThumbHidden = false"
     @touchend="isThumbHidden = true"
     @mouseenter="isThumbHidden = false"
     @mouseleave="isThumbHidden = true"
   >
-    <template v-if="$slots.details" #details>
-      <slot name="details"></slot>
-    </template>
-    <template v-if="$slots.prepend" #prepend>
-      <slot name="prepend"></slot>
-    </template>
-    <template v-if="$slots.append" #append>
-      <slot name="append"></slot>
+    <!-- Dynamically inherit slots from parent -->
+    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+      <slot :name="name"></slot>
     </template>
   </v-slider>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
+<script lang="ts">
+import { computed, ref } from 'vue';
 
-// properties
-export interface Props {
-  width?: string;
-  height?: string;
-  isPowered?: boolean;
-  style?: string;
-}
+export default {
+  props: {
+    width: String,
+    height: String,
+    style: String,
+    isPowered: Boolean,
+  },
+  setup(props, ctx) {
+    const isThumbHidden = ref(true);
 
-const props = withDefaults(defineProps<Props>(), {
-  width: '100%',
-  height: 'auto',
-  isPowered: false,
-  style: '',
-});
+    const playerVolumeDefaults = computed(() => ({
+      class: 'player-volume',
+      hideDetails: true,
+      trackSize: 2,
+      thumbSize: isThumbHidden.value ? 0 : 10,
+      step: 2,
+      elevation: 0,
+      disabled: !props.isPowered,
+      style: `width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`,
+    }));
 
-// local refs
-const isThumbHidden = ref(true);
+    const playerVolumeProps = computed(() => ({
+      ...playerVolumeDefaults.value,
+      ...ctx,
+    }));
+
+    return { isThumbHidden, playerVolumeProps };
+  },
+};
 </script>

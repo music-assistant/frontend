@@ -78,7 +78,6 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 
-
 // computed properties
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
@@ -119,5 +118,6 @@ const streamDetails = computed(() => {
   border-radius: 2px;
   margin-left: 5px;
   flex-flow: column;
+  margin: 0px;
 }
 </style>

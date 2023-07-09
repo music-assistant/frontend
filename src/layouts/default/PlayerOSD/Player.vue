@@ -8,13 +8,17 @@
     app
   >
     <div
-      v-if="colorCode"
+      v-if="coverImageColorCode && curQueueItem"
       :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
-      :style="`background: linear-gradient(90deg, rgba(${colorCode[0]}, ${colorCode[1]}, ${colorCode[2]}, ${
-        $vuetify.theme.current.dark ? '0.3' : '0.7'
-      }) 0%, rgba(${colorCode[0]}, ${colorCode[1]}, ${colorCode[2]}, 0) 100%);`"
+      :style="`background: linear-gradient(90deg, ${coverImageColorCode}${
+        $vuetify.theme.current.dark ? '4D' : 'B3'
+      } 0%, ${coverImageColorCode}00 100%);`"
+    ></div>
+    <PlayerTimeline
+      v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
+      :color="$vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor"
+      :is-progress-bar="true"
     />
-    <PlayerTimeline v-breakpoint="'mobile'" :is-progress-bar="true" />
 
     <div
       class="mediacontrols"
@@ -32,16 +36,28 @@
         <div style="width: 100%">
           <!-- player control buttons -->
           <PlayerControls
-            :button-visibility="{
-              repeat: getBreakpointValue('bp3'),
-              shuffle: getBreakpointValue('bp3'),
-              play: true,
-              previous: getBreakpointValue('bp3'),
-              next: getBreakpointValue('bp3'),
+            :visible-components="{
+              repeat: { isVisible: getBreakpointValue('bp3') },
+              shuffle: { isVisible: getBreakpointValue('bp3') },
+              play: {
+                isVisible: true,
+                icon: {
+                  staticWidth: '50px',
+                  staticHeight: '50px',
+                },
+              },
+              previous: { isVisible: getBreakpointValue('bp3') },
+              next: { isVisible: getBreakpointValue('bp3') },
             }"
           />
           <!-- progress bar -->
-          <PlayerTimeline v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }" :is-progress-bar="false" />
+          <PlayerTimeline
+            v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
+            :color="
+              $vuetify.theme.current.dark ? store.coverImageColorCode.darkColor : store.coverImageColorCode.lightColor
+            "
+            :is-progress-bar="false"
+          />
         </div>
       </div>
       <div class="mediacontrols-buttom-right">
@@ -49,20 +65,20 @@
           <!-- player mobile control buttons -->
           <PlayerControls
             style="padding-right: 5px"
-            :button-visibility="{
-              repeat: false,
-              shuffle: false,
-              play: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
-              previous: false,
-              next: false,
+            :visible-components="{
+              repeat: { isVisible: false },
+              shuffle: { isVisible: false },
+              play: { isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) },
+              previous: { isVisible: false },
+              next: { isVisible: false },
             }"
           />
           <!-- player extended control buttons -->
           <PlayerExtendedControls
-            :button-visibility="{
-              queue: getBreakpointValue('bp3'),
-              player: true,
-              volume: getBreakpointValue('bp0'),
+            :visible-components="{
+              queue: { isVisible: getBreakpointValue('bp3') },
+              player: { isVisible: true },
+              volume: { isVisible: getBreakpointValue('bp0') },
             }"
           />
         </div>
@@ -74,10 +90,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 //@ts-ignore
-import ColorThief from 'colorthief';
 
 import api from '@/plugins/api';
-import { ImageType, MobileDeviceType } from '@/plugins/api/interfaces';
+import { ImageType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
 import PlayerTimeline from './PlayerTimeline.vue';
@@ -85,17 +100,21 @@ import PlayerControls from './PlayerControls.vue';
 import PlayerTrackDetails from './PlayerTrackDetails.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
+import vuetify from '@/plugins/vuetify';
+import { getColorCode } from '@/utils';
 
 // local refs
 const fanartImage = ref();
-const colorCode = ref();
+const coverImageColorCode = ref();
 
-const colorThief = new ColorThief();
 const img = new Image();
 img.crossOrigin = 'Anonymous';
 
 img.addEventListener('load', function () {
-  colorCode.value = colorThief.getColor(img);
+  store.coverImageColorCode = getColorCode(img);
+  coverImageColorCode.value = vuetify.theme.current.value.dark
+    ? store.coverImageColorCode.darkColor
+    : store.coverImageColorCode.lightColor;
 });
 
 // computed properties
@@ -113,11 +132,11 @@ const curQueueItem = computed(() => {
 // watchers
 watch(
   () => curQueueItem.value?.queue_item_id,
-  async () => {
+  () => {
     if (curQueueItem.value?.media_item) {
       fanartImage.value =
-        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.FANART)) ||
-        (await getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB));
+        getImageThumbForItem(curQueueItem.value.media_item, ImageType.FANART) ||
+        getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB);
       img.src = fanartImage.value;
     }
   },

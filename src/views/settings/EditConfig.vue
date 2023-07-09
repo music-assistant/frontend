@@ -245,19 +245,36 @@ const panels = computed(() => {
   return ['basic', 'advanced'];
 });
 const requiredValuesPresent = computed(() => {
-  for (const entry of entries.value!) {
-    if (
-      entry.required &&
-      !(
-        !isNullOrUndefined(entry.value) ||
-        !isNullOrUndefined(entry.default_value) ||
-        entry.type == ConfigEntryType.DIVIDER ||
-        entry.type == ConfigEntryType.LABEL
+  if (entries.value) {
+    for (const entry of entries.value) {
+      if (
+        entry.required &&
+        !(
+          !isNullOrUndefined(entry.value) ||
+          !isNullOrUndefined(entry.default_value) ||
+          entry.type == ConfigEntryType.DIVIDER ||
+          entry.type == ConfigEntryType.LABEL
+        )
       )
-    )
-      return false;
+        return false;
+    }
+    return true;
   }
-  return true;
+  return false;
+});
+
+const currentValues = computed(() => {
+  const values: Record<string, ConfigValueType> = {};
+  for (const entry of props.configEntries!) {
+    // filter out undefined values
+    if (entry.value == undefined) continue;
+    // filter out obfuscated strings
+    if (entry.type == ConfigEntryType.SECURE_STRING && entry.value == SECURE_STRING_SUBSTITUTE) {
+      continue;
+    }
+    values[entry.key] = entry.value;
+  }
+  return values;
 });
 
 // watchers
@@ -276,7 +293,7 @@ watch(
 );
 
 // methods
-const validate = async function (this: any) {
+const validate = async function () {
   const { valid } = await (form.value as any).validate();
   return valid;
 };
@@ -294,7 +311,7 @@ const action = async function (action: string) {
 const openLink = function (url: string) {
   window.open(url, '_blank');
 };
-const isNullOrUndefined = function (value: any) {
+const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
 const hasValidInput = function (entry: ConfigEntry) {

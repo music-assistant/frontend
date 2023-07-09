@@ -33,13 +33,7 @@ onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
 });
 
-const loadItems = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  inLibraryOnly = true
-) {
+const loadItems = async function (offset: number, limit: number, sort: string, search?: string, inLibraryOnly = true) {
   const library = inLibraryOnly || undefined;
   return await api.getAlbums(library, search, limit, offset, sort);
 };

@@ -1,5 +1,9 @@
 import { Artist, BrowseFolder, ItemMapping, Player, PlayerType } from '@/plugins/api/interfaces';
+
+import Color from 'color';
 //@ts-ignore
+import ColorThief from 'colorthief';
+const colorThief = new ColorThief();
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean) => {
@@ -112,7 +116,7 @@ export const getPlayerName = function (player: Player, truncate = 26) {
   if (player.type != PlayerType.GROUP && player.group_childs.length > 1) {
     // create pretty name for syncgroup (e.g. playername +2)
     // TODO: move to API and only count available players
-    return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length-1}`;
+    return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length - 1}`;
   }
   return truncateString(player.display_name, truncate);
 };
@@ -122,3 +126,125 @@ export const numberRange = function (start: number, end: number): number[] {
     .fill(start)
     .map((x, y) => x + y);
 };
+
+//Get correct colour
+type RGBColor = [number, number, number];
+
+export interface ColorCoverPalette {
+  [key: number]: string;
+  lightColor: string;
+  darkColor: string;
+}
+
+export function getContrastingTextColor(hexColor: string): string {
+  hexColor = hexColor.replace('#', '');
+  if (hexColor.length === 3) {
+    hexColor = hexColor
+      .split('')
+      .map((hex) => hex + hex)
+      .join('');
+  }
+
+  const r = parseInt(hexColor.substr(0, 2), 16);
+  const g = parseInt(hexColor.substr(2, 2), 16);
+  const b = parseInt(hexColor.substr(4, 2), 16);
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (luminance > 0.7) {
+    return '#000000';
+  } else {
+    return '#FFFFFF';
+  }
+}
+
+export function getContrastRatio(color1: string, color2: string): number {
+  const c1 = Color(color1);
+  const c2 = Color(color2);
+  return c1.contrast(c2);
+}
+
+export function rgbToHex(rgb: RGBColor): string {
+  const [red, green, blue] = rgb;
+  const hex = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue
+    .toString(16)
+    .padStart(2, '0')}`;
+  return hex;
+}
+
+export function findLightColor(colors: RGBColor[]): string {
+  let mostPleasantColor = '';
+  let highestContrastRatio = 0;
+
+  colors.forEach((rgb) => {
+    const hexColor = rgbToHex(rgb);
+    const contrastRatio = getContrastRatio('#000000', hexColor);
+
+    if (
+      (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
+      (contrastRatio > highestContrastRatio && contrastRatio >= highestContrastRatio * 0.7)
+    ) {
+      highestContrastRatio = contrastRatio;
+      mostPleasantColor = hexColor;
+    }
+  });
+  return mostPleasantColor;
+}
+
+export function findDarkColor(colors: RGBColor[]): string {
+  let mostPleasantColor = '';
+  let highestContrastRatio = 0;
+  const maxContrastRatio = 17.35;
+
+  colors.forEach((rgb) => {
+    const hexColor = rgbToHex(rgb);
+    const contrastRatio = getContrastRatio('#fff', hexColor);
+    //console.log(`${contrastRatio}:${rgb}`);
+    if (maxContrastRatio >= contrastRatio) {
+      if (
+        (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
+        (contrastRatio > highestContrastRatio && contrastRatio >= highestContrastRatio * 0.7)
+      ) {
+        highestContrastRatio = contrastRatio;
+        mostPleasantColor = hexColor;
+      }
+    }
+  });
+  return mostPleasantColor;
+}
+
+export function getColorCode(img: HTMLImageElement): ColorCoverPalette {
+  const colorThief = new ColorThief();
+  const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
+  const colorHexPalette: string[] = colorNumberPalette.map((color) => rgbToHex(color));
+
+  return {
+    0: colorHexPalette[0],
+    1: colorHexPalette[1],
+    2: colorHexPalette[2],
+    3: colorHexPalette[3],
+    4: colorHexPalette[4],
+    lightColor: findLightColor(colorNumberPalette),
+    darkColor: findDarkColor(colorNumberPalette),
+  };
+}
+
+export function getValueFromSources(isAvailabe: any, sources: string | any[]) {
+  if (isAvailabe) {
+    return isAvailabe;
+  }
+
+  for (const element of sources) {
+    const source = element;
+    const expression = source[0];
+    const valueIfTrue = source[1];
+    const valueIfFalse = source[2];
+
+    if (expression) {
+      return valueIfTrue;
+    } else if (valueIfFalse !== undefined) {
+      return valueIfFalse;
+    }
+  }
+
+  return undefined;
+}

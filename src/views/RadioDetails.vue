@@ -1,13 +1,9 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <v-tabs
-      show-arrows
-      grow
-      hide-slider
-    >
+    <v-tabs show-arrows grow hide-slider>
       <v-tab v-if="showVersionsTab">
-        {{ $t("other_versions") }}
+        {{ $t('other_versions') }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -26,12 +22,12 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { filteredItems } from "../components/ItemsListing.vue";
-import InfoHeader from "../components/InfoHeader.vue";
-import { ref } from "vue";
-import type { Radio } from "../plugins/api/interfaces";
-import { api } from "../plugins/api";
-import { watch } from "vue";
+import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
+import InfoHeader from '../components/InfoHeader.vue';
+import { ref } from 'vue';
+import type { Radio } from '../plugins/api/interfaces';
+import { api } from '../plugins/api';
+import { watch } from 'vue';
 
 export interface Props {
   itemId: string;
@@ -54,7 +50,7 @@ watch(
   (val) => {
     if (val) loadItemDetails();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const loadRadioVersions = async function (
@@ -62,19 +58,9 @@ const loadRadioVersions = async function (
   limit: number,
   sort: string,
   search?: string,
-  inLibraryOnly = true
+  inLibraryOnly = true,
 ) {
-  const radioVersions = await api.getRadioVersions(
-    props.itemId,
-    props.provider
-  );
-  return filteredItems(
-    radioVersions,
-    offset,
-    limit,
-    sort,
-    search,
-    inLibraryOnly
-  );
+  const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
+  return filteredItems(radioVersions, offset, limit, sort, search, inLibraryOnly);
 };
 </script>

@@ -32,9 +32,11 @@ const activeTab = computed(() => {
   if (router.currentRoute.value.name?.toString().includes('player')) {
     return 'players';
   }
+
   if (router.currentRoute.value.name?.toString().includes('core')) {
     return 'core';
   }
+
   return 'providers';
 });
 </script>

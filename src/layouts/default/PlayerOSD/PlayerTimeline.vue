@@ -1,10 +1,19 @@
 <template>
   <div style="width: 100%">
-    <div v-if="activePlayerQueue && !isProgressBar">
+    <div v-if="activePlayerQueue && !isProgressBar" style="display: flex; flex: 1 1 auto; align-items: center">
+      <!-- current time detail -->
+      <div
+        class="text-caption"
+        style="cursor: pointer; z-index: 1"
+        @click="showRemainingTime ? (showRemainingTime = false) : (showRemainingTime = true)"
+      >
+        {{ playerCurTimeStr }}
+      </div>
+
       <v-slider
         v-model="curTimeValue"
         :disabled="!curQueueItem || curQueueItem.media_item?.media_type != MediaType.TRACK"
-        color="accent"
+        :color="props.color"
         style="width: 100%"
         :min="0"
         :max="curQueueItem && curQueueItem.duration"
@@ -17,31 +26,18 @@
         @mouseleave="isThumbHidden = true"
         @mousedown="startDragging"
         @mouseup="stopDragging"
-      >
-        <template #prepend>
-          <!-- current time detail -->
-          <div
-            class="text-caption"
-            style="cursor: pointer; z-index: 1"
-            @click="showRemainingTime ? (showRemainingTime = false) : (showRemainingTime = true)"
-          >
-            {{ playerCurTimeStr }}
-          </div>
-        </template>
+      />
 
-        <template #append>
-          <!-- end time detail -->
-          <div style="z-index: 1" class="text-caption">
-            {{ playerTotalTimeStr }}
-          </div>
-        </template>
-      </v-slider>
+      <!-- end time detail -->
+      <div style="z-index: 1" class="text-caption">
+        {{ playerTotalTimeStr }}
+      </div>
     </div>
     <div v-else-if="activePlayerQueue && isProgressBar" style="width: 100%; padding-bottom: 0px">
       <v-progress-linear
         v-model="curTimeValue"
         :disabled="!activePlayerQueue || !curQueueItem || activePlayerQueue?.items == 0"
-        color="accent"
+        :color="props.color"
         :height="2"
         :min="0"
         :max="curQueueItem && curQueueItem.duration"
@@ -60,10 +56,12 @@ import { ref, computed, watch } from 'vue';
 // properties
 export interface Props {
   isProgressBar?: boolean;
+  color?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isProgressBar: false,
+  color: 'accent',
 });
 
 // local refs

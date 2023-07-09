@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-container>
+    <Container>
       <v-text-field
         id="searchInput"
         v-model="search"
@@ -87,7 +87,7 @@
           </v-tooltip>
         </v-toolbar>
       </div>
-    </v-container>
+    </Container>
   </div>
 </template>
 
@@ -105,6 +105,7 @@ import MediaItemContextMenu from '../components/MediaItemContextMenu.vue';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
 import { numberRange } from '@/utils';
+import Container from '@/components/mods/Container.vue';
 
 export interface Props {
   initSearch?: string;

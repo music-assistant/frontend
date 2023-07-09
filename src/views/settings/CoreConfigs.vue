@@ -3,20 +3,20 @@
     <v-card>
       <v-list>
         <v-list-item
-          class="list-item-main"
-          link
-          @click="editCoreConfig(item.domain)"
+          v-for="item in coreConfigs.sort((a, b) => a.manifest.name!.localeCompare(b.manifest.name!))"
+          :key="item.domain"
           v-hold="
             () => {
               editCoreConfig(item.domain);
             }
           "
-          v-for="item in coreConfigs.sort((a, b) => a.manifest.name!.localeCompare(b.manifest.name!))"
-          :key="item.domain"
+          class="list-item-main"
+          link
+          @click="editCoreConfig(item.domain)"
         >
           <template #prepend>
             <provider-icon
-              :manifest="item.manifest"
+              :domain="item.domain"
               :size="'40px'"
               class="listitem-media-thumb"
               style="margin-left: 10px"
@@ -62,8 +62,8 @@
                     @click="editCoreConfig(item.domain)"
                   />
                   <v-list-item
-                    class="list-item-main"
                     v-if="item.manifest.documentation"
+                    class="list-item-main"
                     :title="$t('settings.documentation')"
                     prepend-icon="mdi-bookshelf"
                     :href="item.manifest.documentation"

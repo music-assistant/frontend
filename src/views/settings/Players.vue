@@ -1,20 +1,17 @@
 <template>
-  <v-container>
-    <v-card>
-    <v-list>
-      <v-list-item class="list-item-main"
-        link
-        @click="editPlayer(item.player_id)"
+  <Container>
+    <RecycleScroller v-slot="{ item }" :items="playerConfigs" :item-size="60" key-field="player_id" page-mode>
+      <ListItem
         v-hold="
           () => {
             editPlayer(item.player_id);
           }
         "
-        v-for="item in playerConfigs.sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)))"
-        :key="item.player_id"
+        link
+        @click="editPlayer(item.player_id)"
       >
         <template #prepend>
-          <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" style="margin-left: 10px" />
+          <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" />
         </template>
 
         <!-- title -->
@@ -28,60 +25,58 @@
         </template>
         <!-- append -->
         <template #append>
-          <div class="list-actions">
-            <!-- player disabled -->
-            <div v-if="!item.enabled">
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="props">
-                    <v-icon icon="mdi-cancel" />
-                  </v-btn>
-                </template>
-                <span>{{ $t('settings.player_disabled') }}</span>
-              </v-tooltip>
-            </div>
+          <!-- player disabled -->
+          <div v-if="!item.enabled">
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <Button icon v-bind="props">
+                  <v-icon icon="mdi-cancel" />
+                </Button>
+              </template>
+              <span>{{ $t('settings.player_disabled') }}</span>
+            </v-tooltip>
+          </div>
 
-            <!-- player not (yet) available -->
-            <div v-else-if="!api.players[item.player_id]?.available">
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="props">
-                    <v-icon icon="mdi-timer-sand" />
-                  </v-btn>
-                </template>
-                <span>{{ $t('settings.player_not_available') }}</span>
-              </v-tooltip>
-            </div>
+          <!-- player not (yet) available -->
+          <div v-else-if="!api.players[item.player_id]?.available">
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <Button icon v-bind="props">
+                  <v-icon icon="mdi-timer-sand" />
+                </Button>
+              </template>
+              <span>{{ $t('settings.player_not_available') }}</span>
+            </v-tooltip>
           </div>
 
           <!-- contextmenu-->
           <v-menu location="bottom end">
             <template #activator="{ props }">
-              <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="props">
+              <Button icon v-bind="props">
                 <v-icon icon="mdi-dots-vertical" />
-              </v-btn>
+              </Button>
             </template>
 
             <v-list>
-              <v-list-item class="list-item-main"
+              <ListItem
                 v-if="item.enabled && item.player_id in api.players"
                 :title="$t('settings.configure')"
                 prepend-icon="mdi-cog"
                 @click="editPlayer(item.player_id)"
               />
-              <v-list-item class="list-item-main"
+              <ListItem
                 :title="item.enabled ? $t('settings.disable') : $t('settings.enable')"
                 prepend-icon="mdi-cog"
                 @click="toggleEnabled(item)"
               />
-              <v-list-item class="list-item-main"
+              <ListItem
                 v-if="api.providerManifests[item.provider].documentation"
                 :title="$t('settings.documentation')"
                 prepend-icon="mdi-bookshelf"
                 :href="api.providerManifests[item.provider].documentation"
                 target="_blank"
               />
-              <v-list-item class="list-item-main"
+              <ListItem
                 v-if="!api.players[item.player_id]?.available"
                 :title="$t('settings.delete')"
                 prepend-icon="mdi-delete"
@@ -90,10 +85,9 @@
             </v-list>
           </v-menu>
         </template>
-      </v-list-item>
-    </v-list>
-  </v-card>
-  </v-container>
+      </ListItem>
+    </RecycleScroller>
+  </Container>
 </template>
 
 <script setup lang="ts">
@@ -101,7 +95,11 @@ import { ref, onBeforeUnmount, watch } from 'vue';
 import { api } from '@/plugins/api';
 import { EventType, PlayerConfig } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
+import { RecycleScroller } from 'vue-virtual-scroller';
 import { useRouter } from 'vue-router';
+import Button from '@/components/mods/Button.vue';
+import ListItem from '@/components/mods/ListItem.vue';
+import Container from '@/components/mods/Container.vue';
 
 // global refs
 const router = useRouter();
@@ -155,13 +153,3 @@ watch(
   { immediate: true },
 );
 </script>
-
-<style>
-.list-actions {
-  display: inline-flex;
-  width: auto;
-  vertical-align: middle;
-  align-items: center;
-  padding: 0px;
-}
-</style>

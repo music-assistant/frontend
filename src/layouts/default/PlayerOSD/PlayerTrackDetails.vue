@@ -1,6 +1,6 @@
 <template>
   <!-- now playing media -->
-  <v-list-item class="list-item-main" style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
+  <ListItem style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
     <template #prepend>
       <div
         class="media-thumb player-media-thumb"
@@ -36,18 +36,22 @@
       </span>
       <!-- queue name -->
       <div v-else-if="activePlayerQueue">
-        {{ activePlayerQueue?.display_name }}
+        {{ activePlayerQueue?.display_name || '' }}
       </div>
       <!-- player name -->
       <div v-else-if="store.selectedPlayer">
-        {{ store.selectedPlayer?.display_name }}
+        {{ store.selectedPlayer?.display_name || '' }}
       </div>
     </template>
     <!-- append -->
     <template #append>
       <!-- format -->
       <v-chip
-        v-if="curQueueItem?.streamdetails && !getBreakpointValue({ breakpoint: 'phone' }) && showQualityDetailsBtn"
+        v-if="
+          streamDetails?.audio_format.content_type &&
+          !getBreakpointValue({ breakpoint: 'phone' }) &&
+          showQualityDetailsBtn
+        "
         :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
         class="player-track-content-type"
         :style="$vuetify.theme.current.dark ? 'color: #000; background: #fff;' : 'color: #fff; background: #000;'"
@@ -56,7 +60,7 @@
         v-bind="props"
       >
         <div class="d-flex justify-center" style="width: 100%">
-          {{ curQueueItem?.streamdetails.audio_format.content_type.toUpperCase() }}
+          {{ streamDetails.audio_format.content_type.toUpperCase() }}
         </div>
       </v-chip>
     </template>
@@ -66,10 +70,10 @@
       <div
         v-if="
           curQueueItem &&
-            curQueueItem.media_item?.media_type == MediaType.TRACK &&
-            'album' in curQueueItem.media_item &&
-            curQueueItem.media_item.album &&
-            !props.showOnlyArtist
+          curQueueItem.media_item?.media_type == MediaType.TRACK &&
+          'album' in curQueueItem.media_item &&
+          curQueueItem.media_item.album &&
+          !props.showOnlyArtist
         "
         style="cursor: pointer"
         class="line-clamp-1"
@@ -82,9 +86,9 @@
       <div
         v-else-if="
           curQueueItem &&
-            curQueueItem.media_item &&
-            'artists' in curQueueItem.media_item &&
-            curQueueItem.media_item.artists.length > 0
+          curQueueItem.media_item &&
+          'artists' in curQueueItem.media_item &&
+          curQueueItem.media_item.artists.length > 0
         "
         class="line-clamp-1"
         style="cursor: pointer"
@@ -97,23 +101,23 @@
         {{ curQueueItem.media_item.artists[0].name }}
       </div>
       <!-- radio live metadata -->
-      <div class="line-clamp-1" v-else-if="curQueueItem?.streamdetails?.stream_title">
+      <div v-else-if="curQueueItem?.streamdetails?.stream_title" class="line-clamp-1">
         {{ curQueueItem?.streamdetails?.stream_title }}
       </div>
       <!-- other description -->
-      <div class="line-clamp-1" v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description">
+      <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description" class="line-clamp-1">
         {{ curQueueItem.media_item.metadata.description }}
       </div>
       <!-- queue empty message -->
-      <div class="line-clamp-1" v-else-if="activePlayerQueue && activePlayerQueue.items == 0">
+      <div v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="line-clamp-1">
         {{ $t('queue_empty') }}
       </div>
       <!-- 3rd party source active -->
-      <div class="line-clamp-1" v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id">
+      <div v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id" class="line-clamp-1">
         {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
       </div>
     </template>
-  </v-list-item>
+  </ListItem>
 </template>
 
 <script setup lang="ts">
@@ -127,9 +131,8 @@ import { getArtistsString } from '@/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { iconFallback } from '@/components/ProviderIcons.vue';
-import { ref } from 'vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-
+import ListItem from '@/components/mods/ListItem.vue';
 
 const router = useRouter();
 
@@ -144,9 +147,6 @@ const props = withDefaults(defineProps<Props>(), {
   showQualityDetailsBtn: true,
 });
 
-//ref
-const showOverlay = ref(false);
-
 // computed properties
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
@@ -157,6 +157,9 @@ const activePlayerQueue = computed(() => {
 const curQueueItem = computed(() => {
   if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
   return undefined;
+});
+const streamDetails = computed(() => {
+  return activePlayerQueue.value?.current_item?.streamdetails;
 });
 
 // methods
@@ -182,6 +185,6 @@ const itemClick = function (item: MediaItemType | ItemMapping) {
   font-size: 10px !important;
   letter-spacing: 0.1em;
   border-radius: 2px;
-  margin-left: 16px;
+  margin-right: 30px;
 }
 </style>

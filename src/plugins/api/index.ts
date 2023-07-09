@@ -97,7 +97,7 @@ export class MusicAssistantApi {
   }
 
   public async initialize(baseUrl: string) {
-    if (this.ws) throw 'already initialized';
+    if (this.ws) throw new Error('already initialized');
     if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
     this.baseUrl = baseUrl;
     const wsUrl = baseUrl.replace('http', 'ws') + '/ws';
@@ -571,7 +571,7 @@ export class MusicAssistantApi {
     // Play item at index (or item_id) X in queue.
     this.playerQueueCommand(queueId, 'play_index', { index });
   }
-  public queueCommandMoveItem(queueId: string, queue_item_id: string, pos_shift: number = 1) {
+  public queueCommandMoveItem(queueId: string, queue_item_id: string, pos_shift = 1) {
     // Move queue item x up/down the queue.
     // - queue_id: id of the queue to process this request.
     // - queue_item_id: the item_id of the queueitem that needs to be moved.
@@ -760,7 +760,7 @@ export class MusicAssistantApi {
           - player_id: player_id of the groupplayer to handle the command.
           - members: list of player ids to set as members.
     */
-    this.sendCommand(`players/cmd/set_members`, {
+    this.sendCommand('players/cmd/set_members', {
       player_id,
       members,
     });
@@ -1104,7 +1104,7 @@ export class MusicAssistantApi {
 
   public sendCommand(command: string, args?: Record<string, any>, msgId?: number): void {
     if (this.state.value !== ConnectionState.CONNECTED) {
-      throw 'Connection lost';
+      throw new Error('Connection lost');
     }
 
     if (!msgId) {

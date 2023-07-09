@@ -36,18 +36,13 @@
 
         <v-list>
           <div v-for="item of playMenuItems" :key="item.label">
-            <v-list-item
-              class="list-item-main"
-              :title="$t(item.label, item.labelArgs)"
-              density="default"
-              @click="itemClicked(item)"
-            >
+            <ListItem :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
           </div>
         </v-list>
       </v-card-text>
@@ -61,18 +56,13 @@
         </v-list-item-subtitle>
         <v-list>
           <div v-for="item of actionMenuItems" :key="item.label">
-            <v-list-item
-              class="list-item-main"
-              :title="$t(item.label, item.labelArgs)"
-              density="default"
-              @click="itemClicked(item)"
-            >
+            <ListItem :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
                 </v-avatar>
               </template>
-            </v-list-item>
+            </ListItem>
           </div>
         </v-list>
       </v-card-text>
@@ -80,7 +70,7 @@
       <v-card-text v-if="showPlaylistsMenu">
         <v-list>
           <div v-for="playlist of playlists" :key="playlist.item_id">
-            <v-list-item class="list-item-main" ripple density="default" @click="addToPlaylist(playlist)">
+            <ListItem ripple density="default" @click="addToPlaylist(playlist)">
               <template #prepend>
                 <div class="media-thumb">
                   <MediaItemThumb :item="playlist" :size="50" width="50px" height="50px" />
@@ -99,12 +89,12 @@
                   :height="20"
                 />
               </template>
-            </v-list-item>
+            </ListItem>
           </div>
           <!-- create playlist row(s) -->
           <div v-for="prov of api.providers" :key="prov.instance_id">
             <div v-if="prov.supported_features.includes(ProviderFeature.PLAYLIST_CREATE)">
-              <v-list-item class="list-item-main" ripple>
+              <ListItem ripple>
                 <template #prepend>
                   <provider-icon :domain="prov.domain" :size="'40px'" class="media-thumb" />
                 </template>
@@ -123,7 +113,7 @@
                     @keydown.enter="newPlaylist(prov.instance_id)"
                   />
                 </template>
-              </v-list-item>
+              </ListItem>
             </div>
           </div>
         </v-list>
@@ -143,6 +133,7 @@ import { ProviderFeature } from '../plugins/api/interfaces';
 import api from '../plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '../plugins/store';
+import ListItem from '@/components/mods/ListItem.vue';
 
 // properties
 export interface Props {
@@ -350,38 +341,16 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
     });
   }
 
-  // Play NOW (keep queue) first + REPLACE second
-  if (items.length < 10) {
-    playMenuItems.push({
-      label: 'play_now',
-      action: () => {
-        api.playMedia(items, QueueOption.PLAY);
-      },
-      icon: 'mdi-play-circle-outline',
-      labelArgs: [],
-      actionStr: 'play',
-    });
-
-    playMenuItems.push({
-    label: 'play_now_replace',
+  // Play NOW
+  playMenuItems.push({
+    label: 'play_now',
     action: () => {
-      api.playMedia(items, QueueOption.REPLACE);
+      api.playMedia(items, queueOptPlay);
     },
     icon: 'mdi-play-circle-outline',
     labelArgs: [],
     actionStr: 'play',
   });
-  } else {
-    playMenuItems.push({
-      label: 'play_now',
-      action: () => {
-        api.playMedia(items, QueueOption.REPLACE);
-      },
-      icon: 'mdi-play-circle-outline',
-      labelArgs: [],
-      actionStr: 'play',
-    });
-  }
 
   // Start Radio
   if (radioSupported(items[0])) {

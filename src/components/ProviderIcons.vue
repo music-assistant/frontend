@@ -2,14 +2,14 @@
   <div class="provider-icons" style="display: inline-flex" :style="`height: ${height};`">
     <v-menu v-for="providerDomain of uniqueProviders" :key="providerDomain" location="bottom end" @click:outside.stop>
       <template #activator="{ props }">
-        <v-btn class="buttonicon" variant="plain" icon :ripple="false" v-bind="props" :key="providerDomain">
+        <Button v-bind="props" :key="providerDomain" icon>
           <provider-icon
             :domain="providerDomain"
             :size="height"
             class="provider-icon"
             :style="enableDetails == true ? 'cursor: pointer' : ''"
           />
-        </v-btn>
+        </Button>
       </template>
       <v-card v-if="enableDetails" class="mx-auto" min-width="300">
         <v-list style="overflow: hidden">
@@ -59,10 +59,8 @@
                 <v-icon icon="mdi-headphones" size="40" style="margin-left: 10px; padding-right: 15px" />
                 Preview
               </div>
-              <div
-                style="height: 50px; display: flex; align-items: center; margin-left: 10px; margin-right: 10px"
-              >
-                <audio controls :src="getPreviewUrl(mapping.provider_domain, mapping.item_id)" />
+              <div style="height: 50px; display: flex; align-items: center; margin-left: 10px; margin-right: 10px">
+                <audio controls :src="getPreviewUrl(mapping.provider_domain, mapping.item_id)"></audio>
               </div>
             </div>
           </div>
@@ -104,12 +102,13 @@ const uniqueProviders = computed(() => {
 // };
 
 const getPreviewUrl = function (provider: string, item_id: string) {
-  return `/preview?provider=${provider}&item_id=${encodeURIComponent(item_id)}`
+  return `/preview?provider=${provider}&item_id=${encodeURIComponent(item_id)}`;
 };
 </script>
 
 <script lang="ts">
 import { ContentType } from '../plugins/api/interfaces';
+import Button from '@/components/mods/Button.vue';
 
 export const iconFallback = new URL('@/assets/logo.png', import.meta.url).href;
 

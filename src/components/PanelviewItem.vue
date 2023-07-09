@@ -1,9 +1,9 @@
 <template>
   <v-card
+    v-hold="() => (showCheckboxes ? null : emit('menu', item))"
     class="panel-item"
     @click="showCheckboxes ? null : emit('click', item)"
     @click.right.prevent="showCheckboxes ? null : emit('menu', item)"
-    v-hold="() => (showCheckboxes ? null : emit('menu', item))"
     @mouseover="showSettingDots = true"
     @mouseleave="showSettingDots = true"
   >
@@ -23,14 +23,14 @@
 
     <MediaItemThumb :item="item" :width="'100%'" />
 
-    <v-list-item class="list-item-main" style="padding-left: 0px !important; padding-right: 0px !important; padding-top: 10px !important">
-      <v-list-item-title class="line-clamp-1">
+    <ListItem class="panel-item-details" style="padding-top: 10px !important">
+      <v-list-item-title class="line-clamp-1 panel-item-details">
         {{ item.name }} {{ 'version' in item && item.version ? `- ${item.version}` : '' }}
       </v-list-item-title>
-      <v-list-item-subtitle v-if="'artists' in item && item.artists" class="line-clamp-1">
+      <v-list-item-subtitle v-if="'artists' in item && item.artists" class="line-clamp-1 panel-item-details">
         {{ getArtistsString(item.artists, 1) }}
       </v-list-item-subtitle>
-      <v-list-item-subtitle v-else-if="'owner' in item && item.owner" class="line-clamp-1">
+      <v-list-item-subtitle v-else-if="'owner' in item && item.owner" class="line-clamp-1 panel-item-details">
         {{ item.owner }}
       </v-list-item-subtitle>
 
@@ -56,17 +56,16 @@
           <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" /> {{ item.track_number }}
         </v-item>
       </v-item-group>
-    </v-list-item>
+    </ListItem>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-
+import ListItem from '@/components/mods/ListItem.vue';
 import { ContentType, type MediaItem, type MediaItemType } from '../plugins/api/interfaces';
 import { getArtistsString, parseBool } from '../utils';
-import { ref } from 'vue';
 
 // properties
 export interface Props {
@@ -90,7 +89,8 @@ const showSettingDots = ref(false);
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
-    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV])) continue;
+    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]))
+      continue;
     if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
       return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
     }
@@ -118,5 +118,10 @@ const emit = defineEmits<{
   position: absolute;
   left: 0px;
   top: 0px;
+}
+
+.panel-item-details {
+  padding-left: 0px !important;
+  padding-right: 0px !important;
 }
 </style>

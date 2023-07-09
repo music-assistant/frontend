@@ -1,12 +1,12 @@
 <!-- eslint-disable vue/no-template-shadow -->
 <template>
   <div>
-    <v-list-item class="list-item-main"
+    <ListItem
+      v-hold="() => emit('menu', item)"
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
-      v-hold="() => emit('menu', item)"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -20,7 +20,7 @@
             "
           />
         </div>
-        <div v-else-if="item.media_type == MediaType.FOLDER && !item.metadata.images" class="media-thumb listitem-media-thumb">
+        <div v-else-if="item.media_type == MediaType.FOLDER" class="media-thumb listitem-media-thumb">
           <v-btn variant="plain" icon>
             <v-icon icon="mdi-folder" size="60" style="align: center" />
           </v-btn>
@@ -56,7 +56,7 @@
       <!-- subtitle -->
       <template #subtitle>
         <!-- track: artists(s) + album -->
-        <div class="line-clamp-1" v-if="item.media_type == MediaType.TRACK">
+        <div v-if="item.media_type == MediaType.TRACK" class="line-clamp-1">
           <v-item-group>
             <v-item v-if="'artists' in item">
               {{ getArtistsString(item.artists, 2) }}
@@ -165,11 +165,11 @@
         </div>
         <slot name="append"></slot>
         <!-- menu button/icon -->
-        <div v-if="getBreakpointValue('bp1') && showMenu" style="margin-right:-15px">
+        <div v-if="getBreakpointValue('bp1') && showMenu">
           <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
         </div>
       </template>
-    </v-list-item>
+    </ListItem>
   </div>
 </template>
 
@@ -189,7 +189,7 @@ import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from
 import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-
+import ListItem from '@/components/mods/ListItem.vue';
 
 // properties
 export interface Props {
@@ -228,13 +228,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 // computed properties
 const HiResDetails = computed(() => {
-  if (props.item.provider_mappings) {
-    for (const prov of props.item.provider_mappings) {
-      if (prov.audio_format.content_type == undefined) continue;
-      if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV])) continue;
-      if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
-        return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
-      }
+  for (const prov of props.item.provider_mappings) {
+    if (prov.audio_format.content_type == undefined) continue;
+    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]))
+      continue;
+    if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
+      return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';

@@ -28,7 +28,6 @@
 </template>
 
 <script setup lang="ts">
-
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { store } from '@/plugins/store';
 import { watch } from 'vue';
