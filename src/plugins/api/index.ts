@@ -97,7 +97,7 @@ export class MusicAssistantApi {
   }
 
   public async initialize(baseUrl: string) {
-    if (this.ws) throw 'already initialized';
+    if (this.ws) throw new Error('already initialized');
     if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
     this.baseUrl = baseUrl;
     const wsUrl = baseUrl.replace('http', 'ws') + '/ws';
@@ -1104,7 +1104,7 @@ export class MusicAssistantApi {
 
   public sendCommand(command: string, args?: Record<string, any>, msgId?: number): void {
     if (this.state.value !== ConnectionState.CONNECTED) {
-      throw 'Connection lost';
+      throw new Error('Connection lost');
     }
 
     if (!msgId) {

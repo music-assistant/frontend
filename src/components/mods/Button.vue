@@ -12,18 +12,19 @@ import { computed } from 'vue';
 
 export default {
   props: {
-    variant: String,
+    variant: {
+      type: String,
+      default: '',
+    },
   },
   setup(props, ctx) {
     const btnDefaults = computed(() => ({
       ripple: false,
-      variant: '',
     }));
 
     const btnIconDefaults = computed(() => ({
       ripple: false,
       icon: true,
-      variant: '',
     }));
 
     const btnProps = computed(() => ({

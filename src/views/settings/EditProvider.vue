@@ -148,5 +148,3 @@ const onAction = async function (action: string, values: Record<string, ConfigVa
     });
 };
 </script>
-
-<style scoped></style>

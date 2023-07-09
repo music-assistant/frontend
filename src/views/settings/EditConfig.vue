@@ -293,7 +293,7 @@ watch(
 );
 
 // methods
-const validate = async function (this: any) {
+const validate = async function () {
   const { valid } = await (form.value as any).validate();
   return valid;
 };
