@@ -130,14 +130,14 @@
         />
 
         <!-- in library (heart) icon -->
-        <div v-if="getBreakpointValue('bp3') && 'in_library' in item && showLibrary && !$vuetify.display.mobile">
+        <div v-if="getBreakpointValue('bp3') && 'favorite' in item && showLibrary && !$vuetify.display.mobile">
           <v-tooltip location="bottom">
             <template #activator="{ props }">
               <v-btn
                 variant="plain"
                 ripple
                 v-bind="props"
-                :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
+                :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
                 @click="api.toggleLibrary(item)"
                 @click.prevent
                 @click.stop

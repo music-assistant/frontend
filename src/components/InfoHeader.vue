@@ -142,7 +142,7 @@
             </v-menu>
 
             <v-btn
-              v-if="!$vuetify.display.mobile && !item.in_library"
+              v-if="!$vuetify.display.mobile && !item.favorite"
               style="margin-left: 10px"
               color="primary"
               tile
@@ -152,7 +152,7 @@
               {{ $t('add_library') }}
             </v-btn>
             <v-btn
-              v-if="!$vuetify.display.mobile && item.in_library"
+              v-if="!$vuetify.display.mobile && item.favorite"
               style="margin-left: 10px"
               color="primary"
               tile

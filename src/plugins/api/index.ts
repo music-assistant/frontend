@@ -169,14 +169,14 @@ export class MusicAssistantApi {
   }
 
   public getTracks(
-    in_library?: boolean,
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
     return this.getData('music/tracks', {
-      in_library,
+      favorite,
       search,
       limit,
       offset,
@@ -222,14 +222,14 @@ export class MusicAssistantApi {
   }
 
   public getArtists(
-    in_library?: boolean,
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
     return this.getData('music/artists', {
-      in_library,
+      favorite,
       search,
       limit,
       offset,
@@ -238,14 +238,14 @@ export class MusicAssistantApi {
   }
 
   public getAlbumArtists(
-    in_library?: boolean,
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
     return this.getData('music/albumartists', {
-      in_library,
+      favorite,
       search,
       limit,
       offset,
@@ -282,14 +282,14 @@ export class MusicAssistantApi {
   }
 
   public getAlbums(
-    in_library?: boolean,
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
     return this.getData('music/albums', {
-      in_library,
+      favorite,
       search,
       limit,
       offset,
@@ -326,14 +326,14 @@ export class MusicAssistantApi {
   }
 
   public getPlaylists(
-    in_library?: boolean,
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
     return this.getData('music/playlists', {
-      in_library,
+      favorite,
       search,
       limit,
       offset,
@@ -386,14 +386,14 @@ export class MusicAssistantApi {
   }
 
   public getRadios(
-    in_library?: boolean,
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
     return this.getData('music/radios', {
-      in_library,
+      favorite,
       search,
       limit,
       offset,
@@ -469,7 +469,7 @@ export class MusicAssistantApi {
     // optimistically set the value
     for (const item of items) {
       if (typeof item !== 'string') {
-        item.in_library = true;
+        item.favorite = true;
       }
     }
   }
@@ -488,14 +488,14 @@ export class MusicAssistantApi {
     // optimistically set the value
     for (const item of items) {
       if (typeof item !== 'string') {
-        item.in_library = false;
+        item.favorite = false;
       }
     }
   }
 
   public async toggleLibrary(item: MediaItemType) {
-    // Toggle in_library for a media item
-    if (item.in_library) {
+    // Toggle favorite for a media item
+    if (item.favorite) {
       await this.removeItemsFromLibrary([item]);
     } else {
       await this.addItemsToLibrary([item]);
@@ -503,7 +503,7 @@ export class MusicAssistantApi {
   }
 
   public async deleteDbItem(media_type: MediaType, db_item_id: string | number, recursive = false) {
-    // Remove item from the database.
+    // Remove item from the library.
     this.sendCommand('music/delete', {
       media_type,
       db_item_id,

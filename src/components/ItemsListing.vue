@@ -635,7 +635,7 @@ export const filteredItems = function (
   }
 
   if (inLibraryOnly) {
-    result = result.filter((x) => x.in_library);
+    result = result.filter((x) => x.favorite);
   }
 
   const totalItems = result.length;

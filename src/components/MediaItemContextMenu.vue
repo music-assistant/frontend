@@ -196,7 +196,7 @@ const showContextMenu = async function () {
   if ('position' in firstItem) {
     orgPosition = firstItem.position;
   }
-  if (firstItem.provider !== 'database') {
+  if (firstItem.provider !== 'library') {
     try {
       firstItem = await api.getItemByUri(props.items[0].uri);
     } catch (error) {
@@ -473,7 +473,7 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
     });
   }
   // add to library
-  if (!items[0].in_library && itemIsAvailable(items[0])) {
+  if (!items[0].favorite && itemIsAvailable(items[0])) {
     contextMenuItems.push({
       label: 'add_library',
       labelArgs: [],
@@ -484,7 +484,7 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
     });
   }
   // remove from library
-  if (items[0].in_library) {
+  if (items[0].favorite) {
     contextMenuItems.push({
       label: 'remove_library',
       labelArgs: [],
@@ -521,7 +521,7 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
     });
   }
   // delete from db
-  if (items.length == 1 && items[0].provider == 'database') {
+  if (items.length == 1 && items[0].provider == 'library') {
     contextMenuItems.push({
       label: 'delete_db',
       labelArgs: [],

@@ -28,7 +28,7 @@
   "dark_mode": "Mode sombre",
   "delete_db": "Supprimer l'élément de la base de données",
   "details": "Details",
-  "enter_url": "Enter the URL you want to manually add to the database",
+  "enter_url": "Enter the URL you want to manually add to the library",
   "external_source_active": "External source active: {0}",
   "goto_album": "Aller à l'album {0}",
   "goto_artist": "Aller à l'artiste {0}",
