@@ -3212,10 +3212,10 @@ he@^1.2.0:
   resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
 
-home-assistant-js-websocket@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/home-assistant-js-websocket/-/home-assistant-js-websocket-8.1.0.tgz#648d67b10c0e79d132136a929744cf559836235e"
-  integrity sha512-wj+WtdozkpuZKdl7QcxrVMzjfg5vNP/Apk+cQpRkBQZFwm4dt8sPoK2Dwr456RECa8ckLzseE1JelkhKaDxkNQ==
+home-assistant-js-websocket@^8.2.0:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/home-assistant-js-websocket/-/home-assistant-js-websocket-8.2.0.tgz#3505bf004cc3026c5d0cfdae5c031a44b0fcb01b"
+  integrity sha512-B163iuvC1hsObkbSXm89JfjjOguyQXSQeQsGf6KQblUj9QwMgFkQt13TiCYjeFFTMzhQ8Qj3/gKx/6MnSeYUqA==
 
 howler@^2.1.2:
   version "2.2.3"
