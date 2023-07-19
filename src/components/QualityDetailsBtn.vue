@@ -26,7 +26,7 @@
         <div style="height: 50px; display: flex; align-items: center">
           <ProviderIcon
             :domain="streamDetails.provider"
-            :size="'35px'"
+            :size="35"
             style="object-fit: contain; margin-left: 10px; margin-right: 5px"
           />
           {{ api.providerManifests[streamDetails.provider]?.name || api.providers[streamDetails.provider]?.name }}

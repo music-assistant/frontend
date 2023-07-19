@@ -1077,7 +1077,7 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     }
 
-    for (const prov of await this.getData<ProviderManifest[]>('providers/available')) {
+    for (const prov of await this.getData<ProviderManifest[]>('providers/manifests')) {
       this.providerManifests[prov.domain] = prov;
     }
 

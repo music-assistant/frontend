@@ -3,7 +3,7 @@
     <v-card>
       <v-list>
         <v-list-item
-          v-for="item in coreConfigs.sort((a, b) => a.manifest.name!.localeCompare(b.manifest.name!))"
+          v-for="item in coreConfigs.sort((a, b) => api.providerManifests[a.domain].name!.localeCompare(api.providerManifests[b.domain].name!))"
           :key="item.domain"
           v-hold="
             () => {
@@ -17,7 +17,7 @@
           <template #prepend>
             <provider-icon
               :domain="item.domain"
-              :size="'40px'"
+              :size="40"
               class="listitem-media-thumb"
               style="margin-left: 10px"
             />
@@ -25,12 +25,12 @@
 
           <!-- title -->
           <template #title>
-            <div class="line-clamp-1">{{ item.manifest.name }}</div>
+            <div class="line-clamp-1">{{ api.providerManifests[item.domain].name }}</div>
           </template>
 
           <!-- subtitle -->
           <template #subtitle
-            ><div class="line-clamp-1">{{ item.manifest.description }}</div>
+            ><div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div>
           </template>
           <!-- append -->
           <template #append>
@@ -62,11 +62,11 @@
                     @click="editCoreConfig(item.domain)"
                   />
                   <v-list-item
-                    v-if="item.manifest.documentation"
+                    v-if="api.providerManifests[item.domain].documentation"
                     class="list-item-main"
                     :title="$t('settings.documentation')"
                     prepend-icon="mdi-bookshelf"
-                    :href="item.manifest.documentation"
+                    :href="api.providerManifests[item.domain].documentation"
                     target="_blank"
                   />
                 </v-list>
