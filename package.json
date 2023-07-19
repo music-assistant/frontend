@@ -17,7 +17,7 @@
     "@mdi/js": "^7.2.96",
     "color": "^4.2.3",
     "colorthief": "^2.4.0",
-    "home-assistant-js-websocket": "^8.1.0",
+    "home-assistant-js-websocket": "^8.2.0",
     "mobile-detect": "^1.4.5",
     "v3-infinite-loading": "^1.2.2",
     "vue": "^3.3.4",
