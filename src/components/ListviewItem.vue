@@ -114,8 +114,8 @@
         <v-img
           v-if="HiResDetails"
           :src="iconHiRes"
-          width="35"
-          :style="$vuetify.theme.current.dark ? 'margin-top:5px;' : 'margin-top:5px;filter: invert(100%);'"
+          width="30"
+          :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
         >
           <v-tooltip activator="parent" location="bottom">
             {{ HiResDetails }}
@@ -227,10 +227,10 @@ const props = withDefaults(defineProps<Props>(), {
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
-    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]))
+    if (![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type))
       continue;
     if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
-      return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
+      return `${prov.audio_format.sample_rate/1000}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';
@@ -263,5 +263,17 @@ const itemIsAvailable = function (item: MediaItem) {
   width: 25px;
   margin-left: 8px;
   margin-right: -13px;
+}
+.hiresicon {
+  margin-top:5px;
+  margin-right: 15px;
+  margin-left: 15px;
+  filter: invert(100%);
+}
+.hiresicondark {
+  margin-top:5px;
+  margin-right: 15px;
+  margin-left: 15px;
+  filter: invert(100%);
 }
 </style>

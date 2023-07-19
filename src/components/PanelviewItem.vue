@@ -43,7 +43,12 @@
             <!-- eslint-disable vue/no-template-shadow -->
             <template #activator="{ props }">
               <!-- eslint-enable vue/no-template-shadow -->
-              <v-icon v-bind="props" icon="mdi-quality-high" />
+              <v-img
+                  :src="iconHiRes"
+                  width="30"
+                  :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+                >
+                </v-img>
             </template>
             <span>{{ HiResDetails }}</span>
           </v-tooltip>
@@ -66,6 +71,7 @@ import MediaItemThumb from './MediaItemThumb.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import { ContentType, type MediaItem, type MediaItemType } from '../plugins/api/interfaces';
 import { getArtistsString, parseBool } from '../utils';
+import { iconHiRes } from './QualityDetailsBtn.vue';
 
 // properties
 export interface Props {
@@ -89,10 +95,10 @@ const showSettingDots = ref(false);
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
-    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]))
+    if (![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type))
       continue;
     if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
-      return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
+      return `${prov.audio_format.sample_rate/1000}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';
@@ -123,5 +129,15 @@ const emit = defineEmits<{
 .panel-item-details {
   padding-left: 0px !important;
   padding-right: 0px !important;
+}
+
+.hiresicon {
+  margin-top:5px;
+  margin-left: -10px;
+  filter: invert(100%);
+}
+.hiresicondark {
+  margin-top:5px;
+  margin-left: -10px;
 }
 </style>

@@ -84,14 +84,6 @@ div.v-navigation-drawer__scrim {
 .v-overlay__scrim {
   opacity: 65%;
 }
-
-.hiresicon {
-  position: absolute;
-  margin-left: 5px;
-  margin-top: -20px;
-  height: 30px;
-  border-radius: 5px;
-}
 .v-card--variant-elevated {
   box-shadow: none;
   border-width: 1px;
