@@ -124,13 +124,13 @@
 import { computed } from 'vue';
 
 import api from '@/plugins/api';
-import { MediaType, MediaItemType, ItemMapping, MobileDeviceType } from '@/plugins/api/interfaces';
+import { MediaType, MediaItemType, ItemMapping } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { getArtistsString } from '@/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
-import { iconFallback } from '@/components/QualityIcons.vue';
+import { iconFallback } from '@/components/QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 

@@ -26,7 +26,7 @@ import type { ItemMapping, MediaItemImage, MediaItemType, QueueItem } from '../p
 import { ImageType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { useTheme } from 'vuetify';
-import { imgCoverDark, imgCoverLight } from '@/components/QualityIcons.vue';
+import { imgCoverDark, imgCoverLight } from '@/components/QualityDetailsBtn.vue';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
