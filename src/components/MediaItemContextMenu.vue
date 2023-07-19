@@ -96,7 +96,7 @@
             <div v-if="prov.supported_features.includes(ProviderFeature.PLAYLIST_CREATE)">
               <ListItem ripple>
                 <template #prepend>
-                  <provider-icon :domain="prov.domain" :size="'40px'" class="media-thumb" />
+                  <provider-icon :domain="prov.domain" :size="40" class="media-thumb" />
                 </template>
                 <template #title>
                   <v-text-field
