@@ -1,20 +1,21 @@
 <template>
   <section>
-    <InfoHeader :item="itemDetails" />
+    <InfoHeader :item="itemDetails" :active-provider="provider" />
     <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab v-if="showVersionsTab" value="versions">
-        {{ $t('other_versions') }}
+      <v-tab value="versions">
+        {{ $t('all_versions') }}
       </v-tab>
-      <v-tab v-if="showVersionsTab" value="appears_on">
+      <v-tab value="appears_on">
         {{ $t('appears_on') }}
       </v-tab>
     </v-tabs>
     <v-divider />
     <ItemsListing
-      v-if="showVersionsTab && activeTab == 'versions'"
+      v-if="activeTab == 'versions'"
       itemtype="trackversions"
       :parent-item="itemDetails"
-      :show-providers="true"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
       :show-library="true"
       :show-track-number="false"
       :load-data="loadTrackVersions"
@@ -29,7 +30,8 @@
       v-if="activeTab == 'appears_on'"
       itemtype="trackalbums"
       :parent-item="itemDetails"
-      :show-providers="true"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
       :show-library="true"
       :show-track-number="false"
       :load-data="loadTrackAlbums"
@@ -40,6 +42,54 @@
         updateAvailable = false;
       "
     />
+    <!-- buttons to show more items on streaming providers-->
+    <div v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
+      <div v-for="providerMapping in getStreamingProviderMappings(itemDetails)" :key="providerMapping.provider_instance">
+        <ListItem
+          v-if="![providerMapping.provider_domain, providerMapping.provider_instance].includes(provider)"
+          @click="
+            $router.push({
+              name: 'track',
+              params: {
+                itemId: providerMapping.item_id,
+                provider: providerMapping.provider_instance,
+              },
+            })
+          "
+          :subtitle="
+            $t('check_item_on_provider', [
+              itemDetails.name,
+              api.providerManifests[providerMapping.provider_domain].name,
+            ])
+          "
+        >
+          <template #prepend>
+            <div>
+              <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
+            </div>
+          </template>
+        </ListItem>
+        <ListItem
+          v-if="provider != 'library' && itemDetails.provider == 'library'"
+          @click="
+            $router.push({
+              name: 'track',
+              params: {
+                itemId: itemDetails.item_id,
+                provider: itemDetails.provider,
+              },
+            })
+          "
+          :subtitle="$t('check_item_in_library', [itemDetails.name])"
+        >
+          <template #prepend>
+            <div>
+              <ProviderIcon domain="library" :size="30" />
+            </div>
+          </template>
+        </ListItem>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -50,6 +100,9 @@ import { ref } from 'vue';
 import { EventType, type Track, type EventMessage, type MediaItemType, Album } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { onBeforeUnmount, onMounted, watch } from 'vue';
+import ListItem from '../components/mods/ListItem.vue';
+import ProviderIcon from '@/components/ProviderIcon.vue';
+import {getStreamingProviderMappings} from '../utils'
 
 export interface Props {
   itemId: string;
@@ -60,11 +113,10 @@ const props = defineProps<Props>();
 const activeTab = ref('');
 const updateAvailable = ref(false);
 const itemDetails = ref<Track>();
-const showVersionsTab = ref(true);
 
 const loadItemDetails = async function () {
   console.log('props', props);
-  itemDetails.value = await api.getTrack(props.itemId, props.provider, undefined, undefined, props.album);
+  itemDetails.value = await api.getTrack(props.itemId, props.provider, props.album);
   activeTab.value = 'versions';
 };
 
@@ -77,18 +129,12 @@ watch(
 );
 
 onMounted(() => {
-  const unsub = api.subscribe_multi([EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED], (evt: EventMessage) => {
+  //signal if/when item updates
+  const unsub = api.subscribe(EventType.MEDIA_ITEM_ADDED, (evt: EventMessage) => {
     // signal user that there might be updated info available for this item
     const updatedItem = evt.data as MediaItemType;
     if (itemDetails.value?.uri == updatedItem.uri) {
       updateAvailable.value = true;
-    } else {
-      for (const provId of updatedItem.provider_mappings) {
-        if (provId.provider_domain == itemDetails.value?.provider && provId.item_id == itemDetails.value?.item_id) {
-          updateAvailable.value = true;
-          break;
-        }
-      }
     }
   });
   onBeforeUnmount(unsub);
@@ -99,11 +145,10 @@ const loadTrackVersions = async function (
   limit: number,
   sort: string,
   search?: string,
-  inLibraryOnly = true,
+  favoritesOnly = true,
 ) {
   const trackVersions = await api.getTrackVersions(props.itemId, props.provider);
-  showVersionsTab.value = trackVersions.length > 0;
-  return filteredItems(trackVersions, offset, limit, sort, search, inLibraryOnly);
+  return filteredItems(trackVersions, offset, limit, sort, search, favoritesOnly);
 };
 
 const loadTrackAlbums = async function (
@@ -111,12 +156,12 @@ const loadTrackAlbums = async function (
   limit: number,
   sort: string,
   search?: string,
-  inLibraryOnly = true,
+  favoritesOnly = true,
 ) {
   let trackAlbums = await api.getTrackAlbums(props.itemId, props.provider);
 
   if (trackAlbums.length == 0 && itemDetails.value?.album) trackAlbums = [itemDetails.value?.album as Album];
 
-  return filteredItems(trackAlbums, offset, limit, sort, search, inLibraryOnly);
+  return filteredItems(trackAlbums, offset, limit, sort, search, favoritesOnly);
 };
 </script>

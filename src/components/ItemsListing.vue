@@ -27,11 +27,11 @@
 
       <v-tooltip location="bottom" close-on-content-click>
         <template #activator="{ props }">
-          <v-btn v-if="showLibrary !== false" v-bind="props" icon variant="plain" @click="toggleLibraryFilter">
-            <v-icon :icon="inLibraryOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
+          <v-btn v-if="showFavoritesOnlyFilter !== false" v-bind="props" icon variant="plain" @click="toggleFavoriteFilter">
+            <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
           </v-btn>
         </template>
-        <span>{{ $t('tooltip.filter_library') }}</span>
+        <span>{{ $t('tooltip.filter_favorites') }}</span>
       </v-tooltip>
 
       <v-tooltip v-if="showAlbumArtistsOnlyFilter" location="bottom">
@@ -151,9 +151,9 @@
             :show-track-number="showTrackNumber"
             :show-disc-number="showTrackNumber"
             :show-duration="showDuration"
-            :show-library="showLibrary !== false && !inLibraryOnly"
+            :show-favorite="showFavoritesOnlyFilter"
             :show-menu="showMenu"
-            :show-providers="showProviders"
+            :show-provider="showProvider"
             :show-album="showAlbum"
             :show-checkboxes="showCheckboxes"
             :is-selected="isSelected(item)"
@@ -171,7 +171,7 @@
 
       <!-- show alert if no items found -->
       <div v-if="!loading && items.length == 0">
-        <Alert v-if="!loading && items.length == 0 && (search || inLibraryOnly)" :title="$t('no_content_filter')">
+        <Alert v-if="!loading && items.length == 0 && (search || favoritesOnly)" :title="$t('no_content_filter')">
           <v-btn v-if="search" style="margin-top: 15px" @click="redirectSearch">
             {{ $t('try_global_search') }}
           </v-btn>
@@ -224,23 +224,23 @@ export interface Props {
   itemtype: string;
   sortKeys?: string[];
   showTrackNumber?: boolean;
-  showProviders?: boolean;
+  showProvider?: boolean;
   showAlbum?: boolean;
   showMenu?: boolean;
-  showLibrary?: boolean;
+  showFavoritesOnlyFilter?: boolean;
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
   updateAvailable?: boolean;
-  loadData: (offset: number, limit: number, sort: string, search: string, library?: boolean) => Promise<PagedItems>;
+  loadData: (offset: number, limit: number, sort: string, search: string, favorite?: boolean, albumArtistsFilter?: boolean) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['sort_name', 'timestamp_added DESC'],
   showTrackNumber: true,
-  showProviders: Object.keys(api.providers).length > 1,
+  showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
   showMenu: true,
-  showLibrary: true,
+  showFavoritesOnlyFilter: true,
   showDuration: true,
   parentItem: undefined,
 });
@@ -261,18 +261,17 @@ const offset = ref(0);
 const items = ref<MediaItemType[]>([]);
 const totalItems = ref<number>();
 const loading = ref(false);
-const inLibraryOnly = ref(false);
+const favoritesOnly = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const showContextMenu = ref(false);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
-const albumArtistsOnlyFilter = ref(false);
+const albumArtistsOnlyFilter = ref(true);
 
 // computed properties
 
 // emitters
 const emit = defineEmits<{
-  (e: 'toggleAlbumArtistsOnly', value: boolean): void;
   (e: 'refreshClicked'): void;
 }>();
 
@@ -333,10 +332,10 @@ const toggleViewMode = function () {
   localStorage.setItem(`viewMode.${props.itemtype}`, viewMode.value);
 };
 
-const toggleLibraryFilter = function () {
-  inLibraryOnly.value = !inLibraryOnly.value;
-  const inLibraryOnlyStr = inLibraryOnly.value ? 'true' : 'false';
-  localStorage.setItem(`libraryFilter.${props.itemtype}`, inLibraryOnlyStr);
+const toggleFavoriteFilter = function () {
+  favoritesOnly.value = !favoritesOnly.value;
+  const favoritesOnlyStr = favoritesOnly.value ? 'true' : 'false';
+  localStorage.setItem(`favoriteFilter.${props.itemtype}`, favoritesOnlyStr);
   loadData(true);
 };
 
@@ -344,7 +343,6 @@ const toggleAlbumArtistsFilter = function () {
   albumArtistsOnlyFilter.value = !albumArtistsOnlyFilter.value;
   const albumArtistsOnlyStr = albumArtistsOnlyFilter.value ? 'true' : 'false';
   localStorage.setItem(`albumArtistsFilter.${props.itemtype}`, albumArtistsOnlyStr);
-  emit('toggleAlbumArtistsOnly', albumArtistsOnlyFilter.value);
   loadData(true);
 };
 
@@ -471,7 +469,7 @@ const loadData = async function (clear = false, limit = defaultLimit) {
   }
   loading.value = true;
 
-  const nextItems = await props.loadData(offset.value, limit, sortBy.value, search.value || '', inLibraryOnly.value);
+  const nextItems = await props.loadData(offset.value, limit, sortBy.value, search.value || '', favoritesOnly.value, albumArtistsOnlyFilter.value);
   if (offset.value) {
     items.value.push(...nextItems.items);
   } else {
@@ -505,20 +503,19 @@ onMounted(() => {
     sortBy.value = props.sortKeys[0];
   }
 
-  // get stored/default libraryOnlyFilter for this itemtype
-  if (props.showLibrary !== false) {
-    const savedInLibraryOnlyStr = localStorage.getItem(`libraryFilter.${props.itemtype}`);
-    if (savedInLibraryOnlyStr && savedInLibraryOnlyStr == 'true') {
-      inLibraryOnly.value = true;
+  // get stored/default favoriteOnlyFilter for this itemtype
+  if (props.showFavoritesOnlyFilter !== false) {
+    const savedInFavoriteOnlyStr = localStorage.getItem(`favoriteFilter.${props.itemtype}`);
+    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
+      favoritesOnly.value = true;
     }
   }
 
   // get stored/default albumArtistsOnlyFilter for this itemtype
   if (props.showAlbumArtistsOnlyFilter !== false) {
     const albumArtistsOnlyStr = localStorage.getItem(`albumArtistsFilter.${props.itemtype}`);
-    if (albumArtistsOnlyStr && albumArtistsOnlyStr == 'true') {
-      albumArtistsOnlyFilter.value = true;
-      emit('toggleAlbumArtistsOnly', albumArtistsOnlyFilter.value);
+    if (albumArtistsOnlyStr) {
+      albumArtistsOnlyFilter.value = albumArtistsOnlyStr == 'true';
     }
   }
   // get stored searchquery
@@ -531,23 +528,6 @@ onMounted(() => {
     search.value = savedSearch;
   }
   loadData(true);
-});
-
-onMounted(() => {
-  //reload if/when parent item updates
-  const unsub = api.subscribe_multi(
-    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],
-    (evt: EventMessage) => {
-      if (evt.event == EventType.MEDIA_ITEM_DELETED) {
-        items.value = items.value.filter((x) => x.uri != evt.object_id);
-      } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
-        // update listing if relevant item changes
-        const updatedItem = evt.data as MediaItemType;
-        items.value = items.value.map((x) => (x.uri == updatedItem.uri ? updatedItem : x));
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
 });
 
 // lifecycle hooks
@@ -578,7 +558,7 @@ export const filteredItems = function (
   limit: number,
   sortBy: string,
   search?: string,
-  inLibraryOnly = true,
+  favoritesOnly = true,
 ) {
   let result = [];
 
@@ -634,8 +614,8 @@ export const filteredItems = function (
     result.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 
-  if (inLibraryOnly) {
-    result = result.filter((x) => x.in_library);
+  if (favoritesOnly) {
+    result = result.filter((x) => x.favorite);
   }
 
   const totalItems = result.length;

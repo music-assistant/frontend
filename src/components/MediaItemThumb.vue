@@ -26,7 +26,7 @@ import type { ItemMapping, MediaItemImage, MediaItemType, QueueItem } from '../p
 import { ImageType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { useTheme } from 'vuetify';
-import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
+import { imgCoverDark, imgCoverLight } from '@/components/QualityDetailsBtn.vue';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -158,12 +158,14 @@ export const getImageThumbForItem = function (
   if (!img) return undefined;
   if (img.provider !== 'url') {
     // use imageproxy for embedded images
+    if (!api.providers[img.provider]?.available) return undefined;
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     const checksum = 'metadata' in mediaItem ? mediaItem.metadata?.checksum : '';
-    return `${api.baseUrl}/imageproxy?size=${size || 0}&path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
+    imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
+  } else {
+    imageUrl = img.path;
   }
-  imageUrl = img.path;
-
+  
   if (!size) {
     return imageUrl;
   } else if (imageUrl.includes('imageproxy')) {

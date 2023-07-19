@@ -27,9 +27,9 @@
   "crossfade_disabled": "Crossfade is disabled",
   "crossfade_enabled": "Crossfade is enabled",
   "dark_mode": "Dark mode",
-  "delete_db": "Delete item from database",
+  "delete_db": "Delete item from library",
   "details": "Details",
-  "enter_url": "Enter the URL you want to manually add to the database",
+  "enter_url": "Enter the URL you want to manually add to the library",
   "external_source_active": "External source active: {0}",
   "goto_album": "Goto album {0}",
   "goto_artist": "Goto artist {0}",
@@ -45,7 +45,7 @@
   "no_player": "No player selected",
   "off": "Off",
   "on": "On",
-  "other_versions": "Other versions",
+  "all_versions": "All versions",
   "perform_action": "Perform action on {0} item(s)",
   "play": "Play",
   "play_album_from": "Play Album from here",
@@ -166,8 +166,8 @@
   "tooltip": {
     "album_artist_filter": "Toggle album-artist filter",
     "explicit": "Explicit",
-    "filter_library": "Toggle in-library/favorite filter",
-    "library": "Toggle in-library/favorite",
+    "filter_favorites": "Only show favorites",
+    "favorite": "Mark/unmark as favorite",
     "linked": "This provideritem is linked to the current itemdetails",
     "refresh": "Refresh the items listing",
     "refresh_new_content": "New content is available, click to refresh the listing",
@@ -183,5 +183,10 @@
   "try_global_search": "Try global search",
   "type_to_search": "Type here to search...",
   "volume_normalization": "Volume normalization",
-  "currently_playing": "Currently playing"
+  "currently_playing": "Currently playing",
+  "favorites_add": "Add to favorites",
+  "favorites_remove": "Remove from favorites",
+  "confirm_library_remove": "Are you sure you want to delete this item from the library ? Any items depending on this item will also recursively be removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return in the next sync.",
+  "check_item_on_provider": "Check {0} on {1}",
+  "check_item_in_library": "Check {0} in the library"
 }

@@ -3,23 +3,25 @@
     itemtype="radios"
     :items="items"
     :show-duration="false"
-    :show-providers="true"
-    :show-library="true"
+    :show-provider="false"
+    :show-favorites-only-filter="true"
     :load-data="loadItems"
     :sort-keys="['sort_name', 'timestamp_added DESC']"
+    :update-available="updateAvailable"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ItemsListing from '../components/ItemsListing.vue';
 import api from '../plugins/api';
-import { MediaType, type Radio } from '../plugins/api/interfaces';
+import { EventMessage, EventType, MediaType, type Radio } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
+const updateAvailable = ref<boolean>(false);
 
 store.topBarContextMenuItems = [
   {
@@ -43,17 +45,36 @@ onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
 });
 
-const loadItems = async function (offset: number, limit: number, sort: string, search?: string, inLibraryOnly = true) {
-  const library = inLibraryOnly || undefined;
-  return await api.getRadios(library, search, limit, offset, sort);
+onMounted(() => {
+  // signal if/when items get added/updated/removed within this library
+  const unsub = api.subscribe_multi(
+    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
+      if (evt.object_id?.startsWith('library://radio')) {
+        updateAvailable.value = true;
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
+
+const loadItems = async function (offset: number, limit: number, sort: string, search?: string, favoritesOnly = true) {
+  const favorite = favoritesOnly || undefined;
+  updateAvailable.value = false;
+  return await api.getLibraryRadios(favorite, search, limit, offset, sort);
 };
 
-const addUrl = function () {
+const addUrl = async function () {
   const url = prompt(t('enter_url'));
   if (!url) return;
   api
-    .getRadio(url, 'url', undefined, false)
-    .then(() => location.reload())
+    .getItem(MediaType.RADIO, url, 'url')
+    .then((item) => {
+      const name = prompt(t('enter_name'), item.name);
+      item.name = name || item.name;
+      api.addItemToLibrary(item).then(() => updateAvailable.value = true)
+    })
     .catch((e) => alert(e));
 };
 </script>

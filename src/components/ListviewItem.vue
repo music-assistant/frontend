@@ -122,29 +122,25 @@
           </v-tooltip>
         </v-img>
 
-        <!-- provider icons -->
-        <provider-icons
-          v-if="item.provider_mappings && getBreakpointValue('bp2') && showProviders"
-          :provider-mappings="item.provider_mappings"
-          :height="24"
+        <!-- provider icon -->
+        <provider-icon
+          v-if="getBreakpointValue('bp2') && showProvider"
+          :domain="item.media_type == MediaType.PLAYLIST ? item.provider_mappings[0].provider_domain : item.provider"
+          :size="24"
         />
 
-        <!-- in library (heart) icon -->
-        <div v-if="getBreakpointValue('bp3') && 'in_library' in item && showLibrary && !$vuetify.display.mobile">
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <v-btn
-                variant="plain"
-                ripple
-                v-bind="props"
-                :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
-                @click="api.toggleLibrary(item)"
-                @click.prevent
-                @click.stop
-              />
-            </template>
-            <span>{{ $t('tooltip.library') }}</span>
-          </v-tooltip>
+        <!-- favorite (heart) icon -->
+        <div v-if="getBreakpointValue('bp3') && 'favorite' in item && showFavorite && !$vuetify.display.mobile">
+          <v-btn
+            variant="plain"
+            ripple
+            v-bind="props"
+            :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+            @click="api.toggleFavorite(item)"
+            @click.prevent
+            @click.stop
+            :title="$t('tooltip.favorite')"
+          />
         </div>
 
         <!-- track duration -->
@@ -154,7 +150,7 @@
             item.media_type == MediaType.TRACK &&
             'duration' in item &&
             item.duration != undefined &&
-            getBreakpointValue('bp2')
+            getBreakpointValue('bp0')
           "
         >
           <div>
@@ -177,7 +173,8 @@
 import { computed } from 'vue';
 import { VTooltip } from 'vuetify/components';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ProviderIcons, { iconHiRes } from './ProviderIcons.vue';
+import { iconHiRes } from './QualityDetailsBtn.vue';
+import ProviderIcon from './ProviderIcon.vue';
 import {
   ContentType,
   type BrowseFolder,
@@ -197,10 +194,10 @@ export interface Props {
   showTrackNumber?: boolean;
   showDiscNumber?: boolean;
   showPosition?: boolean;
-  showProviders?: boolean;
+  showProvider?: boolean;
   showAlbum?: boolean;
   showMenu?: boolean;
-  showLibrary?: boolean;
+  showFavorite?: boolean;
   showDuration?: boolean;
   isSelected: boolean;
   isDisabled?: boolean;
@@ -215,11 +212,11 @@ const { t } = useI18n();
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showDiscNumber: true,
-  showProviders: true,
+  showProvider: true,
   showPosition: true,
   showAlbum: true,
   showMenu: true,
-  showLibrary: true,
+  showFavorite: false,
   showDuration: true,
   showCheckboxes: false,
   parentItem: undefined,

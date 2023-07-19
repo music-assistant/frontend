@@ -32,7 +32,7 @@
           :show-duration="true"
           :show-library="true"
           :show-menu="true"
-          :show-providers="false"
+          :show-provider="false"
           :show-album="false"
           :show-checkboxes="false"
           :is-selected="false"

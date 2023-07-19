@@ -373,7 +373,7 @@ export interface MediaItem {
   provider_mappings: ProviderMapping[];
 
   metadata: MediaItemMetadata;
-  in_library: boolean;
+  favorite: boolean;
   media_type: MediaType;
   sort_name?: string;
   uri: string;
