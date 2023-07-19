@@ -40,7 +40,7 @@
     />
     <!-- buttons to show more items on streaming providers-->
     <div v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
-      <div v-for="providerMapping in getStreamingProviderMappings(itemDetails)">
+      <div v-for="providerMapping in getStreamingProviderMappings(itemDetails)" :key="providerMapping.provider_instance">
         <ListItem
           v-if="![providerMapping.provider_domain, providerMapping.provider_instance].includes(provider)"
           @click="

@@ -4,7 +4,7 @@
       <div>
         <v-row dense align-content="start" :align="'start'">
           <v-col v-for="card in cards" :key="card.label" align-self="start">
-            <v-card :ripple="true" class="mx-auto home-card" outlined @click="router.push(card.path)">
+            <v-card :ripple="true" class="mx-auto home-card" outlined @click="$router.push(card.path)">
               <v-list-item two-line>
                 <v-btn variant="plain" icon :ripple="false" height="80">
                   <v-icon :icon="card.icon" size="80" style="align: center; padding: 10px" />
@@ -22,17 +22,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
 
-import { api } from '@/plugins/api';
-import { Artist } from '@/plugins/api/interfaces';
-
-const router = useRouter();
-
-
-onMounted(async () => {
-});
 
 const cards = ref([
   {
