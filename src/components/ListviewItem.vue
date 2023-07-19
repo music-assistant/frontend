@@ -173,7 +173,7 @@
 import { computed } from 'vue';
 import { VTooltip } from 'vuetify/components';
 import MediaItemThumb from './MediaItemThumb.vue';
-import { iconHiRes } from './QualityIcons.vue';
+import { iconHiRes } from './QualityDetailsBtn.vue';
 import ProviderIcon from './ProviderIcon.vue';
 import {
   ContentType,
