@@ -141,26 +141,17 @@
               </v-card>
             </v-menu>
 
+            <!-- favorite (heart) icon -->
             <v-btn
-              v-if="!$vuetify.display.mobile && !item.favorite"
-              style="margin-left: 10px"
-              color="primary"
-              tile
-              prepend-icon="mdi-heart-outline"
-              @click="api.addItemsToLibrary([item!])"
-            >
-              {{ $t('add_library') }}
-            </v-btn>
-            <v-btn
-              v-if="!$vuetify.display.mobile && item.favorite"
-              style="margin-left: 10px"
-              color="primary"
-              tile
-              prepend-icon="mdi-heart"
-              @click="api.removeItemsFromLibrary([item!])"
-            >
-              {{ $t('remove_library') }}
-            </v-btn>
+              variant="plain"
+              ripple
+              :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+              @click="api.toggleFavorite(item)"
+              @click.prevent
+              @click.stop
+              size="x-large"
+              style="margin-top: -15px"
+            />
           </div>
 
           <!-- Description/metadata -->
@@ -195,13 +186,11 @@
         </div>
       </v-layout>
       <v-layout v-if="item" style="z-index: 800; height: 100%; padding-left: 15px">
-        <!-- provider icons -->
-        <div style="position: absolute; float: right; right: 15px; top: 15px">
-          <provider-icons
-            :provider-mappings="item.provider_mappings"
-            :height="25"
-            :enable-details="true"
-            :enable-preview="item.media_type == MediaType.TRACK"
+        <!-- active/filtered provider icon -->
+        <div v-if="activeProvider" style="position: absolute; float: right; right: 15px; top: 15px">
+          <provider-icon
+            :domain="activeProvider"
+            :size="25"
           />
         </div>
       </v-layout>
@@ -224,7 +213,7 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcons from './ProviderIcons.vue';
+import ProviderIcon from './ProviderIcon.vue';
 import { store } from '@/plugins/store';
 import { useDisplay } from 'vuetify';
 import { api } from '@/plugins/api';
@@ -237,10 +226,12 @@ import { useRouter } from 'vue-router';
 import { parseBool } from '../utils';
 import { getPlayMenuItems, getContextMenuItems } from './MediaItemContextMenu.vue';
 import ListItem from '@/components/mods/ListItem.vue';
+import { useI18n } from 'vue-i18n';
 
 // properties
 export interface Props {
   item?: MediaItemType;
+  activeProvider?: string;
 }
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
@@ -250,6 +241,7 @@ const { mobile } = useDisplay();
 const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url).href;
 
 const router = useRouter();
+const { t } = useI18n();
 
 watch(
   () => compProps.item,
@@ -258,10 +250,10 @@ watch(
       store.topBarTitle = val.name;
 
       fanartImage.value =
-        (await getImageThumbForItem(compProps.item, ImageType.FANART)) ||
-        (await getImageThumbForItem(compProps.item, ImageType.THUMB));
+        getImageThumbForItem(compProps.item, ImageType.FANART) ||
+        getImageThumbForItem(compProps.item, ImageType.THUMB);
 
-      store.topBarContextMenuItems = getContextMenuItems([val], val);
+      store.topBarContextMenuItems = getContextMenuItems([val], val, t);
     }
   },
   { immediate: true },

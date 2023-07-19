@@ -130,7 +130,7 @@ import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { getArtistsString } from '@/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
-import { iconFallback } from '@/components/ProviderIcons.vue';
+import { iconFallback } from '@/components/QualityIcons.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 

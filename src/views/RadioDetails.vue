@@ -2,16 +2,16 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <v-tabs show-arrows grow hide-slider>
-      <v-tab v-if="showVersionsTab">
-        {{ $t('other_versions') }}
+      <v-tab>
+        {{ $t('all_versions') }}
       </v-tab>
     </v-tabs>
     <v-divider />
     <ItemsListing
-      v-if="showVersionsTab"
       itemtype="radioversions"
       :parent-item="itemDetails"
-      :show-providers="true"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
       :show-library="false"
       :show-radio-number="false"
       :show-duration="false"
@@ -35,14 +35,12 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Radio>();
-const showVersionsTab = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getRadio(props.itemId, props.provider);
   // we only show the versions tab if we actually have other versions
   // to avoid confusion
   const versions = await loadRadioVersions(0, 2, 'name');
-  showVersionsTab.value = versions.count > 0;
 };
 
 watch(
@@ -58,9 +56,9 @@ const loadRadioVersions = async function (
   limit: number,
   sort: string,
   search?: string,
-  inLibraryOnly = true,
+  favoritesOnly = true,
 ) {
   const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
-  return filteredItems(radioVersions, offset, limit, sort, search, inLibraryOnly);
+  return filteredItems(radioVersions, offset, limit, sort, search, favoritesOnly);
 };
 </script>

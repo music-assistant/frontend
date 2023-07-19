@@ -163,7 +163,7 @@
   "tooltip": {
     "album_artist_filter": "Filter für Album-Künstler umschalten",
     "explicit": "Explizit",
-    "filter_library": "Filter innerhalb der Bibliothek/Favoriten umschalten",
+    "filter_favorites": "Filter innerhalb der Favoriten umschalten",
     "library": "Bibliothek/Favorit umschalten",
     "linked": "Dieses Anbieterelement ist mit den aktuellen Artikeldetails verknüpft",
     "refresh": "Aktualisiere die Artikelliste",

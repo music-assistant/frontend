@@ -1,6 +1,6 @@
 <template>
   <section>
-    <InfoHeader :item="itemDetails" />
+    <InfoHeader :item="itemDetails" :active-provider="itemDetails?.provider_mappings[0].provider_domain" />
 
     <v-tabs show-arrows grow hide-slider>
       <v-tab>
@@ -11,8 +11,9 @@
     <ItemsListing
       itemtype="playlisttracks"
       :parent-item="itemDetails"
-      :show-providers="false"
+      :show-provider="false"
       :show-library="false"
+      :show-favorites-only-filter="false"
       :show-track-number="false"
       :load-data="loadPlaylistTracks"
       :sort-keys="['position', 'position DESC', 'sort_name', 'sort_artist', 'sort_album']"
@@ -54,18 +55,12 @@ watch(
 );
 
 onMounted(() => {
-  const unsub = api.subscribe_multi([EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED], (evt: EventMessage) => {
+  //signal if/when item updates
+  const unsub = api.subscribe(EventType.MEDIA_ITEM_ADDED, (evt: EventMessage) => {
     // signal user that there might be updated info available for this item
     const updatedItem = evt.data as MediaItemType;
     if (itemDetails.value?.uri == updatedItem.uri) {
       updateAvailable.value = true;
-    } else {
-      for (const provId of updatedItem.provider_mappings) {
-        if (provId.provider_domain == itemDetails.value?.provider && provId.item_id == itemDetails.value?.item_id) {
-          updateAvailable.value = true;
-          break;
-        }
-      }
     }
   });
   onBeforeUnmount(unsub);
@@ -76,7 +71,7 @@ const loadPlaylistTracks = async function (
   limit: number,
   sort: string,
   search?: string,
-  inLibraryOnly = true,
+  favoritesOnly = true,
 ) {
   const playlistTracks: Track[] = [];
 
@@ -84,6 +79,6 @@ const loadPlaylistTracks = async function (
     console.log('chunk', data.length);
     playlistTracks.push(...data);
   });
-  return filteredItems(playlistTracks, offset, limit, sort, search, inLibraryOnly);
+  return filteredItems(playlistTracks, offset, limit, sort, search, favoritesOnly);
 };
 </script>

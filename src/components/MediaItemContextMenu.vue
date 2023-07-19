@@ -83,10 +83,10 @@
                 <div>{{ playlist.owner }}</div>
               </template>
               <template #append>
-                <provider-icons
+                <provider-icon
                   v-if="playlist.provider_mappings"
-                  :provider-mappings="playlist.provider_mappings"
-                  :height="20"
+                  :domain="playlist.provider_mappings[0].provider_domain"
+                  :size="20"
                 />
               </template>
             </ListItem>
@@ -124,7 +124,6 @@
 
 <script setup lang="ts">
 import MediaItemThumb from './MediaItemThumb.vue';
-import ProviderIcons from './ProviderIcons.vue';
 import ProviderIcon from './ProviderIcon.vue';
 import { MediaType, QueueOption, type Album } from '../plugins/api/interfaces';
 import type { MediaItem, MediaItemType, Playlist, Track } from '../plugins/api/interfaces';
@@ -211,13 +210,13 @@ const showContextMenu = async function () {
     items[0] = firstItem;
     emit('update:items', items);
   }
-  actionMenuItems.value = getContextMenuItems(props.items, props.parentItem);
+  actionMenuItems.value = getContextMenuItems(props.items, props.parentItem, t);
   fetchPlaylists();
 };
 const fetchPlaylists = async function () {
   // get all editable playlists
   playlists.value = [];
-  const playlistResults = await api.getPlaylists();
+  const playlistResults = await api.getLibraryPlaylists();
 
   for (const playlist of playlistResults.items as Playlist[]) {
     if (
@@ -391,7 +390,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem) {
+export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem, t: any) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
@@ -473,23 +472,54 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
     });
   }
   // add to library
-  if (!items[0].favorite && itemIsAvailable(items[0])) {
+  if (items[0].provider != 'library' && itemIsAvailable(items[0])) {
     contextMenuItems.push({
       label: 'add_library',
       labelArgs: [],
       action: () => {
-        api.addItemsToLibrary(items);
+        for (const item of items) api.addItemToLibrary(item);
       },
-      icon: 'mdi-heart-outline',
+      icon: 'mdi-bookshelf',
     });
   }
   // remove from library
-  if (items[0].favorite) {
+  if (items[0].provider == 'library') {
     contextMenuItems.push({
       label: 'remove_library',
       labelArgs: [],
       action: () => {
-        api.removeItemsFromLibrary(items);
+        if (!confirm(t('confirm_library_remove'))) return;
+        for (const item of items) api.removeItemFromLibrary(item.media_type, item.item_id);
+        if (items[0].item_id == parentItem?.item_id) router.go(-1);
+        else router.go(0);
+      },
+      icon: 'mdi-bookshelf',
+    });
+  }
+  // add to favorites
+  if (!items[0].favorite) {
+    contextMenuItems.push({
+      label: 'favorites_add',
+      labelArgs: [],
+      action: () => {
+        for (const item of items) {
+          api.addItemToFavorites(item);
+          item.favorite = true;
+        }
+      },
+      icon: 'mdi-heart-outline',
+    });
+  }
+  // remove from favorites
+  if (items[0].favorite) {
+    contextMenuItems.push({
+      label: 'favorites_remove',
+      labelArgs: [],
+      action: () => {
+        for (const item of items) {
+          api.removeItemFromFavorites(item.media_type, item.item_id);
+          item.favorite = false;
+        }
       },
       icon: 'mdi-heart',
     });
@@ -518,23 +548,6 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
       labelArgs: [],
       actionStr: 'add_playlist',
       icon: 'mdi-plus-circle-outline',
-    });
-  }
-  // delete from db
-  if (items.length == 1 && items[0].provider == 'library') {
-    contextMenuItems.push({
-      label: 'delete_db',
-      labelArgs: [],
-      action: () => {
-        api.deleteDbItem(items[0].media_type, items[0].item_id, true);
-        if (parentItem && parentItem.item_id == items[0].item_id) {
-          // refresh UI if paremtItem deleted
-          router.push({
-            name: `${parentItem.media_type}s`,
-          });
-        }
-      },
-      icon: 'mdi-cancel',
     });
   }
   // clear selection

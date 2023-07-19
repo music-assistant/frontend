@@ -163,7 +163,7 @@
     "tooltip": {
         "album_artist_filter": "Alterna filtro album-artista",
         "explicit": "Contenuti espliciti",
-        "filter_library": "Alterna filtro in-libreria\/favoriti",
+        "filter_favorites": "Alterna filtro favoriti",
         "library": "Alterna in-libreria\/favoriti",
         "linked": "Questo provider è collegato ai dettagli dell'elemento corrente",
         "refresh": "Aggiorna la lista di elementi",

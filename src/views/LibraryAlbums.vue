@@ -2,22 +2,25 @@
   <ItemsListing
     itemtype="albums"
     :items="items"
-    :show-providers="true"
+    :show-provider="false"
+    :show-favorites-only-filter="true"
     :load-data="loadItems"
     :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'year']"
+    :update-available="updateAvailable"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ItemsListing from '../components/ItemsListing.vue';
 import api from '../plugins/api';
-import { MediaType, type Album } from '../plugins/api/interfaces';
+import { MediaType, type Album, EventMessage, EventType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 
 const { t } = useI18n();
 const items = ref<Album[]>([]);
+const updateAvailable = ref<boolean>(false);
 
 store.topBarContextMenuItems = [
   {
@@ -33,8 +36,23 @@ onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
 });
 
-const loadItems = async function (offset: number, limit: number, sort: string, search?: string, inLibraryOnly = true) {
-  const library = inLibraryOnly || undefined;
-  return await api.getAlbums(library, search, limit, offset, sort);
+onMounted(() => {
+  // signal if/when items get added/updated/removed within this library
+  const unsub = api.subscribe_multi(
+    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
+      if (evt.object_id?.startsWith('library://artist')) {
+        updateAvailable.value = true;
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
+
+const loadItems = async function (offset: number, limit: number, sort: string, search?: string, favoritesOnly = true) {
+  const favorite = favoritesOnly || undefined;
+  updateAvailable.value = false;
+  return await api.getLibraryAlbums(favorite, search, limit, offset, sort);
 };
 </script>

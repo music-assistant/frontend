@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { getContentTypeIcon } from '@/components/ProviderIcons.vue';
+import { getContentTypeIcon } from '@/components/QualityIcons.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';

@@ -163,7 +163,7 @@
     "tooltip": {
         "album_artist_filter": "Skift album-kunstner-filter",
         "explicit": "Eksplicit",
-        "filter_library": "Skift bibliotek-favorit-filter",
+        "filter_favorites": "Skift favorit-filter",
         "library": "Skift bibliotek-favorit",
         "linked": "Denne udbyder er knyttet til de aktuelle detaljer",
         "refresh": "Opdater listen",

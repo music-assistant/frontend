@@ -332,7 +332,7 @@ import NextBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue';
 import PreviousBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue';
 import ShuffleBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue';
 import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
-import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
+import { imgCoverDark, imgCoverLight } from '@/components/QualityIcons.vue';
 import PlayerControls from './PlayerControls.vue';
 import QualityDetailsBtn from './QualityDetailsBtn.vue';
 import router from '@/plugins/router';

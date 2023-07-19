@@ -29,11 +29,9 @@ import { api } from '@/plugins/api';
 import { Artist } from '@/plugins/api/interfaces';
 
 const router = useRouter();
-const recentArtists = ref<Artist[]>([]);
+
 
 onMounted(async () => {
-  const result = await api.getAlbumArtists(undefined, undefined, 25, 0, 'timestamp_added');
-  recentArtists.value = result.items as Artist[];
 });
 
 const cards = ref([

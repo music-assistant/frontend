@@ -163,7 +163,7 @@
   "tooltip": {
     "album_artist_filter": "Alternar filtro de álbum-artista",
     "explicit": "Explicito",
-    "filter_library": "Alternar filtro en la biblioteca/favorito",
+    "filter_favorites": "Alternar filtro en la favorito",
     "library": "Guardar en biblioteca/favorito",
     "linked": "Este artículo del proveedor está vinculado a los detalles del elemento actual",
     "refresh": "Actualizar la lista de elementos",

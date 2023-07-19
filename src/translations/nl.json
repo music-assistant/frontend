@@ -163,8 +163,8 @@
   "tooltip": {
     "album_artist_filter": "Schakel filter in/uit om enkel albumartiesten te tonen",
     "explicit": "Expliciet",
-    "filter_library": "Het filter in/uitschakelen om enkel bibliotheek items te tonen",
-    "library": "Markeer als bibliotheek/favoriet",
+    "filter_favorites": "Het filter in/uitschakelen om enkel favorieten te tonen",
+    "favorite": "Favoriet",
     "linked": "Dit provideritem is gelinkt aan de itemdetails",
     "refresh": "De lijst verversen",
     "refresh_new_content": "Er is nieuwe inhoud beschikbaar, klik om te verversen",

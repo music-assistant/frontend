@@ -1,4 +1,4 @@
-import { Artist, BrowseFolder, ItemMapping, Player, PlayerType } from '@/plugins/api/interfaces';
+import { Artist, BrowseFolder, ItemMapping, MediaItemType, Player, PlayerType, ProviderMapping } from '@/plugins/api/interfaces';
 
 import Color from 'color';
 //@ts-ignore
@@ -119,6 +119,18 @@ export const getPlayerName = function (player: Player, truncate = 26) {
     return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length - 1}`;
   }
   return truncateString(player.display_name, truncate);
+};
+
+export const getStreamingProviderMappings = function (itemDetails: MediaItemType) {
+  const result: ProviderMapping[] = [];
+  for (const provider_mapping of itemDetails?.provider_mappings || []) {
+    if (provider_mapping.provider_domain.startsWith('filesystem')) continue;
+    if (provider_mapping.provider_domain == 'plex') continue;
+    if (result.filter((a) => a.provider_domain == provider_mapping.provider_domain).length) continue;
+    result.push(provider_mapping);
+  }
+  console.log('getStreamingProviderMappings', result)
+  return result;
 };
 
 export const numberRange = function (start: number, end: number): number[] {
