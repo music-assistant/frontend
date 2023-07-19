@@ -399,7 +399,7 @@ watch(
   () => curQueueItem.value,
   async (result) => {
     if (result && result.media_item && result.media_item.media_type === MediaType.TRACK) {
-      fullTrackDetails.value = (await api.getItemByUri(result.media_item.uri, undefined, false)) as Track;
+      fullTrackDetails.value = (await api.getItemByUri(result.media_item.uri)) as Track;
     }
   },
 );

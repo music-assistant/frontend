@@ -390,7 +390,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem, t: any) {
+export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem, t?: any) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
