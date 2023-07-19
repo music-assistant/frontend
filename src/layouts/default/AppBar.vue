@@ -33,7 +33,7 @@
             <Button
               v-if="store.topBarContextMenuItems.length > 0"
               icon
-              style="height: 50px; height: 38px !important"
+              class="contextmenubtn"
               v-bind="props"
             >
               <v-icon icon="mdi-dots-vertical" />
@@ -179,5 +179,11 @@ const backButton = function () {
 
 .main-app-bar > div > div.v-toolbar__append {
   flex: none;
+}
+
+.contextmenubtn {
+  width: 25px;
+  margin-left: 8px;
+  margin-right: -12px;
 }
 </style>

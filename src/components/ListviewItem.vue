@@ -162,7 +162,7 @@
         <slot name="append"></slot>
         <!-- menu button/icon -->
         <div v-if="getBreakpointValue('bp1') && showMenu">
-          <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
+          <v-btn class="contextmenubtn" variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
         </div>
       </template>
     </ListItem>
@@ -256,3 +256,12 @@ const itemIsAvailable = function (item: MediaItem) {
   return false;
 };
 </script>
+
+<style scoped>
+
+.contextmenubtn {
+  width: 25px;
+  margin-left: 8px;
+  margin-right: -13px;
+}
+</style>
