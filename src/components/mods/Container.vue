@@ -1,5 +1,5 @@
 <template>
-  <v-container v-bind="containerProps" class="container">
+  <v-container v-bind="containerProps" class="container" fluid>
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in ($slots as unknown)" #[name]>
       <slot :name="name"></slot>

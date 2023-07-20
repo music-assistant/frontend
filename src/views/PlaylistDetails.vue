@@ -1,13 +1,6 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" :active-provider="itemDetails?.provider_mappings[0].provider_domain" />
-
-    <v-tabs show-arrows grow hide-slider>
-      <v-tab>
-        {{ $t('playlist_tracks') }}
-      </v-tab>
-    </v-tabs>
-    <v-divider />
     <ItemsListing
       itemtype="playlisttracks"
       :parent-item="itemDetails"
@@ -22,6 +15,7 @@
         loadItemDetails();
         updateAvailable = false;
       "
+      :title="$t('playlist_tracks')"
     />
   </section>
 </template>

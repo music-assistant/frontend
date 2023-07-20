@@ -1,12 +1,6 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <v-tabs show-arrows grow hide-slider>
-      <v-tab>
-        {{ $t('all_versions') }}
-      </v-tab>
-    </v-tabs>
-    <v-divider />
     <ItemsListing
       itemtype="radioversions"
       :parent-item="itemDetails"
@@ -17,6 +11,8 @@
       :show-duration="false"
       :load-data="loadRadioVersions"
       :sort-keys="['provider', 'sort_name']"
+      :title="$t('other_versions')"
+      :checksum="provider+itemId"
     />
   </section>
 </template>
@@ -38,9 +34,6 @@ const itemDetails = ref<Radio>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getRadio(props.itemId, props.provider);
-  // we only show the versions tab if we actually have other versions
-  // to avoid confusion
-  const versions = await loadRadioVersions(0, 2, 'name');
 };
 
 watch(

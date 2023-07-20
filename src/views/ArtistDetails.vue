@@ -1,7 +1,7 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" :active-provider="provider" />
-    <div v-if="activeTab == 'library'">
+
       <ItemsListing
         itemtype="artisttracks"
         :parent-item="itemDetails"
@@ -16,6 +16,7 @@
           updateAvailable = false;
         "
         :title="$t('tracks')"
+        :checksum="provider+itemId"
       />
 
       <ItemsListing
@@ -31,6 +32,7 @@
           updateAvailable = false;
         "
         :title="$t('albums')"
+        :checksum="provider+itemId"
       />
 
       <!-- buttons to show more items on streaming providers-->
@@ -84,7 +86,7 @@
           </ListItem>
         </div>
       </v-card>
-    </div>
+
   </section>
 </template>
 

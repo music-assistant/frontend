@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <Container>
+  <Container v-if="!(hideOnEmpty && allItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
     
     <MediaItemContextMenu
@@ -124,7 +124,7 @@
 
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
-        <v-col v-for="item in items" :key="item.uri" :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
+        <v-col v-for="item in allItems" :key="item.uri" :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
           <PanelviewItem
             :item="item"
             :is-selected="isSelected(item)"
@@ -139,7 +139,7 @@
 
       <!-- list view -->
       <div v-if="viewMode == 'list'">
-        <RecycleScroller v-slot="{ item }" :items="items" :item-size="70" key-field="uri" page-mode>
+        <RecycleScroller v-slot="{ item }" :items="allItems" :item-size="70" key-field="uri" page-mode>
           <ListviewItem
             :key="item.uri"
             :item="item"
@@ -164,14 +164,14 @@
       <!-- inifinite scroll component -->
       <InfiniteLoading @infinite="loadNextPage" />
 
-      <!-- show alert if no items found -->
-      <div v-if="!loading && items.length == 0">
-        <Alert v-if="!loading && items.length == 0 && (search || favoritesOnly)" :title="$t('no_content_filter')">
+      <!-- show alert if no item found -->
+      <div v-if="!loading && allItems.length == 0">
+        <Alert v-if="!loading && allItems.length == 0 && (search || favoritesOnly)" :title="$t('no_content_filter')">
           <v-btn v-if="search" style="margin-top: 15px" @click="redirectSearch">
             {{ $t('try_global_search') }}
           </v-btn>
         </Alert>
-        <Alert v-else-if="!loading && items.length == 0">
+        <Alert v-else-if="!loading && allItems.length == 0">
           {{ $t('no_content') }}
         </Alert>
       </div>
@@ -239,6 +239,8 @@ export interface Props {
   showAlbumArtistsOnlyFilter?: boolean;
   updateAvailable?: boolean;
   title?: string;
+  hideOnEmpty?: boolean;
+  checksum?: string;
   loadData: (
     offset: number,
     limit: number,
@@ -257,6 +259,8 @@ const props = withDefaults(defineProps<Props>(), {
   showFavoritesOnlyFilter: true,
   showDuration: true,
   parentItem: undefined,
+  hideOnEmpty: false,
+  checksum: undefined
 });
 
 const defaultLimit = 100;
@@ -272,7 +276,7 @@ const showSortMenu = ref(false);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const offset = ref(0);
-const items = ref<MediaItemType[]>([]);
+const allItems = ref<MediaItemType[]>([]);
 const totalItems = ref<number>();
 const loading = ref(false);
 const favoritesOnly = ref(false);
@@ -438,7 +442,7 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ($state: any) {
-  if (items.value.length == 0) {
+  if (allItems.value.length == 0) {
     $state.loaded();
     return;
   }
@@ -468,7 +472,13 @@ watch(
 watch(
   () => props.updateAvailable,
   (newVal) => {
-    if (newVal && items.value.length == 0) loadData(true);
+    if (newVal && allItems.value.length == 0) loadData(true);
+  },
+);
+watch(
+  () => props.checksum,
+  (newVal) => {
+    if (newVal) loadData(true);
   },
 );
 
@@ -481,6 +491,7 @@ const loadData = async function (clear = false, limit = defaultLimit) {
 
   const nextItems = await props.loadData(
     offset.value,
+
     limit,
     sortBy.value,
     search.value || '',
@@ -488,9 +499,9 @@ const loadData = async function (clear = false, limit = defaultLimit) {
     albumArtistsOnlyFilter.value,
   );
   if (offset.value) {
-    items.value.push(...nextItems.items);
+    allItems.value.push(...nextItems.items);
   } else {
-    items.value = nextItems.items;
+    allItems.value = nextItems.items;
   }
   totalItems.value = nextItems.total;
   loading.value = false;
@@ -552,7 +563,7 @@ const keyListener = function (e: KeyboardEvent) {
   if (showContextMenu.value) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    selectedItems.value = items.value;
+    selectedItems.value = allItems.value;
   } else if (!searchHasFocus.value && e.key == 'Backspace') {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
