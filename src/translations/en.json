@@ -133,7 +133,8 @@
     "sync": "Synchronize now",
     "sync_running": "This provider is now being synchronized",
     "username": "Username",
-    "core": "Core"
+    "core": "Core",
+    "core_modules": "Core modules"
   },
   "show_info": "Show info",
   "show_select_boxes": "Show selection boxes",

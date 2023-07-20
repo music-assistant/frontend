@@ -7,6 +7,7 @@
       :disabled="!itemIsAvailable(item) || isDisabled"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
+      :context-menu-items="showMenu ? getContextMenuItems([item]): []"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -159,11 +160,6 @@
             }}</span>
           </div>
         </div>
-        <slot name="append"></slot>
-        <!-- menu button/icon -->
-        <div v-if="getBreakpointValue('bp1') && showMenu">
-          <v-btn class="contextmenubtn" variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
-        </div>
       </template>
     </ListItem>
   </div>
@@ -187,6 +183,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
+import {getContextMenuItems} from "@/components/MediaItemContextMenu.vue"
 
 // properties
 export interface Props {
@@ -258,12 +255,6 @@ const itemIsAvailable = function (item: MediaItem) {
 </script>
 
 <style scoped>
-
-.contextmenubtn {
-  width: 25px;
-  margin-left: 8px;
-  margin-right: -13px;
-}
 .hiresicon {
   margin-top:5px;
   margin-right: 15px;

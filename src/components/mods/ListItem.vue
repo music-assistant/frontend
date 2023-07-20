@@ -8,14 +8,43 @@
     <!-- append -->
     <template v-if="$slots.append" #append>
       <slot name="append"></slot>
+
+      <!-- contextmenu -->
+      <div v-if="contextMenuItems.length > 0" class="contextmenubtn">
+        <v-menu location="bottom end">
+          <template #activator="{ props }">
+            <v-btn variant="plain" ripple icon="mdi-dots-vertical"  v-bind="props" />
+          </template>
+          <v-list>
+            <ListItem
+              v-for="(item, index) in contextMenuItems.filter(x => x.hide != true)"
+              :key="index"
+              :title="$t(item.label, item.labelArgs)"
+              @click="item.action ? item.action() : ''"
+              :disabled="item.disabled == true"
+            >
+              <template #prepend>
+                <v-avatar :icon="item.icon" />
+              </template>
+            </ListItem>
+          </v-list>
+        </v-menu>
+      </div>
     </template>
   </v-list-item>
 </template>
 
 <script lang="ts">
 import { computed } from 'vue';
+import type { ContextMenuItem } from '@/components/MediaItemContextMenu.vue';
 
 export default {
+  props: {
+    contextMenuItems: {
+      type: Array<ContextMenuItem>,
+      default: [],
+    },
+  },
   setup(props, ctx) {
     const listItemDefaults = computed(() => ({}));
 
@@ -62,5 +91,10 @@ export default {
 .list-item-main > div.v-list-item__content > div {
   padding-left: 10px;
   padding-right: 10px;
+}
+
+.contextmenubtn {
+  width: 25px;
+  margin-right: -13px;
 }
 </style>
