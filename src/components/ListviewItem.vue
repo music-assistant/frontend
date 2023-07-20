@@ -265,6 +265,5 @@ const itemIsAvailable = function (item: MediaItem) {
   margin-top:5px;
   margin-right: 15px;
   margin-left: 15px;
-  filter: invert(100%);
 }
 </style>

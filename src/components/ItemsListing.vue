@@ -13,94 +13,107 @@
     <v-card>
       <v-toolbar density="compact" variant="flat" color="transparent">
         <template #title>
-          <span v-if="!$vuetify.display.mobile && title">
-            {{ title }}
-          </span>
+          {{ title }}
         </template>
 
-        <v-spacer />
+        <template #append>
+          <!-- toggle select button -->
+          <v-btn
+            v-bind="props"
+            :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
+            variant="plain"
+            v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
+            @click="toggleCheckboxes"
+            :title="$t('tooltip.select_items')"
+          />
+          {{ showSelectButton }}
 
-        <!-- toggle select button -->
-        <v-btn
-          v-bind="props"
-          :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
-          variant="plain"
-          @click="toggleCheckboxes"
-          :title="$t('tooltip.select_items')"
-        />
+          <!-- favorites only filter -->
+          <v-btn
+            v-if="showFavoritesOnlyFilter !== false"
+            v-bind="props"
+            icon
+            variant="plain"
+            @click="toggleFavoriteFilter"
+            :title="$t('tooltip.filter_favorites')"
+          >
+            <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
+          </v-btn>
 
-        <!-- favorites only filter -->
-        <v-btn
-          v-if="showFavoritesOnlyFilter !== false"
-          v-bind="props"
-          icon
-          variant="plain"
-          @click="toggleFavoriteFilter"
-          :title="$t('tooltip.filter_favorites')"
-        >
-          <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
-        </v-btn>
+          <!-- album artists only filter -->
+          <v-btn
+            v-if="showAlbumArtistsOnlyFilter"
+            v-bind="props"
+            icon
+            variant="plain"
+            @click="toggleAlbumArtistsFilter"
+            :title="$t('tooltip.album_artist_filter')"
+          >
+            <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
+          </v-btn>
 
-        <!-- album artists only filter -->
-        <v-btn
-          v-if="showAlbumArtistsOnlyFilter"
-          v-bind="props"
-          icon
-          variant="plain"
-          @click="toggleAlbumArtistsFilter"
-          :title="$t('tooltip.album_artist_filter')"
-        >
-          <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
-        </v-btn>
+          <!-- refresh button-->
+          <v-btn
+            v-bind="props"
+            icon
+            variant="plain"
+            @click="onRefreshClicked()"
+            v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
+            :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+          >
+            <v-badge :model-value="updateAvailable" color="error" dot>
+              <v-icon icon="mdi-refresh" />
+            </v-badge>
+          </v-btn>
 
-        <!-- refresh button-->
-        <v-btn
-          v-bind="props"
-          icon
-          variant="plain"
-          @click="onRefreshClicked()"
-          :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
-        >
-          <v-badge :model-value="updateAvailable" color="error" dot>
-            <v-icon icon="mdi-refresh" />
-          </v-badge>
-        </v-btn>
+          <!-- sort options -->
+          <v-menu
+            v-if="sortKeys.length > 1"
+            v-model="showSortMenu"
+            location="bottom end"
+            :close-on-content-click="true"
+          >
+            <template v-slot:activator="{ props }">
+              <v-btn icon v-bind="props" variant="plain" :title="$t('tooltip.sort_options')">
+                <v-icon v-bind="props" icon="mdi-sort" />
+              </v-btn>
+            </template>
+            <v-card>
+              <v-list>
+                <div v-for="key of sortKeys" :key="key">
+                  <ListItem @click="changeSort(key)">
+                    <template #title>{{ $t('sort.' + key) }}</template>
+                    <template #append>
+                      <v-icon v-if="sortBy == key" icon="mdi-check" />
+                    </template>
+                  </ListItem>
+                  <v-divider />
+                </div>
+              </v-list>
+            </v-card>
+          </v-menu>
 
-        <!-- sort options -->
-        <v-menu v-if="sortKeys.length > 1" v-model="showSortMenu" location="bottom end" :close-on-content-click="true">
-          <template v-slot:activator="{ props }">
-            <v-btn icon v-bind="props" variant="plain" :title="$t('tooltip.sort_options')">
-              <v-icon v-bind="props" icon="mdi-sort" />
-            </v-btn>
-          </template>
-          <v-card>
-            <v-list>
-              <div v-for="key of sortKeys" :key="key">
-                <ListItem @click="changeSort(key)">
-                  <template #title>{{ $t('sort.' + key) }}</template>
-                  <template #append>
-                    <v-icon v-if="sortBy == key" icon="mdi-check" />
-                  </template>
-                </ListItem>
-                <v-divider />
-              </div>
-            </v-list>
-          </v-card>
-        </v-menu>
+          <!-- toggle search button -->
+          <v-btn
+            v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
+            v-bind="props"
+            icon
+            variant="plain"
+            @click="toggleSearch()"
+            :title="$t('tooltip.search')"
+          >
+            <v-icon icon="mdi-magnify" />
+          </v-btn>
 
-        <!-- toggle search button -->
-        <v-btn v-bind="props" icon variant="plain" @click="toggleSearch()" :title="$t('tooltip.search')">
-          <v-icon icon="mdi-magnify" />
-        </v-btn>
-
-        <!-- toggle view mode button -->
-        <v-btn
-          v-bind="props"
-          :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="plain"
-          @click="toggleViewMode()"
-          :title="$t('tooltip.toggle_view_mode')"
-        />
+          <!-- toggle view mode button -->
+          <v-btn
+            v-bind="props"
+            :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
+            variant="plain"
+            @click="toggleViewMode()"
+            :title="$t('tooltip.toggle_view_mode')"
+          />
+        </template>
       </v-toolbar>
       <v-divider></v-divider>
 
@@ -241,6 +254,9 @@ export interface Props {
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
+  showSearchButton?: boolean;
+  showRefreshButton?: boolean;
+  showSelectButton?: boolean;
   updateAvailable?: boolean;
   title?: string;
   hideOnEmpty?: boolean;
@@ -265,6 +281,9 @@ const props = withDefaults(defineProps<Props>(), {
   parentItem: undefined,
   hideOnEmpty: false,
   checksum: undefined,
+  showSearchButton: undefined,
+  showRefreshButton: undefined,
+  showSelectButton: undefined,
 });
 
 const defaultLimit = 100;

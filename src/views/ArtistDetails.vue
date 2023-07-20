@@ -48,7 +48,7 @@
               :key="providerMapping.provider_instance"
               @click="
                     $router.push({
-                      name: 'album',
+                      name: 'artist',
                       params: {
                         itemId: providerMapping.item_id,
                         provider: providerMapping.provider_instance,
@@ -91,7 +91,6 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import { api } from '../plugins/api';
 import ListItem from '../components/mods/ListItem.vue';
 import Container from '../components/mods/Container.vue';
-import { getStreamingProviderMappings } from '../utils';
 
 export interface Props {
   itemId: string;

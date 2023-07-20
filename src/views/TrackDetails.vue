@@ -70,6 +70,7 @@
                   name="preview"
                   title="preview"
                   controls
+                  v-if="getBreakpointValue('bp1')"
                   :src="getPreviewUrl(providerMapping.provider_domain, providerMapping.item_id)"
                 />
                 <v-btn
@@ -99,6 +100,7 @@ import ListItem from '../components/mods/ListItem.vue';
 import Container from '../components/mods/Container.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { getStreamingProviderMappings } from '../utils';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 export interface Props {
   itemId: string;
