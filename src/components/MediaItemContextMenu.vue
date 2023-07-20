@@ -322,7 +322,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
     playMenuItems.push({
       label: 'play_playlist_from',
       action: () => {
-        api.playPlaylistFromIndex(parentItem as Playlist, (items[0] as Track).position || 0);
+        api.playMedia(parentItem as Playlist, QueueOption.REPLACE, false, items[0].item_id);
       },
       icon: 'mdi-play-circle-outline',
       labelArgs: [],
@@ -334,7 +334,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
     playMenuItems.push({
       label: 'play_album_from',
       action: () => {
-        api.playAlbumFromItem(parentItem as Album, items[0] as Track);
+        api.playMedia(parentItem as Album, QueueOption.REPLACE, false, items[0].item_id);
       },
       icon: 'mdi-play-circle-outline',
       labelArgs: [],

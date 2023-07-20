@@ -716,6 +716,7 @@ export class MusicAssistantApi {
     media: string | string[] | MediaItemType | MediaItemType[],
     option: QueueOption = QueueOption.PLAY,
     radio_mode?: boolean,
+    start_item?: string,
     queue_id?: string,
   ) {
     if (!queue_id && store.selectedPlayer && store.selectedPlayer?.active_source in this.players) {
@@ -728,27 +729,8 @@ export class MusicAssistantApi {
       media,
       option,
       radio_mode,
+      start_item
     });
-  }
-
-  public async playPlaylistFromIndex(playlist: Playlist, startIndex: number, queue_id?: string) {
-    const tracks = await this.getPlaylistTracks(playlist.item_id, playlist.provider);
-    // to account for shuffle, we play the first track and append the rest
-    this.playMedia(tracks[startIndex], QueueOption.REPLACE, undefined, queue_id);
-    this.playMedia(tracks.slice(startIndex + 1), QueueOption.ADD, undefined, queue_id);
-  }
-
-  public async playAlbumFromItem(album: Album, startItem: Track, queue_id?: string) {
-    const tracks = await this.getAlbumTracks(album.item_id, album.provider);
-    let startIndex = 0;
-    tracks.forEach(function (track, i) {
-      if (track.item_id == startItem.item_id) {
-        startIndex = i;
-      }
-    });
-    // to account for shuffle, we play the first track and append the rest
-    this.playMedia(tracks[startIndex], QueueOption.REPLACE, undefined, queue_id);
-    this.playMedia(tracks.slice(startIndex + 1), QueueOption.ADD, undefined, queue_id);
   }
 
   // ProviderConfig related functions
