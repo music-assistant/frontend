@@ -45,6 +45,7 @@
           <v-list>
             <ListItem
               v-for="providerMapping in itemDetails?.provider_mappings"
+              :key="providerMapping.provider_instance"
               @click="
                     $router.push({
                       name: 'album',
