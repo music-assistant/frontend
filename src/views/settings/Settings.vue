@@ -1,6 +1,6 @@
 <template>
   <section>
-    <v-tabs hide-slider :model-value="activeTab" align-tabs="end">
+    <v-tabs :model-value="activeTab" align-tabs="end">
       <v-tab value="providers" :to="{ name: 'providersettings' }">
         {{ $t('settings.providers') }}
       </v-tab>
