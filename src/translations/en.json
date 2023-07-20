@@ -201,5 +201,7 @@
   "favorites_remove": "Remove from favorites",
   "confirm_library_remove": "Are you sure you want to delete this item from the library ? Any items depending on this item will also recursively be removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return in the next sync.",
   "check_item_on_provider": "Check {0} on {1}",
-  "check_item_in_library": "Check {0} in the library"
+  "check_item_in_library": "Check {0} in the library",
+  "media_details": "Media details",
+  "mapped_providers": "Mapped providers"
 }

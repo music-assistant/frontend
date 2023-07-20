@@ -3,7 +3,6 @@
     <v-card style="margin-bottom: 10px">
       <v-toolbar color="transparent" :title="$t('settings.server_info')" style="height: 55px"> </v-toolbar>
       <v-divider />
-
       <Container>
         <v-table>
           <tbody>

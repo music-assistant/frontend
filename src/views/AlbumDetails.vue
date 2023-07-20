@@ -1,85 +1,86 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" :active-provider="provider" />
-    <ItemsListing
-      itemtype="albumtracks"
-      :parent-item="itemDetails"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
-      :load-data="loadAlbumTracks"
-      :sort-keys="['track_number', 'sort_name', 'duration']"
-      :update-available="updateAvailable"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
-      :title="$t('tracks')"
-      :checksum="provider+itemId"
-    />
-    <ItemsListing
-      itemtype="albumversions"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="false"
-      :load-data="loadAlbumVersions"
-      :sort-keys="['provider', 'sort_name', 'year']"
-      :update-available="updateAvailable"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
-      :title="$t('other_versions')"
-      :hide-on-empty="true"
-      :checksum="provider+itemId"
-    />
-    <!-- buttons to show more items on streaming providers-->
-    <v-card v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
-      <div v-for="providerMapping in getStreamingProviderMappings(itemDetails)" :key="providerMapping.provider_instance">
-        <ListItem
-          v-if="![providerMapping.provider_domain, providerMapping.provider_instance].includes(provider)"
-          @click="
-            $router.replace({
-              name: 'album',
-              params: {
-                itemId: providerMapping.item_id,
-                provider: providerMapping.provider_instance,
-              },
-            })
-          "
-          :subtitle="
-            $t('check_item_on_provider', [
-              itemDetails.name,
-              api.providerManifests[providerMapping.provider_domain].name,
-            ])
-          "
-        >
-          <template #prepend>
-            <div>
-              <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
-            </div>
-          </template>
-        </ListItem>
-        <ListItem
-          v-if="provider != 'library' && itemDetails.provider == 'library'"
-          @click="
-            $router.replace({
-              name: 'album',
-              params: {
-                itemId: itemDetails.item_id,
-                provider: itemDetails.provider,
-              },
-            })
-          "
-          :subtitle="$t('check_item_in_library', [itemDetails.name])"
-        >
-          <template #prepend>
-            <div>
-              <ProviderIcon domain="library" :size="30" />
-            </div>
-          </template>
-        </ListItem>
-      </div>
-    </v-card>
+    <Container>
+      <ItemsListing
+        itemtype="albumtracks"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-favorites-only-filter="false"
+        :load-data="loadAlbumTracks"
+        :sort-keys="['track_number', 'sort_name', 'duration']"
+        :update-available="updateAvailable"
+        @refresh-clicked="
+          loadItemDetails();
+          updateAvailable = false;
+        "
+        :title="$t('tracks')"
+        :checksum="provider + itemId"
+      />
+      <br />
+      <ItemsListing
+        itemtype="albumversions"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="false"
+        :load-data="loadAlbumVersions"
+        :sort-keys="['provider', 'sort_name', 'year']"
+        :update-available="updateAvailable"
+        @refresh-clicked="
+          loadItemDetails();
+          updateAvailable = false;
+        "
+        :title="$t('other_versions')"
+        :hide-on-empty="true"
+        :checksum="provider + itemId"
+      />
+
+      <br />
+
+      <!-- provider mapping details -->
+      <v-card style="margin-bottom: 10px" v-if="provider == 'library'">
+        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px"> </v-toolbar>
+        <v-divider />
+        <Container>
+          <v-list>
+            <ListItem
+              v-for="providerMapping in itemDetails?.provider_mappings"
+              @click="
+                    $router.push({
+                      name: 'album',
+                      params: {
+                        itemId: providerMapping.item_id,
+                        provider: providerMapping.provider_instance,
+                      },
+                    })
+                  "
+            >
+              <template #prepend>
+                <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
+              </template>
+              <template #title>
+                {{ api.providerManifests[providerMapping.provider_domain].name }}
+              </template>
+              <template #subtitle>
+                {{ providerMapping.item_id }} | 
+                {{ providerMapping.audio_format.content_type }} |
+                {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{ providerMapping.audio_format.bit_depth }}
+                bits
+              </template>
+              <template #append>
+                <v-btn
+                  variant="plain"
+                  icon="mdi-open-in-new"
+                  v-if="providerMapping.url"
+                  @click.prevent="
+                    openLinkInNewTab(providerMapping.url)"
+                ></v-btn>
+              </template>
+            </ListItem>
+          </v-list>
+        </Container>
+      </v-card>
+    </Container>
   </section>
 </template>
 
@@ -91,8 +92,9 @@ import { EventType, type Album, type EventMessage, type MediaItemType } from '..
 import { api } from '../plugins/api';
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import ListItem from '../components/mods/ListItem.vue';
+import Container from '../components/mods/Container.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
-import {getStreamingProviderMappings} from '../utils'
+import { getStreamingProviderMappings } from '../utils';
 
 export interface Props {
   itemId: string;
@@ -145,8 +147,21 @@ const loadAlbumVersions = async function (
   search?: string,
   favoritesOnly = true,
 ) {
-  const albumVersions = await api.getAlbumVersions(props.itemId, props.provider);
-  return filteredItems(albumVersions, offset, limit, sort, search, favoritesOnly);
+  const allVersions: Album[] = [];
+
+  if (props.provider == 'library') {
+    const albumVersions = await api.getAlbumVersions(props.itemId, props.provider);
+    allVersions.push(...albumVersions);
+  }
+  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
+    const albumVersions = await api.getAlbumVersions(providerMapping.item_id, providerMapping.provider_instance);
+    allVersions.push(...albumVersions);
+  }
+  return filteredItems(allVersions, offset, limit, sort, search, favoritesOnly);
+};
+
+const openLinkInNewTab = function (url: string) {
+  window.open(url, '_blank');
 };
 </script>
 

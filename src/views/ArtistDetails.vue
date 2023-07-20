@@ -1,7 +1,7 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" :active-provider="provider" />
-
+    <Container>
       <ItemsListing
         itemtype="artisttracks"
         :parent-item="itemDetails"
@@ -18,7 +18,7 @@
         :title="$t('tracks')"
         :checksum="provider+itemId"
       />
-
+      <br/>
       <ItemsListing
         itemtype="artistalbums"
         :parent-item="itemDetails"
@@ -35,58 +35,49 @@
         :checksum="provider+itemId"
       />
 
-      <!-- buttons to show more items on streaming providers-->
-      <v-card v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
-        <div
-          v-for="providerMapping in getStreamingProviderMappings(itemDetails)"
-          :key="providerMapping.provider_instance"
-        >
-          <ListItem
-            v-if="![providerMapping.provider_domain, providerMapping.provider_instance].includes(provider)"
-            @click="
-              $router.push({
-                name: 'artist',
-                params: {
-                  itemId: providerMapping.item_id,
-                  provider: providerMapping.provider_instance,
-                },
-              })
-            "
-            :subtitle="
-              $t('check_item_on_provider', [
-                itemDetails.name,
-                api.providerManifests[providerMapping.provider_domain].name,
-              ])
-            "
-          >
-            <template #prepend>
-              <div>
-                <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
-              </div>
-            </template>
-          </ListItem>
-          <ListItem
-            v-if="provider != 'library' && itemDetails.provider == 'library'"
-            @click="
-              $router.push({
-                name: 'artist',
-                params: {
-                  itemId: itemDetails.item_id,
-                  provider: itemDetails.provider,
-                },
-              })
-            "
-            :subtitle="$t('check_item_in_library', [itemDetails.name])"
-          >
-            <template #prepend>
-              <div>
-                <ProviderIcon domain="library" :size="30" />
-              </div>
-            </template>
-          </ListItem>
-        </div>
-      </v-card>
+      <br />
 
+      <!-- provider mapping details -->
+      <v-card style="margin-bottom: 10px" v-if="provider == 'library'">
+        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px"> </v-toolbar>
+        <v-divider />
+        <Container>
+          <v-list>
+            <ListItem
+              v-for="providerMapping in itemDetails?.provider_mappings"
+              @click="
+                    $router.push({
+                      name: 'album',
+                      params: {
+                        itemId: providerMapping.item_id,
+                        provider: providerMapping.provider_instance,
+                      },
+                    })
+                  "
+            >
+              <template #prepend>
+                <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
+              </template>
+              <template #title>
+                {{ api.providerManifests[providerMapping.provider_domain].name }}
+              </template>
+              <template #subtitle>
+                {{ providerMapping.item_id }}
+              </template>
+              <template #append>
+                <v-btn
+                  variant="plain"
+                  icon="mdi-open-in-new"
+                  v-if="providerMapping.url"
+                  @click.prevent="
+                    openLinkInNewTab(providerMapping.url)"
+                ></v-btn>
+              </template>
+            </ListItem>
+          </v-list>
+        </Container>
+      </v-card>
+</Container>
   </section>
 </template>
 
@@ -98,6 +89,7 @@ import { EventType, type Artist, type EventMessage, type MediaItemType } from '.
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { api } from '../plugins/api';
 import ListItem from '../components/mods/ListItem.vue';
+import Container from '../components/mods/Container.vue';
 import { getStreamingProviderMappings } from '../utils';
 
 export interface Props {
@@ -156,5 +148,8 @@ const loadArtistTracks = async function (
 ) {
   const artistTopTracks = await api.getArtistTracks(props.itemId, props.provider);
   return filteredItems(artistTopTracks, offset, limit, sort, search, favoritesOnly);
+};
+const openLinkInNewTab = function (url: string) {
+  window.open(url, '_blank');
 };
 </script>

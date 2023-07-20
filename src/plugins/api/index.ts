@@ -367,7 +367,7 @@ export class MusicAssistantApi {
     force_refresh?: boolean,
     lazy?: boolean,
   ): Promise<Radio> {
-    return this.getData('music/radios/get_radio', {
+    return this.getData('music/radio/get_radio', {
       item_id,
       provider_instance_id_or_domain,
       force_refresh,
