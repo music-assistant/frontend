@@ -7,6 +7,7 @@
       :disabled="!itemIsAvailable(item) || isDisabled"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
+      :context-menu-items="showMenu ? getContextMenuItems([item]): []"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -114,8 +115,8 @@
         <v-img
           v-if="HiResDetails"
           :src="iconHiRes"
-          width="35"
-          :style="$vuetify.theme.current.dark ? 'margin-top:5px;' : 'margin-top:5px;filter: invert(100%);'"
+          width="30"
+          :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
         >
           <v-tooltip activator="parent" location="bottom">
             {{ HiResDetails }}
@@ -159,11 +160,6 @@
             }}</span>
           </div>
         </div>
-        <slot name="append"></slot>
-        <!-- menu button/icon -->
-        <div v-if="getBreakpointValue('bp1') && showMenu">
-          <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
-        </div>
       </template>
     </ListItem>
   </div>
@@ -187,6 +183,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
+import {getContextMenuItems} from "@/components/MediaItemContextMenu.vue"
 
 // properties
 export interface Props {
@@ -227,10 +224,10 @@ const props = withDefaults(defineProps<Props>(), {
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
-    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]))
+    if (![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type))
       continue;
     if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
-      return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
+      return `${prov.audio_format.sample_rate/1000}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';
@@ -256,3 +253,18 @@ const itemIsAvailable = function (item: MediaItem) {
   return false;
 };
 </script>
+
+<style scoped>
+.hiresicon {
+  margin-top:5px;
+  margin-right: 15px;
+  margin-left: 15px;
+  filter: invert(100%);
+}
+.hiresicondark {
+  margin-top:5px;
+  margin-right: 15px;
+  margin-left: 15px;
+  filter: invert(100%);
+}
+</style>

@@ -1,33 +1,7 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" :active-provider="provider" />
-    <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab value="versions">
-        {{ $t('all_versions') }}
-      </v-tab>
-      <v-tab value="appears_on">
-        {{ $t('appears_on') }}
-      </v-tab>
-    </v-tabs>
-    <v-divider />
     <ItemsListing
-      v-if="activeTab == 'versions'"
-      itemtype="trackversions"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="false"
-      :show-library="true"
-      :show-track-number="false"
-      :load-data="loadTrackVersions"
-      :sort-keys="['provider', 'sort_name', 'duration']"
-      :update-available="updateAvailable"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
-    />
-    <ItemsListing
-      v-if="activeTab == 'appears_on'"
       itemtype="trackalbums"
       :parent-item="itemDetails"
       :show-provider="true"
@@ -41,9 +15,29 @@
         loadItemDetails();
         updateAvailable = false;
       "
+      :title="$t('appears_on')"
+      :checksum="provider+itemId"
+    />
+    <ItemsListing
+      itemtype="trackversions"
+      :parent-item="itemDetails"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
+      :show-library="true"
+      :show-track-number="false"
+      :load-data="loadTrackVersions"
+      :sort-keys="['provider', 'sort_name', 'duration']"
+      :update-available="updateAvailable"
+      @refresh-clicked="
+        loadItemDetails();
+        updateAvailable = false;
+      "
+      :title="$t('other_versions')"
+      :hide-on-empty="true"
+      :checksum="provider+itemId"
     />
     <!-- buttons to show more items on streaming providers-->
-    <div v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
+    <v-card v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
       <div v-for="providerMapping in getStreamingProviderMappings(itemDetails)" :key="providerMapping.provider_instance">
         <ListItem
           v-if="![providerMapping.provider_domain, providerMapping.provider_instance].includes(provider)"
@@ -89,7 +83,7 @@
           </template>
         </ListItem>
       </div>
-    </div>
+    </v-card>
   </section>
 </template>
 

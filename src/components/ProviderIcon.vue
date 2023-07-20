@@ -1,5 +1,5 @@
 <template>
-  <div class="provider-icon" :style="`width:${size}px;`">
+  <div :style="`width:${size}px;margin-left:10px;margin-right:10px`">
     <!-- icon for library-->
     <v-icon v-if="providerDomain == 'library'" :size="size" icon="mdi-bookshelf" :title="$t('library')" />
     <!-- dark mode and dark svg icon-->
@@ -32,7 +32,6 @@
     />
     <!-- fallback icon -->
     <v-icon v-else :size="size" :dark="$vuetify.theme.current.dark" icon="mdi-playlist-play" />
-
   </div>
 </template>
 
@@ -55,16 +54,3 @@ const providerDomain = computed(() => {
 });
 
 </script>
-
-<style scoped>
-.provider-icon {
-  float: inherit;
-  padding-left: 5px;
-  display: flex;
-  margin-right: 15px;
-  justify-content: center;
-  padding: 0px;
-  display: flex;
-  flex-direction: column;
-}
-</style>

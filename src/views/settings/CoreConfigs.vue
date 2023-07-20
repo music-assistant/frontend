@@ -1,8 +1,10 @@
 <template>
-  <v-container>
-    <v-card>
-      <v-list>
-        <v-list-item
+  <Container>
+    <v-card style="margin-bottom: 10px">
+      <v-toolbar color="transparent" :title="$t('settings.core_modules')" style="height: 55px"> </v-toolbar>
+      <v-divider />
+      <Container>
+        <ListItem
           v-for="item in coreConfigs.sort((a, b) => api.providerManifests[a.domain].name!.localeCompare(api.providerManifests[b.domain].name!))"
           :key="item.domain"
           v-hold="
@@ -13,14 +15,28 @@
           class="list-item-main"
           link
           @click="editCoreConfig(item.domain)"
+          :context-menu-items="[
+            {
+              label: 'settings.configure',
+              labelArgs:[],
+              action: () => {
+                editCoreConfig(item.domain);
+              },
+              icon: 'mdi-cog',
+            },
+            {
+              label: 'settings.documentation',
+              labelArgs:[],
+              action: () => {
+                openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+              },
+              icon: 'mdi-bookshelf',
+              disabled: !api.providerManifests[item.domain].documentation
+            },
+          ]"
         >
           <template #prepend>
-            <provider-icon
-              :domain="item.domain"
-              :size="40"
-              class="listitem-media-thumb"
-              style="margin-left: 10px"
-            />
+            <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" style="margin-left: 10px" />
           </template>
 
           <!-- title -->
@@ -32,58 +48,26 @@
           <template #subtitle
             ><div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div>
           </template>
-          <!-- append -->
+
+          <!-- actions -->
           <template #append>
-            <div class="list-actions">
-              <div v-if="item.last_error">
-                <v-tooltip location="top end" origin="end center">
-                  <template #activator="{ props: tooltip }">
-                    <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="tooltip">
-                      <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
-                    </v-btn>
-                  </template>
-                  <span>{{ item.last_error }}</span>
-                </v-tooltip>
-              </div>
-
-              <!-- contextmenu-->
-              <v-menu location="bottom end">
-                <template #activator="{ props }">
-                  <v-btn class="buttonicon" variant="plain" :ripple="false" :icon="true" v-bind="props">
-                    <v-icon icon="mdi-dots-vertical" />
-                  </v-btn>
-                </template>
-
-                <v-list>
-                  <v-list-item
-                    class="list-item-main"
-                    :title="$t('settings.configure')"
-                    prepend-icon="mdi-cog"
-                    @click="editCoreConfig(item.domain)"
-                  />
-                  <v-list-item
-                    v-if="api.providerManifests[item.domain].documentation"
-                    class="list-item-main"
-                    :title="$t('settings.documentation')"
-                    prepend-icon="mdi-bookshelf"
-                    :href="api.providerManifests[item.domain].documentation"
-                    target="_blank"
-                  />
-                </v-list>
-              </v-menu>
-            </div>
+            <Button v-if="item.last_error" icon :title="item.last_error">
+              <v-icon color="red"> mdi-alert-circle </v-icon>
+            </Button>
           </template>
-        </v-list-item>
-      </v-list>
+        </ListItem>
+      </Container>
     </v-card>
-  </v-container>
+  </Container>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { api } from '@/plugins/api';
-import { EventType, CoreConfig } from '@/plugins/api/interfaces';
+import { CoreConfig } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
+import ListItem from '@/components/mods/ListItem.vue';
+import Container from '@/components/mods/Container.vue';
 import { useRouter } from 'vue-router';
 
 // global refs
@@ -94,25 +78,15 @@ const coreConfigs = ref<CoreConfig[]>([]);
 console.log(coreConfigs);
 
 // methods
-const loadItems = async function () {
-  coreConfigs.value = await api.getCoreConfigs();
-};
-
 const editCoreConfig = function (domain: string) {
   router.push(`/settings/editcore/${domain}`);
+};
+
+const openLinkInNewTab = function (url: string) {
+  window.open(url, '_blank');
 };
 
 onMounted(async () => {
   coreConfigs.value = await api.getCoreConfigs();
 });
 </script>
-
-<style>
-.list-actions {
-  display: inline-flex;
-  width: auto;
-  vertical-align: middle;
-  align-items: center;
-  padding: 0px;
-}
-</style>

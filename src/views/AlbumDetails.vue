@@ -1,17 +1,7 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" :active-provider="provider" />
-    <v-tabs v-model="activeTab" show-arrows grow hide-slider>
-      <v-tab value="tracks">
-        {{ $t('tracks') }}
-      </v-tab>
-      <v-tab value="versions">
-        {{ $t('all_versions') }}
-      </v-tab>
-    </v-tabs>
-    <v-divider />
     <ItemsListing
-      v-if="activeTab == 'tracks'"
       itemtype="albumtracks"
       :parent-item="itemDetails"
       :show-provider="false"
@@ -23,9 +13,10 @@
         loadItemDetails();
         updateAvailable = false;
       "
+      :title="$t('tracks')"
+      :checksum="provider+itemId"
     />
     <ItemsListing
-      v-if="activeTab == 'versions'"
       itemtype="albumversions"
       :parent-item="itemDetails"
       :show-provider="true"
@@ -37,14 +28,17 @@
         loadItemDetails();
         updateAvailable = false;
       "
+      :title="$t('other_versions')"
+      :hide-on-empty="true"
+      :checksum="provider+itemId"
     />
     <!-- buttons to show more items on streaming providers-->
-    <div v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
+    <v-card v-if="itemDetails && itemDetails.provider == 'library'" style="margin-left: 20px; margin-right: 20px">
       <div v-for="providerMapping in getStreamingProviderMappings(itemDetails)" :key="providerMapping.provider_instance">
         <ListItem
           v-if="![providerMapping.provider_domain, providerMapping.provider_instance].includes(provider)"
           @click="
-            $router.push({
+            $router.replace({
               name: 'album',
               params: {
                 itemId: providerMapping.item_id,
@@ -68,7 +62,7 @@
         <ListItem
           v-if="provider != 'library' && itemDetails.provider == 'library'"
           @click="
-            $router.push({
+            $router.replace({
               name: 'album',
               params: {
                 itemId: itemDetails.item_id,
@@ -85,7 +79,7 @@
           </template>
         </ListItem>
       </div>
-    </div>
+    </v-card>
   </section>
 </template>
 
@@ -106,13 +100,11 @@ export interface Props {
   forceProviderVersion?: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref('');
 const updateAvailable = ref(false);
 const itemDetails = ref<Album>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(props.itemId, props.provider);
-  activeTab.value = 'tracks';
 };
 
 watch(

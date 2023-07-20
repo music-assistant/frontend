@@ -287,6 +287,8 @@ export interface ContextMenuItem {
   action?: CallableFunction;
   icon: string;
   actionStr?: string;
+  disabled?: boolean;
+  hide?: boolean;
 }
 
 export const itemIsAvailable = function (item: MediaItemType) {

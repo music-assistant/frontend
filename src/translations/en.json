@@ -45,7 +45,7 @@
   "no_player": "No player selected",
   "off": "Off",
   "on": "On",
-  "all_versions": "All versions",
+  "other_versions": "Other versions",
   "perform_action": "Perform action on {0} item(s)",
   "play": "Play",
   "play_album_from": "Play Album from here",
@@ -133,7 +133,8 @@
     "sync": "Synchronize now",
     "sync_running": "This provider is now being synchronized",
     "username": "Username",
-    "core": "Core"
+    "core": "Core",
+    "core_modules": "Core modules"
   },
   "show_info": "Show info",
   "show_select_boxes": "Show selection boxes",
