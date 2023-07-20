@@ -49,6 +49,7 @@
           <v-list>
             <ListItem
               v-for="providerMapping in itemDetails?.provider_mappings"
+              :key="providerMapping.provider_instance"
             >
               <template #prepend>
                 <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
