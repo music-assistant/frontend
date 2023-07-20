@@ -146,10 +146,10 @@ const openLinkInNewTab = function (url: string) {
 
 onMounted(async () => {
   coreConfigs.value = await api.getCoreConfigs();
-  totalLibraryArtists.value = (await api.getLibraryArtists(undefined, undefined, 1)).total
-  totalLibraryAlbums.value = (await api.getLibraryAlbums(undefined, undefined, 1)).total
-  totalLibraryTracks.value = (await api.getLibraryTracks(undefined, undefined, 1)).total
-  totalLibraryPlaylists.value = (await api.getLibraryPlaylists(undefined, undefined, 1)).total
-  totalLibraryRadio.value = (await api.getLibraryRadio(undefined, undefined, 1)).total
+  totalLibraryArtists.value = (await api.getLibraryArtists(undefined, undefined, 1)).total || 0
+  totalLibraryAlbums.value = (await api.getLibraryAlbums(undefined, undefined, 1)).total || 0
+  totalLibraryTracks.value = (await api.getLibraryTracks(undefined, undefined, 1)).total || 0
+  totalLibraryPlaylists.value = (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0
+  totalLibraryRadio.value = (await api.getLibraryRadios(undefined, undefined, 1)).total || 0
 });
 </script>
