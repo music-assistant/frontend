@@ -39,19 +39,17 @@
           <v-icon v-if="parseBool(item.metadata.explicit || false)" icon="mdi-alpha-e-box" />
         </v-item>
         <v-item>
-          <v-tooltip v-if="HiResDetails" bottom>
-            <!-- eslint-disable vue/no-template-shadow -->
-            <template #activator="{ props }">
-              <!-- eslint-enable vue/no-template-shadow -->
-              <v-img
-                  :src="iconHiRes"
-                  width="30"
-                  :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
-                >
-                </v-img>
-            </template>
-            <span>{{ HiResDetails }}</span>
-          </v-tooltip>
+          <!-- hi res icon -->
+          <v-img
+            v-if="HiResDetails"
+            :src="iconHiRes"
+            width="30"
+            :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+          >
+            <v-tooltip activator="parent" location="bottom">
+              {{ HiResDetails }}
+            </v-tooltip>
+          </v-img>
         </v-item>
 
         <v-item v-if="'disc_number' in item && item.disc_number && showTrackNumber">
@@ -95,10 +93,12 @@ const showSettingDots = ref(false);
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
-    if (![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type))
+    if (
+      ![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type)
+    )
       continue;
     if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
-      return `${prov.audio_format.sample_rate/1000}kHz ${prov.audio_format.bit_depth} bits`;
+      return `${prov.audio_format.sample_rate / 1000}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';
@@ -132,12 +132,12 @@ const emit = defineEmits<{
 }
 
 .hiresicon {
-  margin-top:5px;
+  margin-top: 5px;
   margin-left: -10px;
   filter: invert(100%);
 }
 .hiresicondark {
-  margin-top:5px;
+  margin-top: 5px;
   margin-left: -10px;
 }
 </style>
