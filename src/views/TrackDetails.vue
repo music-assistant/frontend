@@ -3,6 +3,7 @@
     <InfoHeader :item="itemDetails" :active-provider="provider" />
     <Container>
       <ItemsListing
+        v-if="itemDetails"
         itemtype="trackalbums"
         :parent-item="itemDetails"
         :show-provider="true"
@@ -14,6 +15,7 @@
         :update-available="updateAvailable"
         :title="$t('appears_on')"
         :checksum="provider + itemId"
+        :provider-filter="providerFilter"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;
@@ -21,6 +23,7 @@
       />
       <br />
       <ItemsListing
+        v-if="itemDetails"
         itemtype="trackversions"
         :parent-item="itemDetails"
         :show-provider="true"
@@ -58,11 +61,27 @@
                 {{ api.providerManifests[providerMapping.provider_domain].name }}
               </template>
               <template #subtitle>
-                {{ providerMapping.item_id }} | {{ providerMapping.audio_format.content_type }} |
+                {{ providerMapping.audio_format.content_type }} |
                 {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{ providerMapping.audio_format.bit_depth }}
-                bits
+                bits |
+                <a
+                  v-if="providerMapping.url && !providerMapping.url.startsWith('file')"
+                  style="opacity: 0.4"
+                  :title="$t('tooltip.open_provider_link')"
+                  @click.prevent="openLinkInNewTab(providerMapping.url)"
+                  >{{ providerMapping.url }}</a
+                >
+                <span v-else style="opacity: 0.4" :title="providerMapping.item_id">{{ providerMapping.item_id }}</span>
               </template>
               <template #append>
+                <!-- hi res icon -->
+                <v-img
+                  v-if="providerMapping.audio_format.bit_depth > 16"
+                  :src="iconHiRes"
+                  width="30"
+                  :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+                  style="margin-right:15px"
+                />
                 <audio
                   v-if="getBreakpointValue('bp1')"
                   name="preview"
@@ -70,12 +89,6 @@
                   controls
                   :src="getPreviewUrl(providerMapping.provider_domain, providerMapping.item_id)"
                 ></audio>
-                <v-btn
-                  v-if="providerMapping.url"
-                  variant="plain"
-                  icon="mdi-open-in-new"
-                  @click.prevent="openLinkInNewTab(providerMapping.url)"
-                />
               </template>
             </ListItem>
           </v-list>
@@ -86,9 +99,10 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams, filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
-import { ref } from 'vue';
+import { iconHiRes } from '@/components/QualityDetailsBtn.vue';
+import { computed, ref } from 'vue';
 import { EventType, type Track, type EventMessage, type MediaItemType, Album } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { onBeforeUnmount, onMounted, watch } from 'vue';
@@ -107,6 +121,15 @@ const props = defineProps<Props>();
 const activeTab = ref('');
 const updateAvailable = ref(false);
 const itemDetails = ref<Track>();
+
+const providerFilter = computed(() => {
+  if (itemDetails.value?.provider !== 'library') return [];
+  const result: string[] = ['library'];
+  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
+    result.push(providerMapping.provider_instance);
+  }
+  return result;
+});
 
 const loadItemDetails = async function () {
   console.log('props', props);
@@ -134,13 +157,7 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const loadTrackVersions = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  favoritesOnly = true,
-) {
+const loadTrackVersions = async function (params: LoadDataParams) {
   const allVersions: Track[] = [];
 
   if (props.provider == 'library') {
@@ -152,26 +169,24 @@ const loadTrackVersions = async function (
     allVersions.push(...trackVersions);
   }
 
-  return filteredItems(allVersions, offset, limit, sort, search, favoritesOnly);
+  return filteredItems(allVersions, params);
 };
 
-const loadTrackAlbums = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  favoritesOnly = true,
-) {
-  const allAlbums: Album[] = [];
-  if (props.provider == 'library') {
-    const trackAlbums = await api.getTrackAlbums(props.itemId, props.provider);
-    allAlbums.push(...trackAlbums);
+const loadTrackAlbums = async function (params: LoadDataParams) {
+  let items: Album[] = [];
+  if (!itemDetails.value) {
+    items = [];
+  } else if (params.providerFilter && params.providerFilter != 'library') {
+    for (const providerMapping of getStreamingProviderMappings(itemDetails.value)) {
+      if (providerMapping.provider_instance == params.providerFilter) {
+        items = await api.getTrackAlbums(providerMapping.item_id, providerMapping.provider_instance);
+        break;
+      }
+    }
+  } else {
+    items = await api.getTrackAlbums(itemDetails.value.item_id, itemDetails.value.provider);
   }
-  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
-    const trackAlbums = await api.getTrackAlbums(providerMapping.item_id, providerMapping.provider_instance);
-    allAlbums.push(...trackAlbums);
-  }
-  return filteredItems(allAlbums, offset, limit, sort, search, favoritesOnly);
+  return filteredItems(items, params);
 };
 
 const openLinkInNewTab = function (url: string) {

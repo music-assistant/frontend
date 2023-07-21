@@ -187,7 +187,9 @@
     "search": "Show/hide search input",
     "select_items": "Select multiple items",
     "sort_options": "Sort options",
-    "toggle_view_mode": "Toggle view mode list/thumbs"
+    "toggle_view_mode": "Toggle view mode list/thumbs",
+    "open_provider_link": "Open this item on the provider's website",
+    "collapse_expand": "Collapse/expand this listing"
   },
   "topresult": "Top result",
   "track": "Track",
@@ -203,5 +205,7 @@
   "check_item_on_provider": "Check {0} on {1}",
   "check_item_in_library": "Check {0} in the library",
   "media_details": "Media details",
-  "mapped_providers": "Mapped providers"
+  "mapped_providers": "Mapped providers",
+  "item_in_library": "This item is available in the library"
+ 
 }

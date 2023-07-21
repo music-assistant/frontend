@@ -1,23 +1,26 @@
 <template>
-  <ItemsListing
-    itemtype="radios"
-    :items="items"
-    :show-duration="false"
-    :show-provider="false"
-    :show-favorites-only-filter="true"
-    :load-data="loadItems"
-    :sort-keys="['sort_name', 'timestamp_added DESC']"
-    :update-available="updateAvailable"
-  />
+  <Container>
+    <ItemsListing
+      itemtype="radios"
+      :items="items"
+      :show-duration="false"
+      :show-provider="false"
+      :show-favorites-only-filter="true"
+      :load-data="loadItems"
+      :sort-keys="['sort_name', 'timestamp_added DESC']"
+      :update-available="updateAvailable"
+    />
+  </Container>
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Radio } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
+import Container from '../components/mods/Container.vue';
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
@@ -59,10 +62,15 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const loadItems = async function (offset: number, limit: number, sort: string, search?: string, favoritesOnly = true) {
-  const favorite = favoritesOnly || undefined;
+const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  return await api.getLibraryRadios(favorite, search, limit, offset, sort);
+  return await api.getLibraryRadios(
+    params.favoritesOnly || undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortBy,
+  );
 };
 
 const addUrl = async function () {

@@ -3,6 +3,7 @@
     <InfoHeader :item="itemDetails" :active-provider="itemDetails?.provider_mappings[0].provider_domain" />
     <Container>
       <ItemsListing
+        v-if="itemDetails"
         itemtype="playlisttracks"
         :parent-item="itemDetails"
         :show-provider="false"
@@ -23,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import Container from '../components/mods/Container.vue';
@@ -63,19 +64,12 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const loadPlaylistTracks = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  favoritesOnly = true,
-) {
+const loadPlaylistTracks = async function (params: LoadDataParams) {
   const playlistTracks: Track[] = [];
-
   await api.getPlaylistTracks(props.itemId, props.provider, (data: Track[]) => {
     console.log('chunk', data.length);
     playlistTracks.push(...data);
   });
-  return filteredItems(playlistTracks, offset, limit, sort, search, favoritesOnly);
+  return filteredItems(playlistTracks, params);
 };
 </script>

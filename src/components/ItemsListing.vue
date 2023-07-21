@@ -14,6 +14,11 @@
       <v-toolbar density="compact" variant="flat" color="transparent">
         <template #title>
           {{ title }}
+          <v-badge
+            color="grey"
+            :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
+            inline
+          />
         </template>
 
         <template #append>
@@ -24,9 +29,9 @@
             :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
             variant="plain"
             :title="$t('tooltip.select_items')"
+            :disabled="!expanded"
             @click="toggleCheckboxes"
           />
-          {{ showSelectButton }}
 
           <!-- favorites only filter -->
           <v-btn
@@ -35,6 +40,7 @@
             icon
             variant="plain"
             :title="$t('tooltip.filter_favorites')"
+            :disabled="!expanded"
             @click="toggleFavoriteFilter"
           >
             <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
@@ -47,6 +53,7 @@
             icon
             variant="plain"
             :title="$t('tooltip.album_artist_filter')"
+            :disabled="!expanded"
             @click="toggleAlbumArtistsFilter"
           >
             <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
@@ -59,6 +66,7 @@
             icon
             variant="plain"
             :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+            :disabled="!expanded"
             @click="onRefreshClicked()"
           >
             <v-badge :model-value="updateAvailable" color="error" dot>
@@ -74,7 +82,7 @@
             :close-on-content-click="true"
           >
             <template #activator="{ props }">
-              <v-btn icon v-bind="props" variant="plain" :title="$t('tooltip.sort_options')">
+              <v-btn icon v-bind="props" variant="plain" :disabled="!expanded" :title="$t('tooltip.sort_options')">
                 <v-icon v-bind="props" icon="mdi-sort" />
               </v-btn>
             </template>
@@ -100,6 +108,7 @@
             icon
             variant="plain"
             :title="$t('tooltip.search')"
+            :disabled="!expanded"
             @click="toggleSearch()"
           >
             <v-icon icon="mdi-magnify" />
@@ -111,27 +120,68 @@
             :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
             variant="plain"
             :title="$t('tooltip.toggle_view_mode')"
+            :disabled="!expanded"
             @click="toggleViewMode()"
+          />
+
+          <!-- provider filter dropdown -->
+          <v-menu
+            v-if="providerFilter && providerFilter.length > 1"
+            location="bottom end"
+            :close-on-content-click="true"
+          >
+            <template #activator="{ props }">
+              <v-btn icon v-bind="props" variant="plain" :disabled="!expanded">
+                <ProviderIcon :domain="activeProviderFilter" :size="30" />
+              </v-btn>
+            </template>
+            <v-card>
+              <v-list>
+                <div v-for="provId of providerFilter" :key="provId">
+                  <ListItem @click="changeActiveProviderFilter(provId)">
+                    <template #prepend>
+                      <ProviderIcon :domain="provId" :size="30" />
+                    </template>
+                    <template #title>
+                      <span v-if="provId == 'library'">{{ $t('library') }}</span>
+                      <span v-else>{{ api.getProviderName(provId) }}</span>
+                    </template>
+                    <template #append>
+                      <v-icon v-if="activeProviderFilter == provId" icon="mdi-check" />
+                    </template>
+                  </ListItem>
+                  <v-divider />
+                </div>
+              </v-list>
+            </v-card>
+          </v-menu>
+
+          <!-- expand/collapse button -->
+          <v-btn
+            v-if="allowCollapse"
+            :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+            variant="plain"
+            :title="$t('tooltip.collapse_expand')"
+            @click="toggleExpand"
           />
         </template>
       </v-toolbar>
       <v-divider />
 
-      <v-text-field
-        v-if="showSearch"
-        id="searchInput"
-        v-model="search"
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('search')"
-        hide-details
-        variant="filled"
-        style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
-        @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false"
-      />
-
-      <Container>
+      <Container v-if="expanded">
+        <v-text-field
+          v-if="showSearch"
+          id="searchInput"
+          v-model="search"
+          clearable
+          prepend-inner-icon="mdi-magnify"
+          :label="$t('search')"
+          hide-details
+          variant="filled"
+          style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
+          @focus="searchHasFocus = true"
+          @blur="searchHasFocus = false"
+        />
         <!-- loading animation -->
         <v-progress-linear v-if="loading" indeterminate />
 
@@ -200,16 +250,6 @@
             </v-btn>
           </template>
         </v-snackbar>
-
-        <div style="height: 30px; margin-top: 20px">
-          <!-- item count -->
-          <span v-if="!selectedItems.length && totalItems" style="cursor: pointer" @click="toggleCheckboxes">{{
-            $t('items_total', [totalItems])
-          }}</span>
-          <span v-else-if="selectedItems.length" style="cursor: pointer" @click="toggleCheckboxes">{{
-            $t('items_selected', [selectedItems.length])
-          }}</span>
-        </div>
       </Container>
     </v-card>
   </section>
@@ -218,15 +258,8 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import { ref, onBeforeUnmount, nextTick, onMounted, watch, mergeProps } from 'vue';
-import {
-  EventType,
-  type Album,
-  type EventMessage,
-  type MediaItemType,
-  type PagedItems,
-  type Track,
-} from '../plugins/api/interfaces';
+import { ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
+import { type Album, type MediaItemType, type PagedItems, type Track } from '../plugins/api/interfaces';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
@@ -239,6 +272,7 @@ import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
+import ProviderIcon from '@/components/ProviderIcon.vue';
 import Alert from './mods/Alert.vue';
 import Container from './mods/Container.vue';
 
@@ -260,15 +294,9 @@ export interface Props {
   updateAvailable?: boolean;
   title?: string;
   hideOnEmpty?: boolean;
-  checksum?: string;
-  loadData: (
-    offset: number,
-    limit: number,
-    sort: string,
-    search: string,
-    favorite?: boolean,
-    albumArtistsFilter?: boolean,
-  ) => Promise<PagedItems>;
+  providerFilter?: string[];
+  allowCollapse?: boolean;
+  loadData: (params: LoadDataParams) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['sort_name', 'timestamp_added DESC'],
@@ -280,10 +308,10 @@ const props = withDefaults(defineProps<Props>(), {
   showDuration: true,
   parentItem: undefined,
   hideOnEmpty: false,
-  checksum: undefined,
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
+  allowCollapse: false,
 });
 
 const defaultLimit = 100;
@@ -308,6 +336,8 @@ const showContextMenu = ref(false);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(true);
+const activeProviderFilter = ref<string>('library');
+const expanded = ref(true);
 
 // computed properties
 
@@ -365,6 +395,11 @@ const panelViewItemResponsive = function (displaySize: number) {
   } else {
     return 0;
   }
+};
+
+const toggleExpand = function () {
+  expanded.value = !expanded.value;
+  localStorage.setItem(`expand.${props.itemtype}`, expanded.value.toString());
 };
 
 const toggleViewMode = function () {
@@ -460,6 +495,11 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   loadData(true);
 };
 
+const changeActiveProviderFilter = function (provider: string) {
+  activeProviderFilter.value = provider;
+  loadData(true);
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ($state: any) {
   if (allItems.value.length == 0) {
@@ -495,12 +535,6 @@ watch(
     if (newVal && allItems.value.length == 0) loadData(true);
   },
 );
-watch(
-  () => props.checksum,
-  (newVal) => {
-    if (newVal) loadData(true);
-  },
-);
 
 const loadData = async function (clear = false, limit = defaultLimit) {
   if (clear) {
@@ -509,15 +543,15 @@ const loadData = async function (clear = false, limit = defaultLimit) {
   }
   loading.value = true;
 
-  const nextItems = await props.loadData(
-    offset.value,
-
-    limit,
-    sortBy.value,
-    search.value || '',
-    favoritesOnly.value,
-    albumArtistsOnlyFilter.value,
-  );
+  const nextItems = await props.loadData({
+    offset: offset.value,
+    limit: limit,
+    sortBy: sortBy.value,
+    search: search.value,
+    favoritesOnly: favoritesOnly.value,
+    albumArtistsFilter: albumArtistsOnlyFilter.value,
+    providerFilter: activeProviderFilter.value,
+  });
   if (offset.value) {
     allItems.value.push(...nextItems.items);
   } else {
@@ -566,6 +600,15 @@ onMounted(() => {
       albumArtistsOnlyFilter.value = albumArtistsOnlyStr == 'true';
     }
   }
+
+  // get stored/default expand property for this itemtype
+  if (props.allowCollapse !== false) {
+    const expandStr = localStorage.getItem(`expand.${props.itemtype}`);
+    if (expandStr) {
+      expanded.value = expandStr == 'true';
+    }
+  }
+
   // get stored searchquery
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
@@ -599,20 +642,26 @@ onBeforeUnmount(() => {
 </script>
 
 <script lang="ts">
+export interface LoadDataParams {
+  offset: number;
+  limit: number;
+  sortBy: string;
+  search: string;
+  favoritesOnly?: boolean;
+  albumArtistsFilter?: boolean;
+  providerFilter?: string;
+}
+
 export const filteredItems = function (
   // In-memory paging for (smaller) item sets that do not have server side paging
   items: MediaItemType[],
-  offset: number,
-  limit: number,
-  sortBy: string,
-  search?: string,
-  favoritesOnly = true,
+  params: LoadDataParams,
 ) {
   let result = [];
 
   // search
-  if (search) {
-    const searchStr = search.toLowerCase();
+  if (params.search) {
+    const searchStr = params.search.toLowerCase();
     for (const item of items) {
       if (item.name.toLowerCase().includes(searchStr)) {
         result.push(item);
@@ -628,51 +677,51 @@ export const filteredItems = function (
     result = items;
   }
   // sort
-  if (sortBy == 'sort_name') {
+  if (params.sortBy == 'sort_name') {
     result.sort((a, b) => (a.sort_name || a.name).localeCompare(b.sort_name || b.name));
   }
-  if (sortBy == 'sort_album') {
+  if (params.sortBy == 'sort_album') {
     result.sort((a, b) => (a as Track).album?.name.localeCompare((b as Track).album?.name));
   }
-  if (sortBy == 'sort_artist') {
+  if (params.sortBy == 'sort_artist') {
     result.sort((a, b) => (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name));
   }
-  if (sortBy == 'track_number') {
+  if (params.sortBy == 'track_number') {
     result.sort((a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0));
     result.sort((a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0));
   }
-  if (sortBy == 'position') {
+  if (params.sortBy == 'position') {
     result.sort((a, b) => ((a as Track).position || 0) - ((b as Track).position || 0));
   }
-  if (sortBy == 'position DESC') {
+  if (params.sortBy == 'position DESC') {
     result.sort((a, b) => ((b as Track).position || 0) - ((a as Track).position || 0));
   }
-  if (sortBy == 'year') {
+  if (params.sortBy == 'year') {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }
-  if (sortBy == 'timestamp_added DESC') {
+  if (params.sortBy == 'timestamp_added DESC') {
     result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
   }
 
-  if (sortBy == 'duration') {
+  if (params.sortBy == 'duration') {
     result.sort((a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0));
   }
 
-  if (sortBy == 'provider') {
+  if (params.sortBy == 'provider') {
     result.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 
-  if (favoritesOnly) {
+  if (params.favoritesOnly) {
     result = result.filter((x) => x.favorite);
   }
 
   const totalItems = result.length;
-  const pagedItems = result.slice(offset, offset + limit);
+  const pagedItems = result.slice(params.offset, params.offset + params.limit);
   return {
     items: pagedItems,
     count: pagedItems.length,
-    limit: limit,
-    offset: offset,
+    limit: params.limit,
+    offset: params.offset,
     total: totalItems,
   };
 };

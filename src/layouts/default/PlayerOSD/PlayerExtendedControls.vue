@@ -17,22 +17,13 @@
   <!-- active player -->
   <Button
     v-if="props.visibleComponents && props.visibleComponents.player?.isVisible"
-    :icon="getBreakpointValue('bp6') ? false : true"
+    icon
     v-bind="props.visibleComponents.player.icon"
+    class="mediacontrols-right"
     @click="store.showPlayersMenu = true"
   >
-    <v-badge
-      v-if="curGroupPlayers && curGroupPlayers.length > 0"
-      size="small"
-      :content="store.selectedPlayer?.group_childs.length"
-      :color="$vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor"
-    >
-      <v-icon :size="24">mdi-speaker</v-icon>
-    </v-badge>
-    <v-icon v-else :size="24">mdi-speaker</v-icon>
-    <div v-if="activePlayerQueue" class="line-clamp-1">{{ truncateString(activePlayerQueue?.display_name, 8) }}</div>
+    <v-icon icon="mdi-speaker" />
   </Button>
-
   <!-- active player volume -->
   <div v-if="props.visibleComponents && props.visibleComponents.volume?.isVisible">
     <v-menu v-if="activePlayerQueue" v-model="showVolume" class="volume-control-dialog" :close-on-content-click="false">
@@ -130,7 +121,6 @@ import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';
 import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import { truncateString } from '@/utils';
 
 const router = useRouter();
 
@@ -174,13 +164,6 @@ const showVolume = ref(false);
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
     return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-
-const curGroupPlayers = computed(() => {
-  if (store.selectedPlayer) {
-    return store.selectedPlayer.group_childs;
   }
   return undefined;
 });

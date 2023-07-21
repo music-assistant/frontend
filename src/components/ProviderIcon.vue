@@ -1,7 +1,7 @@
 <template>
   <div :style="`width:${size}px;margin-left:10px;margin-right:10px`">
     <!-- icon for library-->
-    <v-icon v-if="providerDomain == 'library'" :size="size" icon="mdi-bookshelf" :title="$t('library')" />
+    <v-icon v-if="providerDomain == 'library'" :size="size" icon="mdi-bookshelf" :title="$t('item_in_library')" />
     <!-- dark mode and dark svg icon-->
     <div
       v-else-if="$vuetify.theme.current.dark && api.providerManifests[providerDomain].icon_svg_dark"
@@ -32,7 +32,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { api } from '../plugins/api';
-import SvgIcon from './SvgIcon.vue';
 
 export interface Props {
   domain: string;

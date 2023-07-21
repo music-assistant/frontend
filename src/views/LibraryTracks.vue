@@ -1,24 +1,27 @@
 <template>
-  <ItemsListing
-    itemtype="tracks"
-    :items="items"
-    :show-provider="false"
-    :show-favorites-only-filter="true"
-    :show-track-number="false"
-    :load-data="loadItems"
-    :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'duration']"
-    :show-album="false"
-    :update-available="updateAvailable"
-  />
+  <Container>
+    <ItemsListing
+      itemtype="tracks"
+      :items="items"
+      :show-provider="false"
+      :show-favorites-only-filter="true"
+      :show-track-number="false"
+      :load-data="loadItems"
+      :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'duration']"
+      :show-album="false"
+      :update-available="updateAvailable"
+    />
+  </Container>
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Track } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
+import Container from '../components/mods/Container.vue';
 
 const { t } = useI18n();
 const items = ref<Track[]>([]);
@@ -60,10 +63,10 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const loadItems = async function (offset: number, limit: number, sort: string, search?: string, favoritesOnly = true) {
-  const favorite = favoritesOnly || undefined;
+const loadItems = async function (params: LoadDataParams) {
+  params.favoritesOnly = params.favoritesOnly || undefined;
   updateAvailable.value = false;
-  return await api.getLibraryTracks(favorite, search, limit, offset, sort);
+  return await api.getLibraryTracks(params.favoritesOnly, params.search, params.limit, params.offset, params.sortBy);
 };
 
 const addUrl = async function () {

@@ -137,7 +137,6 @@ export const getStreamingProviderMappings = function (itemDetails: MediaItemType
     if (result.filter((a) => a.provider_domain == provider_mapping.provider_domain).length) continue;
     result.push(provider_mapping);
   }
-  console.log('getStreamingProviderMappings', result);
   return result;
 };
 

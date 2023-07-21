@@ -10,7 +10,7 @@
       <slot name="append"></slot>
 
       <!-- contextmenu -->
-      <div v-if="contextMenuItems.length > 0">
+      <div v-if="contextMenuItems.length > 0" class="contextmenubtn">
         <v-menu location="bottom end">
           <template #activator="{ props }">
             <v-btn variant="plain" ripple icon="mdi-dots-vertical" v-bind="props" />
@@ -93,8 +93,8 @@ export default {
   padding-right: 10px;
 }
 
-.list-item-main > div.v-list-item__content > .panel-item-details-info {
-  padding-left: 0px;
-  padding-right: 0px;
+.contextmenubtn {
+  width: 25px;
+  margin-right: -13px;
 }
 </style>

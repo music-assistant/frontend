@@ -120,7 +120,7 @@
           @click="editProvider(item.instance_id)"
         >
           <template #prepend>
-            <provider-icon :domain="item.domain" :size="45" />
+            <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" />
           </template>
 
           <!-- title -->

@@ -88,7 +88,7 @@
           @click="editCoreConfig(item.domain)"
         >
           <template #prepend>
-            <provider-icon :domain="item.domain" :size="45" />
+            <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" style="margin-left: 10px" />
           </template>
 
           <!-- title -->

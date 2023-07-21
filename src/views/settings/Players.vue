@@ -47,7 +47,7 @@
       @click="editPlayer(item.player_id)"
     >
       <template #prepend>
-        <provider-icon :domain="item.provider" :size="45" />
+        <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
       </template>
 
       <!-- title -->

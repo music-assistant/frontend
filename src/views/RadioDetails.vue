@@ -3,6 +3,7 @@
     <InfoHeader :item="itemDetails" />
     <Container>
       <ItemsListing
+        v-if="itemDetails"
         itemtype="radioversions"
         :parent-item="itemDetails"
         :show-provider="true"
@@ -35,17 +36,17 @@
                 {{ api.providerManifests[providerMapping.provider_domain].name }}
               </template>
               <template #subtitle>
-                {{ providerMapping.item_id }} |
-                {{ providerMapping.audio_format.content_type }}
-                bits
-              </template>
-              <template #append>
-                <v-btn
-                  v-if="providerMapping.url"
-                  variant="plain"
-                  icon="mdi-open-in-new"
+                {{ providerMapping.audio_format.content_type }} |
+                {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{ providerMapping.audio_format.bit_depth }}
+                bits |
+                <a
+                  v-if="providerMapping.url && !providerMapping.url.startsWith('file')"
+                  style="opacity: 0.4"
+                  :title="$t('tooltip.open_provider_link')"
                   @click.prevent="openLinkInNewTab(providerMapping.url)"
-                />
+                  >{{ providerMapping.url }}</a
+                >
+                <span v-else style="opacity: 0.4" :title="providerMapping.item_id">{{ providerMapping.item_id }}</span>
               </template>
             </ListItem>
           </v-list>
@@ -56,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams, filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { ref } from 'vue';
 import type { Radio } from '../plugins/api/interfaces';
@@ -86,15 +87,8 @@ watch(
   { immediate: true },
 );
 
-const loadRadioVersions = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  favoritesOnly = true,
-) {
+const loadRadioVersions = async function (params: LoadDataParams) {
   const allVersions: Radio[] = [];
-
   if (props.provider == 'library') {
     const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
     allVersions.push(...radioVersions);
@@ -104,7 +98,7 @@ const loadRadioVersions = async function (
     allVersions.push(...radioVersions);
   }
 
-  return filteredItems(allVersions, offset, limit, sort, search, favoritesOnly);
+  return filteredItems(allVersions, params);
 };
 const openLinkInNewTab = function (url: string) {
   window.open(url, '_blank');

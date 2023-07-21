@@ -187,8 +187,8 @@
       </v-layout>
       <v-layout v-if="item" style="z-index: 800; height: 100%; padding-left: 15px">
         <!-- active/filtered provider icon -->
-        <div v-if="activeProvider" style="position: absolute; float: right; right: 15px; top: 15px">
-          <provider-icon :domain="activeProvider" :size="25" />
+        <div v-if="item" style="position: absolute; float: right; right: 15px; top: 15px">
+          <provider-icon :domain="item.provider" :size="25" />
         </div>
       </v-layout>
     </v-card>
@@ -228,7 +228,6 @@ import { useI18n } from 'vue-i18n';
 // properties
 export interface Props {
   item?: MediaItemType;
-  activeProvider?: string;
 }
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
