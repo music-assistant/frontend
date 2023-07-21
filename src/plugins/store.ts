@@ -14,11 +14,10 @@ interface Store {
   sizeNavigationMenu: number;
   showFullscreenPlayer: boolean;
   coverImageColorCode: ColorCoverPalette;
-  topBarTitle?: string;
-  topBarContextMenuItems: ContextMenuItem[];
   alwaysShowMenuButton: boolean;
   apiInitialized: boolean;
   apiBaseUrl: string;
+  dialogActive: boolean;
   prevRoutes: Array<{
     name: string;
     path: string;
@@ -46,9 +45,9 @@ export const store: Store = reactive({
     lightColor: '',
     darkColor: '',
   },
-  topBarContextMenuItems: [],
   alwaysShowMenuButton: false,
   apiInitialized: false,
   apiBaseUrl: '',
+  dialogActive: false,
   prevRoutes: [],
 });

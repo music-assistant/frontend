@@ -166,8 +166,6 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from) => {
-  store.topBarTitle = undefined;
-  store.topBarContextMenuItems = [];
   if (!from.name) return;
   if (to.params['backnav']) return;
   from.meta.scrollPos = window.scrollY;

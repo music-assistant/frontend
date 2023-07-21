@@ -1,84 +1,81 @@
 <template>
-  <div>
-    <Container>
-      <v-text-field
-        id="searchInput"
-        v-model="search"
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('type_to_search')"
-        hide-details
-        variant="filled"
-        @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false"
-      />
+  <section>
+    <v-text-field
+      id="searchInput"
+      v-model="search"
+      clearable
+      prepend-inner-icon="mdi-magnify"
+      :label="$t('type_to_search')"
+      hide-details
+      variant="filled"
+      @focus="searchHasFocus = true"
+      @blur="searchHasFocus = false"
+    />
+    <div>
+      <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
+        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
+          {{ $t(item) }}
+        </v-chip>
+      </v-chip-group>
 
-      <div>
-        <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
-          <v-chip v-for="item in viewFilters" :key="item" filter outlined>
-            {{ $t(item) }}
-          </v-chip>
-        </v-chip-group>
+      <!-- loading animation -->
+      <v-progress-linear v-if="loading" indeterminate />
 
-        <!-- loading animation -->
-        <v-progress-linear v-if="loading" indeterminate />
+      <!-- panel view -->
+      <v-row v-if="viewMode == 'panel'">
+        <v-col
+          v-for="item in filteredItems"
+          :key="item.uri"
+          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+        >
+          <PanelviewItem
+            :item="item"
+            :size="thumbSize"
+            :is-selected="false"
+            :show-checkboxes="false"
+            @menu="onMenu"
+            @click="onClick"
+          />
+        </v-col>
+      </v-row>
 
-        <!-- panel view -->
-        <v-row v-if="viewMode == 'panel'">
-          <v-col
-            v-for="item in filteredItems"
-            :key="item.uri"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          >
-            <PanelviewItem
-              :item="item"
-              :size="thumbSize"
-              :is-selected="false"
-              :show-checkboxes="false"
-              @menu="onMenu"
-              @click="onClick"
-            />
-          </v-col>
-        </v-row>
-
-        <!-- list view -->
-        <div v-if="viewMode == 'list'">
-          <RecycleScroller v-slot="{ item }" :items="filteredItems" :item-size="60" key-field="item_id" page-mode>
-            <ListviewItem
-              :item="item"
-              :show-track-number="false"
-              :show-duration="true"
-              :show-library="false"
-              :show-menu="true"
-              :show-provider="true"
-              :show-checkboxes="false"
-              :is-selected="false"
-              :show-details="true"
-              @menu="onMenu"
-              @click="onClick"
-            />
-          </RecycleScroller>
-        </div>
-
-        <v-toolbar density="compact" variant="flat" color="transparent" height="45">
-          <span style="margin-left: 15px">{{ $t('items_total', [filteredItems.length]) }}</span>
-          <v-spacer />
-
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-                variant="plain"
-                @click="toggleViewMode()"
-              />
-            </template>
-            <span>{{ $t('tooltip.toggle_view_mode') }}</span>
-          </v-tooltip>
-        </v-toolbar>
+      <!-- list view -->
+      <div v-if="viewMode == 'list'">
+        <RecycleScroller v-slot="{ item }" :items="filteredItems" :item-size="60" key-field="item_id" page-mode>
+          <ListviewItem
+            :item="item"
+            :show-track-number="false"
+            :show-duration="true"
+            :show-library="false"
+            :show-menu="true"
+            :show-provider="true"
+            :show-checkboxes="false"
+            :is-selected="false"
+            :show-details="true"
+            @menu="onMenu"
+            @click="onClick"
+          />
+        </RecycleScroller>
       </div>
-    </Container>
-  </div>
+
+      <v-toolbar density="compact" variant="flat" color="transparent" height="45">
+        <span style="margin-left: 15px">{{ $t('items_total', [filteredItems.length]) }}</span>
+        <v-spacer />
+
+        <v-tooltip location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
+              variant="plain"
+              @click="toggleViewMode()"
+            />
+          </template>
+          <span>{{ $t('tooltip.toggle_view_mode') }}</span>
+        </v-tooltip>
+      </v-toolbar>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -93,7 +90,6 @@ import ListviewItem from '../components/ListviewItem.vue';
 import PanelviewItem from '../components/PanelviewItem.vue';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
-import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 
 export interface Props {
@@ -112,7 +108,6 @@ const search = ref('');
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
-const selectedItems = ref<MediaItemType[]>([]);
 const throttleId = ref();
 
 const viewFilters = ['topresult', 'artists', 'albums', 'tracks', 'playlists', 'radios'];
@@ -131,7 +126,7 @@ const toggleViewMode = function () {
 };
 
 const onMenu = function (item: MediaItemType) {
-  selectedItems.value = [item];
+  eventbus.emit('playdialog', { items: [item], showContextMenuItems: true });
 };
 
 const onClick = function (mediaItem: MediaItemType) {
@@ -146,7 +141,7 @@ const onClick = function (mediaItem: MediaItemType) {
       },
     });
   } else {
-    eventbus.emit('playdialog', { items: selectedItems.value, showContextMenuItems: false });
+    eventbus.emit('playdialog', { items: [mediaItem], showContextMenuItems: false });
   }
 };
 
@@ -274,16 +269,12 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    selectedItems.value = filteredItems.value;
-  } else if (!searchHasFocus.value && e.key == 'Backspace') {
+  if (!searchHasFocus.value && e.key == 'Backspace') {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
     search.value += e.key;
   }
 };
-
 document.addEventListener('keydown', keyListener);
 
 onBeforeUnmount(() => {

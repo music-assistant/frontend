@@ -4,7 +4,17 @@
   we steer its visibility through the centralized eventbus.
 -->
 <template>
-  <v-dialog v-model="show" :fullscreen="$vuetify.display.mobile" min-height="80%" :scrim="true">
+  <v-dialog
+    v-model="show"
+    :fullscreen="$vuetify.display.mobile"
+    min-height="80%"
+    :scrim="true"
+    @update:model-value="
+      (v) => {
+        store.dialogActive = v;
+      }
+    "
+  >
     <v-card>
       <v-toolbar color="transparent" style="padding: 10px 0px" density="compact" class="titlebar">
         <v-btn icon="mdi-play-circle-outline" />

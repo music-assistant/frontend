@@ -90,7 +90,6 @@ const router = useRouter();
 
 // local refs
 const playerConfigs = ref<PlayerConfig[]>([]);
-console.log(playerConfigs);
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe_multi([EventType.PLAYER_CONFIG_UPDATED], () => {
   loadItems();

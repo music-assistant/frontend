@@ -1,7 +1,6 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
     <navigation-menu />
-    <app-bar />
     <add-to-playlist-dialog />
     <play-item-dialog />
 
@@ -15,7 +14,6 @@
 
 <script lang="ts" setup>
 import NavigationMenu from './NavigationMenu.vue';
-import AppBar from './AppBar.vue';
 import AddToPlaylistDialog from './AddToPlaylistDialog.vue';
 import PlayItemDialog from './PlayItemDialog.vue';
 import { nextTick, onBeforeUnmount, onMounted } from 'vue';

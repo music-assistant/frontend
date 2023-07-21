@@ -1,69 +1,68 @@
 <template>
-  <Container>
-    <!-- show alert if no music providers configured-->
-    <!-- show section per providertype -->
-    <v-card v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
-      <v-toolbar color="transparent" density="compact" class="titlebar">
-        <template #title>
-          <h2 class="line-clamp-1">{{ $t(`settings.${provType}providers`) }}</h2>
-        </template>
-        <template #append>
-          <!-- ADD provider button + contextmenu -->
-          <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
-            <template #activator="{ props }">
-              <v-btn variant="text" v-bind="props">
-                {{ $t('settings.add_new') }}
-              </v-btn>
-            </template>
+  <!-- show alert if no music providers configured-->
+  <!-- show section per providertype -->
+  <section v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
+    <v-toolbar color="transparent" density="compact" class="titlebar">
+      <template #title>
+        <h2 class="line-clamp-1">{{ $t(`settings.${provType}providers`) }}</h2>
+      </template>
+      <template #append>
+        <!-- ADD provider button + contextmenu -->
+        <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" color="accent" variant="outlined">
+              {{ $t('settings.add_new') }}
+            </v-btn>
+          </template>
 
-            <v-card density="compact">
-              <ListItem
-                v-for="provider in availableProviders.filter((x) => x.type == provType)"
-                :key="provider.domain"
-                density="compact"
-                style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
-                :title="provider.name"
-                @click="addProvider(provider)"
-              >
-                <template #prepend>
-                  <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
-                </template>
-              </ListItem>
-            </v-card>
-          </v-menu>
-        </template>
-      </v-toolbar>
-      <v-divider />
+          <v-card density="compact">
+            <ListItem
+              v-for="provider in availableProviders.filter((x) => x.type == provType)"
+              :key="provider.domain"
+              density="compact"
+              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
+              :title="provider.name"
+              @click="addProvider(provider)"
+            >
+              <template #prepend>
+                <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
+              </template>
+            </ListItem>
+          </v-card>
+        </v-menu>
+      </template>
+    </v-toolbar>
+    <v-divider />
 
-      <!-- alert if no providers configured -->
-      <Alert
-        v-if="
-          provType == ProviderType.MUSIC &&
-          providerConfigs.filter(
-            (x) =>
-              x.type == ProviderType.MUSIC &&
-              x.domain in api.providerManifests &&
-              !api.providerManifests[x.domain].hidden,
-          ).length == 0
+    <!-- alert if no providers configured -->
+    <Alert
+      v-if="
+        provType == ProviderType.MUSIC &&
+        providerConfigs.filter(
+          (x) =>
+            x.type == ProviderType.MUSIC &&
+            x.domain in api.providerManifests &&
+            !api.providerManifests[x.domain].hidden,
+        ).length == 0
+      "
+      icon="mdi-radio-tower"
+    >
+      <b>{{ $t('settings.no_providers') }}</b>
+      <br />
+      {{ $t('settings.no_providers_detail') }}
+    </Alert>
+
+    <Container>
+      <ListItem
+        v-for="item in providerConfigs.filter((x) => x.type == provType)"
+        :key="item.instance_id"
+        v-hold="
+          () => {
+            editProvider(item.instance_id);
+          }
         "
-        icon="mdi-radio-tower"
-      >
-        <b>{{ $t('settings.no_providers') }}</b>
-        <br />
-        {{ $t('settings.no_providers_detail') }}
-      </Alert>
-
-      <Container>
-        <ListItem
-          v-for="item in providerConfigs.filter((x) => x.type == provType)"
-          :key="item.instance_id"
-          v-hold="
-            () => {
-              editProvider(item.instance_id);
-            }
-          "
-          link
-          :context-menu-items="[
+        link
+        :context-menu-items="[
             {
               label: 'settings.configure',
               labelArgs:[],
@@ -117,51 +116,50 @@
               icon: 'mdi-refresh',
             },
           ]"
-          @click="editProvider(item.instance_id)"
+        @click="editProvider(item.instance_id)"
+      >
+        <template #prepend>
+          <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" />
+        </template>
+
+        <!-- title -->
+        <template #title>
+          <div class="line-clamp-1">{{ item.name || api.providerManifests[item.domain].name }}</div>
+        </template>
+
+        <!-- subtitle -->
+        <template #subtitle>
+          <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div></template
         >
-          <template #prepend>
-            <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" />
-          </template>
-
-          <!-- title -->
-          <template #title>
-            <div class="line-clamp-1">{{ item.name || api.providerManifests[item.domain].name }}</div>
-          </template>
-
-          <!-- subtitle -->
-          <template #subtitle>
-            <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div></template
+        <!-- actions -->
+        <template #append>
+          <!-- sync running -->
+          <Button
+            v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0"
+            icon
+            :title="$t('settings.sync_running')"
           >
-          <!-- actions -->
-          <template #append>
-            <!-- sync running -->
-            <Button
-              v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0"
-              icon
-              :title="$t('settings.sync_running')"
-            >
-              <v-icon color="grey"> mdi-sync </v-icon>
-            </Button>
+            <v-icon color="grey"> mdi-sync </v-icon>
+          </Button>
 
-            <!-- provider disabled -->
-            <Button v-if="!item.enabled" icon :title="$t('settings.provider_disabled')">
-              <v-icon color="grey"> mdi-cancel </v-icon>
-            </Button>
+          <!-- provider disabled -->
+          <Button v-if="!item.enabled" icon :title="$t('settings.provider_disabled')">
+            <v-icon color="grey"> mdi-cancel </v-icon>
+          </Button>
 
-            <!-- provider has errors -->
-            <Button v-else-if="item.last_error" icon :title="item.last_error">
-              <v-icon color="red"> mdi-alert-circle </v-icon>
-            </Button>
+          <!-- provider has errors -->
+          <Button v-else-if="item.last_error" icon :title="item.last_error">
+            <v-icon color="red"> mdi-alert-circle </v-icon>
+          </Button>
 
-            <!-- loading (provider not yet available) -->
-            <Button v-else-if="!api.providers[item.instance_id]?.available" icon :title="$t('settings.not_loaded')">
-              <v-icon icon="mdi-timer-sand" />
-            </Button>
-          </template>
-        </ListItem>
-      </Container>
-    </v-card>
-  </Container>
+          <!-- loading (provider not yet available) -->
+          <Button v-else-if="!api.providers[item.instance_id]?.available" icon :title="$t('settings.not_loaded')">
+            <v-icon icon="mdi-timer-sand" />
+          </Button>
+        </template>
+      </ListItem>
+    </Container>
+  </section>
 </template>
 
 <script setup lang="ts">

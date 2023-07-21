@@ -1,100 +1,48 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" :active-provider="provider" />
-    <Container>
-      <ItemsListing
-        v-if="itemDetails"
-        itemtype="trackalbums"
-        :parent-item="itemDetails"
-        :show-provider="true"
-        :show-favorites-only-filter="false"
-        :show-library="true"
-        :show-track-number="false"
-        :load-data="loadTrackAlbums"
-        :sort-keys="['provider', 'sort_name', 'duration']"
-        :update-available="updateAvailable"
-        :title="$t('appears_on')"
-        :checksum="provider + itemId"
-        :provider-filter="providerFilter"
-        @refresh-clicked="
-          loadItemDetails();
-          updateAvailable = false;
-        "
-      />
-      <br />
-      <ItemsListing
-        v-if="itemDetails"
-        itemtype="trackversions"
-        :parent-item="itemDetails"
-        :show-provider="true"
-        :show-favorites-only-filter="false"
-        :show-library="true"
-        :show-track-number="false"
-        :load-data="loadTrackVersions"
-        :sort-keys="['provider', 'sort_name', 'duration']"
-        :update-available="updateAvailable"
-        :title="$t('other_versions')"
-        :hide-on-empty="true"
-        :checksum="provider + itemId"
-        @refresh-clicked="
-          loadItemDetails();
-          updateAvailable = false;
-        "
-      />
-
-      <br />
-
-      <!-- provider mapping details -->
-      <v-card v-if="provider == 'library'" style="margin-bottom: 10px">
-        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px" />
-        <v-divider />
-        <Container>
-          <v-list>
-            <ListItem
-              v-for="providerMapping in itemDetails?.provider_mappings"
-              :key="providerMapping.provider_instance"
-            >
-              <template #prepend>
-                <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
-              </template>
-              <template #title>
-                {{ api.providerManifests[providerMapping.provider_domain].name }}
-              </template>
-              <template #subtitle>
-                {{ providerMapping.audio_format.content_type }} |
-                {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{ providerMapping.audio_format.bit_depth }}
-                bits |
-                <a
-                  v-if="providerMapping.url && !providerMapping.url.startsWith('file')"
-                  style="opacity: 0.4"
-                  :title="$t('tooltip.open_provider_link')"
-                  @click.prevent="openLinkInNewTab(providerMapping.url)"
-                  >{{ providerMapping.url }}</a
-                >
-                <span v-else style="opacity: 0.4" :title="providerMapping.item_id">{{ providerMapping.item_id }}</span>
-              </template>
-              <template #append>
-                <!-- hi res icon -->
-                <v-img
-                  v-if="providerMapping.audio_format.bit_depth > 16"
-                  :src="iconHiRes"
-                  width="30"
-                  :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
-                  style="margin-right: 15px"
-                />
-                <audio
-                  v-if="getBreakpointValue('bp1')"
-                  name="preview"
-                  title="preview"
-                  controls
-                  :src="getPreviewUrl(providerMapping.provider_domain, providerMapping.item_id)"
-                ></audio>
-              </template>
-            </ListItem>
-          </v-list>
-        </Container>
-      </v-card>
-    </Container>
+    <ItemsListing
+      v-if="itemDetails"
+      itemtype="trackalbums"
+      :parent-item="itemDetails"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
+      :show-library="true"
+      :show-track-number="false"
+      :load-data="loadTrackAlbums"
+      :sort-keys="['provider', 'sort_name', 'duration']"
+      :update-available="updateAvailable"
+      :title="$t('appears_on')"
+      :checksum="provider + itemId"
+      :provider-filter="providerFilter"
+      @refresh-clicked="
+        loadItemDetails();
+        updateAvailable = false;
+      "
+    />
+    <br />
+    <ItemsListing
+      v-if="itemDetails"
+      itemtype="trackversions"
+      :parent-item="itemDetails"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
+      :show-library="true"
+      :show-track-number="false"
+      :load-data="loadTrackVersions"
+      :sort-keys="['provider', 'sort_name', 'duration']"
+      :update-available="updateAvailable"
+      :title="$t('other_versions')"
+      :hide-on-empty="true"
+      :checksum="provider + itemId"
+      @refresh-clicked="
+        loadItemDetails();
+        updateAvailable = false;
+      "
+    />
+    <br />
+    <!-- provider mapping details -->
+    <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
   </section>
 </template>
 
@@ -109,6 +57,7 @@ import { onBeforeUnmount, onMounted, watch } from 'vue';
 import ListItem from '../components/mods/ListItem.vue';
 import Container from '../components/mods/Container.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
+import ProviderDetails from '@/components/ProviderDetails.vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 

@@ -1,16 +1,32 @@
 <template>
-  <Container>
-    <ItemsListing
-      itemtype="radios"
-      :items="items"
-      :show-duration="false"
-      :show-provider="false"
-      :show-favorites-only-filter="true"
-      :load-data="loadItems"
-      :sort-keys="['sort_name', 'timestamp_added DESC']"
-      :update-available="updateAvailable"
-    />
-  </Container>
+  <ItemsListing
+    itemtype="radios"
+    :items="items"
+    :show-duration="false"
+    :show-provider="false"
+    :show-favorites-only-filter="true"
+    :load-data="loadItems"
+    :sort-keys="['sort_name', 'timestamp_added DESC']"
+    :update-available="updateAvailable"
+    :title="$t('radios')"
+    :allow-key-hooks="true"
+    :context-menu-items="[
+      {
+        label: 'add_url_item',
+        labelArgs: [],
+        action: () => {
+          addUrl();
+        },
+        icon: 'mdi-link-plus',
+      },
+    ]"
+    @refresh-clicked="
+      () => {
+        api.startSync([MediaType.RADIO]);
+        updateAvailable = false;
+      }
+    "
+  />
 </template>
 
 <script setup lang="ts">
@@ -25,28 +41,6 @@ import Container from '../components/mods/Container.vue';
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
 const updateAvailable = ref<boolean>(false);
-
-store.topBarContextMenuItems = [
-  {
-    label: 'sync_now',
-    labelArgs: [t('radios')],
-    action: () => {
-      api.startSync([MediaType.RADIO]);
-    },
-    icon: 'mdi-sync',
-  },
-  {
-    label: 'add_url_item',
-    labelArgs: [],
-    action: () => {
-      addUrl();
-    },
-    icon: 'mdi-link-plus',
-  },
-];
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
-});
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library

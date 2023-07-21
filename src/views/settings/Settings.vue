@@ -1,23 +1,29 @@
 <template>
-  <section>
-    <v-tabs :model-value="activeTab" align-tabs="end">
-      <v-tab value="providers" :to="{ name: 'providersettings' }">
-        {{ $t('settings.providers') }}
-      </v-tab>
-      <v-tab value="players" :to="{ name: 'playersettings' }">
-        {{ $t('settings.players') }}
-      </v-tab>
-      <v-tab value="core" :to="{ name: 'coresettings' }">
-        {{ $t('settings.core') }}
-      </v-tab>
-    </v-tabs>
-    <v-divider />
+  <div>
+    <v-toolbar variant="flat" color="transparent" style="height: 50px">
+      <template #title> {{ $t('settings.settings') }} | {{ $t(`settings.${activeTab}`) }} </template>
+      <template #append>
+        <v-tabs :model-value="activeTab" align-tabs="end">
+          <v-tab value="providers" :to="{ name: 'providersettings' }">
+            {{ $t('settings.providers') }}
+          </v-tab>
+          <v-tab value="players" :to="{ name: 'playersettings' }">
+            {{ $t('settings.players') }}
+          </v-tab>
+          <v-tab value="core" :to="{ name: 'coresettings' }">
+            {{ $t('settings.core') }}
+          </v-tab>
+        </v-tabs>
+      </template>
+    </v-toolbar>
     <router-view v-slot="{ Component }" app>
-      <transition name="fade" mode="out-in">
+      <component :is="Component" />
+      <!-- transition temporary disabled as it renders the view unusable somehow? -->
+      <!-- <transition name="fade" mode="out-in">
         <component :is="Component" />
-      </transition>
+      </transition> -->
     </router-view>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">

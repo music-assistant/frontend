@@ -1,18 +1,24 @@
 <template>
-  <Container>
-    <ItemsListing
-      itemtype="playlists"
-      :items="items"
-      :show-duration="false"
-      :show-provider="true"
-      :show-favorites-only-filter="true"
-      :load-data="loadItems"
-      :show-library="true"
-      :sort-keys="['sort_name', 'timestamp_added DESC']"
-      :update-available="updateAvailable"
-      @refresh-clicked="updateAvailable = false"
-    />
-  </Container>
+  <ItemsListing
+    itemtype="playlists"
+    :items="items"
+    :show-duration="false"
+    :show-provider="true"
+    :show-favorites-only-filter="true"
+    :load-data="loadItems"
+    :show-library="true"
+    :sort-keys="['sort_name', 'timestamp_added DESC']"
+    :update-available="updateAvailable"
+    :title="$t('playlists')"
+    :allow-key-hooks="true"
+    :context-menu-items="contextMenuItems"
+    @refresh-clicked="
+      () => {
+        api.startSync([MediaType.PLAYLIST]);
+        updateAvailable = false;
+      }
+    "
+  />
 </template>
 
 <script setup lang="ts">
@@ -22,39 +28,12 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, ProviderFeature, type Playlist, EventMessage, EventType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
-import Container from '../components/mods/Container.vue';
+import { ContextMenuItem } from '@/helpers/contextmenu';
 
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
 const updateAvailable = ref(false);
-
-store.topBarContextMenuItems = [
-  {
-    label: 'sync_now',
-    labelArgs: [t('playlists')],
-    action: () => {
-      api.startSync([MediaType.PLAYLIST]);
-    },
-    icon: 'mdi-sync',
-  },
-];
-
-for (const prov of Object.values(api.providers).filter(
-  (x) => x.available && x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
-)) {
-  store.topBarContextMenuItems.push({
-    label: 'create_playlist',
-    labelArgs: [prov.name],
-    action: () => {
-      newPlaylist(prov.instance_id);
-    },
-    icon: 'mdi-sync',
-  });
-}
-
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
-});
+const contextMenuItems = ref<ContextMenuItem[]>([]);
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
@@ -68,6 +47,18 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 onMounted(() => {
+  for (const prov of Object.values(api.providers).filter(
+    (x) => x.available && x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
+  )) {
+    contextMenuItems.value.push({
+      label: 'create_playlist',
+      labelArgs: [prov.name],
+      action: () => {
+        newPlaylist(prov.instance_id);
+      },
+      icon: 'mdi-sync',
+    });
+  }
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
     [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],

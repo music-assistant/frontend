@@ -1,17 +1,33 @@
 <template>
-  <Container>
-    <ItemsListing
-      itemtype="tracks"
-      :items="items"
-      :show-provider="false"
-      :show-favorites-only-filter="true"
-      :show-track-number="false"
-      :load-data="loadItems"
-      :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'duration']"
-      :show-album="false"
-      :update-available="updateAvailable"
-    />
-  </Container>
+  <ItemsListing
+    itemtype="tracks"
+    :items="items"
+    :show-provider="false"
+    :show-favorites-only-filter="true"
+    :show-track-number="false"
+    :load-data="loadItems"
+    :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'duration']"
+    :show-album="false"
+    :update-available="updateAvailable"
+    :title="$t('tracks')"
+    :allow-key-hooks="true"
+    :context-menu-items="[
+      {
+        label: 'add_url_item',
+        labelArgs: [],
+        action: () => {
+          addUrl();
+        },
+        icon: 'mdi-link-plus',
+      },
+    ]"
+    @refresh-clicked="
+      () => {
+        api.startSync([MediaType.TRACK]);
+        updateAvailable = false;
+      }
+    "
+  />
 </template>
 
 <script setup lang="ts">
@@ -20,34 +36,10 @@ import { useI18n } from 'vue-i18n';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Track } from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
-import Container from '../components/mods/Container.vue';
 
 const { t } = useI18n();
 const items = ref<Track[]>([]);
 const updateAvailable = ref<boolean>(false);
-
-store.topBarContextMenuItems = [
-  {
-    label: 'sync_now',
-    labelArgs: [t('tracks')],
-    action: () => {
-      api.startSync([MediaType.TRACK]);
-    },
-    icon: 'mdi-sync',
-  },
-  {
-    label: 'add_url_item',
-    labelArgs: [],
-    action: () => {
-      addUrl();
-    },
-    icon: 'mdi-link-plus',
-  },
-];
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
-});
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library
