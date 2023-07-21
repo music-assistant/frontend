@@ -13,7 +13,9 @@
 
         <v-card-subtitle v-if="api.providerManifests[config.domain].documentation">
           <b>{{ $t('settings.need_help_setup_provider') }} </b>&nbsp;
-          <a :href="api.providerManifests[config.domain].documentation" target="_blank">{{ $t('settings.check_docs') }}</a>
+          <a :href="api.providerManifests[config.domain].documentation" target="_blank">{{
+            $t('settings.check_docs')
+          }}</a>
         </v-card-subtitle>
         <br />
         <v-divider />

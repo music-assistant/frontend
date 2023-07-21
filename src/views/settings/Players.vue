@@ -9,7 +9,6 @@
         }
       "
       link
-      @click="editPlayer(item.player_id)"
       :context-menu-items="[
             {
               label: 'settings.configure',
@@ -45,9 +44,10 @@
               icon: 'mdi-delete',
             },
           ]"
+      @click="editPlayer(item.player_id)"
     >
       <template #prepend>
-        <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
+        <provider-icon :domain="item.provider" :size="45" />
       </template>
 
       <!-- title -->

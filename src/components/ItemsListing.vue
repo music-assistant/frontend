@@ -19,12 +19,12 @@
         <template #append>
           <!-- toggle select button -->
           <v-btn
+            v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
             v-bind="props"
             :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
             variant="plain"
-            v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
-            @click="toggleCheckboxes"
             :title="$t('tooltip.select_items')"
+            @click="toggleCheckboxes"
           />
           {{ showSelectButton }}
 
@@ -34,8 +34,8 @@
             v-bind="props"
             icon
             variant="plain"
-            @click="toggleFavoriteFilter"
             :title="$t('tooltip.filter_favorites')"
+            @click="toggleFavoriteFilter"
           >
             <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
           </v-btn>
@@ -46,20 +46,20 @@
             v-bind="props"
             icon
             variant="plain"
-            @click="toggleAlbumArtistsFilter"
             :title="$t('tooltip.album_artist_filter')"
+            @click="toggleAlbumArtistsFilter"
           >
             <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
           </v-btn>
 
           <!-- refresh button-->
           <v-btn
+            v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
             v-bind="props"
             icon
             variant="plain"
-            @click="onRefreshClicked()"
-            v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
             :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+            @click="onRefreshClicked()"
           >
             <v-badge :model-value="updateAvailable" color="error" dot>
               <v-icon icon="mdi-refresh" />
@@ -73,7 +73,7 @@
             location="bottom end"
             :close-on-content-click="true"
           >
-            <template v-slot:activator="{ props }">
+            <template #activator="{ props }">
               <v-btn icon v-bind="props" variant="plain" :title="$t('tooltip.sort_options')">
                 <v-icon v-bind="props" icon="mdi-sort" />
               </v-btn>
@@ -99,8 +99,8 @@
             v-bind="props"
             icon
             variant="plain"
-            @click="toggleSearch()"
             :title="$t('tooltip.search')"
+            @click="toggleSearch()"
           >
             <v-icon icon="mdi-magnify" />
           </v-btn>
@@ -110,12 +110,12 @@
             v-bind="props"
             :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
             variant="plain"
-            @click="toggleViewMode()"
             :title="$t('tooltip.toggle_view_mode')"
+            @click="toggleViewMode()"
           />
         </template>
       </v-toolbar>
-      <v-divider></v-divider>
+      <v-divider />
 
       <v-text-field
         v-if="showSearch"

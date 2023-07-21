@@ -146,11 +146,11 @@
               variant="plain"
               ripple
               :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+              size="x-large"
+              style="margin-top: -15px"
               @click="api.toggleFavorite(item)"
               @click.prevent
               @click.stop
-              size="x-large"
-              style="margin-top: -15px"
             />
           </div>
 
@@ -188,10 +188,7 @@
       <v-layout v-if="item" style="z-index: 800; height: 100%; padding-left: 15px">
         <!-- active/filtered provider icon -->
         <div v-if="activeProvider" style="position: absolute; float: right; right: 15px; top: 15px">
-          <provider-icon
-            :domain="activeProvider"
-            :size="25"
-          />
+          <provider-icon :domain="activeProvider" :size="25" />
         </div>
       </v-layout>
     </v-card>
@@ -250,8 +247,7 @@ watch(
       store.topBarTitle = val.name;
 
       fanartImage.value =
-        getImageThumbForItem(compProps.item, ImageType.FANART) ||
-        getImageThumbForItem(compProps.item, ImageType.THUMB);
+        getImageThumbForItem(compProps.item, ImageType.FANART) || getImageThumbForItem(compProps.item, ImageType.THUMB);
 
       store.topBarContextMenuItems = getContextMenuItems([val], val, t);
     }

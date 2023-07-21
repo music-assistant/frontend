@@ -165,7 +165,7 @@ export const getImageThumbForItem = function (
   } else {
     imageUrl = img.path;
   }
-  
+
   if (!size) {
     return imageUrl;
   } else if (imageUrl.includes('imageproxy')) {

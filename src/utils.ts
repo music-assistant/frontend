@@ -1,4 +1,12 @@
-import { Artist, BrowseFolder, ItemMapping, MediaItemType, Player, PlayerType, ProviderMapping } from '@/plugins/api/interfaces';
+import {
+  Artist,
+  BrowseFolder,
+  ItemMapping,
+  MediaItemType,
+  Player,
+  PlayerType,
+  ProviderMapping,
+} from '@/plugins/api/interfaces';
 
 import Color from 'color';
 //@ts-ignore
@@ -129,7 +137,7 @@ export const getStreamingProviderMappings = function (itemDetails: MediaItemType
     if (result.filter((a) => a.provider_domain == provider_mapping.provider_domain).length) continue;
     result.push(provider_mapping);
   }
-  console.log('getStreamingProviderMappings', result)
+  console.log('getStreamingProviderMappings', result);
   return result;
 };
 
