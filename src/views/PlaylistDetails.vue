@@ -12,11 +12,11 @@
         :load-data="loadPlaylistTracks"
         :sort-keys="['position', 'position DESC', 'sort_name', 'sort_artist', 'sort_album']"
         :update-available="updateAvailable"
+        :title="$t('playlist_tracks')"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;
         "
-        :title="$t('playlist_tracks')"
       />
     </Container>
   </section>

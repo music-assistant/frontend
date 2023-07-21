@@ -73,7 +73,7 @@ const addUrl = async function () {
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;
-      api.addItemToLibrary(item).then(() => updateAvailable.value = true)
+      api.addItemToLibrary(item).then(() => (updateAvailable.value = true));
     })
     .catch((e) => alert(e));
 };

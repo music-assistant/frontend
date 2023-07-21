@@ -112,6 +112,14 @@ div.v-navigation-drawer__scrim {
   min-height: 48px;
 }
 
+.v-toolbar__append {
+  margin-inline-end: 23px;
+}
+
+.v-toolbar__content > .v-toolbar-title {
+  margin-inline-start: 23px;
+}
+
 /* ThumbView panel columns */
 .col-2 {
   width: 50%;

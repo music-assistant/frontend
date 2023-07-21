@@ -14,6 +14,8 @@
 </template>
 
 <script lang="ts">
+import api from '@/plugins/api';
+import { store } from '@/plugins/store';
 import { computed, ref } from 'vue';
 
 export default {
@@ -26,6 +28,18 @@ export default {
   setup(props, ctx) {
     const isThumbHidden = ref(true);
 
+    // computed properties
+    const activePlayerQueue = computed(() => {
+      if (store.selectedPlayer) {
+        return api.queues[store.selectedPlayer.active_source];
+      }
+      return undefined;
+    });
+    const curQueueItem = computed(() => {
+      if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
+      return undefined;
+    });
+
     const playerVolumeDefaults = computed(() => ({
       class: 'player-volume',
       hideDetails: true,
@@ -33,7 +47,11 @@ export default {
       thumbSize: isThumbHidden.value ? 0 : 10,
       step: 2,
       elevation: 0,
-      disabled: !props.isPowered,
+      disabled:
+        !props.isPowered ||
+        !activePlayerQueue.value ||
+        !activePlayerQueue.value?.active ||
+        activePlayerQueue.value?.items == 0,
       style: `width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`,
     }));
 

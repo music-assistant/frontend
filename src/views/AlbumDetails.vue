@@ -10,12 +10,12 @@
         :load-data="loadAlbumTracks"
         :sort-keys="['track_number', 'sort_name', 'duration']"
         :update-available="updateAvailable"
+        :title="$t('tracks')"
+        :checksum="provider + itemId"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;
         "
-        :title="$t('tracks')"
-        :checksum="provider + itemId"
       />
       <br />
       <ItemsListing
@@ -26,20 +26,20 @@
         :load-data="loadAlbumVersions"
         :sort-keys="['provider', 'sort_name', 'year']"
         :update-available="updateAvailable"
+        :title="$t('other_versions')"
+        :hide-on-empty="true"
+        :checksum="provider + itemId"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;
         "
-        :title="$t('other_versions')"
-        :hide-on-empty="true"
-        :checksum="provider + itemId"
       />
 
       <br />
 
       <!-- provider mapping details -->
-      <v-card style="margin-bottom: 10px" v-if="provider == 'library'">
-        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px"> </v-toolbar>
+      <v-card v-if="provider == 'library'" style="margin-bottom: 10px">
+        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px" />
         <v-divider />
         <Container>
           <v-list>
@@ -47,14 +47,14 @@
               v-for="providerMapping in itemDetails?.provider_mappings"
               :key="providerMapping.provider_instance"
               @click="
-                    $router.push({
-                      name: 'album',
-                      params: {
-                        itemId: providerMapping.item_id,
-                        provider: providerMapping.provider_instance,
-                      },
-                    })
-                  "
+                $router.push({
+                  name: 'album',
+                  params: {
+                    itemId: providerMapping.item_id,
+                    provider: providerMapping.provider_instance,
+                  },
+                })
+              "
             >
               <template #prepend>
                 <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
@@ -63,19 +63,17 @@
                 {{ api.providerManifests[providerMapping.provider_domain].name }}
               </template>
               <template #subtitle>
-                {{ providerMapping.item_id }} | 
-                {{ providerMapping.audio_format.content_type }} |
+                {{ providerMapping.item_id }} | {{ providerMapping.audio_format.content_type }} |
                 {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{ providerMapping.audio_format.bit_depth }}
                 bits
               </template>
               <template #append>
                 <v-btn
+                  v-if="providerMapping.url"
                   variant="plain"
                   icon="mdi-open-in-new"
-                  v-if="providerMapping.url"
-                  @click.prevent="
-                    openLinkInNewTab(providerMapping.url)"
-                ></v-btn>
+                  @click.prevent="openLinkInNewTab(providerMapping.url)"
+                />
               </template>
             </ListItem>
           </v-list>

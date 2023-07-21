@@ -24,7 +24,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-
 const cards = ref([
   {
     label: 'artists',

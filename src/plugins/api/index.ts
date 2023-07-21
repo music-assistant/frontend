@@ -729,7 +729,7 @@ export class MusicAssistantApi {
       media,
       option,
       radio_mode,
-      start_item
+      start_item,
     });
   }
 

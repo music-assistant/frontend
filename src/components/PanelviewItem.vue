@@ -34,7 +34,11 @@
         {{ item.owner }}
       </v-list-item-subtitle>
 
-      <v-item-group v-if="item && item.media_type === 'track'" style="min-height: 22px; padding-top: 5px">
+      <v-item-group
+        v-if="item && item.media_type === 'track'"
+        class="panel-item-details-info"
+        style="min-height: 22px; padding-top: 5px"
+      >
         <v-item>
           <v-icon v-if="parseBool(item.metadata.explicit || false)" icon="mdi-alpha-e-box" />
         </v-item>

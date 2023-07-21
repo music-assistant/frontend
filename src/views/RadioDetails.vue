@@ -2,25 +2,25 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <Container>
-    <ItemsListing
-      itemtype="radioversions"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="false"
-      :show-library="false"
-      :show-radio-number="false"
-      :show-duration="false"
-      :load-data="loadRadioVersions"
-      :sort-keys="['provider', 'sort_name']"
-      :title="$t('other_versions')"
-      :hide-on-empty="true"
-      :checksum="provider + itemId"
-    />
-    <br />
-      
+      <ItemsListing
+        itemtype="radioversions"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="false"
+        :show-library="false"
+        :show-radio-number="false"
+        :show-duration="false"
+        :load-data="loadRadioVersions"
+        :sort-keys="['provider', 'sort_name']"
+        :title="$t('other_versions')"
+        :hide-on-empty="true"
+        :checksum="provider + itemId"
+      />
+      <br />
+
       <!-- provider mapping details -->
-      <v-card style="margin-bottom: 10px" v-if="provider == 'library'">
-        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px"> </v-toolbar>
+      <v-card v-if="provider == 'library'" style="margin-bottom: 10px">
+        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px" />
         <v-divider />
         <Container>
           <v-list>
@@ -35,24 +35,23 @@
                 {{ api.providerManifests[providerMapping.provider_domain].name }}
               </template>
               <template #subtitle>
-                {{ providerMapping.item_id }} | 
+                {{ providerMapping.item_id }} |
                 {{ providerMapping.audio_format.content_type }}
                 bits
               </template>
               <template #append>
                 <v-btn
+                  v-if="providerMapping.url"
                   variant="plain"
                   icon="mdi-open-in-new"
-                  v-if="providerMapping.url"
-                  @click.prevent="
-                    openLinkInNewTab(providerMapping.url)"
-                ></v-btn>
+                  @click.prevent="openLinkInNewTab(providerMapping.url)"
+                />
               </template>
             </ListItem>
           </v-list>
         </Container>
       </v-card>
-  </Container>
+    </Container>
   </section>
 </template>
 

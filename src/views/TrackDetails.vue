@@ -12,12 +12,12 @@
         :load-data="loadTrackAlbums"
         :sort-keys="['provider', 'sort_name', 'duration']"
         :update-available="updateAvailable"
+        :title="$t('appears_on')"
+        :checksum="provider + itemId"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;
         "
-        :title="$t('appears_on')"
-        :checksum="provider + itemId"
       />
       <br />
       <ItemsListing
@@ -30,20 +30,20 @@
         :load-data="loadTrackVersions"
         :sort-keys="['provider', 'sort_name', 'duration']"
         :update-available="updateAvailable"
+        :title="$t('other_versions')"
+        :hide-on-empty="true"
+        :checksum="provider + itemId"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;
         "
-        :title="$t('other_versions')"
-        :hide-on-empty="true"
-        :checksum="provider + itemId"
       />
 
       <br />
-      
+
       <!-- provider mapping details -->
-      <v-card style="margin-bottom: 10px" v-if="provider == 'library'">
-        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px"> </v-toolbar>
+      <v-card v-if="provider == 'library'" style="margin-bottom: 10px">
+        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px" />
         <v-divider />
         <Container>
           <v-list>
@@ -58,28 +58,24 @@
                 {{ api.providerManifests[providerMapping.provider_domain].name }}
               </template>
               <template #subtitle>
-                {{ providerMapping.item_id }} | 
-                {{ providerMapping.audio_format.content_type }} |
-                {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{
-                  providerMapping.audio_format.bit_depth
-                }}
+                {{ providerMapping.item_id }} | {{ providerMapping.audio_format.content_type }} |
+                {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{ providerMapping.audio_format.bit_depth }}
                 bits
               </template>
               <template #append>
                 <audio
+                  v-if="getBreakpointValue('bp1')"
                   name="preview"
                   title="preview"
                   controls
-                  v-if="getBreakpointValue('bp1')"
                   :src="getPreviewUrl(providerMapping.provider_domain, providerMapping.item_id)"
-                />
+                ></audio>
                 <v-btn
+                  v-if="providerMapping.url"
                   variant="plain"
                   icon="mdi-open-in-new"
-                  v-if="providerMapping.url"
-                  @click.prevent="
-                    openLinkInNewTab(providerMapping.url)"
-                ></v-btn>
+                  @click.prevent="openLinkInNewTab(providerMapping.url)"
+                />
               </template>
             </ListItem>
           </v-list>
