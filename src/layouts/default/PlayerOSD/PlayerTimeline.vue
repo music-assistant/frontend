@@ -37,8 +37,11 @@
       <v-progress-linear
         v-model="curTimeValue"
         :disabled="!activePlayerQueue || !curQueueItem || activePlayerQueue?.items == 0"
-        :color="props.color"
-        :height="2"
+        height="70"
+        :color="lightenColor(props.color, 0.1)"
+        :bg-color="props.color"
+        :bg-opacity="1"
+        style="position: absolute; border-radius: 10px"
         :min="0"
         :max="curQueueItem && curQueueItem.duration"
       />
@@ -50,7 +53,7 @@
 import api from '@/plugins/api';
 import { MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import { formatDuration } from '@/utils';
+import { formatDuration, lightenColor } from '@/utils';
 import { ref, computed, watch } from 'vue';
 
 // properties

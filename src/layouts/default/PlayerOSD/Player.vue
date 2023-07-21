@@ -2,10 +2,14 @@
   <v-footer
     bottom
     fixed
-    class="d-flex flex-column"
-    style="width: 100%; border-top-style: ridge; padding: 0px"
+    :class="`d-flex flex-column ${
+      getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+        ? 'mediacontrols-player-float'
+        : 'mediacontrols-player-default'
+    }`"
     elevation="5"
     app
+    @click="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? (store.showFullscreenPlayer = true) : ''"
   >
     <div
       v-if="coverImageColorCode && curQueueItem"
@@ -153,6 +157,21 @@ watch(
   width: 100%;
 }
 
+.mediacontrols-player-float {
+  width: 100%;
+  border-top-style: ridge;
+  padding: 0px;
+  left: 5px !important;
+  bottom: 5px !important;
+  width: calc((100% - 10px) - 0px) !important;
+  border-radius: 10px;
+}
+
+.mediacontrols-player-default {
+  width: 100%;
+  border-top-style: ridge;
+  padding: 0px;
+}
 .mediacontrols-bg-1 {
   position: absolute;
   width: 20%;
@@ -167,6 +186,7 @@ watch(
   height: 100%;
   left: 0px;
   top: 0px;
+  border-radius: 10px;
 }
 
 .mediacontrols-top-right {

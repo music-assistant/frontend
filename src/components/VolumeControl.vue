@@ -20,6 +20,7 @@
           <PlayerVolume
             class="vc-slider"
             width="100%"
+            color="secondary"
             :is-powered="player.powered"
             :model-value="Math.round(player.group_volume)"
             @update:model-value="api.playerCommandGroupVolume(player.player_id, $event)"
@@ -52,6 +53,7 @@
           <PlayerVolume
             class="vc-slider"
             width="100%"
+            color="secondary"
             :is-powered="childPlayer.powered"
             :model-value="Math.round(childPlayer.volume_level)"
             @update:model-value="api.playerCommandVolumeSet(childPlayer.player_id, $event)"

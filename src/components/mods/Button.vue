@@ -18,19 +18,30 @@ export default {
     },
   },
   setup(props, ctx) {
-    const btnDefaults = computed(() => ({
+    const btnDefault = computed(() => ({
       ripple: false,
     }));
 
-    const btnIconDefaults = computed(() => ({
+    const btnIconDefault = computed(() => ({
       ripple: false,
       icon: true,
     }));
 
-    const btnProps = computed(() => ({
-      ...(ctx.attrs.variant === 'icon' ? btnIconDefaults.value : btnDefaults.value),
-      ...ctx.attrs,
+    const btnIconListView = computed(() => ({
+      ...btnIconDefault,
+      width: 'calc(var(--v-btn-height) + 0px)',
+      height: 'calc(var(--v-btn-height) + 0px)',
+      style: 'padding: 0px;',
     }));
+
+    const btnProps = computed(() => {
+      const variant = ctx.attrs.variant;
+      return variant === 'icon'
+        ? btnIconDefault.value
+        : variant === 'listViewIcon'
+        ? btnIconListView.value
+        : btnDefault.value;
+    });
 
     return { btnProps };
   },

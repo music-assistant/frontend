@@ -1,7 +1,6 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
     <navigation-menu />
-    <app-bar />
 
     <router-view v-slot="{ Component }" app>
       <transition name="fade" mode="out-in">
