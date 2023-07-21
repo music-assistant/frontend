@@ -1,5 +1,6 @@
 <template>
   <v-navigation-drawer
+    v-if="getBreakpointValue({ breakpoint: 'bp3' })"
     ref="resizeComponent"
     app
     :permanent="!$vuetify.display.mobile"
@@ -13,6 +14,17 @@
     "
   >
     <v-list lines="one" density="compact" nav>
+      <v-list-item
+        nav
+        density="compact"
+        :height="15"
+        :width="40"
+        style="margin-left: auto"
+        :ripple="false"
+        :prepend-icon="store.showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'"
+        @click.stop="store.showNavigationMenu = !store.showNavigationMenu"
+      />
+
       <v-list-item
         v-for="menuItem of menuItems"
         :key="menuItem.path"

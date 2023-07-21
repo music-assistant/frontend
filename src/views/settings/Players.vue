@@ -10,40 +10,40 @@
       "
       link
       :context-menu-items="[
-            {
-              label: 'settings.configure',
-              labelArgs:[],
-              action: () => {
-                editPlayer(item.player_id);
-              },
-              icon: 'mdi-cog',
-            },
-            {
-              label: item.enabled ? 'settings.disable' : 'settings.enable',
-              labelArgs:[],
-              action: () => {
-                toggleEnabled(item);
-              },
-              icon: 'mdi-cancel',
-            },
-            {
-              label: 'settings.documentation',
-              labelArgs:[],
-              action: () => {
-                openLinkInNewTab(api.providerManifests[item.provider].documentation!);
-              },
-              icon: 'mdi-bookshelf',
-              disabled: !api.providerManifests[item.provider].documentation
-            },
-            {
-              label: 'settings.delete',
-              labelArgs:[],
-              action: () => {
-                removePlayerConfig(item.player_id)
-              },
-              icon: 'mdi-delete',
-            },
-          ]"
+        {
+          label: 'settings.configure',
+          labelArgs: [],
+          action: () => {
+            editPlayer(item.player_id);
+          },
+          icon: 'mdi-cog',
+        },
+        {
+          label: item.enabled ? 'settings.disable' : 'settings.enable',
+          labelArgs: [],
+          action: () => {
+            toggleEnabled(item);
+          },
+          icon: 'mdi-cancel',
+        },
+        {
+          label: 'settings.documentation',
+          labelArgs: [],
+          action: () => {
+            openLinkInNewTab(api.providerManifests[item.provider].documentation!);
+          },
+          icon: 'mdi-bookshelf',
+          disabled: !api.providerManifests[item.provider].documentation,
+        },
+        {
+          label: 'settings.delete',
+          labelArgs: [],
+          action: () => {
+            removePlayerConfig(item.player_id);
+          },
+          icon: 'mdi-delete',
+        },
+      ]"
       @click="editPlayer(item.player_id)"
     >
       <template #prepend>

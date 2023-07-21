@@ -1,29 +1,49 @@
 <template>
   <!-- active queue -->
-  <Button
-    v-if="props.visibleComponents && props.visibleComponents.queue?.isVisible"
-    icon
-    v-bind="props.visibleComponents.queue.icon"
-    @click="
-      store.showFullscreenPlayer = false;
-      props.showQueueDialog
-        ? // eslint-disable-next-line vue/no-mutating-props
-          (props.showQueueDialog = true)
-        : router.push('/playerqueue/');
-    "
-  >
-    <v-icon icon="mdi-playlist-play" />
-  </Button>
+  <QueueBtn
+    v-if="props.visibleComponents.queue"
+    :is-visible="props.visibleComponents && props.visibleComponents.queue?.isVisible"
+    :icon="props.visibleComponents.queue.icon"
+  />
   <!-- active player -->
   <Button
     v-if="props.visibleComponents && props.visibleComponents.player?.isVisible"
-    icon
+    :icon="getBreakpointValue('bp6') ? false : true"
     v-bind="props.visibleComponents.player.icon"
-    class="mediacontrols-right"
     @click="store.showPlayersMenu = true"
   >
-    <v-icon icon="mdi-speaker" />
+    <v-badge
+      v-if="curGroupPlayers && curGroupPlayers.length > 0"
+      size="small"
+      :content="store.selectedPlayer?.group_childs.length"
+      :color="$vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor"
+    >
+      <v-icon
+        :color="
+          !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
+          isColorDark(store.coverImageColorCode.darkColor)
+            ? '#000'
+            : '#fff'
+        "
+        :size="24"
+        >mdi-speaker</v-icon
+      >
+    </v-badge>
+    <v-icon
+      v-else
+      :color="
+        !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) && isColorDark(store.coverImageColorCode.darkColor)
+          ? '#000'
+          : '#fff'
+      "
+      :size="24"
+      >mdi-speaker</v-icon
+    >
+    <div v-if="activePlayerQueue && getBreakpointValue('bp6')" class="line-clamp-1">
+      {{ truncateString(activePlayerQueue?.display_name, 8) }}
+    </div>
   </Button>
+
   <!-- active player volume -->
   <div v-if="props.visibleComponents && props.visibleComponents.volume?.isVisible">
     <v-menu v-if="activePlayerQueue" v-model="showVolume" class="volume-control-dialog" :close-on-content-click="false">
@@ -47,7 +67,15 @@
             <template #prepend>
               <!-- select player -->
               <Button icon v-bind="{ ...menu, ...props.visibleComponents.volume.icon }">
-                <v-icon icon="mdi-volume-high" />
+                <v-icon
+                  icon="mdi-volume-high"
+                  :color="
+                    !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
+                    isColorDark(store.coverImageColorCode.darkColor)
+                      ? '#000'
+                      : '#fff'
+                  "
+                />
                 <div class="text-caption">
                   {{
                     store.selectedPlayer!.group_childs.length > 0
@@ -61,8 +89,26 @@
         </div>
         <div v-else>
           <Button v-bind="{ ...menu, ...props.visibleComponents.volume.icon }" icon>
-            <v-icon icon="mdi-volume-high" />
-            <div class="text-caption">
+            <v-icon
+              icon="mdi-volume-high"
+              :color="
+                !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
+                isColorDark(store.coverImageColorCode.darkColor)
+                  ? '#000'
+                  : '#fff'
+              "
+            />
+            <div
+              class="text-caption"
+              :style="{
+                cursor: 'pointer',
+                color:
+                  !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
+                  isColorDark(store.coverImageColorCode.darkColor)
+                    ? '#000'
+                    : '#fff',
+              }"
+            >
               {{
                 store.selectedPlayer!.group_childs.length > 0
                   ? Math.round(store.selectedPlayer?.group_volume || 0)
@@ -84,11 +130,7 @@
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="
-                store.selectedPlayer!.group_childs.length > 0
-                  ? 'mdi-speaker-multiple'
-                  : 'mdi-speaker'
-              "
+                :icon="store.selectedPlayer!.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
                 color="primary"
               />
             </template>
@@ -121,6 +163,8 @@ import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';
 import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import { isColorDark, truncateString } from '@/helpers/utils';
+import QueueBtn from './PlayerControlBtn/QueueBtn.vue';
 
 const router = useRouter();
 
@@ -164,6 +208,13 @@ const showVolume = ref(false);
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
     return api.queues[store.selectedPlayer.active_source];
+  }
+  return undefined;
+});
+
+const curGroupPlayers = computed(() => {
+  if (store.selectedPlayer) {
+    return store.selectedPlayer.group_childs;
   }
   return undefined;
 });

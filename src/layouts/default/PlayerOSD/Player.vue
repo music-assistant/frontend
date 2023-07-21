@@ -1,9 +1,14 @@
 <template>
+  <BottomNavigation />
+
   <v-footer
     bottom
     fixed
-    class="d-flex flex-column"
-    style="width: 100%; border-top-style: ridge; padding: 0px"
+    :class="`d-flex flex-column ${
+      getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+        ? 'mediacontrols-player-float'
+        : 'mediacontrols-player-default'
+    }`"
     elevation="5"
     app
   >
@@ -102,6 +107,7 @@ import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
 import { getColorCode } from '@/helpers/utils';
+import BottomNavigation from '@/layouts/default/ButtomNavigation.vue';
 
 // local refs
 const fanartImage = ref();
@@ -153,6 +159,21 @@ watch(
   width: 100%;
 }
 
+.mediacontrols-player-float {
+  width: 100%;
+  border-top-style: ridge;
+  padding: 0px;
+  left: 5px !important;
+  bottom: 60px !important;
+  width: calc((100% - 10px) - 0px) !important;
+  border-radius: 10px;
+}
+
+.mediacontrols-player-default {
+  width: 100%;
+  border-top-style: ridge;
+  padding: 0px;
+}
 .mediacontrols-bg-1 {
   position: absolute;
   width: 20%;
@@ -167,6 +188,7 @@ watch(
   height: 100%;
   left: 0px;
   top: 0px;
+  border-radius: 10px;
 }
 
 .mediacontrols-top-right {

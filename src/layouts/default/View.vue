@@ -3,7 +3,6 @@
     <navigation-menu />
     <add-to-playlist-dialog />
     <play-item-dialog />
-
     <router-view v-slot="{ Component }" app>
       <transition name="fade" mode="out-in">
         <component :is="Component" v-scroll:#cont="onScroll" />

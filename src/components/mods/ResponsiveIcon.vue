@@ -21,7 +21,7 @@
       :height="props.staticHeight ? props.staticHeight : null"
     >
       <!-- Dynamically inherit slots from parent -->
-      <template v-for="(value, name) in ($slots as unknown)" #[name]>
+      <template v-for="(value, name) in $slots as unknown" #[name]>
         <slot :name="name"></slot>
       </template>
     </v-icon>
@@ -29,6 +29,7 @@
       v-else-if="type === 'btn'"
       ref="responsiveIcon"
       class="responsive-icon"
+      style="cursor: pointer"
       :color="color ? color : ''"
       :icon="props.icon ? props.icon : 'mdi-check'"
       :width="props.staticWidth ? props.staticWidth : null"
@@ -36,7 +37,7 @@
       :disabled="disabled"
     >
       <!-- Dynamically inherit slots from parent -->
-      <template v-for="(value, name) in ($slots as unknown)" #[name]>
+      <template v-for="(value, name) in $slots as unknown" #[name]>
         <slot :name="name"></slot>
       </template>
     </v-icon>
@@ -98,7 +99,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   opacity: 0.62;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .responsive-icon-holder-btn:focus,

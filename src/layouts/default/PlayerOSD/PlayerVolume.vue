@@ -7,7 +7,7 @@
     @mouseleave="isThumbHidden = true"
   >
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+    <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
     </template>
   </v-slider>

@@ -1,7 +1,7 @@
 <template>
   <v-list-item v-bind="listItemProps" class="list-item-main" @input="(v: any) => $emit('input', v)">
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+    <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
     </template>
 
