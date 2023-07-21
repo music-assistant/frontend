@@ -1,5 +1,11 @@
 <template>
   <section>
+    <v-toolbar variant="flat" color="transparent" style="height: 50px">
+      <template #title>
+        {{ $t('search') }}
+      </template>
+    </v-toolbar>
+    <v-divider />
     <v-text-field
       id="searchInput"
       v-model="search"
