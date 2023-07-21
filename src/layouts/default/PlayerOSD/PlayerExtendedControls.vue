@@ -39,12 +39,12 @@
       >
     </v-badge>
     <v-icon
+      v-else
       :color="
         !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) && isColorDark(store.coverImageColorCode.darkColor)
           ? '#000'
           : '#fff'
       "
-      v-else
       :size="24"
       >mdi-speaker</v-icon
     >

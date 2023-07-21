@@ -80,7 +80,7 @@
                   :src="iconHiRes"
                   width="30"
                   :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
-                  style="margin-right:15px"
+                  style="margin-right: 15px"
                 />
                 <audio
                   v-if="getBreakpointValue('bp1')"
