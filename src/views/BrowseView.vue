@@ -1,6 +1,7 @@
 <template>
   <section>
     <Container>
+      <v-card>
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
       <!-- back button -->
@@ -21,6 +22,7 @@
           @click="onClick"
         />
       </RecycleScroller>
+    </v-card>
     </Container>
   </section>
 </template>

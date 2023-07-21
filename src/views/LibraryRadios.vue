@@ -1,14 +1,16 @@
 <template>
-  <ItemsListing
-    itemtype="radios"
-    :items="items"
-    :show-duration="false"
-    :show-provider="false"
-    :show-favorites-only-filter="true"
-    :load-data="loadItems"
-    :sort-keys="['sort_name', 'timestamp_added DESC']"
-    :update-available="updateAvailable"
-  />
+  <Container>
+    <ItemsListing
+      itemtype="radios"
+      :items="items"
+      :show-duration="false"
+      :show-provider="false"
+      :show-favorites-only-filter="true"
+      :load-data="loadItems"
+      :sort-keys="['sort_name', 'timestamp_added DESC']"
+      :update-available="updateAvailable"
+    />
+  </Container>
 </template>
 
 <script setup lang="ts">
@@ -18,6 +20,7 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Radio } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
+import Container from '../components/mods/Container.vue';
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);

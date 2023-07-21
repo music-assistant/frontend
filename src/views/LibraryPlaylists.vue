@@ -1,16 +1,18 @@
 <template>
-  <ItemsListing
-    itemtype="playlists"
-    :items="items"
-    :show-duration="false"
-    :show-provider="true"
-    :show-favorites-only-filter="true"
-    :load-data="loadItems"
-    :show-library="true"
-    :sort-keys="['sort_name', 'timestamp_added DESC']"
-    :update-available="updateAvailable"
-    @refresh-clicked="updateAvailable = false"
-  />
+  <Container>
+    <ItemsListing
+      itemtype="playlists"
+      :items="items"
+      :show-duration="false"
+      :show-provider="true"
+      :show-favorites-only-filter="true"
+      :load-data="loadItems"
+      :show-library="true"
+      :sort-keys="['sort_name', 'timestamp_added DESC']"
+      :update-available="updateAvailable"
+      @refresh-clicked="updateAvailable = false"
+    />
+  </Container>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +22,7 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, ProviderFeature, type Playlist, EventMessage, EventType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
+import Container from '../components/mods/Container.vue';
 
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);

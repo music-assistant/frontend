@@ -1,13 +1,15 @@
 <template>
-  <ItemsListing
-    itemtype="albums"
-    :items="items"
-    :show-provider="false"
-    :show-favorites-only-filter="true"
-    :load-data="loadItems"
-    :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'year']"
-    :update-available="updateAvailable"
-  />
+  <Container>
+    <ItemsListing
+      itemtype="albums"
+      :items="items"
+      :show-provider="false"
+      :show-favorites-only-filter="true"
+      :load-data="loadItems"
+      :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'year']"
+      :update-available="updateAvailable"
+    />
+  </Container>
 </template>
 
 <script setup lang="ts">
@@ -17,6 +19,7 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, type Album, EventMessage, EventType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
+import Container from '../components/mods/Container.vue';
 
 const { t } = useI18n();
 const items = ref<Album[]>([]);
