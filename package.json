@@ -18,6 +18,7 @@
     "color": "^4.2.3",
     "colorthief": "^2.4.0",
     "home-assistant-js-websocket": "^8.2.0",
+    "mitt": "^3.0.1",
     "mobile-detect": "^1.4.5",
     "v3-infinite-loading": "^1.2.2",
     "vue": "^3.3.4",
@@ -42,7 +43,6 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-vue": "^9.15.1",
-    "vue-virtual-scroller": "2.0.0-beta.8",
     "https-localhost": "^4.7.1",
     "jsdom": "^22.1.0",
     "material-design-icons-iconfont": "^6.7.0",
@@ -55,6 +55,7 @@
     "vite-plugin-pwa": "^0.16.4",
     "vite-plugin-vuetify": "^1.0.2",
     "vite-plugin-webfont-dl": "^3.7.6",
-    "vue-tsc": "^1.8.5"
+    "vue-tsc": "^1.8.5",
+    "vue-virtual-scroller": "2.0.0-beta.8"
   }
 }

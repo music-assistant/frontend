@@ -53,7 +53,7 @@
 import api from '@/plugins/api';
 import { MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import { formatDuration, lightenColor } from '@/utils';
+import { formatDuration, lightenColor } from '@/helpers/utils';
 import { ref, computed, watch } from 'vue';
 
 // properties

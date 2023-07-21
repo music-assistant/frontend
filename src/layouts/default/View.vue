@@ -1,7 +1,8 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
     <navigation-menu />
-
+    <add-to-playlist-dialog />
+    <play-item-dialog />
     <router-view v-slot="{ Component }" app>
       <transition name="fade" mode="out-in">
         <component :is="Component" v-scroll:#cont="onScroll" />
@@ -13,7 +14,9 @@
 <script lang="ts" setup>
 import NavigationMenu from './NavigationMenu.vue';
 import AppBar from './AppBar.vue';
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import AddToPlaylistDialog from './AddToPlaylistDialog.vue';
+import PlayItemDialog from './PlayItemDialog.vue';
+import { nextTick, onBeforeUnmount, onMounted } from 'vue';
 
 function onScroll(e: any) {
   history.replaceState({ top: e.target.scrollTop }, '');

@@ -184,7 +184,7 @@ import type { QueueItem, EventMessage, MediaItemType } from '../plugins/api/inte
 import { EventType, MediaType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { store } from '../plugins/store';
-import { truncateString } from '../utils';
+import { truncateString } from '@/helpers/utils';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import ListviewItem from '@/components/ListviewItem.vue';
@@ -353,5 +353,3 @@ watch(
   { immediate: true },
 );
 </script>
-
-<style scoped></style>

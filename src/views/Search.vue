@@ -20,16 +20,6 @@
           </v-chip>
         </v-chip-group>
 
-        <MediaItemContextMenu
-          v-model="showContextMenu"
-          :items="selectedItems"
-          @clear="
-            () => {
-              selectedItems = [];
-            }
-          "
-        />
-
         <!-- loading animation -->
         <v-progress-linear v-if="loading" indeterminate />
 
@@ -95,17 +85,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useDisplay } from 'vuetify';
-import { MediaType, SearchResults, type MediaItemType } from '../plugins/api/interfaces';
+import { SearchResults, type MediaItemType } from '../plugins/api/interfaces';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from '../components/ListviewItem.vue';
 import PanelviewItem from '../components/PanelviewItem.vue';
-import MediaItemContextMenu from '../components/MediaItemContextMenu.vue';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
-import { numberRange } from '@/utils';
 import Container from '@/components/mods/Container.vue';
+import { eventbus } from '@/plugins/eventbus';
 
 export interface Props {
   initSearch?: string;
@@ -123,7 +112,6 @@ const search = ref('');
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
-const showContextMenu = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const throttleId = ref();
 
@@ -144,7 +132,6 @@ const toggleViewMode = function () {
 
 const onMenu = function (item: MediaItemType) {
   selectedItems.value = [item];
-  showContextMenu.value = true;
 };
 
 const onClick = function (mediaItem: MediaItemType) {
@@ -158,9 +145,8 @@ const onClick = function (mediaItem: MediaItemType) {
         provider: mediaItem.provider,
       },
     });
-  } else if (store.selectedPlayer) {
-    // assume track (or radio) item
-    api.playMedia(mediaItem);
+  } else {
+    eventbus.emit('playdialog', { items: selectedItems.value, showContextMenuItems: false });
   }
 };
 
@@ -288,7 +274,6 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (showContextMenu.value) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = filteredItems.value;

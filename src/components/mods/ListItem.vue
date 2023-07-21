@@ -13,7 +13,7 @@
       <div v-if="contextMenuItems.length > 0" class="contextmenubtn">
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <v-btn variant="plain" ripple icon="mdi-dots-vertical" v-bind="props" />
+            <v-btn v-bind="props" id="menu" variant="plain" ripple icon="mdi-dots-vertical" />
           </template>
           <v-list>
             <ListItem
@@ -36,7 +36,7 @@
 
 <script lang="ts">
 import { computed } from 'vue';
-import type { ContextMenuItem } from '@/components/MediaItemContextMenu.vue';
+import type { ContextMenuItem } from '@/helpers/contextmenu';
 
 export default {
   props: {

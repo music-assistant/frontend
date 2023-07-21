@@ -105,7 +105,7 @@ import PlayerTrackDetails from './PlayerTrackDetails.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
-import { getColorCode } from '@/utils';
+import { getColorCode } from '@/helpers/utils';
 
 // local refs
 const fanartImage = ref();

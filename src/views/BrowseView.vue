@@ -36,7 +36,7 @@ import ListviewItem from '../components/ListviewItem.vue';
 import { MediaType, type BrowseFolder, type MediaItemType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 import { useRouter } from 'vue-router';
-import { getBrowseFolderName } from '../utils';
+import { getBrowseFolderName } from '@/helpers/utils';
 import api from '../plugins/api';
 import Container from '@/components/mods/Container.vue';
 

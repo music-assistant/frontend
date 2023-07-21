@@ -66,7 +66,7 @@ import Container from '../components/mods/Container.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { api } from '../plugins/api';
 import { watch } from 'vue';
-import { getStreamingProviderMappings } from '../utils';
+import { getStreamingProviderMappings } from '@/helpers/utils';
 
 export interface Props {
   itemId: string;

@@ -109,7 +109,7 @@ import { onBeforeUnmount, onMounted, watch } from 'vue';
 import ListItem from '../components/mods/ListItem.vue';
 import Container from '../components/mods/Container.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
-import { getStreamingProviderMappings } from '../utils';
+import { getStreamingProviderMappings } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
 export interface Props {

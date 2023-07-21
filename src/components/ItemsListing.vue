@@ -2,14 +2,6 @@
 <template>
   <section v-if="!(hideOnEmpty && allItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
-
-    <MediaItemContextMenu
-      v-model="showContextMenu"
-      :items="selectedItems"
-      :parent-item="parentItem"
-      @clear="onClearSelection"
-      @delete="onDelete"
-    />
     <v-card>
       <v-toolbar density="compact" variant="flat" color="transparent">
         <template #title>
@@ -221,6 +213,7 @@
               :is-selected="isSelected(item)"
               :show-details="itemtype.includes('versions')"
               :parent-item="parentItem"
+              :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
               @select="onSelect"
               @menu="onMenu"
               @click="onClick"
@@ -242,10 +235,12 @@
             {{ $t('no_content') }}
           </Alert>
         </div>
+
+        <!-- box shown when item(s) selected -->
         <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom: 120px">
           <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
           <template #actions>
-            <v-btn color="primary" variant="text" @click="showContextMenu = true">
+            <v-btn color="primary" variant="text" @click="showPlayMenu(true)">
               {{ $t('actions') }}
             </v-btn>
           </template>
@@ -265,7 +260,7 @@ import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
-import MediaItemContextMenu, { itemIsAvailable } from './MediaItemContextMenu.vue';
+import { itemIsAvailable, getContextMenuItems } from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
@@ -275,6 +270,7 @@ import ListItem from '@/components/mods/ListItem.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import Alert from './mods/Alert.vue';
 import Container from './mods/Container.vue';
+import { eventbus } from '@/plugins/eventbus';
 
 // properties
 export interface Props {
@@ -332,7 +328,6 @@ const totalItems = ref<number>();
 const loading = ref(false);
 const favoritesOnly = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
-const showContextMenu = ref(false);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(true);
@@ -436,30 +431,27 @@ const onSelect = function (item: MediaItemType, selected: boolean) {
       }
     }
   }
-  store.blockGlobalPlayMenu = selectedItems.value.length > 0;
-};
-
-const onClearSelection = function () {
-  selectedItems.value = [];
-  showCheckboxes.value = false;
-  store.blockGlobalPlayMenu = false;
 };
 
 const toggleCheckboxes = function () {
-  if (selectedItems.value.length > 0) {
-    showContextMenu.value = true;
-  } else {
-    showCheckboxes.value = !showCheckboxes.value;
+  if (showCheckboxes.value) {
+    // clear selection
+    selectedItems.value = [];
   }
+  showCheckboxes.value = !showCheckboxes.value;
 };
 
-const onDelete = function (item: MediaItemType) {
-  loadData(true);
-};
-
-const onMenu = function (item: MediaItemType) {
+const onMenu = function (item: MediaItemType, showContextMenuItems = true) {
   selectedItems.value = [item];
-  showContextMenu.value = true;
+  showPlayMenu(showContextMenuItems);
+};
+
+const showPlayMenu = function (showContextMenuItems = true) {
+  eventbus.emit('playdialog', {
+    items: selectedItems.value,
+    parentItem: props.parentItem,
+    showContextMenuItems: showContextMenuItems,
+  });
 };
 
 const onRefreshClicked = function () {
@@ -470,7 +462,7 @@ const onRefreshClicked = function () {
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(mediaItem)) {
-    onMenu(mediaItem);
+    onMenu(mediaItem, false);
     return;
   }
 
@@ -483,7 +475,7 @@ const onClick = function (mediaItem: MediaItemType) {
       },
     });
   } else {
-    onMenu(mediaItem);
+    onMenu(mediaItem, false);
   }
 };
 
@@ -623,10 +615,10 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (showContextMenu.value) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = allItems.value;
+    showCheckboxes.value = true;
   } else if (!searchHasFocus.value && e.key == 'Backspace') {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
