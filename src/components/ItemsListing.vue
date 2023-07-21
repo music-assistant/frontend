@@ -29,6 +29,7 @@
             :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
             variant="plain"
             :title="$t('tooltip.select_items')"
+            :disabled="!expanded"
             @click="toggleCheckboxes"
           />
 
@@ -39,6 +40,7 @@
             icon
             variant="plain"
             :title="$t('tooltip.filter_favorites')"
+            :disabled="!expanded"
             @click="toggleFavoriteFilter"
           >
             <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
@@ -51,6 +53,7 @@
             icon
             variant="plain"
             :title="$t('tooltip.album_artist_filter')"
+            :disabled="!expanded"
             @click="toggleAlbumArtistsFilter"
           >
             <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
@@ -63,6 +66,7 @@
             icon
             variant="plain"
             :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+            :disabled="!expanded"
             @click="onRefreshClicked()"
           >
             <v-badge :model-value="updateAvailable" color="error" dot>
@@ -78,7 +82,7 @@
             :close-on-content-click="true"
           >
             <template #activator="{ props }">
-              <v-btn icon v-bind="props" variant="plain" :title="$t('tooltip.sort_options')">
+              <v-btn icon v-bind="props" variant="plain" :disabled="!expanded" :title="$t('tooltip.sort_options')">
                 <v-icon v-bind="props" icon="mdi-sort" />
               </v-btn>
             </template>
@@ -104,6 +108,7 @@
             icon
             variant="plain"
             :title="$t('tooltip.search')"
+            :disabled="!expanded"
             @click="toggleSearch()"
           >
             <v-icon icon="mdi-magnify" />
@@ -115,6 +120,7 @@
             :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
             variant="plain"
             :title="$t('tooltip.toggle_view_mode')"
+            :disabled="!expanded"
             @click="toggleViewMode()"
           />
 
@@ -125,7 +131,7 @@
             :close-on-content-click="true"
           >
             <template #activator="{ props }">
-              <v-btn icon v-bind="props" variant="plain">
+              <v-btn icon v-bind="props" variant="plain" :disabled="!expanded">
                 <ProviderIcon :domain="activeProviderFilter" :size="30" />
               </v-btn>
             </template>
