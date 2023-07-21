@@ -1,17 +1,9 @@
 <template>
   <div>
     <Container>
-      <v-text-field
-        id="searchInput"
-        v-model="search"
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('type_to_search')"
-        hide-details
-        variant="filled"
-        @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false"
-      />
+      <v-text-field id="searchInput" v-model="search" clearable prepend-inner-icon="mdi-magnify"
+        :label="$t('type_to_search')" hide-details variant="filled" @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false" />
 
       <div>
         <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
@@ -20,53 +12,24 @@
           </v-chip>
         </v-chip-group>
 
-        <MediaItemContextMenu
-          v-model="showContextMenu"
-          :items="selectedItems"
-          @clear="
-            () => {
-              selectedItems = [];
-            }
-          "
-        />
-
         <!-- loading animation -->
         <v-progress-linear v-if="loading" indeterminate />
 
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
-          <v-col
-            v-for="item in filteredItems"
-            :key="item.uri"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          >
-            <PanelviewItem
-              :item="item"
-              :size="thumbSize"
-              :is-selected="false"
-              :show-checkboxes="false"
-              @menu="onMenu"
-              @click="onClick"
-            />
+          <v-col v-for="item in filteredItems" :key="item.uri"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
+            <PanelviewItem :item="item" :size="thumbSize" :is-selected="false" :show-checkboxes="false" @menu="onMenu"
+              @click="onClick" />
           </v-col>
         </v-row>
 
         <!-- list view -->
         <div v-if="viewMode == 'list'">
           <RecycleScroller v-slot="{ item }" :items="filteredItems" :item-size="60" key-field="item_id" page-mode>
-            <ListviewItem
-              :item="item"
-              :show-track-number="false"
-              :show-duration="true"
-              :show-library="false"
-              :show-menu="true"
-              :show-provider="true"
-              :show-checkboxes="false"
-              :is-selected="false"
-              :show-details="true"
-              @menu="onMenu"
-              @click="onClick"
-            />
+            <ListviewItem :item="item" :show-track-number="false" :show-duration="true" :show-library="false"
+              :show-menu="true" :show-provider="true" :show-checkboxes="false" :is-selected="false" :show-details="true"
+              @menu="onMenu" @click="onClick" />
           </RecycleScroller>
         </div>
 
@@ -76,12 +39,8 @@
 
           <v-tooltip location="bottom">
             <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-                variant="plain"
-                @click="toggleViewMode()"
-              />
+              <v-btn v-bind="props" :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'" variant="plain"
+                @click="toggleViewMode()" />
             </template>
             <span>{{ $t('tooltip.toggle_view_mode') }}</span>
           </v-tooltip>
@@ -95,17 +54,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useDisplay } from 'vuetify';
-import { MediaType, SearchResults, type MediaItemType } from '../plugins/api/interfaces';
+import { SearchResults, type MediaItemType } from '../plugins/api/interfaces';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from '../components/ListviewItem.vue';
 import PanelviewItem from '../components/PanelviewItem.vue';
-import MediaItemContextMenu from '../components/MediaItemContextMenu.vue';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
-import { numberRange } from '@/utils';
 import Container from '@/components/mods/Container.vue';
+import { eventbus } from '@/plugins/eventbus';
 
 export interface Props {
   initSearch?: string;
@@ -123,7 +81,6 @@ const search = ref('');
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
-const showContextMenu = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const throttleId = ref();
 
@@ -144,7 +101,6 @@ const toggleViewMode = function () {
 
 const onMenu = function (item: MediaItemType) {
   selectedItems.value = [item];
-  showContextMenu.value = true;
 };
 
 const onClick = function (mediaItem: MediaItemType) {
@@ -158,9 +114,8 @@ const onClick = function (mediaItem: MediaItemType) {
         provider: mediaItem.provider,
       },
     });
-  } else if (store.selectedPlayer) {
-    // assume track (or radio) item
-    api.playMedia(mediaItem);
+  } else {
+    eventbus.emit('playdialog', { items: selectedItems.value, showContextMenuItems: false })
   }
 };
 
@@ -288,7 +243,6 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (showContextMenu.value) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = filteredItems.value;

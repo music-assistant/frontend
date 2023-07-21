@@ -83,11 +83,11 @@
 
 <script setup lang="ts">
 import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
-import { Player, PlayerState } from '../../plugins/api/interfaces';
-import { store } from '../../plugins/store';
-import VolumeControl from '../../components/VolumeControl.vue';
-import { api } from '../../plugins/api';
-import { getPlayerName, truncateString } from '@/utils';
+import { Player, PlayerState } from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
+import VolumeControl from '@/components/VolumeControl.vue';
+import { api } from '@/plugins/api';
+import { getPlayerName, truncateString } from '@/helpers/utils';
 import ListItem from '@/components/mods/ListItem.vue';
 
 const panelItem = ref<number | undefined>(undefined);

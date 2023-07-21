@@ -2,85 +2,45 @@
 <template>
   <section v-if="!(hideOnEmpty && allItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
-
-    <MediaItemContextMenu
-      v-model="showContextMenu"
-      :items="selectedItems"
-      :parent-item="parentItem"
-      @clear="onClearSelection"
-      @delete="onDelete"
-    />
     <v-card>
       <v-toolbar density="compact" variant="flat" color="transparent">
         <template #title>
           {{ title }}
-          <v-badge
-            color="grey"
-            :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
-            inline
-          />
+          <v-badge color="grey" :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
+            inline />
         </template>
 
         <template #append>
           <!-- toggle select button -->
-          <v-btn
-            v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
+          <v-btn v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
             v-bind="props"
             :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
-            variant="plain"
-            :title="$t('tooltip.select_items')"
-            :disabled="!expanded"
-            @click="toggleCheckboxes"
-          />
+            variant="plain" :title="$t('tooltip.select_items')" :disabled="!expanded" @click="toggleCheckboxes" />
 
           <!-- favorites only filter -->
-          <v-btn
-            v-if="showFavoritesOnlyFilter !== false"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="$t('tooltip.filter_favorites')"
-            :disabled="!expanded"
-            @click="toggleFavoriteFilter"
-          >
+          <v-btn v-if="showFavoritesOnlyFilter !== false" v-bind="props" icon variant="plain"
+            :title="$t('tooltip.filter_favorites')" :disabled="!expanded" @click="toggleFavoriteFilter">
             <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
           </v-btn>
 
           <!-- album artists only filter -->
-          <v-btn
-            v-if="showAlbumArtistsOnlyFilter"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="$t('tooltip.album_artist_filter')"
-            :disabled="!expanded"
-            @click="toggleAlbumArtistsFilter"
-          >
+          <v-btn v-if="showAlbumArtistsOnlyFilter" v-bind="props" icon variant="plain"
+            :title="$t('tooltip.album_artist_filter')" :disabled="!expanded" @click="toggleAlbumArtistsFilter">
             <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
           </v-btn>
 
           <!-- refresh button-->
-          <v-btn
-            v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
-            :disabled="!expanded"
-            @click="onRefreshClicked()"
-          >
+          <v-btn v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
+            v-bind="props" icon variant="plain"
+            :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')" :disabled="!expanded"
+            @click="onRefreshClicked()">
             <v-badge :model-value="updateAvailable" color="error" dot>
               <v-icon icon="mdi-refresh" />
             </v-badge>
           </v-btn>
 
           <!-- sort options -->
-          <v-menu
-            v-if="sortKeys.length > 1"
-            v-model="showSortMenu"
-            location="bottom end"
-            :close-on-content-click="true"
-          >
+          <v-menu v-if="sortKeys.length > 1" v-model="showSortMenu" location="bottom end" :close-on-content-click="true">
             <template #activator="{ props }">
               <v-btn icon v-bind="props" variant="plain" :disabled="!expanded" :title="$t('tooltip.sort_options')">
                 <v-icon v-bind="props" icon="mdi-sort" />
@@ -102,34 +62,18 @@
           </v-menu>
 
           <!-- toggle search button -->
-          <v-btn
-            v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="$t('tooltip.search')"
-            :disabled="!expanded"
-            @click="toggleSearch()"
-          >
+          <v-btn v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
+            v-bind="props" icon variant="plain" :title="$t('tooltip.search')" :disabled="!expanded"
+            @click="toggleSearch()">
             <v-icon icon="mdi-magnify" />
           </v-btn>
 
           <!-- toggle view mode button -->
-          <v-btn
-            v-bind="props"
-            :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-            variant="plain"
-            :title="$t('tooltip.toggle_view_mode')"
-            :disabled="!expanded"
-            @click="toggleViewMode()"
-          />
+          <v-btn v-bind="props" :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'" variant="plain"
+            :title="$t('tooltip.toggle_view_mode')" :disabled="!expanded" @click="toggleViewMode()" />
 
           <!-- provider filter dropdown -->
-          <v-menu
-            v-if="providerFilter && providerFilter.length > 1"
-            location="bottom end"
-            :close-on-content-click="true"
-          >
+          <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
             <template #activator="{ props }">
               <v-btn icon v-bind="props" variant="plain" :disabled="!expanded">
                 <ProviderIcon :domain="activeProviderFilter" :size="30" />
@@ -157,74 +101,39 @@
           </v-menu>
 
           <!-- expand/collapse button -->
-          <v-btn
-            v-if="allowCollapse"
-            :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            variant="plain"
-            :title="$t('tooltip.collapse_expand')"
-            @click="toggleExpand"
-          />
+          <v-btn v-if="allowCollapse" :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'" variant="plain"
+            :title="$t('tooltip.collapse_expand')" @click="toggleExpand" />
         </template>
       </v-toolbar>
       <v-divider />
 
       <Container v-if="expanded">
-        <v-text-field
-          v-if="showSearch"
-          id="searchInput"
-          v-model="search"
-          clearable
-          prepend-inner-icon="mdi-magnify"
-          :label="$t('search')"
-          hide-details
-          variant="filled"
-          style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
-          @focus="searchHasFocus = true"
-          @blur="searchHasFocus = false"
-        />
+        <v-text-field v-if="showSearch" id="searchInput" v-model="search" clearable prepend-inner-icon="mdi-magnify"
+          :label="$t('search')" hide-details variant="filled"
+          style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px" @focus="searchHasFocus = true"
+          @blur="searchHasFocus = false" />
         <!-- loading animation -->
         <v-progress-linear v-if="loading" indeterminate />
 
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
-          <v-col
-            v-for="item in allItems"
-            :key="item.uri"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          >
-            <PanelviewItem
-              :item="item"
-              :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
-              :show-track-number="showTrackNumber"
-              @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-            />
+          <v-col v-for="item in allItems" :key="item.uri"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
+            <PanelviewItem :item="item" :is-selected="isSelected(item)" :show-checkboxes="showCheckboxes"
+              :show-track-number="showTrackNumber" @select="onSelect" @menu="onMenu" @click="onClick" />
           </v-col>
         </v-row>
 
         <!-- list view -->
         <div v-if="viewMode == 'list'">
           <RecycleScroller v-slot="{ item }" :items="allItems" :item-size="70" key-field="uri" page-mode>
-            <ListviewItem
-              :key="item.uri"
-              :item="item"
-              :show-track-number="showTrackNumber"
-              :show-disc-number="showTrackNumber"
-              :show-duration="showDuration"
-              :show-favorite="showFavoritesOnlyFilter"
-              :show-menu="showMenu"
-              :show-provider="showProvider"
-              :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
-              :is-selected="isSelected(item)"
-              :show-details="itemtype.includes('versions')"
-              :parent-item="parentItem"
-              @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-            />
+            <ListviewItem :key="item.uri" :item="item" :show-track-number="showTrackNumber"
+              :show-disc-number="showTrackNumber" :show-duration="showDuration" :show-favorite="showFavoritesOnlyFilter"
+              :show-menu="showMenu" :show-provider="showProvider" :show-album="showAlbum"
+              :show-checkboxes="showCheckboxes" :is-selected="isSelected(item)"
+              :show-details="itemtype.includes('versions')" :parent-item="parentItem"
+              :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []" @select="onSelect"
+              @menu="onMenu" @click="onClick" />
           </RecycleScroller>
         </div>
 
@@ -242,10 +151,12 @@
             {{ $t('no_content') }}
           </Alert>
         </div>
+
+        <!-- box shown when item(s) selected -->
         <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom: 120px">
           <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
           <template #actions>
-            <v-btn color="primary" variant="text" @click="showContextMenu = true">
+            <v-btn color="primary" variant="text" @click="showPlayMenu(true)">
               {{ $t('actions') }}
             </v-btn>
           </template>
@@ -265,7 +176,7 @@ import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
-import MediaItemContextMenu, { itemIsAvailable } from './MediaItemContextMenu.vue';
+import { itemIsAvailable, getContextMenuItems } from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
@@ -275,6 +186,7 @@ import ListItem from '@/components/mods/ListItem.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import Alert from './mods/Alert.vue';
 import Container from './mods/Container.vue';
+import { eventbus } from '@/plugins/eventbus';
 
 // properties
 export interface Props {
@@ -332,7 +244,6 @@ const totalItems = ref<number>();
 const loading = ref(false);
 const favoritesOnly = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
-const showContextMenu = ref(false);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(true);
@@ -436,31 +347,24 @@ const onSelect = function (item: MediaItemType, selected: boolean) {
       }
     }
   }
-  store.blockGlobalPlayMenu = selectedItems.value.length > 0;
-};
-
-const onClearSelection = function () {
-  selectedItems.value = [];
-  showCheckboxes.value = false;
-  store.blockGlobalPlayMenu = false;
 };
 
 const toggleCheckboxes = function () {
-  if (selectedItems.value.length > 0) {
-    showContextMenu.value = true;
-  } else {
-    showCheckboxes.value = !showCheckboxes.value;
+  if (showCheckboxes.value) {
+    // clear selection
+    selectedItems.value = [];
   }
+  showCheckboxes.value = !showCheckboxes.value;
 };
 
-const onDelete = function (item: MediaItemType) {
-  loadData(true);
-};
-
-const onMenu = function (item: MediaItemType) {
+const onMenu = function (item: MediaItemType, showContextMenuItems = false) {
   selectedItems.value = [item];
-  showContextMenu.value = true;
+  showPlayMenu(showContextMenuItems);
 };
+
+const showPlayMenu = function (showContextMenuItems = false) {
+  eventbus.emit('playdialog', { items: selectedItems.value, parentItem: props.parentItem, showContextMenuItems: showContextMenuItems });
+}
 
 const onRefreshClicked = function () {
   loadData(true);
@@ -483,7 +387,7 @@ const onClick = function (mediaItem: MediaItemType) {
       },
     });
   } else {
-    onMenu(mediaItem);
+    onMenu(mediaItem, false);
   }
 };
 
@@ -623,10 +527,10 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (showContextMenu.value) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = allItems.value;
+    showCheckboxes.value = true;
   } else if (!searchHasFocus.value && e.key == 'Backspace') {
     search.value = search.value.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {

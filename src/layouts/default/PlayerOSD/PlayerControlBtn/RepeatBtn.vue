@@ -40,7 +40,7 @@ import api from '@/plugins/api';
 import { RepeatMode } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import { getValueFromSources } from '@/utils';
+import { getValueFromSources } from '@/helpers/utils';
 
 // properties
 export interface Props {

@@ -1,30 +1,14 @@
 <template>
   <div>
-    <v-card
-      variant="flat"
-      :img="imgGradient"
-      style="margin-top: -10px; z-index: 0"
-      height="30vh"
-      max-height="500px"
-      min-height="340px"
-    >
+    <v-card variant="flat" :img="imgGradient" style="margin-top: -10px; z-index: 0" height="30vh" max-height="500px"
+      min-height="340px">
       <!-- loading animation -->
       <v-progress-linear v-if="!item" indeterminate />
-      <v-img
-        width="100%"
-        height="100%"
-        cover
-        class="background-image"
-        :src="fanartImage"
-        :gradient="
-          $vuetify.theme.current.dark
-            ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
-            : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
-        "
-      />
-      <v-layout
-        v-if="item"
-        style="
+      <v-img width="100%" height="100%" cover class="background-image" :src="fanartImage" :gradient="$vuetify.theme.current.dark
+          ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
+          : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
+        " />
+      <v-layout v-if="item" style="
           margin: 0;
           position: absolute;
           top: 50%;
@@ -33,15 +17,10 @@
           padding-left: 15px;
           align-items: center;
           padding-right: 15px;
-        "
-      >
+        ">
         <!-- left side: cover image -->
-        <div
-          v-if="!$vuetify.display.mobile"
-          xs5
-          pa-5
-          style="width: 230px; height: 230px; margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
-        >
+        <div v-if="!$vuetify.display.mobile" xs5 pa-5
+          style="width: 230px; height: 230px; margin-top: 15px; margin-bottom: 15px; margin-right: 24px">
           <div v-if="item.media_type && (item.media_type == MediaType.ARTIST || 'owner' in item)">
             <v-avatar size="192">
               <MediaItemThumb :item="item" :height="230" :width="230" />
@@ -66,12 +45,8 @@
               <!-- explicit icon -->
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
-                  <v-icon
-                    v-if="parseBool(item.metadata.explicit || false)"
-                    v-bind="props"
-                    icon="mdi-alpha-e-box"
-                    width="35"
-                  />
+                  <v-icon v-if="parseBool(item.metadata.explicit || false)" v-bind="props" icon="mdi-alpha-e-box"
+                    width="35" />
                 </template>
                 <span>{{ $t('tooltip.explicit') }}</span>
               </v-tooltip>
@@ -108,78 +83,31 @@
 
           <!-- play/info buttons -->
           <div style="display: flex; margin-left: 14px; padding-bottom: 10px">
-            <v-menu location="bottom">
-              <!-- eslint-disable vue/no-template-shadow -->
-              <template #activator="{ props }">
-                <!-- eslint-enable vue/no-template-shadow -->
-                <v-btn
-                  color="primary"
-                  v-bind="props"
-                  prepend-icon="mdi-play-circle"
-                  :disabled="!store.selectedPlayer?.available || store.blockGlobalPlayMenu"
-                >
-                  {{ $t('play') }}
-                </v-btn>
-              </template>
 
-              <v-card min-width="300">
-                <v-list lines="one" density="comfortable">
-                  <!-- play now -->
-                  <ListItem
-                    v-for="menuItem in getPlayMenuItems([item])"
-                    :key="menuItem.label"
-                    :title="$t(menuItem.label, menuItem.labelArgs)"
-                    @click="menuItem.action ? menuItem.action() : ''"
-                  >
-                    <template #prepend>
-                      <v-avatar style="padding-right: 10px">
-                        <v-icon :icon="menuItem.icon" />
-                      </v-avatar>
-                    </template>
-                  </ListItem>
-                </v-list>
-              </v-card>
-            </v-menu>
+            <!-- play button -->
+            <v-btn color="primary" prepend-icon="mdi-play-circle"
+              :disabled="!store.selectedPlayer?.available"
+              @click="eventbus.emit('playdialog', { items: [item], parentItem: item, showContextMenuItems: false })">
+              {{ $t('play') }}
+            </v-btn>
 
             <!-- favorite (heart) icon -->
-            <v-btn
-              variant="plain"
-              ripple
-              :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
-              size="x-large"
-              style="margin-top: -15px"
-              @click="api.toggleFavorite(item)"
-              @click.prevent
-              @click.stop
-            />
+            <v-btn variant="plain" ripple :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'" size="x-large"
+              style="margin-top: -15px" @click="api.toggleFavorite(item)" @click.prevent @click.stop />
           </div>
 
           <!-- Description/metadata -->
-          <v-card-subtitle
-            v-if="shortDescription"
-            class="body-2 justify-left"
-            style="padding-bottom: 10px; white-space: pre-line; cursor: pointer"
-            @click="showFullInfo = !showFullInfo"
-          >
+          <v-card-subtitle v-if="shortDescription" class="body-2 justify-left"
+            style="padding-bottom: 10px; white-space: pre-line; cursor: pointer" @click="showFullInfo = !showFullInfo">
             <!-- eslint-disable vue/no-v-html -->
             <div v-html="shortDescription"></div>
             <!-- eslint-enable vue/no-v-html -->
           </v-card-subtitle>
 
           <!-- genres/tags -->
-          <div
-            v-if="item && item.metadata.genres"
-            class="justify-center"
-            style="margin-left: 15px; padding-bottom: 20px"
-          >
-            <v-chip
-              v-for="tag of item.metadata.genres.slice(0, $vuetify.display.mobile ? 15 : 25)"
-              :key="tag"
-              color="blue-grey lighten-1"
-              style="margin-right: 5px; margin-bottom: 5px"
-              small
-              outlined
-            >
+          <div v-if="item && item.metadata.genres" class="justify-center" style="margin-left: 15px; padding-bottom: 20px">
+            <v-chip v-for="tag of item.metadata.genres.slice(0, $vuetify.display.mobile ? 15 : 25)" :key="tag"
+              color="blue-grey lighten-1" style="margin-right: 5px; margin-bottom: 5px" small outlined>
               {{ tag }}
             </v-chip>
           </div>
@@ -220,10 +148,11 @@ import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
-import { parseBool } from '../utils';
-import { getPlayMenuItems, getContextMenuItems } from './MediaItemContextMenu.vue';
+import { parseBool } from '@/helpers/utils';
+import { getContextMenuItems } from '@/helpers/contextmenu';
 import ListItem from '@/components/mods/ListItem.vue';
 import { useI18n } from 'vue-i18n';
+import { eventbus } from '@/plugins/eventbus'
 
 // properties
 export interface Props {

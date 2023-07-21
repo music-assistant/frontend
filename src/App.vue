@@ -7,7 +7,7 @@ import { api } from './plugins/api';
 import { computed, onMounted, watch } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from './plugins/store';
-import { ColorCoverPalette, getContrastingTextColor } from './utils';
+import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 
 const theme = useTheme();
 let lightTheme = theme.themes.value.light;

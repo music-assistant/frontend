@@ -50,7 +50,7 @@
 import api from '@/plugins/api';
 import { MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import { formatDuration } from '@/utils';
+import { formatDuration } from '@/helpers/utils';
 import { ref, computed, watch } from 'vue';
 
 // properties

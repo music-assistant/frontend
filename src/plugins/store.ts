@@ -2,8 +2,8 @@ import type { Player, QueueItem } from './api/interfaces';
 import { reactive } from 'vue';
 import type { LocationQuery, RouteParams, RouteMeta } from 'vue-router';
 
-import type { ContextMenuItem } from '../components/MediaItemContextMenu.vue';
-import { ColorCoverPalette } from '@/utils';
+import type { ContextMenuItem } from '@/helpers/contextmenu';
+import { ColorCoverPalette } from '@/helpers/utils';
 
 interface Store {
   selectedPlayer?: Player;
@@ -16,7 +16,6 @@ interface Store {
   coverImageColorCode: ColorCoverPalette;
   topBarTitle?: string;
   topBarContextMenuItems: ContextMenuItem[];
-  blockGlobalPlayMenu: boolean;
   alwaysShowMenuButton: boolean;
   apiInitialized: boolean;
   apiBaseUrl: string;
@@ -48,7 +47,6 @@ export const store: Store = reactive({
     darkColor: '',
   },
   topBarContextMenuItems: [],
-  blockGlobalPlayMenu: false,
   alwaysShowMenuButton: false,
   apiInitialized: false,
   apiBaseUrl: '',

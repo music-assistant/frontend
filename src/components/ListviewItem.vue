@@ -5,9 +5,9 @@
       v-hold="() => emit('menu', item)"
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
-      :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
+      :context-menu-items="contextMenuItems"
       @click.stop="emit('click', item)"
-      @click.right.prevent="emit('menu', item)"
+      @click.right.prevent="$el.querySelector('#menu').click()"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -178,12 +178,12 @@ import {
   type MediaItemType,
   MediaType,
 } from '../plugins/api/interfaces';
-import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from '../utils';
+import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from '@/helpers/utils';
 import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
-import { getContextMenuItems } from '@/components/MediaItemContextMenu.vue';
+import { ContextMenuItem } from '@/helpers/contextmenu';
 
 // properties
 export interface Props {
@@ -201,6 +201,7 @@ export interface Props {
   showCheckboxes?: boolean;
   showDetails?: boolean;
   parentItem?: MediaItemType;
+  contextMenuItems?: Array<ContextMenuItem>;
 }
 
 // global refs
