@@ -14,6 +14,7 @@
         :update-available="updateAvailable"
         :title="$t('tracks')"
         :provider-filter="providerFilter"
+        :allow-collapse="true"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;
@@ -31,6 +32,7 @@
         :update-available="updateAvailable"
         :title="$t('albums')"
         :provider-filter="providerFilter"
+        :allow-collapse="true"
         @refresh-clicked="
           loadItemDetails();
           updateAvailable = false;

@@ -188,7 +188,8 @@
     "select_items": "Select multiple items",
     "sort_options": "Sort options",
     "toggle_view_mode": "Toggle view mode list/thumbs",
-    "open_provider_link": "Open this item on the provider's website"
+    "open_provider_link": "Open this item on the provider's website",
+    "collapse_expand": "Collapse/expand this listing"
   },
   "topresult": "Top result",
   "track": "Track",

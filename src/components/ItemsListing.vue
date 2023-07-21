@@ -133,7 +133,9 @@
               <v-list>
                 <div v-for="provId of providerFilter" :key="provId">
                   <ListItem @click="changeActiveProviderFilter(provId)">
-                    <template #prepend><ProviderIcon :domain="provId" :size="30" /></template>
+                    <template #prepend>
+                      <ProviderIcon :domain="provId" :size="30" />
+                    </template>
                     <template #title>
                       <span v-if="provId == 'library'">{{ $t('library') }}</span>
                       <span v-else>{{ api.getProviderName(provId) }}</span>
@@ -147,25 +149,33 @@
               </v-list>
             </v-card>
           </v-menu>
+
+          <!-- expand/collapse button -->
+          <v-btn
+            v-if="allowCollapse"
+            :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+            variant="plain"
+            :title="$t('tooltip.collapse_expand')"
+            @click="toggleExpand"
+          />
         </template>
       </v-toolbar>
       <v-divider />
 
-      <v-text-field
-        v-if="showSearch"
-        id="searchInput"
-        v-model="search"
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('search')"
-        hide-details
-        variant="filled"
-        style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
-        @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false"
-      />
-
-      <Container>
+      <Container v-if="expanded">
+        <v-text-field
+          v-if="showSearch"
+          id="searchInput"
+          v-model="search"
+          clearable
+          prepend-inner-icon="mdi-magnify"
+          :label="$t('search')"
+          hide-details
+          variant="filled"
+          style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
+          @focus="searchHasFocus = true"
+          @blur="searchHasFocus = false"
+        />
         <!-- loading animation -->
         <v-progress-linear v-if="loading" indeterminate />
 
@@ -279,6 +289,7 @@ export interface Props {
   title?: string;
   hideOnEmpty?: boolean;
   providerFilter?: string[];
+  allowCollapse?: boolean;
   loadData: (params: LoadDataParams) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -294,6 +305,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
+  allowCollapse: false,
 });
 
 const defaultLimit = 100;
@@ -319,6 +331,7 @@ const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(true);
 const activeProviderFilter = ref<string>('library');
+const expanded = ref(true);
 
 // computed properties
 
@@ -376,6 +389,11 @@ const panelViewItemResponsive = function (displaySize: number) {
   } else {
     return 0;
   }
+};
+
+const toggleExpand = function () {
+  expanded.value = !expanded.value;
+  localStorage.setItem(`expand.${props.itemtype}`, expanded.value.toString());
 };
 
 const toggleViewMode = function () {
@@ -576,6 +594,15 @@ onMounted(() => {
       albumArtistsOnlyFilter.value = albumArtistsOnlyStr == 'true';
     }
   }
+
+  // get stored/default expand property for this itemtype
+  if (props.allowCollapse !== false) {
+    const expandStr = localStorage.getItem(`expand.${props.itemtype}`);
+    if (expandStr) {
+      expanded.value = expandStr == 'true';
+    }
+  }
+
   // get stored searchquery
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
