@@ -1,9 +1,17 @@
 <template>
   <div>
     <Container>
-      <v-text-field id="searchInput" v-model="search" clearable prepend-inner-icon="mdi-magnify"
-        :label="$t('type_to_search')" hide-details variant="filled" @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false" />
+      <v-text-field
+        id="searchInput"
+        v-model="search"
+        clearable
+        prepend-inner-icon="mdi-magnify"
+        :label="$t('type_to_search')"
+        hide-details
+        variant="filled"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
+      />
 
       <div>
         <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
@@ -17,19 +25,38 @@
 
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
-          <v-col v-for="item in filteredItems" :key="item.uri"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
-            <PanelviewItem :item="item" :size="thumbSize" :is-selected="false" :show-checkboxes="false" @menu="onMenu"
-              @click="onClick" />
+          <v-col
+            v-for="item in filteredItems"
+            :key="item.uri"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          >
+            <PanelviewItem
+              :item="item"
+              :size="thumbSize"
+              :is-selected="false"
+              :show-checkboxes="false"
+              @menu="onMenu"
+              @click="onClick"
+            />
           </v-col>
         </v-row>
 
         <!-- list view -->
         <div v-if="viewMode == 'list'">
           <RecycleScroller v-slot="{ item }" :items="filteredItems" :item-size="60" key-field="item_id" page-mode>
-            <ListviewItem :item="item" :show-track-number="false" :show-duration="true" :show-library="false"
-              :show-menu="true" :show-provider="true" :show-checkboxes="false" :is-selected="false" :show-details="true"
-              @menu="onMenu" @click="onClick" />
+            <ListviewItem
+              :item="item"
+              :show-track-number="false"
+              :show-duration="true"
+              :show-library="false"
+              :show-menu="true"
+              :show-provider="true"
+              :show-checkboxes="false"
+              :is-selected="false"
+              :show-details="true"
+              @menu="onMenu"
+              @click="onClick"
+            />
           </RecycleScroller>
         </div>
 
@@ -39,8 +66,12 @@
 
           <v-tooltip location="bottom">
             <template #activator="{ props }">
-              <v-btn v-bind="props" :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'" variant="plain"
-                @click="toggleViewMode()" />
+              <v-btn
+                v-bind="props"
+                :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
+                variant="plain"
+                @click="toggleViewMode()"
+              />
             </template>
             <span>{{ $t('tooltip.toggle_view_mode') }}</span>
           </v-tooltip>
@@ -115,7 +146,7 @@ const onClick = function (mediaItem: MediaItemType) {
       },
     });
   } else {
-    eventbus.emit('playdialog', { items: selectedItems.value, showContextMenuItems: false })
+    eventbus.emit('playdialog', { items: selectedItems.value, showContextMenuItems: false });
   }
 };
 

@@ -17,11 +17,17 @@
 
       <!-- play contextmenu items -->
       <v-card-text v-if="playMenuItems.length > 0">
-        <v-select :label="$t('play_on')" :model-value="store.selectedPlayer?.player_id" :items="availablePlayers"
-          hide-details @update:model-value="(newVal) => {
+        <v-select
+          :label="$t('play_on')"
+          :model-value="store.selectedPlayer?.player_id"
+          :items="availablePlayers"
+          hide-details
+          @update:model-value="
+            (newVal) => {
               store.selectedPlayer = api.players[newVal];
             }
-            " />
+          "
+        />
 
         <v-list>
           <div v-for="item of playMenuItems" :key="item.label">
@@ -36,8 +42,10 @@
         </v-list>
       </v-card-text>
       <!-- action contextmenu items -->
-      <v-card-text v-if="showContextMenuItems && contextMenuItems.length > 0"
-        style="padding-top: 0; margin-top: -10px; padding-bottom: 0">
+      <v-card-text
+        v-if="showContextMenuItems && contextMenuItems.length > 0"
+        style="padding-top: 0; margin-top: -10px; padding-bottom: 0"
+      >
         <v-list-item-subtitle style="margin-left: 10px">
           {{ $t('actions') }}
         </v-list-item-subtitle>
@@ -64,7 +72,7 @@ import api from '@/plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '@/plugins/store';
 import ListItem from '@/components/mods/ListItem.vue';
-import { getContextMenuItems, ContextMenuItem, getPlayMenuItems } from '@/helpers/contextmenu'
+import { getContextMenuItems, ContextMenuItem, getPlayMenuItems } from '@/helpers/contextmenu';
 import { PlayItemDialogEvent, eventbus } from '@/plugins/eventbus';
 
 const { t } = useI18n();
@@ -79,13 +87,15 @@ const playMenuItems = ref<ContextMenuItem[]>([]);
 const header = ref('');
 
 onMounted(() => {
-  eventbus.on('playdialog', async (evt: PlayItemDialogEvent) => { 
+  eventbus.on('playdialog', async (evt: PlayItemDialogEvent) => {
     selectedItems.value = evt.items;
     parentItem.value = evt.parentItem;
     showContextMenuItems.value = evt.showContextMenuItems || false;
     showDialog();
-  })
-  onBeforeUnmount(() =>{ eventbus.off('playdialog') });
+  });
+  onBeforeUnmount(() => {
+    eventbus.off('playdialog');
+  });
 });
 
 const showDialog = async function () {
@@ -122,7 +132,6 @@ const showDialog = async function () {
   } else {
     contextMenuItems.value = [];
   }
-  
 };
 const itemClicked = async function (item: ContextMenuItem) {
   close();

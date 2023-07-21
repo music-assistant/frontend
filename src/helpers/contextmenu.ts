@@ -57,7 +57,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
         api.playMedia(parentItem as Playlist, QueueOption.REPLACE, false, items[0].item_id);
       },
       icon: 'mdi-play-circle-outline',
-      labelArgs: []
+      labelArgs: [],
     });
   }
   // Play from here (album track)
@@ -68,7 +68,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
         api.playMedia(parentItem as Album, QueueOption.REPLACE, false, items[0].item_id);
       },
       icon: 'mdi-play-circle-outline',
-      labelArgs: []
+      labelArgs: [],
     });
   }
 
@@ -79,7 +79,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
       api.playMedia(items, queueOptPlay);
     },
     icon: 'mdi-play-circle-outline',
-    labelArgs: []
+    labelArgs: [],
   });
 
   // Start Radio
@@ -90,7 +90,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
         api.playMedia(items, queueOptPlay, true);
       },
       icon: 'mdi-radio-tower',
-      labelArgs: []
+      labelArgs: [],
     });
   }
 
@@ -102,7 +102,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
         api.playMedia(items, queueOptNext);
       },
       icon: 'mdi-skip-next-circle-outline',
-      labelArgs: []
+      labelArgs: [],
     });
   }
   // Add to Queue
@@ -112,7 +112,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
       api.playMedia(items, QueueOption.ADD);
     },
     icon: 'mdi-playlist-plus',
-    labelArgs: []
+    labelArgs: [],
   });
 
   return playMenuItems;

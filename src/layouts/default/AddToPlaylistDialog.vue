@@ -31,8 +31,11 @@
                 <div>{{ playlist.owner }}</div>
               </template>
               <template #append>
-                <provider-icon v-if="playlist.provider_mappings" :domain="playlist.provider_mappings[0].provider_domain"
-                  :size="20" />
+                <provider-icon
+                  v-if="playlist.provider_mappings"
+                  :domain="playlist.provider_mappings[0].provider_domain"
+                  :size="20"
+                />
               </template>
             </ListItem>
           </div>
@@ -44,11 +47,19 @@
                   <provider-icon :domain="prov.domain" :size="40" class="media-thumb" />
                 </template>
                 <template #title>
-                  <v-text-field :label="$t('create_playlist', [prov.name])" append-icon="mdi-playlist-plus"
-                    variant="plain" hide-details @update:model-value="(txt) => {
+                  <v-text-field
+                    :label="$t('create_playlist', [prov.name])"
+                    append-icon="mdi-playlist-plus"
+                    variant="plain"
+                    hide-details
+                    @update:model-value="
+                      (txt) => {
                         newPlaylistName = txt;
                       }
-                      " @click:append="newPlaylist(prov.instance_id)" @keydown.enter="newPlaylist(prov.instance_id)" />
+                    "
+                    @click:append="newPlaylist(prov.instance_id)"
+                    @keydown.enter="newPlaylist(prov.instance_id)"
+                  />
                 </template>
               </ListItem>
             </div>
@@ -62,8 +73,8 @@
 <script setup lang="ts">
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
-import { MediaType} from '@/plugins/api/interfaces';
-import type {MediaItemType, Playlist } from '@/plugins/api/interfaces';
+import { MediaType } from '@/plugins/api/interfaces';
+import type { MediaItemType, Playlist } from '@/plugins/api/interfaces';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { ProviderFeature } from '@/plugins/api/interfaces';
 import api from '@/plugins/api';
@@ -77,15 +88,16 @@ const newPlaylistName = ref('');
 const parentItem = ref<MediaItemType>();
 const selectedItems = ref<MediaItemType[]>([]);
 
-
 onMounted(() => {
-  eventbus.on('playlistdialog', async (evt: PlaylistDialogEvent) => { 
+  eventbus.on('playlistdialog', async (evt: PlaylistDialogEvent) => {
     await fetchPlaylists();
     selectedItems.value = evt.items;
     parentItem.value = evt.parentItem;
     show.value = true;
-  })
-  onBeforeUnmount(() =>{ eventbus.off('playlistdialog') });
+  });
+  onBeforeUnmount(() => {
+    eventbus.off('playlistdialog');
+  });
 });
 
 const fetchPlaylists = async function () {
@@ -122,7 +134,6 @@ const newPlaylist = async function (provId: string) {
 const close = function () {
   show.value = false;
 };
-
 </script>
 
 <style>
