@@ -176,7 +176,7 @@ import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';
 import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import { isColorDark, truncateString } from '@/utils';
+import { isColorDark, truncateString } from '@/helpers/utils';
 
 const router = useRouter();
 

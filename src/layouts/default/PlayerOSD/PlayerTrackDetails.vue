@@ -144,7 +144,7 @@ import api from '@/plugins/api';
 import { MediaType, MediaItemType, ItemMapping } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { getArtistsString } from '@/helpers/utils';
+import { getArtistsString, isColorDark } from '@/helpers/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { iconFallback } from '@/components/QualityDetailsBtn.vue';
