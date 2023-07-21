@@ -441,12 +441,12 @@ const toggleCheckboxes = function () {
   showCheckboxes.value = !showCheckboxes.value;
 };
 
-const onMenu = function (item: MediaItemType, showContextMenuItems = false) {
+const onMenu = function (item: MediaItemType, showContextMenuItems = true) {
   selectedItems.value = [item];
   showPlayMenu(showContextMenuItems);
 };
 
-const showPlayMenu = function (showContextMenuItems = false) {
+const showPlayMenu = function (showContextMenuItems = true) {
   eventbus.emit('playdialog', {
     items: selectedItems.value,
     parentItem: props.parentItem,
@@ -462,7 +462,7 @@ const onRefreshClicked = function () {
 const onClick = function (mediaItem: MediaItemType) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(mediaItem)) {
-    onMenu(mediaItem);
+    onMenu(mediaItem, false);
     return;
   }
 

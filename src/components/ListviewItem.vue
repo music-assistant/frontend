@@ -7,7 +7,7 @@
       :disabled="!itemIsAvailable(item) || isDisabled"
       :context-menu-items="contextMenuItems"
       @click.stop="emit('click', item)"
-      @click.right.prevent="$el.querySelector('#menu').click()"
+      @click.right.prevent="() => emit('menu', item)"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
