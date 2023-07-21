@@ -58,16 +58,14 @@
                 {{ api.providerManifests[providerMapping.provider_domain].name }}
               </template>
               <template #subtitle>
-                {{ providerMapping.item_id }}
-              </template>
-              <template #append>
-                <v-btn
-                  v-if="providerMapping.url && !providerMapping.url.startsWith('filesystem')"
-                  variant="plain"
-                  icon="mdi-open-in-new"
+                <a
+                  v-if="providerMapping.url && !providerMapping.url.startsWith('file')"
+                  style="opacity: 0.4"
                   :title="$t('tooltip.open_provider_link')"
                   @click.prevent="openLinkInNewTab(providerMapping.url)"
-                />
+                  >{{ providerMapping.url }}</a
+                >
+                <span v-else style="opacity: 0.4">{{ providerMapping.item_id }}</span>
               </template>
             </ListItem>
           </v-list>
