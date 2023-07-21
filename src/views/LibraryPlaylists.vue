@@ -3,23 +3,27 @@
     itemtype="playlists"
     :items="items"
     :show-duration="false"
-    :show-providers="true"
+    :show-provider="true"
+    :show-favorites-only-filter="true"
     :load-data="loadItems"
     :show-library="true"
     :sort-keys="['sort_name', 'timestamp_added DESC']"
+    :update-available="updateAvailable"
+    @refresh-clicked="updateAvailable = false"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ItemsListing from '../components/ItemsListing.vue';
 import api from '../plugins/api';
-import { MediaType, ProviderFeature, type Playlist } from '../plugins/api/interfaces';
+import { MediaType, ProviderFeature, type Playlist, EventMessage, EventType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
+const updateAvailable = ref(false);
 
 store.topBarContextMenuItems = [
   {
@@ -49,10 +53,25 @@ onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
 });
 
-const loadItems = async function (offset: number, limit: number, sort: string, search?: string, inLibraryOnly = true) {
-  const library = inLibraryOnly || undefined;
-  return await api.getPlaylists(library, search, limit, offset, sort);
+const loadItems = async function (offset: number, limit: number, sort: string, search?: string, favoritesOnly = true) {
+  const favorite = favoritesOnly || undefined;
+  updateAvailable.value = false;
+  return await api.getLibraryPlaylists(favorite, search, limit, offset, sort);
 };
+
+onMounted(() => {
+  // signal if/when items get added/updated/removed within this library
+  const unsub = api.subscribe_multi(
+    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
+      if (evt.object_id?.startsWith('library://playlist')) {
+        updateAvailable.value = true;
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
 
 const newPlaylist = async function (provId: string) {
   const name = prompt(t('new_playlist_name'));

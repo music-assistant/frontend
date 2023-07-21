@@ -1,92 +1,77 @@
 <template>
   <Container>
-    <RecycleScroller v-slot="{ item }" :items="playerConfigs" :item-size="60" key-field="player_id" page-mode>
-      <ListItem
-        v-hold="
-          () => {
-            editPlayer(item.player_id);
-          }
-        "
-        link
-        @click="editPlayer(item.player_id)"
-      >
-        <template #prepend>
-          <provider-icon :domain="item.provider" :size="'40px'" class="listitem-media-thumb" />
-        </template>
+    <ListItem
+      v-for="item in playerConfigs"
+      :key="item.player_id"
+      v-hold="
+        () => {
+          editPlayer(item.player_id);
+        }
+      "
+      link
+      @click="editPlayer(item.player_id)"
+      :context-menu-items="[
+            {
+              label: 'settings.configure',
+              labelArgs:[],
+              action: () => {
+                editPlayer(item.player_id);
+              },
+              icon: 'mdi-cog',
+            },
+            {
+              label: item.enabled ? 'settings.disable' : 'settings.enable',
+              labelArgs:[],
+              action: () => {
+                toggleEnabled(item);
+              },
+              icon: 'mdi-cancel',
+            },
+            {
+              label: 'settings.documentation',
+              labelArgs:[],
+              action: () => {
+                openLinkInNewTab(api.providerManifests[item.provider].documentation!);
+              },
+              icon: 'mdi-bookshelf',
+              disabled: !api.providerManifests[item.provider].documentation
+            },
+            {
+              label: 'settings.delete',
+              labelArgs:[],
+              action: () => {
+                removePlayerConfig(item.player_id)
+              },
+              icon: 'mdi-delete',
+            },
+          ]"
+    >
+      <template #prepend>
+        <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
+      </template>
 
-        <!-- title -->
-        <template #title>
-          <div class="line-clamp-1">{{ getPlayerName(item) }}</div>
-        </template>
+      <!-- title -->
+      <template #title>
+        <div class="line-clamp-1">{{ getPlayerName(item) }}</div>
+      </template>
 
-        <!-- subtitle -->
-        <template #subtitle
-          ><div class="line-clamp-1">{{ api.providers[item.provider]?.name || item.provider }}</div>
-        </template>
-        <!-- append -->
-        <template #append>
-          <!-- player disabled -->
-          <div v-if="!item.enabled">
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <Button icon v-bind="props">
-                  <v-icon icon="mdi-cancel" />
-                </Button>
-              </template>
-              <span>{{ $t('settings.player_disabled') }}</span>
-            </v-tooltip>
-          </div>
+      <!-- subtitle -->
+      <template #subtitle
+        ><div class="line-clamp-1">{{ api.providers[item.provider]?.name || item.provider }}</div>
+      </template>
+      <!-- actions -->
+      <template #append>
+        <!-- player disabled -->
+        <Button v-if="!item.enabled" icon :title="$t('settings.player_disabled')">
+          <v-icon icon="mdi-cancel" />
+        </Button>
 
-          <!-- player not (yet) available -->
-          <div v-else-if="!api.players[item.player_id]?.available">
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <Button icon v-bind="props">
-                  <v-icon icon="mdi-timer-sand" />
-                </Button>
-              </template>
-              <span>{{ $t('settings.player_not_available') }}</span>
-            </v-tooltip>
-          </div>
-
-          <!-- contextmenu-->
-          <v-menu location="bottom end">
-            <template #activator="{ props }">
-              <Button icon v-bind="props">
-                <v-icon icon="mdi-dots-vertical" />
-              </Button>
-            </template>
-
-            <v-list>
-              <ListItem
-                v-if="item.enabled && item.player_id in api.players"
-                :title="$t('settings.configure')"
-                prepend-icon="mdi-cog"
-                @click="editPlayer(item.player_id)"
-              />
-              <ListItem
-                :title="item.enabled ? $t('settings.disable') : $t('settings.enable')"
-                prepend-icon="mdi-cog"
-                @click="toggleEnabled(item)"
-              />
-              <ListItem
-                v-if="api.providerManifests[item.provider].documentation"
-                :title="$t('settings.documentation')"
-                prepend-icon="mdi-bookshelf"
-                :href="api.providerManifests[item.provider].documentation"
-                target="_blank"
-              />
-              <ListItem
-                v-if="!api.players[item.player_id]?.available"
-                :title="$t('settings.delete')"
-                prepend-icon="mdi-delete"
-                @click="removePlayerConfig(item.player_id)"
-              />
-            </v-list>
-          </v-menu>
-        </template>
-      </ListItem>
-    </RecycleScroller>
+        <!-- player not (yet) available -->
+        <Button v-else-if="!api.players[item.player_id]?.available" icon :title="$t('settings.player_not_available')">
+          <v-icon icon="mdi-timer-sand" />
+        </Button>
+      </template>
+    </ListItem>
   </Container>
 </template>
 
@@ -95,7 +80,6 @@ import { ref, onBeforeUnmount, watch } from 'vue';
 import { api } from '@/plugins/api';
 import { EventType, PlayerConfig } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
-import { RecycleScroller } from 'vue-virtual-scroller';
 import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
@@ -142,6 +126,10 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
     playerConfig.default_name ||
     playerConfig.player_id
   );
+};
+
+const openLinkInNewTab = function (url: string) {
+  window.open(url, '_blank');
 };
 
 // watchers

@@ -29,7 +29,7 @@
   "dark_mode": "Tryb ciemnny",
   "delete_db": "Usuń zaznaczone z bazy",
   "details": "Szczegóły",
-  "enter_url": "Enter the URL you want to manually add to the database",
+  "enter_url": "Enter the URL you want to manually add to the library",
   "external_source_active": "External source active: {0}",
   "goto_album": "Idź do albumu {0}",
   "goto_artist": "Idź do artysty {0}",

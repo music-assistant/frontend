@@ -16,7 +16,7 @@
           :item="item"
           :show-library="false"
           :show-menu="false"
-          :show-providers="false"
+          :show-provider="false"
           :is-selected="false"
           @click="onClick"
         />

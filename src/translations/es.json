@@ -28,7 +28,7 @@
   "dark_mode": "Modo oscuro",
   "delete_db": "Eliminar elemento de la base de datos",
   "details": "Detalles",
-  "enter_url": "Enter the URL you want to manually add to the database",
+  "enter_url": "Enter the URL you want to manually add to the library",
   "external_source_active": "External source active: {0}",
   "goto_album": "Ir al disco {0}",
   "goto_artist": "Ir al artista {0}",
@@ -163,7 +163,7 @@
   "tooltip": {
     "album_artist_filter": "Alternar filtro de álbum-artista",
     "explicit": "Explicito",
-    "filter_library": "Alternar filtro en la biblioteca/favorito",
+    "filter_favorites": "Alternar filtro en la favorito",
     "library": "Guardar en biblioteca/favorito",
     "linked": "Este artículo del proveedor está vinculado a los detalles del elemento actual",
     "refresh": "Actualizar la lista de elementos",

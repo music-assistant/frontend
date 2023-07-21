@@ -1,23 +1,58 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <v-tabs show-arrows grow hide-slider>
-      <v-tab v-if="showVersionsTab">
-        {{ $t('other_versions') }}
-      </v-tab>
-    </v-tabs>
-    <v-divider />
+    <Container>
     <ItemsListing
-      v-if="showVersionsTab"
       itemtype="radioversions"
       :parent-item="itemDetails"
-      :show-providers="true"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
       :show-library="false"
       :show-radio-number="false"
       :show-duration="false"
       :load-data="loadRadioVersions"
       :sort-keys="['provider', 'sort_name']"
+      :title="$t('other_versions')"
+      :hide-on-empty="true"
+      :checksum="provider + itemId"
     />
+    <br />
+      
+      <!-- provider mapping details -->
+      <v-card style="margin-bottom: 10px" v-if="provider == 'library'">
+        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px"> </v-toolbar>
+        <v-divider />
+        <Container>
+          <v-list>
+            <ListItem
+              v-for="providerMapping in itemDetails?.provider_mappings"
+              :key="providerMapping.provider_instance"
+            >
+              <template #prepend>
+                <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
+              </template>
+              <template #title>
+                {{ api.providerManifests[providerMapping.provider_domain].name }}
+              </template>
+              <template #subtitle>
+                {{ providerMapping.item_id }} | 
+                {{ providerMapping.audio_format.content_type }}
+                bits
+              </template>
+              <template #append>
+                <v-btn
+                  variant="plain"
+                  icon="mdi-open-in-new"
+                  v-if="providerMapping.url"
+                  @click.prevent="
+                    openLinkInNewTab(providerMapping.url)"
+                ></v-btn>
+              </template>
+            </ListItem>
+          </v-list>
+        </Container>
+      </v-card>
+  </Container>
   </section>
 </template>
 
@@ -26,8 +61,12 @@ import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { ref } from 'vue';
 import type { Radio } from '../plugins/api/interfaces';
+import ListItem from '../components/mods/ListItem.vue';
+import Container from '../components/mods/Container.vue';
+import ProviderIcon from '@/components/ProviderIcon.vue';
 import { api } from '../plugins/api';
 import { watch } from 'vue';
+import { getStreamingProviderMappings } from '../utils';
 
 export interface Props {
   itemId: string;
@@ -35,14 +74,9 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Radio>();
-const showVersionsTab = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getRadio(props.itemId, props.provider);
-  // we only show the versions tab if we actually have other versions
-  // to avoid confusion
-  const versions = await loadRadioVersions(0, 2, 'name');
-  showVersionsTab.value = versions.count > 0;
 };
 
 watch(
@@ -58,9 +92,22 @@ const loadRadioVersions = async function (
   limit: number,
   sort: string,
   search?: string,
-  inLibraryOnly = true,
+  favoritesOnly = true,
 ) {
-  const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
-  return filteredItems(radioVersions, offset, limit, sort, search, inLibraryOnly);
+  const allVersions: Radio[] = [];
+
+  if (props.provider == 'library') {
+    const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
+    allVersions.push(...radioVersions);
+  }
+  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
+    const radioVersions = await api.getRadioVersions(providerMapping.item_id, providerMapping.provider_instance);
+    allVersions.push(...radioVersions);
+  }
+
+  return filteredItems(allVersions, offset, limit, sort, search, favoritesOnly);
+};
+const openLinkInNewTab = function (url: string) {
+  window.open(url, '_blank');
 };
 </script>

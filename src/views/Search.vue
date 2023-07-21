@@ -60,7 +60,7 @@
               :show-duration="true"
               :show-library="false"
               :show-menu="true"
-              :show-providers="true"
+              :show-provider="true"
               :show-checkboxes="false"
               :is-selected="false"
               :show-details="true"

@@ -54,139 +54,113 @@
       </Alert>
 
       <Container>
-        <RecycleScroller
-          v-slot="{ item }"
-          :items="providerConfigs.filter((x) => x.type == provType)"
-          :item-size="60"
-          key-field="instance_id"
-          page-mode
-        >
-          <ListItem
-            v-hold="
-              () => {
+        <ListItem
+          v-for="item in providerConfigs.filter((x) => x.type == provType)"
+          :key="item.instance_id"
+          v-hold="
+            () => {
+              editProvider(item.instance_id);
+            }
+          "
+          link
+          @click="editProvider(item.instance_id)"
+          :context-menu-items="[
+            {
+              label: 'settings.configure',
+              labelArgs:[],
+              action: () => {
                 editProvider(item.instance_id);
-              }
-            "
-            link
-            density="compact"
-            @click="editProvider(item.instance_id)"
+              },
+              icon: 'mdi-cog',
+            },
+            {
+              label: item.enabled ? 'settings.disable' : 'settings.enable',
+              labelArgs:[],
+              action: () => {
+                toggleEnabled(item);
+              },
+              icon: 'mdi-cancel',
+              disabled: api.providerManifests[item.domain].builtin
+            },
+            {
+              label: 'settings.documentation',
+              labelArgs:[],
+              action: () => {
+                openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+              },
+              icon: 'mdi-bookshelf',
+              disabled: !api.providerManifests[item.domain].documentation
+            },
+            {
+              label: 'settings.sync',
+              labelArgs:[],
+              action: () => {
+                api.startSync(undefined, [item.instance_id]);
+              },
+              icon: 'mdi-sync',
+              hide: api.providers[item.instance_id]?.available && provType != ProviderType.MUSIC
+            },
+            {
+              label: 'settings.delete',
+              labelArgs:[],
+              action: () => {
+                removeProvider(item.instance_id)
+              },
+              icon: 'mdi-delete',
+              hide: api.providerManifests[item.domain].builtin
+            },
+            {
+              label: 'settings.reload',
+              labelArgs:[],
+              action: () => {
+                reloadProvider(item.instance_id)
+              },
+              icon: 'mdi-refresh',
+            },
+          ]"
+        >
+        
+          <template #prepend>
+            <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" />
+          </template>
+
+          <!-- title -->
+          <template #title>
+            <div class="line-clamp-1">{{ item.name || api.providerManifests[item.domain].name }}</div>
+          </template>
+
+          <!-- subtitle -->
+          <template #subtitle>
+            <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div></template
           >
-            <template #prepend>
-              <provider-icon :domain="item.domain" :size="'40px'" class="listitem-media-thumb" />
-            </template>
-
-            <!-- title -->
-            <template #title>
-              <div class="line-clamp-1">{{ item.name || api.providerManifests[item.domain].name }}</div>
-            </template>
-
-            <!-- subtitle -->
-            <template #subtitle>
-              <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div></template
+          <!-- actions -->
+          <template #append>
+            <!-- sync running -->
+            <Button
+              v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0"
+              icon
+              :title="$t('settings.sync_running')"
             >
-            <!-- append -->
-            <template #append>
-              <div>
-                <!-- start -->
-                <div v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0">
-                  <v-tooltip location="top end" origin="end center">
-                    <template #activator="{ props: tooltip }">
-                      <Button icon v-bind="tooltip">
-                        <v-icon v-bind="tooltip" color="grey"> mdi-sync </v-icon>
-                      </Button>
-                    </template>
-                    <span>{{ $t('settings.sync_running') }}</span>
-                  </v-tooltip>
-                </div>
+              <v-icon color="grey"> mdi-sync </v-icon>
+            </Button>
 
-                <!-- provider disabled -->
-                <div v-if="!item.enabled">
-                  <v-tooltip location="top end" origin="end center">
-                    <template #activator="{ props: tooltip }">
-                      <Button icon v-bind="tooltip">
-                        <v-icon v-bind="tooltip" color="grey"> mdi-cancel </v-icon>
-                      </Button>
-                    </template>
-                    <span>{{ $t('settings.provider_disabled') }}</span>
-                  </v-tooltip>
-                </div>
+            <!-- provider disabled -->
+            <Button v-if="!item.enabled" icon :title="$t('settings.provider_disabled')">
+              <v-icon color="grey"> mdi-cancel </v-icon>
+            </Button>
 
-                <!-- provider has errors -->
-                <div v-else-if="item.last_error">
-                  <v-tooltip location="top end" origin="end center">
-                    <template #activator="{ props: tooltip }">
-                      <Button icon v-bind="tooltip">
-                        <v-icon v-bind="tooltip" color="red"> mdi-alert-circle </v-icon>
-                      </Button>
-                    </template>
-                    <span>{{ item.last_error }}</span>
-                  </v-tooltip>
-                </div>
+            <!-- provider has errors -->
+            <Button v-else-if="item.last_error" icon :title="item.last_error">
+              <v-icon color="red"> mdi-alert-circle </v-icon>
+            </Button>
 
-                <!-- loading (provider not yet available) -->
-                <div v-else-if="!api.providers[item.instance_id]?.available">
-                  <v-tooltip location="top end" origin="end center">
-                    <template #activator="{ props: tooltip }">
-                      <Button icon v-bind="tooltip">
-                        <v-icon icon="mdi-timer-sand" />
-                      </Button>
-                    </template>
-                    <span>{{ $t('settings.not_loaded') }}</span>
-                  </v-tooltip>
-                </div>
-                <!-- end -->
-                <!-- contextmenu-->
-                <v-menu location="bottom end">
-                  <template #activator="{ props }">
-                    <Button icon v-bind="props">
-                      <v-icon icon="mdi-dots-vertical" />
-                    </Button>
-                  </template>
-                  <v-list>
-                    <ListItem
-                      :title="$t('settings.configure')"
-                      prepend-icon="mdi-cog"
-                      @click="editProvider(item.instance_id)"
-                    />
-                    <ListItem
-                      :title="item.enabled ? $t('settings.disable') : $t('settings.enable')"
-                      prepend-icon="mdi-cancel"
-                      :disabled="api.providerManifests[item.domain].builtin"
-                      @click="toggleEnabled(item)"
-                    />
-                    <ListItem
-                      v-if="api.providerManifests[item.domain].documentation"
-                      :title="$t('settings.documentation')"
-                      prepend-icon="mdi-bookshelf"
-                      :href="api.providerManifests[item.domain].documentation"
-                      target="_blank"
-                    />
-                    <ListItem
-                      v-if="api.providers[item.instance_id]?.available && provType == ProviderType.MUSIC"
-                      :title="$t('settings.sync')"
-                      prepend-icon="mdi-sync"
-                      @click="api.startSync(undefined, [item.instance_id])"
-                    />
-                    <ListItem
-                      v-if="
-                        !api.providerManifests[item.domain].builtin &&
-                        !api.providerManifests[item.domain].load_by_default
-                      "
-                      :title="$t('settings.delete')"
-                      prepend-icon="mdi-delete"
-                      @click="removeProvider(item.instance_id)"
-                    />
-                    <ListItem
-                      :title="$t('settings.reload')"
-                      prepend-icon="mdi-refresh"
-                      @click="reloadProvider(item.instance_id)"
-                    />
-                  </v-list>
-                </v-menu>
-              </div>
-            </template>
-          </ListItem>
-        </RecycleScroller>
+            <!-- loading (provider not yet available) -->
+            <Button v-else-if="!api.providers[item.instance_id]?.available" icon :title="$t('settings.not_loaded')">
+              <v-icon icon="mdi-timer-sand" />
+            </Button>
+
+          </template>
+        </ListItem>
       </Container>
     </v-card>
   </Container>
@@ -195,7 +169,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
-import { RecycleScroller } from 'vue-virtual-scroller';
 import { api } from '@/plugins/api';
 import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
@@ -275,6 +248,10 @@ const reloadProvider = function (providerInstanceId: string) {
     .catch((err) => alert(err));
 };
 
+const openLinkInNewTab = function (url: string) {
+  window.open(url, '_blank');
+}
+
 // watchers
 watch(
   () => api.providers,
@@ -285,8 +262,9 @@ watch(
 );
 </script>
 
-<style>
+<style scoped>
 .titlebar {
   padding: 10px 0px;
 }
+
 </style>

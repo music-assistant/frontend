@@ -373,7 +373,7 @@ export interface MediaItem {
   provider_mappings: ProviderMapping[];
 
   metadata: MediaItemMetadata;
-  in_library: boolean;
+  favorite: boolean;
   media_type: MediaType;
   sort_name?: string;
   uri: string;
@@ -577,10 +577,12 @@ export interface ProviderManifest {
   hidden: boolean;
   // load_by_default: load this provider by default (mostly used together with `builtin`)
   load_by_default: boolean;
-  // icon: material design icon (starts with md: or mdi:) or base64 encoded image
+  // icon: material design icon
   icon?: string;
-  // icon_dark: same as icon but seperate dark icon if needed.
-  icon_dark?: string;
+  // icon_svg: svg icon (full xml string)
+  icon_svg?: string;
+  // icon_svg_dark: optional separate dark svg icon (full xml string)
+  icon_svg_dark?: string;
 }
 
 export interface ProviderInstance {

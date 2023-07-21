@@ -33,7 +33,7 @@
             <Button
               v-if="store.topBarContextMenuItems.length > 0"
               icon
-              style="height: 50px; height: 38px !important"
+              style="right:3px;"
               v-bind="props"
             >
               <v-icon icon="mdi-dots-vertical" />
@@ -41,10 +41,11 @@
           </template>
           <v-list>
             <ListItem
-              v-for="(item, index) in store.topBarContextMenuItems"
+              v-for="(item, index) in store.topBarContextMenuItems.filter(x => x.hide != true)"
               :key="index"
               :title="$t(item.label, item.labelArgs)"
               @click="item.action ? item.action() : ''"
+              :disabled="item.disabled == true"
             >
               <template #prepend>
                 <v-avatar :icon="item.icon" />
@@ -160,7 +161,7 @@ const backButton = function () {
 };
 </script>
 
-<style>
+<style scoped>
 .main-app-bar {
   height: 80px;
   padding-left: 0;
@@ -180,4 +181,5 @@ const backButton = function () {
 .main-app-bar > div > div.v-toolbar__append {
   flex: none;
 }
+
 </style>

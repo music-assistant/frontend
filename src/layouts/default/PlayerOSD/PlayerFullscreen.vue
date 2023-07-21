@@ -332,9 +332,9 @@ import NextBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue';
 import PreviousBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue';
 import ShuffleBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue';
 import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
-import { imgCoverDark, imgCoverLight } from '@/components/ProviderIcons.vue';
+import { imgCoverDark, imgCoverLight } from '@/components/QualityDetailsBtn.vue';
 import PlayerControls from './PlayerControls.vue';
-import QualityDetailsBtn from './QualityDetailsBtn.vue';
+import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
 import router from '@/plugins/router';
 import Flicking from '@egjs/vue3-flicking';
 
@@ -399,7 +399,7 @@ watch(
   () => curQueueItem.value,
   async (result) => {
     if (result && result.media_item && result.media_item.media_type === MediaType.TRACK) {
-      fullTrackDetails.value = (await api.getItemByUri(result.media_item.uri, undefined, false)) as Track;
+      fullTrackDetails.value = (await api.getItemByUri(result.media_item.uri)) as Track;
     }
   },
 );

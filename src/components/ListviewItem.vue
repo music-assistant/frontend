@@ -7,6 +7,7 @@
       :disabled="!itemIsAvailable(item) || isDisabled"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
+      :context-menu-items="showMenu ? getContextMenuItems([item], parentItem): []"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -114,37 +115,33 @@
         <v-img
           v-if="HiResDetails"
           :src="iconHiRes"
-          width="35"
-          :style="$vuetify.theme.current.dark ? 'margin-top:5px;' : 'margin-top:5px;filter: invert(100%);'"
+          width="30"
+          :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
         >
           <v-tooltip activator="parent" location="bottom">
             {{ HiResDetails }}
           </v-tooltip>
         </v-img>
 
-        <!-- provider icons -->
-        <provider-icons
-          v-if="item.provider_mappings && getBreakpointValue('bp2') && showProviders"
-          :provider-mappings="item.provider_mappings"
-          :height="24"
+        <!-- provider icon -->
+        <provider-icon
+          v-if="getBreakpointValue('bp2') && showProvider"
+          :domain="item.media_type == MediaType.PLAYLIST ? item.provider_mappings[0].provider_domain : item.provider"
+          :size="24"
         />
 
-        <!-- in library (heart) icon -->
-        <div v-if="getBreakpointValue('bp3') && 'in_library' in item && showLibrary && !$vuetify.display.mobile">
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <v-btn
-                variant="plain"
-                ripple
-                v-bind="props"
-                :icon="item.in_library ? 'mdi-heart' : 'mdi-heart-outline'"
-                @click="api.toggleLibrary(item)"
-                @click.prevent
-                @click.stop
-              />
-            </template>
-            <span>{{ $t('tooltip.library') }}</span>
-          </v-tooltip>
+        <!-- favorite (heart) icon -->
+        <div v-if="getBreakpointValue('bp3') && 'favorite' in item && showFavorite && !$vuetify.display.mobile">
+          <v-btn
+            variant="plain"
+            ripple
+            v-bind="props"
+            :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+            @click="api.toggleFavorite(item)"
+            @click.prevent
+            @click.stop
+            :title="$t('tooltip.favorite')"
+          />
         </div>
 
         <!-- track duration -->
@@ -154,7 +151,7 @@
             item.media_type == MediaType.TRACK &&
             'duration' in item &&
             item.duration != undefined &&
-            getBreakpointValue('bp2')
+            getBreakpointValue('bp0')
           "
         >
           <div>
@@ -162,11 +159,6 @@
               formatDuration(item.duration)
             }}</span>
           </div>
-        </div>
-        <slot name="append"></slot>
-        <!-- menu button/icon -->
-        <div v-if="getBreakpointValue('bp1') && showMenu">
-          <v-btn variant="plain" ripple v-bind="props" icon="mdi-dots-vertical" @click.stop="emit('menu', item)" />
         </div>
       </template>
     </ListItem>
@@ -177,7 +169,8 @@
 import { computed } from 'vue';
 import { VTooltip } from 'vuetify/components';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ProviderIcons, { iconHiRes } from './ProviderIcons.vue';
+import { iconHiRes } from './QualityDetailsBtn.vue';
+import ProviderIcon from './ProviderIcon.vue';
 import {
   ContentType,
   type BrowseFolder,
@@ -190,6 +183,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
+import {getContextMenuItems} from "@/components/MediaItemContextMenu.vue"
 
 // properties
 export interface Props {
@@ -197,10 +191,10 @@ export interface Props {
   showTrackNumber?: boolean;
   showDiscNumber?: boolean;
   showPosition?: boolean;
-  showProviders?: boolean;
+  showProvider?: boolean;
   showAlbum?: boolean;
   showMenu?: boolean;
-  showLibrary?: boolean;
+  showFavorite?: boolean;
   showDuration?: boolean;
   isSelected: boolean;
   isDisabled?: boolean;
@@ -215,11 +209,11 @@ const { t } = useI18n();
 const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showDiscNumber: true,
-  showProviders: true,
+  showProvider: true,
   showPosition: true,
   showAlbum: true,
   showMenu: true,
-  showLibrary: true,
+  showFavorite: false,
   showDuration: true,
   showCheckboxes: false,
   parentItem: undefined,
@@ -230,10 +224,10 @@ const props = withDefaults(defineProps<Props>(), {
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
-    if (!(prov.audio_format.content_type in [ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV]))
+    if (![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type))
       continue;
     if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
-      return `${prov.audio_format.sample_rate}kHz ${prov.audio_format.bit_depth} bits`;
+      return `${prov.audio_format.sample_rate/1000}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';
@@ -259,3 +253,17 @@ const itemIsAvailable = function (item: MediaItem) {
   return false;
 };
 </script>
+
+<style scoped>
+.hiresicon {
+  margin-top:5px;
+  margin-right: 15px;
+  margin-left: 15px;
+  filter: invert(100%);
+}
+.hiresicondark {
+  margin-top:5px;
+  margin-right: 15px;
+  margin-left: 15px;
+}
+</style>

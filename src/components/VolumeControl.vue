@@ -19,8 +19,8 @@
 
           <PlayerVolume
             class="vc-slider"
-            :is-powered="true"
-            :disabled="!player.powered"
+            width="100%"
+            :is-powered="player.powered"
             :model-value="Math.round(player.group_volume)"
             @update:model-value="api.playerCommandGroupVolume(player.player_id, $event)"
           />
@@ -51,8 +51,8 @@
           <h6>{{ truncateString(childPlayer.display_name, 27) }}</h6>
           <PlayerVolume
             class="vc-slider"
-            :is-powered="true"
-            :disabled="!childPlayer.powered"
+            width="100%"
+            :is-powered="childPlayer.powered"
             :model-value="Math.round(childPlayer.volume_level)"
             @update:model-value="api.playerCommandVolumeSet(childPlayer.player_id, $event)"
           />
@@ -105,7 +105,6 @@
 <script setup lang="ts">
 import { Player, PlayerType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
-import { store } from '@/plugins/store';
 import { truncateString, getPlayerName } from '../utils';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
 import ListItem from '@/components/mods/ListItem.vue';

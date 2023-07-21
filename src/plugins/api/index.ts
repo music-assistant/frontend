@@ -168,15 +168,15 @@ export class MusicAssistantApi {
     return removeCallback;
   }
 
-  public getTracks(
-    in_library?: boolean,
+  public getLibraryTracks(
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
-    return this.getData('music/tracks', {
-      in_library,
+    return this.getData('music/tracks/library_items', {
+      favorite,
       search,
       limit,
       offset,
@@ -184,112 +184,81 @@ export class MusicAssistantApi {
     });
   }
 
-  public getTrack(
-    item_id: string,
-    provider_instance_id_or_domain: string,
-    force_refresh?: boolean,
-    lazy?: boolean,
-    album?: string,
-  ): Promise<Track> {
-    return this.getData('music/track', {
+  public getTrack(item_id: string, provider_instance_id_or_domain: string, album_uri?: string): Promise<Track> {
+    return this.getData('music/tracks/get_track', {
       item_id,
       provider_instance_id_or_domain,
-      force_refresh,
-      lazy,
-      album_uri: album,
+      album_uri: album_uri,
     });
   }
 
   public getTrackVersions(item_id: string, provider_instance_id_or_domain: string): Promise<Track[]> {
-    return this.getData('music/track/versions', {
+    return this.getData('music/tracks/track_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
   public getTrackAlbums(item_id: string, provider_instance_id_or_domain: string): Promise<Album[]> {
-    return this.getData('music/track/albums', {
+    return this.getData('music/tracks/track_albums', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getTrackPreviewUrl(provider_instance_id_or_domain: string, item_id: string): Promise<string> {
-    return this.getData('music/track/preview', {
-      provider_instance_id_or_domain,
-      item_id,
-    });
+  public getTrackPreviewUrl(provider_instance_id_or_domain: string, item_id: string): string {
+    const encItemId = encodeURIComponent(encodeURIComponent(item_id));
+    return `${api.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
   }
 
-  public getArtists(
-    in_library?: boolean,
+  public getLibraryArtists(
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    album_artists_only?: boolean,
   ): Promise<PagedItems> {
-    return this.getData('music/artists', {
-      in_library,
+    return this.getData('music/artists/library_items', {
+      favorite,
       search,
       limit,
       offset,
       order_by,
+      album_artists_only,
     });
   }
 
-  public getAlbumArtists(
-    in_library?: boolean,
-    search?: string,
-    limit?: number,
-    offset?: number,
-    order_by?: string,
-  ): Promise<PagedItems> {
-    return this.getData('music/albumartists', {
-      in_library,
-      search,
-      limit,
-      offset,
-      order_by,
-    });
-  }
-
-  public getArtist(
-    item_id: string,
-    provider_instance_id_or_domain: string,
-    force_refresh?: boolean,
-    lazy?: boolean,
-  ): Promise<Artist> {
-    return this.getData('music/artist', {
+  public getArtist(item_id: string, provider_instance_id_or_domain: string): Promise<Artist> {
+    return this.getData('music/artists/get_artist', {
       item_id,
       provider_instance_id_or_domain,
-      force_refresh,
-      lazy,
     });
   }
 
   public getArtistTracks(item_id: string, provider_instance_id_or_domain: string): Promise<Track[]> {
-    return this.getData('music/artist/tracks', {
+    return this.getData('music/artists/artist_tracks', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
   public getArtistAlbums(item_id: string, provider_instance_id_or_domain: string): Promise<Album[]> {
-    return this.getData('music/artist/albums', {
+    return this.getData('music/artists/artist_albums', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getAlbums(
-    in_library?: boolean,
+  public getLibraryAlbums(
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
-    return this.getData('music/albums', {
-      in_library,
+    return this.getData('music/albums/library_items', {
+      favorite,
       search,
       limit,
       offset,
@@ -297,43 +266,36 @@ export class MusicAssistantApi {
     });
   }
 
-  public getAlbum(
-    item_id: string,
-    provider_instance_id_or_domain: string,
-    force_refresh?: boolean,
-    lazy?: boolean,
-  ): Promise<Album> {
-    return this.getData('music/album', {
+  public getAlbum(item_id: string, provider_instance_id_or_domain: string): Promise<Album> {
+    return this.getData('music/albums/get_album', {
       item_id,
       provider_instance_id_or_domain,
-      force_refresh,
-      lazy,
     });
   }
 
   public getAlbumTracks(item_id: string, provider_instance_id_or_domain: string): Promise<Track[]> {
-    return this.getData('music/album/tracks', {
+    return this.getData('music/albums/album_tracks', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
   public getAlbumVersions(item_id: string, provider_instance_id_or_domain: string): Promise<Album[]> {
-    return this.getData('music/album/versions', {
+    return this.getData('music/albums/album_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getPlaylists(
-    in_library?: boolean,
+  public getLibraryPlaylists(
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
-    return this.getData('music/playlists', {
-      in_library,
+    return this.getData('music/playlists/library_items', {
+      favorite,
       search,
       limit,
       offset,
@@ -347,11 +309,9 @@ export class MusicAssistantApi {
     force_refresh?: boolean,
     lazy?: boolean,
   ): Promise<Playlist> {
-    return this.getData('music/playlist', {
+    return this.getData('music/playlists/get_playlist', {
       item_id,
       provider_instance_id_or_domain,
-      force_refresh,
-      lazy,
     });
   }
 
@@ -361,7 +321,7 @@ export class MusicAssistantApi {
     chunkCallback?: chunkCallback,
   ): Promise<Track[]> {
     return this.getData(
-      'music/playlist/tracks',
+      'music/playlists/playlist_tracks',
       {
         item_id,
         provider_instance_id_or_domain,
@@ -371,29 +331,29 @@ export class MusicAssistantApi {
   }
 
   public addPlaylistTracks(db_playlist_id: string | number, uris: string[]) {
-    this.sendCommand('music/playlist/tracks/add', { db_playlist_id, uris });
+    this.sendCommand('music/playlists/add_playlist_tracks', { db_playlist_id, uris });
   }
 
   public removePlaylistTracks(db_playlist_id: string | number, positions_to_remove: number[]) {
-    this.sendCommand('music/playlist/tracks/remove', {
+    this.sendCommand('music/playlists/remove_playlist_tracks', {
       db_playlist_id,
       positions_to_remove,
     });
   }
 
   public createPlaylist(name: string, provider?: string): Promise<Playlist> {
-    return this.getData('music/playlist/create', { name, provider });
+    return this.getData('music/playlists/create_playlist', { name, provider });
   }
 
-  public getRadios(
-    in_library?: boolean,
+  public getLibraryRadios(
+    favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
-    return this.getData('music/radios', {
-      in_library,
+    return this.getData('music/radio/library_items', {
+      favorite,
       search,
       limit,
       offset,
@@ -407,7 +367,7 @@ export class MusicAssistantApi {
     force_refresh?: boolean,
     lazy?: boolean,
   ): Promise<Radio> {
-    return this.getData('music/radio', {
+    return this.getData('music/radio/get_radio', {
       item_id,
       provider_instance_id_or_domain,
       force_refresh,
@@ -416,18 +376,16 @@ export class MusicAssistantApi {
   }
 
   public getRadioVersions(item_id: string, provider_instance_id_or_domain: string): Promise<Radio[]> {
-    return this.getData('music/radio/versions', {
+    return this.getData('music/radio/radio_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getItemByUri(uri: string, force_refresh?: boolean, lazy?: boolean): Promise<MediaItemType> {
+  public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
     return this.getData('music/item_by_uri', {
       uri,
-      force_refresh,
-      lazy,
     });
   }
 
@@ -442,73 +400,59 @@ export class MusicAssistantApi {
     media_type: MediaType,
     item_id: string,
     provider_instance_id_or_domain: string,
-    force_refresh?: boolean,
-    lazy?: boolean,
   ): Promise<MediaItemType> {
     // Get single music item by id and media type.
     return this.getData('music/item', {
       media_type,
       item_id,
       provider_instance_id_or_domain,
-      force_refresh,
-      lazy,
     });
   }
 
-  public async addToLibrary(media_type: MediaType, item_id: string, provider_instance_id_or_domain: string) {
-    // Add an item to the library.
-    this.sendCommand('music/library/add', {
-      media_type,
-      item_id,
-      provider_instance_id_or_domain,
+  public async addItemToLibrary(item: string | MediaItemType) {
+    // Add an item (uri or mediaitem) to the library.
+    this.sendCommand('music/library/add_item', {
+      item,
     });
   }
-  public async addItemsToLibrary(items: Array<MediaItemType | string>) {
-    // Add multiple items to the library (provide uri or MediaItem).
-    this.sendCommand('music/library/add_items', { items });
-    // optimistically set the value
-    for (const item of items) {
-      if (typeof item !== 'string') {
-        item.in_library = true;
-      }
-    }
-  }
 
-  public async removeFromLibrary(media_type: MediaType, item_id: string, provider_instance_id_or_domain: string) {
+  public async removeItemFromLibrary(media_type: MediaType, library_item_id: string | number) {
     // Remove an item from the library.
-    this.sendCommand('music/library/remove', {
+    this.sendCommand('music/library/remove_item', {
       media_type,
-      item_id,
-      provider_instance_id_or_domain,
+      library_item_id,
     });
   }
-  public async removeItemsFromLibrary(items: Array<MediaItemType | string>) {
-    // Remove multiple items from the library (provide uri or MediaItem).
-    this.sendCommand('music/library/remove_items', { items });
+
+  public async addItemToFavorites(item: string | MediaItemType) {
+    // Add an item (uri or mediaitem) to the favorites.
+    this.sendCommand('music/favorites/add_item', {
+      item,
+    });
     // optimistically set the value
-    for (const item of items) {
-      if (typeof item !== 'string') {
-        item.in_library = false;
-      }
+    if (typeof item !== 'string') {
+      item.favorite = true;
     }
   }
-
-  public async toggleLibrary(item: MediaItemType) {
-    // Toggle in_library for a media item
-    if (item.in_library) {
-      await this.removeItemsFromLibrary([item]);
-    } else {
-      await this.addItemsToLibrary([item]);
-    }
-  }
-
-  public async deleteDbItem(media_type: MediaType, db_item_id: string | number, recursive = false) {
-    // Remove item from the database.
-    this.sendCommand('music/delete', {
+  public async removeItemFromFavorites(media_type: MediaType, library_item_id: string | number) {
+    // Add an item (uri or mediaitem) to the favorites.
+    this.sendCommand('music/favorites/remove_item', {
       media_type,
-      db_item_id,
-      recursive,
+      library_item_id,
     });
+  }
+
+  public toggleFavorite(item: MediaItemType) {
+    // Toggle favorite for a media item
+    if (item.favorite) {
+      this.removeItemFromFavorites(item.media_type, item.item_id);
+      // optimistically set the value
+      item.favorite = false;
+    } else {
+      this.addItemToFavorites(item);
+      // optimistically set the value
+      item.favorite = true;
+    }
   }
 
   public browse(path?: string): Promise<BrowseFolder> {
@@ -772,6 +716,7 @@ export class MusicAssistantApi {
     media: string | string[] | MediaItemType | MediaItemType[],
     option: QueueOption = QueueOption.PLAY,
     radio_mode?: boolean,
+    start_item?: string,
     queue_id?: string,
   ) {
     if (!queue_id && store.selectedPlayer && store.selectedPlayer?.active_source in this.players) {
@@ -784,27 +729,8 @@ export class MusicAssistantApi {
       media,
       option,
       radio_mode,
+      start_item
     });
-  }
-
-  public async playPlaylistFromIndex(playlist: Playlist, startIndex: number, queue_id?: string) {
-    const tracks = await this.getPlaylistTracks(playlist.item_id, playlist.provider);
-    // to account for shuffle, we play the first track and append the rest
-    this.playMedia(tracks[startIndex], QueueOption.REPLACE, undefined, queue_id);
-    this.playMedia(tracks.slice(startIndex + 1), QueueOption.ADD, undefined, queue_id);
-  }
-
-  public async playAlbumFromItem(album: Album, startItem: Track, queue_id?: string) {
-    const tracks = await this.getAlbumTracks(album.item_id, album.provider);
-    let startIndex = 0;
-    tracks.forEach(function (track, i) {
-      if (track.item_id == startItem.item_id) {
-        startIndex = i;
-      }
-    });
-    // to account for shuffle, we play the first track and append the rest
-    this.playMedia(tracks[startIndex], QueueOption.REPLACE, undefined, queue_id);
-    this.playMedia(tracks.slice(startIndex + 1), QueueOption.ADD, undefined, queue_id);
   }
 
   // ProviderConfig related functions
@@ -1133,7 +1059,7 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     }
 
-    for (const prov of await this.getData<ProviderManifest[]>('providers/available')) {
+    for (const prov of await this.getData<ProviderManifest[]>('providers/manifests')) {
       this.providerManifests[prov.domain] = prov;
     }
 
