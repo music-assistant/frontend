@@ -349,7 +349,6 @@ const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(true);
 const activeProviderFilter = ref<string>('library');
 const expanded = ref(true);
-const hasFocus = ref(false);
 
 // computed properties
 
@@ -635,6 +634,15 @@ const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
+    // CTRL-A (select all requested)
+    // fetch all items first
+    while (allItems.value.length < totalItems.value!) {
+      if (totalItems.value !== undefined && offset.value >= totalItems.value) {
+        break;
+      }
+      offset.value += defaultLimit;
+      loadData();
+    }
     selectedItems.value = allItems.value;
     showCheckboxes.value = true;
   } else if (!searchHasFocus.value && e.key == 'Backspace') {
