@@ -1,27 +1,29 @@
 <template>
-  <Container>
-    <ItemsListing
-      itemtype="artists"
-      :items="items"
-      :show-provider="false"
-      :show-favorites-only-filter="true"
-      :load-data="loadItems"
-      :show-album-artists-only-filter="true"
-      :update-available="updateAvailable"
-    />
-  </Container>
+  <ItemsListing
+    itemtype="artists"
+    :items="items"
+    :show-provider="false"
+    :show-favorites-only-filter="true"
+    :load-data="loadItems"
+    :show-album-artists-only-filter="true"
+    :update-available="updateAvailable"
+    :title="$t('artists')"
+    :allow-key-hooks="true"
+    @refresh-clicked="
+      () => {
+        api.startSync([MediaType.ARTIST]);
+        updateAvailable = false;
+      }
+    "
+  />
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, type Artist, EventMessage, EventType } from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
-import Container from '../components/mods/Container.vue';
 
-const { t } = useI18n();
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
@@ -35,20 +37,6 @@ const loadItems = async function (params: LoadDataParams) {
     params.sortBy,
   );
 };
-
-store.topBarContextMenuItems = [
-  {
-    label: 'sync_now',
-    labelArgs: [t('artists')],
-    action: () => {
-      api.startSync([MediaType.ARTIST]);
-    },
-    icon: 'mdi-sync',
-  },
-];
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
-});
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library

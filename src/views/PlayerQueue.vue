@@ -1,13 +1,44 @@
 <template>
   <section>
-    <v-tabs v-model="activePanel" show-arrows grow>
-      <v-tab :value="0">
-        {{ $t('queue_next_items') + ' (' + nextItems.length + ')' }}
-      </v-tab>
-      <v-tab :value="1">
-        {{ $t('queue_previous_items') + ' (' + previousItems.length + ')' }}
-      </v-tab>
-    </v-tabs>
+    <v-toolbar variant="flat" color="transparent" style="height: 50px">
+      <template #title>
+        {{ $t('queue') }} | {{ store.selectedPlayer?.display_name }}
+        <v-badge v-if="!getBreakpointValue('bp1')" color="grey" :content="nextItems.length" inline />
+      </template>
+      <template #append>
+        <v-tabs v-if="getBreakpointValue('bp1')" v-model="activePanel" show-arrows grow>
+          <v-tab :value="0">
+            {{ $t('queue_next_items') }}
+            <v-badge color="grey" :content="nextItems.length" inline />
+          </v-tab>
+          <v-tab :value="1">
+            {{ $t('queue_previous_items') }}
+            <v-badge color="grey" :content="previousItems.length" inline />
+          </v-tab>
+        </v-tabs>
+        <!-- contextmenu -->
+        <v-menu v-if="topBarContextMenuItems && topBarContextMenuItems.length > 0" location="bottom end">
+          <template #activator="{ props }">
+            <Button icon style="right: 3px" v-bind="props">
+              <v-icon icon="mdi-dots-vertical" />
+            </Button>
+          </template>
+          <v-list>
+            <ListItem
+              v-for="(item, index) in topBarContextMenuItems.filter((x) => x.hide != true)"
+              :key="index"
+              :title="$t(item.label, item.labelArgs)"
+              :disabled="item.disabled == true"
+              @click="item.action ? item.action() : ''"
+            >
+              <template #prepend>
+                <v-avatar :icon="item.icon" />
+              </template>
+            </ListItem>
+          </v-list>
+        </v-menu>
+      </template>
+    </v-toolbar>
 
     <Container>
       <Alert v-if="activePlayerQueue && activePlayerQueue?.radio_source.length > 0" icon="mdi-radio-tower">
@@ -46,40 +77,23 @@
         >
           <template #append>
             <!-- move up -->
-            <div v-if="!$vuetify.display.mobile">
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-btn
-                    variant="plain"
-                    ripple
-                    v-bind="props"
-                    icon="mdi-arrow-up"
-                    @click="api.queueCommandMoveUp(activePlayerQueue!.queue_id, item.queue_item_id)"
-                    @click.prevent
-                    @click.stop
-                  />
-                </template>
-                <span>{{ $t('queue_move_up') }}</span>
-              </v-tooltip>
-            </div>
+            <v-btn
+              v-if="getBreakpointValue('bp1')"
+              variant="plain"
+              ripple
+              icon="mdi-arrow-up"
+              :title="$t('queue_move_up')"
+              @click="api.queueCommandMoveUp(activePlayerQueue!.queue_id, item.queue_item_id)"
+              @click.prevent
+              @click.stop
+            />
 
             <!-- move down -->
-            <div v-if="!$vuetify.display.mobile">
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-btn
-                    variant="plain"
-                    ripple
-                    v-bind="props"
-                    icon="mdi-arrow-down"
-                    @click="api.queueCommandMoveDown(activePlayerQueue!.queue_id, item.queue_item_id)"
-                    @click.prevent
-                    @click.stop
-                  />
-                </template>
-                <span>{{ $t('queue_move_down') }}</span>
-              </v-tooltip>
-            </div>
+            <v-btn
+              icon="mdi-arrow-down"
+              :title="$t('queue_move_down')"
+              @click.prevent="api.queueCommandMoveDown(activePlayerQueue!.queue_id, item.queue_item_id)"
+            />
           </template>
         </ListviewItem>
       </RecycleScroller>
@@ -188,9 +202,12 @@ import { truncateString } from '@/helpers/utils';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import ListviewItem from '@/components/ListviewItem.vue';
+import Button from '@/components/mods/Button.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
 import Alert from '@/components/mods/Alert.vue';
+import { ContextMenuItem } from '@/helpers/contextmenu';
 
 // global refs
 const { t } = useI18n();
@@ -200,6 +217,7 @@ const router = useRouter();
 const activePanel = ref(0);
 const selectedItem = ref<QueueItem>();
 const showContextMenu = ref(false);
+const topBarContextMenuItems = ref<ContextMenuItem[]>([]);
 
 const items = ref<QueueItem[]>([]);
 
@@ -248,14 +266,12 @@ onMounted(() => {
 // methods
 const loadItems = async function () {
   if (activePlayerQueue.value) {
-    store.topBarTitle = activePlayerQueue.value.display_name;
     items.value = [];
     await api.getPlayerQueueItems(activePlayerQueue.value.queue_id, (data: QueueItem[]) => {
       console.log('chunk', data.length);
       items.value.push(...data);
     });
   } else {
-    store.topBarTitle = undefined;
     items.value = [];
   }
 };
@@ -292,7 +308,7 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
 
 const setMenuItems = function () {
   // set items in topbar contextmenu
-  store.topBarContextMenuItems = [
+  topBarContextMenuItems.value = [
     {
       label: 'settings.player_settings',
       labelArgs: [],

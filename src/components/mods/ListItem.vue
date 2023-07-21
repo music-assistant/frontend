@@ -13,7 +13,7 @@
       <div v-if="contextMenuItems.length > 0" class="contextmenubtn">
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <v-btn v-bind="props" id="menu" variant="plain" ripple icon="mdi-dots-vertical" />
+            <v-btn v-bind="props" id="menu" variant="plain" :ripple="false" icon="mdi-dots-vertical" />
           </template>
           <v-list>
             <ListItem
@@ -95,6 +95,5 @@ export default {
 
 .contextmenubtn {
   width: 25px;
-  margin-right: -13px;
 }
 </style>

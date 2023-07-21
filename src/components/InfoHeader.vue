@@ -117,6 +117,27 @@
             >
               {{ $t('play') }}
             </v-btn>
+            <!-- contextmenu button -->
+            <v-menu>
+              <template #activator="{ props }">
+                <Button icon style="margin-top: -8px" v-bind="props">
+                  <v-icon icon="mdi-dots-vertical" />
+                </Button>
+              </template>
+              <v-list>
+                <ListItem
+                  v-for="(menuItem, index) in getContextMenuItems([item], item).filter((x) => x.hide != true)"
+                  :key="index"
+                  :title="$t(menuItem.label, menuItem.labelArgs)"
+                  :disabled="menuItem.disabled == true"
+                  @click="menuItem.action ? menuItem.action() : ''"
+                >
+                  <template #prepend>
+                    <v-avatar :icon="menuItem.icon" />
+                  </template>
+                </ListItem>
+              </v-list>
+            </v-menu>
 
             <!-- favorite (heart) icon -->
             <v-btn
@@ -124,11 +145,14 @@
               ripple
               :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
               size="x-large"
-              style="margin-top: -15px"
+              style="margin-top: -14px"
+              :title="$t('tooltip.favorite')"
               @click="api.toggleFavorite(item)"
               @click.prevent
               @click.stop
             />
+            <!-- provider icon -->
+            <provider-icon :domain="item.provider" :size="25" style="margin-top: 4px" />
           </div>
 
           <!-- Description/metadata -->
@@ -162,12 +186,6 @@
           </div>
         </div>
       </v-layout>
-      <v-layout v-if="item" style="z-index: 800; height: 100%; padding-left: 15px">
-        <!-- active/filtered provider icon -->
-        <div v-if="item" style="position: absolute; float: right; right: 15px; top: 15px">
-          <provider-icon :domain="item.provider" :size="25" />
-        </div>
-      </v-layout>
     </v-card>
     <v-dialog v-model="showFullInfo" max-width="975" width="auto">
       <v-card>
@@ -193,8 +211,9 @@ import { useDisplay } from 'vuetify';
 import { api } from '@/plugins/api';
 import { ImageType, Track, MediaType } from '@/plugins/api/interfaces';
 import type { Album, Artist, ItemMapping, MediaItemType } from '@/plugins/api/interfaces';
-import { computed, ref, watch, onBeforeUnmount } from 'vue';
+import { computed, ref, watch } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
+import Button from './mods/Button.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
 import { parseBool } from '@/helpers/utils';
@@ -221,20 +240,12 @@ watch(
   () => compProps.item,
   async (val) => {
     if (val) {
-      store.topBarTitle = val.name;
-
       fanartImage.value =
         getImageThumbForItem(compProps.item, ImageType.FANART) || getImageThumbForItem(compProps.item, ImageType.THUMB);
-
-      store.topBarContextMenuItems = getContextMenuItems([val], val, t);
     }
   },
   { immediate: true },
 );
-
-onBeforeUnmount(() => {
-  store.topBarContextMenuItems = [];
-});
 
 const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked

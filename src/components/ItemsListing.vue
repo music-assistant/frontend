@@ -2,251 +2,262 @@
 <template>
   <section v-if="!(hideOnEmpty && allItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-card>
-      <v-toolbar density="compact" variant="flat" color="transparent">
-        <template #title>
-          {{ title }}
-          <v-badge
-            color="grey"
-            :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
-            inline
-          />
-        </template>
-
-        <template #append>
-          <!-- toggle select button -->
-          <v-btn
-            v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
-            v-bind="props"
-            :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
-            variant="plain"
-            :title="$t('tooltip.select_items')"
-            :disabled="!expanded"
-            @click="toggleCheckboxes"
-          />
-
-          <!-- favorites only filter -->
-          <v-btn
-            v-if="showFavoritesOnlyFilter !== false"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="$t('tooltip.filter_favorites')"
-            :disabled="!expanded"
-            @click="toggleFavoriteFilter"
-          >
-            <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
-          </v-btn>
-
-          <!-- album artists only filter -->
-          <v-btn
-            v-if="showAlbumArtistsOnlyFilter"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="$t('tooltip.album_artist_filter')"
-            :disabled="!expanded"
-            @click="toggleAlbumArtistsFilter"
-          >
-            <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
-          </v-btn>
-
-          <!-- refresh button-->
-          <v-btn
-            v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
-            :disabled="!expanded"
-            @click="onRefreshClicked()"
-          >
-            <v-badge :model-value="updateAvailable" color="error" dot>
-              <v-icon icon="mdi-refresh" />
-            </v-badge>
-          </v-btn>
-
-          <!-- sort options -->
-          <v-menu
-            v-if="sortKeys.length > 1"
-            v-model="showSortMenu"
-            location="bottom end"
-            :close-on-content-click="true"
-          >
-            <template #activator="{ props }">
-              <v-btn icon v-bind="props" variant="plain" :disabled="!expanded" :title="$t('tooltip.sort_options')">
-                <v-icon v-bind="props" icon="mdi-sort" />
-              </v-btn>
-            </template>
-            <v-card>
-              <v-list>
-                <div v-for="key of sortKeys" :key="key">
-                  <ListItem @click="changeSort(key)">
-                    <template #title>{{ $t('sort.' + key) }}</template>
-                    <template #append>
-                      <v-icon v-if="sortBy == key" icon="mdi-check" />
-                    </template>
-                  </ListItem>
-                  <v-divider />
-                </div>
-              </v-list>
-            </v-card>
-          </v-menu>
-
-          <!-- toggle search button -->
-          <v-btn
-            v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
-            v-bind="props"
-            icon
-            variant="plain"
-            :title="$t('tooltip.search')"
-            :disabled="!expanded"
-            @click="toggleSearch()"
-          >
-            <v-icon icon="mdi-magnify" />
-          </v-btn>
-
-          <!-- toggle view mode button -->
-          <v-btn
-            v-bind="props"
-            :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-            variant="plain"
-            :title="$t('tooltip.toggle_view_mode')"
-            :disabled="!expanded"
-            @click="toggleViewMode()"
-          />
-
-          <!-- provider filter dropdown -->
-          <v-menu
-            v-if="providerFilter && providerFilter.length > 1"
-            location="bottom end"
-            :close-on-content-click="true"
-          >
-            <template #activator="{ props }">
-              <v-btn icon v-bind="props" variant="plain" :disabled="!expanded">
-                <ProviderIcon :domain="activeProviderFilter" :size="30" />
-              </v-btn>
-            </template>
-            <v-card>
-              <v-list>
-                <div v-for="provId of providerFilter" :key="provId">
-                  <ListItem @click="changeActiveProviderFilter(provId)">
-                    <template #prepend>
-                      <ProviderIcon :domain="provId" :size="30" />
-                    </template>
-                    <template #title>
-                      <span v-if="provId == 'library'">{{ $t('library') }}</span>
-                      <span v-else>{{ api.getProviderName(provId) }}</span>
-                    </template>
-                    <template #append>
-                      <v-icon v-if="activeProviderFilter == provId" icon="mdi-check" />
-                    </template>
-                  </ListItem>
-                  <v-divider />
-                </div>
-              </v-list>
-            </v-card>
-          </v-menu>
-
-          <!-- expand/collapse button -->
-          <v-btn
-            v-if="allowCollapse"
-            :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            variant="plain"
-            :title="$t('tooltip.collapse_expand')"
-            @click="toggleExpand"
-          />
-        </template>
-      </v-toolbar>
-      <v-divider />
-
-      <Container v-if="expanded">
-        <v-text-field
-          v-if="showSearch"
-          id="searchInput"
-          v-model="search"
-          clearable
-          prepend-inner-icon="mdi-magnify"
-          :label="$t('search')"
-          hide-details
-          variant="filled"
-          style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
-          @focus="searchHasFocus = true"
-          @blur="searchHasFocus = false"
+    <v-toolbar density="compact" variant="flat" color="transparent">
+      <template #title>
+        {{ title }}
+        <v-badge
+          color="grey"
+          :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
+          inline
         />
-        <!-- loading animation -->
-        <v-progress-linear v-if="loading" indeterminate />
+      </template>
 
-        <!-- panel view -->
-        <v-row v-if="viewMode == 'panel'">
-          <v-col
-            v-for="item in allItems"
-            :key="item.uri"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          >
-            <PanelviewItem
-              :item="item"
-              :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
-              :show-track-number="showTrackNumber"
-              @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-            />
-          </v-col>
-        </v-row>
+      <template #append>
+        <!-- toggle select button -->
+        <v-btn
+          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
+          v-bind="props"
+          :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
+          variant="plain"
+          :title="$t('tooltip.select_items')"
+          :disabled="!expanded"
+          @click="toggleCheckboxes"
+        />
 
-        <!-- list view -->
-        <div v-if="viewMode == 'list'">
-          <RecycleScroller v-slot="{ item }" :items="allItems" :item-size="70" key-field="uri" page-mode>
-            <ListviewItem
-              :key="item.uri"
-              :item="item"
-              :show-track-number="showTrackNumber"
-              :show-disc-number="showTrackNumber"
-              :show-duration="showDuration"
-              :show-favorite="showFavoritesOnlyFilter"
-              :show-menu="showMenu"
-              :show-provider="showProvider"
-              :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
-              :is-selected="isSelected(item)"
-              :show-details="itemtype.includes('versions')"
-              :parent-item="parentItem"
-              :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
-              @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-            />
-          </RecycleScroller>
-        </div>
+        <!-- favorites only filter -->
+        <v-btn
+          v-if="showFavoritesOnlyFilter !== false"
+          v-bind="props"
+          icon
+          variant="plain"
+          :title="$t('tooltip.filter_favorites')"
+          :disabled="!expanded"
+          @click="toggleFavoriteFilter"
+        >
+          <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
+        </v-btn>
 
-        <!-- inifinite scroll component -->
-        <InfiniteLoading @infinite="loadNextPage" />
+        <!-- album artists only filter -->
+        <v-btn
+          v-if="showAlbumArtistsOnlyFilter"
+          v-bind="props"
+          icon
+          variant="plain"
+          :title="$t('tooltip.album_artist_filter')"
+          :disabled="!expanded"
+          @click="toggleAlbumArtistsFilter"
+        >
+          <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
+        </v-btn>
 
-        <!-- show alert if no item found -->
-        <div v-if="!loading && allItems.length == 0">
-          <Alert v-if="!loading && allItems.length == 0 && (search || favoritesOnly)" :title="$t('no_content_filter')">
-            <v-btn v-if="search" style="margin-top: 15px" @click="redirectSearch">
-              {{ $t('try_global_search') }}
-            </v-btn>
-          </Alert>
-          <Alert v-else-if="!loading && allItems.length == 0">
-            {{ $t('no_content') }}
-          </Alert>
-        </div>
+        <!-- refresh button-->
+        <v-btn
+          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
+          v-bind="props"
+          icon
+          variant="plain"
+          :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+          :disabled="!expanded"
+          @click="onRefreshClicked()"
+        >
+          <v-badge :model-value="updateAvailable" color="error" dot>
+            <v-icon icon="mdi-refresh" />
+          </v-badge>
+        </v-btn>
 
-        <!-- box shown when item(s) selected -->
-        <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom: 120px">
-          <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
-          <template #actions>
-            <v-btn color="primary" variant="text" @click="showPlayMenu(true)">
-              {{ $t('actions') }}
+        <!-- sort options -->
+        <v-menu v-if="sortKeys.length > 1" v-model="showSortMenu" location="bottom end" :close-on-content-click="true">
+          <template #activator="{ props }">
+            <v-btn icon v-bind="props" variant="plain" :disabled="!expanded" :title="$t('tooltip.sort_options')">
+              <v-icon v-bind="props" icon="mdi-sort" />
             </v-btn>
           </template>
-        </v-snackbar>
-      </Container>
-    </v-card>
+          <v-card>
+            <v-list>
+              <div v-for="key of sortKeys" :key="key">
+                <ListItem @click="changeSort(key)">
+                  <template #title>{{ $t('sort.' + key) }}</template>
+                  <template #append>
+                    <v-icon v-if="sortBy == key" icon="mdi-check" />
+                  </template>
+                </ListItem>
+                <v-divider />
+              </div>
+            </v-list>
+          </v-card>
+        </v-menu>
+
+        <!-- toggle search button -->
+        <v-btn
+          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
+          v-bind="props"
+          icon
+          variant="plain"
+          :title="$t('tooltip.search')"
+          :disabled="!expanded"
+          @click="toggleSearch()"
+        >
+          <v-icon icon="mdi-magnify" />
+        </v-btn>
+
+        <!-- toggle view mode button -->
+        <v-btn
+          v-bind="props"
+          :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
+          variant="plain"
+          :title="$t('tooltip.toggle_view_mode')"
+          :disabled="!expanded"
+          @click="toggleViewMode()"
+        />
+
+        <!-- provider filter dropdown -->
+        <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
+          <template #activator="{ props }">
+            <v-btn icon v-bind="props" variant="plain" :disabled="!expanded">
+              <ProviderIcon :domain="activeProviderFilter" :size="30" />
+            </v-btn>
+          </template>
+          <v-card>
+            <v-list>
+              <div v-for="provId of providerFilter" :key="provId">
+                <ListItem @click="changeActiveProviderFilter(provId)">
+                  <template #prepend>
+                    <ProviderIcon :domain="provId" :size="30" />
+                  </template>
+                  <template #title>
+                    <span v-if="provId == 'library'">{{ $t('library') }}</span>
+                    <span v-else>{{ api.getProviderName(provId) }}</span>
+                  </template>
+                  <template #append>
+                    <v-icon v-if="activeProviderFilter == provId" icon="mdi-check" />
+                  </template>
+                </ListItem>
+                <v-divider />
+              </div>
+            </v-list>
+          </v-card>
+        </v-menu>
+
+        <!-- contextmenu -->
+        <v-menu v-if="contextMenuItems && contextMenuItems.length > 0" location="bottom end">
+          <template #activator="{ props }">
+            <Button icon style="right: 3px" v-bind="props">
+              <v-icon icon="mdi-dots-vertical" />
+            </Button>
+          </template>
+          <v-list>
+            <ListItem
+              v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)"
+              :key="index"
+              :title="$t(item.label, item.labelArgs)"
+              :disabled="item.disabled == true"
+              @click="item.action ? item.action() : ''"
+            >
+              <template #prepend>
+                <v-avatar :icon="item.icon" />
+              </template>
+            </ListItem>
+          </v-list>
+        </v-menu>
+
+        <!-- expand/collapse button -->
+        <v-btn
+          v-if="allowCollapse"
+          :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          variant="plain"
+          :title="$t('tooltip.collapse_expand')"
+          @click="toggleExpand"
+        />
+      </template>
+    </v-toolbar>
+    <v-divider />
+
+    <Container v-if="expanded">
+      <v-text-field
+        v-if="showSearch"
+        id="searchInput"
+        v-model="search"
+        clearable
+        prepend-inner-icon="mdi-magnify"
+        :label="$t('search')"
+        hide-details
+        variant="filled"
+        style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
+      />
+      <!-- loading animation -->
+      <v-progress-linear v-if="loading" indeterminate />
+
+      <!-- panel view -->
+      <v-row v-if="viewMode == 'panel'">
+        <v-col
+          v-for="item in allItems"
+          :key="item.uri"
+          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+        >
+          <PanelviewItem
+            :item="item"
+            :is-selected="isSelected(item)"
+            :show-checkboxes="showCheckboxes"
+            :show-track-number="showTrackNumber"
+            @select="onSelect"
+            @menu="onMenu"
+            @click="onClick"
+          />
+        </v-col>
+      </v-row>
+
+      <!-- list view -->
+      <div v-if="viewMode == 'list'">
+        <RecycleScroller v-slot="{ item }" :items="allItems" :item-size="70" key-field="uri" page-mode>
+          <ListviewItem
+            :key="item.uri"
+            :item="item"
+            :show-track-number="showTrackNumber"
+            :show-disc-number="showTrackNumber"
+            :show-duration="showDuration"
+            :show-favorite="showFavoritesOnlyFilter"
+            :show-menu="showMenu"
+            :show-provider="showProvider"
+            :show-album="showAlbum"
+            :show-checkboxes="showCheckboxes"
+            :is-selected="isSelected(item)"
+            :show-details="itemtype.includes('versions')"
+            :parent-item="parentItem"
+            :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
+            @select="onSelect"
+            @menu="onMenu"
+            @click="onClick"
+          />
+        </RecycleScroller>
+      </div>
+
+      <!-- inifinite scroll component -->
+      <InfiniteLoading @infinite="loadNextPage" />
+
+      <!-- show alert if no item found -->
+      <div v-if="!loading && allItems.length == 0">
+        <Alert v-if="!loading && allItems.length == 0 && (search || favoritesOnly)" :title="$t('no_content_filter')">
+          <v-btn v-if="search" style="margin-top: 15px" @click="redirectSearch">
+            {{ $t('try_global_search') }}
+          </v-btn>
+        </Alert>
+        <Alert v-else-if="!loading && allItems.length == 0">
+          {{ $t('no_content') }}
+        </Alert>
+      </div>
+
+      <!-- box shown when item(s) selected -->
+      <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom: 120px">
+        <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
+        <template #actions>
+          <v-btn color="primary" variant="text" @click="showPlayMenu(true)">
+            {{ $t('actions') }}
+          </v-btn>
+        </template>
+      </v-snackbar>
+    </Container>
   </section>
 </template>
 
@@ -259,8 +270,9 @@ import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from './ListviewItem.vue';
+import Button from './mods/Button.vue';
 import PanelviewItem from './PanelviewItem.vue';
-import { itemIsAvailable, getContextMenuItems } from '@/helpers/contextmenu';
+import { itemIsAvailable, getContextMenuItems, ContextMenuItem } from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
@@ -292,6 +304,8 @@ export interface Props {
   hideOnEmpty?: boolean;
   providerFilter?: string[];
   allowCollapse?: boolean;
+  allowKeyHooks?: boolean;
+  contextMenuItems?: Array<ContextMenuItem>;
   loadData: (params: LoadDataParams) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -308,6 +322,7 @@ const props = withDefaults(defineProps<Props>(), {
   showRefreshButton: undefined,
   showSelectButton: undefined,
   allowCollapse: false,
+  allowKeyHooks: false,
 });
 
 const defaultLimit = 100;
@@ -333,6 +348,7 @@ const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(true);
 const activeProviderFilter = ref<string>('library');
 const expanded = ref(true);
+const hasFocus = ref(false);
 
 // computed properties
 
@@ -455,8 +471,8 @@ const showPlayMenu = function (showContextMenuItems = true) {
 };
 
 const onRefreshClicked = function () {
-  loadData(true);
   emit('refreshClicked');
+  loadData(true);
 };
 
 const onClick = function (mediaItem: MediaItemType) {
@@ -615,6 +631,7 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
+  if (store.dialogActive) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = allItems.value;
@@ -626,11 +643,13 @@ const keyListener = function (e: KeyboardEvent) {
     showSearch.value = true;
   }
 };
-document.addEventListener('keydown', keyListener);
 
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', keyListener);
-});
+if (props.allowKeyHooks) {
+  document.addEventListener('keydown', keyListener);
+  onBeforeUnmount(() => {
+    document.removeEventListener('keydown', keyListener);
+  });
+}
 </script>
 
 <script lang="ts">

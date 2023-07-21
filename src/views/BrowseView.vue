@@ -1,9 +1,13 @@
 <template>
   <section>
-    <Container>
-      <v-card>
-        <!-- loading animation -->
-        <v-progress-linear v-if="loading" indeterminate />
+    <v-toolbar variant="flat" color="transparent" style="height: 50px">
+      <template #title>
+        {{ $t('browse') }}
+        <span v-if="browseItem"> | {{ getBrowseFolderName(browseItem, $t) }}</span>
+        <v-badge v-if="browseItem?.items" color="grey" :content="browseItem?.items.length" inline />
+      </template>
+
+      <template #append>
         <!-- back button -->
         <v-btn
           v-if="props.path"
@@ -11,18 +15,23 @@
           icon="mdi-arrow-left"
           :to="{ name: 'browse', query: { path: backPath } }"
         />
+      </template>
+    </v-toolbar>
+    <v-divider />
+    <Container>
+      <!-- loading animation -->
+      <v-progress-linear v-if="loading" indeterminate />
 
-        <RecycleScroller v-slot="{ item }" :items="browseItem?.items || []" :item-size="66" key-field="uri" page-mode>
-          <ListviewItem
-            :item="item"
-            :show-library="false"
-            :show-menu="false"
-            :show-provider="false"
-            :is-selected="false"
-            @click="onClick"
-          />
-        </RecycleScroller>
-      </v-card>
+      <RecycleScroller v-slot="{ item }" :items="browseItem?.items || []" :item-size="66" key-field="uri" page-mode>
+        <ListviewItem
+          :item="item"
+          :show-library="false"
+          :show-menu="false"
+          :show-provider="false"
+          :is-selected="false"
+          @click="onClick"
+        />
+      </RecycleScroller>
     </Container>
   </section>
 </template>
@@ -65,13 +74,6 @@ const backPath = computed(() => {
 const loadData = async function () {
   loading.value = true;
   browseItem.value = await api.browse(props.path);
-
-  // set header title to browse title
-  if (!browseItem.value || !props.path) {
-    store.topBarTitle = undefined;
-  } else {
-    store.topBarTitle = getBrowseFolderName(browseItem.value, t);
-  }
   loading.value = false;
 };
 
