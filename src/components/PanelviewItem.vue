@@ -68,7 +68,7 @@ import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import { ContentType, type MediaItem, type MediaItemType } from '../plugins/api/interfaces';
-import { getArtistsString, parseBool } from '../utils';
+import { getArtistsString, parseBool } from '@/helpers/utils';
 import { iconHiRes } from './QualityDetailsBtn.vue';
 
 // properties

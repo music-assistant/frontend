@@ -85,7 +85,7 @@ import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue';
 import ListItem from '../components/mods/ListItem.vue';
 import Container from '../components/mods/Container.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
-import { getStreamingProviderMappings } from '../utils';
+import { getStreamingProviderMappings } from '@/helpers/utils';
 
 export interface Props {
   itemId: string;
@@ -164,5 +164,3 @@ const openLinkInNewTab = function (url: string) {
   window.open(url, '_blank');
 };
 </script>
-
-<style lang="scss"></style>

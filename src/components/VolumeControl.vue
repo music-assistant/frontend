@@ -105,7 +105,7 @@
 <script setup lang="ts">
 import { Player, PlayerType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
-import { truncateString, getPlayerName } from '../utils';
+import { truncateString, getPlayerName } from '@/helpers/utils';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';

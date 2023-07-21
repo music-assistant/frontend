@@ -46,7 +46,7 @@ import api from '@/plugins/api';
 import { ImageType, Track, Radio } from '@/plugins/api/interfaces';
 import MediaItemThumb, { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
 import { iconFallback } from '@/components/QualityDetailsBtn.vue';
-import { getArtistsString } from '@/utils';
+import { getArtistsString } from '@/helpers/utils';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 

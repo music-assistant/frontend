@@ -25,7 +25,7 @@ import { computed } from 'vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import { getValueFromSources } from '@/utils';
+import { getValueFromSources } from '@/helpers/utils';
 
 // properties
 export interface Props {

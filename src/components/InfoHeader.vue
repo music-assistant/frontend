@@ -108,38 +108,15 @@
 
           <!-- play/info buttons -->
           <div style="display: flex; margin-left: 14px; padding-bottom: 10px">
-            <v-menu location="bottom">
-              <!-- eslint-disable vue/no-template-shadow -->
-              <template #activator="{ props }">
-                <!-- eslint-enable vue/no-template-shadow -->
-                <v-btn
-                  color="primary"
-                  v-bind="props"
-                  prepend-icon="mdi-play-circle"
-                  :disabled="!store.selectedPlayer?.available || store.blockGlobalPlayMenu"
-                >
-                  {{ $t('play') }}
-                </v-btn>
-              </template>
-
-              <v-card min-width="300">
-                <v-list lines="one" density="comfortable">
-                  <!-- play now -->
-                  <ListItem
-                    v-for="menuItem in getPlayMenuItems([item])"
-                    :key="menuItem.label"
-                    :title="$t(menuItem.label, menuItem.labelArgs)"
-                    @click="menuItem.action ? menuItem.action() : ''"
-                  >
-                    <template #prepend>
-                      <v-avatar style="padding-right: 10px">
-                        <v-icon :icon="menuItem.icon" />
-                      </v-avatar>
-                    </template>
-                  </ListItem>
-                </v-list>
-              </v-card>
-            </v-menu>
+            <!-- play button -->
+            <v-btn
+              color="primary"
+              prepend-icon="mdi-play-circle"
+              :disabled="!store.selectedPlayer?.available"
+              @click="eventbus.emit('playdialog', { items: [item], parentItem: item, showContextMenuItems: false })"
+            >
+              {{ $t('play') }}
+            </v-btn>
 
             <!-- favorite (heart) icon -->
             <v-btn
@@ -220,10 +197,11 @@ import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
-import { parseBool } from '../utils';
-import { getPlayMenuItems, getContextMenuItems } from './MediaItemContextMenu.vue';
+import { parseBool } from '@/helpers/utils';
+import { getContextMenuItems } from '@/helpers/contextmenu';
 import ListItem from '@/components/mods/ListItem.vue';
 import { useI18n } from 'vue-i18n';
+import { eventbus } from '@/plugins/eventbus';
 
 // properties
 export interface Props {
