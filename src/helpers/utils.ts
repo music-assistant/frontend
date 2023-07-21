@@ -182,6 +182,30 @@ export function getContrastRatio(color1: string, color2: string): number {
   return c1.contrast(c2);
 }
 
+export function lightenColor(hexCode: string, factor: number): string {
+  if (factor <= 0 || factor > 1) {
+    throw new Error('Faktor muss im Bereich von 0 (ausschließlich) bis 1 liegen.');
+  }
+
+  const rgbColor: RGBColor = hexToRgb(hexCode);
+
+  const newRgbColor: RGBColor = [
+    Math.min(255, Math.round(rgbColor[0] + (255 - rgbColor[0]) * factor)),
+    Math.min(255, Math.round(rgbColor[1] + (255 - rgbColor[1]) * factor)),
+    Math.min(255, Math.round(rgbColor[2] + (255 - rgbColor[2]) * factor)),
+  ];
+
+  return rgbToHex(newRgbColor);
+}
+
+export function hexToRgb(hex: string): RGBColor {
+  const bigint = parseInt(hex.startsWith('#') ? hex.slice(1) : hex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return [r, g, b];
+}
+
 export function rgbToHex(rgb: RGBColor): string {
   const [red, green, blue] = rgb;
   const hex = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue

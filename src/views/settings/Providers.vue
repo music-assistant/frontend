@@ -176,6 +176,8 @@ import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
+import { useSlots } from 'vue';
+const slots = useSlots();
 
 // global refs
 const router = useRouter();

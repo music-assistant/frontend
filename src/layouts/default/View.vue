@@ -1,10 +1,8 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
     <navigation-menu />
-    <app-bar />
     <add-to-playlist-dialog />
     <play-item-dialog />
-
     <router-view v-slot="{ Component }" app>
       <transition name="fade" mode="out-in">
         <component :is="Component" v-scroll:#cont="onScroll" />

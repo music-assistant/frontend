@@ -112,6 +112,30 @@ div.v-navigation-drawer__scrim {
   min-height: 48px;
 }
 
+.v-toolbar > .v-toolbar__content > .v-toolbar-title {
+  margin-inline-start: 25px;
+}
+
+.v-toolbar > .v-toolbar__content > .v-toolbar__prepend {
+  margin-inline-start: 6px;
+}
+
+.v-toolbar > .v-toolbar__content > .v-toolbar__append {
+  margin-inline-end: 21px;
+}
+
+.v-toolbar-default > .v-toolbar__content > .v-toolbar-title {
+  margin-inline-start: 16px;
+}
+
+.v-toolbar-default > .v-toolbar__content > .v-toolbar__prepend {
+  margin-inline-start: 10px;
+}
+
+.v-toolbar-default > .v-toolbar__content > .v-toolbar__append {
+  margin-inline-end: 10px;
+}
+
 /* ThumbView panel columns */
 .col-2 {
   width: 50%;
