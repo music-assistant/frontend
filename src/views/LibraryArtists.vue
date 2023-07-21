@@ -22,11 +22,15 @@ const { t } = useI18n();
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
-const loadItems = async function (
-  params: LoadDataParams
-) {
+const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  return await api.getLibraryArtists(params.favoritesOnly || undefined, params.search, params.limit, params.offset, params.sortBy);
+  return await api.getLibraryArtists(
+    params.favoritesOnly || undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortBy,
+  );
 };
 
 store.topBarContextMenuItems = [

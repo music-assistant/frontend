@@ -2,10 +2,21 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <Container>
-      <ItemsListing v-if="itemDetails" itemtype="radioversions" :parent-item="itemDetails" :show-provider="true"
-        :show-favorites-only-filter="false" :show-library="false" :show-radio-number="false" :show-duration="false"
-        :load-data="loadRadioVersions" :sort-keys="['provider', 'sort_name']" :title="$t('other_versions')"
-        :hide-on-empty="true" :checksum="provider + itemId" />
+      <ItemsListing
+        v-if="itemDetails"
+        itemtype="radioversions"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="false"
+        :show-library="false"
+        :show-radio-number="false"
+        :show-duration="false"
+        :load-data="loadRadioVersions"
+        :sort-keys="['provider', 'sort_name']"
+        :title="$t('other_versions')"
+        :hide-on-empty="true"
+        :checksum="provider + itemId"
+      />
       <br />
 
       <!-- provider mapping details -->
@@ -14,7 +25,10 @@
         <v-divider />
         <Container>
           <v-list>
-            <ListItem v-for="providerMapping in itemDetails?.provider_mappings" :key="providerMapping.provider_instance">
+            <ListItem
+              v-for="providerMapping in itemDetails?.provider_mappings"
+              :key="providerMapping.provider_instance"
+            >
               <template #prepend>
                 <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
               </template>
@@ -27,8 +41,12 @@
                 bits
               </template>
               <template #append>
-                <v-btn v-if="providerMapping.url" variant="plain" icon="mdi-open-in-new"
-                  @click.prevent="openLinkInNewTab(providerMapping.url)" />
+                <v-btn
+                  v-if="providerMapping.url"
+                  variant="plain"
+                  icon="mdi-open-in-new"
+                  @click.prevent="openLinkInNewTab(providerMapping.url)"
+                />
               </template>
             </ListItem>
           </v-list>
@@ -69,9 +87,7 @@ watch(
   { immediate: true },
 );
 
-const loadRadioVersions = async function (
-  params: LoadDataParams
-) {
+const loadRadioVersions = async function (params: LoadDataParams) {
   const allVersions: Radio[] = [];
   if (props.provider == 'library') {
     const radioVersions = await api.getRadioVersions(props.itemId, props.provider);

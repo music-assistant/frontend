@@ -55,7 +55,13 @@ onBeforeUnmount(() => {
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  return await api.getLibraryPlaylists(params.favoritesOnly || undefined, params.search, params.limit, params.offset, params.sortBy);
+  return await api.getLibraryPlaylists(
+    params.favoritesOnly || undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortBy,
+  );
 };
 
 onMounted(() => {

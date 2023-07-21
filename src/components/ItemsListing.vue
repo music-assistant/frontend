@@ -15,10 +15,10 @@
         <template #title>
           {{ title }}
           <v-badge
-          color="grey"
-          :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
-          inline
-        ></v-badge>
+            color="grey"
+            :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
+            inline
+          />
         </template>
 
         <template #append>

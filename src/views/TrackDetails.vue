@@ -2,21 +2,45 @@
   <section>
     <InfoHeader :item="itemDetails" :active-provider="provider" />
     <Container>
-      <ItemsListing v-if="itemDetails" itemtype="trackalbums" :parent-item="itemDetails" :show-provider="true"
-        :show-favorites-only-filter="false" :show-library="true" :show-track-number="false" :load-data="loadTrackAlbums"
-        :sort-keys="['provider', 'sort_name', 'duration']" :update-available="updateAvailable" :title="$t('appears_on')"
-        :checksum="provider + itemId" @refresh-clicked="
+      <ItemsListing
+        v-if="itemDetails"
+        itemtype="trackalbums"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="false"
+        :show-library="true"
+        :show-track-number="false"
+        :load-data="loadTrackAlbums"
+        :sort-keys="['provider', 'sort_name', 'duration']"
+        :update-available="updateAvailable"
+        :title="$t('appears_on')"
+        :checksum="provider + itemId"
+        :provider-filter="providerFilter"
+        @refresh-clicked="
           loadItemDetails();
-        updateAvailable = false;
-        " :provider-filter="providerFilter" />
+          updateAvailable = false;
+        "
+      />
       <br />
-      <ItemsListing v-if="itemDetails" itemtype="trackversions" :parent-item="itemDetails" :show-provider="true"
-        :show-favorites-only-filter="false" :show-library="true" :show-track-number="false" :load-data="loadTrackVersions"
-        :sort-keys="['provider', 'sort_name', 'duration']" :update-available="updateAvailable"
-        :title="$t('other_versions')" :hide-on-empty="true" :checksum="provider + itemId" @refresh-clicked="
+      <ItemsListing
+        v-if="itemDetails"
+        itemtype="trackversions"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="false"
+        :show-library="true"
+        :show-track-number="false"
+        :load-data="loadTrackVersions"
+        :sort-keys="['provider', 'sort_name', 'duration']"
+        :update-available="updateAvailable"
+        :title="$t('other_versions')"
+        :hide-on-empty="true"
+        :checksum="provider + itemId"
+        @refresh-clicked="
           loadItemDetails();
-        updateAvailable = false;
-        " />
+          updateAvailable = false;
+        "
+      />
 
       <br />
 
@@ -26,7 +50,10 @@
         <v-divider />
         <Container>
           <v-list>
-            <ListItem v-for="providerMapping in itemDetails?.provider_mappings" :key="providerMapping.provider_instance">
+            <ListItem
+              v-for="providerMapping in itemDetails?.provider_mappings"
+              :key="providerMapping.provider_instance"
+            >
               <template #prepend>
                 <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
               </template>
@@ -37,14 +64,23 @@
                 {{ providerMapping.audio_format.content_type }} |
                 {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{ providerMapping.audio_format.bit_depth }}
                 bits |
-                <a v-if="providerMapping.url && !providerMapping.url.startsWith('file')" style="opacity: 0.4"
-                  :title="$t('tooltip.open_provider_link')" @click.prevent="openLinkInNewTab(providerMapping.url)">{{
-                    providerMapping.url }}</a>
+                <a
+                  v-if="providerMapping.url && !providerMapping.url.startsWith('file')"
+                  style="opacity: 0.4"
+                  :title="$t('tooltip.open_provider_link')"
+                  @click.prevent="openLinkInNewTab(providerMapping.url)"
+                  >{{ providerMapping.url }}</a
+                >
                 <span v-else style="opacity: 0.4" :title="providerMapping.item_id">{{ providerMapping.item_id }}</span>
               </template>
               <template #append>
-                <audio v-if="getBreakpointValue('bp1')" name="preview" title="preview" controls
-                  :src="getPreviewUrl(providerMapping.provider_domain, providerMapping.item_id)"></audio>
+                <audio
+                  v-if="getBreakpointValue('bp1')"
+                  name="preview"
+                  title="preview"
+                  controls
+                  :src="getPreviewUrl(providerMapping.provider_domain, providerMapping.item_id)"
+                ></audio>
               </template>
             </ListItem>
           </v-list>
@@ -112,9 +148,7 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const loadTrackVersions = async function (
-  params: LoadDataParams
-) {
+const loadTrackVersions = async function (params: LoadDataParams) {
   const allVersions: Track[] = [];
 
   if (props.provider == 'library') {

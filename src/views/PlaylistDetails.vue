@@ -2,14 +2,23 @@
   <section>
     <InfoHeader :item="itemDetails" :active-provider="itemDetails?.provider_mappings[0].provider_domain" />
     <Container>
-      <ItemsListing v-if="itemDetails" itemtype="playlisttracks" :parent-item="itemDetails" :show-provider="false"
-        :show-library="false" :show-favorites-only-filter="false" :show-track-number="false"
+      <ItemsListing
+        v-if="itemDetails"
+        itemtype="playlisttracks"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-library="false"
+        :show-favorites-only-filter="false"
+        :show-track-number="false"
         :load-data="loadPlaylistTracks"
         :sort-keys="['position', 'position DESC', 'sort_name', 'sort_artist', 'sort_album']"
-        :update-available="updateAvailable" :title="$t('playlist_tracks')" @refresh-clicked="
+        :update-available="updateAvailable"
+        :title="$t('playlist_tracks')"
+        @refresh-clicked="
           loadItemDetails();
-        updateAvailable = false;
-        " />
+          updateAvailable = false;
+        "
+      />
     </Container>
   </section>
 </template>
@@ -55,9 +64,7 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const loadPlaylistTracks = async function (
-  params: LoadDataParams
-) {
+const loadPlaylistTracks = async function (params: LoadDataParams) {
   const playlistTracks: Track[] = [];
   await api.getPlaylistTracks(props.itemId, props.provider, (data: Track[]) => {
     console.log('chunk', data.length);

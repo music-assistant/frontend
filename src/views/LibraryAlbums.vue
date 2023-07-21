@@ -51,6 +51,12 @@ onMounted(() => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  return await api.getLibraryAlbums(params.favoritesOnly || undefined, params.search, params.limit, params.offset, params.sortBy);
+  return await api.getLibraryAlbums(
+    params.favoritesOnly || undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortBy,
+  );
 };
 </script>
