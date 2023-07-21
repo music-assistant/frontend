@@ -9,6 +9,7 @@
     :update-available="updateAvailable"
     :title="$t('albums')"
     :allow-key-hooks="true"
+    :show-search-button="true"
     @refresh-clicked="
       () => {
         api.startSync([MediaType.ALBUM]);

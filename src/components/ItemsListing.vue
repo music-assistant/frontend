@@ -6,6 +6,7 @@
       <template #title>
         {{ title }}
         <v-badge
+          v-if="getBreakpointValue('bp1')"
           color="grey"
           :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
           inline
@@ -15,7 +16,7 @@
       <template #append>
         <!-- toggle select button -->
         <v-btn
-          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
+          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')"
           v-bind="props"
           :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
           variant="plain"
@@ -26,7 +27,7 @@
 
         <!-- favorites only filter -->
         <v-btn
-          v-if="showFavoritesOnlyFilter !== false"
+          v-if="showFavoritesOnlyFilter != undefined ? showAlbumArtistsOnlyFilter : getBreakpointValue('bp1')"
           v-bind="props"
           icon
           variant="plain"
@@ -52,7 +53,7 @@
 
         <!-- refresh button-->
         <v-btn
-          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
+          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')"
           v-bind="props"
           icon
           variant="plain"
@@ -89,7 +90,7 @@
 
         <!-- toggle search button -->
         <v-btn
-          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
+          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')"
           v-bind="props"
           icon
           variant="plain"
@@ -172,9 +173,8 @@
     </v-toolbar>
     <v-divider />
 
-    <Container v-if="expanded">
-      <v-text-field
-        v-if="showSearch"
+    <v-text-field
+        v-if="showSearch && expanded"
         id="searchInput"
         v-model="search"
         clearable
@@ -182,10 +182,11 @@
         :label="$t('search')"
         hide-details
         variant="filled"
-        style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
+        style="width: auto; margin-top: 10px"
         @focus="searchHasFocus = true"
         @blur="searchHasFocus = false"
       />
+    <Container v-if="expanded">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 

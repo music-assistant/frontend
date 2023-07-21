@@ -9,6 +9,7 @@
     :update-available="updateAvailable"
     :title="$t('artists')"
     :allow-key-hooks="true"
+    :show-search-button="true"
     @refresh-clicked="
       () => {
         api.startSync([MediaType.ARTIST]);
