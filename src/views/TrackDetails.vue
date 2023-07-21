@@ -74,6 +74,14 @@
                 <span v-else style="opacity: 0.4" :title="providerMapping.item_id">{{ providerMapping.item_id }}</span>
               </template>
               <template #append>
+                <!-- hi res icon -->
+                <v-img
+                  v-if="providerMapping.audio_format.bit_depth > 16"
+                  :src="iconHiRes"
+                  width="30"
+                  :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+                  style="margin-right:15px"
+                />
                 <audio
                   v-if="getBreakpointValue('bp1')"
                   name="preview"
@@ -93,6 +101,7 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams, filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
+import { iconHiRes } from '@/components/QualityDetailsBtn.vue';
 import { computed, ref } from 'vue';
 import { EventType, type Track, type EventMessage, type MediaItemType, Album } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
