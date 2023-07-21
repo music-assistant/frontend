@@ -109,10 +109,10 @@
               <!-- track/album falback: artist present -->
               <h4
                 v-if="
-                curQueueItem.media_item &&
+                  curQueueItem.media_item &&
                   curQueueItem.media_item?.media_type == MediaType.TRACK &&
                   (curQueueItem.media_item as Track).artists.length > 0
-              "
+                "
                 class="fullscreen-track-info-subtitle"
               >
                 {{ (curQueueItem.media_item as Track).artists[0].name }}

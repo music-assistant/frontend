@@ -1,7 +1,7 @@
 <template>
   <v-btn v-bind="btnProps" variant="plain">
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+    <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
     </template>
   </v-btn>

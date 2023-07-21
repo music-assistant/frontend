@@ -6,7 +6,6 @@
     <v-overlay v-else>
       <v-progress-circular indeterminate size="64" />
     </v-overlay>
-
     <reload-prompt v-if="store.isInStandaloneMode" />
   </v-app>
 </template>

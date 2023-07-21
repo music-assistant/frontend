@@ -1,4 +1,6 @@
 <template>
+  <BottomNavigation />
+
   <v-footer
     bottom
     fixed
@@ -9,7 +11,6 @@
     }`"
     elevation="5"
     app
-    @click="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? (store.showFullscreenPlayer = true) : ''"
   >
     <div
       v-if="coverImageColorCode && curQueueItem"
@@ -106,6 +107,7 @@ import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
 import { getColorCode } from '@/helpers/utils';
+import BottomNavigation from '@/layouts/default/ButtomNavigation.vue';
 
 // local refs
 const fanartImage = ref();
@@ -162,7 +164,7 @@ watch(
   border-top-style: ridge;
   padding: 0px;
   left: 5px !important;
-  bottom: 5px !important;
+  bottom: 60px !important;
   width: calc((100% - 10px) - 0px) !important;
   border-radius: 10px;
 }

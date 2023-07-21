@@ -1,7 +1,7 @@
 <template>
   <v-alert v-bind="alertProps" class="alert" color="primary" density="compact" prominent>
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="(value, name) in ($slots as unknown)" #[name]>
+    <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
     </template>
   </v-alert>

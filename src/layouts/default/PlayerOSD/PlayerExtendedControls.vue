@@ -1,19 +1,10 @@
 <template>
   <!-- active queue -->
-  <Button
-    v-if="props.visibleComponents && props.visibleComponents.queue?.isVisible"
-    icon
-    v-bind="props.visibleComponents.queue.icon"
-    @click="
-      store.showFullscreenPlayer = false;
-      props.showQueueDialog
-        ? // eslint-disable-next-line vue/no-mutating-props
-          (props.showQueueDialog = true)
-        : router.push('/playerqueue/');
-    "
-  >
-    <v-icon icon="mdi-playlist-play" />
-  </Button>
+  <QueueBtn
+    v-if="props.visibleComponents.queue"
+    :is-visible="props.visibleComponents && props.visibleComponents.queue?.isVisible"
+    :icon="props.visibleComponents.queue.icon"
+  />
   <!-- active player -->
   <Button
     v-if="props.visibleComponents && props.visibleComponents.player?.isVisible"
@@ -139,11 +130,7 @@
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="
-                store.selectedPlayer!.group_childs.length > 0
-                  ? 'mdi-speaker-multiple'
-                  : 'mdi-speaker'
-              "
+                :icon="store.selectedPlayer!.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
                 color="primary"
               />
             </template>
@@ -177,6 +164,7 @@ import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';
 import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
 import { isColorDark, truncateString } from '@/helpers/utils';
+import QueueBtn from './PlayerControlBtn/QueueBtn.vue';
 
 const router = useRouter();
 

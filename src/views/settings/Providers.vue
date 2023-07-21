@@ -66,7 +66,7 @@
           :context-menu-items="[
             {
               label: 'settings.configure',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
                 editProvider(item.instance_id);
               },
@@ -74,45 +74,45 @@
             },
             {
               label: item.enabled ? 'settings.disable' : 'settings.enable',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
                 toggleEnabled(item);
               },
               icon: 'mdi-cancel',
-              disabled: api.providerManifests[item.domain].builtin
+              disabled: api.providerManifests[item.domain].builtin,
             },
             {
               label: 'settings.documentation',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
                 openLinkInNewTab(api.providerManifests[item.domain].documentation!);
               },
               icon: 'mdi-bookshelf',
-              disabled: !api.providerManifests[item.domain].documentation
+              disabled: !api.providerManifests[item.domain].documentation,
             },
             {
               label: 'settings.sync',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
                 api.startSync(undefined, [item.instance_id]);
               },
               icon: 'mdi-sync',
-              hide: api.providers[item.instance_id]?.available && provType != ProviderType.MUSIC
+              hide: api.providers[item.instance_id]?.available && provType != ProviderType.MUSIC,
             },
             {
               label: 'settings.delete',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
-                removeProvider(item.instance_id)
+                removeProvider(item.instance_id);
               },
               icon: 'mdi-delete',
-              hide: api.providerManifests[item.domain].builtin
+              hide: api.providerManifests[item.domain].builtin,
             },
             {
               label: 'settings.reload',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
-                reloadProvider(item.instance_id)
+                reloadProvider(item.instance_id);
               },
               icon: 'mdi-refresh',
             },

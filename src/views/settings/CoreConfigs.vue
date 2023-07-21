@@ -57,7 +57,9 @@
       <v-divider />
       <Container>
         <ListItem
-          v-for="item in coreConfigs.sort((a, b) => api.providerManifests[a.domain].name!.localeCompare(api.providerManifests[b.domain].name!))"
+          v-for="item in coreConfigs.sort((a, b) =>
+            api.providerManifests[a.domain].name!.localeCompare(api.providerManifests[b.domain].name!),
+          )"
           :key="item.domain"
           v-hold="
             () => {
@@ -69,7 +71,7 @@
           :context-menu-items="[
             {
               label: 'settings.configure',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
                 editCoreConfig(item.domain);
               },
@@ -77,12 +79,12 @@
             },
             {
               label: 'settings.documentation',
-              labelArgs:[],
+              labelArgs: [],
               action: () => {
                 openLinkInNewTab(api.providerManifests[item.domain].documentation!);
               },
               icon: 'mdi-bookshelf',
-              disabled: !api.providerManifests[item.domain].documentation
+              disabled: !api.providerManifests[item.domain].documentation,
             },
           ]"
           @click="editCoreConfig(item.domain)"

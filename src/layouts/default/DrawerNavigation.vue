@@ -1,5 +1,6 @@
 <template>
   <v-navigation-drawer
+    v-if="getBreakpointValue({ breakpoint: 'bp3' })"
     ref="resizeComponent"
     app
     :permanent="!$vuetify.display.mobile"
