@@ -5,9 +5,9 @@
       v-hold="() => emit('menu', item)"
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
+      :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
       @click.stop="emit('click', item)"
       @click.right.prevent="emit('menu', item)"
-      :context-menu-items="showMenu ? getContextMenuItems([item], parentItem): []"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -137,10 +137,10 @@
             ripple
             v-bind="props"
             :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+            :title="$t('tooltip.favorite')"
             @click="api.toggleFavorite(item)"
             @click.prevent
             @click.stop
-            :title="$t('tooltip.favorite')"
           />
         </div>
 
@@ -183,7 +183,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
-import {getContextMenuItems} from "@/components/MediaItemContextMenu.vue"
+import { getContextMenuItems } from '@/components/MediaItemContextMenu.vue';
 
 // properties
 export interface Props {
@@ -224,10 +224,12 @@ const props = withDefaults(defineProps<Props>(), {
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
-    if (![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type))
+    if (
+      ![ContentType.DSF, ContentType.FLAC, ContentType.AIFF, ContentType.WAV].includes(prov.audio_format.content_type)
+    )
       continue;
     if (prov.audio_format.sample_rate > 48000 || prov.audio_format.bit_depth > 16) {
-      return `${prov.audio_format.sample_rate/1000}kHz ${prov.audio_format.bit_depth} bits`;
+      return `${prov.audio_format.sample_rate / 1000}kHz ${prov.audio_format.bit_depth} bits`;
     }
   }
   return '';
@@ -256,13 +258,13 @@ const itemIsAvailable = function (item: MediaItem) {
 
 <style scoped>
 .hiresicon {
-  margin-top:5px;
+  margin-top: 5px;
   margin-right: 15px;
   margin-left: 15px;
   filter: invert(100%);
 }
 .hiresicondark {
-  margin-top:5px;
+  margin-top: 5px;
   margin-right: 15px;
   margin-left: 15px;
 }

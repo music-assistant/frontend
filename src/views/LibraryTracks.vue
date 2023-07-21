@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Track } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
@@ -60,10 +60,10 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const loadItems = async function (offset: number, limit: number, sort: string, search?: string, favoritesOnly = true) {
-  const favorite = favoritesOnly || undefined;
+const loadItems = async function (params: LoadDataParams) {
+  params.favoritesOnly = params.favoritesOnly || undefined;
   updateAvailable.value = false;
-  return await api.getLibraryTracks(favorite, search, limit, offset, sort);
+  return await api.getLibraryTracks(params.favoritesOnly, params.search, params.limit, params.offset, params.sortBy);
 };
 
 const addUrl = async function () {
@@ -74,7 +74,7 @@ const addUrl = async function () {
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;
-      api.addItemToLibrary(item).then(() => updateAvailable.value = true)
+      api.addItemToLibrary(item).then(() => (updateAvailable.value = true));
     })
     .catch((e) => alert(e));
 };

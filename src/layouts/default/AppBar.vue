@@ -30,22 +30,17 @@
         </v-tooltip>
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <Button
-              v-if="store.topBarContextMenuItems.length > 0"
-              icon
-              style="right:3px;"
-              v-bind="props"
-            >
+            <Button v-if="store.topBarContextMenuItems.length > 0" icon style="right: 3px" v-bind="props">
               <v-icon icon="mdi-dots-vertical" />
             </Button>
           </template>
           <v-list>
             <ListItem
-              v-for="(item, index) in store.topBarContextMenuItems.filter(x => x.hide != true)"
+              v-for="(item, index) in store.topBarContextMenuItems.filter((x) => x.hide != true)"
               :key="index"
               :title="$t(item.label, item.labelArgs)"
-              @click="item.action ? item.action() : ''"
               :disabled="item.disabled == true"
+              @click="item.action ? item.action() : ''"
             >
               <template #prepend>
                 <v-avatar :icon="item.icon" />
@@ -181,5 +176,4 @@ const backButton = function () {
 .main-app-bar > div > div.v-toolbar__append {
   flex: none;
 }
-
 </style>

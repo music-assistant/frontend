@@ -2,28 +2,20 @@
   <section>
     <InfoHeader :item="itemDetails" :active-provider="itemDetails?.provider_mappings[0].provider_domain" />
     <Container>
-      <ItemsListing
-        itemtype="playlisttracks"
-        :parent-item="itemDetails"
-        :show-provider="false"
-        :show-library="false"
-        :show-favorites-only-filter="false"
-        :show-track-number="false"
+      <ItemsListing v-if="itemDetails" itemtype="playlisttracks" :parent-item="itemDetails" :show-provider="false"
+        :show-library="false" :show-favorites-only-filter="false" :show-track-number="false"
         :load-data="loadPlaylistTracks"
         :sort-keys="['position', 'position DESC', 'sort_name', 'sort_artist', 'sort_album']"
-        :update-available="updateAvailable"
-        @refresh-clicked="
+        :update-available="updateAvailable" :title="$t('playlist_tracks')" @refresh-clicked="
           loadItemDetails();
-          updateAvailable = false;
-        "
-        :title="$t('playlist_tracks')"
-      />
+        updateAvailable = false;
+        " />
     </Container>
   </section>
 </template>
 
 <script setup lang="ts">
-import ItemsListing from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import Container from '../components/mods/Container.vue';
@@ -64,18 +56,13 @@ onMounted(() => {
 });
 
 const loadPlaylistTracks = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  favoritesOnly = true,
+  params: LoadDataParams
 ) {
   const playlistTracks: Track[] = [];
-
   await api.getPlaylistTracks(props.itemId, props.provider, (data: Track[]) => {
     console.log('chunk', data.length);
     playlistTracks.push(...data);
   });
-  return filteredItems(playlistTracks, offset, limit, sort, search, favoritesOnly);
+  return filteredItems(playlistTracks, params);
 };
 </script>

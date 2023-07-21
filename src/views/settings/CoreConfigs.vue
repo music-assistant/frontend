@@ -1,57 +1,59 @@
 <template>
   <Container>
     <v-card style="margin-bottom: 10px">
-      <v-toolbar color="transparent" :title="$t('settings.server_info')" style="height: 55px"> </v-toolbar>
+      <v-toolbar color="transparent" :title="$t('settings.server_info')" style="height: 55px" />
       <v-divider />
       <Container>
         <v-table>
           <tbody>
             <tr>
               <td>{{ $t('settings.server_id') }}</td>
-              <td>{{ api.serverInfo.value?.server_id  }}</td>
+              <td>{{ api.serverInfo.value?.server_id }}</td>
             </tr>
             <tr>
               <td>{{ $t('settings.server_version') }}</td>
-              <td>{{ api.serverInfo.value?.server_version  }}</td>
+              <td>{{ api.serverInfo.value?.server_version }}</td>
             </tr>
             <tr v-if="!api.serverInfo.value?.homeassistant_addon">
               <td>{{ $t('settings.server_base_url') }}</td>
-              <td>{{ api.serverInfo.value?.base_url  }}</td>
+              <td>{{ api.serverInfo.value?.base_url }}</td>
             </tr>
             <tr>
               <td>{{ $t('settings.server_as_addon') }}</td>
-              <td><v-icon :icon="api.serverInfo.value?.homeassistant_addon ? 'mdi-check' : 'mdi-close'"></v-icon></td>
+              <td><v-icon :icon="api.serverInfo.value?.homeassistant_addon ? 'mdi-check' : 'mdi-close'" /></td>
             </tr>
             <tr>
               <td>{{ $t('settings.artists_in_library') }}</td>
-              <td>{{ totalLibraryArtists  }}</td>
+              <td>{{ totalLibraryArtists }}</td>
             </tr>
             <tr>
               <td>{{ $t('settings.albums_in_library') }}</td>
-              <td>{{ totalLibraryAlbums  }}</td>
+              <td>{{ totalLibraryAlbums }}</td>
             </tr>
             <tr>
               <td>{{ $t('settings.tracks_in_library') }}</td>
-              <td>{{ totalLibraryTracks  }}</td>
+              <td>{{ totalLibraryTracks }}</td>
             </tr>
             <tr>
               <td>{{ $t('settings.playlists_in_library') }}</td>
-              <td>{{ totalLibraryPlaylists  }}</td>
+              <td>{{ totalLibraryPlaylists }}</td>
             </tr>
             <tr>
               <td>{{ $t('settings.radio_in_library') }}</td>
-              <td>{{ totalLibraryRadio  }}</td>
+              <td>{{ totalLibraryRadio }}</td>
             </tr>
             <tr>
               <td>{{ $t('settings.server_logging') }}</td>
-              <td><a href="/log" target="_blank">{{ $t('settings.download_log') }}</a></td>
+              <td>
+                <a href="/log" target="_blank">{{ $t('settings.download_log') }}</a>
+              </td>
             </tr>
           </tbody>
         </v-table>
       </Container>
     </v-card>
     <v-card style="margin-bottom: 10px">
-      <v-toolbar color="transparent" :title="$t('settings.core_modules')" style="height: 55px"> </v-toolbar>
+      <v-toolbar color="transparent" :title="$t('settings.core_modules')" style="height: 55px" />
       <v-divider />
       <Container>
         <ListItem
@@ -64,7 +66,6 @@
           "
           class="list-item-main"
           link
-          @click="editCoreConfig(item.domain)"
           :context-menu-items="[
             {
               label: 'settings.configure',
@@ -84,6 +85,7 @@
               disabled: !api.providerManifests[item.domain].documentation
             },
           ]"
+          @click="editCoreConfig(item.domain)"
         >
           <template #prepend>
             <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" style="margin-left: 10px" />
@@ -123,7 +125,6 @@ import { useRouter } from 'vue-router';
 // global refs
 const router = useRouter();
 
-
 // local refs
 const coreConfigs = ref<CoreConfig[]>([]);
 const totalLibraryArtists = ref(0);
@@ -131,8 +132,6 @@ const totalLibraryAlbums = ref(0);
 const totalLibraryTracks = ref(0);
 const totalLibraryPlaylists = ref(0);
 const totalLibraryRadio = ref(0);
-
-
 
 // methods
 const editCoreConfig = function (domain: string) {
@@ -145,10 +144,10 @@ const openLinkInNewTab = function (url: string) {
 
 onMounted(async () => {
   coreConfigs.value = await api.getCoreConfigs();
-  totalLibraryArtists.value = (await api.getLibraryArtists(undefined, undefined, 1)).total || 0
-  totalLibraryAlbums.value = (await api.getLibraryAlbums(undefined, undefined, 1)).total || 0
-  totalLibraryTracks.value = (await api.getLibraryTracks(undefined, undefined, 1)).total || 0
-  totalLibraryPlaylists.value = (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0
-  totalLibraryRadio.value = (await api.getLibraryRadios(undefined, undefined, 1)).total || 0
+  totalLibraryArtists.value = (await api.getLibraryArtists(undefined, undefined, 1)).total || 0;
+  totalLibraryAlbums.value = (await api.getLibraryAlbums(undefined, undefined, 1)).total || 0;
+  totalLibraryTracks.value = (await api.getLibraryTracks(undefined, undefined, 1)).total || 0;
+  totalLibraryPlaylists.value = (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0;
+  totalLibraryRadio.value = (await api.getLibraryRadios(undefined, undefined, 1)).total || 0;
 });
 </script>

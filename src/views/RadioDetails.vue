@@ -2,32 +2,19 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <Container>
-    <ItemsListing
-      itemtype="radioversions"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="false"
-      :show-library="false"
-      :show-radio-number="false"
-      :show-duration="false"
-      :load-data="loadRadioVersions"
-      :sort-keys="['provider', 'sort_name']"
-      :title="$t('other_versions')"
-      :hide-on-empty="true"
-      :checksum="provider + itemId"
-    />
-    <br />
-      
+      <ItemsListing v-if="itemDetails" itemtype="radioversions" :parent-item="itemDetails" :show-provider="true"
+        :show-favorites-only-filter="false" :show-library="false" :show-radio-number="false" :show-duration="false"
+        :load-data="loadRadioVersions" :sort-keys="['provider', 'sort_name']" :title="$t('other_versions')"
+        :hide-on-empty="true" :checksum="provider + itemId" />
+      <br />
+
       <!-- provider mapping details -->
-      <v-card style="margin-bottom: 10px" v-if="provider == 'library'">
-        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px"> </v-toolbar>
+      <v-card v-if="provider == 'library'" style="margin-bottom: 10px">
+        <v-toolbar color="transparent" :title="$t('mapped_providers')" style="height: 55px" />
         <v-divider />
         <Container>
           <v-list>
-            <ListItem
-              v-for="providerMapping in itemDetails?.provider_mappings"
-              :key="providerMapping.provider_instance"
-            >
+            <ListItem v-for="providerMapping in itemDetails?.provider_mappings" :key="providerMapping.provider_instance">
               <template #prepend>
                 <ProviderIcon :domain="providerMapping.provider_domain" :size="30" />
               </template>
@@ -35,29 +22,24 @@
                 {{ api.providerManifests[providerMapping.provider_domain].name }}
               </template>
               <template #subtitle>
-                {{ providerMapping.item_id }} | 
+                {{ providerMapping.item_id }} |
                 {{ providerMapping.audio_format.content_type }}
                 bits
               </template>
               <template #append>
-                <v-btn
-                  variant="plain"
-                  icon="mdi-open-in-new"
-                  v-if="providerMapping.url"
-                  @click.prevent="
-                    openLinkInNewTab(providerMapping.url)"
-                ></v-btn>
+                <v-btn v-if="providerMapping.url" variant="plain" icon="mdi-open-in-new"
+                  @click.prevent="openLinkInNewTab(providerMapping.url)" />
               </template>
             </ListItem>
           </v-list>
         </Container>
       </v-card>
-  </Container>
+    </Container>
   </section>
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { filteredItems } from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams, filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { ref } from 'vue';
 import type { Radio } from '../plugins/api/interfaces';
@@ -88,14 +70,9 @@ watch(
 );
 
 const loadRadioVersions = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  favoritesOnly = true,
+  params: LoadDataParams
 ) {
   const allVersions: Radio[] = [];
-
   if (props.provider == 'library') {
     const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
     allVersions.push(...radioVersions);
@@ -105,7 +82,7 @@ const loadRadioVersions = async function (
     allVersions.push(...radioVersions);
   }
 
-  return filteredItems(allVersions, offset, limit, sort, search, favoritesOnly);
+  return filteredItems(allVersions, params);
 };
 const openLinkInNewTab = function (url: string) {
   window.open(url, '_blank');

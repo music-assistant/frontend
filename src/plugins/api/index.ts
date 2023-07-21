@@ -729,7 +729,7 @@ export class MusicAssistantApi {
       media,
       option,
       radio_mode,
-      start_item
+      start_item,
     });
   }
 
@@ -880,6 +880,18 @@ export class MusicAssistantApi {
     // media_types: only sync these media types. omit for all.
     // providers: only sync these provider domains. omit for all.
     this.sendCommand('music/sync', { media_types, providers });
+  }
+
+  public getProviderName(provider_domain_or_instance_id: string): string {
+    // try to get the name of the provider from the instance_id or domain
+    if (provider_domain_or_instance_id in this.providers) {
+      provider_domain_or_instance_id = this.providers[provider_domain_or_instance_id].domain;
+    }
+    // prefer the name from manifest and not the user configured name
+    if (provider_domain_or_instance_id in this.providerManifests) {
+      return this.providerManifests[provider_domain_or_instance_id].name;
+    }
+    return provider_domain_or_instance_id;
   }
 
   private async connectHass() {

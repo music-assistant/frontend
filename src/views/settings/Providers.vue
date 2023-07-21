@@ -63,7 +63,6 @@
             }
           "
           link
-          @click="editProvider(item.instance_id)"
           :context-menu-items="[
             {
               label: 'settings.configure',
@@ -118,8 +117,8 @@
               icon: 'mdi-refresh',
             },
           ]"
+          @click="editProvider(item.instance_id)"
         >
-        
           <template #prepend>
             <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" />
           </template>
@@ -158,7 +157,6 @@
             <Button v-else-if="!api.providers[item.instance_id]?.available" icon :title="$t('settings.not_loaded')">
               <v-icon icon="mdi-timer-sand" />
             </Button>
-
           </template>
         </ListItem>
       </Container>
@@ -250,7 +248,7 @@ const reloadProvider = function (providerInstanceId: string) {
 
 const openLinkInNewTab = function (url: string) {
   window.open(url, '_blank');
-}
+};
 
 // watchers
 watch(
@@ -266,5 +264,4 @@ watch(
 .titlebar {
   padding: 10px 0px;
 }
-
 </style>

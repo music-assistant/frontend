@@ -13,15 +13,15 @@
       <div v-if="contextMenuItems.length > 0" class="contextmenubtn">
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <v-btn variant="plain" ripple icon="mdi-dots-vertical"  v-bind="props" />
+            <v-btn variant="plain" ripple icon="mdi-dots-vertical" v-bind="props" />
           </template>
           <v-list>
             <ListItem
-              v-for="(item, index) in contextMenuItems.filter(x => x.hide != true)"
+              v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)"
               :key="index"
               :title="$t(item.label, item.labelArgs)"
-              @click="item.action ? item.action() : ''"
               :disabled="item.disabled == true"
+              @click="item.action ? item.action() : ''"
             >
               <template #prepend>
                 <v-avatar :icon="item.icon" />

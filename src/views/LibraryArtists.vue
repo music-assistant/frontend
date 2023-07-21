@@ -13,9 +13,9 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
-import { MediaType, type Artist, EventMessage, EventType, MediaItemType } from '../plugins/api/interfaces';
+import { MediaType, type Artist, EventMessage, EventType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 
 const { t } = useI18n();
@@ -23,16 +23,10 @@ const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
 const loadItems = async function (
-  offset: number,
-  limit: number,
-  sort: string,
-  search?: string,
-  favoritesOnly = true,
-  albumArtistsOnly = true,
+  params: LoadDataParams
 ) {
-  const favorite = favoritesOnly || undefined;
   updateAvailable.value = false;
-  return await api.getLibraryArtists(favorite, search, limit, offset, sort, albumArtistsOnly);
+  return await api.getLibraryArtists(params.favoritesOnly || undefined, params.search, params.limit, params.offset, params.sortBy);
 };
 
 store.topBarContextMenuItems = [

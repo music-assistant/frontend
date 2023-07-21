@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, ProviderFeature, type Playlist, EventMessage, EventType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
@@ -53,10 +53,9 @@ onBeforeUnmount(() => {
   store.topBarContextMenuItems = [];
 });
 
-const loadItems = async function (offset: number, limit: number, sort: string, search?: string, favoritesOnly = true) {
-  const favorite = favoritesOnly || undefined;
+const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  return await api.getLibraryPlaylists(favorite, search, limit, offset, sort);
+  return await api.getLibraryPlaylists(params.favoritesOnly || undefined, params.search, params.limit, params.offset, params.sortBy);
 };
 
 onMounted(() => {
