@@ -132,7 +132,7 @@
 
         <!-- favorite (heart) icon -->
         <div v-if="getBreakpointValue('bp3') && 'favorite' in item && showFavorite && !$vuetify.display.mobile">
-          <MainButton
+          <Button
             v-bind="props"
             variant="list"
             :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
@@ -183,7 +183,7 @@ import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import { ContextMenuItem } from '@/helpers/contextmenu';
-import MainButton from './mods/MainButton.vue';
+import Button from './mods/Button.vue';
 
 // properties
 export interface Props {

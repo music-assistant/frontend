@@ -15,7 +15,7 @@
 
       <template #append>
         <!-- toggle select button -->
-        <MainButton
+        <Button
           v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
           v-bind="props"
           variant="list"
@@ -26,7 +26,7 @@
         />
 
         <!-- favorites only filter -->
-        <MainButton
+        <Button
           v-if="showFavoritesOnlyFilter !== false"
           v-bind="props"
           variant="list"
@@ -35,10 +35,10 @@
           @click="toggleFavoriteFilter"
         >
           <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
-        </MainButton>
+        </Button>
 
         <!-- album artists only filter -->
-        <MainButton
+        <Button
           v-if="showAlbumArtistsOnlyFilter"
           v-bind="props"
           variant="list"
@@ -47,10 +47,10 @@
           @click="toggleAlbumArtistsFilter"
         >
           <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
-        </MainButton>
+        </Button>
 
         <!-- refresh button-->
-        <MainButton
+        <Button
           v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
           v-bind="props"
           variant="list"
@@ -61,14 +61,14 @@
           <v-badge :model-value="updateAvailable" color="error" dot>
             <v-icon icon="mdi-refresh" />
           </v-badge>
-        </MainButton>
+        </Button>
 
         <!-- sort options -->
         <v-menu v-if="sortKeys.length > 1" v-model="showSortMenu" location="bottom end" :close-on-content-click="true">
           <template #activator="{ props }">
-            <MainButton v-bind="props" variant="list" :disabled="!expanded" :title="$t('tooltip.sort_options')">
+            <Button v-bind="props" variant="list" :disabled="!expanded" :title="$t('tooltip.sort_options')">
               <v-icon v-bind="props" icon="mdi-sort" />
-            </MainButton>
+            </Button>
           </template>
           <v-card>
             <v-list>
@@ -86,7 +86,7 @@
         </v-menu>
 
         <!-- toggle search button -->
-        <MainButton
+        <Button
           v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
           v-bind="props"
           variant="list"
@@ -95,10 +95,10 @@
           @click="toggleSearch()"
         >
           <v-icon icon="mdi-magnify" />
-        </MainButton>
+        </Button>
 
         <!-- toggle view mode button -->
-        <MainButton
+        <Button
           v-bind="props"
           :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
           variant="list"
@@ -110,9 +110,9 @@
         <!-- provider filter dropdown -->
         <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
           <template #activator="{ props }">
-            <MainButton v-bind="props" variant="list" :disabled="!expanded">
+            <Button v-bind="props" variant="list" :disabled="!expanded">
               <ProviderIcon :domain="activeProviderFilter" :size="30" />
-            </MainButton>
+            </Button>
           </template>
           <v-card>
             <v-list>
@@ -138,9 +138,9 @@
         <!-- contextmenu -->
         <v-menu v-if="contextMenuItems && contextMenuItems.length > 0" location="bottom end">
           <template #activator="{ props }">
-            <MainButton variant="list" style="right: 3px" v-bind="props">
+            <Button variant="list" style="right: 3px" v-bind="props">
               <v-icon icon="mdi-dots-vertical" />
-            </MainButton>
+            </Button>
           </template>
           <v-list>
             <ListItem
@@ -158,7 +158,7 @@
         </v-menu>
 
         <!-- expand/collapse button -->
-        <MainButton
+        <Button
           v-if="allowCollapse"
           :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
           variant="list"
@@ -280,7 +280,6 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import Alert from './mods/Alert.vue';
 import Container from './mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
-import MainButton from './mods/MainButton.vue';
 
 // properties
 export interface Props {

@@ -1,6 +1,6 @@
 <template>
   <!-- active player -->
-  <Button :icon="getBreakpointValue('bp6') ? false : true" @click="store.showPlayersMenu = true">
+  <Button variant="icon" :icon="getBreakpointValue('bp6') ? false : true" @click="store.showPlayersMenu = true">
     <v-badge
       v-if="curGroupPlayers && curGroupPlayers.length > 0"
       size="small"

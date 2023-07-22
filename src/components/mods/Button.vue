@@ -8,39 +8,58 @@
 </template>
 
 <script lang="ts">
-import { computed } from 'vue';
+import { ButtonProps } from '@/plugins/api/interfaces';
+import { defineProps, computed } from 'vue';
 
 export default {
   props: {
     variant: {
       type: String,
       default: '',
+      validator: (value: string) => {
+        const allowedVariants = ['plain', 'default', 'responsive', 'icon', 'list'];
+        return allowedVariants.includes(value);
+      },
     },
   },
   setup(props, ctx) {
-    const btnDefault = computed(() => ({
-      ripple: false,
-    }));
+    const btnDefault = defineProps<ButtonProps>();
 
-    const btnIconDefault = computed(() => ({
-      ripple: false,
-      icon: true,
-    }));
-
-    const btnIconListView = computed(() => ({
+    const btnResponsive = computed(() => ({
+      ...btnDefault,
+      class: 'v-btn--variant-responsive',
       ripple: true,
       icon: true,
-      class: 'v-btn--variant-icon-list-view',
-      size: 30,
+      style:
+        'height: min(calc(100vw - 40px), calc(100vh - 340px)); width: min(calc(100vw - 40px), calc(100vh - 340px));',
+    }));
+
+    const btnIcon = computed(() => ({
+      ...btnDefault,
+      ripple: false,
+    }));
+
+    const btnList = computed(() => ({
+      ...btnDefault,
+      density: 'comfortable',
     }));
 
     const btnProps = computed(() => {
       const variant = props.variant;
-      return variant === 'icon'
-        ? btnIconDefault.value
-        : variant === 'listViewIcon'
-        ? btnIconListView.value
-        : btnDefault.value;
+      switch (variant) {
+        case 'default':
+          return btnDefault;
+        case 'plain':
+          return btnDefault;
+        case 'responsive':
+          return btnResponsive.value;
+        case 'icon':
+          return btnIcon.value;
+        case 'list':
+          return btnList.value;
+        default:
+          return btnDefault;
+      }
     });
 
     return { btnProps };
@@ -49,22 +68,13 @@ export default {
 </script>
 
 <style>
-.v-btn--variant-icon {
-  width: calc(var(--v-btn-height) + 10px) !important;
-  height: calc(var(--v-btn-height) + 10px) !important;
+.v-btn--variant-responsive > .v-btn__content {
+  height: 100%;
+  width: calc(100vw);
 }
 
-.v-btn--variant-icon-list-view {
-  border-radius: 20px;
-}
-
-.v-btn {
-  opacity: 0.62;
-  cursor: pointer;
-}
-
-.v-btn:focus,
-.v-btn:hover {
-  opacity: 1;
+.v-btn--variant-responsive > .v-btn__content > .responsive-icon-holder-btn {
+  height: 100%;
+  width: 100%;
 }
 </style>

@@ -21,15 +21,15 @@
           >
             <template #prepend>
               <!-- select player -->
-              <Button iscon v-bind="menu">
+              <Button variant="icon" v-bind="menu">
                 <v-icon
                   :size="24"
                   icon="mdi-volume-high"
                   :color="
                     !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
                     isColorDark(store.coverImageColorCode.darkColor)
-                      ? '#fff'
-                      : '#000'
+                      ? '#000'
+                      : '#fff'
                   "
                 />
                 <div class="text-caption">
