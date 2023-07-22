@@ -16,12 +16,20 @@
             </v-card>
           </v-col>
         </v-row>
+        <main-button> Default </main-button>
+        <main-button variant="responsive">
+          <responsive-icon type="btn" icon="mdi-play" />
+        </main-button>
+        <main-button variant="icon" icon="mdi-play" />
+        <main-button variant="list" icon="mdi-play" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import MainButton from '@/components/mods/MainButton.vue';
+import ResponsiveIcon from '@/components/mods/ResponsiveIcon.vue';
 import { ref } from 'vue';
 
 const cards = ref([

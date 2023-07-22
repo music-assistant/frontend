@@ -13,7 +13,7 @@
       <div v-if="contextMenuItems.length > 0" class="contextmenubtn">
         <v-menu location="bottom end">
           <template #activator="{ props }">
-            <v-btn v-bind="props" id="menu" variant="plain" :ripple="false" icon="mdi-dots-vertical" />
+            <MainButton v-bind="props" variant="list" icon="mdi-dots-vertical" />
           </template>
           <v-list>
             <ListItem
@@ -37,6 +37,7 @@
 <script lang="ts">
 import { computed } from 'vue';
 import type { ContextMenuItem } from '@/helpers/contextmenu';
+import MainButton from './MainButton.vue';
 
 export default {
   props: {
@@ -47,14 +48,13 @@ export default {
   },
   setup(props, ctx) {
     const listItemDefaults = computed(() => ({}));
-
     const listItemProps = computed(() => ({
       ...listItemDefaults.value,
       ...ctx.attrs,
     }));
-
     return { listItemProps };
   },
+  components: { MainButton },
 };
 </script>
 
@@ -91,9 +91,5 @@ export default {
 .list-item-main > div.v-list-item__content > div {
   padding-left: 10px;
   padding-right: 10px;
-}
-
-.contextmenubtn {
-  width: 25px;
 }
 </style>
