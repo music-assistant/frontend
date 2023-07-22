@@ -11,6 +11,7 @@
     :update-available="updateAvailable"
     :title="$t('playlists')"
     :allow-key-hooks="true"
+    :show-search-button="true"
     :context-menu-items="contextMenuItems"
     @refresh-clicked="
       () => {

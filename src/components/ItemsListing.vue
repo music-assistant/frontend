@@ -16,7 +16,7 @@
       <template #append>
         <!-- toggle select button -->
         <Button
-          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1') || !title"
+          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')"
           v-bind="props"
           variant="list"
           :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
@@ -27,7 +27,7 @@
 
         <!-- favorites only filter -->
         <Button
-          v-if="showFavoritesOnlyFilter !== false"
+          v-if="showFavoritesOnlyFilter != undefined ? showAlbumArtistsOnlyFilter : getBreakpointValue('bp1')"
           v-bind="props"
           variant="list"
           :title="$t('tooltip.filter_favorites')"
@@ -51,7 +51,7 @@
 
         <!-- refresh button-->
         <Button
-          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1') || !title"
+          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')"
           v-bind="props"
           variant="list"
           :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
@@ -87,7 +87,7 @@
 
         <!-- toggle search button -->
         <Button
-          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1') || !title"
+          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')"
           v-bind="props"
           variant="list"
           :title="$t('tooltip.search')"
@@ -169,9 +169,8 @@
     </v-toolbar>
     <v-divider />
 
-    <Container v-if="expanded">
-      <v-text-field
-        v-if="showSearch"
+    <v-text-field
+        v-if="showSearch && expanded"
         id="searchInput"
         v-model="search"
         clearable
@@ -179,10 +178,11 @@
         :label="$t('search')"
         hide-details
         variant="filled"
-        style="width: auto; margin-left: 15px; margin-right: 15px; margin-top: 10px"
+        style="width: auto; margin-top: 10px"
         @focus="searchHasFocus = true"
         @blur="searchHasFocus = false"
       />
+    <Container v-if="expanded">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
@@ -345,7 +345,6 @@ const showCheckboxes = ref(false);
 const albumArtistsOnlyFilter = ref(true);
 const activeProviderFilter = ref<string>('library');
 const expanded = ref(true);
-const hasFocus = ref(false);
 
 // computed properties
 
@@ -631,6 +630,15 @@ const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
+    // CTRL-A (select all requested)
+    // fetch all items first
+    while (allItems.value.length < totalItems.value!) {
+      if (totalItems.value !== undefined && offset.value >= totalItems.value) {
+        break;
+      }
+      offset.value += defaultLimit;
+      loadData();
+    }
     selectedItems.value = allItems.value;
     showCheckboxes.value = true;
   } else if (!searchHasFocus.value && e.key == 'Backspace') {
