@@ -63,59 +63,59 @@
         "
         link
         :context-menu-items="[
-            {
-              label: 'settings.configure',
-              labelArgs: [],
-              action: () => {
-                editProvider(item.instance_id);
-              },
-              icon: 'mdi-cog',
+          {
+            label: 'settings.configure',
+            labelArgs: [],
+            action: () => {
+              editProvider(item.instance_id);
             },
-            {
-              label: item.enabled ? 'settings.disable' : 'settings.enable',
-              labelArgs: [],
-              action: () => {
-                toggleEnabled(item);
-              },
-              icon: 'mdi-cancel',
-              disabled: api.providerManifests[item.domain].builtin,
+            icon: 'mdi-cog',
+          },
+          {
+            label: item.enabled ? 'settings.disable' : 'settings.enable',
+            labelArgs: [],
+            action: () => {
+              toggleEnabled(item);
             },
-            {
-              label: 'settings.documentation',
-              labelArgs: [],
-              action: () => {
-                openLinkInNewTab(api.providerManifests[item.domain].documentation!);
-              },
-              icon: 'mdi-bookshelf',
-              disabled: !api.providerManifests[item.domain].documentation,
+            icon: 'mdi-cancel',
+            disabled: api.providerManifests[item.domain].builtin,
+          },
+          {
+            label: 'settings.documentation',
+            labelArgs: [],
+            action: () => {
+              openLinkInNewTab(api.providerManifests[item.domain].documentation!);
             },
-            {
-              label: 'settings.sync',
-              labelArgs: [],
-              action: () => {
-                api.startSync(undefined, [item.instance_id]);
-              },
-              icon: 'mdi-sync',
-              hide: api.providers[item.instance_id]?.available && provType != ProviderType.MUSIC,
+            icon: 'mdi-bookshelf',
+            disabled: !api.providerManifests[item.domain].documentation,
+          },
+          {
+            label: 'settings.sync',
+            labelArgs: [],
+            action: () => {
+              api.startSync(undefined, [item.instance_id]);
             },
-            {
-              label: 'settings.delete',
-              labelArgs: [],
-              action: () => {
-                removeProvider(item.instance_id);
-              },
-              icon: 'mdi-delete',
-              hide: api.providerManifests[item.domain].builtin,
+            icon: 'mdi-sync',
+            hide: api.providers[item.instance_id]?.available && provType != ProviderType.MUSIC,
+          },
+          {
+            label: 'settings.delete',
+            labelArgs: [],
+            action: () => {
+              removeProvider(item.instance_id);
             },
-            {
-              label: 'settings.reload',
-              labelArgs: [],
-              action: () => {
-                reloadProvider(item.instance_id);
-              },
-              icon: 'mdi-refresh',
+            icon: 'mdi-delete',
+            hide: api.providerManifests[item.domain].builtin,
+          },
+          {
+            label: 'settings.reload',
+            labelArgs: [],
+            action: () => {
+              reloadProvider(item.instance_id);
             },
-          ]"
+            icon: 'mdi-refresh',
+          },
+        ]"
         @click="editProvider(item.instance_id)"
       >
         <template #prepend>
