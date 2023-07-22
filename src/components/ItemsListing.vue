@@ -19,11 +19,11 @@
           v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')"
           v-bind="props"
           variant="list"
-          :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
           :title="$t('tooltip.select_items')"
           :disabled="!expanded"
           @click="toggleCheckboxes"
-        />
+          ><v-icon :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
+        /></Button>
 
         <!-- favorites only filter -->
         <Button
@@ -100,12 +100,12 @@
         <!-- toggle view mode button -->
         <Button
           v-bind="props"
-          :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
           variant="list"
           :title="$t('tooltip.toggle_view_mode')"
           :disabled="!expanded"
           @click="toggleViewMode()"
-        />
+          ><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
+        /></Button>
 
         <!-- provider filter dropdown -->
         <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
@@ -158,30 +158,26 @@
         </v-menu>
 
         <!-- expand/collapse button -->
-        <Button
-          v-if="allowCollapse"
-          :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-          variant="list"
-          :title="$t('tooltip.collapse_expand')"
-          @click="toggleExpand"
-        />
+        <Button v-if="allowCollapse" variant="list" :title="$t('tooltip.collapse_expand')" @click="toggleExpand"
+          ><v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+        /></Button>
       </template>
     </v-toolbar>
     <v-divider />
 
     <v-text-field
-        v-if="showSearch && expanded"
-        id="searchInput"
-        v-model="search"
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('search')"
-        hide-details
-        variant="filled"
-        style="width: auto; margin-top: 10px"
-        @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false"
-      />
+      v-if="showSearch && expanded"
+      id="searchInput"
+      v-model="search"
+      clearable
+      prepend-inner-icon="mdi-magnify"
+      :label="$t('search')"
+      hide-details
+      variant="filled"
+      style="width: auto; margin-top: 10px"
+      @focus="searchHasFocus = true"
+      @blur="searchHasFocus = false"
+    />
     <Container v-if="expanded">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />

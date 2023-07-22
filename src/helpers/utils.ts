@@ -255,11 +255,7 @@ export function findDarkColor(colors: RGBColor[]): string {
   return mostPleasantColor;
 }
 
-export function darkenBrightColors(
-  color: string,
-  thresholdBrightness: number = 100,
-  colorPartReduction: number = 50,
-): string {
+export function darkenBrightColors(color: string, thresholdBrightness = 100, colorPartReduction = 50): string {
   const hexColor = color.replace(/^#/, '');
   const r = parseInt(hexColor.substring(0, 2), 16);
   const g = parseInt(hexColor.substring(2, 4), 16);
