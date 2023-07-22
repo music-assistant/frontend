@@ -4,8 +4,9 @@ import MobileDetect from 'mobile-detect';
 type MobileDeviceType = 'mobile' | 'phone' | 'tablet';
 const md = new MobileDetect(window.navigator.userAgent);
 
-type Breakpoints = 'bp0' | 'bp1' | 'bp2' | 'bp3' | 'bp4' | 'bp5' | 'bp6' | 'bp7' | 'bp8' | 'bp9' | 'bp10';
+type Breakpoints = 'bp0' | 'bp1' | 'bp2' | 'bp3' | 'bp4' | 'bp5' | 'bp6' | 'bp7' | 'bp8' | 'bp9' | 'bp10' | 'bp11';
 
+//TODO sorting
 const breakpoints: { [key in Breakpoints]: number } = {
   bp0: 375,
   bp1: 500,
@@ -18,6 +19,7 @@ const breakpoints: { [key in Breakpoints]: number } = {
   bp8: 1500,
   bp9: 1700,
   bp10: 1900,
+  bp11: 415,
 };
 
 const state = reactive({ width: window.innerWidth });

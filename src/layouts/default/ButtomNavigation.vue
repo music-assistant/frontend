@@ -18,7 +18,7 @@
       <v-window-item :style="{ display: pageValue == 1 ? 'flex' : 'none' }">
         <v-btn nav density="compact" @click="() => (pageValue -= 1)">
           <v-icon icon="mdi-arrow-left" />
-          <h6>{{ $t('BACK') }}</h6>
+          <h6>{{ $t('back') }}</h6>
         </v-btn>
 
         <div style="display: flex; overflow: auto">
