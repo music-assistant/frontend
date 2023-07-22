@@ -84,7 +84,7 @@ watch(
   () => props.item,
   async (newVal) => {
     if (newVal) {
-      imgData.value = (await getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value)) || fallbackImage.value;
+      imgData.value = getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value) || fallbackImage.value;
     }
   },
   { immediate: true },
