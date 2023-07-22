@@ -37,7 +37,7 @@
 <script lang="ts">
 import { computed } from 'vue';
 import type { ContextMenuItem } from '@/helpers/contextmenu';
-import * as MAButton from './Button.vue';
+import MAButton from './Button.vue';
 
 export default {
   components: { MAButton },
