@@ -738,3 +738,9 @@ export const filteredItems = function (
   };
 };
 </script>
+
+<style>
+.v-toolbar > .v-toolbar__content > .v-toolbar__append {
+  margin-right: 5px;
+}
+</style>
