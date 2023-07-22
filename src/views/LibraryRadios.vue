@@ -9,6 +9,7 @@
     :sort-keys="['sort_name', 'timestamp_added DESC']"
     :update-available="updateAvailable"
     :title="$t('radios')"
+    :show-search-button="true"
     :allow-key-hooks="true"
     :context-menu-items="[
       {

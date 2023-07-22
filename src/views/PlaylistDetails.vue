@@ -13,6 +13,7 @@
       :sort-keys="['position', 'position DESC', 'sort_name', 'sort_artist', 'sort_album']"
       :update-available="updateAvailable"
       :title="$t('playlist_tracks')"
+      :allow-key-hooks="true"
       @refresh-clicked="
         loadItemDetails();
         updateAvailable = false;

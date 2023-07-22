@@ -10,6 +10,7 @@
     :show-album="false"
     :update-available="updateAvailable"
     :title="$t('tracks')"
+    :show-search-button="true"
     :allow-key-hooks="true"
     :context-menu-items="[
       {
