@@ -66,23 +66,29 @@
       </div>
       <div class="mediacontrols-buttom-right">
         <div>
+          <!-- player mobile extended control buttons -->
+          <PlayerExtendedControls
+            :queue="{ isVisible: getBreakpointValue('bp3') }"
+            :player="{ isVisible: true }"
+            :volume="{ isVisible: true }"
+          />
           <!-- player mobile control buttons -->
           <PlayerControls
             style="padding-right: 5px"
             :visible-components="{
               repeat: { isVisible: false },
               shuffle: { isVisible: false },
-              play: { isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) },
+              play: {
+                isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
+                withCircle: false,
+                icon: {
+                  staticWidth: '48px',
+                  staticHeight: '48px',
+                  color: $vuetify.theme.current.dark ? '#000' : '#fff',
+                },
+              },
               previous: { isVisible: false },
               next: { isVisible: false },
-            }"
-          />
-          <!-- player extended control buttons -->
-          <PlayerExtendedControls
-            :visible-components="{
-              queue: { isVisible: getBreakpointValue('bp3') },
-              player: { isVisible: true },
-              volume: { isVisible: getBreakpointValue('bp0') },
             }"
           />
         </div>

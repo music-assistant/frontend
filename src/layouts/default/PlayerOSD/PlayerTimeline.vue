@@ -38,7 +38,7 @@
         v-model="curTimeValue"
         :disabled="!activePlayerQueue || !curQueueItem || activePlayerQueue?.items == 0"
         height="70"
-        :color="lightenColor(props.color, 0.1)"
+        :color="lightenColor(props.color, 0.15)"
         :bg-color="props.color"
         :bg-opacity="1"
         style="position: absolute; border-radius: 10px"

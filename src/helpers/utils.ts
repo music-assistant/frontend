@@ -255,6 +255,29 @@ export function findDarkColor(colors: RGBColor[]): string {
   return mostPleasantColor;
 }
 
+export function darkenBrightColors(color: string, thresholdBrightness = 100, colorPartReduction = 50): string {
+  const hexColor = color.replace(/^#/, '');
+  const r = parseInt(hexColor.substring(0, 2), 16);
+  const g = parseInt(hexColor.substring(2, 4), 16);
+  const b = parseInt(hexColor.substring(4, 6), 16);
+
+  const brightness = (r + g + b) / 7;
+
+  if (brightness > thresholdBrightness) {
+    const darkenedR = Math.max(0, r - colorPartReduction);
+    const darkenedG = Math.max(0, g - colorPartReduction);
+    const darkenedB = Math.max(0, b - colorPartReduction);
+
+    const darkenedColor = `#${darkenedR.toString(16).padStart(2, '0')}${darkenedG
+      .toString(16)
+      .padStart(2, '0')}${darkenedB.toString(16).padStart(2, '0')}`;
+
+    return darkenedColor;
+  }
+
+  return color;
+}
+
 export function getColorCode(img: HTMLImageElement): ColorCoverPalette {
   const colorThief = new ColorThief();
   const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);

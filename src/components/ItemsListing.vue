@@ -2,7 +2,7 @@
 <template>
   <section v-if="!(hideOnEmpty && allItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar density="compact" variant="flat" color="transparent">
+    <v-toolbar density="compact" variant="flat" style="height: 48px" color="transparent">
       <template #title>
         {{ title }}
         <v-badge
@@ -15,48 +15,45 @@
 
       <template #append>
         <!-- toggle select button -->
-        <v-btn
+        <Button
           v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')"
           v-bind="props"
-          :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
-          variant="plain"
+          variant="list"
           :title="$t('tooltip.select_items')"
           :disabled="!expanded"
           @click="toggleCheckboxes"
-        />
+          ><v-icon :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
+        /></Button>
 
         <!-- favorites only filter -->
-        <v-btn
+        <Button
           v-if="showFavoritesOnlyFilter != undefined ? showAlbumArtistsOnlyFilter : getBreakpointValue('bp1')"
           v-bind="props"
-          icon
-          variant="plain"
+          variant="list"
           :title="$t('tooltip.filter_favorites')"
           :disabled="!expanded"
           @click="toggleFavoriteFilter"
         >
           <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
-        </v-btn>
+        </Button>
 
         <!-- album artists only filter -->
-        <v-btn
+        <Button
           v-if="showAlbumArtistsOnlyFilter"
           v-bind="props"
-          icon
-          variant="plain"
+          variant="list"
           :title="$t('tooltip.album_artist_filter')"
           :disabled="!expanded"
           @click="toggleAlbumArtistsFilter"
         >
           <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
-        </v-btn>
+        </Button>
 
         <!-- refresh button-->
-        <v-btn
+        <Button
           v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')"
           v-bind="props"
-          icon
-          variant="plain"
+          variant="list"
           :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
           :disabled="!expanded"
           @click="onRefreshClicked()"
@@ -64,14 +61,14 @@
           <v-badge :model-value="updateAvailable" color="error" dot>
             <v-icon icon="mdi-refresh" />
           </v-badge>
-        </v-btn>
+        </Button>
 
         <!-- sort options -->
         <v-menu v-if="sortKeys.length > 1" v-model="showSortMenu" location="bottom end" :close-on-content-click="true">
           <template #activator="{ props }">
-            <v-btn icon v-bind="props" variant="plain" :disabled="!expanded" :title="$t('tooltip.sort_options')">
+            <Button v-bind="props" variant="list" :disabled="!expanded" :title="$t('tooltip.sort_options')">
               <v-icon v-bind="props" icon="mdi-sort" />
-            </v-btn>
+            </Button>
           </template>
           <v-card>
             <v-list>
@@ -89,34 +86,33 @@
         </v-menu>
 
         <!-- toggle search button -->
-        <v-btn
+        <Button
           v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')"
           v-bind="props"
-          icon
-          variant="plain"
+          variant="list"
           :title="$t('tooltip.search')"
           :disabled="!expanded"
           @click="toggleSearch()"
         >
           <v-icon icon="mdi-magnify" />
-        </v-btn>
+        </Button>
 
         <!-- toggle view mode button -->
-        <v-btn
+        <Button
           v-bind="props"
-          :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="plain"
+          variant="list"
           :title="$t('tooltip.toggle_view_mode')"
           :disabled="!expanded"
           @click="toggleViewMode()"
-        />
+          ><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
+        /></Button>
 
         <!-- provider filter dropdown -->
         <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
           <template #activator="{ props }">
-            <v-btn icon v-bind="props" variant="plain" :disabled="!expanded">
+            <Button v-bind="props" variant="list" :disabled="!expanded">
               <ProviderIcon :domain="activeProviderFilter" :size="30" />
-            </v-btn>
+            </Button>
           </template>
           <v-card>
             <v-list>
@@ -142,7 +138,7 @@
         <!-- contextmenu -->
         <v-menu v-if="contextMenuItems && contextMenuItems.length > 0" location="bottom end">
           <template #activator="{ props }">
-            <Button icon style="right: 3px" v-bind="props">
+            <Button variant="list" style="right: 3px" v-bind="props">
               <v-icon icon="mdi-dots-vertical" />
             </Button>
           </template>
@@ -162,30 +158,26 @@
         </v-menu>
 
         <!-- expand/collapse button -->
-        <v-btn
-          v-if="allowCollapse"
-          :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-          variant="plain"
-          :title="$t('tooltip.collapse_expand')"
-          @click="toggleExpand"
-        />
+        <Button v-if="allowCollapse" variant="list" :title="$t('tooltip.collapse_expand')" @click="toggleExpand"
+          ><v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+        /></Button>
       </template>
     </v-toolbar>
     <v-divider />
 
     <v-text-field
-        v-if="showSearch && expanded"
-        id="searchInput"
-        v-model="search"
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('search')"
-        hide-details
-        variant="filled"
-        style="width: auto; margin-top: 10px"
-        @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false"
-      />
+      v-if="showSearch && expanded"
+      id="searchInput"
+      v-model="search"
+      clearable
+      prepend-inner-icon="mdi-magnify"
+      :label="$t('search')"
+      hide-details
+      variant="filled"
+      style="width: auto; margin-top: 10px"
+      @focus="searchHasFocus = true"
+      @blur="searchHasFocus = false"
+    />
     <Container v-if="expanded">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />

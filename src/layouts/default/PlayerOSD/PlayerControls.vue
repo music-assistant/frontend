@@ -1,26 +1,20 @@
 <template>
-  <div
-    v-if="
-      props.visibleComponents &&
-      props.visibleComponents.shuffle?.isVisible &&
-      props.visibleComponents.previous?.isVisible &&
-      props.visibleComponents.play?.isVisible &&
-      props.visibleComponents.next?.isVisible &&
-      props.visibleComponents.repeat?.isVisible
-    "
-    style="display: inline-flex"
-  >
+  <div v-if="props.visibleComponents" style="display: inline-flex">
     <!-- shuffle button -->
     <div v-if="props.visibleComponents && props.visibleComponents.shuffle?.isVisible" class="player-controls-elements">
       <ShuffleBtn class="media-controls-item" :icon="props.visibleComponents.shuffle.icon" />
     </div>
     <!-- prev button -->
-    <div class="player-controls-elements">
+    <div v-if="props.visibleComponents && props.visibleComponents.previous?.isVisible" class="player-controls-elements">
       <PreviousBtn class="media-controls-item" :icon="props.visibleComponents.previous.icon" />
     </div>
     <!-- play/pause button: only when MA queue is active -->
     <div v-if="props.visibleComponents && props.visibleComponents.play?.isVisible">
-      <PlayBtn class="media-controls-item" :icon="props.visibleComponents.play.icon" />
+      <PlayBtn
+        class="media-controls-item"
+        :with-circle="props.visibleComponents.play.withCircle"
+        :icon="props.visibleComponents.play.icon"
+      />
     </div>
     <!-- next button -->
     <div v-if="props.visibleComponents && props.visibleComponents.next?.isVisible" class="player-controls-elements">
@@ -59,6 +53,7 @@ export interface Props {
     };
     play?: {
       isVisible?: boolean;
+      withCircle?: boolean;
       icon?: ResponsiveIconProps;
     };
     previous?: {

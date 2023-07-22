@@ -619,9 +619,9 @@ export interface IconProps {
 export interface ButtonProps {
   height?: string;
   width?: string;
-  /*ripple?: boolean;
-  icon?: boolean;
+  ripple?: boolean;
   class?: string;
-  size?: number;*/
-  icon?: IconProps;
+  size?: number;
+  icon?: string;
+  iconOptions?: IconProps; //Experimental
 }
