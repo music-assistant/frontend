@@ -6,7 +6,7 @@
       <template #title>
         {{ title }}
         <v-badge
-          v-if="getBreakpointValue('bp1')"
+          v-if="getBreakpointValue('bp11')"
           color="grey"
           :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
           inline

@@ -27,7 +27,7 @@
           cursor: 'pointer',
           color:
             !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-            !isColorDark(store.coverImageColorCode.darkColor)
+            isColorDark(store.coverImageColorCode.darkColor)
               ? '#000'
               : '#fff',
         }"

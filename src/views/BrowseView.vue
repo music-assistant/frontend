@@ -3,18 +3,8 @@
     <v-toolbar variant="flat" color="transparent" style="height: 50px">
       <template #title>
         {{ $t('browse') }}
-        <span v-if="browseItem"> | {{ getBrowseFolderName(browseItem, $t) }}</span>
+        <span v-if="browseItem && browseItem.provider != 'library'"> | {{ getBrowseFolderName(browseItem, $t) }}</span>
         <v-badge v-if="browseItem?.items" color="grey" :content="browseItem?.items.length" inline />
-      </template>
-
-      <template #append>
-        <!-- back button -->
-        <v-btn
-          v-if="props.path"
-          variant="plain"
-          icon="mdi-arrow-left"
-          :to="{ name: 'browse', query: { path: backPath } }"
-        />
       </template>
     </v-toolbar>
     <v-divider />
@@ -59,17 +49,6 @@ const router = useRouter();
 
 const browseItem = ref<BrowseFolder>();
 const loading = ref(false);
-
-const backPath = computed(() => {
-  if (props.path) {
-    const backPath = props.path.substring(0, props.path.lastIndexOf('/') + 1);
-    if (backPath.endsWith('://')) {
-      return '';
-    }
-    return backPath;
-  }
-  return '';
-});
 
 const loadData = async function () {
   loading.value = true;

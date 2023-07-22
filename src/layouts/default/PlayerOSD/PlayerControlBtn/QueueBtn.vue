@@ -1,15 +1,13 @@
 <template>
   <!-- active queue -->
   <Button
-    v-if="props.isVisible"
-    icon
-    v-bind="props.icon"
+    variant="icon"
     @click="
       store.showFullscreenPlayer = false;
       router.push('/playerqueue/');
     "
   >
-    <v-icon icon="mdi-playlist-play" />
+    <v-icon size="24" icon="mdi-playlist-play" />
   </Button>
 </template>
 
@@ -18,19 +16,8 @@ import { computed } from 'vue';
 
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
-import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import { getValueFromSources } from '@/helpers/utils';
 import router from '@/plugins/router';
-
-// properties
-export interface Props {
-  isVisible?: boolean;
-  icon?: ResponsiveIconProps;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isVisible: true,
-});
+import Button from '@/components/mods/Button.vue';
 
 // computed properties
 const activePlayerQueue = computed(() => {

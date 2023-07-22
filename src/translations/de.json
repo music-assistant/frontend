@@ -19,6 +19,7 @@
   "artist_albums": "Alben",
   "artist_toptracks": "Top Tracks",
   "artists": "Künstler*innen",
+  "back": "Zurück",
   "browse": "Durchsuchen",
   "clear_selection": "Auswahl aufheben",
   "close": "Schließen",
@@ -163,7 +164,7 @@
   "tooltip": {
     "album_artist_filter": "Filter für Album-Künstler umschalten",
     "explicit": "Explizit",
-    "filter_favorites": "Filter innerhalb der Favoriten umschalten",
+    "filter_library": "Filter innerhalb der Bibliothek/Favoriten umschalten",
     "library": "Bibliothek/Favorit umschalten",
     "linked": "Dieses Anbieterelement ist mit den aktuellen Artikeldetails verknüpft",
     "refresh": "Aktualisiere die Artikelliste",
@@ -171,7 +172,8 @@
     "search": "Sucheingabe ein-/ausblenden",
     "select_items": "Wählen Sie mehrere Artikel aus",
     "sort_options": "Sortieroptionen",
-    "toggle_view_mode": "Liste/Thumbs im Anzeigemodus umschalten"
+    "toggle_view_mode": "Liste/Thumbs im Anzeigemodus umschalten",
+    "filter_favorites": "Filter innerhalb der Favoriten umschalten"
   },
   "topresult": "Top-Ergebnis",
   "track": "Track",
