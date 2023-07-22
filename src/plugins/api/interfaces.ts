@@ -607,3 +607,21 @@ export enum MobileDeviceType {
   TABLET,
   PHONE,
 }
+
+export interface IconProps {
+  height?: string;
+  width?: string;
+  size?: number;
+  icon?: string;
+  color?: string;
+}
+
+export interface ButtonProps {
+  height?: string;
+  width?: string;
+  /*ripple?: boolean;
+  icon?: boolean;
+  class?: string;
+  size?: number;*/
+  icon?: IconProps;
+}

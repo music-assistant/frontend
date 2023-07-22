@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import Library from './Library.vue';
 
 const cards = ref([
   {

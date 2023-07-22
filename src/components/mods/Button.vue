@@ -28,14 +28,14 @@ export default {
     }));
 
     const btnIconListView = computed(() => ({
-      ...btnIconDefault,
-      width: 'calc(var(--v-btn-height) + 0px)',
-      height: 'calc(var(--v-btn-height) + 0px)',
-      style: 'padding: 0px;',
+      ripple: true,
+      icon: true,
+      class: 'v-btn--variant-icon-list-view',
+      size: 30,
     }));
 
     const btnProps = computed(() => {
-      const variant = ctx.attrs.variant;
+      const variant = props.variant;
       return variant === 'icon'
         ? btnIconDefault.value
         : variant === 'listViewIcon'
@@ -52,6 +52,10 @@ export default {
 .v-btn--variant-icon {
   width: calc(var(--v-btn-height) + 10px) !important;
   height: calc(var(--v-btn-height) + 10px) !important;
+}
+
+.v-btn--variant-icon-list-view {
+  border-radius: 20px;
 }
 
 .v-btn {

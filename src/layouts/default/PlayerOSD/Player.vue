@@ -1,6 +1,5 @@
 <template>
   <BottomNavigation />
-
   <v-footer
     bottom
     fixed
