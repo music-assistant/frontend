@@ -1,6 +1,6 @@
 <template>
   <!-- active player volume -->
-  <div>
+  <div v-if="props.isVisible">
     <v-menu v-if="activePlayerQueue" v-model="showVolume" class="volume-control-dialog" :close-on-content-click="false">
       <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
@@ -21,7 +21,7 @@
           >
             <template #prepend>
               <!-- select player -->
-              <Button variant="icon" v-bind="menu">
+              <Button variant="icon" size="48" :ripple="false" v-bind="{ ...menu }">
                 <v-icon
                   :size="24"
                   icon="mdi-volume-high"
@@ -44,10 +44,9 @@
           </PlayerVolume>
         </div>
         <div v-else>
-          <Button icon v-bind="menu">
+          <Button v-bind="{ ...menu }" size="48" variant="icon">
             <v-icon
               icon="mdi-volume-high"
-              :size="24"
               :color="
                 !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
                 isColorDark(store.coverImageColorCode.darkColor)
@@ -109,26 +108,31 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-
+import { useRouter } from 'vue-router';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
-import PlayerVolume from '../PlayerVolume.vue';
 import VolumeControl from '@/components/VolumeControl.vue';
-
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';
-import { isColorDark } from '@/helpers/utils';
+import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import { isColorDark, truncateString } from '@/helpers/utils';
+import PlayerVolume from '../PlayerVolume.vue';
+
+const router = useRouter();
 
 // properties
 export interface Props {
+  // eslint-disable-next-line vue/require-default-prop
   volumeSize?: string;
   responsiveVolumeSize?: boolean;
+  isVisible?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   volumeSize: '150px',
   responsiveVolumeSize: true,
+  isVisible: true,
 });
 
 //refs
@@ -145,8 +149,8 @@ const activePlayerQueue = computed(() => {
 
 <style>
 .volume-control-dialog > .v-overlay__content {
-  bottom: 90px !important;
-  right: 10px !important;
+  bottom: 135px !important;
+  right: 5px !important;
   left: unset !important;
   top: unset !important;
 }

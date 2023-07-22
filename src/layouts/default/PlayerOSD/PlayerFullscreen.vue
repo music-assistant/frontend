@@ -6,7 +6,7 @@
     style="overflow: hidden"
     transition="dialog-bottom-transition"
   >
-    <v-card :color="coverImageColorCode">
+    <v-card :color="darkenBrightColors(coverImageColorCode, 77, 40)">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -204,13 +204,9 @@
         <div class="fullscreen-row">
           <PlayerExtendedControls
             v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
-            :responsive-volume-size="false"
-            :visible-components="{
-              player: { isVisible: false },
-              volume: { isVisible: true },
-              queue: { isVisible: false },
-            }"
-            :volume-size="'100%'"
+            :queue="{ isVisible: false }"
+            :player="{ isVisible: false }"
+            :volume="{ isVisible: true, volumeSize: '100%', responsiveVolumeSize: false }"
           />
         </div>
         <div v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })" class="fullscreen-media-controls">
@@ -268,13 +264,11 @@
                   next: { isVisible: false },
                 }"
               />
-              <!-- player extended control buttons -->
+              <!-- player mobile extended control buttons -->
               <PlayerExtendedControls
-                :visible-components="{
-                  queue: { isVisible: getBreakpointValue('bp3') },
-                  player: { isVisible: true },
-                  volume: { isVisible: getBreakpointValue('bp0') },
-                }"
+                :queue="{ isVisible: getBreakpointValue('bp3') }"
+                :player="{ isVisible: true }"
+                :volume="{ isVisible: getBreakpointValue('bp0') }"
               />
             </div>
           </div>
@@ -299,13 +293,11 @@
           </div>
           <div style="text-align: end">
             <PlayerExtendedControls
-              :visible-components="{
-                queue: {
-                  isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
-                },
-                player: { isVisible: false },
-                volume: { isVisible: false },
+              :queue="{
+                isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
               }"
+              :player="{ isVisible: false }"
+              :volume="{ isVisible: false }"
             />
           </div>
         </div>
@@ -337,6 +329,7 @@ import PlayerControls from './PlayerControls.vue';
 import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
 import router from '@/plugins/router';
 import Flicking from '@egjs/vue3-flicking';
+import { darkenBrightColors } from '@/helpers/utils';
 
 const coverImageColorCode = ref(
   vuetify.theme.current.value.dark ? store.coverImageColorCode.darkColor : store.coverImageColorCode.lightColor,
