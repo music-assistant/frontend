@@ -55,7 +55,7 @@
           v-bind="props"
           variant="list"
           :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
-          :disabled="!expanded"
+          :disabled="!expanded || isSyncing"
           @click="onRefreshClicked()"
         >
           <v-badge :model-value="updateAvailable" color="error" dot>
@@ -299,6 +299,7 @@ export interface Props {
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   contextMenuItems?: Array<ContextMenuItem>;
+    isSyncing?: boolean;
   loadData: (params: LoadDataParams) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -464,7 +465,7 @@ const showPlayMenu = function (showContextMenuItems = true) {
 
 const onRefreshClicked = function () {
   emit('refreshClicked');
-  loadData(true);
+  loadData(true, undefined, true);
 };
 
 const onClick = function (mediaItem: MediaItemType) {
@@ -536,8 +537,8 @@ watch(
   },
 );
 
-const loadData = async function (clear = false, limit = defaultLimit) {
-  if (clear) {
+const loadData = async function (clear = false, limit = defaultLimit, refresh=false) {
+  if (clear || refresh) {
     offset.value = 0;
     newContentAvailable.value = false;
   }
@@ -551,6 +552,7 @@ const loadData = async function (clear = false, limit = defaultLimit) {
     favoritesOnly: favoritesOnly.value,
     albumArtistsFilter: albumArtistsOnlyFilter.value,
     providerFilter: activeProviderFilter.value,
+    refresh
   });
   if (offset.value) {
     allItems.value.push(...nextItems.items);
@@ -662,6 +664,7 @@ export interface LoadDataParams {
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
   providerFilter?: string;
+  refresh?: boolean;
 }
 
 export const filteredItems = function (

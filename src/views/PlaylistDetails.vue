@@ -14,10 +14,7 @@
       :update-available="updateAvailable"
       :title="$t('playlist_tracks')"
       :allow-key-hooks="true"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
+      :is-syncing="isSyncing"
     />
     <!-- provider mapping details -->
     <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
@@ -40,6 +37,7 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
+const isSyncing = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
@@ -57,6 +55,7 @@ onMounted(() => {
   //signal if/when item updates
   const unsub = api.subscribe(EventType.MEDIA_ITEM_ADDED, (evt: EventMessage) => {
     // signal user that there might be updated info available for this item
+    if (isSyncing.value) return;
     const updatedItem = evt.data as MediaItemType;
     if (itemDetails.value?.uri == updatedItem.uri) {
       updateAvailable.value = true;
@@ -65,12 +64,17 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
+const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
+
 const loadPlaylistTracks = async function (params: LoadDataParams) {
   const playlistTracks: Track[] = [];
+  if (params.refresh) isSyncing.value = true;
   await api.getPlaylistTracks(props.itemId, props.provider, (data: Track[]) => {
-    console.log('chunk', data.length);
     playlistTracks.push(...data);
-  });
+  }, params.refresh);
+  // prevent race condition with a short sleep
+  if (params.refresh) await sleep(1000);
+  isSyncing.value = false;
   return filteredItems(playlistTracks, params);
 };
 </script>

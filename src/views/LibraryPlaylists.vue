@@ -13,12 +13,6 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :context-menu-items="contextMenuItems"
-    @refresh-clicked="
-      () => {
-        api.startSync([MediaType.PLAYLIST]);
-        updateAvailable = false;
-      }
-    "
   />
 </template>
 
@@ -27,8 +21,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
-import { MediaType, ProviderFeature, type Playlist, EventMessage, EventType } from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
+import { ProviderFeature, type Playlist, EventMessage, EventType, MediaType } from '../plugins/api/interfaces';
 import { ContextMenuItem } from '@/helpers/contextmenu';
 
 const { t } = useI18n();
@@ -37,7 +30,10 @@ const updateAvailable = ref(false);
 const contextMenuItems = ref<ContextMenuItem[]>([]);
 
 const loadItems = async function (params: LoadDataParams) {
-  updateAvailable.value = false;
+  if (params.refresh) {
+    api.startSync([MediaType.PLAYLIST]);
+    updateAvailable.value = false;
+  }
   return await api.getLibraryPlaylists(
     params.favoritesOnly || undefined,
     params.search,

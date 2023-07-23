@@ -10,12 +10,6 @@
     :title="$t('artists')"
     :allow-key-hooks="true"
     :show-search-button="true"
-    @refresh-clicked="
-      () => {
-        api.startSync([MediaType.ARTIST]);
-        updateAvailable = false;
-      }
-    "
   />
 </template>
 
@@ -29,7 +23,10 @@ const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
 const loadItems = async function (params: LoadDataParams) {
-  updateAvailable.value = false;
+  if (params.refresh) {
+    api.startSync([MediaType.ARTIST]);
+    updateAvailable.value = false;
+  }
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
     params.search,
