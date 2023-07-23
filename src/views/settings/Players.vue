@@ -19,6 +19,15 @@
           icon: 'mdi-cog',
         },
         {
+          label: 'settings.edit_group_members',
+          labelArgs: [],
+          action: () => {
+            editGroupMembers(item.player_id);
+          },
+          icon: 'mdi-speaker-multiple',
+          hide: item.provider != 'ugp'
+        },
+        {
           label: item.enabled ? 'settings.disable' : 'settings.enable',
           labelArgs: [],
           action: () => {
@@ -110,6 +119,13 @@ const editPlayer = function (playerId: string) {
   if (playerId in api.players) {
     // only allow edit if player is alive/available
     router.push(`/settings/editplayer/${playerId}`);
+  }
+};
+
+const editGroupMembers = function (playerId: string) {
+  if (playerId in api.players) {
+    // only allow edit if player is alive/available
+    router.push(`/settings/editprovider/ugp`);
   }
 };
 

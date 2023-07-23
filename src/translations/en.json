@@ -145,7 +145,8 @@
     "playlists_in_library": "Playlists in library",
     "radio_in_library": "Radio in library",
     "server_logging": "Server logging",
-    "download_log": "Download logfile"
+    "download_log": "Download logfile",
+    "edit_group_members": "Edit group members"
   },
   "show_info": "Show info",
   "show_select_boxes": "Show selection boxes",
