@@ -12,10 +12,6 @@
       :update-available="updateAvailable"
       :title="$t('tracks')"
       :provider-filter="providerFilter"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
     />
     <br />
     <ItemsListing
@@ -29,10 +25,6 @@
       :update-available="updateAvailable"
       :title="$t('other_versions')"
       :hide-on-empty="true"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
     />
     <br />
     <!-- provider mapping details -->
@@ -94,6 +86,10 @@ onMounted(() => {
 
 const loadAlbumTracks = async function (params: LoadDataParams) {
   let items: Track[] = [];
+  if (params.refresh) {
+    await loadItemDetails();
+    updateAvailable.value = false;
+  }
   if (!itemDetails.value) {
     items = [];
   } else if (params.providerFilter && params.providerFilter != 'library') {
@@ -106,12 +102,16 @@ const loadAlbumTracks = async function (params: LoadDataParams) {
   } else {
     items = await api.getAlbumTracks(itemDetails.value.item_id, itemDetails.value.provider);
   }
+  updateAvailable.value = false;
   return filteredItems(items, params);
 };
 
 const loadAlbumVersions = async function (params: LoadDataParams) {
   const allVersions: Album[] = [];
-
+  if (params.refresh) {
+    await loadItemDetails();
+    updateAvailable.value = false;
+  }
   if (props.provider == 'library') {
     const albumVersions = await api.getAlbumVersions(props.itemId, props.provider);
     allVersions.push(...albumVersions);
@@ -119,7 +119,7 @@ const loadAlbumVersions = async function (params: LoadDataParams) {
   for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
     const albumVersions = await api.getAlbumVersions(providerMapping.item_id, providerMapping.provider_instance);
     allVersions.push(...albumVersions);
-  }
+  }  
   return filteredItems(allVersions, params);
 };
 </script>

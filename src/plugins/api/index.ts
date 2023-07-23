@@ -312,6 +312,8 @@ export class MusicAssistantApi {
     return this.getData('music/playlists/get_playlist', {
       item_id,
       provider_instance_id_or_domain,
+      force_refresh,
+      lazy
     });
   }
 
@@ -319,12 +321,14 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     chunkCallback?: chunkCallback,
+    force_refresh?: boolean,
   ): Promise<Track[]> {
     return this.getData(
       'music/playlists/playlist_tracks',
       {
         item_id,
         provider_instance_id_or_domain,
+        force_refresh
       },
       chunkCallback,
     );

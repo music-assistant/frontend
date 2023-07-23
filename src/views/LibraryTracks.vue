@@ -22,12 +22,6 @@
         icon: 'mdi-link-plus',
       },
     ]"
-    @refresh-clicked="
-      () => {
-        api.startSync([MediaType.TRACK]);
-        updateAvailable = false;
-      }
-    "
   />
 </template>
 
@@ -58,7 +52,10 @@ onMounted(() => {
 
 const loadItems = async function (params: LoadDataParams) {
   params.favoritesOnly = params.favoritesOnly || undefined;
-  updateAvailable.value = false;
+  if (params.refresh) {
+    api.startSync([MediaType.TRACK]);
+    updateAvailable.value = false;
+  }
   return await api.getLibraryTracks(params.favoritesOnly, params.search, params.limit, params.offset, params.sortBy);
 };
 

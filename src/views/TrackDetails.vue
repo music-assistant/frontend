@@ -15,10 +15,6 @@
       :title="$t('appears_on')"
       :checksum="provider + itemId"
       :provider-filter="providerFilter"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
     />
     <br />
     <ItemsListing
@@ -35,10 +31,6 @@
       :title="$t('other_versions')"
       :hide-on-empty="true"
       :checksum="provider + itemId"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
     />
     <br />
     <!-- provider mapping details -->
@@ -49,17 +41,12 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams, filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
-import { iconHiRes } from '@/components/QualityDetailsBtn.vue';
 import { computed, ref } from 'vue';
 import { EventType, type Track, type EventMessage, type MediaItemType, Album } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { onBeforeUnmount, onMounted, watch } from 'vue';
-import ListItem from '../components/mods/ListItem.vue';
-import Container from '../components/mods/Container.vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
 
 export interface Props {
   itemId: string;
@@ -108,6 +95,10 @@ onMounted(() => {
 
 const loadTrackVersions = async function (params: LoadDataParams) {
   const allVersions: Track[] = [];
+  if (params.refresh) {
+    await loadItemDetails();
+    updateAvailable.value = false;
+  }
 
   if (props.provider == 'library') {
     const trackVersions = await api.getTrackVersions(props.itemId, props.provider);
@@ -123,6 +114,10 @@ const loadTrackVersions = async function (params: LoadDataParams) {
 
 const loadTrackAlbums = async function (params: LoadDataParams) {
   let items: Album[] = [];
+  if (params.refresh) {
+    await loadItemDetails();
+    updateAvailable.value = false;
+  }
   if (!itemDetails.value) {
     items = [];
   } else if (params.providerFilter && params.providerFilter != 'library') {
@@ -138,10 +133,4 @@ const loadTrackAlbums = async function (params: LoadDataParams) {
   return filteredItems(items, params);
 };
 
-const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
-};
-const getPreviewUrl = function (provider: string, item_id: string) {
-  return `${api.baseUrl}/preview?provider=${provider}&item_id=${encodeURIComponent(item_id)}`;
-};
 </script>

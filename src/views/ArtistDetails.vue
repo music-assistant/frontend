@@ -14,10 +14,6 @@
       :title="$t('tracks')"
       :provider-filter="providerFilter"
       :allow-collapse="true"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
     />
     <br />
     <ItemsListing
@@ -32,10 +28,6 @@
       :title="$t('albums')"
       :provider-filter="providerFilter"
       :allow-collapse="true"
-      @refresh-clicked="
-        loadItemDetails();
-        updateAvailable = false;
-      "
     />
     <br />
     <!-- provider mapping details -->
@@ -91,6 +83,10 @@ onMounted(() => {
 
 const loadArtistAlbums = async function (params: LoadDataParams) {
   let items: Album[] = [];
+  if (params.refresh) {
+    await loadItemDetails();
+    updateAvailable.value = false;
+  }
   if (!itemDetails.value) {
     items = [];
   } else if (params.providerFilter && params.providerFilter != 'library') {
@@ -108,6 +104,10 @@ const loadArtistAlbums = async function (params: LoadDataParams) {
 
 const loadArtistTracks = async function (params: LoadDataParams) {
   let items: Track[] = [];
+  if (params.refresh) {
+    await loadItemDetails();
+    updateAvailable.value = false;
+  }
   if (!itemDetails.value) {
     items = [];
   } else if (params.providerFilter && params.providerFilter != 'library') {

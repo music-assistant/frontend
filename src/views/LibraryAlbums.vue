@@ -10,12 +10,6 @@
     :title="$t('albums')"
     :allow-key-hooks="true"
     :show-search-button="true"
-    @refresh-clicked="
-      () => {
-        api.startSync([MediaType.ALBUM]);
-        updateAvailable = false;
-      }
-    "
   />
 </template>
 
@@ -43,6 +37,10 @@ onMounted(() => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
+  if (params.refresh) {
+    api.startSync([MediaType.ALBUM]);
+    updateAvailable.value = false;
+  }
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
