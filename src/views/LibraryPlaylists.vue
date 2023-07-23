@@ -23,6 +23,7 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { ProviderFeature, type Playlist, EventMessage, EventType, MediaType } from '../plugins/api/interfaces';
 import { ContextMenuItem } from '@/helpers/contextmenu';
+import { sleep } from '@/helpers/utils';
 
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
@@ -32,8 +33,17 @@ const contextMenuItems = ref<ContextMenuItem[]>([]);
 const loadItems = async function (params: LoadDataParams) {
   if (params.refresh) {
     api.startSync([MediaType.PLAYLIST]);
-    updateAvailable.value = false;
+    // prevent race condition with a short sleep
+    await sleep(250);
+    // wait for sync to finish
+    while (true) {
+      if (api.syncTasks.value.length == 0) break;
+      if (api.syncTasks.value.filter((x) => x.media_types.includes(MediaType.PLAYLIST)).length == 0) break;
+      await sleep(500);
+    }
+    await sleep(500);
   }
+  updateAvailable.value = false;
   return await api.getLibraryPlaylists(
     params.favoritesOnly || undefined,
     params.search,

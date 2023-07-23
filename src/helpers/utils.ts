@@ -140,6 +140,8 @@ export const getStreamingProviderMappings = function (itemDetails: MediaItemType
   return result;
 };
 
+export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
+
 export const numberRange = function (start: number, end: number): number[] {
   return Array(end - start + 1)
     .fill(start)

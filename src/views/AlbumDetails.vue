@@ -119,7 +119,7 @@ const loadAlbumVersions = async function (params: LoadDataParams) {
   for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
     const albumVersions = await api.getAlbumVersions(providerMapping.item_id, providerMapping.provider_instance);
     allVersions.push(...albumVersions);
-  }  
+  }
   return filteredItems(allVersions, params);
 };
 </script>

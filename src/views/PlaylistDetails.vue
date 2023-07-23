@@ -37,7 +37,6 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
-const isSyncing = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
@@ -64,17 +63,18 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
-
 const loadPlaylistTracks = async function (params: LoadDataParams) {
   const playlistTracks: Track[] = [];
-  if (params.refresh) isSyncing.value = true;
-  await api.getPlaylistTracks(props.itemId, props.provider, (data: Track[]) => {
-    playlistTracks.push(...data);
-  }, params.refresh);
+  await api.getPlaylistTracks(
+    props.itemId,
+    props.provider,
+    (data: Track[]) => {
+      playlistTracks.push(...data);
+    },
+    params.refresh,
+  );
   // prevent race condition with a short sleep
   if (params.refresh) await sleep(1000);
-  isSyncing.value = false;
   updateAvailable.value = false;
   return filteredItems(playlistTracks, params);
 };

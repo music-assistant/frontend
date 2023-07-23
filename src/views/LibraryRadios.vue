@@ -32,6 +32,7 @@ import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Radio } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 import Container from '../components/mods/Container.vue';
+import { sleep } from '@/helpers/utils';
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
@@ -54,8 +55,17 @@ onMounted(() => {
 const loadItems = async function (params: LoadDataParams) {
   if (params.refresh) {
     api.startSync([MediaType.RADIO]);
-    updateAvailable.value = false;
+    // prevent race condition with a short sleep
+    await sleep(250);
+    // wait for sync to finish
+    while (true) {
+      if (api.syncTasks.value.length == 0) break;
+      if (api.syncTasks.value.filter((x) => x.media_types.includes(MediaType.RADIO)).length == 0) break;
+      await sleep(500);
+    }
+    await sleep(500);
   }
+  updateAvailable.value = false;
   return await api.getLibraryRadios(
     params.favoritesOnly || undefined,
     params.search,

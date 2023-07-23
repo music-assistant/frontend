@@ -18,6 +18,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, type Album, EventMessage, EventType } from '../plugins/api/interfaces';
+import { sleep } from '@/helpers/utils';
 
 const items = ref<Album[]>([]);
 const updateAvailable = ref<boolean>(false);
@@ -39,8 +40,17 @@ onMounted(() => {
 const loadItems = async function (params: LoadDataParams) {
   if (params.refresh) {
     api.startSync([MediaType.ALBUM]);
-    updateAvailable.value = false;
+    // prevent race condition with a short sleep
+    await sleep(250);
+    // wait for sync to finish
+    while (true) {
+      if (api.syncTasks.value.length == 0) break;
+      if (api.syncTasks.value.filter((x) => x.media_types.includes(MediaType.ALBUM)).length == 0) break;
+      await sleep(500);
+    }
+    await sleep(500);
   }
+  updateAvailable.value = false;
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
