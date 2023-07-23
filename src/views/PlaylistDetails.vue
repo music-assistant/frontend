@@ -75,6 +75,7 @@ const loadPlaylistTracks = async function (params: LoadDataParams) {
   // prevent race condition with a short sleep
   if (params.refresh) await sleep(1000);
   isSyncing.value = false;
+  updateAvailable.value = false;
   return filteredItems(playlistTracks, params);
 };
 </script>
