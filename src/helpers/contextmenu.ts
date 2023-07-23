@@ -14,7 +14,7 @@ import {
   Track,
 } from '@/plugins/api/interfaces';
 import { useI18n } from 'vue-i18n';
-import {i18n} from '@/plugins/i18n'
+import { i18n } from '@/plugins/i18n';
 
 export interface ContextMenuItem {
   label: string;
@@ -125,7 +125,7 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
   if (items.length == 0) {
     return contextMenuItems;
   }
-  const { t } = i18n.global
+  const t = i18n.global;
 
   // show info
   if (items.length === 1 && items[0] !== parentItem && itemIsAvailable(items[0])) {

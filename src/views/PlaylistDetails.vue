@@ -14,7 +14,6 @@
       :update-available="updateAvailable"
       :title="$t('playlist_tracks')"
       :allow-key-hooks="true"
-      :is-syncing="isSyncing"
     />
     <!-- provider mapping details -->
     <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
@@ -29,6 +28,7 @@ import ProviderDetails from '@/components/ProviderDetails.vue';
 import { EventType, type Playlist, type EventMessage, type MediaItemType, Track } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
+import { sleep } from '@/helpers/utils';
 
 export interface Props {
   itemId: string;
@@ -54,7 +54,6 @@ onMounted(() => {
   //signal if/when item updates
   const unsub = api.subscribe(EventType.MEDIA_ITEM_ADDED, (evt: EventMessage) => {
     // signal user that there might be updated info available for this item
-    if (isSyncing.value) return;
     const updatedItem = evt.data as MediaItemType;
     if (itemDetails.value?.uri == updatedItem.uri) {
       updateAvailable.value = true;
