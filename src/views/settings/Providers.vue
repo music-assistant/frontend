@@ -1,39 +1,32 @@
 <template>
   <!-- show alert if no music providers configured-->
   <!-- show section per providertype -->
-  <section v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
-    <v-toolbar color="transparent" density="compact" class="titlebar">
-      <template #title>
-        <h2 class="line-clamp-1">{{ $t(`settings.${provType}providers`) }}</h2>
-      </template>
-      <template #append>
-        <!-- ADD provider button + contextmenu -->
-        <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
-          <template #activator="{ props }">
-            <v-btn v-bind="props" color="accent" variant="outlined">
-              {{ $t('settings.add_new') }}
-            </v-btn>
-          </template>
+  <ListViewItemContainer v-for="provType in ProviderType" :key="provType">
+    <template #append>
+      <!-- ADD provider button + contextmenu -->
+      <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
+        <template #activator="{ props }">
+          <v-btn v-bind="props" variant="plain">
+            {{ $t('settings.add_new') }}
+          </v-btn>
+        </template>
 
-          <v-card density="compact">
-            <ListItem
-              v-for="provider in availableProviders.filter((x) => x.type == provType)"
-              :key="provider.domain"
-              density="compact"
-              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
-              :title="provider.name"
-              @click="addProvider(provider)"
-            >
-              <template #prepend>
-                <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
-              </template>
-            </ListItem>
-          </v-card>
-        </v-menu>
-      </template>
-    </v-toolbar>
-    <v-divider />
-
+        <v-card density="compact">
+          <ListItem
+            v-for="provider in availableProviders.filter((x) => x.type == provType)"
+            :key="provider.domain"
+            density="compact"
+            style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
+            :title="provider.name"
+            @click="addProvider(provider)"
+          >
+            <template #prepend>
+              <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
+            </template>
+          </ListItem>
+        </v-card> </v-menu
+    ></template>
+    <template #title> {{ $t(`settings.${provType}providers`) }} </template>
     <!-- alert if no providers configured -->
     <Alert
       v-if="
@@ -159,23 +152,21 @@
         </template>
       </ListItem>
     </Container>
-  </section>
+  </ListViewItemContainer>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, onBeforeUnmount, watch, useSlots } from 'vue';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { api } from '@/plugins/api';
 import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
-import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
-import { useSlots } from 'vue';
-const slots = useSlots();
+import ListViewItemContainer from '@/components/mods/ListViewItemContainer.vue';
 
 // global refs
 const router = useRouter();

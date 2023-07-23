@@ -10,6 +10,7 @@
     }`"
     elevation="5"
     app
+    :dark="true"
   >
     <div
       v-if="coverImageColorCode && curQueueItem"
@@ -34,6 +35,9 @@
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp5') ? true : false"
           :show-only-artist="true"
+          :color="
+            !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? '#fff' : '#000'
+          "
         />
       </div>
       <div :class="`mediacontrols-buttom-center-${getBreakpointValue('bp3') ? '1' : '2'}`">
@@ -69,10 +73,23 @@
           <!-- player mobile extended control buttons -->
           <PlayerExtendedControls
             :queue="{ isVisible: getBreakpointValue('bp3') }"
-            :player="{ isVisible: true }"
-            :volume="{ isVisible: true }"
+            :player="{
+              isVisible: true,
+              color:
+                !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                  ? '#fff'
+                  : '#000',
+            }"
+            :volume="{
+              isVisible: true,
+              color:
+                !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                  ? '#fff'
+                  : '#000',
+            }"
           />
           <!-- player mobile control buttons -->
+
           <PlayerControls
             style="padding-right: 5px"
             :visible-components="{
@@ -84,7 +101,10 @@
                 icon: {
                   staticWidth: '48px',
                   staticHeight: '48px',
-                  color: $vuetify.theme.current.dark ? '#000' : '#fff',
+                  color:
+                    !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                      ? '#fff'
+                      : '#000',
                 },
               },
               previous: { isVisible: false },
