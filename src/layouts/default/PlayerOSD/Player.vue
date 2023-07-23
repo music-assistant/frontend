@@ -36,7 +36,11 @@
           :show-quality-details-btn="getBreakpointValue('bp5') ? true : false"
           :show-only-artist="true"
           :color="
-            !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) ? '#fff' : '#000'
+            !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+              ? '#fff'
+              : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+              ? '#fff'
+              : '#000'
           "
         />
       </div>
@@ -78,12 +82,16 @@
               color:
                 !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                   ? '#fff'
+                  : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+                  ? '#fff'
                   : '#000',
             }"
             :volume="{
               isVisible: true,
               color:
                 !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                  ? '#fff'
+                  : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
                   ? '#fff'
                   : '#000',
             }"
@@ -103,6 +111,8 @@
                   staticHeight: '48px',
                   color:
                     !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                      ? '#fff'
+                      : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
                       ? '#fff'
                       : '#000',
                 },
