@@ -17,6 +17,5 @@
 
 <script setup lang="ts">
 import { useSlots } from 'vue';
-import Container from '@/components/mods/Container.vue';
 const slots = useSlots();
 </script>

@@ -9,6 +9,7 @@
 
 <script lang="ts">
 import { ButtonProps } from '@/plugins/api/interfaces';
+import vuetify from '@/plugins/vuetify';
 import { defineProps, computed } from 'vue';
 
 export default {
@@ -28,7 +29,9 @@ export default {
     const containerDefault = computed(() => ({ class: 'container-default' }));
 
     const containerPanel = computed(() => ({
-      class: 'container-default container-panels',
+      class: vuetify.theme.current.value.dark
+        ? 'container-default container-panels-dark'
+        : 'container-default container-panels-light',
     }));
 
     const btnProps = computed(() => {
@@ -53,7 +56,7 @@ export default {
   padding: 20px;
 }
 
-.container-panels {
+.container-panels-light {
   background: #f5f5f5;
 }
 
