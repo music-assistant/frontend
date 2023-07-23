@@ -1,9 +1,8 @@
 <template>
   <div>
     <v-toolbar variant="flat" color="transparent" style="height: 50px">
-      <template #title> {{ $t('settings.settings') }} | {{ $t(`settings.${activeTab}`) }} </template>
-      <template #append>
-        <v-tabs :model-value="activeTab" align-tabs="end">
+      <template #title>
+        <v-tabs :model-value="activeTab" color="primary" align-tabs="end">
           <v-tab value="providers" :to="{ name: 'providersettings' }">
             {{ $t('settings.providers') }}
           </v-tab>
