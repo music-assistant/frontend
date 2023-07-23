@@ -88,7 +88,7 @@
   },
   "search": "Search",
   "settings": {
-    "add_new": "Add new",
+    "add_new_provider_button": "Add {0} provider",
     "add_provider": "Add a new provider",
     "advanced_settings": "Advanced settings",
     "check_docs": "Checkout the documentation",
@@ -146,7 +146,8 @@
     "radio_in_library": "Radio in library",
     "server_logging": "Server logging",
     "download_log": "Download logfile",
-    "edit_group_members": "Edit group members"
+    "edit_group_members": "Edit group members",
+    "add_group_player": "Add group player"
   },
   "show_info": "Show info",
   "show_select_boxes": "Show selection boxes",

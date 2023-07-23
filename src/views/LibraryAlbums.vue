@@ -43,8 +43,7 @@ const loadItems = async function (params: LoadDataParams) {
     // prevent race condition with a short sleep
     await sleep(250);
     // wait for sync to finish
-    while (true) {
-      if (api.syncTasks.value.length == 0) break;
+    while (api.syncTasks.value.length > 0) {
       if (api.syncTasks.value.filter((x) => x.media_types.includes(MediaType.ALBUM)).length == 0) break;
       await sleep(500);
     }
