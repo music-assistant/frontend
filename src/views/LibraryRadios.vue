@@ -21,12 +21,6 @@
         icon: 'mdi-link-plus',
       },
     ]"
-    @refresh-clicked="
-      () => {
-        api.startSync([MediaType.RADIO]);
-        updateAvailable = false;
-      }
-    "
   />
 </template>
 
@@ -58,7 +52,10 @@ onMounted(() => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  updateAvailable.value = false;
+  if (params.refresh) {
+    api.startSync([MediaType.RADIO]);
+    updateAvailable.value = false;
+  }
   return await api.getLibraryRadios(
     params.favoritesOnly || undefined,
     params.search,

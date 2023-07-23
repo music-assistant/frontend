@@ -138,7 +138,7 @@ const showDialog = async function () {
   }
   // fetch contextmenu items too (if enabled)
   if (showContextMenuItems.value) {
-    contextMenuItems.value = getContextMenuItems(selectedItems.value, parentItem.value, t);
+    contextMenuItems.value = getContextMenuItems(selectedItems.value, parentItem.value);
   } else {
     contextMenuItems.value = [];
   }

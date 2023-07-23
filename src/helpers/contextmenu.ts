@@ -13,6 +13,7 @@ import {
   Album,
   Track,
 } from '@/plugins/api/interfaces';
+import { useI18n } from 'vue-i18n';
 
 export interface ContextMenuItem {
   label: string;
@@ -118,11 +119,13 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem, t?: any) {
+export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
   }
+
+  const { t } = useI18n();
 
   // show info
   if (items.length === 1 && items[0] !== parentItem && itemIsAvailable(items[0])) {
