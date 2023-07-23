@@ -137,7 +137,10 @@
         "playlists_in_library": "Playlists in de bibliotheek",
         "radio_in_library": "Radio in de bibliotheek",
         "server_logging": "Server logging",
-        "download_log": "Download logbestand"
+        "download_log": "Download logbestand",
+        "edit_group_members": "Bewerk groepsleden",
+        "add_new_provider_button": "{0} provider toevoegen",
+        "add_group_player": "Groepspeler toevoegen"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -199,5 +202,6 @@
     "check_item_in_library": "Bekijk {0} in de bibliotheek",
     "media_details": "Media details",
     "mapped_providers": "Provider details",
-    "item_in_library": "Dit item is beschikbaar in de bibliotheek"
+    "item_in_library": "Dit item is beschikbaar in de bibliotheek",
+    "back": "Terug"
 }
