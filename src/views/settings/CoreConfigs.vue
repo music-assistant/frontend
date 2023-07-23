@@ -110,7 +110,7 @@
           <tr>
             <td>{{ $t('settings.server_logging') }}</td>
             <td>
-              <a href="${api.baseUrl}/log" target="_blank">{{ $t('settings.download_log') }}</a>
+              <a :href="`${api.baseUrl}/log`" target="_blank">{{ $t('settings.download_log') }}</a>
             </td>
           </tr>
         </tbody>
