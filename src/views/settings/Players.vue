@@ -10,93 +10,87 @@
     </v-toolbar>
     <v-divider />
     <Container>
-      <Container>
-        <ListItem
-          v-for="item in playerConfigs"
-          :key="item.player_id"
-          v-hold="
-            () => {
+      <ListItem
+        v-for="item in playerConfigs"
+        :key="item.player_id"
+        v-hold="
+          () => {
+            editPlayer(item.player_id);
+          }
+        "
+        link
+        :context-menu-items="[
+          {
+            label: 'settings.configure',
+            labelArgs: [],
+            action: () => {
               editPlayer(item.player_id);
-            }
-          "
-          link
-          :context-menu-items="[
-            {
-              label: 'settings.configure',
-              labelArgs: [],
-              action: () => {
-                editPlayer(item.player_id);
-              },
-              icon: 'mdi-cog',
             },
-            {
-              label: 'settings.edit_group_members',
-              labelArgs: [],
-              action: () => {
-                editGroupMembers(item.player_id);
-              },
-              icon: 'mdi-speaker-multiple',
-              hide: item.provider != 'ugp',
+            icon: 'mdi-cog',
+          },
+          {
+            label: 'settings.edit_group_members',
+            labelArgs: [],
+            action: () => {
+              editGroupMembers(item.player_id);
             },
-            {
-              label: item.enabled ? 'settings.disable' : 'settings.enable',
-              labelArgs: [],
-              action: () => {
-                toggleEnabled(item);
-              },
-              icon: 'mdi-cancel',
+            icon: 'mdi-speaker-multiple',
+            hide: item.provider != 'ugp',
+          },
+          {
+            label: item.enabled ? 'settings.disable' : 'settings.enable',
+            labelArgs: [],
+            action: () => {
+              toggleEnabled(item);
             },
-            {
-              label: 'settings.documentation',
-              labelArgs: [],
-              action: () => {
-                openLinkInNewTab(api.providerManifests[item.provider].documentation!);
-              },
-              icon: 'mdi-bookshelf',
-              disabled: !api.providerManifests[item.provider].documentation,
+            icon: 'mdi-cancel',
+          },
+          {
+            label: 'settings.documentation',
+            labelArgs: [],
+            action: () => {
+              openLinkInNewTab(api.providerManifests[item.provider].documentation!);
             },
-            {
-              label: 'settings.delete',
-              labelArgs: [],
-              action: () => {
-                removePlayerConfig(item.player_id);
-              },
-              icon: 'mdi-delete',
+            icon: 'mdi-bookshelf',
+            disabled: !api.providerManifests[item.provider].documentation,
+          },
+          {
+            label: 'settings.delete',
+            labelArgs: [],
+            action: () => {
+              removePlayerConfig(item.player_id);
             },
-          ]"
-          @click="editPlayer(item.player_id)"
-        >
-          <template #prepend>
-            <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
-          </template>
+            icon: 'mdi-delete',
+          },
+        ]"
+        @click="editPlayer(item.player_id)"
+      >
+        <template #prepend>
+          <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
+        </template>
 
-          <!-- title -->
-          <template #title>
-            <div class="line-clamp-1">{{ getPlayerName(item) }}</div>
-          </template>
+        <!-- title -->
+        <template #title>
+          <div class="line-clamp-1">{{ getPlayerName(item) }}</div>
+        </template>
 
-          <!-- subtitle -->
-          <template #subtitle
-            ><div class="line-clamp-1">{{ api.providers[item.provider]?.name || item.provider }}</div>
-          </template>
-          <!-- actions -->
-          <template #append>
-            <!-- player disabled -->
-            <Button v-if="!item.enabled" icon :title="$t('settings.player_disabled')">
-              <v-icon icon="mdi-cancel" />
-            </Button>
+        <!-- subtitle -->
+        <template #subtitle
+          ><div class="line-clamp-1">{{ api.providers[item.provider]?.name || item.provider }}</div>
+        </template>
+        <!-- actions -->
+        <template #append>
+          <!-- player disabled -->
+          <Button v-if="!item.enabled" icon :title="$t('settings.player_disabled')">
+            <v-icon icon="mdi-cancel" />
+          </Button>
 
-            <!-- player not (yet) available -->
-            <Button
-              v-else-if="!api.players[item.player_id]?.available"
-              icon
-              :title="$t('settings.player_not_available')"
-            >
-              <v-icon icon="mdi-timer-sand" />
-            </Button>
-          </template>
-        </ListItem>
-      </Container>
+          <!-- player not (yet) available -->
+          <Button v-else-if="!api.players[item.player_id]?.available" icon :title="$t('settings.player_not_available')">
+            <v-icon icon="mdi-timer-sand" />
+          </Button>
+        </template>
+      </ListItem>
     </Container>
   </div>
 </template>
