@@ -8,6 +8,7 @@ import { computed, onMounted, watch } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from './plugins/store';
 import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
+import { invoke } from '@tauri-apps/api/tauri'
 
 const theme = useTheme();
 let lightTheme = theme.themes.value.light;
@@ -68,30 +69,43 @@ watch(
 
 onMounted(() => {
   // enable dark mode based on OS/browser config
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
-    const newColorScheme = event.matches ? 'dark' : 'light';
-    theme.global.name.value = newColorScheme;
-  });
+  //window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+  //  const newColorScheme = event.matches ? 'dark' : 'light';
+  //  theme.global.name.value = newColorScheme;
+  //});
+  // Always dark cus its just for me
+  theme.global.name.value = 'dark';
 
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    // dark mode is enabled
-    theme.global.name.value = 'dark';
-  }
+  //if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  //  // dark mode is enabled
+  //  theme.global.name.value = 'dark';
+  //}
 
   // Initialize API Connection
   // TODO: retrieve serveraddress through discovery and/or user settings ?
-  let serverAddress = '';
-  if (process.env.NODE_ENV === 'development') {
-    serverAddress = localStorage.getItem('mass_debug_address') || '';
-    if (!serverAddress) {
-      serverAddress =
-        prompt('Enter location of the Music Assistant server', window.location.origin.replace('3000', '8095')) || '';
-      localStorage.setItem('mass_debug_address', serverAddress);
-    }
+  let serverAddressStorage = localStorage.getItem('mass_debug_address') || '';
+  let ip = "";
+  if (!serverAddressStorage) {
+    ip = prompt('Enter the ip/hostname of the Music Assistant server', 'homeassistant.local') || '';
   } else {
-    const loc = window.location;
-    serverAddress = loc.origin + loc.pathname;
+    ip = prompt('Enter the ip/hostname of the Music Assistant server', serverAddressStorage) || '';
   }
+  
+  let serverAddress = `http://${ip}:8095/`;
+  let websocket = `ws://${ip}:8095/ws`
+  //if (process.env.NODE_ENV === 'development') {
+  //  serverAddress = localStorage.getItem('mass_debug_address') || '';
+  //  if (!serverAddress) {
+  //    serverAddress =
+  //      prompt('Enter location of the Music Assistant server', window.location.origin.replace('3000', '8095')) || '';
+  //    localStorage.setItem('mass_debug_address', serverAddress);
+  //  }
+  //} else {
+  //  const loc = window.location;
+  //  serverAddress = loc.origin + loc.pathname;
+  //}
+  invoke('start_rpc', {'websocket': websocket});
+  invoke('start_sqzlite', {'ip': ip});
   api.initialize(serverAddress);
 });
 </script>
