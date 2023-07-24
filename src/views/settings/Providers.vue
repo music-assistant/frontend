@@ -156,7 +156,7 @@
         </template>
       </ListItem>
     </Container>
-  </ListViewItemContainer>
+  </section>
 </template>
 
 <script setup lang="ts">
