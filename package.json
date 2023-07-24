@@ -27,7 +27,8 @@
     "vue-router": "^4.2.4",
     "vue-virtual-scroller": "2.0.0-beta.8",
     "vuetify": "3.3.9",
-    "websocket-ts": "^1.1.1"
+    "websocket-ts": "^1.1.1",
+    "@tauri-apps/api": "^1.4.0"
   },
   "devDependencies": {
     "@fontsource/roboto": "^5.0.5",
