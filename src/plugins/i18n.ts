@@ -7,7 +7,7 @@ import { createI18n } from 'vue-i18n';
  */
 import messages from '@intlify/unplugin-vue-i18n/messages';
 
-export const i18n = createI18n({
+const i18n = createI18n({
   legacy: false,
   globalInjection: true,
   locale: navigator.language.split('-')[0],
@@ -17,3 +17,8 @@ export const i18n = createI18n({
   silentTranslationWarn: true,
   messages,
 });
+
+// @ts-ignore
+const $t = i18n.global.t
+
+export { i18n, $t };

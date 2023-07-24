@@ -55,7 +55,7 @@
           v-bind="props"
           variant="list"
           :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
-          :disabled="!expanded || isSyncing"
+          :disabled="!expanded || loading"
           @click="onRefreshClicked()"
         >
           <v-badge :model-value="updateAvailable" color="error" dot>
@@ -299,7 +299,6 @@ export interface Props {
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   contextMenuItems?: Array<ContextMenuItem>;
-    isSyncing?: boolean;
   loadData: (params: LoadDataParams) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -537,7 +536,7 @@ watch(
   },
 );
 
-const loadData = async function (clear = false, limit = defaultLimit, refresh=false) {
+const loadData = async function (clear = false, limit = defaultLimit, refresh = false) {
   if (clear || refresh) {
     offset.value = 0;
     newContentAvailable.value = false;
@@ -552,7 +551,7 @@ const loadData = async function (clear = false, limit = defaultLimit, refresh=fa
     favoritesOnly: favoritesOnly.value,
     albumArtistsFilter: albumArtistsOnlyFilter.value,
     providerFilter: activeProviderFilter.value,
-    refresh
+    refresh,
   });
   if (offset.value) {
     allItems.value.push(...nextItems.items);

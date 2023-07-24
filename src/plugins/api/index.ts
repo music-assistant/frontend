@@ -313,7 +313,7 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       force_refresh,
-      lazy
+      lazy,
     });
   }
 
@@ -328,7 +328,7 @@ export class MusicAssistantApi {
       {
         item_id,
         provider_instance_id_or_domain,
-        force_refresh
+        force_refresh,
       },
       chunkCallback,
     );

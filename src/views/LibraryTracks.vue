@@ -31,6 +31,7 @@ import { useI18n } from 'vue-i18n';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Track } from '../plugins/api/interfaces';
+import { sleep } from '@/helpers/utils';
 
 const { t } = useI18n();
 const items = ref<Track[]>([]);
@@ -54,8 +55,16 @@ const loadItems = async function (params: LoadDataParams) {
   params.favoritesOnly = params.favoritesOnly || undefined;
   if (params.refresh) {
     api.startSync([MediaType.TRACK]);
-    updateAvailable.value = false;
+    // prevent race condition with a short sleep
+    await sleep(250);
+    // wait for sync to finish
+    while (api.syncTasks.value.length > 0) {
+      if (api.syncTasks.value.filter((x) => x.media_types.includes(MediaType.TRACK)).length == 0) break;
+      await sleep(500);
+    }
+    await sleep(500);
   }
+  updateAvailable.value = false;
   return await api.getLibraryTracks(params.favoritesOnly, params.search, params.limit, params.offset, params.sortBy);
 };
 

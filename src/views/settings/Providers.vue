@@ -1,33 +1,37 @@
 <template>
-  <!-- show alert if no music providers configured-->
   <!-- show section per providertype -->
-  <ListViewItemContainer v-for="provType in ProviderType" :key="provType">
-    <template #append>
-      <!-- ADD provider button + contextmenu -->
-      <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
-        <template #activator="{ props }">
-          <v-btn v-bind="props" variant="plain">
-            {{ $t('settings.add_new') }}
-          </v-btn>
-        </template>
+  <section v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
+    <v-toolbar color="transparent" density="compact" class="titlebar">
+      <template #title> {{ $t('settings.settings') }} | {{ $t(`settings.${provType}providers`) }} </template>
+      <template #append>
+        <!-- ADD provider button + contextmenu -->
+        <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" color="accent" variant="outlined">
+              {{ $t('settings.add_new_provider_button', [provType]) }}
+            </v-btn>
+          </template>
 
-        <v-card density="compact">
-          <ListItem
-            v-for="provider in availableProviders.filter((x) => x.type == provType)"
-            :key="provider.domain"
-            density="compact"
-            style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
-            :title="provider.name"
-            @click="addProvider(provider)"
-          >
-            <template #prepend>
-              <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
-            </template>
-          </ListItem>
-        </v-card> </v-menu
-    ></template>
-    <template #title> {{ $t(`settings.${provType}providers`) }} </template>
-    <!-- alert if no providers configured -->
+          <v-card density="compact">
+            <ListItem
+              v-for="provider in availableProviders.filter((x) => x.type == provType)"
+              :key="provider.domain"
+              density="compact"
+              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
+              :title="provider.name"
+              @click="addProvider(provider)"
+            >
+              <template #prepend>
+                <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
+              </template>
+            </ListItem>
+          </v-card>
+        </v-menu>
+      </template>
+    </v-toolbar>
+    <v-divider />
+
+    <!-- show alert if no music providers configured-->
     <Alert
       v-if="
         provType == ProviderType.MUSIC &&

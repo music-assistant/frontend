@@ -132,5 +132,4 @@ const loadTrackAlbums = async function (params: LoadDataParams) {
   }
   return filteredItems(items, params);
 };
-
 </script>

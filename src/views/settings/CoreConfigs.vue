@@ -1,7 +1,9 @@
 <template>
   <!-- core modules -->
   <div style="margin-bottom: 10px">
-    <v-toolbar color="transparent" :title="$t('settings.core_modules')" style="height: 55px" />
+    <v-toolbar color="transparent" style="height: 55px">
+      <template #title> {{ $t('settings.settings') }} | {{ $t('settings.core_modules') }} </template>
+    </v-toolbar>
     <v-divider />
     <Container>
       <ListItem
@@ -62,7 +64,9 @@
   </div>
   <!-- server information -->
   <div style="margin-bottom: 10px">
-    <v-toolbar color="transparent" :title="$t('settings.server_info')" style="height: 55px" />
+    <v-toolbar color="transparent" style="height: 55px">
+      <template #title> {{ $t('settings.settings') }} | {{ $t('settings.server_info') }} </template>
+    </v-toolbar>
     <v-divider />
     <Container>
       <v-table>
@@ -106,7 +110,7 @@
           <tr>
             <td>{{ $t('settings.server_logging') }}</td>
             <td>
-              <a href="${api.baseUrl}/log" target="_blank">{{ $t('settings.download_log') }}</a>
+              <a :href="`${api.baseUrl}/log`" target="_blank">{{ $t('settings.download_log') }}</a>
             </td>
           </tr>
         </tbody>
