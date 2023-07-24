@@ -1,5 +1,5 @@
 <template>
-  <v-container v-bind="containerProps" class="container" fluid>
+  <v-container v-bind="btnProps" variant="default">
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
@@ -8,35 +8,66 @@
 </template>
 
 <script lang="ts">
-import { computed } from 'vue';
+import { ButtonProps } from '@/plugins/api/interfaces';
+import vuetify from '@/plugins/vuetify';
+import { defineProps, computed } from 'vue';
 
 export default {
+  props: {
+    variant: {
+      type: String,
+      default: 'default',
+      validator: (value: string) => {
+        const allowedVariants = ['default', 'panel'];
+        return allowedVariants.includes(value);
+      },
+    },
+  },
   setup(props, ctx) {
-    const containerDefaults = computed(() => ({}));
+    const btnDefault = {};
 
-    const containerProps = computed(() => ({
-      ...containerDefaults.value,
-      ...ctx.attrs,
+    const containerDefault = computed(() => ({ class: 'container-default' }));
+
+    const containerPanel = computed(() => ({
+      class: vuetify.theme.current.value.dark
+        ? 'container-default container-panels-dark'
+        : 'container-default container-panels-light',
     }));
 
-    return { containerProps };
+    const btnProps = computed(() => {
+      const variant = props.variant;
+      switch (variant) {
+        case 'default':
+          return containerDefault.value;
+        case 'panel':
+          return containerPanel.value;
+        default:
+          return containerDefault.value;
+      }
+    });
+
+    return { btnProps };
   },
 };
 </script>
 
 <style>
-.container {
+.container-default {
   padding: 20px;
 }
 
+.container-panels-light {
+  background: #f5f5f5;
+}
+
 @media (min-width: 1920px) {
-  .container {
+  .container-default {
     max-width: unset !important;
   }
 }
 
 @media (min-width: 1280px) {
-  .container {
+  .container-default {
     max-width: unset !important;
   }
 }

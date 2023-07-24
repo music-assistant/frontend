@@ -11,30 +11,12 @@
       size="small"
       :content="store.selectedPlayer?.group_childs.length"
     >
-      <v-icon
-        :color="
-          !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-          isColorDark(store.coverImageColorCode.darkColor)
-            ? '#000'
-            : '#fff'
-        "
-        :size="24"
-        >mdi-speaker</v-icon
-      >
+      <v-icon :color="props.color ? color : ''" :size="24">mdi-speaker</v-icon>
     </v-badge>
-    <v-icon
-      v-else
-      :color="
-        !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) && isColorDark(store.coverImageColorCode.darkColor)
-          ? '#000'
-          : '#fff'
-      "
-      :size="24"
-      >mdi-speaker</v-icon
-    >
-    <div v-if="activePlayerQueue && getBreakpointValue('bp6')" class="line-clamp-1">
+    <v-icon v-else :color="props.color ? color : ''" :size="24">mdi-speaker</v-icon>
+    <h6 v-if="activePlayerQueue && getBreakpointValue('bp6')" class="line-clamp-1">
       {{ truncateString(activePlayerQueue?.display_name, 8) }}
-    </div>
+    </h6>
   </Button>
 </template>
 
@@ -46,6 +28,12 @@ import { store } from '@/plugins/store';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import Button from '@/components/mods/Button.vue';
 import { isColorDark, truncateString } from '@/helpers/utils';
+
+// properties
+export interface Props {
+  color?: string;
+}
+const props = defineProps<Props>();
 
 // computed properties
 const activePlayerQueue = computed(() => {

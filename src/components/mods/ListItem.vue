@@ -76,6 +76,11 @@ export default {
   margin-inline-end: 5px !important;
 }
 
+.list-item-main > div.v-list-item__prepend > div {
+  display: flex !important;
+  align-items: center !important;
+}
+
 .list-item-main > div.v-list-item__append > .v-icon {
   margin-inline-start: 5px !important;
 }

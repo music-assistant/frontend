@@ -15,7 +15,7 @@ export default {
   props: {
     variant: {
       type: String,
-      default: '',
+      default: 'default',
       validator: (value: string) => {
         const allowedVariants = ['plain', 'default', 'responsive', 'icon', 'list'];
         return allowedVariants.includes(value);
@@ -23,7 +23,7 @@ export default {
     },
   },
   setup(props, ctx) {
-    const btnDefault = defineProps<ButtonProps>();
+    const btnDefault = {};
 
     const btnResponsive = computed(() => ({
       ...btnDefault,
@@ -44,7 +44,7 @@ export default {
       density: 'comfortable',
     }));
 
-    const btnProps = computed(() => {
+    const btnProps = computed<ButtonProps>(() => {
       const variant = props.variant;
       switch (variant) {
         case 'default':

@@ -22,16 +22,7 @@
             <template #prepend>
               <!-- select player -->
               <Button variant="icon" size="48" :ripple="false" v-bind="{ ...menu }">
-                <v-icon
-                  :size="24"
-                  icon="mdi-volume-high"
-                  :color="
-                    !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-                    isColorDark(store.coverImageColorCode.darkColor)
-                      ? '#000'
-                      : '#fff'
-                  "
-                />
+                <v-icon :color="props.color ? color : ''" :size="24" icon="mdi-volume-high" />
                 <div class="text-caption">
                   {{
                     store.selectedPlayer!.group_childs.length > 0
@@ -45,26 +36,8 @@
         </div>
         <div v-else>
           <Button v-bind="{ ...menu }" size="48" variant="icon">
-            <v-icon
-              icon="mdi-volume-high"
-              :color="
-                !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-                isColorDark(store.coverImageColorCode.darkColor)
-                  ? '#000'
-                  : '#fff'
-              "
-            />
-            <div
-              class="text-caption"
-              :style="{
-                cursor: 'pointer',
-                color:
-                  !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-                  isColorDark(store.coverImageColorCode.darkColor)
-                    ? '#000'
-                    : '#fff',
-              }"
-            >
+            <v-icon :color="props.color ? color : ''" icon="mdi-volume-high" />
+            <div class="text-caption" :style="{ color: props.color ? color : '' }">
               {{
                 store.selectedPlayer!.group_childs.length > 0
                   ? Math.round(store.selectedPlayer?.group_volume || 0)
@@ -108,18 +81,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import VolumeControl from '@/components/VolumeControl.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';
-import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import { isColorDark, truncateString } from '@/helpers/utils';
+import { isColorDark } from '@/helpers/utils';
 import PlayerVolume from '../PlayerVolume.vue';
-
-const router = useRouter();
 
 // properties
 export interface Props {
@@ -127,6 +96,7 @@ export interface Props {
   volumeSize?: string;
   responsiveVolumeSize?: boolean;
   isVisible?: boolean;
+  color?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {

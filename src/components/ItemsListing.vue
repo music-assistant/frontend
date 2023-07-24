@@ -178,7 +178,7 @@
       @focus="searchHasFocus = true"
       @blur="searchHasFocus = false"
     />
-    <Container v-if="expanded">
+    <Container v-if="expanded" :variant="viewMode == 'panel' ? 'panel' : 'default'">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 

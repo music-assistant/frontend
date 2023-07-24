@@ -25,11 +25,7 @@
         v-if="curQueueItem && curQueueItem.media_item"
         :style="{
           cursor: 'pointer',
-          color:
-            !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-            isColorDark(store.coverImageColorCode.darkColor)
-              ? '#000'
-              : '#fff',
+          color: props.color ? color : '',
         }"
         @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
       >
@@ -80,11 +76,7 @@
         "
         :style="{
           cursor: 'pointer',
-          color:
-            !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-            isColorDark(store.coverImageColorCode.darkColor)
-              ? '#000'
-              : '#fff',
+          color: props.color ? color : '',
         }"
         class="line-clamp-1"
         @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
@@ -103,11 +95,7 @@
         class="line-clamp-1"
         :style="{
           cursor: 'pointer',
-          color:
-            !getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
-            isColorDark(store.coverImageColorCode.darkColor)
-              ? '#000'
-              : '#fff',
+          color: props.color ? color : '',
         }"
         @click="
           curQueueItem?.media_item && 'artists' in curQueueItem.media_item
@@ -157,6 +145,7 @@ const router = useRouter();
 interface Props {
   showOnlyArtist?: boolean;
   showQualityDetailsBtn?: boolean;
+  color?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {

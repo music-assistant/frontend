@@ -118,6 +118,7 @@ const emit = defineEmits<{
 .panel-item {
   height: 100%;
   padding: 10px;
+  border: none;
 }
 
 .panel-item-checkbox {

@@ -249,12 +249,6 @@ div.v-slide-group__prev {
   height: 100% !important;
 }
 
-.content-spacing {
-  display: flex;
-  flex-flow: column;
-  gap: 10px;
-}
-
 .padded-overlay .v-overlay__content {
   padding: 50px;
 }

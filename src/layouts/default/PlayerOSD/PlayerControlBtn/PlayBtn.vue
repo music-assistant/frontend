@@ -6,10 +6,10 @@
     :disabled="activePlayerQueue && !activePlayerQueue?.active && activePlayerQueue?.items == 0"
     :icon="
       activePlayerQueue?.state == 'playing'
-        ? withCircle
+        ? props.withCircle
           ? 'mdi-pause-circle'
           : 'mdi-pause'
-        : withCircle
+        : props.withCircle
         ? 'mdi-play-circle'
         : 'mdi-play'
     "
@@ -29,7 +29,7 @@
     v-else-if="props.isVisible"
     v-bind="props.icon"
     :disabled="!activePlayerQueue || activePlayerQueue?.items == 0"
-    :icon="withCircle ? 'mdi-play-circle' : 'mdi-play'"
+    :icon="props.withCircle ? 'mdi-play-circle' : 'mdi-play'"
     :type="'btn'"
     @click="api.queueCommandPlay(activePlayerQueue?.queue_id || store.selectedPlayer!.player_id)"
   />
