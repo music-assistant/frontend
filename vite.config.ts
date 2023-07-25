@@ -6,9 +6,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 import webfontDownload from 'vite-plugin-webfont-dl';
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
+import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import path from 'path';
 
 // https://vitejs.dev/config/
+export default defineConfig(async () => ({
 export default defineConfig(async () => ({
   base: './',
   plugins: [
@@ -53,6 +55,7 @@ export default defineConfig(async () => ({
     VueI18nPlugin({
       include: [path.resolve(__dirname, './src/translations/**')],
     })
+    })
   ],
   define: { 'process.env': {} },
   resolve: {
@@ -61,6 +64,10 @@ export default defineConfig(async () => ({
     },
     extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
   },
+  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
+  // prevent vite from obscuring rust errors
+  clearScreen: false,
+  // tauri expects a fixed port, fail if that port is not available
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   // prevent vite from obscuring rust errors
   clearScreen: false,
@@ -80,4 +87,4 @@ export default defineConfig(async () => ({
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
   },
-});
+}));
