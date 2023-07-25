@@ -81,21 +81,18 @@ onMounted(() => {
   } else {
     ip = prompt('Enter the ip/hostname of the Music Assistant server', serverAddressStorage) || '';
   }
-  console.log('sdoajiodj');
 
   // Store the new ip
-  //localStorage.setItem('mass_ip', ip);
-
-  console.log('gotcha');
+  localStorage.setItem('mass_ip', ip);
 
   // The server adress and websocket address
   let serverAddress = `http://${ip}:8095/`;
   let websocket = `ws://${ip}:8095/ws`;
 
   // Start discord rpc, squeezelite and the web app
-  console.log('aosijdoijasoijdfoijsafioj');
-  //invoke('start_rpc', { websocket: websocket });
   invoke('start_sqzlite', { ip: ip });
   api.initialize(serverAddress);
+  //if (confirm('Do you wish to start Discord rich presence')) {
+  invoke('start_rpc', { websocket: websocket });
 });
 </script>
