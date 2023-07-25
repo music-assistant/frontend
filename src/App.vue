@@ -8,7 +8,7 @@ import { computed, onMounted, watch } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from './plugins/store';
 import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
-import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/tauri';
 
 const theme = useTheme();
 let lightTheme = theme.themes.value.light;
@@ -68,44 +68,30 @@ watch(
 );
 
 onMounted(() => {
-  // enable dark mode based on OS/browser config
-  //window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
-  //  const newColorScheme = event.matches ? 'dark' : 'light';
-  //  theme.global.name.value = newColorScheme;
-  //});
-  // Always dark cus its just for me
+  // Just dark theme for now
   theme.global.name.value = 'dark';
 
-  //if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  //  // dark mode is enabled
-  //  theme.global.name.value = 'dark';
-  //}
+  // Get the mass ip
+  let serverAddressStorage = localStorage.getItem('mass_ip') || '';
+  let ip = '';
 
-  // Initialize API Connection
-  // TODO: retrieve serveraddress through discovery and/or user settings ?
-  let serverAddressStorage = localStorage.getItem('mass_debug_address') || '';
-  let ip = "";
+  // Promt the user for the IP
   if (!serverAddressStorage) {
     ip = prompt('Enter the ip/hostname of the Music Assistant server', 'homeassistant.local') || '';
   } else {
     ip = prompt('Enter the ip/hostname of the Music Assistant server', serverAddressStorage) || '';
   }
-  
+
+  // Store the new ip
+  localStorage.setItem('mass_ip', ip);
+
+  // The server adress and websocket address
   let serverAddress = `http://${ip}:8095/`;
-  let websocket = `ws://${ip}:8095/ws`
-  //if (process.env.NODE_ENV === 'development') {
-  //  serverAddress = localStorage.getItem('mass_debug_address') || '';
-  //  if (!serverAddress) {
-  //    serverAddress =
-  //      prompt('Enter location of the Music Assistant server', window.location.origin.replace('3000', '8095')) || '';
-  //    localStorage.setItem('mass_debug_address', serverAddress);
-  //  }
-  //} else {
-  //  const loc = window.location;
-  //  serverAddress = loc.origin + loc.pathname;
-  //}
-  invoke('start_rpc', {'websocket': websocket});
-  invoke('start_sqzlite', {'ip': ip});
+  let websocket = `ws://${ip}:8095/ws`;
+
+  // Start discord rpc, squeezelite and the web app
+  invoke('start_rpc', { websocket: websocket });
+  invoke('start_sqzlite', { ip: ip });
   api.initialize(serverAddress);
 });
 </script>
