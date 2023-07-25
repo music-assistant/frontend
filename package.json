@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
       "dev": "vite",
-      "build": "vue-tsc --noEmit && vite build",
+      "build": "vue-tsc --noEmit && vite build && rm dist/index.html && mv dist/frontend-source/index.html dist/ && rm -r dist/frontend-source/",
       "preview": "vite preview",
       "tauri": "tauri",
       "lint": "eslint . --fix --ignore-path .gitignore"
