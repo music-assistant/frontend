@@ -73,6 +73,8 @@ onMounted(() => {
 
   // Get the mass ip
   let serverAddressStorage = localStorage.getItem('mass_ip') || '';
+  let start_discord_rpc = localStorage.getItem('mass_ip') || '';
+  let start_squeezelite = localStorage.getItem('mass_ip') || '';
   let ip = '';
 
   // Promt the user for the IP
@@ -90,9 +92,12 @@ onMounted(() => {
   let websocket = `ws://${ip}:8095/ws`;
 
   // Start discord rpc, squeezelite and the web app
-  invoke('start_sqzlite', { ip: ip });
+  if (start_squeezelite == "true") {
+    invoke('start_sqzlite', { ip: ip });
+  }
+  if (start_discord_rpc == "true") {
+    invoke('start_rpc', { websocket: websocket });
+  }
   api.initialize(serverAddress);
-  //if (confirm('Do you wish to start Discord rich presence')) {
-  invoke('start_rpc', { websocket: websocket });
 });
 </script>

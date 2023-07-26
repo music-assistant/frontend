@@ -117,6 +117,27 @@
       </v-table>
     </Container>
   </div>
+  <!-- client settings -->
+  <div style="margin-bottom: 10px">
+    <v-toolbar color="transparent" style="height: 55px">
+      <template #title> {{ $t('settings.settings') }} | Client</template>
+    </v-toolbar>
+    <v-divider />
+    <Container>
+      <v-table>
+        <tbody>
+          <tr>
+            <td>Enable Discord RPC</td>
+            <td><v-switch @change="discordRpcConfig" v-model="discordRPCEnabled" label="Restart to apply changes" inset/></td>
+          </tr>
+          <tr>
+            <td>Start squeezelite</td>
+            <td><v-switch @change="squeezeliteConfig" v-model="squeezeliteEnabled" label="Restart to apply changes" inset/></td>
+          </tr>
+        </tbody>
+      </v-table>
+    </Container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -138,8 +159,19 @@ const totalLibraryAlbums = ref(0);
 const totalLibraryTracks = ref(0);
 const totalLibraryPlaylists = ref(0);
 const totalLibraryRadio = ref(0);
+const discordRPCEnabled = ref(false);
+const squeezeliteEnabled = ref(false);
 
 // methods
+const discordRpcConfig = () => {
+  localStorage.setItem('discordRPCEnabled', discordRPCEnabled.value.toString());
+};
+
+const squeezeliteConfig = () => {
+  localStorage.setItem('squeezeliteEnabled', squeezeliteEnabled.value.toString());
+};
+
+
 const editCoreConfig = function (domain: string) {
   router.push(`/settings/editcore/${domain}`);
 };
