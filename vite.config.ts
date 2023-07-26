@@ -5,17 +5,19 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 import webfontDownload from 'vite-plugin-webfont-dl';
-import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import path from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   base: './',
   plugins: [
     vue({
       template: { transformAssetUrls },
     }),
-    webfontDownload(['https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap']),
+    webfontDownload([
+      'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap',
+    ]),
     vuetify({
       autoImport: true,
       styles: {
@@ -23,7 +25,12 @@ export default defineConfig(async () => ({
       },
     }),
     VitePWA({
-      includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon.ico',
+        'robots.txt',
+        'apple-touch-icon.png',
+      ],
       manifest: {
         name: 'Music Assistant',
         short_name: 'Music library manager',
@@ -52,7 +59,7 @@ export default defineConfig(async () => ({
     }),
     VueI18nPlugin({
       include: [path.resolve(__dirname, './src/translations/**')],
-    })
+    }),
   ],
   define: { 'process.env': {} },
   resolve: {
@@ -68,6 +75,7 @@ export default defineConfig(async () => ({
   // tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
+    host: true,
     strictPort: true,
   },
   // to make use of `TAURI_DEBUG` and other env variables
@@ -81,4 +89,4 @@ export default defineConfig(async () => ({
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
   },
-}));
+});

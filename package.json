@@ -1,8 +1,8 @@
 {
-    "name": "mass",
-    "private": true,
+    "name": "frontend",
     "version": "0.0.0",
     "type": "module",
+    "description": "The Music Assistant frontend developed in Vue.",
     "scripts": {
       "dev": "vite",
       "build": "vue-tsc --noEmit && vite build && rm dist/index.html && mv dist/frontend-source/index.html dist/ && rm -r dist/frontend-source/",
@@ -29,14 +29,14 @@
       "vue-i18n": "^9.2.2",
       "vue-router": "^4.2.4",
       "vue-virtual-scroller": "2.0.0-beta.8",
-      "vuetify": "^3.3.9",
+      "vuetify": "3.3.9",
       "websocket-ts": "^1.1.1"
     },
     "devDependencies": {
       "@fontsource/roboto": "^5.0.5",
       "@intlify/vite-plugin-vue-i18n": "^7.0.0",
       "@types/color": "^3.0.3",
-      "@types/node": "^20.4.2",
+      "@types/node": "^20.4.4",
       "@typescript-eslint/eslint-plugin": "^6.1.0",
       "@typescript-eslint/parser": "^6.1.0",
       "@vitejs/plugin-vue": "^4.2.3",
@@ -52,7 +52,7 @@
       "nanoid": "^4.0.2",
       "prettier": "^3.0.0",
       "replace-in-file": "^7.0.1",
-      "sass": "^1.64.0",
+      "sass": "^1.64.1",
       "typescript": "^5.1.6",
       "vite": "^4.4.6",
       "vite-plugin-pwa": "^0.16.4",
