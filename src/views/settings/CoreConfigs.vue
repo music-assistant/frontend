@@ -187,5 +187,7 @@ onMounted(async () => {
   totalLibraryTracks.value = (await api.getLibraryTracks(undefined, undefined, 1)).total || 0;
   totalLibraryPlaylists.value = (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0;
   totalLibraryRadio.value = (await api.getLibraryRadios(undefined, undefined, 1)).total || 0;
+  discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
+  squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
 });
 </script>

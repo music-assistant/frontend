@@ -73,8 +73,8 @@ onMounted(() => {
 
   // Get the mass ip
   let serverAddressStorage = localStorage.getItem('mass_ip') || '';
-  let start_discord_rpc = localStorage.getItem('mass_ip') || '';
-  let start_squeezelite = localStorage.getItem('mass_ip') || '';
+  let start_discord_rpc = localStorage.getItem('discordRPCEnabled') === 'true' || false;
+  let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
   let ip = '';
 
   // Promt the user for the IP
@@ -91,11 +91,13 @@ onMounted(() => {
   let serverAddress = `http://${ip}:8095/`;
   let websocket = `ws://${ip}:8095/ws`;
 
+  console.log(start_discord_rpc.toString());
+
   // Start discord rpc, squeezelite and the web app
-  if (start_squeezelite == "true") {
+  if (start_squeezelite == true) {
     invoke('start_sqzlite', { ip: ip });
   }
-  if (start_discord_rpc == "true") {
+  if (start_discord_rpc == true) {
     invoke('start_rpc', { websocket: websocket });
   }
   api.initialize(serverAddress);
