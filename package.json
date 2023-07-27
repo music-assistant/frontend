@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "yarn && vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint . --fix --ignore-path .gitignore"
