@@ -23,4 +23,4 @@ zip-safe  = false
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["music_assistant_frontend"]
+include = ["dist"]
