@@ -616,7 +616,6 @@ onMounted(() => {
   const savedSearch = localStorage.getItem(storKey);
 
   if (savedSearch && savedSearch !== 'null') {
-    console.log('savedSearch', savedSearch);
     search.value = savedSearch;
   }
   loadData(true);

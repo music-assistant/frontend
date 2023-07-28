@@ -259,7 +259,6 @@ const albumClick = function (item: Album | ItemMapping) {
 };
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
-  console.log('artistClick', item);
   router.push({
     name: 'artist',
     params: {

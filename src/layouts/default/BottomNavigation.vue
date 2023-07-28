@@ -24,7 +24,6 @@ defineProps<Props>();
 const activeTab = computed(() => {
   for (const menuItem of mainMenuItems) {
     if (router.currentRoute.value.path.startsWith(menuItem.path)) {
-      console.log('activeTab', router.currentRoute.value.path, menuItem.path)
       return menuItem.path;
     }
   }

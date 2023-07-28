@@ -68,7 +68,6 @@ const providerFilter = computed(() => {
 });
 
 const loadItemDetails = async function () {
-  console.log('props', props);
   itemDetails.value = await api.getTrack(props.itemId, props.provider, props.album);
   activeTab.value = 'versions';
 };

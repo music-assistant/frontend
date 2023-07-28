@@ -268,7 +268,6 @@ const loadItems = async function () {
   if (activePlayerQueue.value) {
     items.value = [];
     await api.getPlayerQueueItems(activePlayerQueue.value.queue_id, (data: QueueItem[]) => {
-      console.log('chunk', data.length);
       items.value.push(...data);
     });
   } else {
