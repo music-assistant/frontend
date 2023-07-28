@@ -75,21 +75,24 @@ onMounted(() => {
   let serverAddressStorage = localStorage.getItem('mass_ip') || '';
   let start_discord_rpc = localStorage.getItem('discordRPCEnabled') === 'true' || false;
   let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
-  let ip = '';
+  let serverAddress = '';
 
   // Promt the user for the IP
   if (!serverAddressStorage) {
-    ip = prompt('Enter the ip/hostname of the Music Assistant server', 'homeassistant.local') || '';
+    serverAddress =
+      prompt('Enter the ip/hostname of the Music Assistant server including port', 'homeassistant.local:8095') || '';
   } else {
-    ip = prompt('Enter the ip/hostname of the Music Assistant server', serverAddressStorage) || '';
+    serverAddress =
+      prompt('Enter the ip/hostname of the Music Assistant server including port', serverAddressStorage) || '';
   }
 
   // Store the new ip
-  localStorage.setItem('mass_ip', ip);
+  localStorage.setItem('mass_ip', serverAddress);
 
   // The server adress and websocket address
-  let serverAddress = `http://${ip}:8095/`;
-  let websocket = `ws://${ip}:8095/ws`;
+  let frontendServerAddress = `http://${serverAddress}/`;
+  let websocket = `ws://${serverAddress}/ws`;
+  let ip = frontendServerAddress.split(':')[0];
 
   console.log(start_discord_rpc.toString());
 
@@ -100,6 +103,6 @@ onMounted(() => {
   if (start_discord_rpc == true) {
     invoke('start_rpc', { websocket: websocket });
   }
-  api.initialize(serverAddress);
+  api.initialize(frontendServerAddress);
 });
 </script>
