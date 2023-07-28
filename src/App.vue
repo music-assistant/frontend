@@ -139,13 +139,7 @@ onMounted(async () => {
   themeSetting.value = theme_setting;
 
   // Set inital theme
-  if ((await appWindow.theme().toString()) == 'Dark') {
-    systemTheme = 'dark';
-  } else {
-    systemTheme = 'light';
-  }
-
-  console.log(await appWindow.theme());
+  themeSettingConfig();
 
   // Update theme live
   await appWindow.onThemeChanged(({ payload: newTheme }) => {
