@@ -128,11 +128,20 @@
         <tbody>
           <tr>
             <td>Enable Discord RPC</td>
-            <td><v-switch @change="discordRpcConfig" v-model="discordRPCEnabled" label="Restart to apply changes" inset/></td>
+            <td>
+              <v-switch v-model="discordRPCEnabled" label="Restart to apply changes" inset @change="discordRpcConfig" />
+            </td>
           </tr>
           <tr>
             <td>Start squeezelite</td>
-            <td><v-switch @change="squeezeliteConfig" v-model="squeezeliteEnabled" label="Restart to apply changes" inset/></td>
+            <td>
+              <v-switch
+                v-model="squeezeliteEnabled"
+                label="Restart to apply changes"
+                inset
+                @change="squeezeliteConfig"
+              />
+            </td>
           </tr>
         </tbody>
       </v-table>
@@ -170,7 +179,6 @@ const discordRpcConfig = () => {
 const squeezeliteConfig = () => {
   localStorage.setItem('squeezeliteEnabled', squeezeliteEnabled.value.toString());
 };
-
 
 const editCoreConfig = function (domain: string) {
   router.push(`/settings/editcore/${domain}`);
