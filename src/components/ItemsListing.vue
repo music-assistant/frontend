@@ -2,7 +2,7 @@
 <template>
   <section v-if="!(hideOnEmpty && allItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar density="compact" variant="flat" style="height: 48px" color="transparent">
+    <v-toolbar color="transparent">
       <template #title>
         {{ title }}
         <v-badge
@@ -27,7 +27,7 @@
 
         <!-- favorites only filter -->
         <Button
-          v-if="showFavoritesOnlyFilter != undefined ? showAlbumArtistsOnlyFilter : getBreakpointValue('bp1')"
+          v-if="showFavoritesOnlyFilter != undefined ? showFavoritesOnlyFilter : getBreakpointValue('bp1')"
           v-bind="props"
           variant="list"
           :title="$t('tooltip.filter_favorites')"

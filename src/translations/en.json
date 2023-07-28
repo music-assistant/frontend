@@ -192,7 +192,9 @@
         "filter_favorites": "Only show favorites",
         "favorite": "Mark\/unmark as favorite",
         "open_provider_link": "Open this item on the provider's website",
-        "collapse_expand": "Collapse\/expand this listing"
+        "collapse_expand": "Collapse\/expand this listing",
+        "back": "Back",
+        "show_menu": "Show/hide menu"
     },
     "topresult": "Top result",
     "track": "Track",

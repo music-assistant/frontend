@@ -6,6 +6,15 @@
   font-weight: 400;
   src: url(@/assets/material-icons-outlined.woff2) format('woff2');
 }
+
+@font-face {
+  font-family: "JetBrains Mono Medium";
+  font-weight: 400;
+  font-style: normal;
+  font-display: auto;
+  src: url(@/assets/JetBrainsMono-Medium.woff2) format("woff2");
+}
+
 .material-icons-outlined {
   font-family: 'Material Icons Outlined';
   font-weight: normal;
@@ -134,6 +143,14 @@ div.v-navigation-drawer__scrim {
 
 .v-toolbar-default > .v-toolbar__content > .v-toolbar__append {
   margin-inline-end: 10px;
+}
+
+.v-toolbar {
+  height: 52px;
+}
+
+.v-toolbar-title {
+  font-family: "JetBrains Mono Medium";
 }
 
 /* ThumbView panel columns */

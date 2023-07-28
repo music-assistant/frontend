@@ -158,7 +158,7 @@ export const getImageThumbForItem = function (
   if (!img) return undefined;
   if (img.provider !== 'url') {
     // use imageproxy for embedded images
-    if (!api.providers[img.provider]?.available) return undefined;
+    if (!api.providers[img.provider]?.available && img.provider != 'file') return undefined;
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     const checksum = 'metadata' in mediaItem ? mediaItem.metadata?.checksum : '';
     imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;

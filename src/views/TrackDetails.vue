@@ -94,22 +94,7 @@ onMounted(() => {
 });
 
 const loadTrackVersions = async function (params: LoadDataParams) {
-  const allVersions: Track[] = [];
-  if (params.refresh) {
-    await loadItemDetails();
-    updateAvailable.value = false;
-  }
-
-  if (props.provider == 'library') {
-    const trackVersions = await api.getTrackVersions(props.itemId, props.provider);
-    allVersions.push(...trackVersions);
-  }
-  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
-    const trackVersions = await api.getTrackVersions(providerMapping.item_id, providerMapping.provider_instance);
-    allVersions.push(...trackVersions);
-  }
-
-  return filteredItems(allVersions, params);
+  return filteredItems(await api.getTrackVersions(itemDetails.value!.item_id, itemDetails.value!.provider), params);
 };
 
 const loadTrackAlbums = async function (params: LoadDataParams) {
