@@ -92,8 +92,6 @@ div.v-navigation-drawer__scrim {
 }
 .v-card--variant-elevated {
   box-shadow: none;
-  border-width: 1px;
-  border-style: solid;
   font-size: smaller;
 }
 .line-clamp-1 {

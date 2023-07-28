@@ -1,3 +1,0 @@
-include README.md
-graft dist
-recursive-exclude * *.py[co]
