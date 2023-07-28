@@ -7,9 +7,10 @@
     }
       ">
 
-    <v-list-item dark style="height: 52px;">
+    <v-list-item dark style="height: 52px;" :active="false">
       <template #prepend v-if="showLogo">
-        <img style="margin-left: -5px;border-radius:4px;" width="35" src="@/assets/logo.svg" />
+        <img class="logo_icon" :style="$vuetify.theme.current.dark ? 'filter: invert(100%);' : ''" width="35"
+          src="@/assets/logo.svg" />
       </template>
       <template #title v-if="showLogo">
         <div class="logo_text">Music
@@ -18,8 +19,8 @@
     </v-list-item>
     <!-- back button -->
     <!-- NOTE: we only allow/show the back button at one of the nested levels (item details) -->
-    <Button v-if="showBackButton" :height="15" :width="40" style="position: absolute; right: 4px;top: 12px;"
-      icon="mdi-arrow-left" @click.stop="backButton" :title="$t('tooltip.back')" />
+    <Button v-if="showBackButton" :height="15" :width="40" style="position: absolute; right: 4px;top: 14px;"
+      @click.stop="backButton" icon="mdi-arrow-left" :title="$t('tooltip.back')" />
     <v-divider />
 
     <!-- menu items -->
@@ -29,8 +30,7 @@
     </v-list>
     <!-- button at bottom to collapse/expand the navigation drawer-->
     <Button nav :height="15" :width="40" style="position: absolute; right: 10px;bottom: 20px;" :ripple="false"
-      :icon="store.showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'"
-      :title="$t('tooltip.show_menu')"
+      :icon="store.showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'" :title="$t('tooltip.show_menu')"
       @click.stop="store.showNavigationMenu = !store.showNavigationMenu" />
   </v-navigation-drawer>
 </template>
@@ -45,16 +45,12 @@ import router from '@/plugins/router';
 const backButtonAllowedRouteNames = ["track", "artist", "album", "playlist", "radio", "addprovider", "editprovider", "editplayer", "editcore"]
 
 const menuItems = [
-  {
-    label: 'home',
-    icon: 'mdi-home-outline',
-    path: '/home',
-  },
-  {
-    label: 'search',
-    icon: 'mdi-magnify',
-    path: '/search',
-  },
+  // disable Home until we have something useful to fill that screen
+  // {
+  //   label: 'home',
+  //   icon: 'mdi-home-outline',
+  //   path: '/home',
+  // },
   {
     label: 'artists',
     icon: 'mdi-account-outline',
@@ -84,6 +80,11 @@ const menuItems = [
     label: 'browse',
     icon: 'mdi-folder-outline',
     path: '/browse',
+  },
+  {
+    label: 'search',
+    icon: 'mdi-magnify',
+    path: '/search',
   },
   {
     label: 'settings.settings',
@@ -125,5 +126,10 @@ const backButton = function () {
   font-family: 'JetBrains Mono Medium';
   font-size: 55;
   font-weight: 500
+}
+
+.logo_icon {
+  margin-left: -5px;
+  border-radius: 4px;
 }
 </style>

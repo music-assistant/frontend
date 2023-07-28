@@ -14,7 +14,8 @@ const routes = [
     children: [
       {
         path: '',
-        redirect: '/home',
+        // redirect: '/home', // revert once we finish the new home screen
+        redirect: '/artists',
         name: 'homeredirect',
       },
       {
@@ -35,66 +36,97 @@ const routes = [
         component: () => import(/* webpackChunkName: "browse" */ '@/views/BrowseView.vue'),
         props: (route: { query: { path: any } }) => ({ path: route.query.path }),
       },
+
       {
         path: '/artists',
-        name: 'artists',
-        component: () => import(/* webpackChunkName: "artists" */ '@/views/LibraryArtists.vue'),
-        props: true,
+        children: [
+          {
+            path: '',
+            name: 'artists',
+            component: () => import(/* webpackChunkName: "artists" */ '@/views/LibraryArtists.vue'),
+            props: true,
+          },
+          {
+            path: ':provider/:itemId',
+            name: 'artist',
+            component: () => import(/* webpackChunkName: "artist" */ '@/views/ArtistDetails.vue'),
+            props: true,
+          },
+        ],
       },
-      {
-        path: '/tracks',
-        name: 'tracks',
-        component: () => import(/* webpackChunkName: "tracks" */ '@/views/LibraryTracks.vue'),
-        props: true,
-      },
+
       {
         path: '/albums',
-        name: 'albums',
-        component: () => import(/* webpackChunkName: "albums" */ '@/views/LibraryAlbums.vue'),
-        props: true,
+        children: [
+          {
+            path: '',
+            name: 'albums',
+            component: () => import(/* webpackChunkName: "albums" */ '@/views/LibraryAlbums.vue'),
+            props: true,
+          },
+          {
+            path: '/:provider/:itemId',
+            name: 'album',
+            component: () => import(/* webpackChunkName: "album" */ '@/views/AlbumDetails.vue'),
+            props: true,
+          },
+        ],
       },
+
+      {
+        path: '/tracks',
+        children: [
+          {
+            path: '',
+            name: 'tracks',
+            component: () => import(/* webpackChunkName: "tracks" */ '@/views/LibraryTracks.vue'),
+            props: true,
+          },
+          {
+            path: '/:provider/:itemId',
+            name: 'track',
+            component: () => import(/* webpackChunkName: "track" */ '@/views/TrackDetails.vue'),
+            props: (route: { params: any; query: any }) => ({ ...route.params, ...route.query }),
+          },
+        ],
+      },
+
       {
         path: '/playlists',
-        name: 'playlists',
-        component: () => import(/* webpackChunkName: "playlists" */ '@/views/LibraryPlaylists.vue'),
-        props: true,
+        children: [
+          {
+            path: '',
+            name: 'playlists',
+            component: () => import(/* webpackChunkName: "playlists" */ '@/views/LibraryPlaylists.vue'),
+            props: true,
+          },
+          {
+            path: '/:provider/:itemId',
+            name: 'playlist',
+            component: () => import(/* webpackChunkName: "playlist" */ '@/views/PlaylistDetails.vue'),
+            props: true,
+          },
+        ],
       },
+
       {
         path: '/radios',
-        name: 'radios',
-        component: () => import(/* webpackChunkName: "radios" */ '@/views/LibraryRadios.vue'),
-        props: true,
+        children: [
+          {
+            path: '',
+            name: 'radios',
+            component: () => import(/* webpackChunkName: "radios" */ '@/views/LibraryRadios.vue'),
+            props: true,
+          },
+          {
+            path: '/:provider/:itemId',
+            name: 'radio',
+            component: () => import(/* webpackChunkName: "radio" */ '@/views/RadioDetails.vue'),
+            props: true,
+          },
+        ],
       },
-      {
-        path: '/artists/:provider/:itemId',
-        name: 'artist',
-        component: () => import(/* webpackChunkName: "artist" */ '@/views/ArtistDetails.vue'),
-        props: true,
-      },
-      {
-        path: '/albums/:provider/:itemId',
-        name: 'album',
-        component: () => import(/* webpackChunkName: "album" */ '@/views/AlbumDetails.vue'),
-        props: true,
-      },
-      {
-        path: '/tracks/:provider/:itemId',
-        name: 'track',
-        component: () => import(/* webpackChunkName: "track" */ '@/views/TrackDetails.vue'),
-        props: (route: { params: any; query: any }) => ({ ...route.params, ...route.query }),
-      },
-      {
-        path: '/radios/:provider/:itemId',
-        name: 'radio',
-        component: () => import(/* webpackChunkName: "radio" */ '@/views/RadioDetails.vue'),
-        props: true,
-      },
-      {
-        path: '/playlists/:provider/:itemId',
-        name: 'playlist',
-        component: () => import(/* webpackChunkName: "playlist" */ '@/views/PlaylistDetails.vue'),
-        props: true,
-      },
+
       {
         path: '/playerqueue',
         name: 'playerqueue',
