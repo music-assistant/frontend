@@ -15,9 +15,7 @@ export default defineConfig({
     vue({
       template: { transformAssetUrls },
     }),
-    webfontDownload([
-      'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap',
-    ]),
+    webfontDownload(['https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap']),
     vuetify({
       autoImport: true,
       styles: {
@@ -25,12 +23,7 @@ export default defineConfig({
       },
     }),
     VitePWA({
-      includeAssets: [
-        'favicon.svg',
-        'favicon.ico',
-        'robots.txt',
-        'apple-touch-icon.png',
-      ],
+      includeAssets: ['robots.txt'],
       manifest: {
         name: 'Music Assistant',
         short_name: 'Music library manager',
