@@ -139,6 +139,8 @@ onMounted(async () => {
   themeSetting.value = theme_setting;
 
   // Set inital theme
+  systemTheme = await appWindow.theme().toString();
+  localStorage.setItem('systemTheme', systemTheme);
   themeSettingConfig();
 
   // Update theme live
@@ -149,6 +151,7 @@ onMounted(async () => {
       systemTheme = 'light';
     }
     theme.global.name.value = systemTheme;
+    localStorage.setItem('systemTheme', systemTheme);
   });
 });
 
