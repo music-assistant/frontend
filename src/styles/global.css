@@ -22,6 +22,12 @@
   -webkit-font-smoothing: antialiased;
 }
 
+input {
+  user-select: initial;
+  -webkit-user-select: initial;
+  cursor: initial;
+}
+
 html {
   overflow: hidden;
 }
