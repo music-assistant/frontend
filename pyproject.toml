@@ -3,9 +3,9 @@ requires = ["setuptools~=62.3", "wheel~=0.37.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name         = "music-assistant-frontend"
+name         = "mass"
 # The version is set by GH action on release
-version = "0.0.0"
+version = "0.0.1"
 license      = {text = "Apache-2.0"}
 description  = "The Music Assistant frontend"
 readme       = "README.md"
