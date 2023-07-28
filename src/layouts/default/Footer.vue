@@ -1,5 +1,5 @@
 <template>
-  <BottomNavigation v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })" :height="store.isInStandaloneMode ? 100 : 80" />
+  <BottomNavigation v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })" :height="bottomNavHeight" />
   <v-footer
     bottom
     fixed
@@ -8,7 +8,7 @@
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
-    :style="store.isInStandaloneMode ? 'bottom: 105px' : 'bottom: 85px'"
+    :style="`bottom: ${footerMarginBottom}px;`"
     elevation="5"
     app
     :dark="true"
@@ -22,6 +22,20 @@ import { getBreakpointValue } from '@/plugins/breakpoint';
 import BottomNavigation from './BottomNavigation.vue';
 import Player from './PlayerOSD/Player.vue';
 import { store } from '@/plugins/store';
+import { computed } from 'vue';
+
+const bottomNavHeight = computed(() => {
+  if (store.isInStandaloneMode) {
+    // for iOS standalone we need extra padding at the bottom due to the apphandle
+    return 100;
+  }
+  return 80;
+});
+
+const footerMarginBottom = computed(() => {
+  if (!getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })) return 0;
+  return bottomNavHeight.value + 5;
+});
 </script>
 
 <style>
