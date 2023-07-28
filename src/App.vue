@@ -140,7 +140,7 @@ const start = () => {
 
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
-    invoke('start_sqzlite', { ip: ip });
+    invoke('start_sqzlite', { ip: ip.value });
   }
   if (discordRPCEnabled.value == true) {
     invoke('start_rpc', { websocket: websocket });
