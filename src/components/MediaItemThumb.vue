@@ -1,6 +1,6 @@
 <template>
   <v-img
-    :key="'uri' in item! ? item?.uri : item?.queue_item_id"
+    :key="item && 'uri' in item! ? item?.uri : item?.queue_item_id"
     :style="`height:${size || height}px; width:${size || width}px; ${rounded ? 'border-radius: 4px;' : ''}`"
     :cover="cover"
     :src="imgData"
@@ -57,16 +57,9 @@ const theme = useTheme();
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
   if (!props.item) return '';
-
-  if (theme.current.value.dark)
-    return `https://ui-avatars.com/api/?name=${props.item.name}&size=${
-      thumbSize.value || 256
-    }&bold=true&background=1d1d1d&color=383838`;
-  else
-    return `https://ui-avatars.com/api/?name=${props.item.name}&size=${
-      thumbSize.value || 256
-    }&bold=true&background=a0a0a0&color=cccccc`;
+  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize.value)
 });
+
 
 const thumbSize = computed(() => {
   if (typeof props.size == 'number') return props.size;
@@ -85,7 +78,7 @@ watch(
   async (newVal) => {
     if (newVal) {
       imgData.value = getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value) || fallbackImage.value;
-    }
+    } else imgData.value = fallbackImage.value;
   },
   { immediate: true },
 );
@@ -93,6 +86,19 @@ watch(
 
 <script lang="ts">
 //// utility functions for images
+
+export const getAvatarImage = function (name: string, dark = false, size = 256) : string {
+  // get url to avatar image for a string or sentence
+  if (dark)
+    return `https://ui-avatars.com/api/?name=${name}&size=${
+      size || 256
+    }&bold=true&background=1d1d1d&color=383838`;
+  else
+    return `https://ui-avatars.com/api/?name=${name}&size=${
+      size || 256
+    }&bold=true&background=a0a0a0&color=cccccc`;
+
+}
 
 export const getMediaItemImage = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,

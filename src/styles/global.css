@@ -236,7 +236,7 @@ div.v-navigation-drawer__scrim {
   width: 50px;
 }
 
-div.v-slide-group__next {
+/* div.v-slide-group__next {
   position: absolute;
   right: -5px;
   min-width: 40px;
@@ -252,7 +252,7 @@ div.v-slide-group__prev {
   height: 30px;
   align-items: start;
   margin-top: -35px;
-}
+} */
 
 .v-expansion-panel-title {
   border-radius: 0px;

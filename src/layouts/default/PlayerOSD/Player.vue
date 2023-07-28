@@ -1,130 +1,87 @@
 <template>
-  <BottomNavigation />
-  <v-footer
-    bottom
-    fixed
-    :class="`d-flex flex-column ${
-      getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-        ? 'mediacontrols-player-float'
-        : 'mediacontrols-player-default'
-    }`"
-    elevation="5"
-    app
-    :dark="true"
-  >
-    <div
-      v-if="coverImageColorCode && curQueueItem"
-      :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
-      :style="`background: linear-gradient(90deg, ${coverImageColorCode}${
-        $vuetify.theme.current.dark ? '4D' : 'B3'
-      } 0%, ${coverImageColorCode}00 100%);`"
-    ></div>
-    <PlayerTimeline
-      v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
-      :color="$vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor"
-      :is-progress-bar="true"
-    />
+  <div v-if="coverImageColorCode" :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`" :style="`background: linear-gradient(90deg, ${coverImageColorCode}${$vuetify.theme.current.dark ? '4D' : 'B3'
+    } 0%, ${coverImageColorCode}00 100%);`"></div>
+  <PlayerTimeline v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
+    :color="$vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor"
+    :is-progress-bar="true" />
 
-    <div
-      class="mediacontrols"
-      :style="`padding: ${getBreakpointValue({ breakpoint: 'phone' }) ? 3 : 10}px ${
-        getBreakpointValue({ breakpoint: 'phone' }) ? 10 : 10
-      }px;`"
-    >
-      <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
-        <PlayerTrackDetails
-          :show-quality-details-btn="getBreakpointValue('bp5') ? true : false"
-          :show-only-artist="true"
-          :color="
+  <div class="mediacontrols" :style="`padding: ${getBreakpointValue({ breakpoint: 'phone' }) ? 3 : 10}px ${getBreakpointValue({ breakpoint: 'phone' }) ? 10 : 10
+    }px;`">
+    <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
+      <PlayerTrackDetails :show-quality-details-btn="getBreakpointValue('bp7') ? true : false" :show-only-artist="true"
+        :color="!$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+            ? '#fff'
+            : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+              ? '#fff'
+              : '#000'
+          " />
+    </div>
+    <div :class="`mediacontrols-bottom-center-${getBreakpointValue('bp3') ? '1' : '2'}`">
+      <div style="width: 100%">
+        <!-- player control buttons -->
+        <PlayerControls :visible-components="{
+          repeat: { isVisible: getBreakpointValue('bp3') },
+          shuffle: { isVisible: getBreakpointValue('bp3') },
+          play: {
+            isVisible: true,
+            icon: {
+              staticWidth: '50px',
+              staticHeight: '50px',
+            },
+          },
+          previous: { isVisible: getBreakpointValue('bp3') },
+          next: { isVisible: getBreakpointValue('bp3') },
+        }" />
+        <!-- progress bar -->
+        <PlayerTimeline v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }" :color="$vuetify.theme.current.dark ? store.coverImageColorCode.darkColor : store.coverImageColorCode.lightColor
+          " :is-progress-bar="false" />
+      </div>
+    </div>
+    <div class="mediacontrols-bottom-right">
+      <div>
+        <!-- player mobile extended control buttons -->
+        <PlayerExtendedControls :queue="{ isVisible: getBreakpointValue('bp3') }" :player="{
+          isVisible: true,
+          color:
             !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
               ? '#fff'
               : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-              ? '#fff'
-              : '#000'
-          "
-        />
-      </div>
-      <div :class="`mediacontrols-buttom-center-${getBreakpointValue('bp3') ? '1' : '2'}`">
-        <div style="width: 100%">
-          <!-- player control buttons -->
-          <PlayerControls
-            :visible-components="{
-              repeat: { isVisible: getBreakpointValue('bp3') },
-              shuffle: { isVisible: getBreakpointValue('bp3') },
-              play: {
-                isVisible: true,
-                icon: {
-                  staticWidth: '50px',
-                  staticHeight: '50px',
-                },
-              },
-              previous: { isVisible: getBreakpointValue('bp3') },
-              next: { isVisible: getBreakpointValue('bp3') },
-            }"
-          />
-          <!-- progress bar -->
-          <PlayerTimeline
-            v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
-            :color="
-              $vuetify.theme.current.dark ? store.coverImageColorCode.darkColor : store.coverImageColorCode.lightColor
-            "
-            :is-progress-bar="false"
-          />
-        </div>
-      </div>
-      <div class="mediacontrols-buttom-right">
-        <div>
-          <!-- player mobile extended control buttons -->
-          <PlayerExtendedControls
-            :queue="{ isVisible: getBreakpointValue('bp3') }"
-            :player="{
-              isVisible: true,
-              color:
-                !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                  ? '#fff'
-                  : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
-            }"
-            :volume="{
-              isVisible: true,
-              color:
-                !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                  ? '#fff'
-                  : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
-            }"
-          />
-          <!-- player mobile control buttons -->
+                ? '#fff'
+                : '#000',
+        }" :volume="{
+  isVisible: true,
+  color:
+    !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+      ? '#fff'
+      : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+        ? '#fff'
+        : '#000',
+}" />
+        <!-- player mobile control buttons -->
 
-          <PlayerControls
-            style="padding-right: 5px"
-            :visible-components="{
-              repeat: { isVisible: false },
-              shuffle: { isVisible: false },
-              play: {
-                isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
-                withCircle: false,
-                icon: {
-                  staticWidth: '48px',
-                  staticHeight: '48px',
-                  color:
-                    !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                      ? '#fff'
-                      : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                      ? '#fff'
-                      : '#000',
-                },
-              },
-              previous: { isVisible: false },
-              next: { isVisible: false },
-            }"
-          />
-        </div>
+        <PlayerControls style="padding-right: 5px" :visible-components="{
+          repeat: { isVisible: false },
+          shuffle: { isVisible: false },
+          play: {
+            isVisible: getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }),
+            withCircle: false,
+            icon: {
+              staticWidth: '48px',
+              staticHeight: '48px',
+              color:
+                !$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                  ? '#fff'
+                  : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+                    ? '#fff'
+                    : '#000',
+            },
+          },
+          previous: { isVisible: false },
+          next: { isVisible: false },
+        }" />
       </div>
     </div>
-  </v-footer>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -142,13 +99,13 @@ import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
 import { getColorCode } from '@/helpers/utils';
-import BottomNavigation from '@/layouts/default/ButtomNavigation.vue';
+import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
 
 // local refs
-const fanartImage = ref();
 const coverImageColorCode = ref();
 
 const img = new Image();
+img.src = imgCoverDark;
 img.crossOrigin = 'Anonymous';
 
 img.addEventListener('load', function () {
@@ -174,11 +131,13 @@ const curQueueItem = computed(() => {
 watch(
   () => curQueueItem.value?.queue_item_id,
   () => {
+    // make sure that the image selection is exactly the same as on the player OSD thumb
     if (curQueueItem.value?.media_item) {
-      fanartImage.value =
-        getImageThumbForItem(curQueueItem.value.media_item, ImageType.FANART) ||
-        getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB);
-      img.src = fanartImage.value;
+      img.src = getImageThumbForItem(curQueueItem.value.media_item , ImageType.THUMB) || imgCoverDark;
+    } else if (curQueueItem.value) {
+      img.src = getImageThumbForItem(curQueueItem.value , ImageType.THUMB) || imgCoverDark;
+    } else {
+      img.src = imgCoverDark
     }
   },
 );
@@ -194,21 +153,6 @@ watch(
   width: 100%;
 }
 
-.mediacontrols-player-float {
-  width: 100%;
-  border-top-style: ridge;
-  padding: 0px;
-  left: 5px !important;
-  bottom: 60px !important;
-  width: calc((100% - 10px) - 0px) !important;
-  border-radius: 10px;
-}
-
-.mediacontrols-player-default {
-  width: 100%;
-  border-top-style: ridge;
-  padding: 0px;
-}
 .mediacontrols-bg-1 {
   position: absolute;
   width: 20%;
@@ -241,32 +185,33 @@ watch(
   vertical-align: middle;
 }
 
-.mediacontrols-left-1 > div {
-  padding: 0px !important;
-}
-.mediacontrols-left-2 > div {
+.mediacontrols-left-1>div {
   padding: 0px !important;
 }
 
-.mediacontrols-buttom-center-1 {
+.mediacontrols-left-2>div {
+  padding: 0px !important;
+}
+
+.mediacontrols-bottom-center-1 {
   display: table-cell;
   text-align: center;
-  width: 50%;
+  width: 40%;
   vertical-align: middle;
 }
 
-.mediacontrols-buttom-center-2 {
+.mediacontrols-bottom-center-2 {
   display: none;
-  width: 33.333%;
+  width: 25%;
 }
 
-.mediacontrols-buttom-right {
+.mediacontrols-bottom-right {
   display: table-cell;
   text-align: right;
   vertical-align: middle;
 }
 
-.mediacontrols-buttom-right > div {
+.mediacontrols-bottom-right>div {
   display: inline-flex;
   align-items: center;
 }

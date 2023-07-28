@@ -67,6 +67,8 @@ watch(
 );
 
 onMounted(() => {
+  // @ts-ignore
+  store.isInStandaloneMode = window.navigator.standalone || false;
   // enable dark mode based on OS/browser config
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
     const newColorScheme = event.matches ? 'dark' : 'light';

@@ -7,7 +7,7 @@
     :load-data="loadItems"
     :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'year']"
     :update-available="updateAvailable"
-    :title="$t('albums')"
+    :title="getBreakpointValue('bp4') ? $t('albums') : ''"
     :allow-key-hooks="true"
     :show-search-button="true"
   />
@@ -19,6 +19,7 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, type Album, EventMessage, EventType } from '../plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const items = ref<Album[]>([]);
 const updateAvailable = ref<boolean>(false);

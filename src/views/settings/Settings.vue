@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-toolbar color="transparent" :title="$t('settings.settings')">
+    <v-toolbar color="transparent" :title="getBreakpointValue('bp4') ? $t('settings.settings') : ''">
       <template #append>
         <v-tabs :model-value="activeTab" align-tabs="end" height="100%">
           <v-tab value="providers" :to="{ name: 'providersettings' }">
@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 // global refs
 const router = useRouter();
@@ -40,11 +41,9 @@ const activeTab = computed(() => {
   if (router.currentRoute.value.name?.toString().includes('player')) {
     return 'players';
   }
-
   if (router.currentRoute.value.name?.toString().includes('core')) {
     return 'core';
   }
-
   return 'providers';
 });
 </script>

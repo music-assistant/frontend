@@ -9,7 +9,7 @@
     :show-library="true"
     :sort-keys="['sort_name', 'timestamp_added DESC']"
     :update-available="updateAvailable"
-    :title="$t('playlists')"
+    :title="getBreakpointValue('bp4') ? $t('playlists') : ''"
     :allow-key-hooks="true"
     :show-search-button="true"
     :context-menu-items="contextMenuItems"
@@ -24,6 +24,7 @@ import api from '../plugins/api';
 import { ProviderFeature, type Playlist, EventMessage, EventType, MediaType } from '../plugins/api/interfaces';
 import { ContextMenuItem } from '@/helpers/contextmenu';
 import { sleep } from '@/helpers/utils';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);

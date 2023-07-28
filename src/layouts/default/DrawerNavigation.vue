@@ -25,7 +25,7 @@
 
     <!-- menu items -->
     <v-list lines="one" density="compact" nav>
-      <v-list-item v-for="menuItem of menuItems" :key="menuItem.path" nav density="compact" :height="15"
+      <v-list-item v-for="menuItem of mainMenuItems" :key="menuItem.path" nav density="compact" :height="15"
         :title="$t(menuItem.label)" :prepend-icon="menuItem.icon" :to="menuItem.path" />
     </v-list>
     <!-- button at bottom to collapse/expand the navigation drawer-->
@@ -42,9 +42,44 @@ import { computed, watch } from 'vue';
 import Button from '@/components/mods/Button.vue';
 import router from '@/plugins/router';
 
-const backButtonAllowedRouteNames = ["track", "artist", "album", "playlist", "radio", "addprovider", "editprovider", "editplayer", "editcore"]
+const showBackButton = computed(() => {
+  return store.prevRoutes.length > 0 && backButtonAllowedRouteNames.includes(router.currentRoute.value.name!.toString())
+});
+const showLogo = computed(() => {
+  return !(showBackButton.value && !store.showNavigationMenu);
+});
 
-const menuItems = [
+const backButton = function () {
+  const prevRoute = store.prevRoutes.pop();
+  if (prevRoute) {
+    prevRoute.params['backnav'] = 'true';
+    router.replace(prevRoute).then(() => {
+      setTimeout(() => {
+        window.scrollTo(0, prevRoute.meta.scrollPos || 0);
+      }, 400);
+    });
+  }
+};
+
+watch(
+  () => store.showNavigationMenu,
+  (isShown) => {
+    isShown ? (store.sizeNavigationMenu = !getBreakpointValue('mobile') ? 200 : 250) : (store.sizeNavigationMenu = 55);
+  },
+);
+
+</script>
+
+<script lang="ts">
+export const backButtonAllowedRouteNames = ["track", "artist", "album", "playlist", "radio", "addprovider", "editprovider", "editplayer", "editcore"]
+
+export interface MenuItem {
+  label: string;
+  icon: string;
+  path: string;
+}
+
+export const mainMenuItems: MenuItem[] = [
   // disable Home until we have something useful to fill that screen
   // {
   //   label: 'home',
@@ -92,32 +127,6 @@ const menuItems = [
     path: '/settings',
   },
 ];
-
-const showBackButton = computed(() => {
-  return store.prevRoutes.length > 0 && backButtonAllowedRouteNames.includes(router.currentRoute.value.name!.toString())
-});
-const showLogo = computed(() => {
-  return !(showBackButton.value && !store.showNavigationMenu);
-});
-
-watch(
-  () => store.showNavigationMenu,
-  (isShown) => {
-    isShown ? (store.sizeNavigationMenu = !getBreakpointValue('mobile') ? 200 : 250) : (store.sizeNavigationMenu = 55);
-  },
-);
-
-const backButton = function () {
-  const prevRoute = store.prevRoutes.pop();
-  if (prevRoute) {
-    prevRoute.params['backnav'] = 'true';
-    router.replace(prevRoute).then(() => {
-      setTimeout(() => {
-        window.scrollTo(0, prevRoute.meta.scrollPos || 0);
-      }, 400);
-    });
-  }
-};
 </script>
 
 <style>
