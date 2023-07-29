@@ -483,7 +483,7 @@ const onClick = function (mediaItem: MediaItemType) {
       },
     });
   } else {
-    onMenu(mediaItem, false);
+    onMenu(mediaItem, true);
   }
 };
 

@@ -29,12 +29,6 @@ const activeTab = computed(() => {
   }
 });
 
-watch(
-  () => store.showNavigationMenu,
-  (isShown) => {
-    isShown ? (store.sizeNavigationMenu = !getBreakpointValue('mobile') ? 200 : 250) : (store.sizeNavigationMenu = 55);
-  },
-);
 </script>
 
 <style>

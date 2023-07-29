@@ -10,7 +10,6 @@ interface Store {
   currentItemType?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
-  showNavigationMenu: boolean;
   sizeNavigationMenu: number;
   showFullscreenPlayer: boolean;
   coverImageColorCode: ColorCoverPalette;
@@ -32,7 +31,6 @@ export const store: Store = reactive({
   currentItemType: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
-  showNavigationMenu: true,
   sizeNavigationMenu: 300,
   showFullscreenPlayer: false,
   coverImageColorCode: {

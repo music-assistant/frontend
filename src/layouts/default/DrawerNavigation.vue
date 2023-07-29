@@ -1,9 +1,9 @@
 <template>
   <v-navigation-drawer v-if="getBreakpointValue({ breakpoint: 'bp3' })" ref="resizeComponent" app
-    :permanent="!$vuetify.display.mobile" :rail="!$vuetify.display.mobile && !store.showNavigationMenu"
-    :model-value="($vuetify.display.mobile && store.showNavigationMenu) || !$vuetify.display.mobile"
+    :permanent="!$vuetify.display.mobile" :rail="!$vuetify.display.mobile && !showNavigationMenu"
+    :model-value="($vuetify.display.mobile && showNavigationMenu) || !$vuetify.display.mobile"
     :width="!getBreakpointValue('mobile') ? 200 : 250" @update:model-value="(e) => {
-      if ($vuetify.display.mobile) store.showNavigationMenu = e;
+      if ($vuetify.display.mobile) showNavigationMenu = e;
     }
       ">
 
@@ -20,7 +20,7 @@
     <!-- back button -->
     <!-- NOTE: we only allow/show the back button at one of the nested levels (item details) -->
     <Button v-if="showBackButton" :height="15" :width="40" style="position: absolute; right: 4px;top: 14px;"
-      @click.stop="backButton" icon="mdi-arrow-left" :title="$t('tooltip.back')" />
+      @click.stop="router.go(-1)" icon="mdi-arrow-left" :title="$t('tooltip.back')" />
     <v-divider />
 
     <!-- menu items -->
@@ -29,40 +29,30 @@
         :title="$t(menuItem.label)" :prepend-icon="menuItem.icon" :to="menuItem.path" />
     </v-list>
     <!-- button at bottom to collapse/expand the navigation drawer-->
-    <Button nav :height="15" :width="40" style="position: absolute; right: 10px;bottom: 20px;" :ripple="false"
-      :icon="store.showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'" :title="$t('tooltip.show_menu')"
-      @click.stop="store.showNavigationMenu = !store.showNavigationMenu" />
+    <Button nav :height="15" :width="40" style="position: relative; float: right;right: 10px;top: 20px;" :ripple="false"
+      :icon="showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'" :title="$t('tooltip.show_menu')"
+      @click.stop="showNavigationMenu = !showNavigationMenu" />
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { store } from '@/plugins/store';
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Button from '@/components/mods/Button.vue';
 import router from '@/plugins/router';
+
+const showNavigationMenu = ref(false);
 
 const showBackButton = computed(() => {
   return store.prevRoutes.length > 0 && backButtonAllowedRouteNames.includes(router.currentRoute.value.name!.toString())
 });
 const showLogo = computed(() => {
-  return !(showBackButton.value && !store.showNavigationMenu);
+  return !(showBackButton.value && !showNavigationMenu.value);
 });
 
-const backButton = function () {
-  const prevRoute = store.prevRoutes.pop();
-  if (prevRoute) {
-    prevRoute.params['backnav'] = 'true';
-    router.replace(prevRoute).then(() => {
-      setTimeout(() => {
-        window.scrollTo(0, prevRoute.meta.scrollPos || 0);
-      }, 400);
-    });
-  }
-};
-
 watch(
-  () => store.showNavigationMenu,
+  () => showNavigationMenu.value,
   (isShown) => {
     isShown ? (store.sizeNavigationMenu = !getBreakpointValue('mobile') ? 200 : 250) : (store.sizeNavigationMenu = 55);
   },
