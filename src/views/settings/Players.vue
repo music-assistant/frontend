@@ -109,7 +109,12 @@ onBeforeUnmount(unsub);
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = await api.getPlayerConfigs();
+  playerConfigs.value = (await api.getPlayerConfigs()).sort((a, b) =>
+      (api.players[a.player_id]?.display_name || a.name || a.default_name || a.player_id) >
+      (api.players[b.player_id]?.display_name || b.name || b.default_name || b.player_id)
+        ? 1
+        : -1,
+    );;
 };
 
 const removePlayerConfig = function (playerId: string) {
