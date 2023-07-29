@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch, useSlots } from 'vue';
+import { ref, computed, onBeforeUnmount, watch } from 'vue';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { api } from '@/plugins/api';
 import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plugins/api/interfaces';
@@ -169,7 +169,6 @@ import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
-import ListViewItemContainer from '@/components/mods/ListViewItemContainer.vue';
 
 // global refs
 const router = useRouter();
