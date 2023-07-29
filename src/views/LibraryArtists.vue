@@ -43,6 +43,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.limit,
     params.offset,
     params.sortBy,
+    params.albumArtistsFilter
   );
 };
 
