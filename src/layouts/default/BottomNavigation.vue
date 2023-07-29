@@ -27,6 +27,7 @@ const activeTab = computed(() => {
       return menuItem.path;
     }
   }
+  return ""
 });
 
 </script>
