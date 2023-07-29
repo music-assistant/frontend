@@ -1,7 +1,7 @@
 <template>
   <v-bottom-navigation height="80" grow>
     <v-tabs stacked :show-arrows="false" :model-value="activeTab" center-active nav color="accent">
-      <v-tab v-for="menuItem of mainMenuItems" :to="menuItem.path" :value="menuItem.path">
+      <v-tab v-for="menuItem of mainMenuItems" :to="menuItem.path" :value="menuItem.path" :key="menuItem.path">
         <v-icon size="xx-large">{{ menuItem.icon }}</v-icon>
         <span class="menuButton">{{ $t(menuItem.label) }}</span>
       </v-tab>

@@ -25,7 +25,7 @@
         <div v-else-if="curQueueItem">
           {{ curQueueItem.name }}
         </div>
-        <div v-else="activePlayerQueue">
+        <div v-else>
           {{ activePlayerQueue?.display_name }}
         </div>
       </div>
