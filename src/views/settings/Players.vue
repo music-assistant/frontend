@@ -10,8 +10,8 @@
     </v-toolbar>
     <Container>
       <ListItem v-for="item in playerConfigs" :key="item.player_id" v-hold="() => {
-          editPlayer(item.player_id);
-        }
+        editPlayer(item.player_id);
+      }
         " link :context-menu-items="[
     {
       label: 'settings.configure',
@@ -110,11 +110,8 @@ onBeforeUnmount(unsub);
 // methods
 const loadItems = async function () {
   playerConfigs.value = (await api.getPlayerConfigs()).sort((a, b) =>
-      (api.players[a.player_id]?.display_name || a.name || a.default_name || a.player_id) >
-      (api.players[b.player_id]?.display_name || b.name || b.default_name || b.player_id)
-        ? 1
-        : -1,
-    );;
+    getPlayerName(a).localeCompare(getPlayerName(b))
+  );;
 };
 
 const removePlayerConfig = function (playerId: string) {
