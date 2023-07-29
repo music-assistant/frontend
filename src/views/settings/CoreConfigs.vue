@@ -1,10 +1,9 @@
 <template>
   <!-- core modules -->
   <div style="margin-bottom: 10px">
-    <v-toolbar color="transparent" style="height: 55px">
-      <template #title> {{ $t('settings.settings') }} | {{ $t('settings.core_modules') }} </template>
+    <v-toolbar color="transparent">
+      <template #title>{{ $t('settings.core_modules') }} </template>
     </v-toolbar>
-    <v-divider />
     <Container>
       <ListItem
         v-for="item in coreConfigs.sort((a, b) =>
@@ -64,10 +63,9 @@
   </div>
   <!-- server information -->
   <div style="margin-bottom: 10px">
-    <v-toolbar color="transparent" style="height: 55px">
-      <template #title> {{ $t('settings.settings') }} | {{ $t('settings.server_info') }} </template>
+    <v-toolbar color="transparent">
+      <template #title>{{ $t('settings.server_info') }} </template>
     </v-toolbar>
-    <v-divider />
     <Container>
       <v-table>
         <tbody>

@@ -2,62 +2,45 @@
   <!-- now playing media -->
   <ListItem style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
     <template #prepend>
-      <div
-        class="media-thumb player-media-thumb"
-        :style="`height: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64}px; width: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
-        }px; `"
-      >
+      <div class="media-thumb player-media-thumb" :style="`height: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64}px; width: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
+        }px; `">
         <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" />
-        <MediaItemThumb
-          v-if="curQueueItem"
-          :item="curQueueItem.media_item || curQueueItem"
-          style="cursor: pointer"
-          @click="store.showFullscreenPlayer = true"
-        />
-        <v-img v-else :src="iconFallback" style="opacity: 50%" />
+        <MediaItemThumb :item="curQueueItem?.media_item || curQueueItem" :fallback="imgCoverDark" style="cursor: pointer" 
+          @click="store.showFullscreenPlayer = true"  />
       </div>
     </template>
 
     <!-- title -->
     <template #title>
-      <div
-        v-if="curQueueItem && curQueueItem.media_item"
-        :style="{
-          cursor: 'pointer',
-          color: props.color ? color : '',
-        }"
-        @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
-      >
-        {{ curQueueItem.media_item.name }}
-        <span v-if="'version' in curQueueItem.media_item && curQueueItem.media_item.version"
-          >({{ curQueueItem.media_item.version }})</span
-        >
-      </div>
-      <div v-else-if="curQueueItem">
-        {{ curQueueItem.name }}
+      <div :style="{
+        cursor: 'pointer',
+        color: props.color ? color : '',
+      }">
+        <div v-if="curQueueItem && curQueueItem.media_item"
+          @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''">
+          {{ curQueueItem.media_item.name }}
+          <span v-if="'version' in curQueueItem.media_item && curQueueItem.media_item.version">({{
+            curQueueItem.media_item.version }})</span>
+        </div>
+        <div v-else-if="curQueueItem">
+          {{ curQueueItem.name }}
+        </div>
+        <div v-else>
+          {{ activePlayerQueue?.display_name }}
+        </div>
       </div>
     </template>
     <!-- append -->
     <template #append>
       <!-- format -->
-      <v-chip
-        v-if="
-          streamDetails?.audio_format.content_type &&
-          !getBreakpointValue({ breakpoint: 'phone' }) &&
-          showQualityDetailsBtn
-        "
-        :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
-        class="player-track-content-type"
-        :style="
-          $vuetify.theme.current.dark
+      <v-chip v-if="streamDetails?.audio_format.content_type &&
+        !getBreakpointValue({ breakpoint: 'phone' }) &&
+        showQualityDetailsBtn
+        " :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+        class="player-track-content-type" :style="$vuetify.theme.current.dark
             ? 'color: #000; background: #fff; margin-left: 15px;'
             : 'color: #fff; background: #000; margin-left: 15px;'
-        "
-        label
-        :ripple="false"
-        v-bind="props"
-      >
+          " label :ripple="false" v-bind="props">
         <div class="d-flex justify-center" style="width: 100%">
           {{ streamDetails.audio_format.content_type.toUpperCase() }}
         </div>
@@ -66,60 +49,47 @@
     <!-- subtitle -->
     <template #subtitle>
       <!-- track: artists(s) + album -->
-      <div
-        v-if="
-          curQueueItem &&
+      <div :style="{
+        cursor: 'pointer',
+        color: props.color ? color : '',
+      }" class="line-clamp-1">
+        <div v-if="curQueueItem &&
           curQueueItem.media_item?.media_type == MediaType.TRACK &&
           'album' in curQueueItem.media_item &&
           curQueueItem.media_item.album &&
           !props.showOnlyArtist
-        "
-        :style="{
-          cursor: 'pointer',
-          color: props.color ? color : '',
-        }"
-        class="line-clamp-1"
-        @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
-      >
-        {{ getArtistsString(curQueueItem.media_item.artists) }} •
-        {{ curQueueItem.media_item.album.name }}
-      </div>
-      <!-- track/album falback: artist present -->
-      <div
-        v-else-if="
-          curQueueItem &&
+          " @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''">
+          {{ getArtistsString(curQueueItem.media_item.artists) }} •
+          {{ curQueueItem.media_item.album.name }}
+        </div>
+        <!-- track/album falback: artist present -->
+        <div v-else-if="curQueueItem &&
           curQueueItem.media_item &&
           'artists' in curQueueItem.media_item &&
           curQueueItem.media_item.artists.length > 0
-        "
-        class="line-clamp-1"
-        :style="{
-          cursor: 'pointer',
-          color: props.color ? color : '',
-        }"
-        @click="
-          curQueueItem?.media_item && 'artists' in curQueueItem.media_item
-            ? itemClick(curQueueItem.media_item.artists[0])
-            : ''
-        "
-      >
-        {{ curQueueItem.media_item.artists[0].name }}
-      </div>
-      <!-- radio live metadata -->
-      <div v-else-if="curQueueItem?.streamdetails?.stream_title" class="line-clamp-1">
-        {{ curQueueItem?.streamdetails?.stream_title }}
-      </div>
-      <!-- other description -->
-      <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description" class="line-clamp-1">
-        {{ curQueueItem.media_item.metadata.description }}
-      </div>
-      <!-- queue empty message -->
-      <div v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="line-clamp-1">
-        {{ $t('queue_empty') }}
-      </div>
-      <!-- 3rd party source active -->
-      <div v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id" class="line-clamp-1">
-        {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
+          " @click="
+    curQueueItem?.media_item && 'artists' in curQueueItem.media_item
+      ? itemClick(curQueueItem.media_item.artists[0])
+      : ''
+    ">
+          {{ curQueueItem.media_item.artists[0].name }}
+        </div>
+        <!-- radio live metadata -->
+        <div v-else-if="curQueueItem?.streamdetails?.stream_title" class="line-clamp-1">
+          {{ curQueueItem?.streamdetails?.stream_title }}
+        </div>
+        <!-- other description -->
+        <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description" class="line-clamp-1">
+          {{ curQueueItem.media_item.metadata.description }}
+        </div>
+        <!-- queue empty message -->
+        <div v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="line-clamp-1">
+          {{ $t('queue_empty') }}
+        </div>
+        <!-- 3rd party source active -->
+        <div v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id" class="line-clamp-1">
+          {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
+        </div>
       </div>
     </template>
   </ListItem>
@@ -132,10 +102,10 @@ import api from '@/plugins/api';
 import { MediaType, MediaItemType, ItemMapping } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { getArtistsString, isColorDark } from '@/helpers/utils';
+import { getArtistsString } from '@/helpers/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
-import { iconFallback } from '@/components/QualityDetailsBtn.vue';
+import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 

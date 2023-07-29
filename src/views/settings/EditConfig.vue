@@ -299,7 +299,6 @@ const validate = async function () {
 };
 const submit = async function () {
   // submit button is pressed
-  console.log('submit', getCurrentValues());
   if (await validate()) {
     emit('submit', getCurrentValues());
   }

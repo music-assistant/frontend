@@ -100,7 +100,7 @@ const getContentTypeIcon = function (contentType: ContentType) {
 </script>
 
 <script lang="ts">
-export const iconFallback = new URL('@/assets/logo.png', import.meta.url).href;
+export const iconFallback = new URL('@/assets/logo.svg', import.meta.url).href;
 export const iconAac = new URL('@/assets/aac.png', import.meta.url).href;
 export const iconFlac = new URL('@/assets/flac.png', import.meta.url).href;
 export const iconMp3 = new URL('@/assets/mp3.png', import.meta.url).href;

@@ -7,7 +7,7 @@
     :load-data="loadItems"
     :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
-    :title="$t('artists')"
+    :title="getBreakpointValue('bp4') ? $t('artists') : ''"
     :allow-key-hooks="true"
     :show-search-button="true"
   />
@@ -19,6 +19,7 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { MediaType, type Artist, EventMessage, EventType } from '../plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);

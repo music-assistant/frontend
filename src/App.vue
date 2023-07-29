@@ -132,6 +132,9 @@ onMounted(async () => {
   let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
   let theme_setting = localStorage.getItem('themeSetting') || 'system';
 
+  // @ts-ignore
+  store.isInStandaloneMode = window.navigator.standalone || false;
+
   discordRPCEnabled.value = start_discord_rpc;
   squeezeliteEnabled.value = start_squeezelite;
   ip.value = ip_storage;

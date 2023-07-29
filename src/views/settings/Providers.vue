@@ -1,8 +1,8 @@
 <template>
   <!-- show section per providertype -->
-  <section v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
+  <div v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
     <v-toolbar color="transparent" density="compact" class="titlebar">
-      <template #title> {{ $t('settings.settings') }} | {{ $t(`settings.${provType}providers`) }} </template>
+      <template #title> {{ $t(`settings.${provType}providers`) }} </template>
       <template #append>
         <!-- ADD provider button + contextmenu -->
         <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
@@ -29,7 +29,6 @@
         </v-menu>
       </template>
     </v-toolbar>
-    <v-divider />
 
     <!-- show alert if no music providers configured-->
     <Alert
@@ -156,7 +155,7 @@
         </template>
       </ListItem>
     </Container>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
