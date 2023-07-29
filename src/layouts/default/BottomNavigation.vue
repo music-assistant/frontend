@@ -10,8 +10,6 @@
 </template>
 
 <script setup lang="ts">
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { store } from '@/plugins/store';
 import { computed, watch } from 'vue';
 import { mainMenuItems } from './DrawerNavigation.vue';
 import router from '@/plugins/router';
