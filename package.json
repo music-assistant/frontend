@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "type": "module",
   "description": "The Music Assistant frontend developed in Vue.",
   "license": "Apache-2.0",

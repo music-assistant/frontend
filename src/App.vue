@@ -159,7 +159,6 @@ onMounted(async () => {
 });
 
 const start = () => {
-  console.log(themeSetting.value);
   // Save ip and port
   localStorage.setItem('mass_ip', ip.value);
   localStorage.setItem('mass_port', port.value.toString());

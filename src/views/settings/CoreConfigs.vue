@@ -243,5 +243,6 @@ onMounted(async () => {
   discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
   squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
   themeSetting.value = localStorage.getItem('themeSetting') || 'system';
+  themeSettingConfig();
 });
 </script>
