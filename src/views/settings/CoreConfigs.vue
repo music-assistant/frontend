@@ -162,6 +162,12 @@
               </v-btn-toggle>
             </td>
           </tr>
+          <tr>
+            <td>Check for updates</td>
+            <td>
+              <v-btn @click="checkForUpdates">Check for updates</v-btn>
+            </td>
+          </tr>
         </tbody>
       </v-table>
     </Container>
@@ -177,6 +183,7 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
 import { useRouter } from 'vue-router';
+import { emit } from '@tauri-apps/api/event';
 
 // global refs
 const router = useRouter();
@@ -222,6 +229,10 @@ const openLinkInNewTab = function (url: string) {
   window.open(url, '_blank');
 };
 
+const checkForUpdates = async () => {
+  await emit('tauri://update');
+};
+
 onMounted(async () => {
   coreConfigs.value = await api.getCoreConfigs();
   totalLibraryArtists.value = (await api.getLibraryArtists(undefined, undefined, 1)).total || 0;
@@ -231,5 +242,6 @@ onMounted(async () => {
   totalLibraryRadio.value = (await api.getLibraryRadios(undefined, undefined, 1)).total || 0;
   discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
   squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
+  themeSetting.value = localStorage.getItem('themeSetting') || 'system';
 });
 </script>
