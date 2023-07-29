@@ -1,6 +1,6 @@
 <template>
-  <QueueBtn v-if="props.queue && props.queue.isVisible" :color="props.queue.color" />
   <SpeakerBtn v-if="props.player && props.player.isVisible" :color="props.player.color" />
+  <QueueBtn v-if="props.queue && props.queue.isVisible" :color="props.queue.color" />
   <VolumeBtn
     v-if="props.volume && props.volume.isVisible"
     :color="props.volume.color"

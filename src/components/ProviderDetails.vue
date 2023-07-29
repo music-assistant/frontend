@@ -18,7 +18,7 @@
               bits |
             </span>
             <a
-              v-if="providerMapping.url && !providerMapping.url.startsWith('file')"
+              v-if="providerMapping.url && !providerMapping.provider_domain.startsWith('file')"
               style="opacity: 0.4"
               :title="$t('tooltip.open_provider_link')"
               @click.prevent="openLinkInNewTab(providerMapping.url)"

@@ -8,7 +8,7 @@
     :load-data="loadItems"
     :sort-keys="['sort_name', 'timestamp_added DESC']"
     :update-available="updateAvailable"
-    :title="$t('radios')"
+    :title="getBreakpointValue('bp4') ? $t('radios') : ''"
     :show-search-button="true"
     :allow-key-hooks="true"
     :context-menu-items="[
@@ -33,6 +33,7 @@ import { EventMessage, EventType, MediaType, type Radio } from '../plugins/api/i
 import { store } from '../plugins/store';
 import Container from '../components/mods/Container.vue';
 import { sleep } from '@/helpers/utils';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);

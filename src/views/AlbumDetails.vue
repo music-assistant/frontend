@@ -107,19 +107,6 @@ const loadAlbumTracks = async function (params: LoadDataParams) {
 };
 
 const loadAlbumVersions = async function (params: LoadDataParams) {
-  const allVersions: Album[] = [];
-  if (params.refresh) {
-    await loadItemDetails();
-    updateAvailable.value = false;
-  }
-  if (props.provider == 'library') {
-    const albumVersions = await api.getAlbumVersions(props.itemId, props.provider);
-    allVersions.push(...albumVersions);
-  }
-  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
-    const albumVersions = await api.getAlbumVersions(providerMapping.item_id, providerMapping.provider_instance);
-    allVersions.push(...albumVersions);
-  }
-  return filteredItems(allVersions, params);
+  return filteredItems(await api.getAlbumVersions(itemDetails.value!.item_id, itemDetails.value!.provider), params);
 };
 </script>

@@ -11,6 +11,13 @@
     <Container>
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
+      <!-- back button -->
+      <v-btn
+          v-if="props.path"
+          variant="plain"
+          icon="mdi-arrow-left"
+          :to="{ name: 'browse', query: { path: backPath } }"
+        />
 
       <RecycleScroller v-slot="{ item }" :items="browseItem?.items || []" :item-size="66" key-field="uri" page-mode>
         <ListviewItem
@@ -49,6 +56,17 @@ const router = useRouter();
 
 const browseItem = ref<BrowseFolder>();
 const loading = ref(false);
+
+const backPath = computed(() => {
+  if (props.path) {
+    const backPath = props.path.substring(0, props.path.lastIndexOf('/') + 1);
+    if (backPath.endsWith('://')) {
+      return '';
+    }
+    return backPath;
+  }
+  return '';
+});
 
 const loadData = async function () {
   loading.value = true;

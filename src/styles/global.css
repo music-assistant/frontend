@@ -6,6 +6,15 @@
   font-weight: 400;
   src: url(@/assets/material-icons-outlined.woff2) format('woff2');
 }
+
+@font-face {
+  font-family: "JetBrains Mono Medium";
+  font-weight: 400;
+  font-style: normal;
+  font-display: auto;
+  src: url(@/assets/JetBrainsMono-Medium.woff2) format("woff2");
+}
+
 .material-icons-outlined {
   font-family: 'Material Icons Outlined';
   font-weight: normal;
@@ -136,6 +145,14 @@ div.v-navigation-drawer__scrim {
   margin-inline-end: 10px;
 }
 
+.v-toolbar {
+  height: 52px;
+}
+
+.v-toolbar-title {
+  font-family: "JetBrains Mono Medium";
+}
+
 /* ThumbView panel columns */
 .col-2 {
   width: 50%;
@@ -219,7 +236,7 @@ div.v-navigation-drawer__scrim {
   width: 50px;
 }
 
-div.v-slide-group__next {
+/* div.v-slide-group__next {
   position: absolute;
   right: -5px;
   min-width: 40px;
@@ -235,7 +252,7 @@ div.v-slide-group__prev {
   height: 30px;
   align-items: start;
   margin-top: -35px;
-}
+} */
 
 .v-expansion-panel-title {
   border-radius: 0px;

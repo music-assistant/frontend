@@ -3,10 +3,10 @@
     <v-toolbar variant="flat" color="transparent" style="height: 50px">
       <template #title>
         {{ $t('queue') }} | {{ store.selectedPlayer?.display_name }}
-        <v-badge v-if="!getBreakpointValue('bp1')" color="grey" :content="nextItems.length" inline />
+        <v-badge v-if="!getBreakpointValue('bp6')" color="grey" :content="nextItems.length" inline />
       </template>
       <template #append>
-        <v-tabs v-if="getBreakpointValue('bp1')" v-model="activePanel" show-arrows grow>
+        <v-tabs v-if="getBreakpointValue('bp6')" v-model="activePanel" show-arrows grow>
           <v-tab :value="0">
             {{ $t('queue_next_items') }}
             <v-badge color="grey" :content="nextItems.length" inline />
@@ -268,7 +268,6 @@ const loadItems = async function () {
   if (activePlayerQueue.value) {
     items.value = [];
     await api.getPlayerQueueItems(activePlayerQueue.value.queue_id, (data: QueueItem[]) => {
-      console.log('chunk', data.length);
       items.value.push(...data);
     });
   } else {

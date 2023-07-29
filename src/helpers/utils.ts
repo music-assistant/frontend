@@ -243,7 +243,6 @@ export function findDarkColor(colors: RGBColor[]): string {
   colors.forEach((rgb) => {
     const hexColor = rgbToHex(rgb);
     const contrastRatio = getContrastRatio('#fff', hexColor);
-    //console.log(`${contrastRatio}:${rgb}`);
     if (maxContrastRatio >= contrastRatio) {
       if (
         (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||

@@ -9,7 +9,7 @@
     :sort-keys="['sort_name', 'timestamp_added DESC', 'sort_artist', 'duration']"
     :show-album="false"
     :update-available="updateAvailable"
-    :title="$t('tracks')"
+    :title="getBreakpointValue('bp4') ? $t('tracks') : ''"
     :show-search-button="true"
     :allow-key-hooks="true"
     :context-menu-items="[
@@ -32,6 +32,7 @@ import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Track } from '../plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const { t } = useI18n();
 const items = ref<Track[]>([]);
