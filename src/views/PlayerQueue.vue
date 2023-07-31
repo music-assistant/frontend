@@ -57,8 +57,9 @@
       <v-virtual-scroll :height="66" :items="tabItems" style="height:100%">
         <template v-slot:default="{ item }">
           <ListviewItem
-          :key="item.uri"
-          :item="item.media_item"
+          v-if="item.media_item"
+          :key="item.queue_item_id"
+          :item="item.media_item || item"
           :show-disc-number="false"
           :show-track-number="false"
           :show-duration="true"
@@ -69,7 +70,6 @@
           :show-checkboxes="false"
           :is-selected="false"
           :show-details="false"
-          :parent-item="item"
           :is-disabled="item.queue_item_id == curQueueItem?.queue_item_id"
           ripple
           @menu="onClick(item)"
@@ -97,6 +97,10 @@
             />
           </template>
         </ListviewItem>
+        <ListItem v-else>
+          <!-- edge case: QueueItem without MediaItem attached-->
+          <template #title>{{ item.name }}</template>
+        </ListItem>
         </template>
       </v-virtual-scroll>
 
