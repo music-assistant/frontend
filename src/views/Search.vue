@@ -6,17 +6,9 @@
       </template>
     </v-toolbar>
     <v-divider />
-    <v-text-field
-      id="searchInput"
-      v-model="search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('type_to_search')"
-      hide-details
-      variant="filled"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
+    <v-text-field id="searchInput" v-model="search" clearable prepend-inner-icon="mdi-magnify"
+      :label="$t('type_to_search')" hide-details variant="filled" @focus="searchHasFocus = true"
+      @blur="searchHasFocus = false" />
     <div>
       <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
         <v-chip v-for="item in viewFilters" :key="item" filter outlined>
@@ -29,40 +21,22 @@
 
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
-        <v-col
-          v-for="item in filteredItems"
-          :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-        >
-          <PanelviewItem
-            :item="item"
-            :size="thumbSize"
-            :is-selected="false"
-            :show-checkboxes="false"
-            @menu="onMenu"
-            @click="onClick"
-          />
+        <v-col v-for="item in filteredItems" :key="item.uri"
+          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
+          <PanelviewItem :item="item" :size="thumbSize" :is-selected="false" :show-checkboxes="false" @menu="onMenu"
+            @click="onClick" />
         </v-col>
       </v-row>
 
       <!-- list view -->
-      <div v-if="viewMode == 'list'">
-        <RecycleScroller v-slot="{ item }" :items="filteredItems" :item-size="60" key-field="item_id" page-mode>
-          <ListviewItem
-            :item="item"
-            :show-track-number="false"
-            :show-duration="true"
-            :show-library="false"
-            :show-menu="true"
-            :show-provider="true"
-            :show-checkboxes="false"
-            :is-selected="false"
-            :show-details="true"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </RecycleScroller>
-      </div>
+      <v-virtual-scroll :height="60" :items="filteredItems" v-if="viewMode == 'list'" style="height:100%">
+        <template v-slot:default="{ item }">
+          <ListviewItem :item="item" :show-track-number="false" :show-duration="true" :show-library="false"
+            :show-menu="true" :show-provider="true" :show-checkboxes="false" :is-selected="false" :show-details="true"
+            @menu="onMenu" @click="onClick" />
+        </template>
+      </v-virtual-scroll>
+
 
       <v-toolbar density="compact" variant="flat" color="transparent" height="45">
         <span style="margin-left: 15px">{{ $t('items_total', [filteredItems.length]) }}</span>
@@ -70,12 +44,8 @@
 
         <v-tooltip location="bottom">
           <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-              variant="plain"
-              @click="toggleViewMode()"
-            />
+            <v-btn v-bind="props" :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'" variant="plain"
+              @click="toggleViewMode()" />
           </template>
           <span>{{ $t('tooltip.toggle_view_mode') }}</span>
         </v-tooltip>
@@ -89,8 +59,6 @@
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 import { SearchResults, type MediaItemType } from '../plugins/api/interfaces';
-import { RecycleScroller } from 'vue-virtual-scroller';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from '../components/ListviewItem.vue';
 import PanelviewItem from '../components/PanelviewItem.vue';

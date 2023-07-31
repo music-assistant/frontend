@@ -156,7 +156,7 @@
         "sort_artist": "Artiest",
         "sort_name": "Alfabetisch",
         "sort_name DESC": "Alfabetisch (omgekeerd)",
-        "timestamp_added DESC": "Recently added",
+        "recent": "Recently added",
         "track_number": "Tracknummer",
         "year": "Verschijningsdatum\/jaar"
     },

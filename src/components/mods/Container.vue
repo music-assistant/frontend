@@ -1,5 +1,5 @@
 <template>
-  <v-container v-bind="btnProps" variant="default">
+  <v-container v-bind="btnProps" variant="default" fluid>
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
@@ -53,7 +53,7 @@ export default {
 
 <style>
 .container-default {
-  padding: 20px;
+  padding: 15px;
 }
 
 .container-panels-light {

@@ -12,23 +12,15 @@
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
       <!-- back button -->
-      <v-btn
-          v-if="props.path"
-          variant="plain"
-          icon="mdi-arrow-left"
-          :to="{ name: 'browse', query: { path: backPath } }"
-        />
+      <v-btn v-if="props.path" variant="plain" icon="mdi-arrow-left"
+        :to="{ name: 'browse', query: { path: backPath } }" />
 
-      <RecycleScroller v-slot="{ item }" :items="browseItem?.items || []" :item-size="66" key-field="uri" page-mode>
-        <ListviewItem
-          :item="item"
-          :show-library="false"
-          :show-menu="false"
-          :show-provider="false"
-          :is-selected="false"
-          @click="onClick"
-        />
-      </RecycleScroller>
+      <v-virtual-scroll :height="66" :items="browseItem?.items || []" style="height:100%">
+        <template v-slot:default="{ item }">
+          <ListviewItem :item="item" :show-library="false" :show-menu="false" :show-provider="false" :is-selected="false"
+            @click="onClick" />
+        </template>
+      </v-virtual-scroll>
     </Container>
   </section>
 </template>
@@ -36,11 +28,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { RecycleScroller } from 'vue-virtual-scroller';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import ListviewItem from '../components/ListviewItem.vue';
 import { MediaType, type BrowseFolder, type MediaItemType } from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
 import { useRouter } from 'vue-router';
 import { getBrowseFolderName } from '@/helpers/utils';
 import api from '../plugins/api';
