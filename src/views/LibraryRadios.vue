@@ -6,7 +6,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-data="loadItems"
-    :sort-keys="['sort_name', 'timestamp_added DESC']"
+    :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
     :title="getBreakpointValue('bp4') ? $t('radios') : ''"
     :show-search-button="true"
@@ -30,14 +30,17 @@ import { useI18n } from 'vue-i18n';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
 import { EventMessage, EventType, MediaType, type Radio } from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
-import Container from '../components/mods/Container.vue';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
 const updateAvailable = ref<boolean>(false);
+
+const sortKeys: Record<string, string> = {
+  'name': 'sort_name',
+  'recent': 'timestamp_added DESC',
+}
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library
@@ -71,7 +74,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    sortKeys[params.sortBy],
   );
 };
 

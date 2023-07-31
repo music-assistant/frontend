@@ -224,7 +224,7 @@ export interface Props {
   loadData: (params: LoadDataParams) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ['sort_name', 'recent'],
+  sortKeys: () => ['name'],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -248,7 +248,7 @@ const router = useRouter();
 // local refs
 const viewMode = ref('list');
 const search = ref('');
-const sortBy = ref<string>('sort_name');
+const sortBy = ref<string>('name');
 const showSortMenu = ref(false);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
@@ -502,7 +502,7 @@ onMounted(() => {
   }
   // get stored/default sortBy for this itemtype
   const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
-  if (savedSortBy && savedSortBy !== 'null') {
+  if (savedSortBy && savedSortBy !== 'null' && props.sortKeys.includes(savedSortBy)) {
     sortBy.value = savedSortBy;
   } else {
     sortBy.value = props.sortKeys[0];
@@ -612,13 +612,13 @@ export const filteredItems = function (
     result = items;
   }
   // sort
-  if (params.sortBy == 'sort_name') {
-    result.sort((a, b) => (a.sort_name || a.name).localeCompare(b.sort_name || b.name));
+  if (params.sortBy == 'name') {
+    result.sort((a, b) => (a.sort_name).localeCompare(b.sort_name));
   }
-  if (params.sortBy == 'sort_album') {
-    result.sort((a, b) => (a as Track).album?.name.localeCompare((b as Track).album?.name));
+  if (params.sortBy == 'album') {
+    result.sort((a, b) => (a as Track).album?.sort_name.localeCompare((b as Track).album?.sort_name));
   }
-  if (params.sortBy == 'sort_artist') {
+  if (params.sortBy == 'artist') {
     result.sort((a, b) => (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name));
   }
   if (params.sortBy == 'track_number') {
@@ -628,7 +628,7 @@ export const filteredItems = function (
   if (params.sortBy == 'position') {
     result.sort((a, b) => ((a as Track).position || 0) - ((b as Track).position || 0));
   }
-  if (params.sortBy == 'position DESC') {
+  if (params.sortBy == 'position_desc') {
     result.sort((a, b) => ((b as Track).position || 0) - ((a as Track).position || 0));
   }
   if (params.sortBy == 'year') {
@@ -640,6 +640,9 @@ export const filteredItems = function (
 
   if (params.sortBy == 'duration') {
     result.sort((a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0));
+  }
+  if (params.sortBy == 'duration_desc') {
+    result.sort((a, b) => ((b as Track).duration || 0) - ((a as Track).duration || 0));
   }
 
   if (params.sortBy == 'provider') {

@@ -160,7 +160,7 @@
         "sort_artist": "Wykonawca",
         "sort_name": "Alfabetycznie",
         "sort_name DESC": "Alfabetycznie (malejąco)",
-        "timestamp_added DESC": "Ostatnio dodane",
+        "recent": "Ostatnio dodane",
         "track_number": "Numer ścieżki",
         "year": "Rok wydania"
     },

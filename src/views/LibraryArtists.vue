@@ -10,6 +10,7 @@
     :title="getBreakpointValue('bp4') ? $t('artists') : ''"
     :allow-key-hooks="true"
     :show-search-button="true"
+    :sort-keys="Object.keys(sortKeys)"
   />
 </template>
 
@@ -23,6 +24,11 @@ import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
+
+const sortKeys: Record<string, string> = {
+  'name': 'sort_name',
+  'recent': 'timestamp_added DESC',
+}
 
 const loadItems = async function (params: LoadDataParams) {
   if (params.refresh) {
@@ -42,7 +48,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    sortKeys[params.sortBy],
     params.albumArtistsFilter
   );
 };

@@ -11,6 +11,8 @@
         "compilation": "Compilation",
         "ep": "EP",
         "single": "Single",
+        "audiobook": "Audiobook",
+        "podcast": "Podcast",
         "unknown": "Unknown album type"
     },
     "albums": "Albums",
@@ -157,15 +159,17 @@
     "sort": {
         "duration": "Duration",
         "position": "Position",
-        "position DESC": "Position (descending)",
+        "position_desc": "Position (descending)",
         "provider": "Provider",
-        "sort_album": "Album",
-        "sort_artist": "Artist",
-        "sort_name": "Alphabetically",
-        "sort_name DESC": "Alphabetically (descending)",
-        "timestamp_added DESC": "Recently added",
+        "album": "Album",
+        "artist": "Artist",
+        "name": "Alphabetically",
+        "name_desc": "Alphabetically (descending)",
+        "recent": "Recently added",
         "track_number": "Track number",
-        "year": "Release year"
+        "year": "Release year",
+        "year_desc": "Release year (descending)",
+        "duration_desc": "Duration (descending)"
     },
     "state": {
         "idle": "idle",

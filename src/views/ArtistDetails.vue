@@ -9,7 +9,7 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :load-data="loadArtistTracks"
-      :sort-keys="['timestamp_added DESC', 'sort_name', 'sort_album']"
+      :sort-keys="['recent', 'name', 'album']"
       :update-available="updateAvailable"
       :title="$t('tracks')"
       :provider-filter="providerFilter"
@@ -23,7 +23,7 @@
       :show-provider="false"
       :show-favorites-only-filter="false"
       :load-data="loadArtistAlbums"
-      :sort-keys="['timestamp_added DESC', 'sort_name', 'year']"
+      :sort-keys="['recent', 'name', 'year']"
       :update-available="updateAvailable"
       :title="$t('albums')"
       :provider-filter="providerFilter"
@@ -51,7 +51,6 @@ export interface Props {
 const props = defineProps<Props>();
 const activeTab = ref('library');
 const updateAvailable = ref(false);
-
 const itemDetails = ref<Artist>();
 
 const loadItemDetails = async function () {
