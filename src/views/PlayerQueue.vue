@@ -54,8 +54,9 @@
         >
       </Alert>
 
-      <RecycleScroller v-slot="{ item }" :items="tabItems" :item-size="60" key-field="queue_item_id" page-mode>
-        <ListviewItem
+      <v-virtual-scroll :height="66" :items="tabItems" style="height:100%">
+        <template v-slot:default="{ item }">
+          <ListviewItem
           :key="item.uri"
           :item="item.media_item"
           :show-disc-number="false"
@@ -96,7 +97,8 @@
             />
           </template>
         </ListviewItem>
-      </RecycleScroller>
+        </template>
+      </v-virtual-scroll>
 
       <Alert v-if="items.length == 0" type="info">
         {{ $t('no_content') }}
@@ -192,7 +194,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed, onBeforeUnmount, watch } from 'vue';
-import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import type { QueueItem, EventMessage, MediaItemType } from '../plugins/api/interfaces';
 import { EventType, MediaType } from '../plugins/api/interfaces';

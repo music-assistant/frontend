@@ -5,59 +5,33 @@
     <v-toolbar color="transparent">
       <template #title>
         {{ title }}
-        <v-badge
-          v-if="getBreakpointValue('bp11')"
-          color="grey"
-          :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
-          inline
-        />
+        <v-badge v-if="getBreakpointValue('bp11')" color="grey"
+          :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems" inline />
       </template>
 
       <template #append>
         <!-- toggle select button -->
-        <Button
-          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.select_items')"
-          :disabled="!expanded"
-          @click="toggleCheckboxes"
-          ><v-icon :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
-        /></Button>
+        <Button v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')" v-bind="props"
+          variant="list" :title="$t('tooltip.select_items')" :disabled="!expanded" @click="toggleCheckboxes"><v-icon
+            :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'" /></Button>
 
         <!-- favorites only filter -->
-        <Button
-          v-if="showFavoritesOnlyFilter != undefined ? showFavoritesOnlyFilter : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.filter_favorites')"
-          :disabled="!expanded"
-          @click="toggleFavoriteFilter"
-        >
+        <Button v-if="showFavoritesOnlyFilter != undefined ? showFavoritesOnlyFilter : getBreakpointValue('bp1')"
+          v-bind="props" variant="list" :title="$t('tooltip.filter_favorites')" :disabled="!expanded"
+          @click="toggleFavoriteFilter">
           <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
         </Button>
 
         <!-- album artists only filter -->
-        <Button
-          v-if="showAlbumArtistsOnlyFilter"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.album_artist_filter')"
-          :disabled="!expanded"
-          @click="toggleAlbumArtistsFilter"
-        >
+        <Button v-if="showAlbumArtistsOnlyFilter" v-bind="props" variant="list" :title="$t('tooltip.album_artist_filter')"
+          :disabled="!expanded" @click="toggleAlbumArtistsFilter">
           <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
         </Button>
 
         <!-- refresh button-->
-        <Button
-          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
-          :disabled="!expanded || loading"
-          @click="onRefreshClicked()"
-        >
+        <Button v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')" v-bind="props"
+          variant="list" :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+          :disabled="!expanded || loading" @click="onRefreshClicked()">
           <v-badge :model-value="updateAvailable" color="error" dot>
             <v-icon icon="mdi-refresh" />
           </v-badge>
@@ -86,26 +60,14 @@
         </v-menu>
 
         <!-- toggle search button -->
-        <Button
-          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.search')"
-          :disabled="!expanded"
-          @click="toggleSearch()"
-        >
+        <Button v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')" v-bind="props"
+          variant="list" :title="$t('tooltip.search')" :disabled="!expanded" @click="toggleSearch()">
           <v-icon icon="mdi-magnify" />
         </Button>
 
         <!-- toggle view mode button -->
-        <Button
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.toggle_view_mode')"
-          :disabled="!expanded"
-          @click="toggleViewMode()"
-          ><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-        /></Button>
+        <Button v-bind="props" variant="list" :title="$t('tooltip.toggle_view_mode')" :disabled="!expanded"
+          @click="toggleViewMode()"><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'" /></Button>
 
         <!-- provider filter dropdown -->
         <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
@@ -143,13 +105,9 @@
             </Button>
           </template>
           <v-list>
-            <ListItem
-              v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)"
-              :key="index"
-              :title="$t(item.label, item.labelArgs)"
-              :disabled="item.disabled == true"
-              @click="item.action ? item.action() : ''"
-            >
+            <ListItem v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)" :key="index"
+              :title="$t(item.label, item.labelArgs)" :disabled="item.disabled == true"
+              @click="item.action ? item.action() : ''">
               <template #prepend>
                 <v-avatar :icon="item.icon" />
               </template>
@@ -158,73 +116,38 @@
         </v-menu>
 
         <!-- expand/collapse button -->
-        <Button v-if="allowCollapse" variant="list" :title="$t('tooltip.collapse_expand')" @click="toggleExpand"
-          ><v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-        /></Button>
+        <Button v-if="allowCollapse" variant="list" :title="$t('tooltip.collapse_expand')" @click="toggleExpand"><v-icon
+            :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'" /></Button>
       </template>
     </v-toolbar>
     <v-divider />
 
-    <v-text-field
-      v-if="showSearch && expanded"
-      id="searchInput"
-      v-model="search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
-      hide-details
-      variant="filled"
-      style="width: auto; margin-top: 10px"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
+    <v-text-field v-if="showSearch && expanded" id="searchInput" v-model="search" clearable
+      prepend-inner-icon="mdi-magnify" :label="$t('search')" hide-details variant="filled"
+      style="width: auto; margin-top: 10px" @focus="searchHasFocus = true" @blur="searchHasFocus = false" />
     <Container v-if="expanded" :variant="viewMode == 'panel' ? 'panel' : 'default'">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
-        <v-col
-          v-for="item in allItems"
-          :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-        >
-          <PanelviewItem
-            :item="item"
-            :is-selected="isSelected(item)"
-            :show-checkboxes="showCheckboxes"
-            :show-track-number="showTrackNumber"
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
+        <v-col v-for="item in allItems" :key="item.uri" :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
+          <PanelviewItem :item="item" :is-selected="isSelected(item)" :show-checkboxes="showCheckboxes"
+            :show-track-number="showTrackNumber" @select="onSelect" @menu="onMenu" @click="onClick" />
         </v-col>
       </v-row>
 
       <!-- list view -->
-      <div v-if="viewMode == 'list'">
-        <RecycleScroller v-slot="{ item }" :items="allItems" :item-size="70" key-field="uri" page-mode>
-          <ListviewItem
-            :key="item.uri"
-            :item="item"
-            :show-track-number="showTrackNumber"
-            :show-disc-number="showTrackNumber"
-            :show-duration="showDuration"
-            :show-favorite="showFavoritesOnlyFilter"
-            :show-menu="showMenu"
-            :show-provider="showProvider"
-            :show-album="showAlbum"
-            :show-checkboxes="showCheckboxes"
-            :is-selected="isSelected(item)"
-            :show-details="itemtype.includes('versions')"
-            :parent-item="parentItem"
-            :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </RecycleScroller>
-      </div>
+      <v-virtual-scroll :height="70" :items="allItems" v-if="viewMode == 'list'" style="height:100%;">
+        <template v-slot:default="{ item }">
+          <ListviewItem :item="item" :show-track-number="showTrackNumber" :show-disc-number="showTrackNumber"
+            :show-duration="showDuration" :show-favorite="showFavoritesOnlyFilter" :show-menu="showMenu"
+            :show-provider="showProvider" :show-album="showAlbum" :show-checkboxes="showCheckboxes"
+            :is-selected="isSelected(item)" :show-details="itemtype.includes('versions')" :parent-item="parentItem"
+            :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []" @select="onSelect"
+            @menu="onMenu" @click="onClick" />
+        </template>
+      </v-virtual-scroll>
 
       <!-- inifinite scroll component -->
       <InfiniteLoading @infinite="loadNextPage" />
@@ -259,7 +182,6 @@
 
 import { ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
 import { type Album, type MediaItemType, type PagedItems, type Track } from '../plugins/api/interfaces';
-import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from './ListviewItem.vue';
@@ -302,7 +224,7 @@ export interface Props {
   loadData: (params: LoadDataParams) => Promise<PagedItems>;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ['sort_name', 'timestamp_added DESC'],
+  sortKeys: () => ['sort_name', 'recent'],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -712,7 +634,7 @@ export const filteredItems = function (
   if (params.sortBy == 'year') {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }
-  if (params.sortBy == 'timestamp_added DESC') {
+  if (params.sortBy == 'recent') {
     result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
   }
 
@@ -741,7 +663,7 @@ export const filteredItems = function (
 </script>
 
 <style>
-.v-toolbar > .v-toolbar__content > .v-toolbar__append {
+.v-toolbar>.v-toolbar__content>.v-toolbar__append {
   margin-right: 5px;
 }
 </style>
