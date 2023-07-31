@@ -59,7 +59,6 @@
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 import { SearchResults, type MediaItemType } from '../plugins/api/interfaces';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from '../components/ListviewItem.vue';
 import PanelviewItem from '../components/PanelviewItem.vue';

@@ -28,7 +28,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import ListviewItem from '../components/ListviewItem.vue';
 import { MediaType, type BrowseFolder, type MediaItemType } from '../plugins/api/interfaces';
 import { useRouter } from 'vue-router';

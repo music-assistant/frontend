@@ -198,7 +198,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed, onBeforeUnmount, watch } from 'vue';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import type { QueueItem, EventMessage, MediaItemType } from '../plugins/api/interfaces';
 import { EventType, MediaType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';

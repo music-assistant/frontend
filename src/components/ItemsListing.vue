@@ -182,7 +182,6 @@
 
 import { ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
 import { type Album, type MediaItemType, type PagedItems, type Track } from '../plugins/api/interfaces';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { store } from '../plugins/store';
 import ListviewItem from './ListviewItem.vue';
 import Button from './mods/Button.vue';
