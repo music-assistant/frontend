@@ -25,14 +25,14 @@
     "vue-audio-better": "^3.0.1",
     "vue-i18n": "^9.2.2",
     "vue-router": "^4.2.4",
-    "vuetify": "3.3.9",
+    "vuetify": "3.3.10",
     "websocket-ts": "^1.1.1"
   },
   "devDependencies": {
     "@fontsource/roboto": "^5.0.5",
     "@intlify/vite-plugin-vue-i18n": "^7.0.0",
     "@types/color": "^3.0.3",
-    "@types/node": "^20.4.4",
+    "@types/node": "^20.4.5",
     "@typescript-eslint/eslint-plugin": "^6.1.0",
     "@typescript-eslint/parser": "^6.1.0",
     "@vitejs/plugin-vue": "^4.2.3",
@@ -41,7 +41,7 @@
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "eslint-plugin-vue": "^9.15.1",
+    "eslint-plugin-vue": "^9.16.1",
     "https-localhost": "^4.7.1",
     "jsdom": "^22.1.0",
     "material-design-icons-iconfont": "^6.7.0",
@@ -50,10 +50,10 @@
     "replace-in-file": "^7.0.1",
     "sass": "^1.64.1",
     "typescript": "^5.1.6",
-    "vite": "^4.4.6",
+    "vite": "^4.4.7",
     "vite-plugin-pwa": "^0.16.4",
     "vite-plugin-vuetify": "^1.0.2",
     "vite-plugin-webfont-dl": "^3.7.6",
-    "vue-tsc": "^1.8.6"
+    "vue-tsc": "^1.8.8"
   }
 }
