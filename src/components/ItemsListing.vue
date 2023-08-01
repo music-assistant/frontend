@@ -282,39 +282,39 @@ const toggleSearch = function () {
 };
 
 const panelViewItemResponsive = function (displaySize: number) {
-  if (getBreakpointValue({ breakpoint: 'bp1', condition: 'lt', offset: store.sizeNavigationMenu })) {
+  if (getBreakpointValue({ breakpoint: 'bp1', condition: 'lt', offset: store.navigationMenuSize })) {
     return 2;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp1', condition: 'gt', offset: store.sizeNavigationMenu }) &&
-    getBreakpointValue({ breakpoint: 'bp4', condition: 'lt', offset: store.sizeNavigationMenu })
+    getBreakpointValue({ breakpoint: 'bp1', condition: 'gt', offset: store.navigationMenuSize }) &&
+    getBreakpointValue({ breakpoint: 'bp4', condition: 'lt', offset: store.navigationMenuSize })
   ) {
     return 3;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp4', condition: 'gt', offset: store.sizeNavigationMenu }) &&
-    getBreakpointValue({ breakpoint: 'bp6', condition: 'lt', offset: store.sizeNavigationMenu })
+    getBreakpointValue({ breakpoint: 'bp4', condition: 'gt', offset: store.navigationMenuSize }) &&
+    getBreakpointValue({ breakpoint: 'bp6', condition: 'lt', offset: store.navigationMenuSize })
   ) {
     return 4;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp6', condition: 'gt', offset: store.sizeNavigationMenu }) &&
-    getBreakpointValue({ breakpoint: 'bp7', condition: 'lt', offset: store.sizeNavigationMenu })
+    getBreakpointValue({ breakpoint: 'bp6', condition: 'gt', offset: store.navigationMenuSize }) &&
+    getBreakpointValue({ breakpoint: 'bp7', condition: 'lt', offset: store.navigationMenuSize })
   ) {
     return 5;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp7', condition: 'gt', offset: store.sizeNavigationMenu }) &&
-    getBreakpointValue({ breakpoint: 'bp8', condition: 'lt', offset: store.sizeNavigationMenu })
+    getBreakpointValue({ breakpoint: 'bp7', condition: 'gt', offset: store.navigationMenuSize }) &&
+    getBreakpointValue({ breakpoint: 'bp8', condition: 'lt', offset: store.navigationMenuSize })
   ) {
     return 6;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp8', condition: 'gt', offset: store.sizeNavigationMenu }) &&
-    getBreakpointValue({ breakpoint: 'bp9', condition: 'lt', offset: store.sizeNavigationMenu })
+    getBreakpointValue({ breakpoint: 'bp8', condition: 'gt', offset: store.navigationMenuSize }) &&
+    getBreakpointValue({ breakpoint: 'bp9', condition: 'lt', offset: store.navigationMenuSize })
   ) {
     return 7;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp9', condition: 'gt', offset: store.sizeNavigationMenu }) &&
-    getBreakpointValue({ breakpoint: 'bp10', condition: 'lt', offset: store.sizeNavigationMenu })
+    getBreakpointValue({ breakpoint: 'bp9', condition: 'gt', offset: store.navigationMenuSize }) &&
+    getBreakpointValue({ breakpoint: 'bp10', condition: 'lt', offset: store.navigationMenuSize })
   ) {
     return 8;
-  } else if (getBreakpointValue({ breakpoint: 'bp10', condition: 'gt', offset: store.sizeNavigationMenu })) {
+  } else if (getBreakpointValue({ breakpoint: 'bp10', condition: 'gt', offset: store.navigationMenuSize })) {
     return 9;
   } else {
     return 0;

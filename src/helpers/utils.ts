@@ -279,7 +279,7 @@ export function darkenBrightColors(color: string, thresholdBrightness = 100, col
   return color;
 }
 
-export function getColorCode(img: HTMLImageElement): ColorCoverPalette {
+export function getColorPalette(img: HTMLImageElement): ColorCoverPalette {
   const colorThief = new ColorThief();
   const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
   const colorHexPalette: string[] = colorNumberPalette.map((color) => rgbToHex(color));

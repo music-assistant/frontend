@@ -54,7 +54,7 @@ const showLogo = computed(() => {
 watch(
   () => showNavigationMenu.value,
   (isShown) => {
-    isShown ? (store.sizeNavigationMenu = !getBreakpointValue('mobile') ? 200 : 250) : (store.sizeNavigationMenu = 55);
+    isShown ? (store.navigationMenuSize = !getBreakpointValue('mobile') ? 200 : 250) : (store.navigationMenuSize = 55);
   },
 );
 

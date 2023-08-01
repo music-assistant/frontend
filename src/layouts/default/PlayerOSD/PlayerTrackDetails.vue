@@ -4,7 +4,7 @@
     <template #prepend>
       <div class="media-thumb player-media-thumb" :style="`height: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64}px; width: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
         }px; `">
-        <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" />
+        <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" :color-palette="colorPalette" />
         <MediaItemThumb :item="curQueueItem?.media_item || curQueueItem" :fallback="imgCoverDark" style="cursor: pointer" 
           @click="store.showFullscreenPlayer = true"  />
       </div>
@@ -102,7 +102,7 @@ import api from '@/plugins/api';
 import { MediaType, MediaItemType, ItemMapping } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { getArtistsString } from '@/helpers/utils';
+import { ColorCoverPalette, getArtistsString } from '@/helpers/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
@@ -115,6 +115,7 @@ const router = useRouter();
 interface Props {
   showOnlyArtist?: boolean;
   showQualityDetailsBtn?: boolean;
+  colorPalette: ColorCoverPalette;
   color?: string;
 }
 
