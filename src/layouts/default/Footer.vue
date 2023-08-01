@@ -45,7 +45,7 @@ const footerMarginBottom = computed(() => {
   padding: 0px !important;
   left: 5px !important;
   width: calc((100% - 10px) - 0px) !important;
-  border-radius: 10px;
+  border-radius: 10px !important;
 }
 
 .mediacontrols-player-default {
