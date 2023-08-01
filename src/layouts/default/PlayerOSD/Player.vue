@@ -9,7 +9,7 @@
     }px;`">
     <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
       <PlayerTrackDetails :show-quality-details-btn="getBreakpointValue('bp7') ? true : false" :show-only-artist="true" :color-palette="coverImageColorPalette"
-        :color="!$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+        :primary-color="!$vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
             ? '#fff'
             : $vuetify.theme.current.dark && getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
               ? '#fff'

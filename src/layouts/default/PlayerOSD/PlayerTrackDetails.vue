@@ -14,7 +14,7 @@
     <template #title>
       <div :style="{
         cursor: 'pointer',
-        color: props.color ? color : '',
+        color: primaryColor,
       }">
         <div v-if="curQueueItem && curQueueItem.media_item"
           @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''">
@@ -51,7 +51,7 @@
       <!-- track: artists(s) + album -->
       <div :style="{
         cursor: 'pointer',
-        color: props.color ? color : '',
+        color: primaryColor,
       }" class="line-clamp-1">
         <div v-if="curQueueItem &&
           curQueueItem.media_item?.media_type == MediaType.TRACK &&
@@ -116,12 +116,13 @@ interface Props {
   showOnlyArtist?: boolean;
   showQualityDetailsBtn?: boolean;
   colorPalette: ColorCoverPalette;
-  color?: string;
+  primaryColor: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
   showQualityDetailsBtn: true,
+  primaryColor: ''
 });
 
 // computed properties
