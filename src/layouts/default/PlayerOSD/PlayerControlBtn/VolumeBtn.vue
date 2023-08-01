@@ -53,7 +53,7 @@
           <ListItem
             density="compact"
             two-line
-            :title="store.selectedPlayer?.name.substring(0, 25)"
+            :title="store.selectedPlayer?.display_name.substring(0, 25)"
             :subtitle="$t('state.' + store.selectedPlayer?.state)"
           >
             <template #prepend>

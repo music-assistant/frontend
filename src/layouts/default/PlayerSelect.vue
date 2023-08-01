@@ -7,7 +7,7 @@
     clipped
     temporary
     touchless
-    width="275"
+    width="290"
     style="z-index: 9999"
   >
     <!-- heading with Players as title-->
@@ -54,7 +54,7 @@
             </template>
             <template #title>
               <div>
-                <b>{{ truncateString(getPlayerName(player), 18) }}</b>
+                <b>{{ truncateString(getPlayerName(player), 20) }}</b>
               </div>
             </template>
             <template #subtitle>

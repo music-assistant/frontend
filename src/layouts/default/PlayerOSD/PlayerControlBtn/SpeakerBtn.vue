@@ -11,7 +11,7 @@
     </v-badge>
     <v-icon v-else :color="props.color ? color : ''" :size="24">mdi-speaker</v-icon>
     <span v-if="activePlayerQueue && getBreakpointValue('bp6')" class="line-clamp-1 no_transform">
-      {{ truncateString(activePlayerQueue?.display_name, 8) }}
+      {{ truncateString(activePlayerQueue?.display_name, getBreakpointValue('bp7') ? 16 : 8) }}
     </span>
   </Button>
 </template>
