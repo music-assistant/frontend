@@ -13,7 +13,7 @@
         <v-slide-group :show-arrows="false">
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
             <PanelviewItem :item="item" :show-checkboxes="false" :show-track-number="false" :is-selected="false"
-              style="height:160px;width:120px" @click="itemClicked" />
+              style="height:160px;width:120px;margin:10px" @click="itemClicked" />
           </v-slide-group-item>
           <template #prev></template>
           <template #next></template>
@@ -88,22 +88,22 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 
 onMounted(async () => {
 
-  api.getRecentlyPlayedItems(10).then(items => {
+  api.getRecentlyPlayedItems(20).then(items => {
     widgetRows.value.recently_played.items = items;
   })
-  api.getLibraryArtists(undefined, undefined, 10, undefined, "RANDOM()").then(pagedItems => {
+  api.getLibraryArtists(undefined, undefined, 20, undefined, "RANDOM()").then(pagedItems => {
     widgetRows.value.artists.items = pagedItems.items;
     widgetRows.value.artists.count = pagedItems.total;
   })
-  api.getLibraryAlbums(undefined, undefined, 10, undefined, "timestamp_added DESC").then(pagedItems => {
+  api.getLibraryAlbums(undefined, undefined, 20, undefined, "timestamp_added DESC").then(pagedItems => {
     widgetRows.value.albums.items = pagedItems.items;
     widgetRows.value.albums.count = pagedItems.total;
   })
 
   // playlists widget = recent played playlists + recent added playlists
-  api.getRecentlyPlayedItems(5, [MediaType.PLAYLIST]).then((playedItems) => {
+  api.getRecentlyPlayedItems(10, [MediaType.PLAYLIST]).then((playedItems) => {
     widgetRows.value.playlists.items = playedItems;
-    api.getLibraryPlaylists(undefined, undefined, 10, undefined, "timestamp_added DESC").then(recentItems => {
+    api.getLibraryPlaylists(undefined, undefined, 20, undefined, "timestamp_added DESC").then(recentItems => {
       widgetRows.value.playlists.count = recentItems.total;
       const allNames = playedItems.map(function (x) { return x.name; });
       for (const recentItem of recentItems.items) {
@@ -115,9 +115,9 @@ onMounted(async () => {
   })
 
   // radios widget = recent played radios + recent added radios
-  api.getRecentlyPlayedItems(5, [MediaType.RADIO]).then((playedItems) => {
+  api.getRecentlyPlayedItems(10, [MediaType.RADIO]).then((playedItems) => {
     widgetRows.value.radios.items = playedItems;
-    api.getLibraryRadios(undefined, undefined, 10, undefined, "timestamp_added DESC").then(recentItems => {
+    api.getLibraryRadios(undefined, undefined, 20, undefined, "timestamp_added DESC").then(recentItems => {
       widgetRows.value.radios.count = recentItems.total;
       const allNames = playedItems.map(function (x) { return x.name; });
       for (const recentItem of recentItems.items) {
@@ -128,7 +128,7 @@ onMounted(async () => {
     })
   })
 
-  api.getLibraryTracks(undefined, undefined, 10, undefined, "timestamp_added DESC").then(pagedItems => {
+  api.getLibraryTracks(undefined, undefined, 20, undefined, "timestamp_added DESC").then(pagedItems => {
     widgetRows.value.tracks.items = pagedItems.items;
     widgetRows.value.tracks.count = pagedItems.total;
   })
