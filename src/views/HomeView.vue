@@ -12,8 +12,18 @@
         </v-toolbar>
         <v-slide-group :show-arrows="false">
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
+            <!-- <v-card v-if="" :ripple="true" class="mx-auto home-card" outlined @click="$router.push(card.path)">
+              <v-list-item two-line>
+                <v-btn variant="plain" icon :ripple="false" height="80">
+                  <v-icon :icon="card.icon" size="80" style="align: center; padding: 10px" />
+                </v-btn>
+                <div class="mb-4">
+                  <h5>{{ $t(card.label) }}</h5>
+                </div>
+              </v-list-item>
+            </v-card> -->
             <PanelviewItem :item="item" :show-checkboxes="false" :show-track-number="false" :is-selected="false"
-              style="height:160px;width:120px" />
+              style="height:160px;width:120px" @click="itemClicked" />
           </v-slide-group-item>
           <template #prev></template>
           <template #next></template>
@@ -26,11 +36,12 @@
 
 <script setup lang="ts">
 import api from '@/plugins/api';
-import { Artist, MediaItemType, MediaType, PagedItems } from '@/plugins/api/interfaces';
+import { BrowseFolder, MediaItemType, MediaType } from '@/plugins/api/interfaces';
 import PanelviewItem from '@/components/PanelviewItem.vue';
 import { onMounted, ref } from 'vue';
-
-
+import { eventbus } from '@/plugins/eventbus';
+import { itemIsAvailable } from '@/helpers/contextmenu';
+import router from '@/plugins/router';
 
 interface WidgetRow {
   label: string;
@@ -136,6 +147,29 @@ onMounted(async () => {
   })
 
 });
+
+const itemClicked = function (mediaItem: MediaItemType) {
+  if (itemIsAvailable(mediaItem) && ['artist', 'album', 'playlist'].includes(mediaItem.media_type)) {
+    router.push({
+      name: mediaItem.media_type,
+      params: {
+        itemId: mediaItem.item_id,
+        provider: mediaItem.provider,
+      },
+    });
+  } else if (mediaItem.media_type === MediaType.FOLDER) {
+    router.push({
+      name: 'browse',
+      query: { path: (mediaItem as BrowseFolder).path },
+    });
+  } else {
+    eventbus.emit('playdialog', {
+      items: [mediaItem],
+      showContextMenuItems: true,
+    });
+  }
+};
+
 
 
 </script>
