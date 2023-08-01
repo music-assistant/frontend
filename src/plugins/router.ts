@@ -65,7 +65,7 @@ const routes = [
             props: true,
           },
           {
-            path: '/:provider/:itemId',
+            path: ':provider/:itemId',
             name: 'album',
             component: () => import(/* webpackChunkName: "album" */ '@/views/AlbumDetails.vue'),
             props: true,
@@ -83,7 +83,7 @@ const routes = [
             props: true,
           },
           {
-            path: '/:provider/:itemId',
+            path: ':provider/:itemId',
             name: 'track',
             component: () => import(/* webpackChunkName: "track" */ '@/views/TrackDetails.vue'),
             props: (route: { params: any; query: any }) => ({ ...route.params, ...route.query }),
@@ -101,7 +101,7 @@ const routes = [
             props: true,
           },
           {
-            path: '/:provider/:itemId',
+            path: ':provider/:itemId',
             name: 'playlist',
             component: () => import(/* webpackChunkName: "playlist" */ '@/views/PlaylistDetails.vue'),
             props: true,
@@ -119,7 +119,7 @@ const routes = [
             props: true,
           },
           {
-            path: '/:provider/:itemId',
+            path: ':provider/:itemId',
             name: 'radio',
             component: () => import(/* webpackChunkName: "radio" */ '@/views/RadioDetails.vue'),
             props: true,
