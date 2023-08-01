@@ -1,27 +1,24 @@
 <template>
   <div>
-
-    <div v-for="widgetRow in widgetRows">
+    <div v-for="widgetRow in widgetRows" :key="widgetRow.label">
       <v-divider />
       <div v-if="widgetRow.items.length" class="widget-row">
-      <v-toolbar color="transparent" @click="widgetRow.path ? $router.replace(widgetRow.path) : ''" style="cursor: pointer">
-        <template #prepend><v-icon :icon="widgetRow.icon" style="margin-left: 15px" /></template>
-        <template #title>{{ $t(widgetRow.label) }}</template>
-        <template #append v-if="widgetRow.path"><v-badge
-          v-if="widgetRow.count"
-          color="grey"
-          :content="widgetRow.count"
-          inline
-        /></template>
-      </v-toolbar>
-      <v-slide-group :show-arrows="false">
-        <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
-          <PanelviewItem :item="item" :show-checkboxes="false" :show-track-number="false" :is-selected="false" style="height:160px;width:120px" />
-        </v-slide-group-item>
-        <template #prev></template>
-        <template #next></template>
-      </v-slide-group>
-    </div>
+        <v-toolbar color="transparent" @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
+          :style="widgetRow.path ? 'cursor: pointer' : ''">
+          <template #prepend><v-icon :icon="widgetRow.icon" style="margin-left: 15px" /></template>
+          <template #title>{{ $t(widgetRow.label) }}</template>
+          <template #append v-if="widgetRow.path"><v-badge v-if="widgetRow.count" color="grey" :content="widgetRow.count"
+              inline /></template>
+        </v-toolbar>
+        <v-slide-group :show-arrows="false">
+          <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
+            <PanelviewItem :item="item" :show-checkboxes="false" :show-track-number="false" :is-selected="false"
+              style="height:160px;width:120px" />
+          </v-slide-group-item>
+          <template #prev></template>
+          <template #next></template>
+        </v-slide-group>
+      </div>
     </div>
 
   </div>
@@ -37,10 +34,10 @@ import { onMounted, ref } from 'vue';
 
 interface WidgetRow {
   label: string;
-    icon: string;
-    path?: string;
-    items: MediaItemType[],
-    count?: number;
+  icon: string;
+  path?: string;
+  items: MediaItemType[],
+  count?: number;
 }
 
 const widgetRows = ref<Record<string, WidgetRow>>({
@@ -85,7 +82,7 @@ const widgetRows = ref<Record<string, WidgetRow>>({
     path: '/browse',
     items: []
   },
-  
+
 });
 
 onMounted(async () => {
@@ -103,7 +100,7 @@ onMounted(async () => {
   })
 
   // playlists widget = recent played playlists + recent added playlists
-  api.getRecentlyPlayedItems(5, [MediaType.PLAYLIST]).then( (playedItems) => {
+  api.getRecentlyPlayedItems(5, [MediaType.PLAYLIST]).then((playedItems) => {
     widgetRows.value.playlists.items = playedItems;
     api.getLibraryPlaylists(undefined, undefined, 10, undefined, "timestamp_added DESC").then(recentItems => {
       widgetRows.value.playlists.count = recentItems.total;
@@ -117,7 +114,7 @@ onMounted(async () => {
   })
 
   // radios widget = recent played radios + recent added radios
-  api.getRecentlyPlayedItems(5, [MediaType.RADIO]).then( (playedItems) => {
+  api.getRecentlyPlayedItems(5, [MediaType.RADIO]).then((playedItems) => {
     widgetRows.value.radios.items = playedItems;
     api.getLibraryRadios(undefined, undefined, 10, undefined, "timestamp_added DESC").then(recentItems => {
       widgetRows.value.radios.count = recentItems.total;
@@ -159,8 +156,8 @@ onMounted(async () => {
   min-width: 0px !important;
   margin-right: -15px;
 }
+
 .v-slide-group__next {
   min-width: 0px !important;
 }
-
 </style>
