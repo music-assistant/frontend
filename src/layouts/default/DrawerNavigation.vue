@@ -113,11 +113,11 @@ export interface MenuItem {
 
 export const mainMenuItems: MenuItem[] = [
   // disable Home until we have something useful to fill that screen
-  // {
-  //   label: 'home',
-  //   icon: 'mdi-home-outline',
-  //   path: '/home',
-  // },
+  {
+    label: 'home',
+    icon: 'mdi-home-outline',
+    path: '/home',
+  },
   {
     label: 'artists',
     icon: 'mdi-account-outline',
