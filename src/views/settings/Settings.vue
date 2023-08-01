@@ -17,7 +17,7 @@
     </v-toolbar>
     <v-divider />
     <!-- some spacing -->
-    <div style="height:15px" />
+    <div style="height: 15px"></div>
     <router-view v-slot="{ Component }" app>
       <component :is="Component" />
       <!-- transition temporary disabled as it renders the view unusable somehow? -->

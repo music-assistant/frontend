@@ -12,13 +12,23 @@
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
       <!-- back button -->
-      <v-btn v-if="props.path" variant="plain" icon="mdi-arrow-left"
-        :to="{ name: 'browse', query: { path: backPath } }" />
+      <v-btn
+        v-if="props.path"
+        variant="plain"
+        icon="mdi-arrow-left"
+        :to="{ name: 'browse', query: { path: backPath } }"
+      />
 
-      <v-virtual-scroll :height="66" :items="browseItem?.items || []" style="height:100%">
-        <template v-slot:default="{ item }">
-          <ListviewItem :item="item" :show-library="false" :show-menu="false" :show-provider="false" :is-selected="false"
-            @click="onClick" />
+      <v-virtual-scroll :height="66" :items="browseItem?.items || []" style="height: 100%">
+        <template #default="{ item }">
+          <ListviewItem
+            :item="item"
+            :show-library="false"
+            :show-menu="false"
+            :show-provider="false"
+            :is-selected="false"
+            @click="onClick"
+          />
         </template>
       </v-virtual-scroll>
     </Container>

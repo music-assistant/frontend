@@ -31,9 +31,8 @@
 import { computed } from 'vue';
 
 import api from '@/plugins/api';
-import { PlayerState, RepeatMode } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
 import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
 import ShuffleBtn from './PlayerControlBtn/ShuffleBtn.vue';
 import PlayBtn from './PlayerControlBtn/PlayBtn.vue';

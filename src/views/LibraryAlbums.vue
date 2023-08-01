@@ -25,12 +25,12 @@ const items = ref<Album[]>([]);
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  'name': 'sort_name',
-  'recent': 'timestamp_added DESC',
-  'artist': 'sort_artist, sort_name',
-  'year': 'year',
-  'year_desc': 'year DESC'
-}
+  name: 'sort_name',
+  recent: 'timestamp_added DESC',
+  artist: 'sort_artist, sort_name',
+  year: 'year',
+  year_desc: 'year DESC',
+};
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library

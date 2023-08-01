@@ -2,25 +2,38 @@
   <!-- now playing media -->
   <ListItem style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
     <template #prepend>
-      <div class="media-thumb player-media-thumb" :style="`height: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64}px; width: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
-        }px; `">
-        <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" />
-        <MediaItemThumb :item="curQueueItem?.media_item || curQueueItem" :fallback="imgCoverDark" style="cursor: pointer" 
-          @click="store.showFullscreenPlayer = true"  />
+      <div
+        class="media-thumb player-media-thumb"
+        :style="`height: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64}px; width: ${
+          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
+        }px; `"
+      >
+        <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" :color-palette="colorPalette" />
+        <MediaItemThumb
+          :item="curQueueItem?.media_item || curQueueItem"
+          :fallback="imgCoverDark"
+          style="cursor: pointer"
+          @click="store.showFullscreenPlayer = true"
+        />
       </div>
     </template>
 
     <!-- title -->
     <template #title>
-      <div :style="{
-        cursor: 'pointer',
-        color: props.color ? color : '',
-      }">
-        <div v-if="curQueueItem && curQueueItem.media_item"
-          @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''">
+      <div
+        :style="{
+          cursor: 'pointer',
+          color: primaryColor,
+        }"
+      >
+        <div
+          v-if="curQueueItem && curQueueItem.media_item"
+          @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
+        >
           {{ curQueueItem.media_item.name }}
-          <span v-if="'version' in curQueueItem.media_item && curQueueItem.media_item.version">({{
-            curQueueItem.media_item.version }})</span>
+          <span v-if="'version' in curQueueItem.media_item && curQueueItem.media_item.version"
+            >({{ curQueueItem.media_item.version }})</span
+          >
         </div>
         <div v-else-if="curQueueItem">
           {{ curQueueItem.name }}
@@ -33,14 +46,23 @@
     <!-- append -->
     <template #append>
       <!-- format -->
-      <v-chip v-if="streamDetails?.audio_format.content_type &&
-        !getBreakpointValue({ breakpoint: 'phone' }) &&
-        showQualityDetailsBtn
-        " :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
-        class="player-track-content-type" :style="$vuetify.theme.current.dark
+      <v-chip
+        v-if="
+          streamDetails?.audio_format.content_type &&
+          !getBreakpointValue({ breakpoint: 'phone' }) &&
+          showQualityDetailsBtn
+        "
+        :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+        class="player-track-content-type"
+        :style="
+          $vuetify.theme.current.dark
             ? 'color: #000; background: #fff; margin-left: 15px;'
             : 'color: #fff; background: #000; margin-left: 15px;'
-          " label :ripple="false" v-bind="props">
+        "
+        label
+        :ripple="false"
+        v-bind="props"
+      >
         <div class="d-flex justify-center" style="width: 100%">
           {{ streamDetails.audio_format.content_type.toUpperCase() }}
         </div>
@@ -49,29 +71,40 @@
     <!-- subtitle -->
     <template #subtitle>
       <!-- track: artists(s) + album -->
-      <div :style="{
-        cursor: 'pointer',
-        color: props.color ? color : '',
-      }" class="line-clamp-1">
-        <div v-if="curQueueItem &&
-          curQueueItem.media_item?.media_type == MediaType.TRACK &&
-          'album' in curQueueItem.media_item &&
-          curQueueItem.media_item.album &&
-          !props.showOnlyArtist
-          " @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''">
+      <div
+        :style="{
+          cursor: 'pointer',
+          color: primaryColor,
+        }"
+        class="line-clamp-1"
+      >
+        <div
+          v-if="
+            curQueueItem &&
+            curQueueItem.media_item?.media_type == MediaType.TRACK &&
+            'album' in curQueueItem.media_item &&
+            curQueueItem.media_item.album &&
+            !props.showOnlyArtist
+          "
+          @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
+        >
           {{ getArtistsString(curQueueItem.media_item.artists) }} •
           {{ curQueueItem.media_item.album.name }}
         </div>
         <!-- track/album falback: artist present -->
-        <div v-else-if="curQueueItem &&
-          curQueueItem.media_item &&
-          'artists' in curQueueItem.media_item &&
-          curQueueItem.media_item.artists.length > 0
-          " @click="
-    curQueueItem?.media_item && 'artists' in curQueueItem.media_item
-      ? itemClick(curQueueItem.media_item.artists[0])
-      : ''
-    ">
+        <div
+          v-else-if="
+            curQueueItem &&
+            curQueueItem.media_item &&
+            'artists' in curQueueItem.media_item &&
+            curQueueItem.media_item.artists.length > 0
+          "
+          @click="
+            curQueueItem?.media_item && 'artists' in curQueueItem.media_item
+              ? itemClick(curQueueItem.media_item.artists[0])
+              : ''
+          "
+        >
           {{ curQueueItem.media_item.artists[0].name }}
         </div>
         <!-- radio live metadata -->
@@ -102,7 +135,7 @@ import api from '@/plugins/api';
 import { MediaType, MediaItemType, ItemMapping } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { getArtistsString } from '@/helpers/utils';
+import { ColorCoverPalette, getArtistsString } from '@/helpers/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
@@ -115,12 +148,14 @@ const router = useRouter();
 interface Props {
   showOnlyArtist?: boolean;
   showQualityDetailsBtn?: boolean;
-  color?: string;
+  colorPalette: ColorCoverPalette;
+  primaryColor: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
   showQualityDetailsBtn: true,
+  primaryColor: '',
 });
 
 // computed properties

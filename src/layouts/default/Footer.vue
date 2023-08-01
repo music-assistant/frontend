@@ -13,7 +13,7 @@
     app
     :dark="true"
   >
-  <Player />
+    <Player />
   </v-footer>
 </template>
 
