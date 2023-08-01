@@ -57,9 +57,8 @@ const theme = useTheme();
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
   if (!props.item) return '';
-  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize.value)
+  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize.value);
 });
-
 
 const thumbSize = computed(() => {
   if (typeof props.size == 'number') return props.size;
@@ -87,18 +86,12 @@ watch(
 <script lang="ts">
 //// utility functions for images
 
-export const getAvatarImage = function (name: string, dark = false, size = 256) : string {
+export const getAvatarImage = function (name: string, dark = false, size = 256): string {
   // get url to avatar image for a string or sentence
   if (dark)
-    return `https://ui-avatars.com/api/?name=${name}&size=${
-      size || 256
-    }&bold=true&background=1d1d1d&color=383838`;
-  else
-    return `https://ui-avatars.com/api/?name=${name}&size=${
-      size || 256
-    }&bold=true&background=a0a0a0&color=cccccc`;
-
-}
+    return `https://ui-avatars.com/api/?name=${name}&size=${size || 256}&bold=true&background=1d1d1d&color=383838`;
+  else return `https://ui-avatars.com/api/?name=${name}&size=${size || 256}&bold=true&background=a0a0a0&color=cccccc`;
+};
 
 export const getMediaItemImage = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,

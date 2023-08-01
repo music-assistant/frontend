@@ -103,6 +103,7 @@ const props = withDefaults(defineProps<Props>(), {
   volumeSize: '150px',
   responsiveVolumeSize: true,
   isVisible: true,
+  color: '',
 });
 
 //refs

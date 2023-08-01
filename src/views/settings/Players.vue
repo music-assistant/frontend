@@ -9,53 +9,61 @@
       </template>
     </v-toolbar>
     <Container>
-      <ListItem v-for="item in playerConfigs" :key="item.player_id" v-hold="() => {
-        editPlayer(item.player_id);
-      }
-        " link :context-menu-items="[
-    {
-      label: 'settings.configure',
-      labelArgs: [],
-      action: () => {
-        editPlayer(item.player_id);
-      },
-      icon: 'mdi-cog',
-    },
-    {
-      label: 'settings.edit_group_members',
-      labelArgs: [],
-      action: () => {
-        editGroupMembers(item.player_id);
-      },
-      icon: 'mdi-speaker-multiple',
-      hide: item.provider != 'ugp',
-    },
-    {
-      label: item.enabled ? 'settings.disable' : 'settings.enable',
-      labelArgs: [],
-      action: () => {
-        toggleEnabled(item);
-      },
-      icon: 'mdi-cancel',
-    },
-    {
-      label: 'settings.documentation',
-      labelArgs: [],
-      action: () => {
-        openLinkInNewTab(api.providerManifests[item.provider].documentation!);
-      },
-      icon: 'mdi-bookshelf',
-      disabled: !api.providerManifests[item.provider].documentation,
-    },
-    {
-      label: 'settings.delete',
-      labelArgs: [],
-      action: () => {
-        removePlayerConfig(item.player_id);
-      },
-      icon: 'mdi-delete',
-    },
-  ]" @click="editPlayer(item.player_id)">
+      <ListItem
+        v-for="item in playerConfigs"
+        :key="item.player_id"
+        v-hold="
+          () => {
+            editPlayer(item.player_id);
+          }
+        "
+        link
+        :context-menu-items="[
+          {
+            label: 'settings.configure',
+            labelArgs: [],
+            action: () => {
+              editPlayer(item.player_id);
+            },
+            icon: 'mdi-cog',
+          },
+          {
+            label: 'settings.edit_group_members',
+            labelArgs: [],
+            action: () => {
+              editGroupMembers(item.player_id);
+            },
+            icon: 'mdi-speaker-multiple',
+            hide: item.provider != 'ugp',
+          },
+          {
+            label: item.enabled ? 'settings.disable' : 'settings.enable',
+            labelArgs: [],
+            action: () => {
+              toggleEnabled(item);
+            },
+            icon: 'mdi-cancel',
+          },
+          {
+            label: 'settings.documentation',
+            labelArgs: [],
+            action: () => {
+              openLinkInNewTab(api.providerManifests[item.provider].documentation!);
+            },
+            icon: 'mdi-bookshelf',
+            disabled: !api.providerManifests[item.provider].documentation,
+          },
+          {
+            label: 'settings.delete',
+            labelArgs: [],
+            action: () => {
+              removePlayerConfig(item.player_id);
+            },
+            icon: 'mdi-delete',
+          },
+        ]"
+        @click="editPlayer(item.player_id)"
+      >
         <template #prepend>
           <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
         </template>
@@ -109,9 +117,7 @@ onBeforeUnmount(unsub);
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = (await api.getPlayerConfigs()).sort((a, b) =>
-    getPlayerName(a).localeCompare(getPlayerName(b))
-  );;
+  playerConfigs.value = (await api.getPlayerConfigs()).sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };
 
 const removePlayerConfig = function (playerId: string) {

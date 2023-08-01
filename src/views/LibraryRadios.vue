@@ -38,9 +38,9 @@ const items = ref<Radio[]>([]);
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  'name': 'sort_name',
-  'recent': 'timestamp_added DESC',
-}
+  name: 'sort_name',
+  recent: 'timestamp_added DESC',
+};
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library

@@ -39,13 +39,13 @@ const items = ref<Track[]>([]);
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  'name': 'sort_name',
-  'recent': 'timestamp_added DESC',
-  'artist': 'sort_artist, sort_name',
-  'album': 'albums.sort_name, tracks.sort_name',
-  'duration': 'duration',
-  'duration_desc': 'duration DESC',
-}
+  name: 'sort_name',
+  recent: 'timestamp_added DESC',
+  artist: 'sort_artist, sort_name',
+  album: 'albums.sort_name, tracks.sort_name',
+  duration: 'duration',
+  duration_desc: 'duration DESC',
+};
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library
@@ -75,7 +75,13 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
-  return await api.getLibraryTracks(params.favoritesOnly, params.search, params.limit, params.offset, sortKeys[params.sortBy]);
+  return await api.getLibraryTracks(
+    params.favoritesOnly,
+    params.search,
+    params.limit,
+    params.offset,
+    sortKeys[params.sortBy],
+  );
 };
 
 const addUrl = async function () {

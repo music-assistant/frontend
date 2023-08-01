@@ -26,9 +26,9 @@ const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
 const sortKeys: Record<string, string> = {
-  'name': 'sort_name',
-  'recent': 'timestamp_added DESC',
-}
+  name: 'sort_name',
+  recent: 'timestamp_added DESC',
+};
 
 const loadItems = async function (params: LoadDataParams) {
   if (params.refresh) {
@@ -49,7 +49,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.limit,
     params.offset,
     sortKeys[params.sortBy],
-    params.albumArtistsFilter
+    params.albumArtistsFilter,
   );
 };
 

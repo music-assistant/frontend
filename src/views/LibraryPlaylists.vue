@@ -32,9 +32,9 @@ const updateAvailable = ref(false);
 const contextMenuItems = ref<ContextMenuItem[]>([]);
 
 const sortKeys: Record<string, string> = {
-  'name': 'sort_name',
-  'recent': 'timestamp_added DESC'
-}
+  name: 'sort_name',
+  recent: 'timestamp_added DESC',
+};
 
 const loadItems = async function (params: LoadDataParams) {
   if (params.refresh) {
