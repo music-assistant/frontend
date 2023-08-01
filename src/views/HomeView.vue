@@ -12,16 +12,6 @@
         </v-toolbar>
         <v-slide-group :show-arrows="false">
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
-            <!-- <v-card v-if="" :ripple="true" class="mx-auto home-card" outlined @click="$router.push(card.path)">
-              <v-list-item two-line>
-                <v-btn variant="plain" icon :ripple="false" height="80">
-                  <v-icon :icon="card.icon" size="80" style="align: center; padding: 10px" />
-                </v-btn>
-                <div class="mb-4">
-                  <h5>{{ $t(card.label) }}</h5>
-                </div>
-              </v-list-item>
-            </v-card> -->
             <PanelviewItem :item="item" :show-checkboxes="false" :show-track-number="false" :is-selected="false"
               style="height:160px;width:120px" @click="itemClicked" />
           </v-slide-group-item>
@@ -54,7 +44,7 @@ interface WidgetRow {
 const widgetRows = ref<Record<string, WidgetRow>>({
   recently_played: {
     label: 'recently_played',
-    icon: 'mdi-file-music',
+    icon: 'mdi-motion-play',
     items: []
   },
   artists: {
