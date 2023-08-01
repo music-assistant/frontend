@@ -16,8 +16,7 @@ import {
   type Player,
   type PlayerQueue,
   type PagedItems,
-  type MediaItemType,
-  type MediaType,
+  type MediaItemType, MediaType,
   type BrowseFolder,
   type QueueItem,
   QueueOption,
@@ -467,6 +466,13 @@ export class MusicAssistantApi {
   public search(search_query: string, media_types?: MediaType[], limit?: number): Promise<SearchResults> {
     // Perform global search for media items on all providers.
     return this.getData('music/search', { search_query, media_types, limit });
+  }
+
+  public getRecentlyPlayedItems(limit = 10, media_types: MediaType[] = [MediaType.TRACK, MediaType.RADIO]): Promise<MediaItemType[]> {
+    return this.getData('music/recently_played_items', {
+      limit,
+      media_types
+    });
   }
 
   // PlayerQueue related functions/commands

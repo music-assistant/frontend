@@ -217,5 +217,6 @@
     "media_details": "Media details",
     "mapped_providers": "Provider details",
     "item_in_library": "This item is available in the library",
-    "back": "Back"
+    "back": "Back",
+    "recently_played": "Recently played"
 }

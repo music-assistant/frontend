@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import api from '@/plugins/api';
-import { Artist, MediaItemType, PagedItems } from '@/plugins/api/interfaces';
+import { Artist, MediaItemType, MediaType, PagedItems } from '@/plugins/api/interfaces';
 import PanelviewItem from '@/components/PanelviewItem.vue';
 import { onMounted, ref } from 'vue';
 
@@ -44,6 +44,11 @@ interface WidgetRow {
 }
 
 const widgetRows = ref<Record<string, WidgetRow>>({
+  recently_played: {
+    label: 'recently_played',
+    icon: 'mdi-file-music',
+    items: []
+  },
   artists: {
     label: 'artists',
     icon: 'mdi-account-music',
@@ -83,9 +88,12 @@ const widgetRows = ref<Record<string, WidgetRow>>({
   
 });
 
-onMounted(() => {
+onMounted(async () => {
 
-  api.getLibraryArtists(undefined, undefined, 10, undefined, "timestamp_added DESC").then(pagedItems => {
+  api.getRecentlyPlayedItems(10).then(items => {
+    widgetRows.value.recently_played.items = items;
+  })
+  api.getLibraryArtists(undefined, undefined, 10, undefined, "RANDOM()").then(pagedItems => {
     widgetRows.value.artists.items = pagedItems.items;
     widgetRows.value.artists.count = pagedItems.total;
   })
@@ -93,17 +101,38 @@ onMounted(() => {
     widgetRows.value.albums.items = pagedItems.items;
     widgetRows.value.albums.count = pagedItems.total;
   })
-  api.getLibraryPlaylists(undefined, undefined, 10, undefined, "timestamp_added DESC").then(pagedItems => {
-    widgetRows.value.playlists.items = pagedItems.items;
-    widgetRows.value.playlists.count = pagedItems.total;
+
+  // playlists widget = recent played playlists + recent added playlists
+  api.getRecentlyPlayedItems(5, [MediaType.PLAYLIST]).then( (playedItems) => {
+    widgetRows.value.playlists.items = playedItems;
+    api.getLibraryPlaylists(undefined, undefined, 10, undefined, "timestamp_added DESC").then(recentItems => {
+      widgetRows.value.playlists.count = recentItems.total;
+      const allNames = playedItems.map(function (x) { return x.name; });
+      for (const recentItem of recentItems.items) {
+        if (!allNames.includes(recentItem.name)) {
+          widgetRows.value.playlists.items.push(recentItem)
+        }
+      }
+    })
   })
+
+  // radios widget = recent played radios + recent added radios
+  api.getRecentlyPlayedItems(5, [MediaType.RADIO]).then( (playedItems) => {
+    widgetRows.value.radios.items = playedItems;
+    api.getLibraryRadios(undefined, undefined, 10, undefined, "timestamp_added DESC").then(recentItems => {
+      widgetRows.value.radios.count = recentItems.total;
+      const allNames = playedItems.map(function (x) { return x.name; });
+      for (const recentItem of recentItems.items) {
+        if (!allNames.includes(recentItem.name)) {
+          widgetRows.value.radios.items.push(recentItem)
+        }
+      }
+    })
+  })
+
   api.getLibraryTracks(undefined, undefined, 10, undefined, "timestamp_added DESC").then(pagedItems => {
     widgetRows.value.tracks.items = pagedItems.items;
     widgetRows.value.tracks.count = pagedItems.total;
-  })
-  api.getLibraryRadios(undefined, undefined, 10, undefined, "timestamp_added DESC").then(pagedItems => {
-    widgetRows.value.radios.items = pagedItems.items;
-    widgetRows.value.radios.count = pagedItems.total;
   })
   api.browse().then(browseFolder => {
     widgetRows.value.browse.items = browseFolder.items!;
