@@ -70,7 +70,7 @@ const loadPlaylistTracks = async function (params: LoadDataParams) {
     (data: Track[]) => {
       playlistTracks.push(...data);
     },
-    params.refresh,
+    params.refresh && !updateAvailable.value,
   );
   // prevent race condition with a short sleep
   if (params.refresh) await sleep(1000);

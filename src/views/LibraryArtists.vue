@@ -31,7 +31,7 @@ const sortKeys: Record<string, string> = {
 };
 
 const loadItems = async function (params: LoadDataParams) {
-  if (params.refresh) {
+  if (params.refresh && !updateAvailable.value) {
     api.startSync([MediaType.ARTIST]);
     // prevent race condition with a short sleep
     await sleep(250);

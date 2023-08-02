@@ -63,7 +63,7 @@ onMounted(() => {
 
 const loadItems = async function (params: LoadDataParams) {
   params.favoritesOnly = params.favoritesOnly || undefined;
-  if (params.refresh) {
+  if (params.refresh && !updateAvailable.value) {
     api.startSync([MediaType.TRACK]);
     // prevent race condition with a short sleep
     await sleep(250);
