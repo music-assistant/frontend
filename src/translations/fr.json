@@ -146,9 +146,10 @@
         "sort_artist": "Artiste",
         "sort_name": "Alphabétiquement",
         "sort_name DESC": "Alphabétiquement (descendant)",
-        "recent": "Recently added",
+        "timestamp_added DESC": "Recently added",
         "track_number": "Numéro de piste",
-        "year": "Année de sortie"
+        "year": "Année de sortie",
+        "recent": "Recently added"
     },
     "state": {
         "idle": "En attente",
