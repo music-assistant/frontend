@@ -13,7 +13,7 @@
         <v-slide-group :show-arrows="false">
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
             <PanelviewItem :item="item" :show-checkboxes="false" :show-track-number="false" :is-selected="false"
-              style="height:160px;width:120px;margin:10px" @click="itemClicked" />
+              style="height:160px;width:120px;margin:5px" @click="itemClicked" />
           </v-slide-group-item>
           <template #prev></template>
           <template #next></template>
