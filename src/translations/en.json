@@ -11,9 +11,9 @@
         "compilation": "Compilation",
         "ep": "EP",
         "single": "Single",
+        "unknown": "Unknown album type",
         "audiobook": "Audiobook",
-        "podcast": "Podcast",
-        "unknown": "Unknown album type"
+        "podcast": "Podcast"
     },
     "albums": "Albums",
     "appears_on": "Appears on",
@@ -159,15 +159,21 @@
     "sort": {
         "duration": "Duration",
         "position": "Position",
-        "position_desc": "Position (descending)",
+        "position DESC": "Position (descending)",
         "provider": "Provider",
+        "sort_album": "Album",
+        "sort_artist": "Artist",
+        "sort_name": "Alphabetically",
+        "sort_name DESC": "Alphabetically (descending)",
+        "timestamp_added DESC": "Recently added",
+        "track_number": "Track number",
+        "year": "Release year",
+        "position_desc": "Position (descending)",
         "album": "Album",
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
         "recent": "Recently added",
-        "track_number": "Track number",
-        "year": "Release year",
         "year_desc": "Release year (descending)",
         "duration_desc": "Duration (descending)"
     },
@@ -198,7 +204,7 @@
         "open_provider_link": "Open this item on the provider's website",
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
-        "show_menu": "Show/hide menu"
+        "show_menu": "Show\/hide menu"
     },
     "topresult": "Top result",
     "track": "Track",

@@ -146,7 +146,7 @@
         "sort_artist": "Artista",
         "sort_name": "Alfabetico",
         "sort_name DESC": "Alfabetico (inverso)",
-        "recent": "Aggiunto di recente",
+        "timestamp_added DESC": "Aggiunto di recente",
         "track_number": "Numero traccia",
         "year": "Anno pubblicazione"
     },
