@@ -100,14 +100,7 @@ export const getMediaItemImage = function (
 ): MediaItemImage | undefined {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
-  if ('image' in mediaItem && mediaItem.image) return mediaItem.image;
-  if ('metadata' in mediaItem && mediaItem.metadata.images) {
-    for (const img of mediaItem.metadata.images) {
-      if (img.provider == 'http' && !includeFileBased) continue;
-      if (img.type == type) return img;
-    }
-  }
-  // retry with album of track
+  // prefer album image in case of tracks
   if (
     'album' in mediaItem &&
     mediaItem.album &&
@@ -116,6 +109,15 @@ export const getMediaItemImage = function (
     mediaItem.album.metadata.images
   ) {
     for (const img of mediaItem.album.metadata.images) {
+      if (img.provider == 'http' && !includeFileBased) continue;
+      if (img.type == type) return img;
+    }
+  }
+  // handle image in queueitem
+  if ('image' in mediaItem && mediaItem.image) return mediaItem.image;
+  // handle regular image within mediaitem
+  if ('metadata' in mediaItem && mediaItem.metadata.images) {
+    for (const img of mediaItem.metadata.images) {
       if (img.provider == 'http' && !includeFileBased) continue;
       if (img.type == type) return img;
     }
