@@ -50,27 +50,30 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
     queueOptPlay = QueueOption.REPLACE;
     queueOptNext = QueueOption.REPLACE_NEXT;
   }
-  // Play from here (playlist track)
-  if (items.length == 1 && parentItem && parentItem.media_type == MediaType.PLAYLIST) {
-    playMenuItems.push({
-      label: 'play_playlist_from',
-      action: () => {
-        api.playMedia(parentItem as Playlist, QueueOption.REPLACE, false, items[0].item_id);
-      },
-      icon: 'mdi-play-circle-outline',
-      labelArgs: [],
-    });
-  }
-  // Play from here (album track)
-  if (items.length == 1 && parentItem && parentItem.media_type == MediaType.ALBUM) {
-    playMenuItems.push({
-      label: 'play_album_from',
-      action: () => {
-        api.playMedia(parentItem as Album, QueueOption.REPLACE, false, items[0].item_id);
-      },
-      icon: 'mdi-play-circle-outline',
-      labelArgs: [],
-    });
+  // Play from here...
+  if (items.length == 1 && parentItem && parentItem.uri != items[0].uri) {
+    // Play from here (playlist track)
+    if (parentItem.media_type == MediaType.PLAYLIST) {
+      playMenuItems.push({
+        label: 'play_playlist_from',
+        action: () => {
+          api.playMedia(parentItem as Playlist, QueueOption.REPLACE, false, items[0].item_id);
+        },
+        icon: 'mdi-play-circle-outline',
+        labelArgs: [],
+      });
+    }
+    // Play from here (album track)
+    if (parentItem.media_type == MediaType.ALBUM) {
+      playMenuItems.push({
+        label: 'play_album_from',
+        action: () => {
+          api.playMedia(parentItem as Album, QueueOption.REPLACE, false, items[0].item_id);
+        },
+        icon: 'mdi-play-circle-outline',
+        labelArgs: [],
+      });
+    }
   }
 
   // Play NOW

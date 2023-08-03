@@ -10,7 +10,7 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :load-data="loadPlaylistTracks"
-      :sort-keys="['position', 'position_desc', 'name', 'artist', 'album']"
+      :sort-keys="['position', 'position_desc', 'name', 'artist', 'album', 'duration', 'duration_desc']"
       :update-available="updateAvailable"
       :title="$t('playlist_tracks')"
       :allow-key-hooks="true"

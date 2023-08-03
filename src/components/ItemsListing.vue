@@ -8,7 +8,7 @@
         <v-badge
           v-if="getBreakpointValue('bp11')"
           color="grey"
-          :content="selectedItems.length ? `${selectedItems.length}/${totalItems}` : totalItems"
+          :content="totalItems"
           inline
         />
       </template>
