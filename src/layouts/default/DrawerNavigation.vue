@@ -13,7 +13,7 @@
       }
     "
   >
-    <v-list-item dark style="height: 52px" :active="false">
+    <v-list-item dark style="height: 55px" :active="false">
       <template v-if="showLogo" #prepend>
         <img
           class="logo_icon"
