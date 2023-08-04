@@ -5,7 +5,7 @@
     :show-duration="false"
     :show-provider="false"
     :show-favorites-only-filter="true"
-    :load-data="loadItems"
+    :load-paged-data="loadItems"
     :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
     :title="getBreakpointValue('bp4') ? $t('radios') : ''"

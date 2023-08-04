@@ -16,7 +16,8 @@ import {
   type Player,
   type PlayerQueue,
   type PagedItems,
-  type MediaItemType, MediaType,
+  type MediaItemType,
+  MediaType,
   type BrowseFolder,
   type QueueItem,
   QueueOption,
@@ -39,6 +40,7 @@ import {
   ConfigEntry,
   PlayerConfig,
   CoreConfig,
+  ItemMapping,
 } from './interfaces';
 
 const DEBUG = true;
@@ -392,7 +394,7 @@ export class MusicAssistantApi {
     });
   }
 
-  public refreshItem(media_item: MediaItemType): Promise<MediaItemType> {
+  public refreshItem(media_item: MediaItemType | ItemMapping): Promise<MediaItemType> {
     // Try to refresh a mediaitem by requesting it's full object or search for substitutes.
     return this.getData('music/refresh_item', {
       media_item,
@@ -412,7 +414,7 @@ export class MusicAssistantApi {
     });
   }
 
-  public async addItemToLibrary(item: string | MediaItemType) {
+  public async addItemToLibrary(item: string | MediaItemType | ItemMapping) {
     // Add an item (uri or mediaitem) to the library.
     this.sendCommand('music/library/add_item', {
       item,
@@ -427,13 +429,13 @@ export class MusicAssistantApi {
     });
   }
 
-  public async addItemToFavorites(item: string | MediaItemType) {
+  public async addItemToFavorites(item: string | MediaItemType | ItemMapping) {
     // Add an item (uri or mediaitem) to the favorites.
     this.sendCommand('music/favorites/add_item', {
       item,
     });
     // optimistically set the value
-    if (typeof item !== 'string') {
+    if (typeof item !== 'string' && 'favorite' in item) {
       item.favorite = true;
     }
   }
@@ -458,9 +460,9 @@ export class MusicAssistantApi {
     }
   }
 
-  public browse(path?: string): Promise<BrowseFolder> {
+  public browse(path?: string, chunkCallback?: chunkCallback): Promise<MediaItemType[]> {
     // Browse Music providers.
-    return this.getData('music/browse', { path });
+    return this.getData('music/browse', { path }, chunkCallback);
   }
 
   public search(search_query: string, media_types?: MediaType[], limit?: number): Promise<SearchResults> {
@@ -468,10 +470,13 @@ export class MusicAssistantApi {
     return this.getData('music/search', { search_query, media_types, limit });
   }
 
-  public getRecentlyPlayedItems(limit = 10, media_types: MediaType[] = [MediaType.TRACK, MediaType.RADIO]): Promise<MediaItemType[]> {
+  public getRecentlyPlayedItems(
+    limit = 10,
+    media_types: MediaType[] = [MediaType.TRACK, MediaType.RADIO],
+  ): Promise<MediaItemType[]> {
     return this.getData('music/recently_played_items', {
       limit,
-      media_types
+      media_types,
     });
   }
 

@@ -157,13 +157,11 @@
     "sort": {
         "duration": "Czas trwania",
         "position": "Pozycja",
-        "position DESC": "Pozycja (malejąco)",
+        "position_desc": "Pozycja (malejąco)",
         "provider": "Dostawca",
-        "sort_album": "Album",
-        "sort_artist": "Wykonawca",
-        "sort_name": "Alfabetycznie",
-        "sort_name DESC": "Alfabetycznie (malejąco)",
-        "timestamp_added DESC": "Ostatnio dodane",
+        "artist": "Wykonawca",
+        "name": "Alfabetycznie",
+        "name_desc": "Alfabetycznie (malejąco)",
         "track_number": "Numer ścieżki",
         "year": "Rok wydania",
         "recent": "Ostatnio dodane"

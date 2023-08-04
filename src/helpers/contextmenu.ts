@@ -12,6 +12,7 @@ import {
   Playlist,
   Album,
   Track,
+  ItemMapping,
 } from '@/plugins/api/interfaces';
 import { $t } from '@/plugins/i18n';
 
@@ -24,22 +25,29 @@ export interface ContextMenuItem {
   hide?: boolean;
 }
 
-export const itemIsAvailable = function (item: MediaItemType) {
-  for (const x of item.provider_mappings) {
-    if (x.available && api.providers[x.provider_instance]?.available) return true;
+export const itemIsAvailable = function (item: MediaItemType | ItemMapping) {
+  if (item.media_type == MediaType.FOLDER) return true;
+  if ('provider_mappings' in item) {
+    for (const x of item.provider_mappings) {
+      if (x.available && api.providers[x.provider_instance]?.available) return true;
+    }
+  } else if ('available' in item) return item.available;
+  return false;
+};
+
+export const radioSupported = function (item: MediaItemType | ItemMapping) {
+  if ('provider_mappings' in item) {
+    for (const provId of item.provider_mappings) {
+      if (api.providers[provId.provider_instance]?.supported_features.includes(ProviderFeature.SIMILAR_TRACKS))
+        return true;
+    }
+  } else if (api.providers[item.provider]?.supported_features.includes(ProviderFeature.SIMILAR_TRACKS)) {
+    return true;
   }
   return false;
 };
 
-export const radioSupported = function (item: MediaItemType) {
-  for (const provId of item.provider_mappings) {
-    if (api.providers[provId.provider_instance]?.supported_features.includes(ProviderFeature.SIMILAR_TRACKS))
-      return true;
-  }
-  return false;
-};
-
-export const getPlayMenuItems = function (items: MediaItem[], parentItem?: MediaItem) {
+export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMapping>, parentItem?: MediaItem) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
     return playMenuItems;
@@ -57,7 +65,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
       playMenuItems.push({
         label: 'play_playlist_from',
         action: () => {
-          api.playMedia(parentItem as Playlist, QueueOption.REPLACE, false, items[0].item_id);
+          api.playMedia(parentItem.uri, QueueOption.REPLACE, false, items[0].item_id);
         },
         icon: 'mdi-play-circle-outline',
         labelArgs: [],
@@ -68,7 +76,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
       playMenuItems.push({
         label: 'play_album_from',
         action: () => {
-          api.playMedia(parentItem as Album, QueueOption.REPLACE, false, items[0].item_id);
+          api.playMedia(parentItem.uri, QueueOption.REPLACE, false, items[0].item_id);
         },
         icon: 'mdi-play-circle-outline',
         labelArgs: [],
@@ -80,7 +88,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
   playMenuItems.push({
     label: 'play_now',
     action: () => {
-      api.playMedia(items, queueOptPlay);
+      api.playMedia(items.map((x) => x.uri), queueOptPlay);
     },
     icon: 'mdi-play-circle-outline',
     labelArgs: [],
@@ -91,7 +99,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
     playMenuItems.push({
       label: 'play_radio',
       action: () => {
-        api.playMedia(items, queueOptPlay, true);
+        api.playMedia(items.map((x) => x.uri), queueOptPlay, true);
       },
       icon: 'mdi-radio-tower',
       labelArgs: [],
@@ -103,7 +111,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
     playMenuItems.push({
       label: 'play_next',
       action: () => {
-        api.playMedia(items, queueOptNext);
+        api.playMedia(items.map((x) => x.uri), queueOptNext);
       },
       icon: 'mdi-skip-next-circle-outline',
       labelArgs: [],
@@ -113,7 +121,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
   playMenuItems.push({
     label: 'add_queue',
     action: () => {
-      api.playMedia(items, QueueOption.ADD);
+      api.playMedia(items.map((x) => x.uri), QueueOption.ADD);
     },
     icon: 'mdi-playlist-plus',
     labelArgs: [],
@@ -122,7 +130,7 @@ export const getPlayMenuItems = function (items: MediaItem[], parentItem?: Media
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (items: MediaItem[], parentItem?: MediaItem) {
+export const getContextMenuItems = function (items: Array<MediaItemType | ItemMapping>, parentItem?: MediaItem) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
@@ -229,28 +237,27 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
     });
   }
   // add to favorites
-  if (!items[0].favorite) {
+  if ('favorite' in items[0] && !items[0].favorite) {
     contextMenuItems.push({
       label: 'favorites_add',
       labelArgs: [],
       action: () => {
         for (const item of items) {
           api.addItemToFavorites(item);
-          item.favorite = true;
         }
       },
       icon: 'mdi-heart-outline',
     });
   }
   // remove from favorites
-  if (items[0].favorite) {
+  if ('favorite' in items[0] && items[0].favorite) {
     contextMenuItems.push({
       label: 'favorites_remove',
       labelArgs: [],
       action: () => {
         for (const item of items) {
           api.removeItemFromFavorites(item.media_type, item.item_id);
-          item.favorite = false;
+          (item as MediaItemType).favorite = false;
         }
       },
       icon: 'mdi-heart',
@@ -274,13 +281,13 @@ export const getContextMenuItems = function (items: MediaItem[], parentItem?: Me
     }
   }
   // add to playlist action (tracks only)
-  if (items[0].media_type === 'track') {
+  if (items[0].media_type === 'track' && 'provider_mappings' in items[0]) {
     contextMenuItems.push({
       label: 'add_playlist',
       labelArgs: [],
       action: () => {
         eventbus.emit('playlistdialog', {
-          items: items,
+          items: items as MediaItemType[],
           parentItem: parentItem,
         });
       },

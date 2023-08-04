@@ -4,7 +4,7 @@
     :items="items"
     :show-provider="false"
     :show-favorites-only-filter="true"
-    :load-data="loadItems"
+    :load-paged-data="loadItems"
     :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
     :title="getBreakpointValue('bp4') ? $t('artists') : ''"

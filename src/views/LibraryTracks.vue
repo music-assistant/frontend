@@ -5,7 +5,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :show-track-number="false"
-    :load-data="loadItems"
+    :load-paged-data="loadItems"
     :sort-keys="Object.keys(sortKeys)"
     :show-album="true"
     :update-available="updateAvailable"

@@ -9,7 +9,7 @@
       :show-favorites-only-filter="false"
       :show-library="true"
       :show-track-number="false"
-      :load-data="loadTrackAlbums"
+      :load-items="loadTrackAlbums"
       :sort-keys="['provider', 'name', 'duration']"
       :update-available="updateAvailable"
       :title="$t('appears_on')"
@@ -25,7 +25,7 @@
       :show-favorites-only-filter="false"
       :show-library="true"
       :show-track-number="false"
-      :load-data="loadTrackVersions"
+      :load-items="loadTrackVersions"
       :sort-keys="['provider', 'name', 'duration']"
       :update-available="updateAvailable"
       :title="$t('other_versions')"
@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams, filteredItems } from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { computed, ref } from 'vue';
 import { EventType, type Track, type EventMessage, type MediaItemType, Album } from '../plugins/api/interfaces';
@@ -93,7 +93,7 @@ onMounted(() => {
 });
 
 const loadTrackVersions = async function (params: LoadDataParams) {
-  return filteredItems(await api.getTrackVersions(itemDetails.value!.item_id, itemDetails.value!.provider), params);
+  return await api.getTrackVersions(itemDetails.value!.item_id, itemDetails.value!.provider);
 };
 
 const loadTrackAlbums = async function (params: LoadDataParams) {
@@ -114,6 +114,6 @@ const loadTrackAlbums = async function (params: LoadDataParams) {
   } else {
     items = await api.getTrackAlbums(itemDetails.value.item_id, itemDetails.value.provider);
   }
-  return filteredItems(items, params);
+  return items;
 };
 </script>

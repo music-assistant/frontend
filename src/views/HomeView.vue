@@ -127,14 +127,15 @@ onMounted(async () => {
       }
     })
   })
-
+  // tracks widget
   api.getLibraryTracks(undefined, undefined, 20, undefined, "timestamp_added DESC").then(pagedItems => {
     widgetRows.value.tracks.items = pagedItems.items;
     widgetRows.value.tracks.count = pagedItems.total;
   })
-  api.browse().then(browseFolder => {
-    widgetRows.value.browse.items = browseFolder.items!;
-  })
+  // browse widget
+  await api.browse('', (data: MediaItemType[]) => {
+    widgetRows.value.browse.items.push(...data);
+  });
 
 });
 
