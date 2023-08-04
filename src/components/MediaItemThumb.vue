@@ -23,10 +23,10 @@
 <script setup lang="ts">
 import { watch, ref, computed } from 'vue';
 import type { ItemMapping, MediaItemImage, MediaItemType, QueueItem } from '../plugins/api/interfaces';
-import { ImageType } from '../plugins/api/interfaces';
+import { ImageType, MediaType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { useTheme } from 'vuetify';
-import { imgCoverDark, imgCoverLight } from '@/components/QualityDetailsBtn.vue';
+import { imgCoverDark, imgCoverLight, iconFolder } from '@/components/QualityDetailsBtn.vue';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -56,7 +56,9 @@ const theme = useTheme();
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
+  if (props.item && 'media_type' in props.item && props.item.media_type == MediaType.FOLDER) return iconFolder;
   if (!props.item) return '';
+  if (!props.item.name) return '';
   return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize.value);
 });
 
@@ -100,6 +102,15 @@ export const getMediaItemImage = function (
 ): MediaItemImage | undefined {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
+  // handle image in queueitem
+  if ('image' in mediaItem && mediaItem.image) return mediaItem.image;
+  // handle regular image within mediaitem
+  if ('metadata' in mediaItem && mediaItem.metadata.images) {
+    for (const img of mediaItem.metadata.images) {
+      if (img.provider == 'http' && !includeFileBased) continue;
+      if (img.type == type) return img;
+    }
+  }
   // prefer album image in case of tracks
   if (
     'album' in mediaItem &&
@@ -109,15 +120,6 @@ export const getMediaItemImage = function (
     mediaItem.album.metadata.images
   ) {
     for (const img of mediaItem.album.metadata.images) {
-      if (img.provider == 'http' && !includeFileBased) continue;
-      if (img.type == type) return img;
-    }
-  }
-  // handle image in queueitem
-  if ('image' in mediaItem && mediaItem.image) return mediaItem.image;
-  // handle regular image within mediaitem
-  if ('metadata' in mediaItem && mediaItem.metadata.images) {
-    for (const img of mediaItem.metadata.images) {
       if (img.provider == 'http' && !includeFileBased) continue;
       if (img.type == type) return img;
     }
@@ -156,7 +158,7 @@ export const getImageThumbForItem = function (
   let imageUrl = '';
   // find image in mediaitem
   const img = getMediaItemImage(mediaItem, type, true);
-  if (!img) return undefined;
+  if (!img || !img.path) return undefined;
   if (img.provider !== 'url') {
     // use imageproxy for embedded images
     if (!api.providers[img.provider]?.available && img.provider != 'file') return undefined;

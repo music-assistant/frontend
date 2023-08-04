@@ -159,13 +159,7 @@
     "sort": {
         "duration": "Dauer",
         "position": "Position",
-        "position DESC": "Position (absteigend)",
         "provider": "Anbieter",
-        "sort_album": "Album",
-        "sort_artist": "Künstler",
-        "sort_name": "Alphabetisch",
-        "sort_name DESC": "Alphabetisch (absteigend)",
-        "timestamp_added DESC": "Kürzlich hinzugefügt",
         "track_number": "Titelnummer",
         "year": "Erscheinungsjahr",
         "position_desc": "Position (absteigend)",

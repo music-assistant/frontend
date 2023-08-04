@@ -5,7 +5,7 @@
     :show-duration="false"
     :show-provider="true"
     :show-favorites-only-filter="true"
-    :load-data="loadItems"
+    :load-paged-data="loadItems"
     :show-library="true"
     :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"

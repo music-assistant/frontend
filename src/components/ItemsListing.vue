@@ -1,63 +1,36 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && allItems.length == 0)">
+  <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
     <v-toolbar color="transparent">
       <template #title>
         {{ title }}
-        <v-badge
-          v-if="getBreakpointValue('bp11')"
-          color="grey"
-          :content="totalItems"
-          inline
-        />
+        <v-badge v-if="getBreakpointValue('bp11')" color="grey" :content="total" inline />
       </template>
 
       <template #append>
         <!-- toggle select button -->
-        <Button
-          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.select_items')"
-          :disabled="!expanded"
-          @click="toggleCheckboxes"
-          ><v-icon :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
-        /></Button>
+        <Button v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')" v-bind="props"
+          variant="list" :title="$t('tooltip.select_items')" :disabled="!expanded" @click="toggleCheckboxes"><v-icon
+            :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'" /></Button>
 
         <!-- favorites only filter -->
-        <Button
-          v-if="showFavoritesOnlyFilter != undefined ? showFavoritesOnlyFilter : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.filter_favorites')"
-          :disabled="!expanded"
-          @click="toggleFavoriteFilter"
-        >
-          <v-icon :icon="favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
+        <Button v-if="showFavoritesOnlyFilter != undefined ? showFavoritesOnlyFilter : getBreakpointValue('bp1')"
+          v-bind="props" variant="list" :title="$t('tooltip.filter_favorites')" :disabled="!expanded"
+          @click="toggleFavoriteFilter">
+          <v-icon :icon="params.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
         </Button>
 
         <!-- album artists only filter -->
-        <Button
-          v-if="showAlbumArtistsOnlyFilter"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.album_artist_filter')"
-          :disabled="!expanded"
-          @click="toggleAlbumArtistsFilter"
-        >
-          <v-icon :icon="albumArtistsOnlyFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
+        <Button v-if="showAlbumArtistsOnlyFilter" v-bind="props" variant="list" :title="$t('tooltip.album_artist_filter')"
+          :disabled="!expanded" @click="toggleAlbumArtistsFilter">
+          <v-icon :icon="params.albumArtistsFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
         </Button>
 
         <!-- refresh button-->
-        <Button
-          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
-          :disabled="!expanded || loading"
-          @click="onRefreshClicked()"
-        >
+        <Button v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')" v-bind="props"
+          variant="list" :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+          :disabled="!expanded || loading" @click="onRefreshClicked()">
           <v-badge :model-value="updateAvailable" color="error" dot>
             <v-icon icon="mdi-refresh" />
           </v-badge>
@@ -76,7 +49,7 @@
                 <ListItem @click="changeSort(key)">
                   <template #title>{{ $t('sort.' + key) }}</template>
                   <template #append>
-                    <v-icon v-if="sortBy == key" icon="mdi-check" />
+                    <v-icon v-if="params.sortBy == key" icon="mdi-check" />
                   </template>
                 </ListItem>
                 <v-divider />
@@ -86,32 +59,20 @@
         </v-menu>
 
         <!-- toggle search button -->
-        <Button
-          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.search')"
-          :disabled="!expanded"
-          @click="toggleSearch()"
-        >
+        <Button v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')" v-bind="props"
+          variant="list" :title="$t('tooltip.search')" :disabled="!expanded" @click="toggleSearch()">
           <v-icon icon="mdi-magnify" />
         </Button>
 
         <!-- toggle view mode button -->
-        <Button
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.toggle_view_mode')"
-          :disabled="!expanded"
-          @click="toggleViewMode()"
-          ><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-        /></Button>
+        <Button v-bind="props" variant="list" :title="$t('tooltip.toggle_view_mode')" :disabled="!expanded"
+          @click="toggleViewMode()"><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'" /></Button>
 
         <!-- provider filter dropdown -->
         <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
           <template #activator="{ props }">
             <Button v-bind="props" variant="list" :disabled="!expanded">
-              <ProviderIcon :domain="activeProviderFilter" :size="30" />
+              <ProviderIcon :domain="params.providerFilter!" :size="30" />
             </Button>
           </template>
           <v-card>
@@ -126,7 +87,7 @@
                     <span v-else>{{ api.getProviderName(provId) }}</span>
                   </template>
                   <template #append>
-                    <v-icon v-if="activeProviderFilter == provId" icon="mdi-check" />
+                    <v-icon v-if="params.providerFilter == provId" icon="mdi-check" />
                   </template>
                 </ListItem>
                 <v-divider />
@@ -143,13 +104,9 @@
             </Button>
           </template>
           <v-list>
-            <ListItem
-              v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)"
-              :key="index"
-              :title="$t(item.label, item.labelArgs)"
-              :disabled="item.disabled == true"
-              @click="item.action ? item.action() : ''"
-            >
+            <ListItem v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)" :key="index"
+              :title="$t(item.label, item.labelArgs)" :disabled="item.disabled == true"
+              @click="item.action ? item.action() : ''">
               <template #prepend>
                 <v-avatar :icon="item.icon" />
               </template>
@@ -158,70 +115,36 @@
         </v-menu>
 
         <!-- expand/collapse button -->
-        <Button v-if="allowCollapse" variant="list" :title="$t('tooltip.collapse_expand')" @click="toggleExpand"
-          ><v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-        /></Button>
+        <Button v-if="allowCollapse" variant="list" :title="$t('tooltip.collapse_expand')" @click="toggleExpand"><v-icon
+            :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'" /></Button>
       </template>
     </v-toolbar>
     <v-divider />
 
-    <v-text-field
-      v-if="showSearch && expanded"
-      id="searchInput"
-      v-model="search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
-      hide-details
-      variant="filled"
-      style="width: auto; margin-top: 10px"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
+    <v-text-field v-if="showSearch && expanded" id="searchInput" v-model="params.search" clearable
+      prepend-inner-icon="mdi-magnify" :label="$t('search')" hide-details variant="filled"
+      style="width: auto; margin-top: 10px" @focus="searchHasFocus = true" @blur="searchHasFocus = false" />
     <Container v-if="expanded" :variant="viewMode == 'panel' ? 'panel' : 'default'">
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
-        <v-col
-          v-for="item in allItems"
-          :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-        >
-          <PanelviewItem
-            :item="item"
-            :is-selected="isSelected(item)"
-            :show-checkboxes="showCheckboxes"
-            :show-track-number="showTrackNumber"
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
+        <v-col v-for="item in pagedItems" :key="item.uri" :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
+          <PanelviewItem :item="item" :is-selected="isSelected(item)" :show-checkboxes="showCheckboxes"
+            :show-track-number="showTrackNumber" @select="onSelect" @menu="onMenu" @click="onClick" />
         </v-col>
       </v-row>
 
       <!-- list view -->
-      <v-virtual-scroll v-if="viewMode == 'list'" :height="70" :items="allItems" style="height: 100%">
+      <v-virtual-scroll v-if="viewMode == 'list'" :height="70" :items="pagedItems" style="height: 100%">
         <template #default="{ item }">
-          <ListviewItem
-            :item="item"
-            :show-track-number="showTrackNumber"
-            :show-disc-number="showTrackNumber"
-            :show-duration="showDuration"
-            :show-favorite="showFavoritesOnlyFilter"
-            :show-menu="showMenu"
-            :show-provider="showProvider"
-            :show-album="showAlbum"
-            :show-checkboxes="showCheckboxes"
-            :is-selected="isSelected(item)"
-            :show-details="itemtype.includes('versions')"
-            :parent-item="parentItem"
-            :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
+          <ListviewItem :item="item" :show-track-number="showTrackNumber" :show-disc-number="showTrackNumber"
+            :show-duration="showDuration" :show-favorite="showFavoritesOnlyFilter" :show-menu="showMenu"
+            :show-provider="showProvider" :show-album="showAlbum" :show-checkboxes="showCheckboxes"
+            :is-selected="isSelected(item)" :show-details="itemtype.includes('versions')" :parent-item="parentItem"
+            :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []" @select="onSelect"
+            @menu="onMenu" @click="onClick" />
         </template>
       </v-virtual-scroll>
 
@@ -229,13 +152,14 @@
       <InfiniteLoading @infinite="loadNextPage" />
 
       <!-- show alert if no item found -->
-      <div v-if="!loading && allItems.length == 0">
-        <Alert v-if="!loading && allItems.length == 0 && (search || favoritesOnly)" :title="$t('no_content_filter')">
-          <v-btn v-if="search" style="margin-top: 15px" @click="redirectSearch">
+      <div v-if="!loading && pagedItems.length == 0">
+        <Alert v-if="!loading && pagedItems.length == 0 && (params.search || params.favoritesOnly)"
+          :title="$t('no_content_filter')">
+          <v-btn v-if="params.search" style="margin-top: 15px" @click="redirectSearch">
             {{ $t('try_global_search') }}
           </v-btn>
         </Alert>
-        <Alert v-else-if="!loading && allItems.length == 0">
+        <Alert v-else-if="!loading && pagedItems.length == 0">
           {{ $t('no_content') }}
         </Alert>
       </div>
@@ -257,7 +181,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
 import { ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
-import { type Album, type MediaItemType, type PagedItems, type Track } from '../plugins/api/interfaces';
+import { MediaType, type Album, type MediaItemType, type PagedItems, type Track, BrowseFolder, ItemMapping } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 import ListviewItem from './ListviewItem.vue';
 import Button from './mods/Button.vue';
@@ -273,7 +197,18 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import Alert from './mods/Alert.vue';
 import Container from './mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
+import { useI18n } from 'vue-i18n';
 
+export interface LoadDataParams {
+  offset: number;
+  limit: number;
+  sortBy: string;
+  search: string;
+  favoritesOnly?: boolean;
+  albumArtistsFilter?: boolean;
+  providerFilter?: string;
+  refresh?: boolean;
+}
 // properties
 export interface Props {
   itemtype: string;
@@ -296,7 +231,10 @@ export interface Props {
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   contextMenuItems?: Array<ContextMenuItem>;
-  loadData: (params: LoadDataParams) => Promise<PagedItems>;
+  // loadPagedData callback is provided for serverside paging/sorting
+  loadPagedData?: (params: LoadDataParams) => Promise<PagedItems>;
+  // loadItems callback is provided for flat non-paged listings
+  loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name'],
@@ -321,25 +259,27 @@ const defaultLimit = 100;
 const router = useRouter();
 
 // local refs
+const params = ref<LoadDataParams>({
+  offset: 0,
+  limit: 100,
+  sortBy: 'name',
+  search: '',
+  providerFilter: 'library'
+});
 const viewMode = ref('list');
-const search = ref('');
-const sortBy = ref<string>('name');
 const showSortMenu = ref(false);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
-const offset = ref(0);
+const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
-const totalItems = ref<number>();
+const total = ref<number>();
 const loading = ref(false);
-const favoritesOnly = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
-const albumArtistsOnlyFilter = ref(true);
-const activeProviderFilter = ref<string>('library');
 const expanded = ref(true);
 
-// computed properties
+const { t } = useI18n();
 
 // emitters
 const emit = defineEmits<{
@@ -409,15 +349,15 @@ const toggleViewMode = function () {
 };
 
 const toggleFavoriteFilter = function () {
-  favoritesOnly.value = !favoritesOnly.value;
-  const favoritesOnlyStr = favoritesOnly.value ? 'true' : 'false';
+  params.value.favoritesOnly = !params.value.favoritesOnly;
+  const favoritesOnlyStr = params.value.favoritesOnly ? 'true' : 'false';
   localStorage.setItem(`favoriteFilter.${props.itemtype}`, favoritesOnlyStr);
   loadData(true);
 };
 
 const toggleAlbumArtistsFilter = function () {
-  albumArtistsOnlyFilter.value = !albumArtistsOnlyFilter.value;
-  const albumArtistsOnlyStr = albumArtistsOnlyFilter.value ? 'true' : 'false';
+  params.value.albumArtistsFilter = !params.value.albumArtistsFilter;
+  const albumArtistsOnlyStr = params.value.albumArtistsFilter ? 'true' : 'false';
   localStorage.setItem(`albumArtistsFilter.${props.itemtype}`, albumArtistsOnlyStr);
   loadData(true);
 };
@@ -470,8 +410,14 @@ const onClick = function (mediaItem: MediaItemType) {
     onMenu(mediaItem, false);
     return;
   }
-
-  if (['artist', 'album', 'playlist'].includes(mediaItem.media_type) || !store.selectedPlayer?.available) {
+  if (mediaItem.media_type == MediaType.FOLDER) {
+    router.push({
+      name: 'browse',
+      query: {
+        path: (mediaItem as BrowseFolder).path,
+      },
+    });
+  } else if (['artist', 'album', 'playlist'].includes(mediaItem.media_type) || !store.selectedPlayer?.available) {
     router.push({
       name: mediaItem.media_type,
       params: {
@@ -486,187 +432,105 @@ const onClick = function (mediaItem: MediaItemType) {
 
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   if (sort_key !== undefined) {
-    sortBy.value = sort_key;
+    params.value.sortBy = sort_key;
   }
-  localStorage.setItem(`sortBy.${props.itemtype}`, sortBy.value);
-  loadData(true);
+  localStorage.setItem(`sortBy.${props.itemtype}`, params.value.sortBy);
+  loadData(true, undefined, sort_key == 'original');
 };
 
 const changeActiveProviderFilter = function (provider: string) {
-  activeProviderFilter.value = provider;
+  params.value.providerFilter = provider;
   loadData(true);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ($state: any) {
-  if (allItems.value.length == 0) {
+  if (pagedItems.value.length == 0) {
     $state.loaded();
     return;
   }
-  if (totalItems.value !== undefined && offset.value >= totalItems.value) {
+  if (total.value !== undefined && params.value.offset >= total.value) {
     $state.loaded();
     return;
   }
-  offset.value += defaultLimit;
+  params.value.offset += defaultLimit;
   loadData().then(() => {
     $state.loaded();
   });
 };
 
 const redirectSearch = function () {
-  localStorage.setItem('globalsearch', search.value);
-  router.push({ name: 'search', params: { initSearch: search.value } });
+  localStorage.setItem('globalsearch', params.value.search);
+  router.push({ name: 'search', params: { initSearch: params.value.search } });
 };
 
 // watchers
 watch(
-  () => search.value,
+  () => params.value.search,
   (newVal) => {
     if (newVal) showSearch.value = true;
     loadData(true);
+    let storKey = `search.${props.itemtype}`;
+    if (props.parentItem) storKey += props.parentItem.item_id;
+    localStorage.setItem(storKey, params.value.search);
   },
 );
 watch(
-  () => props.updateAvailable,
-  (newVal) => {
-    if (newVal && allItems.value.length == 0) loadData(true);
+  () => props.itemtype,
+  () => {
+    allItems.value = [];
+    loadData(true);
   },
 );
 
 const loadData = async function (clear = false, limit = defaultLimit, refresh = false) {
   if (clear || refresh) {
-    offset.value = 0;
+    params.value.offset = 0;
     newContentAvailable.value = false;
   }
   loading.value = true;
-
-  const nextItems = await props.loadData({
-    offset: offset.value,
-    limit: limit,
-    sortBy: sortBy.value,
-    search: search.value,
-    favoritesOnly: favoritesOnly.value,
-    albumArtistsFilter: albumArtistsOnlyFilter.value,
-    providerFilter: activeProviderFilter.value,
-    refresh,
-  });
-  if (offset.value) {
-    allItems.value.push(...nextItems.items);
-  } else {
-    allItems.value = nextItems.items;
-  }
-  totalItems.value = nextItems.total;
-  loading.value = false;
-  let storKey = `search.${props.itemtype}`;
-  if (props.parentItem) storKey += props.parentItem.item_id;
-  localStorage.setItem(storKey, search.value);
-};
-
-// get/set default settings at load
-onMounted(() => {
-  // get stored/default viewMode for this itemtype
-  const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
-  if (savedViewMode && savedViewMode !== 'null') {
-    viewMode.value = savedViewMode;
-  } else if (props.itemtype == 'artists') {
-    viewMode.value = 'panel';
-  } else if (props.itemtype == 'albums') {
-    viewMode.value = 'panel';
-  } else {
-    viewMode.value = 'list';
-  }
-  // get stored/default sortBy for this itemtype
-  const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
-  if (savedSortBy && savedSortBy !== 'null' && props.sortKeys.includes(savedSortBy)) {
-    sortBy.value = savedSortBy;
-  } else {
-    sortBy.value = props.sortKeys[0];
-  }
-
-  // get stored/default favoriteOnlyFilter for this itemtype
-  if (props.showFavoritesOnlyFilter !== false) {
-    const savedInFavoriteOnlyStr = localStorage.getItem(`favoriteFilter.${props.itemtype}`);
-    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
-      favoritesOnly.value = true;
-    }
-  }
-
-  // get stored/default albumArtistsOnlyFilter for this itemtype
-  if (props.showAlbumArtistsOnlyFilter !== false) {
-    const albumArtistsOnlyStr = localStorage.getItem(`albumArtistsFilter.${props.itemtype}`);
-    if (albumArtistsOnlyStr) {
-      albumArtistsOnlyFilter.value = albumArtistsOnlyStr == 'true';
-    }
-  }
-
-  // get stored/default expand property for this itemtype
-  if (props.allowCollapse !== false) {
-    const expandStr = localStorage.getItem(`expand.${props.itemtype}`);
-    if (expandStr) {
-      expanded.value = expandStr == 'true';
-    }
-  }
-
-  // get stored searchquery
-  let storKey = `search.${props.itemtype}`;
-  if (props.parentItem) storKey += props.parentItem.item_id;
-  const savedSearch = localStorage.getItem(storKey);
-
-  if (savedSearch && savedSearch !== 'null') {
-    search.value = savedSearch;
-  }
-  loadData(true);
-});
-
-// lifecycle hooks
-const keyListener = function (e: KeyboardEvent) {
-  if (store.dialogActive) return;
-  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    // CTRL-A (select all requested)
-    // fetch all items first
-    while (allItems.value.length < totalItems.value!) {
-      if (totalItems.value !== undefined && offset.value >= totalItems.value) {
-        break;
+  if (props.loadPagedData !== undefined) {
+    // call server for paged listing
+    const nextItems = await props.loadPagedData(params.value);
+    if (nextItems) {
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems.items);
+      } else {
+        pagedItems.value = nextItems.items;
       }
-      offset.value += defaultLimit;
-      loadData();
+      total.value = nextItems.total;
     }
-    selectedItems.value = allItems.value;
-    showCheckboxes.value = true;
-  } else if (!searchHasFocus.value && e.key == 'Backspace') {
-    search.value = search.value.slice(0, -1);
-  } else if (!searchHasFocus.value && e.key.length == 1) {
-    search.value += e.key;
-    showSearch.value = true;
+  } else if (props.loadItems !== undefined) {
+    // grab items from loadItems callback
+    if (allItems.value.length === 0 || refresh) {
+      // load all items from the callback
+      allItems.value = [];
+      allItems.value = await props.loadItems(params.value), params.value;
+      total.value = allItems.value.length;
+    }
+    // filter
+    const nextItems = getFilteredItems(allItems.value, params.value);
+    if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
   }
+  loading.value = false;
 };
 
-if (props.allowKeyHooks) {
-  document.addEventListener('keydown', keyListener);
-  onBeforeUnmount(() => {
-    document.removeEventListener('keydown', keyListener);
-  });
-}
-</script>
-
-<script lang="ts">
-export interface LoadDataParams {
-  offset: number;
-  limit: number;
-  sortBy: string;
-  search: string;
-  favoritesOnly?: boolean;
-  albumArtistsFilter?: boolean;
-  providerFilter?: string;
-  refresh?: boolean;
+const getSortName = function (item: MediaItemType | ItemMapping) {
+  if ('label' in item && item.label && item.name) return t(item.label, [item.name]);
+  if ('label' in item && item.label) return t(item.label);
+  if ('sort_name' in item && item.sort_name) return item.sort_name;
+  return item.name;
 }
 
-export const filteredItems = function (
-  // In-memory paging for (smaller) item sets that do not have server side paging
+const getFilteredItems = function (
+  // In-memory filter for (smaller) item sets that do not have server side paging and filtering
   items: MediaItemType[],
   params: LoadDataParams,
-) {
+): MediaItemType[] {
   let result = [];
 
   // search
@@ -687,8 +551,12 @@ export const filteredItems = function (
     result = items;
   }
   // sort
+  console.log('flter', params.sortBy)
   if (params.sortBy == 'name') {
-    result.sort((a, b) => a.sort_name.localeCompare(b.sort_name));
+    result.sort((a, b) => getSortName(a).localeCompare(getSortName(b)));
+  }
+  if (params.sortBy == 'name_desc') {
+    result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
   }
   if (params.sortBy == 'album') {
     result.sort((a, b) => (a as Track).album?.sort_name.localeCompare((b as Track).album?.sort_name));
@@ -727,21 +595,101 @@ export const filteredItems = function (
   if (params.favoritesOnly) {
     result = result.filter((x) => x.favorite);
   }
-
-  const totalItems = result.length;
-  const pagedItems = result.slice(params.offset, params.offset + params.limit);
-  return {
-    items: pagedItems,
-    count: pagedItems.length,
-    limit: params.limit,
-    offset: params.offset,
-    total: totalItems,
-  };
+  return result.slice(params.offset, params.offset + params.limit);
 };
+
+
+
+// get/set default settings at load
+onMounted(() => {
+  // get stored/default viewMode for this itemtype
+  const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
+  if (savedViewMode && savedViewMode !== 'null') {
+    viewMode.value = savedViewMode;
+  } else if (props.itemtype == 'artists') {
+    viewMode.value = 'panel';
+  } else if (props.itemtype == 'albums') {
+    viewMode.value = 'panel';
+  } else {
+    viewMode.value = 'list';
+  }
+  // get stored/default sortBy for this itemtype
+  const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
+  if (savedSortBy && savedSortBy !== 'null' && props.sortKeys.includes(savedSortBy)) {
+    params.value.sortBy = savedSortBy;
+  } else {
+    params.value.sortBy = props.sortKeys[0];
+  }
+
+  // get stored/default favoriteOnlyFilter for this itemtype
+  if (props.showFavoritesOnlyFilter !== false) {
+    const savedInFavoriteOnlyStr = localStorage.getItem(`favoriteFilter.${props.itemtype}`);
+    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
+      params.value.favoritesOnly = true;
+    }
+  }
+
+  // get stored/default albumArtistsOnlyFilter for this itemtype
+  if (props.showAlbumArtistsOnlyFilter !== false) {
+    const albumArtistsOnlyStr = localStorage.getItem(`albumArtistsFilter.${props.itemtype}`);
+    if (albumArtistsOnlyStr) {
+      params.value.albumArtistsFilter = albumArtistsOnlyStr == 'true';
+    }
+  }
+
+  // get stored/default expand property for this itemtype
+  if (props.allowCollapse !== false) {
+    const expandStr = localStorage.getItem(`expand.${props.itemtype}`);
+    if (expandStr) {
+      expanded.value = expandStr == 'true';
+    }
+  }
+
+  // get stored searchquery
+  let storKey = `search.${props.itemtype}`;
+  if (props.parentItem) storKey += props.parentItem.item_id;
+  const savedSearch = localStorage.getItem(storKey);
+
+  if (savedSearch && savedSearch !== 'null') {
+    params.value.search = savedSearch;
+  }
+  loadData(true);
+});
+
+// lifecycle hooks
+const keyListener = function (e: KeyboardEvent) {
+  if (store.dialogActive) return;
+  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    // CTRL-A (select all requested)
+    // fetch all items first
+    while (pagedItems.value.length < total.value!) {
+      if (total.value !== undefined && params.value.offset >= total.value) {
+        break;
+      }
+      params.value.offset += defaultLimit;
+      loadData();
+    }
+    selectedItems.value = pagedItems.value;
+    showCheckboxes.value = true;
+  } else if (!searchHasFocus.value && e.key == 'Backspace') {
+    params.value.search = params.value.search.slice(0, -1);
+  } else if (!searchHasFocus.value && e.key.length == 1) {
+    params.value.search += e.key;
+    showSearch.value = true;
+  }
+};
+
+if (props.allowKeyHooks) {
+  document.addEventListener('keydown', keyListener);
+  onBeforeUnmount(() => {
+    document.removeEventListener('keydown', keyListener);
+  });
+}
 </script>
 
 <style>
-.v-toolbar > .v-toolbar__content > .v-toolbar__append {
+.v-toolbar>.v-toolbar__content>.v-toolbar__append {
   margin-right: 5px;
 }
 </style>

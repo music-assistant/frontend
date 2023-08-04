@@ -34,7 +34,7 @@ const routes = [
         path: '/browse',
         name: 'browse',
         component: () => import(/* webpackChunkName: "browse" */ '@/views/BrowseView.vue'),
-        props: (route: { query: { path: any } }) => ({ path: route.query.path }),
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
 
       {

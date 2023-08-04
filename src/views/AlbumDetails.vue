@@ -7,7 +7,7 @@
       :parent-item="itemDetails"
       :show-provider="false"
       :show-favorites-only-filter="false"
-      :load-data="loadAlbumTracks"
+      :load-items="loadAlbumTracks"
       :sort-keys="['track_number', 'name', 'duration']"
       :update-available="updateAvailable"
       :title="$t('tracks')"
@@ -20,7 +20,7 @@
       :parent-item="itemDetails"
       :show-provider="true"
       :show-favorites-only-filter="false"
-      :load-data="loadAlbumVersions"
+      :load-items="loadAlbumVersions"
       :sort-keys="['provider', 'name', 'year']"
       :update-available="updateAvailable"
       :title="$t('other_versions')"
@@ -34,7 +34,6 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { EventType, type Album, type EventMessage, type MediaItemType, Track } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
@@ -103,10 +102,10 @@ const loadAlbumTracks = async function (params: LoadDataParams) {
     items = await api.getAlbumTracks(itemDetails.value.item_id, itemDetails.value.provider);
   }
   updateAvailable.value = false;
-  return filteredItems(items, params);
+  return items;
 };
 
 const loadAlbumVersions = async function (params: LoadDataParams) {
-  return filteredItems(await api.getAlbumVersions(itemDetails.value!.item_id, itemDetails.value!.provider), params);
+  return await api.getAlbumVersions(itemDetails.value!.item_id, itemDetails.value!.provider);
 };
 </script>
