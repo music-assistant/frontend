@@ -76,3 +76,13 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
+
+  server-repo-pr:
+    name: Server repo PR
+    needs: release
+    runs-on: ubuntu-latest
+    steps:  
+      - uses: music-assistant/frontend-release-pr-action@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          new_release_version: ${{ needs.release.steps.vars.outputs.tag }}
