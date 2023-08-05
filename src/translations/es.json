@@ -140,14 +140,20 @@
     "sort": {
         "duration": "Duración",
         "position": "Posición",
-        "position_desc": "Position (descending)",
+        "position DESC": "Position (descending)",
         "provider": "Proveedor",
+        "sort_album": "Disco",
+        "sort_artist": "Artista",
+        "sort_name": "Alfabeticamente",
+        "sort_name DESC": "Alfabeticamente (descendente)",
+        "timestamp_added DESC": "Recently added",
+        "track_number": "Número de pista",
+        "year": "Año de lanzamiento",
+        "position_desc": "Position (descending)",
         "album": "Disco",
         "artist": "Artista",
         "name": "Alfabeticamente",
         "name_desc": "Alfabeticamente (descendente)",
-        "track_number": "Número de pista",
-        "year": "Año de lanzamiento",
         "recent": "Recently added"
     },
     "state": {
