@@ -1,86 +1,25 @@
 <template>
   <section>
-    <v-toolbar variant="flat" color="transparent" style="height: 50px">
+    <v-toolbar variant="flat" color="transparent">
       <template #title>
         {{ $t('search') }}
       </template>
     </v-toolbar>
     <v-divider />
-    <v-text-field
-      id="searchInput"
-      v-model="search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('type_to_search')"
-      hide-details
-      variant="filled"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
-    <div>
-      <v-chip-group v-model="viewFilter" column style="margin-top: 15px; margin-left: 10px">
-        <v-chip v-for="item in viewFilters" :key="item" filter outlined>
-          {{ $t(item) }}
-        </v-chip>
-      </v-chip-group>
+    <v-text-field id="searchInput" v-model="search" clearable prepend-inner-icon="mdi-magnify"
+      :label="$t('type_to_search')" hide-details variant="filled" @focus="searchHasFocus = true"
+      @blur="searchHasFocus = false" />
 
-      <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate />
-
-      <!-- panel view -->
-      <v-row v-if="viewMode == 'panel'">
-        <v-col
-          v-for="item in filteredItems"
-          :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-        >
-          <PanelviewItem
-            :item="item"
-            :size="thumbSize"
-            :is-selected="false"
-            :show-checkboxes="false"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </v-col>
-      </v-row>
-
-      <!-- list view -->
-      <v-virtual-scroll v-if="viewMode == 'list'" :height="60" :items="filteredItems" style="height: 100%">
-        <template #default="{ item }">
-          <ListviewItem
-            :item="item"
-            :show-track-number="false"
-            :show-duration="true"
-            :show-library="false"
-            :show-menu="true"
-            :show-provider="true"
-            :show-checkboxes="false"
-            :is-selected="false"
-            :show-details="true"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </template>
-      </v-virtual-scroll>
-
-      <v-toolbar density="compact" variant="flat" color="transparent" height="45">
-        <span style="margin-left: 15px">{{ $t('items_total', [filteredItems.length]) }}</span>
-        <v-spacer />
-
-        <v-tooltip location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-              variant="plain"
-              @click="toggleViewMode()"
-            />
-          </template>
-          <span>{{ $t('tooltip.toggle_view_mode') }}</span>
-        </v-tooltip>
-      </v-toolbar>
-    </div>
+    <v-row v-for="rowSet in [ ['topresult', 'tracks'], ['artists', 'albums'], ['playlists', 'radio']]">
+      <v-col v-for="resultKey in rowSet.filter(x => filteredItems(x).length)">
+        <ItemsListing v-if="filteredItems(resultKey).length" 
+          :itemtype="`search.${resultKey}`" :path="`search.${search}`"
+          :show-provider="true" :show-favorites-only-filter="false" :show-select-button="false"
+          :show-refresh-button="false" :load-items="async (params) => { return filteredItems(resultKey) }"
+          :title="$t(resultKey)" :allow-key-hooks="false" :show-search-button="false" :limit="8" :infinite-scroll="false"
+          :sort-keys="['original']" />
+      </v-col>
+    </v-row>
   </section>
 </template>
 
@@ -88,66 +27,30 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useDisplay } from 'vuetify';
-import { SearchResults, type MediaItemType } from '../plugins/api/interfaces';
+import { SearchResults, type MediaItemType, BrowseFolder, MediaType } from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
-import ListviewItem from '../components/ListviewItem.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import PanelviewItem from '../components/PanelviewItem.vue';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
 import { eventbus } from '@/plugins/eventbus';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import { itemIsAvailable } from '@/helpers/contextmenu';
 
 export interface Props {
   initSearch?: string;
 }
 const compProps = defineProps<Props>();
 
-// global refs
-const router = useRouter();
-const { mobile } = useDisplay();
 
 // local refs
-const viewMode = ref('list');
-const viewFilter = ref(0);
 const search = ref('');
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
 const throttleId = ref();
 
-const viewFilters = ['topresult', 'artists', 'albums', 'tracks', 'playlists', 'radios'];
 
-// computed properties
-const thumbSize = computed(() => {
-  return mobile.value ? 140 : 150;
-});
-
-// methods
-
-const toggleViewMode = function () {
-  if (viewMode.value === 'panel') viewMode.value = 'list';
-  else viewMode.value = 'panel';
-  localStorage.setItem(`viewMode.search.${viewFilterStr.value}`, viewMode.value);
-};
-
-const onMenu = function (item: MediaItemType) {
-  eventbus.emit('playdialog', { items: [item], showContextMenuItems: true });
-};
-
-const onClick = function (mediaItem: MediaItemType) {
-  // mediaItem in the list is clicked
-
-  if (['artist', 'album', 'playlist'].includes(mediaItem.media_type) || !store.selectedPlayer?.available) {
-    router.push({
-      name: mediaItem.media_type,
-      params: {
-        itemId: mediaItem.item_id,
-        provider: mediaItem.provider,
-      },
-    });
-  } else {
-    eventbus.emit('playdialog', { items: [mediaItem], showContextMenuItems: false });
-  }
-};
 
 // watchers
 watch(
@@ -159,28 +62,6 @@ watch(
     }, 200);
   },
 );
-
-const panelViewItemResponsive = function (displaySize: number) {
-  if (displaySize < 500) {
-    return 2;
-  } else if (displaySize <= 500) {
-    return 3;
-  } else if (displaySize <= 700) {
-    return 4;
-  } else if (displaySize <= 1000) {
-    return 5;
-  } else if (displaySize <= 1200) {
-    return 6;
-  } else if (displaySize <= 1500) {
-    return 7;
-  } else if (displaySize <= 1700) {
-    return 8;
-  } else if (displaySize > 1700) {
-    return 9;
-  } else {
-    return 0;
-  }
-};
 
 const loadSearchResults = async function () {
   loading.value = true;
@@ -194,31 +75,27 @@ const loadSearchResults = async function () {
   loading.value = false;
 };
 
-const viewFilterStr = computed(() => {
-  return viewFilters[viewFilter.value];
-});
 
-const filteredItems = computed(() => {
+const filteredItems = function (itemType: string) {
   if (!searchResult.value) return [];
 
-  if (viewFilterStr.value == 'artists') {
+  if (itemType == 'artists') {
     return searchResult.value.artists;
   }
-  if (viewFilterStr.value == 'albums') {
+  if (itemType == 'albums') {
     return searchResult.value.albums;
   }
-  if (viewFilterStr.value == 'tracks') {
+  if (itemType == 'tracks') {
     return searchResult.value.tracks;
   }
-  if (viewFilterStr.value == 'playlists') {
+  if (itemType == 'playlists') {
     return searchResult.value.playlists;
   }
-  if (viewFilterStr.value == 'radios') {
+  if (itemType == 'radio') {
     return searchResult.value.radio;
   }
-  if (viewFilterStr.value == 'topresult') {
+  if (itemType == 'topresult') {
     const result: MediaItemType[] = [];
-
     for (const results of [
       searchResult.value.tracks,
       searchResult.value.artists,
@@ -236,29 +113,8 @@ const filteredItems = computed(() => {
     }
     return result;
   }
-
   return [];
-});
-
-watch(
-  () => viewFilterStr.value,
-  (val) => {
-    if (val) {
-      // get stored/default viewMode for this itemtype
-      const savedViewMode = localStorage.getItem(`viewMode.search.${viewFilterStr.value}`);
-      if (savedViewMode) {
-        viewMode.value = savedViewMode;
-      } else if (viewFilterStr.value == 'artists') {
-        viewMode.value = 'panel';
-      } else if (viewFilterStr.value == 'albums') {
-        viewMode.value = 'panel';
-      } else {
-        viewMode.value = 'list';
-      }
-    }
-  },
-  { immediate: true },
-);
+}
 
 onMounted(() => {
   if (compProps.initSearch) {
@@ -270,6 +126,7 @@ onMounted(() => {
     }
   }
 });
+
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {

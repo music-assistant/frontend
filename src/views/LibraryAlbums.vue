@@ -1,7 +1,6 @@
 <template>
   <ItemsListing
     itemtype="albums"
-    :items="items"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
@@ -21,7 +20,6 @@ import { MediaType, type Album, EventMessage, EventType } from '../plugins/api/i
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
-const items = ref<Album[]>([]);
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {

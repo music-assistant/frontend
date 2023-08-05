@@ -130,7 +130,8 @@
 
       <!-- panel view -->
       <v-row v-if="viewMode == 'panel'">
-        <v-col v-for="item in pagedItems" :key="item.uri" :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
+        <v-col v-for="item in pagedItems" :key="item.uri"
+          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`">
           <PanelviewItem :item="item" :is-selected="isSelected(item)" :show-checkboxes="showCheckboxes"
             :show-track-number="showTrackNumber" @select="onSelect" @menu="onMenu" @click="onClick" />
         </v-col>
@@ -149,7 +150,8 @@
       </v-virtual-scroll>
 
       <!-- inifinite scroll component -->
-      <InfiniteLoading @infinite="loadNextPage" />
+      <InfiniteLoading v-if="infiniteScroll" @infinite="loadNextPage" />
+      <v-btn v-else-if="(total || 0) > pagedItems.length" @click="loadNextPage" variant="plain">{{ $t('load_more_items') }}</v-btn>
 
       <!-- show alert if no item found -->
       <div v-if="!loading && pagedItems.length == 0">
@@ -235,6 +237,9 @@ export interface Props {
   loadPagedData?: (params: LoadDataParams) => Promise<PagedItems>;
   // loadItems callback is provided for flat non-paged listings
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  limit?: number
+  infiniteScroll?: boolean;
+  path?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name'],
@@ -251,9 +256,9 @@ const props = withDefaults(defineProps<Props>(), {
   showSelectButton: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
+  limit: 100,
+  infiniteScroll: true
 });
-
-const defaultLimit = 100;
 
 // global refs
 const router = useRouter();
@@ -446,16 +451,16 @@ const changeActiveProviderFilter = function (provider: string) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ($state: any) {
   if (pagedItems.value.length == 0) {
-    $state.loaded();
+    if ($state) $state.loaded();
     return;
   }
   if (total.value !== undefined && params.value.offset >= total.value) {
-    $state.loaded();
+    if ($state) $state.loaded();
     return;
   }
-  params.value.offset += defaultLimit;
+  params.value.offset += props.limit;
   loadData().then(() => {
-    $state.loaded();
+    if ($state) $state.loaded();
   });
 };
 
@@ -476,19 +481,26 @@ watch(
   },
 );
 watch(
-  () => props.itemtype,
+  () => props.path,
   () => {
     allItems.value = [];
     loadData(true);
   },
 );
+watch(
+  () => props.limit,
+  (newVal) => {
+    params.value.limit = newVal
+  },
+);
 
-const loadData = async function (clear = false, limit = defaultLimit, refresh = false) {
+const loadData = async function (clear = false, limit = props.limit, refresh = false) {
   if (clear || refresh) {
     params.value.offset = 0;
     newContentAvailable.value = false;
   }
   loading.value = true;
+  params.value.limit = props.limit;
   if (props.loadPagedData !== undefined) {
     // call server for paged listing
     const nextItems = await props.loadPagedData(params.value);
@@ -511,10 +523,10 @@ const loadData = async function (clear = false, limit = defaultLimit, refresh = 
     // filter
     const nextItems = getFilteredItems(allItems.value, params.value);
     if (params.value.offset) {
-        pagedItems.value.push(...nextItems);
-      } else {
-        pagedItems.value = nextItems;
-      }
+      pagedItems.value.push(...nextItems);
+    } else {
+      pagedItems.value = nextItems;
+    }
   }
   loading.value = false;
 };
@@ -667,7 +679,7 @@ const keyListener = function (e: KeyboardEvent) {
       if (total.value !== undefined && params.value.offset >= total.value) {
         break;
       }
-      params.value.offset += defaultLimit;
+      params.value.offset += props.limit;
       loadData();
     }
     selectedItems.value = pagedItems.value;

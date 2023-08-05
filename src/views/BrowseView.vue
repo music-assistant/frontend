@@ -1,7 +1,7 @@
 <template>
   <section>
     <ItemsListing
-      :itemtype="`browseitems.${path}`"
+      itemtype="browse"
       :show-provider="false"
       :show-library="false"
       :show-favorites-only-filter="false"
@@ -9,6 +9,7 @@
       :load-items="loadItems"
       :sort-keys="['original', 'name', 'name_desc']"
       :title="header"
+      :path="path"
       :allow-key-hooks="true"
     />
   </section>
