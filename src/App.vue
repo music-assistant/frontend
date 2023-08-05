@@ -37,6 +37,7 @@ import { store } from './plugins/store';
 import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
+import { Websocket } from 'websocket-ts';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -97,33 +98,6 @@ const curQueueItem = computed(() => {
   return undefined;
 });
 
-//functions
-function changeThemeColor() {
-  if (!curQueueItem.value) {
-    themeColor({
-      lightColor: '',
-      darkColor: '',
-    });
-  } else {
-    themeColor(store.coverImageColorCode);
-  }
-}
-
-// watchers
-watch(
-  () => activePlayerQueue.value?.display_name,
-  () => {
-    changeThemeColor();
-  },
-);
-
-watch(
-  () => store.coverImageColorCode,
-  () => {
-    changeThemeColor();
-  },
-);
-
 onMounted(async () => {
   // Set to previus settings
   let ip_storage = localStorage.getItem('mass_ip') || 'homeassistant.local';
@@ -153,8 +127,13 @@ onMounted(async () => {
     } else {
       systemTheme = 'light';
     }
-    theme.global.name.value = systemTheme;
     localStorage.setItem('systemTheme', systemTheme);
+  });
+
+  // Start app if stored config is valid
+  new Websocket(`ws://${ip.value}:${port.value}/ws`).addEventListener('open', (event) => {
+    start();
+    event.close();
   });
 });
 

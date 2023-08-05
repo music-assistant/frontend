@@ -163,6 +163,31 @@
             </td>
           </tr>
           <tr>
+            <td>Server IP / Hostname (Restart to apply)</td>
+            <td>
+              <v-text-field
+                v-model="ip"
+                variant="outlined"
+                label="IP / Hostname"
+                placeholder="homeassistant.local"
+                @change="ipConfig"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>Server Port (Restart to apply)</td>
+            <td>
+              <v-text-field
+                v-model="port"
+                variant="outlined"
+                type="number"
+                label="Port"
+                placeholder="8095"
+                @change="portConfig"
+              />
+            </td>
+          </tr>
+          <tr>
             <td>Check for updates</td>
             <td>
               <v-btn @click="checkForUpdates">Check for updates</v-btn>
@@ -197,6 +222,8 @@ const totalLibraryPlaylists = ref(0);
 const totalLibraryRadio = ref(0);
 const discordRPCEnabled = ref(false);
 const squeezeliteEnabled = ref(false);
+const port = ref(8095);
+const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
 
 const theme = useTheme();
@@ -208,6 +235,14 @@ const discordRpcConfig = () => {
 
 const squeezeliteConfig = () => {
   localStorage.setItem('squeezeliteEnabled', squeezeliteEnabled.value.toString());
+};
+
+const ipConfig = () => {
+  localStorage.setItem('mass_ip', ip.value.toString());
+};
+
+const portConfig = () => {
+  localStorage.setItem('mass_port', port.value.toString());
 };
 
 const themeSettingConfig = () => {
@@ -243,6 +278,8 @@ onMounted(async () => {
   discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
   squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
   themeSetting.value = localStorage.getItem('themeSetting') || 'system';
+  ip.value = localStorage.getItem('mass_ip') || 'homeassistant.local';
+  port.value = Number(localStorage.getItem('mass_port')) || 8095;
   themeSettingConfig();
 });
 </script>
