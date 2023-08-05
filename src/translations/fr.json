@@ -140,13 +140,16 @@
     "sort": {
         "duration": "Durée",
         "position": "Position",
-        "position_desc": "Position (descending)",
+        "position DESC": "Position (descending)",
         "provider": "Fournisseur",
-        "artist": "Artiste",
-        "name": "Alphabétiquement",
-        "name_desc": "Alphabétiquement (descendant)",
+        "sort_album": "Album",
+        "sort_artist": "Artiste",
+        "sort_name": "Alphabétiquement",
+        "sort_name DESC": "Alphabétiquement (descendant)",
+        "timestamp_added DESC": "Recently added",
         "track_number": "Numéro de piste",
         "year": "Année de sortie",
+        "recent": "Recently added"
     },
     "state": {
         "idle": "En attente",
