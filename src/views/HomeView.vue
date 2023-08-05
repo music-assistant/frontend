@@ -3,24 +3,33 @@
     <div v-for="widgetRow in widgetRows" :key="widgetRow.label">
       <v-divider />
       <div v-if="widgetRow.items.length" class="widget-row">
-        <v-toolbar color="transparent" @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
-          :style="widgetRow.path ? 'cursor: pointer' : ''">
+        <v-toolbar
+          color="transparent"
+          :style="widgetRow.path ? 'cursor: pointer' : ''"
+          @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
+        >
           <template #prepend><v-icon :icon="widgetRow.icon" style="margin-left: 15px" /></template>
           <template #title>{{ $t(widgetRow.label) }}</template>
-          <template #append v-if="widgetRow.path"><v-badge v-if="widgetRow.count" color="grey" :content="widgetRow.count"
-              inline /></template>
+          <template v-if="widgetRow.path" #append
+            ><v-badge v-if="widgetRow.count" color="grey" :content="widgetRow.count"
+          /></template>
         </v-toolbar>
         <v-slide-group :show-arrows="false">
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
-            <PanelviewItem :item="item" :show-checkboxes="false" :show-track-number="false" :is-selected="false"
-              style="height:160px;width:120px;margin:5px" @click="itemClicked" />
+            <PanelviewItem
+              :item="item"
+              :show-checkboxes="false"
+              :show-track-number="false"
+              :is-selected="false"
+              style="height: 160px; width: 120px; margin: 5px"
+              @click="itemClicked"
+            />
           </v-slide-group-item>
           <template #prev></template>
           <template #next></template>
         </v-slide-group>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -37,7 +46,7 @@ interface WidgetRow {
   label: string;
   icon: string;
   path?: string;
-  items: MediaItemType[],
+  items: MediaItemType[];
   count?: number;
 }
 
@@ -45,98 +54,99 @@ const widgetRows = ref<Record<string, WidgetRow>>({
   recently_played: {
     label: 'recently_played',
     icon: 'mdi-motion-play',
-    items: []
+    items: [],
   },
   artists: {
     label: 'artists',
     icon: 'mdi-account-music',
     path: '/artists',
-    items: []
+    items: [],
   },
   albums: {
     label: 'albums',
     icon: 'mdi-album',
     path: '/albums',
-    items: []
+    items: [],
   },
   playlists: {
     label: 'playlists',
     icon: 'mdi-playlist-music',
     path: '/playlists',
-    items: []
+    items: [],
   },
   tracks: {
     label: 'tracks',
     icon: 'mdi-file-music',
     path: '/tracks',
-    items: []
+    items: [],
   },
   radios: {
     label: 'radios',
     icon: 'mdi-radio',
     path: '/radios',
-    items: []
+    items: [],
   },
   browse: {
     label: 'browse',
     icon: 'mdi-folder',
     path: '/browse',
-    items: []
+    items: [],
   },
-
 });
 
 onMounted(async () => {
-
-  api.getRecentlyPlayedItems(20).then(items => {
+  api.getRecentlyPlayedItems(20).then((items) => {
     widgetRows.value.recently_played.items = items;
-  })
-  api.getLibraryArtists(undefined, undefined, 20, undefined, "RANDOM()").then(pagedItems => {
+  });
+  api.getLibraryArtists(undefined, undefined, 20, undefined, 'RANDOM()').then((pagedItems) => {
     widgetRows.value.artists.items = pagedItems.items;
     widgetRows.value.artists.count = pagedItems.total;
-  })
-  api.getLibraryAlbums(undefined, undefined, 20, undefined, "timestamp_added DESC").then(pagedItems => {
+  });
+  api.getLibraryAlbums(undefined, undefined, 20, undefined, 'timestamp_added DESC').then((pagedItems) => {
     widgetRows.value.albums.items = pagedItems.items;
     widgetRows.value.albums.count = pagedItems.total;
-  })
+  });
 
   // playlists widget = recent played playlists + recent added playlists
   api.getRecentlyPlayedItems(10, [MediaType.PLAYLIST]).then((playedItems) => {
     widgetRows.value.playlists.items = playedItems;
-    api.getLibraryPlaylists(undefined, undefined, 20, undefined, "timestamp_added DESC").then(recentItems => {
+    api.getLibraryPlaylists(undefined, undefined, 20, undefined, 'timestamp_added DESC').then((recentItems) => {
       widgetRows.value.playlists.count = recentItems.total;
-      const allNames = playedItems.map(function (x) { return x.name; });
+      const allNames = playedItems.map(function (x) {
+        return x.name;
+      });
       for (const recentItem of recentItems.items) {
         if (!allNames.includes(recentItem.name)) {
-          widgetRows.value.playlists.items.push(recentItem)
+          widgetRows.value.playlists.items.push(recentItem);
         }
       }
-    })
-  })
+    });
+  });
 
   // radios widget = recent played radios + recent added radios
   api.getRecentlyPlayedItems(10, [MediaType.RADIO]).then((playedItems) => {
     widgetRows.value.radios.items = playedItems;
-    api.getLibraryRadios(undefined, undefined, 20, undefined, "timestamp_added DESC").then(recentItems => {
+    api.getLibraryRadios(undefined, undefined, 20, undefined, 'timestamp_added DESC').then((recentItems) => {
       widgetRows.value.radios.count = recentItems.total;
-      const allNames = playedItems.map(function (x) { return x.name; });
+      const allNames = playedItems.map(function (x) {
+        return x.name;
+      });
       for (const recentItem of recentItems.items) {
         if (!allNames.includes(recentItem.name)) {
-          widgetRows.value.radios.items.push(recentItem)
+          widgetRows.value.radios.items.push(recentItem);
         }
       }
-    })
-  })
+    });
+  });
   // tracks widget
-  api.getLibraryTracks(undefined, undefined, 20, undefined, "timestamp_added DESC").then(pagedItems => {
+  api.getLibraryTracks(undefined, undefined, 20, undefined, 'timestamp_added DESC').then((pagedItems) => {
     widgetRows.value.tracks.items = pagedItems.items;
     widgetRows.value.tracks.count = pagedItems.total;
-  })
+  });
   // browse widget
   await api.browse('', (data: MediaItemType[]) => {
     widgetRows.value.browse.items.push(...data);
   });
-
 });
 
 const itemClicked = function (mediaItem: MediaItemType) {
@@ -160,9 +170,6 @@ const itemClicked = function (mediaItem: MediaItemType) {
     });
   }
 };
-
-
-
 </script>
 
 <style>

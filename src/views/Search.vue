@@ -6,18 +6,47 @@
       </template>
     </v-toolbar>
     <v-divider />
-    <v-text-field id="searchInput" v-model="search" clearable prepend-inner-icon="mdi-magnify"
-      :label="$t('type_to_search')" hide-details variant="filled" @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false" />
+    <v-text-field
+      id="searchInput"
+      v-model="search"
+      clearable
+      prepend-inner-icon="mdi-magnify"
+      :label="$t('type_to_search')"
+      hide-details
+      variant="filled"
+      @focus="searchHasFocus = true"
+      @blur="searchHasFocus = false"
+    />
 
-    <v-row v-for="rowSet in [ ['topresult', 'tracks'], ['artists', 'albums'], ['playlists', 'radio']]">
-      <v-col v-for="resultKey in rowSet.filter(x => filteredItems(x).length)" :key="resultKey">
-        <ItemsListing v-if="filteredItems(resultKey).length" 
-          :itemtype="`search.${resultKey}`" :path="`search.${search}`"
-          :show-provider="true" :show-favorites-only-filter="false" :show-select-button="false"
-          :show-refresh-button="false" :load-items="async (params) => { return filteredItems(resultKey) }"
-          :title="$t(resultKey)" :allow-key-hooks="false" :show-search-button="false" :limit="8" :infinite-scroll="false"
-          :sort-keys="['original']" />
+    <v-row
+      v-for="rowSet in [
+        ['topresult', 'tracks'],
+        ['artists', 'albums'],
+        ['playlists', 'radio'],
+      ]"
+      :key="rowSet[0] + rowSet[1]"
+    >
+      <v-col v-for="resultKey in rowSet.filter((x) => filteredItems(x).length)" :key="resultKey">
+        <ItemsListing
+          v-if="filteredItems(resultKey).length"
+          :itemtype="`search.${resultKey}`"
+          :path="`search.${search}`"
+          :show-provider="true"
+          :show-favorites-only-filter="false"
+          :show-select-button="false"
+          :show-refresh-button="false"
+          :load-items="
+            async (params) => {
+              return filteredItems(resultKey);
+            }
+          "
+          :title="$t(resultKey)"
+          :allow-key-hooks="false"
+          :show-search-button="false"
+          :limit="8"
+          :infinite-scroll="false"
+          :sort-keys="['original']"
+        />
       </v-col>
     </v-row>
   </section>
@@ -42,15 +71,12 @@ export interface Props {
 }
 const compProps = defineProps<Props>();
 
-
 // local refs
 const search = ref('');
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
 const throttleId = ref();
-
-
 
 // watchers
 watch(
@@ -74,7 +100,6 @@ const loadSearchResults = async function () {
   }
   loading.value = false;
 };
-
 
 const filteredItems = function (itemType: string) {
   if (!searchResult.value) return [];
@@ -114,7 +139,7 @@ const filteredItems = function (itemType: string) {
     return result;
   }
   return [];
-}
+};
 
 onMounted(() => {
   if (compProps.initSearch) {
@@ -126,7 +151,6 @@ onMounted(() => {
     }
   }
 });
-
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {

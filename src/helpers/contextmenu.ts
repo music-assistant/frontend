@@ -88,7 +88,10 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
   playMenuItems.push({
     label: 'play_now',
     action: () => {
-      api.playMedia(items.map((x) => x.uri), queueOptPlay);
+      api.playMedia(
+        items.map((x) => x.uri),
+        queueOptPlay,
+      );
     },
     icon: 'mdi-play-circle-outline',
     labelArgs: [],
@@ -99,7 +102,11 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
     playMenuItems.push({
       label: 'play_radio',
       action: () => {
-        api.playMedia(items.map((x) => x.uri), queueOptPlay, true);
+        api.playMedia(
+          items.map((x) => x.uri),
+          queueOptPlay,
+          true,
+        );
       },
       icon: 'mdi-radio-tower',
       labelArgs: [],
@@ -111,7 +118,10 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
     playMenuItems.push({
       label: 'play_next',
       action: () => {
-        api.playMedia(items.map((x) => x.uri), queueOptNext);
+        api.playMedia(
+          items.map((x) => x.uri),
+          queueOptNext,
+        );
       },
       icon: 'mdi-skip-next-circle-outline',
       labelArgs: [],
@@ -121,7 +131,10 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
   playMenuItems.push({
     label: 'add_queue',
     action: () => {
-      api.playMedia(items.map((x) => x.uri), QueueOption.ADD);
+      api.playMedia(
+        items.map((x) => x.uri),
+        QueueOption.ADD,
+      );
     },
     icon: 'mdi-playlist-plus',
     labelArgs: [],
