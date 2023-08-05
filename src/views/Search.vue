@@ -11,7 +11,7 @@
       @blur="searchHasFocus = false" />
 
     <v-row v-for="rowSet in [ ['topresult', 'tracks'], ['artists', 'albums'], ['playlists', 'radio']]">
-      <v-col v-for="resultKey in rowSet.filter(x => filteredItems(x).length)">
+      <v-col v-for="resultKey in rowSet.filter(x => filteredItems(x).length)" :key="resultKey">
         <ItemsListing v-if="filteredItems(resultKey).length" 
           :itemtype="`search.${resultKey}`" :path="`search.${search}`"
           :show-provider="true" :show-favorites-only-filter="false" :show-select-button="false"
