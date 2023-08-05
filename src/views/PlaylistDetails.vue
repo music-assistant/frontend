@@ -9,8 +9,8 @@
       :show-library="false"
       :show-favorites-only-filter="false"
       :show-track-number="false"
-      :load-data="loadPlaylistTracks"
-      :sort-keys="['position', 'position DESC', 'sort_name', 'sort_artist', 'sort_album']"
+      :load-items="loadPlaylistTracks"
+      :sort-keys="['position', 'position_desc', 'name', 'artist', 'album', 'duration', 'duration_desc']"
       :update-available="updateAvailable"
       :title="$t('playlist_tracks')"
       :allow-key-hooks="true"
@@ -22,7 +22,6 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import { filteredItems } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { EventType, type Playlist, type EventMessage, type MediaItemType, Track } from '../plugins/api/interfaces';
@@ -70,11 +69,11 @@ const loadPlaylistTracks = async function (params: LoadDataParams) {
     (data: Track[]) => {
       playlistTracks.push(...data);
     },
-    params.refresh,
+    params.refresh && !updateAvailable.value,
   );
   // prevent race condition with a short sleep
-  if (params.refresh) await sleep(1000);
+  if (params.refresh) await sleep(100);
   updateAvailable.value = false;
-  return filteredItems(playlistTracks, params);
+  return playlistTracks;
 };
 </script>

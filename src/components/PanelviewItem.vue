@@ -25,7 +25,11 @@
 
     <ListItem class="panel-item-details" style="padding-top: 10px !important">
       <v-list-item-title class="line-clamp-1 panel-item-details">
-        {{ item.name }} {{ 'version' in item && item.version ? `- ${item.version}` : '' }}
+        <span v-if="item.media_type == MediaType.FOLDER">
+          <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
+        </span>
+        <span v-else>{{ item.name }}</span>
+        <span v-if="'version' in item && item.version"> - {{ item.version }}</span>
       </v-list-item-title>
       <v-list-item-subtitle v-if="'artists' in item && item.artists" class="line-clamp-1 panel-item-details">
         {{ getArtistsString(item.artists, 1) }}
@@ -33,8 +37,11 @@
       <v-list-item-subtitle v-else-if="'owner' in item && item.owner" class="line-clamp-1 panel-item-details">
         {{ item.owner }}
       </v-list-item-subtitle>
+      <v-list-item-subtitle v-else-if="showMediaType" class="line-clamp-1 panel-item-details">
+        {{ $t(item.media_type) }}
+      </v-list-item-subtitle>
 
-      <v-item-group v-if="item && item.media_type === 'track'" style="min-height: 22px; padding-top: 5px">
+      <v-item-group v-if="item && item.media_type === 'track' && 'metadata' in item" style="min-height: 22px; padding-top: 5px">
         <v-item>
           <v-icon v-if="parseBool(item.metadata.explicit || false)" icon="mdi-alpha-e-box" />
         </v-item>
@@ -67,8 +74,8 @@
 import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 import ListItem from '@/components/mods/ListItem.vue';
-import { ContentType, type MediaItem, type MediaItemType } from '../plugins/api/interfaces';
-import { getArtistsString, parseBool } from '@/helpers/utils';
+import { BrowseFolder, ContentType, type MediaItem, type MediaItemType, MediaType } from '../plugins/api/interfaces';
+import { getArtistsString, getBrowseFolderName, parseBool } from '@/helpers/utils';
 import { iconHiRes } from './QualityDetailsBtn.vue';
 
 // properties
@@ -76,13 +83,15 @@ export interface Props {
   item: MediaItemType;
   size?: number;
   isSelected: boolean;
-  showCheckboxes: boolean;
-  showTrackNumber: boolean;
+  showCheckboxes?: boolean;
+  showTrackNumber?: boolean;
+  showMediaType?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
   showTrackNumber: true,
+  showMediaType: false
 });
 
 // refs
@@ -119,6 +128,7 @@ const emit = defineEmits<{
   height: 100%;
   padding: 10px;
   border: none;
+  border-style: none !important;
 }
 
 .panel-item-checkbox {

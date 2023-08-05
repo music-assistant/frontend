@@ -148,7 +148,8 @@
         "sort_name DESC": "Alphabétiquement (descendant)",
         "timestamp_added DESC": "Recently added",
         "track_number": "Numéro de piste",
-        "year": "Année de sortie"
+        "year": "Année de sortie",
+        "recent": "Recently added"
     },
     "state": {
         "idle": "En attente",

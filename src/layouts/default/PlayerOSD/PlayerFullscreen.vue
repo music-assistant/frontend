@@ -145,58 +145,56 @@
         <div class="fullscreen-row" style="margin: 0 10px">
           <PlayerTimeline
             :is-progress-bar="false"
-            :color="
-              $vuetify.theme.current.dark ? store.coverImageColorCode.lightColor : store.coverImageColorCode.darkColor
-            "
+            :color="$vuetify.theme.current.dark ? props.colorPalette.lightColor : props.colorPalette.darkColor"
           />
         </div>
         <div v-if="false">
           <div
             style="height: 50px; width: 50px"
             :style="{
-              background: `${store.coverImageColorCode[0]}`,
+              background: `${props.colorPalette[0]}`,
             }"
           ></div>
-          <a style="color: #000"> {{ store.coverImageColorCode[0] }}</a>
+          <a style="color: #000"> {{ props.colorPalette[0] }}</a>
           <div
             style="height: 50px; width: 50px"
             :style="{
-              background: `${store.coverImageColorCode[1]}`,
+              background: `${props.colorPalette[1]}`,
             }"
           ></div>
-          <a style="color: #000"> {{ store.coverImageColorCode[1] }}</a>
+          <a style="color: #000"> {{ props.colorPalette[1] }}</a>
           <div
             style="height: 50px; width: 50px"
             :style="{
-              background: `${store.coverImageColorCode[2]}`,
+              background: `${props.colorPalette[2]}`,
             }"
           ></div>
-          <a style="color: #000"> {{ store.coverImageColorCode[2] }}</a>
+          <a style="color: #000"> {{ props.colorPalette[2] }}</a>
           <div
             style="height: 50px; width: 50px"
             :style="{
-              background: `${store.coverImageColorCode[3]}`,
+              background: `${props.colorPalette[3]}`,
             }"
           ></div>
-          <a style="color: #000"> {{ store.coverImageColorCode[3] }}</a>
+          <a style="color: #000"> {{ props.colorPalette[3] }}</a>
           <div
             style="height: 50px; width: 50px"
             :style="{
-              background: `${store.coverImageColorCode[4]}`,
+              background: `${props.colorPalette[4]}`,
             }"
           ></div>
-          <a style="color: #000"> {{ store.coverImageColorCode[4] }}</a>
+          <a style="color: #000"> {{ props.colorPalette[4] }}</a>
           <div
             style="height: 50px; width: 50px"
             :style="{
-              background: `${store.coverImageColorCode.darkColor}`,
+              background: `${props.colorPalette.darkColor}`,
             }"
           ></div>
           <a style="color: #000"> DarkColor </a>
           <div
             style="height: 50px; width: 50px"
             :style="{
-              background: `${store.coverImageColorCode.lightColor}`,
+              background: `${props.colorPalette.lightColor}`,
             }"
           ></div>
           <a style="color: #000"> LightColor </a>
@@ -279,11 +277,7 @@
               <v-badge
                 v-if="curGroupPlayers && curGroupPlayers.length > 0"
                 :content="store.selectedPlayer?.group_childs.length"
-                :color="
-                  $vuetify.theme.current.dark
-                    ? store.coverImageColorCode.lightColor
-                    : store.coverImageColorCode.darkColor
-                "
+                :color="$vuetify.theme.current.dark ? props.colorPalette.lightColor : props.colorPalette.darkColor"
               >
                 <v-icon :size="30">mdi-speaker</v-icon>
               </v-badge>
@@ -329,11 +323,14 @@ import PlayerControls from './PlayerControls.vue';
 import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
 import router from '@/plugins/router';
 import Flicking from '@egjs/vue3-flicking';
-import { darkenBrightColors } from '@/helpers/utils';
+import { ColorCoverPalette, darkenBrightColors } from '@/helpers/utils';
 
-const coverImageColorCode = ref(
-  vuetify.theme.current.value.dark ? store.coverImageColorCode.darkColor : store.coverImageColorCode.lightColor,
-);
+interface Props {
+  colorPalette: ColorCoverPalette;
+}
+const props = defineProps<Props>();
+
+const coverImageColorCode = ref<string>('');
 // Local refs
 const fullTrackDetails = ref<Track>();
 
@@ -398,7 +395,7 @@ watch(
 );
 
 watch(
-  () => store.coverImageColorCode,
+  () => props.colorPalette,
   (result) => {
     if (!result.darkColor || !result.lightColor) {
       coverImageColorCode.value = vuetify.theme.current.value.dark ? '#000' : '#fff';

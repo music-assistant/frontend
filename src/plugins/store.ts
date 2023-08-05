@@ -1,19 +1,13 @@
-import type { Player, QueueItem } from './api/interfaces';
+import type { Player } from './api/interfaces';
 import { reactive } from 'vue';
 import type { LocationQuery, RouteParams, RouteMeta } from 'vue-router';
 
-import type { ContextMenuItem } from '@/helpers/contextmenu';
-import { ColorCoverPalette } from '@/helpers/utils';
-
 interface Store {
   selectedPlayer?: Player;
-  currentItemType?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
-  sizeNavigationMenu: number;
+  navigationMenuSize: number;
   showFullscreenPlayer: boolean;
-  coverImageColorCode: ColorCoverPalette;
-  alwaysShowMenuButton: boolean;
   apiInitialized: boolean;
   apiBaseUrl: string;
   dialogActive: boolean;
@@ -28,22 +22,10 @@ interface Store {
 
 export const store: Store = reactive({
   selectedPlayer: undefined,
-  currentItemType: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
-  sizeNavigationMenu: 300,
+  navigationMenuSize: 300,
   showFullscreenPlayer: false,
-  coverImageColorCode: {
-    '0': '',
-    '1': '',
-    '2': '',
-    '3': '',
-    '4': '',
-    '5': '',
-    lightColor: '',
-    darkColor: '',
-  },
-  alwaysShowMenuButton: false,
   apiInitialized: false,
   apiBaseUrl: '',
   dialogActive: false,

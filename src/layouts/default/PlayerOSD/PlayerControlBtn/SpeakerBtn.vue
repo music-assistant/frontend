@@ -6,16 +6,12 @@
     :icon="getBreakpointValue('bp6') ? false : true"
     @click="store.showPlayersMenu = true"
   >
-    <v-badge
-      v-if="store.selectedPlayer?.group_childs.length"
-      size="small"
-      :content="curGroupPlayers"
-    >
+    <v-badge v-if="store.selectedPlayer?.group_childs.length" size="small" :content="curGroupPlayers">
       <v-icon :color="props.color ? color : ''" :size="24">mdi-speaker-multiple</v-icon>
     </v-badge>
     <v-icon v-else :color="props.color ? color : ''" :size="24">mdi-speaker</v-icon>
     <span v-if="activePlayerQueue && getBreakpointValue('bp6')" class="line-clamp-1 no_transform">
-      {{ truncateString(activePlayerQueue?.display_name, 8) }}
+      {{ truncateString(activePlayerQueue?.display_name, getBreakpointValue('bp7') ? 16 : 8) }}
     </span>
   </Button>
 </template>
@@ -51,7 +47,7 @@ const curGroupPlayers = computed(() => {
   for (const groupChildId of store.selectedPlayer.group_childs) {
     const volumeChild = api?.players[groupChildId];
     if (volumeChild && volumeChild.available && volumeChild.powered) {
-      count ++;
+      count++;
     }
   }
   return count;
@@ -59,7 +55,6 @@ const curGroupPlayers = computed(() => {
 </script>
 
 <style>
-
 .no_transform {
   text-transform: none;
 }

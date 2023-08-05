@@ -11,7 +11,9 @@
         "compilation": "Compilation",
         "ep": "EP",
         "single": "Single",
-        "unknown": "Unknown album type"
+        "unknown": "Unknown album type",
+        "audiobook": "Audiobook",
+        "podcast": "Podcast"
     },
     "albums": "Albums",
     "appears_on": "Appears on",
@@ -165,7 +167,16 @@
         "sort_name DESC": "Alphabetically (descending)",
         "timestamp_added DESC": "Recently added",
         "track_number": "Track number",
-        "year": "Release year"
+        "year": "Release year",
+        "position_desc": "Position (descending)",
+        "album": "Album",
+        "artist": "Artist",
+        "name": "Alphabetically",
+        "name_desc": "Alphabetically (descending)",
+        "recent": "Recently added",
+        "year_desc": "Release year (descending)",
+        "duration_desc": "Duration (descending)",
+        "original": "Original"
     },
     "state": {
         "idle": "idle",
@@ -194,7 +205,7 @@
         "open_provider_link": "Open this item on the provider's website",
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
-        "show_menu": "Show/hide menu"
+        "show_menu": "Show\/hide menu"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -213,5 +224,11 @@
     "media_details": "Media details",
     "mapped_providers": "Provider details",
     "item_in_library": "This item is available in the library",
-    "back": "Back"
+    "back": "Back",
+    "recently_played": "Recently played",
+    "radiobrowser_by_popularity": "By popularity",
+    "radiobrowser_by_country": "By country",
+    "radiobrowser_by_tag": "By tag",
+    "load_more_items": "Load more items...",
+    "radio": "Radio"
 }

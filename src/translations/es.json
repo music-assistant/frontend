@@ -148,7 +148,13 @@
         "sort_name DESC": "Alfabeticamente (descendente)",
         "timestamp_added DESC": "Recently added",
         "track_number": "Número de pista",
-        "year": "Año de lanzamiento"
+        "year": "Año de lanzamiento",
+        "position_desc": "Position (descending)",
+        "album": "Disco",
+        "artist": "Artista",
+        "name": "Alfabeticamente",
+        "name_desc": "Alfabeticamente (descendente)",
+        "recent": "Recently added"
     },
     "state": {
         "idle": "inactivo",

@@ -1,74 +1,49 @@
 <template>
   <!-- players side menu -->
-  <v-navigation-drawer
-    v-model="store.showPlayersMenu"
-    location="right"
-    app
-    clipped
-    temporary
-    touchless
-    width="275"
-    style="z-index: 9999"
-  >
+  <v-navigation-drawer v-model="store.showPlayersMenu" location="right" app clipped temporary touchless width="290"
+    style="z-index: 9999">
     <!-- heading with Players as title-->
     <v-card-title class="headline">
       <b>{{ $t('players') }}</b>
     </v-card-title>
 
     <!-- close button in the top right (accessibility reasons)-->
-    <v-btn
-      variant="plain"
-      style="position: absolute; right: -10px; top: 0px"
-      icon="mdi-close"
-      dark
-      @click="store.showPlayersMenu = !store.showPlayersMenu"
-    />
+    <v-btn variant="plain" style="position: absolute; right: -10px; top: 0px" icon="mdi-close" dark
+      @click="store.showPlayersMenu = !store.showPlayersMenu" />
     <v-divider />
 
     <!-- collapsable player rows-->
     <v-expansion-panels v-model="panelItem" focusable accordion flat>
-      <v-expansion-panel
-        v-for="player in sortedPlayers"
-        :id="player.player_id"
-        :key="player.player_id"
-        :disabled="!player.available"
-        flat
-      >
-        <v-expansion-panel-title
-          class="playerrow"
+      <v-expansion-panel v-for="player in sortedPlayers" :id="player.player_id" :key="player.player_id"
+        :disabled="!player.available" flat>
+        <v-expansion-panel-title class="playerrow"
           :style="store.selectedPlayer?.player_id == player.player_id ? 'padding:0;' : 'padding:0'"
-          expand-icon="mdi-chevron-down"
-          collapse-icon="mdi-chevron-up"
-          @click="
+          expand-icon="mdi-chevron-down" collapse-icon="mdi-chevron-up" @click="
             store.selectedPlayer = player;
-            scrollToTop(player.player_id);
-          "
-        >
+          scrollToTop(player.player_id);
+          ">
           <ListItem>
             <template #prepend>
-              <v-icon
-                size="50"
-                :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
-                color="primary"
-              />
+              <v-icon size="50" :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
+                color="primary" />
             </template>
             <template #title>
               <div>
-                <b>{{ truncateString(getPlayerName(player), 18) }}</b>
+                <b>{{ truncateString(getPlayerName(player), 20) }}</b>
               </div>
             </template>
             <template #subtitle>
-              <div
-                v-if="player.active_source != player.player_id && api.queues[player.active_source]"
-                class="text-body-2"
-                style="line-height: 1em"
-              >
-                {{ $t('state.' + api.queues[player.active_source].state) }} ({{
+              <div v-if="!player.powered" class="text-body-2" style="line-height: 1em">
+                {{ $t('state.off') }}
+              </div>
+              <div v-else-if="player.active_source != player.player_id && api.queues[player.active_source]" class="text-body-2"
+                style="line-height: 1em">
+                {{ $t('state.' + player.state) }} ({{
                   api.queues[player.active_source].display_name
                 }})
               </div>
               <div v-else class="text-body-2" style="line-height: 1em">
-                {{ player.state }}
+                {{ $t('state.' + player.state) }}
               </div>
             </template>
           </ListItem>
@@ -218,9 +193,10 @@ div.v-expansion-panel-text__wrapper {
 }
 
 div.v-expansion-panel--active:not(:first-child),
-.v-expansion-panel--active + .v-expansion-panel {
+.v-expansion-panel--active+.v-expansion-panel {
   margin-top: 0px;
 }
+
 div.v-expansion-panel__shadow {
   box-shadow: none;
 }

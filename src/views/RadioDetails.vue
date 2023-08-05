@@ -10,7 +10,7 @@
       :show-library="false"
       :show-radio-number="false"
       :show-duration="false"
-      :load-data="loadRadioVersions"
+      :load-items="loadRadioVersions"
       :sort-keys="['provider', 'sort_name']"
       :title="$t('other_versions')"
       :hide-on-empty="true"
@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams, filteredItems } from '../components/ItemsListing.vue';
+import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { ref } from 'vue';
 import type { Radio } from '../plugins/api/interfaces';
@@ -61,7 +61,6 @@ const loadRadioVersions = async function (params: LoadDataParams) {
     const radioVersions = await api.getRadioVersions(providerMapping.item_id, providerMapping.provider_instance);
     allVersions.push(...radioVersions);
   }
-
-  return filteredItems(allVersions, params);
+  return allVersions;
 };
 </script>

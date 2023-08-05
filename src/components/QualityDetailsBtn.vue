@@ -111,6 +111,7 @@ export const iconHiRes = new URL('@/assets/hires.png', import.meta.url).href;
 
 export const imgCoverDark = new URL('@/assets/cover_dark.png', import.meta.url).href;
 export const imgCoverLight = new URL('@/assets/cover_light.png', import.meta.url).href;
+export const iconFolder = new URL('@/assets/folder.svg', import.meta.url).href;
 </script>
 
 <style>

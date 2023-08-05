@@ -5,9 +5,9 @@
     :show-duration="false"
     :show-provider="true"
     :show-favorites-only-filter="true"
-    :load-data="loadItems"
+    :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="['sort_name', 'timestamp_added DESC']"
+    :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
     :title="getBreakpointValue('bp4') ? $t('playlists') : ''"
     :allow-key-hooks="true"
@@ -31,8 +31,13 @@ const items = ref<Playlist[]>([]);
 const updateAvailable = ref(false);
 const contextMenuItems = ref<ContextMenuItem[]>([]);
 
+const sortKeys: Record<string, string> = {
+  name: 'sort_name',
+  recent: 'timestamp_added DESC',
+};
+
 const loadItems = async function (params: LoadDataParams) {
-  if (params.refresh) {
+  if (params.refresh && !updateAvailable.value) {
     api.startSync([MediaType.PLAYLIST]);
     // prevent race condition with a short sleep
     await sleep(250);
@@ -49,7 +54,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    sortKeys[params.sortBy],
   );
 };
 

@@ -66,6 +66,7 @@
           <!-- sync button -->
           <div
             v-if="
+              player.type != PlayerType.GROUP &&
               !childPlayer.synced_to &&
               !childPlayer.group_childs.length &&
               Object.values(api.players).filter((x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id))
@@ -93,7 +94,7 @@
             </v-menu>
           </div>
           <!-- unsync button -->
-          <div v-if="childPlayer.synced_to" class="syncbtn">
+          <div v-if="player.type != PlayerType.GROUP && childPlayer.synced_to" class="syncbtn">
             <Button icon @click="api.playerCommandUnSync(childPlayer.player_id)">
               <v-icon>mdi-link-variant-off</v-icon>
             </Button>

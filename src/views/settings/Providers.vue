@@ -160,7 +160,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount, watch } from 'vue';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { api } from '@/plugins/api';
 import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';

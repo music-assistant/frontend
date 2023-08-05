@@ -7,7 +7,7 @@
   <v-dialog
     v-model="show"
     :fullscreen="$vuetify.display.mobile"
-    min-height="80%"
+    transition="dialog-bottom-transition"
     :scrim="true"
     @update:model-value="
       (v) => {

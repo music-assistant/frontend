@@ -23,10 +23,10 @@
 <script setup lang="ts">
 import { watch, ref, computed } from 'vue';
 import type { ItemMapping, MediaItemImage, MediaItemType, QueueItem } from '../plugins/api/interfaces';
-import { ImageType } from '../plugins/api/interfaces';
+import { ImageType, MediaType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { useTheme } from 'vuetify';
-import { imgCoverDark, imgCoverLight } from '@/components/QualityDetailsBtn.vue';
+import { imgCoverDark, imgCoverLight, iconFolder } from '@/components/QualityDetailsBtn.vue';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -56,10 +56,11 @@ const theme = useTheme();
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
+  if (props.item && 'media_type' in props.item && props.item.media_type == MediaType.FOLDER) return iconFolder;
   if (!props.item) return '';
-  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize.value)
+  if (!props.item.name) return '';
+  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize.value);
 });
-
 
 const thumbSize = computed(() => {
   if (typeof props.size == 'number') return props.size;
@@ -87,18 +88,12 @@ watch(
 <script lang="ts">
 //// utility functions for images
 
-export const getAvatarImage = function (name: string, dark = false, size = 256) : string {
+export const getAvatarImage = function (name: string, dark = false, size = 256): string {
   // get url to avatar image for a string or sentence
   if (dark)
-    return `https://ui-avatars.com/api/?name=${name}&size=${
-      size || 256
-    }&bold=true&background=1d1d1d&color=383838`;
-  else
-    return `https://ui-avatars.com/api/?name=${name}&size=${
-      size || 256
-    }&bold=true&background=a0a0a0&color=cccccc`;
-
-}
+    return `https://ui-avatars.com/api/?name=${name}&size=${size || 256}&bold=true&background=1d1d1d&color=383838`;
+  else return `https://ui-avatars.com/api/?name=${name}&size=${size || 256}&bold=true&background=a0a0a0&color=cccccc`;
+};
 
 export const getMediaItemImage = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
@@ -107,14 +102,16 @@ export const getMediaItemImage = function (
 ): MediaItemImage | undefined {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
+  // handle image in queueitem
   if ('image' in mediaItem && mediaItem.image) return mediaItem.image;
+  // handle regular image within mediaitem
   if ('metadata' in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
       if (img.provider == 'http' && !includeFileBased) continue;
       if (img.type == type) return img;
     }
   }
-  // retry with album of track
+  // prefer album image in case of tracks
   if (
     'album' in mediaItem &&
     mediaItem.album &&
@@ -161,7 +158,7 @@ export const getImageThumbForItem = function (
   let imageUrl = '';
   // find image in mediaitem
   const img = getMediaItemImage(mediaItem, type, true);
-  if (!img) return undefined;
+  if (!img || !img.path) return undefined;
   if (img.provider !== 'url') {
     // use imageproxy for embedded images
     if (!api.providers[img.provider]?.available && img.provider != 'file') return undefined;

@@ -4,12 +4,13 @@
     :items="items"
     :show-provider="false"
     :show-favorites-only-filter="true"
-    :load-data="loadItems"
+    :load-paged-data="loadItems"
     :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
     :title="getBreakpointValue('bp4') ? $t('artists') : ''"
     :allow-key-hooks="true"
     :show-search-button="true"
+    :sort-keys="Object.keys(sortKeys)"
   />
 </template>
 
@@ -24,8 +25,13 @@ import { getBreakpointValue } from '@/plugins/breakpoint';
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
+const sortKeys: Record<string, string> = {
+  name: 'sort_name',
+  recent: 'timestamp_added DESC',
+};
+
 const loadItems = async function (params: LoadDataParams) {
-  if (params.refresh) {
+  if (params.refresh && !updateAvailable.value) {
     api.startSync([MediaType.ARTIST]);
     // prevent race condition with a short sleep
     await sleep(250);
@@ -42,7 +48,8 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    sortKeys[params.sortBy],
+    params.albumArtistsFilter,
   );
 };
 

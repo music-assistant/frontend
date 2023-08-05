@@ -11,7 +11,9 @@
         "compilation": "Compilatie",
         "ep": "EP",
         "single": "Single",
-        "unknown": "Onbekend album type"
+        "unknown": "Onbekend album type",
+        "audiobook": "Luisterboek",
+        "podcast": "Podcast"
     },
     "albums": "Albums",
     "appears_on": "Appears on",
@@ -158,7 +160,17 @@
         "sort_name DESC": "Alfabetisch (omgekeerd)",
         "timestamp_added DESC": "Recently added",
         "track_number": "Tracknummer",
-        "year": "Verschijningsdatum\/jaar"
+        "year": "Verschijningsdatum\/jaar",
+        "position_desc": "Positie (aflopend)",
+        "album": "Album",
+        "artist": "Artiest",
+        "name": "Alfabetisch",
+        "name_desc": "Alfabetisch (aflopend)",
+        "recent": "Recent toegevoegd",
+        "year_desc": "Jaar van uitgave (aflopend)",
+        "duration_desc": "Duur (aflopend)",
+        "original": "Origineel",
+        "none": "Geen"
     },
     "state": {
         "idle": "gestopt",
@@ -185,7 +197,9 @@
         "filter_favorites": "Het filter in\/uitschakelen om enkel favorieten te tonen",
         "favorite": "Favoriet",
         "open_provider_link": "Open dit item op de website van de provider",
-        "collapse_expand": "lijst in\/uitklappen"
+        "collapse_expand": "lijst in\/uitklappen",
+        "back": "Terug",
+        "show_menu": "Toon of verberg menu"
     },
     "topresult": "Top resultaat",
     "track": "Nummer",
@@ -197,11 +211,17 @@
     "currently_playing": "Speelt nu af",
     "favorites_add": "Voeg toe aan favorieten",
     "favorites_remove": "Verwijder uit favorieten",
-    "confirm_library_remove": "Weet je zeker dat je dit item wilt verwijderen uit de bibliotheek? Eventuele items die afhankelijk zijn van dit item zullen ook worden verwijderd. Indien dit een lokaal bestand betreft, kan het weer terugkeren in de volgende sync, tenzij je het bestand zelf ook verwiderd.",
+    "confirm_library_remove": "Weet je zeker dat je dit item wilt verwijderen uit de bibliotheek? Eventuele items die afhankelijk zijn van dit item zullen ook worden verwijderd. Als dit een lokaal bestand betreft, kan het weer terugkeren in de volgende sync, tenzij je het bestand zelf ook verwijderd.",
     "check_item_on_provider": "Bekijk {0} op {1}",
     "check_item_in_library": "Bekijk {0} in de bibliotheek",
     "media_details": "Media details",
     "mapped_providers": "Provider details",
     "item_in_library": "Dit item is beschikbaar in de bibliotheek",
-    "back": "Terug"
+    "back": "Terug",
+    "recently_played": "Onlangs afgespeeld",
+    "radiobrowser_by_popularity": "Op populariteit",
+    "radiobrowser_by_country": "Per land",
+    "radiobrowser_by_tag": "Op onderwerp",
+    "load_more_items": "Meer items laden...",
+    "radio": "Radio"
 }
