@@ -37,7 +37,7 @@ import { store } from './plugins/store';
 import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
-import { Websocket } from 'websocket-ts';
+import { WebsocketBuilder } from 'websocket-ts';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -131,9 +131,9 @@ onMounted(async () => {
   });
 
   // Start app if stored config is valid
-  new Websocket(`ws://${ip.value}:${port.value}/ws`).addEventListener('open', (event) => {
+  new WebsocketBuilder(`ws://${ip.value}:${port.value}/ws`).onOpen((i) => {
     start();
-    event.close();
+    i.close();
   });
 });
 
