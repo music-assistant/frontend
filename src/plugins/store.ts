@@ -11,13 +11,8 @@ interface Store {
   apiInitialized: boolean;
   apiBaseUrl: string;
   dialogActive: boolean;
-  prevRoutes: Array<{
-    name: string;
-    path: string;
-    params: RouteParams;
-    query: LocationQuery;
-    meta: RouteMeta;
-  }>;
+  prevScrollPos?: number;
+  prevScrollName?: string;
 }
 
 export const store: Store = reactive({
@@ -29,5 +24,6 @@ export const store: Store = reactive({
   apiInitialized: false,
   apiBaseUrl: '',
   dialogActive: false,
-  prevRoutes: [],
+  prevScrollPos: undefined,
+  prevScrollName: undefined,
 });

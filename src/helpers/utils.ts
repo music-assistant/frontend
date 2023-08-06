@@ -315,3 +315,29 @@ export function getValueFromSources(isAvailabe: any, sources: string | any[]) {
 
   return undefined;
 }
+
+export function scrollElement(el: HTMLElement, to: number, duration: number) {
+  const start = el.scrollTop;
+  const change = to - start;
+  const startDate = new Date().getTime();
+
+  const easeInOutQuad = (t: number, b: number, c: number, d: number) => {
+    t /= d / 2;
+    if (t < 1) return (c / 2) * t * t + b;
+    t--;
+    return (-c / 2) * (t * (t - 2) - 1) + b;
+  };
+
+  const animateScroll = () => {
+    const currentDate = new Date().getTime();
+    const elapsedTime = currentDate - startDate;
+    el.scrollTop = easeInOutQuad(elapsedTime, start, change, duration);
+    if (elapsedTime < duration) {
+      requestAnimationFrame(animateScroll);
+    } else {
+      el.scrollTop = to;
+    }
+  };
+
+  animateScroll();
+}

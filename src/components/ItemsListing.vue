@@ -222,7 +222,7 @@
 
       <!-- inifinite scroll component -->
       <InfiniteLoading v-if="infiniteScroll" @infinite="loadNextPage" />
-      <v-btn v-else-if="(total || 0) > pagedItems.length" variant="plain" @click="loadNextPage">{{
+      <v-btn v-else-if="(total || 0) > pagedItems.length" variant="plain" @click="loadNextPage()">{{
         $t('load_more_items')
       }}</v-btn>
 
@@ -283,6 +283,7 @@ import Alert from './mods/Alert.vue';
 import Container from './mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
+import { getElement } from '@egjs/vue3-flicking';
 
 export interface LoadDataParams {
   offset: number;
@@ -532,7 +533,7 @@ const changeActiveProviderFilter = function (provider: string) {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ($state: any) {
+const loadNextPage = function ($state?: any) {
   if (pagedItems.value.length == 0) {
     if ($state) $state.loaded();
     return;
@@ -567,7 +568,7 @@ watch(
   () => props.path,
   () => {
     allItems.value = [];
-    loadData(true);
+    restoreState();
   },
 );
 watch(
@@ -646,7 +647,6 @@ const getFilteredItems = function (
     result = items;
   }
   // sort
-  console.log('flter', params.sortBy);
   if (params.sortBy == 'name') {
     result.sort((a, b) => getSortName(a).localeCompare(getSortName(b)));
   }
@@ -693,8 +693,8 @@ const getFilteredItems = function (
   return result.slice(params.offset, params.offset + params.limit);
 };
 
-// get/set default settings at load
-onMounted(() => {
+const restoreState = function () {
+  // restore state for this path/itemtype
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
   if (savedViewMode && savedViewMode !== 'null') {
@@ -747,6 +747,11 @@ onMounted(() => {
     params.value.search = savedSearch;
   }
   loadData(true);
+};
+
+// get/set default settings at load
+onMounted(async () => {
+  restoreState();
 });
 
 // lifecycle hooks
