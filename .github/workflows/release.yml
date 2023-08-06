@@ -18,6 +18,8 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.vars.outputs.tag }}
     permissions:
       contents: write # Required to upload release assets
     steps:
@@ -85,4 +87,4 @@ jobs:
       - uses: music-assistant/frontend-release-pr-action@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          new_release_version: ${{ needs.release.steps.vars.outputs.tag }}
+          new_release_version: ${{ needs.release.outputs.version }}
