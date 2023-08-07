@@ -40,7 +40,7 @@
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Enter a new for the new playlist",
+    "new_playlist_name": "Enter a new name for the new playlist",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",

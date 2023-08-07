@@ -14,7 +14,7 @@
     "
   >
     <v-list-item dark style="height: 55px" :active="false">
-      <template v-if="showLogo" #prepend>
+      <template #prepend>
         <img
           class="logo_icon"
           :style="$vuetify.theme.current.dark ? 'filter: invert(100%);' : ''"
@@ -22,21 +22,10 @@
           src="@/assets/logo.svg"
         />
       </template>
-      <template v-if="showLogo" #title>
+      <template #title>
         <div class="logo_text">Music Assistant</div>
       </template>
     </v-list-item>
-    <!-- back button -->
-    <!-- NOTE: we only allow/show the back button at one of the nested levels (item details) -->
-    <Button
-      v-if="showBackButton"
-      :height="15"
-      :width="40"
-      style="position: absolute; right: 4px; top: 14px"
-      icon="mdi-arrow-left"
-      :title="$t('tooltip.back')"
-      @click.stop="router.go(-1)"
-    />
     <v-divider />
 
     <!-- menu items -->
@@ -69,20 +58,10 @@
 <script setup lang="ts">
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { store } from '@/plugins/store';
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import Button from '@/components/mods/Button.vue';
-import router from '@/plugins/router';
 
 const showNavigationMenu = ref(false);
-
-const showBackButton = computed(() => {
-  return (
-    store.prevRoutes.length > 0 && backButtonAllowedRouteNames.includes(router.currentRoute.value.name!.toString())
-  );
-});
-const showLogo = computed(() => {
-  return !(showBackButton.value && !showNavigationMenu.value);
-});
 
 watch(
   () => showNavigationMenu.value,
@@ -163,7 +142,7 @@ export const mainMenuItems: MenuItem[] = [
 
 <style>
 .logo_text {
-  margin-left: 10px;
+  margin-left: 25px;
   font-family: 'JetBrains Mono Medium';
   font-size: 55;
   font-weight: 500;

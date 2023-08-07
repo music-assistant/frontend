@@ -98,6 +98,7 @@ const loadArtistAlbums = async function (params: LoadDataParams) {
   } else {
     items = await api.getArtistAlbums(itemDetails.value.item_id, itemDetails.value.provider);
   }
+  updateAvailable.value = false;
   return items;
 };
 
@@ -119,6 +120,7 @@ const loadArtistTracks = async function (params: LoadDataParams) {
   } else {
     items = await api.getArtistTracks(itemDetails.value.item_id, itemDetails.value.provider);
   }
+  updateAvailable.value = false;
   return items;
 };
 

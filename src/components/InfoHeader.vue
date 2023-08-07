@@ -22,6 +22,16 @@
             : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
         "
       />
+      <!-- back button -->
+      <!-- allows the user to go back from this nested level (item details) to the main listing -->
+      <Button
+        v-if="store.prevScrollName"
+        xx-large
+        style="position: absolute; width:40px, height:40px;right: 4px; top: 10px"
+        icon="mdi-arrow-left"
+        :title="$t('tooltip.back')"
+        @click.stop="router.go(-1)"
+      />
       <v-layout
         v-if="item"
         style="

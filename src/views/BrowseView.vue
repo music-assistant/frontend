@@ -34,18 +34,16 @@ const router = useRouter();
 
 const header = computed(() => {
   if (!props.path || props.path == 'root') return t('browse');
-  if (getBreakpointValue('bp6')) return t('browse') + " | " + props.path;
+  if (getBreakpointValue('bp6')) return t('browse') + ' | ' + props.path;
   if (getBreakpointValue('bp3')) return props.path;
-  return  t('browse')
+  return t('browse');
 });
-
 
 const loadItems = async function (params: LoadDataParams) {
   const browseItems: MediaItemType[] = [];
   await api.browse(props.path, (data: MediaItemType[]) => {
     browseItems.push(...data);
-    });
+  });
   return browseItems;
 };
-
 </script>

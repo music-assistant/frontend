@@ -1,11 +1,10 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { store } from './store';
+import { getElement } from '@egjs/vue3-flicking';
+import { nextTick } from 'vue';
+import { scrollElement } from '@/helpers/utils';
 
-declare module 'vue-router' {
-  interface RouteMeta {
-    scrollPos?: number;
-  }
-}
+export const mainListings = ['artists', 'albums', 'tracks', 'playlists', 'browse'];
 
 const routes = [
   {
@@ -198,16 +197,31 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from) => {
-  if (!from.name) return;
-  if (to.params['backnav']) return;
-  from.meta.scrollPos = window.scrollY;
-  store.prevRoutes.push({
-    name: from.name as string,
-    path: from.path,
-    query: from.query,
-    params: from.params,
-    meta: from.meta,
-  });
+  if (!from?.name) return;
+  // for the main listings (e.g. artists, albums etc.) we remember the scroll position
+  // to we can jump back there on back navigation
+  if (!mainListings.includes(from.name.toString())) return;
+  store.prevScrollPos = getElement('#cont').scrollTop;
+  store.prevScrollName = from.name.toString();
+});
+
+router.afterEach((to, from) => {
+  if (!from?.name) return;
+  if (!to?.name) return;
+  if (!store.prevScrollName) return;
+  if (store.prevScrollName == to.name) {
+    // scroll the main listing back to its previous scroll position
+    nextTick(() => {
+      const el = document.getElementById('cont');
+      setTimeout(() => {
+        if (el && store.prevScrollPos) {
+          scrollElement(el, store.prevScrollPos, 1000);
+        }
+        store.prevScrollName = undefined;
+        store.prevScrollPos = undefined;
+      }, 400);
+    });
+  }
 });
 
 export default router;

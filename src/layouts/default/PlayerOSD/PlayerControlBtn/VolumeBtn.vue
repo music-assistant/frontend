@@ -4,15 +4,21 @@
     <v-menu v-if="activePlayerQueue" v-model="showVolume" class="volume-control-dialog" :close-on-content-click="false">
       <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
-          <PlayerVolume :style="'margin-right: 0px; margin-left: 0px;'" :width="volumeSize" :is-powered="true"
-            :model-value="store.selectedPlayer!.group_childs.length > 0
+          <PlayerVolume
+            :style="'margin-right: 0px; margin-left: 0px;'"
+            :width="volumeSize"
+            :is-powered="true"
+            :model-value="
+              store.selectedPlayer!.group_childs.length > 0
                 ? Math.round(store.selectedPlayer?.group_volume || 0)
                 : Math.round(store.selectedPlayer?.volume_level || 0)
-              " @update:model-value="
-    store.selectedPlayer!.group_childs.length > 0
-      ? api.playerCommandGroupVolume(store.selectedPlayer?.player_id || '', $event)
-      : api.playerCommandVolumeSet(store.selectedPlayer?.player_id || '', $event)
-    ">
+            "
+            @update:model-value="
+              store.selectedPlayer!.group_childs.length > 0
+                ? api.playerCommandGroupVolume(store.selectedPlayer?.player_id || '', $event)
+                : api.playerCommandVolumeSet(store.selectedPlayer?.player_id || '', $event)
+            "
+          >
             <template #prepend>
               <!-- select player -->
               <Button variant="icon" size="48" :ripple="false" v-bind="{ ...menu }">
@@ -20,8 +26,8 @@
                 <div class="text-caption">
                   {{
                     store.selectedPlayer!.group_childs.length > 0
-                    ? Math.round(store.selectedPlayer?.group_volume || 0)
-                    : Math.round(store.selectedPlayer?.volume_level || 0)
+                      ? Math.round(store.selectedPlayer?.group_volume || 0)
+                      : Math.round(store.selectedPlayer?.volume_level || 0)
                   }}
                 </div>
               </Button>
@@ -34,8 +40,8 @@
             <div class="text-caption" :style="{ color: props.color ? color : '' }">
               {{
                 store.selectedPlayer!.group_childs.length > 0
-                ? Math.round(store.selectedPlayer?.group_volume || 0)
-                : Math.round(store.selectedPlayer?.volume_level || 0)
+                  ? Math.round(store.selectedPlayer?.group_volume || 0)
+                  : Math.round(store.selectedPlayer?.volume_level || 0)
               }}
             </div>
           </Button>
@@ -44,15 +50,26 @@
 
       <v-card :min-width="300">
         <v-list style="overflow: hidden" lines="two">
-          <ListItem density="compact" two-line :title="store.selectedPlayer?.display_name.substring(0, 25)"
-            :subtitle="!store.selectedPlayer?.powered ? $t('state.off') : $t('state.' + store.selectedPlayer?.state)">
+          <ListItem
+            density="compact"
+            two-line
+            :title="store.selectedPlayer?.display_name.substring(0, 25)"
+            :subtitle="!store.selectedPlayer?.powered ? $t('state.off') : $t('state.' + store.selectedPlayer?.state)"
+          >
             <template #prepend>
-              <v-icon size="50"
+              <v-icon
+                size="50"
                 :icon="store.selectedPlayer!.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
-                color="primary" />
+                color="primary"
+              />
             </template>
-            <v-btn variant="plain" style="position: absolute; right: 0px; top: 0px" icon="mdi-close" dark
-              @click="showVolume = !showVolume" />
+            <v-btn
+              variant="plain"
+              style="position: absolute; right: 0px; top: 0px"
+              icon="mdi-close"
+              dark
+              @click="showVolume = !showVolume"
+            />
           </ListItem>
           <v-divider />
           <VolumeControl v-if="store.selectedPlayer" :player="store.selectedPlayer" />
@@ -102,7 +119,7 @@ const activePlayerQueue = computed(() => {
 </script>
 
 <style>
-.volume-control-dialog>.v-overlay__content {
+.volume-control-dialog > .v-overlay__content {
   bottom: 135px !important;
   right: 5px !important;
   left: unset !important;

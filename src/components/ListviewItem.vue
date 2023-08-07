@@ -1,15 +1,25 @@
 <!-- eslint-disable vue/no-template-shadow -->
 <template>
   <div>
-    <ListItem v-hold="() => emit('menu', item)" link :disabled="!itemIsAvailable(item) || isDisabled"
-      :context-menu-items="contextMenuItems" @click.stop="emit('click', item)"
-      @click.right.prevent="() => emit('menu', item)">
+    <ListItem
+      v-hold="() => emit('menu', item)"
+      link
+      :disabled="!itemIsAvailable(item) || isDisabled"
+      :context-menu-items="contextMenuItems"
+      @click.stop="emit('click', item)"
+      @click.right.prevent="() => emit('menu', item)"
+    >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
-          <v-checkbox :model-value="isSelected" @click.stop @update:model-value="(x: boolean) => {
-              emit('select', item, x);
-            }
-            " />
+          <v-checkbox
+            :model-value="isSelected"
+            @click.stop
+            @update:model-value="
+              (x: boolean) => {
+                emit('select', item, x);
+              }
+            "
+          />
         </div>
         <div class="media-thumb listitem-media-thumb">
           <MediaItemThumb height="50" width="50" :item="item" />
@@ -28,7 +38,12 @@
         <!-- explicit icon -->
         <v-tooltip v-if="item && item.metadata" location="bottom">
           <template #activator="{ props }">
-            <v-icon v-if="parseBool(item.metadata.explicit || false)" v-bind="props" icon="mdi-alpha-e-box" width="35" />
+            <v-icon
+              v-if="parseBool(item.metadata.explicit || false)"
+              v-bind="props"
+              icon="mdi-alpha-e-box"
+              width="35"
+            />
           </template>
           <span>{{ $t('tooltip.explicit') }}</span>
         </v-tooltip>
@@ -56,17 +71,22 @@
         </div>
 
         <!-- album: albumtype + artists + year -->
-        <div v-else-if="item.media_type == MediaType.ALBUM &&
-          'artists' in item &&
-          item.artists &&
-          'year' in item &&
-          item.year &&
-          'album_type' in item
-          ">
+        <div
+          v-else-if="
+            item.media_type == MediaType.ALBUM &&
+            'artists' in item &&
+            item.artists &&
+            'year' in item &&
+            item.year &&
+            'album_type' in item
+          "
+        >
           {{ $t('album_type.' + item.album_type) }} • {{ getArtistsString(item.artists) }} • {{ item.year }}
         </div>
         <!-- album: albumtype + artists -->
-        <div v-else-if="item.media_type == MediaType.ALBUM && 'artists' in item && item.artists && 'album_type' in item">
+        <div
+          v-else-if="item.media_type == MediaType.ALBUM && 'artists' in item && item.artists && 'album_type' in item"
+        >
           {{ $t('album_type.' + item.album_type) }} •
           {{ getArtistsString(item.artists) }}
         </div>
@@ -91,31 +111,47 @@
       <!-- actions -->
       <template #append>
         <!-- hi res icon -->
-        <v-img v-if="HiResDetails" :src="iconHiRes" width="30"
-          :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'">
+        <v-img
+          v-if="HiResDetails"
+          :src="iconHiRes"
+          width="30"
+          :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+        >
           <v-tooltip activator="parent" location="bottom">
             {{ HiResDetails }}
           </v-tooltip>
         </v-img>
 
         <!-- provider icon -->
-        <provider-icon v-if="getBreakpointValue('bp2') && showProvider"
+        <provider-icon
+          v-if="getBreakpointValue('bp2') && showProvider"
           :domain="item.media_type == MediaType.PLAYLIST ? item.provider_mappings[0].provider_domain : item.provider"
-          :size="24" />
+          :size="24"
+        />
 
         <!-- favorite (heart) icon -->
         <div v-if="getBreakpointValue('bp3') && 'favorite' in item && showFavorite && !$vuetify.display.mobile">
-          <Button v-bind="props" variant="list" :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
-            :title="$t('tooltip.favorite')" @click="api.toggleFavorite(item)" @click.prevent @click.stop />
+          <Button
+            v-bind="props"
+            variant="list"
+            :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+            :title="$t('tooltip.favorite')"
+            @click="api.toggleFavorite(item)"
+            @click.prevent
+            @click.stop
+          />
         </div>
 
         <!-- track duration -->
-        <div v-if="showDuration &&
-          item.media_type == MediaType.TRACK &&
-          'duration' in item &&
-          item.duration != undefined &&
-          getBreakpointValue('bp0')
-          ">
+        <div
+          v-if="
+            showDuration &&
+            item.media_type == MediaType.TRACK &&
+            'duration' in item &&
+            item.duration != undefined &&
+            getBreakpointValue('bp0')
+          "
+        >
           <div>
             <span class="text-caption" style="padding-right: 10px; padding-left: 10px">{{
               formatDuration(item.duration)

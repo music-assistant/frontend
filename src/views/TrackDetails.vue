@@ -100,7 +100,6 @@ const loadTrackAlbums = async function (params: LoadDataParams) {
   let items: Album[] = [];
   if (params.refresh) {
     await loadItemDetails();
-    updateAvailable.value = false;
   }
   if (!itemDetails.value) {
     items = [];
@@ -114,6 +113,7 @@ const loadTrackAlbums = async function (params: LoadDataParams) {
   } else {
     items = await api.getTrackAlbums(itemDetails.value.item_id, itemDetails.value.provider);
   }
+  updateAvailable.value = false;
   return items;
 };
 </script>
