@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@egjs/flicking-plugins": "^4.7.1",
-    "@egjs/vue3-flicking": "^4.10.8",
+    "@egjs/vue3-flicking": "^4.11.0",
     "@intlify/unplugin-vue-i18n": "^0.12.2",
     "@mdi/font": "^7.2.96",
     "@mdi/js": "^7.2.96",
