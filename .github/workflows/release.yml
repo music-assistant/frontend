@@ -86,5 +86,5 @@ jobs:
     steps:  
       - uses: music-assistant/frontend-release-pr-action@main
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
           new_release_version: ${{ needs.release.outputs.version }}
