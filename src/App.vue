@@ -131,10 +131,12 @@ onMounted(async () => {
   });
 
   // Start app if stored config is valid
-  new WebsocketBuilder(`ws://${ip.value}:${port.value}/ws`).onOpen((i) => {
+  let websocket = new WebsocketBuilder(`ws://${ip.value}:${port.value}/ws`);
+  websocket.onOpen((i) => {
     start();
     i.close();
   });
+  websocket.build();
 });
 
 const start = () => {
