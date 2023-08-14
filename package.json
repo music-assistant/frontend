@@ -41,7 +41,7 @@
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^8.9.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "eslint-plugin-vue": "^9.16.1",
+    "eslint-plugin-vue": "^9.17.0",
     "https-localhost": "^4.7.1",
     "jsdom": "^22.1.0",
     "material-design-icons-iconfont": "^6.7.0",
