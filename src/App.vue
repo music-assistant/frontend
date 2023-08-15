@@ -2,7 +2,7 @@
   <div>
     <v-container v-if="setup" fill-height class="d-flex align-center justify-center h-screen">
       <v-sheet width="350" class="mx-auto rounded-lg">
-        <v-form style="padding-left: 15px; padding-right: 15px" @submit="start">
+        <v-form style="padding-left: 15px; padding-right: 15px" @submit="try_start">
           <v-card-title class="my-3" style="cursor: default">Music Assistant server details</v-card-title>
           <v-text-field v-model="ip" variant="outlined" label="IP / Hostname" placeholder="homeassistant.local" />
           <v-text-field v-model="port" variant="outlined" type="number" label="Port" placeholder="8095" />
@@ -21,7 +21,7 @@
             <v-btn class="text-center" style="width: 35%" value="light">Light</v-btn>
             <v-btn class="text-center" style="width: 35%" value="dark">Dark</v-btn>
           </v-btn-toggle>
-          <v-btn type="submit" block class="mb-5" text="Start" />
+          <v-btn type="submit" :loading="loading" block class="mb-5" text="Start" />
         </v-form>
       </v-sheet>
     </v-container>
@@ -38,6 +38,7 @@ import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
 import { WebsocketBuilder } from 'websocket-ts';
+import { message } from '@tauri-apps/api/dialog';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -45,6 +46,7 @@ const squeezeliteEnabled = ref(false);
 const port = ref(8095);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
+const loading = ref(false);
 
 let systemTheme = 'light';
 
@@ -67,6 +69,25 @@ const themeColor = function (colors: ColorCoverPalette) {
 };
 
 // methods
+const try_start = () => {
+  loading.value = true;
+  // Try to connect to the websocket
+  let websocket = new WebsocketBuilder(`ws://${ip.value}:${port.value}/ws`);
+  websocket.onOpen((i) => {
+    // If it sucessfully connects, start the app
+    start();
+    i.close();
+    loading.value = false;
+  });
+  websocket.onError((i, e) => {
+    // If it cant connect throw error
+    message('Could not connect to MA!', 'Please check the IP and Port');
+    loading.value = false;
+    i.close();
+  });
+  websocket.build();
+};
+
 const discordRpcConfig = () => {
   localStorage.setItem('discordRPCEnabled', discordRPCEnabled.value.toString());
 };
@@ -130,9 +151,10 @@ onMounted(async () => {
     localStorage.setItem('systemTheme', systemTheme);
   });
 
-  // Start app if stored config is valid
+  // Try to start the app with saved config
   let websocket = new WebsocketBuilder(`ws://${ip.value}:${port.value}/ws`);
   websocket.onOpen((i) => {
+    // If it sucessfully connects, start the app
     start();
     i.close();
   });
