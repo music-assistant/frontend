@@ -48,8 +48,6 @@ const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
 const loading = ref(false);
 
-let systemTheme = 'light';
-
 const theme = useTheme();
 let lightTheme = theme.themes.value.light;
 let darkTheme = theme.themes.value.dark;
@@ -99,7 +97,7 @@ const themeSettingConfig = () => {
   } else if (themeSetting.value == 'light') {
     theme.global.name.value = 'light';
   } else {
-    theme.global.name.value = systemTheme;
+    theme.global.name.value = localStorage.getItem('systemTheme') || 'light';
   }
 };
 
@@ -137,18 +135,22 @@ onMounted(async () => {
   themeSetting.value = theme_setting;
 
   // Set inital theme
-  systemTheme = await appWindow.theme().toString();
-  localStorage.setItem('systemTheme', systemTheme);
-  themeSettingConfig();
+  await appWindow.theme().then((theme) => {
+    if (theme != null) {
+      localStorage.setItem('systemTheme', theme.toString());
+      themeSettingConfig();
+    }
+  });
 
   // Update theme live
   await appWindow.onThemeChanged(({ payload: newTheme }) => {
+    console.log(`Updated theme: ${newTheme.toString()}`);
     if (newTheme.toString() == 'Dark') {
-      systemTheme = 'dark';
+      localStorage.setItem('systemTheme', 'dark');
     } else {
-      systemTheme = 'light';
+      localStorage.setItem('systemTheme', 'light');
     }
-    localStorage.setItem('systemTheme', systemTheme);
+    themeSettingConfig();
   });
 
   // Try to start the app with saved config
