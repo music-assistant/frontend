@@ -145,11 +145,7 @@ onMounted(async () => {
   // Update theme live
   await appWindow.onThemeChanged(({ payload: newTheme }) => {
     console.log(`Updated theme: ${newTheme.toString()}`);
-    if (newTheme.toString() == 'Dark') {
-      localStorage.setItem('systemTheme', 'dark');
-    } else {
-      localStorage.setItem('systemTheme', 'light');
-    }
+    localStorage.setItem('systemTheme', newTheme.toString());
     themeSettingConfig();
   });
 
