@@ -1,7 +1,8 @@
 <template>
   <div>
-    <v-container v-if="setup" fill-height class="d-flex align-center justify-center h-screen">
-      <v-sheet width="350" class="mx-auto rounded-lg">
+    <v-container v-if="setup" fill-height fill-width class="d-flex align-center justify-center h-screen">
+      <v-progress-circular v-if="loading" indeterminate :size="60" :width="10" style="position: absolute" />
+      <v-sheet v-if="!loading" width="350" class="mx-auto rounded-lg">
         <v-form style="padding-left: 15px; padding-right: 15px" @submit="try_start">
           <v-card-title class="my-3" style="cursor: default">Music Assistant server details</v-card-title>
           <v-text-field v-model="ip" variant="outlined" label="IP / Hostname" placeholder="homeassistant.local" />
@@ -26,7 +27,7 @@
       </v-sheet>
     </v-container>
   </div>
-  <router-view v-if="!setup" />
+  <router-view v-if="!setup && !loading" />
 </template>
 
 <script setup lang="ts">
@@ -46,7 +47,7 @@ const squeezeliteEnabled = ref(false);
 const port = ref(8095);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
-const loading = ref(false);
+const loading = ref(true);
 
 const theme = useTheme();
 let lightTheme = theme.themes.value.light;
@@ -79,7 +80,7 @@ const try_start = () => {
   });
   websocket.onError((i, e) => {
     // If it cant connect throw error
-    message('Could not connect to MA!', 'Please check the IP and Port');
+    message('Could not connect to Music Assistant!', 'Please check the ip and port');
     loading.value = false;
     i.close();
   });
@@ -150,13 +151,7 @@ onMounted(async () => {
   });
 
   // Try to start the app with saved config
-  let websocket = new WebsocketBuilder(`ws://${ip.value}:${port.value}/ws`);
-  websocket.onOpen((i) => {
-    // If it sucessfully connects, start the app
-    start();
-    i.close();
-  });
-  websocket.build();
+  try_start();
 });
 
 const start = () => {
@@ -170,6 +165,7 @@ const start = () => {
 
   // Hide setup thing
   setup.value = false;
+  loading.value = false;
 
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
