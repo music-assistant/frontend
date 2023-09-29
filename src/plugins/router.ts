@@ -157,6 +157,12 @@ const routes = [
             props: true,
           },
           {
+            path: 'client',
+            name: 'clientsettings',
+            component: () => import(/* webpackChunkName: "clientsettings" */ '@/views/settings/ClientConfigs.vue'),
+            props: true,
+          },
+          {
             path: 'addprovider/:domain',
             name: 'addprovider',
             component: () => import(/* webpackChunkName: "addprovider" */ '@/views/settings/AddProvider.vue'),

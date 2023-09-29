@@ -149,7 +149,8 @@
         "download_log": "Download logfile",
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
-        "add_group_player": "Add group player"
+        "add_group_player": "Add group player",
+        "client": "Client"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",

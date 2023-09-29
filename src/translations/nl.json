@@ -124,7 +124,8 @@
         "download_log": "Download logbestand",
         "edit_group_members": "Bewerk groepsleden",
         "add_new_provider_button": "{0} provider toevoegen",
-        "add_group_player": "Groepspeler toevoegen"
+        "add_group_player": "Groepspeler toevoegen",
+        "client": "cliënt"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",

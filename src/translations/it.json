@@ -130,7 +130,8 @@
         "setup_provider": "Impostazioni provider: {0}",
         "sync": "Sincronizza ora",
         "sync_running": "Questo provider si stà sincronizzando",
-        "username": "Nome utente"
+        "username": "Nome utente", 
+        "client": "Cliente"
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",

@@ -1,6 +1,9 @@
 <template>
   <div>
-    <v-toolbar color="transparent" :title="getBreakpointValue('bp4') ? $t('settings.settings') : ''">
+    <v-toolbar
+      color="transparent"
+      :title="getBreakpointValue('bp4') ? `${$t('settings.settings')} | ${$t(`settings.${activeTab}`)}` : ''"
+    >
       <template #append>
         <v-tabs :model-value="activeTab" align-tabs="end" height="100%">
           <v-tab value="providers" :to="{ name: 'providersettings' }">
@@ -11,6 +14,9 @@
           </v-tab>
           <v-tab value="core" :to="{ name: 'coresettings' }">
             {{ $t('settings.core') }}
+          </v-tab>
+          <v-tab value="client" :to="{ name: 'clientsettings' }">
+            {{ $t('settings.client') }}
           </v-tab>
         </v-tabs>
       </template>
@@ -43,6 +49,9 @@ const activeTab = computed(() => {
   }
   if (router.currentRoute.value.name?.toString().includes('core')) {
     return 'core';
+  }
+  if (router.currentRoute.value.name?.toString().includes('client')) {
+    return 'client';
   }
   return 'providers';
 });

@@ -149,7 +149,8 @@
         "download_log": "Protokoll-Datei herunterladen",
         "edit_group_members": "Gruppenmitglieder bearbeiten",
         "add_new_provider_button": "Anbieter {0} hinzufügen",
-        "add_group_player": "Wiedergabegruppen hinzufügen"
+        "add_group_player": "Wiedergabegruppen hinzufügen",
+        "client": "Klient"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
