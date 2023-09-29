@@ -67,6 +67,7 @@ import { api } from '@/plugins/api';
 import { ProviderConfig, ConfigValueType, EventMessage, EventType } from '@/plugins/api/interfaces';
 import EditConfig from './EditConfig.vue';
 import { nanoid } from 'nanoid';
+import { shell } from '@tauri-apps/api';
 
 // global refs
 const router = useRouter();
@@ -86,7 +87,7 @@ onMounted(() => {
     // ignore any events that not match our session id.
     if (evt.object_id !== sessionId) return;
     const url = evt.data as string;
-    window.open(url, '_blank')!.focus();
+    shell.open(url);
   });
   onBeforeUnmount(unsub);
 });

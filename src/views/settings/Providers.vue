@@ -168,6 +168,7 @@ import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
+import { shell } from '@tauri-apps/api';
 
 // global refs
 const router = useRouter();
@@ -239,7 +240,7 @@ const reloadProvider = function (providerInstanceId: string) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  shell.open(url);
 };
 
 // watchers

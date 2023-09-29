@@ -48,8 +48,8 @@
         </template>
 
         <!-- subtitle -->
-        <template #subtitle
-          ><div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div>
+        <template #subtitle>
+          <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div>
         </template>
 
         <!-- actions -->
@@ -115,100 +115,17 @@
       </v-table>
     </Container>
   </div>
-  <!-- client settings -->
-  <div style="margin-bottom: 10px">
-    <v-toolbar color="transparent" style="height: 55px">
-      <template #title> {{ $t('settings.settings') }} | Client</template>
-    </v-toolbar>
-    <v-divider />
-    <Container style="overflow: hidden">
-      <v-table style="overflow: hidden">
-        <tbody style="overflow: hidden">
-          <tr>
-            <td>Enable Discord RPC</td>
-            <td>
-              <v-switch
-                v-model="discordRPCEnabled"
-                style="height: 56px"
-                label="Restart to apply changes"
-                @change="discordRpcConfig"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>Start squeezelite</td>
-            <td>
-              <v-switch
-                v-model="squeezeliteEnabled"
-                style="height: 56px"
-                label="Restart to apply changes"
-                @change="squeezeliteConfig"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>Theme settings</td>
-            <td>
-              <v-btn-toggle
-                v-model="themeSetting"
-                style="width: 100%"
-                mandatory
-                rounded="lg"
-                @update:model-value="themeSettingConfig"
-              >
-                <v-btn class="text-center my-auto" style="width: 15%; height: 80%" value="system">System</v-btn>
-                <v-btn class="text-center my-auto" style="width: 15%; height: 80%" value="light">Light</v-btn>
-                <v-btn class="text-center my-auto" style="width: 15%; height: 80%" value="dark">Dark</v-btn>
-              </v-btn-toggle>
-            </td>
-          </tr>
-          <tr>
-            <td>Server IP / Hostname (Restart to apply)</td>
-            <td>
-              <v-text-field
-                v-model="ip"
-                variant="outlined"
-                label="IP / Hostname"
-                placeholder="homeassistant.local"
-                @change="ipConfig"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>Server Port (Restart to apply)</td>
-            <td>
-              <v-text-field
-                v-model="port"
-                variant="outlined"
-                type="number"
-                label="Port"
-                placeholder="8095"
-                @change="portConfig"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>Check for updates</td>
-            <td>
-              <v-btn @click="checkForUpdates">Check for updates</v-btn>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </Container>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { api } from '@/plugins/api';
 import { CoreConfig } from '@/plugins/api/interfaces';
-import { useTheme } from 'vuetify';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
 import { useRouter } from 'vue-router';
-import { emit } from '@tauri-apps/api/event';
+import { shell } from '@tauri-apps/api';
 
 // global refs
 const router = useRouter();
@@ -220,52 +137,14 @@ const totalLibraryAlbums = ref(0);
 const totalLibraryTracks = ref(0);
 const totalLibraryPlaylists = ref(0);
 const totalLibraryRadio = ref(0);
-const discordRPCEnabled = ref(false);
-const squeezeliteEnabled = ref(false);
-const port = ref(8095);
-const ip = ref('homeassistant.local');
-const themeSetting = ref('light');
-
-const theme = useTheme();
 
 // methods
-const discordRpcConfig = () => {
-  localStorage.setItem('discordRPCEnabled', discordRPCEnabled.value.toString());
-};
-
-const squeezeliteConfig = () => {
-  localStorage.setItem('squeezeliteEnabled', squeezeliteEnabled.value.toString());
-};
-
-const ipConfig = () => {
-  localStorage.setItem('mass_ip', ip.value.toString());
-};
-
-const portConfig = () => {
-  localStorage.setItem('mass_port', port.value.toString());
-};
-
-const themeSettingConfig = () => {
-  localStorage.setItem('themeSetting', themeSetting.value);
-  if (themeSetting.value == 'dark') {
-    theme.global.name.value = 'dark';
-  } else if (themeSetting.value == 'light') {
-    theme.global.name.value = 'light';
-  } else {
-    theme.global.name.value = localStorage.getItem('systemTheme') || 'light';
-  }
-};
-
 const editCoreConfig = function (domain: string) {
   router.push(`/settings/editcore/${domain}`);
 };
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
-};
-
-const checkForUpdates = async () => {
-  await emit('tauri://update');
+  shell.open(url);
 };
 
 onMounted(async () => {
@@ -275,11 +154,5 @@ onMounted(async () => {
   totalLibraryTracks.value = (await api.getLibraryTracks(undefined, undefined, 1)).total || 0;
   totalLibraryPlaylists.value = (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0;
   totalLibraryRadio.value = (await api.getLibraryRadios(undefined, undefined, 1)).total || 0;
-  discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
-  squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
-  themeSetting.value = localStorage.getItem('themeSetting') || 'system';
-  ip.value = localStorage.getItem('mass_ip') || 'homeassistant.local';
-  port.value = Number(localStorage.getItem('mass_port')) || 8095;
-  themeSettingConfig();
 });
 </script>

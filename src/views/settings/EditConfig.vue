@@ -210,6 +210,7 @@
 import { ref, VNodeRef, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ConfigEntryType, ConfigValueType, SECURE_STRING_SUBSTITUTE, ConfigEntry } from '@/plugins/api/interfaces';
+import { shell } from '@tauri-apps/api';
 
 const router = useRouter();
 
@@ -308,7 +309,7 @@ const action = async function (action: string) {
   emit('action', action, getCurrentValues());
 };
 const openLink = function (url: string) {
-  window.open(url, '_blank');
+  shell.open(url);
 };
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
