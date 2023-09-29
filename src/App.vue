@@ -151,7 +151,11 @@ onMounted(async () => {
   });
 
   // Try to start the app with saved config
-  try_start();
+  if (localStorage.getItem('mass_ip')) {
+    try_start();
+  } else {
+    loading.value = false;
+  }
 });
 
 const start = () => {
