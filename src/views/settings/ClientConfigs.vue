@@ -2,30 +2,77 @@
   <!-- client settings -->
   <div>
     <v-toolbar color="transparent">
-      <template #title>{{ $t('settings.client') }}</template>
+      <template #title>{{ $t('settings.client') }} {{ $t('settings') }}</template>
     </v-toolbar>
     <Container>
       <v-table>
         <tbody>
-          <tr>
-            <td>Enable Discord RPC</td>
+          <!-- <tr>
+            <td>
+              Close to tray
+              <v-tooltip text="Wether or not to close the app to tray instead of fully exiting.">
+                <template #activator="{ props }">
+                  <v-icon
+                    style="margin-left: 3px; margin-bottom: 1px"
+                    size="20"
+                    icon="mdi-information-outline"
+                    v-bind="props"
+                  />
+                </template>
+              </v-tooltip>
+            </td>
             <td>
               <v-switch
-                v-model="discordRPCEnabled"
+                v-model="closeToTrayEnabled"
                 style="height: 56px"
-                label="Restart to apply changes"
-                @change="discordRpcConfig"
+                label="Relaunch to apply"
+                @change="closeToTrayConfig"
               />
             </td>
-          </tr>
+          </tr> -->
           <tr>
-            <td>Start squeezelite</td>
+            <td>
+              Music player
+              <v-tooltip text="Wether or not to start a music player on this machine.">
+                <template #activator="{ props }">
+                  <v-icon
+                    style="margin-left: 3px; margin-bottom: 1px"
+                    size="20"
+                    icon="mdi-information-outline"
+                    v-bind="props"
+                  />
+                </template>
+              </v-tooltip>
+            </td>
             <td>
               <v-switch
                 v-model="squeezeliteEnabled"
                 style="height: 56px"
-                label="Restart to apply changes"
+                label="Relaunch to apply"
                 @change="squeezeliteConfig"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Discord RPC
+              <v-tooltip text="Wether or not to show music activity on Discord.">
+                <template #activator="{ props }">
+                  <v-icon
+                    style="margin-left: 3px; margin-bottom: 1px"
+                    size="20"
+                    icon="mdi-information-outline"
+                    v-bind="props"
+                  />
+                </template>
+              </v-tooltip>
+            </td>
+            <td>
+              <v-switch
+                v-model="discordRPCEnabled"
+                style="height: 56px"
+                label="Relaunch to apply"
+                @change="discordRpcConfig"
               />
             </td>
           </tr>
@@ -47,7 +94,32 @@
             </td>
           </tr>
           <tr>
-            <td>Server IP / Hostname (Restart to apply)</td>
+            <td>Check for updates</td>
+            <td>
+              <v-btn variant="tonal" @click="checkForUpdates">Check for updates</v-btn>
+            </td>
+          </tr>
+          <tr>
+            <td>Relaunch Companion</td>
+            <td>
+              <v-btn variant="tonal" @click.prevent="relaunch">Relaunch Companion App</v-btn>
+            </td>
+          </tr>
+          <tr>
+            <td>Companion Version</td>
+            <td>v{{ version }}</td>
+          </tr>
+        </tbody>
+      </v-table>
+    </Container>
+    <v-toolbar color="transparent">
+      <template #title>Connection {{ $t('settings') }}</template>
+    </v-toolbar>
+    <Container>
+      <v-table>
+        <tbody>
+          <tr>
+            <td>Server IP / Hostname (Relaunch to apply)</td>
             <td>
               <v-text-field
                 v-model="ip"
@@ -60,7 +132,7 @@
             </td>
           </tr>
           <tr>
-            <td>Server Port (Restart to apply)</td>
+            <td>Server Port (Relaunch to apply)</td>
             <td>
               <v-text-field
                 v-model="port"
@@ -71,24 +143,6 @@
                 placeholder="8095"
                 @change="portConfig"
               />
-            </td>
-          </tr>
-          <tr>
-            <td>Check for updates</td>
-            <td>
-              <v-btn @click="checkForUpdates">Check for updates</v-btn>
-            </td>
-          </tr>
-          <tr>
-            <td>Companion Version</td>
-            <td>
-              {{ version }}
-            </td>
-          </tr>
-          <tr>
-            <td>Restart Companion</td>
-            <td>
-              <v-btn @click.prevent="relaunch">Restart Companion App</v-btn>
             </td>
           </tr>
         </tbody>
@@ -110,7 +164,8 @@ import { relaunch } from '@tauri-apps/api/process';
 const router = useRouter();
 // local refs
 const discordRPCEnabled = ref(false);
-const squeezeliteEnabled = ref(false);
+const squeezeliteEnabled = ref(true);
+const closeToTrayEnabled = ref(true);
 const port = ref(8095);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
@@ -121,6 +176,10 @@ const theme = useTheme();
 // methods
 const discordRpcConfig = () => {
   localStorage.setItem('discordRPCEnabled', discordRPCEnabled.value.toString());
+};
+
+const closeToTrayConfig = () => {
+  localStorage.setItem('closeToTrayEnabled', closeToTrayEnabled.value.toString());
 };
 
 const squeezeliteConfig = () => {
@@ -152,7 +211,8 @@ const checkForUpdates = async () => {
 
 onMounted(async () => {
   discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
-  squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
+  squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || true;
+  closeToTrayEnabled.value = localStorage.getItem('closeToTrayEnabled') === 'true' || true;
   themeSetting.value = localStorage.getItem('themeSetting') || 'system';
   ip.value = localStorage.getItem('mass_ip') || 'homeassistant.local';
   port.value = Number(localStorage.getItem('mass_port')) || 8095;

@@ -6,15 +6,40 @@
         <v-form style="padding-left: 15px; padding-right: 15px" @submit="try_start">
           <v-card-title class="my-3" style="cursor: default">Music Assistant server details</v-card-title>
           <v-text-field v-model="ip" variant="outlined" label="IP / Hostname" placeholder="homeassistant.local" />
-          <v-text-field v-model="port" variant="outlined" type="number" label="Port" placeholder="8095" />
-          <v-card-title class="my-3" style="cursor: default">Client settings</v-card-title>
-          <v-switch v-model="discordRPCEnabled" label="Start Discord Rich Presence" @change="discordRpcConfig" />
-          <v-switch v-model="squeezeliteEnabled" label="Start Squeezelite" @change="squeezeliteConfig" />
+          <v-text-field
+            v-model="port"
+            variant="outlined"
+            style="height: 56px"
+            type="number"
+            label="Port"
+            placeholder="8095"
+          />
+          <v-card-title class="my-3" style="cursor: default; height: 32px">Client settings</v-card-title>
+          <v-switch
+            v-model="discordRPCEnabled"
+            style="height: 56px"
+            label="Start Discord Rich Presence"
+            @change="discordRpcConfig"
+          />
+          <!-- <v-switch
+            v-model="closeToTrayEnabled"
+            style="height: 56px"
+            label="Close to tray"
+            @change="closeToTrayConfig"
+          /> -->
+          <v-switch
+            v-model="squeezeliteEnabled"
+            style="height: 60px"
+            label="Start Squeezelite"
+            @change="squeezeliteConfig"
+          />
           <v-card-subtitle style="cursor: default">Theme Setting</v-card-subtitle>
           <v-btn-toggle
             v-model="themeSetting"
             style="width: 100%; margin-bottom: 12px"
             mandatory
+            variant="outlined"
+            divided
             rounded="lg"
             @update:model-value="themeSettingConfig"
           >
@@ -22,7 +47,7 @@
             <v-btn class="text-center" style="width: 35%" value="light">Light</v-btn>
             <v-btn class="text-center" style="width: 35%" value="dark">Dark</v-btn>
           </v-btn-toggle>
-          <v-btn type="submit" :loading="loading" block class="mb-5" text="Start" />
+          <v-btn rounded="lg" variant="tonal" type="submit" :loading="loading" block class="mb-5" text="Start" />
         </v-form>
       </v-sheet>
     </v-container>
@@ -43,7 +68,8 @@ import WebSocket from 'tauri-plugin-websocket-api';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
-const squeezeliteEnabled = ref(false);
+const squeezeliteEnabled = ref(true);
+const closeToTrayEnabled = ref(true);
 const port = ref(8095);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
@@ -107,6 +133,10 @@ const squeezeliteConfig = () => {
   localStorage.setItem('squeezeliteEnabled', squeezeliteEnabled.value.toString());
 };
 
+const closeToTrayConfig = () => {
+  localStorage.setItem('closeToTrayEnabled', closeToTrayEnabled.value.toString());
+};
+
 // computed properties
 const activePlayerQueue = computed(() => {
   if (store.selectedPlayer) {
@@ -124,12 +154,14 @@ onMounted(async () => {
   let ip_storage = localStorage.getItem('mass_ip') || 'homeassistant.local';
   let port_storage = Number(localStorage.getItem('mass_port')) || 8095;
   let start_discord_rpc = localStorage.getItem('discordRPCEnabled') === 'true' || false;
-  let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || false;
+  let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || true;
   let theme_setting = localStorage.getItem('themeSetting') || 'system';
+  let tray_setting = localStorage.getItem('closeToTrayEnabled') === 'true' || true;
 
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
 
+  closeToTrayEnabled.value = tray_setting;
   discordRPCEnabled.value = start_discord_rpc;
   squeezeliteEnabled.value = start_squeezelite;
   ip.value = ip_storage;
