@@ -26,20 +26,20 @@
         </v-form>
       </v-sheet>
     </v-container>
+    <v-snackbar v-model="err" timeout="2500" color="error">Error! {{ err_message }}</v-snackbar>
   </div>
   <router-view v-if="!setup && !loading" />
 </template>
 
 <script setup lang="ts">
 import { api } from './plugins/api';
-import { computed, onMounted, watch, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from './plugins/store';
 import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
 import { WebsocketBuilder } from 'websocket-ts';
-import { message } from '@tauri-apps/api/dialog';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -48,6 +48,8 @@ const port = ref(8095);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
 const loading = ref(true);
+const err = ref(false);
+const err_message = ref('Error!');
 
 const theme = useTheme();
 let lightTheme = theme.themes.value.light;
@@ -80,7 +82,8 @@ const try_start = () => {
   });
   websocket.onError((i, e) => {
     // If it cant connect throw error
-    message('Could not connect to Music Assistant!', 'Please check the ip and port');
+    err_message.value = 'Could not connect to Music Assistant! Please check the ip and port';
+    err.value = true;
     loading.value = false;
     i.close();
   });
@@ -167,10 +170,6 @@ const start = () => {
   let frontendServerAddress = `http://${ip.value}:${port.value}/`;
   let websocket = `ws://${ip.value}:${port.value}/ws`;
 
-  // Hide setup thing
-  setup.value = false;
-  loading.value = false;
-
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
     invoke('start_sqzlite', { ip: ip.value });
@@ -179,5 +178,9 @@ const start = () => {
     invoke('start_rpc', { websocket: websocket });
   }
   api.initialize(frontendServerAddress);
+
+  // Hide setup thing
+  setup.value = false;
+  loading.value = false;
 };
 </script>
