@@ -3,7 +3,7 @@ import { store } from '../store';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { WebsocketBuilder, Websocket, WebsocketEvents, LinearBackoff } from 'websocket-ts';
+import WebSocket from 'tauri-plugin-websocket-api';
 import { reactive, ref } from 'vue';
 import { type Connection, createConnection, ERR_HASS_HOST_REQUIRED, getAuth } from 'home-assistant-js-websocket';
 
@@ -69,7 +69,7 @@ export interface chunkCallback {
 }
 
 export class MusicAssistantApi {
-  private ws?: Websocket;
+  private ws?: WebSocket;
   private commandId: number;
   private _throttleId?: any;
   public baseUrl?: string;
@@ -105,39 +105,32 @@ export class MusicAssistantApi {
     console.log(`Connecting to Music Assistant API ${wsUrl}`);
     this.state.value = ConnectionState.CONNECTING;
     // connect to the websocket api
-    this.ws = new WebsocketBuilder(wsUrl)
-      .onOpen((i, ev) => {
+    this.ws = await WebSocket.connect(wsUrl)
+      .then((i) => {
         console.log('connection opened');
+        return i;
       })
-      .onClose((i, ev) => {
-        console.log('connection closed');
-        this.state.value = ConnectionState.DISCONNECTED;
-      })
-      .onError((i, ev) => {
+      .catch(() => {
         console.log('error on connection');
-      })
-      .onMessage((i, ev) => {
-        // Message retrieved on the websocket
-        const msg = JSON.parse(ev.data);
-        if ('event' in msg) {
-          this.handleEventMessage(msg as EventMessage);
-        } else if ('server_version' in msg) {
-          this.handleServerInfoMessage(msg as ServerInfoMessage);
-        } else if ('message_id' in msg && 'is_last_chunk' in msg) {
-          this.handleChunkedResultMessage(msg);
-        } else if ('message_id' in msg) {
-          this.handleResultMessage(msg);
-        } else {
-          // unknown message receoved
-          console.error('received unknown message', msg);
-        }
-      })
-      .onRetry((i, ev) => {
-        console.log('retry');
-        this.state.value = ConnectionState.CONNECTING;
-      })
-      .withBackoff(new LinearBackoff(0, 1000, 12000))
-      .build();
+        this.state.value = ConnectionState.DISCONNECTED;
+        return undefined;
+      });
+    this.ws?.addListener((ev) => {
+      // Message retrieved on the websocket
+      const msg = JSON.parse(ev.data?.toString() || '');
+      if ('event' in msg) {
+        this.handleEventMessage(msg as EventMessage);
+      } else if ('server_version' in msg) {
+        this.handleServerInfoMessage(msg as ServerInfoMessage);
+      } else if ('message_id' in msg && 'is_last_chunk' in msg) {
+        this.handleChunkedResultMessage(msg);
+      } else if ('message_id' in msg) {
+        this.handleResultMessage(msg);
+      } else {
+        // unknown message receoved
+        console.error('received unknown message', msg);
+      }
+    });
   }
 
   public subscribe(eventFilter: EventType, callback: CallableFunction) {

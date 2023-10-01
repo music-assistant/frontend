@@ -39,7 +39,8 @@ import { store } from './plugins/store';
 import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
-import { WebsocketBuilder } from 'websocket-ts';
+import WebSocket from 'tauri-plugin-websocket-api';
+import { i } from '@tauri-apps/api/notification-e8316aac';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -70,24 +71,22 @@ const themeColor = function (colors: ColorCoverPalette) {
 };
 
 // methods
-const try_start = () => {
+const try_start = async () => {
   loading.value = true;
   // Try to connect to the websocket
-  let websocket = new WebsocketBuilder(`ws://${ip.value}:${port.value}/ws`);
-  websocket.onOpen((i) => {
-    // If it sucessfully connects, start the app
-    start();
-    i.close();
-    loading.value = false;
-  });
-  websocket.onError((i, e) => {
-    // If it cant connect throw error
-    err_message.value = 'Could not connect to Music Assistant! Please check the ip and port';
-    err.value = true;
-    loading.value = false;
-    i.close();
-  });
-  websocket.build();
+  await WebSocket.connect(`ws://${ip.value}:${port.value}/ws`)
+    .then((i) => {
+      // If it sucessfully connects, start the app
+      start();
+      i.disconnect();
+      loading.value = false;
+    })
+    .catch(() => {
+      // If it cant connect throw error
+      err_message.value = 'Could not connect to Music Assistant! Please check the ip and port';
+      err.value = true;
+      loading.value = false;
+    });
 };
 
 const discordRpcConfig = () => {
