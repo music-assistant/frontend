@@ -40,7 +40,6 @@ import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
 import WebSocket from 'tauri-plugin-websocket-api';
-import { i } from '@tauri-apps/api/notification-e8316aac';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
