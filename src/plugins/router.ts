@@ -13,8 +13,7 @@ const routes = [
     children: [
       {
         path: '',
-        // redirect: '/home', // revert once we finish the new home screen
-        redirect: '/artists',
+        redirect: '/home',
         name: 'homeredirect',
       },
       {

@@ -235,4 +235,9 @@ div.v-expansion-panel__shadow {
   margin-inline-start: auto;
   margin-right: 5px;
 }
+
+.v-list-item__prepend {
+  /* fixes weird alignment in playerselect */
+  display: unset;
+}
 </style>
