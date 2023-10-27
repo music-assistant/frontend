@@ -44,8 +44,8 @@
             scrollToTop(player.player_id);
           "
         >
-          <ListItem>
-            <template #prepend>
+          <ListItem class="pizza">
+            <template #prepend style="display: unset;">
               <v-icon
                 size="50"
                 :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
@@ -234,5 +234,10 @@ div.v-expansion-panel__shadow {
   user-select: none;
   margin-inline-start: auto;
   margin-right: 5px;
+}
+
+.v-list-item__prepend {
+  /* fixes weird alignment in playerselect */
+  display: unset;
 }
 </style>
