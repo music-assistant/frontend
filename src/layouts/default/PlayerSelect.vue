@@ -44,8 +44,8 @@
             scrollToTop(player.player_id);
           "
         >
-          <ListItem class="pizza">
-            <template #prepend style="display: unset;">
+          <ListItem>
+            <template #prepend>
               <v-icon
                 size="50"
                 :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
