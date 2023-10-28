@@ -35,7 +35,7 @@
   "devDependencies": {
     "@fontsource/roboto": "5.0.8",
     "@intlify/unplugin-vue-i18n": "0.12.3",
-    "@tauri-apps/cli": "^1.5.5",
+    "@tauri-apps/cli": "^1.5.6",
     "@types/color": "3.0.3",
     "@types/node": "20.8.9",
     "@typescript-eslint/eslint-plugin": "6.2.1",
