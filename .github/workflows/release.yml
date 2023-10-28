@@ -24,7 +24,7 @@ jobs:
       contents: write # Required to upload release assets
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get tag
         id: vars
@@ -36,7 +36,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: yarn
@@ -67,7 +67,7 @@ jobs:
           python3 -m build
 
       - name: Publish release to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.8
+        uses: pypa/gh-action-pypi-publish@v1.8.10
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
@@ -86,5 +86,5 @@ jobs:
     steps:  
       - uses: music-assistant/frontend-release-pr-action@main
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
           new_release_version: ${{ needs.release.outputs.version }}

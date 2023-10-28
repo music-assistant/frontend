@@ -529,7 +529,8 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
 
 const changeActiveProviderFilter = function (provider: string) {
   params.value.providerFilter = provider;
-  loadData(true);
+  console.log("changeActiveProviderFilter", provider)
+  loadData(true, undefined, true);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

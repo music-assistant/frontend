@@ -101,7 +101,7 @@
               removeProvider(item.instance_id);
             },
             icon: 'mdi-delete',
-            hide: api.providerManifests[item.domain].builtin,
+            hide: api.providerManifests[item.domain].builtin || (api.providerManifests[item.domain].load_by_default && item.domain == item.instance_id),
           },
           {
             label: 'settings.reload',
