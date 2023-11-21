@@ -9,10 +9,11 @@
           @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
         >
           <template #prepend><v-icon :icon="widgetRow.icon" style="margin-left: 15px" /></template>
-          <template #title>{{ $t(widgetRow.label) }}</template>
-          <template v-if="widgetRow.path" #append
-            ><v-badge v-if="widgetRow.count" color="grey" :content="widgetRow.count"
-          /></template>
+          <template #title>
+            <v-badge inline v-if="widgetRow.count" color="grey" :content="widgetRow.count">
+              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+            </v-badge>
+          </template>
         </v-toolbar>
         <v-slide-group :show-arrows="false">
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
