@@ -13,6 +13,9 @@
             <v-badge inline v-if="widgetRow.count" color="grey" :content="widgetRow.count">
               <span class="mr-3">{{ $t(widgetRow.label) }}</span>
             </v-badge>
+            <template v-else>
+              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+            </template>
           </template>
         </v-toolbar>
         <v-slide-group :show-arrows="false">
