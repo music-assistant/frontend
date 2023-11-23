@@ -14,7 +14,7 @@
             ><v-badge v-if="widgetRow.count" color="grey" :content="widgetRow.count"
           /></template>
         </v-toolbar>
-        <v-slide-group :show-arrows="false">
+        <v-slide-group show-arrows>
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
             <PanelviewItem
               :item="item"
@@ -25,8 +25,6 @@
               @click="itemClicked"
             />
           </v-slide-group-item>
-          <template #prev></template>
-          <template #next></template>
         </v-slide-group>
       </div>
     </div>
@@ -186,10 +184,18 @@ const itemClicked = function (mediaItem: MediaItemType) {
 
 .v-slide-group__prev {
   min-width: 0px !important;
+}
+
+.v-slide-group__prev.v-slide-group__prev--disabled {
+  visibility: hidden;
   margin-right: -15px;
 }
 
 .v-slide-group__next {
-  min-width: 0px !important;
+  min-width: 15px !important;
+}
+
+.v-slide-group__next.v-slide-group__next--disabled {
+  visibility: hidden;
 }
 </style>
