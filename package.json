@@ -12,7 +12,7 @@
   "dependencies": {
     "@egjs/flicking-plugins": "4.7.1",
     "@egjs/vue3-flicking": "4.10.8",
-    "@intlify/unplugin-vue-i18n": "0.12.3",
+    "@intlify/unplugin-vue-i18n": "1.5.0",
     "@mdi/font": "7.3.67",
     "@mdi/js": "7.3.67",
     "color": "4.2.3",
@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@fontsource/roboto": "5.0.8",
-    "@intlify/unplugin-vue-i18n": "0.12.3",
+    "@intlify/unplugin-vue-i18n": "1.5.0",
     "@types/color": "3.0.6",
     "@types/node": "20.8.9",
     "@typescript-eslint/eslint-plugin": "6.11.0",
