@@ -1693,10 +1693,10 @@
   resolved "https://registry.yarnpkg.com/@ungap/structured-clone/-/structured-clone-1.2.0.tgz#756641adb587851b5ccb3e095daf27ae581c8406"
   integrity sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==
 
-"@vitejs/plugin-vue@4.2.3":
-  version "4.2.3"
-  resolved "https://registry.yarnpkg.com/@vitejs/plugin-vue/-/plugin-vue-4.2.3.tgz#ee0b6dfcc62fe65364e6395bf38fa2ba10bb44b6"
-  integrity sha512-R6JDUfiZbJA9cMiguQ7jxALsgiprjBeHL5ikpXfJCH62pPHtI+JdJ5xWj6Ev73yXSlYl86+blXn1kZHQ7uElxw==
+"@vitejs/plugin-vue@4.5.1":
+  version "4.5.1"
+  resolved "https://registry.yarnpkg.com/@vitejs/plugin-vue/-/plugin-vue-4.5.1.tgz#84815bfeb46928c03a9ed765e4a8425c22345e15"
+  integrity sha512-DaUzYFr+2UGDG7VSSdShKa9sIWYBa1LL8KC0MNOf2H5LjcTPjob0x8LbkqXWmAtbANJCkpiQTj66UVcQkN2s3g==
 
 "@volar/language-core@1.10.7", "@volar/language-core@~1.10.5":
   version "1.10.7"
