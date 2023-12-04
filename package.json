@@ -45,7 +45,7 @@
     "https-localhost": "4.7.1",
     "jsdom": "23.0.1",
     "material-design-icons-iconfont": "6.7.0",
-    "nanoid": "4.0.2",
+    "nanoid": "5.0.4",
     "prettier": "3.0.3",
     "replace-in-file": "7.0.2",
     "sass": "1.69.5",
