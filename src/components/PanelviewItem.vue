@@ -41,6 +41,10 @@
         {{ $t(item.media_type) }}
       </v-list-item-subtitle>
 
+      <template v-if="item.favorite" #append>
+        <v-icon icon="mdi-heart" />
+      </template>
+
       <v-item-group
         v-if="item && item.media_type === 'track' && 'metadata' in item"
         style="min-height: 22px; padding-top: 5px"
