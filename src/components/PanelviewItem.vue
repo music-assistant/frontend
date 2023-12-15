@@ -42,7 +42,7 @@
       </v-list-item-subtitle>
 
       <template v-if="item.favorite" #append>
-        <v-icon icon="mdi-heart" />
+        <v-icon icon="mdi-heart" aria-hidden="false" :aria-label="$t('is_favorite')" />
       </template>
 
       <v-item-group
