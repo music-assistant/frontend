@@ -9,12 +9,16 @@
           @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
         >
           <template #prepend><v-icon :icon="widgetRow.icon" style="margin-left: 15px" /></template>
-          <template #title>{{ $t(widgetRow.label) }}</template>
-          <template v-if="widgetRow.path" #append
-            ><v-badge v-if="widgetRow.count" color="grey" :content="widgetRow.count"
-          /></template>
+          <template #title>
+            <v-badge inline v-if="widgetRow.count" color="grey" :content="widgetRow.count">
+              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+            </v-badge>
+            <template v-else>
+              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+            </template>
+          </template>
         </v-toolbar>
-        <v-slide-group :show-arrows="false">
+        <v-slide-group show-arrows>
           <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
             <PanelviewItem
               :item="item"
@@ -25,8 +29,6 @@
               @click="itemClicked"
             />
           </v-slide-group-item>
-          <template #prev></template>
-          <template #next></template>
         </v-slide-group>
       </div>
     </div>
@@ -186,10 +188,18 @@ const itemClicked = function (mediaItem: MediaItemType) {
 
 .v-slide-group__prev {
   min-width: 0px !important;
+}
+
+.v-slide-group__prev.v-slide-group__prev--disabled {
+  visibility: hidden;
   margin-right: -15px;
 }
 
 .v-slide-group__next {
-  min-width: 0px !important;
+  min-width: 15px !important;
+}
+
+.v-slide-group__next.v-slide-group__next--disabled {
+  visibility: hidden;
 }
 </style>
