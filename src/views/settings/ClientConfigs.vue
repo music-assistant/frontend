@@ -74,7 +74,7 @@
                 label="Output device"
                 style="margin-top: 15px; height: 70px"
                 variant="outlined"
-                @change="outputDevice"
+                @change="outputDeviceConfig"
               />
             </td>
           </tr>
@@ -184,6 +184,7 @@ import { useRouter } from 'vue-router';
 import { emit } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import { relaunch } from '@tauri-apps/api/process';
+import { invoke } from '@tauri-apps/api/tauri';
 
 // global refs
 const router = useRouter();
@@ -222,6 +223,10 @@ const portConfig = () => {
   localStorage.setItem('mass_port', port.value.toString());
 };
 
+const outputDeviceConfig = () => {
+  localStorage.setItem('outputDevice', outputDevice.value);
+};
+
 const themeSettingConfig = () => {
   localStorage.setItem('themeSetting', themeSetting.value);
   if (themeSetting.value == 'dark') {
@@ -238,6 +243,13 @@ const checkForUpdates = async () => {
 };
 
 onMounted(async () => {
+  invoke<string[]>('get_output_devices').then((message) => {
+    // Move default to the top
+    message.splice(message.indexOf('default'), 1);
+    message.unshift('default');
+
+    availableOutputDevices.value = message;
+  });
   discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
   squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || true;
   closeToTrayEnabled.value = localStorage.getItem('closeToTrayEnabled') === 'true' || true;
