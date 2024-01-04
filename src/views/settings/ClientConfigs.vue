@@ -32,7 +32,7 @@
           </tr> -->
           <tr>
             <td>
-              Music player
+              Launch Squeezelite
               <v-tooltip text="Wether or not to start a music player on this machine.">
                 <template #activator="{ props }">
                   <v-icon
@@ -50,6 +50,31 @@
                 style="height: 56px"
                 label="Relaunch to apply"
                 @change="squeezeliteConfig"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Audio output device (Relaunch to apply)
+              <v-tooltip text="The output device squeezelite should play to.">
+                <template #activator="{ props }">
+                  <v-icon
+                    style="margin-left: 3px; margin-bottom: 1px"
+                    size="20"
+                    icon="mdi-information-outline"
+                    v-bind="props"
+                  />
+                </template>
+              </v-tooltip>
+            </td>
+            <td>
+              <v-select
+                v-model="outputDevice"
+                :items="availableOutputDevices"
+                label="Output device"
+                style="margin-top: 15px; height: 70px"
+                variant="outlined"
+                @change="outputDevice"
               />
             </td>
           </tr>
@@ -170,6 +195,9 @@ const port = ref(8095);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
 const version = ref('Loading...');
+
+const outputDevice = ref('default');
+const availableOutputDevices = ref(['default']);
 
 const theme = useTheme();
 
