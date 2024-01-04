@@ -47,6 +47,13 @@
             <v-btn class="text-center" style="width: 35%" value="light">Light</v-btn>
             <v-btn class="text-center" style="width: 35%" value="dark">Dark</v-btn>
           </v-btn-toggle>
+          <v-select
+            v-model="outputDevice"
+            :items="availableOutputDevices"
+            label="Output device"
+            variant="outlined"
+            @change="outputDevice"
+          />
           <v-btn rounded="lg" variant="tonal" type="submit" :loading="loading" block class="mb-5" text="Start" />
         </v-form>
       </v-sheet>
@@ -73,6 +80,8 @@ const closeToTrayEnabled = ref(true);
 const port = ref(8095);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
+const outputDevice = ref('default');
+const availableOutputDevices = ref(['default']);
 const loading = ref(true);
 const err = ref(false);
 const err_message = ref('Error!');
@@ -97,6 +106,11 @@ const themeColor = function (colors: ColorCoverPalette) {
 
 // methods
 const try_start = async () => {
+  // Save ip and port
+  localStorage.setItem('mass_ip', ip.value);
+  localStorage.setItem('mass_port', port.value.toString());
+  localStorage.setItem('outputDevice', outputDevice.value);
+
   loading.value = true;
   // Try to connect to the websocket
   await WebSocket.connect(`ws://${ip.value}:${port.value}/ws`)
@@ -150,9 +164,19 @@ const curQueueItem = computed(() => {
 });
 
 onMounted(async () => {
+  // Get available output devices
+  invoke<string[]>('get_output_devices').then((message) => {
+    // Move default to the top
+    message.splice(message.indexOf('default'), 1);
+    message.unshift('default');
+
+    availableOutputDevices.value = message;
+  });
+
   // Set to previus settings
   let ip_storage = localStorage.getItem('mass_ip') || 'homeassistant.local';
   let port_storage = Number(localStorage.getItem('mass_port')) || 8095;
+  let output_device_setting = localStorage.getItem('outputDevice') || 'default';
   let start_discord_rpc = localStorage.getItem('discordRPCEnabled') === 'true' || false;
   let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || true;
   let theme_setting = localStorage.getItem('themeSetting') || 'system';
@@ -167,6 +191,7 @@ onMounted(async () => {
   ip.value = ip_storage;
   port.value = port_storage;
   themeSetting.value = theme_setting;
+  outputDevice.value = output_device_setting;
 
   // Set inital theme
   await appWindow.theme().then((theme) => {
@@ -192,17 +217,13 @@ onMounted(async () => {
 });
 
 const start = () => {
-  // Save ip and port
-  localStorage.setItem('mass_ip', ip.value);
-  localStorage.setItem('mass_port', port.value.toString());
-
   // The server adress and websocket address
   let frontendServerAddress = `http://${ip.value}:${port.value}/`;
   let websocket = `ws://${ip.value}:${port.value}/ws`;
 
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
-    invoke('start_sqzlite', { ip: ip.value });
+    invoke('start_sqzlite', { ip: ip.value, output_device: outputDevice.value });
   }
   if (discordRPCEnabled.value == true) {
     invoke('start_rpc', { websocket: websocket });
