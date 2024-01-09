@@ -16,10 +16,18 @@
     "
   >
     <v-card>
-      <v-toolbar color="transparent" style="padding: 10px 0px" density="compact" class="titlebar">
-        <v-btn icon="mdi-play-circle-outline" />
-        <v-toolbar-title style="padding-left: 10px">
-          <b>{{ header }}</b>
+      <v-toolbar color="transparent" density="compact" class="titlebar">
+        <template #prepend>
+          <v-icon
+            size="large"
+            class="ml-4 d-none d-sm-block"
+            style="vertical-align: initial"
+            icon="mdi-play-circle-outline"
+            aria-hidden="true"
+          />
+        </template>
+        <v-toolbar-title>
+          <h2 class="font-weight-bold">{{ header }}</h2>
         </v-toolbar-title>
         <v-btn icon="mdi-close" dark @click="close()" />
       </v-toolbar>
