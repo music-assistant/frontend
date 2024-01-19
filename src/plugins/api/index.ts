@@ -3,9 +3,9 @@ import { store } from '../store';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { WebsocketBuilder, Websocket, WebsocketEvents, LinearBackoff } from 'websocket-ts';
+import { WebsocketBuilder, Websocket, LinearBackoff } from 'websocket-ts';
 import { reactive, ref } from 'vue';
-import { type Connection, createConnection, ERR_HASS_HOST_REQUIRED, getAuth } from 'home-assistant-js-websocket';
+import { type createConnection, ERR_HASS_HOST_REQUIRED, getAuth } from 'home-assistant-js-websocket';
 
 import {
   type Artist,
@@ -18,7 +18,6 @@ import {
   type PagedItems,
   type MediaItemType,
   MediaType,
-  type BrowseFolder,
   type QueueItem,
   QueueOption,
   type ProviderInstance,
@@ -602,7 +601,7 @@ export class MusicAssistantApi {
   }
   public playerQueueCommand(queue_id: string, command: string, args?: Record<string, any>) {
     /*
-      Handle (throttled) command to player 
+      Handle (throttled) command to player
     */
     clearTimeout(this._throttleId);
     // apply a bit of throttling here
@@ -684,7 +683,7 @@ export class MusicAssistantApi {
 
   public playerCommand(player_id: string, command: string, args?: Record<string, any>) {
     /*
-      Handle (throttled) command to player 
+      Handle (throttled) command to player
     */
     clearTimeout(this._throttleId);
     // apply a bit of throttling here (for the volume and seek sliders especially)
