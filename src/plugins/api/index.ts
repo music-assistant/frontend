@@ -5,7 +5,7 @@ import { store } from '../store';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { WebsocketBuilder, Websocket, LinearBackoff } from 'websocket-ts';
 import { reactive, ref } from 'vue';
-import { type createConnection, ERR_HASS_HOST_REQUIRED, getAuth } from 'home-assistant-js-websocket';
+import { createConnection, ERR_HASS_HOST_REQUIRED, getAuth } from 'home-assistant-js-websocket';
 
 import {
   type Artist,
