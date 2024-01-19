@@ -3,67 +3,66 @@
     <v-toolbar density="compact" class="titlebar" color="transparent" style="height: 55px">
       <template #title> {{ $t('settings.players') }} </template>
       <template #append>
-        <v-btn color="accent" variant="outlined" @click="addGroupPlayer">
-          {{ $t('settings.add_group_player') }}
-        </v-btn>
+        <!-- ADD group player button + contextmenu -->
+        <v-menu v-if="provsWithCreateGroupFeature.length">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" color="accent" variant="outlined">
+              {{ $t('settings.add_group_player') }}
+            </v-btn>
+          </template>
+
+          <v-card density="compact">
+            <ListItem v-for="provider in provsWithCreateGroupFeature" :key="provider.instance_id" density="compact"
+              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0" :title="provider.name"
+              @click="addGroupPlayer(provider.instance_id)">
+              <template #prepend>
+                <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px;" />
+              </template>
+            </ListItem>
+          </v-card>
+        </v-menu>
+
       </template>
     </v-toolbar>
     <Container>
-      <ListItem
-        v-for="item in playerConfigs"
-        :key="item.player_id"
-        v-hold="
-          () => {
-            editPlayer(item.player_id);
-          }
-        "
-        link
-        :context-menu-items="[
-          {
-            label: 'settings.configure',
-            labelArgs: [],
-            action: () => {
-              editPlayer(item.player_id);
-            },
-            icon: 'mdi-cog',
-          },
-          {
-            label: 'settings.edit_group_members',
-            labelArgs: [],
-            action: () => {
-              editGroupMembers(item.player_id);
-            },
-            icon: 'mdi-speaker-multiple',
-            hide: item.provider != 'ugp',
-          },
-          {
-            label: item.enabled ? 'settings.disable' : 'settings.enable',
-            labelArgs: [],
-            action: () => {
-              toggleEnabled(item);
-            },
-            icon: 'mdi-cancel',
-          },
-          {
-            label: 'settings.documentation',
-            labelArgs: [],
-            action: () => {
-              openLinkInNewTab(api.providerManifests[item.provider].documentation!);
-            },
-            icon: 'mdi-bookshelf',
-            disabled: !api.providerManifests[item.provider].documentation,
-          },
-          {
-            label: 'settings.delete',
-            labelArgs: [],
-            action: () => {
-              removePlayerConfig(item.player_id);
-            },
-            icon: 'mdi-delete',
-          },
-        ]"
-        @click="editPlayer(item.player_id)"
-      >
+      <ListItem v-for="item in playerConfigs" :key="item.player_id" v-hold="() => {
+        editPlayer(item.player_id);
+      }
+        " link :context-menu-items="[
+    {
+      label: 'settings.configure',
+      labelArgs: [],
+      action: () => {
+        editPlayer(item.player_id);
+      },
+      icon: 'mdi-cog',
+    },
+    {
+      label: item.enabled ? 'settings.disable' : 'settings.enable',
+      labelArgs: [],
+      action: () => {
+        toggleEnabled(item);
+      },
+      icon: 'mdi-cancel',
+    },
+    {
+      label: 'settings.documentation',
+      labelArgs: [],
+      action: () => {
+        openLinkInNewTab(api.providerManifests[item.provider].documentation!);
+      },
+      icon: 'mdi-bookshelf',
+      disabled: !api.providerManifests[item.provider].documentation,
+    },
+    {
+      label: 'settings.delete',
+      labelArgs: [],
+      action: () => {
+        removePlayerConfig(item.player_id);
+      },
+      icon: 'mdi-delete',
+    },
+  ]" @click="editPlayer(item.player_id)">
         <template #prepend>
           <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
         </template>
@@ -95,9 +94,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, watch } from 'vue';
+import { ref, onBeforeUnmount, watch, computed } from 'vue';
 import { api } from '@/plugins/api';
-import { EventType, PlayerConfig } from '@/plugins/api/interfaces';
+import { EventType, PlayerConfig, ProviderFeature } from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
@@ -114,6 +113,25 @@ const unsub = api.subscribe_multi([EventType.PLAYER_CONFIG_UPDATED], () => {
   loadItems();
 });
 onBeforeUnmount(unsub);
+
+
+// computed properties
+const provsWithCreateGroupFeature = computed(() => {
+  // providers that are enabled and support the PLAYER_GROUP_CREATE feature
+  return Object.values(api.providers)
+    .filter(
+      (x) =>
+        x.available &&
+        x.supported_features.includes(ProviderFeature.PLAYER_GROUP_CREATE)
+    )
+    .sort((a, b) =>
+      (a.name || api.providerManifests[a.domain].name).toUpperCase() >
+        (b.name || api.providerManifests[b.domain].name).toUpperCase()
+        ? 1
+        : -1,
+    );
+});
+
 
 // methods
 const loadItems = async function () {
@@ -132,15 +150,8 @@ const editPlayer = function (playerId: string) {
   }
 };
 
-const editGroupMembers = function (playerId: string) {
-  if (playerId in api.players) {
-    // only allow edit if player is alive/available
-    router.push('/settings/editprovider/ugp');
-  }
-};
-
-const addGroupPlayer = function () {
-  router.push('/settings/editprovider/ugp');
+const addGroupPlayer = function (provider: string) {
+  router.push(`/settings/addgroup/${provider}`);
 };
 
 const toggleEnabled = function (config: PlayerConfig) {

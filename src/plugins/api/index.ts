@@ -703,6 +703,15 @@ export class MusicAssistantApi {
     this.players[playerId].group_volume = newVolume;
   }
 
+  public async createPlayerGroup(provider: string, name: string, members: string[]): Promise<Player> {
+    // Save/update PlayerConfig.
+    return this.getData('players/create_group', {
+      provider,
+      name,
+      members,
+    });
+  }
+
   // Play Media related functions
 
   public playMedia(
