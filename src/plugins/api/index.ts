@@ -580,14 +580,6 @@ export class MusicAssistantApi {
     // Configure repeat setting on the the queue.
     this.playerQueueCommand(queueId, 'repeat', { repeat_mode });
   }
-  public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
-    // Configure crossfade setting on the the queue.
-    this.playerQueueCommand(queueId, 'crossfade', { crossfade_enabled });
-  }
-  public queueCommandCrossfadeToggle(queueId: string) {
-    // Toggle crossfade mode for a queue
-    this.queueCommandCrossfade(queueId, !this.queues[queueId].crossfade_enabled);
-  }
   public queueCommandRepeatToggle(queueId: string) {
     // Toggle repeat mode of a queue
     const queue = this.queues[queueId];
