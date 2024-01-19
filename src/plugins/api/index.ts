@@ -703,19 +703,6 @@ export class MusicAssistantApi {
     this.players[playerId].group_volume = newVolume;
   }
 
-  public setPlayerGroupMembers(player_id: string, members: string[]) {
-    /*
-      Update the memberlist of the given PlayerGroup.
-
-          - player_id: player_id of the groupplayer to handle the command.
-          - members: list of player ids to set as members.
-    */
-    this.sendCommand('players/cmd/set_members', {
-      player_id,
-      members,
-    });
-  }
-
   // Play Media related functions
 
   public playMedia(

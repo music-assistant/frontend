@@ -2,14 +2,9 @@
   <!-- streaming quality details -->
   <v-menu v-if="streamDetails" location="bottom end" :close-on-content-click="false">
     <template #activator="{ props }">
-      <v-chip
-        v-if="streamDetails"
+      <v-chip v-if="streamDetails"
         :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
-        class="mediadetails-content-type-btn"
-        label
-        :ripple="false"
-        v-bind="props"
-      >
+        class="mediadetails-content-type-btn" label :ripple="false" v-bind="props">
         <div class="d-flex justify-center" style="width: 100%">
           {{ streamDetails.audio_format.content_type.toUpperCase() }}
         </div>
@@ -24,46 +19,20 @@
         </v-list-item>
         <v-divider />
         <div style="height: 50px; display: flex; align-items: center">
-          <ProviderIcon
-            :domain="streamDetails.provider"
-            :size="35"
-            style="object-fit: contain; margin-left: 10px; margin-right: 5px"
-          />
+          <ProviderIcon :domain="streamDetails.provider" :size="35"
+            style="object-fit: contain; margin-left: 10px; margin-right: 5px" />
           {{ api.providerManifests[streamDetails.provider]?.name || api.providers[streamDetails.provider]?.name }}
         </div>
 
         <div style="height: 50px; display: flex; align-items: center">
-          <img
-            height="30"
-            width="50"
-            :src="getContentTypeIcon(streamDetails.audio_format.content_type)"
-            :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
-          />
+          <img height="30" width="50" :src="getContentTypeIcon(streamDetails.audio_format.content_type)"
+            :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'" />
           {{ streamDetails.audio_format.sample_rate / 1000 }} kHz / {{ streamDetails.audio_format.bit_depth }} bits
         </div>
 
-        <div
-          v-if="activePlayerQueue && activePlayerQueue.crossfade_enabled"
-          style="height: 50px; display: flex; align-items: center"
-        >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/crossfade.png"
-            :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
-          />
-          {{ $t('crossfade_enabled') }}
-        </div>
-
         <div v-if="streamDetails.gain_correct" style="height: 50px; display: flex; align-items: center">
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/level.png"
-            :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
-          />
+          <img height="30" width="50" contain src="@/assets/level.png"
+            :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'" />
           {{ streamDetails.gain_correct }} dB
         </div>
       </v-list>
@@ -119,9 +88,10 @@ export const iconFolder = new URL('@/assets/folder.svg', import.meta.url).href;
   padding: 0px 8px 0px 8px !important;
 }
 
-.list-item > div.ListItem__prepend {
+.list-item>div.ListItem__prepend {
   padding-right: 10px;
 }
+
 .mediadetails-streamdetails {
   width: 30px;
   height: 14px;
@@ -132,6 +102,7 @@ export const iconFolder = new URL('@/assets/folder.svg', import.meta.url).href;
   padding: 0;
   box-shadow: none;
 }
+
 .mediadetails-content-type-btn {
   height: 25px !important;
   width: 50px !important;
