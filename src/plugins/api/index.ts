@@ -580,14 +580,6 @@ export class MusicAssistantApi {
     // Configure repeat setting on the the queue.
     this.playerQueueCommand(queueId, 'repeat', { repeat_mode });
   }
-  public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
-    // Configure crossfade setting on the the queue.
-    this.playerQueueCommand(queueId, 'crossfade', { crossfade_enabled });
-  }
-  public queueCommandCrossfadeToggle(queueId: string) {
-    // Toggle crossfade mode for a queue
-    this.queueCommandCrossfade(queueId, !this.queues[queueId].crossfade_enabled);
-  }
   public queueCommandRepeatToggle(queueId: string) {
     // Toggle repeat mode of a queue
     const queue = this.queues[queueId];
@@ -711,15 +703,21 @@ export class MusicAssistantApi {
     this.players[playerId].group_volume = newVolume;
   }
 
-  public setPlayerGroupMembers(player_id: string, members: string[]) {
+  public playerCommandGroupPower(playerId: string, newPower: boolean) {
     /*
-      Update the memberlist of the given PlayerGroup.
-
-          - player_id: player_id of the groupplayer to handle the command.
-          - members: list of player ids to set as members.
+      Send POWER command to given playergroup.
     */
-    this.sendCommand('players/cmd/set_members', {
-      player_id,
+    this.playerCommand(playerId, 'group_power', {
+      power: newPower,
+    });
+    this.players[playerId].powered = newPower;
+  }
+
+  public async createPlayerGroup(provider: string, name: string, members: string[]): Promise<Player> {
+    // Save/update PlayerConfig.
+    return this.getData('players/create_group', {
+      provider,
+      name,
       members,
     });
   }

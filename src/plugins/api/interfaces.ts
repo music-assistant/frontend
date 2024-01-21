@@ -99,17 +99,17 @@ export enum PlayerState {
 export enum PlayerType {
   PLAYER = 'player', // A regular player.
   GROUP = 'group', // A (dedicated) group player or playergroup.
-  STEREO_PAIR = 'stereo_pair', // Two speakers playing as one stereo pair.
+  SYNC_GROUP = 'sync_group', // A group/preset of players that can be synced together.
 }
 
 export enum PlayerFeature {
   POWER = 'power',
   VOLUME_SET = 'volume_set',
   VOLUME_MUTE = 'volume_mute',
+  PAUSE = 'pause',
   SYNC = 'sync',
   SEEK = 'seek',
-  SET_MEMBERS = 'set_members',
-  QUEUE = 'queue',
+  ENQUEUE_NEXT = 'enqueue_next',
 }
 
 export enum EventType {
@@ -160,8 +160,12 @@ export enum ProviderFeature {
   PLAYLIST_TRACKS_EDIT = 'playlist_tracks_edit',
   PLAYLIST_CREATE = 'playlist_create',
   // player provider specific features
-  CREATE_GROUP = 'create_group',
-  DELETE_GROUP = 'delete_group',
+  PLAYER_GROUP_CREATE = 'player_group_create',
+  SYNC_PLAYERS = 'sync_players',
+  // metadata provider specific features
+  ARTIST_METADATA = 'artist_metadata',
+  ALBUM_METADATA = 'album_metadata',
+  TRACK_METADATA = 'track_metadata',
 }
 
 export enum ProviderType {
@@ -507,7 +511,6 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
-  crossfade_enabled: boolean;
   repeat_mode: RepeatMode;
   current_index?: number;
   index_in_buffer?: number;
@@ -552,7 +555,7 @@ export interface Player {
   enabled: boolean;
   group_volume: number;
   display_name: string;
-  hidden_by: string[];
+  hidden: boolean;
 }
 
 // provider

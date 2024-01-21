@@ -180,6 +180,12 @@ const routes = [
             props: true,
           },
           {
+            path: 'addgroup/:provider',
+            name: 'addgroup',
+            component: () => import(/* webpackChunkName: "addgroup" */ '@/views/settings/AddGroupPlayer.vue'),
+            props: true,
+          },
+          {
             path: '',
             redirect: '/settings/providers', // default child path
             name: 'settingsredirect',

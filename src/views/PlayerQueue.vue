@@ -344,14 +344,6 @@ const setMenuItems = function () {
       },
       icon: activePlayerQueue.value!.shuffle_enabled ? 'mdi-repeat' : 'mdi-repeat-off',
     },
-    {
-      label: activePlayerQueue.value!.crossfade_enabled ? 'crossfade_enabled' : 'crossfade_disabled',
-      labelArgs: [],
-      action: () => {
-        api.queueCommandCrossfadeToggle(activePlayerQueue.value!.queue_id);
-      },
-      icon: activePlayerQueue.value!.crossfade_enabled ? 'mdi-swap-horizontal-bold' : 'mdi-swap-horizontal',
-    },
   ];
 };
 
