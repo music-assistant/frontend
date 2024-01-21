@@ -42,20 +42,6 @@
           {{ streamDetails.audio_format.sample_rate / 1000 }} kHz / {{ streamDetails.audio_format.bit_depth }} bits
         </div>
 
-        <div
-          v-if="activePlayerQueue && activePlayerQueue.crossfade_enabled"
-          style="height: 50px; display: flex; align-items: center"
-        >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/crossfade.png"
-            :style="$vuetify.theme.current.dark ? 'object-fit: contain;' : 'object-fit: contain;filter: invert(100%);'"
-          />
-          {{ $t('crossfade_enabled') }}
-        </div>
-
         <div v-if="streamDetails.gain_correct" style="height: 50px; display: flex; align-items: center">
           <img
             height="30"
@@ -122,6 +108,7 @@ export const iconFolder = new URL('@/assets/folder.svg', import.meta.url).href;
 .list-item > div.ListItem__prepend {
   padding-right: 10px;
 }
+
 .mediadetails-streamdetails {
   width: 30px;
   height: 14px;
@@ -132,6 +119,7 @@ export const iconFolder = new URL('@/assets/folder.svg', import.meta.url).href;
   padding: 0;
   box-shadow: none;
 }
+
 .mediadetails-content-type-btn {
   height: 25px !important;
   width: 50px !important;

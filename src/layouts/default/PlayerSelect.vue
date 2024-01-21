@@ -158,7 +158,7 @@ const playerActive = function (
   if (!player.enabled) return false;
   if (!player.available && !allowUnavailable) return false;
   if (player.synced_to && !allowSyncChild) return false;
-  if (player.hidden_by.length && !allowHidden) return false;
+  if (player.hidden && !allowHidden) return false;
   return true;
 };
 

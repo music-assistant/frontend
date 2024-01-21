@@ -529,7 +529,6 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
 
 const changeActiveProviderFilter = function (provider: string) {
   params.value.providerFilter = provider;
-  console.log("changeActiveProviderFilter", provider)
   loadData(true, undefined, true);
 };
 

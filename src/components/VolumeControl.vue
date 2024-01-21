@@ -40,9 +40,10 @@
         <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center">
             <Button icon style="height: 25px !important" @click="api.playerCommandPowerToggle(childPlayer.player_id)">
-              <v-icon :size="25" :icon="childPlayer.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
+              <v-icon :size="25" icon="mdi-power" />
             </Button>
-            <div class="text-caption">{{ childPlayer.volume_level }}</div>
+            <div v-if="childPlayer.volume_muted" class="text-caption">{{ $t('muted') }}</div>
+            <div v-else class="text-caption">{{ childPlayer.volume_level }}</div>
           </div>
         </div>
       </template>
@@ -62,13 +63,12 @@
       </template>
 
       <template #append>
-        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+        <div :style="childPlayer.powered ? 'margin-right:-10px;opacity: 0.75' : 'margin-right:-10px;opacity: 0.5'">
           <!-- sync button -->
           <div
             v-if="
-              player.type != PlayerType.GROUP &&
               !childPlayer.synced_to &&
-              !childPlayer.group_childs.length &&
+              childPlayer.can_sync_with.length &&
               Object.values(api.players).filter((x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id))
                 .length > 0
             "
@@ -94,7 +94,7 @@
             </v-menu>
           </div>
           <!-- unsync button -->
-          <div v-if="player.type != PlayerType.GROUP && childPlayer.synced_to" class="syncbtn">
+          <div v-if="childPlayer.synced_to" class="syncbtn">
             <Button icon @click="api.playerCommandUnSync(childPlayer.player_id)">
               <v-icon>mdi-link-variant-off</v-icon>
             </Button>
@@ -120,7 +120,7 @@ defineProps<Props>();
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
-  if (player.type != PlayerType.GROUP) {
+  if (player.type != PlayerType.GROUP && player.type != PlayerType.SYNC_GROUP) {
     items.push(player);
   }
   for (const groupChildId of player.group_childs) {
@@ -134,18 +134,13 @@ const getVolumePlayers = function (player: Player) {
   return items;
 };
 const setGroupPower = function (player: Player, powered: boolean) {
-  if (player.type != PlayerType.GROUP && player.group_childs.length > 0) {
+  if (player.type == PlayerType.GROUP || player.type == PlayerType.SYNC_GROUP || player.group_childs.length > 0) {
     // send power command to all group child players
-    for (const childPlayer of getVolumePlayers(player)) {
-      // bypass api throttling by sending the command directly
-      api.sendCommand('players/cmd/power', {
-        player_id: childPlayer.player_id,
-        powered,
-      });
-    }
+    api.playerCommandGroupPower(player.player_id, powered);
+  } else {
+    // regular power command to single player (or special group player)
+    api.playerCommandPower(player.player_id, powered);
   }
-  // regular power command to single player (or special group player)
-  api.playerCommandPower(player.player_id, powered);
 };
 </script>
 
