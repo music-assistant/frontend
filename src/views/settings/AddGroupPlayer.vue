@@ -51,11 +51,10 @@ const props = defineProps<{
 
 // computed properties
 const syncPlayers = computed(() => {
-  // providers that are enabled and support the PLAYER_GROUP_CREATE feature
   return Object.values(api.players)
     .filter(
       (x) =>
-        x.provider == props.provider
+        props.provider == "ugp" || (x.provider == props.provider && x.can_sync_with.length)
     )
     .sort((a, b) =>
       (a.display_name).toUpperCase() > (b.display_name).toUpperCase()

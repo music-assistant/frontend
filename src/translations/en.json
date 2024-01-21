@@ -231,5 +231,6 @@
   "radiobrowser_by_country": "By country",
   "radiobrowser_by_tag": "By tag",
   "load_more_items": "Load more items...",
-  "radio": "Radio"
+  "radio": "Radio",
+  "muted": "muted"
 }

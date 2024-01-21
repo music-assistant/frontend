@@ -117,12 +117,12 @@ onBeforeUnmount(unsub);
 
 // computed properties
 const provsWithCreateGroupFeature = computed(() => {
-  // providers that are enabled and support the PLAYER_GROUP_CREATE feature
+  // providers that are enabled and support the PLAYER_GROUP_CREATE or SYNC_PLAYERS feature
   return Object.values(api.providers)
     .filter(
       (x) =>
         x.available &&
-        x.supported_features.includes(ProviderFeature.PLAYER_GROUP_CREATE)
+        x.supported_features.includes(ProviderFeature.PLAYER_GROUP_CREATE) || x.supported_features.includes(ProviderFeature.SYNC_PLAYERS)
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >

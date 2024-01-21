@@ -99,7 +99,7 @@ export enum PlayerState {
 export enum PlayerType {
   PLAYER = 'player', // A regular player.
   GROUP = 'group', // A (dedicated) group player or playergroup.
-  SYNC_GROUP = 'stereo_pair', // A group/preset of players that can be synced together.
+  SYNC_GROUP = 'sync_group', // A group/preset of players that can be synced together.
 }
 
 export enum PlayerFeature {
@@ -161,6 +161,7 @@ export enum ProviderFeature {
   PLAYLIST_CREATE = 'playlist_create',
   // player provider specific features
   PLAYER_GROUP_CREATE = 'player_group_create',
+  SYNC_PLAYERS = 'sync_players',
   // metadata provider specific features
   ARTIST_METADATA = 'artist_metadata',
   ALBUM_METADATA = 'album_metadata',
@@ -554,7 +555,7 @@ export interface Player {
   enabled: boolean;
   group_volume: number;
   display_name: string;
-  hidden_by: string[];
+  hidden: boolean;
 }
 
 // provider

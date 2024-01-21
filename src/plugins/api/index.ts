@@ -703,6 +703,16 @@ export class MusicAssistantApi {
     this.players[playerId].group_volume = newVolume;
   }
 
+  public playerCommandGroupPower(playerId: string, newPower: boolean) {
+    /*
+      Send POWER command to given playergroup.
+    */
+    this.playerCommand(playerId, 'group_power', {
+      power: newPower,
+    });
+    this.players[playerId].powered = newPower;
+  }
+
   public async createPlayerGroup(provider: string, name: string, members: string[]): Promise<Player> {
     // Save/update PlayerConfig.
     return this.getData('players/create_group', {
