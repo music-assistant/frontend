@@ -10,7 +10,7 @@
         >
           <template #prepend><v-icon :icon="widgetRow.icon" style="margin-left: 15px" /></template>
           <template #title>
-            <v-badge inline v-if="widgetRow.count" color="grey" :content="widgetRow.count">
+            <v-badge v-if="widgetRow.count" inline color="grey" :content="widgetRow.count">
               <span class="mr-3">{{ $t(widgetRow.label) }}</span>
             </v-badge>
             <template v-else>

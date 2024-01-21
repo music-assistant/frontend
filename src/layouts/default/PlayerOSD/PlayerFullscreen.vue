@@ -43,7 +43,7 @@
               useResizeObserver: true,
               circular: true,
             }"
-            @moveEnd="handleFlickingMoveEnd"
+            @move-end="handleFlickingMoveEnd"
           >
             <div v-for="config in 3" :key="config" style="margin-right: 10px; margin-left: 10px; display: flex">
               <MediaItemThumb

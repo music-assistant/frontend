@@ -3,9 +3,7 @@
     <v-card-text>
       <!-- header -->
       <div v-if="provider && provider in api.providers" style="margin-left: -5px; margin-right: -5px">
-        <v-card-title>
-          {{ $t('settings.add_group_player') }} ({{ api.providers[provider].name }})
-        </v-card-title>
+        <v-card-title> {{ $t('settings.add_group_player') }} ({{ api.providers[provider].name }}) </v-card-title>
         <br />
         <v-divider />
         <br />
@@ -14,8 +12,14 @@
           <!-- name field -->
           <v-text-field v-model="name" :label="$t('settings.player_name')" variant="outlined" clearable required />
           <!-- value with dropdown -->
-          <v-select v-model="members" clearable multiple :items="syncPlayers" :label="$t('settings.group_members')"
-            required />
+          <v-select
+            v-model="members"
+            clearable
+            multiple
+            :items="syncPlayers"
+            :label="$t('settings.group_members')"
+            required
+          />
           <br />
           <v-btn block color="primary" :disabled="!valid" @click="onSubmit">
             {{ $t('settings.save') }}
@@ -38,29 +42,21 @@ import { watch } from 'vue';
 
 // global refs
 const router = useRouter();
-const name = ref<string>("");
+const name = ref<string>('');
 const members = ref<string[]>([]);
 const valid = ref<boolean>(false);
-
 
 // props
 const props = defineProps<{
   provider: string;
 }>();
 
-
 // computed properties
 const syncPlayers = computed(() => {
   return Object.values(api.players)
-    .filter(
-      (x) =>
-        props.provider == "ugp" || (x.provider == props.provider && x.can_sync_with.length)
-    )
-    .sort((a, b) =>
-      (a.display_name).toUpperCase() > (b.display_name).toUpperCase()
-        ? 1
-        : -1,
-    ).map((x) => ({ title: x.display_name, value: x.player_id }));
+    .filter((x) => props.provider == 'ugp' || (x.provider == props.provider && x.can_sync_with.length))
+    .sort((a, b) => (a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1))
+    .map((x) => ({ title: x.display_name, value: x.player_id }));
 });
 
 // watchers
@@ -68,7 +64,7 @@ const syncPlayers = computed(() => {
 watch(
   () => props.provider,
   async (val) => {
-    name.value = "";
+    name.value = '';
     valid.value = false;
     members.value = [];
   },

@@ -24,9 +24,13 @@
             </Button>
           </template>
           <v-list>
-            <ListItem v-for="(item, index) in topBarContextMenuItems.filter((x) => x.hide != true)" :key="index"
-              :title="$t(item.label, item.labelArgs)" :disabled="item.disabled == true"
-              @click="item.action ? item.action() : ''">
+            <ListItem
+              v-for="(item, index) in topBarContextMenuItems.filter((x) => x.hide != true)"
+              :key="index"
+              :title="$t(item.label, item.labelArgs)"
+              :disabled="item.disabled == true"
+              @click="item.action ? item.action() : ''"
+            >
               <template #prepend>
                 <v-avatar :icon="item.icon" />
               </template>
@@ -41,29 +45,56 @@
         <b>{{ $t('queue_radio_enabled') }}</b>
         <br />
         {{ $t('queue_radio_based_on', [$t(activePlayerQueue?.radio_source[0].media_type)]) }}
-        <b><a @click="activePlayerQueue ? gotoItem(activePlayerQueue?.radio_source[0]) : ''">{{
-          activePlayerQueue?.radio_source[0].name
-        }}</a></b><span v-if="activePlayerQueue?.radio_source.length > 1">
-          (+{{ activePlayerQueue?.radio_source.length - 1 }})</span>
+        <b
+          ><a @click="activePlayerQueue ? gotoItem(activePlayerQueue?.radio_source[0]) : ''">{{
+            activePlayerQueue?.radio_source[0].name
+          }}</a></b
+        ><span v-if="activePlayerQueue?.radio_source.length > 1">
+          (+{{ activePlayerQueue?.radio_source.length - 1 }})</span
+        >
       </Alert>
 
       <v-virtual-scroll :height="66" :items="tabItems" style="height: 100%">
         <template #default="{ item }">
-          <ListviewItem v-if="item.media_item" :key="item.queue_item_id" :item="item.media_item || item"
-            :show-disc-number="false" :show-track-number="false" :show-duration="true" :show-library="true"
-            :show-menu="true" :show-provider="false" :show-album="false" :show-checkboxes="false" :is-selected="false"
-            :show-details="false" :is-disabled="item.queue_item_id == curQueueItem?.queue_item_id" ripple
-            @menu="onClick(item)" @click="queueCommand(item, 'play_now')" @click.right.prevent="onClick(item)">
+          <ListviewItem
+            v-if="item.media_item"
+            :key="item.queue_item_id"
+            :item="item.media_item || item"
+            :show-disc-number="false"
+            :show-track-number="false"
+            :show-duration="true"
+            :show-library="true"
+            :show-menu="true"
+            :show-provider="false"
+            :show-album="false"
+            :show-checkboxes="false"
+            :is-selected="false"
+            :show-details="false"
+            :is-disabled="item.queue_item_id == curQueueItem?.queue_item_id"
+            ripple
+            @menu="onClick(item)"
+            @click="queueCommand(item, 'play_now')"
+            @click.right.prevent="onClick(item)"
+          >
             <template #append>
               <!-- move up -->
-              <v-btn v-if="getBreakpointValue('bp1')" variant="plain" ripple icon="mdi-arrow-up"
+              <v-btn
+                v-if="getBreakpointValue('bp1')"
+                variant="plain"
+                ripple
+                icon="mdi-arrow-up"
                 :title="$t('queue_move_up')"
-                @click="api.queueCommandMoveUp(activePlayerQueue!.queue_id, item.queue_item_id)" @click.prevent
-                @click.stop />
+                @click="api.queueCommandMoveUp(activePlayerQueue!.queue_id, item.queue_item_id)"
+                @click.prevent
+                @click.stop
+              />
 
               <!-- move down -->
-              <v-btn icon="mdi-arrow-down" :title="$t('queue_move_down')"
-                @click.prevent="api.queueCommandMoveDown(activePlayerQueue!.queue_id, item.queue_item_id)" />
+              <v-btn
+                icon="mdi-arrow-down"
+                :title="$t('queue_move_down')"
+                @click.prevent="api.queueCommandMoveDown(activePlayerQueue!.queue_id, item.queue_item_id)"
+              />
             </template>
           </ListviewItem>
           <ListItem v-else>
@@ -146,8 +177,11 @@
             <v-divider />
 
             <!-- show info (track only) -->
-            <ListItem v-if="selectedItem?.media_item?.media_type == MediaType.TRACK" :title="$t('show_info')"
-              @click="selectedItem?.media_item ? gotoItem(selectedItem.media_item) : ''">
+            <ListItem
+              v-if="selectedItem?.media_item?.media_type == MediaType.TRACK"
+              :title="$t('show_info')"
+              @click="selectedItem?.media_item ? gotoItem(selectedItem.media_item) : ''"
+            >
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon icon="mdi-information-outline" />
