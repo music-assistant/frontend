@@ -12,14 +12,9 @@
           </template>
 
           <v-card density="compact">
-            <ListItem
-              v-for="provider in provsWithCreateGroupFeature"
-              :key="provider.instance_id"
-              density="compact"
-              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
-              :title="provider.name"
-              @click="addGroupPlayer(provider.instance_id)"
-            >
+            <ListItem v-for="provider in provsWithCreateGroupFeature" :key="provider.instance_id" density="compact"
+              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0" :title="provider.name"
+              @click="addGroupPlayer(provider.instance_id)">
               <template #prepend>
                 <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
               </template>
@@ -29,54 +24,46 @@
       </template>
     </v-toolbar>
     <Container>
-      <ListItem
-        v-for="item in playerConfigs"
-        :key="item.player_id"
-        v-hold="
-          () => {
-            editPlayer(item.player_id);
-          }
-        "
-        link
-        :context-menu-items="[
-          {
-            label: 'settings.configure',
-            labelArgs: [],
-            action: () => {
-              editPlayer(item.player_id);
-            },
-            icon: 'mdi-cog',
-          },
-          {
-            label: item.enabled ? 'settings.disable' : 'settings.enable',
-            labelArgs: [],
-            action: () => {
-              toggleEnabled(item);
-            },
-            icon: 'mdi-cancel',
-          },
-          {
-            label: 'settings.documentation',
-            labelArgs: [],
-            action: () => {
-              openLinkInNewTab(api.providerManifests[item.provider].documentation!);
-            },
-            icon: 'mdi-bookshelf',
-            disabled: !api.providerManifests[item.provider].documentation,
-          },
-          {
-            label: 'settings.delete',
-            labelArgs: [],
-            action: () => {
-              removePlayerConfig(item.player_id);
-            },
-            icon: 'mdi-delete',
-          },
-        ]"
-        @click="editPlayer(item.player_id)"
-      >
+      <ListItem v-for="item in playerConfigs" :key="item.player_id" v-hold="() => {
+          editPlayer(item.player_id);
+        }
+        " link :context-menu-items="[
+    {
+      label: 'settings.configure',
+      labelArgs: [],
+      action: () => {
+        editPlayer(item.player_id);
+      },
+      icon: 'mdi-cog',
+    },
+    {
+      label: item.enabled ? 'settings.disable' : 'settings.enable',
+      labelArgs: [],
+      action: () => {
+        toggleEnabled(item);
+      },
+      icon: 'mdi-cancel',
+    },
+    {
+      label: 'settings.documentation',
+      labelArgs: [],
+      action: () => {
+        openLinkInNewTab(api.providerManifests[api.providers[item.provider].domain].documentation!);
+      },
+      icon: 'mdi-bookshelf',
+      disabled: !api.providerManifests[api.providers[item.provider].domain].documentation,
+    },
+    {
+      label: 'settings.delete',
+      labelArgs: [],
+      action: () => {
+        removePlayerConfig(item.player_id);
+      },
+      icon: 'mdi-delete',
+    },
+  ]" @click="editPlayer(item.player_id)">
         <template #prepend>
-          <provider-icon :domain="item.provider" :size="40" class="listitem-media-thumb" />
+          <provider-icon :domain="api.providers[item.provider].domain" :size="40" class="listitem-media-thumb" />
         </template>
 
         <!-- title -->
@@ -137,7 +124,7 @@ const provsWithCreateGroupFeature = computed(() => {
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >
-      (b.name || api.providerManifests[b.domain].name).toUpperCase()
+        (b.name || api.providerManifests[b.domain].name).toUpperCase()
         ? 1
         : -1,
     );
