@@ -135,10 +135,12 @@
           <h2>{{ $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || '') }}</h2>
         </v-card-text>
         <!-- eslint-disable vue/no-v-html -->
+        <!-- eslint-disable vue/no-v-text-v-html-on-component -->
         <v-card-text
           v-html="markdownToHtml($t(`settings.${showHelpInfo?.key}.description`, showHelpInfo?.description || ''))">
         </v-card-text>
         <!-- eslint-enable vue/no-v-html -->
+        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <v-card-actions>
           <v-btn v-if="showHelpInfo?.help_link" @click="openLink(showHelpInfo!.help_link!)">
             {{ $t('read_more') }}
