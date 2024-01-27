@@ -59,12 +59,15 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  item: undefined,
+  size: undefined,
   width: '100%',
   height: 'auto',
   aspectRatio: '1/1',
   cover: true,
   fallback: undefined,
   thumb: true,
+  lazySrc: undefined,
   rounded: true,
 });
 

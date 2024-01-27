@@ -111,7 +111,7 @@
           {{ getArtistsString(curQueueItem.media_item.artists) }} •
           {{ curQueueItem.media_item.album.name }}
         </div>
-        <!-- track/album falback: artist present -->
+        <!-- track/album fallback: artist present -->
         <div
           v-else-if="
             curQueueItem &&

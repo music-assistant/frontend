@@ -138,7 +138,7 @@
                   : ''
               "
             >
-              <!-- track/album falback: artist present -->
+              <!-- track/album fallback: artist present -->
               <h4
                 v-if="
                   curQueueItem.media_item &&

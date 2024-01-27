@@ -132,7 +132,7 @@ watch(curQueueItemTime, (newTime) => {
   }
 });
 
-// methodes
+// methods
 const startDragging = function () {
   isDragging.value = true;
 };

@@ -25,7 +25,7 @@
     />
     <v-divider />
 
-    <!-- collapsable player rows-->
+    <!-- collapsible player rows-->
     <v-expansion-panels v-model="panelItem" focusable accordion flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"

@@ -1,4 +1,4 @@
-<!-- 
+<!--
   Global dialog to play item(s) to a player.
   Because this dialog can be called from various places throughout the app,
   we steer its visibility through the centralized eventbus.

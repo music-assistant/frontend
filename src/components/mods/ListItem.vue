@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/require-explicit-emits -->
 <template>
   <v-list-item
     v-bind="listItemProps"

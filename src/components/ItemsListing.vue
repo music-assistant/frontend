@@ -294,7 +294,7 @@
         </template>
       </v-virtual-scroll>
 
-      <!-- inifinite scroll component -->
+      <!-- infinite scroll component -->
       <InfiniteLoading v-if="infiniteScroll" @infinite="loadNextPage" />
       <v-btn
         v-else-if="(total || 0) > pagedItems.length"
@@ -435,6 +435,12 @@ const props = withDefaults(defineProps<Props>(), {
   allowKeyHooks: false,
   limit: 100,
   infiniteScroll: true,
+  title: undefined,
+  providerFilter: undefined,
+  contextMenuItems: undefined,
+  loadPagedData: undefined,
+  loadItems: undefined,
+  path: undefined,
 });
 
 // global refs

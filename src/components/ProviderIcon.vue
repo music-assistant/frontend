@@ -1,4 +1,6 @@
 <template>
+  <!-- eslint-disable vue/no-v-html -->
+  <!-- eslint-disable vue/no-v-text-v-html-on-component -->
   <div :style="`width:${size}px;margin-left:10px;margin-right:10px`">
     <!-- icon for library-->
     <v-icon

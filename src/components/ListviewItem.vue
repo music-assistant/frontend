@@ -122,7 +122,7 @@
           {{ $t('album_type.' + item.album_type) }} •
           {{ getArtistsString(item.artists) }}
         </div>
-        <!-- track/album falback: artist present -->
+        <!-- track/album fallback: artist present -->
         <div v-else-if="'artists' in item && item.artists">
           {{ getArtistsString(item.artists) }}
         </div>
@@ -272,6 +272,7 @@ const props = withDefaults(defineProps<Props>(), {
   showCheckboxes: false,
   parentItem: undefined,
   isDisabled: false,
+  contextMenuItems: undefined,
 });
 
 // computed properties

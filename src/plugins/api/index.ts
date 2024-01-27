@@ -775,7 +775,7 @@ export class MusicAssistantApi {
     /*
       Send VOLUME_SET command to given playergroup.
 
-      Will send the new (average) volume level to group childs.
+      Will send the new (average) volume level to group child's.
         - playerId: player_id of the playergroup to handle the command.
         - newVolume: volume level (0..100) to set on the player.
     */

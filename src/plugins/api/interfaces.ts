@@ -256,14 +256,14 @@ export type ConfigValueType =
   | null;
 
 export interface ConfigValueOption {
-  // Model for a value with seperated name/value.
+  // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
 }
 
 export interface ConfigEntry {
   // Model for a Config Entry.
-  // The definition of something that can be configured for an opbject (e.g. provider or player)
+  // The definition of something that can be configured for an object (e.g. provider or player)
   // within Music Assistant (without the value).
   // key: used as identifier for the entry, also for localization
   key: string;

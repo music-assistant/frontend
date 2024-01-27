@@ -48,6 +48,7 @@ export interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
+  icon: undefined,
 });
 
 // computed properties

@@ -18,8 +18,11 @@ import { computed, ref } from 'vue';
 
 export default {
   props: {
+    // eslint-disable-next-line vue/require-default-prop
     width: String,
+    // eslint-disable-next-line vue/require-default-prop
     height: String,
+    // eslint-disable-next-line vue/require-default-prop
     style: String,
     isPowered: Boolean,
   },

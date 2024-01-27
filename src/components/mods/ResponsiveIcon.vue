@@ -68,9 +68,17 @@ export interface ResponsiveIconProps {
   disabled?: boolean;
 }
 const props = withDefaults(defineProps<ResponsiveIconProps>(), {
+  width: undefined,
+  height: undefined,
+  staticWidth: undefined,
+  staticHeight: undefined,
+  maxWidth: undefined,
+  maxHeight: undefined,
   minWidth: '24px',
   minHeight: '24px',
+  icon: undefined,
   type: 'icon',
+  color: undefined,
 });
 
 const adjustIconSize = () => {
@@ -115,6 +123,7 @@ onBeforeUnmount(() => {
 .responsive-icon-holder-btn:hover {
   opacity: 1;
 }
+
 .responsive-icon-holder-btn:focus {
   outline: none;
   color: #00ff00;
