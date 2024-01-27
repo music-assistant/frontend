@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Enter a new for the new playlist",
     "no_content": "No items found.",
-    "no_content_filter": "No items found for the current filter/search conditions.",
+    "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",
     "off": "Off",
     "on": "On",
@@ -93,7 +93,7 @@
         "add_provider": "Add a new provider",
         "advanced_settings": "Advanced settings",
         "check_docs": "Checkout the documentation",
-        "codeowners": "Authors/credits",
+        "codeowners": "Authors\/credits",
         "config_player": "Configure player: {0}",
         "configure": "Configure",
         "delete": "Delete",
@@ -104,67 +104,6 @@
         "enable_provider": "Enable this provider entry",
         "enabled": "Enable",
         "invalid_input": "The input is invalid",
-        "log_level": {
-            "label": "Log level",
-            "description": "Set the log verbosity for this provider.",
-            "options": {
-                "global": "Global",
-                "info": "Info",
-                "warning": "Warning",
-                "error": "Error",
-                "debug": "Debug"
-            }
-        },
-        "flow_mode": {
-            "label": "Enable queue flow mode",
-            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \nUse for players that do not natively support gapless and/or crossfading or if the player has trouble transitioning between tracks."
-        },
-        "auto_play": {
-            "label": "Automatically play (resume on power on)",
-            "description": "When this player is turned ON, automatically start playing (if there are items in the queue)."
-        },
-        "output_channels": {
-            "label": "Output Channel Mode",
-            "description": "You can configure this player to play only the left or right channel, for example to a create a stereo pair with 2 players.",
-            "options": {
-                "stereo": "Stereo (both channels)",
-                "left": "Left channel only",
-                "right": "Right channel only",
-                "mono": "Mono (both channels)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Enable volume normalization (EBU-R128 based)",
-            "description": "Enable volume normalization based on the EBU-R128 standard without affecting dynamic range"
-        },
-        "volume_normalization_target": {
-            "label": "Target level for volume normalization",
-            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \n\n **WARNING:** Setting the level too high may result in clipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bass",
-            "description": "Use the builtin basic equalizer to adjust the bass (low tones) level of the audio."
-        },
-        "eq_mid": {
-            "label": "Equalizer: mid",
-            "description": "Use the builtin basic equalizer to adjust the mid level of audio."
-        },
-        "eq_treble": {
-            "label": "Equalizer: treble",
-            "description": "Use the builtin basic equalizer to adjust the treble (high tones) level of audio."
-        },
-        "crossfade": {
-            "label": "Enable crossfade",
-            "description": "Enable a crossfade transition between (queue) tracks."
-        },
-        "crossfade_duration": {
-            "label": "Crossfade duration",
-            "description": "Duration in seconds of the crossfade between tracks (if enabled)"
-        },
-        "hide_player": {
-            "label": "Hide this player in the user interface",
-            "description": "Hide this player in the user interface. \n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
-        },
         "metadataproviders": "Metadata providers",
         "musicproviders": "Music providers",
         "need_help_setup_provider": "Need help setting up this provider ?",
@@ -211,7 +150,68 @@
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
-        "group_members": "Group members"
+        "group_members": "Group members",
+        "log_level": {
+            "label": "Log level",
+            "description": "Set the log verbosity for this provider.",
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Warning",
+                "error": "Error",
+                "debug": "Debug"
+            }
+        },
+        "flow_mode": {
+            "label": "Enable queue flow mode",
+            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
+        },
+        "auto_play": {
+            "label": "Automatically play (resume on power on)",
+            "description": "When this player is turned ON, automatically start playing (if there are items in the queue)."
+        },
+        "output_channels": {
+            "label": "Output Channel Mode",
+            "description": "You can configure this player to play only the left or right channel, for example to a create a stereo pair with 2 players.",
+            "options": {
+                "stereo": "Stereo (both channels)",
+                "left": "Left channel only",
+                "right": "Right channel only",
+                "mono": "Mono (both channels)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Enable volume normalization (EBU-R128 based)",
+            "description": "Enable volume normalization based on the EBU-R128 standard without affecting dynamic range"
+        },
+        "volume_normalization_target": {
+            "label": "Target level for volume normalization",
+            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \n\n **WARNING:** Setting the level too high may result in clipping!"
+        },
+        "eq_bass": {
+            "label": "Equalizer: bass",
+            "description": "Use the builtin basic equalizer to adjust the bass (low tones) level of the audio."
+        },
+        "eq_mid": {
+            "label": "Equalizer: mid",
+            "description": "Use the builtin basic equalizer to adjust the mid level of audio."
+        },
+        "eq_treble": {
+            "label": "Equalizer: treble",
+            "description": "Use the builtin basic equalizer to adjust the treble (high tones) level of audio."
+        },
+        "crossfade": {
+            "label": "Enable crossfade",
+            "description": "Enable a crossfade transition between (queue) tracks."
+        },
+        "crossfade_duration": {
+            "label": "Crossfade duration",
+            "description": "Duration in seconds of the crossfade between tracks (if enabled)"
+        },
+        "hide_player": {
+            "label": "Hide this player in the user interface",
+            "description": "Hide this player in the user interface. \n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
+        }
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
@@ -253,21 +253,21 @@
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
         "explicit": "Explicit",
-        "filter_library": "Toggle in-library/favorite filter",
-        "library": "Toggle in-library/favorite",
+        "filter_library": "Toggle in-library\/favorite filter",
+        "library": "Toggle in-library\/favorite",
         "linked": "This provideritem is linked to the current itemdetails",
         "refresh": "Refresh the items listing",
         "refresh_new_content": "New content is available, click to refresh the listing",
-        "search": "Show/hide search input",
+        "search": "Show\/hide search input",
         "select_items": "Select multiple items",
         "sort_options": "Sort options",
-        "toggle_view_mode": "Toggle view mode list/thumbs",
+        "toggle_view_mode": "Toggle view mode list\/thumbs",
         "filter_favorites": "Only show favorites",
-        "favorite": "Mark/unmark as favorite",
+        "favorite": "Mark\/unmark as favorite",
         "open_provider_link": "Open this item on the provider's website",
-        "collapse_expand": "Collapse/expand this listing",
+        "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
-        "show_menu": "Show/hide menu"
+        "show_menu": "Show\/hide menu"
     },
     "topresult": "Top result",
     "track": "Track",
