@@ -1,14 +1,22 @@
 <template>
   <!-- now playing media -->
-  <ListItem style="height: auto; width: fit-content; margin: 0px; padding: 0px" lines="two">
+  <ListItem
+    style="height: auto; width: fit-content; margin: 0px; padding: 0px"
+    lines="two"
+  >
     <template #prepend>
       <div
         class="media-thumb player-media-thumb"
-        :style="`height: ${getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64}px; width: ${
+        :style="`height: ${
+          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
+        }px; width: ${
           getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
         }px; `"
       >
-        <PlayerFullscreen :show-fullscreen="store.showFullscreenPlayer" :color-palette="colorPalette" />
+        <PlayerFullscreen
+          :show-fullscreen="store.showFullscreenPlayer"
+          :color-palette="colorPalette"
+        />
         <MediaItemThumb
           :item="curQueueItem?.media_item || curQueueItem"
           :fallback="imgCoverDark"
@@ -28,10 +36,16 @@
       >
         <div
           v-if="curQueueItem && curQueueItem.media_item"
-          @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
+          @click="
+            curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
+          "
         >
           {{ curQueueItem.media_item.name }}
-          <span v-if="'version' in curQueueItem.media_item && curQueueItem.media_item.version"
+          <span
+            v-if="
+              'version' in curQueueItem.media_item &&
+              curQueueItem.media_item.version
+            "
             >({{ curQueueItem.media_item.version }})</span
           >
         </div>
@@ -52,7 +66,11 @@
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
         "
-        :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+        :disabled="
+          !activePlayerQueue ||
+          !activePlayerQueue?.active ||
+          activePlayerQueue?.items == 0
+        "
         class="player-track-content-type"
         :style="
           $vuetify.theme.current.dark
@@ -86,7 +104,9 @@
             curQueueItem.media_item.album &&
             !props.showOnlyArtist
           "
-          @click="curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''"
+          @click="
+            curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
+          "
         >
           {{ getArtistsString(curQueueItem.media_item.artists) }} •
           {{ curQueueItem.media_item.album.name }}
@@ -108,20 +128,39 @@
           {{ curQueueItem.media_item.artists[0].name }}
         </div>
         <!-- radio live metadata -->
-        <div v-else-if="curQueueItem?.streamdetails?.stream_title" class="line-clamp-1">
+        <div
+          v-else-if="curQueueItem?.streamdetails?.stream_title"
+          class="line-clamp-1"
+        >
           {{ curQueueItem?.streamdetails?.stream_title }}
         </div>
         <!-- other description -->
-        <div v-else-if="curQueueItem && curQueueItem.media_item?.metadata.description" class="line-clamp-1">
+        <div
+          v-else-if="
+            curQueueItem && curQueueItem.media_item?.metadata.description
+          "
+          class="line-clamp-1"
+        >
           {{ curQueueItem.media_item.metadata.description }}
         </div>
         <!-- queue empty message -->
-        <div v-else-if="activePlayerQueue && activePlayerQueue.items == 0" class="line-clamp-1">
+        <div
+          v-else-if="activePlayerQueue && activePlayerQueue.items == 0"
+          class="line-clamp-1"
+        >
           {{ $t('queue_empty') }}
         </div>
         <!-- 3rd party source active -->
-        <div v-else-if="store.selectedPlayer?.active_source != store.selectedPlayer?.player_id" class="line-clamp-1">
-          {{ $t('external_source_active', [store.selectedPlayer?.active_source]) }}
+        <div
+          v-else-if="
+            store.selectedPlayer?.active_source !=
+            store.selectedPlayer?.player_id
+          "
+          class="line-clamp-1"
+        >
+          {{
+            $t('external_source_active', [store.selectedPlayer?.active_source])
+          }}
         </div>
       </div>
     </template>
@@ -132,7 +171,11 @@
 import { computed } from 'vue';
 
 import api from '@/plugins/api';
-import { MediaType, MediaItemType, ItemMapping } from '@/plugins/api/interfaces';
+import {
+  MediaType,
+  MediaItemType,
+  ItemMapping,
+} from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { ColorCoverPalette, getArtistsString } from '@/helpers/utils';

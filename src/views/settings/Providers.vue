@@ -1,11 +1,17 @@
 <template>
   <!-- show section per providertype -->
-  <div v-for="provType in ProviderType" :key="provType" style="margin-bottom: 10px">
+  <div
+    v-for="provType in ProviderType"
+    :key="provType"
+    style="margin-bottom: 10px"
+  >
     <v-toolbar color="transparent" density="compact" class="titlebar">
       <template #title> {{ $t(`settings.${provType}providers`) }} </template>
       <template #append>
         <!-- ADD provider button + contextmenu -->
-        <v-menu v-if="availableProviders.filter((x) => x.type == provType).length">
+        <v-menu
+          v-if="availableProviders.filter((x) => x.type == provType).length"
+        >
           <template #activator="{ props }">
             <v-btn v-bind="props" color="accent" variant="outlined">
               {{ $t('settings.add_new_provider_button', [provType]) }}
@@ -14,7 +20,9 @@
 
           <v-card density="compact">
             <ListItem
-              v-for="provider in availableProviders.filter((x) => x.type == provType)"
+              v-for="provider in availableProviders.filter(
+                (x) => x.type == provType,
+              )"
               :key="provider.domain"
               density="compact"
               style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
@@ -22,7 +30,12 @@
               @click="addProvider(provider)"
             >
               <template #prepend>
-                <provider-icon :domain="provider.domain" :size="26" class="media-thumb" style="margin-left: 10px" />
+                <provider-icon
+                  :domain="provider.domain"
+                  :size="26"
+                  class="media-thumb"
+                  style="margin-left: 10px"
+                />
               </template>
             </ListItem>
           </v-card>
@@ -80,7 +93,9 @@
             label: 'settings.documentation',
             labelArgs: [],
             action: () => {
-              openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+              openLinkInNewTab(
+                api.providerManifests[item.domain].documentation!,
+              );
             },
             icon: 'mdi-bookshelf',
             disabled: !api.providerManifests[item.domain].documentation,
@@ -92,7 +107,9 @@
               api.startSync(undefined, [item.instance_id]);
             },
             icon: 'mdi-sync',
-            hide: api.providers[item.instance_id]?.available && provType != ProviderType.MUSIC,
+            hide:
+              api.providers[item.instance_id]?.available &&
+              provType != ProviderType.MUSIC,
           },
           {
             label: 'settings.delete',
@@ -103,7 +120,8 @@
             icon: 'mdi-delete',
             hide:
               api.providerManifests[item.domain].builtin ||
-              (api.providerManifests[item.domain].load_by_default && item.domain == item.instance_id),
+              (api.providerManifests[item.domain].load_by_default &&
+                item.domain == item.instance_id),
           },
           {
             label: 'settings.reload',
@@ -117,23 +135,35 @@
         @click="editProvider(item.instance_id)"
       >
         <template #prepend>
-          <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" />
+          <provider-icon
+            :domain="item.domain"
+            :size="40"
+            class="listitem-media-thumb"
+          />
         </template>
 
         <!-- title -->
         <template #title>
-          <div class="line-clamp-1">{{ item.name || api.providerManifests[item.domain].name }}</div>
+          <div class="line-clamp-1">
+            {{ item.name || api.providerManifests[item.domain].name }}
+          </div>
         </template>
 
         <!-- subtitle -->
         <template #subtitle>
-          <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div></template
+          <div class="line-clamp-1">
+            {{ api.providerManifests[item.domain].description }}
+          </div></template
         >
         <!-- actions -->
         <template #append>
           <!-- sync running -->
           <Button
-            v-if="api.syncTasks.value.filter((x) => x.provider_instance == item.instance_id).length > 0"
+            v-if="
+              api.syncTasks.value.filter(
+                (x) => x.provider_instance == item.instance_id,
+              ).length > 0
+            "
             icon
             :title="$t('settings.sync_running')"
           >
@@ -141,7 +171,11 @@
           </Button>
 
           <!-- provider disabled -->
-          <Button v-if="!item.enabled" icon :title="$t('settings.provider_disabled')">
+          <Button
+            v-if="!item.enabled"
+            icon
+            :title="$t('settings.provider_disabled')"
+          >
             <v-icon color="grey"> mdi-cancel </v-icon>
           </Button>
 
@@ -151,7 +185,11 @@
           </Button>
 
           <!-- loading (provider not yet available) -->
-          <Button v-else-if="!api.providers[item.instance_id]?.available" icon :title="$t('settings.not_loaded')">
+          <Button
+            v-else-if="!api.providers[item.instance_id]?.available"
+            icon
+            :title="$t('settings.not_loaded')"
+          >
             <v-icon icon="mdi-timer-sand" />
           </Button>
         </template>
@@ -163,7 +201,12 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount, watch } from 'vue';
 import { api } from '@/plugins/api';
-import { EventType, ProviderConfig, ProviderManifest, ProviderType } from '@/plugins/api/interfaces';
+import {
+  EventType,
+  ProviderConfig,
+  ProviderManifest,
+  ProviderType,
+} from '@/plugins/api/interfaces';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
@@ -187,7 +230,8 @@ const availableProviders = computed(() => {
       (x) =>
         !x.hidden &&
         // provider is either multi instance or does not exist at all
-        (x.multi_instance || !providerConfigs.value.find((y) => y.domain == x.domain)),
+        (x.multi_instance ||
+          !providerConfigs.value.find((y) => y.domain == x.domain)),
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >
@@ -210,7 +254,9 @@ const loadItems = async function () {
 
 const removeProvider = function (providerInstanceId: string) {
   api.removeProviderConfig(providerInstanceId);
-  providerConfigs.value = providerConfigs.value.filter((x) => x.instance_id != providerInstanceId);
+  providerConfigs.value = providerConfigs.value.filter(
+    (x) => x.instance_id != providerInstanceId,
+  );
 };
 
 const editProvider = function (providerInstanceId: string) {

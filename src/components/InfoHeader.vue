@@ -50,9 +50,20 @@
           v-if="!$vuetify.display.mobile"
           xs5
           pa-5
-          style="width: 230px; height: 230px; margin-top: 15px; margin-bottom: 15px; margin-right: 24px"
+          style="
+            width: 230px;
+            height: 230px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            margin-right: 24px;
+          "
         >
-          <div v-if="item.media_type && (item.media_type == MediaType.ARTIST || 'owner' in item)">
+          <div
+            v-if="
+              item.media_type &&
+              (item.media_type == MediaType.ARTIST || 'owner' in item)
+            "
+          >
             <v-avatar size="192">
               <MediaItemThumb :item="item" :height="230" :width="230" />
             </v-avatar>
@@ -71,7 +82,10 @@
           <!-- other details -->
           <div style="padding-bottom: 10px">
             <!-- version -->
-            <v-card-subtitle v-if="'version' in item && item.version" class="caption">
+            <v-card-subtitle
+              v-if="'version' in item && item.version"
+              class="caption"
+            >
               {{ item.version }}
               <!-- explicit icon -->
               <v-tooltip location="bottom">
@@ -88,31 +102,71 @@
             </v-card-subtitle>
 
             <!-- item artists -->
-            <v-card-subtitle v-if="'artists' in item && item.artists" class="title accent--text">
-              <v-icon style="margin-left: -3px; margin-right: 3px" small color="primary" icon="mdi-account-music" />
-              <span v-for="(artist, artistindex) in item.artists" :key="artist.item_id">
-                <a style="color: accent" @click="artistClick(artist)">{{ artist.name }}</a>
-                <span v-if="artistindex + 1 < item.artists.length" :key="artistindex" style="color: accent">{{
-                  ' / '
-                }}</span>
+            <v-card-subtitle
+              v-if="'artists' in item && item.artists"
+              class="title accent--text"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-music"
+              />
+              <span
+                v-for="(artist, artistindex) in item.artists"
+                :key="artist.item_id"
+              >
+                <a style="color: accent" @click="artistClick(artist)">{{
+                  artist.name
+                }}</a>
+                <span
+                  v-if="artistindex + 1 < item.artists.length"
+                  :key="artistindex"
+                  style="color: accent"
+                  >{{ ' / ' }}</span
+                >
               </span>
             </v-card-subtitle>
 
             <!-- album artist -->
-            <v-card-subtitle v-if="'artist' in item && item.artist" class="title">
-              <v-icon style="margin-left: -3px; margin-right: 3px" small color="primary" icon="mdi-account-music" />
-              <a @click="artistClick((item as Album).artist)">{{ item.artist.name }}</a>
+            <v-card-subtitle
+              v-if="'artist' in item && item.artist"
+              class="title"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-music"
+              />
+              <a @click="artistClick((item as Album).artist)">{{
+                item.artist.name
+              }}</a>
             </v-card-subtitle>
 
             <!-- playlist owner -->
             <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
-              <v-icon color="primary" style="margin-left: -3px; margin-right: 3px" small icon="mdi-account-music" />
+              <v-icon
+                color="primary"
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                icon="mdi-account-music"
+              />
               <a style="color: primary">{{ item.owner }}</a>
             </v-card-subtitle>
 
             <v-card-subtitle v-if="'album' in item && item.album">
-              <v-icon color="primary" style="margin-left: -3px; margin-right: 3px" small icon="mdi-album" />
-              <a style="color: secondary" @click="albumClick((item as Track)?.album)">{{ item.album.name }}</a>
+              <v-icon
+                color="primary"
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                icon="mdi-album"
+              />
+              <a
+                style="color: secondary"
+                @click="albumClick((item as Track)?.album)"
+                >{{ item.album.name }}</a
+              >
             </v-card-subtitle>
           </div>
 
@@ -123,7 +177,13 @@
               color="primary"
               prepend-icon="mdi-play-circle"
               :disabled="!store.selectedPlayer?.available"
-              @click="eventbus.emit('playdialog', { items: [item], parentItem: item, showContextMenuItems: false })"
+              @click="
+                eventbus.emit('playdialog', {
+                  items: [item],
+                  parentItem: item,
+                  showContextMenuItems: false,
+                })
+              "
             >
               {{ $t('play') }}
             </v-btn>
@@ -136,7 +196,10 @@
               </template>
               <v-list>
                 <ListItem
-                  v-for="(menuItem, index) in getContextMenuItems([item], item).filter((x) => x.hide != true)"
+                  v-for="(menuItem, index) in getContextMenuItems(
+                    [item],
+                    item,
+                  ).filter((x) => x.hide != true)"
                   :key="index"
                   :title="$t(menuItem.label, menuItem.labelArgs)"
                   :disabled="menuItem.disabled == true"
@@ -162,7 +225,11 @@
               @click.stop
             />
             <!-- provider icon -->
-            <provider-icon :domain="item.provider" :size="25" style="margin-top: 4px" />
+            <provider-icon
+              :domain="item.provider"
+              :size="25"
+              style="margin-top: 4px"
+            />
           </div>
 
           <!-- Description/metadata -->
@@ -184,7 +251,10 @@
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <v-chip
-              v-for="tag of item.metadata.genres.slice(0, $vuetify.display.mobile ? 15 : 25)"
+              v-for="tag of item.metadata.genres.slice(
+                0,
+                $vuetify.display.mobile ? 15 : 25,
+              )"
               :key="tag"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"
@@ -220,7 +290,12 @@ import { store } from '@/plugins/store';
 import { useDisplay } from 'vuetify';
 import { api } from '@/plugins/api';
 import { ImageType, Track, MediaType } from '@/plugins/api/interfaces';
-import type { Album, Artist, ItemMapping, MediaItemType } from '@/plugins/api/interfaces';
+import type {
+  Album,
+  Artist,
+  ItemMapping,
+  MediaItemType,
+} from '@/plugins/api/interfaces';
 import { computed, ref, watch } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 import Button from './mods/Button.vue';
@@ -241,7 +316,8 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
 
-const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url).href;
+const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url)
+  .href;
 
 const router = useRouter();
 const { t } = useI18n();
@@ -251,7 +327,8 @@ watch(
   async (val) => {
     if (val) {
       fanartImage.value =
-        getImageThumbForItem(compProps.item, ImageType.FANART) || getImageThumbForItem(compProps.item, ImageType.THUMB);
+        getImageThumbForItem(compProps.item, ImageType.FANART) ||
+        getImageThumbForItem(compProps.item, ImageType.THUMB);
     }
   },
   { immediate: true },

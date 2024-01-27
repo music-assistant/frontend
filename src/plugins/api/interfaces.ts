@@ -238,11 +238,22 @@ export interface ServerInfoMessage {
   homeassistant_addon: boolean;
 }
 
-export type MessageType = CommandMessage | EventMessage | SuccessResultMessage | ErrorResultMessage | ServerInfoMessage;
+export type MessageType =
+  | CommandMessage
+  | EventMessage
+  | SuccessResultMessage
+  | ErrorResultMessage
+  | ServerInfoMessage;
 
 // config entries
 
-export type ConfigValueType = string | number | boolean | string[] | number[] | null;
+export type ConfigValueType =
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | null;
 
 export interface ConfigValueOption {
   // Model for a value with seperated name/value.
@@ -440,7 +451,13 @@ export interface Radio extends MediaItem {
   duration?: number;
 }
 
-export type MediaItemType = Artist | Album | Track | Radio | Playlist | BrowseFolder;
+export type MediaItemType =
+  | Artist
+  | Album
+  | Track
+  | Radio
+  | Playlist
+  | BrowseFolder;
 
 export interface BrowseFolder extends MediaItem {
   path?: string;

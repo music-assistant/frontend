@@ -4,18 +4,33 @@
       <!-- header -->
       <div v-if="config" style="margin-left: -5px; margin-right: -5px">
         <v-card-title>
-          {{ $t('settings.setup_provider', [api.providerManifests[config.domain].name]) }}
+          {{
+            $t('settings.setup_provider', [
+              api.providerManifests[config.domain].name,
+            ])
+          }}
         </v-card-title>
-        <v-card-subtitle> {{ api.providerManifests[config.domain].description }} </v-card-subtitle><br />
-        <v-card-subtitle v-if="api.providerManifests[config.domain].codeowners.length">
-          <b>{{ $t('settings.codeowners') }}: </b>{{ api.providerManifests[config.domain].codeowners.join(' / ') }}
+        <v-card-subtitle>
+          {{
+            api.providerManifests[config.domain].description
+          }} </v-card-subtitle
+        ><br />
+        <v-card-subtitle
+          v-if="api.providerManifests[config.domain].codeowners.length"
+        >
+          <b>{{ $t('settings.codeowners') }}: </b
+          >{{ api.providerManifests[config.domain].codeowners.join(' / ') }}
         </v-card-subtitle>
 
-        <v-card-subtitle v-if="api.providerManifests[config.domain].documentation">
+        <v-card-subtitle
+          v-if="api.providerManifests[config.domain].documentation"
+        >
           <b>{{ $t('settings.need_help_setup_provider') }} </b>&nbsp;
-          <a :href="api.providerManifests[config.domain].documentation" target="_blank">{{
-            $t('settings.check_docs')
-          }}</a>
+          <a
+            :href="api.providerManifests[config.domain].documentation"
+            target="_blank"
+            >{{ $t('settings.check_docs') }}</a
+          >
         </v-card-subtitle>
         <br />
         <v-divider />
@@ -89,7 +104,10 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     });
 };
 
-const onAction = async function (action: string, values: Record<string, ConfigValueType>) {
+const onAction = async function (
+  action: string,
+  values: Record<string, ConfigValueType>,
+) {
   loading.value = true;
   // append existing ConfigEntry values to allow
   // values be passed between flow steps

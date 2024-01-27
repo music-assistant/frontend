@@ -16,7 +16,12 @@
     "
   >
     <v-card>
-      <v-toolbar color="transparent" style="padding: 10px 0px" density="compact" class="titlebar">
+      <v-toolbar
+        color="transparent"
+        style="padding: 10px 0px"
+        density="compact"
+        class="titlebar"
+      >
         <v-btn icon="mdi-play-circle-outline" />
         <v-toolbar-title style="padding-left: 10px">
           <b>{{ $t('add_playlist') }}</b>
@@ -31,7 +36,12 @@
             <ListItem ripple density="default" @click="addToPlaylist(playlist)">
               <template #prepend>
                 <div class="media-thumb">
-                  <MediaItemThumb :item="playlist" :size="50" width="50px" height="50px" />
+                  <MediaItemThumb
+                    :item="playlist"
+                    :size="50"
+                    width="50px"
+                    height="50px"
+                  />
                 </div>
               </template>
               <template #title>
@@ -51,10 +61,20 @@
           </div>
           <!-- create playlist row(s) -->
           <div v-for="prov of api.providers" :key="prov.instance_id">
-            <div v-if="prov.supported_features.includes(ProviderFeature.PLAYLIST_CREATE)">
+            <div
+              v-if="
+                prov.supported_features.includes(
+                  ProviderFeature.PLAYLIST_CREATE,
+                )
+              "
+            >
               <ListItem ripple>
                 <template #prepend>
-                  <provider-icon :domain="prov.domain" :size="40" class="media-thumb" />
+                  <provider-icon
+                    :domain="prov.domain"
+                    :size="40"
+                    class="media-thumb"
+                  />
                 </template>
                 <template #title>
                   <v-text-field

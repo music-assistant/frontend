@@ -1,7 +1,12 @@
 <template>
   <div
     ref="responsiveIconHolder"
-    :class="[props.type == 'btn' ? 'responsive-icon-holder-btn' : 'responsive-icon-holder', { disabled: disabled }]"
+    :class="[
+      props.type == 'btn'
+        ? 'responsive-icon-holder-btn'
+        : 'responsive-icon-holder',
+      { disabled: disabled },
+    ]"
     :style="{
       width: props.staticWidth ? props.staticWidth : props.width,
       height: props.staticWidth ? props.staticWidth : props.height,
@@ -62,7 +67,11 @@ export interface ResponsiveIconProps {
   color?: string;
   disabled?: boolean;
 }
-const props = withDefaults(defineProps<ResponsiveIconProps>(), { minWidth: '24px', minHeight: '24px', type: 'icon' });
+const props = withDefaults(defineProps<ResponsiveIconProps>(), {
+  minWidth: '24px',
+  minHeight: '24px',
+  type: 'icon',
+});
 
 const adjustIconSize = () => {
   if (responsiveIconHolder.value) {

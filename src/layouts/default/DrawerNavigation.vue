@@ -5,7 +5,10 @@
     app
     :permanent="!$vuetify.display.mobile"
     :rail="!$vuetify.display.mobile && !showNavigationMenu"
-    :model-value="($vuetify.display.mobile && showNavigationMenu) || !$vuetify.display.mobile"
+    :model-value="
+      ($vuetify.display.mobile && showNavigationMenu) ||
+      !$vuetify.display.mobile
+    "
     :width="!getBreakpointValue('mobile') ? 200 : 250"
     @update:model-value="
       (e) => {
@@ -66,7 +69,9 @@ const showNavigationMenu = ref(false);
 watch(
   () => showNavigationMenu.value,
   (isShown) => {
-    isShown ? (store.navigationMenuSize = !getBreakpointValue('mobile') ? 200 : 250) : (store.navigationMenuSize = 55);
+    isShown
+      ? (store.navigationMenuSize = !getBreakpointValue('mobile') ? 200 : 250)
+      : (store.navigationMenuSize = 55);
   },
 );
 </script>

@@ -3,7 +3,11 @@
   <ResponsiveIcon
     v-if="activePlayerQueue && activePlayerQueue?.active && props.isVisible"
     v-bind="props.icon"
-    :disabled="activePlayerQueue && !activePlayerQueue?.active && activePlayerQueue?.items == 0"
+    :disabled="
+      activePlayerQueue &&
+      !activePlayerQueue?.active &&
+      activePlayerQueue?.items == 0
+    "
     :icon="
       activePlayerQueue?.state == 'playing'
         ? props.withCircle
@@ -18,7 +22,9 @@
   />
   <!-- stop button: player is playing other source (not MA)-->
   <ResponsiveIcon
-    v-else-if="store.selectedPlayer?.state == PlayerState.PLAYING && props.isVisible"
+    v-else-if="
+      store.selectedPlayer?.state == PlayerState.PLAYING && props.isVisible
+    "
     v-bind="props.icon"
     icon="mdi-stop"
     :type="'btn'"
@@ -31,7 +37,11 @@
     :disabled="!activePlayerQueue || activePlayerQueue?.items == 0"
     :icon="props.withCircle ? 'mdi-play-circle' : 'mdi-play'"
     :type="'btn'"
-    @click="api.queueCommandPlay(activePlayerQueue?.queue_id || store.selectedPlayer!.player_id)"
+    @click="
+      api.queueCommandPlay(
+        activePlayerQueue?.queue_id || store.selectedPlayer!.player_id,
+      )
+    "
   />
 </template>
 
@@ -41,7 +51,9 @@ import { computed } from 'vue';
 import api from '@/plugins/api';
 import { PlayerState } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import ResponsiveIcon, {
+  ResponsiveIconProps,
+} from '@/components/mods/ResponsiveIcon.vue';
 
 // properties
 export interface Props {

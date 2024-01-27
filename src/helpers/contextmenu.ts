@@ -29,7 +29,8 @@ export const itemIsAvailable = function (item: MediaItemType | ItemMapping) {
   if (item.media_type == MediaType.FOLDER) return true;
   if ('provider_mappings' in item) {
     for (const x of item.provider_mappings) {
-      if (x.available && api.providers[x.provider_instance]?.available) return true;
+      if (x.available && api.providers[x.provider_instance]?.available)
+        return true;
     }
   } else if ('available' in item) return item.available;
   return false;
@@ -38,24 +39,36 @@ export const itemIsAvailable = function (item: MediaItemType | ItemMapping) {
 export const radioSupported = function (item: MediaItemType | ItemMapping) {
   if ('provider_mappings' in item) {
     for (const provId of item.provider_mappings) {
-      if (api.providers[provId.provider_instance]?.supported_features.includes(ProviderFeature.SIMILAR_TRACKS))
+      if (
+        api.providers[provId.provider_instance]?.supported_features.includes(
+          ProviderFeature.SIMILAR_TRACKS,
+        )
+      )
         return true;
     }
-  } else if (api.providers[item.provider]?.supported_features.includes(ProviderFeature.SIMILAR_TRACKS)) {
+  } else if (
+    api.providers[item.provider]?.supported_features.includes(
+      ProviderFeature.SIMILAR_TRACKS,
+    )
+  ) {
     return true;
   }
   return false;
 };
 
-export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMapping>, parentItem?: MediaItem) {
+export const getPlayMenuItems = function (
+  items: Array<MediaItemType | ItemMapping>,
+  parentItem?: MediaItem,
+) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
     return playMenuItems;
   }
-  let queueOptPlay = QueueOption.PLAY;
   let queueOptNext = QueueOption.NEXT;
-  if (items.length > 10 || [MediaType.ALBUM, MediaType.PLAYLIST].includes(items[0].media_type)) {
-    queueOptPlay = QueueOption.REPLACE;
+  if (
+    items.length > 10 ||
+    [MediaType.ALBUM, MediaType.PLAYLIST].includes(items[0].media_type)
+  ) {
     queueOptNext = QueueOption.REPLACE_NEXT;
   }
   // Play from here...
@@ -65,7 +78,7 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
       playMenuItems.push({
         label: 'play_playlist_from',
         action: () => {
-          api.playMedia(parentItem.uri, QueueOption.REPLACE, false, items[0].item_id);
+          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
         },
         icon: 'mdi-play-circle-outline',
         labelArgs: [],
@@ -76,7 +89,7 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
       playMenuItems.push({
         label: 'play_album_from',
         action: () => {
-          api.playMedia(parentItem.uri, QueueOption.REPLACE, false, items[0].item_id);
+          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
         },
         icon: 'mdi-play-circle-outline',
         labelArgs: [],
@@ -90,7 +103,7 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
     action: () => {
       api.playMedia(
         items.map((x) => x.uri),
-        queueOptPlay,
+        undefined,
       );
     },
     icon: 'mdi-play-circle-outline',
@@ -104,7 +117,7 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
       action: () => {
         api.playMedia(
           items.map((x) => x.uri),
-          queueOptPlay,
+          undefined,
           true,
         );
       },
@@ -143,14 +156,21 @@ export const getPlayMenuItems = function (items: Array<MediaItemType | ItemMappi
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (items: Array<MediaItemType | ItemMapping>, parentItem?: MediaItem) {
+export const getContextMenuItems = function (
+  items: Array<MediaItemType | ItemMapping>,
+  parentItem?: MediaItem,
+) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
   }
 
   // show info
-  if (items.length === 1 && items[0] !== parentItem && itemIsAvailable(items[0])) {
+  if (
+    items.length === 1 &&
+    items[0] !== parentItem &&
+    itemIsAvailable(items[0])
+  ) {
     contextMenuItems.push({
       label: 'show_info',
       labelArgs: [],
@@ -195,7 +215,12 @@ export const getContextMenuItems = function (items: Array<MediaItemType | ItemMa
     }
   }
   // go to album
-  if (items.length === 1 && itemIsAvailable(items[0]) && 'album' in items[0] && (items[0] as Track).album) {
+  if (
+    items.length === 1 &&
+    itemIsAvailable(items[0]) &&
+    'album' in items[0] &&
+    (items[0] as Track).album
+  ) {
     contextMenuItems.push({
       label: 'goto_album',
       labelArgs: [(items[0] as Track).album.name],
@@ -213,7 +238,10 @@ export const getContextMenuItems = function (items: Array<MediaItemType | ItemMa
   }
 
   // refresh item
-  if (items.length === 1 && (items[0] == parentItem || !itemIsAvailable(items[0]))) {
+  if (
+    items.length === 1 &&
+    (items[0] == parentItem || !itemIsAvailable(items[0]))
+  ) {
     contextMenuItems.push({
       label: 'refresh_item',
       labelArgs: [],
@@ -242,7 +270,8 @@ export const getContextMenuItems = function (items: Array<MediaItemType | ItemMa
       labelArgs: [],
       action: () => {
         if (!confirm($t('confirm_library_remove'))) return;
-        for (const item of items) api.removeItemFromLibrary(item.media_type, item.item_id);
+        for (const item of items)
+          api.removeItemFromLibrary(item.media_type, item.item_id);
         if (items[0].item_id == parentItem?.item_id) router.go(-1);
         else router.go(0);
       },

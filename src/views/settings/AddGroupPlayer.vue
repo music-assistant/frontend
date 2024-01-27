@@ -2,15 +2,28 @@
   <section>
     <v-card-text>
       <!-- header -->
-      <div v-if="provider && provider in api.providers" style="margin-left: -5px; margin-right: -5px">
-        <v-card-title> {{ $t('settings.add_group_player') }} ({{ api.providers[provider].name }}) </v-card-title>
+      <div
+        v-if="provider && provider in api.providers"
+        style="margin-left: -5px; margin-right: -5px"
+      >
+        <v-card-title>
+          {{ $t('settings.add_group_player') }} ({{
+            api.providers[provider].name
+          }})
+        </v-card-title>
         <br />
         <v-divider />
         <br />
         <br />
         <v-form ref="form" v-model="valid" style="margin-right: 10px">
           <!-- name field -->
-          <v-text-field v-model="name" :label="$t('settings.player_name')" variant="outlined" clearable required />
+          <v-text-field
+            v-model="name"
+            :label="$t('settings.player_name')"
+            variant="outlined"
+            clearable
+            required
+          />
           <!-- value with dropdown -->
           <v-select
             v-model="members"
@@ -54,8 +67,14 @@ const props = defineProps<{
 // computed properties
 const syncPlayers = computed(() => {
   return Object.values(api.players)
-    .filter((x) => props.provider == 'ugp' || (x.provider == props.provider && x.can_sync_with.length))
-    .sort((a, b) => (a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1))
+    .filter(
+      (x) =>
+        props.provider == 'ugp' ||
+        (x.provider == props.provider && x.can_sync_with.length),
+    )
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
+    )
     .map((x) => ({ title: x.display_name, value: x.player_id }));
 });
 

@@ -2,32 +2,58 @@
   <section>
     <v-card-text>
       <!-- header -->
-      <div v-if="config && api.providers[config.provider].domain in api.providerManifests"
-        style="margin-left: -5px; margin-right: -5px">
+      <div
+        v-if="
+          config &&
+          api.providers[config.provider].domain in api.providerManifests
+        "
+        style="margin-left: -5px; margin-right: -5px"
+      >
         <v-card-title>
-          {{ $t('settings.config_player', [config.name || api.players[config.player_id].name]) }}
+          {{
+            $t('settings.config_player', [
+              config.name || api.players[config.player_id].name,
+            ])
+          }}
         </v-card-title>
         <v-card-subtitle>
           <b>{{ $t('settings.player_id') }}: </b>{{ config.player_id }}
         </v-card-subtitle>
         <v-card-subtitle>
-          <b>{{ $t('settings.player_provider') }}: </b>{{
-            api.providerManifests[api.providers[config.provider].domain].name }}
+          <b>{{ $t('settings.player_provider') }}: </b
+          >{{
+            api.providerManifests[api.providers[config.provider].domain].name
+          }}
           (
-          {{ api.providerManifests[api.providers[config.provider].domain].description }})
-          <a v-if="api.providerManifests[api.providers[config.provider].domain].documentation"
-            :href="api.providerManifests[api.providers[config.provider].domain].documentation" target="_blank">{{
-              $t('settings.check_docs') }}</a>
+          {{
+            api.providerManifests[api.providers[config.provider].domain]
+              .description
+          }})
+          <a
+            v-if="
+              api.providerManifests[api.providers[config.provider].domain]
+                .documentation
+            "
+            :href="
+              api.providerManifests[api.providers[config.provider].domain]
+                .documentation
+            "
+            target="_blank"
+            >{{ $t('settings.check_docs') }}</a
+          >
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t('settings.player_model') }}: </b>{{ api.players[config.player_id].device_info.manufacturer }} /
+          <b>{{ $t('settings.player_model') }}: </b
+          >{{ api.players[config.player_id].device_info.manufacturer }} /
           {{ api.players[config.player_id].device_info.model }}
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t('settings.player_address') }}: </b>{{ api.players[config.player_id].device_info.address }}
+          <b>{{ $t('settings.player_address') }}: </b
+          >{{ api.players[config.player_id].device_info.address }}
         </v-card-subtitle>
         <v-card-subtitle>
-          <b>{{ $t('settings.player_type_label') }}: </b>{{ $t(`player_type.${api.players[config.player_id].type}`) }}
+          <b>{{ $t('settings.player_type_label') }}: </b
+          >{{ $t(`player_type.${api.players[config.player_id].type}`) }}
         </v-card-subtitle>
         <br />
         <v-divider />
@@ -35,16 +61,34 @@
         <br />
 
         <!-- name field -->
-        <v-text-field v-if="'name' in config" v-model="config.name" :placeholder="config?.name"
-          :label="$t('settings.player_name')" variant="outlined" clearable />
+        <v-text-field
+          v-if="'name' in config"
+          v-model="config.name"
+          :placeholder="config?.name"
+          :label="$t('settings.player_name')"
+          variant="outlined"
+          clearable
+        />
         <!-- enable field -->
-        <v-switch v-if="'enabled' in config" v-model="config.enabled" :label="$t('settings.enable_player')"
-          color="primary" :disabled="api.providerManifests[api.providers[config.provider].domain]?.builtin" />
+        <v-switch
+          v-if="'enabled' in config"
+          v-model="config.enabled"
+          :label="$t('settings.enable_player')"
+          color="primary"
+          :disabled="
+            api.providerManifests[api.providers[config.provider].domain]
+              ?.builtin
+          "
+        />
       </div>
       <br />
       <v-divider />
-      <edit-config v-if="config" :disabled="!config.enabled" :config-entries="Object.values(config.values)"
-        @submit="onSubmit" />
+      <edit-config
+        v-if="config"
+        :disabled="!config.enabled"
+        :config-entries="Object.values(config.values)"
+        @submit="onSubmit"
+      />
     </v-card-text>
   </section>
 </template>

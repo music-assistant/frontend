@@ -1,11 +1,19 @@
 <template>
   <v-img
     :key="item && 'uri' in item! ? item?.uri : item?.queue_item_id"
-    :style="`height:${size || height}px; width:${size || width}px; ${rounded ? 'border-radius: 4px;' : ''}`"
+    :style="`height:${size || height}px; width:${size || width}px; ${
+      rounded ? 'border-radius: 4px;' : ''
+    }`"
     :cover="cover"
     :src="imgData"
     :aspect-ratio="aspectRatio"
-    :lazy-src="!lazySrc ? ($vuetify.theme.current.dark ? imgCoverDark : imgCoverLight) : lazySrc"
+    :lazy-src="
+      !lazySrc
+        ? $vuetify.theme.current.dark
+          ? imgCoverDark
+          : imgCoverLight
+        : lazySrc
+    "
     @error="
       () => {
         imgData = fallbackImage;
@@ -22,11 +30,20 @@
 
 <script setup lang="ts">
 import { watch, ref, computed } from 'vue';
-import type { ItemMapping, MediaItemImage, MediaItemType, QueueItem } from '../plugins/api/interfaces';
+import type {
+  ItemMapping,
+  MediaItemImage,
+  MediaItemType,
+  QueueItem,
+} from '../plugins/api/interfaces';
 import { ImageType, MediaType } from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { useTheme } from 'vuetify';
-import { imgCoverDark, imgCoverLight, iconFolder } from '@/components/QualityDetailsBtn.vue';
+import {
+  imgCoverDark,
+  imgCoverLight,
+  iconFolder,
+} from '@/components/QualityDetailsBtn.vue';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -56,10 +73,19 @@ const theme = useTheme();
 
 const fallbackImage = computed(() => {
   if (props.fallback) return props.fallback;
-  if (props.item && 'media_type' in props.item && props.item.media_type == MediaType.FOLDER) return iconFolder;
+  if (
+    props.item &&
+    'media_type' in props.item &&
+    props.item.media_type == MediaType.FOLDER
+  )
+    return iconFolder;
   if (!props.item) return '';
   if (!props.item.name) return '';
-  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize.value);
+  return getAvatarImage(
+    props.item.name,
+    theme.current.value.dark,
+    thumbSize.value,
+  );
 });
 
 const thumbSize = computed(() => {
@@ -78,7 +104,9 @@ watch(
   () => props.item,
   async (newVal) => {
     if (newVal) {
-      imgData.value = getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value) || fallbackImage.value;
+      imgData.value =
+        getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value) ||
+        fallbackImage.value;
     } else imgData.value = fallbackImage.value;
   },
   { immediate: true },
@@ -88,11 +116,20 @@ watch(
 <script lang="ts">
 //// utility functions for images
 
-export const getAvatarImage = function (name: string, dark = false, size = 256): string {
+export const getAvatarImage = function (
+  name: string,
+  dark = false,
+  size = 256,
+): string {
   // get url to avatar image for a string or sentence
   if (dark)
-    return `https://ui-avatars.com/api/?name=${name}&size=${size || 256}&bold=true&background=1d1d1d&color=383838`;
-  else return `https://ui-avatars.com/api/?name=${name}&size=${size || 256}&bold=true&background=a0a0a0&color=cccccc`;
+    return `https://ui-avatars.com/api/?name=${name}&size=${
+      size || 256
+    }&bold=true&background=1d1d1d&color=383838`;
+  else
+    return `https://ui-avatars.com/api/?name=${name}&size=${
+      size || 256
+    }&bold=true&background=a0a0a0&color=cccccc`;
 };
 
 export const getMediaItemImage = function (
@@ -161,9 +198,11 @@ export const getImageThumbForItem = function (
   if (!img || !img.path) return undefined;
   if (img.provider !== 'url') {
     // use imageproxy for embedded images
-    if (!api.providers[img.provider]?.available && img.provider != 'file') return undefined;
+    if (!api.providers[img.provider]?.available && img.provider != 'file')
+      return undefined;
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
-    const checksum = 'metadata' in mediaItem ? mediaItem.metadata?.checksum : '';
+    const checksum =
+      'metadata' in mediaItem ? mediaItem.metadata?.checksum : '';
     imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
   } else {
     imageUrl = img.path;

@@ -54,11 +54,19 @@ watch(
 const loadRadioVersions = async function (params: LoadDataParams) {
   const allVersions: Radio[] = [];
   if (props.provider == 'library') {
-    const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
+    const radioVersions = await api.getRadioVersions(
+      props.itemId,
+      props.provider,
+    );
     allVersions.push(...radioVersions);
   }
-  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
-    const radioVersions = await api.getRadioVersions(providerMapping.item_id, providerMapping.provider_instance);
+  for (const providerMapping of getStreamingProviderMappings(
+    itemDetails.value!,
+  )) {
+    const radioVersions = await api.getRadioVersions(
+      providerMapping.item_id,
+      providerMapping.provider_instance,
+    );
     allVersions.push(...radioVersions);
   }
   return allVersions;

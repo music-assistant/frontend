@@ -1,5 +1,9 @@
 <template>
-  <v-list-item v-bind="listItemProps" class="list-item-main" @input="(v: any) => $emit('input', v)">
+  <v-list-item
+    v-bind="listItemProps"
+    class="list-item-main"
+    @input="(v: any) => $emit('input', v)"
+  >
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
@@ -17,7 +21,9 @@
           </template>
           <v-list>
             <ListItem
-              v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)"
+              v-for="(item, index) in contextMenuItems.filter(
+                (x) => x.hide != true,
+              )"
               :key="index"
               :title="$t(item.label, item.labelArgs)"
               :disabled="item.disabled == true"

@@ -3,6 +3,7 @@ root = true
 [*.{js,jsx,ts,tsx,vue}]
 indent_style = space
 indent_size = 2
+single_quote = true
 trim_trailing_whitespace = true
 insert_final_newline = true
 end_of_line = lf

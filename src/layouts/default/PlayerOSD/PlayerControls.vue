@@ -1,15 +1,33 @@
 <template>
   <div v-if="props.visibleComponents" style="display: inline-flex">
     <!-- shuffle button -->
-    <div v-if="props.visibleComponents && props.visibleComponents.shuffle?.isVisible" class="player-controls-elements">
-      <ShuffleBtn class="media-controls-item" :icon="props.visibleComponents.shuffle.icon" />
+    <div
+      v-if="
+        props.visibleComponents && props.visibleComponents.shuffle?.isVisible
+      "
+      class="player-controls-elements"
+    >
+      <ShuffleBtn
+        class="media-controls-item"
+        :icon="props.visibleComponents.shuffle.icon"
+      />
     </div>
     <!-- prev button -->
-    <div v-if="props.visibleComponents && props.visibleComponents.previous?.isVisible" class="player-controls-elements">
-      <PreviousBtn class="media-controls-item" :icon="props.visibleComponents.previous.icon" />
+    <div
+      v-if="
+        props.visibleComponents && props.visibleComponents.previous?.isVisible
+      "
+      class="player-controls-elements"
+    >
+      <PreviousBtn
+        class="media-controls-item"
+        :icon="props.visibleComponents.previous.icon"
+      />
     </div>
     <!-- play/pause button: only when MA queue is active -->
-    <div v-if="props.visibleComponents && props.visibleComponents.play?.isVisible">
+    <div
+      v-if="props.visibleComponents && props.visibleComponents.play?.isVisible"
+    >
       <PlayBtn
         class="media-controls-item"
         :with-circle="props.visibleComponents.play.withCircle"
@@ -17,12 +35,28 @@
       />
     </div>
     <!-- next button -->
-    <div v-if="props.visibleComponents && props.visibleComponents.next?.isVisible" class="player-controls-elements">
-      <NextBtn :icon="props.visibleComponents.next.icon" static-height="24px" static-width="24px" />
+    <div
+      v-if="props.visibleComponents && props.visibleComponents.next?.isVisible"
+      class="player-controls-elements"
+    >
+      <NextBtn
+        :icon="props.visibleComponents.next.icon"
+        static-height="24px"
+        static-width="24px"
+      />
     </div>
     <!-- repeat button -->
-    <div v-if="props.visibleComponents && props.visibleComponents.repeat?.isVisible" class="player-controls-elements">
-      <RepeatBtn :icon="props.visibleComponents.repeat.icon" static-height="24px" static-width="24px" />
+    <div
+      v-if="
+        props.visibleComponents && props.visibleComponents.repeat?.isVisible
+      "
+      class="player-controls-elements"
+    >
+      <RepeatBtn
+        :icon="props.visibleComponents.repeat.icon"
+        static-height="24px"
+        static-width="24px"
+      />
     </div>
   </div>
 </template>
