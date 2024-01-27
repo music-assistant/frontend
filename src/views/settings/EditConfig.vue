@@ -485,6 +485,9 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
       `settings.${entry.key}.options.${option.value}`,
       option.title,
     );
+    if (option.value == entry.default_value) {
+      option.title += ` [${$t('settings.default')}]`;
+    }
   }
   return entry.options;
 };
