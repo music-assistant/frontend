@@ -133,7 +133,7 @@
         "sync": "Jetzt Änderungen synchronisieren",
         "sync_running": "Dieser Anbieter wird jetzt synchronisiert",
         "username": "Benutzername",
-        "core": "Kern",
+        "core": "Grundsystem",
         "core_modules": "Kernmodule",
         "server_info": "Server-Informationen",
         "server_id": "Server-ID",
@@ -175,10 +175,12 @@
         "name_desc": "Alphabetisch (absteigend)",
         "recent": "Kürzlich hinzugefügt",
         "year_desc": "Erscheinungsjahr (absteigend)",
-        "duration_desc": "Dauer (absteigend)"
+        "duration_desc": "Dauer (absteigend)",
+        "original": "Standard",
+        "none": "Leer"
     },
     "state": {
-        "idle": "Untätig",
+        "idle": "Inaktiv",
         "off": "Aus",
         "paused": "Pausiert",
         "playing": "spielt gerade"
@@ -194,7 +196,7 @@
         "library": "Bibliothek\/Favorit umschalten",
         "linked": "Dieser Anbieter ist mit den aktuellen Details des Elements verknüpft",
         "refresh": "Liste aktualisieren",
-        "refresh_new_content": "Neue Inhalte verfügbar. Hier klicken um die Liste zu aktualisieren",
+        "refresh_new_content": "Neue Inhalte verfügbar. Zum Aktualisieren, hier klicken",
         "search": "Sucheingabe ein-\/ausblenden",
         "select_items": "Mehrere Elemente wählen",
         "sort_options": "Sortieroptionen",
@@ -211,7 +213,7 @@
     "track_number": "Disk {0} Track {1}",
     "tracks": "Tracks",
     "try_global_search": "Mit der globalen Suche versuchen",
-    "type_to_search": "Hier Suchbegriff eingeben...",
+    "type_to_search": "Suchbegriff eingeben...",
     "volume_normalization": "Lautstärke normalisieren",
     "play_now_replace": "Jetzt wiedergeben (Warteschlange leeren)",
     "currently_playing": "Wird grade abgespielt",
@@ -224,5 +226,10 @@
     "mapped_providers": "Anbieterdetails",
     "item_in_library": "Dieses Element ist in der Bibliothek vorhanden",
     "back": "Zurück",
-    "recently_played": "Zuletzt gespielt"
+    "recently_played": "Zuletzt gespielt",
+    "radiobrowser_by_popularity": "Nach Beliebtheit",
+    "radiobrowser_by_country": "Nach Land",
+    "radiobrowser_by_tag": "Nach Tag",
+    "load_more_items": "Weitere Elemente laden…",
+    "radio": "Radio"
 }

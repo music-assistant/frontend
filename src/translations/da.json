@@ -175,7 +175,9 @@
         "name_desc": "Alfabetisk (faldende)",
         "recent": "Nyligt tilføjet",
         "year_desc": "Udgivelsesår (faldende)",
-        "duration_desc": "Varighed (faldende)"
+        "duration_desc": "Varighed (faldende)",
+        "original": "Original",
+        "none": "Tom"
     },
     "state": {
         "idle": "keder sig",
@@ -224,5 +226,10 @@
     "mapped_providers": "Udbyderoplysninger",
     "item_in_library": "Dette element er tilgængeligt i biblioteket",
     "back": "Tilbage",
-    "recently_played": "Nyligt afspillet"
+    "recently_played": "Nyligt afspillet",
+    "radiobrowser_by_popularity": "Efter popularitet",
+    "radiobrowser_by_country": "Efter land",
+    "radiobrowser_by_tag": "Efter tag",
+    "load_more_items": "Indlæs flere emner...",
+    "radio": "Radio"
 }
