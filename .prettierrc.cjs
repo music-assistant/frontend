@@ -1,5 +1,5 @@
 module.exports = {
-  tabWidth: 2,
+  tabWidth: 4,
   printWidth: 120,
   proseWrap: "never",
   eslintIntegration: true,
