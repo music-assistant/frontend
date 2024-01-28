@@ -156,9 +156,9 @@
                     showPasswordValues
                       ? 'mdi-eye'
                       : typeof conf_entry.value == 'string' &&
-                        conf_entry.value.includes(SECURE_STRING_SUBSTITUTE)
-                      ? ''
-                      : 'mdi-eye-off'
+                          conf_entry.value.includes(SECURE_STRING_SUBSTITUTE)
+                        ? ''
+                        : 'mdi-eye-off'
                   "
                   variant="outlined"
                   clearable
@@ -480,16 +480,21 @@ const getCurrentValues = function () {
 };
 const getTranslatedOptions = function (entry: ConfigEntry) {
   if (!entry.options) return [];
-  for (const option of entry.options) {
-    option.title = $t(
-      `settings.${entry.key}.options.${option.value}`,
-      option.title,
-    );
+  const options: ConfigValueOption[] = [];
+  for (const orgOption of entry.options) {
+    const option: ConfigValueOption = {
+      title: $t(
+        `settings.${entry.key}.options.${orgOption.value}`,
+        orgOption.title,
+      ),
+      value: orgOption.value,
+    };
     if (option.value == entry.default_value) {
       option.title += ` [${$t('settings.default')}]`;
     }
+    options.push(option);
   }
-  return entry.options;
+  return options;
 };
 
 const markdownToHtml = function (text: string) {

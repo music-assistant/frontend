@@ -32,9 +32,9 @@
           getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
             ? '#fff'
             : $vuetify.theme.current.dark &&
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-            ? '#fff'
-            : '#000'
+                getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+              ? '#fff'
+              : '#000'
         "
       />
     </div>
@@ -84,9 +84,9 @@
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                 ? '#fff'
                 : $vuetify.theme.current.dark &&
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                ? '#fff'
-                : '#000',
+                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+                  ? '#fff'
+                  : '#000',
           }"
           :volume="{
             isVisible: true,
@@ -95,9 +95,9 @@
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                 ? '#fff'
                 : $vuetify.theme.current.dark &&
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                ? '#fff'
-                : '#000',
+                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
+                  ? '#fff'
+                  : '#000',
           }"
         />
         <!-- player mobile control buttons -->
@@ -121,9 +121,12 @@
                   getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                     ? '#fff'
                     : $vuetify.theme.current.dark &&
-                      getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                    ? '#fff'
-                    : '#000',
+                        getBreakpointValue({
+                          breakpoint: 'bp3',
+                          condition: 'gt',
+                        })
+                      ? '#fff'
+                      : '#000',
               },
             },
             previous: { isVisible: false },

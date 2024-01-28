@@ -836,11 +836,10 @@ const getFilteredItems = function (
     result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
   }
   if (params.sortBy == 'album') {
-    result.sort(
-      (a, b) =>
-        (a as Track).album?.sort_name.localeCompare(
-          (b as Track).album?.sort_name,
-        ),
+    result.sort((a, b) =>
+      (a as Track).album?.sort_name.localeCompare(
+        (b as Track).album?.sort_name,
+      ),
     );
   }
   if (params.sortBy == 'artist') {

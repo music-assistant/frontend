@@ -14,8 +14,8 @@
           ? 'mdi-pause-circle'
           : 'mdi-pause'
         : props.withCircle
-        ? 'mdi-play-circle'
-        : 'mdi-play'
+          ? 'mdi-play-circle'
+          : 'mdi-play'
     "
     :type="'btn'"
     @click="api.queueCommandPlayPause(activePlayerQueue!.queue_id)"

@@ -74,20 +74,20 @@ export const getBreakpointValue = (key: Key): boolean => {
         return md.mobile()
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       case 'phone':
         return md.phone()
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       case 'tablet':
         return md.tablet()
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
     }
   } else {
     return condition === 'lt'
@@ -129,24 +129,24 @@ const vBreakpoint: Directive = {
         return isMobileDevice
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       }
       if (device === 'phone') {
         const isPhoneDevice = md.phone() ? true : false;
         return isPhoneDevice
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       }
       if (device === 'tablet') {
         const isTabletDevice = md.tablet() ? true : false;
         return isTabletDevice
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       }
     };
 
