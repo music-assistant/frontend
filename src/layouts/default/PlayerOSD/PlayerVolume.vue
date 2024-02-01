@@ -5,6 +5,7 @@
     @touchend="isThumbHidden = true"
     @mouseenter="isThumbHidden = false"
     @mouseleave="isThumbHidden = true"
+    @wheel="onWheel"
   >
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
@@ -26,6 +27,7 @@ export default {
     style: String,
     isPowered: Boolean,
   },
+  emits: ['update:model-value'],
   setup(props, ctx) {
     const isThumbHidden = ref(true);
 
@@ -45,7 +47,16 @@ export default {
       ...ctx,
     }));
 
-    return { isThumbHidden, playerVolumeProps };
+    const onWheel = ({ deltaY }: WheelEvent) => {
+      const step = playerVolumeProps.value.step;
+
+      const volumeValue = ctx.attrs['model-value'] as number;
+      const volumeDelta = deltaY < 0 ? step : -step;
+
+      ctx.emit('update:model-value', volumeValue + volumeDelta);
+    };
+
+    return { isThumbHidden, playerVolumeProps, onWheel };
   },
 };
 </script>
