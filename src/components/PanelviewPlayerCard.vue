@@ -103,7 +103,7 @@
             v-else-if="playerQueue && playerQueue.items == 0"
             class="line-clamp-1"
           >
-            {{ $t('queue_empty') }}
+            {{ $t("queue_empty") }}
           </div>
           <!-- 3rd party source active -->
           <div
@@ -114,7 +114,7 @@
             class="line-clamp-1"
           >
             {{
-              $t('external_source_active', [
+              $t("external_source_active", [
                 store.selectedPlayer?.active_source,
               ])
             }}
@@ -144,15 +144,17 @@
       <!-- play button -->
       <template #append>
         <v-btn
-          class="ms-2"
           icon
           variant="text"
           @click="api.queueCommandPlayPause(player_queue.queue_id)"
         >
           <v-icon v-if="player_queue.state == PlayerState.PLAYING"
+          :size="getBreakpointValue({ breakpoint: 'phone' }) ? '24' : '32'"
             >mdi-pause-circle-outline</v-icon
           >
-          <v-icon v-else>mdi-play-circle-outline</v-icon>
+          <v-icon v-else
+          :size="getBreakpointValue({ breakpoint: 'phone' }) ? '24' : '32'"
+          >mdi-play-circle-outline</v-icon>
         </v-btn>
       </template>
     </ListItem>
@@ -160,21 +162,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import api from '@/plugins/api';
+import { ref, computed } from "vue";
+import api from "@/plugins/api";
 import {
   MediaType,
   PlayerQueue,
   Player,
   PlayerState,
-} from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
-import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
+} from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import ListItem from "@/components/mods/ListItem.vue";
+import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
 
-import { getArtistsString } from '@/helpers/utils';
+import { getArtistsString } from "@/helpers/utils";
 
 var player_queue: PlayerQueue;
 // properties
@@ -217,7 +219,11 @@ const activePlayer = computed(() => {
 }
 
 .panel-item-selected {
-  background-image: linear-gradient(90deg, lightgrey 0%, white 35%);
+  background-image: linear-gradient(
+    90deg,
+    rgb(var(--v-theme-surface-light)) 0%,
+    rgb(var(--v-theme-background)) 35%
+  );
 }
 
 .panel-item-details {
