@@ -39,7 +39,7 @@
         </v-slide-group>
       </div>
       <div
-        v-else="widgetRow.players && widgetRow.players.length"
+        v-else-if="widgetRow.players && widgetRow.players.length"
         class="widget-row"
       >
         <v-toolbar
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import api from "@/plugins/api";
+import api from '@/plugins/api';
 import {
   BrowseFolder,
   MediaItemType,
@@ -90,15 +90,15 @@ import {
   Player,
   EventType,
   type EventMessage,
-} from "@/plugins/api/interfaces";
-import PanelviewItem from "@/components/PanelviewItem.vue";
-import { onMounted, ref } from "vue";
-import { store } from "@/plugins/store";
-import { eventbus } from "@/plugins/eventbus";
-import { itemIsAvailable } from "@/helpers/contextmenu";
-import router from "@/plugins/router";
-import PanelviewPlayerCard from "@/components/PanelviewPlayerCard.vue";
-import { onBeforeUnmount } from "vue";
+} from '@/plugins/api/interfaces';
+import PanelviewItem from '@/components/PanelviewItem.vue';
+import { onMounted, ref } from 'vue';
+import { store } from '@/plugins/store';
+import { eventbus } from '@/plugins/eventbus';
+import { itemIsAvailable } from '@/helpers/contextmenu';
+import router from '@/plugins/router';
+import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
+import { onBeforeUnmount } from 'vue';
 
 interface WidgetRow {
   label: string;
@@ -111,49 +111,49 @@ interface WidgetRow {
 
 const widgetRows = ref<Record<string, WidgetRow>>({
   queue: {
-    label: "currently_queued",
-    icon: "mdi-playlist-play",
+    label: 'currently_queued',
+    icon: 'mdi-playlist-play',
     items: [],
   },
   recently_played: {
-    label: "recently_played",
-    icon: "mdi-motion-play",
+    label: 'recently_played',
+    icon: 'mdi-motion-play',
     items: [],
   },
   artists: {
-    label: "artists",
-    icon: "mdi-account-music",
-    path: "/artists",
+    label: 'artists',
+    icon: 'mdi-account-music',
+    path: '/artists',
     items: [],
   },
   albums: {
-    label: "albums",
-    icon: "mdi-album",
-    path: "/albums",
+    label: 'albums',
+    icon: 'mdi-album',
+    path: '/albums',
     items: [],
   },
   playlists: {
-    label: "playlists",
-    icon: "mdi-playlist-music",
-    path: "/playlists",
+    label: 'playlists',
+    icon: 'mdi-playlist-music',
+    path: '/playlists',
     items: [],
   },
   tracks: {
-    label: "tracks",
-    icon: "mdi-file-music",
-    path: "/tracks",
+    label: 'tracks',
+    icon: 'mdi-file-music',
+    path: '/tracks',
     items: [],
   },
   radios: {
-    label: "radios",
-    icon: "mdi-radio",
-    path: "/radios",
+    label: 'radios',
+    icon: 'mdi-radio',
+    path: '/radios',
     items: [],
   },
   browse: {
-    label: "browse",
-    icon: "mdi-folder",
-    path: "/browse",
+    label: 'browse',
+    icon: 'mdi-folder',
+    path: '/browse',
     items: [],
   },
 });
@@ -170,7 +170,7 @@ onMounted(async () => {
     widgetRows.value.recently_played.items = items;
   });
   api
-    .getLibraryArtists(undefined, undefined, 20, undefined, "RANDOM()")
+    .getLibraryArtists(undefined, undefined, 20, undefined, 'RANDOM()')
     .then((pagedItems) => {
       widgetRows.value.artists.items = pagedItems.items;
       widgetRows.value.artists.count = pagedItems.total;
@@ -182,7 +182,7 @@ onMounted(async () => {
       undefined,
       20,
       undefined,
-      "timestamp_added DESC",
+      'timestamp_added DESC',
     )
     .then((pagedItems) => {
       widgetRows.value.albums.items = pagedItems.items;
@@ -198,7 +198,7 @@ onMounted(async () => {
         undefined,
         20,
         undefined,
-        "timestamp_added DESC",
+        'timestamp_added DESC',
       )
       .then((recentItems) => {
         widgetRows.value.playlists.count = recentItems.total;
@@ -222,7 +222,7 @@ onMounted(async () => {
         undefined,
         20,
         undefined,
-        "timestamp_added DESC",
+        'timestamp_added DESC',
       )
       .then((recentItems) => {
         widgetRows.value.radios.count = recentItems.total;
@@ -243,14 +243,14 @@ onMounted(async () => {
       undefined,
       20,
       undefined,
-      "timestamp_added DESC",
+      'timestamp_added DESC',
     )
     .then((pagedItems) => {
       widgetRows.value.tracks.items = pagedItems.items;
       widgetRows.value.tracks.count = pagedItems.total;
     });
   // browse widget
-  await api.browse("", (data: MediaItemType[]) => {
+  await api.browse('', (data: MediaItemType[]) => {
     widgetRows.value.browse.items.push(...data);
   });
 });
@@ -278,7 +278,7 @@ const queueWdiget = function () {
 const itemClicked = function (mediaItem: MediaItemType) {
   if (
     itemIsAvailable(mediaItem) &&
-    ["artist", "album", "playlist"].includes(mediaItem.media_type)
+    ['artist', 'album', 'playlist'].includes(mediaItem.media_type)
   ) {
     router.push({
       name: mediaItem.media_type,
@@ -289,11 +289,11 @@ const itemClicked = function (mediaItem: MediaItemType) {
     });
   } else if (mediaItem.media_type === MediaType.FOLDER) {
     router.push({
-      name: "browse",
+      name: 'browse',
       query: { path: (mediaItem as BrowseFolder).path },
     });
   } else {
-    eventbus.emit("playdialog", {
+    eventbus.emit('playdialog', {
       items: [mediaItem],
       showContextMenuItems: true,
     });
@@ -304,7 +304,7 @@ const playerClicked = function (player: Player) {
   const newDefaultPlayer = player;
   if (newDefaultPlayer) {
     store.selectedPlayer = newDefaultPlayer;
-    console.log("Selected new default player: ", newDefaultPlayer.display_name);
+    console.log('Selected new default player: ', newDefaultPlayer.display_name);
   }
 };
 </script>
