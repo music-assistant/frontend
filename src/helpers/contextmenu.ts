@@ -323,7 +323,11 @@ export const getContextMenuItems = function (
     }
   }
   // add to playlist action (tracks only)
-  if ((items[0].media_type === MediaType.TRACK || items[0].media_type === MediaType.ALBUM) && 'provider_mappings' in items[0]) {
+  if (
+    (items[0].media_type === MediaType.TRACK ||
+      items[0].media_type === MediaType.ALBUM) &&
+    'provider_mappings' in items[0]
+  ) {
     contextMenuItems.push({
       label: 'add_playlist',
       labelArgs: [],

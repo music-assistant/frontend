@@ -159,13 +159,18 @@ const addToPlaylist = function (value: MediaItemType) {
   // add album track(s) to playlist
   else if (selectedItems.value[0].media_type === MediaType.ALBUM) {
     var albumTracks: Track[] = [];
-    api.getAlbumTracks(selectedItems.value[0].item_id, selectedItems.value[0].provider).then((tracks) => {
-      albumTracks = tracks;
-      api.addPlaylistTracks(
-        value.item_id,
-        albumTracks.map((x) => x.uri),
-      );
-    });
+    api
+      .getAlbumTracks(
+        selectedItems.value[0].item_id,
+        selectedItems.value[0].provider,
+      )
+      .then((tracks) => {
+        albumTracks = tracks;
+        api.addPlaylistTracks(
+          value.item_id,
+          albumTracks.map((x) => x.uri),
+        );
+      });
   }
   close();
 };
