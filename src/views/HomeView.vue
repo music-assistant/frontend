@@ -111,7 +111,7 @@ interface WidgetRow {
 
 const widgetRows = ref<Record<string, WidgetRow>>({
   queue: {
-    label: 'currently_queued',
+    label: 'currently_playing',
     icon: 'mdi-playlist-play',
     items: [],
   },
@@ -161,11 +161,11 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 onMounted(async () => {
   const unsub = api.subscribe(EventType.PLAYER_UPDATED, (evt: EventMessage) => {
     // signal user that there might be updated info available for this item
-    queueWdiget();
+    updateCurrentlyPlayingQueueWidgetRow();
   });
   onBeforeUnmount(unsub);
 
-  queueWdiget();
+  updateCurrentlyPlayingQueueWidgetRow();
   api.getRecentlyPlayedItems(20).then((items) => {
     widgetRows.value.recently_played.items = items;
   });
@@ -175,7 +175,6 @@ onMounted(async () => {
       widgetRows.value.artists.items = pagedItems.items;
       widgetRows.value.artists.count = pagedItems.total;
     });
-  queueWdiget();
   api
     .getLibraryAlbums(
       undefined,
@@ -255,7 +254,7 @@ onMounted(async () => {
   });
 });
 
-const queueWdiget = function () {
+const updateCurrentlyPlayingQueueWidgetRow = function () {
   api.getPlayers().then((players) => {
     for (var player of players) {
       var player_queue = api.queues[player.player_id];

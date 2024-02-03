@@ -352,7 +352,6 @@
     "volume_normalization": "Volume normalization",
     "play_now_replace": "Play Now (clear queue)",
     "currently_playing": "Currently playing",
-    "currently_queued": "Currently queued",
     "favorites_add": "Add to favorites",
     "favorites_remove": "Remove from favorites",
     "confirm_library_remove": "Are you sure you want to delete this item from the library ? Any items depending on this item will also recursively be removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return in the next sync.",
