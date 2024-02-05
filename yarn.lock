@@ -5160,10 +5160,10 @@ vue@^2.6.10:
     "@vue/compiler-sfc" "2.7.14"
     csstype "^3.1.0"
 
-vuetify@3.5.1:
-  version "3.5.1"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.5.1.tgz#c2f35dad5e54a090e87e55ed1a4e76091199ed4a"
-  integrity sha512-fkhU4UFnX/lBARXg+n9mBCDPTaEDHoYGx9SZ5A/1LlzM7LohoqldmrNgza4WgpPTLIWqr6NvYp2NvT2IrcTfhg==
+vuetify@3.5.2:
+  version "3.5.2"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.5.2.tgz#269772066dc0aafdab8f10424ee3f1bea5ea6d3b"
+  integrity sha512-H/g9+8Loykt50qe9mruHkwWsAIgfQ8gO+SPTAV2uaCFmfYPSFRfu0aGcZ42iWu4bZ9ZkgswIIDaVsfnKINd8yg==
 
 w3c-xmlserializer@^5.0.0:
   version "5.0.0"
