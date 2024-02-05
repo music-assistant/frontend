@@ -35,7 +35,7 @@
     "@types/color": "3.0.6",
     "@types/node": "20.11.10",
     "@typescript-eslint/eslint-plugin": "6.19.1",
-    "@typescript-eslint/parser": "6.19.1",
+    "@typescript-eslint/parser": "6.20.0",
     "@vitejs/plugin-vue": "4.6.2",
     "@vue/eslint-config-typescript": "12.0.0",
     "@vue/tsconfig": "0.5.1",
