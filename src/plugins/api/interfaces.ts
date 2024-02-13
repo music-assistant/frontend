@@ -603,6 +603,8 @@ export interface ProviderManifest {
   icon_svg?: string;
   // icon_svg_dark: optional separate dark svg icon (full xml string)
   icon_svg_dark?: string;
+  // depends on: domain of another provider that is required for this provider
+  depends_on?: string;
 }
 
 export interface ProviderInstance {
