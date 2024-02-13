@@ -149,7 +149,47 @@
         "download_log": "Télécharger le fichier journal",
         "edit_group_members": "Modifier les membres du groupe",
         "add_new_provider_button": "Ajouter {0} fournisseur",
-        "add_group_player": "Ajouter un lecteur de groupe"
+        "add_group_player": "Ajouter un lecteur de groupe",
+        "group_members": "Membres du groupe",
+        "log_level": {
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Alerte",
+                "error": "Erreur",
+                "GLOBAL": "Vide",
+                "INFO": "Vide",
+                "WARNING": "Vide",
+                "ERROR": "Vide",
+                "DEBUG": "Vide"
+            }
+        },
+        "output_channels": {
+            "options": {
+                "stereo": "Stéréo (les deux canaux)",
+                "left": "Canal gauche uniquement",
+                "right": "Canal droit uniquement",
+                "mono": "Mono (les deux canaux)"
+            }
+        },
+        "eq_bass": {
+            "label": "Égaliseur : graves"
+        },
+        "eq_mid": {
+            "label": "Égaliseur : mediums"
+        },
+        "eq_treble": {
+            "label": "Égaliseur : aigus"
+        },
+        "crossfade": {
+            "label": "Activer le fondu enchaîné",
+            "description": "Activer un fondu enchaîné entre les pistes (de la file d'attente)"
+        },
+        "crossfade_duration": {
+            "label": "Durée du fondu enchaîné",
+            "description": "Durée en secondes du fondu enchaîné entre les pistes (si activé)"
+        },
+        "default": "Par défaut"
     },
     "show_info": "Montrer les infos",
     "show_select_boxes": "Afficher les cases de sélection",
@@ -206,7 +246,8 @@
         "open_provider_link": "Ouvrir cet élément sur le site web du fournisseur",
         "collapse_expand": "Réduire\/développer cette liste",
         "back": "Précédent",
-        "show_menu": "Afficher\/masquer le menu"
+        "show_menu": "Afficher\/masquer le menu",
+        "search_filter_active": "Les résultats de la recherche sont filtrés"
     },
     "topresult": "Meilleurs résultats",
     "track": "Piste",

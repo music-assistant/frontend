@@ -149,7 +149,48 @@
         "download_log": "Download log-fil",
         "edit_group_members": "Rediger gruppe-afspillere",
         "add_new_provider_button": "Tilføj {0} udbyder",
-        "add_group_player": "Tilføj gruppe-afspiller"
+        "add_group_player": "Tilføj gruppe-afspiller",
+        "default_enqueue_action_album": {
+            "options": {
+                "next": "Afspil elementet\/elementerne efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil albumnummeret\/-numrene lige efter det aktuelle nummer.",
+                "add": "Tilføj albumnummeret\/-numrene i bunden af køen."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Standard kø-indstilling for numre.",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil nummeret\/numrene, og behold de(t) resterende køelement(er). [standard]",
+                "replace": "Ryd køen, og afspil nummeret\/numrene.",
+                "next": "Afspil nummeret\/numrene efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil nummeret\/numrene efter det aktuelle element.",
+                "add": "Tilføj nummeret\/numrene i bunden af køen."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Standard kø-indstilling for afspilningslisteelement(er).",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil afspilningslistens numre, og behold de resterende elementer i køen.",
+                "replace": "Ryd køen, og afspil afspilningslistens numre [standard].",
+                "next": "Afspil elementet(erne) efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil afspilningslistens spor efter det aktuelle element.",
+                "add": "Tilføj afspilningslistens spor i bunden af køen."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Standard kø-indstilling for radio-element(er).",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil radiostationen nu, og behold de(t) resterende element(er) i køen.",
+                "replace": "Ryd køen, og afspil radiostationen [standard].",
+                "next": "Afspil elementet(erne) efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil radiostationen(erne) efter det aktuelle element.",
+                "add": "Tilføj radiostation(er) i bunden af køen."
+            }
+        },
+        "default": "standard"
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
@@ -206,7 +247,8 @@
         "open_provider_link": "Åbn dette element på udbyderens hjemmeside",
         "collapse_expand": "Skjul\/udvid listen",
         "back": "Tilbage",
-        "show_menu": "Vis\/skjul menu"
+        "show_menu": "Vis\/skjul menu",
+        "search_filter_active": "Søgningen filtrerer i øjeblikket resultater"
     },
     "topresult": "Bedste resultat",
     "track": "Spor",
