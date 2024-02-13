@@ -52,7 +52,7 @@
     "sass": "1.70.0",
     "typescript": "5.3.3",
     "vite": "4.5.0",
-    "vite-plugin-pwa": "0.17.5",
+    "vite-plugin-pwa": "0.18.1",
     "vite-plugin-vuetify": "1.0.2",
     "vite-plugin-webfont-dl": "3.9.1",
     "vue-tsc": "1.8.27"
