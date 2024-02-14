@@ -38,6 +38,45 @@
           </v-slide-group-item>
         </v-slide-group>
       </div>
+      <div
+        v-else-if="widgetRow.players && widgetRow.players.length"
+        class="widget-row"
+      >
+        <v-toolbar
+          color="transparent"
+          :style="widgetRow.path ? 'cursor: pointer' : ''"
+          @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
+        >
+          <template #prepend
+            ><v-icon :icon="widgetRow.icon" style="margin-left: 15px"
+          /></template>
+          <template #title>
+            <v-badge
+              v-if="widgetRow.count"
+              inline
+              color="grey"
+              :content="widgetRow.count"
+            >
+              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+            </v-badge>
+            <template v-else>
+              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+            </template>
+          </template>
+        </v-toolbar>
+        <v-slide-group show-arrows>
+          <v-slide-group-item
+            v-for="player in widgetRow.players"
+            :key="player.player_id"
+          >
+            <PanelviewPlayerCard
+              :player="player"
+              style="height: auto; width: auto; max-width: 400px; margin: 5px"
+              @click="playerClicked(player)"
+            />
+          </v-slide-group-item>
+        </v-slide-group>
+      </div>
     </div>
   </div>
 </template>
@@ -48,12 +87,18 @@ import {
   BrowseFolder,
   MediaItemType,
   MediaType,
+  Player,
+  EventType,
+  type EventMessage,
 } from '@/plugins/api/interfaces';
 import PanelviewItem from '@/components/PanelviewItem.vue';
 import { onMounted, ref } from 'vue';
+import { store } from '@/plugins/store';
 import { eventbus } from '@/plugins/eventbus';
 import { itemIsAvailable } from '@/helpers/contextmenu';
 import router from '@/plugins/router';
+import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
+import { onBeforeUnmount } from 'vue';
 
 interface WidgetRow {
   label: string;
@@ -61,9 +106,15 @@ interface WidgetRow {
   path?: string;
   items: MediaItemType[];
   count?: number;
+  players?: Player[];
 }
 
 const widgetRows = ref<Record<string, WidgetRow>>({
+  queue: {
+    label: 'currently_playing',
+    icon: 'mdi-playlist-play',
+    items: [],
+  },
   recently_played: {
     label: 'recently_played',
     icon: 'mdi-motion-play',
@@ -108,6 +159,13 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 });
 
 onMounted(async () => {
+  const unsub = api.subscribe(EventType.PLAYER_UPDATED, (evt: EventMessage) => {
+    // signal user that there might be updated info available for this item
+    updateCurrentlyPlayingQueueWidgetRow();
+  });
+  onBeforeUnmount(unsub);
+
+  updateCurrentlyPlayingQueueWidgetRow();
   api.getRecentlyPlayedItems(20).then((items) => {
     widgetRows.value.recently_played.items = items;
   });
@@ -196,6 +254,26 @@ onMounted(async () => {
   });
 });
 
+const updateCurrentlyPlayingQueueWidgetRow = function () {
+  api.getPlayers().then((players) => {
+    for (var player of players) {
+      var player_queue = api.queues[player.player_id];
+      if (player_queue && player_queue.items > 0) {
+        if (!widgetRows.value.queue.players) {
+          widgetRows.value.queue.players = [];
+        }
+        if (
+          !widgetRows.value.queue.players.some(
+            (p) => p.player_id === player.player_id,
+          )
+        ) {
+          widgetRows.value.queue.players.push(player);
+        }
+      }
+    }
+  });
+};
+
 const itemClicked = function (mediaItem: MediaItemType) {
   if (
     itemIsAvailable(mediaItem) &&
@@ -218,6 +296,14 @@ const itemClicked = function (mediaItem: MediaItemType) {
       items: [mediaItem],
       showContextMenuItems: true,
     });
+  }
+};
+
+const playerClicked = function (player: Player) {
+  const newDefaultPlayer = player;
+  if (newDefaultPlayer) {
+    store.selectedPlayer = newDefaultPlayer;
+    console.log('Selected new default player: ', newDefaultPlayer.display_name);
   }
 };
 </script>

@@ -133,11 +133,17 @@
           "
           v-bind="props"
           variant="list"
-          :title="$t('tooltip.search')"
+          :title="
+            params.search.length !== 0
+              ? $t('tooltip.search_filter_active')
+              : $t('tooltip.search')
+          "
           :disabled="!expanded"
           @click="toggleSearch()"
         >
-          <v-icon icon="mdi-magnify" />
+          <v-badge :model-value="params.search.length !== 0" color="error" dot>
+            <v-icon icon="mdi-magnify" />
+          </v-badge>
         </Button>
 
         <!-- toggle view mode button -->

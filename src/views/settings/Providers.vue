@@ -153,8 +153,8 @@
         <template #subtitle>
           <div class="line-clamp-1">
             {{ api.providerManifests[item.domain].description }}
-          </div></template
-        >
+          </div>
+        </template>
         <!-- actions -->
         <template #append>
           <!-- sync running -->
@@ -213,6 +213,7 @@ import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
+import { $t } from '@/plugins/i18n';
 
 // global refs
 const router = useRouter();
@@ -264,6 +265,23 @@ const editProvider = function (providerInstanceId: string) {
 };
 
 const addProvider = function (provider: ProviderManifest) {
+  if (provider.depends_on) {
+    if (!api.getProvider(provider.depends_on)) {
+      // this provider depends on another provider that is not yet setup
+      const depProvName = api.getProviderName(provider.depends_on);
+      if (
+        confirm(
+          $t('settings.provider_depends_on_confirm', [
+            provider.name,
+            depProvName,
+          ]),
+        )
+      ) {
+        router.push(`/settings/addprovider/${provider.depends_on}`);
+      }
+      return;
+    }
+  }
   router.push(`/settings/addprovider/${provider.domain}`);
 };
 

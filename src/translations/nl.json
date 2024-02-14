@@ -216,7 +216,26 @@
         "hide_player": {
             "label": "Verberg deze speler in de gebruikersinterface",
             "description": "Verberg deze speler in de gebruikersinterface. \n\nMerk op dat het nog steeds kan worden bestuurd en het zal ook verschijnen in alle synchronisatiegroepen waartoe de speler behoort."
-        }
+        },
+        "default_enqueue_action_playlist": {
+            "options": {
+                "next": "Speel de item(s) direct na het momenteel afgespeelde\/gebufferde item af.",
+                "replace_next": "Wis de wachtrij en speel de afspeellijsttrack(s) af direct na het huidige afgespeelde\/gebufferde item.",
+                "add": "Voeg de track(s) van de afspeellijst toe aan het einde van de wachtrij."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Standaard enqueue optie voor Radio item(s).",
+            "description": "Definieer de standaardactie voor het in de wachtrij plaatsen voor dit mediatype (als je geen actie hebt opgegeven).",
+            "options": {
+                "play": "Speel het radiostation af en bewaar de resterende wachtrij-item(s).",
+                "replace": "Wis de wachtrij en speel het radiostation af",
+                "next": "Speel het item of de items direct na het momenteel afgespeelde\/gebufferde item af.",
+                "replace_next": "Wis de wachtrij en speel de radiozender(s) af direct na het huidige afgespeelde\/gebufferde item.",
+                "add": "Voeg de radiozender(s) toe aan het einde van de wachtrij."
+            }
+        },
+        "default": "standaard"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
