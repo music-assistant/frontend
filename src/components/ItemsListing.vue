@@ -353,7 +353,14 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import { computed,ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
+import {
+  computed,
+  ref,
+  onBeforeUnmount,
+  nextTick,
+  onMounted,
+  watch,
+} from 'vue';
 import {
   MediaType,
   type Album,
