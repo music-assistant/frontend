@@ -4,6 +4,7 @@
     :class="{
       'panel-item-selected':
         activePlayer && player && activePlayer.player_id == player.player_id,
+      'panel-item-idle': player_queue && player_queue.state == PlayerState.IDLE,
     }"
   >
     <!-- now playing media -->
@@ -165,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import api from '@/plugins/api';
 import {
   MediaType,
@@ -225,6 +226,10 @@ const activePlayer = computed(() => {
     rgb(var(--v-theme-surface-light)) 0%,
     rgb(var(--v-theme-background)) 35%
   );
+}
+
+.panel-item-idle {
+  opacity: 0.5;
 }
 
 .panel-item-details {

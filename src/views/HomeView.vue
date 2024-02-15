@@ -90,6 +90,7 @@ import {
   Player,
   EventType,
   type EventMessage,
+  PlayerState,
 } from '@/plugins/api/interfaces';
 import PanelviewItem from '@/components/PanelviewItem.vue';
 import { onMounted, ref } from 'vue';
@@ -160,7 +161,7 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 
 onMounted(async () => {
   const unsub = api.subscribe(EventType.PLAYER_UPDATED, (evt: EventMessage) => {
-    // signal user that there might be updated info available for this item
+    // update the now playing widget row
     updateCurrentlyPlayingQueueWidgetRow();
   });
   onBeforeUnmount(unsub);
@@ -254,11 +255,22 @@ onMounted(async () => {
   });
 });
 
+const playerStateOrder = {
+  [PlayerState.PLAYING]: 1,
+  [PlayerState.PAUSED]: 2,
+  [PlayerState.IDLE]: 2,
+} as const;
+
 const updateCurrentlyPlayingQueueWidgetRow = function () {
   api.getPlayers().then((players) => {
     for (var player of players) {
       var player_queue = api.queues[player.player_id];
-      if (player_queue && player_queue.items > 0) {
+      if (
+        player_queue &&
+        player_queue.items > 0 &&
+        player.powered &&
+        isOwnActiveSource(player)
+      ) {
         if (!widgetRows.value.queue.players) {
           widgetRows.value.queue.players = [];
         }
@@ -268,10 +280,20 @@ const updateCurrentlyPlayingQueueWidgetRow = function () {
           )
         ) {
           widgetRows.value.queue.players.push(player);
+          widgetRows.value.queue.players.sort((a, b) =>
+            a.display_name.localeCompare(b.display_name),
+          );
+          widgetRows.value.queue.players.sort(
+            (a, b) => playerStateOrder[a.state] - playerStateOrder[b.state],
+          );
         }
       }
     }
   });
+};
+
+const isOwnActiveSource = function (player: Player) {
+  return player.active_source === player.player_id;
 };
 
 const itemClicked = function (mediaItem: MediaItemType) {
@@ -303,7 +325,7 @@ const playerClicked = function (player: Player) {
   const newDefaultPlayer = player;
   if (newDefaultPlayer) {
     store.selectedPlayer = newDefaultPlayer;
-    console.log('Selected new default player: ', newDefaultPlayer.display_name);
+    updateCurrentlyPlayingQueueWidgetRow();
   }
 };
 </script>
