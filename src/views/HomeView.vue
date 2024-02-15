@@ -258,7 +258,7 @@ onMounted(async () => {
 const playerStateOrder = {
   [PlayerState.PLAYING]: 1,
   [PlayerState.PAUSED]: 2,
-  [PlayerState.IDLE]: 3,
+  [PlayerState.IDLE]: 2,
 } as const;
 
 const updateCurrentlyPlayingQueueWidgetRow = function () {
@@ -281,7 +281,7 @@ const updateCurrentlyPlayingQueueWidgetRow = function () {
         ) {
           widgetRows.value.queue.players.push(player);
           widgetRows.value.queue.players.sort((a, b) =>
-            a.name.localeCompare(b.name),
+            a.display_name.localeCompare(b.display_name),
           );
           widgetRows.value.queue.players.sort(
             (a, b) => playerStateOrder[a.state] - playerStateOrder[b.state],
