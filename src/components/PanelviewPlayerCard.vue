@@ -104,7 +104,7 @@
             v-else-if="playerQueue && playerQueue.items == 0"
             class="line-clamp-1"
           >
-            {{ $t("queue_empty") }}
+            {{ $t('queue_empty') }}
           </div>
           <!-- 3rd party source active -->
           <div
@@ -115,7 +115,7 @@
             class="line-clamp-1"
           >
             {{
-              $t("external_source_active", [
+              $t('external_source_active', [
                 store.selectedPlayer?.active_source,
               ])
             }}
@@ -166,21 +166,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import api from "@/plugins/api";
+import { computed } from 'vue';
+import api from '@/plugins/api';
 import {
   MediaType,
   PlayerQueue,
   Player,
   PlayerState,
-} from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
-import ListItem from "@/components/mods/ListItem.vue";
-import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
+} from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
+import MediaItemThumb from '@/components/MediaItemThumb.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import ListItem from '@/components/mods/ListItem.vue';
+import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
 
-import { getArtistsString } from "@/helpers/utils";
+import { getArtistsString } from '@/helpers/utils';
 
 var player_queue: PlayerQueue;
 // properties
