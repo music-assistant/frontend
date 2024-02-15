@@ -134,14 +134,14 @@
           v-bind="props"
           variant="list"
           :title="
-            isSearchActive()
+            isSearchActive
               ? $t('tooltip.search_filter_active')
               : $t('tooltip.search')
           "
           :disabled="!expanded"
           @click="toggleSearch()"
         >
-          <v-badge :model-value="isSearchActive()" color="error" dot>
+          <v-badge :model-value="isSearchActive" color="error" dot>
             <v-icon icon="mdi-magnify" />
           </v-badge>
         </Button>
@@ -353,7 +353,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import { ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
+import { computed,ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
 import {
   MediaType,
   type Album,
@@ -699,13 +699,13 @@ const onClear = function () {
   loadData(true);
 };
 
-const isSearchActive = function () {
+const isSearchActive = computed(() => {
   var searchActive = false;
   if (params.value.search && params.value.search.length !== 0) {
     searchActive = true;
   }
   return searchActive;
-};
+});
 
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   if (sort_key !== undefined) {
