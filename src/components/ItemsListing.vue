@@ -134,14 +134,14 @@
           v-bind="props"
           variant="list"
           :title="
-            params.search.length !== 0
+            isSearchActive()
               ? $t('tooltip.search_filter_active')
               : $t('tooltip.search')
           "
           :disabled="!expanded"
           @click="toggleSearch()"
         >
-          <v-badge :model-value="params.search.length !== 0" color="error" dot>
+          <v-badge :model-value="isSearchActive()" color="error" dot>
             <v-icon icon="mdi-magnify" />
           </v-badge>
         </Button>
@@ -242,6 +242,7 @@
       style="width: auto; margin-top: 10px"
       @focus="searchHasFocus = true"
       @blur="searchHasFocus = false"
+      @click:clear="onClear"
     />
     <Container
       v-if="expanded"
@@ -690,6 +691,20 @@ const onClick = function (mediaItem: MediaItemType) {
   } else {
     onMenu(mediaItem, true);
   }
+};
+
+const onClear = function () {
+  params.value.search = '';
+  showSearch.value = false;
+  loadData(true);
+};
+
+const isSearchActive = function () {
+  var searchActive = false;
+  if (params.value.search && params.value.search.length !== 0) {
+    searchActive = true;
+  }
+  return searchActive;
 };
 
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
