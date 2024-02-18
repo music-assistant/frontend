@@ -98,7 +98,6 @@
         "configure": "Configure",
         "delete": "Delete",
         "disable": "Disable",
-        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?",
         "documentation": "Documentation",
         "enable": "Enable",
         "enable_player": "Enable this player",
@@ -286,7 +285,8 @@
                 "add": "Add the radio station(s) at the end of the queue."
             }
         },
-        "default": "default"
+        "default": "default",
+        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
