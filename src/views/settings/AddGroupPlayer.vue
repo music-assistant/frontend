@@ -69,8 +69,9 @@ const syncPlayers = computed(() => {
   return Object.values(api.players)
     .filter(
       (x) =>
-        props.provider == 'ugp' ||
-        (x.provider == props.provider && x.can_sync_with.length),
+        props.provider.startsWith('ugp') ||
+        (api.getProvider(x.provider)?.instance_id == props.provider &&
+          x.can_sync_with.length),
     )
     .sort((a, b) =>
       a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
