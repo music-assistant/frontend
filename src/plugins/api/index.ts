@@ -1025,6 +1025,20 @@ export class MusicAssistantApi {
     return undefined;
   }
 
+  public getProviderManifest(
+    provider_domain_or_instance_id: string,
+  ): ProviderManifest | undefined {
+    // try to get the provider manifest from the instance_id or domain
+    if (provider_domain_or_instance_id in this.providerManifests) {
+      return this.providerManifests[provider_domain_or_instance_id];
+    }
+    if (provider_domain_or_instance_id in this.providers) {
+      const prov = this.providers[provider_domain_or_instance_id];
+      return this.providerManifests[prov.domain];
+    }
+    return undefined;
+  }
+
   private async connectHass() {
     // TODO
     // Connect to Music Assistant by using the Home Assistant API

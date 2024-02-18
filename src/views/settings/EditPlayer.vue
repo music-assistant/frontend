@@ -5,7 +5,8 @@
       <div
         v-if="
           config &&
-          api.providers[config.provider].domain in api.providerManifests
+          api.getProviderManifest(config.provider)!.domain in
+            api.providerManifests
         "
         style="margin-left: -5px; margin-right: -5px"
       >
@@ -21,23 +22,12 @@
         </v-card-subtitle>
         <v-card-subtitle>
           <b>{{ $t('settings.player_provider') }}: </b
-          >{{
-            api.providerManifests[api.providers[config.provider].domain].name
-          }}
+          >{{ api.getProviderManifest(config.provider)?.name }}
           (
-          {{
-            api.providerManifests[api.providers[config.provider].domain]
-              .description
-          }})
+          {{ api.getProviderManifest(config.provider)?.description }})
           <a
-            v-if="
-              api.providerManifests[api.providers[config.provider].domain]
-                .documentation
-            "
-            :href="
-              api.providerManifests[api.providers[config.provider].domain]
-                .documentation
-            "
+            v-if="api.getProviderManifest(config.provider)?.documentation"
+            :href="api.getProviderManifest(config.provider)?.documentation"
             target="_blank"
             >{{ $t('settings.check_docs') }}</a
           >
@@ -75,10 +65,7 @@
           v-model="config.enabled"
           :label="$t('settings.enable_player')"
           color="primary"
-          :disabled="
-            api.providerManifests[api.providers[config.provider].domain]
-              ?.builtin
-          "
+          :disabled="api.getProviderManifest(config.provider)?.builtin"
         />
       </div>
       <br />

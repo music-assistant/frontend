@@ -70,14 +70,11 @@
             labelArgs: [],
             action: () => {
               openLinkInNewTab(
-                api.providerManifests[api.providers[item.provider].domain]
-                  .documentation!,
+                api.getProviderManifest(item!.provider)?.documentation!,
               );
             },
             icon: 'mdi-bookshelf',
-            disabled:
-              !api.providerManifests[api.providers[item.provider].domain]
-                .documentation,
+            disabled: !api.getProviderManifest(item!.provider)?.documentation!,
           },
           {
             label: 'settings.delete',
@@ -92,7 +89,7 @@
       >
         <template #prepend>
           <provider-icon
-            :domain="api.providers[item.provider].domain"
+            :domain="api.getProviderManifest(item!.provider)?.domain!"
             :size="40"
             class="listitem-media-thumb"
           />
@@ -106,7 +103,7 @@
         <!-- subtitle -->
         <template #subtitle>
           <div class="line-clamp-1">
-            {{ api.providers[item.provider]?.name || item.provider }}
+            {{ api.getProviderManifest(item!.provider)?.name || item.provider }}
           </div>
         </template>
         <!-- actions -->
