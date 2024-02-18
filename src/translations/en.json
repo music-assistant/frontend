@@ -98,7 +98,6 @@
         "configure": "Configure",
         "delete": "Delete",
         "disable": "Disable",
-        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?",
         "documentation": "Documentation",
         "enable": "Enable",
         "enable_player": "Enable this player",
@@ -236,7 +235,7 @@
             "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
             "options": {
                 "play": "Play artist track(s) now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the artist track(s)",
+                "replace": "Clear the queue and play the artist track(s) [default]",
                 "next": "Play the item(s) right after the currently played\/buffered item.",
                 "replace_next": "Clear the queue and play the artist track(s) right after the currently played\/buffered item.",
                 "add": "Add the artist track(s) at the end of the queue."
@@ -247,7 +246,7 @@
             "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
             "options": {
                 "play": "Play album track(s) now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the album track(s)",
+                "replace": "Clear the queue and play the album track(s) [default]",
                 "next": "Play the item(s) right after the currently played\/buffered item.",
                 "replace_next": "Clear the queue and play the album track(s) right after the currently played\/buffered item.",
                 "add": "Add the album track(s) at the end of the queue."
@@ -257,7 +256,7 @@
             "label": "Default enqueue option for Track item(s).",
             "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
             "options": {
-                "play": "Play track(s) now and keep the remaining queue item(s).",
+                "play": "Play track(s) now and keep the remaining queue item(s). [default]",
                 "replace": "Clear the queue and play the track(s).",
                 "next": "Play the track(s) right after the currently played\/buffered item.",
                 "replace_next": "Clear the queue and play the track(s) right after the currently played\/buffered item.",
@@ -269,7 +268,7 @@
             "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
             "options": {
                 "play": "Play playlist track(s) now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the playlist track(s)",
+                "replace": "Clear the queue and play the playlist track(s) [default]",
                 "next": "Play the item(s) right after the currently played\/buffered item.",
                 "replace_next": "Clear the queue and play the playlist track(s) right after the currently played\/buffered item.",
                 "add": "Add the playlist track(s) at the end of the queue."
@@ -280,13 +279,14 @@
             "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
             "options": {
                 "play": "Play radio station now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the radio station",
+                "replace": "Clear the queue and play the radio station [default]",
                 "next": "Play the item(s) right after the currently played\/buffered item.",
                 "replace_next": "Clear the queue and play the radio station(s) right after the currently played\/buffered item.",
                 "add": "Add the radio station(s) at the end of the queue."
             }
         },
-        "default": "default"
+        "default": "default",
+        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
