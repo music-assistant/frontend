@@ -167,15 +167,19 @@ onMounted(async () => {
   onBeforeUnmount(unsub);
 
   updateCurrentlyPlayingQueueWidgetRow();
+  // recently played widget row
   api.getRecentlyPlayedItems(20).then((items) => {
     widgetRows.value.recently_played.items = items;
   });
+  // library artists widget row
   api
     .getLibraryArtists(undefined, undefined, 20, undefined, 'RANDOM()')
     .then((pagedItems) => {
       widgetRows.value.artists.items = pagedItems.items;
       widgetRows.value.artists.count = pagedItems.total;
     });
+
+  // library albums widget row
   api
     .getLibraryAlbums(
       undefined,
@@ -189,53 +193,33 @@ onMounted(async () => {
       widgetRows.value.albums.count = pagedItems.total;
     });
 
-  // playlists widget = recent played playlists + recent added playlists
-  api.getRecentlyPlayedItems(10, [MediaType.PLAYLIST]).then((playedItems) => {
-    widgetRows.value.playlists.items = playedItems;
-    api
-      .getLibraryPlaylists(
-        undefined,
-        undefined,
-        20,
-        undefined,
-        'timestamp_added DESC',
-      )
-      .then((recentItems) => {
-        widgetRows.value.playlists.count = recentItems.total;
-        const allNames = playedItems.map(function (x) {
-          return x.name;
-        });
-        for (const recentItem of recentItems.items) {
-          if (!allNames.includes(recentItem.name)) {
-            widgetRows.value.playlists.items.push(recentItem);
-          }
-        }
-      });
-  });
+  // library playlist widget row
+  api
+    .getLibraryPlaylists(
+      undefined,
+      undefined,
+      20,
+      undefined,
+      'timestamp_added DESC',
+    )
+    .then((pagedItems) => {
+      widgetRows.value.playlists.items = pagedItems.items;
+      widgetRows.value.playlists.count = pagedItems.total;
+    });
 
-  // radios widget = recent played radios + recent added radios
-  api.getRecentlyPlayedItems(10, [MediaType.RADIO]).then((playedItems) => {
-    widgetRows.value.radios.items = playedItems;
-    api
-      .getLibraryRadios(
-        undefined,
-        undefined,
-        20,
-        undefined,
-        'timestamp_added DESC',
-      )
-      .then((recentItems) => {
-        widgetRows.value.radios.count = recentItems.total;
-        const allNames = playedItems.map(function (x) {
-          return x.name;
-        });
-        for (const recentItem of recentItems.items) {
-          if (!allNames.includes(recentItem.name)) {
-            widgetRows.value.radios.items.push(recentItem);
-          }
-        }
-      });
-  });
+  // library radios widget row
+  api
+    .getLibraryRadios(
+      undefined,
+      undefined,
+      20,
+      undefined,
+      'timestamp_added DESC',
+    )
+    .then((pagedItems) => {
+      widgetRows.value.radios.items = pagedItems.items;
+      widgetRows.value.radios.count = pagedItems.total;
+    });
   // tracks widget
   api
     .getLibraryTracks(
