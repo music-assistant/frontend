@@ -40,7 +40,7 @@
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Enter a new name for the new playlist",
+    "new_playlist_name": "Enter a new for the new playlist",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",
@@ -149,7 +149,144 @@
         "download_log": "Download logfile",
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
-        "add_group_player": "Add group player"
+        "add_group_player": "Add group player",
+        "group_members": "Group members",
+        "log_level": {
+            "label": "Log level",
+            "description": "Set the log verbosity for this provider.",
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Warning",
+                "error": "Error",
+                "debug": "Debug"
+            }
+        },
+        "flow_mode": {
+            "label": "Enable queue flow mode",
+            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
+        },
+        "auto_play": {
+            "label": "Automatically play (resume on power on)",
+            "description": "When this player is turned ON, automatically start playing (if there are items in the queue)."
+        },
+        "output_channels": {
+            "label": "Output Channel Mode",
+            "description": "You can configure this player to play only the left or right channel, for example to a create a stereo pair with 2 players.",
+            "options": {
+                "stereo": "Stereo (both channels)",
+                "left": "Left channel only",
+                "right": "Right channel only",
+                "mono": "Mono (both channels)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Enable volume normalization (EBU-R128 based)",
+            "description": "Enable volume normalization based on the EBU-R128 standard without affecting dynamic range"
+        },
+        "volume_normalization_target": {
+            "label": "Target level for volume normalization",
+            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \n\n **WARNING:** Setting the level too high may result in clipping!"
+        },
+        "eq_bass": {
+            "label": "Equalizer: bass",
+            "description": "Use the builtin basic equalizer to adjust the bass (low tones) level of the audio."
+        },
+        "eq_mid": {
+            "label": "Equalizer: mid",
+            "description": "Use the builtin basic equalizer to adjust the mid level of audio."
+        },
+        "eq_treble": {
+            "label": "Equalizer: treble",
+            "description": "Use the builtin basic equalizer to adjust the treble (high tones) level of audio."
+        },
+        "crossfade": {
+            "label": "Enable crossfade",
+            "description": "Enable a crossfade transition between (queue) tracks."
+        },
+        "crossfade_duration": {
+            "label": "Crossfade duration",
+            "description": "Duration in seconds of the crossfade between tracks (if enabled)"
+        },
+        "hide_player": {
+            "label": "Hide this player in the user interface",
+            "description": "Hide this player in the user interface. \n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Items to select when you play a (in-library) artist.",
+            "description": "If you want to play an artist, what items should be enqueued?",
+            "options": {
+                "library_tracks": "Only in-library tracks",
+                "library_album_tracks": "All tracks from all albums in the library",
+                "all_tracks": "All (top) tracks from (all) provider(s)",
+                "all_album_tracks": "All tracks from all albums from (all) provider(s)"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Items to select when you play a (in-library) album.",
+            "description": "If you want to play an artist, what items should be enqueued?",
+            "options": {
+                "library_tracks": "Only in-library tracks",
+                "all_tracks": "All tracks for album on provider"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Default enqueue option for Artist item(s).",
+            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "options": {
+                "play": "Play artist track(s) now and keep the remaining queue item(s).",
+                "replace": "Clear the queue and play the artist track(s)",
+                "next": "Play the item(s) right after the currently played\/buffered item.",
+                "replace_next": "Clear the queue and play the artist track(s) right after the currently played\/buffered item.",
+                "add": "Add the artist track(s) at the end of the queue."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Default enqueue option for Album item(s).",
+            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "options": {
+                "play": "Play album track(s) now and keep the remaining queue item(s).",
+                "replace": "Clear the queue and play the album track(s)",
+                "next": "Play the item(s) right after the currently played\/buffered item.",
+                "replace_next": "Clear the queue and play the album track(s) right after the currently played\/buffered item.",
+                "add": "Add the album track(s) at the end of the queue."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Default enqueue option for Track item(s).",
+            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "options": {
+                "play": "Play track(s) now and keep the remaining queue item(s).",
+                "replace": "Clear the queue and play the track(s).",
+                "next": "Play the track(s) right after the currently played\/buffered item.",
+                "replace_next": "Clear the queue and play the track(s) right after the currently played\/buffered item.",
+                "add": "Add the track(s) at the end of the queue."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Default enqueue option for Playlist item(s).",
+            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "options": {
+                "play": "Play playlist track(s) now and keep the remaining queue item(s).",
+                "replace": "Clear the queue and play the playlist track(s)",
+                "next": "Play the item(s) right after the currently played\/buffered item.",
+                "replace_next": "Clear the queue and play the playlist track(s) right after the currently played\/buffered item.",
+                "add": "Add the playlist track(s) at the end of the queue."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Default enqueue option for Radio item(s).",
+            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "options": {
+                "play": "Play radio station now and keep the remaining queue item(s).",
+                "replace": "Clear the queue and play the radio station",
+                "next": "Play the item(s) right after the currently played\/buffered item.",
+                "replace_next": "Clear the queue and play the radio station(s) right after the currently played\/buffered item.",
+                "add": "Add the radio station(s) at the end of the queue."
+            }
+        },
+        "default": "default",
+        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
@@ -205,7 +342,8 @@
         "open_provider_link": "Open this item on the provider's website",
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
-        "show_menu": "Show\/hide menu"
+        "show_menu": "Show\/hide menu",
+        "search_filter_active": "Search is currently filtering results"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -230,5 +368,6 @@
     "radiobrowser_by_country": "By country",
     "radiobrowser_by_tag": "By tag",
     "load_more_items": "Load more items...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "muted": "muted"
 }

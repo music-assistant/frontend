@@ -21,9 +21,11 @@ const TouchEvents = {
     // Hold Directive
     app.directive('hold', {
       mounted(el, binding) {
-        const touchStartEvent = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+        const touchStartEvent =
+          'ontouchstart' in window ? 'touchstart' : 'mousedown';
         const touchEndEvent = 'ontouchstart' in window ? 'touchend' : 'mouseup';
-        const touchMoveEvent = 'ontouchstart' in window ? 'touchmove' : 'mousemove';
+        const touchMoveEvent =
+          'ontouchstart' in window ? 'touchmove' : 'mousemove';
         let holdTimeout: number | null = null;
         let startX: number | null = null;
         let startY: number | null = null;
@@ -49,7 +51,10 @@ const TouchEvents = {
           const x = event.touches[0].clientX;
           const y = event.touches[0].clientY;
 
-          if (Math.abs(x - startX) > holdThreshold || Math.abs(y - startY) > holdThreshold) {
+          if (
+            Math.abs(x - startX) > holdThreshold ||
+            Math.abs(y - startY) > holdThreshold
+          ) {
             window.clearTimeout(holdTimeout);
             holdTimeout = null;
           }
@@ -115,7 +120,8 @@ const TouchEvents = {
     // Swipe Directive
     app.directive('swipe', {
       mounted(el, binding) {
-        const touchStartEvent = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+        const touchStartEvent =
+          'ontouchstart' in window ? 'touchstart' : 'mousedown';
         const touchEndEvent = 'ontouchstart' in window ? 'touchend' : 'mouseup';
         let startX: number | null = null;
         let startY: number | null = null;
@@ -244,7 +250,8 @@ const TouchEvents = {
     // Press Directive
     app.directive('press', {
       mounted(el, binding) {
-        const touchStartEvent = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+        const touchStartEvent =
+          'ontouchstart' in window ? 'touchstart' : 'mousedown';
 
         const handleTouchStart = (event: TouchEvent) => {
           binding.value(event);
@@ -288,7 +295,8 @@ const TouchEvents = {
     // DoubleTap Directive
     app.directive('doubletap', {
       mounted(el, binding) {
-        const touchStartEvent = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+        const touchStartEvent =
+          'ontouchstart' in window ? 'touchstart' : 'mousedown';
         let lastTapTime = 0;
 
         const handleTouchEnd = (event: TouchEvent) => {

@@ -1,6 +1,12 @@
 <template>
-  <SpeakerBtn v-if="props.player && props.player.isVisible" :color="props.player.color" />
-  <QueueBtn v-if="props.queue && props.queue.isVisible" :color="props.queue.color" />
+  <SpeakerBtn
+    v-if="props.player && props.player.isVisible"
+    :color="props.player.color"
+  />
+  <QueueBtn
+    v-if="props.queue && props.queue.isVisible"
+    :color="props.queue.color"
+  />
   <VolumeBtn
     v-if="props.volume && props.volume.isVisible"
     :color="props.volume.color"
@@ -37,6 +43,10 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   queue: () => ({ isVisible: true, showQueueDialog: false }),
   player: () => ({ isVisible: true }),
-  volume: () => ({ isVisible: true, volumeSize: '150px', responsiveVolumeSize: false }),
+  volume: () => ({
+    isVisible: true,
+    volumeSize: '150px',
+    responsiveVolumeSize: false,
+  }),
 });
 </script>

@@ -24,3 +24,6 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["music_assistant_frontend"]
+
+[tool.codespell]
+ignore-words-list = "provid,hass,followings"

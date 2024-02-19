@@ -14,12 +14,17 @@ onMounted(() => {
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
   // enable dark mode based on OS/browser config
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
-    const newColorScheme = event.matches ? 'dark' : 'light';
-    theme.global.name.value = newColorScheme;
-  });
+  window
+    .matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', (event) => {
+      const newColorScheme = event.matches ? 'dark' : 'light';
+      theme.global.name.value = newColorScheme;
+    });
 
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  if (
+    window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  ) {
     // dark mode is enabled
     theme.global.name.value = 'dark';
   }
@@ -31,7 +36,10 @@ onMounted(() => {
     serverAddress = localStorage.getItem('mass_debug_address') || '';
     if (!serverAddress) {
       serverAddress =
-        prompt('Enter location of the Music Assistant server', window.location.origin.replace('3000', '8095')) || '';
+        prompt(
+          'Enter location of the Music Assistant server',
+          window.location.origin.replace('3000', '8095'),
+        ) || '';
       localStorage.setItem('mass_debug_address', serverAddress);
     }
   } else {

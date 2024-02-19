@@ -3,9 +3,13 @@ import { store } from '../store';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { WebsocketBuilder, Websocket, WebsocketEvents, LinearBackoff } from 'websocket-ts';
+import { WebsocketBuilder, Websocket, LinearBackoff } from 'websocket-ts';
 import { reactive, ref } from 'vue';
-import { type Connection, createConnection, ERR_HASS_HOST_REQUIRED, getAuth } from 'home-assistant-js-websocket';
+import {
+  createConnection,
+  ERR_HASS_HOST_REQUIRED,
+  getAuth,
+} from 'home-assistant-js-websocket';
 
 import {
   type Artist,
@@ -18,7 +22,6 @@ import {
   type PagedItems,
   type MediaItemType,
   MediaType,
-  type BrowseFolder,
   type QueueItem,
   QueueOption,
   type ProviderInstance,
@@ -78,7 +81,9 @@ export class MusicAssistantApi {
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
   public providers = reactive<{ [instance_id: string]: ProviderInstance }>({});
-  public providerManifests = reactive<{ [domain: string]: ProviderManifest }>({});
+  public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
+    {},
+  );
   public syncTasks = ref<SyncTask[]>([]);
   public fetchesInProgress = ref<number[]>([]);
   private eventCallbacks: Array<[string, CallableFunction]>;
@@ -154,7 +159,10 @@ export class MusicAssistantApi {
     return removeCallback;
   }
 
-  public subscribe_multi(eventFilters: EventType[], callback: CallableFunction) {
+  public subscribe_multi(
+    eventFilters: EventType[],
+    callback: CallableFunction,
+  ) {
     // subscribe a listener for multiple events
     // returns handle to remove the listener
     const removeCallbacks: CallableFunction[] = [];
@@ -185,7 +193,11 @@ export class MusicAssistantApi {
     });
   }
 
-  public getTrack(item_id: string, provider_instance_id_or_domain: string, album_uri?: string): Promise<Track> {
+  public getTrack(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    album_uri?: string,
+  ): Promise<Track> {
     return this.getData('music/tracks/get_track', {
       item_id,
       provider_instance_id_or_domain,
@@ -193,21 +205,30 @@ export class MusicAssistantApi {
     });
   }
 
-  public getTrackVersions(item_id: string, provider_instance_id_or_domain: string): Promise<Track[]> {
+  public getTrackVersions(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
     return this.getData('music/tracks/track_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getTrackAlbums(item_id: string, provider_instance_id_or_domain: string): Promise<Album[]> {
+  public getTrackAlbums(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Album[]> {
     return this.getData('music/tracks/track_albums', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getTrackPreviewUrl(provider_instance_id_or_domain: string, item_id: string): string {
+  public getTrackPreviewUrl(
+    provider_instance_id_or_domain: string,
+    item_id: string,
+  ): string {
     const encItemId = encodeURIComponent(encodeURIComponent(item_id));
     return `${api.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
   }
@@ -230,21 +251,30 @@ export class MusicAssistantApi {
     });
   }
 
-  public getArtist(item_id: string, provider_instance_id_or_domain: string): Promise<Artist> {
+  public getArtist(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Artist> {
     return this.getData('music/artists/get_artist', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getArtistTracks(item_id: string, provider_instance_id_or_domain: string): Promise<Track[]> {
+  public getArtistTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
     return this.getData('music/artists/artist_tracks', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getArtistAlbums(item_id: string, provider_instance_id_or_domain: string): Promise<Album[]> {
+  public getArtistAlbums(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Album[]> {
     return this.getData('music/artists/artist_albums', {
       item_id,
       provider_instance_id_or_domain,
@@ -267,21 +297,30 @@ export class MusicAssistantApi {
     });
   }
 
-  public getAlbum(item_id: string, provider_instance_id_or_domain: string): Promise<Album> {
+  public getAlbum(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Album> {
     return this.getData('music/albums/get_album', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getAlbumTracks(item_id: string, provider_instance_id_or_domain: string): Promise<Track[]> {
+  public getAlbumTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
     return this.getData('music/albums/album_tracks', {
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public getAlbumVersions(item_id: string, provider_instance_id_or_domain: string): Promise<Album[]> {
+  public getAlbumVersions(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Album[]> {
     return this.getData('music/albums/album_versions', {
       item_id,
       provider_instance_id_or_domain,
@@ -336,10 +375,16 @@ export class MusicAssistantApi {
   }
 
   public addPlaylistTracks(db_playlist_id: string | number, uris: string[]) {
-    this.sendCommand('music/playlists/add_playlist_tracks', { db_playlist_id, uris });
+    this.sendCommand('music/playlists/add_playlist_tracks', {
+      db_playlist_id,
+      uris,
+    });
   }
 
-  public removePlaylistTracks(db_playlist_id: string | number, positions_to_remove: number[]) {
+  public removePlaylistTracks(
+    db_playlist_id: string | number,
+    positions_to_remove: number[],
+  ) {
     this.sendCommand('music/playlists/remove_playlist_tracks', {
       db_playlist_id,
       positions_to_remove,
@@ -380,7 +425,10 @@ export class MusicAssistantApi {
     });
   }
 
-  public getRadioVersions(item_id: string, provider_instance_id_or_domain: string): Promise<Radio[]> {
+  public getRadioVersions(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Radio[]> {
     return this.getData('music/radio/radio_versions', {
       item_id,
       provider_instance_id_or_domain,
@@ -394,7 +442,9 @@ export class MusicAssistantApi {
     });
   }
 
-  public refreshItem(media_item: MediaItemType | ItemMapping): Promise<MediaItemType> {
+  public refreshItem(
+    media_item: MediaItemType | ItemMapping,
+  ): Promise<MediaItemType> {
     // Try to refresh a mediaitem by requesting it's full object or search for substitutes.
     return this.getData('music/refresh_item', {
       media_item,
@@ -421,7 +471,10 @@ export class MusicAssistantApi {
     });
   }
 
-  public async removeItemFromLibrary(media_type: MediaType, library_item_id: string | number) {
+  public async removeItemFromLibrary(
+    media_type: MediaType,
+    library_item_id: string | number,
+  ) {
     // Remove an item from the library.
     this.sendCommand('music/library/remove_item', {
       media_type,
@@ -439,7 +492,10 @@ export class MusicAssistantApi {
       item.favorite = true;
     }
   }
-  public async removeItemFromFavorites(media_type: MediaType, library_item_id: string | number) {
+  public async removeItemFromFavorites(
+    media_type: MediaType,
+    library_item_id: string | number,
+  ) {
     // Add an item (uri or mediaitem) to the favorites.
     this.sendCommand('music/favorites/remove_item', {
       media_type,
@@ -460,12 +516,19 @@ export class MusicAssistantApi {
     }
   }
 
-  public browse(path?: string, chunkCallback?: chunkCallback): Promise<MediaItemType[]> {
+  public browse(
+    path?: string,
+    chunkCallback?: chunkCallback,
+  ): Promise<MediaItemType[]> {
     // Browse Music providers.
     return this.getData('music/browse', { path }, chunkCallback);
   }
 
-  public search(search_query: string, media_types?: MediaType[], limit?: number): Promise<SearchResults> {
+  public search(
+    search_query: string,
+    media_types?: MediaType[],
+    limit?: number,
+  ): Promise<SearchResults> {
     // Perform global search for media items on all providers.
     return this.getData('music/search', { search_query, media_types, limit });
   }
@@ -487,7 +550,10 @@ export class MusicAssistantApi {
     return this.getData('players/queue/all');
   }
 
-  public getPlayerQueueItems(queue_id: string, chunkCallback?: chunkCallback): Promise<QueueItem[]> {
+  public getPlayerQueueItems(
+    queue_id: string,
+    chunkCallback?: chunkCallback,
+  ): Promise<QueueItem[]> {
     // Get all QueueItems for given PlayerQueue
     return this.getData(
       'players/queue/items',
@@ -530,7 +596,11 @@ export class MusicAssistantApi {
     // Play item at index (or item_id) X in queue.
     this.playerQueueCommand(queueId, 'play_index', { index });
   }
-  public queueCommandMoveItem(queueId: string, queue_item_id: string, pos_shift = 1) {
+  public queueCommandMoveItem(
+    queueId: string,
+    queue_item_id: string,
+    pos_shift = 1,
+  ) {
     // Move queue item x up/down the queue.
     // - queue_id: id of the queue to process this request.
     // - queue_item_id: the item_id of the queueitem that needs to be moved.
@@ -548,7 +618,10 @@ export class MusicAssistantApi {
   public queueCommandMoveNext(queueId: string, queue_item_id: string) {
     this.queueCommandMoveItem(queueId, queue_item_id, 0);
   }
-  public queueCommandDelete(queueId: string, item_id_or_index: number | string) {
+  public queueCommandDelete(
+    queueId: string,
+    item_id_or_index: number | string,
+  ) {
     // Delete item (by id or index) from the queue.
     this.playerQueueCommand(queueId, 'delete_item', { item_id_or_index });
   }
@@ -581,14 +654,6 @@ export class MusicAssistantApi {
     // Configure repeat setting on the the queue.
     this.playerQueueCommand(queueId, 'repeat', { repeat_mode });
   }
-  public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
-    // Configure crossfade setting on the the queue.
-    this.playerQueueCommand(queueId, 'crossfade', { crossfade_enabled });
-  }
-  public queueCommandCrossfadeToggle(queueId: string) {
-    // Toggle crossfade mode for a queue
-    this.queueCommandCrossfade(queueId, !this.queues[queueId].crossfade_enabled);
-  }
   public queueCommandRepeatToggle(queueId: string) {
     // Toggle repeat mode of a queue
     const queue = this.queues[queueId];
@@ -600,9 +665,13 @@ export class MusicAssistantApi {
       this.queueCommandRepeat(queueId, RepeatMode.OFF);
     }
   }
-  public playerQueueCommand(queue_id: string, command: string, args?: Record<string, any>) {
+  public playerQueueCommand(
+    queue_id: string,
+    command: string,
+    args?: Record<string, any>,
+  ) {
     /*
-      Handle (throttled) command to player 
+      Handle (throttled) command to player
     */
     clearTimeout(this._throttleId);
     // apply a bit of throttling here
@@ -682,9 +751,13 @@ export class MusicAssistantApi {
     this.playerCommand(playerId, 'unsync');
   }
 
-  public playerCommand(player_id: string, command: string, args?: Record<string, any>) {
+  public playerCommand(
+    player_id: string,
+    command: string,
+    args?: Record<string, any>,
+  ) {
     /*
-      Handle (throttled) command to player 
+      Handle (throttled) command to player
     */
     clearTimeout(this._throttleId);
     // apply a bit of throttling here (for the volume and seek sliders especially)
@@ -702,7 +775,7 @@ export class MusicAssistantApi {
     /*
       Send VOLUME_SET command to given playergroup.
 
-      Will send the new (average) volume level to group childs.
+      Will send the new (average) volume level to group child's.
         - playerId: player_id of the playergroup to handle the command.
         - newVolume: volume level (0..100) to set on the player.
     */
@@ -712,15 +785,25 @@ export class MusicAssistantApi {
     this.players[playerId].group_volume = newVolume;
   }
 
-  public setPlayerGroupMembers(player_id: string, members: string[]) {
+  public playerCommandGroupPower(playerId: string, newPower: boolean) {
     /*
-      Update the memberlist of the given PlayerGroup.
-
-          - player_id: player_id of the groupplayer to handle the command.
-          - members: list of player ids to set as members.
+      Send POWER command to given playergroup.
     */
-    this.sendCommand('players/cmd/set_members', {
-      player_id,
+    this.playerCommand(playerId, 'group_power', {
+      power: newPower,
+    });
+    this.players[playerId].powered = newPower;
+  }
+
+  public async createPlayerGroup(
+    provider: string,
+    name: string,
+    members: string[],
+  ): Promise<Player> {
+    // Save/update PlayerConfig.
+    return this.getData('players/create_group', {
+      provider,
+      name,
       members,
     });
   }
@@ -729,12 +812,16 @@ export class MusicAssistantApi {
 
   public playMedia(
     media: string | string[] | MediaItemType | MediaItemType[],
-    option: QueueOption = QueueOption.PLAY,
+    option?: QueueOption,
     radio_mode?: boolean,
     start_item?: string,
     queue_id?: string,
   ) {
-    if (!queue_id && store.selectedPlayer && store.selectedPlayer?.active_source in this.players) {
+    if (
+      !queue_id &&
+      store.selectedPlayer &&
+      store.selectedPlayer?.active_source in this.players
+    ) {
       queue_id = store.selectedPlayer?.active_source;
     } else if (!queue_id) {
       queue_id = store.selectedPlayer?.player_id;
@@ -750,7 +837,10 @@ export class MusicAssistantApi {
 
   // ProviderConfig related functions
 
-  public async getProviderConfigs(provider_type?: ProviderType, provider_domain?: string): Promise<ProviderConfig[]> {
+  public async getProviderConfigs(
+    provider_type?: ProviderType,
+    provider_domain?: string,
+  ): Promise<ProviderConfig[]> {
     // Return all known provider configurations, optionally filtered by ProviderType or domain.
     return this.getData('config/providers', { provider_type, provider_domain });
   }
@@ -822,12 +912,18 @@ export class MusicAssistantApi {
     return this.getData('config/players/get', { player_id });
   }
 
-  public async getPlayerConfigValue(player_id: string, key: string): Promise<PlayerConfig> {
+  public async getPlayerConfigValue(
+    player_id: string,
+    key: string,
+  ): Promise<PlayerConfig> {
     // Return single configentry value for a player.
     return this.getData('config/players/get_value', { player_id, key });
   }
 
-  public async savePlayerConfig(player_id: string, values: Record<string, ConfigValueType>): Promise<PlayerConfig> {
+  public async savePlayerConfig(
+    player_id: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<PlayerConfig> {
     // Save/update PlayerConfig.
     return this.getData('config/players/save', {
       player_id,
@@ -870,7 +966,10 @@ export class MusicAssistantApi {
     });
   }
 
-  public async saveCoreConfig(domain: string, values: Record<string, ConfigValueType>): Promise<ProviderConfig> {
+  public async saveCoreConfig(
+    domain: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<ProviderConfig> {
     // Save Core controller Config.
     // domain: (mandatory) domain of the provider.
     // values: the raw values for config entries that need to be stored/updated.
@@ -900,13 +999,44 @@ export class MusicAssistantApi {
   public getProviderName(provider_domain_or_instance_id: string): string {
     // try to get the name of the provider from the instance_id or domain
     if (provider_domain_or_instance_id in this.providers) {
-      provider_domain_or_instance_id = this.providers[provider_domain_or_instance_id].domain;
+      provider_domain_or_instance_id =
+        this.providers[provider_domain_or_instance_id].domain;
     }
     // prefer the name from manifest and not the user configured name
     if (provider_domain_or_instance_id in this.providerManifests) {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }
     return provider_domain_or_instance_id;
+  }
+
+  public getProvider(
+    provider_domain_or_instance_id: string,
+  ): ProviderInstance | undefined {
+    // try to get the provider from the instance_id or domain
+    if (provider_domain_or_instance_id in this.providers) {
+      return this.providers[provider_domain_or_instance_id];
+    }
+    for (const provId in this.providers) {
+      const prov = this.providers[provId];
+      if (prov.domain == provider_domain_or_instance_id) {
+        return prov;
+      }
+    }
+    return undefined;
+  }
+
+  public getProviderManifest(
+    provider_domain_or_instance_id: string,
+  ): ProviderManifest | undefined {
+    // try to get the provider manifest from the instance_id or domain
+    if (provider_domain_or_instance_id in this.providerManifests) {
+      return this.providerManifests[provider_domain_or_instance_id];
+    }
+    if (provider_domain_or_instance_id in this.providers) {
+      const prov = this.providers[provider_domain_or_instance_id];
+      return this.providerManifests[prov.domain];
+    }
+    return undefined;
   }
 
   private async connectHass() {
@@ -930,7 +1060,11 @@ export class MusicAssistantApi {
       auth = await getAuth(authOptions);
     } catch (err) {
       if (err === ERR_HASS_HOST_REQUIRED) {
-        authOptions.hassUrl = prompt('Please enter the URL to Home Assistant', 'http://homeassistant.local:8123') || '';
+        authOptions.hassUrl =
+          prompt(
+            'Please enter the URL to Home Assistant',
+            'http://homeassistant.local:8123',
+          ) || '';
         if (!authOptions.hassUrl) return;
         auth = await getAuth(authOptions);
       } else {
@@ -950,17 +1084,20 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     } else if (msg.event == EventType.QUEUE_UPDATED) {
       const queue = msg.data as PlayerQueue;
-      if (queue.queue_id in this.queues) Object.assign(this.queues[queue.queue_id], queue);
+      if (queue.queue_id in this.queues)
+        Object.assign(this.queues[queue.queue_id], queue);
       else this.queues[queue.queue_id] = queue;
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
-      if (queueId in this.queues) this.queues[queueId].elapsed_time = msg.data as unknown as number;
+      if (queueId in this.queues)
+        this.queues[queueId].elapsed_time = msg.data as unknown as number;
     } else if (msg.event == EventType.PLAYER_ADDED) {
       const player = msg.data as Player;
       this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_UPDATED) {
       const player = msg.data as Player;
-      if (player.player_id in this.players) Object.assign(this.players[player.player_id], player);
+      if (player.player_id in this.players)
+        Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_REMOVED) {
       delete this.players[msg.object_id!];
@@ -981,7 +1118,9 @@ export class MusicAssistantApi {
     this.signalEvent(msg);
   }
 
-  private handleResultMessage(msg: SuccessResultMessage | ChunkedResultMessage | ErrorResultMessage) {
+  private handleResultMessage(
+    msg: SuccessResultMessage | ChunkedResultMessage | ErrorResultMessage,
+  ) {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
     if (!resultPromise) return;
@@ -990,7 +1129,9 @@ export class MusicAssistantApi {
     }
 
     this.commands.delete(msg.message_id as number);
-    this.fetchesInProgress.value = this.fetchesInProgress.value.filter((x) => x != msg.message_id);
+    this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
+      (x) => x != msg.message_id,
+    );
 
     if ('error_code' in msg) {
       msg = msg as ErrorResultMessage;
@@ -1001,7 +1142,9 @@ export class MusicAssistantApi {
     }
   }
 
-  private handleChunkedResultMessage(msg: ChunkedResultMessage | ErrorResultMessage) {
+  private handleChunkedResultMessage(
+    msg: ChunkedResultMessage | ErrorResultMessage,
+  ) {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
     if (!resultPromise) return;
@@ -1013,7 +1156,9 @@ export class MusicAssistantApi {
 
     if (isError || lastChunk) {
       this.commands.delete(msg.message_id as number);
-      this.fetchesInProgress.value = this.fetchesInProgress.value.filter((x) => x != msg.message_id);
+      this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
+        (x) => x != msg.message_id,
+      );
     }
 
     if ('error_code' in msg) {
@@ -1045,7 +1190,11 @@ export class MusicAssistantApi {
     }
   }
 
-  public getData<Result>(command: string, args?: Record<string, any>, chunkCallback?: chunkCallback): Promise<Result> {
+  public getData<Result>(
+    command: string,
+    args?: Record<string, any>,
+    chunkCallback?: chunkCallback,
+  ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
@@ -1055,7 +1204,11 @@ export class MusicAssistantApi {
     });
   }
 
-  public sendCommand(command: string, args?: Record<string, any>, msgId?: number): void {
+  public sendCommand(
+    command: string,
+    args?: Record<string, any>,
+    msgId?: number,
+  ): void {
     if (this.state.value !== ConnectionState.CONNECTED) {
       throw new Error('Connection lost');
     }
@@ -1086,7 +1239,9 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     }
 
-    for (const prov of await this.getData<ProviderManifest[]>('providers/manifests')) {
+    for (const prov of await this.getData<ProviderManifest[]>(
+      'providers/manifests',
+    )) {
       this.providerManifests[prov.domain] = prov;
     }
 

@@ -16,7 +16,12 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import api from '../plugins/api';
-import { MediaType, type Album, EventMessage, EventType } from '../plugins/api/interfaces';
+import {
+  MediaType,
+  type Album,
+  EventMessage,
+  EventType,
+} from '../plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
@@ -33,7 +38,11 @@ const sortKeys: Record<string, string> = {
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
-    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],
+    [
+      EventType.MEDIA_ITEM_ADDED,
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
+    ],
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
       if (evt.object_id?.startsWith('library://artist')) {
@@ -51,7 +60,12 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(250);
     // wait for sync to finish
     while (api.syncTasks.value.length > 0) {
-      if (api.syncTasks.value.filter((x) => x.media_types.includes(MediaType.ALBUM)).length == 0) break;
+      if (
+        api.syncTasks.value.filter((x) =>
+          x.media_types.includes(MediaType.ALBUM),
+        ).length == 0
+      )
+        break;
       await sleep(500);
     }
     await sleep(500);

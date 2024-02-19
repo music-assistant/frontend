@@ -1,4 +1,4 @@
-<!-- 
+<!--
   Global dialog to add item(s) to a playlist.
   Because this dialog can be called from various places throughout the app,
   we steer its visibility through the centralized eventbus.
@@ -16,7 +16,12 @@
     "
   >
     <v-card>
-      <v-toolbar color="transparent" style="padding: 10px 0px" density="compact" class="titlebar">
+      <v-toolbar
+        color="transparent"
+        style="padding: 10px 0px"
+        density="compact"
+        class="titlebar"
+      >
         <v-btn icon="mdi-play-circle-outline" />
         <v-toolbar-title style="padding-left: 10px">
           <b>{{ $t('add_playlist') }}</b>
@@ -31,7 +36,12 @@
             <ListItem ripple density="default" @click="addToPlaylist(playlist)">
               <template #prepend>
                 <div class="media-thumb">
-                  <MediaItemThumb :item="playlist" :size="50" width="50px" height="50px" />
+                  <MediaItemThumb
+                    :item="playlist"
+                    :size="50"
+                    width="50px"
+                    height="50px"
+                  />
                 </div>
               </template>
               <template #title>
@@ -51,10 +61,20 @@
           </div>
           <!-- create playlist row(s) -->
           <div v-for="prov of api.providers" :key="prov.instance_id">
-            <div v-if="prov.supported_features.includes(ProviderFeature.PLAYLIST_CREATE)">
+            <div
+              v-if="
+                prov.supported_features.includes(
+                  ProviderFeature.PLAYLIST_CREATE,
+                )
+              "
+            >
               <ListItem ripple>
                 <template #prepend>
-                  <provider-icon :domain="prov.domain" :size="40" class="media-thumb" />
+                  <provider-icon
+                    :domain="prov.domain"
+                    :size="40"
+                    class="media-thumb"
+                  />
                 </template>
                 <template #title>
                   <v-text-field
@@ -84,7 +104,7 @@
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { MediaType } from '@/plugins/api/interfaces';
-import type { MediaItemType, Playlist } from '@/plugins/api/interfaces';
+import type { MediaItemType, Playlist, Track } from '@/plugins/api/interfaces';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { ProviderFeature } from '@/plugins/api/interfaces';
 import api from '@/plugins/api';
@@ -130,10 +150,28 @@ const fetchPlaylists = async function () {
 };
 const addToPlaylist = function (value: MediaItemType) {
   /// add track(s) to playlist
-  api.addPlaylistTracks(
-    value.item_id,
-    selectedItems.value.map((x) => x.uri),
-  );
+  if (selectedItems.value[0].media_type === MediaType.TRACK) {
+    api.addPlaylistTracks(
+      value.item_id,
+      selectedItems.value.map((x) => x.uri),
+    );
+  }
+  // add album track(s) to playlist
+  else if (selectedItems.value[0].media_type === MediaType.ALBUM) {
+    var albumTracks: Track[] = [];
+    api
+      .getAlbumTracks(
+        selectedItems.value[0].item_id,
+        selectedItems.value[0].provider,
+      )
+      .then((tracks) => {
+        albumTracks = tracks;
+        api.addPlaylistTracks(
+          value.item_id,
+          albumTracks.map((x) => x.uri),
+        );
+      });
+  }
   close();
 };
 const newPlaylist = async function (provId: string) {

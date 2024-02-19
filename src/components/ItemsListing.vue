@@ -5,31 +5,51 @@
     <v-toolbar color="transparent">
       <template #title>
         {{ title }}
-        <v-badge v-if="getBreakpointValue('bp11')" color="grey" :content="total" inline />
+        <v-badge
+          v-if="getBreakpointValue('bp11')"
+          color="grey"
+          :content="total"
+          inline
+        />
       </template>
 
       <template #append>
         <!-- toggle select button -->
         <Button
-          v-if="showSelectButton != undefined ? showSelectButton : getBreakpointValue('bp1')"
+          v-if="
+            showSelectButton != undefined
+              ? showSelectButton
+              : getBreakpointValue('bp1')
+          "
           v-bind="props"
           variant="list"
           :title="$t('tooltip.select_items')"
           :disabled="!expanded"
           @click="toggleCheckboxes"
-          ><v-icon :icon="showCheckboxes ? 'mdi-checkbox-multiple-outline' : 'mdi-checkbox-multiple-blank-outline'"
+          ><v-icon
+            :icon="
+              showCheckboxes
+                ? 'mdi-checkbox-multiple-outline'
+                : 'mdi-checkbox-multiple-blank-outline'
+            "
         /></Button>
 
         <!-- favorites only filter -->
         <Button
-          v-if="showFavoritesOnlyFilter != undefined ? showFavoritesOnlyFilter : getBreakpointValue('bp1')"
+          v-if="
+            showFavoritesOnlyFilter != undefined
+              ? showFavoritesOnlyFilter
+              : getBreakpointValue('bp1')
+          "
           v-bind="props"
           variant="list"
           :title="$t('tooltip.filter_favorites')"
           :disabled="!expanded"
           @click="toggleFavoriteFilter"
         >
-          <v-icon :icon="params.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'" />
+          <v-icon
+            :icon="params.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'"
+          />
         </Button>
 
         <!-- album artists only filter -->
@@ -41,15 +61,29 @@
           :disabled="!expanded"
           @click="toggleAlbumArtistsFilter"
         >
-          <v-icon :icon="params.albumArtistsFilter ? 'mdi-account-music' : 'mdi-account-music-outline'" />
+          <v-icon
+            :icon="
+              params.albumArtistsFilter
+                ? 'mdi-account-music'
+                : 'mdi-account-music-outline'
+            "
+          />
         </Button>
 
         <!-- refresh button-->
         <Button
-          v-if="showRefreshButton != undefined ? showRefreshButton : getBreakpointValue('bp1')"
+          v-if="
+            showRefreshButton != undefined
+              ? showRefreshButton
+              : getBreakpointValue('bp1')
+          "
           v-bind="props"
           variant="list"
-          :title="updateAvailable ? $t('tooltip.refresh_new_content') : $t('tooltip.refresh')"
+          :title="
+            updateAvailable
+              ? $t('tooltip.refresh_new_content')
+              : $t('tooltip.refresh')
+          "
           :disabled="!expanded || loading"
           @click="onRefreshClicked()"
         >
@@ -59,9 +93,19 @@
         </Button>
 
         <!-- sort options -->
-        <v-menu v-if="sortKeys.length > 1" v-model="showSortMenu" location="bottom end" :close-on-content-click="true">
+        <v-menu
+          v-if="sortKeys.length > 1"
+          v-model="showSortMenu"
+          location="bottom end"
+          :close-on-content-click="true"
+        >
           <template #activator="{ props }">
-            <Button v-bind="props" variant="list" :disabled="!expanded" :title="$t('tooltip.sort_options')">
+            <Button
+              v-bind="props"
+              variant="list"
+              :disabled="!expanded"
+              :title="$t('tooltip.sort_options')"
+            >
               <v-icon v-bind="props" icon="mdi-sort" />
             </Button>
           </template>
@@ -82,14 +126,24 @@
 
         <!-- toggle search button -->
         <Button
-          v-if="showSearchButton != undefined ? showSearchButton : getBreakpointValue('bp1')"
+          v-if="
+            showSearchButton != undefined
+              ? showSearchButton
+              : getBreakpointValue('bp1')
+          "
           v-bind="props"
           variant="list"
-          :title="$t('tooltip.search')"
+          :title="
+            isSearchActive
+              ? $t('tooltip.search_filter_active')
+              : $t('tooltip.search')
+          "
           :disabled="!expanded"
           @click="toggleSearch()"
         >
-          <v-icon icon="mdi-magnify" />
+          <v-badge :model-value="isSearchActive" color="error" dot>
+            <v-icon icon="mdi-magnify" />
+          </v-badge>
         </Button>
 
         <!-- toggle view mode button -->
@@ -103,7 +157,11 @@
         /></Button>
 
         <!-- provider filter dropdown -->
-        <v-menu v-if="providerFilter && providerFilter.length > 1" location="bottom end" :close-on-content-click="true">
+        <v-menu
+          v-if="providerFilter && providerFilter.length > 1"
+          location="bottom end"
+          :close-on-content-click="true"
+        >
           <template #activator="{ props }">
             <Button v-bind="props" variant="list" :disabled="!expanded">
               <ProviderIcon :domain="params.providerFilter!" :size="30" />
@@ -121,7 +179,10 @@
                     <span v-else>{{ api.getProviderName(provId) }}</span>
                   </template>
                   <template #append>
-                    <v-icon v-if="params.providerFilter == provId" icon="mdi-check" />
+                    <v-icon
+                      v-if="params.providerFilter == provId"
+                      icon="mdi-check"
+                    />
                   </template>
                 </ListItem>
                 <v-divider />
@@ -131,7 +192,10 @@
         </v-menu>
 
         <!-- contextmenu -->
-        <v-menu v-if="contextMenuItems && contextMenuItems.length > 0" location="bottom end">
+        <v-menu
+          v-if="contextMenuItems && contextMenuItems.length > 0"
+          location="bottom end"
+        >
           <template #activator="{ props }">
             <Button variant="list" style="right: 3px" v-bind="props">
               <v-icon icon="mdi-dots-vertical" />
@@ -139,7 +203,9 @@
           </template>
           <v-list>
             <ListItem
-              v-for="(item, index) in contextMenuItems.filter((x) => x.hide != true)"
+              v-for="(item, index) in contextMenuItems.filter(
+                (x) => x.hide != true,
+              )"
               :key="index"
               :title="$t(item.label, item.labelArgs)"
               :disabled="item.disabled == true"
@@ -153,7 +219,11 @@
         </v-menu>
 
         <!-- expand/collapse button -->
-        <Button v-if="allowCollapse" variant="list" :title="$t('tooltip.collapse_expand')" @click="toggleExpand"
+        <Button
+          v-if="allowCollapse"
+          variant="list"
+          :title="$t('tooltip.collapse_expand')"
+          @click="toggleExpand"
           ><v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
         /></Button>
       </template>
@@ -172,8 +242,12 @@
       style="width: auto; margin-top: 10px"
       @focus="searchHasFocus = true"
       @blur="searchHasFocus = false"
+      @click:clear="onClear"
     />
-    <Container v-if="expanded" :variant="viewMode == 'panel' ? 'panel' : 'default'">
+    <Container
+      v-if="expanded"
+      :variant="viewMode == 'panel' ? 'panel' : 'default'"
+    >
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
@@ -198,7 +272,12 @@
       </v-row>
 
       <!-- list view -->
-      <v-virtual-scroll v-if="viewMode == 'list'" :height="70" :items="pagedItems" style="height: 100%">
+      <v-virtual-scroll
+        v-if="viewMode == 'list'"
+        :height="70"
+        :items="pagedItems"
+        style="height: 100%"
+      >
         <template #default="{ item }">
           <ListviewItem
             :item="item"
@@ -213,7 +292,9 @@
             :is-selected="isSelected(item)"
             :show-details="itemtype.includes('versions')"
             :parent-item="parentItem"
-            :context-menu-items="showMenu ? getContextMenuItems([item], parentItem) : []"
+            :context-menu-items="
+              showMenu ? getContextMenuItems([item], parentItem) : []
+            "
             @select="onSelect"
             @menu="onMenu"
             @click="onClick"
@@ -221,19 +302,30 @@
         </template>
       </v-virtual-scroll>
 
-      <!-- inifinite scroll component -->
+      <!-- infinite scroll component -->
       <InfiniteLoading v-if="infiniteScroll" @infinite="loadNextPage" />
-      <v-btn v-else-if="(total || 0) > pagedItems.length" variant="plain" @click="loadNextPage()">{{
-        $t('load_more_items')
-      }}</v-btn>
+      <v-btn
+        v-else-if="(total || 0) > pagedItems.length"
+        variant="plain"
+        @click="loadNextPage()"
+        >{{ $t('load_more_items') }}</v-btn
+      >
 
       <!-- show alert if no item found -->
       <div v-if="!loading && pagedItems.length == 0">
         <Alert
-          v-if="!loading && pagedItems.length == 0 && (params.search || params.favoritesOnly)"
+          v-if="
+            !loading &&
+            pagedItems.length == 0 &&
+            (params.search || params.favoritesOnly)
+          "
           :title="$t('no_content_filter')"
         >
-          <v-btn v-if="params.search" style="margin-top: 15px" @click="redirectSearch">
+          <v-btn
+            v-if="params.search"
+            style="margin-top: 15px"
+            @click="redirectSearch"
+          >
             {{ $t('try_global_search') }}
           </v-btn>
         </Alert>
@@ -243,7 +335,11 @@
       </div>
 
       <!-- box shown when item(s) selected -->
-      <v-snackbar :model-value="selectedItems.length > 1" :timeout="-1" style="margin-bottom: 120px">
+      <v-snackbar
+        :model-value="selectedItems.length > 1"
+        :timeout="-1"
+        style="margin-bottom: 120px"
+      >
         <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
         <template #actions>
           <v-btn color="primary" variant="text" @click="showPlayMenu(true)">
@@ -258,7 +354,14 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import { ref, onBeforeUnmount, nextTick, onMounted, watch } from 'vue';
+import {
+  computed,
+  ref,
+  onBeforeUnmount,
+  nextTick,
+  onMounted,
+  watch,
+} from 'vue';
 import {
   MediaType,
   type Album,
@@ -272,7 +375,11 @@ import { store } from '../plugins/store';
 import ListviewItem from './ListviewItem.vue';
 import Button from './mods/Button.vue';
 import PanelviewItem from './PanelviewItem.vue';
-import { itemIsAvailable, getContextMenuItems, ContextMenuItem } from '@/helpers/contextmenu';
+import {
+  itemIsAvailable,
+  getContextMenuItems,
+  ContextMenuItem,
+} from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
 import { api } from '../plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
@@ -343,6 +450,12 @@ const props = withDefaults(defineProps<Props>(), {
   allowKeyHooks: false,
   limit: 100,
   infiniteScroll: true,
+  title: undefined,
+  providerFilter: undefined,
+  contextMenuItems: undefined,
+  loadPagedData: undefined,
+  loadItems: undefined,
+  path: undefined,
 });
 
 // global refs
@@ -388,39 +501,99 @@ const toggleSearch = function () {
 };
 
 const panelViewItemResponsive = function (displaySize: number) {
-  if (getBreakpointValue({ breakpoint: 'bp1', condition: 'lt', offset: store.navigationMenuSize })) {
+  if (
+    getBreakpointValue({
+      breakpoint: 'bp1',
+      condition: 'lt',
+      offset: store.navigationMenuSize,
+    })
+  ) {
     return 2;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp1', condition: 'gt', offset: store.navigationMenuSize }) &&
-    getBreakpointValue({ breakpoint: 'bp4', condition: 'lt', offset: store.navigationMenuSize })
+    getBreakpointValue({
+      breakpoint: 'bp1',
+      condition: 'gt',
+      offset: store.navigationMenuSize,
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp4',
+      condition: 'lt',
+      offset: store.navigationMenuSize,
+    })
   ) {
     return 3;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp4', condition: 'gt', offset: store.navigationMenuSize }) &&
-    getBreakpointValue({ breakpoint: 'bp6', condition: 'lt', offset: store.navigationMenuSize })
+    getBreakpointValue({
+      breakpoint: 'bp4',
+      condition: 'gt',
+      offset: store.navigationMenuSize,
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp6',
+      condition: 'lt',
+      offset: store.navigationMenuSize,
+    })
   ) {
     return 4;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp6', condition: 'gt', offset: store.navigationMenuSize }) &&
-    getBreakpointValue({ breakpoint: 'bp7', condition: 'lt', offset: store.navigationMenuSize })
+    getBreakpointValue({
+      breakpoint: 'bp6',
+      condition: 'gt',
+      offset: store.navigationMenuSize,
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp7',
+      condition: 'lt',
+      offset: store.navigationMenuSize,
+    })
   ) {
     return 5;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp7', condition: 'gt', offset: store.navigationMenuSize }) &&
-    getBreakpointValue({ breakpoint: 'bp8', condition: 'lt', offset: store.navigationMenuSize })
+    getBreakpointValue({
+      breakpoint: 'bp7',
+      condition: 'gt',
+      offset: store.navigationMenuSize,
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp8',
+      condition: 'lt',
+      offset: store.navigationMenuSize,
+    })
   ) {
     return 6;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp8', condition: 'gt', offset: store.navigationMenuSize }) &&
-    getBreakpointValue({ breakpoint: 'bp9', condition: 'lt', offset: store.navigationMenuSize })
+    getBreakpointValue({
+      breakpoint: 'bp8',
+      condition: 'gt',
+      offset: store.navigationMenuSize,
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp9',
+      condition: 'lt',
+      offset: store.navigationMenuSize,
+    })
   ) {
     return 7;
   } else if (
-    getBreakpointValue({ breakpoint: 'bp9', condition: 'gt', offset: store.navigationMenuSize }) &&
-    getBreakpointValue({ breakpoint: 'bp10', condition: 'lt', offset: store.navigationMenuSize })
+    getBreakpointValue({
+      breakpoint: 'bp9',
+      condition: 'gt',
+      offset: store.navigationMenuSize,
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp10',
+      condition: 'lt',
+      offset: store.navigationMenuSize,
+    })
   ) {
     return 8;
-  } else if (getBreakpointValue({ breakpoint: 'bp10', condition: 'gt', offset: store.navigationMenuSize })) {
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp10',
+      condition: 'gt',
+      offset: store.navigationMenuSize,
+    })
+  ) {
     return 9;
   } else {
     return 0;
@@ -447,8 +620,13 @@ const toggleFavoriteFilter = function () {
 
 const toggleAlbumArtistsFilter = function () {
   params.value.albumArtistsFilter = !params.value.albumArtistsFilter;
-  const albumArtistsOnlyStr = params.value.albumArtistsFilter ? 'true' : 'false';
-  localStorage.setItem(`albumArtistsFilter.${props.itemtype}`, albumArtistsOnlyStr);
+  const albumArtistsOnlyStr = params.value.albumArtistsFilter
+    ? 'true'
+    : 'false';
+  localStorage.setItem(
+    `albumArtistsFilter.${props.itemtype}`,
+    albumArtistsOnlyStr,
+  );
   loadData(true);
 };
 
@@ -507,7 +685,10 @@ const onClick = function (mediaItem: MediaItemType) {
         path: (mediaItem as BrowseFolder).path,
       },
     });
-  } else if (['artist', 'album', 'playlist'].includes(mediaItem.media_type) || !store.selectedPlayer?.available) {
+  } else if (
+    ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
+    !store.selectedPlayer?.available
+  ) {
     router.push({
       name: mediaItem.media_type,
       params: {
@@ -520,6 +701,20 @@ const onClick = function (mediaItem: MediaItemType) {
   }
 };
 
+const onClear = function () {
+  params.value.search = '';
+  showSearch.value = false;
+  loadData(true);
+};
+
+const isSearchActive = computed(() => {
+  var searchActive = false;
+  if (params.value.search && params.value.search.length !== 0) {
+    searchActive = true;
+  }
+  return searchActive;
+});
+
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
@@ -530,7 +725,6 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
 
 const changeActiveProviderFilter = function (provider: string) {
   params.value.providerFilter = provider;
-  console.log("changeActiveProviderFilter", provider)
   loadData(true, undefined, true);
 };
 
@@ -580,7 +774,11 @@ watch(
   },
 );
 
-const loadData = async function (clear = false, limit = props.limit, refresh = false) {
+const loadData = async function (
+  clear = false,
+  limit = props.limit,
+  refresh = false,
+) {
   if (clear || refresh) {
     params.value.offset = 0;
     newContentAvailable.value = false;
@@ -618,7 +816,8 @@ const loadData = async function (clear = false, limit = props.limit, refresh = f
 };
 
 const getSortName = function (item: MediaItemType | ItemMapping) {
-  if ('label' in item && item.label && item.name) return t(item.label, [item.name]);
+  if ('label' in item && item.label && item.name)
+    return t(item.label, [item.name]);
   if ('label' in item && item.label) return t(item.label);
   if ('sort_name' in item && item.sort_name) return item.sort_name;
   return item.name;
@@ -637,11 +836,21 @@ const getFilteredItems = function (
     for (const item of items) {
       if (item.name.toLowerCase().includes(searchStr)) {
         result.push(item);
-      } else if ('artist' in item && item.artist?.name.toLowerCase().includes(searchStr)) {
+      } else if (
+        'artist' in item &&
+        item.artist?.name.toLowerCase().includes(searchStr)
+      ) {
         result.push(item);
-      } else if ('album' in item && item.album?.name.toLowerCase().includes(searchStr)) {
+      } else if (
+        'album' in item &&
+        item.album?.name.toLowerCase().includes(searchStr)
+      ) {
         result.push(item);
-      } else if ('artists' in item && item.artists && item.artists[0].name.toLowerCase().includes(searchStr)) {
+      } else if (
+        'artists' in item &&
+        item.artists &&
+        item.artists[0].name.toLowerCase().includes(searchStr)
+      ) {
         result.push(item);
       }
     }
@@ -656,20 +865,36 @@ const getFilteredItems = function (
     result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
   }
   if (params.sortBy == 'album') {
-    result.sort((a, b) => (a as Track).album?.sort_name.localeCompare((b as Track).album?.sort_name));
+    result.sort((a, b) =>
+      (a as Track).album?.sort_name.localeCompare(
+        (b as Track).album?.sort_name,
+      ),
+    );
   }
   if (params.sortBy == 'artist') {
-    result.sort((a, b) => (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name));
+    result.sort((a, b) =>
+      (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name),
+    );
   }
   if (params.sortBy == 'track_number') {
-    result.sort((a, b) => ((a as Track).track_number || 0) - ((b as Track).track_number || 0));
-    result.sort((a, b) => ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0));
+    result.sort(
+      (a, b) =>
+        ((a as Track).track_number || 0) - ((b as Track).track_number || 0),
+    );
+    result.sort(
+      (a, b) =>
+        ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0),
+    );
   }
   if (params.sortBy == 'position') {
-    result.sort((a, b) => ((a as Track).position || 0) - ((b as Track).position || 0));
+    result.sort(
+      (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0),
+    );
   }
   if (params.sortBy == 'position_desc') {
-    result.sort((a, b) => ((b as Track).position || 0) - ((a as Track).position || 0));
+    result.sort(
+      (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0),
+    );
   }
   if (params.sortBy == 'year') {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
@@ -679,10 +904,14 @@ const getFilteredItems = function (
   }
 
   if (params.sortBy == 'duration') {
-    result.sort((a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0));
+    result.sort(
+      (a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0),
+    );
   }
   if (params.sortBy == 'duration_desc') {
-    result.sort((a, b) => ((b as Track).duration || 0) - ((a as Track).duration || 0));
+    result.sort(
+      (a, b) => ((b as Track).duration || 0) - ((a as Track).duration || 0),
+    );
   }
 
   if (params.sortBy == 'provider') {
@@ -710,7 +939,11 @@ const restoreState = function () {
   }
   // get stored/default sortBy for this itemtype
   const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
-  if (savedSortBy && savedSortBy !== 'null' && props.sortKeys.includes(savedSortBy)) {
+  if (
+    savedSortBy &&
+    savedSortBy !== 'null' &&
+    props.sortKeys.includes(savedSortBy)
+  ) {
     params.value.sortBy = savedSortBy;
   } else {
     params.value.sortBy = props.sortKeys[0];
@@ -718,7 +951,9 @@ const restoreState = function () {
 
   // get stored/default favoriteOnlyFilter for this itemtype
   if (props.showFavoritesOnlyFilter !== false) {
-    const savedInFavoriteOnlyStr = localStorage.getItem(`favoriteFilter.${props.itemtype}`);
+    const savedInFavoriteOnlyStr = localStorage.getItem(
+      `favoriteFilter.${props.itemtype}`,
+    );
     if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
       params.value.favoritesOnly = true;
     }
@@ -726,7 +961,9 @@ const restoreState = function () {
 
   // get stored/default albumArtistsOnlyFilter for this itemtype
   if (props.showAlbumArtistsOnlyFilter !== false) {
-    const albumArtistsOnlyStr = localStorage.getItem(`albumArtistsFilter.${props.itemtype}`);
+    const albumArtistsOnlyStr = localStorage.getItem(
+      `albumArtistsFilter.${props.itemtype}`,
+    );
     if (albumArtistsOnlyStr) {
       params.value.albumArtistsFilter = albumArtistsOnlyStr == 'true';
     }

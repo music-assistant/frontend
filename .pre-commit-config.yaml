@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: debug-statements
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        args: []
+        files: ^src/
+        exclude: ^src/translations/
+        additional_dependencies:
+          - tomli
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: yarn lint
+        entry: yarn lint
+        language: system
+        files: ^src/
+        exclude_types: [csv, json, css, scss]
+        exclude: ^src/assets/

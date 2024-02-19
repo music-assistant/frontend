@@ -83,7 +83,7 @@ jobs:
     name: Server repo PR
     needs: release
     runs-on: ubuntu-latest
-    steps:  
+    steps:
       - uses: music-assistant/frontend-release-pr-action@main
         with:
           github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
