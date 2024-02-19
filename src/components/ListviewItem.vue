@@ -131,15 +131,7 @@
 
         <!-- favorite (heart) icon -->
         <div v-if="getBreakpointValue('bp3') && 'favorite' in item && showFavorite && !$vuetify.display.mobile">
-          <Button
-            v-bind="props"
-            variant="list"
-            :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
-            :title="$t('tooltip.favorite')"
-            @click="api.toggleFavorite(item)"
-            @click.prevent
-            @click.stop
-          />
+          <FavouriteButton :item="item" />
         </div>
 
         <!-- track duration -->
@@ -180,9 +172,10 @@ import { formatDuration, parseBool, getArtistsString, getBrowseFolderName } from
 import { useI18n } from 'vue-i18n';
 import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
 import { ContextMenuItem } from '@/helpers/contextmenu';
-import Button from './mods/Button.vue';
+
+import ListItem from '@/components/mods/ListItem.vue';
+import FavouriteButton from '@/components/FavoriteButton.vue';
 
 // properties
 export interface Props {
