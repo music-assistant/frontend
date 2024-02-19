@@ -64,7 +64,7 @@
 
       <!-- <div v-if="'favorite' in item">
       </div> -->
-      
+
       <template v-if="getBreakpointValue('bp3') && showFavorite" #append>
         <FavouriteButton :item="item" />
       </template>
@@ -113,7 +113,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ListItem from '@/components/mods/ListItem.vue';
 import {
   BrowseFolder,
   ContentType,
