@@ -62,6 +62,13 @@
         {{ $t(item.media_type) }}
       </v-list-item-subtitle>
 
+      <!-- <div v-if="'favorite' in item">
+      </div> -->
+
+      <template v-if="getBreakpointValue('bp3') && showFavorite" #append>
+        <FavouriteButton :item="item" />
+      </template>
+
       <v-item-group
         v-if="item && item.media_type === 'track' && 'metadata' in item"
         style="min-height: 22px; padding-top: 5px"
@@ -106,7 +113,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ListItem from '@/components/mods/ListItem.vue';
 import {
   BrowseFolder,
   ContentType,
@@ -120,6 +126,10 @@ import {
   parseBool,
 } from '@/helpers/utils';
 import { iconHiRes } from './QualityDetailsBtn.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+
+import ListItem from '@/components/mods/ListItem.vue';
+import FavouriteButton from '@/components/FavoriteButton.vue';
 
 // properties
 export interface Props {
@@ -129,10 +139,12 @@ export interface Props {
   showCheckboxes?: boolean;
   showTrackNumber?: boolean;
   showMediaType?: boolean;
+  showFavorite?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
+  showFavorite: false,
   showTrackNumber: true,
   showMediaType: false,
 });

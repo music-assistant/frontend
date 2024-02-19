@@ -263,6 +263,7 @@
             :is-selected="isSelected(item)"
             :show-checkboxes="showCheckboxes"
             :show-track-number="showTrackNumber"
+            :show-favorite="showFavoritesOnlyFilter"
             @select="onSelect"
             @menu="onMenu"
             @click="onClick"
