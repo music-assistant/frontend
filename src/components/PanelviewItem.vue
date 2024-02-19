@@ -126,7 +126,6 @@ import {
   getBrowseFolderName,
   parseBool,
 } from '@/helpers/utils';
->>>>>>> main
 import { iconHiRes } from './QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
