@@ -41,8 +41,11 @@
         {{ $t(item.media_type) }}
       </v-list-item-subtitle>
 
-      <template v-if="item.favorite" #append>
-        <v-icon icon="mdi-heart" aria-hidden="false" :aria-label="$t('is_favorite')" />
+      <!-- <div v-if="'favorite' in item">
+      </div> -->
+      
+      <template v-if="getBreakpointValue('bp3') && showFavorite" #append>
+        <FavouriteButton :item="item" />
       </template>
 
       <v-item-group
@@ -80,10 +83,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import ListItem from '@/components/mods/ListItem.vue';
 import { BrowseFolder, ContentType, type MediaItem, type MediaItemType, MediaType } from '../plugins/api/interfaces';
 import { getArtistsString, getBrowseFolderName, parseBool } from '@/helpers/utils';
 import { iconHiRes } from './QualityDetailsBtn.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+
+import ListItem from '@/components/mods/ListItem.vue';
+import FavouriteButton from '@/components/FavoriteButton.vue';
 
 // properties
 export interface Props {
@@ -93,10 +99,12 @@ export interface Props {
   showCheckboxes?: boolean;
   showTrackNumber?: boolean;
   showMediaType?: boolean;
+  showFavorite?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
+  showFavorite: false,
   showTrackNumber: true,
   showMediaType: false,
 });
