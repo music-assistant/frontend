@@ -133,7 +133,7 @@
         "sync": "Jetzt Änderungen synchronisieren",
         "sync_running": "Dieser Anbieter wird jetzt synchronisiert",
         "username": "Benutzername",
-        "core": "Kern",
+        "core": "Grundsystem",
         "core_modules": "Kernmodule",
         "server_info": "Server-Informationen",
         "server_id": "Server-ID",
@@ -150,7 +150,106 @@
         "edit_group_members": "Gruppenmitglieder bearbeiten",
         "add_new_provider_button": "Anbieter {0} hinzufügen",
         "add_group_player": "Wiedergabegruppen hinzufügen",
-        "client": "Klient"
+        "client": "Klient",
+        "group_members": "Gruppenmitglieder",
+        "log_level": {
+            "label": "Log-Stufe",
+            "description": "Lege die Ausführlichkeit der Protokollierung für diesen Anbieter fest.",
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Warnung",
+                "error": "Fehler",
+                "debug": "Debug",
+                "GLOBAL": "Global",
+                "INFO": "Info",
+                "WARNING": "Warnung",
+                "ERROR": "Fehler",
+                "DEBUG": "Debug"
+            }
+        },
+        "flow_mode": {
+            "label": "Warteschlangen-\"Flow\"-Modus aktivieren",
+            "description": "Aktiviere den \"Flow\"-Modus, bei dem alle Warteschlangentitel als kontinuierlicher Audiostrom gesendet werden. \nVerwenden Sie diesen Modus für Player, die keine native lückenlose Überblendung unterstützen, oder wenn der Player Probleme beim Übergang zwischen den Titeln hat."
+        },
+        "auto_play": {
+            "label": "Automatische Wiedergabe (Fortsetzen beim Einschalten)",
+            "description": "Wenn dieser Player eingeschaltet wird, wird die Wiedergabe automatisch gestartet (wenn sich Elemente in der Warteschlange befinden)."
+        },
+        "output_channels": {
+            "label": "Ausgangskanal-Modus",
+            "description": "Der Player kann so konfiguriert werden, dass nur der linke oder der rechte Kanal wiedergegeben wird, um z. B. ein Stereopaar mit 2 Playern zu bilden.",
+            "options": {
+                "stereo": "Stereo (beide Kanäle)",
+                "left": "Nur linker Kanal",
+                "right": "Nur rechter Kanal",
+                "mono": "Mono (beide Kanäle)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Lautstärkenormalisierung aktivieren (EBU-R128-basiert)",
+            "description": "Aktiviere die Lautstärkenormalisierung basierend auf dem EBU-R128-Standard, ohne den Dynamikbereich zu beeinträchtigen"
+        },
+        "volume_normalization_target": {
+            "label": "Zielpegel für die Lautstärkenormalisierung",
+            "description": "Passe die durchschnittliche (wahrgenommene) Lautstärke an diesen Zielpegel an. Der Standardwert ist -17 LUFS \n\n **WARNUNG:** Wenn der Pegel zu hoch eingestellt wird, kann es zu Übersteuerung kommen!"
+        },
+        "eq_bass": {
+            "label": "Equalizer: Bass",
+            "description": "Verwende den integrierten Basis-Equalizer, um die tiefen Audiofrequenzen anzupassen."
+        },
+        "eq_mid": {
+            "label": "Equalizer: Mitte",
+            "description": "Verwende den integrierten Basis-Equalizer, um die mittleren Audiofrequenzen anzupassen."
+        },
+        "eq_treble": {
+            "label": "Equalizer: Höhen",
+            "description": "Verwende den integrierten Basis-Equalizer, um die hohen Audiofrequenzen anzupassen."
+        },
+        "crossfade": {
+            "label": "Crossfade aktivieren",
+            "description": "Aktiviere einen Crossfade-Übergang zwischen (Warteschlangen-)Titeln."
+        },
+        "crossfade_duration": {
+            "label": "Crossfade-Dauer",
+            "description": "Crossfade-Dauer in Sekunden zwischen Titeln (falls aktiviert)"
+        },
+        "hide_player": {
+            "label": "Player in der Benutzeroberfläche ausblenden",
+            "description": "Diesen Player in der Benutzeroberfläche ausblenden. \n\nBeachte, dass der Player weiterhin gesteuert werden kann und auch in allen Synchronisierungsgruppen angezeigt wird, zu denen der Player gehört."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Auswählbare Elemente, wenn ein (bibliotheksinterner) Künstler abgespielt wird.",
+            "description": "Wenn ein Künstler gespielt werden soll, welche Elemente sollten in die Warteschlange aufgenommen werden?",
+            "options": {
+                "library_tracks": "Nur Titel in der Bibliothek"
+            }
+        },
+        "default_enqueue_action_track": {
+            "options": {
+                "replace": "Lösche die Warteschlange und spiele den\/die Titel ab.",
+                "next": "Spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "add": "Füge den\/die Titel am Ende der Warteschlange hinzu."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "options": {
+                "add": "Füge den\/die Playlist-Titel am Ende der Warteschlange hinzu."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Standardmäßige Warteschlangenoption für Radio-Elemente.",
+            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine Aktion definiert wurde).",
+            "options": {
+                "play": "Spiele jetzt den Radiosender ab und behalte die verbleibenden Warteschlangenelemente.",
+                "replace": "Lösche die Warteschlange und spiele den Radiosender ab [Standard]",
+                "next": "Spiele das\/die Element(e) direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Radiosender direkt nach dem aktuell wiedergegebenen\/gepufferten Element ab.",
+                "add": "Füge den\/die Radiosender am Ende der Warteschlange hinzu."
+            }
+        },
+        "default": "Standard"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -176,10 +275,12 @@
         "name_desc": "Alphabetisch (absteigend)",
         "recent": "Kürzlich hinzugefügt",
         "year_desc": "Erscheinungsjahr (absteigend)",
-        "duration_desc": "Dauer (absteigend)"
+        "duration_desc": "Dauer (absteigend)",
+        "original": "Standard",
+        "none": "Leer"
     },
     "state": {
-        "idle": "Untätig",
+        "idle": "Inaktiv",
         "off": "Aus",
         "paused": "Pausiert",
         "playing": "spielt gerade"
@@ -195,7 +296,7 @@
         "library": "Bibliothek\/Favorit umschalten",
         "linked": "Dieser Anbieter ist mit den aktuellen Details des Elements verknüpft",
         "refresh": "Liste aktualisieren",
-        "refresh_new_content": "Neue Inhalte verfügbar. Hier klicken um die Liste zu aktualisieren",
+        "refresh_new_content": "Neue Inhalte verfügbar. Zum Aktualisieren, hier klicken",
         "search": "Sucheingabe ein-\/ausblenden",
         "select_items": "Mehrere Elemente wählen",
         "sort_options": "Sortieroptionen",
@@ -205,14 +306,15 @@
         "open_provider_link": "Auf Website des Anbieters ansehen",
         "collapse_expand": "Auflistung aus-\/einklappen",
         "back": "Zurück",
-        "show_menu": "Menü anzeigen\/verbergen"
+        "show_menu": "Menü anzeigen\/verbergen",
+        "search_filter_active": "Die Suche filtert aktuell die Ergebnisse"
     },
     "topresult": "Top-Ergebnis",
     "track": "Track",
     "track_number": "Disk {0} Track {1}",
     "tracks": "Tracks",
     "try_global_search": "Mit der globalen Suche versuchen",
-    "type_to_search": "Hier Suchbegriff eingeben...",
+    "type_to_search": "Suchbegriff eingeben...",
     "volume_normalization": "Lautstärke normalisieren",
     "play_now_replace": "Jetzt wiedergeben (Warteschlange leeren)",
     "currently_playing": "Wird grade abgespielt",
@@ -225,5 +327,11 @@
     "mapped_providers": "Anbieterdetails",
     "item_in_library": "Dieses Element ist in der Bibliothek vorhanden",
     "back": "Zurück",
-    "recently_played": "Zuletzt gespielt"
+    "recently_played": "Zuletzt gespielt",
+    "radiobrowser_by_popularity": "Nach Beliebtheit",
+    "radiobrowser_by_country": "Nach Land",
+    "radiobrowser_by_tag": "Nach Tag",
+    "load_more_items": "Weitere Elemente laden…",
+    "radio": "Radio",
+    "muted": "stumm"
 }

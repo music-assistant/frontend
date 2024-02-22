@@ -5,8 +5,15 @@
       <template #prepend>
         <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center" style="padding-right: 5px">
-            <Button icon style="height: 25px !important" @click="setGroupPower(player, !player.powered)">
-              <v-icon :size="25" :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'" />
+            <Button
+              icon
+              style="height: 25px !important"
+              @click="setGroupPower(player, !player.powered)"
+            >
+              <v-icon
+                :size="25"
+                :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'"
+              />
             </Button>
             <div class="text-caption">{{ player.group_volume }}</div>
           </div>
@@ -23,12 +30,17 @@
             color="secondary"
             :is-powered="player.powered"
             :model-value="Math.round(player.group_volume)"
-            @update:model-value="api.playerCommandGroupVolume(player.player_id, $event)"
+            @update:model-value="
+              api.playerCommandGroupVolume(player.player_id, $event)
+            "
           />
         </div>
       </template>
     </ListItem>
-    <v-divider v-if="player.group_childs.length > 0" style="margin-top: 10px; margin-bottom: 10px" />
+    <v-divider
+      v-if="player.group_childs.length > 0"
+      style="margin-top: 10px; margin-bottom: 10px"
+    />
 
     <!-- group children -->
     <ListItem
@@ -39,11 +51,19 @@
       <template #prepend>
         <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <div class="text-center">
-            <Button icon style="height: 25px !important" @click="api.playerCommandPowerToggle(childPlayer.player_id)">
+            <Button
+              icon
+              style="height: 25px !important"
+              @click="api.playerCommandPowerToggle(childPlayer.player_id)"
+            >
               <v-icon :size="25" icon="mdi-power" />
             </Button>
-            <div v-if="childPlayer.volume_muted" class="text-caption">{{ $t('muted') }}</div>
-            <div v-else class="text-caption">{{ childPlayer.volume_level }}</div>
+            <div v-if="childPlayer.volume_muted" class="text-caption">
+              {{ $t('muted') }}
+            </div>
+            <div v-else class="text-caption">
+              {{ childPlayer.volume_level }}
+            </div>
           </div>
         </div>
       </template>
@@ -57,20 +77,31 @@
             color="secondary"
             :is-powered="childPlayer.powered"
             :model-value="Math.round(childPlayer.volume_level)"
-            @update:model-value="api.playerCommandVolumeSet(childPlayer.player_id, $event)"
+            @update:model-value="
+              api.playerCommandVolumeSet(childPlayer.player_id, $event)
+            "
           />
         </div>
       </template>
 
       <template #append>
-        <div :style="childPlayer.powered ? 'margin-right:-10px;opacity: 0.75' : 'margin-right:-10px;opacity: 0.5'">
+        <div
+          :style="
+            childPlayer.powered
+              ? 'margin-right:-10px;opacity: 0.75'
+              : 'margin-right:-10px;opacity: 0.5'
+          "
+        >
           <!-- sync button -->
           <div
             v-if="
               !childPlayer.synced_to &&
               childPlayer.can_sync_with.length &&
-              Object.values(api.players).filter((x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id))
-                .length > 0
+              Object.values(api.players).filter(
+                (x) =>
+                  !x.synced_to &&
+                  x.can_sync_with.includes(childPlayer.player_id),
+              ).length > 0
             "
           >
             <v-menu location="bottom end" style="z-index: 999999">
@@ -83,11 +114,18 @@
                 <v-card-subtitle>{{ $t('sync_player_to') }}</v-card-subtitle>
                 <list-item
                   v-for="parentPlayer of Object.values(api.players).filter(
-                    (x) => !x.synced_to && x.can_sync_with.includes(childPlayer.player_id),
+                    (x) =>
+                      !x.synced_to &&
+                      x.can_sync_with.includes(childPlayer.player_id),
                   )"
                   :key="parentPlayer.player_id"
                   :title="parentPlayer.display_name"
-                  @click="api.playerCommandSync(childPlayer.player_id, parentPlayer.player_id)"
+                  @click="
+                    api.playerCommandSync(
+                      childPlayer.player_id,
+                      parentPlayer.player_id,
+                    )
+                  "
                 />
                 <v-divider />
               </v-list>
@@ -95,7 +133,10 @@
           </div>
           <!-- unsync button -->
           <div v-if="childPlayer.synced_to" class="syncbtn">
-            <Button icon @click="api.playerCommandUnSync(childPlayer.player_id)">
+            <Button
+              icon
+              @click="api.playerCommandUnSync(childPlayer.player_id)"
+            >
               <v-icon>mdi-link-variant-off</v-icon>
             </Button>
           </div>
@@ -130,11 +171,17 @@ const getVolumePlayers = function (player: Player) {
       items.push(volumeChild);
     }
   }
-  items.sort((a, b) => (a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1));
+  items.sort((a, b) =>
+    a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
+  );
   return items;
 };
 const setGroupPower = function (player: Player, powered: boolean) {
-  if (player.type == PlayerType.GROUP || player.type == PlayerType.SYNC_GROUP || player.group_childs.length > 0) {
+  if (
+    player.type == PlayerType.GROUP ||
+    player.type == PlayerType.SYNC_GROUP ||
+    player.group_childs.length > 0
+  ) {
     // send power command to all group child players
     api.playerCommandGroupPower(player.player_id, powered);
   } else {

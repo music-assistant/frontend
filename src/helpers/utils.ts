@@ -58,7 +58,9 @@ export const truncateString = function (str: string, num: number) {
 
 export const isColorDark = function (hexColor: string) {
   if (hexColor.includes('var')) {
-    hexColor = getComputedStyle(document.documentElement).getPropertyValue(hexColor);
+    hexColor = getComputedStyle(document.documentElement).getPropertyValue(
+      hexColor,
+    );
   }
   let r = 0;
   let g = 0;
@@ -84,12 +86,17 @@ export const kebabize = (str: string) => {
   return str
     .split('')
     .map((letter, idx) => {
-      return letter.toUpperCase() === letter ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}` : letter;
+      return letter.toUpperCase() === letter
+        ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}`
+        : letter;
     })
     .join('');
 };
 
-export const getArtistsString = function (artists: Array<Artist | ItemMapping>, size?: number) {
+export const getArtistsString = function (
+  artists: Array<Artist | ItemMapping>,
+  size?: number,
+) {
   if (!artists) return '';
   if (size)
     return artists
@@ -121,26 +128,40 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
 
 export const getPlayerName = function (player: Player, truncate = 26) {
   if (!player) return '';
-  if (player.type != PlayerType.GROUP && player.type != PlayerType.SYNC_GROUP && player.group_childs.length > 1) {
+  if (
+    player.type != PlayerType.GROUP &&
+    player.type != PlayerType.SYNC_GROUP &&
+    player.group_childs.length > 1
+  ) {
     // create pretty name for syncgroup (e.g. playername +2)
     // TODO: move to API and only count available players
-    return `${truncateString(player.display_name, truncate - 3)} +${player.group_childs.length - 1}`;
+    return `${truncateString(player.display_name, truncate - 3)} +${
+      player.group_childs.length - 1
+    }`;
   }
   return truncateString(player.display_name, truncate);
 };
 
-export const getStreamingProviderMappings = function (itemDetails: MediaItemType) {
+export const getStreamingProviderMappings = function (
+  itemDetails: MediaItemType,
+) {
   const result: ProviderMapping[] = [];
   for (const provider_mapping of itemDetails?.provider_mappings || []) {
     if (provider_mapping.provider_domain.startsWith('filesystem')) continue;
     if (provider_mapping.provider_domain == 'plex') continue;
-    if (result.filter((a) => a.provider_domain == provider_mapping.provider_domain).length) continue;
+    if (
+      result.filter(
+        (a) => a.provider_domain == provider_mapping.provider_domain,
+      ).length
+    )
+      continue;
     result.push(provider_mapping);
   }
   return result;
 };
 
-export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
+export const sleep = (delay: number) =>
+  new Promise((resolve) => setTimeout(resolve, delay));
 
 export const numberRange = function (start: number, end: number): number[] {
   return Array(end - start + 1)
@@ -186,7 +207,9 @@ export function getContrastRatio(color1: string, color2: string): number {
 
 export function lightenColor(hexCode: string, factor: number): string {
   if (factor <= 0 || factor > 1) {
-    throw new Error('Faktor muss im Bereich von 0 (ausschließlich) bis 1 liegen.');
+    throw new Error(
+      'Faktor muss im Bereich von 0 (ausschließlich) bis 1 liegen.',
+    );
   }
 
   const rgbColor: RGBColor = hexToRgb(hexCode);
@@ -210,9 +233,9 @@ export function hexToRgb(hex: string): RGBColor {
 
 export function rgbToHex(rgb: RGBColor): string {
   const [red, green, blue] = rgb;
-  const hex = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue
+  const hex = `#${red.toString(16).padStart(2, '0')}${green
     .toString(16)
-    .padStart(2, '0')}`;
+    .padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
   return hex;
 }
 
@@ -226,7 +249,8 @@ export function findLightColor(colors: RGBColor[]): string {
 
     if (
       (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
-      (contrastRatio > highestContrastRatio && contrastRatio >= highestContrastRatio * 0.7)
+      (contrastRatio > highestContrastRatio &&
+        contrastRatio >= highestContrastRatio * 0.7)
     ) {
       highestContrastRatio = contrastRatio;
       mostPleasantColor = hexColor;
@@ -246,7 +270,8 @@ export function findDarkColor(colors: RGBColor[]): string {
     if (maxContrastRatio >= contrastRatio) {
       if (
         (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
-        (contrastRatio > highestContrastRatio && contrastRatio >= highestContrastRatio * 0.7)
+        (contrastRatio > highestContrastRatio &&
+          contrastRatio >= highestContrastRatio * 0.7)
       ) {
         highestContrastRatio = contrastRatio;
         mostPleasantColor = hexColor;
@@ -256,7 +281,11 @@ export function findDarkColor(colors: RGBColor[]): string {
   return mostPleasantColor;
 }
 
-export function darkenBrightColors(color: string, thresholdBrightness = 100, colorPartReduction = 50): string {
+export function darkenBrightColors(
+  color: string,
+  thresholdBrightness = 100,
+  colorPartReduction = 50,
+): string {
   const hexColor = color.replace(/^#/, '');
   const r = parseInt(hexColor.substring(0, 2), 16);
   const g = parseInt(hexColor.substring(2, 4), 16);
@@ -269,9 +298,11 @@ export function darkenBrightColors(color: string, thresholdBrightness = 100, col
     const darkenedG = Math.max(0, g - colorPartReduction);
     const darkenedB = Math.max(0, b - colorPartReduction);
 
-    const darkenedColor = `#${darkenedR.toString(16).padStart(2, '0')}${darkenedG
+    const darkenedColor = `#${darkenedR
       .toString(16)
-      .padStart(2, '0')}${darkenedB.toString(16).padStart(2, '0')}`;
+      .padStart(2, '0')}${darkenedG.toString(16).padStart(2, '0')}${darkenedB
+      .toString(16)
+      .padStart(2, '0')}`;
 
     return darkenedColor;
   }
@@ -282,7 +313,9 @@ export function darkenBrightColors(color: string, thresholdBrightness = 100, col
 export function getColorPalette(img: HTMLImageElement): ColorCoverPalette {
   const colorThief = new ColorThief();
   const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
-  const colorHexPalette: string[] = colorNumberPalette.map((color) => rgbToHex(color));
+  const colorHexPalette: string[] = colorNumberPalette.map((color) =>
+    rgbToHex(color),
+  );
 
   return {
     0: colorHexPalette[0],

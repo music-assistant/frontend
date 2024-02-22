@@ -1,18 +1,28 @@
 <template>
   <div style="width: 100%">
-    <div v-if="activePlayerQueue && !isProgressBar" style="display: flex; flex: 1 1 auto; align-items: center">
+    <div
+      v-if="activePlayerQueue && !isProgressBar"
+      style="display: flex; flex: 1 1 auto; align-items: center"
+    >
       <!-- current time detail -->
       <div
         class="text-caption"
         style="cursor: pointer; z-index: 1"
-        @click="showRemainingTime ? (showRemainingTime = false) : (showRemainingTime = true)"
+        @click="
+          showRemainingTime
+            ? (showRemainingTime = false)
+            : (showRemainingTime = true)
+        "
       >
         {{ playerCurTimeStr }}
       </div>
 
       <v-slider
         v-model="curTimeValue"
-        :disabled="!curQueueItem || curQueueItem.media_item?.media_type != MediaType.TRACK"
+        :disabled="
+          !curQueueItem ||
+          curQueueItem.media_item?.media_type != MediaType.TRACK
+        "
         :color="props.color"
         style="width: 100%"
         :min="0"
@@ -33,10 +43,15 @@
         {{ playerTotalTimeStr }}
       </div>
     </div>
-    <div v-else-if="activePlayerQueue && isProgressBar" style="width: 100%; padding-bottom: 0px">
+    <div
+      v-else-if="activePlayerQueue && isProgressBar"
+      style="width: 100%; padding-bottom: 0px"
+    >
       <v-progress-linear
         v-model="curTimeValue"
-        :disabled="!activePlayerQueue || !curQueueItem || activePlayerQueue?.items == 0"
+        :disabled="
+          !activePlayerQueue || !curQueueItem || activePlayerQueue?.items == 0
+        "
         height="70"
         :color="lightenColor(props.color, 0.15)"
         :bg-color="props.color"
@@ -88,7 +103,9 @@ const curQueueItem = computed(() => {
 const playerCurTimeStr = computed(() => {
   if (!curQueueItem.value) return '0:00';
   if (showRemainingTime.value) {
-    return `-${formatDuration(curQueueItem.value.duration - curQueueItemTime.value)}`;
+    return `-${formatDuration(
+      curQueueItem.value.duration - curQueueItemTime.value,
+    )}`;
   } else {
     return `${formatDuration(curQueueItemTime.value)}`;
   }
@@ -115,7 +132,7 @@ watch(curQueueItemTime, (newTime) => {
   }
 });
 
-// methodes
+// methods
 const startDragging = function () {
   isDragging.value = true;
 };
@@ -127,7 +144,10 @@ const stopDragging = () => {
 
 const updateTime = (newTime: number) => {
   if (!isDragging.value) {
-    api.queueCommandSeek(activePlayerQueue.value?.queue_id || '', Math.round(newTime));
+    api.queueCommandSeek(
+      activePlayerQueue.value?.queue_id || '',
+      Math.round(newTime),
+    );
   }
 };
 </script>

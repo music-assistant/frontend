@@ -238,21 +238,32 @@ export interface ServerInfoMessage {
   homeassistant_addon: boolean;
 }
 
-export type MessageType = CommandMessage | EventMessage | SuccessResultMessage | ErrorResultMessage | ServerInfoMessage;
+export type MessageType =
+  | CommandMessage
+  | EventMessage
+  | SuccessResultMessage
+  | ErrorResultMessage
+  | ServerInfoMessage;
 
 // config entries
 
-export type ConfigValueType = string | number | boolean | string[] | number[] | null;
+export type ConfigValueType =
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | null;
 
 export interface ConfigValueOption {
-  // Model for a value with seperated name/value.
+  // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
 }
 
 export interface ConfigEntry {
   // Model for a Config Entry.
-  // The definition of something that can be configured for an opbject (e.g. provider or player)
+  // The definition of something that can be configured for an object (e.g. provider or player)
   // within Music Assistant (without the value).
   // key: used as identifier for the entry, also for localization
   key: string;
@@ -440,7 +451,13 @@ export interface Radio extends MediaItem {
   duration?: number;
 }
 
-export type MediaItemType = Artist | Album | Track | Radio | Playlist | BrowseFolder;
+export type MediaItemType =
+  | Artist
+  | Album
+  | Track
+  | Radio
+  | Playlist
+  | BrowseFolder;
 
 export interface BrowseFolder extends MediaItem {
   path?: string;
@@ -586,6 +603,8 @@ export interface ProviderManifest {
   icon_svg?: string;
   // icon_svg_dark: optional separate dark svg icon (full xml string)
   icon_svg_dark?: string;
+  // depends on: domain of another provider that is required for this provider
+  depends_on?: string;
 }
 
 export interface ProviderInstance {

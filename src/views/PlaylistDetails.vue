@@ -10,7 +10,15 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :load-items="loadPlaylistTracks"
-      :sort-keys="['position', 'position_desc', 'name', 'artist', 'album', 'duration', 'duration_desc']"
+      :sort-keys="[
+        'position',
+        'position_desc',
+        'name',
+        'artist',
+        'album',
+        'duration',
+        'duration_desc',
+      ]"
       :update-available="updateAvailable"
       :title="$t('playlist_tracks')"
       :allow-key-hooks="true"
@@ -24,7 +32,13 @@
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
-import { EventType, type Playlist, type EventMessage, type MediaItemType, Track } from '../plugins/api/interfaces';
+import {
+  EventType,
+  type Playlist,
+  type EventMessage,
+  type MediaItemType,
+  Track,
+} from '../plugins/api/interfaces';
 import { api } from '../plugins/api';
 import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
 import { sleep } from '@/helpers/utils';
@@ -51,13 +65,16 @@ watch(
 
 onMounted(() => {
   //signal if/when item updates
-  const unsub = api.subscribe(EventType.MEDIA_ITEM_ADDED, (evt: EventMessage) => {
-    // signal user that there might be updated info available for this item
-    const updatedItem = evt.data as MediaItemType;
-    if (itemDetails.value?.uri == updatedItem.uri) {
-      updateAvailable.value = true;
-    }
-  });
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_ADDED,
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
+      const updatedItem = evt.data as MediaItemType;
+      if (itemDetails.value?.uri == updatedItem.uri) {
+        updateAvailable.value = true;
+      }
+    },
+  );
   onBeforeUnmount(unsub);
 });
 

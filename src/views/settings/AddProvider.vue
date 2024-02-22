@@ -2,25 +2,42 @@
   <section>
     <v-card-text>
       <!-- header -->
-      <div v-if="api.providerManifests[domain]" style="margin-left: -5px; margin-right: -5px">
+      <div
+        v-if="api.providerManifests[domain]"
+        style="margin-left: -5px; margin-right: -5px"
+      >
         <v-card-title>
-          {{ $t('settings.setup_provider', [api.providerManifests[domain].name]) }}
+          {{
+            $t('settings.setup_provider', [api.providerManifests[domain].name])
+          }}
         </v-card-title>
-        <v-card-subtitle> {{ api.providerManifests[domain].description }} </v-card-subtitle><br />
+        <v-card-subtitle>
+          {{ api.providerManifests[domain].description }} </v-card-subtitle
+        ><br />
         <v-card-subtitle v-if="api.providerManifests[domain].codeowners.length">
-          <b>{{ $t('settings.codeowners') }}: </b>{{ api.providerManifests[domain].codeowners.join(' / ') }}
+          <b>{{ $t('settings.codeowners') }}: </b
+          >{{ api.providerManifests[domain].codeowners.join(' / ') }}
         </v-card-subtitle>
 
         <v-card-subtitle v-if="api.providerManifests[domain].documentation">
           <b>{{ $t('settings.need_help_setup_provider') }} </b>&nbsp;
-          <a :href="api.providerManifests[domain].documentation" target="_blank">{{ $t('settings.check_docs') }}</a>
+          <a
+            :href="api.providerManifests[domain].documentation"
+            target="_blank"
+            >{{ $t('settings.check_docs') }}</a
+          >
         </v-card-subtitle>
       </div>
       <br />
       <v-divider />
       <br />
       <br />
-      <edit-config :config-entries="config_entries" :disabled="false" @submit="onSubmit" @action="onAction" />
+      <edit-config
+        :config-entries="config_entries"
+        :disabled="false"
+        @submit="onSubmit"
+        @action="onAction"
+      />
     </v-card-text>
     <v-overlay
       v-model="loading"
@@ -38,7 +55,12 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { nanoid } from 'nanoid';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
-import { ConfigValueType, ConfigEntry, EventType, EventMessage } from '@/plugins/api/interfaces';
+import {
+  ConfigValueType,
+  ConfigEntry,
+  EventType,
+  EventMessage,
+} from '@/plugins/api/interfaces';
 import EditConfig from './EditConfig.vue';
 import { watch } from 'vue';
 import { shell } from '@tauri-apps/api';
@@ -73,9 +95,14 @@ watch(
   async (val) => {
     if (val) {
       // fetch initial config entries (without any action) but pass along our session id
-      config_entries.value = await api.getProviderConfigEntries(props.domain, undefined, undefined, {
-        session_id: sessionId,
-      });
+      config_entries.value = await api.getProviderConfigEntries(
+        props.domain,
+        undefined,
+        undefined,
+        {
+          session_id: sessionId,
+        },
+      );
     }
   },
   { immediate: true },
@@ -98,7 +125,10 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     });
 };
 
-const onAction = async function (action: string, values: Record<string, ConfigValueType>) {
+const onAction = async function (
+  action: string,
+  values: Record<string, ConfigValueType>,
+) {
   loading.value = true;
   // append existing ConfigEntry values to allow
   // values be passed between flow steps

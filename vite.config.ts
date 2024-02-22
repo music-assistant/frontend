@@ -15,7 +15,9 @@ export default defineConfig({
     vue({
       template: { transformAssetUrls },
     }),
-    webfontDownload(['https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap']),
+    webfontDownload([
+      'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap',
+    ]),
     vuetify({
       autoImport: true,
       styles: {

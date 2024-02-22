@@ -1,7 +1,12 @@
 <template>
   <div
     ref="responsiveIconHolder"
-    :class="[props.type == 'btn' ? 'responsive-icon-holder-btn' : 'responsive-icon-holder', { disabled: disabled }]"
+    :class="[
+      props.type == 'btn'
+        ? 'responsive-icon-holder-btn'
+        : 'responsive-icon-holder',
+      { disabled: disabled },
+    ]"
     :style="{
       width: props.staticWidth ? props.staticWidth : props.width,
       height: props.staticWidth ? props.staticWidth : props.height,
@@ -62,7 +67,19 @@ export interface ResponsiveIconProps {
   color?: string;
   disabled?: boolean;
 }
-const props = withDefaults(defineProps<ResponsiveIconProps>(), { minWidth: '24px', minHeight: '24px', type: 'icon' });
+const props = withDefaults(defineProps<ResponsiveIconProps>(), {
+  width: undefined,
+  height: undefined,
+  staticWidth: undefined,
+  staticHeight: undefined,
+  maxWidth: undefined,
+  maxHeight: undefined,
+  minWidth: '24px',
+  minHeight: '24px',
+  icon: undefined,
+  type: 'icon',
+  color: undefined,
+});
 
 const adjustIconSize = () => {
   if (responsiveIconHolder.value) {
@@ -106,6 +123,7 @@ onBeforeUnmount(() => {
 .responsive-icon-holder-btn:hover {
   opacity: 1;
 }
+
 .responsive-icon-holder-btn:focus {
   outline: none;
   color: #00ff00;

@@ -39,7 +39,14 @@
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import InfoHeader from '../components/InfoHeader.vue';
 import { ref, watch, onBeforeUnmount, onMounted, computed } from 'vue';
-import { EventType, type Artist, type EventMessage, type MediaItemType, Album, Track } from '../plugins/api/interfaces';
+import {
+  EventType,
+  type Artist,
+  type EventMessage,
+  type MediaItemType,
+  Album,
+  Track,
+} from '../plugins/api/interfaces';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { api } from '../plugins/api';
 import { getStreamingProviderMappings } from '@/helpers/utils';
@@ -70,13 +77,16 @@ watch(
 
 onMounted(() => {
   //signal if/when item updates
-  const unsub = api.subscribe(EventType.MEDIA_ITEM_ADDED, (evt: EventMessage) => {
-    // signal user that there might be updated info available for this item
-    const updatedItem = evt.data as MediaItemType;
-    if (itemDetails.value?.uri == updatedItem.uri) {
-      updateAvailable.value = true;
-    }
-  });
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_ADDED,
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
+      const updatedItem = evt.data as MediaItemType;
+      if (itemDetails.value?.uri == updatedItem.uri) {
+        updateAvailable.value = true;
+      }
+    },
+  );
   onBeforeUnmount(unsub);
 });
 
@@ -89,14 +99,22 @@ const loadArtistAlbums = async function (params: LoadDataParams) {
   if (!itemDetails.value) {
     items = [];
   } else if (params.providerFilter && params.providerFilter != 'library') {
-    for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
+    for (const providerMapping of getStreamingProviderMappings(
+      itemDetails.value!,
+    )) {
       if (providerMapping.provider_instance == params.providerFilter) {
-        items = await api.getArtistAlbums(providerMapping.item_id, providerMapping.provider_instance);
+        items = await api.getArtistAlbums(
+          providerMapping.item_id,
+          providerMapping.provider_instance,
+        );
         break;
       }
     }
   } else {
-    items = await api.getArtistAlbums(itemDetails.value.item_id, itemDetails.value.provider);
+    items = await api.getArtistAlbums(
+      itemDetails.value.item_id,
+      itemDetails.value.provider,
+    );
   }
   updateAvailable.value = false;
   return items;
@@ -111,14 +129,22 @@ const loadArtistTracks = async function (params: LoadDataParams) {
   if (!itemDetails.value) {
     items = [];
   } else if (params.providerFilter && params.providerFilter != 'library') {
-    for (const providerMapping of getStreamingProviderMappings(itemDetails.value)) {
+    for (const providerMapping of getStreamingProviderMappings(
+      itemDetails.value,
+    )) {
       if (providerMapping.provider_instance == params.providerFilter) {
-        items = await api.getArtistTracks(providerMapping.item_id, providerMapping.provider_instance);
+        items = await api.getArtistTracks(
+          providerMapping.item_id,
+          providerMapping.provider_instance,
+        );
         break;
       }
     }
   } else {
-    items = await api.getArtistTracks(itemDetails.value.item_id, itemDetails.value.provider);
+    items = await api.getArtistTracks(
+      itemDetails.value.item_id,
+      itemDetails.value.provider,
+    );
   }
   updateAvailable.value = false;
   return items;
@@ -127,7 +153,9 @@ const loadArtistTracks = async function (params: LoadDataParams) {
 const providerFilter = computed(() => {
   if (itemDetails.value?.provider !== 'library') return [];
   const result: string[] = ['library'];
-  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
+  for (const providerMapping of getStreamingProviderMappings(
+    itemDetails.value!,
+  )) {
     result.push(providerMapping.provider_instance);
   }
   return result;

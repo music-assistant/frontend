@@ -26,7 +26,10 @@
       ]"
       :key="rowSet[0] + rowSet[1]"
     >
-      <v-col v-for="resultKey in rowSet.filter((x) => filteredItems(x).length)" :key="resultKey">
+      <v-col
+        v-for="resultKey in rowSet.filter((x) => filteredItems(x).length)"
+        :key="resultKey"
+      >
         <ItemsListing
           v-if="filteredItems(resultKey).length"
           :itemtype="`search.${resultKey}`"
@@ -56,7 +59,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useDisplay } from 'vuetify';
-import { SearchResults, type MediaItemType, BrowseFolder, MediaType } from '../plugins/api/interfaces';
+import {
+  SearchResults,
+  type MediaItemType,
+  BrowseFolder,
+  MediaType,
+} from '../plugins/api/interfaces';
 import { store } from '../plugins/store';
 import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
 import PanelviewItem from '../components/PanelviewItem.vue';

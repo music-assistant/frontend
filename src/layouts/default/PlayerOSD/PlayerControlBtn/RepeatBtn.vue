@@ -3,7 +3,11 @@
   <ResponsiveIcon
     v-if="props.isVisible"
     v-bind="props.icon"
-    :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+    :disabled="
+      !activePlayerQueue ||
+      !activePlayerQueue?.active ||
+      activePlayerQueue?.items == 0
+    "
     :color="
       getValueFromSources(props.icon?.color, [
         [activePlayerQueue?.repeat_mode == RepeatMode.OFF, null],
@@ -39,7 +43,9 @@ import { computed } from 'vue';
 import api from '@/plugins/api';
 import { RepeatMode } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import ResponsiveIcon, {
+  ResponsiveIconProps,
+} from '@/components/mods/ResponsiveIcon.vue';
 import { getValueFromSources } from '@/helpers/utils';
 
 // properties
@@ -49,6 +55,7 @@ export interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
+  icon: undefined,
 });
 
 // computed properties

@@ -7,7 +7,9 @@
     <Container>
       <ListItem
         v-for="item in coreConfigs.sort((a, b) =>
-          api.providerManifests[a.domain].name!.localeCompare(api.providerManifests[b.domain].name!),
+          api.providerManifests[a.domain].name!.localeCompare(
+            api.providerManifests[b.domain].name!,
+          ),
         )"
         :key="item.domain"
         v-hold="
@@ -30,7 +32,9 @@
             label: 'settings.documentation',
             labelArgs: [],
             action: () => {
-              openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+              openLinkInNewTab(
+                api.providerManifests[item.domain].documentation!,
+              );
             },
             icon: 'mdi-bookshelf',
             disabled: !api.providerManifests[item.domain].documentation,
@@ -39,17 +43,26 @@
         @click="editCoreConfig(item.domain)"
       >
         <template #prepend>
-          <provider-icon :domain="item.domain" :size="40" class="listitem-media-thumb" style="margin-left: 10px" />
+          <provider-icon
+            :domain="item.domain"
+            :size="40"
+            class="listitem-media-thumb"
+            style="margin-left: 10px"
+          />
         </template>
 
         <!-- title -->
         <template #title>
-          <div class="line-clamp-1">{{ api.providerManifests[item.domain].name }}</div>
+          <div class="line-clamp-1">
+            {{ api.providerManifests[item.domain].name }}
+          </div>
         </template>
 
         <!-- subtitle -->
         <template #subtitle>
-          <div class="line-clamp-1">{{ api.providerManifests[item.domain].description }}</div>
+          <div class="line-clamp-1">
+            {{ api.providerManifests[item.domain].description }}
+          </div>
         </template>
 
         <!-- actions -->
@@ -83,7 +96,15 @@
           </tr>
           <tr>
             <td>{{ $t('settings.server_as_addon') }}</td>
-            <td><v-icon :icon="api.serverInfo.value?.homeassistant_addon ? 'mdi-check' : 'mdi-close'" /></td>
+            <td>
+              <v-icon
+                :icon="
+                  api.serverInfo.value?.homeassistant_addon
+                    ? 'mdi-check'
+                    : 'mdi-close'
+                "
+              />
+            </td>
           </tr>
           <tr>
             <td>{{ $t('settings.artists_in_library') }}</td>
@@ -108,7 +129,9 @@
           <tr>
             <td>{{ $t('settings.server_logging') }}</td>
             <td>
-              <a :href="`${api.baseUrl}/log`" target="_blank">{{ $t('settings.download_log') }}</a>
+              <a :href="`${api.baseUrl}/log`" target="_blank">{{
+                $t('settings.download_log')
+              }}</a>
             </td>
           </tr>
         </tbody>
@@ -149,10 +172,15 @@ const openLinkInNewTab = function (url: string) {
 
 onMounted(async () => {
   coreConfigs.value = await api.getCoreConfigs();
-  totalLibraryArtists.value = (await api.getLibraryArtists(undefined, undefined, 1)).total || 0;
-  totalLibraryAlbums.value = (await api.getLibraryAlbums(undefined, undefined, 1)).total || 0;
-  totalLibraryTracks.value = (await api.getLibraryTracks(undefined, undefined, 1)).total || 0;
-  totalLibraryPlaylists.value = (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0;
-  totalLibraryRadio.value = (await api.getLibraryRadios(undefined, undefined, 1)).total || 0;
+  totalLibraryArtists.value =
+    (await api.getLibraryArtists(undefined, undefined, 1)).total || 0;
+  totalLibraryAlbums.value =
+    (await api.getLibraryAlbums(undefined, undefined, 1)).total || 0;
+  totalLibraryTracks.value =
+    (await api.getLibraryTracks(undefined, undefined, 1)).total || 0;
+  totalLibraryPlaylists.value =
+    (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0;
+  totalLibraryRadio.value =
+    (await api.getLibraryRadios(undefined, undefined, 1)).total || 0;
 });
 </script>
