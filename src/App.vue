@@ -33,6 +33,14 @@
             label="Start Squeezelite"
             @change="squeezeliteConfig"
           />
+          <v-text-field
+            v-model="slimprotoPort"
+            variant="outlined"
+            style="height: 56px"
+            type="number"
+            label="Squeezelite port"
+            placeholder="3483"
+          />
           <v-card-subtitle style="cursor: default">Theme Setting</v-card-subtitle>
           <v-btn-toggle
             v-model="themeSetting"
@@ -78,6 +86,7 @@ const discordRPCEnabled = ref(false);
 const squeezeliteEnabled = ref(true);
 const closeToTrayEnabled = ref(true);
 const port = ref(8095);
+const slimprotoPort = ref(3483);
 const ip = ref('homeassistant.local');
 const themeSetting = ref('light');
 const outputDevice = ref('default');
@@ -109,6 +118,7 @@ const try_start = async () => {
   // Save ip and port
   localStorage.setItem('mass_ip', ip.value);
   localStorage.setItem('mass_port', port.value.toString());
+  localStorage.setItem('slimprotoPort', slimprotoPort.value.toString());
   localStorage.setItem('outputDevice', outputDevice.value);
 
   loading.value = true;
@@ -177,6 +187,7 @@ onMounted(async () => {
   let ip_storage = localStorage.getItem('mass_ip') || 'homeassistant.local';
   let port_storage = Number(localStorage.getItem('mass_port')) || 8095;
   let output_device_setting = localStorage.getItem('outputDevice') || 'default';
+  let slimproto_port_storage = Number(localStorage.getItem('slimprotoPort')) || 3483;
   let start_discord_rpc = localStorage.getItem('discordRPCEnabled') === 'true' || false;
   let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || true;
   let theme_setting = localStorage.getItem('themeSetting') || 'system';
@@ -192,6 +203,7 @@ onMounted(async () => {
   port.value = port_storage;
   themeSetting.value = theme_setting;
   outputDevice.value = output_device_setting;
+  slimprotoPort.value = slimproto_port_storage;
 
   // Set inital theme
   await appWindow.theme().then((theme) => {
@@ -223,7 +235,7 @@ const start = () => {
 
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
-    invoke('start_sqzlite', { ip: ip.value, outputDevice: outputDevice.value });
+    invoke('start_sqzlite', { ip: ip.value, outputDevice: outputDevice.value, port: slimprotoPort.value});
   }
   if (discordRPCEnabled.value == true) {
     invoke('start_rpc', { websocket: websocket });
