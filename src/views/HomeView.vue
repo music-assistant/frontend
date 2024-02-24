@@ -1,83 +1,82 @@
 <template>
   <div>
-    <div v-for="widgetRow in widgetRows" :key="widgetRow.label">
-      <v-divider />
-      <div v-if="widgetRow.items.length" class="widget-row">
-        <v-toolbar
-          color="transparent"
-          :style="widgetRow.path ? 'cursor: pointer' : ''"
-          @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
-        >
-          <template #prepend
-            ><v-icon :icon="widgetRow.icon" style="margin-left: 15px"
-          /></template>
-          <template #title>
-            <v-badge
-              v-if="widgetRow.count"
-              inline
-              color="grey"
-              :content="widgetRow.count"
-            >
-              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
-            </v-badge>
-            <template v-else>
-              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
-            </template>
-          </template>
-        </v-toolbar>
-        <v-slide-group show-arrows>
-          <v-slide-group-item v-for="item in widgetRow.items" :key="item.uri">
-            <PanelviewItem
-              :item="item"
-              :show-checkboxes="false"
-              :show-track-number="false"
-              :is-selected="false"
-              style="height: 160px; width: 120px; margin: 5px"
-              @click="itemClicked"
-            />
-          </v-slide-group-item>
-        </v-slide-group>
-      </div>
-      <div
-        v-else-if="widgetRow.players && widgetRow.players.length"
-        class="widget-row"
-      >
-        <v-toolbar
-          color="transparent"
-          :style="widgetRow.path ? 'cursor: pointer' : ''"
-          @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
-        >
-          <template #prepend
-            ><v-icon :icon="widgetRow.icon" style="margin-left: 15px"
-          /></template>
-          <template #title>
-            <v-badge
-              v-if="widgetRow.count"
-              inline
-              color="grey"
-              :content="widgetRow.count"
-            >
-              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
-            </v-badge>
-            <template v-else>
-              <span class="mr-3">{{ $t(widgetRow.label) }}</span>
-            </template>
-          </template>
-        </v-toolbar>
-        <v-slide-group show-arrows>
-          <v-slide-group-item
-            v-for="player in widgetRow.players"
-            :key="player.player_id"
+    <Container variant="panel">
+      <div v-for="widgetRow in widgetRows" :key="widgetRow.label">
+        <div v-if="widgetRow.items.length" class="widget-row">
+          <v-toolbar
+            color="transparent"
+            :style="widgetRow.path ? 'cursor: pointer' : ''"
+            @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
           >
-            <PanelviewPlayerCard
-              :player="player"
-              style="height: auto; width: auto; max-width: 400px; margin: 5px"
-              @click="playerClicked(player)"
-            />
-          </v-slide-group-item>
-        </v-slide-group>
+            <template #prepend
+              ><v-icon :icon="widgetRow.icon" style="margin-left: 15px"
+            /></template>
+            <template #title>
+              <v-badge
+                v-if="widgetRow.count"
+                inline
+                color="grey"
+                :content="widgetRow.count"
+              >
+                <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+              </v-badge>
+              <template v-else>
+                <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+              </template>
+            </template>
+          </v-toolbar>
+          <carousel>
+            <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
+              <PanelviewItem
+                :item="item"
+                :show-checkboxes="false"
+                :show-track-number="false"
+                :is-selected="false"
+                @click="itemClicked"
+            /></swiper-slide>
+          </carousel>
+        </div>
+        <div
+          v-else-if="widgetRow.players && widgetRow.players.length"
+          class="widget-row"
+        >
+          <v-toolbar
+            color="transparent"
+            :style="widgetRow.path ? 'cursor: pointer' : ''"
+            @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
+          >
+            <template #prepend
+              ><v-icon :icon="widgetRow.icon" style="margin-left: 15px"
+            /></template>
+            <template #title>
+              <v-badge
+                v-if="widgetRow.count"
+                inline
+                color="grey"
+                :content="widgetRow.count"
+              >
+                <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+              </v-badge>
+              <template v-else>
+                <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+              </template>
+            </template>
+          </v-toolbar>
+          <v-slide-group show-arrows>
+            <v-slide-group-item
+              v-for="player in widgetRow.players"
+              :key="player.player_id"
+            >
+              <PanelviewPlayerCard
+                :player="player"
+                style="height: auto; width: auto; max-width: 400px; margin: 5px"
+                @click="playerClicked(player)"
+              />
+            </v-slide-group-item>
+          </v-slide-group>
+        </div>
       </div>
-    </div>
+    </Container>
   </div>
 </template>
 
@@ -93,6 +92,7 @@ import {
   PlayerState,
 } from '@/plugins/api/interfaces';
 import PanelviewItem from '@/components/PanelviewItem.vue';
+import Carousel from '@/components/Carousel.vue';
 import { onMounted, ref } from 'vue';
 import { store } from '@/plugins/store';
 import { eventbus } from '@/plugins/eventbus';
@@ -100,6 +100,7 @@ import { itemIsAvailable } from '@/helpers/contextmenu';
 import router from '@/plugins/router';
 import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
 import { onBeforeUnmount } from 'vue';
+import Container from '@/components/mods/Container.vue';
 
 interface WidgetRow {
   label: string;
