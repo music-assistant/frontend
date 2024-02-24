@@ -150,7 +150,43 @@
         "edit_group_members": "Rediger gruppe-afspillere",
         "add_new_provider_button": "Tilføj {0} udbyder",
         "add_group_player": "Tilføj gruppe-afspiller",
+        "group_members": "Enheder i gruppen",
+        "log_level": {
+            "label": "Log-niveau",
+            "description": "Indstil log-niveauet for denne udbyder.",
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Advarsel",
+                "error": "Fejl",
+                "debug": "Fejlsøgning",
+                "GLOBAL": "Global",
+                "INFO": "Info",
+                "WARNING": "Advarsler",
+                "ERROR": "Fejl",
+                "DEBUG": "Fejlfinding"
+            }
+        },
+        "flow_mode": {
+            "label": "Aktivér flow-tilstand",
+            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
+        },
+        "auto_play": {
+            "label": "Start afspilning",
+            "description": "Når denne afspiller tændes, starter afspilningen automatisk (hvis der er elementer i køen)."
+        },
+        "output_channels": {
+            "label": "Tilstand for udgangskanal",
+            "description": "Du kan konfigurere denne afspiller til kun at afspille venstre eller højre kanal, f.eks. for at skabe et stereopar med 2 afspillere.",
+            "options": {
+                "stereo": "Stereo (begge kanaler)",
+                "left": "Kun venstre kanal",
+                "right": "Kun højre kanal",
+                "mono": "Mono (begge kanaler)"
+            }
+        },
         "volume_normalization": {
+            "label": "Aktiver normalisering af lydstyrke (EBU-R128-baseret)",
             "description": "Aktiver lydstyrkenormalisering baseret på EBU-R128-standarden uden at påvirke dynamikområdet"
         },
         "volume_normalization_target": {
@@ -180,15 +216,6 @@
         "hide_player": {
             "label": "Skjul denne afspiller i brugergrænsefladen",
             "description": "Skjul denne afspiller i brugergrænsefladen. \n\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
-        },
-        "log_level": {
-            "options": {
-                "GLOBAL": "Global",
-                "INFO": "Info",
-                "WARNING": "Advarsler",
-                "ERROR": "Fejl",
-                "DEBUG": "Fejlfinding"
-            }
         },
         "default_enqueue_select_artist": {
             "label": "Elementer, der skal vælges, når du afspiller en kunstner (i biblioteket).",
@@ -347,5 +374,6 @@
     "radiobrowser_by_country": "Efter land",
     "radiobrowser_by_tag": "Efter tag",
     "load_more_items": "Indlæs flere emner...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "muted": "dæmpet"
 }
