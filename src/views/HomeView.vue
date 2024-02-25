@@ -5,7 +5,11 @@
         <div v-if="widgetRow.items.length" class="widget-row">
           <v-toolbar
             color="transparent"
-            :style="widgetRow.path ? 'cursor: pointer' : ''"
+            :style="
+              widgetRow.path
+                ? 'cursor: pointer; width: fit-content;'
+                : 'width: fit-content;'
+            "
             @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
           >
             <template #prepend><v-icon :icon="widgetRow.icon" /></template>
@@ -41,7 +45,11 @@
         >
           <v-toolbar
             color="transparent"
-            :style="widgetRow.path ? 'cursor: pointer' : ''"
+            :style="
+              widgetRow.path
+                ? 'cursor: pointer; width: fit-content;'
+                : 'width: fit-content;'
+            "
             @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
           >
             <template #prepend><v-icon :icon="widgetRow.icon" /></template>

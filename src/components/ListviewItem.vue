@@ -216,7 +216,7 @@ import {
   type MediaItem,
   type MediaItemType,
   MediaType,
-} from '../plugins/api/interfaces';
+} from '@/plugins/api/interfaces';
 import {
   formatDuration,
   parseBool,

@@ -370,10 +370,10 @@ import {
   type Track,
   BrowseFolder,
   ItemMapping,
-} from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
+} from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
 import ListviewItem from './ListviewItem.vue';
-import Button from './mods/Button.vue';
+import Button from '@/components/mods/Button.vue';
 import PanelviewItem from './PanelviewItem.vue';
 import {
   itemIsAvailable,
@@ -381,14 +381,14 @@ import {
   ContextMenuItem,
 } from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
-import { api } from '../plugins/api';
+import { api } from '@/plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
-import Alert from './mods/Alert.vue';
-import Container from './mods/Container.vue';
+import Alert from '@/components/mods/Alert.vue';
+import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
 import { panelViewItemResponsive } from '@/helpers/utils';
