@@ -42,7 +42,7 @@
           hide-details
           @update:model-value="
             (newVal) => {
-              store.selectedPlayer = newVal;
+              store.selectedPlayerId = newVal;
             }
           "
         />
