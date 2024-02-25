@@ -1,6 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { store } from './store';
-import { getElement } from '@egjs/vue3-flicking';
 import { nextTick } from 'vue';
 import { scrollElement } from '@/helpers/utils';
 
@@ -278,7 +277,8 @@ router.beforeEach((to, from) => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // to we can jump back there on back navigation
   if (!mainListings.includes(from.name.toString())) return;
-  store.prevScrollPos = getElement('#cont').scrollTop;
+  const el = document.querySelector('#cont');
+  if (el) store.prevScrollPos = el.scrollTop;
   store.prevScrollName = from.name.toString();
 });
 

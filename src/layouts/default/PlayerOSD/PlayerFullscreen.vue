@@ -17,53 +17,34 @@
         <template #default>
           <h3 class="line-clamp-1">{{ $t('currently_playing') }}</h3>
         </template>
-
       </v-toolbar>
 
       <Container class="fullscreen-container">
         <div class="fullscreen-media-space"></div>
         <div class="fullscreen-row-centered">
-          <Flicking
+          <MediaItemThumb
             v-if="
               curQueueItem &&
               getBreakpointValue({ breakpoint: 'mobile' }) &&
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
               false
             "
-            :options="{
-              align: 'center',
-              defaultIndex: 1,
-              moveType: 'strict',
-              panelsPerView: 1,
-              useResizeObserver: true,
-              circular: true,
-            }"
-            @move-end="handleFlickingMoveEnd"
-          >
-            <div
-              v-for="config in 3"
-              :key="config"
-              style="margin-right: 10px; margin-left: 10px; display: flex"
-            >
-              <MediaItemThumb
-                :item="curQueueItem?.media_item || curQueueItem"
-                :width="
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                    ? 512
-                    : 1024
-                "
-                :height="
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                    ? 512
-                    : 1024
-                "
-                style="
-                  height: min(calc(100vw - 40px), calc(100vh - 340px));
-                  width: min(calc(100vw - 40px), calc(100vh - 340px));
-                "
-              />
-            </div>
-          </Flicking>
+            :item="curQueueItem?.media_item || curQueueItem"
+            :width="
+              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                ? 512
+                : 1024
+            "
+            :height="
+              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                ? 512
+                : 1024
+            "
+            style="
+              height: min(calc(100vw - 40px), calc(100vh - 340px));
+              width: min(calc(100vw - 40px), calc(100vh - 340px));
+            "
+          />
           <MediaItemThumb
             v-else-if="curQueueItem"
             :item="curQueueItem.media_item || curQueueItem"
@@ -404,7 +385,6 @@ import {
 import PlayerControls from './PlayerControls.vue';
 import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
 import router from '@/plugins/router';
-import Flicking from '@egjs/vue3-flicking';
 import { ColorCoverPalette, darkenBrightColors } from '@/helpers/utils';
 
 interface Props {
@@ -447,11 +427,6 @@ const trackClick = function (item: Track | ItemMapping) {
     params: { itemId: item.item_id, provider: item.provider },
   });
   store.showFullscreenPlayer = false;
-};
-
-const handleFlickingMoveEnd = function (event: { currentTarget: any }) {
-  const flicking = event.currentTarget;
-  const status = flicking.getStatus();
 };
 
 const artistClick = function (item: Artist | ItemMapping) {

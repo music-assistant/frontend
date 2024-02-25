@@ -18,7 +18,9 @@
         "types": ["vuetify", "node"],
         "forceConsistentCasingInFileNames": true,
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["src/*"],
+            "@/plugins": ["src/plugins"]
+
         }
     },
     "include": [
