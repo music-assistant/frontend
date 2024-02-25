@@ -104,7 +104,7 @@ import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
 import { Player, PlayerState } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import VolumeControl from '@/components/VolumeControl.vue';
-import { api } from '@/plugins/api';
+import { ConnectionState, api } from '@/plugins/api';
 import { getPlayerName, truncateString } from '@/helpers/utils';
 import ListItem from '@/components/mods/ListItem.vue';
 
@@ -152,6 +152,14 @@ watch(
     }
   },
   { deep: true },
+);
+watch(
+  () => api.state,
+  (newVal) => {
+    if (newVal.value == ConnectionState.DISCONNECTED) {
+      store.selectedPlayer = undefined;
+    }
+  },
 );
 
 const shadowRoot = ref<ShadowRoot>();
