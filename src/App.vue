@@ -3,10 +3,10 @@
 </template>
 
 <script setup lang="ts">
-import { api } from './plugins/api';
+import { api } from '@/plugins/api';
 import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
-import { store } from './plugins/store';
+import { store } from '@/plugins/store';
 
 const theme = useTheme();
 

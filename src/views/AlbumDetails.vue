@@ -33,16 +33,16 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import InfoHeader from '@/components/InfoHeader.vue';
 import {
   EventType,
   type Album,
   type EventMessage,
   type MediaItemType,
   Track,
-} from '../plugins/api/interfaces';
-import { api } from '../plugins/api';
+} from '@/plugins/api/interfaces';
+import { api } from '@/plugins/api';
 import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';

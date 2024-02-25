@@ -35,9 +35,9 @@ import type {
   MediaItemImage,
   MediaItemType,
   QueueItem,
-} from '../plugins/api/interfaces';
-import { ImageType, MediaType } from '../plugins/api/interfaces';
-import { api } from '../plugins/api';
+} from '@/plugins/api/interfaces';
+import { ImageType, MediaType } from '@/plugins/api/interfaces';
+import { api } from '@/plugins/api';
 import { useTheme } from 'vuetify';
 import {
   imgCoverDark,

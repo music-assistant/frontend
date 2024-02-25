@@ -36,8 +36,8 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import InfoHeader from '@/components/InfoHeader.vue';
 import { ref, watch, onBeforeUnmount, onMounted, computed } from 'vue';
 import {
   EventType,
@@ -46,9 +46,9 @@ import {
   type MediaItemType,
   Album,
   Track,
-} from '../plugins/api/interfaces';
+} from '@/plugins/api/interfaces';
 import ProviderDetails from '@/components/ProviderDetails.vue';
-import { api } from '../plugins/api';
+import { api } from '@/plugins/api';
 import { getStreamingProviderMappings } from '@/helpers/utils';
 
 export interface Props {
