@@ -18,11 +18,6 @@
           <h3 class="line-clamp-1">{{ $t('currently_playing') }}</h3>
         </template>
 
-        <template #append>
-          <Button icon>
-            <v-icon icon="mdi-dots-vertical" />
-          </Button>
-        </template>
       </v-toolbar>
 
       <Container class="fullscreen-container">
