@@ -277,7 +277,8 @@ router.beforeEach((to, from) => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // to we can jump back there on back navigation
   if (!mainListings.includes(from.name.toString())) return;
-  //store.prevScrollPos = getElement('#cont').scrollTop;
+  const el = document.querySelector('#cont');
+  if (el) store.prevScrollPos = el.scrollTop;
   store.prevScrollName = from.name.toString();
 });
 
