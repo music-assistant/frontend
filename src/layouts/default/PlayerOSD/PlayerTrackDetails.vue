@@ -36,9 +36,7 @@
       >
         <div
           v-if="curQueueItem && curQueueItem.media_item"
-          @click="
-            curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
-          "
+          @click="store.showFullscreenPlayer = true"
         >
           {{ curQueueItem.media_item.name }}
           <span
@@ -95,6 +93,7 @@
           color: primaryColor,
         }"
         class="line-clamp-1"
+        @click="store.showFullscreenPlayer = true"
       >
         <div
           v-if="
@@ -103,9 +102,6 @@
             'album' in curQueueItem.media_item &&
             curQueueItem.media_item.album &&
             !props.showOnlyArtist
-          "
-          @click="
-            curQueueItem?.media_item ? itemClick(curQueueItem.media_item) : ''
           "
         >
           {{ getArtistsString(curQueueItem.media_item.artists) }} •
@@ -118,11 +114,6 @@
             curQueueItem.media_item &&
             'artists' in curQueueItem.media_item &&
             curQueueItem.media_item.artists.length > 0
-          "
-          @click="
-            curQueueItem?.media_item && 'artists' in curQueueItem.media_item
-              ? itemClick(curQueueItem.media_item.artists[0])
-              : ''
           "
         >
           {{ curQueueItem.media_item.artists[0].name }}
