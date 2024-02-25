@@ -1,8 +1,7 @@
 <template>
   <!-- active player volume -->
-  <div v-if="props.isVisible">
+  <div v-if="props.isVisible && store.selectedPlayer">
     <v-menu
-      v-if="activePlayerQueue"
       v-model="showVolume"
       class="volume-control-dialog"
       :close-on-content-click="false"
@@ -142,14 +141,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 //refs
 const showVolume = ref(false);
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
 </script>
 
 <style>

@@ -4,27 +4,30 @@
     v-if="props.isVisible"
     v-bind="props.icon"
     :disabled="
-      !activePlayerQueue ||
-      !activePlayerQueue?.active ||
-      activePlayerQueue?.items == 0
+      !store.activePlayerQueue ||
+      !store.activePlayerQueue?.active ||
+      store.activePlayerQueue?.items == 0
     "
     :color="
       getValueFromSources(props.icon?.color, [
-        [activePlayerQueue?.shuffle_enabled, 'secondary', ''],
+        [store.activePlayerQueue?.shuffle_enabled, 'secondary', ''],
       ])
     "
     :icon="
       getValueFromSources(props.icon?.icon, [
-        [activePlayerQueue?.shuffle_enabled, 'mdi-shuffle'],
-        [activePlayerQueue?.shuffle_enabled == false, 'mdi-shuffle-disabled'],
+        [store.activePlayerQueue?.shuffle_enabled, 'mdi-shuffle'],
+        [
+          store.activePlayerQueue?.shuffle_enabled == false,
+          'mdi-shuffle-disabled',
+        ],
         [true, 'mdi-shuffle'],
       ])
     "
     :type="'btn'"
     @click="
       api.queueCommandShuffle(
-        activePlayerQueue?.queue_id || '',
-        activePlayerQueue?.shuffle_enabled ? false : true,
+        store.activePlayerQueue?.queue_id || '',
+        store.activePlayerQueue?.shuffle_enabled ? false : true,
       )
     "
   />
@@ -49,13 +52,5 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
-});
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
 });
 </script>

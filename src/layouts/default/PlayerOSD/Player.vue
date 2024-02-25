@@ -189,31 +189,19 @@ img.addEventListener('load', function () {
     : coverImageColorPalette.value.lightColor;
 });
 
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-const curQueueItem = computed(() => {
-  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
-  return undefined;
-});
-
 // watchers
 watch(
-  () => curQueueItem.value?.queue_item_id,
+  () => store.curQueueItem?.queue_item_id,
   () => {
     // load cover image for the (new) QueueItem
     // make sure that the image selection is exactly the same as on the player OSD thumb
-    if (curQueueItem.value?.media_item) {
+    if (store.curQueueItem?.media_item) {
       img.src =
-        getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB) ||
+        getImageThumbForItem(store.curQueueItem.media_item, ImageType.THUMB) ||
         imgCoverDark;
-    } else if (curQueueItem.value) {
+    } else if (store.curQueueItem) {
       img.src =
-        getImageThumbForItem(curQueueItem.value, ImageType.THUMB) ||
+        getImageThumbForItem(store.curQueueItem, ImageType.THUMB) ||
         imgCoverDark;
     } else {
       img.src = imgCoverDark;
