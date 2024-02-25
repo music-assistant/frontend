@@ -17,7 +17,6 @@
         <template #default>
           <h3 class="line-clamp-1">{{ $t('currently_playing') }}</h3>
         </template>
-
       </v-toolbar>
 
       <Container class="fullscreen-container">

@@ -8,9 +8,7 @@
             :style="widgetRow.path ? 'cursor: pointer' : ''"
             @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
           >
-            <template #prepend
-              ><v-icon :icon="widgetRow.icon" style="margin-left: 15px"
-            /></template>
+            <template #prepend><v-icon :icon="widgetRow.icon" /></template>
             <template #title>
               <v-badge
                 v-if="widgetRow.count"
@@ -33,7 +31,8 @@
                 :show-track-number="false"
                 :is-selected="false"
                 @click="itemClicked"
-            /></swiper-slide>
+              />
+            </swiper-slide>
           </carousel>
         </div>
         <div
@@ -45,9 +44,7 @@
             :style="widgetRow.path ? 'cursor: pointer' : ''"
             @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
           >
-            <template #prepend
-              ><v-icon :icon="widgetRow.icon" style="margin-left: 15px"
-            /></template>
+            <template #prepend><v-icon :icon="widgetRow.icon" /></template>
             <template #title>
               <v-badge
                 v-if="widgetRow.count"
