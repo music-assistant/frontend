@@ -48,7 +48,8 @@ export const store: Store = reactive({
     return undefined;
   }),
   curQueueItem: computed(() => {
-    if (store.activePlayerQueue) return store.activePlayerQueue.current_item;
+    if (store.activePlayerQueue && store.activePlayerQueue.active)
+      return store.activePlayerQueue.current_item;
     return undefined;
   }),
 });
