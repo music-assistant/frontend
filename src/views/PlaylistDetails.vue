@@ -29,8 +29,8 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import InfoHeader from '@/components/InfoHeader.vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import {
   EventType,
@@ -38,8 +38,8 @@ import {
   type EventMessage,
   type MediaItemType,
   Track,
-} from '../plugins/api/interfaces';
-import { api } from '../plugins/api';
+} from '@/plugins/api/interfaces';
+import { api } from '@/plugins/api';
 import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
 import { sleep } from '@/helpers/utils';
 

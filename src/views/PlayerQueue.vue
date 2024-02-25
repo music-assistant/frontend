@@ -273,10 +273,10 @@ import type {
   QueueItem,
   EventMessage,
   MediaItemType,
-} from '../plugins/api/interfaces';
-import { EventType, MediaType } from '../plugins/api/interfaces';
-import { api } from '../plugins/api';
-import { store } from '../plugins/store';
+} from '@/plugins/api/interfaces';
+import { EventType, MediaType } from '@/plugins/api/interfaces';
+import { api } from '@/plugins/api';
+import { store } from '@/plugins/store';
 import { truncateString } from '@/helpers/utils';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';

@@ -19,8 +19,10 @@
         "forceConsistentCasingInFileNames": true,
         "paths": {
             "@/*": ["src/*"],
-            "@/plugins": ["src/plugins"]
-
+            "@plugins/*": ["src/plugins/*"],
+            "@components/*": ["src/components/*"],
+            "@views/*": ["src/views/*"],
+            "@layout/*": ["src/layouts/*"],
         }
     },
     "include": [

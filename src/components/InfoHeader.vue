@@ -298,7 +298,7 @@ import type {
 } from '@/plugins/api/interfaces';
 import { computed, ref, watch } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import Button from './mods/Button.vue';
+import Button from '@/components/mods/Button.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
 import { parseBool } from '@/helpers/utils';

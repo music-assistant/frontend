@@ -64,12 +64,12 @@ import {
   type MediaItemType,
   BrowseFolder,
   MediaType,
-} from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import PanelviewItem from '../components/PanelviewItem.vue';
+} from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import PanelviewItem from '@/components/PanelviewItem.vue';
 import { useRouter } from 'vue-router';
-import { api } from '../plugins/api';
+import { api } from '@/plugins/api';
 import { eventbus } from '@/plugins/eventbus';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { itemIsAvailable } from '@/helpers/contextmenu';

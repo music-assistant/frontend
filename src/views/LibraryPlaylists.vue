@@ -19,15 +19,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import api from '../plugins/api';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import api from '@/plugins/api';
 import {
   ProviderFeature,
   type Playlist,
   EventMessage,
   EventType,
   MediaType,
-} from '../plugins/api/interfaces';
+} from '@/plugins/api/interfaces';
 import { ContextMenuItem } from '@/helpers/contextmenu';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
