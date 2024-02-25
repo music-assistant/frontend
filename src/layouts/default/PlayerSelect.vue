@@ -44,7 +44,7 @@
           expand-icon="mdi-chevron-down"
           collapse-icon="mdi-chevron-up"
           @click="
-            store.selectedPlayer = player;
+            store.selectedPlayerId = player.player_id;
             scrollToTop(player.player_id);
           "
         >
@@ -107,6 +107,7 @@ import VolumeControl from '@/components/VolumeControl.vue';
 import { ConnectionState, api } from '@/plugins/api';
 import { getPlayerName, truncateString } from '@/helpers/utils';
 import ListItem from '@/components/mods/ListItem.vue';
+import { VueElement } from 'vue';
 
 const panelItem = ref<number | undefined>(undefined);
 
@@ -156,10 +157,11 @@ watch(
 watch(
   () => api.state,
   (newVal) => {
-    if (newVal.value == ConnectionState.DISCONNECTED) {
-      store.selectedPlayer = undefined;
+    if (newVal.value != ConnectionState.CONNECTED) {
+      store.selectedPlayerId = undefined;
     }
   },
+  { deep: true },
 );
 
 const shadowRoot = ref<ShadowRoot>();
@@ -199,7 +201,7 @@ const checkDefaultPlayer = function () {
     return;
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
-    store.selectedPlayer = newDefaultPlayer;
+    store.selectedPlayerId = newDefaultPlayer.player_id;
     console.log('Selected new default player: ', newDefaultPlayer.display_name);
   }
 };

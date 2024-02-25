@@ -306,7 +306,7 @@ const itemClicked = function (mediaItem: MediaItemType) {
 const playerClicked = function (player: Player) {
   const newDefaultPlayer = player;
   if (newDefaultPlayer) {
-    store.selectedPlayer = newDefaultPlayer;
+    store.selectedPlayerId = newDefaultPlayer.player_id;
     updateCurrentlyPlayingQueueWidgetRow();
   }
 };

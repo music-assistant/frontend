@@ -176,7 +176,7 @@
             <v-btn
               color="primary"
               prepend-icon="mdi-play-circle"
-              :disabled="!store.selectedPlayer?.available"
+              :disabled="!store.selectedPlayer.value?.available"
               @click="
                 eventbus.emit('playdialog', {
                   items: [item],

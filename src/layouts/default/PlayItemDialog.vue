@@ -37,12 +37,12 @@
       <v-card-text v-if="playMenuItems.length > 0">
         <v-select
           :label="$t('play_on')"
-          :model-value="store.selectedPlayer?.player_id"
+          :model-value="store.selectedPlayerId"
           :items="availablePlayers"
           hide-details
           @update:model-value="
             (newVal) => {
-              store.selectedPlayer = api.players[newVal];
+              store.selectedPlayer = newVal;
             }
           "
         />
