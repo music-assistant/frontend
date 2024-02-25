@@ -139,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 //@ts-ignore
 
 import api from '@/plugins/api';
@@ -157,7 +157,10 @@ import {
   getColorPalette,
   getContrastingTextColor,
 } from '@/helpers/utils';
-import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
+import {
+  imgCoverDark,
+  imgCoverLight,
+} from '@/components/QualityDetailsBtn.vue';
 import { useTheme } from 'vuetify/lib/framework.mjs';
 
 // global refs
@@ -179,7 +182,7 @@ const coverImageColorPalette = ref<ColorCoverPalette>({
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD
 const img = new Image();
-img.src = imgCoverDark;
+img.src = vuetify.theme.current.value.dark ? imgCoverLight : imgCoverDark;
 img.crossOrigin = 'Anonymous';
 img.addEventListener('load', function () {
   coverImageColorPalette.value = getColorPalette(img);
@@ -198,13 +201,17 @@ watch(
     if (store.curQueueItem?.media_item) {
       img.src =
         getImageThumbForItem(store.curQueueItem.media_item, ImageType.THUMB) ||
-        imgCoverDark;
+        vuetify.theme.current.value.dark
+          ? imgCoverLight
+          : imgCoverDark;
     } else if (store.curQueueItem) {
       img.src =
         getImageThumbForItem(store.curQueueItem, ImageType.THUMB) ||
-        imgCoverDark;
+        vuetify.theme.current.value.dark
+          ? imgCoverLight
+          : imgCoverDark;
     } else {
-      img.src = imgCoverDark;
+      img.src = vuetify.theme.current.value.dark ? imgCoverLight : imgCoverDark;
     }
   },
 );
