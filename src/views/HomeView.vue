@@ -36,7 +36,7 @@
           </carousel>
         </div>
         <div
-          v-else-if="widgetRow.players && widgetRow.players.length"
+          v-else-if="widgetRow.queues && widgetRow.queues.length"
           class="widget-row"
         >
           <v-toolbar
@@ -59,18 +59,18 @@
               </template>
             </template>
           </v-toolbar>
-          <v-slide-group show-arrows>
-            <v-slide-group-item
-              v-for="player in widgetRow.players"
-              :key="player.player_id"
+          <carousel>
+            <swiper-slide
+              v-for="queue in widgetRow.queues"
+              :key="queue.queue_id"
+              style="min-width: 300px; max-width: 440px"
             >
               <PanelviewPlayerCard
-                :player="player"
-                style="height: auto; width: auto; max-width: 400px; margin: 5px"
-                @click="playerClicked(player)"
+                :queue="queue"
+                @click="playerQueueClicked(queue)"
               />
-            </v-slide-group-item>
-          </v-slide-group>
+            </swiper-slide>
+          </carousel>
         </div>
       </div>
     </Container>
@@ -87,10 +87,11 @@ import {
   EventType,
   type EventMessage,
   PlayerState,
+  PlayerQueue,
 } from '@/plugins/api/interfaces';
 import PanelviewItem from '@/components/PanelviewItem.vue';
 import Carousel from '@/components/Carousel.vue';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { store } from '@/plugins/store';
 import { eventbus } from '@/plugins/eventbus';
 import { itemIsAvailable } from '@/helpers/contextmenu';
@@ -105,7 +106,7 @@ interface WidgetRow {
   path?: string;
   items: MediaItemType[];
   count?: number;
-  players?: Player[];
+  queues?: PlayerQueue[];
 }
 
 const widgetRows = ref<Record<string, WidgetRow>>({
@@ -158,13 +159,13 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 });
 
 onMounted(async () => {
-  const unsub = api.subscribe(EventType.PLAYER_UPDATED, (evt: EventMessage) => {
+  const unsub = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
     // update the now playing widget row
-    updateCurrentlyPlayingQueueWidgetRow();
+    updateCurrentlyPlayingWidgetRow();
   });
   onBeforeUnmount(unsub);
 
-  updateCurrentlyPlayingQueueWidgetRow();
+  updateCurrentlyPlayingWidgetRow();
   // recently played widget row
   api.getRecentlyPlayedItems(20).then((items) => {
     widgetRows.value.recently_played.items = items;
@@ -243,39 +244,28 @@ const playerStateOrder = {
   [PlayerState.IDLE]: 2,
 } as const;
 
-const updateCurrentlyPlayingQueueWidgetRow = function () {
-  api.getPlayers().then((players) => {
-    for (var player of players) {
-      var player_queue = api.queues[player.player_id];
-      if (
-        player_queue &&
-        player_queue.items > 0 &&
-        player.powered &&
-        isOwnActiveSource(player)
-      ) {
-        if (!widgetRows.value.queue.players) {
-          widgetRows.value.queue.players = [];
-        }
-        if (
-          !widgetRows.value.queue.players.some(
-            (p) => p.player_id === player.player_id,
-          )
-        ) {
-          widgetRows.value.queue.players.push(player);
-          widgetRows.value.queue.players.sort((a, b) =>
-            a.display_name.localeCompare(b.display_name),
-          );
-          widgetRows.value.queue.players.sort(
-            (a, b) => playerStateOrder[a.state] - playerStateOrder[b.state],
-          );
-        }
+const updateCurrentlyPlayingWidgetRow = function () {
+  for (const playerQueue of Object.values(api.queues)) {
+    if (playerQueue.items > 0 && playerQueue.active) {
+      if (!widgetRows.value.queue.queues) {
+        widgetRows.value.queue.queues = [];
       }
+      if (
+        widgetRows.value.queue.queues.some(
+          (p) => p.queue_id === playerQueue.queue_id,
+        )
+      )
+        continue;
+      widgetRows.value.queue.queues.push(playerQueue);
+      console.log(playerQueue);
+      widgetRows.value.queue.queues.sort((a, b) =>
+        a.display_name.localeCompare(b.display_name),
+      );
+      widgetRows.value.queue.queues.sort(
+        (a, b) => playerStateOrder[a.state] - playerStateOrder[b.state],
+      );
     }
-  });
-};
-
-const isOwnActiveSource = function (player: Player) {
-  return player.active_source === player.player_id;
+  }
 };
 
 const itemClicked = function (mediaItem: MediaItemType) {
@@ -303,11 +293,10 @@ const itemClicked = function (mediaItem: MediaItemType) {
   }
 };
 
-const playerClicked = function (player: Player) {
-  const newDefaultPlayer = player;
-  if (newDefaultPlayer) {
-    store.selectedPlayerId = newDefaultPlayer.player_id;
-    updateCurrentlyPlayingQueueWidgetRow();
+const playerQueueClicked = function (queue: PlayerQueue) {
+  if (queue && queue.queue_id in api.players) {
+    store.selectedPlayerId = queue.queue_id;
+    updateCurrentlyPlayingWidgetRow();
   }
 };
 </script>
@@ -322,6 +311,8 @@ const playerClicked = function (player: Player) {
 
 .widget-row {
   margin-bottom: 20px;
+  margin-left: 0px;
+  padding-left: 0px;
 }
 
 .v-slide-group__prev {

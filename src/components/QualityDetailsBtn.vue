@@ -9,9 +9,9 @@
       <v-chip
         v-if="streamDetails"
         :disabled="
-          !activePlayerQueue ||
-          !activePlayerQueue?.active ||
-          activePlayerQueue?.items == 0
+          !store.activePlayerQueue ||
+          !store.activePlayerQueue?.active ||
+          store.activePlayerQueue?.items == 0
         "
         class="mediadetails-content-type-btn"
         label
@@ -88,14 +88,8 @@ import { store } from '@/plugins/store';
 import { ContentType } from '@/plugins/api/interfaces';
 
 // computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
 const streamDetails = computed(() => {
-  return activePlayerQueue.value?.current_item?.streamdetails;
+  return store.activePlayerQueue?.current_item?.streamdetails;
 });
 const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;

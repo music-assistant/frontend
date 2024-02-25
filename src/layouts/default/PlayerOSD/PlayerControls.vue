@@ -109,14 +109,6 @@ const props = withDefaults(defineProps<Props>(), {
     next: { isVisible: true },
   }),
 });
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
 </script>
 
 <style>

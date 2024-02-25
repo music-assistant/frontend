@@ -1,7 +1,7 @@
 <template>
   <div style="width: 100%">
     <div
-      v-if="activePlayerQueue && !isProgressBar"
+      v-if="store.activePlayerQueue && !isProgressBar"
       style="display: flex; flex: 1 1 auto; align-items: center"
     >
       <!-- current time detail -->
@@ -20,13 +20,13 @@
       <v-slider
         v-model="curTimeValue"
         :disabled="
-          !curQueueItem ||
-          curQueueItem.media_item?.media_type != MediaType.TRACK
+          !store.curQueueItem ||
+          store.curQueueItem.media_item?.media_type != MediaType.TRACK
         "
         :color="props.color"
         style="width: 100%"
         :min="0"
-        :max="curQueueItem && curQueueItem.duration"
+        :max="store.curQueueItem && store.curQueueItem.duration"
         hide-details
         :track-size="2"
         :thumb-size="isThumbHidden ? 0 : 10"
@@ -44,13 +44,15 @@
       </div>
     </div>
     <div
-      v-else-if="activePlayerQueue && isProgressBar"
+      v-else-if="store.activePlayerQueue && isProgressBar"
       style="width: 100%; padding-bottom: 0px"
     >
       <v-progress-linear
         v-model="curTimeValue"
         :disabled="
-          !activePlayerQueue || !curQueueItem || activePlayerQueue?.items == 0
+          !store.activePlayerQueue ||
+          !store.curQueueItem ||
+          store.activePlayerQueue?.items == 0
         "
         height="70"
         :color="lightenColor(props.color, 0.15)"
@@ -58,7 +60,7 @@
         :bg-opacity="1"
         style="position: absolute; border-radius: 10px"
         :min="0"
-        :max="curQueueItem && curQueueItem.duration"
+        :max="store.curQueueItem && store.curQueueItem.duration"
       />
     </div>
   </div>
@@ -90,29 +92,19 @@ const curTimeValue = ref(0);
 const tempTime = ref(0);
 
 // computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-const curQueueItem = computed(() => {
-  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
-  return undefined;
-});
 const playerCurTimeStr = computed(() => {
-  if (!curQueueItem.value) return '0:00';
+  if (!store.curQueueItem) return '0:00';
   if (showRemainingTime.value) {
     return `-${formatDuration(
-      curQueueItem.value.duration - curQueueItemTime.value,
+      store.curQueueItem.duration - curQueueItemTime.value,
     )}`;
   } else {
     return `${formatDuration(curQueueItemTime.value)}`;
   }
 });
 const playerTotalTimeStr = computed(() => {
-  if (!curQueueItem.value) return '0:00';
-  const totalSecs = curQueueItem.value.duration;
+  if (!store.curQueueItem) return '0:00';
+  const totalSecs = store.curQueueItem.duration;
   return formatDuration(totalSecs);
 });
 const curQueueItemTime = computed(() => {
@@ -121,7 +113,7 @@ const curQueueItemTime = computed(() => {
     tempTime.value = curTimeValue.value;
     return curTimeValue.value;
   }
-  if (activePlayerQueue.value) return activePlayerQueue.value.elapsed_time;
+  if (store.activePlayerQueue) return store.activePlayerQueue.elapsed_time;
   return 0;
 });
 
@@ -145,7 +137,7 @@ const stopDragging = () => {
 const updateTime = (newTime: number) => {
   if (!isDragging.value) {
     api.queueCommandSeek(
-      activePlayerQueue.value?.queue_id || '',
+      store.activePlayerQueue?.queue_id || '',
       Math.round(newTime),
     );
   }

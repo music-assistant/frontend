@@ -57,27 +57,30 @@
 
     <Container>
       <Alert
-        v-if="activePlayerQueue && activePlayerQueue?.radio_source.length > 0"
+        v-if="
+          store.activePlayerQueue &&
+          store.activePlayerQueue?.radio_source.length > 0
+        "
         icon="mdi-radio-tower"
       >
         <b>{{ $t('queue_radio_enabled') }}</b>
         <br />
         {{
           $t('queue_radio_based_on', [
-            $t(activePlayerQueue?.radio_source[0].media_type),
+            $t(store.activePlayerQueue?.radio_source[0].media_type),
           ])
         }}
         <b
           ><a
             @click="
-              activePlayerQueue
-                ? gotoItem(activePlayerQueue?.radio_source[0])
+              store.activePlayerQueue
+                ? gotoItem(store.activePlayerQueue?.radio_source[0])
                 : ''
             "
-            >{{ activePlayerQueue?.radio_source[0].name }}</a
+            >{{ store.activePlayerQueue?.radio_source[0].name }}</a
           ></b
-        ><span v-if="activePlayerQueue?.radio_source.length > 1">
-          (+{{ activePlayerQueue?.radio_source.length - 1 }})</span
+        ><span v-if="store.activePlayerQueue?.radio_source.length > 1">
+          (+{{ store.activePlayerQueue?.radio_source.length - 1 }})</span
         >
       </Alert>
 
@@ -97,7 +100,9 @@
             :show-checkboxes="false"
             :is-selected="false"
             :show-details="false"
-            :is-disabled="item.queue_item_id == curQueueItem?.queue_item_id"
+            :is-disabled="
+              item.queue_item_id == store.curQueueItem?.queue_item_id
+            "
             ripple
             @menu="onClick(item)"
             @click="queueCommand(item, 'play_now')"
@@ -113,7 +118,7 @@
                 :title="$t('queue_move_up')"
                 @click="
                   api.queueCommandMoveUp(
-                    activePlayerQueue!.queue_id,
+                    store.activePlayerQueue!.queue_id,
                     item.queue_item_id,
                   )
                 "
@@ -127,7 +132,7 @@
                 :title="$t('queue_move_down')"
                 @click.prevent="
                   api.queueCommandMoveDown(
-                    activePlayerQueue!.queue_id,
+                    store.activePlayerQueue!.queue_id,
                     item.queue_item_id,
                   )
                 "
@@ -165,7 +170,7 @@
           </v-toolbar-title>
           <v-toolbar-title v-else style="padding-left: 10px">
             <b>{{ $t('settings') }}</b> |
-            {{ activePlayerQueue?.display_name }}
+            {{ store.activePlayerQueue?.display_name }}
           </v-toolbar-title>
           <v-btn icon="mdi-close" dark @click="closeContextMenu()" />
         </v-toolbar>
@@ -296,25 +301,14 @@ const topBarContextMenuItems = ref<ContextMenuItem[]>([]);
 const items = ref<QueueItem[]>([]);
 
 // computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-
-const curQueueItem = computed(() => {
-  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
-  return undefined;
-});
 const nextItems = computed(() => {
-  if (activePlayerQueue.value) {
-    return items.value.slice(activePlayerQueue.value.current_index);
+  if (store.activePlayerQueue) {
+    return items.value.slice(store.activePlayerQueue.current_index);
   } else return [];
 });
 const previousItems = computed(() => {
-  if (activePlayerQueue.value) {
-    return items.value.slice(0, activePlayerQueue.value.current_index);
+  if (store.activePlayerQueue) {
+    return items.value.slice(0, store.activePlayerQueue.current_index);
   } else return [];
 });
 const tabItems = computed(() => {
@@ -328,7 +322,7 @@ onMounted(() => {
   const unsub = api.subscribe_multi(
     [EventType.QUEUE_UPDATED, EventType.QUEUE_ITEMS_UPDATED],
     (evt: EventMessage) => {
-      if (evt.object_id != activePlayerQueue.value?.queue_id) return;
+      if (evt.object_id != store.activePlayerQueue?.queue_id) return;
 
       if (evt.event == EventType.QUEUE_ITEMS_UPDATED) {
         loadItems();
@@ -342,10 +336,10 @@ onMounted(() => {
 
 // methods
 const loadItems = async function () {
-  if (activePlayerQueue.value) {
+  if (store.activePlayerQueue) {
     items.value = [];
     await api.getPlayerQueueItems(
-      activePlayerQueue.value.queue_id,
+      store.activePlayerQueue.queue_id,
       (data: QueueItem[]) => {
         items.value.push(...data);
       },
@@ -371,30 +365,30 @@ const gotoItem = function (item: MediaItemType) {
 
 const queueCommand = function (item: QueueItem | undefined, command: string) {
   closeContextMenu();
-  if (!item || !activePlayerQueue.value) return;
+  if (!item || !store.activePlayerQueue) return;
   if (command == 'play_now') {
     api.queueCommandPlayIndex(
-      activePlayerQueue?.value.queue_id,
+      store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
   } else if (command == 'move_next') {
     api.queueCommandMoveNext(
-      activePlayerQueue?.value.queue_id,
+      store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
   } else if (command == 'up') {
     api.queueCommandMoveUp(
-      activePlayerQueue?.value.queue_id,
+      store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
   } else if (command == 'down') {
     api.queueCommandMoveDown(
-      activePlayerQueue?.value.queue_id,
+      store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
   } else if (command == 'delete') {
     api.queueCommandDelete(
-      activePlayerQueue?.value.queue_id,
+      store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
   }
@@ -408,7 +402,7 @@ const setMenuItems = function () {
       labelArgs: [],
       action: () => {
         router.push(
-          `/settings/editplayer/${activePlayerQueue.value!.queue_id}`,
+          `/settings/editplayer/${store.activePlayerQueue!.queue_id}`,
         );
       },
       icon: 'mdi-cog-outline',
@@ -417,29 +411,29 @@ const setMenuItems = function () {
       label: 'queue_clear',
       labelArgs: [],
       action: () => {
-        api.queueCommandClear(activePlayerQueue.value!.queue_id);
+        api.queueCommandClear(store.activePlayerQueue!.queue_id);
       },
       icon: 'mdi-cancel',
     },
     {
-      label: activePlayerQueue.value!.shuffle_enabled
+      label: store.activePlayerQueue!.shuffle_enabled
         ? 'shuffle_enabled'
         : 'shuffle_disabled',
       labelArgs: [],
       action: () => {
-        api.queueCommandShuffleToggle(activePlayerQueue.value!.queue_id);
+        api.queueCommandShuffleToggle(store.activePlayerQueue!.queue_id);
       },
-      icon: activePlayerQueue.value!.shuffle_enabled
+      icon: store.activePlayerQueue!.shuffle_enabled
         ? 'mdi-shuffle'
         : 'mdi-shuffle-disabled',
     },
     {
       label: 'repeat_mode',
-      labelArgs: [t(`repeatmode.${activePlayerQueue.value!.repeat_mode}`)],
+      labelArgs: [t(`repeatmode.${store.activePlayerQueue!.repeat_mode}`)],
       action: () => {
-        api.queueCommandRepeatToggle(activePlayerQueue.value!.queue_id);
+        api.queueCommandRepeatToggle(store.activePlayerQueue!.queue_id);
       },
-      icon: activePlayerQueue.value!.shuffle_enabled
+      icon: store.activePlayerQueue!.shuffle_enabled
         ? 'mdi-repeat'
         : 'mdi-repeat-off',
     },
@@ -453,7 +447,7 @@ const closeContextMenu = function () {
 
 // watchers
 watch(
-  () => activePlayerQueue.value,
+  () => store.activePlayerQueue,
   (val) => {
     if (val) {
       loadItems();

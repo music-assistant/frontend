@@ -4,13 +4,13 @@
     v-if="props.isVisible"
     v-bind="props.icon"
     :disabled="
-      !activePlayerQueue ||
-      !activePlayerQueue?.active ||
-      activePlayerQueue?.items == 0
+      !store.activePlayerQueue ||
+      !store.activePlayerQueue?.active ||
+      store.activePlayerQueue?.items == 0
     "
     icon="mdi-skip-previous-outline"
     :type="'btn'"
-    @click="api.queueCommandPrevious(activePlayerQueue!.queue_id)"
+    @click="api.queueCommandPrevious(store.activePlayerQueue!.queue_id)"
   />
 </template>
 
@@ -31,13 +31,5 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
-});
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
 });
 </script>

@@ -20,12 +20,12 @@
         <div class="fullscreen-row-centered">
           <MediaItemThumb
             v-if="
-              curQueueItem &&
+              store.curQueueItem &&
               getBreakpointValue({ breakpoint: 'mobile' }) &&
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
               false
             "
-            :item="curQueueItem?.media_item || curQueueItem"
+            :item="store.curQueueItem?.media_item || store.curQueueItem"
             :width="
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                 ? 512
@@ -42,8 +42,8 @@
             "
           />
           <MediaItemThumb
-            v-else-if="curQueueItem"
-            :item="curQueueItem.media_item || curQueueItem"
+            v-else-if="store.curQueueItem"
+            :item="store.curQueueItem.media_item || store.curQueueItem"
             :width="
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                 ? 512
@@ -70,7 +70,7 @@
         </div>
         <div class="fullscreen-row">
           <div
-            v-if="curQueueItem && curQueueItem.media_item"
+            v-if="store.curQueueItem && store.curQueueItem.media_item"
             class="fullscreen-track-info"
           >
             <!-- title -->
@@ -78,17 +78,17 @@
               style="cursor: pointer; width: fit-content; display: inline"
               class="title line-clamp-1"
               @click="
-                curQueueItem?.media_item
-                  ? trackClick(curQueueItem.media_item as Track)
+                store.curQueueItem?.media_item
+                  ? trackClick(store.curQueueItem.media_item as Track)
                   : ''
               "
             >
               <!-- name + version (if present) -->
               {{
-                `${curQueueItem.media_item.name} ${
-                  'version' in curQueueItem.media_item &&
-                  curQueueItem.media_item.version
-                    ? '(' + curQueueItem.media_item.version + ')'
+                `${store.curQueueItem.media_item.name} ${
+                  'version' in store.curQueueItem.media_item &&
+                  store.curQueueItem.media_item.version
+                    ? '(' + store.curQueueItem.media_item.version + ')'
                     : ''
                 }`
               }}
@@ -98,48 +98,54 @@
             <!-- track: artists(s) -->
             <div
               v-if="
-                curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                'album' in curQueueItem.media_item &&
-                curQueueItem.media_item.album
+                store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
+                'album' in store.curQueueItem.media_item &&
+                store.curQueueItem.media_item.album
               "
               style="cursor: pointer"
               class="line-clamp-1"
               @click="
-                curQueueItem?.media_item
-                  ? artistClick((curQueueItem.media_item as Track).artists[0])
+                store.curQueueItem?.media_item
+                  ? artistClick(
+                      (store.curQueueItem.media_item as Track).artists[0],
+                    )
                   : ''
               "
             >
               <!-- track/album fallback: artist present -->
               <h4
                 v-if="
-                  curQueueItem.media_item &&
-                  curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                  (curQueueItem.media_item as Track).artists.length > 0
+                  store.curQueueItem.media_item &&
+                  store.curQueueItem.media_item?.media_type ==
+                    MediaType.TRACK &&
+                  (store.curQueueItem.media_item as Track).artists.length > 0
                 "
                 class="fullscreen-track-info-subtitle"
               >
-                {{ (curQueueItem.media_item as Track).artists[0].name }}
+                {{ (store.curQueueItem.media_item as Track).artists[0].name }}
               </h4>
               <!-- radio live metadata -->
               <h4
-                v-else-if="curQueueItem?.streamdetails?.stream_title"
+                v-else-if="store.curQueueItem?.streamdetails?.stream_title"
                 class="fullscreen-track-info-subtitle"
               >
-                {{ curQueueItem?.streamdetails?.stream_title }}
+                {{ store.curQueueItem?.streamdetails?.stream_title }}
               </h4>
               <!-- other description -->
               <h4
                 v-else-if="
-                  curQueueItem && curQueueItem.media_item?.metadata.description
+                  store.curQueueItem &&
+                  store.curQueueItem.media_item?.metadata.description
                 "
                 class="fullscreen-track-info-subtitle"
               >
-                {{ curQueueItem.media_item.metadata.description }}
+                {{ store.curQueueItem.media_item.metadata.description }}
               </h4>
               <!-- queue empty message -->
               <h4
-                v-else-if="activePlayerQueue && activePlayerQueue.items == 0"
+                v-else-if="
+                  store.activePlayerQueue && store.activePlayerQueue.items == 0
+                "
                 class="fullscreen-track-info-subtitle"
               >
                 {{ $t('queue_empty') }}
@@ -311,7 +317,10 @@
             </div>
           </div>
         </div>
-        <div class="fullscreen-media-controls-bottom" if="activePlayerQueue">
+        <div
+          class="fullscreen-media-controls-bottom"
+          if="store.activePlayerQueue"
+        >
           <div
             v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
           >
@@ -329,7 +338,7 @@
               </v-badge>
               <v-icon v-else :size="30">mdi-speaker</v-icon>
               <div class="line-clamp-1">
-                {{ activePlayerQueue?.display_name }}
+                {{ store.activePlayerQueue?.display_name }}
               </div>
             </Button>
           </div>
@@ -393,22 +402,10 @@ const coverImageColorCode = ref<string>('');
 const fullTrackDetails = ref<Track>();
 
 // Computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-
 const curGroupPlayers = computed(() => {
   if (store.selectedPlayer) {
     return store.selectedPlayer.group_childs;
   }
-  return undefined;
-});
-
-const curQueueItem = computed(() => {
-  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
   return undefined;
 });
 
@@ -439,7 +436,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 
 // watchers
 watch(
-  () => curQueueItem.value,
+  () => store.curQueueItem,
   async (result) => {
     if (
       result &&
