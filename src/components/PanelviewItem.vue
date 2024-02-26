@@ -62,48 +62,45 @@
         {{ $t(item.media_type) }}
       </v-list-item-subtitle>
 
-      <!-- <div v-if="'favorite' in item">
-      </div> -->
-
-      <template v-if="getBreakpointValue('bp3') && showFavorite" #append>
-        <FavouriteButton :item="item" />
-      </template>
-
       <v-item-group
-        v-if="item && item.media_type === 'track' && 'metadata' in item"
-        style="min-height: 22px; padding-top: 5px"
+        v-if="
+          (item.media_type === 'track' && 'metadata' in item) || showFavorite
+        "
+        style="min-height: 33px; margin-top: 10px; margin-left: -15px"
       >
-        <v-item>
-          <v-icon
-            v-if="parseBool(item.metadata.explicit || false)"
-            icon="mdi-alpha-e-box"
-          />
+        <!-- explicit icon -->
+        <v-item v-if="parseBool(item.metadata.explicit || false)">
+          <v-icon size="30" icon="mdi-alpha-e-box" />
         </v-item>
-        <v-item>
-          <!-- hi res icon -->
-          <v-img
-            v-if="HiResDetails"
-            :src="iconHiRes"
-            width="30"
-            :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+        <!-- hi res icon -->
+        <v-item v-if="HiResDetails">
+          <v-icon
+            :class="
+              $vuetify.theme.current.dark ? 'hiresicon' : 'hiresiconinverted'
+            "
           >
+            <img :src="iconHiRes" width="30" />
             <v-tooltip activator="parent" location="bottom">
               {{ HiResDetails }}
             </v-tooltip>
-          </v-img>
+          </v-icon>
         </v-item>
-
+        <!-- disc number -->
         <v-item
           v-if="'disc_number' in item && item.disc_number && showTrackNumber"
         >
-          <v-icon style="margin-left: 5px" icon="md:album" />
+          <v-icon icon="md:album" style="margin-left: 5px" />
           {{ item.disc_number }}
         </v-item>
+        <!-- track number-->
         <v-item
           v-if="'track_number' in item && item.track_number && showTrackNumber"
         >
-          <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
+          <v-icon icon="mdi-music-circle-outline" style="margin-left: 10px" />
           {{ item.track_number }}
+        </v-item>
+        <v-item v-if="getBreakpointValue('bp3') && showFavorite">
+          <FavouriteButton :item="item" />
         </v-item>
       </v-item-group>
     </ListItem>
@@ -208,12 +205,13 @@ const emit = defineEmits<{
 }
 
 .hiresicon {
-  margin-top: 5px;
-  margin-left: -10px;
-  filter: invert(100%);
+  margin-left: 10px;
+  margin-right: 10px;
 }
-.hiresicondark {
-  margin-top: 5px;
-  margin-left: -10px;
+
+.hiresiconinverted {
+  margin-left: 10px;
+  margin-right: 10px;
+  filter: invert(100%);
 }
 </style>
