@@ -179,9 +179,9 @@ const props = defineProps<Props>();
 <style scoped>
 .panel-item {
   height: 75px;
-  margin-right: 15px;
+  margin-right: 25px;
   border: none;
-  width: 100%;
+  width: 98%;
   border-style: none !important;
 }
 

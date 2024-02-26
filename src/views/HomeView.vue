@@ -1,6 +1,28 @@
 <template>
   <div>
     <Container variant="panel">
+      <!-- now playing widget row -->
+      <div v-if="nowPlayingWidgetRow.length" class="widget-row">
+        <v-toolbar color="transparent" style="width: fit-content">
+          <template #prepend><v-icon icon="mdi-playlist-play" /></template>
+          <template #title>
+            <span class="mr-3">{{ $t('currently_playing') }}</span>
+          </template>
+        </v-toolbar>
+        <carousel>
+          <swiper-slide
+            v-for="queue in nowPlayingWidgetRow"
+            :key="queue.queue_id"
+            style="min-width: 300px; max-width: 500px"
+          >
+            <PanelviewPlayerCard
+              :queue="queue"
+              @click="playerQueueClicked(queue)"
+            />
+          </swiper-slide>
+        </carousel>
+      </div>
+      <!-- all other widget rows -->
       <div v-for="widgetRow in widgetRows" :key="widgetRow.label">
         <div v-if="widgetRow.items.length" class="widget-row">
           <v-toolbar
@@ -39,47 +61,6 @@
             </swiper-slide>
           </carousel>
         </div>
-        <div
-          v-else-if="widgetRow.queues && widgetRow.queues.length"
-          class="widget-row"
-        >
-          <v-toolbar
-            color="transparent"
-            :style="
-              widgetRow.path
-                ? 'cursor: pointer; width: fit-content;'
-                : 'width: fit-content;'
-            "
-            @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
-          >
-            <template #prepend><v-icon :icon="widgetRow.icon" /></template>
-            <template #title>
-              <v-badge
-                v-if="widgetRow.count"
-                inline
-                color="grey"
-                :content="widgetRow.count"
-              >
-                <span class="mr-3">{{ $t(widgetRow.label) }}</span>
-              </v-badge>
-              <template v-else>
-                <span class="mr-3">{{ $t(widgetRow.label) }}</span>
-              </template>
-            </template>
-          </v-toolbar>
-          <carousel>
-            <swiper-slide
-              v-for="queue in widgetRow.queues"
-              :key="queue.queue_id"
-              style="min-width: 300px; max-width: 440px"
-            >
-              <PanelviewPlayerCard
-                :queue="queue"
-                @click="playerQueueClicked(queue)"
-              />
-            </swiper-slide>
-          </carousel>
-        </div>
       </div>
     </Container>
   </div>
@@ -91,21 +72,17 @@ import {
   BrowseFolder,
   MediaItemType,
   MediaType,
-  Player,
-  EventType,
-  type EventMessage,
   PlayerState,
   PlayerQueue,
 } from '@/plugins/api/interfaces';
 import PanelviewItem from '@/components/PanelviewItem.vue';
 import Carousel from '@/components/Carousel.vue';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { store } from '@/plugins/store';
 import { eventbus } from '@/plugins/eventbus';
 import { itemIsAvailable } from '@/helpers/contextmenu';
 import router from '@/plugins/router';
 import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
-import { onBeforeUnmount } from 'vue';
 import Container from '@/components/mods/Container.vue';
 
 interface WidgetRow {
@@ -118,11 +95,6 @@ interface WidgetRow {
 }
 
 const widgetRows = ref<Record<string, WidgetRow>>({
-  queue: {
-    label: 'currently_playing',
-    icon: 'mdi-playlist-play',
-    items: [],
-  },
   recently_played: {
     label: 'recently_played',
     icon: 'mdi-motion-play',
@@ -167,13 +139,6 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 });
 
 onMounted(async () => {
-  const unsub = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
-    // update the now playing widget row
-    updateCurrentlyPlayingWidgetRow();
-  });
-  onBeforeUnmount(unsub);
-
-  updateCurrentlyPlayingWidgetRow();
   // recently played widget row
   api.getRecentlyPlayedItems(20).then((items) => {
     widgetRows.value.recently_played.items = items;
@@ -252,29 +217,18 @@ const playerStateOrder = {
   [PlayerState.IDLE]: 2,
 } as const;
 
-const updateCurrentlyPlayingWidgetRow = function () {
-  for (const playerQueue of Object.values(api.queues)) {
-    if (playerQueue.items > 0 && playerQueue.active) {
-      if (!widgetRows.value.queue.queues) {
-        widgetRows.value.queue.queues = [];
-      }
-      if (
-        widgetRows.value.queue.queues.some(
-          (p) => p.queue_id === playerQueue.queue_id,
-        )
-      )
-        continue;
-      widgetRows.value.queue.queues.push(playerQueue);
-      console.log(playerQueue);
-      widgetRows.value.queue.queues.sort((a, b) =>
-        a.display_name.localeCompare(b.display_name),
-      );
-      widgetRows.value.queue.queues.sort(
-        (a, b) => playerStateOrder[a.state] - playerStateOrder[b.state],
-      );
-    }
-  }
-};
+const nowPlayingWidgetRow = computed(() => {
+  return Object.values(api.queues)
+    .filter(
+      (x) =>
+        x.active &&
+        x.items > 0 &&
+        x.queue_id in api.players &&
+        api.players[x.queue_id].powered,
+    )
+    .sort((a, b) => a.display_name.localeCompare(b.display_name))
+    .sort((a, b) => playerStateOrder[a.state] - playerStateOrder[b.state]);
+});
 
 const itemClicked = function (mediaItem: MediaItemType) {
   if (
@@ -304,7 +258,6 @@ const itemClicked = function (mediaItem: MediaItemType) {
 const playerQueueClicked = function (queue: PlayerQueue) {
   if (queue && queue.queue_id in api.players) {
     store.selectedPlayerId = queue.queue_id;
-    updateCurrentlyPlayingWidgetRow();
   }
 };
 </script>
