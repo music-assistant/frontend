@@ -14,12 +14,12 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import "./commands";
+import './commands';
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
 beforeEach(() => {
-  const serverAddress = "http://localhost:8095";
+  const serverAddress = 'http://localhost:8095';
   cy.log(`Setting MA server to ${serverAddress}`);
-  window.localStorage.setItem("mass_debug_address", serverAddress);
+  window.localStorage.setItem('mass_debug_address', serverAddress);
 });

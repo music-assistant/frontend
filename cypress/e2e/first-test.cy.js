@@ -1,9 +1,9 @@
 describe('My first test', () => {
   beforeEach(() => {
-    cy.visit("/");
+    cy.visit('/');
   });
 
-  it("Opens the app", () => {
-    cy.get("#app").should("have.length", 1);
+  it('Opens the app', () => {
+    cy.get('#app').should('have.length', 1);
   });
 });
