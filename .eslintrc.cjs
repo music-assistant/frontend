@@ -15,10 +15,11 @@ module.exports = {
     'plugin:prettier/recommended',
     'plugin:vue/vue3-recommended',
     '@vue/eslint-config-typescript',
+    'plugin:cypress/recommended',
     'prettier',
     'plugin:prettier/recommended',
   ],
-  plugins: ['prettier', '@typescript-eslint'],
+  plugins: ['prettier', '@typescript-eslint', 'cypress'],
   rules: {
     quotes: ['error', 'single'],
     'prettier/prettier': [
