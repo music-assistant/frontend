@@ -1,5 +1,5 @@
 // ***********************************************************
-// This example support/e2e.ts is processed and
+// This example support/e2e.js is processed and
 // loaded automatically before your test files.
 //
 // This is a great place to put global configuration and
@@ -14,7 +14,12 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import './commands'
+import "./commands";
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
+beforeEach(() => {
+  const serverAddress = "http://localhost:8095";
+  cy.log(`Setting MA server to ${serverAddress}`);
+  window.localStorage.setItem("mass_debug_address", serverAddress);
+});
