@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --fix --ignore-path .gitignore"
+    "lint": "eslint . --fix --ignore-path .gitignore",
+    "test": "cypress open",
+    "test:ci": "cypress ci"
   },
   "dependencies": {
     "@intlify/unplugin-vue-i18n": "2.0.0",
@@ -38,6 +40,7 @@
     "@vitejs/plugin-vue": "4.6.2",
     "@vue/eslint-config-typescript": "12.0.0",
     "@vue/tsconfig": "0.5.1",
+    "cypress": "13.6.6",
     "eslint": "8.57.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.1.3",
