@@ -23,7 +23,7 @@
     "v3-infinite-loading": "1.2.2",
     "vue": "3.4.20",
     "vue-audio-better": "3.0.1",
-    "vue-i18n": "9.9.1",
+    "vue-i18n": "9.10.1",
     "vue-router": "4.3.0",
     "vuetify": "3.5.6",
     "websocket-ts": "2.1.5"
