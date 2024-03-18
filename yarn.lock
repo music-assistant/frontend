@@ -1186,14 +1186,14 @@
   resolved "https://registry.yarnpkg.com/@intlify/shared/-/shared-9.7.1.tgz#a4902421aacda2d716981eb9528aef0163c7bb0a"
   integrity sha512-CBKnHzlUYGrk5QII9q4nElAQKO5cX1rRx8VmSWXltyOZjbkGHXYQTHULn6KwRi+CypuBCfmPkyPBHMzosypIeg==
 
-"@intlify/unplugin-vue-i18n@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-2.0.0.tgz#5b087e17b4eb4381d0a111cd89df4037880e932f"
-  integrity sha512-1oKvm92L9l2od2H9wKx2ZvR4tzn7gUtd7bPLI7AWUmm7U9H1iEypndt5d985ypxGsEs0gToDaKTrytbBIJwwSg==
+"@intlify/unplugin-vue-i18n@3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-3.0.1.tgz#8bed58d5cbaadda056c2ff88acf99300db516639"
+  integrity sha512-q1zJhA/WpoLBzAAuKA5/AEp0e+bMOM10ll/HxT4g1VAw/9JhC4TTobP9KobKH90JMZ4U2daLFlYQfKNd29lpqw==
   dependencies:
     "@intlify/bundle-utils" "^7.4.0"
     "@intlify/shared" "^9.4.0"
-    "@rollup/pluginutils" "^5.0.2"
+    "@rollup/pluginutils" "^5.1.0"
     "@vue/compiler-sfc" "^3.2.47"
     debug "^4.3.3"
     fast-glob "^3.2.12"
@@ -1332,10 +1332,10 @@
     estree-walker "^1.0.1"
     picomatch "^2.2.2"
 
-"@rollup/pluginutils@^5.0.2":
-  version "5.0.2"
-  resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-5.0.2.tgz#012b8f53c71e4f6f9cb317e311df1404f56e7a33"
-  integrity sha512-pTd9rIsP92h+B6wWwFbW8RkZv4hiR/xKsqre4SIuAOaOEQRxi0lqLke9k2/7WegC85GgUs9pjmOjCUi3In4vwA==
+"@rollup/pluginutils@^5.1.0":
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-5.1.0.tgz#7e53eddc8c7f483a4ad0b94afb1f7f5fd3c771e0"
+  integrity sha512-XTIWOPPcpvyKI6L1NHo0lFlCyznUEyPmPY1mc3KpPVDYulHSTvyeLNVW00QTLIAFNhR3kYnJTQHeGqU4M3n09g==
   dependencies:
     "@types/estree" "^1.0.0"
     estree-walker "^2.0.2"

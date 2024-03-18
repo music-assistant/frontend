@@ -10,7 +10,7 @@
     "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@intlify/unplugin-vue-i18n": "2.0.0",
+    "@intlify/unplugin-vue-i18n": "3.0.1",
     "@mdi/font": "7.4.47",
     "@mdi/js": "7.4.47",
     "color": "4.2.3",
@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@fontsource/roboto": "5.0.12",
-    "@intlify/unplugin-vue-i18n": "2.0.0",
+    "@intlify/unplugin-vue-i18n": "3.0.1",
     "@types/color": "3.0.6",
     "@types/node": "20.11.28",
     "@typescript-eslint/eslint-plugin": "7.0.0",
