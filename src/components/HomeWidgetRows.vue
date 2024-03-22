@@ -8,7 +8,7 @@
 import api from '@/plugins/api';
 import { MediaItemType } from '@/plugins/api/interfaces';
 import HomeWidgetRow, { WidgetRow } from '@/components/HomeWidgetRow.vue';
-import { computed, onMounted, ref } from 'vue';
+import { ref } from 'vue';
 
 const widgetRows = ref<Record<string, WidgetRow>>({
   recently_played: {
