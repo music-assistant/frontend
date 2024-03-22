@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed } from "vue";
 import type {
   ItemMapping,
   MediaItemImage,
@@ -86,10 +86,10 @@ function getFallbackImage() {
 }
 const fallbackImage = getFallbackImage();
 
-const imgData = ref(
+const imgData = computed(() =>
   props.item
     ? getImageThumbForItem(props.item, ImageType.THUMB, thumbSize) ||
-        fallbackImage
+      fallbackImage
     : fallbackImage,
 );
 </script>
