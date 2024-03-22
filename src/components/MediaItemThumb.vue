@@ -1,3 +1,5 @@
+<!-- TODO: Restore fallback image based on media type -->
+<!-- TODO: Restore fallback image based on media type -->
 <template>
   <img
     loading="lazy"
@@ -7,21 +9,10 @@
     :class="{ rounded: rounded }"
     :style="lazyStyle"
   />
-  <!-- <v-img
-    :key="item && 'uri' in item! ? item?.uri : item?.queue_item_id"
-    :cover="cover"
-    :src="imgData"
-    :aspect-ratio="aspectRatio"
-    @error="
-      () => {
-        imgData = fallbackImage;
-      }
-    "
-  /> -->
 </template>
 
 <script setup lang="ts">
-import { watch, ref, computed } from "vue";
+import { ref } from "vue";
 import type {
   ItemMapping,
   MediaItemImage,
@@ -105,18 +96,6 @@ const imgData = ref(
         fallbackImage
     : fallbackImage,
 );
-
-// watch(
-//   () => props.item,
-//   async (newVal) => {
-//     if (newVal) {
-//       imgData.value =
-//         getImageThumbForItem(newVal, ImageType.THUMB, thumbSize.value) ||
-//         fallbackImage.value;
-//     } else imgData.value = fallbackImage.value;
-//   },
-//   { immediate: true },
-// );
 </script>
 
 <script lang="ts">
@@ -231,6 +210,7 @@ export const getImageThumbForItem = function (
   width: 100% !important;
 }
 img {
+  width: 100%;
   max-width: 100%;
   height: auto;
   display: block;
