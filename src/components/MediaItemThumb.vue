@@ -82,11 +82,7 @@ function getFallbackImage() {
     return iconFolder;
   if (!props.item) return "";
   if (!props.item.name) return "";
-  return getAvatarImage(
-    props.item.name,
-    theme.current.value.dark,
-    thumbSize.value,
-  );
+  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize);
 }
 const fallbackImage = getFallbackImage();
 
