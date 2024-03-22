@@ -1,70 +1,21 @@
 <template>
   <div>
     <Container variant="panel">
-      <!-- now playing widget row -->
-      <div v-if="nowPlayingWidgetRow.length" class="widget-row">
-        <v-toolbar color="transparent" style="width: fit-content">
-          <template #prepend><v-icon icon="mdi-playlist-play" /></template>
-          <template #title>
-            <span class="mr-3">{{ $t('currently_playing') }}</span>
-          </template>
-        </v-toolbar>
-        <carousel>
-          <swiper-slide
-            v-for="queue in nowPlayingWidgetRow"
-            :key="queue.queue_id"
-            style="min-width: 300px; max-width: 500px"
-          >
-            <PanelviewPlayerCard
-              :queue="queue"
-              @click="playerQueueClicked(queue)"
-            />
-          </swiper-slide>
-        </carousel>
-      </div>
-      <!-- all other widget rows -->
       <Suspense>
-        <HomeWidgetRows />
-        <template #fallback>Loading...</template>
+        <div>
+          <HomeCurrentlyPlayingRow />
+          <HomeWidgetRows />
+        </div>
+        <template #fallback><v-progress-circular indeterminate /> </template>
       </Suspense>
     </Container>
   </div>
 </template>
 
 <script setup lang="ts">
-import api from '@/plugins/api';
-import { PlayerState, PlayerQueue } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import Carousel from '@/components/Carousel.vue';
-import Container from '@/components/mods/Container.vue';
-import HomeWidgetRows from '@/components/HomeWidgetRows.vue';
-import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
-import { computed } from 'vue';
-
-const playerStateOrder = {
-  [PlayerState.PLAYING]: 1,
-  [PlayerState.PAUSED]: 2,
-  [PlayerState.IDLE]: 2,
-} as const;
-
-const nowPlayingWidgetRow = computed(() => {
-  return Object.values(api.queues)
-    .filter(
-      (x) =>
-        x.active &&
-        x.items > 0 &&
-        x.queue_id in api.players &&
-        api.players[x.queue_id].powered,
-    )
-    .sort((a, b) => a.display_name.localeCompare(b.display_name))
-    .sort((a, b) => playerStateOrder[a.state] - playerStateOrder[b.state]);
-});
-
-const playerQueueClicked = function (queue: PlayerQueue) {
-  if (queue && queue.queue_id in api.players) {
-    store.selectedPlayerId = queue.queue_id;
-  }
-};
+import Container from "@/components/mods/Container.vue";
+import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
+import HomeCurrentlyPlayingRow from "@/components/HomeCurrentlyPlayingRow.vue";
 </script>
 
 <style>
@@ -96,5 +47,12 @@ const playerQueueClicked = function (queue: PlayerQueue) {
 
 .v-slide-group__next.v-slide-group__next--disabled {
   visibility: hidden;
+}
+</style>
+
+<style scoped>
+.v-progress-circular {
+  display: block;
+  margin-inline: auto;
 }
 </style>
