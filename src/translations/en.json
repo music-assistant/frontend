@@ -41,6 +41,8 @@
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
     "new_playlist_name": "Enter a new for the new playlist",
+    "enter_name": "Enter a new (custom) name",
+    "image_url": "Input the URL to an image or icon (optional)",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",
