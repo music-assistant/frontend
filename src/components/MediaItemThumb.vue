@@ -3,8 +3,8 @@
 <template>
   <img
     loading="lazy"
-    width="200px"
-    height="200px"
+    :height="$props.size || $props.height || '600px'"
+    :width="$props.size || $props.width || '600px'"
     :src="imgData"
     :class="{ rounded: rounded }"
     :style="lazyStyle"
@@ -206,7 +206,7 @@ export const getImageThumbForItem = function (
   width: 100% !important;
 }
 img {
-  width: 100%;
+  min-width: 100%;
   max-width: 100%;
   height: auto;
   display: block;
