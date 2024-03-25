@@ -96,6 +96,10 @@ const loadItems = async function (params: LoadDataParams) {
 const addUrl = async function () {
   const url = prompt(t('enter_url'));
   if (!url) return;
+  if (!url?.startsWith('http')) {
+    alert(t('invalid_input'));
+    return;
+  }
   api
     .getItem(MediaType.RADIO, url, 'url')
     .then((item) => {
