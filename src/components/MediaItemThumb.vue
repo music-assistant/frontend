@@ -2,7 +2,8 @@
 <!-- TODO: Restore fallback image based on media type -->
 <template>
   <img
-    loading="lazy"
+    ref="imageTag"
+    :loading="$props.lazy"
     :height="$props.size || $props.height || '600px'"
     :width="$props.size || $props.width || '600px'"
     :src="imgData"
@@ -12,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import type {
   ItemMapping,
   MediaItemImage,
@@ -37,7 +38,7 @@ export interface Props {
   cover?: boolean;
   fallback?: string;
   thumb?: boolean;
-  lazySrc?: string;
+  lazy?: HTMLImageElement['loading'];
   rounded?: boolean;
 }
 
@@ -50,7 +51,7 @@ const props = withDefaults(defineProps<Props>(), {
   cover: true,
   fallback: undefined,
   thumb: true,
-  lazySrc: undefined,
+  lazy: 'lazy'
   rounded: true,
 });
 
@@ -92,6 +93,27 @@ const imgData = computed(() =>
       fallbackImage
     : fallbackImage,
 );
+
+// Remove background images
+const imageTag = ref(null);
+onMounted(() => {
+  const callback: IntersectionObserverCallback = (entries) => {
+    entries.forEach((entry) => {
+      const element = entry.target as HTMLImageElement;
+      if (element.complete) {
+        element.style.backgroundImage = '';
+        observer.disconnect();
+      }
+    });
+  };
+  const observer = new IntersectionObserver(callback, {
+    root: null,
+    threshold: 1.0,
+  });
+  if (imageTag.value) {
+    observer.observe(imageTag.value);
+  }
+});
 </script>
 
 <script lang="ts">
