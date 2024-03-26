@@ -58,6 +58,7 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(20);
 
 // library artists widget row
+// TODO: Find a way to make the images for this row eager load
 const artistItems = await api.getLibraryArtists(
   undefined,
   undefined,
@@ -69,6 +70,7 @@ widgetRows.value.artists.items = artistItems.items;
 widgetRows.value.artists.count = artistItems.total;
 
 // library albums widget row
+// TODO: Find a way to make the images for this row eager load
 const albumItems = await api.getLibraryAlbums(
   undefined,
   undefined,
