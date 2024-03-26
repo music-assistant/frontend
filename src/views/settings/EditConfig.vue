@@ -63,6 +63,18 @@
                   </v-label>
                 </div>
 
+                <!-- alert value -->
+                <div v-else-if="conf_entry.type == ConfigEntryType.ALERT">
+                  <br />
+                  <v-alert density="compact" type="warning">
+                    {{
+                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
+                    }}
+                  </v-alert>
+                  <br />
+                  <br />
+                </div>
+
                 <!-- action type -->
                 <div
                   v-else-if="
@@ -213,6 +225,20 @@
                   type="number"
                   @click:clear="conf_entry.value = null"
                 />
+                <!-- icon 'picker' -->
+                <v-text-field
+                  v-else-if="conf_entry.type == ConfigEntryType.ICON"
+                  v-model="conf_entry.value"
+                  :placeholder="conf_entry.default_value?.toString()"
+                  clearable
+                  :disabled="checkDisabled(conf_entry)"
+                  :label="
+                    $t(`settings.${conf_entry.key}.label`, conf_entry.label)
+                  "
+                  :prepend-inner-icon="conf_entry.value as string"
+                  variant="outlined"
+                  @click:clear="conf_entry.value = conf_entry.default_value"
+                />
                 <!-- all other: textbox with single value -->
                 <v-text-field
                   v-else
@@ -236,12 +262,7 @@
               </div>
               <!-- right side of control: help icon with description-->
               <div
-                v-if="
-                  $t(
-                    `settings.${showHelpInfo?.key}.description`,
-                    conf_entry.description || '',
-                  ) || conf_entry.help_link
-                "
+                v-if="hasDescriptionOrHelpLink(conf_entry)"
                 class="configcolumnright"
               >
                 <v-btn
@@ -251,7 +272,7 @@
                   size="x-large"
                   @click="
                     $t(
-                      `settings.${showHelpInfo?.key}.description`,
+                      `settings.${conf_entry?.key}.description`,
                       conf_entry.description || '',
                     )
                       ? (showHelpInfo = conf_entry)
@@ -499,6 +520,22 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
 
 const markdownToHtml = function (text: string) {
   return marked(text);
+};
+
+const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
+  // overly complicated way to determine we have a description for the entry
+  // in either the translations (by entry key), on the entry itself as fallback
+  // OR it has a help link
+  return (
+    (
+      $t(
+        `settings.${conf_entry?.key}.description`,
+        conf_entry.description || ' ',
+      ) ||
+      conf_entry.help_link ||
+      ' '
+    )?.length > 1
+  );
 };
 </script>
 

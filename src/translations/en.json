@@ -296,7 +296,37 @@
             }
         },
         "default": "default",
-        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?"
+        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?",
+        "tts_pre_announce": {
+            "label": "Pre-announce TTS announcements",
+            "description": "When a TTS (text-to-speech) message is sent to the Announce feature, prepend the announcement with a short pre-announcement sound (bell whistle)."
+        },
+        "announce_volume_strategy": {
+            "label": "Volume strategy for Announcements",
+            "description": "When an announcement is being broadcast to this player, how should the volume be adjusted temporary (use in combination with the volume value below).",
+            "options": {
+                "absolute": "Absolute volume",
+                "relative": "Relative volume increase",
+                "percentual": "Volume increase by fixed percentage",
+                "none": "Do not adjust volume"
+            }
+        },
+        "announce_volume": {
+            "label": "Volume for Announcements",
+            "description": "The percentual, relative or absolute volume level, used with the strategy for announcements."
+        },
+        "announce_volume_min": {
+            "label": "Minimum Volume level for Announcements",
+            "description": "The volume (adjustment) of announcements should no go below this level."
+        },
+        "announce_volume_max": {
+            "label": "Maximum Volume level for Announcements",
+            "description": "The volume (adjustment) of announcements should no go above this level."
+        },
+        "icon": {
+            "label": "Icon",
+            "description": "Material design icon for this player. \n\nSee https://pictogrammers.com/library/mdi/."
+        }
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",

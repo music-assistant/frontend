@@ -184,6 +184,8 @@ export enum ConfigEntryType {
   LABEL = 'label',
   DIVIDER = 'divider',
   ACTION = 'action',
+  ICON = 'icon',
+  ALERT = 'alert',
 }
 
 //// api
@@ -573,6 +575,7 @@ export interface Player {
   group_volume: number;
   display_name: string;
   hidden: boolean;
+  icon: string;
 }
 
 // provider
