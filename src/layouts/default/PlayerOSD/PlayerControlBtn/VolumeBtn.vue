@@ -85,11 +85,7 @@
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="
-                  store.selectedPlayer!.group_childs.length > 0
-                    ? 'mdi-speaker-multiple'
-                    : 'mdi-speaker'
-                "
+                :icon="store.selectedPlayer.icon"
                 color="primary"
               />
             </template>

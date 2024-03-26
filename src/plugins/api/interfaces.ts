@@ -184,6 +184,8 @@ export enum ConfigEntryType {
   LABEL = 'label',
   DIVIDER = 'divider',
   ACTION = 'action',
+  ICON = 'icon',
+  ALERT = 'alert',
 }
 
 //// api
@@ -286,8 +288,8 @@ export interface ConfigEntry {
   depends_on?: string;
   // hidden: hide from UI
   hidden: boolean;
-  // advanced: this is an advanced setting (frontend hides it in some corner)
-  advanced: boolean;
+  // category: category to group this setting into in the frontend (e.g. advanced)
+  category: string;
   // action: (configentry)action that is needed to get the value for this entry
   action?: string;
   // action_label: default label for the action when no translation for the action is present
@@ -573,6 +575,7 @@ export interface Player {
   group_volume: number;
   display_name: string;
   hidden: boolean;
+  icon: string;
 }
 
 // provider

@@ -50,15 +50,7 @@
         >
           <ListItem>
             <template #prepend>
-              <v-icon
-                size="50"
-                :icon="
-                  player.group_childs.length > 0
-                    ? 'mdi-speaker-multiple'
-                    : 'mdi-speaker'
-                "
-                color="primary"
-              />
+              <v-icon size="50" :icon="player.icon" color="primary" />
             </template>
             <template #title>
               <div>

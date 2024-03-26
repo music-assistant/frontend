@@ -14,16 +14,16 @@
           using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
         -->
         <v-expansion-panel v-for="panel of panels" :key="panel" :value="panel">
-          <v-expansion-panel-title v-if="panel == 'advanced'">
+          <v-expansion-panel-title>
             <h3>
-              {{ $t('settings.advanced_settings') }}
+              {{ $t('settings.category.' + panel, panel) }}
             </h3>
           </v-expansion-panel-title>
           <br />
           <v-expansion-panel-text>
             <div
               v-for="conf_entry of entries.filter(
-                (x) => x.advanced == (panel == 'advanced') && !x.hidden,
+                (x) => x.category == panel && !x.hidden,
               )"
               :key="conf_entry.key"
               class="configrow"
@@ -61,6 +61,18 @@
                       $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                     }}
                   </v-label>
+                </div>
+
+                <!-- alert value -->
+                <div v-else-if="conf_entry.type == ConfigEntryType.ALERT">
+                  <br />
+                  <v-alert density="compact" type="warning">
+                    {{
+                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
+                    }}
+                  </v-alert>
+                  <br />
+                  <br />
                 </div>
 
                 <!-- action type -->
@@ -213,6 +225,20 @@
                   type="number"
                   @click:clear="conf_entry.value = null"
                 />
+                <!-- icon 'picker' -->
+                <v-text-field
+                  v-else-if="conf_entry.type == ConfigEntryType.ICON"
+                  v-model="conf_entry.value"
+                  :placeholder="conf_entry.default_value?.toString()"
+                  clearable
+                  :disabled="checkDisabled(conf_entry)"
+                  :label="
+                    $t(`settings.${conf_entry.key}.label`, conf_entry.label)
+                  "
+                  :prepend-inner-icon="conf_entry.value as string"
+                  variant="outlined"
+                  @click:clear="conf_entry.value = conf_entry.default_value"
+                />
                 <!-- all other: textbox with single value -->
                 <v-text-field
                   v-else
@@ -236,12 +262,7 @@
               </div>
               <!-- right side of control: help icon with description-->
               <div
-                v-if="
-                  $t(
-                    `settings.${showHelpInfo?.key}.description`,
-                    conf_entry.description || '',
-                  ) || conf_entry.help_link
-                "
+                v-if="hasDescriptionOrHelpLink(conf_entry)"
                 class="configcolumnright"
               >
                 <v-btn
@@ -251,7 +272,7 @@
                   size="x-large"
                   @click="
                     $t(
-                      `settings.${showHelpInfo?.key}.description`,
+                      `settings.${conf_entry?.key}.description`,
                       conf_entry.description || '',
                     )
                       ? (showHelpInfo = conf_entry)
@@ -352,7 +373,7 @@ const emit = defineEmits<{
 const entries = ref<ConfigEntry[]>();
 const valid = ref(false);
 const form = ref<VNodeRef>();
-const activePanel = ref<string>('basic');
+const activePanel = ref<string>('generic');
 const showPasswordValues = ref(false);
 const showHelpInfo = ref<ConfigEntry>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
@@ -361,13 +382,13 @@ const oldValues = ref<Record<string, ConfigValueType>>({});
 const props = defineProps<Props>();
 
 // computed props
-const hasAdvanced = computed(() => {
-  if (!entries.value) return false;
-  return entries.value.filter((x) => x.advanced && !x.hidden).length > 0;
-});
 const panels = computed(() => {
-  if (!hasAdvanced.value) return ['basic'];
-  return ['basic', 'advanced'];
+  const allCategories = entries.value!.map((x) => x.category);
+  if (allCategories.filter((x) => x == 'generic').length) {
+    return new Set(['generic', ...allCategories]);
+  } else {
+    return new Set(allCategories);
+  }
 });
 const requiredValuesPresent = computed(() => {
   if (entries.value) {
@@ -499,6 +520,22 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
 
 const markdownToHtml = function (text: string) {
   return marked(text);
+};
+
+const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
+  // overly complicated way to determine we have a description for the entry
+  // in either the translations (by entry key), on the entry itself as fallback
+  // OR it has a help link
+  return (
+    (
+      $t(
+        `settings.${conf_entry?.key}.description`,
+        conf_entry.description || ' ',
+      ) ||
+      conf_entry.help_link ||
+      ' '
+    )?.length > 1
+  );
 };
 </script>
 
