@@ -51,7 +51,7 @@ const props = withDefaults(defineProps<Props>(), {
   cover: true,
   fallback: undefined,
   thumb: true,
-  lazy: 'lazy'
+  lazy: 'lazy',
   rounded: true,
 });
 
