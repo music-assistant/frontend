@@ -533,7 +533,7 @@ export class MusicAssistantApi {
     return this.getData('music/search', { search_query, media_types, limit });
   }
 
-  public getRecentlyPlayedItems(
+  public async getRecentlyPlayedItems(
     limit = 10,
     media_types: MediaType[] = [MediaType.TRACK, MediaType.RADIO],
   ): Promise<MediaItemType[]> {
