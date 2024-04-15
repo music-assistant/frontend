@@ -272,6 +272,7 @@ const props = withDefaults(defineProps<Props>(), {
 const HiResDetails = computed(() => {
   if (!('provider_mappings' in props.item)) return '';
   for (const prov of props.item.provider_mappings) {
+    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![
