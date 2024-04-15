@@ -76,12 +76,12 @@ onMounted(() => {
       x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
   )) {
     contextMenuItems.value.push({
-      label: 'create_playlist',
+      label: 'create_playlist_on',
       labelArgs: [prov.name],
       action: () => {
         newPlaylist(prov.instance_id);
       },
-      icon: 'mdi-sync',
+      icon: 'mdi-playlist-plus',
     });
   }
   // signal if/when items get added/updated/removed within this library

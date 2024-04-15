@@ -218,7 +218,7 @@ const addToPlaylist = function (value: MediaItemType) {
   close();
 };
 const newPlaylist = async function (provId: string) {
-  const name = prompt($t('enter_name'));
+  const name = prompt($t('new_playlist_name'));
   if (!name) return;
   const newPlaylist = await api.createPlaylist(name, provId);
   addToPlaylist(newPlaylist);

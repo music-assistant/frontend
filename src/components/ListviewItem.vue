@@ -21,7 +21,7 @@
             "
           />
         </div>
-        <div class="media-thumb listitem-media-thumb">
+        <div v-else class="media-thumb listitem-media-thumb">
           <MediaItemThumb height="50" width="50" :item="item" />
         </div>
       </template>

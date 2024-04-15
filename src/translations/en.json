@@ -384,7 +384,8 @@
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
         "show_menu": "Show\/hide menu",
-        "search_filter_active": "Search is currently filtering results"
+        "search_filter_active": "Search is currently filtering results",
+        "play_sample": "Play sample"
     },
     "topresult": "Top result",
     "track": "Track",
