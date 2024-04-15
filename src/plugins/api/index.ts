@@ -391,8 +391,14 @@ export class MusicAssistantApi {
     });
   }
 
-  public createPlaylist(name: string, provider?: string): Promise<Playlist> {
-    return this.getData('music/playlists/create_playlist', { name, provider });
+  public createPlaylist(
+    name: string,
+    provider_instance_or_domain?: string,
+  ): Promise<Playlist> {
+    return this.getData('music/playlists/create_playlist', {
+      name,
+      provider_instance_or_domain,
+    });
   }
 
   public getLibraryRadios(

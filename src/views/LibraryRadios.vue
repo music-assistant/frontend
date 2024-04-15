@@ -38,6 +38,7 @@ import {
 } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
+import router from '@/plugins/router';
 
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
@@ -101,7 +102,7 @@ const addUrl = async function () {
     return;
   }
   api
-    .getItem(MediaType.RADIO, url, 'url')
+    .getItem(MediaType.RADIO, url, 'builtin')
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;
@@ -115,11 +116,12 @@ const addUrl = async function () {
           {
             type: ImageType.THUMB,
             path: imgUrl,
-            provider: 'url',
+            provider: 'builtin',
+            remotely_accessible: true,
           },
         ];
       }
-      api.addItemToLibrary(item).then(() => (updateAvailable.value = true));
+      api.addItemToLibrary(item).then(() => router.go(0));
     })
     .catch((e) => alert(e));
 };

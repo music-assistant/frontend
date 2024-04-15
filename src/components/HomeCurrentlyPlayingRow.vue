@@ -4,7 +4,7 @@
     <v-toolbar color="transparent" style="width: fit-content">
       <template #prepend><v-icon icon="mdi-playlist-play" /></template>
       <template #title>
-        <span class="mr-3">{{ $t("currently_playing") }}</span>
+        <span class="mr-3">{{ $t('currently_playing') }}</span>
       </template>
     </v-toolbar>
     <carousel>
@@ -23,12 +23,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { PlayerState, PlayerQueue } from "@/plugins/api/interfaces";
-import api from "@/plugins/api";
-import { store } from "@/plugins/store";
-import Carousel from "@/components/Carousel.vue";
-import PanelviewPlayerCard from "@/components/PanelviewPlayerCard.vue";
+import { computed } from 'vue';
+import { PlayerState, PlayerQueue } from '@/plugins/api/interfaces';
+import api from '@/plugins/api';
+import { store } from '@/plugins/store';
+import Carousel from '@/components/Carousel.vue';
+import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
 
 const playerStateOrder = {
   [PlayerState.PLAYING]: 1,

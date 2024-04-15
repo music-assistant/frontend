@@ -344,7 +344,7 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   // quality details (streamable content only)
-  audio_format: AudioFormat;
+  audio_format?: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists
@@ -359,9 +359,8 @@ export interface MediaItemLink {
 export interface MediaItemImage {
   type: ImageType;
   path: string;
-  // set to instance_id of provider if the path needs to be resolved
-  // if the path is just a plain (remotely accessible) URL, set it to 'url'
   provider: string;
+  remotely_accessible: boolean;
 }
 
 export interface MediaItemMetadata {
@@ -380,7 +379,7 @@ export interface MediaItemMetadata {
   preview?: string;
   replaygain?: number;
   popularity?: number;
-  checksum?: string;
+  cache_checksum?: string;
 }
 
 export interface MediaItem {
@@ -445,7 +444,6 @@ export interface Track extends MediaItem {
 
 export interface Playlist extends MediaItem {
   owner: string;
-  checksum: string;
   is_editable: boolean;
 }
 
@@ -618,6 +616,7 @@ export interface ProviderInstance {
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
+  is_streaming_provider?: boolean;
 }
 
 export interface SyncTask {

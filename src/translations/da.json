@@ -24,7 +24,7 @@
     "browse": "Gennemse",
     "clear_selection": "Ryd valg",
     "close": "Luk",
-    "create_playlist": "Opret ny afspilningsliste på {0}",
+    "create_playlist_on": "Opret ny afspilningsliste på {0}",
     "crossfade_disabled": "Crossfade er deaktiveret",
     "crossfade_enabled": "Crossfade er aktiveret",
     "dark_mode": "Mørk tilstand",

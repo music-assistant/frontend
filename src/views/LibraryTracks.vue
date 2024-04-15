@@ -102,7 +102,7 @@ const addUrl = async function () {
   const url = prompt(t('enter_url'));
   if (!url) return;
   api
-    .getItem(MediaType.TRACK, url, 'url')
+    .getItem(MediaType.TRACK, url, 'builtin')
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;

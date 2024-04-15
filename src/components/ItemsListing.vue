@@ -685,6 +685,7 @@ const loadData = async function (
   }
   loading.value = true;
   params.value.limit = props.limit;
+  params.value.refresh = refresh;
   if (props.loadPagedData !== undefined) {
     // call server for paged listing
     const nextItems = await props.loadPagedData(params.value);

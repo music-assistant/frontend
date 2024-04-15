@@ -13,9 +13,9 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/mods/Container.vue";
-import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
-import HomeCurrentlyPlayingRow from "@/components/HomeCurrentlyPlayingRow.vue";
+import Container from '@/components/mods/Container.vue';
+import HomeWidgetRows from '@/components/HomeWidgetRows.vue';
+import HomeCurrentlyPlayingRow from '@/components/HomeCurrentlyPlayingRow.vue';
 </script>
 
 <style>
