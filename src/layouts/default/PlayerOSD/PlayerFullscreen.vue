@@ -88,7 +88,7 @@
                   : ''
               "
             >
-              {{store.curQueueItem.media_item.name}}
+              {{ store.curQueueItem.media_item.name }}
             </h2>
             <!-- track -->
             <h2
