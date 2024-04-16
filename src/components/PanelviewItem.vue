@@ -153,6 +153,7 @@ const showSettingDots = ref(false);
 // computed properties
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
+    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![
