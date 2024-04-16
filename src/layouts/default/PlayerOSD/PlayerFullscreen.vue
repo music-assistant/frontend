@@ -113,9 +113,23 @@
             </h2>
 
             <!-- subtitle -->
-            <!-- track: artists(s) -->
+            <!-- radio station stream title -->
             <div
               v-if="
+                store.curQueueItem.media_item?.media_type == MediaType.RADIO
+              "
+            >
+              <!-- radio live metadata -->
+              <h4
+                v-if="store.curQueueItem?.streamdetails?.stream_title"
+                class="fullscreen-track-info-subtitle"
+              >
+                {{ store.curQueueItem?.streamdetails?.stream_title }}
+              </h4>
+            </div>
+            <!-- track: artists(s) -->
+            <div
+              v-else-if="
                 store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
                 'album' in store.curQueueItem.media_item &&
                 store.curQueueItem.media_item.album
@@ -141,13 +155,6 @@
                 class="fullscreen-track-info-subtitle"
               >
                 {{ (store.curQueueItem.media_item as Track).artists[0].name }}
-              </h4>
-              <!-- radio live metadata -->
-              <h4
-                v-else-if="store.curQueueItem?.streamdetails?.stream_title"
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ store.curQueueItem?.streamdetails?.stream_title }}
               </h4>
               <!-- other description -->
               <h4
