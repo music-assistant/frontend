@@ -405,6 +405,7 @@ export interface ItemMapping {
   sort_name: string;
   uri: string;
   version: string;
+  image?: MediaItemImage;
 }
 
 export interface Artist extends MediaItem {

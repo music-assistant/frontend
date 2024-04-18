@@ -146,7 +146,7 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ('metadata' in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (img.provider == 'http' && !includeFileBased) continue;
+      if (!img.remotely_accessible && !includeFileBased) continue;
       if (img.type == type) return img;
     }
   }
@@ -159,8 +159,22 @@ export const getMediaItemImage = function (
     mediaItem.album.metadata.images
   ) {
     for (const img of mediaItem.album.metadata.images) {
-      if (img.provider == 'http' && !includeFileBased) continue;
+      if (!img.remotely_accessible && !includeFileBased) continue;
       if (img.type == type) return img;
+    }
+  }
+  // retry with ItemMapping album
+  if (
+    'album' in mediaItem &&
+    mediaItem.album &&
+    'image' in mediaItem.album &&
+    mediaItem.album.image
+  ) {
+    if (
+      mediaItem.album.image.type == type &&
+      (mediaItem.album.image.remotely_accessible || includeFileBased)
+    ) {
+      return mediaItem.album.image;
     }
   }
   // retry with album artist
@@ -171,7 +185,7 @@ export const getMediaItemImage = function (
     mediaItem.artist.metadata.images
   ) {
     for (const img of mediaItem.artist.metadata.images) {
-      if (img.provider == 'http' && !includeFileBased) continue;
+      if (!img.remotely_accessible && !includeFileBased) continue;
       if (img.type == type) return img;
     }
   }
@@ -180,7 +194,7 @@ export const getMediaItemImage = function (
     for (const artist of mediaItem.artists) {
       if ('metadata' in artist && artist.metadata.images) {
         for (const img of artist.metadata.images) {
-          if (img.provider == 'http' && !includeFileBased) continue;
+          if (!img.remotely_accessible && !includeFileBased) continue;
           if (img.type == type) return img;
         }
       }
