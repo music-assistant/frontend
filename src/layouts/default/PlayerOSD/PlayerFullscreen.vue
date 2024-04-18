@@ -74,7 +74,25 @@
             class="fullscreen-track-info"
           >
             <!-- title -->
+            <!-- radio station name -->
             <h2
+              v-if="
+                store.curQueueItem?.media_item &&
+                store.curQueueItem.media_item?.media_type == MediaType.RADIO
+              "
+              style="cursor: pointer; width: fit-content; display: inline"
+              class="title line-clamp-1"
+              @click="
+                store.curQueueItem?.media_item
+                  ? radioNameClick(store.curQueueItem.media_item as Radio)
+                  : ''
+              "
+            >
+              {{ store.curQueueItem.media_item.name }}
+            </h2>
+            <!-- track -->
+            <h2
+              v-else
               style="cursor: pointer; width: fit-content; display: inline"
               class="title line-clamp-1"
               @click="
@@ -95,9 +113,23 @@
             </h2>
 
             <!-- subtitle -->
-            <!-- track: artists(s) -->
+            <!-- radio station stream title -->
             <div
               v-if="
+                store.curQueueItem.media_item?.media_type == MediaType.RADIO
+              "
+            >
+              <!-- radio live metadata -->
+              <h4
+                v-if="store.curQueueItem?.streamdetails?.stream_title"
+                class="fullscreen-track-info-subtitle"
+              >
+                {{ store.curQueueItem?.streamdetails?.stream_title }}
+              </h4>
+            </div>
+            <!-- track: artists(s) -->
+            <div
+              v-else-if="
                 store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
                 'album' in store.curQueueItem.media_item &&
                 store.curQueueItem.media_item.album
@@ -123,13 +155,6 @@
                 class="fullscreen-track-info-subtitle"
               >
                 {{ (store.curQueueItem.media_item as Track).artists[0].name }}
-              </h4>
-              <!-- radio live metadata -->
-              <h4
-                v-else-if="store.curQueueItem?.streamdetails?.stream_title"
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ store.curQueueItem?.streamdetails?.stream_title }}
               </h4>
               <!-- other description -->
               <h4
@@ -370,6 +395,7 @@ import {
   Artist,
   ItemMapping,
   MediaType,
+  Radio,
   Track,
 } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
@@ -426,6 +452,18 @@ const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
   router.push({
     name: 'artist',
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
+  store.showFullscreenPlayer = false;
+};
+
+const radioNameClick = function (item: Radio | ItemMapping) {
+  // radio station name clicked
+  router.push({
+    name: 'radio',
     params: {
       itemId: item.item_id,
       provider: item.provider,
