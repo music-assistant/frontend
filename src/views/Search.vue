@@ -33,7 +33,7 @@
         <ItemsListing
           v-if="filteredItems(resultKey).length"
           :itemtype="`search.${resultKey}`"
-          :path="`search.${search}`"
+          :path="`search.${deferredSearch}`"
           :show-provider="true"
           :show-favorites-only-filter="false"
           :show-select-button="false"
@@ -81,6 +81,7 @@ const compProps = defineProps<Props>();
 
 // local refs
 const search = ref('');
+const deferredSearch = ref('');
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
@@ -107,6 +108,7 @@ const loadSearchResults = async function () {
     searchResult.value = undefined;
   }
   loading.value = false;
+  deferredSearch.value = search.value;
 };
 
 const filteredItems = function (itemType: string) {
