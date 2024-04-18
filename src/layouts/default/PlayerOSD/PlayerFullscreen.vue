@@ -113,83 +113,88 @@
             </h2>
 
             <!-- subtitle -->
+
             <!-- radio station stream title -->
             <div
               v-if="
-                store.curQueueItem.media_item?.media_type == MediaType.RADIO
+                store.curQueueItem.media_item?.media_type == MediaType.RADIO &&
+                store.curQueueItem?.streamdetails?.stream_title
               "
             >
-              <!-- radio live metadata -->
-              <h4
-                v-if="store.curQueueItem?.streamdetails?.stream_title"
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ store.curQueueItem?.streamdetails?.stream_title }}
+              <h4 class="fullscreen-track-info-subtitle">
+                {{ store.curQueueItem.streamdetails.stream_title }}
               </h4>
             </div>
-            <!-- track: artists(s) -->
+            <!-- track: artists(s) + album -->
             <div
               v-else-if="
                 store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                'album' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.album
+                'artists' in store.curQueueItem.media_item &&
+                store.curQueueItem.media_item.artists
               "
               style="cursor: pointer"
               class="line-clamp-1"
-              @click="
-                store.curQueueItem?.media_item
-                  ? artistClick(
+            >
+              <h4>
+                <!-- album -->
+                <span
+                  v-if="
+                    'album' in store.curQueueItem.media_item &&
+                    store.curQueueItem.media_item.album
+                  "
+                  class="fullscreen-track-info-subtitle"
+                  @click="albumClick(store.curQueueItem.media_item.album)"
+                >
+                  {{ store.curQueueItem.media_item.album.name }}
+                </span>
+                <!-- artist(s) -->
+                <span
+                  class="fullscreen-track-info"
+                  @click="
+                    artistClick(
                       (store.curQueueItem.media_item as Track).artists[0],
                     )
-                  : ''
-              "
-            >
-              <!-- track/album fallback: artist present -->
-              <h4
-                v-if="
-                  store.curQueueItem.media_item &&
-                  store.curQueueItem.media_item?.media_type ==
-                    MediaType.TRACK &&
-                  (store.curQueueItem.media_item as Track).artists.length > 0
-                "
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ (store.curQueueItem.media_item as Track).artists[0].name }}
-              </h4>
-              <!-- other description -->
-              <h4
-                v-else-if="
-                  store.curQueueItem &&
-                  store.curQueueItem.media_item?.metadata.description
-                "
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ store.curQueueItem.media_item.metadata.description }}
-              </h4>
-              <!-- queue empty message -->
-              <h4
-                v-else-if="
-                  store.activePlayerQueue && store.activePlayerQueue.items == 0
-                "
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ $t('queue_empty') }}
-              </h4>
-              <!-- 3rd party source active -->
-              <h4
-                v-else-if="
-                  store.selectedPlayer?.active_source !=
-                  store.selectedPlayer?.player_id
-                "
-                class="fullscreen-track-info-subtitle"
-              >
-                {{
-                  $t('external_source_active', [
-                    store.selectedPlayer?.active_source,
-                  ])
-                }}
+                  "
+                >
+                  <br /><br />{{
+                    (store.curQueueItem.media_item as Track).artists[0].name
+                  }}
+                </span>
               </h4>
             </div>
+            <!-- other description -->
+            <h4
+              v-else-if="
+                store.curQueueItem &&
+                store.curQueueItem.media_item?.metadata.description
+              "
+              class="fullscreen-track-info-subtitle"
+            >
+              {{ store.curQueueItem.media_item.metadata.description }}
+            </h4>
+            <!-- queue empty message -->
+            <h4
+              v-else-if="
+                store.activePlayerQueue && store.activePlayerQueue.items == 0
+              "
+              class="fullscreen-track-info-subtitle"
+            >
+              {{ $t('queue_empty') }}
+            </h4>
+            <!-- 3rd party source active -->
+            <h4
+              v-else-if="
+                store.selectedPlayer?.active_source !=
+                store.selectedPlayer?.player_id
+              "
+              class="fullscreen-track-info-subtitle"
+            >
+              {{
+                $t('external_source_active', [
+                  store.selectedPlayer?.active_source,
+                ])
+              }}
+            </h4>
           </div>
         </div>
         <div class="fullscreen-row" style="margin: 0 10px">
@@ -452,6 +457,18 @@ const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
   router.push({
     name: 'artist',
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
+  store.showFullscreenPlayer = false;
+};
+
+const albumClick = function (item: Artist | ItemMapping) {
+  // album entry clicked
+  router.push({
+    name: 'album',
     params: {
       itemId: item.item_id,
       provider: item.provider,
