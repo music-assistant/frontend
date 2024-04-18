@@ -436,7 +436,6 @@ export interface Track extends MediaItem {
   artists: Array<ItemMapping | Artist>;
   // album track only
   album: ItemMapping | Album;
-  albums: TrackAlbumMapping[];
   disc_number?: number;
   track_number?: number;
   // playlist track only
@@ -491,6 +490,14 @@ export interface AudioFormat {
   bit_rate: number;
 }
 
+export interface LoudnessMeasurement {
+  integrated: number;
+  true_peak: number;
+  lra: number;
+  threshold: number;
+  target_offset: number;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
@@ -498,13 +505,10 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_title?: string;
   duration?: number;
-  size?: number;
 
   queue_id?: string;
-  seconds_streamed: number;
-  seconds_skipped: number;
-  gain_correct: number;
-  loudness?: number;
+  loudness?: LoudnessMeasurement;
+  target_loudness?: number;
 }
 
 // queue_item
