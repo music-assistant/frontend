@@ -31,7 +31,7 @@ export enum LinkType {
 
 export enum ImageType {
   THUMB = 'thumb',
-  WIDE_THUMB = 'wide_thumb',
+  LANDSCAPE = 'landscape',
   FANART = 'fanart',
   LOGO = 'logo',
   CLEARART = 'clearart',

@@ -200,6 +200,10 @@ export const getMediaItemImage = function (
       }
     }
   }
+  // allow landscape fallback
+  if (type == ImageType.THUMB) {
+    return getMediaItemImage(mediaItem, ImageType.LANDSCAPE, includeFileBased);
+  }
 };
 
 export const getImageThumbForItem = function (
