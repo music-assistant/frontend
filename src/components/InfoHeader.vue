@@ -51,25 +51,26 @@
           xs5
           pa-5
           style="
-            width: 230px;
-            height: 230px;
+            height: 100%;
+            min-width: 230px;
             margin-top: 15px;
             margin-bottom: 15px;
             margin-right: 24px;
+            align-content: center;
           "
         >
           <div
             v-if="
               item.media_type &&
-              (item.media_type == MediaType.ARTIST || 'owner' in item)
+              [MediaType.ARTIST, MediaType.PLAYLIST].includes(item.media_type)
             "
           >
             <v-avatar size="192">
-              <MediaItemThumb :item="item" :height="230" :width="230" />
+              <MediaItemThumb :item="item" :height="300" :width="300" />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb :width="230" :item="item" />
+            <MediaItemThumb :width="300" :item="item" />
           </div>
         </div>
 
