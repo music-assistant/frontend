@@ -27,7 +27,7 @@
       <Button
         v-if="store.prevScrollName"
         xx-large
-        style="position: absolute; width:40px, height:40px;right: 4px; top: 10px"
+        style="position: absolute; width:40px, height:40px;left: 4px; top: 10px"
         icon="mdi-arrow-left"
         :title="$t('tooltip.back')"
         @click.stop="router.go(-1)"
