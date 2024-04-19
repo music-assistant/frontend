@@ -24,7 +24,7 @@
     "browse": "Gennemse",
     "clear_selection": "Ryd valg",
     "close": "Luk",
-    "create_playlist_on": "Opret ny afspilningsliste på {0}",
+    "create_playlist": "Opret ny afspilningsliste på {0}",
     "crossfade_disabled": "Crossfade er deaktiveret",
     "crossfade_enabled": "Crossfade er aktiveret",
     "dark_mode": "Mørk tilstand",
@@ -172,7 +172,7 @@
             "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
         },
         "auto_play": {
-            "label": "Start afspilning",
+            "label": "Start automatisk afspilning",
             "description": "Når denne afspiller tændes, starter afspilningen automatisk (hvis der er elementer i køen)."
         },
         "output_channels": {
@@ -291,7 +291,44 @@
             }
         },
         "default": "standard",
-        "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?"
+        "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?",
+        "category": {
+            "audio": "Lyd",
+            "advanced": "Avancerede indstillinger",
+            "generic": "Generelle indstillinger",
+            "announcements": "Konfiguration af meddelelser",
+            "airplay": "Airplay-specifikke indstillinger"
+        },
+        "tts_pre_announce": {
+            "label": "Forhåndsannoncering af TTS-meddelelser",
+            "description": "Når en TTS-besked (tekst-til-tale) sendes til Announce-funktionen, tilføjes en kort lyd (klokke) før meddelelsen."
+        },
+        "announce_volume_strategy": {
+            "label": "Lydstyrkestrategi for meddelelser",
+            "description": "Når der sendes en meddelelse til denne afspiller, hvordan skal lydstyrken så justeres midlertidigt (brug i kombination med lydstyrken nedenfor).",
+            "options": {
+                "absolute": "Bestemt lydstyrke",
+                "relative": "Relativ lydstyrkeforøgelse",
+                "percentual": "Lydstyrkeforøgelse med fast procentsats",
+                "none": "Juster ikke lydstyrken"
+            }
+        },
+        "announce_volume": {
+            "label": "Lydstyrke for meddelelser",
+            "description": "Det procentuelle, relative eller absolutte, lydstyrkeniveau, der bruges med strategien til meddelelser."
+        },
+        "announce_volume_min": {
+            "label": "Minimum lydstyrke for meddelelser",
+            "description": "Lydstyrken af meddelelser bør ikke gå under dette niveau."
+        },
+        "announce_volume_max": {
+            "label": "Maksimal lydstyrke for meddelelser",
+            "description": "Lydstyrken af meddelelser bør ikke overstige dette niveau."
+        },
+        "icon": {
+            "label": "Ikon",
+            "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+        }
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
@@ -349,7 +386,8 @@
         "collapse_expand": "Skjul\/udvid listen",
         "back": "Tilbage",
         "show_menu": "Vis\/skjul menu",
-        "search_filter_active": "Søgningen filtrerer i øjeblikket resultater"
+        "search_filter_active": "Søgningen filtrerer i øjeblikket resultater",
+        "play_sample": "Afspil prøve"
     },
     "topresult": "Bedste resultat",
     "track": "Spor",
@@ -375,5 +413,10 @@
     "radiobrowser_by_tag": "Efter tag",
     "load_more_items": "Indlæs flere emner...",
     "radio": "Radio",
-    "muted": "dæmpet"
+    "muted": "dæmpet",
+    "enter_name": "Indtast et nyt (brugerdefineret) navn",
+    "image_url": "Indtast URL'en til et billede eller ikon (valgfrit)",
+    "invalid_input": "Input var ugyldigt",
+    "new_playlist": "Ny playliste",
+    "create_playlist_on": "Opret ny playliste på {0}"
 }

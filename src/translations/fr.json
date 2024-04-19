@@ -24,7 +24,7 @@
     "browse": "Parcourir",
     "clear_selection": "Effacer la sélection",
     "close": "Close",
-    "create_playlist_on": "Créer une nouvelle Playlist sur {0}",
+    "create_playlist": "Créer une nouvelle Playlist sur {0}",
     "crossfade_disabled": "Crossfade is disabled",
     "crossfade_enabled": "Fondu enchaîné activé",
     "dark_mode": "Mode sombre",
@@ -152,11 +152,14 @@
         "add_group_player": "Ajouter un lecteur de groupe",
         "group_members": "Membres du groupe",
         "log_level": {
+            "label": "Niveau des logs",
+            "description": "Définit le niveau de détail des logs pour ce fournisseur.",
             "options": {
                 "global": "Global",
                 "info": "Info",
                 "warning": "Alerte",
                 "error": "Erreur",
+                "debug": "Déboguer",
                 "GLOBAL": "Vide",
                 "INFO": "Vide",
                 "WARNING": "Vide",
@@ -164,7 +167,17 @@
                 "DEBUG": "Vide"
             }
         },
+        "flow_mode": {
+            "label": "Activer le mode \"flow\" pour la file d'attente",
+            "description": "Active le mode \"flow\" dans lequel toutes les pistes de la file d'attente sont envoyées comme un flux audio continu. \nÀ utiliser pour les lecteurs qui ne prennent pas en charge le gapless et\/ou le crossfading ou si le lecteur a du mal à faire la transition entre les pistes."
+        },
+        "auto_play": {
+            "label": "Lecture automatique (reprise à la mise sous tension)",
+            "description": "Lorsque ce lecteur est mis en marche, la lecture commence automatiquement (s'il y a des éléments dans la file d'attente)."
+        },
         "output_channels": {
+            "label": "Mode du canal de sortie",
+            "description": "Vous pouvez configurer ce lecteur pour qu'il ne joue que le canal gauche ou droit, par exemple pour créer une paire stéréo avec 2 lecteurs.",
             "options": {
                 "stereo": "Stéréo (les deux canaux)",
                 "left": "Canal gauche uniquement",
@@ -172,14 +185,25 @@
                 "mono": "Mono (les deux canaux)"
             }
         },
+        "volume_normalization": {
+            "label": "Activer la normalisation du volume (basée sur l'EBU-R128)",
+            "description": "Activer la normalisation du volume basée sur la norme EBU-R128 sans affecter la plage dynamique"
+        },
+        "volume_normalization_target": {
+            "label": "Niveau cible pour la normalisation du volume",
+            "description": "Ajuster l'intensité sonore moyenne (perçue) à ce niveau cible, la valeur par défaut étant de -17 LUFS. \n\n **AVERTISSEMENT:** Un niveau trop élevé peut entraîner un écrêtage !"
+        },
         "eq_bass": {
-            "label": "Égaliseur : graves"
+            "label": "Égaliseur : graves",
+            "description": "Utilisez l'égaliseur de base intégré pour régler le niveau de basses du son."
         },
         "eq_mid": {
-            "label": "Égaliseur : mediums"
+            "label": "Égaliseur : mediums",
+            "description": "Utilisez l'égaliseur de base intégré pour régler le niveau des médiums du son."
         },
         "eq_treble": {
-            "label": "Égaliseur : aigus"
+            "label": "Égaliseur : aigus",
+            "description": "Utilisez l'égaliseur de base intégré pour régler le niveau des aigus du son."
         },
         "crossfade": {
             "label": "Activer le fondu enchaîné",
@@ -189,7 +213,122 @@
             "label": "Durée du fondu enchaîné",
             "description": "Durée en secondes du fondu enchaîné entre les pistes (si activé)"
         },
-        "default": "Par défaut"
+        "hide_player": {
+            "label": "Masquer ce lecteur dans l'interface utilisateur",
+            "description": "Masquez ce lecteur dans l’interface utilisateur. \n\nNotez qu’il peut toujours être contrôlé et qu’il apparaîtra également dans tous les groupes de synchronisation auxquels ce lecteur appartient."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Éléments à sélectionner lors de la lecture d'un artiste (de la bibliothèque).",
+            "description": "Si vous voulez jouer un artiste, quels éléments doivent être mis en file d'attente ?",
+            "options": {
+                "library_tracks": "Uniquement les titres en bibliothèque",
+                "library_album_tracks": "Toutes les pistes de tous les albums de la bibliothèque",
+                "all_tracks": "Tous les (meilleurs) titres de (tous) les fournisseurs",
+                "all_album_tracks": "Toutes les pistes de tous les albums de (tous) les fournisseurs"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Éléments à sélectionner lors de la lecture d'un album (de la bibliothèque).",
+            "description": "Si vous voulez jouer un artiste, quels éléments doivent être mis en file d'attente ?",
+            "options": {
+                "library_tracks": "Uniquement les pistes de la bibliothèque",
+                "all_tracks": "Toutes les pistes de l'album sur le fournisseur"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Option de mise en file d'attente par défaut pour le(s) élément(s) Artiste(s).",
+            "description": "Définit l'action de mise en file d'attente par défaut pour ce type de média (si vous n'avez pas spécifié d'action).",
+            "options": {
+                "play": "Jouez le(s) titre(s) de l’artiste maintenant et conservez le(s) élément(s) restant(s) dans la file d’attente.",
+                "replace": "Vider la file d’attente et jouer le(s) titre(s) de l’artiste",
+                "next": "Jouez le(s) élément(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
+                "replace_next": "Effacer la file d'attente et lire le(s) morceau(x) de l'artiste juste après l'élément actuellement lu\/mis en mémoire tampon.",
+                "add": "Ajouter la ou les pistes de l'artiste à la fin de la file d'attente."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Option de mise en file d'attente par défaut pour les éléments de l'album.",
+            "description": "Définit l'action de mise en file d'attente par défaut pour ce type de média (si vous n'avez pas spécifié d'action).",
+            "options": {
+                "play": "Lire les pistes de l'album maintenant et conserver les autres éléments de la file d'attente.",
+                "replace": "Effacer la file d'attente et lire le(s) titre(s) de l'album",
+                "next": "Jouer le(s) piste(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
+                "replace_next": "Effacer la file d'attente et lire le(s) titre(s) de l'album juste après l'élément en cours de lecture ou de mise en mémoire tampon.",
+                "add": "Ajouter la ou les pistes de l'album à la fin de la file d'attente."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Option de mise en file d'attente par défaut pour les pistes.",
+            "description": "Définit l'action de mise en file d'attente par défaut pour ce type de média (si vous n'avez pas spécifié d'action).",
+            "options": {
+                "play": "Lire le(s) morceau(x) maintenant et conserver le(s) morceau(x) restant(s) dans la file d'attente.",
+                "replace": "Effacer la file d'attente et lire la ou les pistes.",
+                "next": "Lit le(s) morceau(s) juste après l'élément actuellement lu\/mis en mémoire tampon.",
+                "replace_next": "Efface la file d'attente et lit la (les) piste(s) juste après l'élément actuellement lu\/mis en mémoire tampon.",
+                "add": "Ajouter la ou les pistes à la fin de la file d'attente."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Option de mise en file d'attente par défaut pour les éléments d'une playlist.",
+            "description": "Définit l'action de mise en file d'attente par défaut pour ce type de média (si vous n'avez pas spécifié d'action).",
+            "options": {
+                "play": "Lire la ou les pistes de la liste de lecture maintenant et conserver les éléments restants dans la file d'attente.",
+                "replace": "Effacer la file d'attente et lire la ou les pistes de la liste de lecture",
+                "next": "Jouer le(s) élément(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
+                "replace_next": "Effacer la file d'attente et lit la (les) piste(s) de la playlist de lecture juste après l'élément actuellement lu\/mis en mémoire tampon.",
+                "add": "Ajoutez le(s) titre(s) de la playlist à la fin de la file d’attente."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Option de mise en file d'attente par défaut pour les éléments Radio.",
+            "description": "Définit l'action de mise en file d'attente par défaut pour ce type de média (si vous n'avez pas spécifié d'action).",
+            "options": {
+                "play": "Écouter la station de radio maintenant et conserver le(s) élément(s) restant(s) dans la file d'attente.",
+                "replace": "Effacer la file d'attente et diffuser la station de radio",
+                "next": "Jouer le(s) élément(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
+                "replace_next": "Efface la file d'attente et joue la ou les stations de radio juste après l'élément actuellement joué\/mis en mémoire tampon.",
+                "add": "Ajouter la ou les stations de radio à la fin de la file d'attente."
+            }
+        },
+        "default": "Par défaut",
+        "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
+        "category": {
+            "audio": "Son",
+            "advanced": "Paramètres avancés",
+            "generic": "Paramètres par défaut",
+            "announcements": "Configuration des annonces",
+            "airplay": "Paramètres spécifiques à Airplay"
+        },
+        "tts_pre_announce": {
+            "label": "Pré-annoncer les annonces TTS",
+            "description": "Lorsqu'un message TTS (text-to-speech) est envoyé à la fonction d'annonce, l'annonce est précédée d'un court son de pré-annonce (son de cloche)."
+        },
+        "announce_volume_strategy": {
+            "label": "Stratégie de volume pour les annonces",
+            "description": "Lorsqu'une annonce est diffusée sur ce lecteur, comment le volume doit-il être réglé temporairement (à utiliser en combinaison avec la valeur du volume ci-dessous).",
+            "options": {
+                "absolute": "Volume absolu",
+                "relative": "Augmentation du volume relatif",
+                "percentual": "Augmentation du volume par un pourcentage définit",
+                "none": "Ne pas régler le volume"
+            }
+        },
+        "announce_volume": {
+            "label": "Volume pour les annonces",
+            "description": "Le niveau de volume en pourcentage, relatif ou absolu, utilisé avec la stratégie pour les annonces."
+        },
+        "announce_volume_min": {
+            "label": "Volume minimum pour les annonces",
+            "description": "Le volume (réglage) des annonces ne doit pas être inférieur à ce niveau."
+        },
+        "announce_volume_max": {
+            "label": "Volume maximum pour les annonces",
+            "description": "Le volume (réglage) des annonces ne doit pas dépasser ce niveau."
+        },
+        "icon": {
+            "label": "Icône",
+            "description": "Icône utilisée pour ce lecteur. \n\nVoir https:\/\/pictogrammers.com\/library\/mdi\/."
+        }
     },
     "show_info": "Montrer les infos",
     "show_select_boxes": "Afficher les cases de sélection",
@@ -272,5 +411,10 @@
     "radiobrowser_by_country": "Par pays",
     "radiobrowser_by_tag": "Par étiquette",
     "load_more_items": "Charger plus d'éléments...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "muted": "en sourdine",
+    "enter_name": "Saisir un nouveau nom (personnalisé)",
+    "image_url": "Saisir l'URL d'une image ou d'une icône (facultatif)",
+    "invalid_input": "L'entrée n'était pas valide",
+    "create_playlist_on": "Créer une nouvelle Playlist sur {0}"
 }

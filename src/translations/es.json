@@ -24,7 +24,7 @@
     "browse": "Explorar",
     "clear_selection": "Limpiar selección",
     "close": "Cerrar",
-    "create_playlist_on": "Crear nueva lista de reproducción en {0}",
+    "create_playlist": "Crear nueva lista de reproducción en {0}",
     "crossfade_disabled": "Crossfade está deshabilitad",
     "crossfade_enabled": "Crossfade esta habilitado",
     "dark_mode": "Modo oscuro",
@@ -231,5 +231,6 @@
     "radiobrowser_by_country": "Por país",
     "radiobrowser_by_tag": "Por etiqueta",
     "load_more_items": "Cargar más elementos...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "create_playlist_on": "Crear nueva lista de reproducción en {0}"
 }
