@@ -24,7 +24,7 @@
     "browse": "Przeglądaj",
     "clear_selection": "Wyczyść zaznaczenie",
     "close": "Zamknij",
-    "create_playlist_on": "Utwórz nową listę odtwarzania na {0}",
+    "create_playlist": "Utwórz nową listę odtwarzania na {0}",
     "crossfade_disabled": "Przejścia między utworami wyłączone",
     "crossfade_enabled": "Przejścia między utworami aktywne",
     "dark_mode": "Tryb ciemny",
@@ -231,5 +231,6 @@
     "radiobrowser_by_country": "Wg kraju",
     "radiobrowser_by_tag": "Wg tagu",
     "load_more_items": "Załaduj więcej pozycji...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "create_playlist_on": "Utwórz nową listę odtwarzania na {0}"
 }

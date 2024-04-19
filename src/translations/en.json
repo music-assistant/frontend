@@ -24,8 +24,7 @@
     "browse": "Browse",
     "clear_selection": "Clear selection",
     "close": "Close",
-    "new_playlist": "New playlist",
-    "create_playlist_on": "Create new playlist on {0}",
+    "create_playlist": "Create new playlist on {0}",
     "crossfade_disabled": "Crossfade is disabled",
     "crossfade_enabled": "Crossfade is enabled",
     "dark_mode": "Dark mode",
@@ -36,15 +35,12 @@
     "goto_album": "Goto album {0}",
     "goto_artist": "Goto artist {0}",
     "home": "Home",
-    "invalid_input": "The input was invalid",
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
     "new_playlist_name": "Enter a new for the new playlist",
-    "enter_name": "Enter a new (custom) name",
-    "image_url": "Input the URL to an image or icon (optional)",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",
@@ -155,13 +151,6 @@
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
         "group_members": "Group members",
-        "category": {
-            "audio": "Audio",
-            "advanced": "Advanced settings",
-            "generic": "Generic Settings",
-            "announcements": "Announcements configuration",
-            "airplay": "Airplay specific settings"
-        },
         "log_level": {
             "label": "Log level",
             "description": "Set the log verbosity for this provider.",
@@ -298,6 +287,13 @@
         },
         "default": "default",
         "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?",
+        "category": {
+            "audio": "Audio",
+            "advanced": "Advanced settings",
+            "generic": "Generic Settings",
+            "announcements": "Announcements configuration",
+            "airplay": "Airplay specific settings"
+        },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
             "description": "When a TTS (text-to-speech) message is sent to the Announce feature, prepend the announcement with a short pre-announcement sound (bell whistle)."
@@ -326,7 +322,7 @@
         },
         "icon": {
             "label": "Icon",
-            "description": "Material design icon for this player. \n\nSee https://pictogrammers.com/library/mdi/."
+            "description": "Material design icon for this player. \n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         }
     },
     "show_info": "Show info",
@@ -411,5 +407,10 @@
     "radiobrowser_by_tag": "By tag",
     "load_more_items": "Load more items...",
     "radio": "Radio",
-    "muted": "muted"
+    "muted": "muted",
+    "enter_name": "Enter a new (custom) name",
+    "image_url": "Input the URL to an image or icon (optional)",
+    "invalid_input": "The input was invalid",
+    "new_playlist": "New playlist",
+    "create_playlist_on": "Create new playlist on {0}"
 }
