@@ -59,7 +59,7 @@
         </div>
 
         <div
-          v-if="streamDetails.gain_correct"
+          v-if="streamDetails.target_loudness"
           style="height: 50px; display: flex; align-items: center"
         >
           <img
@@ -73,7 +73,7 @@
                 : 'object-fit: contain;filter: invert(100%);'
             "
           />
-          {{ streamDetails.gain_correct }} dB
+          {{ streamDetails.target_loudness }} dB
         </div>
       </v-list>
     </v-card>
