@@ -97,30 +97,12 @@
         </div>
 
         <!-- album: albumtype + artists + year -->
-        <div
-          v-else-if="
-            item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'year' in item &&
-            item.year &&
-            'album_type' in item
-          "
-        >
-          {{ $t('album_type.' + item.album_type) }} •
-          {{ getArtistsString(item.artists) }} • {{ item.year }}
-        </div>
-        <!-- album: albumtype + artists -->
-        <div
-          v-else-if="
-            item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'album_type' in item
-          "
-        >
-          {{ $t('album_type.' + item.album_type) }} •
-          {{ getArtistsString(item.artists) }}
+        <div v-else-if="item.media_type == MediaType.ALBUM && 'year' in item">
+          <span v-if="item.album_type != AlbumType.UNKNOWN"
+            >{{ $t('album_type.' + item.album_type) }} •
+          </span>
+          <span>{{ getArtistsString(item.artists) }}</span>
+          <span v-if="item.year"> • {{ item.year }}</span>
         </div>
         <!-- track/album fallback: artist present -->
         <div v-else-if="'artists' in item && item.artists">
@@ -216,6 +198,7 @@ import {
   type MediaItem,
   type MediaItemType,
   MediaType,
+  AlbumType,
 } from '@/plugins/api/interfaces';
 import {
   formatDuration,
