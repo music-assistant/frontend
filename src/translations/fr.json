@@ -386,7 +386,8 @@
         "collapse_expand": "Réduire\/développer cette liste",
         "back": "Précédent",
         "show_menu": "Afficher\/masquer le menu",
-        "search_filter_active": "Les résultats de la recherche sont filtrés"
+        "search_filter_active": "Les résultats de la recherche sont filtrés",
+        "play_sample": "Jouer un extrait"
     },
     "topresult": "Meilleurs résultats",
     "track": "Piste",
@@ -416,5 +417,6 @@
     "enter_name": "Saisir un nouveau nom (personnalisé)",
     "image_url": "Saisir l'URL d'une image ou d'une icône (facultatif)",
     "invalid_input": "L'entrée n'était pas valide",
+    "new_playlist": "Nouvelle playlist",
     "create_playlist_on": "Créer une nouvelle Playlist sur {0}"
 }
