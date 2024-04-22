@@ -218,10 +218,12 @@ export class MusicAssistantApi {
   public getTrackAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,
+    in_library_only = false,
   ): Promise<Album[]> {
     return this.getData('music/tracks/track_albums', {
       item_id,
       provider_instance_id_or_domain,
+      in_library_only,
     });
   }
 
@@ -264,20 +266,24 @@ export class MusicAssistantApi {
   public getArtistTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
+    in_library_only = false,
   ): Promise<Track[]> {
     return this.getData('music/artists/artist_tracks', {
       item_id,
       provider_instance_id_or_domain,
+      in_library_only,
     });
   }
 
   public getArtistAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,
+    in_library_only = false,
   ): Promise<Album[]> {
     return this.getData('music/artists/artist_albums', {
       item_id,
       provider_instance_id_or_domain,
+      in_library_only,
     });
   }
 
@@ -310,10 +316,12 @@ export class MusicAssistantApi {
   public getAlbumTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
+    in_library_only = false,
   ): Promise<Track[]> {
     return this.getData('music/albums/album_tracks', {
       item_id,
       provider_instance_id_or_domain,
+      in_library_only,
     });
   }
 

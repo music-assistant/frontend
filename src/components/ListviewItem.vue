@@ -202,12 +202,12 @@ import {
 } from '@/plugins/api/interfaces';
 import {
   formatDuration,
+  itemIsAvailable,
   parseBool,
   getArtistsString,
   getBrowseFolderName,
 } from '@/helpers/utils';
 import { useI18n } from 'vue-i18n';
-import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { ContextMenuItem } from '@/helpers/contextmenu';
 
@@ -288,16 +288,6 @@ const emit = defineEmits<{
 /* eslint-enable no-unused-vars */
 
 // methods
-
-const itemIsAvailable = function (item: MediaItem) {
-  if (item.media_type == MediaType.FOLDER) return true;
-  if (!props.item.provider_mappings) return true;
-  for (const x of item.provider_mappings) {
-    if (x.available && api.providers[x.provider_instance]?.available)
-      return true;
-  }
-  return false;
-};
 </script>
 
 <style scoped>

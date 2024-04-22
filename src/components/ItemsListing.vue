@@ -34,6 +34,24 @@
             "
         /></Button>
 
+        <!-- library only filter -->
+        <Button
+          v-if="
+            showLibraryOnlyFilter != undefined
+              ? showLibraryOnlyFilter
+              : getBreakpointValue('bp1')
+          "
+          v-bind="props"
+          variant="list"
+          :title="$t('tooltip.filter_library')"
+          :disabled="!expanded"
+          @click="toggleLibraryOnlyFilter"
+        >
+          <v-badge :model-value="params.libraryOnly" color="error" dot>
+            <v-icon icon="mdi-bookshelf" />
+          </v-badge>
+        </Button>
+
         <!-- favorites only filter -->
         <Button
           v-if="
@@ -155,41 +173,6 @@
           @click="toggleViewMode()"
           ><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
         /></Button>
-
-        <!-- provider filter dropdown -->
-        <v-menu
-          v-if="providerFilter && providerFilter.length > 1"
-          location="bottom end"
-          :close-on-content-click="true"
-        >
-          <template #activator="{ props }">
-            <Button v-bind="props" variant="list" :disabled="!expanded">
-              <ProviderIcon :domain="params.providerFilter!" :size="30" />
-            </Button>
-          </template>
-          <v-card>
-            <v-list>
-              <div v-for="provId of providerFilter" :key="provId">
-                <ListItem @click="changeActiveProviderFilter(provId)">
-                  <template #prepend>
-                    <ProviderIcon :domain="provId" :size="30" />
-                  </template>
-                  <template #title>
-                    <span v-if="provId == 'library'">{{ $t('library') }}</span>
-                    <span v-else>{{ api.getProviderName(provId) }}</span>
-                  </template>
-                  <template #append>
-                    <v-icon
-                      v-if="params.providerFilter == provId"
-                      icon="mdi-check"
-                    />
-                  </template>
-                </ListItem>
-                <v-divider />
-              </div>
-            </v-list>
-          </v-card>
-        </v-menu>
 
         <!-- contextmenu -->
         <v-menu
@@ -386,7 +369,6 @@ import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
@@ -400,7 +382,7 @@ export interface LoadDataParams {
   search: string;
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
-  providerFilter?: string;
+  libraryOnly?: boolean;
   refresh?: boolean;
 }
 // properties
@@ -421,7 +403,7 @@ export interface Props {
   updateAvailable?: boolean;
   title?: string;
   hideOnEmpty?: boolean;
-  providerFilter?: string[];
+  showLibraryOnlyFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   contextMenuItems?: Array<ContextMenuItem>;
@@ -451,7 +433,7 @@ const props = withDefaults(defineProps<Props>(), {
   limit: 100,
   infiniteScroll: true,
   title: undefined,
-  providerFilter: undefined,
+  showLibraryOnlyFilter: false,
   contextMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
@@ -467,7 +449,7 @@ const params = ref<LoadDataParams>({
   limit: 100,
   sortBy: 'name',
   search: '',
-  providerFilter: 'library',
+  libraryOnly: false,
 });
 const viewMode = ref('list');
 const showSortMenu = ref(false);
@@ -623,8 +605,8 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   loadData(true, undefined, sort_key == 'original');
 };
 
-const changeActiveProviderFilter = function (provider: string) {
-  params.value.providerFilter = provider;
+const toggleLibraryOnlyFilter = function () {
+  params.value.libraryOnly = !params.value.libraryOnly;
   loadData(true, undefined, true);
 };
 

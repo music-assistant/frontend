@@ -2,6 +2,7 @@
   <v-card
     v-hold="() => (showCheckboxes ? null : emit('menu', item))"
     class="panel-item"
+    :disabled="!itemIsAvailable(item)"
     @click="showCheckboxes ? null : emit('click', item)"
     @click.right.prevent="showCheckboxes ? null : emit('menu', item)"
     @mouseover="showSettingDots = true"
@@ -119,6 +120,7 @@ import {
 } from '@/plugins/api/interfaces';
 import {
   getArtistsString,
+  itemIsAvailable,
   getBrowseFolderName,
   parseBool,
 } from '@/helpers/utils';
