@@ -15,7 +15,7 @@
     "@mdi/js": "7.4.47",
     "color": "4.2.3",
     "colorthief": "2.4.0",
-    "home-assistant-js-websocket": "9.2.1",
+    "home-assistant-js-websocket": "9.3.0",
     "marked": "^12.0.2",
     "mitt": "3.0.1",
     "mobile-detect": "1.4.5",
