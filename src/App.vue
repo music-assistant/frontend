@@ -14,6 +14,11 @@
             label="Port"
             placeholder="8095"
           />
+          <v-switch
+            v-model="tls"
+            style="height: 56px"
+            label="Use TLS for server connection"
+          />
           <v-card-title class="my-3" style="cursor: default; height: 32px">Client settings</v-card-title>
           <v-switch
             v-model="discordRPCEnabled"
@@ -88,6 +93,7 @@ const closeToTrayEnabled = ref(true);
 const port = ref(8095);
 const slimprotoPort = ref(3483);
 const ip = ref('homeassistant.local');
+const tls = ref(false);
 const themeSetting = ref('light');
 const outputDevice = ref('default');
 const availableOutputDevices = ref(['default']);
@@ -118,12 +124,14 @@ const try_start = async () => {
   // Save ip and port
   localStorage.setItem('mass_ip', ip.value);
   localStorage.setItem('mass_port', port.value.toString());
+  localStorage.setItem('mass_tls', tls.value.toString());
   localStorage.setItem('slimprotoPort', slimprotoPort.value.toString());
   localStorage.setItem('outputDevice', outputDevice.value);
 
   loading.value = true;
   // Try to connect to the websocket
-  await WebSocket.connect(`ws://${ip.value}:${port.value}/ws`)
+  let protocol = tls.value ? "wss" : "ws";
+  await WebSocket.connect(`${protocol}://${ip.value}:${port.value}/ws`)
     .then((i) => {
       // If it sucessfully connects, start the app
       start();
@@ -186,6 +194,7 @@ onMounted(async () => {
   // Set to previus settings
   let ip_storage = localStorage.getItem('mass_ip') || 'homeassistant.local';
   let port_storage = Number(localStorage.getItem('mass_port')) || 8095;
+  let tls_storage = localStorage.getItem('mass_tls') === 'true' || false;
   let output_device_setting = localStorage.getItem('outputDevice') || 'default';
   let slimproto_port_storage = Number(localStorage.getItem('slimprotoPort')) || 3483;
   let start_discord_rpc = localStorage.getItem('discordRPCEnabled') === 'true' || false;
@@ -201,6 +210,7 @@ onMounted(async () => {
   squeezeliteEnabled.value = start_squeezelite;
   ip.value = ip_storage;
   port.value = port_storage;
+  tls.value = tls_storage;
   themeSetting.value = theme_setting;
   outputDevice.value = output_device_setting;
   slimprotoPort.value = slimproto_port_storage;
@@ -229,9 +239,11 @@ onMounted(async () => {
 });
 
 const start = () => {
+  let protocolHTTP = tls.value ? "https" : "http";
+  let protocolWS = tls.value ? "wss" : "ws";
   // The server adress and websocket address
-  let frontendServerAddress = `http://${ip.value}:${port.value}/`;
-  let websocket = `ws://${ip.value}:${port.value}/ws`;
+  let frontendServerAddress = `${protocolHTTP}://${ip.value}:${port.value}/`;
+  let websocket = `${protocolWS}://${ip.value}:${port.value}/ws`;
 
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
