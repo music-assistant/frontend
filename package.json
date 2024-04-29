@@ -53,7 +53,7 @@
     "vite": "4.5.0",
     "vite-plugin-pwa": "0.19.8",
     "vite-plugin-vuetify": "1.0.2",
-    "vite-plugin-webfont-dl": "3.9.3",
+    "vite-plugin-webfont-dl": "3.9.4",
     "vue-tsc": "2.0.14"
   }
 }
