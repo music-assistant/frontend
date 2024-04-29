@@ -16,6 +16,7 @@ interface Store {
   selectedPlayer?: Player;
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
+  globalSearchTerm?: string;
 }
 
 export const store: Store = reactive({
@@ -52,4 +53,5 @@ export const store: Store = reactive({
       return store.activePlayerQueue.current_item;
     return undefined;
   }),
+  globalSearchTerm: undefined,
 });
