@@ -27,7 +27,14 @@
       <Button
         v-if="store.prevScrollName"
         xx-large
-        style="position: absolute; width:40px, height:40px;left: 4px; top: 10px"
+        style="
+          width: 40px;
+          height: 5px;
+          left: 4px;
+          top: 15px;
+          bottom: 0;
+          padding: 0;
+        "
         icon="mdi-arrow-left"
         :title="$t('tooltip.back')"
         @click.stop="router.go(-1)"
@@ -36,7 +43,6 @@
         v-if="item"
         style="
           margin: 0;
-          position: absolute;
           top: 50%;
           -ms-transform: translateY(-50%);
           transform: translateY(-50%);
@@ -53,7 +59,7 @@
           style="
             height: 100%;
             min-width: 230px;
-            margin-top: 15px;
+            margin-top: 25px;
             margin-bottom: 15px;
             margin-right: 24px;
             align-content: center;
