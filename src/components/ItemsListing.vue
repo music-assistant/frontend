@@ -629,8 +629,8 @@ const loadNextPage = function ($state?: any) {
 };
 
 const redirectSearch = function () {
-  localStorage.setItem('globalsearch', params.value.search);
-  router.push({ name: 'search', params: { initSearch: params.value.search } });
+  store.globalSearchTerm = params.value.search;
+  router.push({ name: 'search' });
 };
 
 // watchers

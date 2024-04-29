@@ -79,6 +79,7 @@ watch(
       loadSearchResults();
     }, 200);
   },
+  { immediate: true },
 );
 
 const loadSearchResults = async function () {
