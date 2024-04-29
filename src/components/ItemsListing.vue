@@ -500,6 +500,13 @@ const toggleFavoriteFilter = function () {
   loadData(true);
 };
 
+const toggleLibraryOnlyFilter = function () {
+  params.value.libraryOnly = !params.value.libraryOnly;
+  const libraryOnlyStr = params.value.libraryOnly ? 'true' : 'false';
+  localStorage.setItem(`libraryFilter.${props.itemtype}`, libraryOnlyStr);
+  loadData(true, undefined, true);
+};
+
 const toggleAlbumArtistsFilter = function () {
   params.value.albumArtistsFilter = !params.value.albumArtistsFilter;
   const albumArtistsOnlyStr = params.value.albumArtistsFilter
@@ -603,11 +610,6 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   }
   localStorage.setItem(`sortBy.${props.itemtype}`, params.value.sortBy);
   loadData(true, undefined, sort_key == 'original');
-};
-
-const toggleLibraryOnlyFilter = function () {
-  params.value.libraryOnly = !params.value.libraryOnly;
-  loadData(true, undefined, true);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -839,6 +841,16 @@ const restoreState = function () {
     );
     if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
       params.value.favoritesOnly = true;
+    }
+  }
+
+  // get stored/default libraryOnlyFilter for this itemtype
+  if (props.showLibraryOnlyFilter !== false) {
+    const savedLibraryOnlyStr = localStorage.getItem(
+      `libraryFilter.${props.itemtype}`,
+    );
+    if (savedLibraryOnlyStr && savedLibraryOnlyStr == 'true') {
+      params.value.libraryOnly = true;
     }
   }
 
