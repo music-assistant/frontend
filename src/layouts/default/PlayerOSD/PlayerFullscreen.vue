@@ -121,7 +121,18 @@
                 store.curQueueItem?.streamdetails?.stream_title
               "
             >
-              <h4 class="fullscreen-track-info-subtitle">
+              <!-- radio live metadata -->
+              <h4
+                v-if="
+                  store.curQueueItem.streamdetails.stream_title &&
+                  store.curQueueItem.streamdetails.stream_title.includes(' - ')
+                "
+                class="fullscreen-track-info-subtitle"
+                style="cursor: pointer"
+                @click="
+                  radioTitleClick(store.curQueueItem.streamdetails.stream_title)
+                "
+              >
                 {{ store.curQueueItem.streamdetails.stream_title }}
               </h4>
             </div>
@@ -486,6 +497,13 @@ const radioNameClick = function (item: Radio | ItemMapping) {
       provider: item.provider,
     },
   });
+  store.showFullscreenPlayer = false;
+};
+
+const radioTitleClick = function (streamTitle: string) {
+  // radio station title clicked
+  store.globalSearchTerm = streamTitle;
+  router.push({ name: 'search' });
   store.showFullscreenPlayer = false;
 };
 
