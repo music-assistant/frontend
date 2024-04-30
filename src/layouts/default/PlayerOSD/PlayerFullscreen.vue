@@ -124,7 +124,6 @@
               <!-- radio live metadata -->
               <h4
                 v-if="
-                  store.curQueueItem.streamdetails.stream_title &&
                   store.curQueueItem.streamdetails.stream_title.includes(' - ')
                 "
                 class="fullscreen-track-info-subtitle"
@@ -133,6 +132,9 @@
                   radioTitleClick(store.curQueueItem.streamdetails.stream_title)
                 "
               >
+                {{ store.curQueueItem.streamdetails.stream_title }}
+              </h4>
+              <h4 v-else class="fullscreen-track-info-subtitle">
                 {{ store.curQueueItem.streamdetails.stream_title }}
               </h4>
             </div>
