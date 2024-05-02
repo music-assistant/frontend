@@ -58,5 +58,4 @@ We use Lokalise to manage the translation files for the Music Assistant frontend
 
 ### Contributing
 
-If you wish to assist in translating Music Assistant into a language that it currently does not support,
-please reach out on our Discord channel for details on how you can contribute.
+If you wish to assist in translating Music Assistant into a language that it currently does not support, please see here https://music-assistant.io/help/lokalise/.

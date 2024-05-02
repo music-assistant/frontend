@@ -27,9 +27,6 @@ module.exports = {
         singleQuote: true,
         endOfLine: 'auto',
       },
-      {
-        usePrettierrc: true,
-      },
     ],
     'vue/multi-word-component-names': 'off',
     'no-unused-vars': 'off',

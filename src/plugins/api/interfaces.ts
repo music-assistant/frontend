@@ -31,7 +31,7 @@ export enum LinkType {
 
 export enum ImageType {
   THUMB = 'thumb',
-  WIDE_THUMB = 'wide_thumb',
+  LANDSCAPE = 'landscape',
   FANART = 'fanart',
   LOGO = 'logo',
   CLEARART = 'clearart',
@@ -99,17 +99,17 @@ export enum PlayerState {
 export enum PlayerType {
   PLAYER = 'player', // A regular player.
   GROUP = 'group', // A (dedicated) group player or playergroup.
-  STEREO_PAIR = 'stereo_pair', // Two speakers playing as one stereo pair.
+  SYNC_GROUP = 'sync_group', // A group/preset of players that can be synced together.
 }
 
 export enum PlayerFeature {
   POWER = 'power',
   VOLUME_SET = 'volume_set',
   VOLUME_MUTE = 'volume_mute',
+  PAUSE = 'pause',
   SYNC = 'sync',
   SEEK = 'seek',
-  SET_MEMBERS = 'set_members',
-  QUEUE = 'queue',
+  ENQUEUE_NEXT = 'enqueue_next',
 }
 
 export enum EventType {
@@ -160,8 +160,12 @@ export enum ProviderFeature {
   PLAYLIST_TRACKS_EDIT = 'playlist_tracks_edit',
   PLAYLIST_CREATE = 'playlist_create',
   // player provider specific features
-  CREATE_GROUP = 'create_group',
-  DELETE_GROUP = 'delete_group',
+  PLAYER_GROUP_CREATE = 'player_group_create',
+  SYNC_PLAYERS = 'sync_players',
+  // metadata provider specific features
+  ARTIST_METADATA = 'artist_metadata',
+  ALBUM_METADATA = 'album_metadata',
+  TRACK_METADATA = 'track_metadata',
 }
 
 export enum ProviderType {
@@ -180,6 +184,8 @@ export enum ConfigEntryType {
   LABEL = 'label',
   DIVIDER = 'divider',
   ACTION = 'action',
+  ICON = 'icon',
+  ALERT = 'alert',
 }
 
 //// api
@@ -234,21 +240,32 @@ export interface ServerInfoMessage {
   homeassistant_addon: boolean;
 }
 
-export type MessageType = CommandMessage | EventMessage | SuccessResultMessage | ErrorResultMessage | ServerInfoMessage;
+export type MessageType =
+  | CommandMessage
+  | EventMessage
+  | SuccessResultMessage
+  | ErrorResultMessage
+  | ServerInfoMessage;
 
 // config entries
 
-export type ConfigValueType = string | number | boolean | string[] | number[] | null;
+export type ConfigValueType =
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | null;
 
 export interface ConfigValueOption {
-  // Model for a value with seperated name/value.
+  // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
 }
 
 export interface ConfigEntry {
   // Model for a Config Entry.
-  // The definition of something that can be configured for an opbject (e.g. provider or player)
+  // The definition of something that can be configured for an object (e.g. provider or player)
   // within Music Assistant (without the value).
   // key: used as identifier for the entry, also for localization
   key: string;
@@ -271,8 +288,8 @@ export interface ConfigEntry {
   depends_on?: string;
   // hidden: hide from UI
   hidden: boolean;
-  // advanced: this is an advanced setting (frontend hides it in some corner)
-  advanced: boolean;
+  // category: category to group this setting into in the frontend (e.g. advanced)
+  category: string;
   // action: (configentry)action that is needed to get the value for this entry
   action?: string;
   // action_label: default label for the action when no translation for the action is present
@@ -327,7 +344,7 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   // quality details (streamable content only)
-  audio_format: AudioFormat;
+  audio_format?: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists
@@ -342,9 +359,8 @@ export interface MediaItemLink {
 export interface MediaItemImage {
   type: ImageType;
   path: string;
-  // set to instance_id of provider if the path needs to be resolved
-  // if the path is just a plain (remotely accessible) URL, set it to 'url'
   provider: string;
+  remotely_accessible: boolean;
 }
 
 export interface MediaItemMetadata {
@@ -363,7 +379,7 @@ export interface MediaItemMetadata {
   preview?: string;
   replaygain?: number;
   popularity?: number;
-  checksum?: string;
+  cache_checksum?: string;
 }
 
 export interface MediaItem {
@@ -389,6 +405,7 @@ export interface ItemMapping {
   sort_name: string;
   uri: string;
   version: string;
+  image?: MediaItemImage;
 }
 
 export interface Artist extends MediaItem {
@@ -419,7 +436,6 @@ export interface Track extends MediaItem {
   artists: Array<ItemMapping | Artist>;
   // album track only
   album: ItemMapping | Album;
-  albums: TrackAlbumMapping[];
   disc_number?: number;
   track_number?: number;
   // playlist track only
@@ -428,7 +444,6 @@ export interface Track extends MediaItem {
 
 export interface Playlist extends MediaItem {
   owner: string;
-  checksum: string;
   is_editable: boolean;
 }
 
@@ -436,7 +451,13 @@ export interface Radio extends MediaItem {
   duration?: number;
 }
 
-export type MediaItemType = Artist | Album | Track | Radio | Playlist | BrowseFolder;
+export type MediaItemType =
+  | Artist
+  | Album
+  | Track
+  | Radio
+  | Playlist
+  | BrowseFolder;
 
 export interface BrowseFolder extends MediaItem {
   path?: string;
@@ -469,6 +490,14 @@ export interface AudioFormat {
   bit_rate: number;
 }
 
+export interface LoudnessMeasurement {
+  integrated: number;
+  true_peak: number;
+  lra: number;
+  threshold: number;
+  target_offset: number;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
@@ -476,13 +505,10 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_title?: string;
   duration?: number;
-  size?: number;
 
   queue_id?: string;
-  seconds_streamed: number;
-  seconds_skipped: number;
-  gain_correct: number;
-  loudness?: number;
+  loudness?: LoudnessMeasurement;
+  target_loudness?: number;
 }
 
 // queue_item
@@ -507,7 +533,6 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
-  crossfade_enabled: boolean;
   repeat_mode: RepeatMode;
   current_index?: number;
   index_in_buffer?: number;
@@ -552,7 +577,8 @@ export interface Player {
   enabled: boolean;
   group_volume: number;
   display_name: string;
-  hidden_by: string[];
+  hidden: boolean;
+  icon: string;
 }
 
 // provider
@@ -583,6 +609,8 @@ export interface ProviderManifest {
   icon_svg?: string;
   // icon_svg_dark: optional separate dark svg icon (full xml string)
   icon_svg_dark?: string;
+  // depends on: domain of another provider that is required for this provider
+  depends_on?: string;
 }
 
 export interface ProviderInstance {
@@ -593,6 +621,7 @@ export interface ProviderInstance {
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
+  is_streaming_provider?: boolean;
 }
 
 export interface SyncTask {

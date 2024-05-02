@@ -4,7 +4,19 @@ import MobileDetect from 'mobile-detect';
 type MobileDeviceType = 'mobile' | 'phone' | 'tablet';
 const md = new MobileDetect(window.navigator.userAgent);
 
-type Breakpoints = 'bp0' | 'bp1' | 'bp2' | 'bp3' | 'bp4' | 'bp5' | 'bp6' | 'bp7' | 'bp8' | 'bp9' | 'bp10' | 'bp11';
+type Breakpoints =
+  | 'bp0'
+  | 'bp1'
+  | 'bp2'
+  | 'bp3'
+  | 'bp4'
+  | 'bp5'
+  | 'bp6'
+  | 'bp7'
+  | 'bp8'
+  | 'bp9'
+  | 'bp10'
+  | 'bp11';
 
 //TODO sorting
 const breakpoints: { [key in Breakpoints]: number } = {
@@ -32,7 +44,11 @@ type Condition = 'lt' | 'gt';
 type Key =
   | MobileDeviceType
   | Breakpoints
-  | { breakpoint: Breakpoints | MobileDeviceType; condition?: Condition; offset?: number };
+  | {
+      breakpoint: Breakpoints | MobileDeviceType;
+      condition?: Condition;
+      offset?: number;
+    };
 
 export const getBreakpointValue = (key: Key): boolean => {
   let breakpoint: Breakpoints | MobileDeviceType = 'bp1';
@@ -47,27 +63,31 @@ export const getBreakpointValue = (key: Key): boolean => {
     breakpoint = key;
   }
 
-  if (Object.values<MobileDeviceType>(['mobile', 'phone', 'tablet']).includes(breakpoint as MobileDeviceType)) {
+  if (
+    Object.values<MobileDeviceType>(['mobile', 'phone', 'tablet']).includes(
+      breakpoint as MobileDeviceType,
+    )
+  ) {
     if (typeof key === 'object') condition = key.condition || 'lt';
     switch (breakpoint) {
       case 'mobile':
         return md.mobile()
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       case 'phone':
         return md.phone()
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       case 'tablet':
         return md.tablet()
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
     }
   } else {
     return condition === 'lt'
@@ -95,7 +115,11 @@ const vBreakpoint: Directive = {
       breakpoint = binding.value;
     }
 
-    if (Object.values<MobileDeviceType>(['mobile', 'phone', 'tablet']).includes(breakpoint as MobileDeviceType)) {
+    if (
+      Object.values<MobileDeviceType>(['mobile', 'phone', 'tablet']).includes(
+        breakpoint as MobileDeviceType,
+      )
+    ) {
       condition = binding.value.condition || 'lt';
     }
 
@@ -105,29 +129,33 @@ const vBreakpoint: Directive = {
         return isMobileDevice
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       }
       if (device === 'phone') {
         const isPhoneDevice = md.phone() ? true : false;
         return isPhoneDevice
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       }
       if (device === 'tablet') {
         const isTabletDevice = md.tablet() ? true : false;
         return isTabletDevice
           ? true
           : condition === 'lt'
-          ? state.width < breakpoints['bp3']
-          : state.width >= breakpoints['bp3'];
+            ? state.width < breakpoints['bp3']
+            : state.width >= breakpoints['bp3'];
       }
     };
 
     const updateVisibility = () => {
-      if (Object.values<MobileDeviceType>(['mobile', 'phone', 'tablet']).includes(breakpoint as MobileDeviceType)) {
+      if (
+        Object.values<MobileDeviceType>(['mobile', 'phone', 'tablet']).includes(
+          breakpoint as MobileDeviceType,
+        )
+      ) {
         if (isMobileDevice(breakpoint as MobileDeviceType)) {
           el.style.display = '';
         } else {

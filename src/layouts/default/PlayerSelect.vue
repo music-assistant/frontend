@@ -25,7 +25,7 @@
     />
     <v-divider />
 
-    <!-- collapsable player rows-->
+    <!-- collapsible player rows-->
     <v-expansion-panels v-model="panelItem" focusable accordion flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"
@@ -36,21 +36,21 @@
       >
         <v-expansion-panel-title
           class="playerrow"
-          :style="store.selectedPlayer?.player_id == player.player_id ? 'padding:0;' : 'padding:0'"
+          :style="
+            store.selectedPlayer?.player_id == player.player_id
+              ? 'padding:0;'
+              : 'padding:0'
+          "
           expand-icon="mdi-chevron-down"
           collapse-icon="mdi-chevron-up"
           @click="
-            store.selectedPlayer = player;
+            store.selectedPlayerId = player.player_id;
             scrollToTop(player.player_id);
           "
         >
           <ListItem>
             <template #prepend>
-              <v-icon
-                size="50"
-                :icon="player.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
-                color="primary"
-              />
+              <v-icon size="50" :icon="player.icon" color="primary" />
             </template>
             <template #title>
               <div>
@@ -58,15 +58,24 @@
               </div>
             </template>
             <template #subtitle>
-              <div v-if="!player.powered" class="text-body-2" style="line-height: 1em">
-                {{ $t('state.off') }}
-              </div>
               <div
-                v-else-if="player.active_source != player.player_id && api.queues[player.active_source]"
+                v-if="!player.powered"
                 class="text-body-2"
                 style="line-height: 1em"
               >
-                {{ $t('state.' + player.state) }} ({{ api.queues[player.active_source].display_name }})
+                {{ $t('state.off') }}
+              </div>
+              <div
+                v-else-if="
+                  player.active_source != player.player_id &&
+                  api.queues[player.active_source]
+                "
+                class="text-body-2"
+                style="line-height: 1em"
+              >
+                {{ $t('state.' + player.state) }} ({{
+                  api.queues[player.active_source].display_name
+                }})
               </div>
               <div v-else class="text-body-2" style="line-height: 1em">
                 {{ $t('state.' + player.state) }}
@@ -87,9 +96,10 @@ import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
 import { Player, PlayerState } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import VolumeControl from '@/components/VolumeControl.vue';
-import { api } from '@/plugins/api';
+import { ConnectionState, api } from '@/plugins/api';
 import { getPlayerName, truncateString } from '@/helpers/utils';
 import ListItem from '@/components/mods/ListItem.vue';
+import { VueElement } from 'vue';
 
 const panelItem = ref<number | undefined>(undefined);
 
@@ -102,7 +112,11 @@ const sortedPlayers = computed(() => {
     if (!playerActive(player, true)) continue;
     res.push(player);
   }
-  return res.slice().sort((a, b) => (a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1));
+  return res
+    .slice()
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
+    );
 });
 
 //watchers
@@ -128,6 +142,15 @@ watch(
   (newVal) => {
     if (newVal) {
       checkDefaultPlayer();
+    }
+  },
+  { deep: true },
+);
+watch(
+  () => api.state,
+  (newVal) => {
+    if (newVal.value != ConnectionState.CONNECTED) {
+      store.selectedPlayerId = undefined;
     }
   },
   { deep: true },
@@ -158,15 +181,19 @@ const playerActive = function (
   if (!player.enabled) return false;
   if (!player.available && !allowUnavailable) return false;
   if (player.synced_to && !allowSyncChild) return false;
-  if (player.hidden_by.length && !allowHidden) return false;
+  if (player.hidden && !allowHidden) return false;
   return true;
 };
 
 const checkDefaultPlayer = function () {
-  if (store.selectedPlayer && playerActive(store.selectedPlayer, false, false, false)) return;
+  if (
+    store.selectedPlayer &&
+    playerActive(store.selectedPlayer, false, false, false)
+  )
+    return;
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
-    store.selectedPlayer = newDefaultPlayer;
+    store.selectedPlayerId = newDefaultPlayer.player_id;
     console.log('Selected new default player: ', newDefaultPlayer.display_name);
   }
 };
@@ -175,7 +202,10 @@ const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
   const lastPlayerId = localStorage.getItem('mass.LastPlayerId');
   if (lastPlayerId) {
-    if (lastPlayerId in api.players && playerActive(api.players[lastPlayerId], false, false, false)) {
+    if (
+      lastPlayerId in api.players &&
+      playerActive(api.players[lastPlayerId], false, false, false)
+    ) {
       return api.players[lastPlayerId];
     }
   }
@@ -234,5 +264,10 @@ div.v-expansion-panel__shadow {
   user-select: none;
   margin-inline-start: auto;
   margin-right: 5px;
+}
+
+.v-list-item__prepend {
+  /* fixes weird alignment in playerselect */
+  display: unset;
 }
 </style>

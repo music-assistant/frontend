@@ -9,7 +9,9 @@ declare module 'virtual:pwa-register/vue' {
     immediate?: boolean;
     onNeedRefresh?: () => void;
     onOfflineReady?: () => void;
-    onRegistered?: (registration: ServiceWorkerRegistration | undefined) => void;
+    onRegistered?: (
+      registration: ServiceWorkerRegistration | undefined,
+    ) => void;
     onRegisterError?: (error: any) => void;
   }
 

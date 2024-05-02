@@ -5,7 +5,7 @@ on:
     types: [published]
 env:
   PYTHON_VERSION: '3.10'
-  NODE_VERSION: 16
+  NODE_VERSION: "18.x"
   NODE_OPTIONS: --max_old_space_size=6144
 
 # Set default workflow permissions
@@ -31,7 +31,7 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -67,13 +67,13 @@ jobs:
           python3 -m build
 
       - name: Publish release to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.10
+        uses: pypa/gh-action-pypi-publish@v1.8.14
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2.0.4
         with:
           files: |
             dist/*.whl
@@ -83,7 +83,7 @@ jobs:
     name: Server repo PR
     needs: release
     runs-on: ubuntu-latest
-    steps:  
+    steps:
       - uses: music-assistant/frontend-release-pr-action@main
         with:
           github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}

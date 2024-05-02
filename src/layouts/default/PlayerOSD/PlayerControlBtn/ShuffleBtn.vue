@@ -3,18 +3,32 @@
   <ResponsiveIcon
     v-if="props.isVisible"
     v-bind="props.icon"
-    :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
-    :color="getValueFromSources(props.icon?.color, [[activePlayerQueue?.shuffle_enabled, 'secondary', '']])"
+    :disabled="
+      !store.activePlayerQueue ||
+      !store.activePlayerQueue?.active ||
+      store.activePlayerQueue?.items == 0
+    "
+    :color="
+      getValueFromSources(props.icon?.color, [
+        [store.activePlayerQueue?.shuffle_enabled, 'secondary', ''],
+      ])
+    "
     :icon="
       getValueFromSources(props.icon?.icon, [
-        [activePlayerQueue?.shuffle_enabled, 'mdi-shuffle'],
-        [activePlayerQueue?.shuffle_enabled == false, 'mdi-shuffle-disabled'],
+        [store.activePlayerQueue?.shuffle_enabled, 'mdi-shuffle'],
+        [
+          store.activePlayerQueue?.shuffle_enabled == false,
+          'mdi-shuffle-disabled',
+        ],
         [true, 'mdi-shuffle'],
       ])
     "
     :type="'btn'"
     @click="
-      api.queueCommandShuffle(activePlayerQueue?.queue_id || '', activePlayerQueue?.shuffle_enabled ? false : true)
+      api.queueCommandShuffle(
+        store.activePlayerQueue?.queue_id || '',
+        store.activePlayerQueue?.shuffle_enabled ? false : true,
+      )
     "
   />
 </template>
@@ -24,7 +38,9 @@ import { computed } from 'vue';
 
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
-import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import ResponsiveIcon, {
+  ResponsiveIconProps,
+} from '@/components/mods/ResponsiveIcon.vue';
 import { getValueFromSources } from '@/helpers/utils';
 
 // properties
@@ -35,13 +51,6 @@ export interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
-});
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
+  icon: undefined,
 });
 </script>

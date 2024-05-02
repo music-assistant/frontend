@@ -17,7 +17,13 @@ export default {
       type: String,
       default: 'default',
       validator: (value: string) => {
-        const allowedVariants = ['plain', 'default', 'responsive', 'icon', 'list'];
+        const allowedVariants = [
+          'plain',
+          'default',
+          'responsive',
+          'icon',
+          'list',
+        ];
         return allowedVariants.includes(value);
       },
     },

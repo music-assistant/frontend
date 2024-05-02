@@ -19,9 +19,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import api from '../plugins/api';
-import { ProviderFeature, type Playlist, EventMessage, EventType, MediaType } from '../plugins/api/interfaces';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import api from '@/plugins/api';
+import {
+  ProviderFeature,
+  type Playlist,
+  EventMessage,
+  EventType,
+  MediaType,
+} from '@/plugins/api/interfaces';
 import { ContextMenuItem } from '@/helpers/contextmenu';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
@@ -43,7 +49,12 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(250);
     // wait for sync to finish
     while (api.syncTasks.value.length > 0) {
-      if (api.syncTasks.value.filter((x) => x.media_types.includes(MediaType.PLAYLIST)).length == 0) break;
+      if (
+        api.syncTasks.value.filter((x) =>
+          x.media_types.includes(MediaType.PLAYLIST),
+        ).length == 0
+      )
+        break;
       await sleep(500);
     }
     await sleep(500);
@@ -60,20 +71,26 @@ const loadItems = async function (params: LoadDataParams) {
 
 onMounted(() => {
   for (const prov of Object.values(api.providers).filter(
-    (x) => x.available && x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
+    (x) =>
+      x.available &&
+      x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
   )) {
     contextMenuItems.value.push({
-      label: 'create_playlist',
+      label: 'create_playlist_on',
       labelArgs: [prov.name],
       action: () => {
         newPlaylist(prov.instance_id);
       },
-      icon: 'mdi-sync',
+      icon: 'mdi-playlist-plus',
     });
   }
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
-    [EventType.MEDIA_ITEM_ADDED, EventType.MEDIA_ITEM_UPDATED, EventType.MEDIA_ITEM_DELETED],
+    [
+      EventType.MEDIA_ITEM_ADDED,
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
+    ],
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
       if (evt.object_id?.startsWith('library://playlist')) {

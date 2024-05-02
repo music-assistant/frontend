@@ -23,12 +23,12 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import InfoHeader from '@/components/InfoHeader.vue';
 import { ref } from 'vue';
-import type { Radio } from '../plugins/api/interfaces';
+import type { Radio } from '@/plugins/api/interfaces';
 import ProviderDetails from '@/components/ProviderDetails.vue';
-import { api } from '../plugins/api';
+import { api } from '@/plugins/api';
 import { watch } from 'vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';
 
@@ -54,11 +54,19 @@ watch(
 const loadRadioVersions = async function (params: LoadDataParams) {
   const allVersions: Radio[] = [];
   if (props.provider == 'library') {
-    const radioVersions = await api.getRadioVersions(props.itemId, props.provider);
+    const radioVersions = await api.getRadioVersions(
+      props.itemId,
+      props.provider,
+    );
     allVersions.push(...radioVersions);
   }
-  for (const providerMapping of getStreamingProviderMappings(itemDetails.value!)) {
-    const radioVersions = await api.getRadioVersions(providerMapping.item_id, providerMapping.provider_instance);
+  for (const providerMapping of getStreamingProviderMappings(
+    itemDetails.value!,
+  )) {
+    const radioVersions = await api.getRadioVersions(
+      providerMapping.item_id,
+      providerMapping.provider_instance,
+    );
     allVersions.push(...radioVersions);
   }
   return allVersions;

@@ -46,7 +46,11 @@ export default defineComponent({
   },
   setup(props: IconProps) {
     const iconComponent = computed(() => {
-      if (props.darkMode && icons[props.name].props && icons[props.name].props.darkMode) {
+      if (
+        props.darkMode &&
+        icons[props.name].props &&
+        icons[props.name].props.darkMode
+      ) {
         icons[props.name].props.darkMode.default = true;
       }
       return icons[props.name];

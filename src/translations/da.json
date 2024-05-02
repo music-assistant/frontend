@@ -149,7 +149,186 @@
         "download_log": "Download log-fil",
         "edit_group_members": "Rediger gruppe-afspillere",
         "add_new_provider_button": "Tilføj {0} udbyder",
-        "add_group_player": "Tilføj gruppe-afspiller"
+        "add_group_player": "Tilføj gruppe-afspiller",
+        "group_members": "Enheder i gruppen",
+        "log_level": {
+            "label": "Log-niveau",
+            "description": "Indstil log-niveauet for denne udbyder.",
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Advarsel",
+                "error": "Fejl",
+                "debug": "Fejlsøgning",
+                "GLOBAL": "Global",
+                "INFO": "Info",
+                "WARNING": "Advarsler",
+                "ERROR": "Fejl",
+                "DEBUG": "Fejlfinding"
+            }
+        },
+        "flow_mode": {
+            "label": "Aktivér flow-tilstand",
+            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
+        },
+        "auto_play": {
+            "label": "Start automatisk afspilning",
+            "description": "Når denne afspiller tændes, starter afspilningen automatisk (hvis der er elementer i køen)."
+        },
+        "output_channels": {
+            "label": "Tilstand for udgangskanal",
+            "description": "Du kan konfigurere denne afspiller til kun at afspille venstre eller højre kanal, f.eks. for at skabe et stereopar med 2 afspillere.",
+            "options": {
+                "stereo": "Stereo (begge kanaler)",
+                "left": "Kun venstre kanal",
+                "right": "Kun højre kanal",
+                "mono": "Mono (begge kanaler)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Aktiver normalisering af lydstyrke (EBU-R128-baseret)",
+            "description": "Aktiver lydstyrkenormalisering baseret på EBU-R128-standarden uden at påvirke dynamikområdet"
+        },
+        "volume_normalization_target": {
+            "label": "Målniveau for volumenormalisering",
+            "description": "Juster gennemsnitlig (opfattet) lydniveau til dette målniveau, standard er -17 LUFS \n\n **ADVARSEL:** Hvis niveauet indstilles for højt, kan det resultere i klipning!"
+        },
+        "eq_bass": {
+            "label": "Equalizer: bas",
+            "description": "Brug den indbyggede grundlæggende equalizer til at justere lydniveauet for bas (lave toner)."
+        },
+        "eq_mid": {
+            "label": "Equalizer: mellemtone",
+            "description": "Brug den indbyggede grundlæggende equalizer til at justere mellemniveauet i lyden."
+        },
+        "eq_treble": {
+            "label": "Equalizer: diskant",
+            "description": "Brug den indbyggede grundlæggende equalizer til at justere lydniveauet for diskant (høje toner)."
+        },
+        "crossfade": {
+            "label": "Aktivér crossfade",
+            "description": "Aktiver crossfade-overgang mellem (kø-)numre."
+        },
+        "crossfade_duration": {
+            "label": "Crossfade-varighed",
+            "description": "Varighed i sekunder af crossfade mellem spor (hvis aktiveret)"
+        },
+        "hide_player": {
+            "label": "Skjul denne afspiller i brugergrænsefladen",
+            "description": "Skjul denne afspiller i brugergrænsefladen. \n\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Elementer, der skal vælges, når du afspiller en kunstner (i biblioteket).",
+            "description": "Hvis du vil afspille en kunstner, hvilke elementer skal så sættes i kø?",
+            "options": {
+                "library_tracks": "Kun numre fra biblioteket",
+                "library_album_tracks": "Alle numre fra alle albums i biblioteket",
+                "all_tracks": "Alle (top) numre fra (alle) udbyder(e)",
+                "all_album_tracks": "Alle numre fra alle albums fra (alle) udbyder(e)"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Elementer, der skal vælges, når du afspiller et album (i biblioteket).",
+            "description": "Hvis du vil afspille en kunstner, hvilke elementer skal så sættes i kø?",
+            "options": {
+                "library_tracks": "Kun numre i biblioteket",
+                "all_tracks": "Alle numre på albummet på udbyder"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Standard kø-indstilling for artist-element.",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil kunstnerens nummer\/numre nu, og behold resten af køen.",
+                "replace": "Ryd køen, og afspil kunstnerens nummer\/numre [default].",
+                "next": "Afspil elementet\/elementerne efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil kunstnerens nummer\/numre efter det aktuelle element.",
+                "add": "Tilføj kunstnerens spor i bunden af køen."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Standard kø-indstilling for albums.",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil albumnummeret\/-numrene nu, og behold de(t) resterende køelement(er).",
+                "replace": "Ryd køen, og afspil albumnummeret\/-numrene [standard].",
+                "next": "Afspil elementet\/elementerne efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil albumnummeret\/-numrene lige efter det aktuelle nummer.",
+                "add": "Tilføj albumnummeret\/-numrene i bunden af køen."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Standard kø-indstilling for numre.",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil nummeret\/numrene, og behold de(t) resterende køelement(er). [standard]",
+                "replace": "Ryd køen, og afspil nummeret\/numrene.",
+                "next": "Afspil nummeret\/numrene efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil nummeret\/numrene efter det aktuelle element.",
+                "add": "Tilføj nummeret\/numrene i bunden af køen."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Standard kø-indstilling for afspilningslisteelement(er).",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil afspilningslistens numre, og behold de resterende elementer i køen.",
+                "replace": "Ryd køen, og afspil afspilningslistens numre [standard].",
+                "next": "Afspil elementet(erne) efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil afspilningslistens spor efter det aktuelle element.",
+                "add": "Tilføj afspilningslistens spor i bunden af køen."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Standard kø-indstilling for radio-element(er).",
+            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
+            "options": {
+                "play": "Afspil radiostationen nu, og behold de(t) resterende element(er) i køen.",
+                "replace": "Ryd køen, og afspil radiostationen [standard].",
+                "next": "Afspil elementet(erne) efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil radiostationen(erne) efter det aktuelle element.",
+                "add": "Tilføj radiostation(er) i bunden af køen."
+            }
+        },
+        "default": "standard",
+        "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?",
+        "category": {
+            "audio": "Lyd",
+            "advanced": "Avancerede indstillinger",
+            "generic": "Generelle indstillinger",
+            "announcements": "Konfiguration af meddelelser",
+            "airplay": "Airplay-specifikke indstillinger"
+        },
+        "tts_pre_announce": {
+            "label": "Forhåndsannoncering af TTS-meddelelser",
+            "description": "Når en TTS-besked (tekst-til-tale) sendes til Announce-funktionen, tilføjes en kort lyd (klokke) før meddelelsen."
+        },
+        "announce_volume_strategy": {
+            "label": "Lydstyrkestrategi for meddelelser",
+            "description": "Når der sendes en meddelelse til denne afspiller, hvordan skal lydstyrken så justeres midlertidigt (brug i kombination med lydstyrken nedenfor).",
+            "options": {
+                "absolute": "Bestemt lydstyrke",
+                "relative": "Relativ lydstyrkeforøgelse",
+                "percentual": "Lydstyrkeforøgelse med fast procentsats",
+                "none": "Juster ikke lydstyrken"
+            }
+        },
+        "announce_volume": {
+            "label": "Lydstyrke for meddelelser",
+            "description": "Det procentuelle, relative eller absolutte, lydstyrkeniveau, der bruges med strategien til meddelelser."
+        },
+        "announce_volume_min": {
+            "label": "Minimum lydstyrke for meddelelser",
+            "description": "Lydstyrken af meddelelser bør ikke gå under dette niveau."
+        },
+        "announce_volume_max": {
+            "label": "Maksimal lydstyrke for meddelelser",
+            "description": "Lydstyrken af meddelelser bør ikke overstige dette niveau."
+        },
+        "icon": {
+            "label": "Ikon",
+            "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+        }
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
@@ -175,7 +354,9 @@
         "name_desc": "Alfabetisk (faldende)",
         "recent": "Nyligt tilføjet",
         "year_desc": "Udgivelsesår (faldende)",
-        "duration_desc": "Varighed (faldende)"
+        "duration_desc": "Varighed (faldende)",
+        "original": "Original",
+        "none": "Tom"
     },
     "state": {
         "idle": "keder sig",
@@ -204,7 +385,9 @@
         "open_provider_link": "Åbn dette element på udbyderens hjemmeside",
         "collapse_expand": "Skjul\/udvid listen",
         "back": "Tilbage",
-        "show_menu": "Vis\/skjul menu"
+        "show_menu": "Vis\/skjul menu",
+        "search_filter_active": "Søgningen filtrerer i øjeblikket resultater",
+        "play_sample": "Afspil prøve"
     },
     "topresult": "Bedste resultat",
     "track": "Spor",
@@ -224,5 +407,16 @@
     "mapped_providers": "Udbyderoplysninger",
     "item_in_library": "Dette element er tilgængeligt i biblioteket",
     "back": "Tilbage",
-    "recently_played": "Nyligt afspillet"
+    "recently_played": "Nyligt afspillet",
+    "radiobrowser_by_popularity": "Efter popularitet",
+    "radiobrowser_by_country": "Efter land",
+    "radiobrowser_by_tag": "Efter tag",
+    "load_more_items": "Indlæs flere emner...",
+    "radio": "Radio",
+    "muted": "dæmpet",
+    "enter_name": "Indtast et nyt (brugerdefineret) navn",
+    "image_url": "Indtast URL'en til et billede eller ikon (valgfrit)",
+    "invalid_input": "Input var ugyldigt",
+    "new_playlist": "Ny playliste",
+    "create_playlist_on": "Opret ny playliste på {0}"
 }

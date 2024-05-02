@@ -1,4 +1,4 @@
-<!-- 
+<!--
   Global dialog to play item(s) to a player.
   Because this dialog can be called from various places throughout the app,
   we steer its visibility through the centralized eventbus.
@@ -16,10 +16,18 @@
     "
   >
     <v-card>
-      <v-toolbar color="transparent" style="padding: 10px 0px" density="compact" class="titlebar">
-        <v-btn icon="mdi-play-circle-outline" />
-        <v-toolbar-title style="padding-left: 10px">
-          <b>{{ header }}</b>
+      <v-toolbar color="transparent" density="compact" class="titlebar">
+        <template #prepend>
+          <v-icon
+            size="large"
+            class="ml-4 d-none d-sm-block"
+            style="vertical-align: initial"
+            icon="mdi-play-circle-outline"
+            aria-hidden="true"
+          />
+        </template>
+        <v-toolbar-title>
+          <h2 class="font-weight-bold">{{ header }}</h2>
         </v-toolbar-title>
         <v-btn icon="mdi-close" dark @click="close()" />
       </v-toolbar>
@@ -29,19 +37,23 @@
       <v-card-text v-if="playMenuItems.length > 0">
         <v-select
           :label="$t('play_on')"
-          :model-value="store.selectedPlayer?.player_id"
+          :model-value="store.selectedPlayerId"
           :items="availablePlayers"
           hide-details
           @update:model-value="
             (newVal) => {
-              store.selectedPlayer = api.players[newVal];
+              store.selectedPlayerId = newVal;
             }
           "
         />
 
         <v-list>
           <div v-for="item of playMenuItems" :key="item.label">
-            <ListItem :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
+            <ListItem
+              :title="$t(item.label, item.labelArgs)"
+              density="default"
+              @click="itemClicked(item)"
+            >
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
@@ -61,7 +73,11 @@
         </v-list-item-subtitle>
         <v-list>
           <div v-for="item of contextMenuItems" :key="item.label">
-            <ListItem :title="$t(item.label, item.labelArgs)" density="default" @click="itemClicked(item)">
+            <ListItem
+              :title="$t(item.label, item.labelArgs)"
+              density="default"
+              @click="itemClicked(item)"
+            >
               <template #prepend>
                 <v-avatar style="padding-right: 10px">
                   <v-icon :icon="item.icon" />
@@ -82,7 +98,11 @@ import api from '@/plugins/api';
 import { useI18n } from 'vue-i18n';
 import { store } from '@/plugins/store';
 import ListItem from '@/components/mods/ListItem.vue';
-import { getContextMenuItems, ContextMenuItem, getPlayMenuItems } from '@/helpers/contextmenu';
+import {
+  getContextMenuItems,
+  ContextMenuItem,
+  getPlayMenuItems,
+} from '@/helpers/contextmenu';
 import { PlayItemDialogEvent, eventbus } from '@/plugins/eventbus';
 
 const { t } = useI18n();
@@ -113,11 +133,16 @@ const showDialog = async function () {
   // show contextmenu items for the selected mediaItem(s)
   if (!selectedItems.value) return;
 
-  if (selectedItems.value.length === 1) header.value = selectedItems.value[0].name;
-  else header.value = t('items_selected', [selectedItems.value.length]).toString();
+  if (selectedItems.value.length === 1)
+    header.value = selectedItems.value[0].name;
+  else
+    header.value = t('items_selected', [selectedItems.value.length]).toString();
 
   if (store.selectedPlayer && store.selectedPlayer.available) {
-    playMenuItems.value = getPlayMenuItems(selectedItems.value, parentItem.value);
+    playMenuItems.value = getPlayMenuItems(
+      selectedItems.value,
+      parentItem.value,
+    );
   } else {
     playMenuItems.value = [];
   }
@@ -138,7 +163,10 @@ const showDialog = async function () {
   }
   // fetch contextmenu items too (if enabled)
   if (showContextMenuItems.value) {
-    contextMenuItems.value = getContextMenuItems(selectedItems.value, parentItem.value);
+    contextMenuItems.value = getContextMenuItems(
+      selectedItems.value,
+      parentItem.value,
+    );
   } else {
     contextMenuItems.value = [];
   }
@@ -159,7 +187,9 @@ const availablePlayers = computed(() => {
     if (player.synced_to) continue;
     res.push({ title: player.display_name, value: player.player_id });
   }
-  return res.slice().sort((a, b) => (a.title.toUpperCase() > b.title.toUpperCase() ? 1 : -1));
+  return res
+    .slice()
+    .sort((a, b) => (a.title.toUpperCase() > b.title.toUpperCase() ? 1 : -1));
 });
 </script>
 

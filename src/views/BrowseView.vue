@@ -18,11 +18,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type MediaItemType } from '../plugins/api/interfaces';
+import { type MediaItemType } from '@/plugins/api/interfaces';
 import { useRouter } from 'vue-router';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import api from '../plugins/api';
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
+import api from '@/plugins/api';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 
 export interface Props {
   path?: string;

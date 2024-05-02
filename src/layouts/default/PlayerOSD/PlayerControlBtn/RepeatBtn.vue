@@ -3,30 +3,49 @@
   <ResponsiveIcon
     v-if="props.isVisible"
     v-bind="props.icon"
-    :disabled="!activePlayerQueue || !activePlayerQueue?.active || activePlayerQueue?.items == 0"
+    :disabled="
+      !store.activePlayerQueue ||
+      !store.activePlayerQueue?.active ||
+      store.activePlayerQueue?.items == 0
+    "
     :color="
       getValueFromSources(props.icon?.color, [
-        [activePlayerQueue?.repeat_mode == RepeatMode.OFF, null],
-        [activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'secondary'],
-        [activePlayerQueue?.repeat_mode == RepeatMode.ONE, 'secondary'],
+        [store.activePlayerQueue?.repeat_mode == RepeatMode.OFF, null],
+        [store.activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'secondary'],
+        [store.activePlayerQueue?.repeat_mode == RepeatMode.ONE, 'secondary'],
       ])
     "
     :icon="
       getValueFromSources(props.icon?.icon, [
-        [activePlayerQueue?.repeat_mode == RepeatMode.OFF, 'mdi-repeat-off'],
-        [activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'mdi-repeat'],
-        [activePlayerQueue?.repeat_mode == RepeatMode.ONE, 'mdi-repeat-once'],
+        [
+          store.activePlayerQueue?.repeat_mode == RepeatMode.OFF,
+          'mdi-repeat-off',
+        ],
+        [store.activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'mdi-repeat'],
+        [
+          store.activePlayerQueue?.repeat_mode == RepeatMode.ONE,
+          'mdi-repeat-once',
+        ],
         [true, 'mdi-repeat-off'],
       ])
     "
     :type="'btn'"
     @click="
       api.queueCommandRepeat(
-        activePlayerQueue?.queue_id || '',
+        store.activePlayerQueue?.queue_id || '',
         getValueFromSources(null, [
-          [activePlayerQueue?.repeat_mode == RepeatMode.OFF, RepeatMode.ONE],
-          [activePlayerQueue?.repeat_mode == RepeatMode.ALL, RepeatMode.OFF],
-          [activePlayerQueue?.repeat_mode == RepeatMode.ONE, RepeatMode.ALL],
+          [
+            store.activePlayerQueue?.repeat_mode == RepeatMode.OFF,
+            RepeatMode.ONE,
+          ],
+          [
+            store.activePlayerQueue?.repeat_mode == RepeatMode.ALL,
+            RepeatMode.OFF,
+          ],
+          [
+            store.activePlayerQueue?.repeat_mode == RepeatMode.ONE,
+            RepeatMode.ALL,
+          ],
         ]),
       )
     "
@@ -39,7 +58,9 @@ import { computed } from 'vue';
 import api from '@/plugins/api';
 import { RepeatMode } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import ResponsiveIcon, {
+  ResponsiveIconProps,
+} from '@/components/mods/ResponsiveIcon.vue';
 import { getValueFromSources } from '@/helpers/utils';
 
 // properties
@@ -49,13 +70,6 @@ export interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
-});
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
+  icon: undefined,
 });
 </script>

@@ -1,24 +1,34 @@
 <template>
   <!-- play/pause button: only when MA queue is active -->
   <ResponsiveIcon
-    v-if="activePlayerQueue && activePlayerQueue?.active && props.isVisible"
+    v-if="
+      store.activePlayerQueue &&
+      store.activePlayerQueue?.active &&
+      props.isVisible
+    "
     v-bind="props.icon"
-    :disabled="activePlayerQueue && !activePlayerQueue?.active && activePlayerQueue?.items == 0"
+    :disabled="
+      store.activePlayerQueue &&
+      !store.activePlayerQueue?.active &&
+      store.activePlayerQueue?.items == 0
+    "
     :icon="
-      activePlayerQueue?.state == 'playing'
+      store.activePlayerQueue?.state == 'playing'
         ? props.withCircle
           ? 'mdi-pause-circle'
           : 'mdi-pause'
         : props.withCircle
-        ? 'mdi-play-circle'
-        : 'mdi-play'
+          ? 'mdi-play-circle'
+          : 'mdi-play'
     "
     :type="'btn'"
-    @click="api.queueCommandPlayPause(activePlayerQueue!.queue_id)"
+    @click="api.queueCommandPlayPause(store.activePlayerQueue!.queue_id)"
   />
   <!-- stop button: player is playing other source (not MA)-->
   <ResponsiveIcon
-    v-else-if="store.selectedPlayer?.state == PlayerState.PLAYING && props.isVisible"
+    v-else-if="
+      store.selectedPlayer?.state == PlayerState.PLAYING && props.isVisible
+    "
     v-bind="props.icon"
     icon="mdi-stop"
     :type="'btn'"
@@ -28,10 +38,14 @@
   <ResponsiveIcon
     v-else-if="props.isVisible"
     v-bind="props.icon"
-    :disabled="!activePlayerQueue || activePlayerQueue?.items == 0"
+    :disabled="!store.activePlayerQueue || store.activePlayerQueue?.items == 0"
     :icon="props.withCircle ? 'mdi-play-circle' : 'mdi-play'"
     :type="'btn'"
-    @click="api.queueCommandPlay(activePlayerQueue?.queue_id || store.selectedPlayer!.player_id)"
+    @click="
+      api.queueCommandPlay(
+        store.activePlayerQueue?.queue_id || store.selectedPlayer!.player_id,
+      )
+    "
   />
 </template>
 
@@ -41,7 +55,9 @@ import { computed } from 'vue';
 import api from '@/plugins/api';
 import { PlayerState } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import ResponsiveIcon, { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
+import ResponsiveIcon, {
+  ResponsiveIconProps,
+} from '@/components/mods/ResponsiveIcon.vue';
 
 // properties
 export interface Props {
@@ -53,13 +69,6 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
   withCircle: true,
-});
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
+  icon: undefined,
 });
 </script>

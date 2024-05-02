@@ -1,7 +1,11 @@
 <template>
   <!-- active player volume -->
-  <div v-if="props.isVisible">
-    <v-menu v-if="activePlayerQueue" v-model="showVolume" class="volume-control-dialog" :close-on-content-click="false">
+  <div v-if="props.isVisible && store.selectedPlayer">
+    <v-menu
+      v-model="showVolume"
+      class="volume-control-dialog"
+      :close-on-content-click="false"
+    >
       <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
           <PlayerVolume
@@ -15,14 +19,29 @@
             "
             @update:model-value="
               store.selectedPlayer!.group_childs.length > 0
-                ? api.playerCommandGroupVolume(store.selectedPlayer?.player_id || '', $event)
-                : api.playerCommandVolumeSet(store.selectedPlayer?.player_id || '', $event)
+                ? api.playerCommandGroupVolume(
+                    store.selectedPlayer?.player_id || '',
+                    $event,
+                  )
+                : api.playerCommandVolumeSet(
+                    store.selectedPlayer?.player_id || '',
+                    $event,
+                  )
             "
           >
             <template #prepend>
               <!-- select player -->
-              <Button variant="icon" size="48" :ripple="false" v-bind="{ ...menu }">
-                <v-icon :color="props.color ? color : ''" :size="24" icon="mdi-volume-high" />
+              <Button
+                variant="icon"
+                size="48"
+                :ripple="false"
+                v-bind="{ ...menu }"
+              >
+                <v-icon
+                  :color="props.color ? color : ''"
+                  :size="24"
+                  icon="mdi-volume-high"
+                />
                 <div class="text-caption">
                   {{
                     store.selectedPlayer!.group_childs.length > 0
@@ -37,7 +56,10 @@
         <div v-else>
           <Button v-bind="{ ...menu }" size="48" variant="icon">
             <v-icon :color="props.color ? color : ''" icon="mdi-volume-high" />
-            <div class="text-caption" :style="{ color: props.color ? color : '' }">
+            <div
+              class="text-caption"
+              :style="{ color: props.color ? color : '' }"
+            >
               {{
                 store.selectedPlayer!.group_childs.length > 0
                   ? Math.round(store.selectedPlayer?.group_volume || 0)
@@ -54,12 +76,16 @@
             density="compact"
             two-line
             :title="store.selectedPlayer?.display_name.substring(0, 25)"
-            :subtitle="!store.selectedPlayer?.powered ? $t('state.off') : $t('state.' + store.selectedPlayer?.state)"
+            :subtitle="
+              !store.selectedPlayer?.powered
+                ? $t('state.off')
+                : $t('state.' + store.selectedPlayer?.state)
+            "
           >
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="store.selectedPlayer!.group_childs.length > 0 ? 'mdi-speaker-multiple' : 'mdi-speaker'"
+                :icon="store.selectedPlayer.icon"
                 color="primary"
               />
             </template>
@@ -72,7 +98,10 @@
             />
           </ListItem>
           <v-divider />
-          <VolumeControl v-if="store.selectedPlayer" :player="store.selectedPlayer" />
+          <VolumeControl
+            v-if="store.selectedPlayer"
+            :player="store.selectedPlayer"
+          />
         </v-list>
       </v-card>
     </v-menu>
@@ -108,14 +137,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 //refs
 const showVolume = ref(false);
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
 </script>
 
 <style>
