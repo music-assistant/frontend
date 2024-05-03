@@ -110,6 +110,7 @@ const addUrl = async function () {
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;
+      delete item.sort_name;
 
       const imgUrl = prompt(
         t('image_url'),

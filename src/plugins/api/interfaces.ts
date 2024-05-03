@@ -391,7 +391,7 @@ export interface MediaItem {
   metadata: MediaItemMetadata;
   favorite: boolean;
   media_type: MediaType;
-  sort_name: string;
+  sort_name?: string;
   uri: string;
   timestamp_added: number;
   timestamp_modified: number;
