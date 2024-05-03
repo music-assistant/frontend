@@ -86,7 +86,7 @@ export class MusicAssistantApi {
   );
   public syncTasks = ref<SyncTask[]>([]);
   public fetchesInProgress = ref<number[]>([]);
-  private eventCallbacks: Array<[string, CallableFunction]>;
+  private eventCallbacks: Array<[EventType, string, CallableFunction]>;
   private commands: Map<
     number,
     {
@@ -145,10 +145,18 @@ export class MusicAssistantApi {
       .build();
   }
 
-  public subscribe(eventFilter: EventType, callback: CallableFunction) {
+  public subscribe(
+    eventFilter: EventType,
+    callback: CallableFunction,
+    object_id: string = '*',
+  ) {
     // subscribe a listener for events
     // returns handle to remove the listener
-    const listener: [EventType, CallableFunction] = [eventFilter, callback];
+    const listener: [EventType, string, CallableFunction] = [
+      eventFilter,
+      object_id,
+      callback,
+    ];
     this.eventCallbacks.push(listener);
     const removeCallback = () => {
       const index = this.eventCallbacks.indexOf(listener);
@@ -162,12 +170,13 @@ export class MusicAssistantApi {
   public subscribe_multi(
     eventFilters: EventType[],
     callback: CallableFunction,
+    object_id: string = '*',
   ) {
     // subscribe a listener for multiple events
     // returns handle to remove the listener
     const removeCallbacks: CallableFunction[] = [];
     for (const eventFilter of eventFilters) {
-      removeCallbacks.push(this.subscribe(eventFilter, callback));
+      removeCallbacks.push(this.subscribe(eventFilter, callback, object_id));
     }
     const removeCallback = () => {
       for (const cb of removeCallbacks) {
@@ -416,7 +425,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
   ): Promise<PagedItems> {
-    return this.getData('music/radio/library_items', {
+    return this.getData('music/radios/library_items', {
       favorite,
       search,
       limit,
@@ -431,7 +440,7 @@ export class MusicAssistantApi {
     force_refresh?: boolean,
     lazy?: boolean,
   ): Promise<Radio> {
-    return this.getData('music/radio/get_radio', {
+    return this.getData('music/radios/get_radio', {
       item_id,
       provider_instance_id_or_domain,
       force_refresh,
@@ -443,7 +452,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Radio[]> {
-    return this.getData('music/radio/radio_versions', {
+    return this.getData('music/radios/radio_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -1199,7 +1208,9 @@ export class MusicAssistantApi {
     // signal event to all listeners
     for (const listener of this.eventCallbacks) {
       if (listener[0] === EventType.ALL || listener[0] === evt.event) {
-        listener[1](evt);
+        if (listener[1] == '*' || listener[1] === evt.object_id) {
+          listener[2](evt);
+        }
       }
     }
   }

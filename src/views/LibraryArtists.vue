@@ -27,12 +27,24 @@ import {
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
+defineOptions({
+  name: 'Artists',
+});
+
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 const loadItems = async function (params: LoadDataParams) {
@@ -50,7 +62,6 @@ const loadItems = async function (params: LoadDataParams) {
         break;
       await sleep(500);
     }
-    await sleep(500);
   }
   updateAvailable.value = false;
   return await api.getLibraryArtists(

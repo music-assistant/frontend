@@ -275,28 +275,25 @@ const router = createRouter({
 router.beforeEach((to, from) => {
   if (!from?.name) return;
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
-  // to we can jump back there on back navigation
+  // so we can jump back there on back navigation
   if (!mainListings.includes(from.name.toString())) return;
   const el = document.querySelector('#cont');
-  if (el) store.prevScrollPos = el.scrollTop;
-  store.prevScrollName = from.name.toString();
+  if (el) store.prevScrollPos[from.name.toString()] = el.scrollTop;
 });
 
 router.afterEach((to, from) => {
   if (!from?.name) return;
   if (!to?.name) return;
-  if (!store.prevScrollName) return;
-  if (store.prevScrollName == to.name) {
+  if (!(to.name.toString() in store.prevScrollPos)) return;
+  const prevPos = store.prevScrollPos[to.name.toString()];
+  if (prevPos) {
+    console.log('restoring prevPos', prevPos);
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
       const el = document.getElementById('cont');
-      setTimeout(() => {
-        if (el && store.prevScrollPos) {
-          scrollElement(el, store.prevScrollPos, 1000);
-        }
-        store.prevScrollName = undefined;
-        store.prevScrollPos = undefined;
-      }, 400);
+      if (el) {
+        scrollElement(el, prevPos, 100);
+      }
     });
   }
 });
