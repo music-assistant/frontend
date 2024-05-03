@@ -38,9 +38,9 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import InfoHeader from '@/components/InfoHeader.vue';
-import { type Album } from '@/plugins/api/interfaces';
+import { EventType, type Album } from '@/plugins/api/interfaces';
 import { api } from '@/plugins/api';
-import { ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';
 
@@ -54,6 +54,18 @@ const itemDetails = ref<Album>();
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(props.itemId, props.provider);
 };
+
+onMounted(() => {
+  // auto refresh the info if this (library) item is updated.
+  if (props.provider == 'library') {
+    const unsub = api.subscribe(
+      EventType.MEDIA_ITEM_UPDATED,
+      loadItemDetails,
+      `library://album/${props.itemId}`,
+    );
+    onBeforeUnmount(unsub);
+  }
+});
 
 watch(
   () => props.itemId,
