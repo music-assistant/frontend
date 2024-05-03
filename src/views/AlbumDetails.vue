@@ -13,7 +13,13 @@
       "
       :show-refresh-button="false"
       :load-items="loadAlbumTracks"
-      :sort-keys="['track_number', 'name', 'duration']"
+      :sort-keys="[
+        'track_number',
+        'name',
+        'sort_name',
+        'duration',
+        'duration_desc',
+      ]"
       :title="$t('tracks')"
     />
     <br />

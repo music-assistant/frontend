@@ -42,8 +42,18 @@ const updateAvailable = ref(false);
 const contextMenuItems = ref<ContextMenuItem[]>([]);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  timestamp_modified: 'timestamp_modified',
+  timestamp_modified_desc: 'timestamp_modified DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 const loadItems = async function (params: LoadDataParams) {

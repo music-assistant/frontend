@@ -14,7 +14,7 @@
       :show-refresh-button="false"
       :show-track-number="false"
       :load-items="loadArtistTracks"
-      :sort-keys="['recent', 'name', 'album']"
+      :sort-keys="['name', 'sort_name', 'album']"
       :title="$t('tracks')"
       :allow-collapse="true"
     />
@@ -31,7 +31,7 @@
       "
       :show-refresh-button="false"
       :load-items="loadArtistAlbums"
-      :sort-keys="['recent', 'name', 'year']"
+      :sort-keys="['name', 'sort_name', 'year']"
       :title="$t('albums')"
       :allow-collapse="true"
     />

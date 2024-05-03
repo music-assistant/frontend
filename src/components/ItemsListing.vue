@@ -418,7 +418,7 @@ export interface Props {
   saveScrollPosition?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ['name'],
+  sortKeys: () => ['name', 'sort_name'],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -685,11 +685,16 @@ const loadData = async function (
   loading.value = false;
 };
 
-const getSortName = function (item: MediaItemType | ItemMapping) {
+const getSortName = function (
+  item: MediaItemType | ItemMapping,
+  preferSortName = false,
+) {
+  if (!item) return '';
   if ('label' in item && item.label && item.name)
     return t(item.label, [item.name]);
   if ('label' in item && item.label) return t(item.label);
-  if ('sort_name' in item && item.sort_name) return item.sort_name;
+  if (preferSortName && 'sort_name' in item && item.sort_name)
+    return item.sort_name;
   return item.name;
 };
 
@@ -731,19 +736,27 @@ const getFilteredItems = function (
   if (params.sortBy == 'name') {
     result.sort((a, b) => getSortName(a).localeCompare(getSortName(b)));
   }
+  if (params.sortBy == 'sort_name') {
+    result.sort((a, b) =>
+      getSortName(a, true).localeCompare(getSortName(b, true)),
+    );
+  }
   if (params.sortBy == 'name_desc') {
     result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
   }
+
   if (params.sortBy == 'album') {
     result.sort((a, b) =>
-      (a as Track).album?.sort_name.localeCompare(
-        (b as Track).album?.sort_name,
+      getSortName((a as Track).album).localeCompare(
+        getSortName((b as Track).album),
       ),
     );
   }
   if (params.sortBy == 'artist') {
     result.sort((a, b) =>
-      (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name),
+      getSortName((a as Track).artists[0]).localeCompare(
+        getSortName((b as Track).artists[0]),
+      ),
     );
   }
   if (params.sortBy == 'track_number') {

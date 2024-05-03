@@ -50,12 +50,22 @@ const items = ref<Track[]>([]);
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
-  artist: 'sort_artist, sort_name',
-  album: 'albums.sort_name, tracks.sort_name',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  artist: 'artists.name, name',
+  year: 'year',
+  year_desc: 'year DESC',
+  album: 'albums.name, tracks.name',
   duration: 'duration',
   duration_desc: 'duration DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 onMounted(() => {

@@ -16,12 +16,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import api from '@/plugins/api';
-import {
-  MediaType,
-  type Album,
-  EventMessage,
-  EventType,
-} from '@/plugins/api/interfaces';
+import { MediaType, EventMessage, EventType } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
@@ -32,11 +27,19 @@ defineOptions({
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
-  artist: 'sort_artist, sort_name',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  artist: 'artists.name, albums.name',
   year: 'year',
   year_desc: 'year DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 onMounted(() => {
