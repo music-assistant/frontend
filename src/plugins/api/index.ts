@@ -46,20 +46,7 @@ import {
   ItemMapping,
 } from './interfaces';
 
-const DEBUG = true;
-
-export interface Library {
-  artists: Artist[];
-  albums: Album[];
-  tracks: Track[];
-  radios: Radio[];
-  playlists: Playlist[];
-  artistsFetched: boolean;
-  albumsFetched: boolean;
-  tracksFetched: boolean;
-  radiosFetched: boolean;
-  playlistsFetched: boolean;
-}
+const DEBUG = process.env.NODE_ENV === 'development';
 
 export enum ConnectionState {
   DISCONNECTED = 0,
