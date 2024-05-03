@@ -135,22 +135,6 @@
               </span>
             </v-card-subtitle>
 
-            <!-- album artist -->
-            <v-card-subtitle
-              v-if="'artist' in item && item.artist"
-              class="title"
-            >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-account-music"
-              />
-              <a @click="artistClick((item as Album).artist)">{{
-                item.artist.name
-              }}</a>
-            </v-card-subtitle>
-
             <!-- playlist owner -->
             <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
               <v-icon
