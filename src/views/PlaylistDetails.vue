@@ -9,6 +9,7 @@
       :show-library="false"
       :show-favorites-only-filter="false"
       :show-track-number="false"
+      :show-refresh-button="true"
       :load-items="loadPlaylistTracks"
       :sort-keys="[
         'position',
