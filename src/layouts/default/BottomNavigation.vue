@@ -87,7 +87,7 @@ const activeTab = computed(() => {
 
 <style>
 .menuButton {
-  font-weight: 300;
+  font-weight: 350;
   font-size: x-small;
   font-stretch: condensed;
   text-transform: none;

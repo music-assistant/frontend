@@ -177,7 +177,7 @@ export const getMenuItems = function () {
 };
 </script>
 
-<style>
+<style scoped>
 .logo_text {
   margin-left: 25px;
   font-family: 'JetBrains Mono Medium';
