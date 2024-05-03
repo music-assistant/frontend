@@ -31,7 +31,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { api } from '@/plugins/api';
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -39,7 +38,8 @@ import {
 } from '@/plugins/api/interfaces';
 import EditConfig from './EditConfig.vue';
 import { onMounted } from 'vue';
-import { parseBool } from '@/helpers/utils';
+import { $t } from '@/plugins/i18n';
+import { DEFAULT_MENU_ITEMS } from '@/layouts/default/DrawerNavigation.vue';
 
 // global refs
 const router = useRouter();
@@ -47,6 +47,11 @@ const config = ref<ConfigEntry[]>([]);
 const loading = ref(false);
 
 onMounted(() => {
+  const storedMenuConf = localStorage.getItem('frontend.settings.menu_items');
+  const enabledMenuItems: string[] = storedMenuConf
+    ? storedMenuConf.split(',')
+    : DEFAULT_MENU_ITEMS;
+
   config.value = [
     {
       key: 'theme',
@@ -78,14 +83,25 @@ onMounted(() => {
       value: localStorage.getItem('frontend.settings.menu_style'),
     },
     {
-      key: 'hide_settings',
-      type: ConfigEntryType.BOOLEAN,
-      label: 'hide_settings',
-      default_value: false,
+      key: 'menu_items',
+      type: ConfigEntryType.STRING,
+      label: 'menu_items',
+      default_value: DEFAULT_MENU_ITEMS,
       required: false,
-      multi_value: false,
+      options: [
+        { title: $t('home'), value: 'home' },
+        { title: $t('search'), value: 'search' },
+        { title: $t('artists'), value: 'artists' },
+        { title: $t('albums'), value: 'albums' },
+        { title: $t('tracks'), value: 'tracks' },
+        { title: $t('playlists'), value: 'playlists' },
+        { title: $t('radios'), value: 'radios' },
+        { title: $t('browse'), value: 'browse' },
+        { title: $t('settings.settings'), value: 'settings' },
+      ],
+      multi_value: true,
       category: 'generic',
-      value: parseBool(localStorage.getItem('frontend.settings.hide_settings')),
+      value: enabledMenuItems,
     },
   ];
 });

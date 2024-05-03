@@ -1,18 +1,13 @@
 <template>
   <v-navigation-drawer
-    v-if="getBreakpointValue({ breakpoint: 'bp3' })"
     ref="resizeComponent"
     app
-    :permanent="!$vuetify.display.mobile"
-    :rail="!$vuetify.display.mobile && !showNavigationMenu"
-    :model-value="
-      ($vuetify.display.mobile && showNavigationMenu) ||
-      !$vuetify.display.mobile
-    "
+    permanent
+    :rail="!showNavigationMenu"
     :width="!getBreakpointValue('mobile') ? 200 : 250"
     @update:model-value="
       (e) => {
-        if ($vuetify.display.mobile) showNavigationMenu = e;
+        showNavigationMenu = e;
       }
     "
   >
@@ -34,7 +29,7 @@
     <!-- menu items -->
     <v-list lines="one" density="compact" nav>
       <v-list-item
-        v-for="menuItem of mainMenuItems"
+        v-for="menuItem of menuItems"
         :key="menuItem.path"
         nav
         density="compact"
@@ -65,6 +60,7 @@ import { ref, watch } from 'vue';
 import Button from '@/components/mods/Button.vue';
 
 const showNavigationMenu = ref(false);
+const menuItems = getMenuItems();
 
 watch(
   () => showNavigationMenu.value,
@@ -77,72 +73,108 @@ watch(
 </script>
 
 <script lang="ts">
-export const backButtonAllowedRouteNames = [
-  'track',
-  'artist',
-  'album',
-  'playlist',
-  'radio',
-  'addprovider',
-  'editprovider',
-  'editplayer',
-  'editcore',
-];
-
 export interface MenuItem {
   label: string;
   icon: string;
   path: string;
+  isLibraryNode: boolean;
 }
 
-export const mainMenuItems: MenuItem[] = [
-  // disable Home until we have something useful to fill that screen
-  {
-    label: 'home',
-    icon: 'mdi-home-outline',
-    path: '/home',
-  },
-  {
-    label: 'artists',
-    icon: 'mdi-account-outline',
-    path: '/artists',
-  },
-  {
-    label: 'albums',
-    icon: 'mdi-album',
-    path: '/albums',
-  },
-  {
-    label: 'tracks',
-    icon: 'mdi-music-note',
-    path: '/tracks',
-  },
-  {
-    label: 'playlists',
-    icon: 'mdi-playlist-play',
-    path: '/playlists',
-  },
-  {
-    label: 'radios',
-    icon: 'mdi-access-point',
-    path: '/radios',
-  },
-  {
-    label: 'browse',
-    icon: 'mdi-folder-outline',
-    path: '/browse',
-  },
-  {
-    label: 'search',
-    icon: 'mdi-magnify',
-    path: '/search',
-  },
-  {
-    label: 'settings.settings',
-    icon: 'mdi-cog-outline',
-    path: '/settings',
-  },
+export const DEFAULT_MENU_ITEMS = [
+  'home',
+  'search',
+  'artists',
+  'albums',
+  'tracks',
+  'playlists',
+  'tracks',
+  'radios',
+  'browse',
+  'settings',
 ];
+
+export const getMenuItems = function () {
+  const storedMenuConf = localStorage.getItem('frontend.settings.menu_items');
+  console.log('storedMenuConf', storedMenuConf);
+  const enabledItems: string[] = storedMenuConf
+    ? storedMenuConf.split(',')
+    : DEFAULT_MENU_ITEMS;
+
+  const items: MenuItem[] = [];
+  if (enabledItems.includes('home')) {
+    items.push({
+      label: 'home',
+      icon: 'mdi-home-outline',
+      path: '/home',
+      isLibraryNode: false,
+    });
+  }
+  if (enabledItems.includes('search')) {
+    items.push({
+      label: 'search',
+      icon: 'mdi-magnify',
+      path: '/search',
+      isLibraryNode: false,
+    });
+  }
+  if (enabledItems.includes('artists')) {
+    items.push({
+      label: 'artists',
+      icon: 'mdi-account-outline',
+      path: '/artists',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('albums')) {
+    items.push({
+      label: 'albums',
+      icon: 'mdi-album',
+      path: '/albums',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('tracks')) {
+    items.push({
+      label: 'tracks',
+      icon: 'mdi-music-note',
+      path: '/tracks',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('playlists')) {
+    items.push({
+      label: 'playlists',
+      icon: 'mdi-playlist-play',
+      path: '/playlists',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('radios')) {
+    items.push({
+      label: 'radios',
+      icon: 'mdi-access-point',
+      path: '/radios',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('browse')) {
+    items.push({
+      label: 'browse',
+      icon: 'mdi-folder-outline',
+      path: '/browse',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('settings')) {
+    items.push({
+      label: 'settings.settings',
+      icon: 'mdi-cog-outline',
+      path: '/settings',
+      isLibraryNode: true,
+    });
+  }
+  return items;
+};
 </script>
 
 <style>

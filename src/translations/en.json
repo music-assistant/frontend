@@ -341,9 +341,9 @@
                 "vertical": "Vertical"
             }
         },
-        "advanced": {
-            "label": "Hide settings",
-            "description": "Hide access to settings in menu.\n\n Note that you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
+        "menu_items": {
+            "label": "Enabled menu items",
+            "description": "Configure which items to show in the menu.\n\n Note that if you disable settings you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
         }
     },
     "show_info": "Show info",

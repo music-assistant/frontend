@@ -1,6 +1,6 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
-    <drawer-navigation />
+    <drawer-navigation v-if="store.navigationMenuStyle == 'vertical'" />
     <add-to-playlist-dialog />
     <play-item-dialog />
     <router-view v-slot="{ Component }" app>
@@ -18,4 +18,5 @@ import DrawerNavigation from './DrawerNavigation.vue';
 import AddToPlaylistDialog from './AddToPlaylistDialog.vue';
 import PlayItemDialog from './PlayItemDialog.vue';
 import { mainListings } from '@/plugins/router';
+import { store } from '@/plugins/store';
 </script>

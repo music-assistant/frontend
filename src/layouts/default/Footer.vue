@@ -1,13 +1,13 @@
 <template>
   <BottomNavigation
-    v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
+    v-if="store.navigationMenuStyle == 'horizontal'"
     :height="bottomNavHeight"
   />
   <v-footer
     bottom
     fixed
     :class="`d-flex flex-column ${
-      getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+      store.navigationMenuStyle == 'horizontal'
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
@@ -36,7 +36,7 @@ const bottomNavHeight = computed(() => {
 });
 
 const footerMarginBottom = computed(() => {
-  if (!getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })) return 0;
+  if (store.navigationMenuStyle != 'horizontal') return 0;
   return bottomNavHeight.value + 5;
 });
 </script>

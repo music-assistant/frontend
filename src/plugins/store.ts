@@ -1,11 +1,12 @@
 import { computed, reactive, ref } from 'vue';
-import { Player, PlayerQueue, QueueItem } from './api/interfaces';
+import { MenuItem, Player, PlayerQueue, QueueItem } from './api/interfaces';
 import api from './api';
 
 interface Store {
   selectedPlayerId?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
+  navigationMenuStyle: string;
   navigationMenuSize: number;
   showFullscreenPlayer: boolean;
   apiInitialized: boolean;
@@ -22,6 +23,7 @@ export const store: Store = reactive({
   selectedPlayerId: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
+  navigationMenuStyle: 'horizontal',
   navigationMenuSize: 300,
   showFullscreenPlayer: false,
   apiInitialized: false,
