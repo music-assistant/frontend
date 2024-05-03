@@ -7,6 +7,7 @@ import { api } from '@/plugins/api';
 import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
+import '@/styles/global.css';
 
 const theme = useTheme();
 
