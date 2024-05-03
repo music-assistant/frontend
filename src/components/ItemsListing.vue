@@ -239,7 +239,12 @@
         <v-col
           v-for="item in pagedItems"
           :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          cols="12"
+          xs="12"
+          sm="6"
+          md="3"
+          lg="2"
+          xxl="1"
         >
           <PanelviewItem
             :item="item"
@@ -373,7 +378,6 @@ import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
-import { panelViewItemResponsive } from '@/helpers/utils';
 
 export interface LoadDataParams {
   offset: number;
