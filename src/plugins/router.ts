@@ -212,6 +212,15 @@ const routes = [
             props: true,
           },
           {
+            path: 'frontend',
+            name: 'frontendsettings',
+            component: () =>
+              import(
+                /* webpackChunkName: "frontendsettings" */ '@/views/settings/FrontendConfig.vue'
+              ),
+            props: true,
+          },
+          {
             path: 'addprovider/:domain',
             name: 'addprovider',
             component: () =>

@@ -15,6 +15,9 @@
           <v-tab value="core" :to="{ name: 'coresettings' }">
             {{ $t('settings.core') }}
           </v-tab>
+          <v-tab value="frontend" :to="{ name: 'frontendsettings' }">
+            {{ $t('settings.frontend') }}
+          </v-tab>
         </v-tabs>
       </template>
     </v-toolbar>
@@ -46,6 +49,9 @@ const activeTab = computed(() => {
   }
   if (router.currentRoute.value.name?.toString().includes('core')) {
     return 'core';
+  }
+  if (router.currentRoute.value.name?.toString().includes('frontend')) {
+    return 'frontend';
   }
   return 'providers';
 });
