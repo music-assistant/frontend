@@ -27,6 +27,10 @@ import {
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
+defineOptions({
+  name: 'Artists',
+});
+
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 

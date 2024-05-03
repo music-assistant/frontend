@@ -32,6 +32,10 @@ import { ContextMenuItem } from '@/helpers/contextmenu';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
+defineOptions({
+  name: 'Playlists',
+});
+
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
 const updateAvailable = ref(false);

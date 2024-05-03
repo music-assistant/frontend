@@ -40,6 +40,10 @@ import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import router from '@/plugins/router';
 
+defineOptions({
+  name: 'Radios',
+});
+
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
 const updateAvailable = ref<boolean>(false);

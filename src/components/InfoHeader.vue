@@ -25,7 +25,6 @@
       <!-- back button -->
       <!-- allows the user to go back from this nested level (item details) to the main listing -->
       <Button
-        v-if="store.prevScrollName"
         xx-large
         style="
           width: 40px;
@@ -37,7 +36,7 @@
         "
         icon="mdi-arrow-left"
         :title="$t('tooltip.back')"
-        @click.stop="router.go(-1)"
+        @click.stop="backButtonClick"
       />
       <v-layout
         v-if="item"
@@ -345,6 +344,28 @@ const artistClick = function (item: Artist | ItemMapping) {
     },
   });
 };
+
+const backButtonClick = function () {
+  // if we have stored routes, we can safely use history back
+  if (store.prevScrollPos) {
+    router.go(-1);
+    return;
+  }
+  // fallback to main listing for itemtype
+  const curRoute = router.currentRoute.value.name?.toString() || '';
+  for (const itemType of ['artist', 'album', 'track', 'playlist', 'radio']) {
+    if (curRoute.includes(itemType)) {
+      router.push({
+        name: `${itemType}s`,
+      });
+      return;
+    }
+  }
+  router.push({
+    name: 'home',
+  });
+};
+
 const fullDescription = computed(() => {
   let desc = '';
   if (!compProps.item) return '';

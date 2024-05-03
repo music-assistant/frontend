@@ -39,6 +39,10 @@ import {
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
+defineOptions({
+  name: 'Tracks',
+});
+
 const { t } = useI18n();
 const items = ref<Track[]>([]);
 const updateAvailable = ref<boolean>(false);

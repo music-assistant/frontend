@@ -343,6 +343,8 @@ import {
   nextTick,
   onMounted,
   watch,
+  onActivated,
+  onDeactivated,
 } from 'vue';
 import {
   MediaType,
@@ -372,7 +374,7 @@ import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
-import { panelViewItemResponsive } from '@/helpers/utils';
+import { panelViewItemResponsive, scrollElement } from '@/helpers/utils';
 
 export interface LoadDataParams {
   offset: number;
@@ -413,6 +415,7 @@ export interface Props {
   limit?: number;
   infiniteScroll?: boolean;
   path?: string;
+  saveScrollPosition?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name'],
@@ -437,6 +440,7 @@ const props = withDefaults(defineProps<Props>(), {
   loadPagedData: undefined,
   loadItems: undefined,
   path: undefined,
+  saveScrollPosition: true,
 });
 
 // global refs
@@ -633,47 +637,6 @@ const isSearchActive = computed(() => {
   return searchActive;
 });
 
-// watchers
-watch(
-  () => params.value.search,
-  (newVal) => {
-    if (newVal) showSearch.value = true;
-    loadData(true);
-    let storKey = `search.${props.itemtype}`;
-    if (props.parentItem) storKey += props.parentItem.item_id;
-    localStorage.setItem(storKey, params.value.search);
-  },
-);
-watch(
-  () => props.path,
-  () => {
-    allItems.value = [];
-    restoreState();
-  },
-);
-watch(
-  () => props.parentItem,
-  () => {
-    allItems.value = [];
-    restoreState();
-  },
-  { deep: true },
-);
-watch(
-  () => props.limit,
-  (newVal) => {
-    params.value.limit = newVal;
-  },
-);
-watch(
-  () => props.updateAvailable,
-  (newVal) => {
-    if (loading.value) return;
-    newContentAvailable.value = newVal;
-  },
-  { immediate: true },
-);
-
 const loadData = async function (
   clear = false,
   limit = props.limit,
@@ -831,7 +794,7 @@ const getFilteredItems = function (
   return result.slice(params.offset, params.offset + params.limit);
 };
 
-const restoreState = function () {
+const restoreState = async function () {
   // restore state for this path/itemtype
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
@@ -898,17 +861,13 @@ const restoreState = function () {
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
   const savedSearch = localStorage.getItem(storKey);
-
   if (savedSearch && savedSearch !== 'null') {
     params.value.search = savedSearch;
   }
-  loadData(true);
-};
 
-// get/set default settings at load
-onMounted(async () => {
-  restoreState();
-});
+  // load items
+  await loadData(true);
+};
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
@@ -940,6 +899,53 @@ if (props.allowKeyHooks) {
     document.removeEventListener('keydown', keyListener);
   });
 }
+
+// watchers
+watch(
+  () => params.value.search,
+  (newVal) => {
+    if (newVal) showSearch.value = true;
+    loadData(true);
+    let storKey = `search.${props.itemtype}`;
+    if (props.parentItem) storKey += props.parentItem.item_id;
+    localStorage.setItem(storKey, params.value.search);
+  },
+);
+watch(
+  () => props.path,
+  () => {
+    if (loading.value == true) return;
+    allItems.value = [];
+    restoreState();
+  },
+);
+watch(
+  () => props.parentItem,
+  () => {
+    if (loading.value == true) return;
+    allItems.value = [];
+    restoreState();
+  },
+  { deep: true },
+);
+watch(
+  () => props.limit,
+  (newVal) => {
+    params.value.limit = newVal;
+  },
+);
+watch(
+  () => props.updateAvailable,
+  (newVal) => {
+    if (loading.value) return;
+    newContentAvailable.value = newVal;
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  restoreState();
+});
 </script>
 
 <style>

@@ -25,6 +25,10 @@ import {
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
+defineOptions({
+  name: 'Albums',
+});
+
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
