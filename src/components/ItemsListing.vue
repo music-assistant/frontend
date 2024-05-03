@@ -91,21 +91,20 @@
         <!-- refresh button-->
         <Button
           v-if="
-            showRefreshButton != undefined
-              ? showRefreshButton
-              : getBreakpointValue('bp1')
+            (showRefreshButton !== false || newContentAvailable) &&
+            getBreakpointValue('bp1')
           "
           v-bind="props"
           variant="list"
           :title="
-            updateAvailable
+            newContentAvailable
               ? $t('tooltip.refresh_new_content')
               : $t('tooltip.refresh')
           "
           :disabled="!expanded || loading"
           @click="onRefreshClicked()"
         >
-          <v-badge :model-value="updateAvailable" color="error" dot>
+          <v-badge :model-value="newContentAvailable" color="error" dot>
             <v-icon icon="mdi-refresh" />
           </v-badge>
         </Button>
@@ -596,20 +595,17 @@ const onClear = function () {
   loadData(true);
 };
 
-const isSearchActive = computed(() => {
-  var searchActive = false;
-  if (params.value.search && params.value.search.length !== 0) {
-    searchActive = true;
-  }
-  return searchActive;
-});
-
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
   localStorage.setItem(`sortBy.${props.itemtype}`, params.value.sortBy);
   loadData(true, undefined, sort_key == 'original');
+};
+
+const redirectSearch = function () {
+  store.globalSearchTerm = params.value.search;
+  router.push({ name: 'search' });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -628,10 +624,14 @@ const loadNextPage = function ($state?: any) {
   });
 };
 
-const redirectSearch = function () {
-  store.globalSearchTerm = params.value.search;
-  router.push({ name: 'search' });
-};
+// computed properties
+const isSearchActive = computed(() => {
+  var searchActive = false;
+  if (params.value.search && params.value.search.length !== 0) {
+    searchActive = true;
+  }
+  return searchActive;
+});
 
 // watchers
 watch(
@@ -652,10 +652,26 @@ watch(
   },
 );
 watch(
+  () => props.parentItem,
+  () => {
+    allItems.value = [];
+    restoreState();
+  },
+  { deep: true },
+);
+watch(
   () => props.limit,
   (newVal) => {
     params.value.limit = newVal;
   },
+);
+watch(
+  () => props.updateAvailable,
+  (newVal) => {
+    if (loading.value) return;
+    newContentAvailable.value = newVal;
+  },
+  { immediate: true },
 );
 
 const loadData = async function (
@@ -663,11 +679,17 @@ const loadData = async function (
   limit = props.limit,
   refresh = false,
 ) {
+  if (loading.value) {
+    // we could potentially be called multiple times due to multiple watchers
+    // so ignore if we're already loading
+    return;
+  }
+  loading.value = true;
+
   if (clear || refresh) {
     params.value.offset = 0;
     newContentAvailable.value = false;
   }
-  loading.value = true;
   params.value.limit = props.limit;
   params.value.refresh = refresh;
   if (props.loadPagedData !== undefined) {
