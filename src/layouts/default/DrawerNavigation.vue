@@ -95,7 +95,6 @@ export const DEFAULT_MENU_ITEMS = [
 
 export const getMenuItems = function () {
   const storedMenuConf = localStorage.getItem('frontend.settings.menu_items');
-  console.log('storedMenuConf', storedMenuConf);
   const enabledItems: string[] = storedMenuConf
     ? storedMenuConf.split(',')
     : DEFAULT_MENU_ITEMS;

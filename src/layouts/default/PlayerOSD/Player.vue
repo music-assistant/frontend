@@ -188,7 +188,6 @@ img.addEventListener('load', function () {
 });
 
 const backgroundColor = computed(() => {
-  console.log('coverImageColorPalette', coverImageColorPalette.value);
   if (vuetify.theme.current.value.dark) {
     if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
       return coverImageColorPalette.value.darkColor;
@@ -214,7 +213,6 @@ watch(
     } else {
       img.src = vuetify.theme.current.value.dark ? imgCoverLight : imgCoverDark;
     }
-    console.log('img.src', img.src);
   },
 );
 
