@@ -8,7 +8,7 @@
     :load-paged-data="loadItems"
     :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('radios') : ''"
+    :title="$t('radios')"
     :show-search-button="true"
     :allow-key-hooks="true"
     :context-menu-items="[

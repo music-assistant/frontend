@@ -1,9 +1,6 @@
 <template>
   <div>
-    <v-toolbar
-      color="transparent"
-      :title="getBreakpointValue('bp4') ? $t('settings.settings') : ''"
-    >
+    <v-toolbar color="transparent" :title="$t('settings.settings')">
       <template #append>
         <v-tabs :model-value="activeTab" align-tabs="end" height="100%">
           <v-tab value="providers" :to="{ name: 'providersettings' }">

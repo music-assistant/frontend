@@ -9,7 +9,7 @@
     :sort-keys="Object.keys(sortKeys)"
     :show-album="true"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('tracks') : ''"
+    :title="$t('tracks')"
     :show-search-button="true"
     :allow-key-hooks="true"
     :context-menu-items="[

@@ -6,7 +6,7 @@
     :load-paged-data="loadItems"
     :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('albums') : ''"
+    :title="$t('albums')"
     :allow-key-hooks="true"
     :show-search-button="true"
   />

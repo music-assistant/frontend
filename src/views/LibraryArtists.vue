@@ -7,7 +7,7 @@
     :load-paged-data="loadItems"
     :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('artists') : ''"
+    :title="$t('artists')"
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="Object.keys(sortKeys)"

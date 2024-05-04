@@ -9,7 +9,7 @@
     :show-library="true"
     :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('playlists') : ''"
+    :title="$t('playlists')"
     :allow-key-hooks="true"
     :show-search-button="true"
     :context-menu-items="contextMenuItems"
