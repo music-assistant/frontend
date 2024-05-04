@@ -17,6 +17,7 @@ interface Store {
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
   prevScrollPos: Record<string, number>;
+  allowExternalImageRetrieval: boolean;
 }
 
 export const store: Store = reactive({
@@ -54,4 +55,5 @@ export const store: Store = reactive({
   }),
   globalSearchTerm: undefined,
   prevScrollPos: {},
+  allowExternalImageRetrieval: true,
 });

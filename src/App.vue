@@ -39,6 +39,11 @@ onMounted(() => {
   store.navigationMenuStyle =
     localStorage.getItem('frontend.settings.menu_style') || 'horizontal';
 
+  // cache some settings in the store
+  store.allowExternalImageRetrieval =
+    (localStorage.getItem('frontend.settings.artwork_pref') || 'online') ==
+    'online';
+
   // set color theme (and listen for color scheme changes from browser)
   setTheme();
   window
