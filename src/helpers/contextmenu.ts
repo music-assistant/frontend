@@ -18,11 +18,12 @@ import { $t } from '@/plugins/i18n';
 
 export interface ContextMenuItem {
   label: string;
-  labelArgs: Array<string | number>;
-  action: CallableFunction;
-  icon: string;
+  labelArgs?: Array<string | number>;
+  action?: CallableFunction;
+  icon?: string;
   disabled?: boolean;
   hide?: boolean;
+  selected?: boolean;
 }
 
 export const itemIsAvailable = function (item: MediaItemType | ItemMapping) {

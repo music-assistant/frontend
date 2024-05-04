@@ -69,6 +69,7 @@ export default {
 .list-item-main {
   border-radius: 4px !important;
   padding: 7px !important;
+  padding-right: 0 !important;
 }
 
 .list-item-main > div.v-list-item__append {

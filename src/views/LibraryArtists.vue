@@ -11,6 +11,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="Object.keys(sortKeys)"
+    icon="mdi-account-outline"
   />
 </template>
 

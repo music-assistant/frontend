@@ -438,5 +438,9 @@
     "image_url": "Input the URL to an image or icon (optional)",
     "invalid_input": "The input was invalid",
     "new_playlist": "New playlist",
-    "create_playlist_on": "Create new playlist on {0}"
+    "create_playlist_on": "Create new playlist on {0}",
+    "view": {
+        "list": "List view",
+        "panel": "Panel view"
+    }
 }

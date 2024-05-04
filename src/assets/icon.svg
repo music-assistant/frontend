@@ -1,4 +1,4 @@
-<svg width="50" height="50" viewBox="0 0 50 50" fill="none"
+<svg viewBox="0 0 50 50" fill="none" preserveAspectRatio="X50Y50 meet"
   xmlns="http://www.w3.org/2000/svg">
   <rect width="50" height="50" rx="3" fill="black" />
   <path d="M20.775 37.75L29.625 14.25H32.225L23.375 37.75H20.775Z" fill="white" />

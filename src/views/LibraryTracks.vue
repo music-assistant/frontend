@@ -22,6 +22,7 @@
         icon: 'mdi-link-plus',
       },
     ]"
+    icon="mdi-music-note"
   />
 </template>
 

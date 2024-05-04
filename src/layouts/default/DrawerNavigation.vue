@@ -90,7 +90,6 @@ export const DEFAULT_MENU_ITEMS = [
   'tracks',
   'radios',
   'browse',
-  'settings',
 ];
 
 export const getMenuItems = function () {

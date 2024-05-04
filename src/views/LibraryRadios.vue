@@ -11,16 +11,17 @@
     :title="$t('radios')"
     :show-search-button="true"
     :allow-key-hooks="true"
-    :context-menu-items="[
+    :extra-menu-items="[
       {
         label: 'add_url_item',
         labelArgs: [],
         action: () => {
           addUrl();
         },
-        icon: 'mdi-link-plus',
+        icon: 'mdi-playlist-plus',
       },
     ]"
+    icon="mdi-access-point"
   />
 </template>
 

@@ -9,6 +9,7 @@
     :title="$t('albums')"
     :allow-key-hooks="true"
     :show-search-button="true"
+    icon="mdi-album"
   />
 </template>
 
@@ -18,7 +19,6 @@ import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import api from '@/plugins/api';
 import { MediaType, EventMessage, EventType } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
 
 defineOptions({
   name: 'Albums',

@@ -2,214 +2,14 @@
 <template>
   <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar color="transparent">
-      <template #title>
-        {{ title }}
-        <v-badge
-          v-if="getBreakpointValue('bp4')"
-          color="grey"
-          :content="total"
-          inline
-        />
-      </template>
+    <Toolbar
+      :icon="icon"
+      :title="title"
+      :count="total"
+      color="transparent"
+      :menu-items="menuItems"
+    />
 
-      <template #append>
-        <!-- toggle select button -->
-        <Button
-          v-if="
-            showSelectButton != undefined
-              ? showSelectButton
-              : getBreakpointValue('bp4')
-          "
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.select_items')"
-          :disabled="!expanded"
-          @click="toggleCheckboxes"
-          ><v-icon
-            :icon="
-              showCheckboxes
-                ? 'mdi-checkbox-multiple-outline'
-                : 'mdi-checkbox-multiple-blank-outline'
-            "
-        /></Button>
-
-        <!-- library only filter -->
-        <Button
-          v-if="
-            showLibraryOnlyFilter != undefined
-              ? showLibraryOnlyFilter
-              : getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.filter_library')"
-          :disabled="!expanded"
-          @click="toggleLibraryOnlyFilter"
-        >
-          <v-badge :model-value="params.libraryOnly" color="error" dot>
-            <v-icon icon="mdi-bookshelf" />
-          </v-badge>
-        </Button>
-
-        <!-- favorites only filter -->
-        <Button
-          v-if="
-            showFavoritesOnlyFilter != undefined
-              ? showFavoritesOnlyFilter
-              : getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.filter_favorites')"
-          :disabled="!expanded"
-          @click="toggleFavoriteFilter"
-        >
-          <v-icon
-            :icon="params.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'"
-          />
-        </Button>
-
-        <!-- album artists only filter -->
-        <Button
-          v-if="showAlbumArtistsOnlyFilter"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.album_artist_filter')"
-          :disabled="!expanded"
-          @click="toggleAlbumArtistsFilter"
-        >
-          <v-icon
-            :icon="
-              params.albumArtistsFilter
-                ? 'mdi-account-music'
-                : 'mdi-account-music-outline'
-            "
-          />
-        </Button>
-
-        <!-- refresh button-->
-        <Button
-          v-if="
-            (showRefreshButton !== false || newContentAvailable) &&
-            getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="
-            newContentAvailable
-              ? $t('tooltip.refresh_new_content')
-              : $t('tooltip.refresh')
-          "
-          :disabled="!expanded || loading"
-          @click="onRefreshClicked()"
-        >
-          <v-badge :model-value="newContentAvailable" color="error" dot>
-            <v-icon icon="mdi-refresh" />
-          </v-badge>
-        </Button>
-
-        <!-- sort options -->
-        <v-menu
-          v-if="sortKeys.length > 1"
-          v-model="showSortMenu"
-          location="bottom end"
-          :close-on-content-click="true"
-        >
-          <template #activator="{ props }">
-            <Button
-              v-bind="props"
-              variant="list"
-              :disabled="!expanded"
-              :title="$t('tooltip.sort_options')"
-            >
-              <v-icon v-bind="props" icon="mdi-sort" />
-            </Button>
-          </template>
-          <v-card>
-            <v-list>
-              <div v-for="key of sortKeys" :key="key">
-                <ListItem @click="changeSort(key)">
-                  <template #title>{{ $t('sort.' + key) }}</template>
-                  <template #append>
-                    <v-icon v-if="params.sortBy == key" icon="mdi-check" />
-                  </template>
-                </ListItem>
-                <v-divider />
-              </div>
-            </v-list>
-          </v-card>
-        </v-menu>
-
-        <!-- toggle search button -->
-        <Button
-          v-if="
-            showSearchButton != undefined
-              ? showSearchButton
-              : getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="
-            isSearchActive
-              ? $t('tooltip.search_filter_active')
-              : $t('tooltip.search')
-          "
-          :disabled="!expanded"
-          @click="toggleSearch()"
-        >
-          <v-badge :model-value="isSearchActive" color="error" dot>
-            <v-icon icon="mdi-magnify" />
-          </v-badge>
-        </Button>
-
-        <!-- toggle view mode button -->
-        <Button
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.toggle_view_mode')"
-          :disabled="!expanded"
-          @click="toggleViewMode()"
-          ><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-        /></Button>
-
-        <!-- contextmenu -->
-        <v-menu
-          v-if="contextMenuItems && contextMenuItems.length > 0"
-          location="bottom end"
-        >
-          <template #activator="{ props }">
-            <Button variant="list" style="right: 3px" v-bind="props">
-              <v-icon icon="mdi-dots-vertical" />
-            </Button>
-          </template>
-          <v-list>
-            <ListItem
-              v-for="(item, index) in contextMenuItems.filter(
-                (x) => x.hide != true,
-              )"
-              :key="index"
-              :title="$t(item.label, item.labelArgs)"
-              :disabled="item.disabled == true"
-              @click="item.action ? item.action() : ''"
-            >
-              <template #prepend>
-                <v-avatar :icon="item.icon" />
-              </template>
-            </ListItem>
-          </v-list>
-        </v-menu>
-
-        <!-- expand/collapse button -->
-        <Button
-          v-if="allowCollapse"
-          variant="list"
-          :title="$t('tooltip.collapse_expand')"
-          @click="toggleExpand"
-          ><v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-        /></Button>
-      </template>
-    </v-toolbar>
     <v-divider />
 
     <v-text-field
@@ -343,8 +143,6 @@ import {
   nextTick,
   onMounted,
   watch,
-  onActivated,
-  onDeactivated,
 } from 'vue';
 import {
   MediaType,
@@ -357,24 +155,18 @@ import {
 } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import ListviewItem from './ListviewItem.vue';
-import Button from '@/components/mods/Button.vue';
 import PanelviewItem from './PanelviewItem.vue';
-import {
-  itemIsAvailable,
-  getContextMenuItems,
-  ContextMenuItem,
-} from '@/helpers/contextmenu';
+import { itemIsAvailable, getContextMenuItems } from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
-import { panelViewItemResponsive, scrollElement } from '@/helpers/utils';
+import { panelViewItemResponsive } from '@/helpers/utils';
+import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
 
 export interface LoadDataParams {
   offset: number;
@@ -407,7 +199,7 @@ export interface Props {
   showLibraryOnlyFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
-  contextMenuItems?: Array<ContextMenuItem>;
+  extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
   loadPagedData?: (params: LoadDataParams) => Promise<PagedItems>;
   // loadItems callback is provided for flat non-paged listings
@@ -416,6 +208,7 @@ export interface Props {
   infiniteScroll?: boolean;
   path?: string;
   saveScrollPosition?: boolean;
+  icon?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name', 'sort_name'],
@@ -436,11 +229,12 @@ const props = withDefaults(defineProps<Props>(), {
   infiniteScroll: true,
   title: undefined,
   showLibraryOnlyFilter: false,
-  contextMenuItems: undefined,
+  extraMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
   path: undefined,
   saveScrollPosition: true,
+  icon: undefined,
 });
 
 // global refs
@@ -455,7 +249,6 @@ const params = ref<LoadDataParams>({
   libraryOnly: false,
 });
 const viewMode = ref('list');
-const showSortMenu = ref(false);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
@@ -490,10 +283,9 @@ const toggleExpand = function () {
   localStorage.setItem(`expand.${props.itemtype}`, expanded.value.toString());
 };
 
-const toggleViewMode = function () {
-  if (viewMode.value === 'panel') viewMode.value = 'list';
-  else viewMode.value = 'panel';
-  localStorage.setItem(`viewMode.${props.itemtype}`, viewMode.value);
+const selectViewMode = function (newMode: string) {
+  viewMode.value = newMode;
+  localStorage.setItem(`viewMode.${props.itemtype}`, newMode);
 };
 
 const toggleFavoriteFilter = function () {
@@ -635,6 +427,146 @@ const isSearchActive = computed(() => {
     searchActive = true;
   }
   return searchActive;
+});
+
+const menuItems = computed(() => {
+  // toggle expand
+  if (props.allowCollapse === true && !expanded.value) {
+    return [
+      {
+        label: 'tooltip.collapse_expand',
+        icon: 'mdi-chevron-down',
+        action: toggleExpand,
+        overflowAllowed: false,
+      },
+    ];
+  }
+
+  const items: ToolBarMenuItem[] = [];
+
+  // toggle select menu item
+  if (props.showSelectButton !== false) {
+    items.push({
+      label: 'tooltip.select_items',
+      icon: showCheckboxes.value
+        ? 'mdi-checkbox-multiple-outline'
+        : 'mdi-checkbox-multiple-blank-outline',
+      action: toggleCheckboxes,
+      active: showCheckboxes.value,
+    });
+  }
+  // library only filter
+  if (props.showLibraryOnlyFilter === true) {
+    items.push({
+      label: 'tooltip.filter_library',
+      icon: 'mdi-bookshelf',
+      action: toggleLibraryOnlyFilter,
+      active: params.value.libraryOnly,
+    });
+  }
+
+  // favorites only filter
+  if (props.showFavoritesOnlyFilter === true) {
+    items.push({
+      label: 'tooltip.filter_favorites',
+      icon: params.value.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline',
+      action: toggleFavoriteFilter,
+      active: params.value.favoritesOnly,
+    });
+  }
+
+  // album artists only filter
+  if (props.showAlbumArtistsOnlyFilter === true) {
+    items.push({
+      label: 'tooltip.album_artist_filter',
+      icon: params.value.albumArtistsFilter
+        ? 'mdi-account-music'
+        : 'mdi-account-music-outline',
+      action: toggleAlbumArtistsFilter,
+      active: params.value.albumArtistsFilter,
+    });
+  }
+
+  // refresh action
+  if (props.showRefreshButton !== false || newContentAvailable.value) {
+    items.push({
+      label: newContentAvailable.value
+        ? 'tooltip.refresh_new_content'
+        : 'tooltip.refresh',
+      icon: 'mdi-refresh',
+      action: onRefreshClicked,
+      active: newContentAvailable.value,
+      disabled: loading.value,
+    });
+  }
+
+  // sort options
+  if (props.sortKeys?.length) {
+    items.push({
+      label: 'tooltip.sort_options',
+      icon: 'mdi-sort',
+      subItems: props.sortKeys.map((sortKey) => {
+        return {
+          label: `sort.${sortKey}`,
+          selected: params.value.sortBy == sortKey,
+          action: () => {
+            changeSort(sortKey);
+          },
+        };
+      }),
+    });
+  }
+
+  // toggle search
+  if (props.showSearchButton !== false) {
+    items.push({
+      label: isSearchActive.value
+        ? 'tooltip.search_filter_active'
+        : 'tooltip.search',
+      icon: 'mdi-magnify',
+      action: toggleSearch,
+      active: isSearchActive.value,
+    });
+  }
+
+  // toggle view mode
+  items.push({
+    label: 'tooltip.toggle_view_mode',
+    icon: viewMode.value == 'list' ? 'mdi-view-list' : 'mdi-grid',
+    subItems: [
+      {
+        label: 'view.list',
+        icon: 'mdi-view-list',
+        selected: viewMode.value == 'list',
+        action: () => {
+          selectViewMode('list');
+        },
+      },
+      {
+        label: 'view.panel',
+        icon: 'mdi-grid',
+        selected: viewMode.value == 'panel',
+        action: () => {
+          selectViewMode('panel');
+        },
+      },
+    ],
+  });
+
+  if (props.extraMenuItems?.length) {
+    items.push(...props.extraMenuItems);
+  }
+
+  // toggle expand
+  if (props.allowCollapse === true) {
+    items.push({
+      label: 'tooltip.collapse_expand',
+      icon: 'mdi-chevron-up',
+      action: toggleExpand,
+    });
+  }
+
+  return items;
 });
 
 const loadData = async function (
