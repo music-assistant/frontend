@@ -164,14 +164,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import {
-  MediaType,
-  MediaItemType,
-  ItemMapping,
-} from '@/plugins/api/interfaces';
+import { MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { ColorCoverPalette, getArtistsString } from '@/helpers/utils';
+import { ImageColorPalette, getArtistsString } from '@/helpers/utils';
 import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
@@ -184,7 +180,7 @@ const router = useRouter();
 interface Props {
   showOnlyArtist?: boolean;
   showQualityDetailsBtn?: boolean;
-  colorPalette: ColorCoverPalette;
+  colorPalette: ImageColorPalette;
   primaryColor: string;
 }
 

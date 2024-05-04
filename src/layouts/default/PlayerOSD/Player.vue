@@ -121,7 +121,7 @@ import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
 import {
-  ColorCoverPalette,
+  ImageColorPalette,
   getColorPalette,
   getContrastingTextColor,
 } from '@/helpers/utils';
@@ -140,7 +140,7 @@ defineProps<Props>();
 const theme = useTheme();
 
 // local refs
-const coverImageColorPalette = ref<ColorCoverPalette>({
+const coverImageColorPalette = ref<ImageColorPalette>({
   '0': '',
   '1': '',
   '2': '',
@@ -158,7 +158,6 @@ img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
 img.crossOrigin = 'Anonymous';
 img.addEventListener('load', function () {
   coverImageColorPalette.value = getColorPalette(img);
-  applyThemeColors();
 });
 
 const backgroundColor = computed(() => {
@@ -189,36 +188,6 @@ watch(
     }
   },
 );
-
-const applyThemeColors = function () {
-  // set some theme variables based on the coverImageColorPalette so UI elements can react
-  // on the color schema of the currently loaded/playing item
-  let lightTheme = theme.themes.value.light;
-  let darkTheme = theme.themes.value.dark;
-  lightTheme.colors['osd-primary'] =
-    coverImageColorPalette.value.lightColor || lightTheme.colors['primary'];
-  lightTheme.colors['osd-on-primary'] =
-    getContrastingTextColor(coverImageColorPalette.value.lightColor) ||
-    lightTheme.colors['on-primary'];
-  lightTheme.colors['osd-secondary'] =
-    coverImageColorPalette.value.darkColor || lightTheme.colors['secondary'];
-  lightTheme.colors['osd-on-secondary'] =
-    getContrastingTextColor(coverImageColorPalette.value.darkColor) ||
-    lightTheme.colors['on-secondary'];
-  // lightTheme.variables['medium-emphasis-opacity'] = 1;
-
-  darkTheme.colors['osd-primary'] =
-    coverImageColorPalette.value.darkColor || darkTheme.colors['primary'];
-  darkTheme.colors['osd-on-primary'] =
-    getContrastingTextColor(coverImageColorPalette.value.darkColor) ||
-    darkTheme.colors['on-primary'];
-  darkTheme.colors['osd-secondary'] =
-    coverImageColorPalette.value.lightColor || darkTheme.colors['secondary'];
-  darkTheme.colors['osd-on-secondary'] =
-    getContrastingTextColor(coverImageColorPalette.value.lightColor) ||
-    darkTheme.colors['on-secondary'];
-  // darkTheme.variables['medium-emphasis-opacity'] = 1;
-};
 </script>
 
 <style scoped>

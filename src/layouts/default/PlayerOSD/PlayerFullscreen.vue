@@ -435,10 +435,10 @@ import {
 import PlayerControls from './PlayerControls.vue';
 import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
 import router from '@/plugins/router';
-import { ColorCoverPalette, darkenBrightColors } from '@/helpers/utils';
+import { ImageColorPalette, darkenBrightColors } from '@/helpers/utils';
 
 interface Props {
-  colorPalette: ColorCoverPalette;
+  colorPalette: ImageColorPalette;
 }
 const props = defineProps<Props>();
 

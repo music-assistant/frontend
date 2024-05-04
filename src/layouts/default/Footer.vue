@@ -1,18 +1,13 @@
 <template>
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
+    :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
     :style="`
       position: fixed;
       width: 100%;
       height: ${bottomNavHeight + (getBreakpointValue('bp3') ? 110 : 80)}px;
       bottom: 0px;
       z-index: 999;
-      background: linear-gradient(
-        0deg,
-        rgba(100, 100, 100, 0.9) 0%,
-        rgba(100, 100, 100, 0.9) 75%,
-        rgba(255, 255, 255, 0) 100%
-      );
     `"
   ></div>
   <BottomNavigation
@@ -78,5 +73,22 @@ const footerMarginBottom = computed(() => {
   border-top-style: ridge;
   padding: 0px;
   border-top: 1px solid #20202035;
+}
+
+.gradient-dark {
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.9) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+.gradient-light {
+  background: linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.9) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 </style>

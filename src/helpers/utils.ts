@@ -185,7 +185,7 @@ export const numberRange = function (start: number, end: number): number[] {
 //Get correct colour
 type RGBColor = [number, number, number];
 
-export interface ColorCoverPalette {
+export interface ImageColorPalette {
   [key: number]: string;
   lightColor: string;
   darkColor: string;
@@ -323,7 +323,7 @@ export function darkenBrightColors(
   return color;
 }
 
-export function getColorPalette(img: HTMLImageElement): ColorCoverPalette {
+export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
   const colorThief = new ColorThief();
   const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
   const colorHexPalette: string[] = colorNumberPalette.map((color) =>
