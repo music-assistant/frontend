@@ -1,5 +1,5 @@
 <template>
-  <v-bottom-navigation height="80" grow>
+  <v-bottom-navigation :height="height" grow>
     <!-- full menu -->
     <v-tabs
       v-if="getBreakpointValue('tablet')"
@@ -9,12 +9,13 @@
       :model-value="activeTab"
       nav
       color="accent"
+      center-active
     >
       <v-tab
         v-for="menuItem of menuItems"
-        :key="menuItem.path"
+        :key="menuItem.label"
         :to="menuItem.path"
-        :value="menuItem.path"
+        :value="menuItem.label"
       >
         <v-icon size="xx-large">{{ menuItem.icon }}</v-icon>
         <span class="menuButton">{{ $t(menuItem.label) }}</span>
@@ -32,9 +33,9 @@
     >
       <v-tab
         v-for="menuItem of menuItems.filter((x) => !x.isLibraryNode)"
-        :key="menuItem.path"
+        :key="menuItem.label"
         :to="menuItem.path"
-        :value="menuItem.path"
+        :value="menuItem.label"
       >
         <v-icon size="xx-large">{{ menuItem.icon }}</v-icon>
         <span class="menuButton">{{ $t(menuItem.label) }}</span>
@@ -42,7 +43,7 @@
 
       <v-menu>
         <template #activator="{ props }">
-          <v-tab key="library" v-bind="props">
+          <v-tab key="library" v-bind="props" value="library">
             <v-icon size="xx-large">mdi-bookshelf</v-icon>
             <span class="menuButton">{{ $t('library') }}</span>
           </v-tab>
@@ -51,7 +52,7 @@
         <v-list>
           <v-list-item
             v-for="menuItem of menuItems.filter((x) => x.isLibraryNode)"
-            :key="menuItem.path"
+            :key="menuItem.label"
             :title="$t(menuItem.label)"
             :prepend-icon="menuItem.icon"
             :to="menuItem.path"
@@ -78,7 +79,10 @@ const menuItems = getMenuItems();
 const activeTab = computed(() => {
   for (const menuItem of menuItems) {
     if (router.currentRoute.value.path.startsWith(menuItem.path)) {
-      return menuItem.path;
+      if (!getBreakpointValue('tablet') && menuItem.isLibraryNode) {
+        return 'library';
+      }
+      return menuItem.label;
     }
   }
   return '';

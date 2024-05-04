@@ -1,7 +1,7 @@
 <template>
   <div
     :class="`${useFloatingPlayer ? 'mediacontrols-bg-2' : 'mediacontrols-bg-1'}`"
-    :style="`background: linear-gradient(90deg, ${backgroundColor}4D 0%, ${backgroundColor}00 100%);`"
+    :style="`background: ${backgroundColor};`"
   ></div>
   <PlayerTimeline
     v-if="getBreakpointValue('bp3')"
@@ -115,7 +115,6 @@
 import { computed, ref, watch } from 'vue';
 //@ts-ignore
 
-import api from '@/plugins/api';
 import { ImageType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
@@ -139,7 +138,7 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
 interface Props {
   useFloatingPlayer: boolean;
 }
-const props = defineProps<Props>();
+defineProps<Props>();
 
 // global refs
 const theme = useTheme();
@@ -169,12 +168,12 @@ img.addEventListener('load', function () {
 const backgroundColor = computed(() => {
   if (vuetify.theme.current.value.dark) {
     if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
-      return coverImageColorPalette.value.darkColor;
-    return 'CCCCCC';
+      return coverImageColorPalette.value.darkColor + '26';
+    return 'CCCCCC26';
   }
   if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
-    return coverImageColorPalette.value.lightColor;
-  return 'CCCCCC';
+    return coverImageColorPalette.value.lightColor + '26';
+  return 'CCCCCC26';
 });
 
 // watchers
@@ -190,7 +189,7 @@ watch(
     } else if (store.curQueueItem) {
       img.src = getImageThumbForItem(store.curQueueItem, ImageType.THUMB) || '';
     } else {
-      img.src = vuetify.theme.current.value.dark ? imgCoverLight : imgCoverDark;
+      img.src = '';
     }
   },
 );
