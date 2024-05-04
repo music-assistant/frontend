@@ -50,11 +50,13 @@ const footerMarginBottom = computed(() => {
 <style>
 .mediacontrols-player-float {
   width: 100%;
-  border-top-style: ridge;
   padding: 0px !important;
   left: 5px !important;
   width: calc((100% - 10px) - 0px) !important;
   border-radius: 10px !important;
+  border-color: #00000058;
+  border-style: solid;
+  border-width: thin;
 }
 
 .mediacontrols-player-default {

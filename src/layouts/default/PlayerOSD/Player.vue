@@ -25,11 +25,7 @@
         :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
         :show-only-artist="getBreakpointValue('bp7') ? false : true"
         :color-palette="coverImageColorPalette"
-        :primary-color="
-          $vuetify.theme.current.dark
-            ? coverImageColorPalette.lightColor || '#fff'
-            : coverImageColorPalette.darkColor || '#000'
-        "
+        :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
       />
     </div>
     <div
