@@ -182,3 +182,41 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   overflowAllowed?: boolean;
 }
 </script>
+
+<style>
+.v-toolbar {
+  height: 55px;
+}
+
+.v-toolbar-title {
+  font-family: 'JetBrains Mono Medium';
+}
+
+.v-toolbar__content {
+  height: 100% !important;
+}
+
+.v-toolbar > .v-toolbar__content > .v-toolbar-title {
+  margin-inline-start: 25px;
+}
+
+.v-toolbar > .v-toolbar__content > .v-toolbar__prepend {
+  margin-inline-start: 6px;
+}
+
+.v-toolbar > .v-toolbar__content > .v-toolbar__append {
+  margin-inline-end: 21px;
+}
+
+.v-toolbar-default > .v-toolbar__content > .v-toolbar-title {
+  margin-inline-start: 16px;
+}
+
+.v-toolbar-default > .v-toolbar__content > .v-toolbar__prepend {
+  margin-inline-start: 10px;
+}
+
+.v-toolbar-default > .v-toolbar__content > .v-toolbar__append {
+  margin-inline-end: 10px;
+}
+</style>

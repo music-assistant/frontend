@@ -4,11 +4,9 @@
 
 <script setup lang="ts">
 import { api } from '@/plugins/api';
-import { onMounted, watch } from 'vue';
+import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
-import '@/styles/global.css';
-import { ConnectionState } from '@/plugins/api';
 
 const theme = useTheme();
 

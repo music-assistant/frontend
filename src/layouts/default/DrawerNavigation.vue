@@ -2,9 +2,9 @@
   <v-navigation-drawer
     ref="resizeComponent"
     app
-    permanent
+    :permanent="getBreakpointValue('bp1')"
     :rail="!showNavigationMenu"
-    :width="!getBreakpointValue('mobile') ? 200 : 250"
+    :width="!getBreakpointValue('bp1') ? 200 : 250"
     @update:model-value="
       (e) => {
         showNavigationMenu = e;
@@ -13,12 +13,7 @@
   >
     <v-list-item dark style="height: 55px" :active="false">
       <template #prepend>
-        <img
-          class="logo_icon"
-          :style="$vuetify.theme.current.dark ? 'filter: invert(100%);' : ''"
-          width="35"
-          src="@/assets/logo.svg"
-        />
+        <v-icon class="logo_icon" size="40" icon="$mass_alt" />
       </template>
       <template #title>
         <div class="logo_text">Music Assistant</div>
@@ -177,14 +172,14 @@ export const getMenuItems = function () {
 
 <style scoped>
 .logo_text {
-  margin-left: 25px;
+  margin-left: 15px;
   font-family: 'JetBrains Mono Medium';
-  font-size: 55;
+  font-size: larger;
   font-weight: 500;
 }
 
 .logo_icon {
-  margin-left: -5px;
+  margin-left: -8px;
   border-radius: 4px;
 }
 </style>

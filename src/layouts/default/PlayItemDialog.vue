@@ -8,7 +8,7 @@
     v-model="show"
     :fullscreen="$vuetify.display.mobile"
     transition="dialog-bottom-transition"
-    :scrim="true"
+    scrim
     @update:model-value="
       (v) => {
         store.dialogActive = v;
@@ -192,12 +192,3 @@ const availablePlayers = computed(() => {
     .sort((a, b) => (a.title.toUpperCase() > b.title.toUpperCase() ? 1 : -1));
 });
 </script>
-
-<style>
-.fullscreen-menu .v-overlay__content {
-  left: 0px;
-  right: 0px;
-  top: 0px;
-  bottom: 0px;
-}
-</style>

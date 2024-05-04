@@ -1,5 +1,10 @@
 <template>
-  <v-bottom-navigation :height="height" grow>
+  <v-bottom-navigation
+    :height="height"
+    grow
+    elevation="15"
+    style="border-top: 1px solid #20202035"
+  >
     <!-- full menu -->
     <v-tabs
       v-if="getBreakpointValue('tablet')"
