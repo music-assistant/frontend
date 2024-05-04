@@ -8,8 +8,8 @@
     v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
     :color="
       $vuetify.theme.current.dark
-        ? coverImageColorPalette.lightColor
-        : coverImageColorPalette.darkColor
+        ? coverImageColorPalette.lightColor || '#fff'
+        : coverImageColorPalette.darkColor || '#000'
     "
     :is-progress-bar="true"
   />
@@ -20,9 +20,9 @@
       getBreakpointValue({ breakpoint: 'phone' }) ? 3 : 10
     }px ${getBreakpointValue({ breakpoint: 'phone' }) ? 10 : 10}px;`"
   >
-    <div :class="`mediacontrols-left-${useFloatingPlayer ? '1' : '2'}`">
+    <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
       <PlayerTrackDetails
-        :show-quality-details-btn="getBreakpointValue('bp7') ? true : false"
+        :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
         :show-only-artist="getBreakpointValue('bp7') ? false : true"
         :color-palette="coverImageColorPalette"
         :primary-color="
@@ -59,8 +59,8 @@
           v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
           :color="
             $vuetify.theme.current.dark
-              ? coverImageColorPalette.darkColor
-              : coverImageColorPalette.lightColor
+              ? coverImageColorPalette.lightColor || '#fff'
+              : coverImageColorPalette.darkColor || '#000'
           "
           :is-progress-bar="false"
         />
@@ -70,28 +70,17 @@
       <div>
         <!-- player mobile extended control buttons -->
         <PlayerExtendedControls
-          :queue="{ isVisible: getBreakpointValue('bp3') }"
+          :queue="{
+            isVisible: getBreakpointValue('bp3'),
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
+          }"
           :player="{
             isVisible: true,
-            color:
-              !$vuetify.theme.current.dark &&
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? '#fff'
-                : $vuetify.theme.current.dark &&
-                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
           :volume="{
             isVisible: true,
-            color:
-              !$vuetify.theme.current.dark &&
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? '#fff'
-                : $vuetify.theme.current.dark &&
-                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
         <!-- player mobile control buttons -->
@@ -110,17 +99,7 @@
               icon: {
                 staticWidth: '48px',
                 staticHeight: '48px',
-                color:
-                  !$vuetify.theme.current.dark &&
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                    ? '#fff'
-                    : $vuetify.theme.current.dark &&
-                        getBreakpointValue({
-                          breakpoint: 'bp3',
-                          condition: 'gt',
-                        })
-                      ? '#fff'
-                      : '#000',
+                color: $vuetify.theme.current.dark ? '#fff' : '#000',
               },
             },
             previous: { isVisible: false },
