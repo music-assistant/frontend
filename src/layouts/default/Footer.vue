@@ -7,27 +7,33 @@
     bottom
     fixed
     :class="`d-flex flex-column ${
-      store.navigationMenuStyle == 'horizontal'
+      useFloatingPlayer
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
     :style="`bottom: ${footerMarginBottom}px;`"
-    elevation="5"
+    elevation="15"
     app
-    :dark="true"
   >
-    <Player />
+    <Player :use-floating-player="useFloatingPlayer" />
   </v-footer>
 </template>
 
 <script setup lang="ts">
-import { getBreakpointValue } from '@/plugins/breakpoint';
 import BottomNavigation from './BottomNavigation.vue';
 import Player from './PlayerOSD/Player.vue';
 import { store } from '@/plugins/store';
 import { computed } from 'vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+
+const useFloatingPlayer = computed(() => {
+  return (
+    !getBreakpointValue('bp3') || store.navigationMenuStyle == 'horizontal'
+  );
+});
 
 const bottomNavHeight = computed(() => {
+  if (store.navigationMenuStyle != 'horizontal') return 0;
   if (store.isInStandaloneMode) {
     // for iOS standalone we need extra padding at the bottom due to the apphandle
     return 100;
@@ -36,8 +42,8 @@ const bottomNavHeight = computed(() => {
 });
 
 const footerMarginBottom = computed(() => {
-  if (store.navigationMenuStyle != 'horizontal') return 0;
-  return bottomNavHeight.value + 5;
+  if (useFloatingPlayer.value) return bottomNavHeight.value + 5;
+  return 0;
 });
 </script>
 
