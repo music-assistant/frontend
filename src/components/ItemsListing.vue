@@ -170,8 +170,6 @@ import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
-import { scrollElement } from '@/helpers/utils';
-import { panelViewItemResponsive } from '@/helpers/utils';
 import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
 
 export interface LoadDataParams {

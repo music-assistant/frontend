@@ -1,4 +1,20 @@
 <template>
+  <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
+  <div
+    :style="`
+      position: fixed;
+      width: 100%;
+      height: ${bottomNavHeight + (getBreakpointValue('bp3') ? 110 : 80)}px;
+      bottom: 0px;
+      z-index: 999;
+      background: linear-gradient(
+        0deg,
+        rgba(100, 100, 100, 0.9) 0%,
+        rgba(100, 100, 100, 0.9) 75%,
+        rgba(255, 255, 255, 0) 100%
+      );
+    `"
+  ></div>
   <BottomNavigation
     v-if="store.navigationMenuStyle == 'horizontal'"
     :height="bottomNavHeight"
@@ -27,9 +43,7 @@ import { computed } from 'vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 
 const useFloatingPlayer = computed(() => {
-  return (
-    !getBreakpointValue('bp3') || store.navigationMenuStyle == 'horizontal'
-  );
+  return store.navigationMenuStyle == 'horizontal';
 });
 
 const bottomNavHeight = computed(() => {
@@ -54,7 +68,7 @@ const footerMarginBottom = computed(() => {
   left: 5px !important;
   width: calc((100% - 10px) - 0px) !important;
   border-radius: 10px !important;
-  border-color: #00000058;
+  border-color: rgba(100, 100, 100, 0.9) 75%;
   border-style: solid;
   border-width: thin;
 }
@@ -63,5 +77,6 @@ const footerMarginBottom = computed(() => {
   width: 100%;
   border-top-style: ridge;
   padding: 0px;
+  border-top: 1px solid #20202035;
 }
 </style>
