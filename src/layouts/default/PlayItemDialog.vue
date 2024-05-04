@@ -50,7 +50,7 @@
         <v-list>
           <div v-for="item of playMenuItems" :key="item.label">
             <ListItem
-              :title="$t(item.label, item.labelArgs)"
+              :title="$t(item.label, item.labelArgs || [])"
               density="default"
               @click="itemClicked(item)"
             >
@@ -74,7 +74,7 @@
         <v-list>
           <div v-for="item of contextMenuItems" :key="item.label">
             <ListItem
-              :title="$t(item.label, item.labelArgs)"
+              :title="$t(item.label, item.labelArgs || [])"
               density="default"
               @click="itemClicked(item)"
             >
