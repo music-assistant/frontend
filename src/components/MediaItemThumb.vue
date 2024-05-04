@@ -141,8 +141,21 @@ export const getMediaItemImage = function (
 ): MediaItemImage | undefined {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
-  // handle image in queueitem
-  if ('image' in mediaItem && mediaItem.image) return mediaItem.image;
+
+  // handle image in queueitem or itemmapping
+  if ('image' in mediaItem && mediaItem.image && type == ImageType.THUMB)
+    return mediaItem.image;
+
+  // always prefer album image for tracks
+  if ('album' in mediaItem && mediaItem.album) {
+    const albumImage = getMediaItemImage(
+      mediaItem.album,
+      type,
+      includeFileBased,
+    );
+    if (albumImage) return albumImage;
+  }
+
   // handle regular image within mediaitem
   if ('metadata' in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
@@ -150,56 +163,15 @@ export const getMediaItemImage = function (
       if (img.type == type) return img;
     }
   }
-  // prefer album image in case of tracks
-  if (
-    'album' in mediaItem &&
-    mediaItem.album &&
-    'metadata' in mediaItem.album &&
-    mediaItem.album.metadata &&
-    mediaItem.album.metadata.images
-  ) {
-    for (const img of mediaItem.album.metadata.images) {
-      if (!img.remotely_accessible && !includeFileBased) continue;
-      if (img.type == type) return img;
-    }
-  }
-  // retry with ItemMapping album
-  if (
-    'album' in mediaItem &&
-    mediaItem.album &&
-    'image' in mediaItem.album &&
-    mediaItem.album.image
-  ) {
-    if (
-      mediaItem.album.image.type == type &&
-      (mediaItem.album.image.remotely_accessible || includeFileBased)
-    ) {
-      return mediaItem.album.image;
-    }
-  }
-  // retry with album artist
-  if (
-    'artist' in mediaItem &&
-    'metadata' in mediaItem.artist &&
-    mediaItem.artist.metadata &&
-    mediaItem.artist.metadata.images
-  ) {
-    for (const img of mediaItem.artist.metadata.images) {
-      if (!img.remotely_accessible && !includeFileBased) continue;
-      if (img.type == type) return img;
-    }
-  }
-  // retry with track artist
+
+  // retry with album/track artist(s)
   if ('artists' in mediaItem && mediaItem.artists) {
     for (const artist of mediaItem.artists) {
-      if ('metadata' in artist && artist.metadata.images) {
-        for (const img of artist.metadata.images) {
-          if (!img.remotely_accessible && !includeFileBased) continue;
-          if (img.type == type) return img;
-        }
-      }
+      const artistImage = getMediaItemImage(artist, type, includeFileBased);
+      if (artistImage) return artistImage;
     }
   }
+
   // allow landscape fallback
   if (type == ImageType.THUMB) {
     return getMediaItemImage(mediaItem, ImageType.LANDSCAPE, includeFileBased);

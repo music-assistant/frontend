@@ -91,21 +91,20 @@
         <!-- refresh button-->
         <Button
           v-if="
-            showRefreshButton != undefined
-              ? showRefreshButton
-              : getBreakpointValue('bp1')
+            (showRefreshButton !== false || newContentAvailable) &&
+            getBreakpointValue('bp1')
           "
           v-bind="props"
           variant="list"
           :title="
-            updateAvailable
+            newContentAvailable
               ? $t('tooltip.refresh_new_content')
               : $t('tooltip.refresh')
           "
           :disabled="!expanded || loading"
           @click="onRefreshClicked()"
         >
-          <v-badge :model-value="updateAvailable" color="error" dot>
+          <v-badge :model-value="newContentAvailable" color="error" dot>
             <v-icon icon="mdi-refresh" />
           </v-badge>
         </Button>
@@ -349,6 +348,8 @@ import {
   nextTick,
   onMounted,
   watch,
+  onActivated,
+  onDeactivated,
 } from 'vue';
 import {
   MediaType,
@@ -378,6 +379,7 @@ import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
+import { scrollElement } from '@/helpers/utils';
 
 export interface LoadDataParams {
   offset: number;
@@ -418,9 +420,10 @@ export interface Props {
   limit?: number;
   infiniteScroll?: boolean;
   path?: string;
+  saveScrollPosition?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ['name'],
+  sortKeys: () => ['name', 'sort_name'],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -442,6 +445,7 @@ const props = withDefaults(defineProps<Props>(), {
   loadPagedData: undefined,
   loadItems: undefined,
   path: undefined,
+  saveScrollPosition: true,
 });
 
 // global refs
@@ -600,20 +604,17 @@ const onClear = function () {
   loadData(true);
 };
 
-const isSearchActive = computed(() => {
-  var searchActive = false;
-  if (params.value.search && params.value.search.length !== 0) {
-    searchActive = true;
-  }
-  return searchActive;
-});
-
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
   localStorage.setItem(`sortBy.${props.itemtype}`, params.value.sortBy);
   loadData(true, undefined, sort_key == 'original');
+};
+
+const redirectSearch = function () {
+  store.globalSearchTerm = params.value.search;
+  router.push({ name: 'search' });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -632,46 +633,31 @@ const loadNextPage = function ($state?: any) {
   });
 };
 
-const redirectSearch = function () {
-  store.globalSearchTerm = params.value.search;
-  router.push({ name: 'search' });
-};
-
-// watchers
-watch(
-  () => params.value.search,
-  (newVal) => {
-    if (newVal) showSearch.value = true;
-    loadData(true);
-    let storKey = `search.${props.itemtype}`;
-    if (props.parentItem) storKey += props.parentItem.item_id;
-    localStorage.setItem(storKey, params.value.search);
-  },
-);
-watch(
-  () => props.path,
-  () => {
-    allItems.value = [];
-    restoreState();
-  },
-);
-watch(
-  () => props.limit,
-  (newVal) => {
-    params.value.limit = newVal;
-  },
-);
+// computed properties
+const isSearchActive = computed(() => {
+  var searchActive = false;
+  if (params.value.search && params.value.search.length !== 0) {
+    searchActive = true;
+  }
+  return searchActive;
+});
 
 const loadData = async function (
   clear = false,
   limit = props.limit,
   refresh = false,
 ) {
+  if (loading.value) {
+    // we could potentially be called multiple times due to multiple watchers
+    // so ignore if we're already loading
+    return;
+  }
+  loading.value = true;
+
   if (clear || refresh) {
     params.value.offset = 0;
     newContentAvailable.value = false;
   }
-  loading.value = true;
   params.value.limit = props.limit;
   params.value.refresh = refresh;
   if (props.loadPagedData !== undefined) {
@@ -704,11 +690,16 @@ const loadData = async function (
   loading.value = false;
 };
 
-const getSortName = function (item: MediaItemType | ItemMapping) {
+const getSortName = function (
+  item: MediaItemType | ItemMapping,
+  preferSortName = false,
+) {
+  if (!item) return '';
   if ('label' in item && item.label && item.name)
     return t(item.label, [item.name]);
   if ('label' in item && item.label) return t(item.label);
-  if ('sort_name' in item && item.sort_name) return item.sort_name;
+  if (preferSortName && 'sort_name' in item && item.sort_name)
+    return item.sort_name;
   return item.name;
 };
 
@@ -750,19 +741,27 @@ const getFilteredItems = function (
   if (params.sortBy == 'name') {
     result.sort((a, b) => getSortName(a).localeCompare(getSortName(b)));
   }
+  if (params.sortBy == 'sort_name') {
+    result.sort((a, b) =>
+      getSortName(a, true).localeCompare(getSortName(b, true)),
+    );
+  }
   if (params.sortBy == 'name_desc') {
     result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
   }
+
   if (params.sortBy == 'album') {
     result.sort((a, b) =>
-      (a as Track).album?.sort_name.localeCompare(
-        (b as Track).album?.sort_name,
+      getSortName((a as Track).album).localeCompare(
+        getSortName((b as Track).album),
       ),
     );
   }
   if (params.sortBy == 'artist') {
     result.sort((a, b) =>
-      (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name),
+      getSortName((a as Track).artists[0]).localeCompare(
+        getSortName((b as Track).artists[0]),
+      ),
     );
   }
   if (params.sortBy == 'track_number') {
@@ -813,7 +812,7 @@ const getFilteredItems = function (
   return result.slice(params.offset, params.offset + params.limit);
 };
 
-const restoreState = function () {
+const restoreState = async function () {
   // restore state for this path/itemtype
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
@@ -880,17 +879,13 @@ const restoreState = function () {
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
   const savedSearch = localStorage.getItem(storKey);
-
   if (savedSearch && savedSearch !== 'null') {
     params.value.search = savedSearch;
   }
-  loadData(true);
-};
 
-// get/set default settings at load
-onMounted(async () => {
-  restoreState();
-});
+  // load items
+  await loadData(true);
+};
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
@@ -922,6 +917,53 @@ if (props.allowKeyHooks) {
     document.removeEventListener('keydown', keyListener);
   });
 }
+
+// watchers
+watch(
+  () => params.value.search,
+  (newVal) => {
+    if (newVal) showSearch.value = true;
+    loadData(true);
+    let storKey = `search.${props.itemtype}`;
+    if (props.parentItem) storKey += props.parentItem.item_id;
+    localStorage.setItem(storKey, params.value.search);
+  },
+);
+watch(
+  () => props.path,
+  () => {
+    if (loading.value == true) return;
+    allItems.value = [];
+    restoreState();
+  },
+);
+watch(
+  () => props.parentItem,
+  () => {
+    if (loading.value == true) return;
+    allItems.value = [];
+    restoreState();
+  },
+  { deep: true },
+);
+watch(
+  () => props.limit,
+  (newVal) => {
+    params.value.limit = newVal;
+  },
+);
+watch(
+  () => props.updateAvailable,
+  (newVal) => {
+    if (loading.value) return;
+    newContentAvailable.value = newVal;
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  restoreState();
+});
 </script>
 
 <style>

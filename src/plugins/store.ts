@@ -11,12 +11,11 @@ interface Store {
   apiInitialized: boolean;
   apiBaseUrl: string;
   dialogActive: boolean;
-  prevScrollPos?: number;
-  prevScrollName?: string;
   selectedPlayer?: Player;
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
+  prevScrollPos: Record<string, number>;
 }
 
 export const store: Store = reactive({
@@ -28,8 +27,6 @@ export const store: Store = reactive({
   apiInitialized: false,
   apiBaseUrl: '',
   dialogActive: false,
-  prevScrollPos: undefined,
-  prevScrollName: undefined,
   selectedPlayer: computed(() => {
     if (store.selectedPlayerId && store.selectedPlayerId in api.players) {
       return api.players[store.selectedPlayerId];
@@ -54,4 +51,5 @@ export const store: Store = reactive({
     return undefined;
   }),
   globalSearchTerm: undefined,
+  prevScrollPos: {},
 });

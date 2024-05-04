@@ -40,13 +40,25 @@ import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import router from '@/plugins/router';
 
+defineOptions({
+  name: 'Radios',
+});
+
 const { t } = useI18n();
 const items = ref<Radio[]>([]);
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 onMounted(() => {
@@ -106,6 +118,7 @@ const addUrl = async function () {
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;
+      delete item.sort_name;
 
       const imgUrl = prompt(
         t('image_url'),

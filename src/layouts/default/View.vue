@@ -5,7 +5,9 @@
     <play-item-dialog />
     <router-view v-slot="{ Component }" app>
       <transition name="fade" mode="out-in">
-        <component :is="Component" />
+        <keep-alive :include="mainListings">
+          <component :is="Component" />
+        </keep-alive>
       </transition>
     </router-view>
   </v-main>
@@ -15,4 +17,5 @@
 import DrawerNavigation from './DrawerNavigation.vue';
 import AddToPlaylistDialog from './AddToPlaylistDialog.vue';
 import PlayItemDialog from './PlayItemDialog.vue';
+import { mainListings } from '@/plugins/router';
 </script>
