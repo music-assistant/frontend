@@ -85,7 +85,11 @@
       </v-virtual-scroll>
 
       <!-- infinite scroll component -->
-      <InfiniteLoading v-if="infiniteScroll" @infinite="loadNextPage" />
+      <InfiniteLoading
+        v-if="infiniteScroll"
+        :firstload="false"
+        @infinite="loadNextPage"
+      />
       <v-btn
         v-else-if="(total || 0) > pagedItems.length"
         variant="plain"

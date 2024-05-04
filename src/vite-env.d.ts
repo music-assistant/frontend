@@ -8,5 +8,4 @@ declare module '*.vue' {
   export default component;
 }
 
-declare module 'v3-infinite-loading';
 declare module 'vuetify/lib/util/colors';
