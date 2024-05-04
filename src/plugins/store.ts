@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue';
-import { MenuItem, Player, PlayerQueue, QueueItem } from './api/interfaces';
+import { Player, PlayerQueue, QueueItem } from './api/interfaces';
 import api from './api';
 
 interface Store {
