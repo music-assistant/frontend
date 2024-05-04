@@ -48,7 +48,7 @@
           </v-tab>
         </template>
 
-        <v-list class="bg-grey-lighten-3">
+        <v-list>
           <v-list-item
             v-for="menuItem of menuItems.filter((x) => x.isLibraryNode)"
             :key="menuItem.path"
