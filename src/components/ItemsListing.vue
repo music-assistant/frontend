@@ -6,7 +6,7 @@
       <template #title>
         {{ title }}
         <v-badge
-          v-if="getBreakpointValue('bp11')"
+          v-if="getBreakpointValue('bp4')"
           color="grey"
           :content="total"
           inline
@@ -19,7 +19,7 @@
           v-if="
             showSelectButton != undefined
               ? showSelectButton
-              : getBreakpointValue('bp1')
+              : getBreakpointValue('bp4')
           "
           v-bind="props"
           variant="list"
