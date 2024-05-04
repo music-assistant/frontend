@@ -9,10 +9,11 @@
     :show-library="true"
     :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('playlists') : ''"
+    :title="$t('playlists')"
     :allow-key-hooks="true"
     :show-search-button="true"
-    :context-menu-items="contextMenuItems"
+    :extra-menu-items="extraMenuItems"
+    icon="mdi-playlist-play"
   />
 </template>
 
@@ -28,9 +29,8 @@ import {
   EventType,
   MediaType,
 } from '@/plugins/api/interfaces';
-import { ContextMenuItem } from '@/helpers/contextmenu';
+import { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { sleep } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
 
 defineOptions({
   name: 'Playlists',
@@ -39,7 +39,7 @@ defineOptions({
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
 const updateAvailable = ref(false);
-const contextMenuItems = ref<ContextMenuItem[]>([]);
+const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 
 const sortKeys: Record<string, string> = {
   name: 'name',
@@ -84,18 +84,26 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 onMounted(() => {
+  const playListCreateItems: ToolBarMenuItem[] = [];
   for (const prov of Object.values(api.providers).filter(
     (x) =>
       x.available &&
       x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
   )) {
-    contextMenuItems.value.push({
+    playListCreateItems.push({
       label: 'create_playlist_on',
       labelArgs: [prov.name],
       action: () => {
         newPlaylist(prov.instance_id);
       },
       icon: 'mdi-playlist-plus',
+    });
+  }
+  if (playListCreateItems.length) {
+    extraMenuItems.value.push({
+      label: 'create_playlist_on',
+      icon: 'mdi-playlist-plus',
+      subItems: playListCreateItems,
     });
   }
   // signal if/when items get added/updated/removed within this library

@@ -11,6 +11,7 @@
       :title="header"
       :path="path"
       :allow-key-hooks="true"
+      icon="mdi-folder-outline"
     />
   </section>
 </template>

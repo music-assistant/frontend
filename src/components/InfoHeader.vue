@@ -3,8 +3,8 @@
     <v-card
       variant="flat"
       :img="imgGradient"
-      style="margin-top: -10px; z-index: 0"
-      height="30vh"
+      style="z-index: 0"
+      height="25vh"
       max-height="500px"
       min-height="340px"
     >
@@ -22,21 +22,12 @@
             : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
         "
       />
-      <!-- back button -->
-      <!-- allows the user to go back from this nested level (item details) to the main listing -->
-      <Button
-        xx-large
-        style="
-          width: 40px;
-          height: 5px;
-          left: 4px;
-          top: 15px;
-          bottom: 0;
-          padding: 0;
-        "
+      <Toolbar
         icon="mdi-arrow-left"
-        :title="$t('tooltip.back')"
-        @click.stop="backButtonClick"
+        style="position: absolute"
+        :menu-items="item ? getContextMenuItems([item], item) : []"
+        :enforce-overflow-menu="true"
+        @icon-clicked="backButtonClick"
       />
       <v-layout
         v-if="item"
@@ -177,30 +168,6 @@
             >
               {{ $t('play') }}
             </v-btn>
-            <!-- contextmenu button -->
-            <v-menu>
-              <template #activator="{ props }">
-                <Button icon style="margin-top: -8px" v-bind="props">
-                  <v-icon icon="mdi-dots-vertical" />
-                </Button>
-              </template>
-              <v-list>
-                <ListItem
-                  v-for="(menuItem, index) in getContextMenuItems(
-                    [item],
-                    item,
-                  ).filter((x) => x.hide != true)"
-                  :key="index"
-                  :title="$t(menuItem.label, menuItem.labelArgs)"
-                  :disabled="menuItem.disabled == true"
-                  @click="menuItem.action ? menuItem.action() : ''"
-                >
-                  <template #prepend>
-                    <v-avatar :icon="menuItem.icon" />
-                  </template>
-                </ListItem>
-              </v-list>
-            </v-menu>
 
             <!-- favorite (heart) icon -->
             <v-btn
@@ -230,7 +197,7 @@
             @click="showFullInfo = !showFullInfo"
           >
             <!-- eslint-disable vue/no-v-html -->
-            <div v-html="shortDescription"></div>
+            <div v-text="shortDescription"></div>
             <!-- eslint-enable vue/no-v-html -->
           </v-card-subtitle>
 
@@ -291,11 +258,13 @@ import MediaItemThumb from './MediaItemThumb.vue';
 import Button from '@/components/mods/Button.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
-import { parseBool } from '@/helpers/utils';
+import { itemIsAvailable, parseBool } from '@/helpers/utils';
 import { getContextMenuItems } from '@/helpers/contextmenu';
 import ListItem from '@/components/mods/ListItem.vue';
+import Toolbar from '@/components/Toolbar.vue';
 import { useI18n } from 'vue-i18n';
 import { eventbus } from '@/plugins/eventbus';
+import { mdiPrinterPosOff } from '@mdi/js';
 
 // properties
 export interface Props {
@@ -366,31 +335,35 @@ const backButtonClick = function () {
   });
 };
 
-const fullDescription = computed(() => {
-  let desc = '';
+const rawDescription = computed(() => {
   if (!compProps.item) return '';
   if (compProps.item.metadata && compProps.item.metadata.description) {
-    desc = compProps.item.metadata.description;
+    return compProps.item.metadata.description;
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
-    desc = compProps.item.metadata.copyright;
+    return compProps.item.metadata.copyright;
   } else if ('artists' in compProps.item) {
     compProps.item.artists.forEach(function (artist: Artist | ItemMapping) {
       if ('metadata' in artist && artist.metadata.description) {
-        desc = artist.metadata.description;
+        return artist.metadata.description;
       }
     });
   }
-  desc = desc.replace('\r\n', '<br /><br /><br />');
-  desc = desc.replace('\r', '<br /><br />');
-  desc = desc.replace('\n', '<br /><br />');
-  return desc;
+  return '';
+});
+
+const fullDescription = computed(() => {
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, '<br /><br />');
 });
 const shortDescription = computed(() => {
-  const maxChars = mobile.value ? 160 : 260;
-  if (fullDescription.value.length > maxChars) {
-    return fullDescription.value.substring(0, maxChars) + '...';
+  const maxChars = mobile.value ? 160 : 300;
+  if (rawDescription.value.length > maxChars) {
+    return (
+      rawDescription.value
+        .replace(/(\r\n|\n|\r)/gm, ' ')
+        .substring(0, maxChars) + '...'
+    );
   }
-  return fullDescription.value;
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
 });
 </script>
 

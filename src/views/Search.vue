@@ -1,57 +1,54 @@
 <template>
   <section>
-    <v-toolbar variant="flat" color="transparent">
-      <template #title>
-        {{ $t('search') }}
-      </template>
-    </v-toolbar>
-    <v-divider />
-    <v-text-field
-      id="searchInput"
-      v-model="store.globalSearchTerm"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('type_to_search')"
-      hide-details
-      variant="filled"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
+    <Toolbar icon="mdi-magnify" :title="$t('search')" />
 
-    <v-row
-      v-for="rowSet in [
-        ['topresult', 'tracks'],
-        ['artists', 'albums'],
-        ['playlists', 'radio'],
-      ]"
-      :key="rowSet[0] + rowSet[1]"
-    >
-      <v-col
-        v-for="resultKey in rowSet.filter((x) => filteredItems(x).length)"
-        :key="resultKey"
+    <Container variant="default">
+      <v-text-field
+        id="searchInput"
+        v-model="store.globalSearchTerm"
+        clearable
+        prepend-inner-icon="mdi-magnify"
+        :label="$t('type_to_search')"
+        hide-details
+        variant="outlined"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
+      />
+      <v-row
+        v-for="rowSet in [
+          ['topresult', 'tracks'],
+          ['artists', 'albums'],
+          ['playlists', 'radio'],
+        ]"
+        :key="rowSet[0] + rowSet[1]"
       >
-        <ItemsListing
-          v-if="filteredItems(resultKey).length"
-          :itemtype="`search.${resultKey}`"
-          :path="`search.${deferredSearch}`"
-          :show-provider="true"
-          :show-favorites-only-filter="false"
-          :show-select-button="false"
-          :show-refresh-button="false"
-          :load-items="
-            async (params) => {
-              return filteredItems(resultKey);
-            }
-          "
-          :title="$t(resultKey)"
-          :allow-key-hooks="false"
-          :show-search-button="false"
-          :limit="8"
-          :infinite-scroll="false"
-          :sort-keys="['original']"
-        />
-      </v-col>
-    </v-row>
+        <v-col
+          v-for="resultKey in rowSet.filter((x) => filteredItems(x).length)"
+          :key="resultKey"
+        >
+          <ItemsListing
+            v-if="filteredItems(resultKey).length"
+            :itemtype="`search.${resultKey}`"
+            :path="`search.${deferredSearch}`"
+            :show-provider="true"
+            :show-favorites-only-filter="false"
+            :show-select-button="false"
+            :show-refresh-button="false"
+            :load-items="
+              async (params) => {
+                return filteredItems(resultKey);
+              }
+            "
+            :title="$t(resultKey)"
+            :allow-key-hooks="false"
+            :show-search-button="false"
+            :limit="8"
+            :infinite-scroll="false"
+            :sort-keys="[]"
+          />
+        </v-col>
+      </v-row>
+    </Container>
   </section>
 </template>
 
@@ -61,6 +58,8 @@ import { ref, onBeforeUnmount, onMounted, watch } from 'vue';
 import { SearchResults, type MediaItemType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import ItemsListing from '@/components/ItemsListing.vue';
+import Container from '@/components/mods/Container.vue';
+import Toolbar from '@/components/Toolbar.vue';
 import { api } from '@/plugins/api';
 
 // local refs

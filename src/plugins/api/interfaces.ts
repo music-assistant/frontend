@@ -1,3 +1,5 @@
+import { ComputedRef } from 'vue';
+
 /// constants
 export const SECURE_STRING_SUBSTITUTE = 'this_value_is_encrypted';
 export const MASS_LOGO_ONLINE =
@@ -131,6 +133,7 @@ export enum EventType {
   SYNC_TASKS_UPDATED = 'sync_tasks_updated',
   AUTH_SESSION = 'auth_session',
   // special types for local subscriptions only
+  CONNECTED = 'connected',
   ALL = '*',
 }
 
@@ -283,11 +286,11 @@ export interface ConfigEntry {
   // help_link [optional]: link to help article.
   help_link?: string;
   // multi_value [optional]: allow multiple values from the list
-  multi_value: boolean;
+  multi_value?: boolean;
   // depends_on [optional]: needs to be set before this setting shows up in frontend
   depends_on?: string;
   // hidden: hide from UI
-  hidden: boolean;
+  hidden?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
   category: string;
   // action: (configentry)action that is needed to get the value for this entry
