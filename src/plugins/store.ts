@@ -6,6 +6,7 @@ interface Store {
   selectedPlayerId?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
+  navigationMenuStyle: string;
   navigationMenuSize: number;
   showFullscreenPlayer: boolean;
   apiInitialized: boolean;
@@ -16,12 +17,14 @@ interface Store {
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
   prevScrollPos: Record<string, number>;
+  allowExternalImageRetrieval: boolean;
 }
 
 export const store: Store = reactive({
   selectedPlayerId: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
+  navigationMenuStyle: 'horizontal',
   navigationMenuSize: 300,
   showFullscreenPlayer: false,
   apiInitialized: false,
@@ -52,4 +55,5 @@ export const store: Store = reactive({
   }),
   globalSearchTerm: undefined,
   prevScrollPos: {},
+  allowExternalImageRetrieval: true,
 });

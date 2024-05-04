@@ -42,7 +42,7 @@
                 (x) => x.hide != true,
               )"
               :key="index"
-              :title="$t(item.label, item.labelArgs)"
+              :title="$t(item.label, item.labelArgs || [])"
               :disabled="item.disabled == true"
               @click="item.action ? item.action() : ''"
             >

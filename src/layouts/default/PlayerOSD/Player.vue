@@ -1,17 +1,15 @@
 <template>
   <div
-    v-if="primaryCoverImageColor"
-    :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
-    :style="`background: linear-gradient(90deg, ${primaryCoverImageColor}${
-      $vuetify.theme.current.dark ? '4D' : 'B3'
-    } 0%, ${primaryCoverImageColor}00 100%);`"
+    :class="`${useFloatingPlayer ? 'mediacontrols-bg-2' : 'mediacontrols-bg-1'}`"
+    :style="`background: ${backgroundColor};`"
   ></div>
   <PlayerTimeline
+    v-if="getBreakpointValue('bp3')"
     v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
     :color="
       $vuetify.theme.current.dark
-        ? coverImageColorPalette.lightColor
-        : coverImageColorPalette.darkColor
+        ? coverImageColorPalette.lightColor || '#fff'
+        : coverImageColorPalette.darkColor || '#000'
     "
     :is-progress-bar="true"
   />
@@ -24,18 +22,10 @@
   >
     <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
       <PlayerTrackDetails
-        :show-quality-details-btn="getBreakpointValue('bp7') ? true : false"
+        :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
         :show-only-artist="getBreakpointValue('bp7') ? false : true"
         :color-palette="coverImageColorPalette"
-        :primary-color="
-          !$vuetify.theme.current.dark &&
-          getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-            ? '#fff'
-            : $vuetify.theme.current.dark &&
-                getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-              ? '#fff'
-              : '#000'
-        "
+        :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
       />
     </div>
     <div
@@ -65,8 +55,8 @@
           v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
           :color="
             $vuetify.theme.current.dark
-              ? coverImageColorPalette.darkColor
-              : coverImageColorPalette.lightColor
+              ? coverImageColorPalette.lightColor || '#fff'
+              : coverImageColorPalette.darkColor || '#000'
           "
           :is-progress-bar="false"
         />
@@ -76,28 +66,17 @@
       <div>
         <!-- player mobile extended control buttons -->
         <PlayerExtendedControls
-          :queue="{ isVisible: getBreakpointValue('bp3') }"
+          :queue="{
+            isVisible: getBreakpointValue('bp3'),
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
+          }"
           :player="{
             isVisible: true,
-            color:
-              !$vuetify.theme.current.dark &&
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? '#fff'
-                : $vuetify.theme.current.dark &&
-                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
           :volume="{
             isVisible: true,
-            color:
-              !$vuetify.theme.current.dark &&
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? '#fff'
-                : $vuetify.theme.current.dark &&
-                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
         <!-- player mobile control buttons -->
@@ -116,17 +95,7 @@
               icon: {
                 staticWidth: '48px',
                 staticHeight: '48px',
-                color:
-                  !$vuetify.theme.current.dark &&
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                    ? '#fff'
-                    : $vuetify.theme.current.dark &&
-                        getBreakpointValue({
-                          breakpoint: 'bp3',
-                          condition: 'gt',
-                        })
-                      ? '#fff'
-                      : '#000',
+                color: $vuetify.theme.current.dark ? '#fff' : '#000',
               },
             },
             previous: { isVisible: false },
@@ -139,10 +108,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 //@ts-ignore
 
-import api from '@/plugins/api';
 import { ImageType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
@@ -163,11 +131,15 @@ import {
 } from '@/components/QualityDetailsBtn.vue';
 import { useTheme } from 'vuetify/lib/framework.mjs';
 
+interface Props {
+  useFloatingPlayer: boolean;
+}
+defineProps<Props>();
+
 // global refs
 const theme = useTheme();
 
 // local refs
-const primaryCoverImageColor = ref<string>();
 const coverImageColorPalette = ref<ColorCoverPalette>({
   '0': '',
   '1': '',
@@ -182,14 +154,22 @@ const coverImageColorPalette = ref<ColorCoverPalette>({
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD
 const img = new Image();
-img.src = vuetify.theme.current.value.dark ? imgCoverLight : imgCoverDark;
+img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
 img.crossOrigin = 'Anonymous';
 img.addEventListener('load', function () {
   coverImageColorPalette.value = getColorPalette(img);
   applyThemeColors();
-  primaryCoverImageColor.value = vuetify.theme.current.value.dark
-    ? coverImageColorPalette.value.darkColor
-    : coverImageColorPalette.value.lightColor;
+});
+
+const backgroundColor = computed(() => {
+  if (vuetify.theme.current.value.dark) {
+    if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
+      return coverImageColorPalette.value.darkColor + '26';
+    return 'CCCCCC26';
+  }
+  if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
+    return coverImageColorPalette.value.lightColor + '26';
+  return 'CCCCCC26';
 });
 
 // watchers
@@ -201,17 +181,11 @@ watch(
     if (store.curQueueItem?.media_item) {
       img.src =
         getImageThumbForItem(store.curQueueItem.media_item, ImageType.THUMB) ||
-        vuetify.theme.current.value.dark
-          ? imgCoverLight
-          : imgCoverDark;
+        '';
     } else if (store.curQueueItem) {
-      img.src =
-        getImageThumbForItem(store.curQueueItem, ImageType.THUMB) ||
-        vuetify.theme.current.value.dark
-          ? imgCoverLight
-          : imgCoverDark;
+      img.src = getImageThumbForItem(store.curQueueItem, ImageType.THUMB) || '';
     } else {
-      img.src = vuetify.theme.current.value.dark ? imgCoverLight : imgCoverDark;
+      img.src = '';
     }
   },
 );
@@ -259,7 +233,7 @@ const applyThemeColors = function () {
 
 .mediacontrols-bg-1 {
   position: absolute;
-  width: 20%;
+  width: 100%;
   height: 100%;
   left: 0px;
   top: 0px;
@@ -267,7 +241,7 @@ const applyThemeColors = function () {
 
 .mediacontrols-bg-2 {
   position: absolute;
-  width: 40%;
+  width: 100%;
   height: 100%;
   left: 0px;
   top: 0px;

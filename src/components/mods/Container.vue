@@ -53,7 +53,7 @@ export default {
 
 <style>
 .container-default {
-  padding: 15px;
+  padding: 10px;
 }
 
 .container-panels-light {

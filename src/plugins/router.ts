@@ -212,6 +212,15 @@ const routes = [
             props: true,
           },
           {
+            path: 'frontend',
+            name: 'frontendsettings',
+            component: () =>
+              import(
+                /* webpackChunkName: "frontendsettings" */ '@/views/settings/FrontendConfig.vue'
+              ),
+            props: true,
+          },
+          {
             path: 'addprovider/:domain',
             name: 'addprovider',
             component: () =>
@@ -287,7 +296,6 @@ router.afterEach((to, from) => {
   if (!(to.name.toString() in store.prevScrollPos)) return;
   const prevPos = store.prevScrollPos[to.name.toString()];
   if (prevPos) {
-    console.log('restoring prevPos', prevPos);
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
       const el = document.getElementById('cont');

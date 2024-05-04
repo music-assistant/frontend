@@ -26,7 +26,7 @@
                 (x) => x.hide != true,
               )"
               :key="index"
-              :title="$t(item.label, item.labelArgs)"
+              :title="$t(item.label, item.labelArgs || [])"
               :disabled="item.disabled == true"
               @click="item.action ? item.action() : ''"
             >
@@ -69,6 +69,7 @@ export default {
 .list-item-main {
   border-radius: 4px !important;
   padding: 7px !important;
+  padding-right: 0 !important;
 }
 
 .list-item-main > div.v-list-item__append {

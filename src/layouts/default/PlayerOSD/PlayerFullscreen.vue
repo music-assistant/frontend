@@ -410,6 +410,7 @@ import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import api from '@/plugins/api';
 import {
+  Album,
   Artist,
   ItemMapping,
   MediaType,
@@ -478,7 +479,7 @@ const artistClick = function (item: Artist | ItemMapping) {
   store.showFullscreenPlayer = false;
 };
 
-const albumClick = function (item: Artist | ItemMapping) {
+const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked
   router.push({
     name: 'album',

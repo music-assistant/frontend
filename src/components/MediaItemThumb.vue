@@ -27,6 +27,7 @@ import {
   imgCoverLight,
   iconFolder,
 } from '@/components/QualityDetailsBtn.vue';
+import { store } from '@/plugins/store';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -82,7 +83,9 @@ function getFallbackImage() {
     return iconFolder;
   if (!props.item) return '';
   if (!props.item.name) return '';
-  return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize);
+  if (store.allowExternalImageRetrieval)
+    return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize);
+  return theme.current.value.dark ? imgCoverDark : imgCoverLight;
 }
 const fallbackImage = getFallbackImage();
 
@@ -187,14 +190,17 @@ export const getImageThumbForItem = function (
   // find image in mediaitem
   const img = getMediaItemImage(mediaItem, type, true);
   if (!img || !img.path) return undefined;
-  if (!img.remotely_accessible || size) {
+  const checksum =
+    'metadata' in mediaItem ? mediaItem.metadata?.cache_checksum : '';
+  if (!img.remotely_accessible || !store.allowExternalImageRetrieval) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
-    const checksum =
-      'metadata' in mediaItem ? mediaItem.metadata?.cache_checksum : '';
     let imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
     if (size) return imageUrl + `&size=${size}`;
     return imageUrl;
+  } else if (size) {
+    // get url to resized image(thumb) from weserv service
+    return `https://images.weserv.nl/?url=${img.path}&w=${size}&h=${size}&fit=cover&a=attention&checksum=${checksum}`;
   }
   // else: return image as-is
   return img.path;

@@ -1,5 +1,18 @@
 <template>
   <div>
+    <Toolbar
+      icon="$mass"
+      title="Music Assistant"
+      :menu-items="[
+        {
+          label: 'settings.settings',
+          icon: 'mdi-cog-outline',
+          action: () => {
+            $router.push({ path: 'settings' });
+          },
+        },
+      ]"
+    />
     <Container variant="panel">
       <Suspense>
         <div>
@@ -15,8 +28,16 @@
 <script setup lang="ts">
 import Container from '@/components/mods/Container.vue';
 import HomeWidgetRows from '@/components/HomeWidgetRows.vue';
+import Toolbar from '@/components/Toolbar.vue';
 import HomeCurrentlyPlayingRow from '@/components/HomeCurrentlyPlayingRow.vue';
 </script>
+
+<style scoped>
+.v-progress-circular {
+  display: block;
+  margin-inline: auto;
+}
+</style>
 
 <style>
 .home-card {
@@ -47,12 +68,5 @@ import HomeCurrentlyPlayingRow from '@/components/HomeCurrentlyPlayingRow.vue';
 
 .v-slide-group__next.v-slide-group__next--disabled {
   visibility: hidden;
-}
-</style>
-
-<style scoped>
-.v-progress-circular {
-  display: block;
-  margin-inline: auto;
 }
 </style>
