@@ -1,7 +1,12 @@
 <template>
   <v-toolbar :color="color">
     <template v-if="icon" #prepend>
-      <v-icon :icon="icon" size="large" style="margin-left: 10px" />
+      <v-icon
+        :icon="icon"
+        size="large"
+        style="margin-left: 10px"
+        @click="emit('iconClicked')"
+      />
     </template>
 
     <template v-if="title" #title>
@@ -60,9 +65,9 @@
         <!-- regular menuitem without subitems -->
         <Button
           v-else-if="
-            getBreakpointValue('bp3') || menuItem.overflowAllowed == false
+            !enforceOverflowMenu &&
+            (getBreakpointValue('bp3') || menuItem.overflowAllowed == false)
           "
-          v-bind="props"
           variant="list"
           style="width: 50px"
           :title="$t(menuItem.label, menuItem.labelArgs || [])"
@@ -82,7 +87,7 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <div
         v-if="
-          !getBreakpointValue('bp3') &&
+          (!getBreakpointValue('bp3') || enforceOverflowMenu) &&
           menuItems.filter(
             (x) =>
               x.hide != true &&
@@ -153,6 +158,7 @@ export interface Props {
   title?: string;
   count?: number;
   menuItems?: ToolBarMenuItem[];
+  enforceOverflowMenu?: boolean;
 }
 withDefaults(defineProps<Props>(), {
   color: 'transparent',
@@ -160,7 +166,13 @@ withDefaults(defineProps<Props>(), {
   title: undefined,
   count: undefined,
   menuItems: undefined,
+  enforceOverflowMenu: false,
 });
+
+// emitters
+const emit = defineEmits<{
+  (e: 'iconClicked'): void;
+}>();
 </script>
 
 <script lang="ts">

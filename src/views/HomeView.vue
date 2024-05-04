@@ -8,7 +8,7 @@
           label: 'settings.settings',
           icon: 'mdi-cog-outline',
           action: () => {
-            $router.push({ name: 'settings' });
+            $router.push({ path: 'settings' });
           },
         },
       ]"
