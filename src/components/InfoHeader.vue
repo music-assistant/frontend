@@ -62,11 +62,11 @@
             "
           >
             <v-avatar size="192">
-              <MediaItemThumb :item="item" size="100%" />
+              <MediaItemThumb :item="item" size="calc(100%)" />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb size="100%" :item="item" />
+            <MediaItemThumb :item="item" size="calc(100%)" />
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 <template>
   <!-- now playing media -->
-  <ListItem
+  <v-list-item
     style="height: auto; width: fit-content; margin: 0px; padding: 0px"
     lines="two"
   >
@@ -158,7 +158,7 @@
         </div>
       </div>
     </template>
-  </ListItem>
+  </v-list-item>
 </template>
 
 <script setup lang="ts">
@@ -171,7 +171,6 @@ import { ImageColorPalette, getArtistsString } from '@/helpers/utils';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
 
 // properties
 interface Props {

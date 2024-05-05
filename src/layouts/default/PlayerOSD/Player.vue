@@ -120,11 +120,7 @@ import PlayerTrackDetails from './PlayerTrackDetails.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
-import {
-  ImageColorPalette,
-  getColorPalette,
-  getContrastingTextColor,
-} from '@/helpers/utils';
+import { ImageColorPalette, getColorPalette } from '@/helpers/utils';
 import {
   imgCoverDark,
   imgCoverLight,

@@ -36,12 +36,7 @@
             <ListItem ripple density="default" @click="addToPlaylist(playlist)">
               <template #prepend>
                 <div class="media-thumb">
-                  <MediaItemThumb
-                    :item="playlist"
-                    :size="50"
-                    width="50px"
-                    height="50px"
-                  />
+                  <MediaItemThumb :item="playlist" :size="50" />
                 </div>
               </template>
               <template #title>

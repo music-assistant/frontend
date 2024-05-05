@@ -26,12 +26,7 @@
               false
             "
             :item="store.curQueueItem?.media_item || store.curQueueItem"
-            :width="
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? 512
-                : 1024
-            "
-            :height="
+            :size="
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                 ? 512
                 : 1024
@@ -44,12 +39,7 @@
           <MediaItemThumb
             v-else-if="store.curQueueItem"
             :item="store.curQueueItem.media_item || store.curQueueItem"
-            :width="
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? 512
-                : 1024
-            "
-            :height="
+            :size="
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                 ? 512
                 : 1024

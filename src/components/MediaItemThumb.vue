@@ -2,9 +2,9 @@
 <template>
   <img
     ref="imageTag"
-    :loading="$props.lazy"
-    :height="$props.size || $props.height || '600px'"
-    :width="$props.size || $props.width || '600px'"
+    loading="lazy"
+    :height="size || '100%'"
+    :width="size || '100%'"
     :src="imgData"
     :class="{ rounded: rounded }"
     :style="lazyStyle"
@@ -31,27 +31,15 @@ import { store } from '@/plugins/store';
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
-  width?: string | number;
-  height?: string | number;
   size?: string | number;
-  aspectRatio?: string | number;
-  cover?: boolean;
   fallback?: string;
-  thumb?: boolean;
-  lazy?: HTMLImageElement['loading'];
   rounded?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   item: undefined,
-  size: undefined,
-  width: '100%',
-  height: 'auto',
-  aspectRatio: '1/1',
-  cover: true,
+  size: '100%',
   fallback: undefined,
-  thumb: true,
-  lazy: 'lazy',
   rounded: true,
 });
 
@@ -61,15 +49,9 @@ const lazyStyle = {
 };
 
 function getThumbSize() {
-  if (typeof props.size == 'number') return props.size;
-  else if (typeof props.width == 'number' && typeof props.height == 'number') {
-    if (props.height > props.width) {
-      return props.height;
-    } else {
-      return props.width;
-    }
-  } else if (props.thumb) return 256;
-  return 0;
+  if (typeof props.size == 'number') {
+    return props.size;
+  } else return 0;
 }
 const thumbSize = getThumbSize();
 
@@ -84,7 +66,11 @@ function getFallbackImage() {
   if (!props.item) return '';
   if (!props.item.name) return '';
   if (store.allowExternalImageRetrieval)
-    return getAvatarImage(props.item.name, theme.current.value.dark, thumbSize);
+    return getAvatarImage(
+      props.item.name,
+      theme.current.value.dark,
+      thumbSize || 256,
+    );
   return theme.current.value.dark ? imgCoverDark : imgCoverLight;
 }
 const fallbackImage = getFallbackImage();
@@ -219,6 +205,7 @@ img {
   height: auto;
   display: block;
   background-size: cover;
+  aspect-ratio: 1/1;
 }
 
 img.rounded {

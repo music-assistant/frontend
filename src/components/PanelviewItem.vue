@@ -34,7 +34,7 @@
 
     <MediaItemThumb :item="item" :width="'100%'" />
 
-    <ListItem class="panel-item-details" style="padding-top: 10px !important">
+    <div class="panel-item-details" style="padding-top: 10px !important">
       <v-list-item-title class="line-clamp-1 panel-item-details">
         <span v-if="item.media_type == MediaType.FOLDER">
           <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
@@ -62,7 +62,8 @@
       >
         {{ $t(item.media_type) }}
       </v-list-item-subtitle>
-
+    </div>
+    <v-card-actions>
       <v-item-group
         v-if="
           (item.media_type === 'track' && 'metadata' in item) || showFavorite
@@ -104,7 +105,7 @@
           <FavouriteButton :item="item" />
         </v-item>
       </v-item-group>
-    </ListItem>
+    </v-card-actions>
   </v-card>
 </template>
 
@@ -126,7 +127,6 @@ import {
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import { iconHiRes } from './QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
 import FavouriteButton from '@/components/FavoriteButton.vue';
 
 // properties
