@@ -25,7 +25,14 @@
         :key="menuItem.label"
       >
         <!-- menu item with subitems -->
-        <v-menu v-if="menuItem.subItems?.length" location="bottom end" scrim>
+        <v-menu
+          v-if="menuItem.subItems?.length"
+          location="bottom end"
+          scrim
+          density="compact"
+          slim
+          tile
+        >
           <template #activator="{ props }">
             <v-btn
               variant="text"
@@ -111,7 +118,7 @@
               />
             </v-btn>
           </template>
-          <v-list>
+          <v-list density="compact" slim tile>
             <v-list-item
               v-for="(menuItem, index) in menuItems.filter(
                 (x) =>
@@ -146,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { ContextMenuItem } from '../helpers/contextmenu';
+import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
 import { getBreakpointValue } from '../plugins/breakpoint';
 
 // properties

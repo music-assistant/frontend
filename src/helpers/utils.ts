@@ -164,15 +164,6 @@ export const getStreamingProviderMappings = function (
   return result;
 };
 
-export const itemIsAvailable = function (item: MediaItem) {
-  if (item.media_type == MediaType.FOLDER) return true;
-  if (!item.provider_mappings) return true;
-  for (const x of item.provider_mappings) {
-    if (x.available) return true;
-  }
-  return false;
-};
-
 export const sleep = (delay: number) =>
   new Promise((resolve) => setTimeout(resolve, delay));
 

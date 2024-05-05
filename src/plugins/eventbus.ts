@@ -2,19 +2,29 @@
 
 import mitt, { Emitter } from 'mitt';
 import { MediaItemType } from './api/interfaces';
+import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
 
 export type PlaylistDialogEvent = {
   items: MediaItemType[];
   parentItem?: MediaItemType;
 };
-export type PlayItemDialogEvent = {
+
+export type ItemContextMenuDialogEvent = {
+  items: ContextMenuItem[];
+  posX?: number;
+  posY?: number;
+};
+
+export type MediaItemContextMenuDialogEvent = {
   items: MediaItemType[];
   parentItem?: MediaItemType;
   showContextMenuItems?: boolean;
+  posX?: number;
+  posY?: number;
 };
 
 export type Events = {
-  playdialog: PlayItemDialogEvent;
+  contextmenu: ItemContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
 };
 

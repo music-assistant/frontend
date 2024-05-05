@@ -286,7 +286,7 @@ import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
 import Alert from '@/components/mods/Alert.vue';
-import { ContextMenuItem } from '@/helpers/contextmenu';
+import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
 
 // global refs
 const { t } = useI18n();

@@ -1,10 +1,10 @@
 <template>
   <v-card
-    v-hold="() => (showCheckboxes ? null : emit('menu', item))"
+    v-hold="onMenu"
     class="panel-item"
     :disabled="!itemIsAvailable(item)"
-    @click="showCheckboxes ? null : emit('click', item)"
-    @click.right.prevent="showCheckboxes ? null : emit('menu', item)"
+    @click="onClick"
+    @click.right.prevent="onMenu"
     @mouseover="showSettingDots = true"
     @mouseleave="showSettingDots = true"
   >
@@ -120,13 +120,12 @@ import {
 } from '@/plugins/api/interfaces';
 import {
   getArtistsString,
-  itemIsAvailable,
   getBrowseFolderName,
   parseBool,
 } from '@/helpers/utils';
+import { itemIsAvailable } from '@/plugins/api/helpers';
 import { iconHiRes } from './QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-
 import ListItem from '@/components/mods/ListItem.vue';
 import FavouriteButton from '@/components/FavoriteButton.vue';
 
@@ -139,6 +138,7 @@ export interface Props {
   showTrackNumber?: boolean;
   showMediaType?: boolean;
   showFavorite?: boolean;
+  parentItem?: MediaItemType;
 }
 const props = withDefaults(defineProps<Props>(), {
   size: 200,
@@ -146,6 +146,7 @@ const props = withDefaults(defineProps<Props>(), {
   showFavorite: false,
   showTrackNumber: true,
   showMediaType: false,
+  parentItem: undefined,
 });
 
 // refs
@@ -182,10 +183,20 @@ const HiResDetails = computed(() => {
 
 /* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: 'menu', value: MediaItem): void;
-  (e: 'click', value: MediaItem): void;
-  (e: 'select', value: MediaItem, selected: boolean): void;
+  (e: 'menu', event: Event, item: MediaItemType): void;
+  (e: 'click', event: Event, item: MediaItemType): void;
+  (e: 'select', item: MediaItem, selected: boolean): void;
 }>();
+
+const onMenu = function (event: Event) {
+  if (props.showCheckboxes) return;
+  emit('menu', event, props.item);
+};
+
+const onClick = function (event: Event) {
+  if (props.showCheckboxes) return;
+  emit('click', event, props.item);
+};
 </script>
 
 <style>

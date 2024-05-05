@@ -168,13 +168,10 @@ import { MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { ImageColorPalette, getArtistsString } from '@/helpers/utils';
-import { useRouter } from 'vue-router';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import ListItem from '@/components/mods/ListItem.vue';
-
-const router = useRouter();
 
 // properties
 interface Props {

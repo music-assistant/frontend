@@ -1,10 +1,68 @@
+<!--
+  Global contextmenu for a (media) item.
+  Because this dialog can be called from various places throughout the app,
+  we steer its visibility through the centralized eventbus.
+-->
+<template>
+  <v-menu
+    v-model="show"
+    :target="[posX, posY]"
+    scrim
+    @update:model-value="
+      (v) => {
+        store.dialogActive = v;
+      }
+    "
+  >
+    <v-card min-width="260">
+      <v-list density="compact" slim tile>
+        <div v-for="menuItem of items" :key="menuItem.label" class="menurow">
+          <v-list-item
+            variant="text"
+            :title="$t(menuItem.label, menuItem.labelArgs || [])"
+            :disabled="menuItem.disabled == true"
+            :prepend-icon="menuItem.icon"
+            :append-icon="menuItem.selected ? 'mdi-check' : undefined"
+            @click="() => (menuItem.action ? menuItem.action() : '')"
+          />
+        </div>
+      </v-list>
+    </v-card>
+  </v-menu>
+</template>
+
+<script setup lang="ts">
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import api from '@/plugins/api';
+import { store } from '@/plugins/store';
+import { ItemContextMenuDialogEvent, eventbus } from '@/plugins/eventbus';
+
+const show = ref<boolean>(false);
+const items = ref<ContextMenuItem[]>([]);
+const posX = ref(0);
+const posY = ref(0);
+
+onMounted(() => {
+  eventbus.on('contextmenu', async (evt: ItemContextMenuDialogEvent) => {
+    items.value = evt.items;
+    posX.value = evt.posX || 0;
+    posY.value = evt.posY || 0;
+    nextTick(() => {
+      show.value = true;
+    });
+  });
+  onBeforeUnmount(() => {
+    eventbus.off('contextmenu');
+  });
+});
+</script>
+
+<script lang="ts">
 // Helpers and utilities for Contextmenu items
 
 import router from '@/plugins/router';
-import { eventbus } from '@/plugins/eventbus';
-import api from '@/plugins/api';
+
 import {
-  MediaItemType,
   ProviderFeature,
   MediaItem,
   QueueOption,
@@ -13,8 +71,10 @@ import {
   Album,
   Track,
   ItemMapping,
+  MediaItemType,
 } from '@/plugins/api/interfaces';
 import { $t } from '@/plugins/i18n';
+import { itemIsAvailable } from '@/plugins/api/helpers';
 
 export interface ContextMenuItem {
   label: string;
@@ -26,35 +86,32 @@ export interface ContextMenuItem {
   selected?: boolean;
 }
 
-export const itemIsAvailable = function (item: MediaItemType | ItemMapping) {
-  if (item.media_type == MediaType.FOLDER) return true;
-  if ('provider_mappings' in item) {
-    for (const x of item.provider_mappings) {
-      if (x.available && api.providers[x.provider_instance]?.available)
-        return true;
-    }
-  } else if ('available' in item) return item.available;
-  return false;
-};
+export const showContextMenuForMediaItem = async function (
+  item: MediaItemType | MediaItemType[],
+  parentItem?: MediaItem,
+  posX = 0,
+  posY = 0,
+  includePlayItems = true,
+) {
+  // show ContextMenu for given MediaItem(s)
+  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  if (mediaItems.length == 0) return;
 
-export const radioSupported = function (item: MediaItemType | ItemMapping) {
-  if ('provider_mappings' in item) {
-    for (const provId of item.provider_mappings) {
-      if (
-        api.providers[provId.provider_instance]?.supported_features.includes(
-          ProviderFeature.SIMILAR_TRACKS,
-        )
-      )
-        return true;
-    }
-  } else if (
-    api.providers[item.provider]?.supported_features.includes(
-      ProviderFeature.SIMILAR_TRACKS,
-    )
-  ) {
-    return true;
+  const menuItems: ContextMenuItem[] = [];
+
+  if (includePlayItems) {
+    menuItems.push(...getPlayMenuItems(mediaItems, parentItem));
   }
-  return false;
+
+  // collect all contextMenuItems
+  menuItems.push(...getContextMenuItems(mediaItems, parentItem));
+
+  // open the contextmenu by emitting the event
+  eventbus.emit('contextmenu', {
+    items: menuItems,
+    posX: posX,
+    posY: posY,
+  });
 };
 
 export const getPlayMenuItems = function (
@@ -112,7 +169,7 @@ export const getPlayMenuItems = function (
   });
 
   // Start Radio
-  if (radioSupported(items[0])) {
+  if (radioModeSupported(items[0])) {
     playMenuItems.push({
       label: 'play_radio',
       action: () => {
@@ -237,7 +294,6 @@ export const getContextMenuItems = function (
       icon: 'mdi-album',
     });
   }
-
   // refresh item
   if (
     items.length === 1 &&
@@ -343,3 +399,46 @@ export const getContextMenuItems = function (
   }
   return contextMenuItems;
 };
+
+const radioModeSupported = function (item: MediaItemType | ItemMapping) {
+  if ('provider_mappings' in item) {
+    for (const provId of item.provider_mappings) {
+      if (
+        api.providers[provId.provider_instance]?.supported_features.includes(
+          ProviderFeature.SIMILAR_TRACKS,
+        )
+      )
+        return true;
+    }
+  } else if (
+    api.providers[item.provider]?.supported_features.includes(
+      ProviderFeature.SIMILAR_TRACKS,
+    )
+  ) {
+    return true;
+  }
+  return false;
+};
+</script>
+
+<style scoped>
+.menurow >>> .v-list-item__prepend {
+  width: 45px;
+  margin-left: -5px;
+}
+
+.menurow >>> .v-expansion-panel-title {
+  padding: 0;
+  padding-right: 10px;
+  min-height: 40px !important;
+  height: 40px !important;
+}
+
+.menurow >>> .v-expansion-panel-title--active {
+  height: 40px !important;
+}
+
+.menurow >>> .v-expansion-panel-text__wrapper {
+  padding: 0;
+}
+</style>

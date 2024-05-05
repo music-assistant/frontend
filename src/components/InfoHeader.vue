@@ -33,7 +33,7 @@
         v-if="item"
         style="
           margin: 0;
-          top: 50%;
+          top: 55%;
           -ms-transform: translateY(-50%);
           transform: translateY(-50%);
           padding-left: 15px;
@@ -47,7 +47,7 @@
           xs5
           pa-5
           style="
-            height: 100%;
+            height: 80%;
             min-width: 230px;
             margin-top: 25px;
             margin-bottom: 15px;
@@ -187,26 +187,24 @@
                     </v-list-item>
                   </v-list>
                   <v-divider />
-                  <v-list>
-                    <v-list>
-                      <div
-                        v-for="menuItem of getPlayMenuItems([item], item)"
-                        :key="menuItem.label"
+                  <v-list density="compact" slim tile>
+                    <div
+                      v-for="menuItem of getPlayMenuItems([item], item)"
+                      :key="menuItem.label"
+                    >
+                      <v-list-item
+                        :title="$t(menuItem.label, menuItem.labelArgs || [])"
+                        density="compact"
+                        @click="menuItem.action"
                       >
-                        <v-list-item
-                          :title="$t(menuItem.label, menuItem.labelArgs || [])"
-                          density="default"
-                          @click="menuItem.action"
-                        >
-                          <template #prepend>
-                            <v-icon
-                              style="padding-left: 15px"
-                              :icon="menuItem.icon"
-                            />
-                          </template>
-                        </v-list-item>
-                      </div>
-                    </v-list>
+                        <template #prepend>
+                          <v-icon
+                            style="padding-left: 15px"
+                            :icon="menuItem.icon"
+                          />
+                        </template>
+                      </v-list-item>
+                    </div>
                   </v-list>
                 </v-card>
               </template>
@@ -302,10 +300,12 @@ import MenuButton from './MenuButton.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
 import { truncateString, parseBool } from '@/helpers/utils';
-import { getContextMenuItems, getPlayMenuItems } from '@/helpers/contextmenu';
+import {
+  getContextMenuItems,
+  getPlayMenuItems,
+} from '@/layouts/default/ItemContextMenu.vue';
 import Toolbar from '@/components/Toolbar.vue';
 import { useI18n } from 'vue-i18n';
-import { eventbus } from '@/plugins/eventbus';
 
 // properties
 export interface Props {

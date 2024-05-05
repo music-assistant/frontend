@@ -51,6 +51,8 @@
             :show-checkboxes="showCheckboxes"
             :show-track-number="showTrackNumber"
             :show-favorite="showFavoritesOnlyFilter"
+            :show-menu="showMenu"
+            :parent-item="parentItem"
             @select="onSelect"
             @menu="onMenu"
             @click="onClick"
@@ -79,9 +81,6 @@
             :is-selected="isSelected(item)"
             :show-details="itemtype.includes('versions')"
             :parent-item="parentItem"
-            :context-menu-items="
-              showMenu ? getContextMenuItems([item], parentItem) : []
-            "
             @select="onSelect"
             @menu="onMenu"
             @click="onClick"
@@ -129,7 +128,11 @@
       >
         <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
         <template #actions>
-          <v-btn color="primary" variant="text" @click="showPlayMenu(true)">
+          <v-btn
+            color="primary"
+            variant="text"
+            @click="(evt: Event) => onMenu(evt, selectedItems)"
+          >
             {{ $t('actions') }}
           </v-btn>
         </template>
@@ -161,16 +164,16 @@ import {
 import { store } from '@/plugins/store';
 import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
-import { itemIsAvailable, getContextMenuItems } from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
 import InfiniteLoading from 'v3-infinite-loading';
 import 'v3-infinite-loading/lib/style.css';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
-import { eventbus } from '@/plugins/eventbus';
 import { useI18n } from 'vue-i18n';
 import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
+import { itemIsAvailable } from '@/plugins/api/helpers';
+import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
 
 export interface LoadDataParams {
   offset: number;
@@ -342,17 +345,14 @@ const toggleCheckboxes = function () {
   showCheckboxes.value = !showCheckboxes.value;
 };
 
-const onMenu = function (item: MediaItemType, showContextMenuItems = true) {
-  selectedItems.value = [item];
-  showPlayMenu(showContextMenuItems);
-};
-
-const showPlayMenu = function (showContextMenuItems = true) {
-  eventbus.emit('playdialog', {
-    items: selectedItems.value,
-    parentItem: props.parentItem,
-    showContextMenuItems: showContextMenuItems,
-  });
+const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
+  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  showContextMenuForMediaItem(
+    mediaItems,
+    props.parentItem,
+    (evt as PointerEvent).clientX,
+    (evt as PointerEvent).clientY,
+  );
 };
 
 const onRefreshClicked = function () {
@@ -360,32 +360,32 @@ const onRefreshClicked = function () {
   loadData(true, undefined, true);
 };
 
-const onClick = function (mediaItem: MediaItemType) {
+const onClick = function (evt: Event, item: MediaItemType) {
   // mediaItem in the list is clicked
-  if (!itemIsAvailable(mediaItem)) {
-    onMenu(mediaItem, false);
+  if (!itemIsAvailable(item)) {
+    onMenu(evt, item);
     return;
   }
-  if (mediaItem.media_type == MediaType.FOLDER) {
+  if (item.media_type == MediaType.FOLDER) {
     router.push({
       name: 'browse',
       query: {
-        path: (mediaItem as BrowseFolder).path,
+        path: (item as BrowseFolder).path,
       },
     });
   } else if (
-    ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
+    ['artist', 'album', 'playlist'].includes(item.media_type) ||
     !store.selectedPlayer?.available
   ) {
     router.push({
-      name: mediaItem.media_type,
+      name: item.media_type,
       params: {
-        itemId: mediaItem.item_id,
-        provider: mediaItem.provider,
+        itemId: item.item_id,
+        provider: item.provider,
       },
     });
   } else {
-    onMenu(mediaItem, true);
+    onMenu(evt, item);
   }
 };
 

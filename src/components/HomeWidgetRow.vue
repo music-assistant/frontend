@@ -1,6 +1,7 @@
 <template>
   <div v-if="widgetRow.items.length" class="widget-row">
     <v-toolbar
+      class="header"
       color="transparent"
       :style="
         widgetRow.path
@@ -42,7 +43,7 @@
 <script setup lang="ts">
 import Carousel from '@/components/Carousel.vue';
 import PanelviewItem from '@/components/PanelviewItem.vue';
-import { itemIsAvailable } from '@/helpers/contextmenu';
+import { itemIsAvailable } from '@/plugins/api/helpers';
 import {
   BrowseFolder,
   MediaItemType,
@@ -85,7 +86,7 @@ const itemClicked = function (mediaItem: MediaItemType) {
       query: { path: (mediaItem as BrowseFolder).path },
     });
   } else {
-    eventbus.emit('playdialog', {
+    eventbus.emit('contextmenu', {
       items: [mediaItem],
       showContextMenuItems: true,
     });
@@ -94,6 +95,11 @@ const itemClicked = function (mediaItem: MediaItemType) {
 </script>
 
 <style>
+.header.v-toolbar {
+  height: 55px;
+  font-family: 'JetBrains Mono Medium';
+}
+
 .home-card {
   min-width: 80px;
   text-align: center;

@@ -9,7 +9,7 @@
 
 <script lang="ts">
 import { ButtonProps } from '@/plugins/api/interfaces';
-import { defineProps, computed } from 'vue';
+import { computed } from 'vue';
 
 export default {
   props: {

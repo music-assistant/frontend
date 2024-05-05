@@ -1,7 +1,6 @@
 <template>
   <v-app>
     <PlayerSelect />
-
     <MainView v-if="api.state.value == ConnectionState.CONNECTED" />
     <v-overlay v-else>
       <v-progress-circular indeterminate size="64" />
