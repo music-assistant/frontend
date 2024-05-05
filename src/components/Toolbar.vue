@@ -25,11 +25,11 @@
         :key="menuItem.label"
       >
         <!-- menu item with subitems -->
-        <v-menu v-if="menuItem.subItems?.length" location="bottom end">
+        <v-menu v-if="menuItem.subItems?.length" location="bottom end" scrim>
           <template #activator="{ props }">
-            <Button
-              variant="list"
-              style="width: 50px"
+            <v-btn
+              variant="text"
+              style="width: 40px"
               v-bind="props"
               :title="$t(menuItem.label, menuItem.labelArgs || [])"
               :disabled="menuItem.disabled == true"
@@ -41,10 +41,10 @@
                   size="22px"
                 />
               </v-badge>
-            </Button>
+            </v-btn>
           </template>
           <v-list>
-            <ListItem
+            <v-list-item
               v-for="(subItem, index) in menuItem.subItems.filter(
                 (x) => x.hide != true,
               )"
@@ -59,17 +59,17 @@
               <template #append>
                 <v-icon v-if="subItem.selected" icon="mdi-check" />
               </template>
-            </ListItem>
+            </v-list-item>
           </v-list>
         </v-menu>
         <!-- regular menuitem without subitems -->
-        <Button
+        <v-btn
           v-else-if="
             !enforceOverflowMenu &&
             (getBreakpointValue('bp3') || menuItem.overflowAllowed == false)
           "
-          variant="list"
-          style="width: 50px"
+          variant="text"
+          style="width: 40px"
           :title="$t(menuItem.label, menuItem.labelArgs || [])"
           :disabled="menuItem.disabled == true"
           @click="menuItem.action"
@@ -81,7 +81,7 @@
               size="22px"
             />
           </v-badge>
-        </Button>
+        </v-btn>
       </div>
 
       <!-- overflow menu with (remaining) items if on mobile -->
@@ -96,23 +96,23 @@
           ).length
         "
       >
-        <v-menu location="bottom end">
+        <v-menu location="bottom end" scrim>
           <template #activator="{ props }">
-            <Button
-              variant="list"
-              style="width: 20px; margin-left: -15px"
+            <v-btn
+              variant="plain"
+              style="width: 15px; margin-left: -10px"
               v-bind="props"
             >
               <v-icon
                 icon="mdi-dots-vertical"
                 :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
                 size="22"
-                style="margin-right: -15px; width: 20px"
+                style="margin-right: -5px; width: 15px"
               />
-            </Button>
+            </v-btn>
           </template>
           <v-list>
-            <ListItem
+            <v-list-item
               v-for="(menuItem, index) in menuItems.filter(
                 (x) =>
                   x.hide != true &&
@@ -137,7 +137,7 @@
                   />
                 </v-badge>
               </template>
-            </ListItem>
+            </v-list-item>
           </v-list>
         </v-menu>
       </div>
@@ -146,10 +146,8 @@
 </template>
 
 <script setup lang="ts">
-import Button from './mods/Button.vue';
 import { ContextMenuItem } from '../helpers/contextmenu';
 import { getBreakpointValue } from '../plugins/breakpoint';
-import ListItem from './mods/ListItem.vue';
 
 // properties
 export interface Props {
@@ -189,8 +187,8 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   font-family: 'JetBrains Mono Medium';
 }
 
-.header.v-toolbar > .v-toolbar__content > .v-toolbar__append {
-  margin-right: 5px;
+.header.v-toolbar >>> .v-toolbar__content > .v-toolbar__append {
+  margin-right: 0px;
 }
 
 .header.v-toolbar > .v-toolbar__content > .v-toolbar-title {
