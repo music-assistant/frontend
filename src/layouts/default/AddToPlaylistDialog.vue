@@ -6,9 +6,8 @@
 <template>
   <v-dialog
     v-model="show"
-    :fullscreen="$vuetify.display.mobile"
-    min-height="80%"
-    :scrim="true"
+    fullscreen
+    transition="dialog-bottom-transition"
     @update:model-value="
       (v) => {
         store.dialogActive = v;
@@ -16,80 +15,76 @@
     "
   >
     <v-card>
-      <v-toolbar
-        color="transparent"
-        style="padding: 10px 0px"
-        density="compact"
-        class="titlebar"
-      >
-        <v-btn icon="mdi-play-circle-outline" />
-        <v-toolbar-title style="padding-left: 10px">
-          <b>{{ $t('add_playlist') }}</b>
-        </v-toolbar-title>
-        <v-btn icon="mdi-close" dark @click="close()" />
-      </v-toolbar>
-      <v-divider />
+      <Toolbar
+        icon="mdi-playlist-plus"
+        :title="$t('add_playlist')"
+        :menu-items="[
+          {
+            label: 'close',
+            icon: 'mdi-close',
+            action: close,
+          },
+        ]"
+      />
 
-      <v-card-text>
-        <v-list>
-          <div v-for="playlist of playlists" :key="playlist.item_id">
-            <ListItem ripple density="default" @click="addToPlaylist(playlist)">
-              <template #prepend>
-                <div class="media-thumb">
-                  <MediaItemThumb :item="playlist" :size="50" />
-                </div>
-              </template>
-              <template #title>
-                <div>{{ playlist.name }}</div>
-              </template>
-              <template #subtitle>
-                <div>{{ playlist.owner }}</div>
-              </template>
-              <template #append>
-                <provider-icon
-                  v-if="playlist.provider_mappings"
-                  :domain="playlist.provider_mappings[0].provider_domain"
-                  :size="20"
-                />
-              </template>
-            </ListItem>
-          </div>
-          <!-- a bit of spacing, followed by ad dplaylist items-->
-          <div style="height: 30px"></div>
-          <v-divider />
-          <div style="height: 10px"></div>
-          <!-- create playlist row(s) -->
-          <div v-for="providerId of createPlaylistProviders" :key="providerId">
-            <ListItem ripple @click="newPlaylist(providerId)">
-              <template #prepend>
-                <div style="width: 50px; height: 50px; flex-flow: column">
-                  <provider-icon
-                    :domain="api.providers[providerId].domain"
-                    :size="45"
-                    class="media-thumb"
-                  />
-                </div>
-              </template>
-              <template #title>
-                <div>{{ $t('new_playlist') }}</div>
-              </template>
-              <template #subtitle>
-                <div>
-                  {{
-                    $t('create_playlist_on', [api.providers[providerId].name])
-                  }}
-                </div>
-              </template>
-              <template #append>
+      <v-divider />
+      <br />
+
+      <v-list>
+        <div v-for="playlist of playlists" :key="playlist.item_id">
+          <v-list-item @click="addToPlaylist(playlist)">
+            <template #prepend>
+              <div class="media-thumb">
+                <MediaItemThumb :item="playlist" :size="50" />
+              </div>
+            </template>
+            <template #title>
+              <div>{{ playlist.name }}</div>
+            </template>
+            <template #subtitle>
+              <div>{{ playlist.owner }}</div>
+            </template>
+            <template #append>
+              <provider-icon
+                v-if="playlist.provider_mappings"
+                :domain="playlist.provider_mappings[0].provider_domain"
+                :size="20"
+              />
+            </template>
+          </v-list-item>
+        </div>
+        <!-- a bit of spacing, followed by add playlist items-->
+        <div style="height: 30px"></div>
+        <v-divider />
+        <div style="height: 30px"></div>
+        <!-- create playlist row(s) -->
+        <div v-for="providerId of createPlaylistProviders" :key="providerId">
+          <v-list-item @click="newPlaylist(providerId)">
+            <template #prepend>
+              <div style="margin-left: -10px; padding-right: 5px">
                 <provider-icon
                   :domain="api.providers[providerId].domain"
-                  :size="20"
+                  :size="50"
                 />
-              </template>
-            </ListItem>
-          </div>
-        </v-list>
-      </v-card-text>
+              </div>
+            </template>
+            <template #title>
+              <div>{{ $t('new_playlist') }}</div>
+            </template>
+            <template #subtitle>
+              <div>
+                {{ $t('create_playlist_on', [api.providers[providerId].name]) }}
+              </div>
+            </template>
+            <template #append>
+              <provider-icon
+                :domain="api.providers[providerId].domain"
+                :size="20"
+              />
+            </template>
+          </v-list-item>
+        </div>
+      </v-list>
     </v-card>
   </v-dialog>
 </template>
@@ -104,7 +99,7 @@ import { ProviderFeature } from '@/plugins/api/interfaces';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import { eventbus, PlaylistDialogEvent } from '@/plugins/eventbus';
-import ListItem from '@/components/mods/ListItem.vue';
+import Toolbar from '@/components/Toolbar.vue';
 import { $t } from '@/plugins/i18n';
 
 const show = ref<boolean>(false);
@@ -115,10 +110,10 @@ const selectedItems = ref<MediaItemType[]>([]);
 
 onMounted(() => {
   eventbus.on('playlistdialog', async (evt: PlaylistDialogEvent) => {
-    await fetchPlaylists();
+    show.value = true;
     selectedItems.value = evt.items;
     parentItem.value = evt.parentItem;
-    show.value = true;
+    await fetchPlaylists();
   });
   onBeforeUnmount(() => {
     eventbus.off('playlistdialog');
@@ -145,19 +140,14 @@ const fetchPlaylists = async function () {
       playlist.item_id === parentItem.value.item_id
     )
       continue;
-    // skip if provider does not support playlist edit
-    // (this should already be handled by is_editable on the playlist object, but just in case)
+
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
-    if (
-      !playListProvider.supported_features.includes(
-        ProviderFeature.PLAYLIST_TRACKS_EDIT,
-      )
-    )
-      continue;
-    // either the refItem has a provider match or builtin provider
+
+    // either the refItem has a provider match or builtin provider or streaming provider
     if (
       playListProvider.domain == 'builtin' ||
+      playListProvider.is_streaming_provider ||
       refItem?.provider_mappings.filter(
         (x) => x.provider_instance == playListProvider.instance_id,
       ).length
@@ -178,6 +168,7 @@ const fetchPlaylists = async function () {
     // either the refItem has a provider match or builtin provider
     if (
       provider.domain == 'builtin' ||
+      provider.is_streaming_provider ||
       refItem?.provider_mappings.filter(
         (x) => x.provider_instance == provider.instance_id,
       ).length
@@ -224,11 +215,8 @@ const close = function () {
 };
 </script>
 
-<style>
-.fullscreen-menu .v-overlay__content {
-  left: 0px;
-  right: 0px;
-  top: 0px;
-  bottom: 0px;
+<style scoped>
+.media-thumb {
+  padding-right: 15px;
 }
 </style>
