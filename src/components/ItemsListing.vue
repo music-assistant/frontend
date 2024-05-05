@@ -38,6 +38,7 @@
         <v-col
           v-for="item in pagedItems"
           :key="item.uri"
+          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
           cols="12"
           xs="12"
           sm="6"
@@ -174,6 +175,7 @@ import { useI18n } from 'vue-i18n';
 import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
+import { panelViewItemResponsive } from '@/helpers/utils';
 
 export interface LoadDataParams {
   offset: number;
@@ -896,3 +898,47 @@ onMounted(() => {
   restoreState();
 });
 </script>
+
+<style scoped>
+/* ThumbView panel columns */
+.col-2 {
+  width: 50%;
+  max-width: 50%;
+  flex-basis: 50%;
+}
+.col-3 {
+  width: 33.3%;
+  max-width: 33.3%;
+  flex-basis: 33.3%;
+}
+.col-4 {
+  width: 25%;
+  max-width: 25%;
+  flex-basis: 25%;
+}
+.col-5 {
+  width: 20%;
+  max-width: 20%;
+  flex-basis: 20%;
+}
+.col-6 {
+  width: 16.6%;
+  max-width: 16.6%;
+  flex-basis: 16.6%;
+}
+.col-7 {
+  width: 14.2%;
+  max-width: 14.2%;
+  flex-basis: 14.2%;
+}
+.col-8 {
+  width: 12.5%;
+  max-width: 12.5%;
+  flex-basis: 12.5%;
+}
+.col-9 {
+  width: 11.1%;
+  max-width: 11.1%;
+  flex-basis: 11.1%;
+}
+</style>

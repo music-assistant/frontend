@@ -199,7 +199,7 @@ const onClick = function (event: Event) {
 };
 </script>
 
-<style>
+<style scoped>
 .panel-item {
   height: 100%;
   padding: 10px;
