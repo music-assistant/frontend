@@ -35,6 +35,7 @@
               height: min(calc(100vw - 40px), calc(100vh - 340px));
               width: min(calc(100vw - 40px), calc(100vh - 340px));
             "
+            :thumbnail="false"
           />
           <MediaItemThumb
             v-else-if="store.curQueueItem"
@@ -48,6 +49,7 @@
               height: min(calc(100vw - 40px), calc(100vh - 340px));
               width: min(calc(100vw - 40px), calc(100vh - 340px));
             "
+            :thumbnail="false"
           />
           <v-img
             v-else

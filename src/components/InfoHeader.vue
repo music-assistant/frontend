@@ -61,12 +61,16 @@
               [MediaType.ARTIST, MediaType.PLAYLIST].includes(item.media_type)
             "
           >
-            <v-avatar size="192">
-              <MediaItemThumb :item="item" size="calc(100%)" />
+            <v-avatar size="210" style="margin-bottom: 10%">
+              <MediaItemThumb :item="item" />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb :item="item" size="calc(100%)" />
+            <MediaItemThumb
+              :item="item"
+              size="calc(100%)"
+              style="max-height: 256px"
+            />
           </div>
         </div>
 

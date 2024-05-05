@@ -34,6 +34,7 @@ export interface Props {
   size?: string | number;
   fallback?: string;
   rounded?: boolean;
+  thumbnail?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -41,6 +42,7 @@ const props = withDefaults(defineProps<Props>(), {
   size: '100%',
   fallback: undefined,
   rounded: true,
+  thumbnail: true,
 });
 
 const theme = useTheme();
@@ -51,7 +53,8 @@ const lazyStyle = {
 function getThumbSize() {
   if (typeof props.size == 'number') {
     return props.size;
-  } else return 0;
+  } else if (props.thumbnail) return 256;
+  else return 0;
 }
 const thumbSize = getThumbSize();
 
