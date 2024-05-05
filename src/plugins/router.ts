@@ -1,15 +1,9 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { store } from './store';
 import { nextTick } from 'vue';
-import { scrollElement } from '@/helpers/utils';
+import { scrollElement, sleep } from '@/helpers/utils';
 
-export const mainListings = [
-  'artists',
-  'albums',
-  'tracks',
-  'playlists',
-  'browse',
-];
+const mainListings = ['artists', 'albums', 'tracks', 'playlists', 'browse'];
 
 const routes = [
   {
@@ -300,7 +294,7 @@ router.afterEach((to, from) => {
     nextTick(() => {
       const el = document.getElementById('cont');
       if (el) {
-        scrollElement(el, prevPos, 100);
+        scrollElement(el, prevPos, 1500);
       }
     });
   }
