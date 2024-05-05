@@ -4,7 +4,9 @@
 
     <router-view v-slot="{ Component }" app>
       <transition name="fade" mode="out-in">
-        <keep-alive :include="mainListings">
+        <keep-alive
+          :include="['artists', 'albums', 'tracks', 'playlists', 'browse']"
+        >
           <component :is="Component" />
         </keep-alive>
       </transition>
@@ -18,6 +20,5 @@
 import DrawerNavigation from './DrawerNavigation.vue';
 import AddToPlaylistDialog from './AddToPlaylistDialog.vue';
 import ItemContextMenu from './ItemContextMenu.vue';
-import { mainListings } from '@/plugins/router';
 import { store } from '@/plugins/store';
 </script>

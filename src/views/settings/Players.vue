@@ -9,18 +9,17 @@
       <template #title> {{ $t('settings.players') }} </template>
       <template #append>
         <!-- ADD group player button + contextmenu -->
-        <v-menu v-if="provsWithCreateGroupFeature.length">
+        <v-menu v-if="provsWithCreateGroupFeature.length" scrim>
           <template #activator="{ props }">
             <v-btn v-bind="props" color="accent" variant="outlined">
               {{ $t('settings.add_group_player') }}
             </v-btn>
           </template>
 
-          <v-card density="compact">
-            <ListItem
+          <v-card>
+            <v-list-item
               v-for="provider in provsWithCreateGroupFeature"
               :key="provider.instance_id"
-              density="compact"
               style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
               :title="provider.name"
               @click="addGroupPlayer(provider.instance_id)"
@@ -33,7 +32,7 @@
                   style="margin-left: 10px"
                 />
               </template>
-            </ListItem>
+            </v-list-item>
           </v-card>
         </v-menu>
       </template>
@@ -42,49 +41,9 @@
       <ListItem
         v-for="item in playerConfigs"
         :key="item.player_id"
-        v-hold="
-          () => {
-            editPlayer(item.player_id);
-          }
-        "
+        show-menu-btn
         link
-        :context-menu-items="[
-          {
-            label: 'settings.configure',
-            labelArgs: [],
-            action: () => {
-              editPlayer(item.player_id);
-            },
-            icon: 'mdi-cog',
-          },
-          {
-            label: item.enabled ? 'settings.disable' : 'settings.enable',
-            labelArgs: [],
-            action: () => {
-              toggleEnabled(item);
-            },
-            icon: 'mdi-cancel',
-          },
-          {
-            label: 'settings.documentation',
-            labelArgs: [],
-            action: () => {
-              openLinkInNewTab(
-                api.getProviderManifest(item!.provider)?.documentation!,
-              );
-            },
-            icon: 'mdi-bookshelf',
-            disabled: !api.getProviderManifest(item!.provider)?.documentation!,
-          },
-          {
-            label: 'settings.delete',
-            labelArgs: [],
-            action: () => {
-              removePlayerConfig(item.player_id);
-            },
-            icon: 'mdi-delete',
-          },
-        ]"
+        @menu="(evt: Event) => onMenu(evt, item)"
         @click="editPlayer(item.player_id)"
       >
         <template #prepend>
@@ -144,6 +103,7 @@ import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
+import { eventbus } from '@/plugins/eventbus';
 
 // global refs
 const router = useRouter();
@@ -215,6 +175,51 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
 
 const openLinkInNewTab = function (url: string) {
   window.open(url, '_blank');
+};
+
+const onMenu = function (evt: Event, item: PlayerConfig) {
+  const menuItems = [
+    {
+      label: 'settings.configure',
+      labelArgs: [],
+      action: () => {
+        editPlayer(item.player_id);
+      },
+      icon: 'mdi-cog',
+    },
+    {
+      label: item.enabled ? 'settings.disable' : 'settings.enable',
+      labelArgs: [],
+      action: () => {
+        toggleEnabled(item);
+      },
+      icon: 'mdi-cancel',
+    },
+    {
+      label: 'settings.documentation',
+      labelArgs: [],
+      action: () => {
+        openLinkInNewTab(
+          api.getProviderManifest(item!.provider)!.documentation!,
+        );
+      },
+      icon: 'mdi-bookshelf',
+      disabled: !api.getProviderManifest(item!.provider)!.documentation!,
+    },
+    {
+      label: 'settings.delete',
+      labelArgs: [],
+      action: () => {
+        removePlayerConfig(item.player_id);
+      },
+      icon: 'mdi-delete',
+    },
+  ];
+  eventbus.emit('contextmenu', {
+    items: menuItems,
+    posX: (evt as PointerEvent).clientX,
+    posY: (evt as PointerEvent).clientY,
+  });
 };
 
 // watchers

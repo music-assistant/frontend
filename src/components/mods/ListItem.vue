@@ -1,9 +1,11 @@
 <!-- eslint-disable vue/require-explicit-emits -->
 <template>
   <v-list-item
+    v-hold="(v: any) => $emit('menu', v)"
     v-bind="listItemProps"
     class="list-item-main"
     @input="(v: any) => $emit('input', v)"
+    @click.right.prevent="(v: any) => $emit('menu', v)"
   >
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>

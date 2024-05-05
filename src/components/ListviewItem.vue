@@ -2,12 +2,10 @@
 <template>
   <div>
     <ListItem
-      v-hold="onMenu"
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
       :show-menu-btn="showMenu"
       @click.stop="onClick"
-      @click.right.prevent="onMenu"
       @menu.stop="onMenu"
     >
       <template #prepend>
