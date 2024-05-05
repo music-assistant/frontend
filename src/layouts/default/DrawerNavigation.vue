@@ -4,16 +4,16 @@
     app
     :permanent="getBreakpointValue('bp1')"
     :rail="!showNavigationMenu"
-    :width="!getBreakpointValue('bp1') ? 200 : 250"
+    :width="280"
     @update:model-value="
       (e) => {
         showNavigationMenu = e;
       }
     "
   >
-    <v-list-item dark style="height: 55px" :active="false">
+    <v-list-item style="height: 55px" :active="false">
       <template #prepend>
-        <v-icon class="logo_icon" size="40" icon="$mass_alt" />
+        <v-icon class="logo_icon" size="40" icon="$mass" />
       </template>
       <template #title>
         <div class="logo_text">Music Assistant</div>
@@ -172,7 +172,7 @@ export const getMenuItems = function () {
 
 <style scoped>
 .logo_text {
-  margin-left: 15px;
+  margin-left: 0px;
   font-family: 'JetBrains Mono Medium';
   font-size: larger;
   font-weight: 500;
@@ -181,5 +181,9 @@ export const getMenuItems = function () {
 .logo_icon {
   margin-left: -8px;
   border-radius: 4px;
+}
+
+.v-list-item >>> .v-list-item__prepend {
+  width: 55px;
 }
 </style>

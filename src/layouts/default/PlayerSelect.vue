@@ -11,36 +11,21 @@
     style="z-index: 9999"
   >
     <!-- heading with Players as title-->
-    <v-card-title class="headline">
+    <v-card-title class="title">
       <b>{{ $t('players') }}</b>
     </v-card-title>
 
-    <!-- close button in the top right (accessibility reasons)-->
-    <v-btn
-      variant="plain"
-      style="position: absolute; right: -10px; top: 0px"
-      icon="mdi-close"
-      dark
-      @click="store.showPlayersMenu = !store.showPlayersMenu"
-    />
-    <v-divider />
-
     <!-- collapsible player rows-->
-    <v-expansion-panels v-model="panelItem" focusable accordion flat>
+    <v-expansion-panels v-model="panelItem" focusable variant="accordion" flat>
       <v-expansion-panel
         v-for="player in sortedPlayers"
         :id="player.player_id"
         :key="player.player_id"
         :disabled="!player.available"
         flat
+        class="playerrow"
       >
         <v-expansion-panel-title
-          class="playerrow"
-          :style="
-            store.selectedPlayer?.player_id == player.player_id
-              ? 'padding:0;'
-              : 'padding:0'
-          "
           expand-icon="mdi-chevron-down"
           collapse-icon="mdi-chevron-up"
           @click="
@@ -48,9 +33,9 @@
             scrollToTop(player.player_id);
           "
         >
-          <ListItem>
+          <v-list-item class="playerrow-list-item">
             <template #prepend>
-              <v-icon size="50" :icon="player.icon" color="primary" />
+              <v-icon size="45" :icon="player.icon" color="primary" />
             </template>
             <template #title>
               <div>
@@ -81,9 +66,9 @@
                 {{ $t('state.' + player.state) }}
               </div>
             </template>
-          </ListItem>
+          </v-list-item>
         </v-expansion-panel-title>
-        <v-expansion-panel-text variant="contain">
+        <v-expansion-panel-text>
           <VolumeControl :player="player" />
         </v-expansion-panel-text>
       </v-expansion-panel>
@@ -235,39 +220,27 @@ const selectDefaultPlayer = function () {
 };
 </script>
 
-<style>
-.playerrow {
+<style scoped>
+.title {
+  font-family: 'JetBrains Mono Medium';
+  font-size: x-large;
+  opacity: 0.7;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.playerrow >>> .v-list-item__prepend {
+  width: 58px;
+  margin-left: -5px;
+}
+
+.playerrow >>> .v-expansion-panel-title {
+  padding: 0;
+  padding-right: 10px;
   height: 60px;
-  margin-right: 15px;
 }
 
-div.v-expansion-panel-text__wrapper {
-  padding-left: 0px;
-  padding-right: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-
-div.v-expansion-panel--active:not(:first-child),
-.v-expansion-panel--active + .v-expansion-panel {
-  margin-top: 0px;
-}
-
-div.v-expansion-panel__shadow {
-  box-shadow: none;
-}
-
-.v-expansion-panel-title__icon {
-  display: inline-flex;
-  margin-bottom: -4px;
-  margin-top: -4px;
-  user-select: none;
-  margin-inline-start: auto;
-  margin-right: 5px;
-}
-
-.v-list-item__prepend {
-  /* fixes weird alignment in playerselect */
-  display: unset;
+.playerrow >>> .v-expansion-panel-text__wrapper {
+  padding: 0;
 }
 </style>

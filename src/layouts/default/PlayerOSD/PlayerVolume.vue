@@ -61,3 +61,13 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.v-slider.v-input--horizontal .v-input__control {
+  min-height: 5px;
+}
+
+.v-slider.v-input--horizontal {
+  margin-inline: unset !important;
+}
+</style>

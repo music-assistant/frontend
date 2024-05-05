@@ -3,7 +3,7 @@
     <v-card
       variant="flat"
       :img="imgGradient"
-      style="z-index: 0"
+      style="z-index: 0; border-radius: 0px"
       height="25vh"
       max-height="500px"
       min-height="340px"
@@ -153,21 +153,64 @@
 
           <!-- play/info buttons -->
           <div style="display: flex; margin-left: 14px; padding-bottom: 10px">
-            <!-- play button -->
-            <v-btn
-              color="primary"
-              prepend-icon="mdi-play-circle"
-              :disabled="!store.selectedPlayer?.available"
-              @click="
-                eventbus.emit('playdialog', {
-                  items: [item],
-                  parentItem: item,
-                  showContextMenuItems: false,
-                })
-              "
+            <!-- play button with contextmenu -->
+            <MenuButton
+              :width="200"
+              icon="mdi-play-circle-outline"
+              :text="truncateString($t('play'), 12)"
+              @click="api.playMedia(item)"
             >
-              {{ $t('play') }}
-            </v-btn>
+              <template #menu>
+                <v-card width="320">
+                  <v-list>
+                    <v-list-item :title="item.name">
+                      <template #prepend>
+                        <v-avatar
+                          ><MediaItemThumb :item="item" size="80"
+                        /></v-avatar>
+                      </template>
+                      <template #title>
+                        <v-select
+                          variant="plain"
+                          :label="$t('play_on')"
+                          :model-value="store.selectedPlayerId"
+                          hide-details
+                          :items="availablePlayers"
+                          @click.stop
+                          @update:model-value="
+                            (newVal) => {
+                              store.selectedPlayerId = newVal;
+                            }
+                          "
+                        />
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                  <v-divider />
+                  <v-list>
+                    <v-list>
+                      <div
+                        v-for="menuItem of getPlayMenuItems([item], item)"
+                        :key="menuItem.label"
+                      >
+                        <v-list-item
+                          :title="$t(menuItem.label, menuItem.labelArgs || [])"
+                          density="default"
+                          @click="menuItem.action"
+                        >
+                          <template #prepend>
+                            <v-icon
+                              style="padding-left: 15px"
+                              :icon="menuItem.icon"
+                            />
+                          </template>
+                        </v-list-item>
+                      </div>
+                    </v-list>
+                  </v-list>
+                </v-card>
+              </template>
+            </MenuButton>
 
             <!-- favorite (heart) icon -->
             <v-btn
@@ -255,16 +298,14 @@ import type {
 } from '@/plugins/api/interfaces';
 import { computed, ref, watch } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import Button from '@/components/mods/Button.vue';
+import MenuButton from './MenuButton.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
-import { itemIsAvailable, parseBool } from '@/helpers/utils';
-import { getContextMenuItems } from '@/helpers/contextmenu';
-import ListItem from '@/components/mods/ListItem.vue';
+import { truncateString, parseBool } from '@/helpers/utils';
+import { getContextMenuItems, getPlayMenuItems } from '@/helpers/contextmenu';
 import Toolbar from '@/components/Toolbar.vue';
 import { useI18n } from 'vue-i18n';
 import { eventbus } from '@/plugins/eventbus';
-import { mdiPrinterPosOff } from '@mdi/js';
 
 // properties
 export interface Props {
@@ -365,14 +406,32 @@ const shortDescription = computed(() => {
   }
   return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
 });
+
+const availablePlayers = computed(() => {
+  const res: { title: string; value: string }[] = [];
+  for (const player_id in api?.players) {
+    const player = api?.players[player_id];
+    if (player.synced_to) continue;
+    res.push({ title: player.display_name, value: player.player_id });
+  }
+  return res
+    .slice()
+    .sort((a, b) => (a.title.toUpperCase() > b.title.toUpperCase() ? 1 : -1));
+});
 </script>
 
-<style>
+<style scoped>
 .background-image {
   position: absolute;
 }
 
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
+}
+.v-card--variant-elevated {
+  box-shadow: none;
+  border-width: 1px;
+  border-style: solid;
+  font-size: smaller;
 }
 </style>

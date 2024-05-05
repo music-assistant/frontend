@@ -2,10 +2,7 @@
   <section>
     <v-card-text>
       <!-- header -->
-      <div
-        v-if="config && api.providerManifests[config.domain]"
-        style="margin-left: -5px; margin-right: -5px"
-      >
+      <div v-if="config && api.providerManifests[config.domain]">
         <v-card-title>
           {{
             $t('settings.setup_provider', [

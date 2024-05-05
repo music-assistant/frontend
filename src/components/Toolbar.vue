@@ -1,5 +1,5 @@
 <template>
-  <v-toolbar :color="color">
+  <v-toolbar :color="color" class="header">
     <template v-if="icon" #prepend>
       <v-icon
         :icon="icon"
@@ -183,40 +183,37 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 }
 </script>
 
-<style>
-.v-toolbar {
+<style scoped>
+.header.v-toolbar {
   height: 55px;
-}
-
-.v-toolbar-title {
   font-family: 'JetBrains Mono Medium';
 }
 
-.v-toolbar__content {
-  height: 100% !important;
+.header.v-toolbar > .v-toolbar__content > .v-toolbar__append {
+  margin-right: 5px;
 }
 
-.v-toolbar > .v-toolbar__content > .v-toolbar-title {
-  margin-inline-start: 25px;
-}
-
-.v-toolbar > .v-toolbar__content > .v-toolbar__prepend {
-  margin-inline-start: 6px;
-}
-
-.v-toolbar > .v-toolbar__content > .v-toolbar__append {
-  margin-inline-end: 21px;
-}
-
-.v-toolbar-default > .v-toolbar__content > .v-toolbar-title {
-  margin-inline-start: 16px;
-}
-
-.v-toolbar-default > .v-toolbar__content > .v-toolbar__prepend {
+.header.v-toolbar > .v-toolbar__content > .v-toolbar-title {
   margin-inline-start: 10px;
 }
 
-.v-toolbar-default > .v-toolbar__content > .v-toolbar__append {
+.header.v-toolbar > .v-toolbar__content > .v-toolbar__prepend {
+  margin-inline-start: 6px;
+}
+
+.header.v-toolbar > .v-toolbar__content > .v-toolbar__append {
+  margin-inline-end: 21px;
+}
+
+.header.v-toolbar-default > .v-toolbar__content > .v-toolbar-title {
+  margin-inline-start: 0px;
+}
+
+.header.v-toolbar-default > .v-toolbar__content > .v-toolbar__prepend {
+  margin-inline-start: 10px;
+}
+
+.header.v-toolbar-default > .v-toolbar__content > .v-toolbar__append {
   margin-inline-end: 10px;
 }
 </style>

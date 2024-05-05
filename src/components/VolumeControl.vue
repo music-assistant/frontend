@@ -1,10 +1,10 @@
 <template>
   <v-list style="overflow: hidden" lines="two">
     <!-- group volume/power -->
-    <ListItem v-if="player.group_childs.length > 0">
+    <v-list-item v-if="player.group_childs.length > 0">
       <template #prepend>
         <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
-          <div class="text-center" style="padding-right: 5px">
+          <div class="text-center">
             <Button
               icon
               style="height: 25px !important"
@@ -21,9 +21,11 @@
       </template>
 
       <template #default>
-        <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+        <div
+          class="volumesliderrow"
+          :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
+        >
           <h6>{{ getPlayerName(player, 27) }}</h6>
-
           <PlayerVolume
             class="vc-slider"
             width="100%"
@@ -36,20 +38,20 @@
           />
         </div>
       </template>
-    </ListItem>
+    </v-list-item>
     <v-divider
       v-if="player.group_childs.length > 0"
-      style="margin-top: 10px; margin-bottom: 10px"
+      style="margin-top: 7px; margin-bottom: 7px"
     />
 
     <!-- group children -->
-    <ListItem
+    <v-list-item
       v-for="childPlayer in getVolumePlayers(player)"
       :key="childPlayer.player_id"
       :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
     >
       <template #prepend>
-        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+        <div>
           <div class="text-center">
             <Button
               icon
@@ -69,7 +71,10 @@
       </template>
 
       <template #default>
-        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
+        <div
+          class="volumesliderrow"
+          :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
+        >
           <h6>{{ truncateString(childPlayer.display_name, 27) }}</h6>
           <PlayerVolume
             class="vc-slider"
@@ -85,13 +90,7 @@
       </template>
 
       <template #append>
-        <div
-          :style="
-            childPlayer.powered
-              ? 'margin-right:-10px;opacity: 0.75'
-              : 'margin-right:-10px;opacity: 0.5'
-          "
-        >
+        <div :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
           <!-- sync button -->
           <div
             v-if="
@@ -103,6 +102,7 @@
                   x.can_sync_with.includes(childPlayer.player_id),
               ).length > 0
             "
+            class="syncbtn"
           >
             <v-menu location="bottom end" style="z-index: 999999">
               <template #activator="{ props: menu }">
@@ -142,7 +142,7 @@
           </div>
         </div>
       </template>
-    </ListItem>
+    </v-list-item>
   </v-list>
 </template>
 
@@ -191,10 +191,12 @@ const setGroupPower = function (player: Player, powered: boolean) {
 };
 </script>
 
-<style>
-.vc-slider {
-  padding-top: 13px;
-  margin-inline-start: 0px !important;
-  margin-inline-end: 0px !important;
+<style scoped>
+.syncbtn {
+  width: 30px;
+  padding-left: 13px;
+}
+.volumesliderrow {
+  margin-top: 8px;
 }
 </style>
