@@ -33,7 +33,8 @@
           :show-checkboxes="false"
           :show-track-number="false"
           :is-selected="false"
-          @click="itemClicked"
+          @menu="onMenu"
+          @click="onClick"
         />
       </swiper-slide>
     </carousel>
@@ -43,6 +44,8 @@
 <script setup lang="ts">
 import Carousel from '@/components/Carousel.vue';
 import PanelviewItem from '@/components/PanelviewItem.vue';
+import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
+import api from '@/plugins/api';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import {
   BrowseFolder,
@@ -52,6 +55,7 @@ import {
 } from '@/plugins/api/interfaces';
 import { eventbus } from '@/plugins/eventbus';
 import router from '@/plugins/router';
+import { store } from '@/plugins/store';
 
 export interface WidgetRow {
   label: string;
@@ -68,28 +72,44 @@ interface Props {
 
 const { widgetRow } = defineProps<Props>();
 
-const itemClicked = function (mediaItem: MediaItemType) {
-  if (
-    itemIsAvailable(mediaItem) &&
-    ['artist', 'album', 'playlist'].includes(mediaItem.media_type)
-  ) {
-    router.push({
-      name: mediaItem.media_type,
-      params: {
-        itemId: mediaItem.item_id,
-        provider: mediaItem.provider,
-      },
-    });
-  } else if (mediaItem.media_type === MediaType.FOLDER) {
+const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
+  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  showContextMenuForMediaItem(
+    mediaItems,
+    undefined,
+    (evt as PointerEvent).clientX,
+    (evt as PointerEvent).clientY,
+  );
+};
+
+const onClick = function (evt: Event, item: MediaItemType) {
+  // mediaItem in the list is clicked
+  if (!itemIsAvailable(item)) {
+    onMenu(evt, item);
+    return;
+  }
+  if (item.media_type == MediaType.FOLDER) {
     router.push({
       name: 'browse',
-      query: { path: (mediaItem as BrowseFolder).path },
+      query: {
+        path: (item as BrowseFolder).path,
+      },
+    });
+  } else if (
+    ['track', 'radio'].includes(item.media_type) &&
+    store.selectedPlayer?.available
+  ) {
+    api.playMedia(item.uri);
+  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
+    router.push({
+      name: item.media_type,
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
     });
   } else {
-    eventbus.emit('contextmenu', {
-      items: [mediaItem],
-      showContextMenuItems: true,
-    });
+    onMenu(evt, item);
   }
 };
 </script>
