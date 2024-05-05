@@ -242,7 +242,7 @@
             @click="showFullInfo = !showFullInfo"
           >
             <!-- eslint-disable vue/no-v-html -->
-            <div v-text="shortDescription"></div>
+            <div v-html="shortDescription"></div>
             <!-- eslint-enable vue/no-v-html -->
           </v-card-subtitle>
 
@@ -332,7 +332,8 @@ watch(
     if (val) {
       fanartImage.value =
         getImageThumbForItem(compProps.item, ImageType.FANART) ||
-        getImageThumbForItem(compProps.item, ImageType.THUMB);
+        getImageThumbForItem(compProps.item, ImageType.THUMB) ||
+        imgGradient;
     }
   },
   { immediate: true },

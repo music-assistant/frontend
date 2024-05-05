@@ -376,9 +376,11 @@ const onClick = function (evt: Event, item: MediaItemType) {
       },
     });
   } else if (
-    ['artist', 'album', 'playlist'].includes(item.media_type) ||
-    !store.selectedPlayer?.available
+    ['track', 'radio'].includes(item.media_type) &&
+    store.selectedPlayer?.available
   ) {
+    api.playMedia(item.uri);
+  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
     router.push({
       name: item.media_type,
       params: {
@@ -875,7 +877,7 @@ watch(
   () => {
     if (loading.value == true) return;
     allItems.value = [];
-    restoreState();
+    newContentAvailable.value = true;
   },
   { deep: true },
 );
