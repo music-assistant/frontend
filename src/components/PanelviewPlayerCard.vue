@@ -3,11 +3,11 @@
     class="panel-item"
     :class="{
       'panel-item-selected': store.selectedPlayerId == queue.queue_id,
-      'panel-item-idle': queue.state == PlayerState.IDLE,
+      'panel-item-idle': queue.state == PlayerState.PAUSED,
     }"
   >
     <!-- now playing media -->
-    <ListItem class="panel-item-details">
+    <v-list-item class="panel-item-details" flat>
       <template #prepend>
         <div class="media-thumb player-media-thumb">
           <MediaItemThumb
@@ -111,30 +111,14 @@
       </template>
       <!-- player -->
       <template #default>
-        <div
-          :style="{
-            cursor: 'pointer',
-          }"
-        >
-          <div>
-            on
-            <span
-              :style="{
-                cursor: 'pointer',
-                fontWeight: 'bold',
-              }"
-            >
-              {{ queue.display_name }}
-            </span>
-          </div>
-        </div>
+        <h6>{{ queue.display_name }}</h6>
       </template>
       <!-- play button -->
       <template #append>
         <v-btn
           icon
           variant="text"
-          @click="api.queueCommandPlayPause(queue.queue_id)"
+          @click.stop="api.queueCommandPlayPause(queue.queue_id)"
         >
           <v-icon
             v-if="queue.state == PlayerState.PLAYING"
@@ -148,32 +132,24 @@
           >
         </v-btn>
       </template>
-    </ListItem>
+    </v-list-item>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import api from '@/plugins/api';
-import {
-  MediaType,
-  PlayerQueue,
-  Player,
-  PlayerState,
-} from '@/plugins/api/interfaces';
+import { MediaType, PlayerQueue, PlayerState } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
-
 import { getArtistsString } from '@/helpers/utils';
 
 // properties
 export interface Props {
   queue: PlayerQueue;
 }
-
-const props = defineProps<Props>();
+defineProps<Props>();
 </script>
 
 <style scoped>
@@ -183,14 +159,7 @@ const props = defineProps<Props>();
   border: none;
   width: 98%;
   border-style: none !important;
-}
-
-.panel-item-selected {
-  background-image: linear-gradient(
-    90deg,
-    rgb(var(--v-theme-surface-light)) 0%,
-    rgb(var(--v-theme-background)) 35%
-  );
+  padding: 10px;
 }
 
 .panel-item-idle {

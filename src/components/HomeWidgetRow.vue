@@ -114,7 +114,7 @@ const onClick = function (evt: Event, item: MediaItemType) {
 };
 </script>
 
-<style>
+<style scoped>
 .header.v-toolbar {
   height: 55px;
   font-family: 'JetBrains Mono Medium';

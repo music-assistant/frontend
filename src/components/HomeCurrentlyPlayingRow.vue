@@ -1,7 +1,7 @@
 <!-- This is very similar to HomeWidgetRow. Should probably refactor at some point to clean up -->
 <template>
   <div v-if="nowPlayingWidgetRow.length" class="widget-row">
-    <v-toolbar color="transparent" style="width: fit-content">
+    <v-toolbar class="header" color="transparent" style="width: fit-content">
       <template #prepend><v-icon icon="mdi-playlist-play" /></template>
       <template #title>
         <span class="mr-3">{{ $t('currently_playing') }}</span>
@@ -43,7 +43,11 @@ const nowPlayingWidgetRow = computed(() => {
         x.active &&
         x.items > 0 &&
         x.queue_id in api.players &&
-        api.players[x.queue_id].powered,
+        api.players[x.queue_id].powered &&
+        // only show players that are playing or paused
+        [PlayerState.PLAYING, PlayerState.PAUSED].includes(
+          api.players[x.queue_id].state,
+        ),
     )
     .sort((a, b) => a.display_name.localeCompare(b.display_name))
     .sort((a, b) => playerStateOrder[a.state] - playerStateOrder[b.state]);
@@ -51,9 +55,23 @@ const nowPlayingWidgetRow = computed(() => {
 
 function playerQueueClicked(queue: PlayerQueue) {
   if (queue && queue.queue_id in api.players) {
-    store.selectedPlayerId = queue.queue_id;
+    if (store.selectedPlayerId == queue.queue_id) {
+      store.showFullscreenPlayer = true;
+    } else {
+      store.selectedPlayerId = queue.queue_id;
+    }
   }
 }
 </script>
 
-<style></style>
+<style scoped>
+.header.v-toolbar {
+  height: 55px;
+  font-family: 'JetBrains Mono Medium';
+}
+.widget-row {
+  margin-bottom: 20px;
+  margin-left: 0px;
+  padding-left: 0px;
+}
+</style>
