@@ -359,7 +359,12 @@
           <div
             v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
           >
-            <Button @click="store.showPlayersMenu = true">
+            <Button
+              @click="
+                store.showFullscreenPlayer = false;
+                store.showPlayersMenu = true;
+              "
+            >
               <v-badge
                 v-if="curGroupPlayers && curGroupPlayers.length > 0"
                 :content="store.selectedPlayer?.group_childs.length"
