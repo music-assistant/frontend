@@ -7,6 +7,7 @@ import { api } from '@/plugins/api';
 import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
+import { $t, i18n } from '@/plugins/i18n';
 
 const theme = useTheme();
 
@@ -42,6 +43,11 @@ onMounted(() => {
   store.allowExternalImageRetrieval =
     (localStorage.getItem('frontend.settings.artwork_pref') || 'online') ==
     'online';
+
+  const langPref = localStorage.getItem('frontend.settings.language') || 'auto';
+  if (langPref !== 'auto') {
+    i18n.global.locale.value = langPref;
+  }
 
   // set color theme (and listen for color scheme changes from browser)
   setTheme();

@@ -38,7 +38,7 @@ import {
 } from '@/plugins/api/interfaces';
 import EditConfig from './EditConfig.vue';
 import { onMounted } from 'vue';
-import { $t } from '@/plugins/i18n';
+import { $t, i18n } from '@/plugins/i18n';
 import { DEFAULT_MENU_ITEMS } from '@/layouts/default/DrawerNavigation.vue';
 
 // global refs
@@ -67,6 +67,22 @@ onMounted(() => {
       multi_value: false,
       category: 'generic',
       value: localStorage.getItem('frontend.settings.theme'),
+    },
+    {
+      key: 'language',
+      type: ConfigEntryType.STRING,
+      label: 'language',
+      default_value: 'auto',
+      required: false,
+      options: [
+        { title: 'auto', value: 'auto' },
+        ...i18n.global.availableLocales.map((x) => {
+          return { title: x, value: x };
+        }),
+      ],
+      multi_value: false,
+      category: 'generic',
+      value: localStorage.getItem('frontend.settings.language'),
     },
     {
       key: 'menu_style',
@@ -116,6 +132,16 @@ onMounted(() => {
       multi_value: false,
       category: 'advanced',
       value: localStorage.getItem('frontend.settings.artwork_pref'),
+    },
+    {
+      key: 'hide_settings',
+      type: ConfigEntryType.BOOLEAN,
+      label: 'hide_settings',
+      default_value: false,
+      required: false,
+      multi_value: false,
+      category: 'advanced',
+      value: localStorage.getItem('frontend.settings.hide_settings') == 'true',
     },
   ];
 });

@@ -3,15 +3,19 @@
     <Toolbar
       icon="$mass"
       title="Music Assistant"
-      :menu-items="[
-        {
-          label: 'settings.settings',
-          icon: 'mdi-cog-outline',
-          action: () => {
-            $router.push({ path: 'settings' });
-          },
-        },
-      ]"
+      :menu-items="
+        hideSettings
+          ? []
+          : [
+              {
+                label: 'settings.settings',
+                icon: 'mdi-cog-outline',
+                action: () => {
+                  $router.push({ path: 'settings' });
+                },
+              },
+            ]
+      "
     />
     <Container variant="panel">
       <Suspense>
@@ -30,6 +34,11 @@ import Container from '@/components/mods/Container.vue';
 import HomeWidgetRows from '@/components/HomeWidgetRows.vue';
 import Toolbar from '@/components/Toolbar.vue';
 import HomeCurrentlyPlayingRow from '@/components/HomeCurrentlyPlayingRow.vue';
+import { ref } from 'vue';
+
+const hideSettings = ref(
+  localStorage.getItem('frontend.settings.hide_settings') == 'true',
+);
 </script>
 
 <style scoped>

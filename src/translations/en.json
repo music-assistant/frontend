@@ -343,7 +343,7 @@
         },
         "menu_items": {
             "label": "Enabled menu items",
-            "description": "Configure which items to show in the menu.\n\n Note that if you disable settings you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
+            "description": "Configure which items to show in the menu."
         },
         "artwork_pref": {
             "label": "Preference for image retrieval",
@@ -352,6 +352,28 @@
                 "online": "Allow direct retrieval",
                 "server_only": "Enforce routing though the server"
             }
+        },
+        "language": {
+            "label": "Language",
+            "options": {
+                "auto": "Auto (follow system configuration)",
+                "cs": "CS",
+                "da": "Dannish",
+                "de": "German",
+                "en": "English",
+                "es": "Spannish",
+                "fr": "French",
+                "he": "Hebrew",
+                "it": "Italian",
+                "nb": "NB",
+                "nl": "Dutch",
+                "pl": "Polish",
+                "uk_UA": "Ukrain"
+            }
+        },
+        "hide_settings": {
+            "label": "Hide button to settings",
+            "description": "Hide settings button on home screen.\n\n Note that if you disable settings on the home screen and in the menu you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
         }
     },
     "show_info": "Show info",
