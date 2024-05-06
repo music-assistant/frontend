@@ -34,8 +34,8 @@
         @touchend="isThumbHidden = true"
         @mouseenter="isThumbHidden = false"
         @mouseleave="isThumbHidden = true"
-        @mousedown="startDragging"
-        @mouseup="stopDragging"
+        @start="startDragging"
+        @end="stopDragging"
       />
 
       <!-- end time detail -->
