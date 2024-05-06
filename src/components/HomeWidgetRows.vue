@@ -55,7 +55,7 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 });
 
 // recently played widget row
-widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(20);
+widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(10);
 
 // library artists widget row
 // TODO: Find a way to make the images for this row eager load

@@ -1122,8 +1122,7 @@ export class MusicAssistantApi {
     }
     // signal + log all events
     if (msg.event !== EventType.QUEUE_TIME_UPDATED) {
-      // eslint-disable-next-line no-console
-      console.log('[event]', msg);
+      if (DEBUG) console.log('[event]', msg);
     }
     this.signalEvent(msg);
   }
