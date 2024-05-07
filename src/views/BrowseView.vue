@@ -19,7 +19,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type MediaItemType } from '@/plugins/api/interfaces';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import api from '@/plugins/api';
 import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';

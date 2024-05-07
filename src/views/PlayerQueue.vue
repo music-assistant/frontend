@@ -338,12 +338,7 @@ onMounted(() => {
 const loadItems = async function () {
   if (store.activePlayerQueue) {
     items.value = [];
-    await api.getPlayerQueueItems(
-      store.activePlayerQueue.queue_id,
-      (data: QueueItem[]) => {
-        items.value.push(...data);
-      },
-    );
+    await api.getPlayerQueueItems(store.activePlayerQueue.queue_id);
   } else {
     items.value = [];
   }

@@ -398,7 +398,7 @@ const redirectSearch = function () {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ({ done }) {
+const loadNextPage = function ({ done }: { done: any }) {
   if (pagedItems.value.length == 0) {
     done('empty');
     return;

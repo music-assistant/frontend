@@ -521,7 +521,7 @@ export class MusicAssistantApi {
     offset: number,
     limit: number,
     path?: string,
-  ): Promise<MediaItemType[]> {
+  ): Promise<PagedItems> {
     // Browse Music providers.
     return this.getData('music/browse', { offset, limit, path });
   }
