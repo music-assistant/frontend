@@ -384,7 +384,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp1',
       condition: 'lt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 2;
@@ -392,12 +391,10 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp1',
       condition: 'gt',
-      offset: store.navigationMenuSize,
     }) &&
     getBreakpointValue({
       breakpoint: 'bp4',
       condition: 'lt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 3;
@@ -405,12 +402,10 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp4',
       condition: 'gt',
-      offset: store.navigationMenuSize,
     }) &&
     getBreakpointValue({
       breakpoint: 'bp6',
       condition: 'lt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 4;
@@ -418,12 +413,10 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp6',
       condition: 'gt',
-      offset: store.navigationMenuSize,
     }) &&
     getBreakpointValue({
       breakpoint: 'bp7',
       condition: 'lt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 5;
@@ -431,12 +424,10 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp7',
       condition: 'gt',
-      offset: store.navigationMenuSize,
     }) &&
     getBreakpointValue({
       breakpoint: 'bp8',
       condition: 'lt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 6;
@@ -444,12 +435,10 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp8',
       condition: 'gt',
-      offset: store.navigationMenuSize,
     }) &&
     getBreakpointValue({
       breakpoint: 'bp9',
       condition: 'lt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 7;
@@ -457,12 +446,10 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp9',
       condition: 'gt',
-      offset: store.navigationMenuSize,
     }) &&
     getBreakpointValue({
       breakpoint: 'bp10',
       condition: 'lt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 8;
@@ -470,7 +457,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: 'bp10',
       condition: 'gt',
-      offset: store.navigationMenuSize,
     })
   ) {
     return 9;

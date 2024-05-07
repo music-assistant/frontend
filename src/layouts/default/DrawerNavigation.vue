@@ -1,6 +1,5 @@
 <template>
   <v-navigation-drawer
-    ref="resizeComponent"
     v-model="showNavigationMenu"
     app
     :rail="enableRail"
@@ -44,23 +43,12 @@
 </template>
 
 <script setup lang="ts">
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { store } from '@/plugins/store';
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import Button from '@/components/mods/Button.vue';
 
 const showNavigationMenu = ref(true);
 const enableRail = ref(false);
 const menuItems = getMenuItems();
-
-watch(
-  () => showNavigationMenu.value,
-  (isShown) => {
-    isShown
-      ? (store.navigationMenuSize = !getBreakpointValue('mobile') ? 200 : 250)
-      : (store.navigationMenuSize = 55);
-  },
-);
 </script>
 
 <script lang="ts">
