@@ -31,7 +31,7 @@
     "@fontsource/roboto": "5.0.13",
     "@intlify/unplugin-vue-i18n": "4.0.0",
     "@types/color": "3.0.6",
-    "@types/node": "20.12.7",
+    "@types/node": "20.12.8",
     "@typescript-eslint/eslint-plugin": "7.0.0",
     "@typescript-eslint/parser": "6.21.0",
     "@vitejs/plugin-vue": "4.6.2",
@@ -47,13 +47,13 @@
     "nanoid": "5.0.7",
     "prettier": "3.2.5",
     "replace-in-file": "7.1.0",
-    "sass": "1.75.0",
+    "sass": "1.76.0",
     "typescript": "5.4.5",
     "vite": "4.5.0",
     "vite-plugin-pwa": "0.19.8",
     "vite-plugin-vuetify": "1.0.2",
     "vite-plugin-webfont-dl": "3.9.4",
     "vite-svg-loader": "^5.1.0",
-    "vue-tsc": "2.0.14"
+    "vue-tsc": "2.0.16"
   }
 }
