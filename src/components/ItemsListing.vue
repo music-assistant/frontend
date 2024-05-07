@@ -36,7 +36,7 @@
 
       <v-infinite-scroll
         :items="pagedItems"
-        :on-load="loadNextPage"
+        :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
@@ -399,8 +399,6 @@ const redirectSearch = function () {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ({ done }) {
-  console.log('loadNextPage');
-
   if (pagedItems.value.length == 0) {
     done('empty');
     return;
