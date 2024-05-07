@@ -42,7 +42,7 @@
         },
         {
           label: 'settings.client',
-          icon: 'mdi-desktop-mac-dashboard',
+          icon: 'mdi-monitor',
           action: () => {
             $router.push({ name: 'clientsettings' });
           },

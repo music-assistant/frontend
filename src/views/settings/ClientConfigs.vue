@@ -108,38 +108,6 @@
             </td>
           </tr>
           <tr>
-            <td>Theme settings</td>
-            <td>
-              <v-btn-toggle
-                v-model="themeSetting"
-                style="width: 100%"
-                mandatory
-                variant="outlined"
-                divided
-                @update:model-value="themeSettingConfig"
-              >
-                <v-btn
-                  class="text-center my-auto"
-                  style="width: 15%; height: 80%"
-                  value="system"
-                  >System</v-btn
-                >
-                <v-btn
-                  class="text-center my-auto"
-                  style="width: 15%; height: 80%"
-                  value="light"
-                  >Light</v-btn
-                >
-                <v-btn
-                  class="text-center my-auto"
-                  style="width: 15%; height: 80%"
-                  value="dark"
-                  >Dark</v-btn
-                >
-              </v-btn-toggle>
-            </td>
-          </tr>
-          <tr>
             <td>Check for updates</td>
             <td>
               <v-btn variant="tonal" @click="checkForUpdates"
@@ -203,7 +171,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useTheme } from 'vuetify';
 import Container from '@/components/mods/Container.vue';
 import { useRouter } from 'vue-router';
 import { emit } from '@tauri-apps/api/event';
@@ -219,13 +186,10 @@ const squeezeliteEnabled = ref(true);
 const closeToTrayEnabled = ref(true);
 const port = ref(8095);
 const ip = ref('homeassistant.local');
-const themeSetting = ref('light');
 const version = ref('Loading...');
 
 const outputDevice = ref('default');
 const availableOutputDevices = ref(['default']);
-
-const theme = useTheme();
 
 // methods
 const discordRpcConfig = () => {
@@ -258,17 +222,6 @@ const outputDeviceConfig = () => {
   localStorage.setItem('outputDevice', outputDevice.value);
 };
 
-const themeSettingConfig = () => {
-  localStorage.setItem('themeSetting', themeSetting.value);
-  if (themeSetting.value == 'dark') {
-    theme.global.name.value = 'dark';
-  } else if (themeSetting.value == 'light') {
-    theme.global.name.value = 'light';
-  } else {
-    theme.global.name.value = localStorage.getItem('systemTheme') || 'light';
-  }
-};
-
 const checkForUpdates = async () => {
   await emit('tauri://update');
 };
@@ -287,10 +240,8 @@ onMounted(async () => {
     localStorage.getItem('squeezeliteEnabled') === 'true' || true;
   closeToTrayEnabled.value =
     localStorage.getItem('closeToTrayEnabled') === 'true' || true;
-  themeSetting.value = localStorage.getItem('themeSetting') || 'system';
   ip.value = localStorage.getItem('mass_ip') || 'homeassistant.local';
   port.value = Number(localStorage.getItem('mass_port')) || 8095;
   version.value = await getVersion();
-  themeSettingConfig();
 });
 </script>

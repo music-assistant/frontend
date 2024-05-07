@@ -81,7 +81,7 @@
             rounded="lg"
             @update:model-value="themeSettingConfig"
           >
-            <v-btn class="text-center" style="width: 35%" value="system"
+            <v-btn class="text-center" style="width: 35%" value="auto"
               >System</v-btn
             >
             <v-btn class="text-center" style="width: 35%" value="light"
@@ -177,7 +177,12 @@ const discordRpcConfig = () => {
 };
 
 const themeSettingConfig = () => {
-  localStorage.setItem('themeSetting', themeSetting.value);
+  localStorage.setItem('frontend.settings.theme', themeSetting.value);
+  setTheme();
+};
+
+const setTheme = () => {
+  const themePref = localStorage.getItem('frontend.settings.theme') || 'auto';
   if (themeSetting.value == 'dark') {
     theme.global.name.value = 'dark';
   } else if (themeSetting.value == 'light') {
@@ -234,12 +239,26 @@ onMounted(async () => {
     localStorage.getItem('discordRPCEnabled') === 'true' || false;
   let start_squeezelite =
     localStorage.getItem('squeezeliteEnabled') === 'true' || true;
-  let theme_setting = localStorage.getItem('themeSetting') || 'system';
+  let theme_setting = localStorage.getItem('frontend.settings.theme') || 'auto';
   let tray_setting =
     localStorage.getItem('closeToTrayEnabled') === 'true' || true;
 
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
+
+  // set navigation menu style
+  store.navigationMenuStyle =
+    localStorage.getItem('frontend.settings.menu_style') || 'horizontal';
+
+  // cache some settings in the store
+  store.allowExternalImageRetrieval =
+    (localStorage.getItem('frontend.settings.artwork_pref') || 'online') ==
+    'online';
+
+  const langPref = localStorage.getItem('frontend.settings.language') || 'auto';
+  if (langPref !== 'auto') {
+    i18n.global.locale.value = langPref;
+  }
 
   closeToTrayEnabled.value = tray_setting;
   discordRPCEnabled.value = start_discord_rpc;
@@ -255,7 +274,7 @@ onMounted(async () => {
   await appWindow.theme().then((theme) => {
     if (theme != null) {
       localStorage.setItem('systemTheme', theme.toString());
-      themeSettingConfig();
+      setTheme();
     }
   });
 
@@ -263,7 +282,7 @@ onMounted(async () => {
   await appWindow.onThemeChanged(({ payload: newTheme }) => {
     console.log(`Updated theme: ${newTheme.toString()}`);
     localStorage.setItem('systemTheme', newTheme.toString());
-    themeSettingConfig();
+    setTheme();
   });
 
   // Try to start the app with saved config
