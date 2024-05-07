@@ -2,9 +2,11 @@
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
     <drawer-navigation v-if="store.navigationMenuStyle == 'vertical'" />
 
-    <router-view v-slot="{ Component }" app>
+    <router-view v-slot="{ Component }">
       <keep-alive
+        :max="5"
         :include="[
+          'HomeView',
           'Artists',
           'Albums',
           'Tracks',

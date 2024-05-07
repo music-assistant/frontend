@@ -50,8 +50,11 @@
         <div v-else-if="store.curQueueItem">
           {{ store.curQueueItem.name }}
         </div>
-        <div v-else>
+        <div v-else-if="store.activePlayerQueue?.display_name">
           {{ store.activePlayerQueue?.display_name }}
+        </div>
+        <div v-else @click="store.showPlayersMenu = true">
+          {{ $t('no_player') }}
         </div>
       </div>
     </template>

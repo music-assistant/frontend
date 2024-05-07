@@ -39,7 +39,6 @@ import {
   type Track,
 } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
 import router from '@/plugins/router';
 
 defineOptions({

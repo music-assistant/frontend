@@ -174,6 +174,7 @@ export const getImageThumbForItem = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
   size?: number,
+  preferImageProxy: boolean = false,
 ): string | undefined {
   if (!mediaItem) return;
   // find image in mediaitem
@@ -181,7 +182,11 @@ export const getImageThumbForItem = function (
   if (!img || !img.path) return undefined;
   const checksum =
     'metadata' in mediaItem ? mediaItem.metadata?.cache_checksum : '';
-  if (!img.remotely_accessible || !store.allowExternalImageRetrieval) {
+  if (
+    !img.remotely_accessible ||
+    !store.allowExternalImageRetrieval ||
+    preferImageProxy
+  ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     let imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;

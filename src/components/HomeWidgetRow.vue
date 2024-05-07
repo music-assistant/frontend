@@ -94,11 +94,6 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (
-    ['track', 'radio'].includes(item.media_type) &&
-    store.selectedPlayer?.available
-  ) {
-    api.playMedia(item.uri);
   } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
     router.push({
       name: item.media_type,

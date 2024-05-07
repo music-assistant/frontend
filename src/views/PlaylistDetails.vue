@@ -11,15 +11,19 @@
     :show-refresh-button="true"
     :load-paged-data="loadPlaylistTracks"
     :limit="50"
-    :sort-keys="[
-      'position',
-      'position_desc',
-      'name',
-      'artist',
-      'album',
-      'duration',
-      'duration_desc',
-    ]"
+    :sort-keys="
+      allItemsReceived
+        ? [
+            'position',
+            'position_desc',
+            'name',
+            'artist',
+            'album',
+            'duration',
+            'duration_desc',
+          ]
+        : ['position']
+    "
     :update-available="updateAvailable"
     :title="$t('playlist_tracks')"
     :allow-key-hooks="true"
@@ -49,6 +53,7 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
+const allItemsReceived = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
@@ -78,12 +83,14 @@ onMounted(() => {
 });
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {
-  return await api.getPlaylistTracks(
+  const result = await api.getPlaylistTracks(
     props.itemId,
     props.provider,
     params.refresh,
     params.limit,
     params.offset,
   );
+  allItemsReceived.value = result.total != null;
+  return result;
 };
 </script>

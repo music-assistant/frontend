@@ -399,7 +399,7 @@ const redirectSearch = function () {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ({ done }) {
-  done('loading');
+  console.log('loadNextPage');
 
   if (pagedItems.value.length == 0) {
     done('empty');
@@ -409,6 +409,8 @@ const loadNextPage = function ({ done }) {
     done('empty');
     return;
   }
+
+  done('loading');
   params.value.offset += props.limit;
   loadData().then(() => {
     done('ok');
