@@ -1,4 +1,4 @@
-import { store } from '../store';
+import { AlertType, store } from '../store';
 /* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
@@ -1115,10 +1115,21 @@ export class MusicAssistantApi {
   private handleResultMessage(msg: SuccessResultMessage | ErrorResultMessage) {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
-    if (!resultPromise) return;
-    if (DEBUG) {
+
+    if ('error_code' in msg) {
+      // always handle error (as we may be missing a resolve promise for this command)
+      msg = msg as ErrorResultMessage;
+      console.error('[resultMessage]', msg);
+      store.activeAlert = {
+        type: AlertType.ERROR,
+        message: msg.details || msg.error_code,
+        persistent: false,
+      };
+    } else if (DEBUG) {
       console.log('[resultMessage]', msg);
     }
+
+    if (!resultPromise) return;
 
     this.commands.delete(msg.message_id as number);
     this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
@@ -1126,7 +1137,6 @@ export class MusicAssistantApi {
     );
 
     if ('error_code' in msg) {
-      msg = msg as ErrorResultMessage;
       resultPromise.reject(msg.details || msg.error_code);
     } else {
       msg = msg as SuccessResultMessage;

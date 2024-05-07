@@ -21,6 +21,15 @@
 
     <add-to-playlist-dialog />
     <item-context-menu />
+    <v-snackbar
+      :model-value="store.activeAlert !== undefined"
+      :color="store.activeAlert?.type || 'grey'"
+      :text="store.activeAlert?.message"
+      close-on-content-click
+      position="sticky"
+      :timeout="store.activeAlert?.persistent ? -1 : 5000"
+      @update:model-value="() => (store.activeAlert = undefined)"
+    />
   </v-main>
 </template>
 

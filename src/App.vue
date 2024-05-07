@@ -7,7 +7,7 @@ import { api } from '@/plugins/api';
 import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
-import { $t, i18n } from '@/plugins/i18n';
+import { i18n } from '@/plugins/i18n';
 
 const theme = useTheme();
 

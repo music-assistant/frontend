@@ -2,6 +2,19 @@ import { computed, reactive, ref } from 'vue';
 import { Player, PlayerQueue, QueueItem } from './api/interfaces';
 import api from './api';
 
+export enum AlertType {
+  ERROR = 'error',
+  WARNING = 'warning',
+  INFO = 'info',
+  SUCCESS = 'success',
+}
+
+interface Alert {
+  type: AlertType;
+  message: string;
+  persistent: boolean;
+}
+
 interface Store {
   selectedPlayerId?: string;
   isInStandaloneMode: boolean;
@@ -18,6 +31,7 @@ interface Store {
   globalSearchTerm?: string;
   prevScrollPos: Record<string, number>;
   allowExternalImageRetrieval: boolean;
+  activeAlert?: Alert;
 }
 
 export const store: Store = reactive({
@@ -56,4 +70,5 @@ export const store: Store = reactive({
   globalSearchTerm: undefined,
   prevScrollPos: {},
   allowExternalImageRetrieval: true,
+  activeAlert: undefined,
 });
