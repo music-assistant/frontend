@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools~=62.3", "wheel~=0.37.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name         = "music-assistant-frontend"
+# The version is set by GH action on release
+version = "0.0.0"
+license      = {text = "Apache-2.0"}
+description  = "The Music Assistant frontend"
+readme       = "README.md"
+authors      = [
+    {name = "The Music Assistant Authors", email = "m.vanderveldt@outlook.com"}
+]
+requires-python = ">=3.9.0"
+
+[project.urls]
+"Homepage" = "https://github.com/music-assistant/frontend"
+
+[tool.setuptools]
+platforms = ["any"]
+zip-safe  = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["music_assistant_frontend"]
+
+[tool.codespell]
+ignore-words-list = "provid,hass,followings"
