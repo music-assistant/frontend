@@ -12,7 +12,7 @@
     <template v-if="title" #title>
       {{ title }}
       <v-badge
-        v-if="count !== undefined && getBreakpointValue('bp4')"
+        v-if="count && getBreakpointValue('bp4')"
         color="grey"
         :content="count"
         inline

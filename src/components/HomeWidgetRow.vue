@@ -53,7 +53,6 @@ import {
   MediaType,
   PlayerQueue,
 } from '@/plugins/api/interfaces';
-import { eventbus } from '@/plugins/eventbus';
 import router from '@/plugins/router';
 import { store } from '@/plugins/store';
 

@@ -140,6 +140,7 @@ export const getPlayMenuItems = function (
         },
         icon: 'mdi-play-circle-outline',
         labelArgs: [],
+        disabled: !store.activePlayerQueue,
       });
     }
     // Play from here (album track)
@@ -151,6 +152,7 @@ export const getPlayMenuItems = function (
         },
         icon: 'mdi-play-circle-outline',
         labelArgs: [],
+        disabled: !store.activePlayerQueue,
       });
     }
   }
@@ -166,6 +168,36 @@ export const getPlayMenuItems = function (
     },
     icon: 'mdi-play-circle-outline',
     labelArgs: [],
+    disabled: !store.activePlayerQueue,
+  });
+
+  // Play NEXT
+  if (items.length === 1 || items[0].media_type === MediaType.TRACK) {
+    playMenuItems.push({
+      label: 'play_next',
+      action: () => {
+        api.playMedia(
+          items.map((x) => x.uri),
+          queueOptNext,
+        );
+      },
+      icon: 'mdi-skip-next-circle-outline',
+      labelArgs: [],
+      disabled: !store.activePlayerQueue,
+    });
+  }
+  // Add to Queue
+  playMenuItems.push({
+    label: 'add_queue',
+    action: () => {
+      api.playMedia(
+        items.map((x) => x.uri),
+        QueueOption.ADD,
+      );
+    },
+    icon: 'mdi-playlist-plus',
+    labelArgs: [],
+    disabled: !store.activePlayerQueue,
   });
 
   // Start Radio
@@ -181,35 +213,9 @@ export const getPlayMenuItems = function (
       },
       icon: 'mdi-radio-tower',
       labelArgs: [],
+      disabled: !store.activePlayerQueue,
     });
   }
-
-  // Play NEXT
-  if (items.length === 1 || items[0].media_type === MediaType.TRACK) {
-    playMenuItems.push({
-      label: 'play_next',
-      action: () => {
-        api.playMedia(
-          items.map((x) => x.uri),
-          queueOptNext,
-        );
-      },
-      icon: 'mdi-skip-next-circle-outline',
-      labelArgs: [],
-    });
-  }
-  // Add to Queue
-  playMenuItems.push({
-    label: 'add_queue',
-    action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        QueueOption.ADD,
-      );
-    },
-    icon: 'mdi-playlist-plus',
-    labelArgs: [],
-  });
 
   return playMenuItems;
 };

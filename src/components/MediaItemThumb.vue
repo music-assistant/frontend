@@ -135,7 +135,7 @@ export const getMediaItemImage = function (
   if (!mediaItem) return undefined;
 
   // handle image in queueitem or itemmapping
-  if ('image' in mediaItem && mediaItem.image && type == ImageType.THUMB)
+  if ('image' in mediaItem && mediaItem.image && mediaItem.image.type == type)
     return mediaItem.image;
 
   // always prefer album image for tracks

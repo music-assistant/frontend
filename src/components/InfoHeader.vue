@@ -156,42 +156,52 @@
           </div>
 
           <!-- play/info buttons -->
-          <div style="display: flex; margin-left: 14px; padding-bottom: 10px">
+          <div
+            style="
+              display: flex;
+              margin-left: 14px;
+              padding-bottom: 10px;
+              cursor: pointer !important;
+            "
+          >
             <!-- play button with contextmenu -->
             <MenuButton
               :width="200"
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 12)"
-              @click="api.playMedia(item)"
+              :disabled="!item"
+              :open-menu-on-click="!store.activePlayerQueue"
+              @click="api.playMedia(item!)"
             >
               <template #menu>
                 <v-card width="320">
                   <v-list>
-                    <v-list-item :title="item.name">
+                    <v-list-item :title="item.name" link>
                       <template #prepend>
                         <v-avatar
                           ><MediaItemThumb :item="item" size="80"
                         /></v-avatar>
                       </template>
                       <template #title>
-                        <v-select
-                          variant="plain"
-                          :label="$t('play_on')"
-                          :model-value="store.selectedPlayerId"
-                          hide-details
-                          :items="availablePlayers"
-                          @click.stop
-                          @update:model-value="
-                            (newVal) => {
-                              store.selectedPlayerId = newVal;
-                            }
+                        <v-list-item
+                          variant="text"
+                          :title="$t('play_on')"
+                          :subtitle="
+                            store.activePlayerQueue?.display_name ||
+                            $t('no_player')
                           "
+                          @click.stop="store.showPlayersMenu = true"
                         />
                       </template>
                     </v-list-item>
                   </v-list>
                   <v-divider />
-                  <v-list density="compact" slim tile>
+                  <v-list
+                    density="compact"
+                    slim
+                    tile
+                    :disabled="!store.activePlayerQueue"
+                  >
                     <div
                       v-for="menuItem of getPlayMenuItems([item], item)"
                       :key="menuItem.label"
@@ -413,15 +423,11 @@ const shortDescription = computed(() => {
 });
 
 const availablePlayers = computed(() => {
-  const res: { title: string; value: string }[] = [];
-  for (const player_id in api?.players) {
-    const player = api?.players[player_id];
-    if (player.synced_to) continue;
-    res.push({ title: player.display_name, value: player.player_id });
-  }
-  return res
-    .slice()
-    .sort((a, b) => (a.title.toUpperCase() > b.title.toUpperCase() ? 1 : -1));
+  return Object.values(api.players)
+    .filter((x) => x.available && !x.synced_to)
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
+    );
 });
 </script>
 

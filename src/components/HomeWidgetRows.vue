@@ -6,7 +6,6 @@
 
 <script setup lang="ts">
 import api from '@/plugins/api';
-import { MediaItemType } from '@/plugins/api/interfaces';
 import HomeWidgetRow, { WidgetRow } from '@/components/HomeWidgetRow.vue';
 import { ref } from 'vue';
 
@@ -114,10 +113,6 @@ const trackItems = await api.getLibraryTracks(
 widgetRows.value.tracks.items = trackItems.items;
 widgetRows.value.tracks.count = trackItems.total;
 
-// browse widget
-await api.browse('', (data: MediaItemType[]) => {
-  widgetRows.value.browse.items.push(...data);
-});
 // });
 </script>
 

@@ -2,7 +2,7 @@
 <template>
   <div v-if="nowPlayingWidgetRow.length" class="widget-row">
     <v-toolbar class="header" color="transparent" style="width: fit-content">
-      <template #prepend><v-icon icon="mdi-playlist-play" /></template>
+      <template #prepend><v-icon icon="mdi-play-circle-outline" /></template>
       <template #title>
         <span class="mr-3">{{ $t('currently_playing') }}</span>
       </template>

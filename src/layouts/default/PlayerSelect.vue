@@ -189,32 +189,10 @@ const selectDefaultPlayer = function () {
   if (lastPlayerId) {
     if (
       lastPlayerId in api.players &&
-      playerActive(api.players[lastPlayerId], false, false, false)
+      playerActive(api.players[lastPlayerId], false, false, false) &&
+      api.players[lastPlayerId].powered
     ) {
       return api.players[lastPlayerId];
-    }
-  }
-  // select a (new) default active player
-  if (api?.players) {
-    // prefer the first playing player
-    for (const playerId in api?.players) {
-      const player = api.players[playerId];
-      if (player.state == PlayerState.PLAYING) {
-        return player;
-      }
-    }
-    // fallback to just a player with item in queue
-    for (const queueId in api?.queues) {
-      const queue = api.queues[queueId];
-      if (!playerActive(api.players[queueId], false, false, false)) continue;
-      if (queue.items) {
-        return api.players[queueId];
-      }
-    }
-    // last resort: just the first queue
-    for (const playerId in api?.queues) {
-      if (!playerActive(api.players[playerId], false, false, false)) continue;
-      return api.players[playerId];
     }
   }
 };

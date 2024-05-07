@@ -3,14 +3,20 @@
     <drawer-navigation v-if="store.navigationMenuStyle == 'vertical'" />
 
     <router-view v-slot="{ Component }" app>
-      <transition name="fade" mode="out-in">
-        <keep-alive
-          :include="['artists', 'albums', 'tracks', 'playlists', 'browse']"
-        >
-          <component :is="Component" />
-        </keep-alive>
-      </transition>
+      <keep-alive
+        :include="[
+          'Artists',
+          'Albums',
+          'Tracks',
+          'Playlists',
+          'Search',
+          'Browse',
+        ]"
+      >
+        <component :is="Component" />
+      </keep-alive>
     </router-view>
+
     <add-to-playlist-dialog />
     <item-context-menu />
   </v-main>

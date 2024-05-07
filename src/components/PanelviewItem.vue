@@ -1,6 +1,8 @@
 <template>
   <v-card
     v-hold="onMenu"
+    tile
+    hover
     class="panel-item"
     :disabled="!itemIsAvailable(item)"
     @click="onClick"
@@ -34,8 +36,14 @@
 
     <MediaItemThumb :item="item" :width="'100%'" />
 
-    <div class="panel-item-details" style="padding-top: 10px !important">
-      <v-list-item-title class="line-clamp-1 panel-item-details">
+    <v-list-item
+      variant="text"
+      slim
+      tile
+      density="compact"
+      class="panel-item-details"
+    >
+      <v-list-item-title>
         <span v-if="item.media_type == MediaType.FOLDER">
           <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
         </span>
@@ -46,31 +54,24 @@
       </v-list-item-title>
       <v-list-item-subtitle
         v-if="'artists' in item && item.artists"
-        class="line-clamp-1 panel-item-details"
+        class="line-clamp-1"
       >
         {{ getArtistsString(item.artists, 1) }}
       </v-list-item-subtitle>
       <v-list-item-subtitle
         v-else-if="'owner' in item && item.owner"
-        class="line-clamp-1 panel-item-details"
+        class="line-clamp-1"
       >
         {{ item.owner }}
       </v-list-item-subtitle>
-      <v-list-item-subtitle
-        v-else-if="showMediaType"
-        class="line-clamp-1 panel-item-details"
-      >
+      <v-list-item-subtitle v-else-if="showMediaType" class="line-clamp-1">
         {{ $t(item.media_type) }}
       </v-list-item-subtitle>
-    </div>
-    <v-card-actions>
-      <v-item-group
-        v-if="
-          (item.media_type === 'track' && 'metadata' in item) || showFavorite
-        "
-        style="min-height: 33px; margin-top: 10px; margin-left: -15px"
-      >
-        <!-- explicit icon -->
+      <v-list-item-subtitle v-else class="line-clamp-1" />
+    </v-list-item>
+
+    <v-card-actions v-if="showActions" class="panel-item-actions">
+      <v-item-group style="padding: 0; margin: -8px">
         <v-item v-if="parseBool(item.metadata.explicit || false)">
           <v-icon size="30" icon="mdi-alpha-e-box" />
         </v-item>
@@ -88,23 +89,26 @@
           </v-icon>
         </v-item>
         <!-- disc number -->
-        <v-item
-          v-if="'disc_number' in item && item.disc_number && showTrackNumber"
-        >
+        <v-item v-if="'disc_number' in item && item.disc_number">
           <v-icon icon="md:album" style="margin-left: 5px" />
           {{ item.disc_number }}
         </v-item>
         <!-- track number-->
-        <v-item
-          v-if="'track_number' in item && item.track_number && showTrackNumber"
-        >
+        <v-item v-if="'track_number' in item && item.track_number">
           <v-icon icon="mdi-music-circle-outline" style="margin-left: 10px" />
           {{ item.track_number }}
         </v-item>
-        <v-item v-if="getBreakpointValue('bp3') && showFavorite">
+        <v-item v-if="getBreakpointValue('bp3')">
           <FavouriteButton :item="item" />
         </v-item>
       </v-item-group>
+      <v-spacer />
+      <MAButton
+        variant="list"
+        icon="mdi-dots-vertical"
+        style="padding-right: 0; margin-right: -5px"
+        @click.stop="(v: any) => $emit('menu', v, item)"
+      />
     </v-card-actions>
   </v-card>
 </template>
@@ -112,6 +116,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
+import MAButton from './mods/Button.vue';
 import {
   BrowseFolder,
   ContentType,
@@ -135,18 +140,14 @@ export interface Props {
   size?: number;
   isSelected: boolean;
   showCheckboxes?: boolean;
-  showTrackNumber?: boolean;
   showMediaType?: boolean;
-  showFavorite?: boolean;
-  parentItem?: MediaItemType;
+  showActions?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
-  showFavorite: false,
-  showTrackNumber: true,
+  showActions: false,
   showMediaType: false,
-  parentItem: undefined,
 });
 
 // refs
@@ -214,8 +215,26 @@ const onClick = function (event: Event) {
 }
 
 .panel-item-details {
+  margin-top: 10px;
   padding-left: 0px !important;
   padding-right: 0px !important;
+  height: 40px;
+}
+
+.panel-item-actions {
+  padding: 0;
+  margin: 0;
+  margin-top: 10px;
+  height: 40px;
+  min-height: unset !important;
+}
+
+panel-item-details >>> .v-list-item__content {
+  height: 30px;
+}
+
+.v-card--active {
+  background-color: red;
 }
 
 .hiresicon {

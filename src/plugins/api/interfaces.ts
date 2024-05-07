@@ -213,13 +213,6 @@ export interface SuccessResultMessage extends ResultMessageBase {
   result: any;
 }
 
-export interface ChunkedResultMessage extends ResultMessageBase {
-  // Message sent when the result of a command is sent in multiple chunks.
-
-  result: any;
-  is_last_chunk: boolean;
-}
-
 export interface ErrorResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 

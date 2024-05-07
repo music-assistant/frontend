@@ -36,7 +36,6 @@ import {
   RepeatMode,
   SearchResults,
   ProviderManifest,
-  ChunkedResultMessage,
   ProviderType,
   ProviderConfig,
   ConfigValueType,
@@ -52,10 +51,6 @@ export enum ConnectionState {
   DISCONNECTED = 0,
   CONNECTING = 1,
   CONNECTED = 2,
-}
-
-export interface chunkCallback {
-  (data: Array<any>): void;
 }
 
 export class MusicAssistantApi {
@@ -79,7 +74,6 @@ export class MusicAssistantApi {
     {
       resolve: (result?: any) => void;
       reject: (err: any) => void;
-      chunkCallback?: chunkCallback;
     }
   >;
 
@@ -115,8 +109,6 @@ export class MusicAssistantApi {
           this.handleEventMessage(msg as EventMessage);
         } else if ('server_version' in msg) {
           this.handleServerInfoMessage(msg as ServerInfoMessage);
-        } else if ('message_id' in msg && 'is_last_chunk' in msg) {
-          this.handleChunkedResultMessage(msg);
         } else if ('message_id' in msg) {
           this.handleResultMessage(msg);
         } else {
@@ -364,18 +356,17 @@ export class MusicAssistantApi {
   public getPlaylistTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
-    chunkCallback?: chunkCallback,
     force_refresh?: boolean,
-  ): Promise<Track[]> {
-    return this.getData(
-      'music/playlists/playlist_tracks',
-      {
-        item_id,
-        provider_instance_id_or_domain,
-        force_refresh,
-      },
-      chunkCallback,
-    );
+    limit?: number,
+    offset?: number,
+  ): Promise<PagedItems> {
+    return this.getData('music/playlists/playlist_tracks', {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
+      offset,
+      force_refresh,
+    });
   }
 
   public addPlaylistTracks(db_playlist_id: string | number, uris: string[]) {
@@ -527,11 +518,12 @@ export class MusicAssistantApi {
   }
 
   public browse(
+    offset: number,
+    limit: number,
     path?: string,
-    chunkCallback?: chunkCallback,
   ): Promise<MediaItemType[]> {
     // Browse Music providers.
-    return this.getData('music/browse', { path }, chunkCallback);
+    return this.getData('music/browse', { offset, limit, path });
   }
 
   public search(
@@ -557,21 +549,14 @@ export class MusicAssistantApi {
 
   public async getPlayerQueues(): Promise<PlayerQueue[]> {
     // Get all registered PlayerQueues
-    return this.getData('players/queue/all');
+    return this.getData('player_queues/all');
   }
 
-  public getPlayerQueueItems(
-    queue_id: string,
-    chunkCallback?: chunkCallback,
-  ): Promise<QueueItem[]> {
+  public getPlayerQueueItems(queue_id: string): Promise<PagedItems> {
     // Get all QueueItems for given PlayerQueue
-    return this.getData(
-      'players/queue/items',
-      {
-        queue_id,
-      },
-      chunkCallback,
-    );
+    return this.getData('player_queues/items', {
+      queue_id,
+    });
   }
 
   public queueCommandPlay(queueId: string) {
@@ -686,7 +671,7 @@ export class MusicAssistantApi {
     clearTimeout(this._throttleId);
     // apply a bit of throttling here
     this._throttleId = setTimeout(() => {
-      this.sendCommand(`players/queue/${command}`, {
+      this.sendCommand(`player_queues/${command}`, {
         queue_id,
         ...args,
       });
@@ -836,7 +821,7 @@ export class MusicAssistantApi {
     } else if (!queue_id) {
       queue_id = store.selectedPlayer?.player_id;
     }
-    this.sendCommand('players/queue/play_media', {
+    this.sendCommand('player_queues/play_media', {
       queue_id,
       media,
       option,
@@ -1127,9 +1112,7 @@ export class MusicAssistantApi {
     this.signalEvent(msg);
   }
 
-  private handleResultMessage(
-    msg: SuccessResultMessage | ChunkedResultMessage | ErrorResultMessage,
-  ) {
+  private handleResultMessage(msg: SuccessResultMessage | ErrorResultMessage) {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
     if (!resultPromise) return;
@@ -1148,34 +1131,6 @@ export class MusicAssistantApi {
     } else {
       msg = msg as SuccessResultMessage;
       resultPromise.resolve(msg.result);
-    }
-  }
-
-  private handleChunkedResultMessage(
-    msg: ChunkedResultMessage | ErrorResultMessage,
-  ) {
-    // Handle result of a command
-    const resultPromise = this.commands.get(msg.message_id as number);
-    if (!resultPromise) return;
-    const lastChunk = 'is_last_chunk' in msg && msg.is_last_chunk;
-    const isError = 'error_code' in msg;
-    if (DEBUG) {
-      console.log('[chunkedResultMessage]', msg);
-    }
-
-    if (isError || lastChunk) {
-      this.commands.delete(msg.message_id as number);
-      this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
-        (x) => x != msg.message_id,
-      );
-    }
-
-    if ('error_code' in msg) {
-      msg = msg as ErrorResultMessage;
-      resultPromise.reject(msg.details || msg.error_code);
-    } else {
-      if (resultPromise.chunkCallback) resultPromise.chunkCallback(msg.result);
-      if (lastChunk) resultPromise.resolve([]);
     }
   }
 
@@ -1204,12 +1159,11 @@ export class MusicAssistantApi {
   public getData<Result>(
     command: string,
     args?: Record<string, any>,
-    chunkCallback?: chunkCallback,
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
-      this.commands.set(cmdId, { resolve, reject, chunkCallback });
+      this.commands.set(cmdId, { resolve, reject });
       this.fetchesInProgress.value.push(cmdId);
       this.sendCommand(command, args, cmdId);
     });

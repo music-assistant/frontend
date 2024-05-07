@@ -26,6 +26,7 @@
       @blur="searchHasFocus = false"
       @click:clear="onClear"
     />
+
     <Container
       v-if="expanded"
       :variant="viewMode == 'panel' ? 'panel' : 'default'"
@@ -33,70 +34,63 @@
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
-      <!-- panel view -->
-      <v-row v-if="viewMode == 'panel'">
-        <v-col
-          v-for="item in pagedItems"
-          :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          cols="12"
-          xs="12"
-          sm="6"
-          md="3"
-          lg="2"
-          xxl="1"
-        >
-          <PanelviewItem
-            :item="item"
-            :is-selected="isSelected(item)"
-            :show-checkboxes="showCheckboxes"
-            :show-track-number="showTrackNumber"
-            :show-favorite="showFavoritesOnlyFilter"
-            :show-menu="showMenu"
-            :parent-item="parentItem"
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </v-col>
-      </v-row>
-
-      <!-- list view -->
-      <v-virtual-scroll
-        v-if="viewMode == 'list'"
-        :height="70"
+      <v-infinite-scroll
         :items="pagedItems"
-        style="height: 100%"
+        :on-load="loadNextPage"
+        :mode="infiniteScroll ? 'intersect' : 'manual'"
+        :load-more-text="$t('load_more_items')"
+        :empty-text="''"
+        style="overflow-y: unset"
       >
-        <template #default="{ item }">
-          <ListviewItem
-            :item="item"
-            :show-track-number="showTrackNumber"
-            :show-disc-number="showTrackNumber"
-            :show-duration="showDuration"
-            :show-favorite="showFavoritesOnlyFilter"
-            :show-menu="showMenu"
-            :show-provider="showProvider"
-            :show-album="showAlbum"
-            :show-checkboxes="showCheckboxes"
-            :is-selected="isSelected(item)"
-            :show-details="itemtype.includes('versions')"
-            :parent-item="parentItem"
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </template>
-      </v-virtual-scroll>
+        <!-- panel view -->
+        <v-row v-if="viewMode == 'panel'">
+          <v-col
+            v-for="item in pagedItems"
+            :key="item.uri"
+            cols="12"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          >
+            <PanelviewItem
+              :item="item"
+              :is-selected="isSelected(item)"
+              :show-checkboxes="showCheckboxes"
+              :show-track-number="showTrackNumber"
+              :show-favorite="showFavoritesOnlyFilter"
+              :show-actions="['tracks', 'albums'].includes(itemtype)"
+              @select="onSelect"
+              @menu="onMenu"
+              @click="onClick"
+            />
+          </v-col>
+        </v-row>
 
-      <!-- infinite scroll component -->
-      <InfiniteLoading v-if="infiniteScroll" @infinite="loadNextPage" />
-      <v-btn
-        v-else-if="(total || 0) > pagedItems.length"
-        variant="plain"
-        @click="loadNextPage()"
-        >{{ $t('load_more_items') }}</v-btn
-      >
+        <!-- list view -->
+        <v-virtual-scroll
+          v-if="viewMode == 'list'"
+          :height="70"
+          :items="pagedItems"
+          style="height: 100%"
+        >
+          <template #default="{ item }">
+            <ListviewItem
+              :item="item"
+              :show-track-number="showTrackNumber"
+              :show-disc-number="showTrackNumber"
+              :show-duration="showDuration"
+              :show-favorite="showFavoritesOnlyFilter"
+              :show-menu="showMenu"
+              :show-provider="showProvider"
+              :show-album="showAlbum"
+              :show-checkboxes="showCheckboxes"
+              :is-selected="isSelected(item)"
+              :show-details="itemtype.includes('versions')"
+              @select="onSelect"
+              @menu="onMenu"
+              @click="onClick"
+            />
+          </template>
+        </v-virtual-scroll>
+      </v-infinite-scroll>
 
       <!-- show alert if no item found -->
       <div v-if="!loading && pagedItems.length == 0">
@@ -167,8 +161,6 @@ import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
-import InfiniteLoading from 'v3-infinite-loading';
-import 'v3-infinite-loading/lib/style.css';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { useI18n } from 'vue-i18n';
@@ -216,7 +208,6 @@ export interface Props {
   limit?: number;
   infiniteScroll?: boolean;
   path?: string;
-  saveScrollPosition?: boolean;
   icon?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -234,7 +225,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSelectButton: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
-  limit: 100,
+  limit: 50,
   infiniteScroll: true,
   title: undefined,
   showLibraryOnlyFilter: false,
@@ -242,7 +233,6 @@ const props = withDefaults(defineProps<Props>(), {
   loadPagedData: undefined,
   loadItems: undefined,
   path: undefined,
-  saveScrollPosition: true,
   icon: undefined,
 });
 
@@ -252,7 +242,7 @@ const router = useRouter();
 // local refs
 const params = ref<LoadDataParams>({
   offset: 0,
-  limit: 100,
+  limit: 50,
   sortBy: 'name',
   search: '',
   libraryOnly: false,
@@ -375,11 +365,6 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (
-    ['track', 'radio'].includes(item.media_type) &&
-    store.selectedPlayer?.available
-  ) {
-    api.playMedia(item.uri);
   } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
     router.push({
       name: item.media_type,
@@ -413,18 +398,20 @@ const redirectSearch = function () {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ($state?: any) {
+const loadNextPage = function ({ done }) {
+  done('loading');
+
   if (pagedItems.value.length == 0) {
-    if ($state) $state.loaded();
+    done('empty');
     return;
   }
-  if (total.value !== undefined && params.value.offset >= total.value) {
-    if ($state) $state.loaded();
+  if (total.value && pagedItems.value.length >= total.value) {
+    done('empty');
     return;
   }
   params.value.offset += props.limit;
   loadData().then(() => {
-    if ($state) $state.loaded();
+    done('ok');
   });
 };
 
@@ -907,40 +894,48 @@ onMounted(() => {
   width: 50%;
   max-width: 50%;
   flex-basis: 50%;
+  padding: 8px;
 }
 .col-3 {
   width: 33.3%;
   max-width: 33.3%;
   flex-basis: 33.3%;
+  padding: 8px;
 }
 .col-4 {
   width: 25%;
   max-width: 25%;
   flex-basis: 25%;
+  padding: 8px;
 }
 .col-5 {
   width: 20%;
   max-width: 20%;
   flex-basis: 20%;
+  padding: 8px;
 }
 .col-6 {
   width: 16.6%;
   max-width: 16.6%;
   flex-basis: 16.6%;
+  padding: 8px;
 }
 .col-7 {
   width: 14.2%;
   max-width: 14.2%;
   flex-basis: 14.2%;
+  padding: 8px;
 }
 .col-8 {
   width: 12.5%;
   max-width: 12.5%;
   flex-basis: 12.5%;
+  padding: 8px;
 }
 .col-9 {
   width: 11.1%;
   max-width: 11.1%;
   flex-basis: 11.1%;
+  padding: 8px;
 }
 </style>

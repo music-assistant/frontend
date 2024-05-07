@@ -225,7 +225,6 @@ export interface Props {
   isDisabled?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
-  parentItem?: MediaItemType;
 }
 
 // global refs
@@ -241,7 +240,6 @@ const props = withDefaults(defineProps<Props>(), {
   showFavorite: false,
   showDuration: true,
   showCheckboxes: false,
-  parentItem: undefined,
   isDisabled: false,
 });
 
