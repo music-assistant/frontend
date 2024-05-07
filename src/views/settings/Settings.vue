@@ -64,6 +64,7 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Toolbar from '@/components/Toolbar.vue';
+import { getBreakpointValue } from '@/plugins/breakpoint';
 
 // global refs
 const router = useRouter();

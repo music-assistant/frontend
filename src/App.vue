@@ -122,7 +122,6 @@ import { api } from '@/plugins/api';
 import { computed, onMounted, ref } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
-import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
 import WebSocket from 'tauri-plugin-websocket-api';
@@ -144,26 +143,6 @@ const err_message = ref('Error!');
 import { i18n } from '@/plugins/i18n';
 
 const theme = useTheme();
-let lightTheme = theme.themes.value.light;
-let darkTheme = theme.themes.value.dark;
-
-const themeColor = function (colors: ColorCoverPalette) {
-  lightTheme.colors['primary'] = colors.lightColor || '#03a9f4';
-  lightTheme.colors['on-primary'] =
-    getContrastingTextColor(colors.lightColor) || '#fff';
-  lightTheme.colors['secondary'] = colors.darkColor || '#ff9800';
-  lightTheme.colors['on-secondary'] =
-    getContrastingTextColor(colors.darkColor) || '#fff';
-  lightTheme.variables['medium-emphasis-opacity'] = 1;
-
-  darkTheme.colors['primary'] = colors.darkColor || '#0288d1';
-  darkTheme.colors['on-primary'] =
-    getContrastingTextColor(colors.darkColor) || '#fff';
-  darkTheme.colors['secondary'] = colors.lightColor || '#ff9800';
-  darkTheme.colors['on-secondary'] =
-    getContrastingTextColor(colors.lightColor) || '#fff';
-  darkTheme.variables['medium-emphasis-opacity'] = 1;
-};
 
 // methods
 const try_start = async () => {

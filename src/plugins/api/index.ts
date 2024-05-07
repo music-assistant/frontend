@@ -108,8 +108,6 @@ export class MusicAssistantApi {
         this.handleEventMessage(msg as EventMessage);
       } else if ('server_version' in msg) {
         this.handleServerInfoMessage(msg as ServerInfoMessage);
-      } else if ('message_id' in msg && 'is_last_chunk' in msg) {
-        this.handleChunkedResultMessage(msg);
       } else if ('message_id' in msg) {
         this.handleResultMessage(msg);
       } else {
