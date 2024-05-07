@@ -271,6 +271,7 @@ onMounted(async () => {
   slimprotoPort.value = slimproto_port_storage;
 
   // Set inital theme
+  setTheme();
   await appWindow.theme().then((theme) => {
     if (theme != null) {
       localStorage.setItem('systemTheme', theme.toString());
@@ -284,10 +285,6 @@ onMounted(async () => {
     localStorage.setItem('systemTheme', newTheme.toString());
     setTheme();
   });
-
-  window
-    .matchMedia('(prefers-color-scheme: dark)')
-    .addEventListener('change', setTheme);
 
   // Try to start the app with saved config
   if (localStorage.getItem('mass_ip')) {
