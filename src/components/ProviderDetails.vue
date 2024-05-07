@@ -105,7 +105,7 @@ export interface Props {
 defineProps<Props>();
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  shell.open(url);
 };
 
 const demoPlayer = reactive<{ [item_id: string]: HTMLAudioElement }>({});

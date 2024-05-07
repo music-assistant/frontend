@@ -144,7 +144,7 @@ const editCoreConfig = function (domain: string) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  shell.open(url);
 };
 
 const onMenu = function (evt: Event, item: CoreConfig) {

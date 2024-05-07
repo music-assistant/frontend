@@ -175,7 +175,7 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  shell.open(url);
 };
 
 const onMenu = function (evt: Event, item: PlayerConfig) {
