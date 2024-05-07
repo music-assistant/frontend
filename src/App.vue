@@ -1,11 +1,32 @@
 <template>
   <div>
-    <v-container v-if="setup" fill-height fill-width class="d-flex align-center justify-center h-screen">
-      <v-progress-circular v-if="loading" indeterminate :size="60" :width="10" style="position: absolute" />
+    <v-container
+      v-if="setup"
+      fill-height
+      fill-width
+      class="d-flex align-center justify-center h-screen"
+    >
+      <v-progress-circular
+        v-if="loading"
+        indeterminate
+        :size="60"
+        :width="10"
+        style="position: absolute"
+      />
       <v-sheet v-if="!loading" width="350" class="mx-auto rounded-lg">
-        <v-form style="padding-left: 15px; padding-right: 15px" @submit="try_start">
-          <v-card-title class="my-3" style="cursor: default">Music Assistant server details</v-card-title>
-          <v-text-field v-model="ip" variant="outlined" label="IP / Hostname" placeholder="homeassistant.local" />
+        <v-form
+          style="padding-left: 15px; padding-right: 15px"
+          @submit="try_start"
+        >
+          <v-card-title class="my-3" style="cursor: default"
+            >Music Assistant server details</v-card-title
+          >
+          <v-text-field
+            v-model="ip"
+            variant="outlined"
+            label="IP / Hostname"
+            placeholder="homeassistant.local"
+          />
           <v-text-field
             v-model="port"
             variant="outlined"
@@ -19,7 +40,9 @@
             style="height: 56px"
             label="Use TLS for server connection"
           />
-          <v-card-title class="my-3" style="cursor: default; height: 32px">Client settings</v-card-title>
+          <v-card-title class="my-3" style="cursor: default; height: 32px"
+            >Client settings</v-card-title
+          >
           <v-switch
             v-model="discordRPCEnabled"
             style="height: 56px"
@@ -46,7 +69,9 @@
             label="Squeezelite port"
             placeholder="3483"
           />
-          <v-card-subtitle style="cursor: default">Theme Setting</v-card-subtitle>
+          <v-card-subtitle style="cursor: default"
+            >Theme Setting</v-card-subtitle
+          >
           <v-btn-toggle
             v-model="themeSetting"
             style="width: 100%; margin-bottom: 12px"
@@ -56,9 +81,15 @@
             rounded="lg"
             @update:model-value="themeSettingConfig"
           >
-            <v-btn class="text-center" style="width: 35%" value="system">System</v-btn>
-            <v-btn class="text-center" style="width: 35%" value="light">Light</v-btn>
-            <v-btn class="text-center" style="width: 35%" value="dark">Dark</v-btn>
+            <v-btn class="text-center" style="width: 35%" value="system"
+              >System</v-btn
+            >
+            <v-btn class="text-center" style="width: 35%" value="light"
+              >Light</v-btn
+            >
+            <v-btn class="text-center" style="width: 35%" value="dark"
+              >Dark</v-btn
+            >
           </v-btn-toggle>
           <v-select
             v-model="outputDevice"
@@ -67,11 +98,21 @@
             variant="outlined"
             @change="outputDevice"
           />
-          <v-btn rounded="lg" variant="tonal" type="submit" :loading="loading" block class="mb-5" text="Start" />
+          <v-btn
+            rounded="lg"
+            variant="tonal"
+            type="submit"
+            :loading="loading"
+            block
+            class="mb-5"
+            text="Start"
+          />
         </v-form>
       </v-sheet>
     </v-container>
-    <v-snackbar v-model="err" timeout="2500" color="error">Error! {{ err_message }}</v-snackbar>
+    <v-snackbar v-model="err" timeout="2500" color="error"
+      >Error! {{ err_message }}</v-snackbar
+    >
   </div>
   <router-view v-if="!setup && !loading" />
 </template>
@@ -108,15 +149,19 @@ let darkTheme = theme.themes.value.dark;
 
 const themeColor = function (colors: ColorCoverPalette) {
   lightTheme.colors['primary'] = colors.lightColor || '#03a9f4';
-  lightTheme.colors['on-primary'] = getContrastingTextColor(colors.lightColor) || '#fff';
+  lightTheme.colors['on-primary'] =
+    getContrastingTextColor(colors.lightColor) || '#fff';
   lightTheme.colors['secondary'] = colors.darkColor || '#ff9800';
-  lightTheme.colors['on-secondary'] = getContrastingTextColor(colors.darkColor) || '#fff';
+  lightTheme.colors['on-secondary'] =
+    getContrastingTextColor(colors.darkColor) || '#fff';
   lightTheme.variables['medium-emphasis-opacity'] = 1;
 
   darkTheme.colors['primary'] = colors.darkColor || '#0288d1';
-  darkTheme.colors['on-primary'] = getContrastingTextColor(colors.darkColor) || '#fff';
+  darkTheme.colors['on-primary'] =
+    getContrastingTextColor(colors.darkColor) || '#fff';
   darkTheme.colors['secondary'] = colors.lightColor || '#ff9800';
-  darkTheme.colors['on-secondary'] = getContrastingTextColor(colors.lightColor) || '#fff';
+  darkTheme.colors['on-secondary'] =
+    getContrastingTextColor(colors.lightColor) || '#fff';
   darkTheme.variables['medium-emphasis-opacity'] = 1;
 };
 
@@ -131,7 +176,7 @@ const try_start = async () => {
 
   loading.value = true;
   // Try to connect to the websocket
-  let protocol = tls.value ? "wss" : "ws";
+  let protocol = tls.value ? 'wss' : 'ws';
   await WebSocket.connect(`${protocol}://${ip.value}:${port.value}/ws`)
     .then((i) => {
       // If it sucessfully connects, start the app
@@ -141,7 +186,8 @@ const try_start = async () => {
     })
     .catch(() => {
       // If it cant connect throw error
-      err_message.value = 'Could not connect to Music Assistant! Please check the ip and port';
+      err_message.value =
+        'Could not connect to Music Assistant! Please check the ip and port';
       err.value = true;
       loading.value = false;
     });
@@ -163,11 +209,17 @@ const themeSettingConfig = () => {
 };
 
 const squeezeliteConfig = () => {
-  localStorage.setItem('squeezeliteEnabled', squeezeliteEnabled.value.toString());
+  localStorage.setItem(
+    'squeezeliteEnabled',
+    squeezeliteEnabled.value.toString(),
+  );
 };
 
 const closeToTrayConfig = () => {
-  localStorage.setItem('closeToTrayEnabled', closeToTrayEnabled.value.toString());
+  localStorage.setItem(
+    'closeToTrayEnabled',
+    closeToTrayEnabled.value.toString(),
+  );
 };
 
 // computed properties
@@ -197,11 +249,15 @@ onMounted(async () => {
   let port_storage = Number(localStorage.getItem('mass_port')) || 8095;
   let tls_storage = localStorage.getItem('mass_tls') === 'true' || false;
   let output_device_setting = localStorage.getItem('outputDevice') || 'default';
-  let slimproto_port_storage = Number(localStorage.getItem('slimprotoPort')) || 3483;
-  let start_discord_rpc = localStorage.getItem('discordRPCEnabled') === 'true' || false;
-  let start_squeezelite = localStorage.getItem('squeezeliteEnabled') === 'true' || true;
+  let slimproto_port_storage =
+    Number(localStorage.getItem('slimprotoPort')) || 3483;
+  let start_discord_rpc =
+    localStorage.getItem('discordRPCEnabled') === 'true' || false;
+  let start_squeezelite =
+    localStorage.getItem('squeezeliteEnabled') === 'true' || true;
   let theme_setting = localStorage.getItem('themeSetting') || 'system';
-  let tray_setting = localStorage.getItem('closeToTrayEnabled') === 'true' || true;
+  let tray_setting =
+    localStorage.getItem('closeToTrayEnabled') === 'true' || true;
 
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
@@ -240,15 +296,19 @@ onMounted(async () => {
 });
 
 const start = () => {
-  let protocolHTTP = tls.value ? "https" : "http";
-  let protocolWS = tls.value ? "wss" : "ws";
+  let protocolHTTP = tls.value ? 'https' : 'http';
+  let protocolWS = tls.value ? 'wss' : 'ws';
   // The server adress and websocket address
   let frontendServerAddress = `${protocolHTTP}://${ip.value}:${port.value}/`;
   let websocket = `${protocolWS}://${ip.value}:${port.value}/ws`;
 
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
-    invoke('start_sqzlite', { ip: ip.value, outputDevice: outputDevice.value, port: slimprotoPort.value});
+    invoke('start_sqzlite', {
+      ip: ip.value,
+      outputDevice: outputDevice.value,
+      port: slimprotoPort.value,
+    });
   }
   if (discordRPCEnabled.value == true) {
     invoke('start_rpc', { websocket: websocket });

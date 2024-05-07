@@ -2,7 +2,9 @@
   <!-- client settings -->
   <div>
     <v-toolbar color="transparent">
-      <template #title>{{ $t('settings.client') }} {{ $t('settings') }}</template>
+      <template #title
+        >{{ $t('settings.client') }} {{ $t('settings') }}</template
+      >
     </v-toolbar>
     <Container>
       <v-table>
@@ -33,7 +35,9 @@
           <tr>
             <td>
               Launch Squeezelite
-              <v-tooltip text="Wether or not to start a music player on this machine.">
+              <v-tooltip
+                text="Wether or not to start a music player on this machine."
+              >
                 <template #activator="{ props }">
                   <v-icon
                     style="margin-left: 3px; margin-bottom: 1px"
@@ -81,7 +85,9 @@
           <tr>
             <td>
               Discord RPC
-              <v-tooltip text="Wether or not to show music activity on Discord.">
+              <v-tooltip
+                text="Wether or not to show music activity on Discord."
+              >
                 <template #activator="{ props }">
                   <v-icon
                     style="margin-left: 3px; margin-bottom: 1px"
@@ -112,22 +118,41 @@
                 divided
                 @update:model-value="themeSettingConfig"
               >
-                <v-btn class="text-center my-auto" style="width: 15%; height: 80%" value="system">System</v-btn>
-                <v-btn class="text-center my-auto" style="width: 15%; height: 80%" value="light">Light</v-btn>
-                <v-btn class="text-center my-auto" style="width: 15%; height: 80%" value="dark">Dark</v-btn>
+                <v-btn
+                  class="text-center my-auto"
+                  style="width: 15%; height: 80%"
+                  value="system"
+                  >System</v-btn
+                >
+                <v-btn
+                  class="text-center my-auto"
+                  style="width: 15%; height: 80%"
+                  value="light"
+                  >Light</v-btn
+                >
+                <v-btn
+                  class="text-center my-auto"
+                  style="width: 15%; height: 80%"
+                  value="dark"
+                  >Dark</v-btn
+                >
               </v-btn-toggle>
             </td>
           </tr>
           <tr>
             <td>Check for updates</td>
             <td>
-              <v-btn variant="tonal" @click="checkForUpdates">Check for updates</v-btn>
+              <v-btn variant="tonal" @click="checkForUpdates"
+                >Check for updates</v-btn
+              >
             </td>
           </tr>
           <tr>
             <td>Relaunch Companion</td>
             <td>
-              <v-btn variant="tonal" @click.prevent="relaunch">Relaunch Companion App</v-btn>
+              <v-btn variant="tonal" @click.prevent="relaunch"
+                >Relaunch Companion App</v-btn
+              >
             </td>
           </tr>
           <tr>
@@ -208,11 +233,17 @@ const discordRpcConfig = () => {
 };
 
 const closeToTrayConfig = () => {
-  localStorage.setItem('closeToTrayEnabled', closeToTrayEnabled.value.toString());
+  localStorage.setItem(
+    'closeToTrayEnabled',
+    closeToTrayEnabled.value.toString(),
+  );
 };
 
 const squeezeliteConfig = () => {
-  localStorage.setItem('squeezeliteEnabled', squeezeliteEnabled.value.toString());
+  localStorage.setItem(
+    'squeezeliteEnabled',
+    squeezeliteEnabled.value.toString(),
+  );
 };
 
 const ipConfig = () => {
@@ -250,9 +281,12 @@ onMounted(async () => {
 
     availableOutputDevices.value = message;
   });
-  discordRPCEnabled.value = localStorage.getItem('discordRPCEnabled') === 'true' || false;
-  squeezeliteEnabled.value = localStorage.getItem('squeezeliteEnabled') === 'true' || true;
-  closeToTrayEnabled.value = localStorage.getItem('closeToTrayEnabled') === 'true' || true;
+  discordRPCEnabled.value =
+    localStorage.getItem('discordRPCEnabled') === 'true' || false;
+  squeezeliteEnabled.value =
+    localStorage.getItem('squeezeliteEnabled') === 'true' || true;
+  closeToTrayEnabled.value =
+    localStorage.getItem('closeToTrayEnabled') === 'true' || true;
   themeSetting.value = localStorage.getItem('themeSetting') || 'system';
   ip.value = localStorage.getItem('mass_ip') || 'homeassistant.local';
   port.value = Number(localStorage.getItem('mass_port')) || 8095;

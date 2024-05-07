@@ -30,13 +30,21 @@
               bits |
             </span>
             <a
-              v-if="providerMapping.url && !providerMapping.provider_domain.startsWith('file')"
+              v-if="
+                providerMapping.url &&
+                !providerMapping.provider_domain.startsWith('file')
+              "
               style="opacity: 0.4"
               :title="$t('tooltip.open_provider_link')"
               @click.prevent="openLinkInNewTab(providerMapping.url)"
               >{{ providerMapping.url }}</a
             >
-            <span v-else style="opacity: 0.4" :title="providerMapping.item_id">{{ providerMapping.item_id }}</span>
+            <span
+              v-else
+              style="opacity: 0.4"
+              :title="providerMapping.item_id"
+              >{{ providerMapping.item_id }}</span
+            >
           </template>
           <template #append>
             <!-- hi res icon -->

@@ -217,7 +217,10 @@ const routes = [
           {
             path: 'client',
             name: 'clientsettings',
-            component: () => import(/* webpackChunkName: "clientsettings" */ '@/views/settings/ClientConfigs.vue'),
+            component: () =>
+              import(
+                /* webpackChunkName: "clientsettings" */ '@/views/settings/ClientConfigs.vue'
+              ),
             props: true,
           },
           {
