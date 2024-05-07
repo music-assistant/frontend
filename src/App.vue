@@ -307,9 +307,9 @@ const start = () => {
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
     invoke('start_sqzlite', {
-      ip: ip.value,
-      outputDevice: outputDevice.value,
-      port: slimprotoPort.value,
+      ip: ip.value.toString(),
+      outputDevice: outputDevice.value.toString(),
+      port: slimprotoPort.value.toString(),
     });
   }
   if (discordRPCEnabled.value == true) {
