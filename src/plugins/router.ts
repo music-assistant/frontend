@@ -1,16 +1,9 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { store } from './store';
-import { getElement } from '@egjs/vue3-flicking';
 import { nextTick } from 'vue';
-import { scrollElement } from '@/helpers/utils';
+import { scrollElement, sleep } from '@/helpers/utils';
 
-export const mainListings = [
-  'artists',
-  'albums',
-  'tracks',
-  'playlists',
-  'browse',
-];
+const mainListings = ['artists', 'albums', 'tracks', 'playlists', 'browse'];
 
 const routes = [
   {
@@ -213,6 +206,15 @@ const routes = [
             props: true,
           },
           {
+            path: 'frontend',
+            name: 'frontendsettings',
+            component: () =>
+              import(
+                /* webpackChunkName: "frontendsettings" */ '@/views/settings/FrontendConfig.vue'
+              ),
+            props: true,
+          },
+          {
             path: 'client',
             name: 'clientsettings',
             component: () => import(/* webpackChunkName: "clientsettings" */ '@/views/settings/ClientConfigs.vue'),
@@ -281,28 +283,25 @@ const router = createRouter({
 
 router.beforeEach((to, from) => {
   if (!from?.name) return;
-  // for the main listings (e.g. artists, albums etc.) we remember the scroll position
-  // to we can jump back there on back navigation
-  if (!mainListings.includes(from.name.toString())) return;
-  store.prevScrollPos = getElement('#cont').scrollTop;
-  store.prevScrollName = from.name.toString();
+  const el = document.querySelector('#cont');
+  if (el) store.prevScrollPos[from.name.toString()] = el.scrollTop;
 });
 
 router.afterEach((to, from) => {
   if (!from?.name) return;
   if (!to?.name) return;
-  if (!store.prevScrollName) return;
-  if (store.prevScrollName == to.name) {
+  if (!(to.name.toString() in store.prevScrollPos)) return;
+  // for the main listings (e.g. artists, albums etc.) we remember the scroll position
+  // so we can jump back there on back navigation
+  if (!mainListings.includes(to.name.toString())) return;
+  const prevPos = store.prevScrollPos[to.name.toString()];
+  if (prevPos) {
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
       const el = document.getElementById('cont');
-      setTimeout(() => {
-        if (el && store.prevScrollPos) {
-          scrollElement(el, store.prevScrollPos, 1000);
-        }
-        store.prevScrollName = undefined;
-        store.prevScrollPos = undefined;
-      }, 400);
+      if (el) {
+        scrollElement(el, prevPos, 0);
+      }
     });
   }
 });

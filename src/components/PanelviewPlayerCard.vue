@@ -2,24 +2,17 @@
   <v-card
     class="panel-item"
     :class="{
-      'panel-item-selected':
-        activePlayer && player && activePlayer.player_id == player.player_id,
-      'panel-item-idle': player_queue && player_queue.state == PlayerState.IDLE,
+      'panel-item-selected': store.selectedPlayerId == queue.queue_id,
+      'panel-item-idle': queue.state == PlayerState.PAUSED,
     }"
   >
     <!-- now playing media -->
-    <ListItem class="panel-item-details">
+    <v-list-item class="panel-item-details" flat>
       <template #prepend>
-        <div
-          class="media-thumb player-media-thumb"
-          :style="`height: ${
-            getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
-          }px; width: ${
-            getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
-          }px; `"
-        >
+        <div class="media-thumb player-media-thumb">
           <MediaItemThumb
-            :item="curQueueItem?.media_item || curQueueItem"
+            size="60"
+            :item="queue.current_item?.media_item || queue.current_item"
             :fallback="imgCoverDark"
             style="cursor: pointer"
           />
@@ -33,21 +26,21 @@
             cursor: 'pointer',
           }"
         >
-          <div v-if="curQueueItem && curQueueItem.media_item">
-            {{ curQueueItem.media_item.name }}
+          <div v-if="queue.current_item?.media_item">
+            {{ queue.current_item?.media_item.name }}
             <span
               v-if="
-                'version' in curQueueItem.media_item &&
-                curQueueItem.media_item.version
+                'version' in queue.current_item?.media_item &&
+                queue.current_item?.media_item.version
               "
-              >({{ curQueueItem.media_item.version }})</span
+              >({{ queue.current_item?.media_item.version }})</span
             >
           </div>
-          <div v-else-if="curQueueItem">
-            {{ curQueueItem.name }}
+          <div v-else-if="queue.current_item">
+            {{ queue.current_item?.name }}
           </div>
           <div v-else>
-            {{ playerQueue && playerQueue.display_name }}
+            {{ queue.display_name }}
           </div>
         </div>
       </template>
@@ -63,47 +56,41 @@
         >
           <div
             v-if="
-              curQueueItem &&
-              curQueueItem.media_item?.media_type == MediaType.TRACK &&
-              'album' in curQueueItem.media_item &&
-              curQueueItem.media_item.album
+              queue.current_item?.media_item &&
+              queue.current_item?.media_item?.media_type == MediaType.TRACK &&
+              'album' in queue.current_item?.media_item &&
+              queue.current_item?.media_item.album
             "
           >
-            {{ getArtistsString(curQueueItem.media_item.artists) }} •
-            {{ curQueueItem.media_item.album.name }}
+            {{ getArtistsString(queue.current_item?.media_item.artists) }} •
+            {{ queue.current_item?.media_item.album.name }}
           </div>
           <!-- track/album fallback: artist present -->
           <div
             v-else-if="
-              curQueueItem &&
-              curQueueItem.media_item &&
-              'artists' in curQueueItem.media_item &&
-              curQueueItem.media_item.artists.length > 0
+              queue.current_item?.media_item &&
+              'artists' in queue.current_item?.media_item &&
+              queue.current_item?.media_item.artists.length > 0
             "
           >
-            {{ curQueueItem.media_item.artists[0].name }}
+            {{ queue.current_item?.media_item.artists[0].name }}
           </div>
           <!-- radio live metadata -->
           <div
-            v-else-if="curQueueItem?.streamdetails?.stream_title"
+            v-else-if="queue.current_item?.streamdetails?.stream_title"
             class="line-clamp-1"
           >
-            {{ curQueueItem?.streamdetails?.stream_title }}
+            {{ queue.current_item?.streamdetails?.stream_title }}
           </div>
           <!-- other description -->
           <div
-            v-else-if="
-              curQueueItem && curQueueItem.media_item?.metadata.description
-            "
+            v-else-if="queue.current_item?.media_item?.metadata.description"
             class="line-clamp-1"
           >
-            {{ curQueueItem.media_item.metadata.description }}
+            {{ queue.current_item?.media_item.metadata.description }}
           </div>
           <!-- queue empty message -->
-          <div
-            v-else-if="playerQueue && playerQueue.items == 0"
-            class="line-clamp-1"
-          >
+          <div v-else-if="queue.items == 0" class="line-clamp-1">
             {{ $t('queue_empty') }}
           </div>
           <!-- 3rd party source active -->
@@ -124,33 +111,17 @@
       </template>
       <!-- player -->
       <template #default>
-        <div
-          :style="{
-            cursor: 'pointer',
-          }"
-        >
-          <div>
-            on
-            <span
-              :style="{
-                cursor: 'pointer',
-                fontWeight: 'bold',
-              }"
-            >
-              {{ player && player.display_name }}
-            </span>
-          </div>
-        </div>
+        <h6>{{ queue.display_name }}</h6>
       </template>
       <!-- play button -->
       <template #append>
         <v-btn
           icon
           variant="text"
-          @click="api.queueCommandPlayPause(player_queue.queue_id)"
+          @click.stop="api.queueCommandPlayPause(queue.queue_id)"
         >
           <v-icon
-            v-if="player_queue.state == PlayerState.PLAYING"
+            v-if="queue.state == PlayerState.PLAYING"
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? '24' : '32'"
             >mdi-pause-circle-outline</v-icon
           >
@@ -161,71 +132,34 @@
           >
         </v-btn>
       </template>
-    </ListItem>
+    </v-list-item>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import api from '@/plugins/api';
-import {
-  MediaType,
-  PlayerQueue,
-  Player,
-  PlayerState,
-} from '@/plugins/api/interfaces';
+import { MediaType, PlayerQueue, PlayerState } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
-
 import { getArtistsString } from '@/helpers/utils';
 
-var player_queue: PlayerQueue;
 // properties
 export interface Props {
-  player?: Player;
-  playerQueue?: PlayerQueue;
+  queue: PlayerQueue;
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  player: undefined,
-  playerQueue: undefined,
-});
-
-const curQueueItem = computed(() => {
-  if (props.player) {
-    player_queue = api.queues[props.player.active_source];
-  }
-  if (player_queue) {
-    return player_queue.current_item;
-  }
-  return undefined;
-});
-
-const activePlayer = computed(() => {
-  if (store.selectedPlayer) {
-    return store.selectedPlayer;
-  }
-  return undefined;
-});
+defineProps<Props>();
 </script>
 
-<style>
+<style scoped>
 .panel-item {
-  height: 100%;
-  padding: 10px;
+  height: 75px;
+  margin-right: 25px;
   border: none;
+  width: 98%;
   border-style: none !important;
-}
-
-.panel-item-selected {
-  background-image: linear-gradient(
-    90deg,
-    rgb(var(--v-theme-surface-light)) 0%,
-    rgb(var(--v-theme-background)) 35%
-  );
+  padding: 10px;
 }
 
 .panel-item-idle {

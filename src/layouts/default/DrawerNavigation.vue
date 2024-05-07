@@ -1,29 +1,13 @@
 <template>
   <v-navigation-drawer
-    v-if="getBreakpointValue({ breakpoint: 'bp3' })"
-    ref="resizeComponent"
+    v-model="showNavigationMenu"
     app
-    :permanent="!$vuetify.display.mobile"
-    :rail="!$vuetify.display.mobile && !showNavigationMenu"
-    :model-value="
-      ($vuetify.display.mobile && showNavigationMenu) ||
-      !$vuetify.display.mobile
-    "
-    :width="!getBreakpointValue('mobile') ? 200 : 250"
-    @update:model-value="
-      (e) => {
-        if ($vuetify.display.mobile) showNavigationMenu = e;
-      }
-    "
+    :rail="enableRail"
+    :width="280"
   >
-    <v-list-item dark style="height: 55px" :active="false">
+    <v-list-item style="height: 55px" :active="false">
       <template #prepend>
-        <img
-          class="logo_icon"
-          :style="$vuetify.theme.current.dark ? 'filter: invert(100%);' : ''"
-          width="35"
-          src="@/assets/logo.svg"
-        />
+        <img class="logo_icon" size="40" src="@/assets/icon.png" />
       </template>
       <template #title>
         <div class="logo_text">Music Assistant</div>
@@ -34,7 +18,7 @@
     <!-- menu items -->
     <v-list lines="one" density="compact" nav>
       <v-list-item
-        v-for="menuItem of mainMenuItems"
+        v-for="menuItem of menuItems"
         :key="menuItem.path"
         nav
         density="compact"
@@ -51,110 +35,140 @@
       :width="40"
       style="position: relative; float: right; right: 10px; top: 20px"
       :ripple="false"
-      :icon="showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'"
+      :icon="enableRail ? 'mdi-chevron-right' : 'mdi-chevron-left'"
       :title="$t('tooltip.show_menu')"
-      @click.stop="showNavigationMenu = !showNavigationMenu"
+      @click="enableRail = !enableRail"
     />
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { store } from '@/plugins/store';
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import Button from '@/components/mods/Button.vue';
 
-const showNavigationMenu = ref(false);
-
-watch(
-  () => showNavigationMenu.value,
-  (isShown) => {
-    isShown
-      ? (store.navigationMenuSize = !getBreakpointValue('mobile') ? 200 : 250)
-      : (store.navigationMenuSize = 55);
-  },
-);
+const showNavigationMenu = ref(true);
+const enableRail = ref(false);
+const menuItems = getMenuItems();
 </script>
 
 <script lang="ts">
-export const backButtonAllowedRouteNames = [
-  'track',
-  'artist',
-  'album',
-  'playlist',
-  'radio',
-  'addprovider',
-  'editprovider',
-  'editplayer',
-  'editcore',
-];
-
 export interface MenuItem {
   label: string;
   icon: string;
   path: string;
+  isLibraryNode: boolean;
 }
 
-export const mainMenuItems: MenuItem[] = [
-  // disable Home until we have something useful to fill that screen
-  {
-    label: 'home',
-    icon: 'mdi-home-outline',
-    path: '/home',
-  },
-  {
-    label: 'artists',
-    icon: 'mdi-account-outline',
-    path: '/artists',
-  },
-  {
-    label: 'albums',
-    icon: 'mdi-album',
-    path: '/albums',
-  },
-  {
-    label: 'tracks',
-    icon: 'mdi-music-note',
-    path: '/tracks',
-  },
-  {
-    label: 'playlists',
-    icon: 'mdi-playlist-play',
-    path: '/playlists',
-  },
-  {
-    label: 'radios',
-    icon: 'mdi-access-point',
-    path: '/radios',
-  },
-  {
-    label: 'browse',
-    icon: 'mdi-folder-outline',
-    path: '/browse',
-  },
-  {
-    label: 'search',
-    icon: 'mdi-magnify',
-    path: '/search',
-  },
-  {
-    label: 'settings.settings',
-    icon: 'mdi-cog-outline',
-    path: '/settings',
-  },
+export const DEFAULT_MENU_ITEMS = [
+  'home',
+  'search',
+  'artists',
+  'albums',
+  'tracks',
+  'playlists',
+  'tracks',
+  'radios',
+  'browse',
 ];
+
+export const getMenuItems = function () {
+  const storedMenuConf = localStorage.getItem('frontend.settings.menu_items');
+  const enabledItems: string[] = storedMenuConf
+    ? storedMenuConf.split(',')
+    : DEFAULT_MENU_ITEMS;
+
+  const items: MenuItem[] = [];
+  if (enabledItems.includes('home')) {
+    items.push({
+      label: 'home',
+      icon: 'mdi-home-outline',
+      path: '/home',
+      isLibraryNode: false,
+    });
+  }
+  if (enabledItems.includes('search')) {
+    items.push({
+      label: 'search',
+      icon: 'mdi-magnify',
+      path: '/search',
+      isLibraryNode: false,
+    });
+  }
+  if (enabledItems.includes('artists')) {
+    items.push({
+      label: 'artists',
+      icon: 'mdi-account-outline',
+      path: '/artists',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('albums')) {
+    items.push({
+      label: 'albums',
+      icon: 'mdi-album',
+      path: '/albums',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('tracks')) {
+    items.push({
+      label: 'tracks',
+      icon: 'mdi-music-note',
+      path: '/tracks',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('playlists')) {
+    items.push({
+      label: 'playlists',
+      icon: 'mdi-playlist-play',
+      path: '/playlists',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('radios')) {
+    items.push({
+      label: 'radios',
+      icon: 'mdi-access-point',
+      path: '/radios',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('browse')) {
+    items.push({
+      label: 'browse',
+      icon: 'mdi-folder-outline',
+      path: '/browse',
+      isLibraryNode: true,
+    });
+  }
+  if (enabledItems.includes('settings')) {
+    items.push({
+      label: 'settings.settings',
+      icon: 'mdi-cog-outline',
+      path: '/settings',
+      isLibraryNode: true,
+    });
+  }
+  return items;
+};
 </script>
 
-<style>
+<style scoped>
 .logo_text {
-  margin-left: 25px;
+  margin-left: 0px;
   font-family: 'JetBrains Mono Medium';
-  font-size: 55;
+  font-size: larger;
   font-weight: 500;
 }
 
 .logo_icon {
-  margin-left: -5px;
+  margin-left: -8px;
   border-radius: 4px;
+  width: 38px;
+}
+
+.v-list-item >>> .v-list-item__prepend {
+  width: 55px;
 }
 </style>

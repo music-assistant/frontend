@@ -1,47 +1,50 @@
 <template>
-  <section>
-    <InfoHeader :item="itemDetails" />
-    <ItemsListing
-      v-if="itemDetails"
-      itemtype="playlisttracks"
-      :parent-item="itemDetails"
-      :show-provider="false"
-      :show-library="false"
-      :show-favorites-only-filter="false"
-      :show-track-number="false"
-      :load-items="loadPlaylistTracks"
-      :sort-keys="[
-        'position',
-        'position_desc',
-        'name',
-        'artist',
-        'album',
-        'duration',
-        'duration_desc',
-      ]"
-      :update-available="updateAvailable"
-      :title="$t('playlist_tracks')"
-      :allow-key-hooks="true"
-    />
-    <!-- provider mapping details -->
-    <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
-  </section>
+  <InfoHeader :item="itemDetails" />
+  <ItemsListing
+    v-if="itemDetails"
+    itemtype="playlisttracks"
+    :parent-item="itemDetails"
+    :show-provider="false"
+    :show-library="false"
+    :show-favorites-only-filter="false"
+    :show-track-number="false"
+    :show-refresh-button="true"
+    :load-paged-data="loadPlaylistTracks"
+    :limit="50"
+    :sort-keys="
+      allItemsReceived
+        ? [
+            'position',
+            'position_desc',
+            'name',
+            'artist',
+            'album',
+            'duration',
+            'duration_desc',
+          ]
+        : ['position']
+    "
+    :update-available="updateAvailable"
+    :title="$t('playlist_tracks')"
+    :allow-key-hooks="true"
+  />
+
+  <!-- provider mapping details -->
+  <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import InfoHeader from '@/components/InfoHeader.vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import {
   EventType,
   type Playlist,
   type EventMessage,
   type MediaItemType,
-  Track,
-} from '../plugins/api/interfaces';
-import { api } from '../plugins/api';
+} from '@/plugins/api/interfaces';
+import { api } from '@/plugins/api';
 import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
-import { sleep } from '@/helpers/utils';
 
 export interface Props {
   itemId: string;
@@ -50,6 +53,7 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
+const allItemsReceived = ref(false);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
@@ -79,18 +83,14 @@ onMounted(() => {
 });
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {
-  const playlistTracks: Track[] = [];
-  await api.getPlaylistTracks(
+  const result = await api.getPlaylistTracks(
     props.itemId,
     props.provider,
-    (data: Track[]) => {
-      playlistTracks.push(...data);
-    },
-    params.refresh && !updateAvailable.value,
+    params.refresh,
+    params.limit,
+    params.offset,
   );
-  // prevent race condition with a short sleep
-  if (params.refresh) await sleep(100);
-  updateAvailable.value = false;
-  return playlistTracks;
+  allItemsReceived.value = result.total != null;
+  return result;
 };
 </script>

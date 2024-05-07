@@ -5,13 +5,22 @@
       v-if="itemDetails"
       itemtype="albumtracks"
       :parent-item="itemDetails"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
+      :show-provider="true"
+      :show-favorites-only-filter="true"
+      :show-library-only-filter="
+        itemDetails.provider == 'library' &&
+        getStreamingProviderMappings(itemDetails).length > 0
+      "
+      :show-refresh-button="false"
       :load-items="loadAlbumTracks"
-      :sort-keys="['track_number', 'name', 'duration']"
-      :update-available="updateAvailable"
+      :sort-keys="[
+        'track_number',
+        'name',
+        'sort_name',
+        'duration',
+        'duration_desc',
+      ]"
       :title="$t('tracks')"
-      :provider-filter="providerFilter"
     />
     <br />
     <ItemsListing
@@ -20,9 +29,9 @@
       :parent-item="itemDetails"
       :show-provider="true"
       :show-favorites-only-filter="false"
+      :show-refresh-button="false"
       :load-items="loadAlbumVersions"
       :sort-keys="['provider', 'name', 'year']"
-      :update-available="updateAvailable"
       :title="$t('other_versions')"
       :hide-on-empty="true"
     />
@@ -33,43 +42,36 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
-import {
-  EventType,
-  type Album,
-  type EventMessage,
-  type MediaItemType,
-  Track,
-} from '../plugins/api/interfaces';
-import { api } from '../plugins/api';
-import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import InfoHeader from '@/components/InfoHeader.vue';
+import { EventType, type Album } from '@/plugins/api/interfaces';
+import { api } from '@/plugins/api';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';
 
 export interface Props {
   itemId: string;
   provider: string;
-  forceProviderVersion?: string;
 }
 const props = defineProps<Props>();
-const updateAvailable = ref(false);
 const itemDetails = ref<Album>();
-
-const providerFilter = computed(() => {
-  if (itemDetails.value?.provider !== 'library') return [];
-  const result: string[] = ['library'];
-  for (const providerMapping of getStreamingProviderMappings(
-    itemDetails.value!,
-  )) {
-    result.push(providerMapping.provider_instance);
-  }
-  return result;
-});
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAlbum(props.itemId, props.provider);
 };
+
+onMounted(() => {
+  // auto refresh the info if this (library) item is updated.
+  if (props.provider == 'library') {
+    const unsub = api.subscribe(
+      EventType.MEDIA_ITEM_UPDATED,
+      loadItemDetails,
+      `library://album/${props.itemId}`,
+    );
+    onBeforeUnmount(unsub);
+  }
+});
 
 watch(
   () => props.itemId,
@@ -79,49 +81,12 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_ADDED,
-    (evt: EventMessage) => {
-      // signal user that there might be updated info available for this item
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        updateAvailable.value = true;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
-
 const loadAlbumTracks = async function (params: LoadDataParams) {
-  let items: Track[] = [];
-  if (params.refresh) {
-    await loadItemDetails();
-    updateAvailable.value = false;
-  }
-  if (!itemDetails.value) {
-    items = [];
-  } else if (params.providerFilter && params.providerFilter != 'library') {
-    for (const providerMapping of getStreamingProviderMappings(
-      itemDetails.value,
-    )) {
-      if (providerMapping.provider_instance == params.providerFilter) {
-        items = await api.getAlbumTracks(
-          providerMapping.item_id,
-          providerMapping.provider_instance,
-        );
-        break;
-      }
-    }
-  } else {
-    items = await api.getAlbumTracks(
-      itemDetails.value.item_id,
-      itemDetails.value.provider,
-    );
-  }
-  updateAvailable.value = false;
-  return items;
+  return await api.getAlbumTracks(
+    props.itemId,
+    props.provider,
+    params.libraryOnly,
+  );
 };
 
 const loadAlbumVersions = async function (params: LoadDataParams) {

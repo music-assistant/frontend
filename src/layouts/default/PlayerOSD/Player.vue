@@ -1,17 +1,15 @@
 <template>
   <div
-    v-if="primaryCoverImageColor"
-    :class="`mediacontrols-bg-${getBreakpointValue('bp3') ? '1' : '2'}`"
-    :style="`background: linear-gradient(90deg, ${primaryCoverImageColor}${
-      $vuetify.theme.current.dark ? '4D' : 'B3'
-    } 0%, ${primaryCoverImageColor}00 100%);`"
+    :class="`${useFloatingPlayer ? 'mediacontrols-bg-2' : 'mediacontrols-bg-1'}`"
+    :style="`background: ${backgroundColor};`"
   ></div>
   <PlayerTimeline
+    v-if="getBreakpointValue('bp3')"
     v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
     :color="
       $vuetify.theme.current.dark
-        ? coverImageColorPalette.lightColor
-        : coverImageColorPalette.darkColor
+        ? coverImageColorPalette.lightColor || '#fff'
+        : coverImageColorPalette.darkColor || '#000'
     "
     :is-progress-bar="true"
   />
@@ -24,18 +22,10 @@
   >
     <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
       <PlayerTrackDetails
-        :show-quality-details-btn="getBreakpointValue('bp7') ? true : false"
-        :show-only-artist="true"
+        :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
+        :show-only-artist="getBreakpointValue('bp7') ? false : true"
         :color-palette="coverImageColorPalette"
-        :primary-color="
-          !$vuetify.theme.current.dark &&
-          getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-            ? '#fff'
-            : $vuetify.theme.current.dark &&
-                getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-              ? '#fff'
-              : '#000'
-        "
+        :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
       />
     </div>
     <div
@@ -65,8 +55,8 @@
           v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
           :color="
             $vuetify.theme.current.dark
-              ? coverImageColorPalette.darkColor
-              : coverImageColorPalette.lightColor
+              ? coverImageColorPalette.lightColor || '#fff'
+              : coverImageColorPalette.darkColor || '#000'
           "
           :is-progress-bar="false"
         />
@@ -76,28 +66,17 @@
       <div>
         <!-- player mobile extended control buttons -->
         <PlayerExtendedControls
-          :queue="{ isVisible: getBreakpointValue('bp3') }"
+          :queue="{
+            isVisible: getBreakpointValue('bp3'),
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
+          }"
           :player="{
             isVisible: true,
-            color:
-              !$vuetify.theme.current.dark &&
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? '#fff'
-                : $vuetify.theme.current.dark &&
-                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
           :volume="{
             isVisible: true,
-            color:
-              !$vuetify.theme.current.dark &&
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? '#fff'
-                : $vuetify.theme.current.dark &&
-                    getBreakpointValue({ breakpoint: 'bp3', condition: 'gt' })
-                  ? '#fff'
-                  : '#000',
+            color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
         <!-- player mobile control buttons -->
@@ -116,17 +95,7 @@
               icon: {
                 staticWidth: '48px',
                 staticHeight: '48px',
-                color:
-                  !$vuetify.theme.current.dark &&
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                    ? '#fff'
-                    : $vuetify.theme.current.dark &&
-                        getBreakpointValue({
-                          breakpoint: 'bp3',
-                          condition: 'gt',
-                        })
-                      ? '#fff'
-                      : '#000',
+                color: $vuetify.theme.current.dark ? '#fff' : '#000',
               },
             },
             previous: { isVisible: false },
@@ -139,10 +108,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 //@ts-ignore
 
-import api from '@/plugins/api';
 import { ImageType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
@@ -152,20 +120,23 @@ import PlayerTrackDetails from './PlayerTrackDetails.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
+import { ImageColorPalette, getColorPalette } from '@/helpers/utils';
 import {
-  ColorCoverPalette,
-  getColorPalette,
-  getContrastingTextColor,
-} from '@/helpers/utils';
-import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
+  imgCoverDark,
+  imgCoverLight,
+} from '@/components/QualityDetailsBtn.vue';
 import { useTheme } from 'vuetify/lib/framework.mjs';
+
+interface Props {
+  useFloatingPlayer: boolean;
+}
+defineProps<Props>();
 
 // global refs
 const theme = useTheme();
 
 // local refs
-const primaryCoverImageColor = ref<string>();
-const coverImageColorPalette = ref<ColorCoverPalette>({
+const coverImageColorPalette = ref<ImageColorPalette>({
   '0': '',
   '1': '',
   '2': '',
@@ -179,77 +150,40 @@ const coverImageColorPalette = ref<ColorCoverPalette>({
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD
 const img = new Image();
-img.src = imgCoverDark;
+img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
 img.crossOrigin = 'Anonymous';
 img.addEventListener('load', function () {
   coverImageColorPalette.value = getColorPalette(img);
-  applyThemeColors();
-  primaryCoverImageColor.value = vuetify.theme.current.value.dark
-    ? coverImageColorPalette.value.darkColor
-    : coverImageColorPalette.value.lightColor;
 });
 
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
+const backgroundColor = computed(() => {
+  if (vuetify.theme.current.value.dark) {
+    if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
+      return coverImageColorPalette.value.darkColor + '26';
+    return 'CCCCCC26';
   }
-  return undefined;
-});
-const curQueueItem = computed(() => {
-  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
-  return undefined;
+  if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
+    return coverImageColorPalette.value.lightColor + '26';
+  return 'CCCCCC26';
 });
 
 // watchers
 watch(
-  () => curQueueItem.value?.queue_item_id,
+  () => store.curQueueItem?.queue_item_id,
   () => {
     // load cover image for the (new) QueueItem
     // make sure that the image selection is exactly the same as on the player OSD thumb
-    if (curQueueItem.value?.media_item) {
+    if (store.curQueueItem?.media_item) {
       img.src =
-        getImageThumbForItem(curQueueItem.value.media_item, ImageType.THUMB) ||
-        imgCoverDark;
-    } else if (curQueueItem.value) {
-      img.src =
-        getImageThumbForItem(curQueueItem.value, ImageType.THUMB) ||
-        imgCoverDark;
+        getImageThumbForItem(store.curQueueItem.media_item, ImageType.THUMB) ||
+        '';
+    } else if (store.curQueueItem) {
+      img.src = getImageThumbForItem(store.curQueueItem, ImageType.THUMB) || '';
     } else {
-      img.src = imgCoverDark;
+      img.src = '';
     }
   },
 );
-
-const applyThemeColors = function () {
-  // set some theme variables based on the coverImageColorPalette so UI elements can react
-  // on the color schema of the currently loaded/playing item
-  let lightTheme = theme.themes.value.light;
-  let darkTheme = theme.themes.value.dark;
-  lightTheme.colors['osd-primary'] =
-    coverImageColorPalette.value.lightColor || lightTheme.colors['primary'];
-  lightTheme.colors['osd-on-primary'] =
-    getContrastingTextColor(coverImageColorPalette.value.lightColor) ||
-    lightTheme.colors['on-primary'];
-  lightTheme.colors['osd-secondary'] =
-    coverImageColorPalette.value.darkColor || lightTheme.colors['secondary'];
-  lightTheme.colors['osd-on-secondary'] =
-    getContrastingTextColor(coverImageColorPalette.value.darkColor) ||
-    lightTheme.colors['on-secondary'];
-  // lightTheme.variables['medium-emphasis-opacity'] = 1;
-
-  darkTheme.colors['osd-primary'] =
-    coverImageColorPalette.value.darkColor || darkTheme.colors['primary'];
-  darkTheme.colors['osd-on-primary'] =
-    getContrastingTextColor(coverImageColorPalette.value.darkColor) ||
-    darkTheme.colors['on-primary'];
-  darkTheme.colors['osd-secondary'] =
-    coverImageColorPalette.value.lightColor || darkTheme.colors['secondary'];
-  darkTheme.colors['osd-on-secondary'] =
-    getContrastingTextColor(coverImageColorPalette.value.lightColor) ||
-    darkTheme.colors['on-secondary'];
-  // darkTheme.variables['medium-emphasis-opacity'] = 1;
-};
 </script>
 
 <style scoped>
@@ -264,7 +198,7 @@ const applyThemeColors = function () {
 
 .mediacontrols-bg-1 {
   position: absolute;
-  width: 20%;
+  width: 100%;
   height: 100%;
   left: 0px;
   top: 0px;
@@ -272,7 +206,7 @@ const applyThemeColors = function () {
 
 .mediacontrols-bg-2 {
   position: absolute;
-  width: 40%;
+  width: 100%;
   height: 100%;
   left: 0px;
   top: 0px;

@@ -151,7 +151,43 @@
         "add_new_provider_button": "Tilføj {0} udbyder",
         "add_group_player": "Tilføj gruppe-afspiller", 
         "client": "Klient",
+        "group_members": "Enheder i gruppen",
+        "log_level": {
+            "label": "Log-niveau",
+            "description": "Indstil log-niveauet for denne udbyder.",
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Advarsel",
+                "error": "Fejl",
+                "debug": "Fejlsøgning",
+                "GLOBAL": "Global",
+                "INFO": "Info",
+                "WARNING": "Advarsler",
+                "ERROR": "Fejl",
+                "DEBUG": "Fejlfinding"
+            }
+        },
+        "flow_mode": {
+            "label": "Aktivér flow-tilstand",
+            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
+        },
+        "auto_play": {
+            "label": "Start automatisk afspilning",
+            "description": "Når denne afspiller tændes, starter afspilningen automatisk (hvis der er elementer i køen)."
+        },
+        "output_channels": {
+            "label": "Tilstand for udgangskanal",
+            "description": "Du kan konfigurere denne afspiller til kun at afspille venstre eller højre kanal, f.eks. for at skabe et stereopar med 2 afspillere.",
+            "options": {
+                "stereo": "Stereo (begge kanaler)",
+                "left": "Kun venstre kanal",
+                "right": "Kun højre kanal",
+                "mono": "Mono (begge kanaler)"
+            }
+        },
         "volume_normalization": {
+            "label": "Aktiver normalisering af lydstyrke (EBU-R128-baseret)",
             "description": "Aktiver lydstyrkenormalisering baseret på EBU-R128-standarden uden at påvirke dynamikområdet"
         },
         "volume_normalization_target": {
@@ -181,15 +217,6 @@
         "hide_player": {
             "label": "Skjul denne afspiller i brugergrænsefladen",
             "description": "Skjul denne afspiller i brugergrænsefladen. \n\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
-        },
-        "log_level": {
-            "options": {
-                "GLOBAL": "Global",
-                "INFO": "Info",
-                "WARNING": "Advarsler",
-                "ERROR": "Fejl",
-                "DEBUG": "Fejlfinding"
-            }
         },
         "default_enqueue_select_artist": {
             "label": "Elementer, der skal vælges, når du afspiller en kunstner (i biblioteket).",
@@ -265,36 +292,50 @@
             }
         },
         "default": "standard",
-        "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?"
+        "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?",
+        "category": {
+            "audio": "Lyd",
+            "advanced": "Avancerede indstillinger",
+            "generic": "Generelle indstillinger",
+            "announcements": "Konfiguration af meddelelser",
+            "airplay": "Airplay-specifikke indstillinger"
+        },
+        "tts_pre_announce": {
+            "label": "Forhåndsannoncering af TTS-meddelelser",
+            "description": "Når en TTS-besked (tekst-til-tale) sendes til Announce-funktionen, tilføjes en kort lyd (klokke) før meddelelsen."
+        },
+        "announce_volume_strategy": {
+            "label": "Lydstyrkestrategi for meddelelser",
+            "description": "Når der sendes en meddelelse til denne afspiller, hvordan skal lydstyrken så justeres midlertidigt (brug i kombination med lydstyrken nedenfor).",
+            "options": {
+                "absolute": "Bestemt lydstyrke",
+                "relative": "Relativ lydstyrkeforøgelse",
+                "percentual": "Lydstyrkeforøgelse med fast procentsats",
+                "none": "Juster ikke lydstyrken"
+            }
+        },
+        "announce_volume": {
+            "label": "Lydstyrke for meddelelser",
+            "description": "Det procentuelle, relative eller absolutte, lydstyrkeniveau, der bruges med strategien til meddelelser."
+        },
+        "announce_volume_min": {
+            "label": "Minimum lydstyrke for meddelelser",
+            "description": "Lydstyrken af meddelelser bør ikke gå under dette niveau."
+        },
+        "announce_volume_max": {
+            "label": "Maksimal lydstyrke for meddelelser",
+            "description": "Lydstyrken af meddelelser bør ikke overstige dette niveau."
+        },
+        "icon": {
+            "label": "Ikon",
+            "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+        }
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
     "shuffle": "Bland",
     "shuffle_disabled": "Bland er deaktiveret",
     "shuffle_enabled": "Bland er aktiveret",
-    "sort": {
-        "duration": "Varighed",
-        "position": "Position",
-        "position DESC": "Position (faldende)",
-        "provider": "Udbyder",
-        "sort_album": "Album",
-        "sort_artist": "Kunstner",
-        "sort_name": "Alfabetisk",
-        "sort_name DESC": "Alfabetisk (faldende)",
-        "timestamp_added DESC": "Tilføjet for nylig",
-        "track_number": "Nummer",
-        "year": "Udgivelsesår",
-        "position_desc": "Position",
-        "album": "Album",
-        "artist": "Kunstner",
-        "name": "Alfabetisk",
-        "name_desc": "Alfabetisk (faldende)",
-        "recent": "Nyligt tilføjet",
-        "year_desc": "Udgivelsesår (faldende)",
-        "duration_desc": "Varighed (faldende)",
-        "original": "Original",
-        "none": "Tom"
-    },
     "state": {
         "idle": "keder sig",
         "off": "slukket",
@@ -323,7 +364,8 @@
         "collapse_expand": "Skjul\/udvid listen",
         "back": "Tilbage",
         "show_menu": "Vis\/skjul menu",
-        "search_filter_active": "Søgningen filtrerer i øjeblikket resultater"
+        "search_filter_active": "Søgningen filtrerer i øjeblikket resultater",
+        "play_sample": "Afspil prøve"
     },
     "topresult": "Bedste resultat",
     "track": "Spor",
@@ -348,5 +390,11 @@
     "radiobrowser_by_country": "Efter land",
     "radiobrowser_by_tag": "Efter tag",
     "load_more_items": "Indlæs flere emner...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "muted": "dæmpet",
+    "enter_name": "Indtast et nyt (brugerdefineret) navn",
+    "image_url": "Indtast URL'en til et billede eller ikon (valgfrit)",
+    "invalid_input": "Input var ugyldigt",
+    "new_playlist": "Ny playliste",
+    "create_playlist_on": "Opret ny playliste på {0}"
 }

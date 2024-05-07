@@ -7,32 +7,45 @@
     :load-paged-data="loadItems"
     :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('artists') : ''"
+    :title="$t('artists')"
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="Object.keys(sortKeys)"
+    icon="mdi-account-outline"
   />
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import api from '../plugins/api';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import api from '@/plugins/api';
 import {
   MediaType,
   type Artist,
   EventMessage,
   EventType,
-} from '../plugins/api/interfaces';
+} from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
 import { getBreakpointValue } from '@/plugins/breakpoint';
+
+defineOptions({
+  name: 'Artists',
+});
 
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 const loadItems = async function (params: LoadDataParams) {
@@ -50,7 +63,6 @@ const loadItems = async function (params: LoadDataParams) {
         break;
       await sleep(500);
     }
-    await sleep(500);
   }
   updateAvailable.value = false;
   return await api.getLibraryArtists(

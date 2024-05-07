@@ -3,8 +3,8 @@
     <v-card
       variant="flat"
       :img="imgGradient"
-      style="margin-top: -10px; z-index: 0"
-      height="30vh"
+      style="z-index: 0; border-radius: 0px"
+      height="25vh"
       max-height="500px"
       min-height="340px"
     >
@@ -22,22 +22,18 @@
             : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
         "
       />
-      <!-- back button -->
-      <!-- allows the user to go back from this nested level (item details) to the main listing -->
-      <Button
-        v-if="store.prevScrollName"
-        xx-large
-        style="position: absolute; width:40px, height:40px;right: 4px; top: 10px"
+      <Toolbar
         icon="mdi-arrow-left"
-        :title="$t('tooltip.back')"
-        @click.stop="router.go(-1)"
+        style="position: absolute"
+        :menu-items="item ? getContextMenuItems([item], item) : []"
+        :enforce-overflow-menu="true"
+        @icon-clicked="backButtonClick"
       />
       <v-layout
         v-if="item"
         style="
           margin: 0;
-          position: absolute;
-          top: 50%;
+          top: 55%;
           -ms-transform: translateY(-50%);
           transform: translateY(-50%);
           padding-left: 15px;
@@ -51,25 +47,30 @@
           xs5
           pa-5
           style="
-            width: 230px;
-            height: 230px;
-            margin-top: 15px;
+            height: 80%;
+            min-width: 230px;
+            margin-top: 25px;
             margin-bottom: 15px;
             margin-right: 24px;
+            align-content: center;
           "
         >
           <div
             v-if="
               item.media_type &&
-              (item.media_type == MediaType.ARTIST || 'owner' in item)
+              [MediaType.ARTIST, MediaType.PLAYLIST].includes(item.media_type)
             "
           >
-            <v-avatar size="192">
-              <MediaItemThumb :item="item" :height="230" :width="230" />
+            <v-avatar size="210" style="margin-bottom: 10%">
+              <MediaItemThumb :item="item" />
             </v-avatar>
           </div>
           <div v-else>
-            <MediaItemThumb :width="230" :item="item" />
+            <MediaItemThumb
+              :item="item"
+              size="calc(100%)"
+              style="max-height: 256px"
+            />
           </div>
         </div>
 
@@ -128,22 +129,6 @@
               </span>
             </v-card-subtitle>
 
-            <!-- album artist -->
-            <v-card-subtitle
-              v-if="'artist' in item && item.artist"
-              class="title"
-            >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-account-music"
-              />
-              <a @click="artistClick((item as Album).artist)">{{
-                item.artist.name
-              }}</a>
-            </v-card-subtitle>
-
             <!-- playlist owner -->
             <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
               <v-icon
@@ -171,46 +156,73 @@
           </div>
 
           <!-- play/info buttons -->
-          <div style="display: flex; margin-left: 14px; padding-bottom: 10px">
-            <!-- play button -->
-            <v-btn
-              color="primary"
-              prepend-icon="mdi-play-circle"
-              :disabled="!store.selectedPlayer?.available"
-              @click="
-                eventbus.emit('playdialog', {
-                  items: [item],
-                  parentItem: item,
-                  showContextMenuItems: false,
-                })
-              "
+          <div
+            style="
+              display: flex;
+              margin-left: 14px;
+              padding-bottom: 10px;
+              cursor: pointer !important;
+            "
+          >
+            <!-- play button with contextmenu -->
+            <MenuButton
+              :width="200"
+              icon="mdi-play-circle-outline"
+              :text="truncateString($t('play'), 12)"
+              :disabled="!item"
+              :open-menu-on-click="!store.activePlayerQueue"
+              @click="api.playMedia(item!)"
             >
-              {{ $t('play') }}
-            </v-btn>
-            <!-- contextmenu button -->
-            <v-menu>
-              <template #activator="{ props }">
-                <Button icon style="margin-top: -8px" v-bind="props">
-                  <v-icon icon="mdi-dots-vertical" />
-                </Button>
+              <template #menu>
+                <v-card width="320">
+                  <v-list>
+                    <v-list-item :title="item.name" link>
+                      <template #prepend>
+                        <v-avatar
+                          ><MediaItemThumb :item="item" size="80"
+                        /></v-avatar>
+                      </template>
+                      <template #title>
+                        <v-list-item
+                          variant="text"
+                          :title="$t('play_on')"
+                          :subtitle="
+                            store.activePlayerQueue?.display_name ||
+                            $t('no_player')
+                          "
+                          @click.stop="store.showPlayersMenu = true"
+                        />
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                  <v-divider />
+                  <v-list
+                    density="compact"
+                    slim
+                    tile
+                    :disabled="!store.activePlayerQueue"
+                  >
+                    <div
+                      v-for="menuItem of getPlayMenuItems([item], item)"
+                      :key="menuItem.label"
+                    >
+                      <v-list-item
+                        :title="$t(menuItem.label, menuItem.labelArgs || [])"
+                        density="compact"
+                        @click="menuItem.action"
+                      >
+                        <template #prepend>
+                          <v-icon
+                            style="padding-left: 15px"
+                            :icon="menuItem.icon"
+                          />
+                        </template>
+                      </v-list-item>
+                    </div>
+                  </v-list>
+                </v-card>
               </template>
-              <v-list>
-                <ListItem
-                  v-for="(menuItem, index) in getContextMenuItems(
-                    [item],
-                    item,
-                  ).filter((x) => x.hide != true)"
-                  :key="index"
-                  :title="$t(menuItem.label, menuItem.labelArgs)"
-                  :disabled="menuItem.disabled == true"
-                  @click="menuItem.action ? menuItem.action() : ''"
-                >
-                  <template #prepend>
-                    <v-avatar :icon="menuItem.icon" />
-                  </template>
-                </ListItem>
-              </v-list>
-            </v-menu>
+            </MenuButton>
 
             <!-- favorite (heart) icon -->
             <v-btn
@@ -298,14 +310,16 @@ import type {
 } from '@/plugins/api/interfaces';
 import { computed, ref, watch } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
-import Button from './mods/Button.vue';
+import MenuButton from './MenuButton.vue';
 import { getImageThumbForItem } from './MediaItemThumb.vue';
 import { useRouter } from 'vue-router';
-import { parseBool } from '@/helpers/utils';
-import { getContextMenuItems } from '@/helpers/contextmenu';
-import ListItem from '@/components/mods/ListItem.vue';
+import { truncateString, parseBool } from '@/helpers/utils';
+import {
+  getContextMenuItems,
+  getPlayMenuItems,
+} from '@/layouts/default/ItemContextMenu.vue';
+import Toolbar from '@/components/Toolbar.vue';
 import { useI18n } from 'vue-i18n';
-import { eventbus } from '@/plugins/eventbus';
 
 // properties
 export interface Props {
@@ -328,7 +342,8 @@ watch(
     if (val) {
       fanartImage.value =
         getImageThumbForItem(compProps.item, ImageType.FANART) ||
-        getImageThumbForItem(compProps.item, ImageType.THUMB);
+        getImageThumbForItem(compProps.item, ImageType.THUMB) ||
+        imgGradient;
     }
   },
   { immediate: true },
@@ -354,40 +369,80 @@ const artistClick = function (item: Artist | ItemMapping) {
     },
   });
 };
-const fullDescription = computed(() => {
-  let desc = '';
+
+const backButtonClick = function () {
+  // if we have stored routes, we can safely use history back
+  if (store.prevScrollPos) {
+    router.go(-1);
+    return;
+  }
+  // fallback to main listing for itemtype
+  const curRoute = router.currentRoute.value.name?.toString() || '';
+  for (const itemType of ['artist', 'album', 'track', 'playlist', 'radio']) {
+    if (curRoute.includes(itemType)) {
+      router.push({
+        name: `${itemType}s`,
+      });
+      return;
+    }
+  }
+  router.push({
+    name: 'home',
+  });
+};
+
+const rawDescription = computed(() => {
   if (!compProps.item) return '';
   if (compProps.item.metadata && compProps.item.metadata.description) {
-    desc = compProps.item.metadata.description;
+    return compProps.item.metadata.description;
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
-    desc = compProps.item.metadata.copyright;
+    return compProps.item.metadata.copyright;
   } else if ('artists' in compProps.item) {
     compProps.item.artists.forEach(function (artist: Artist | ItemMapping) {
       if ('metadata' in artist && artist.metadata.description) {
-        desc = artist.metadata.description;
+        return artist.metadata.description;
       }
     });
   }
-  desc = desc.replace('\r\n', '<br /><br /><br />');
-  desc = desc.replace('\r', '<br /><br />');
-  desc = desc.replace('\n', '<br /><br />');
-  return desc;
+  return '';
+});
+
+const fullDescription = computed(() => {
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, '<br /><br />');
 });
 const shortDescription = computed(() => {
-  const maxChars = mobile.value ? 160 : 260;
-  if (fullDescription.value.length > maxChars) {
-    return fullDescription.value.substring(0, maxChars) + '...';
+  const maxChars = mobile.value ? 160 : 300;
+  if (rawDescription.value.length > maxChars) {
+    return (
+      rawDescription.value
+        .replace(/(\r\n|\n|\r)/gm, ' ')
+        .substring(0, maxChars) + '...'
+    );
   }
-  return fullDescription.value;
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
+});
+
+const availablePlayers = computed(() => {
+  return Object.values(api.players)
+    .filter((x) => x.available && !x.synced_to)
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
+    );
 });
 </script>
 
-<style>
+<style scoped>
 .background-image {
   position: absolute;
 }
 
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
+}
+.v-card--variant-elevated {
+  box-shadow: none;
+  border-width: 1px;
+  border-style: solid;
+  font-size: smaller;
 }
 </style>

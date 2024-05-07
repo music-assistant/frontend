@@ -140,8 +140,8 @@
         "server_version": "Serverversie",
         "server_base_url": "Basis-URL",
         "server_as_addon": "Home Assistant-add-on",
-        "artists_in_library": "Artietsen in de bibltioheek",
-        "albums_in_library": "Albums in de bibltioheek",
+        "artists_in_library": "Artiesten in de bibliotheek",
+        "albums_in_library": "Albums in de bibliotheek",
         "tracks_in_library": "Nummers in de bibliotheek",
         "playlists_in_library": "Playlists in de bibliotheek",
         "radio_in_library": "Radio in de bibliotheek",
@@ -218,15 +218,70 @@
             "label": "Verberg deze speler in de gebruikersinterface",
             "description": "Verberg deze speler in de gebruikersinterface. \n\nMerk op dat het nog steeds kan worden bestuurd en het zal ook verschijnen in alle synchronisatiegroepen waartoe de speler behoort."
         },
-        "default_enqueue_action_playlist": {
+        "default_enqueue_select_artist": {
+            "label": "Te selecteren items wanneer je een artiest (uit de bibliotheek) afspeelt.",
+            "description": "Wanneer je een artiest wilt afspelen, welke items zouden dan in de wachtrij moeten?",
             "options": {
-                "next": "Speel de item(s) direct na het momenteel afgespeelde\/gebufferde item af.",
+                "library_tracks": "Uitsluitend nummers uit de bibliotheek",
+                "library_album_tracks": "Alle nummers van alle albums in de bibliotheek.",
+                "all_tracks": "Alle (top) nummers van (alle) aanbieders.",
+                "all_album_tracks": "Alle nummers van alle albums van (alle) aanbieders."
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Te selecteren items wanneer je een album uit de bibliotheek wilt afspelen.",
+            "description": "Wanneer je een artiest wilt afspelen, welke items moet dan op de wachtrij worden geplaatst?",
+            "options": {
+                "library_tracks": "Alleen nummers in de bibliotheek.",
+                "all_tracks": "Alle nummers voor het album op aanbieder."
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Standaard wachtrij-optie voor de items van de artiest.",
+            "description": "Definieer de standaard actie voor dit mediatype (wanneer je nog geen actie hebt gespecificeerd).",
+            "options": {
+                "play": "Speel nu het nummer(s) van de artiest en bewaar de resterende items van de wachtrij.",
+                "replace": "Wis de wachtrij en speel het nummer(s) van de artiest.",
+                "next": "Speel het item(s) direct na het huidig spelende of gebufferde item.",
+                "replace_next": "Wis de wachtrij en speel het nummer(s) van de artiest direct na het huidig spelende of gebufferde nummer.",
+                "add": "Voeg de nummers van de artiest toe aan het einde van de wachtrij."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Standaard wachtrij-optie voor album item(s).",
+            "description": "Definieer de standaard actie voor dit mediatype (wanneer je nog geen actie hebt gespecificeerd).",
+            "options": {
+                "play": "Speel het album nummer nu en behoudt de resterende wachtlijst items.",
+                "replace": "Wis de wachtrij en speel het album nummer.",
+                "next": "Speel het item direct na het huidig afspelende of gebufferde item.",
+                "replace_next": "Wis de wachtrij en speel het album nummer(s) direct na het huidig spelende of gebufferde item.",
+                "add": "Voeg het album nummer(s) toe aan het einde van de wachtrij."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Standaard wachrij-optie voor afspeel items.",
+            "description": "Definieer de standaard wachtrij-actie voor dit mediatype (wanneer je geen actie gespecificeerd hebt).",
+            "options": {
+                "play": "Speel het nummer(s) nu en hou de overblijvende wachtrij items.",
+                "replace": "Wis de wachtrij en speel het nummer(s).",
+                "next": "Speel het nummer(s) meteen na het huidige afgespeelde of gebufferde item.",
+                "replace_next": "Wis de wachtrij en speel het nummer(s) direct na het huidig afgespeelde of gebufferde item.",
+                "add": "Voeg het nummer(s) toe aan het einde van de wachtrij."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Standaard wachtrij-actie voor items op de afspeellijst.",
+            "description": "definieer de standaard  wachtrij-actie voor dit mediatype (wanneer je geen actie gespecificeerd hebt).",
+            "options": {
+                "play": "Speel nu de afspeellijst en hou de overige nummers in de wachtrij.",
+                "replace": "Wis de wachtrij en speel de nummers van de afspeellijst",
+                "next": "Speel het item(s) direct na het nu afgespeelde\/gebufferde item af.",
                 "replace_next": "Wis de wachtrij en speel de afspeellijsttrack(s) af direct na het huidige afgespeelde\/gebufferde item.",
                 "add": "Voeg de track(s) van de afspeellijst toe aan het einde van de wachtrij."
             }
         },
         "default_enqueue_action_radio": {
-            "label": "Standaard enqueue optie voor Radio item(s).",
+            "label": "Standaard wachtrij-optie voor Radio item(s).",
             "description": "Definieer de standaardactie voor het in de wachtrij plaatsen voor dit mediatype (als je geen actie hebt opgegeven).",
             "options": {
                 "play": "Speel het radiostation af en bewaar de resterende wachtrij-item(s).",
@@ -236,36 +291,14 @@
                 "add": "Voeg de radiozender(s) toe aan het einde van de wachtrij."
             }
         },
-        "default": "standaard"
+        "default": "standaard",
+        "provider_depends_on_confirm": "Voordat je verder kunt met de set-up, moet je de provider configureren. Wil je dat nu doen?"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
     "shuffle": "Shuffle",
     "shuffle_disabled": "Shuffle is disabled",
     "shuffle_enabled": "Shuffle is enabled",
-    "sort": {
-        "duration": "Duur",
-        "position": "Positie",
-        "position DESC": "Position (descending)",
-        "provider": "Provider",
-        "sort_album": "Album",
-        "sort_artist": "Artiest",
-        "sort_name": "Alfabetisch",
-        "sort_name DESC": "Alfabetisch (omgekeerd)",
-        "timestamp_added DESC": "Recently added",
-        "track_number": "Tracknummer",
-        "year": "Verschijningsdatum\/jaar",
-        "position_desc": "Positie (aflopend)",
-        "album": "Album",
-        "artist": "Artiest",
-        "name": "Alfabetisch",
-        "name_desc": "Alfabetisch (aflopend)",
-        "recent": "Recent toegevoegd",
-        "year_desc": "Jaar van uitgave (aflopend)",
-        "duration_desc": "Duur (aflopend)",
-        "original": "Origineel",
-        "none": "Geen"
-    },
     "state": {
         "idle": "gestopt",
         "off": "uitgeschakeld",
@@ -293,7 +326,8 @@
         "open_provider_link": "Open dit item op de website van de provider",
         "collapse_expand": "lijst in\/uitklappen",
         "back": "Terug",
-        "show_menu": "Toon of verberg menu"
+        "show_menu": "Toon of verberg menu",
+        "search_filter_active": "De zoekactie toont nu gefilterde resultaten."
     },
     "topresult": "Top resultaat",
     "track": "Nummer",
@@ -319,5 +353,6 @@
     "radiobrowser_by_tag": "Op onderwerp",
     "load_more_items": "Meer items laden...",
     "radio": "Radio",
-    "muted": "gedempt"
+    "muted": "gedempt",
+    "create_playlist_on": "Maak een nieuwe playlist aan op {0}"
 }

@@ -60,10 +60,6 @@ a {
   cursor: pointer;
 }
 
-.v-btn--size-default {
-  padding: 0 8px;
-}
-
 .vertical-btn {
   display: flex;
   flex-direction: column;
@@ -240,82 +236,11 @@ div.v-navigation-drawer__scrim {
   width: 50px;
 }
 
-/* div.v-slide-group__next {
-  position: absolute;
-  right: -5px;
-  min-width: 40px;
-  height: 30px;
-  align-items: start;
-  margin-top: -35px;
-}
-
-div.v-slide-group__prev {
-  position: absolute;
-  left: -5px;
-  min-width: 40px;
-  height: 30px;
-  align-items: start;
-  margin-top: -35px;
-} */
-
-.v-expansion-panel-title {
-  border-radius: 0px;
-}
-
-.v-input--horizontal .v-input__prepend {
-  margin-inline-end: 8px;
-}
-
-.v-toolbar__content {
-  height: 100% !important;
-}
-
-.padded-overlay .v-overlay__content {
-  padding: 50px;
-}
-.v-overlay__scrim {
-  opacity: 65%;
-}
-
-.v-expansion-panel-title {
-  padding: 10px;
-}
-
 .flicking-camera {
   display: flex !important;
 }
 
-/* font */
 
-.v-list-item-subtitle {
-  /* h6 */
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 400;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.v-list-item-title {
-  /* h5 */
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 500;
-}
-
-.v-toolbar-title {
-  /* h2 */
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-  font-weight: 500;
-}
-
-.v-list-item--nav .v-list-item-title {
-  /* h5 */
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 500;
-}
 
 h1 {
   font-size: 1.5rem;

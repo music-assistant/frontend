@@ -1,12 +1,12 @@
 <template>
   <v-app>
     <PlayerSelect />
-    <Footer />
     <MainView v-if="api.state.value == ConnectionState.CONNECTED" />
     <v-overlay v-else>
       <v-progress-circular indeterminate size="64" />
     </v-overlay>
     <reload-prompt v-if="store.isInStandaloneMode" />
+    <Footer />
   </v-app>
 </template>
 

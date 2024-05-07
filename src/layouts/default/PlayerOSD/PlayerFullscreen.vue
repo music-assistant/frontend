@@ -13,71 +13,20 @@
             <v-icon icon="mdi-chevron-down" />
           </Button>
         </template>
-
-        <template #default>
-          <h3 class="line-clamp-1">{{ $t('currently_playing') }}</h3>
-        </template>
-
-        <template #append>
-          <Button icon>
-            <v-icon icon="mdi-dots-vertical" />
-          </Button>
-        </template>
       </v-toolbar>
 
       <Container class="fullscreen-container">
         <div class="fullscreen-media-space"></div>
         <div class="fullscreen-row-centered">
-          <Flicking
+          <MediaItemThumb
             v-if="
-              curQueueItem &&
+              store.curQueueItem &&
               getBreakpointValue({ breakpoint: 'mobile' }) &&
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' }) &&
               false
             "
-            :options="{
-              align: 'center',
-              defaultIndex: 1,
-              moveType: 'strict',
-              panelsPerView: 1,
-              useResizeObserver: true,
-              circular: true,
-            }"
-            @move-end="handleFlickingMoveEnd"
-          >
-            <div
-              v-for="config in 3"
-              :key="config"
-              style="margin-right: 10px; margin-left: 10px; display: flex"
-            >
-              <MediaItemThumb
-                :item="curQueueItem?.media_item || curQueueItem"
-                :width="
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                    ? 512
-                    : 1024
-                "
-                :height="
-                  getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                    ? 512
-                    : 1024
-                "
-                style="
-                  height: min(calc(100vw - 40px), calc(100vh - 340px));
-                  width: min(calc(100vw - 40px), calc(100vh - 340px));
-                "
-              />
-            </div>
-          </Flicking>
-          <MediaItemThumb
-            v-else-if="curQueueItem"
-            :item="curQueueItem.media_item || curQueueItem"
-            :width="
-              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
-                ? 512
-                : 1024
-            "
-            :height="
+            :item="store.curQueueItem?.media_item || store.curQueueItem"
+            :size="
               getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
                 ? 512
                 : 1024
@@ -86,6 +35,21 @@
               height: min(calc(100vw - 40px), calc(100vh - 340px));
               width: min(calc(100vw - 40px), calc(100vh - 340px));
             "
+            :thumbnail="false"
+          />
+          <MediaItemThumb
+            v-else-if="store.curQueueItem"
+            :item="store.curQueueItem.media_item || store.curQueueItem"
+            :size="
+              getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })
+                ? 512
+                : 1024
+            "
+            style="
+              height: min(calc(100vw - 40px), calc(100vh - 340px));
+              width: min(calc(100vw - 40px), calc(100vh - 340px));
+            "
+            :thumbnail="false"
           />
           <v-img
             v-else
@@ -98,95 +62,144 @@
         </div>
         <div class="fullscreen-row">
           <div
-            v-if="curQueueItem && curQueueItem.media_item"
+            v-if="store.curQueueItem && store.curQueueItem.media_item"
             class="fullscreen-track-info"
           >
             <!-- title -->
+            <!-- radio station name -->
             <h2
+              v-if="
+                store.curQueueItem?.media_item &&
+                store.curQueueItem.media_item?.media_type == MediaType.RADIO
+              "
               style="cursor: pointer; width: fit-content; display: inline"
               class="title line-clamp-1"
               @click="
-                curQueueItem?.media_item
-                  ? trackClick(curQueueItem.media_item as Track)
+                store.curQueueItem?.media_item
+                  ? radioNameClick(store.curQueueItem.media_item as Radio)
+                  : ''
+              "
+            >
+              {{ store.curQueueItem.media_item.name }}
+            </h2>
+            <!-- track -->
+            <h2
+              v-else
+              style="cursor: pointer; width: fit-content; display: inline"
+              class="title line-clamp-1"
+              @click="
+                store.curQueueItem?.media_item
+                  ? trackClick(store.curQueueItem.media_item as Track)
                   : ''
               "
             >
               <!-- name + version (if present) -->
               {{
-                `${curQueueItem.media_item.name} ${
-                  'version' in curQueueItem.media_item &&
-                  curQueueItem.media_item.version
-                    ? '(' + curQueueItem.media_item.version + ')'
+                `${store.curQueueItem.media_item.name} ${
+                  'version' in store.curQueueItem.media_item &&
+                  store.curQueueItem.media_item.version
+                    ? '(' + store.curQueueItem.media_item.version + ')'
                     : ''
                 }`
               }}
             </h2>
 
             <!-- subtitle -->
-            <!-- track: artists(s) -->
+
+            <!-- radio station stream title -->
             <div
               v-if="
-                curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                'album' in curQueueItem.media_item &&
-                curQueueItem.media_item.album
+                store.curQueueItem.media_item?.media_type == MediaType.RADIO &&
+                store.curQueueItem?.streamdetails?.stream_title
+              "
+            >
+              <!-- radio live metadata -->
+              <h4
+                v-if="
+                  store.curQueueItem.streamdetails.stream_title.includes(' - ')
+                "
+                class="fullscreen-track-info-subtitle"
+                style="cursor: pointer"
+                @click="
+                  radioTitleClick(store.curQueueItem.streamdetails.stream_title)
+                "
+              >
+                {{ store.curQueueItem.streamdetails.stream_title }}
+              </h4>
+              <h4 v-else class="fullscreen-track-info-subtitle">
+                {{ store.curQueueItem.streamdetails.stream_title }}
+              </h4>
+            </div>
+            <!-- track: artists(s) + album -->
+            <div
+              v-else-if="
+                store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
+                'artists' in store.curQueueItem.media_item &&
+                store.curQueueItem.media_item.artists
               "
               style="cursor: pointer"
               class="line-clamp-1"
-              @click="
-                curQueueItem?.media_item
-                  ? artistClick((curQueueItem.media_item as Track).artists[0])
-                  : ''
-              "
             >
-              <!-- track/album fallback: artist present -->
-              <h4
-                v-if="
-                  curQueueItem.media_item &&
-                  curQueueItem.media_item?.media_type == MediaType.TRACK &&
-                  (curQueueItem.media_item as Track).artists.length > 0
-                "
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ (curQueueItem.media_item as Track).artists[0].name }}
-              </h4>
-              <!-- radio live metadata -->
-              <h4
-                v-else-if="curQueueItem?.streamdetails?.stream_title"
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ curQueueItem?.streamdetails?.stream_title }}
-              </h4>
-              <!-- other description -->
-              <h4
-                v-else-if="
-                  curQueueItem && curQueueItem.media_item?.metadata.description
-                "
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ curQueueItem.media_item.metadata.description }}
-              </h4>
-              <!-- queue empty message -->
-              <h4
-                v-else-if="activePlayerQueue && activePlayerQueue.items == 0"
-                class="fullscreen-track-info-subtitle"
-              >
-                {{ $t('queue_empty') }}
-              </h4>
-              <!-- 3rd party source active -->
-              <h4
-                v-else-if="
-                  store.selectedPlayer?.active_source !=
-                  store.selectedPlayer?.player_id
-                "
-                class="fullscreen-track-info-subtitle"
-              >
-                {{
-                  $t('external_source_active', [
-                    store.selectedPlayer?.active_source,
-                  ])
-                }}
+              <h4>
+                <!-- album -->
+                <span
+                  v-if="
+                    'album' in store.curQueueItem.media_item &&
+                    store.curQueueItem.media_item.album
+                  "
+                  class="fullscreen-track-info-subtitle"
+                  @click="albumClick(store.curQueueItem.media_item.album)"
+                >
+                  {{ store.curQueueItem.media_item.album.name }}
+                </span>
+                <!-- artist(s) -->
+                <span
+                  class="fullscreen-track-info"
+                  @click="
+                    artistClick(
+                      (store.curQueueItem.media_item as Track).artists[0],
+                    )
+                  "
+                >
+                  <br /><br />{{
+                    (store.curQueueItem.media_item as Track).artists[0].name
+                  }}
+                </span>
               </h4>
             </div>
+            <!-- other description -->
+            <h4
+              v-else-if="
+                store.curQueueItem &&
+                store.curQueueItem.media_item?.metadata.description
+              "
+              class="fullscreen-track-info-subtitle"
+            >
+              {{ store.curQueueItem.media_item.metadata.description }}
+            </h4>
+            <!-- queue empty message -->
+            <h4
+              v-else-if="
+                store.activePlayerQueue && store.activePlayerQueue.items == 0
+              "
+              class="fullscreen-track-info-subtitle"
+            >
+              {{ $t('queue_empty') }}
+            </h4>
+            <!-- 3rd party source active -->
+            <h4
+              v-else-if="
+                store.selectedPlayer?.active_source !=
+                store.selectedPlayer?.player_id
+              "
+              class="fullscreen-track-info-subtitle"
+            >
+              {{
+                $t('external_source_active', [
+                  store.selectedPlayer?.active_source,
+                ])
+              }}
+            </h4>
           </div>
         </div>
         <div class="fullscreen-row" style="margin: 0 10px">
@@ -339,11 +352,19 @@
             </div>
           </div>
         </div>
-        <div class="fullscreen-media-controls-bottom" if="activePlayerQueue">
+        <div
+          class="fullscreen-media-controls-bottom"
+          if="store.activePlayerQueue"
+        >
           <div
             v-if="getBreakpointValue({ breakpoint: 'bp3', condition: 'lt' })"
           >
-            <Button @click="store.showPlayersMenu = true">
+            <Button
+              @click="
+                store.showFullscreenPlayer = false;
+                store.showPlayersMenu = true;
+              "
+            >
               <v-badge
                 v-if="curGroupPlayers && curGroupPlayers.length > 0"
                 :content="store.selectedPlayer?.group_childs.length"
@@ -357,7 +378,7 @@
               </v-badge>
               <v-icon v-else :size="30">mdi-speaker</v-icon>
               <div class="line-clamp-1">
-                {{ activePlayerQueue?.display_name }}
+                {{ store.activePlayerQueue?.display_name }}
               </div>
             </Button>
           </div>
@@ -386,9 +407,11 @@ import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import api from '@/plugins/api';
 import {
+  Album,
   Artist,
   ItemMapping,
   MediaType,
+  Radio,
   Track,
 } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
@@ -409,11 +432,10 @@ import {
 import PlayerControls from './PlayerControls.vue';
 import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
 import router from '@/plugins/router';
-import Flicking from '@egjs/vue3-flicking';
-import { ColorCoverPalette, darkenBrightColors } from '@/helpers/utils';
+import { ImageColorPalette, darkenBrightColors } from '@/helpers/utils';
 
 interface Props {
-  colorPalette: ColorCoverPalette;
+  colorPalette: ImageColorPalette;
 }
 const props = defineProps<Props>();
 
@@ -422,22 +444,10 @@ const coverImageColorCode = ref<string>('');
 const fullTrackDetails = ref<Track>();
 
 // Computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-
 const curGroupPlayers = computed(() => {
   if (store.selectedPlayer) {
     return store.selectedPlayer.group_childs;
   }
-  return undefined;
-});
-
-const curQueueItem = computed(() => {
-  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
   return undefined;
 });
 
@@ -454,11 +464,6 @@ const trackClick = function (item: Track | ItemMapping) {
   store.showFullscreenPlayer = false;
 };
 
-const handleFlickingMoveEnd = function (event: { currentTarget: any }) {
-  const flicking = event.currentTarget;
-  const status = flicking.getStatus();
-};
-
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
   router.push({
@@ -471,9 +476,40 @@ const artistClick = function (item: Artist | ItemMapping) {
   store.showFullscreenPlayer = false;
 };
 
+const albumClick = function (item: Album | ItemMapping) {
+  // album entry clicked
+  router.push({
+    name: 'album',
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
+  store.showFullscreenPlayer = false;
+};
+
+const radioNameClick = function (item: Radio | ItemMapping) {
+  // radio station name clicked
+  router.push({
+    name: 'radio',
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
+  store.showFullscreenPlayer = false;
+};
+
+const radioTitleClick = function (streamTitle: string) {
+  // radio station title clicked
+  store.globalSearchTerm = streamTitle;
+  router.push({ name: 'search' });
+  store.showFullscreenPlayer = false;
+};
+
 // watchers
 watch(
-  () => curQueueItem.value,
+  () => store.curQueueItem,
   async (result) => {
     if (
       result &&

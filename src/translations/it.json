@@ -138,19 +138,6 @@
     "shuffle": "Riproduzione casuale",
     "shuffle_disabled": "Riproduzione casuale disabilitata",
     "shuffle_enabled": "Riproduzione casuale abilitata",
-    "sort": {
-        "duration": "Durata",
-        "position": "Posizione",
-        "position DESC": "Posizione (inversa)",
-        "provider": "Provider",
-        "sort_album": "Album",
-        "sort_artist": "Artista",
-        "sort_name": "Alfabetico",
-        "sort_name DESC": "Alfabetico (inverso)",
-        "timestamp_added DESC": "Aggiunto di recente",
-        "track_number": "Numero traccia",
-        "year": "Anno pubblicazione"
-    },
     "state": {
         "idle": "inattivo",
         "off": "spento",

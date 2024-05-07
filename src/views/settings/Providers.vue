@@ -11,6 +11,7 @@
         <!-- ADD provider button + contextmenu -->
         <v-menu
           v-if="availableProviders.filter((x) => x.type == provType).length"
+          scrim
         >
           <template #activator="{ props }">
             <v-btn v-bind="props" color="accent" variant="outlined">
@@ -19,12 +20,11 @@
           </template>
 
           <v-card density="compact">
-            <ListItem
+            <v-list-item
               v-for="provider in availableProviders.filter(
                 (x) => x.type == provType,
               )"
               :key="provider.domain"
-              density="compact"
               style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
               :title="provider.name"
               @click="addProvider(provider)"
@@ -37,7 +37,7 @@
                   style="margin-left: 10px"
                 />
               </template>
-            </ListItem>
+            </v-list-item>
           </v-card>
         </v-menu>
       </template>
@@ -65,73 +65,9 @@
       <ListItem
         v-for="item in providerConfigs.filter((x) => x.type == provType)"
         :key="item.instance_id"
-        v-hold="
-          () => {
-            editProvider(item.instance_id);
-          }
-        "
+        show-menu-btn
         link
-        :context-menu-items="[
-          {
-            label: 'settings.configure',
-            labelArgs: [],
-            action: () => {
-              editProvider(item.instance_id);
-            },
-            icon: 'mdi-cog',
-          },
-          {
-            label: item.enabled ? 'settings.disable' : 'settings.enable',
-            labelArgs: [],
-            action: () => {
-              toggleEnabled(item);
-            },
-            icon: 'mdi-cancel',
-            disabled: api.providerManifests[item.domain].builtin,
-          },
-          {
-            label: 'settings.documentation',
-            labelArgs: [],
-            action: () => {
-              openLinkInNewTab(
-                api.providerManifests[item.domain].documentation!,
-              );
-            },
-            icon: 'mdi-bookshelf',
-            disabled: !api.providerManifests[item.domain].documentation,
-          },
-          {
-            label: 'settings.sync',
-            labelArgs: [],
-            action: () => {
-              api.startSync(undefined, [item.instance_id]);
-            },
-            icon: 'mdi-sync',
-            hide:
-              api.providers[item.instance_id]?.available &&
-              provType != ProviderType.MUSIC,
-          },
-          {
-            label: 'settings.delete',
-            labelArgs: [],
-            action: () => {
-              removeProvider(item.instance_id);
-            },
-            icon: 'mdi-delete',
-            hide:
-              api.providerManifests[item.domain].builtin ||
-              (api.providerManifests[item.domain].load_by_default &&
-                item.domain == item.instance_id),
-          },
-          {
-            label: 'settings.reload',
-            labelArgs: [],
-            action: () => {
-              reloadProvider(item.instance_id);
-            },
-            icon: 'mdi-refresh',
-          },
-        ]"
+        @menu="(evt: Event) => onMenu(evt, item)"
         @click="editProvider(item.instance_id)"
       >
         <template #prepend>
@@ -215,6 +151,7 @@ import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
 import { shell } from '@tauri-apps/api';
 import { $t } from '@/plugins/i18n';
+import { eventbus } from '@/plugins/eventbus';
 
 // global refs
 const router = useRouter();
@@ -309,6 +246,73 @@ const openLinkInNewTab = function (url: string) {
   shell.open(url);
 };
 
+const onMenu = function (evt: Event, item: ProviderConfig) {
+  const menuItems = [
+    {
+      label: 'settings.configure',
+      labelArgs: [],
+      action: () => {
+        editProvider(item.instance_id);
+      },
+      icon: 'mdi-cog',
+    },
+    {
+      label: item.enabled ? 'settings.disable' : 'settings.enable',
+      labelArgs: [],
+      action: () => {
+        toggleEnabled(item);
+      },
+      icon: 'mdi-cancel',
+      disabled: api.providerManifests[item.domain].builtin,
+    },
+    {
+      label: 'settings.documentation',
+      labelArgs: [],
+      action: () => {
+        openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+      },
+      icon: 'mdi-bookshelf',
+      disabled: !api.providerManifests[item.domain].documentation,
+    },
+    {
+      label: 'settings.sync',
+      labelArgs: [],
+      action: () => {
+        api.startSync(undefined, [item.instance_id]);
+      },
+      icon: 'mdi-sync',
+      hide:
+        api.providers[item.instance_id]?.available &&
+        item.type != ProviderType.MUSIC,
+    },
+    {
+      label: 'settings.delete',
+      labelArgs: [],
+      action: () => {
+        removeProvider(item.instance_id);
+      },
+      icon: 'mdi-delete',
+      hide:
+        api.providerManifests[item.domain].builtin ||
+        (api.providerManifests[item.domain].load_by_default &&
+          item.domain == item.instance_id),
+    },
+    {
+      label: 'settings.reload',
+      labelArgs: [],
+      action: () => {
+        reloadProvider(item.instance_id);
+      },
+      icon: 'mdi-refresh',
+    },
+  ];
+  eventbus.emit('contextmenu', {
+    items: menuItems,
+    posX: (evt as PointerEvent).clientX,
+    posY: (evt as PointerEvent).clientY,
+  });
+};
+
 // watchers
 watch(
   () => api.providers,
@@ -321,6 +325,10 @@ watch(
 
 <style scoped>
 .titlebar {
-  padding: 10px 0px;
+  padding: 10px 10px;
+}
+.titlebar.v-toolbar {
+  height: 55px;
+  font-family: 'JetBrains Mono Medium';
 }
 </style>

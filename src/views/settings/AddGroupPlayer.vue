@@ -97,5 +97,3 @@ const onSubmit = async function () {
   router.push({ name: 'playersettings' });
 };
 </script>
-
-<style scoped></style>

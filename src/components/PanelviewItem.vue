@@ -1,9 +1,12 @@
 <template>
   <v-card
-    v-hold="() => (showCheckboxes ? null : emit('menu', item))"
+    v-hold="onMenu"
+    tile
+    hover
     class="panel-item"
-    @click="showCheckboxes ? null : emit('click', item)"
-    @click.right.prevent="showCheckboxes ? null : emit('menu', item)"
+    :disabled="!itemIsAvailable(item)"
+    @click="onClick"
+    @click.right.prevent="onMenu"
     @mouseover="showSettingDots = true"
     @mouseleave="showSettingDots = true"
   >
@@ -33,8 +36,14 @@
 
     <MediaItemThumb :item="item" :width="'100%'" />
 
-    <ListItem class="panel-item-details" style="padding-top: 10px !important">
-      <v-list-item-title class="line-clamp-1 panel-item-details">
+    <v-list-item
+      variant="text"
+      slim
+      tile
+      density="compact"
+      class="panel-item-details"
+    >
+      <v-list-item-title>
         <span v-if="item.media_type == MediaType.FOLDER">
           <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
         </span>
@@ -45,90 +54,84 @@
       </v-list-item-title>
       <v-list-item-subtitle
         v-if="'artists' in item && item.artists"
-        class="line-clamp-1 panel-item-details"
+        class="line-clamp-1"
       >
         {{ getArtistsString(item.artists, 1) }}
       </v-list-item-subtitle>
       <v-list-item-subtitle
         v-else-if="'owner' in item && item.owner"
-        class="line-clamp-1 panel-item-details"
+        class="line-clamp-1"
       >
         {{ item.owner }}
       </v-list-item-subtitle>
-      <v-list-item-subtitle
-        v-else-if="showMediaType"
-        class="line-clamp-1 panel-item-details"
-      >
+      <v-list-item-subtitle v-else-if="showMediaType" class="line-clamp-1">
         {{ $t(item.media_type) }}
       </v-list-item-subtitle>
+      <v-list-item-subtitle v-else class="line-clamp-1" />
+    </v-list-item>
 
-      <!-- <div v-if="'favorite' in item">
-      </div> -->
-
-      <template v-if="getBreakpointValue('bp3') && showFavorite" #append>
-        <FavouriteButton :item="item" />
-      </template>
-
-      <v-item-group
-        v-if="item && item.media_type === 'track' && 'metadata' in item"
-        style="min-height: 22px; padding-top: 5px"
-      >
-        <v-item>
-          <v-icon
-            v-if="parseBool(item.metadata.explicit || false)"
-            icon="mdi-alpha-e-box"
-          />
+    <v-card-actions v-if="showActions" class="panel-item-actions">
+      <v-item-group style="padding: 0; margin: -8px">
+        <v-item v-if="parseBool(item.metadata.explicit || false)">
+          <v-icon size="30" icon="mdi-alpha-e-box" />
         </v-item>
-        <v-item>
-          <!-- hi res icon -->
-          <v-img
-            v-if="HiResDetails"
-            :src="iconHiRes"
-            width="30"
-            :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+        <!-- hi res icon -->
+        <v-item v-if="HiResDetails">
+          <v-icon
+            :class="
+              $vuetify.theme.current.dark ? 'hiresicon' : 'hiresiconinverted'
+            "
           >
+            <img :src="iconHiRes" width="30" />
             <v-tooltip activator="parent" location="bottom">
               {{ HiResDetails }}
             </v-tooltip>
-          </v-img>
+          </v-icon>
         </v-item>
-
-        <v-item
-          v-if="'disc_number' in item && item.disc_number && showTrackNumber"
-        >
-          <v-icon style="margin-left: 5px" icon="md:album" />
+        <!-- disc number -->
+        <v-item v-if="'disc_number' in item && item.disc_number">
+          <v-icon icon="md:album" style="margin-left: 5px" />
           {{ item.disc_number }}
         </v-item>
-        <v-item
-          v-if="'track_number' in item && item.track_number && showTrackNumber"
-        >
-          <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
+        <!-- track number-->
+        <v-item v-if="'track_number' in item && item.track_number">
+          <v-icon icon="mdi-music-circle-outline" style="margin-left: 10px" />
           {{ item.track_number }}
         </v-item>
+        <v-item v-if="getBreakpointValue('bp3')">
+          <FavouriteButton :item="item" />
+        </v-item>
       </v-item-group>
-    </ListItem>
+      <v-spacer />
+      <MAButton
+        variant="list"
+        icon="mdi-dots-vertical"
+        style="padding-right: 0; margin-right: -5px"
+        @click.stop="(v: any) => $emit('menu', v, item)"
+      />
+    </v-card-actions>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
+import MAButton from './mods/Button.vue';
 import {
   BrowseFolder,
   ContentType,
   type MediaItem,
   type MediaItemType,
   MediaType,
-} from '../plugins/api/interfaces';
+} from '@/plugins/api/interfaces';
 import {
   getArtistsString,
   getBrowseFolderName,
   parseBool,
 } from '@/helpers/utils';
+import { itemIsAvailable } from '@/plugins/api/helpers';
 import { iconHiRes } from './QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-
-import ListItem from '@/components/mods/ListItem.vue';
 import FavouriteButton from '@/components/FavoriteButton.vue';
 
 // properties
@@ -137,15 +140,13 @@ export interface Props {
   size?: number;
   isSelected: boolean;
   showCheckboxes?: boolean;
-  showTrackNumber?: boolean;
   showMediaType?: boolean;
-  showFavorite?: boolean;
+  showActions?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
-  showFavorite: false,
-  showTrackNumber: true,
+  showActions: false,
   showMediaType: false,
 });
 
@@ -156,6 +157,7 @@ const showSettingDots = ref(false);
 // computed properties
 const HiResDetails = computed(() => {
   for (const prov of props.item.provider_mappings) {
+    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![
@@ -182,13 +184,23 @@ const HiResDetails = computed(() => {
 
 /* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: 'menu', value: MediaItem): void;
-  (e: 'click', value: MediaItem): void;
-  (e: 'select', value: MediaItem, selected: boolean): void;
+  (e: 'menu', event: Event, item: MediaItemType): void;
+  (e: 'click', event: Event, item: MediaItemType): void;
+  (e: 'select', item: MediaItem, selected: boolean): void;
 }>();
+
+const onMenu = function (event: Event) {
+  if (props.showCheckboxes) return;
+  emit('menu', event, props.item);
+};
+
+const onClick = function (event: Event) {
+  if (props.showCheckboxes) return;
+  emit('click', event, props.item);
+};
 </script>
 
-<style>
+<style scoped>
 .panel-item {
   height: 100%;
   padding: 10px;
@@ -203,17 +215,36 @@ const emit = defineEmits<{
 }
 
 .panel-item-details {
+  margin-top: 10px;
   padding-left: 0px !important;
   padding-right: 0px !important;
+  height: 40px;
+}
+
+.panel-item-actions {
+  padding: 0;
+  margin: 0;
+  margin-top: 10px;
+  height: 40px;
+  min-height: unset !important;
+}
+
+panel-item-details >>> .v-list-item__content {
+  height: 30px;
+}
+
+.v-card--active {
+  background-color: red;
 }
 
 .hiresicon {
-  margin-top: 5px;
-  margin-left: -10px;
-  filter: invert(100%);
+  margin-left: 10px;
+  margin-right: 10px;
 }
-.hiresicondark {
-  margin-top: 5px;
-  margin-left: -10px;
+
+.hiresiconinverted {
+  margin-left: 10px;
+  margin-right: 10px;
+  filter: invert(100%);
 }
 </style>

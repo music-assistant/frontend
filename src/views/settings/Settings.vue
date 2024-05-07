@@ -1,35 +1,61 @@
 <template>
   <div>
-    <v-toolbar
-      color="transparent"
-      :title="getBreakpointValue('bp4') ? `${$t('settings.settings')} | ${$t(`settings.${activeTab}`)}` : ''"
-    >
-      <template #append>
-        <v-tabs :model-value="activeTab" align-tabs="end" height="100%">
-          <v-tab value="providers" :to="{ name: 'providersettings' }">
-            {{ $t('settings.providers') }}
-          </v-tab>
-          <v-tab value="players" :to="{ name: 'playersettings' }">
-            {{ $t('settings.players') }}
-          </v-tab>
-          <v-tab value="core" :to="{ name: 'coresettings' }">
-            {{ $t('settings.core') }}
-          </v-tab>
-          <v-tab value="client" :to="{ name: 'clientsettings' }">
-            {{ $t('settings.client') }}
-          </v-tab>
-        </v-tabs>
-      </template>
-    </v-toolbar>
+    <Toolbar
+      icon="mdi-cog-outline"
+      :title="
+        getBreakpointValue('bp4')
+          ? `${$t('settings.settings')} | ${$t(`settings.${activeTab}`)}`
+          : ''
+      "
+      :menu-items="[
+        {
+          label: 'settings.providers',
+          icon: 'mdi-apps',
+          action: () => {
+            $router.push({ name: 'providersettings' });
+          },
+          active: activeTab == 'providers',
+        },
+        {
+          label: 'settings.players',
+          icon: 'mdi-speaker-multiple',
+          action: () => {
+            $router.push({ name: 'playersettings' });
+          },
+          active: activeTab == 'players',
+        },
+        {
+          label: 'settings.core',
+          icon: 'mdi-engine',
+          action: () => {
+            $router.push({ name: 'coresettings' });
+          },
+          active: activeTab == 'core',
+        },
+        {
+          label: 'settings.frontend',
+          icon: 'mdi-palette-advanced',
+          action: () => {
+            $router.push({ name: 'frontendsettings' });
+          },
+          active: activeTab == 'frontend',
+        },
+        {
+          label: 'settings.client',
+          icon: 'mdi-desktop-mac-dashboard',
+          action: () => {
+            $router.push({ name: 'clientsettings' });
+          },
+          active: activeTab == 'client',
+        },
+      ]"
+    />
+
     <v-divider />
     <!-- some spacing -->
     <div style="height: 15px"></div>
     <router-view v-slot="{ Component }" app>
       <component :is="Component" />
-      <!-- transition temporary disabled as it renders the view unusable somehow? -->
-      <!-- <transition name="fade" mode="out-in">
-        <component :is="Component" />
-      </transition> -->
     </router-view>
   </div>
 </template>
@@ -37,7 +63,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+import Toolbar from '@/components/Toolbar.vue';
 
 // global refs
 const router = useRouter();
@@ -49,6 +75,9 @@ const activeTab = computed(() => {
   }
   if (router.currentRoute.value.name?.toString().includes('core')) {
     return 'core';
+  }
+  if (router.currentRoute.value.name?.toString().includes('frontend')) {
+    return 'frontend';
   }
   if (router.currentRoute.value.name?.toString().includes('client')) {
     return 'client';

@@ -9,7 +9,7 @@
     :sort-keys="Object.keys(sortKeys)"
     :show-album="true"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('tracks') : ''"
+    :title="$t('tracks')"
     :show-search-button="true"
     :allow-key-hooks="true"
     :context-menu-items="[
@@ -22,34 +22,50 @@
         icon: 'mdi-link-plus',
       },
     ]"
+    icon="mdi-music-note"
   />
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import api from '../plugins/api';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import api from '@/plugins/api';
 import {
   EventMessage,
   EventType,
+  ImageType,
   MediaType,
   type Track,
-} from '../plugins/api/interfaces';
+} from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+import router from '@/plugins/router';
+
+defineOptions({
+  name: 'Tracks',
+});
 
 const { t } = useI18n();
 const items = ref<Track[]>([]);
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
-  artist: 'sort_artist, sort_name',
-  album: 'albums.sort_name, tracks.sort_name',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  artist: 'artists.name, name',
+  year: 'year',
+  year_desc: 'year DESC',
+  album: 'albums.name, tracks.name',
   duration: 'duration',
   duration_desc: 'duration DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 onMounted(() => {
@@ -101,12 +117,32 @@ const loadItems = async function (params: LoadDataParams) {
 const addUrl = async function () {
   const url = prompt(t('enter_url'));
   if (!url) return;
+  if (!url?.startsWith('http')) {
+    alert(t('invalid_input'));
+    return;
+  }
   api
-    .getItem(MediaType.TRACK, url, 'url')
+    .getItem(MediaType.TRACK, url, 'builtin')
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;
-      api.addItemToLibrary(item).then(() => (updateAvailable.value = true));
+      delete item.sort_name;
+
+      const imgUrl = prompt(
+        t('image_url'),
+        item.metadata.images?.length ? item.metadata.images[0].path : '',
+      );
+      if (imgUrl) {
+        item.metadata.images = [
+          {
+            type: ImageType.THUMB,
+            path: imgUrl,
+            provider: 'builtin',
+            remotely_accessible: true,
+          },
+        ];
+      }
+      api.addItemToLibrary(item).then(() => router.go(0));
     })
     .catch((e) => alert(e));
 };

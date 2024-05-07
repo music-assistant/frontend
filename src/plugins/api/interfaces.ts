@@ -1,3 +1,5 @@
+import { ComputedRef } from 'vue';
+
 /// constants
 export const SECURE_STRING_SUBSTITUTE = 'this_value_is_encrypted';
 export const MASS_LOGO_ONLINE =
@@ -31,7 +33,7 @@ export enum LinkType {
 
 export enum ImageType {
   THUMB = 'thumb',
-  WIDE_THUMB = 'wide_thumb',
+  LANDSCAPE = 'landscape',
   FANART = 'fanart',
   LOGO = 'logo',
   CLEARART = 'clearart',
@@ -131,6 +133,7 @@ export enum EventType {
   SYNC_TASKS_UPDATED = 'sync_tasks_updated',
   AUTH_SESSION = 'auth_session',
   // special types for local subscriptions only
+  CONNECTED = 'connected',
   ALL = '*',
 }
 
@@ -184,6 +187,8 @@ export enum ConfigEntryType {
   LABEL = 'label',
   DIVIDER = 'divider',
   ACTION = 'action',
+  ICON = 'icon',
+  ALERT = 'alert',
 }
 
 //// api
@@ -206,13 +211,6 @@ export interface SuccessResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 
   result: any;
-}
-
-export interface ChunkedResultMessage extends ResultMessageBase {
-  // Message sent when the result of a command is sent in multiple chunks.
-
-  result: any;
-  is_last_chunk: boolean;
 }
 
 export interface ErrorResultMessage extends ResultMessageBase {
@@ -281,13 +279,13 @@ export interface ConfigEntry {
   // help_link [optional]: link to help article.
   help_link?: string;
   // multi_value [optional]: allow multiple values from the list
-  multi_value: boolean;
+  multi_value?: boolean;
   // depends_on [optional]: needs to be set before this setting shows up in frontend
   depends_on?: string;
   // hidden: hide from UI
-  hidden: boolean;
-  // advanced: this is an advanced setting (frontend hides it in some corner)
-  advanced: boolean;
+  hidden?: boolean;
+  // category: category to group this setting into in the frontend (e.g. advanced)
+  category: string;
   // action: (configentry)action that is needed to get the value for this entry
   action?: string;
   // action_label: default label for the action when no translation for the action is present
@@ -342,7 +340,7 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   // quality details (streamable content only)
-  audio_format: AudioFormat;
+  audio_format?: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists
@@ -357,9 +355,8 @@ export interface MediaItemLink {
 export interface MediaItemImage {
   type: ImageType;
   path: string;
-  // set to instance_id of provider if the path needs to be resolved
-  // if the path is just a plain (remotely accessible) URL, set it to 'url'
   provider: string;
+  remotely_accessible: boolean;
 }
 
 export interface MediaItemMetadata {
@@ -378,7 +375,7 @@ export interface MediaItemMetadata {
   preview?: string;
   replaygain?: number;
   popularity?: number;
-  checksum?: string;
+  cache_checksum?: string;
 }
 
 export interface MediaItem {
@@ -390,7 +387,7 @@ export interface MediaItem {
   metadata: MediaItemMetadata;
   favorite: boolean;
   media_type: MediaType;
-  sort_name: string;
+  sort_name?: string;
   uri: string;
   timestamp_added: number;
   timestamp_modified: number;
@@ -404,6 +401,7 @@ export interface ItemMapping {
   sort_name: string;
   uri: string;
   version: string;
+  image?: MediaItemImage;
 }
 
 export interface Artist extends MediaItem {
@@ -434,7 +432,6 @@ export interface Track extends MediaItem {
   artists: Array<ItemMapping | Artist>;
   // album track only
   album: ItemMapping | Album;
-  albums: TrackAlbumMapping[];
   disc_number?: number;
   track_number?: number;
   // playlist track only
@@ -443,7 +440,6 @@ export interface Track extends MediaItem {
 
 export interface Playlist extends MediaItem {
   owner: string;
-  checksum: string;
   is_editable: boolean;
 }
 
@@ -490,6 +486,14 @@ export interface AudioFormat {
   bit_rate: number;
 }
 
+export interface LoudnessMeasurement {
+  integrated: number;
+  true_peak: number;
+  lra: number;
+  threshold: number;
+  target_offset: number;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
@@ -497,13 +501,10 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_title?: string;
   duration?: number;
-  size?: number;
 
   queue_id?: string;
-  seconds_streamed: number;
-  seconds_skipped: number;
-  gain_correct: number;
-  loudness?: number;
+  loudness?: LoudnessMeasurement;
+  target_loudness?: number;
 }
 
 // queue_item
@@ -573,6 +574,7 @@ export interface Player {
   group_volume: number;
   display_name: string;
   hidden: boolean;
+  icon: string;
 }
 
 // provider
@@ -615,6 +617,7 @@ export interface ProviderInstance {
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
+  is_streaming_provider?: boolean;
 }
 
 export interface SyncTask {

@@ -1,9 +1,11 @@
 <!-- eslint-disable vue/require-explicit-emits -->
 <template>
   <v-list-item
+    v-hold="(v: any) => $emit('menu', v)"
     v-bind="listItemProps"
     class="list-item-main"
     @input="(v: any) => $emit('input', v)"
+    @click.right.prevent="(v: any) => $emit('menu', v)"
   >
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
@@ -14,44 +16,27 @@
     <template v-if="$slots.append" #append>
       <slot name="append"></slot>
 
-      <!-- contextmenu -->
-      <div v-if="contextMenuItems.length > 0" class="contextmenubtn">
-        <v-menu location="bottom end">
-          <template #activator="{ props }">
-            <MAButton v-bind="props" variant="list" icon="mdi-dots-vertical" />
-          </template>
-          <v-list>
-            <ListItem
-              v-for="(item, index) in contextMenuItems.filter(
-                (x) => x.hide != true,
-              )"
-              :key="index"
-              :title="$t(item.label, item.labelArgs)"
-              :disabled="item.disabled == true"
-              @click="item.action ? item.action() : ''"
-            >
-              <template #prepend>
-                <v-avatar :icon="item.icon" />
-              </template>
-            </ListItem>
-          </v-list>
-        </v-menu>
-      </div>
+      <!-- optional contextmenu button -->
+      <MAButton
+        v-if="showMenuBtn"
+        variant="list"
+        icon="mdi-dots-vertical"
+        @click.stop="(v: any) => $emit('menu', v)"
+      />
     </template>
   </v-list-item>
 </template>
 
 <script lang="ts">
 import { computed } from 'vue';
-import type { ContextMenuItem } from '@/helpers/contextmenu';
 import MAButton from './Button.vue';
 
 export default {
   components: { MAButton },
   props: {
-    contextMenuItems: {
-      type: Array<ContextMenuItem>,
-      default: [],
+    showMenuBtn: {
+      type: Boolean,
+      default: false,
     },
   },
   setup(props, ctx) {
@@ -65,10 +50,11 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .list-item-main {
   border-radius: 4px !important;
   padding: 7px !important;
+  padding-right: 0 !important;
 }
 
 .list-item-main > div.v-list-item__append {

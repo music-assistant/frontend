@@ -2,11 +2,15 @@ import {
   Artist,
   BrowseFolder,
   ItemMapping,
+  MediaItem,
   MediaItemType,
+  MediaType,
   Player,
   PlayerType,
   ProviderMapping,
 } from '@/plugins/api/interfaces';
+import { getBreakpointValue } from '@/plugins/breakpoint';
+import { store } from '@/plugins/store';
 
 import Color from 'color';
 //@ts-ignore
@@ -14,8 +18,8 @@ import ColorThief from 'colorthief';
 const colorThief = new ColorThief();
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const parseBool = (val: string | boolean) => {
-  if (val == undefined) return false;
+export const parseBool = (val: string | boolean | undefined | null) => {
+  if (val == undefined || val == null) return false;
   if (!val) return false;
   if (typeof val === 'boolean') return val;
   return !!JSON.parse(String(val).toLowerCase());
@@ -172,7 +176,7 @@ export const numberRange = function (start: number, end: number): number[] {
 //Get correct colour
 type RGBColor = [number, number, number];
 
-export interface ColorCoverPalette {
+export interface ImageColorPalette {
   [key: number]: string;
   lightColor: string;
   darkColor: string;
@@ -310,7 +314,7 @@ export function darkenBrightColors(
   return color;
 }
 
-export function getColorPalette(img: HTMLImageElement): ColorCoverPalette {
+export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
   const colorThief = new ColorThief();
   const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
   const colorHexPalette: string[] = colorNumberPalette.map((color) =>
@@ -374,3 +378,89 @@ export function scrollElement(el: HTMLElement, to: number, duration: number) {
 
   animateScroll();
 }
+
+export const panelViewItemResponsive = function (displaySize: number) {
+  if (
+    getBreakpointValue({
+      breakpoint: 'bp1',
+      condition: 'lt',
+    })
+  ) {
+    return 2;
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp1',
+      condition: 'gt',
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp4',
+      condition: 'lt',
+    })
+  ) {
+    return 3;
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp4',
+      condition: 'gt',
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp6',
+      condition: 'lt',
+    })
+  ) {
+    return 4;
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp6',
+      condition: 'gt',
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp7',
+      condition: 'lt',
+    })
+  ) {
+    return 5;
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp7',
+      condition: 'gt',
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp8',
+      condition: 'lt',
+    })
+  ) {
+    return 6;
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp8',
+      condition: 'gt',
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp9',
+      condition: 'lt',
+    })
+  ) {
+    return 7;
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp9',
+      condition: 'gt',
+    }) &&
+    getBreakpointValue({
+      breakpoint: 'bp10',
+      condition: 'lt',
+    })
+  ) {
+    return 8;
+  } else if (
+    getBreakpointValue({
+      breakpoint: 'bp10',
+      condition: 'gt',
+    })
+  ) {
+    return 9;
+  } else {
+    return 0;
+  }
+};

@@ -19,12 +19,12 @@
       >mdi-speaker</v-icon
     >
     <span
-      v-if="activePlayerQueue && getBreakpointValue('bp6')"
+      v-if="store.activePlayerQueue && getBreakpointValue('bp6')"
       class="line-clamp-1 no_transform"
     >
       {{
         truncateString(
-          activePlayerQueue?.display_name,
+          store.activePlayerQueue?.display_name,
           getBreakpointValue('bp7') ? 16 : 8,
         )
       }}
@@ -48,13 +48,6 @@ export interface Props {
 const props = defineProps<Props>();
 
 // computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-
 const curGroupPlayers = computed(() => {
   if (!store.selectedPlayer) {
     return 0;

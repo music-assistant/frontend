@@ -51,9 +51,9 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .container-default {
-  padding: 15px;
+  padding: 10px;
 }
 
 .container-panels-light {

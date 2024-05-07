@@ -2,232 +2,14 @@
 <template>
   <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
     <!-- eslint-disable vue/no-template-shadow -->
-    <v-toolbar color="transparent">
-      <template #title>
-        {{ title }}
-        <v-badge
-          v-if="getBreakpointValue('bp11')"
-          color="grey"
-          :content="total"
-          inline
-        />
-      </template>
+    <Toolbar
+      :icon="icon"
+      :title="title"
+      :count="total"
+      color="transparent"
+      :menu-items="menuItems"
+    />
 
-      <template #append>
-        <!-- toggle select button -->
-        <Button
-          v-if="
-            showSelectButton != undefined
-              ? showSelectButton
-              : getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.select_items')"
-          :disabled="!expanded"
-          @click="toggleCheckboxes"
-          ><v-icon
-            :icon="
-              showCheckboxes
-                ? 'mdi-checkbox-multiple-outline'
-                : 'mdi-checkbox-multiple-blank-outline'
-            "
-        /></Button>
-
-        <!-- favorites only filter -->
-        <Button
-          v-if="
-            showFavoritesOnlyFilter != undefined
-              ? showFavoritesOnlyFilter
-              : getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.filter_favorites')"
-          :disabled="!expanded"
-          @click="toggleFavoriteFilter"
-        >
-          <v-icon
-            :icon="params.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline'"
-          />
-        </Button>
-
-        <!-- album artists only filter -->
-        <Button
-          v-if="showAlbumArtistsOnlyFilter"
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.album_artist_filter')"
-          :disabled="!expanded"
-          @click="toggleAlbumArtistsFilter"
-        >
-          <v-icon
-            :icon="
-              params.albumArtistsFilter
-                ? 'mdi-account-music'
-                : 'mdi-account-music-outline'
-            "
-          />
-        </Button>
-
-        <!-- refresh button-->
-        <Button
-          v-if="
-            showRefreshButton != undefined
-              ? showRefreshButton
-              : getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="
-            updateAvailable
-              ? $t('tooltip.refresh_new_content')
-              : $t('tooltip.refresh')
-          "
-          :disabled="!expanded || loading"
-          @click="onRefreshClicked()"
-        >
-          <v-badge :model-value="updateAvailable" color="error" dot>
-            <v-icon icon="mdi-refresh" />
-          </v-badge>
-        </Button>
-
-        <!-- sort options -->
-        <v-menu
-          v-if="sortKeys.length > 1"
-          v-model="showSortMenu"
-          location="bottom end"
-          :close-on-content-click="true"
-        >
-          <template #activator="{ props }">
-            <Button
-              v-bind="props"
-              variant="list"
-              :disabled="!expanded"
-              :title="$t('tooltip.sort_options')"
-            >
-              <v-icon v-bind="props" icon="mdi-sort" />
-            </Button>
-          </template>
-          <v-card>
-            <v-list>
-              <div v-for="key of sortKeys" :key="key">
-                <ListItem @click="changeSort(key)">
-                  <template #title>{{ $t('sort.' + key) }}</template>
-                  <template #append>
-                    <v-icon v-if="params.sortBy == key" icon="mdi-check" />
-                  </template>
-                </ListItem>
-                <v-divider />
-              </div>
-            </v-list>
-          </v-card>
-        </v-menu>
-
-        <!-- toggle search button -->
-        <Button
-          v-if="
-            showSearchButton != undefined
-              ? showSearchButton
-              : getBreakpointValue('bp1')
-          "
-          v-bind="props"
-          variant="list"
-          :title="
-            isSearchActive
-              ? $t('tooltip.search_filter_active')
-              : $t('tooltip.search')
-          "
-          :disabled="!expanded"
-          @click="toggleSearch()"
-        >
-          <v-badge :model-value="isSearchActive" color="error" dot>
-            <v-icon icon="mdi-magnify" />
-          </v-badge>
-        </Button>
-
-        <!-- toggle view mode button -->
-        <Button
-          v-bind="props"
-          variant="list"
-          :title="$t('tooltip.toggle_view_mode')"
-          :disabled="!expanded"
-          @click="toggleViewMode()"
-          ><v-icon :icon="viewMode == 'panel' ? 'mdi-view-list' : 'mdi-grid'"
-        /></Button>
-
-        <!-- provider filter dropdown -->
-        <v-menu
-          v-if="providerFilter && providerFilter.length > 1"
-          location="bottom end"
-          :close-on-content-click="true"
-        >
-          <template #activator="{ props }">
-            <Button v-bind="props" variant="list" :disabled="!expanded">
-              <ProviderIcon :domain="params.providerFilter!" :size="30" />
-            </Button>
-          </template>
-          <v-card>
-            <v-list>
-              <div v-for="provId of providerFilter" :key="provId">
-                <ListItem @click="changeActiveProviderFilter(provId)">
-                  <template #prepend>
-                    <ProviderIcon :domain="provId" :size="30" />
-                  </template>
-                  <template #title>
-                    <span v-if="provId == 'library'">{{ $t('library') }}</span>
-                    <span v-else>{{ api.getProviderName(provId) }}</span>
-                  </template>
-                  <template #append>
-                    <v-icon
-                      v-if="params.providerFilter == provId"
-                      icon="mdi-check"
-                    />
-                  </template>
-                </ListItem>
-                <v-divider />
-              </div>
-            </v-list>
-          </v-card>
-        </v-menu>
-
-        <!-- contextmenu -->
-        <v-menu
-          v-if="contextMenuItems && contextMenuItems.length > 0"
-          location="bottom end"
-        >
-          <template #activator="{ props }">
-            <Button variant="list" style="right: 3px" v-bind="props">
-              <v-icon icon="mdi-dots-vertical" />
-            </Button>
-          </template>
-          <v-list>
-            <ListItem
-              v-for="(item, index) in contextMenuItems.filter(
-                (x) => x.hide != true,
-              )"
-              :key="index"
-              :title="$t(item.label, item.labelArgs)"
-              :disabled="item.disabled == true"
-              @click="item.action ? item.action() : ''"
-            >
-              <template #prepend>
-                <v-avatar :icon="item.icon" />
-              </template>
-            </ListItem>
-          </v-list>
-        </v-menu>
-
-        <!-- expand/collapse button -->
-        <Button
-          v-if="allowCollapse"
-          variant="list"
-          :title="$t('tooltip.collapse_expand')"
-          @click="toggleExpand"
-          ><v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-        /></Button>
-      </template>
-    </v-toolbar>
     <v-divider />
 
     <v-text-field
@@ -244,6 +26,7 @@
       @blur="searchHasFocus = false"
       @click:clear="onClear"
     />
+
     <Container
       v-if="expanded"
       :variant="viewMode == 'panel' ? 'panel' : 'default'"
@@ -251,65 +34,63 @@
       <!-- loading animation -->
       <v-progress-linear v-if="loading" indeterminate />
 
-      <!-- panel view -->
-      <v-row v-if="viewMode == 'panel'">
-        <v-col
-          v-for="item in pagedItems"
-          :key="item.uri"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-        >
-          <PanelviewItem
-            :item="item"
-            :is-selected="isSelected(item)"
-            :show-checkboxes="showCheckboxes"
-            :show-track-number="showTrackNumber"
-            :show-favorite="showFavoritesOnlyFilter"
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </v-col>
-      </v-row>
-
-      <!-- list view -->
-      <v-virtual-scroll
-        v-if="viewMode == 'list'"
-        :height="70"
+      <v-infinite-scroll
         :items="pagedItems"
-        style="height: 100%"
+        :onLoad="loadNextPage"
+        :mode="infiniteScroll ? 'intersect' : 'manual'"
+        :load-more-text="$t('load_more_items')"
+        :empty-text="''"
+        style="overflow-y: unset"
       >
-        <template #default="{ item }">
-          <ListviewItem
-            :item="item"
-            :show-track-number="showTrackNumber"
-            :show-disc-number="showTrackNumber"
-            :show-duration="showDuration"
-            :show-favorite="showFavoritesOnlyFilter"
-            :show-menu="showMenu"
-            :show-provider="showProvider"
-            :show-album="showAlbum"
-            :show-checkboxes="showCheckboxes"
-            :is-selected="isSelected(item)"
-            :show-details="itemtype.includes('versions')"
-            :parent-item="parentItem"
-            :context-menu-items="
-              showMenu ? getContextMenuItems([item], parentItem) : []
-            "
-            @select="onSelect"
-            @menu="onMenu"
-            @click="onClick"
-          />
-        </template>
-      </v-virtual-scroll>
+        <!-- panel view -->
+        <v-row v-if="viewMode == 'panel'">
+          <v-col
+            v-for="item in pagedItems"
+            :key="item.uri"
+            cols="12"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          >
+            <PanelviewItem
+              :item="item"
+              :is-selected="isSelected(item)"
+              :show-checkboxes="showCheckboxes"
+              :show-track-number="showTrackNumber"
+              :show-favorite="showFavoritesOnlyFilter"
+              :show-actions="['tracks', 'albums'].includes(itemtype)"
+              @select="onSelect"
+              @menu="onMenu"
+              @click="onClick"
+            />
+          </v-col>
+        </v-row>
 
-      <!-- infinite scroll component -->
-      <InfiniteLoading v-if="infiniteScroll" @infinite="loadNextPage" />
-      <v-btn
-        v-else-if="(total || 0) > pagedItems.length"
-        variant="plain"
-        @click="loadNextPage()"
-        >{{ $t('load_more_items') }}</v-btn
-      >
+        <!-- list view -->
+        <v-virtual-scroll
+          v-if="viewMode == 'list'"
+          :height="70"
+          :items="pagedItems"
+          style="height: 100%"
+        >
+          <template #default="{ item }">
+            <ListviewItem
+              :item="item"
+              :show-track-number="showTrackNumber"
+              :show-disc-number="showTrackNumber"
+              :show-duration="showDuration"
+              :show-favorite="showFavoritesOnlyFilter"
+              :show-menu="showMenu"
+              :show-provider="showProvider"
+              :show-album="showAlbum"
+              :show-checkboxes="showCheckboxes"
+              :is-selected="isSelected(item)"
+              :show-details="itemtype.includes('versions')"
+              @select="onSelect"
+              @menu="onMenu"
+              @click="onClick"
+            />
+          </template>
+        </v-virtual-scroll>
+      </v-infinite-scroll>
 
       <!-- show alert if no item found -->
       <div v-if="!loading && pagedItems.length == 0">
@@ -342,7 +123,11 @@
       >
         <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
         <template #actions>
-          <v-btn color="primary" variant="text" @click="showPlayMenu(true)">
+          <v-btn
+            color="primary"
+            variant="text"
+            @click="(evt: Event) => onMenu(evt, selectedItems)"
+          >
             {{ $t('actions') }}
           </v-btn>
         </template>
@@ -370,28 +155,19 @@ import {
   type Track,
   BrowseFolder,
   ItemMapping,
-} from '../plugins/api/interfaces';
-import { store } from '../plugins/store';
+} from '@/plugins/api/interfaces';
+import { store } from '@/plugins/store';
 import ListviewItem from './ListviewItem.vue';
-import Button from './mods/Button.vue';
 import PanelviewItem from './PanelviewItem.vue';
-import {
-  itemIsAvailable,
-  getContextMenuItems,
-  ContextMenuItem,
-} from '@/helpers/contextmenu';
 import { useRouter } from 'vue-router';
-import { api } from '../plugins/api';
-import InfiniteLoading from 'v3-infinite-loading';
-import 'v3-infinite-loading/lib/style.css';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import Alert from './mods/Alert.vue';
-import Container from './mods/Container.vue';
-import { eventbus } from '@/plugins/eventbus';
+import { api } from '@/plugins/api';
+import Alert from '@/components/mods/Alert.vue';
+import Container from '@/components/mods/Container.vue';
 import { useI18n } from 'vue-i18n';
-import { getElement } from '@egjs/vue3-flicking';
+import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
+import { itemIsAvailable } from '@/plugins/api/helpers';
+import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
+import { panelViewItemResponsive } from '@/helpers/utils';
 
 export interface LoadDataParams {
   offset: number;
@@ -400,7 +176,7 @@ export interface LoadDataParams {
   search: string;
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
-  providerFilter?: string;
+  libraryOnly?: boolean;
   refresh?: boolean;
 }
 // properties
@@ -421,10 +197,10 @@ export interface Props {
   updateAvailable?: boolean;
   title?: string;
   hideOnEmpty?: boolean;
-  providerFilter?: string[];
+  showLibraryOnlyFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
-  contextMenuItems?: Array<ContextMenuItem>;
+  extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
   loadPagedData?: (params: LoadDataParams) => Promise<PagedItems>;
   // loadItems callback is provided for flat non-paged listings
@@ -432,9 +208,10 @@ export interface Props {
   limit?: number;
   infiniteScroll?: boolean;
   path?: string;
+  icon?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ['name'],
+  sortKeys: () => ['name', 'sort_name'],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -448,14 +225,15 @@ const props = withDefaults(defineProps<Props>(), {
   showSelectButton: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
-  limit: 100,
+  limit: 50,
   infiniteScroll: true,
   title: undefined,
-  providerFilter: undefined,
-  contextMenuItems: undefined,
+  showLibraryOnlyFilter: false,
+  extraMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
   path: undefined,
+  icon: undefined,
 });
 
 // global refs
@@ -464,13 +242,12 @@ const router = useRouter();
 // local refs
 const params = ref<LoadDataParams>({
   offset: 0,
-  limit: 100,
+  limit: 50,
   sortBy: 'name',
   search: '',
-  providerFilter: 'library',
+  libraryOnly: false,
 });
 const viewMode = ref('list');
-const showSortMenu = ref(false);
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
@@ -500,115 +277,14 @@ const toggleSearch = function () {
   }
 };
 
-const panelViewItemResponsive = function (displaySize: number) {
-  if (
-    getBreakpointValue({
-      breakpoint: 'bp1',
-      condition: 'lt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 2;
-  } else if (
-    getBreakpointValue({
-      breakpoint: 'bp1',
-      condition: 'gt',
-      offset: store.navigationMenuSize,
-    }) &&
-    getBreakpointValue({
-      breakpoint: 'bp4',
-      condition: 'lt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 3;
-  } else if (
-    getBreakpointValue({
-      breakpoint: 'bp4',
-      condition: 'gt',
-      offset: store.navigationMenuSize,
-    }) &&
-    getBreakpointValue({
-      breakpoint: 'bp6',
-      condition: 'lt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 4;
-  } else if (
-    getBreakpointValue({
-      breakpoint: 'bp6',
-      condition: 'gt',
-      offset: store.navigationMenuSize,
-    }) &&
-    getBreakpointValue({
-      breakpoint: 'bp7',
-      condition: 'lt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 5;
-  } else if (
-    getBreakpointValue({
-      breakpoint: 'bp7',
-      condition: 'gt',
-      offset: store.navigationMenuSize,
-    }) &&
-    getBreakpointValue({
-      breakpoint: 'bp8',
-      condition: 'lt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 6;
-  } else if (
-    getBreakpointValue({
-      breakpoint: 'bp8',
-      condition: 'gt',
-      offset: store.navigationMenuSize,
-    }) &&
-    getBreakpointValue({
-      breakpoint: 'bp9',
-      condition: 'lt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 7;
-  } else if (
-    getBreakpointValue({
-      breakpoint: 'bp9',
-      condition: 'gt',
-      offset: store.navigationMenuSize,
-    }) &&
-    getBreakpointValue({
-      breakpoint: 'bp10',
-      condition: 'lt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 8;
-  } else if (
-    getBreakpointValue({
-      breakpoint: 'bp10',
-      condition: 'gt',
-      offset: store.navigationMenuSize,
-    })
-  ) {
-    return 9;
-  } else {
-    return 0;
-  }
-};
-
 const toggleExpand = function () {
   expanded.value = !expanded.value;
   localStorage.setItem(`expand.${props.itemtype}`, expanded.value.toString());
 };
 
-const toggleViewMode = function () {
-  if (viewMode.value === 'panel') viewMode.value = 'list';
-  else viewMode.value = 'panel';
-  localStorage.setItem(`viewMode.${props.itemtype}`, viewMode.value);
+const selectViewMode = function (newMode: string) {
+  viewMode.value = newMode;
+  localStorage.setItem(`viewMode.${props.itemtype}`, newMode);
 };
 
 const toggleFavoriteFilter = function () {
@@ -616,6 +292,13 @@ const toggleFavoriteFilter = function () {
   const favoritesOnlyStr = params.value.favoritesOnly ? 'true' : 'false';
   localStorage.setItem(`favoriteFilter.${props.itemtype}`, favoritesOnlyStr);
   loadData(true);
+};
+
+const toggleLibraryOnlyFilter = function () {
+  params.value.libraryOnly = !params.value.libraryOnly;
+  const libraryOnlyStr = params.value.libraryOnly ? 'true' : 'false';
+  localStorage.setItem(`libraryFilter.${props.itemtype}`, libraryOnlyStr);
+  loadData(true, undefined, true);
 };
 
 const toggleAlbumArtistsFilter = function () {
@@ -654,17 +337,14 @@ const toggleCheckboxes = function () {
   showCheckboxes.value = !showCheckboxes.value;
 };
 
-const onMenu = function (item: MediaItemType, showContextMenuItems = true) {
-  selectedItems.value = [item];
-  showPlayMenu(showContextMenuItems);
-};
-
-const showPlayMenu = function (showContextMenuItems = true) {
-  eventbus.emit('playdialog', {
-    items: selectedItems.value,
-    parentItem: props.parentItem,
-    showContextMenuItems: showContextMenuItems,
-  });
+const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
+  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  showContextMenuForMediaItem(
+    mediaItems,
+    props.parentItem,
+    (evt as PointerEvent).clientX,
+    (evt as PointerEvent).clientY,
+  );
 };
 
 const onRefreshClicked = function () {
@@ -672,32 +352,29 @@ const onRefreshClicked = function () {
   loadData(true, undefined, true);
 };
 
-const onClick = function (mediaItem: MediaItemType) {
+const onClick = function (evt: Event, item: MediaItemType) {
   // mediaItem in the list is clicked
-  if (!itemIsAvailable(mediaItem)) {
-    onMenu(mediaItem, false);
+  if (!itemIsAvailable(item)) {
+    onMenu(evt, item);
     return;
   }
-  if (mediaItem.media_type == MediaType.FOLDER) {
+  if (item.media_type == MediaType.FOLDER) {
     router.push({
       name: 'browse',
       query: {
-        path: (mediaItem as BrowseFolder).path,
+        path: (item as BrowseFolder).path,
       },
     });
-  } else if (
-    ['artist', 'album', 'playlist'].includes(mediaItem.media_type) ||
-    !store.selectedPlayer?.available
-  ) {
+  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
     router.push({
-      name: mediaItem.media_type,
+      name: item.media_type,
       params: {
-        itemId: mediaItem.item_id,
-        provider: mediaItem.provider,
+        itemId: item.item_id,
+        provider: item.provider,
       },
     });
   } else {
-    onMenu(mediaItem, true);
+    onMenu(evt, item);
   }
 };
 
@@ -707,14 +384,6 @@ const onClear = function () {
   loadData(true);
 };
 
-const isSearchActive = computed(() => {
-  var searchActive = false;
-  if (params.value.search && params.value.search.length !== 0) {
-    searchActive = true;
-  }
-  return searchActive;
-});
-
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
@@ -723,68 +392,196 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   loadData(true, undefined, sort_key == 'original');
 };
 
-const changeActiveProviderFilter = function (provider: string) {
-  params.value.providerFilter = provider;
-  loadData(true, undefined, true);
+const redirectSearch = function () {
+  store.globalSearchTerm = params.value.search;
+  router.push({ name: 'search' });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ($state?: any) {
+const loadNextPage = function ({ done }: { done: any }) {
   if (pagedItems.value.length == 0) {
-    if ($state) $state.loaded();
+    done('empty');
     return;
   }
-  if (total.value !== undefined && params.value.offset >= total.value) {
-    if ($state) $state.loaded();
+  if (total.value && pagedItems.value.length >= total.value) {
+    done('empty');
     return;
   }
+
+  done('loading');
   params.value.offset += props.limit;
   loadData().then(() => {
-    if ($state) $state.loaded();
+    done('ok');
   });
 };
 
-const redirectSearch = function () {
-  localStorage.setItem('globalsearch', params.value.search);
-  router.push({ name: 'search', params: { initSearch: params.value.search } });
-};
+// computed properties
+const isSearchActive = computed(() => {
+  var searchActive = false;
+  if (params.value.search && params.value.search.length !== 0) {
+    searchActive = true;
+  }
+  return searchActive;
+});
 
-// watchers
-watch(
-  () => params.value.search,
-  (newVal) => {
-    if (newVal) showSearch.value = true;
-    loadData(true);
-    let storKey = `search.${props.itemtype}`;
-    if (props.parentItem) storKey += props.parentItem.item_id;
-    localStorage.setItem(storKey, params.value.search);
-  },
-);
-watch(
-  () => props.path,
-  () => {
-    allItems.value = [];
-    restoreState();
-  },
-);
-watch(
-  () => props.limit,
-  (newVal) => {
-    params.value.limit = newVal;
-  },
-);
+const menuItems = computed(() => {
+  // toggle expand
+  if (props.allowCollapse === true && !expanded.value) {
+    return [
+      {
+        label: 'tooltip.collapse_expand',
+        icon: 'mdi-chevron-down',
+        action: toggleExpand,
+        overflowAllowed: false,
+      },
+    ];
+  }
+
+  const items: ToolBarMenuItem[] = [];
+
+  // toggle select menu item
+  if (props.showSelectButton !== false) {
+    items.push({
+      label: 'tooltip.select_items',
+      icon: showCheckboxes.value
+        ? 'mdi-checkbox-multiple-outline'
+        : 'mdi-checkbox-multiple-blank-outline',
+      action: toggleCheckboxes,
+      active: showCheckboxes.value,
+    });
+  }
+  // library only filter
+  if (props.showLibraryOnlyFilter === true) {
+    items.push({
+      label: 'tooltip.filter_library',
+      icon: 'mdi-bookshelf',
+      action: toggleLibraryOnlyFilter,
+      active: params.value.libraryOnly,
+    });
+  }
+
+  // favorites only filter
+  if (props.showFavoritesOnlyFilter === true) {
+    items.push({
+      label: 'tooltip.filter_favorites',
+      icon: params.value.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline',
+      action: toggleFavoriteFilter,
+      active: params.value.favoritesOnly,
+    });
+  }
+
+  // album artists only filter
+  if (props.showAlbumArtistsOnlyFilter === true) {
+    items.push({
+      label: 'tooltip.album_artist_filter',
+      icon: params.value.albumArtistsFilter
+        ? 'mdi-account-music'
+        : 'mdi-account-music-outline',
+      action: toggleAlbumArtistsFilter,
+      active: params.value.albumArtistsFilter,
+    });
+  }
+
+  // refresh action
+  if (props.showRefreshButton !== false || newContentAvailable.value) {
+    items.push({
+      label: newContentAvailable.value
+        ? 'tooltip.refresh_new_content'
+        : 'tooltip.refresh',
+      icon: 'mdi-refresh',
+      action: onRefreshClicked,
+      active: newContentAvailable.value,
+      disabled: loading.value,
+    });
+  }
+
+  // sort options
+  if (props.sortKeys?.length) {
+    items.push({
+      label: 'tooltip.sort_options',
+      icon: 'mdi-sort',
+      subItems: props.sortKeys.map((sortKey) => {
+        return {
+          label: `sort.${sortKey}`,
+          selected: params.value.sortBy == sortKey,
+          action: () => {
+            changeSort(sortKey);
+          },
+        };
+      }),
+    });
+  }
+
+  // toggle search
+  if (props.showSearchButton !== false) {
+    items.push({
+      label: isSearchActive.value
+        ? 'tooltip.search_filter_active'
+        : 'tooltip.search',
+      icon: 'mdi-magnify',
+      action: toggleSearch,
+      active: isSearchActive.value,
+    });
+  }
+
+  // toggle view mode
+  items.push({
+    label: 'tooltip.toggle_view_mode',
+    icon: viewMode.value == 'list' ? 'mdi-view-list' : 'mdi-grid',
+    subItems: [
+      {
+        label: 'view.list',
+        icon: 'mdi-view-list',
+        selected: viewMode.value == 'list',
+        action: () => {
+          selectViewMode('list');
+        },
+      },
+      {
+        label: 'view.panel',
+        icon: 'mdi-grid',
+        selected: viewMode.value == 'panel',
+        action: () => {
+          selectViewMode('panel');
+        },
+      },
+    ],
+  });
+
+  if (props.extraMenuItems?.length) {
+    items.push(...props.extraMenuItems);
+  }
+
+  // toggle expand
+  if (props.allowCollapse === true) {
+    items.push({
+      label: 'tooltip.collapse_expand',
+      icon: 'mdi-chevron-up',
+      action: toggleExpand,
+    });
+  }
+
+  return items;
+});
 
 const loadData = async function (
   clear = false,
   limit = props.limit,
   refresh = false,
 ) {
+  if (loading.value) {
+    // we could potentially be called multiple times due to multiple watchers
+    // so ignore if we're already loading
+    return;
+  }
+  loading.value = true;
+
   if (clear || refresh) {
     params.value.offset = 0;
     newContentAvailable.value = false;
   }
-  loading.value = true;
   params.value.limit = props.limit;
+  params.value.refresh = refresh;
   if (props.loadPagedData !== undefined) {
     // call server for paged listing
     const nextItems = await props.loadPagedData(params.value);
@@ -815,11 +612,16 @@ const loadData = async function (
   loading.value = false;
 };
 
-const getSortName = function (item: MediaItemType | ItemMapping) {
+const getSortName = function (
+  item: MediaItemType | ItemMapping,
+  preferSortName = false,
+) {
+  if (!item) return '';
   if ('label' in item && item.label && item.name)
     return t(item.label, [item.name]);
   if ('label' in item && item.label) return t(item.label);
-  if ('sort_name' in item && item.sort_name) return item.sort_name;
+  if (preferSortName && 'sort_name' in item && item.sort_name)
+    return item.sort_name;
   return item.name;
 };
 
@@ -861,19 +663,27 @@ const getFilteredItems = function (
   if (params.sortBy == 'name') {
     result.sort((a, b) => getSortName(a).localeCompare(getSortName(b)));
   }
+  if (params.sortBy == 'sort_name') {
+    result.sort((a, b) =>
+      getSortName(a, true).localeCompare(getSortName(b, true)),
+    );
+  }
   if (params.sortBy == 'name_desc') {
     result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
   }
+
   if (params.sortBy == 'album') {
     result.sort((a, b) =>
-      (a as Track).album?.sort_name.localeCompare(
-        (b as Track).album?.sort_name,
+      getSortName((a as Track).album).localeCompare(
+        getSortName((b as Track).album),
       ),
     );
   }
   if (params.sortBy == 'artist') {
     result.sort((a, b) =>
-      (a as Track).artists[0].name.localeCompare((b as Track).artists[0].name),
+      getSortName((a as Track).artists[0]).localeCompare(
+        getSortName((b as Track).artists[0]),
+      ),
     );
   }
   if (params.sortBy == 'track_number') {
@@ -924,7 +734,7 @@ const getFilteredItems = function (
   return result.slice(params.offset, params.offset + params.limit);
 };
 
-const restoreState = function () {
+const restoreState = async function () {
   // restore state for this path/itemtype
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
@@ -959,6 +769,16 @@ const restoreState = function () {
     }
   }
 
+  // get stored/default libraryOnlyFilter for this itemtype
+  if (props.showLibraryOnlyFilter !== false) {
+    const savedLibraryOnlyStr = localStorage.getItem(
+      `libraryFilter.${props.itemtype}`,
+    );
+    if (savedLibraryOnlyStr && savedLibraryOnlyStr == 'true') {
+      params.value.libraryOnly = true;
+    }
+  }
+
   // get stored/default albumArtistsOnlyFilter for this itemtype
   if (props.showAlbumArtistsOnlyFilter !== false) {
     const albumArtistsOnlyStr = localStorage.getItem(
@@ -981,17 +801,13 @@ const restoreState = function () {
   let storKey = `search.${props.itemtype}`;
   if (props.parentItem) storKey += props.parentItem.item_id;
   const savedSearch = localStorage.getItem(storKey);
-
   if (savedSearch && savedSearch !== 'null') {
     params.value.search = savedSearch;
   }
-  loadData(true);
-};
 
-// get/set default settings at load
-onMounted(async () => {
-  restoreState();
-});
+  // load items
+  await loadData(true);
+};
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
@@ -1023,10 +839,103 @@ if (props.allowKeyHooks) {
     document.removeEventListener('keydown', keyListener);
   });
 }
+
+// watchers
+watch(
+  () => params.value.search,
+  (newVal) => {
+    if (newVal) showSearch.value = true;
+    loadData(true);
+    let storKey = `search.${props.itemtype}`;
+    if (props.parentItem) storKey += props.parentItem.item_id;
+    localStorage.setItem(storKey, params.value.search);
+  },
+);
+watch(
+  () => props.path,
+  () => {
+    if (loading.value == true) return;
+    allItems.value = [];
+    restoreState();
+  },
+);
+watch(
+  () => props.parentItem,
+  () => {
+    if (loading.value == true) return;
+    allItems.value = [];
+    newContentAvailable.value = true;
+  },
+  { deep: true },
+);
+watch(
+  () => props.limit,
+  (newVal) => {
+    params.value.limit = newVal;
+  },
+);
+watch(
+  () => props.updateAvailable,
+  (newVal) => {
+    if (loading.value) return;
+    newContentAvailable.value = newVal;
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  restoreState();
+});
 </script>
 
-<style>
-.v-toolbar > .v-toolbar__content > .v-toolbar__append {
-  margin-right: 5px;
+<style scoped>
+/* ThumbView panel columns */
+.col-2 {
+  width: 50%;
+  max-width: 50%;
+  flex-basis: 50%;
+  padding: 8px;
+}
+.col-3 {
+  width: 33.3%;
+  max-width: 33.3%;
+  flex-basis: 33.3%;
+  padding: 8px;
+}
+.col-4 {
+  width: 25%;
+  max-width: 25%;
+  flex-basis: 25%;
+  padding: 8px;
+}
+.col-5 {
+  width: 20%;
+  max-width: 20%;
+  flex-basis: 20%;
+  padding: 8px;
+}
+.col-6 {
+  width: 16.6%;
+  max-width: 16.6%;
+  flex-basis: 16.6%;
+  padding: 8px;
+}
+.col-7 {
+  width: 14.2%;
+  max-width: 14.2%;
+  flex-basis: 14.2%;
+  padding: 8px;
+}
+.col-8 {
+  width: 12.5%;
+  max-width: 12.5%;
+  flex-basis: 12.5%;
+  padding: 8px;
+}
+.col-9 {
+  width: 11.1%;
+  max-width: 11.1%;
+  flex-basis: 11.1%;
+  padding: 8px;
 }
 </style>

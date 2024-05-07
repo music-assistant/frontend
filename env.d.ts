@@ -21,5 +21,3 @@ declare module 'virtual:pwa-register/vue' {
     updateServiceWorker: (reloadPage?: boolean) => Promise<void>;
   };
 }
-
-declare module 'v3-infinite-loading';

@@ -18,7 +18,11 @@
         "types": ["vuetify", "node"],
         "forceConsistentCasingInFileNames": true,
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["src/*"],
+            "@plugins/*": ["src/plugins/*"],
+            "@components/*": ["src/components/*"],
+            "@views/*": ["src/views/*"],
+            "@layout/*": ["src/layouts/*"],
         }
     },
     "include": [

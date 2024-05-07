@@ -77,10 +77,10 @@
 </template>
 
 <script setup lang="ts">
-import { api } from './plugins/api';
+import { api } from '@/plugins/api';
 import { computed, onMounted, ref } from 'vue';
 import { useTheme } from 'vuetify';
-import { store } from './plugins/store';
+import { store } from '@/plugins/store';
 import { ColorCoverPalette, getContrastingTextColor } from '@/helpers/utils';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
@@ -100,6 +100,7 @@ const availableOutputDevices = ref(['default']);
 const loading = ref(true);
 const err = ref(false);
 const err_message = ref('Error!');
+import { i18n } from '@/plugins/i18n';
 
 const theme = useTheme();
 let lightTheme = theme.themes.value.light;

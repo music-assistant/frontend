@@ -9,37 +9,51 @@
     :show-library="true"
     :sort-keys="Object.keys(sortKeys)"
     :update-available="updateAvailable"
-    :title="getBreakpointValue('bp4') ? $t('playlists') : ''"
+    :title="$t('playlists')"
     :allow-key-hooks="true"
     :show-search-button="true"
-    :context-menu-items="contextMenuItems"
+    :extra-menu-items="extraMenuItems"
+    icon="mdi-playlist-play"
   />
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import api from '../plugins/api';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import api from '@/plugins/api';
 import {
   ProviderFeature,
   type Playlist,
   EventMessage,
   EventType,
   MediaType,
-} from '../plugins/api/interfaces';
-import { ContextMenuItem } from '@/helpers/contextmenu';
+} from '@/plugins/api/interfaces';
+import { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { sleep } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+
+defineOptions({
+  name: 'Playlists',
+});
 
 const { t } = useI18n();
 const items = ref<Playlist[]>([]);
 const updateAvailable = ref(false);
-const contextMenuItems = ref<ContextMenuItem[]>([]);
+const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 
 const sortKeys: Record<string, string> = {
-  name: 'sort_name',
-  recent: 'timestamp_added DESC',
+  name: 'name',
+  name_desc: 'name DESC',
+  sort_name: 'sort_name',
+  sort_name_desc: 'sort_name DESC',
+  timestamp_added: 'timestamp_added',
+  timestamp_added_desc: 'timestamp_added DESC',
+  timestamp_modified: 'timestamp_modified',
+  timestamp_modified_desc: 'timestamp_modified DESC',
+  last_played: 'last_played',
+  last_played_desc: 'last_played DESC',
+  play_count: 'play_count',
+  play_count_desc: 'play_count DESC',
 };
 
 const loadItems = async function (params: LoadDataParams) {
@@ -70,18 +84,26 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 onMounted(() => {
+  const playListCreateItems: ToolBarMenuItem[] = [];
   for (const prov of Object.values(api.providers).filter(
     (x) =>
       x.available &&
       x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
   )) {
-    contextMenuItems.value.push({
-      label: 'create_playlist',
+    playListCreateItems.push({
+      label: 'create_playlist_on',
       labelArgs: [prov.name],
       action: () => {
         newPlaylist(prov.instance_id);
       },
-      icon: 'mdi-sync',
+      icon: 'mdi-playlist-plus',
+    });
+  }
+  if (playListCreateItems.length) {
+    extraMenuItems.value.push({
+      label: 'create_playlist_on',
+      icon: 'mdi-playlist-plus',
+      subItems: playListCreateItems,
     });
   }
   // signal if/when items get added/updated/removed within this library

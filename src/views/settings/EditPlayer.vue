@@ -58,6 +58,8 @@
           :label="$t('settings.player_name')"
           variant="outlined"
           clearable
+          class="configcolumnleft"
+          style="margin-right: 25px"
         />
         <!-- enable field -->
         <v-switch

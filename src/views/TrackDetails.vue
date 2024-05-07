@@ -7,14 +7,17 @@
       :parent-item="itemDetails"
       :show-provider="true"
       :show-favorites-only-filter="false"
-      :show-library="true"
+      :show-library-only-filter="
+        itemDetails.provider == 'library' &&
+        getStreamingProviderMappings(itemDetails).length > 0
+      "
       :show-track-number="false"
+      :show-refresh-button="false"
       :load-items="loadTrackAlbums"
-      :sort-keys="['provider', 'name', 'duration']"
-      :update-available="updateAvailable"
+      :sort-keys="['name', 'sort_name', 'year', 'year_desc']"
       :title="$t('appears_on')"
-      :checksum="provider + itemId"
-      :provider-filter="providerFilter"
+      :path="provider + itemId"
+      :allow-collapse="true"
     />
     <br />
     <ItemsListing
@@ -23,14 +26,14 @@
       :parent-item="itemDetails"
       :show-provider="true"
       :show-favorites-only-filter="false"
-      :show-library="true"
       :show-track-number="false"
       :load-items="loadTrackVersions"
-      :sort-keys="['provider', 'name', 'duration']"
-      :update-available="updateAvailable"
+      :show-refresh-button="false"
+      :sort-keys="['name', 'sort_name', 'duration']"
       :title="$t('other_versions')"
       :hide-on-empty="true"
-      :checksum="provider + itemId"
+      :path="provider + itemId"
+      :allow-collapse="true"
     />
     <br />
     <!-- provider mapping details -->
@@ -39,18 +42,12 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '../components/ItemsListing.vue';
-import InfoHeader from '../components/InfoHeader.vue';
-import { computed, ref } from 'vue';
-import {
-  EventType,
-  type Track,
-  type EventMessage,
-  type MediaItemType,
-  Album,
-} from '../plugins/api/interfaces';
-import { api } from '../plugins/api';
-import { onBeforeUnmount, onMounted, watch } from 'vue';
+import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import InfoHeader from '@/components/InfoHeader.vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { EventType, type Track } from '@/plugins/api/interfaces';
+import { api } from '@/plugins/api';
+import { watch } from 'vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';
 
@@ -60,20 +57,7 @@ export interface Props {
   album?: string;
 }
 const props = defineProps<Props>();
-const activeTab = ref('');
-const updateAvailable = ref(false);
 const itemDetails = ref<Track>();
-
-const providerFilter = computed(() => {
-  if (itemDetails.value?.provider !== 'library') return [];
-  const result: string[] = ['library'];
-  for (const providerMapping of getStreamingProviderMappings(
-    itemDetails.value!,
-  )) {
-    result.push(providerMapping.provider_instance);
-  }
-  return result;
-});
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getTrack(
@@ -81,8 +65,19 @@ const loadItemDetails = async function () {
     props.provider,
     props.album,
   );
-  activeTab.value = 'versions';
 };
+
+onMounted(() => {
+  // auto refresh the info if this (library) item is updated.
+  if (props.provider == 'library') {
+    const unsub = api.subscribe(
+      EventType.MEDIA_ITEM_UPDATED,
+      loadItemDetails,
+      `library://artist/${props.itemId}`,
+    );
+    onBeforeUnmount(unsub);
+  }
+});
 
 watch(
   () => props.itemId,
@@ -92,21 +87,6 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  //signal if/when item updates
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_ADDED,
-    (evt: EventMessage) => {
-      // signal user that there might be updated info available for this item
-      const updatedItem = evt.data as MediaItemType;
-      if (itemDetails.value?.uri == updatedItem.uri) {
-        updateAvailable.value = true;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
-
 const loadTrackVersions = async function (params: LoadDataParams) {
   return await api.getTrackVersions(
     itemDetails.value!.item_id,
@@ -115,31 +95,10 @@ const loadTrackVersions = async function (params: LoadDataParams) {
 };
 
 const loadTrackAlbums = async function (params: LoadDataParams) {
-  let items: Album[] = [];
-  if (params.refresh) {
-    await loadItemDetails();
-  }
-  if (!itemDetails.value) {
-    items = [];
-  } else if (params.providerFilter && params.providerFilter != 'library') {
-    for (const providerMapping of getStreamingProviderMappings(
-      itemDetails.value,
-    )) {
-      if (providerMapping.provider_instance == params.providerFilter) {
-        items = await api.getTrackAlbums(
-          providerMapping.item_id,
-          providerMapping.provider_instance,
-        );
-        break;
-      }
-    }
-  } else {
-    items = await api.getTrackAlbums(
-      itemDetails.value.item_id,
-      itemDetails.value.provider,
-    );
-  }
-  updateAvailable.value = false;
-  return items;
+  return await api.getTrackAlbums(
+    props.itemId,
+    props.provider,
+    params.libraryOnly,
+  );
 };
 </script>

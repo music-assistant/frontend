@@ -9,11 +9,16 @@ import '@mdi/font/css/materialdesignicons.css';
 import 'material-design-icons-iconfont/dist/material-design-icons.css';
 import 'vuetify/styles';
 import colors from 'vuetify/lib/util/colors';
-import { aliases, mdi } from 'vuetify/iconsets/mdi';
+import { aliases as defaultAliases, mdi } from 'vuetify/iconsets/mdi';
 import { md } from 'vuetify/iconsets/md';
 
 // Composables
-import { createVuetify } from 'vuetify';
+import { IconAliases, createVuetify } from 'vuetify';
+
+const aliases: IconAliases = {
+  ...defaultAliases,
+};
+
 export default createVuetify(
   // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
   {

@@ -1,11 +1,13 @@
 <template>
   <!-- active player volume -->
-  <div v-if="props.isVisible">
+  <div v-if="props.isVisible && store.selectedPlayer">
     <v-menu
-      v-if="activePlayerQueue"
       v-model="showVolume"
       class="volume-control-dialog"
       :close-on-content-click="false"
+      :scrim="
+        $vuetify.theme.current.dark ? 'rgba(0,0,0,.75)' : 'rgba(0,0,0,.85)'
+      "
     >
       <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
@@ -73,7 +75,7 @@
 
       <v-card :min-width="300">
         <v-list style="overflow: hidden" lines="two">
-          <ListItem
+          <v-list-item
             density="compact"
             two-line
             :title="store.selectedPlayer?.display_name.substring(0, 25)"
@@ -86,22 +88,11 @@
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="
-                  store.selectedPlayer!.group_childs.length > 0
-                    ? 'mdi-speaker-multiple'
-                    : 'mdi-speaker'
-                "
+                :icon="store.selectedPlayer.icon"
                 color="primary"
               />
             </template>
-            <v-btn
-              variant="plain"
-              style="position: absolute; right: 0px; top: 0px"
-              icon="mdi-close"
-              dark
-              @click="showVolume = !showVolume"
-            />
-          </ListItem>
+          </v-list-item>
           <v-divider />
           <VolumeControl
             v-if="store.selectedPlayer"
@@ -114,14 +105,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import VolumeControl from '@/components/VolumeControl.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
 import Button from '@/components/mods/Button.vue';
-import { isColorDark } from '@/helpers/utils';
 import PlayerVolume from '../PlayerVolume.vue';
 
 // properties
@@ -142,21 +131,20 @@ const props = withDefaults(defineProps<Props>(), {
 
 //refs
 const showVolume = ref(false);
-
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
 </script>
 
-<style>
+<style scoped>
 .volume-control-dialog > .v-overlay__content {
   bottom: 135px !important;
   right: 5px !important;
   left: unset !important;
   top: unset !important;
+}
+.v-list-item >>> .v-list-item__prepend {
+  width: 60px;
+  margin-left: -5px;
+}
+.v-overlay__scrim {
+  opacity: 0.4;
 }
 </style>

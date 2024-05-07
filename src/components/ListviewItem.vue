@@ -2,12 +2,11 @@
 <template>
   <div>
     <ListItem
-      v-hold="() => emit('menu', item)"
       link
       :disabled="!itemIsAvailable(item) || isDisabled"
-      :context-menu-items="contextMenuItems"
-      @click.stop="emit('click', item)"
-      @click.right.prevent="() => emit('menu', item)"
+      :show-menu-btn="showMenu"
+      @click.stop="onClick"
+      @menu.stop="onMenu"
     >
       <template #prepend>
         <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
@@ -21,8 +20,8 @@
             "
           />
         </div>
-        <div class="media-thumb listitem-media-thumb">
-          <MediaItemThumb height="50" width="50" :item="item" />
+        <div v-else class="media-thumb listitem-media-thumb">
+          <MediaItemThumb size="50" :item="item" />
         </div>
       </template>
 
@@ -97,30 +96,12 @@
         </div>
 
         <!-- album: albumtype + artists + year -->
-        <div
-          v-else-if="
-            item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'year' in item &&
-            item.year &&
-            'album_type' in item
-          "
-        >
-          {{ $t('album_type.' + item.album_type) }} •
-          {{ getArtistsString(item.artists) }} • {{ item.year }}
-        </div>
-        <!-- album: albumtype + artists -->
-        <div
-          v-else-if="
-            item.media_type == MediaType.ALBUM &&
-            'artists' in item &&
-            item.artists &&
-            'album_type' in item
-          "
-        >
-          {{ $t('album_type.' + item.album_type) }} •
-          {{ getArtistsString(item.artists) }}
+        <div v-else-if="item.media_type == MediaType.ALBUM && 'year' in item">
+          <span v-if="item.album_type != AlbumType.UNKNOWN"
+            >{{ $t('album_type.' + item.album_type) }} •
+          </span>
+          <span>{{ getArtistsString(item.artists) }}</span>
+          <span v-if="item.year"> • {{ item.year }}</span>
         </div>
         <!-- track/album fallback: artist present -->
         <div v-else-if="'artists' in item && item.artists">
@@ -213,10 +194,10 @@ import ProviderIcon from './ProviderIcon.vue';
 import {
   ContentType,
   type BrowseFolder,
-  type MediaItem,
   type MediaItemType,
   MediaType,
-} from '../plugins/api/interfaces';
+  AlbumType,
+} from '@/plugins/api/interfaces';
 import {
   formatDuration,
   parseBool,
@@ -224,12 +205,10 @@ import {
   getBrowseFolderName,
 } from '@/helpers/utils';
 import { useI18n } from 'vue-i18n';
-import api from '@/plugins/api';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import { ContextMenuItem } from '@/helpers/contextmenu';
-
 import ListItem from '@/components/mods/ListItem.vue';
 import FavouriteButton from '@/components/FavoriteButton.vue';
+import { itemIsAvailable } from '@/plugins/api/helpers';
 
 // properties
 export interface Props {
@@ -246,8 +225,6 @@ export interface Props {
   isDisabled?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
-  parentItem?: MediaItemType;
-  contextMenuItems?: Array<ContextMenuItem>;
 }
 
 // global refs
@@ -263,15 +240,14 @@ const props = withDefaults(defineProps<Props>(), {
   showFavorite: false,
   showDuration: true,
   showCheckboxes: false,
-  parentItem: undefined,
   isDisabled: false,
-  contextMenuItems: undefined,
 });
 
 // computed properties
 const HiResDetails = computed(() => {
   if (!('provider_mappings' in props.item)) return '';
   for (const prov of props.item.provider_mappings) {
+    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![
@@ -297,22 +273,22 @@ const HiResDetails = computed(() => {
 // emits
 /* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: 'menu', value: MediaItemType): void;
-  (e: 'click', value: MediaItemType): void;
-  (e: 'select', value: MediaItemType, selected: boolean): void;
+  (e: 'menu', event: Event, item: MediaItemType): void;
+  (e: 'click', event: Event, item: MediaItemType): void;
+  (e: 'select', item: MediaItemType, selected: boolean): void;
 }>();
 /* eslint-enable no-unused-vars */
 
 // methods
 
-const itemIsAvailable = function (item: MediaItem) {
-  if (item.media_type == MediaType.FOLDER) return true;
-  if (!props.item.provider_mappings) return true;
-  for (const x of item.provider_mappings) {
-    if (x.available && api.providers[x.provider_instance]?.available)
-      return true;
-  }
-  return false;
+const onMenu = function (event: Event) {
+  if (props.showCheckboxes) return;
+  emit('menu', event, props.item);
+};
+
+const onClick = function (event: Event) {
+  if (props.showCheckboxes) return;
+  emit('click', event, props.item);
 };
 </script>
 

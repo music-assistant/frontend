@@ -12,34 +12,10 @@
           ),
         )"
         :key="item.domain"
-        v-hold="
-          () => {
-            editCoreConfig(item.domain);
-          }
-        "
+        show-menu-btn
         class="list-item-main"
         link
-        :context-menu-items="[
-          {
-            label: 'settings.configure',
-            labelArgs: [],
-            action: () => {
-              editCoreConfig(item.domain);
-            },
-            icon: 'mdi-cog',
-          },
-          {
-            label: 'settings.documentation',
-            labelArgs: [],
-            action: () => {
-              openLinkInNewTab(
-                api.providerManifests[item.domain].documentation!,
-              );
-            },
-            icon: 'mdi-bookshelf',
-            disabled: !api.providerManifests[item.domain].documentation,
-          },
-        ]"
+        @menu="(evt: Event) => onMenu(evt, item)"
         @click="editCoreConfig(item.domain)"
       >
         <template #prepend>
@@ -148,6 +124,7 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
 import { useRouter } from 'vue-router';
+import { eventbus } from '@/plugins/eventbus';
 import { shell } from '@tauri-apps/api';
 
 // global refs
@@ -167,7 +144,34 @@ const editCoreConfig = function (domain: string) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  shell.open(url);
+  window.open(url, '_blank');
+};
+
+const onMenu = function (evt: Event, item: CoreConfig) {
+  const menuItems = [
+    {
+      label: 'settings.configure',
+      labelArgs: [],
+      action: () => {
+        editCoreConfig(item.domain);
+      },
+      icon: 'mdi-cog',
+    },
+    {
+      label: 'settings.documentation',
+      labelArgs: [],
+      action: () => {
+        openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+      },
+      icon: 'mdi-bookshelf',
+      disabled: !api.providerManifests[item.domain].documentation,
+    },
+  ];
+  eventbus.emit('contextmenu', {
+    items: menuItems,
+    posX: (evt as PointerEvent).clientX,
+    posY: (evt as PointerEvent).clientY,
+  });
 };
 
 onMounted(async () => {
