@@ -1,11 +1,12 @@
 <template>
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
+    v-if="useFloatingPlayer"
     :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
     :style="`
       position: fixed;
       width: 100%;
-      height: ${bottomNavHeight + (getBreakpointValue('bp3') ? 110 : 80)}px;
+      height: ${bottomNavHeight + (getBreakpointValue('bp3') ? 100 : 70)}px;
       bottom: 0px;
       z-index: 999;
     `"
@@ -23,7 +24,7 @@
         : 'mediacontrols-player-default'
     }`"
     :style="`bottom: ${footerMarginBottom}px;`"
-    elevation="15"
+    elevation="10"
     app
   >
     <Player :use-floating-player="useFloatingPlayer" />

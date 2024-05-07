@@ -1,19 +1,14 @@
 <template>
   <v-navigation-drawer
     ref="resizeComponent"
+    v-model="showNavigationMenu"
     app
-    :permanent="getBreakpointValue('bp1')"
-    :rail="!showNavigationMenu"
+    :rail="enableRail"
     :width="280"
-    @update:model-value="
-      (e) => {
-        showNavigationMenu = e;
-      }
-    "
   >
     <v-list-item style="height: 55px" :active="false">
       <template #prepend>
-        <v-icon class="logo_icon" size="40" icon="$mass" />
+        <img class="logo_icon" size="40" src="@/assets/icon.png" />
       </template>
       <template #title>
         <div class="logo_text">Music Assistant</div>
@@ -41,9 +36,9 @@
       :width="40"
       style="position: relative; float: right; right: 10px; top: 20px"
       :ripple="false"
-      :icon="showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'"
+      :icon="enableRail ? 'mdi-chevron-right' : 'mdi-chevron-left'"
       :title="$t('tooltip.show_menu')"
-      @click.stop="showNavigationMenu = !showNavigationMenu"
+      @click="enableRail = !enableRail"
     />
   </v-navigation-drawer>
 </template>
@@ -54,7 +49,8 @@ import { store } from '@/plugins/store';
 import { ref, watch } from 'vue';
 import Button from '@/components/mods/Button.vue';
 
-const showNavigationMenu = ref(false);
+const showNavigationMenu = ref(true);
+const enableRail = ref(false);
 const menuItems = getMenuItems();
 
 watch(
@@ -181,6 +177,7 @@ export const getMenuItems = function () {
 .logo_icon {
   margin-left: -8px;
   border-radius: 4px;
+  width: 38px;
 }
 
 .v-list-item >>> .v-list-item__prepend {

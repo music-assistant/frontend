@@ -11,16 +11,12 @@ import 'vuetify/styles';
 import colors from 'vuetify/lib/util/colors';
 import { aliases as defaultAliases, mdi } from 'vuetify/iconsets/mdi';
 import { md } from 'vuetify/iconsets/md';
-import mass from '@/assets/icon.svg';
-import mass_alt from '@/assets/logo.svg';
 
 // Composables
 import { IconAliases, createVuetify } from 'vuetify';
 
 const aliases: IconAliases = {
   ...defaultAliases,
-  mass,
-  mass_alt,
 };
 
 export default createVuetify(

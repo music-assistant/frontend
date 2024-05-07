@@ -61,7 +61,6 @@ export default defineConfig({
     VueI18nPlugin({
       include: [path.resolve(__dirname, './src/translations/**')],
     }),
-    svgLoader(),
   ],
   define: { 'process.env': {} },
   resolve: {

@@ -1,7 +1,6 @@
 <template>
   <div>
     <Toolbar
-      icon="$mass"
       title="Music Assistant"
       :menu-items="
         hideSettings
