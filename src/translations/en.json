@@ -152,8 +152,8 @@
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
-            "client": "Client",
-    "group_members": "Group members",
+        "group_members": "Group members",
+        "client": "Client",
         "log_level": {
             "label": "Log level",
             "description": "Set the log verbosity for this provider.",
