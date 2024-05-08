@@ -34,7 +34,7 @@
       />
     </v-overlay>
 
-    <MediaItemThumb :item="item" :width="'100%'" />
+    <MediaItemThumb :item="item" style="height: auto" />
 
     <v-list-item
       variant="text"
@@ -71,7 +71,7 @@
     </v-list-item>
 
     <v-card-actions v-if="showActions" class="panel-item-actions">
-      <v-item-group style="padding: 0; margin: -8px">
+      <v-item-group style="padding: 0">
         <v-item v-if="parseBool(item.metadata.explicit || false)">
           <v-icon size="30" icon="mdi-alpha-e-box" />
         </v-item>
@@ -88,15 +88,16 @@
             </v-tooltip>
           </v-icon>
         </v-item>
-        <!-- disc number -->
-        <v-item v-if="'disc_number' in item && item.disc_number">
-          <v-icon icon="md:album" style="margin-left: 5px" />
-          {{ item.disc_number }}
-        </v-item>
-        <!-- track number-->
-        <v-item v-if="'track_number' in item && item.track_number">
-          <v-icon icon="mdi-music-circle-outline" style="margin-left: 10px" />
-          {{ item.track_number }}
+        <!-- disc/track number/position-->
+        <v-item
+          v-if="
+            ('track_number' in item && item.track_number) ||
+            ('position' in item && item.position)
+          "
+        >
+          <v-icon size="small" icon="mdi-music-circle-outline" />
+          <span v-if="item.disc_number">{{ item.disc_number }}/</span
+          >{{ item.track_number || item.position }}
         </v-item>
         <v-item v-if="getBreakpointValue('bp3')">
           <FavouriteButton :item="item" />
@@ -239,12 +240,10 @@ panel-item-details >>> .v-list-item__content {
 }
 
 .hiresicon {
-  margin-left: 10px;
   margin-right: 10px;
 }
 
 .hiresiconinverted {
-  margin-left: 10px;
   margin-right: 10px;
   filter: invert(100%);
 }

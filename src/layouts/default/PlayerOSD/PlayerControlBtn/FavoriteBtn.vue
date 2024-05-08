@@ -1,19 +1,20 @@
 <template>
   <ResponsiveIcon
-    v-if="props.isVisible"
+    v-if="isVisible"
     v-bind="props.icon"
-    :disabled="
-      !store.activePlayerQueue ||
-      !store.activePlayerQueue?.active ||
-      store.activePlayerQueue?.items == 0
-    "
-    icon="mdi-playlist-play"
+    :disabled="disabled || !item"
+    :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+    :title="$t('tooltip.favorite')"
     :type="'btn'"
     @click="onClick"
   />
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
+import { type MediaItemType } from '@/plugins/api/interfaces';
+import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import ResponsiveIcon, {
   ResponsiveIconProps,
@@ -21,23 +22,21 @@ import ResponsiveIcon, {
 
 // properties
 export interface Props {
+  item?: MediaItemType;
   isVisible?: boolean;
   icon?: ResponsiveIconProps;
+  disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  item: undefined,
   isVisible: true,
   icon: undefined,
+  disabled: false,
 });
 
 const onClick = function () {
-  if (store.showFullscreenPlayer && store.showQueueItems) {
-    store.showQueueItems = false;
-  } else if (store.showFullscreenPlayer && !store.showQueueItems) {
-    store.showQueueItems = true;
-  } else {
-    store.showQueueItems = true;
-    store.showFullscreenPlayer = true;
-  }
+  if (!props.item) return;
+  api.toggleFavorite(props.item);
 };
 </script>

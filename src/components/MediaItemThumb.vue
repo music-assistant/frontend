@@ -1,18 +1,19 @@
-<!-- TODO: Restore fallback image based on media type -->
 <template>
-  <img
+  <v-img
     ref="imageTag"
     loading="lazy"
     :height="size || '100%'"
     :width="size || '100%'"
+    aspect-ratio="1/1"
     :src="imgData"
     :class="{ rounded: rounded }"
-    :style="lazyStyle"
+    contain
+    :lazy-src="theme.current.value.dark ? imgCoverDark : imgCoverLight"
   />
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import type {
   ItemMapping,
   MediaItemImage,
@@ -46,9 +47,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const theme = useTheme();
-const lazyStyle = {
-  backgroundImage: `url(${theme.current.value.dark ? imgCoverDark : imgCoverLight})`,
-};
 
 function getThumbSize() {
   if (typeof props.size == 'number') {
@@ -84,27 +82,6 @@ const imgData = computed(() =>
       fallbackImage
     : fallbackImage,
 );
-
-// Remove background images
-const imageTag = ref(null);
-onMounted(() => {
-  const callback: IntersectionObserverCallback = (entries) => {
-    entries.forEach((entry) => {
-      const element = entry.target as HTMLImageElement;
-      if (element.complete) {
-        element.style.backgroundImage = '';
-        observer.disconnect();
-      }
-    });
-  };
-  const observer = new IntersectionObserver(callback, {
-    root: null,
-    threshold: 1.0,
-  });
-  if (imageTag.value) {
-    observer.observe(imageTag.value);
-  }
-});
 </script>
 
 <script lang="ts">
@@ -205,18 +182,5 @@ export const getImageThumbForItem = function (
 .v-avatar.v-avatar--density-default {
   height: 100% !important;
   width: 100% !important;
-}
-
-img {
-  min-width: 100%;
-  max-width: 100%;
-  height: auto;
-  display: block;
-  background-size: cover;
-  aspect-ratio: 1/1;
-}
-
-img.rounded {
-  border-radius: 4px;
 }
 </style>

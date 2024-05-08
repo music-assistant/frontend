@@ -552,10 +552,16 @@ export class MusicAssistantApi {
     return this.getData('player_queues/all');
   }
 
-  public getPlayerQueueItems(queue_id: string): Promise<PagedItems> {
+  public getPlayerQueueItems(
+    queue_id: string,
+    limit: number,
+    offset: number,
+  ): Promise<PagedItems> {
     // Get all QueueItems for given PlayerQueue
     return this.getData('player_queues/items', {
       queue_id,
+      limit,
+      offset,
     });
   }
 

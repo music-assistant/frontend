@@ -3,7 +3,7 @@
   <Button
     variant="icon"
     :ripple="false"
-    :icon="getBreakpointValue('bp6') ? false : true"
+    :icon="responsive && !getBreakpointValue('bp6') ? true : false"
     @click="store.showPlayersMenu = true"
   >
     <v-badge
@@ -19,12 +19,12 @@
       >mdi-speaker</v-icon
     >
     <span
-      v-if="store.activePlayerQueue && getBreakpointValue('bp6')"
+      v-if="!responsive || getBreakpointValue('bp6')"
       class="line-clamp-1 no_transform"
     >
       {{
         truncateString(
-          store.activePlayerQueue?.display_name,
+          store.activePlayerQueue?.display_name || $t('no_player'),
           getBreakpointValue('bp7') ? 16 : 8,
         )
       }}
@@ -44,6 +44,7 @@ import { isColorDark, truncateString } from '@/helpers/utils';
 // properties
 export interface Props {
   color?: string;
+  responsive?: boolean;
 }
 const props = defineProps<Props>();
 

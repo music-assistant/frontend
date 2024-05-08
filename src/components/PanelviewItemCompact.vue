@@ -8,10 +8,10 @@
       @click="onClick"
       @click.right.prevent="onMenu"
     >
-      <MediaItemThumb :item="item" :width="'100%'" :size="size" />
+      <MediaItemThumb :item="item" />
       <v-overlay
-        :model-value="isHovering || !getBreakpointValue('mobile')"
-        style="height: 40%; top: 60%; border-radius: 0"
+        :model-value="isHovering || $vuetify.display.mobile"
+        style="height: 35%; top: 65%; border-radius: 0"
         contained
         flat
         :scrim="
@@ -65,7 +65,7 @@ import {
   MediaType,
 } from '@/plugins/api/interfaces';
 import { getArtistsString, getBrowseFolderName } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+import { store } from '@/plugins/store';
 
 // properties
 export interface Props {

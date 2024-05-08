@@ -13,7 +13,7 @@
     </template>
 
     <!-- append -->
-    <template v-if="$slots.append" #append>
+    <template v-if="$slots.append || showMenuBtn" #append>
       <slot name="append"></slot>
 
       <!-- optional contextmenu button -->

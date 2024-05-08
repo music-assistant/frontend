@@ -159,16 +159,6 @@ const routes = [
           },
         ],
       },
-
-      {
-        path: '/playerqueue',
-        name: 'playerqueue',
-        component: () =>
-          import(
-            /* webpackChunkName: "playerqueue" */ '@/views/PlayerQueue.vue'
-          ),
-        props: true,
-      },
       {
         path: '/settings',
         name: 'settings',
