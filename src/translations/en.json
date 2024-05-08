@@ -134,8 +134,6 @@
         "sync_running": "This provider is now being synchronized",
         "username": "Username",
         "core": "Core",
-        "frontend": "User Interface",
-        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored on a device level.",
         "core_modules": "Core modules",
         "server_info": "Server information",
         "server_id": "Server ID",
@@ -226,7 +224,7 @@
         },
         "default_enqueue_select_album": {
             "label": "Items to select when you play a (in-library) album.",
-            "description": "If you want to play an artist, what items should be enqueued?",
+            "description": "If you want to play an album, what items should be enqueued?",
             "options": {
                 "library_tracks": "Only in-library tracks",
                 "all_tracks": "All tracks for album on provider"
@@ -326,6 +324,8 @@
             "label": "Icon",
             "description": "Material design icon for this player. \n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
+        "frontend": "User Interface",
+        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored on a device level.",
         "theme": {
             "label": "Theme",
             "options": {
@@ -343,11 +343,11 @@
         },
         "menu_items": {
             "label": "Enabled menu items",
-            "description": "Configure which items to show in the menu."
+            "description": "Configure which items to show in the menu.\n\n Note that if you disable settings you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
         },
         "artwork_pref": {
             "label": "Preference for image retrieval",
-            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server ?\nBy default the client is allowed to cache/download artwork directly from internet resources to put less stress on the server.",
+            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server ?\nBy default the client is allowed to cache\/download artwork directly from internet resources to put less stress on the server.",
             "options": {
                 "online": "Allow direct retrieval",
                 "server_only": "Enforce routing though the server"
@@ -358,7 +358,7 @@
             "options": {
                 "auto": "Auto (follow system configuration)",
                 "cs": "CS",
-                "da": "Dannish",
+                "da": "Danish",
                 "de": "German",
                 "en": "English",
                 "es": "Spannish",
@@ -383,30 +383,36 @@
     "shuffle_enabled": "Shuffle is enabled",
     "sort": {
         "duration": "Duration",
-        "duration_desc": "Duration (descending)",
         "position": "Position",
+        "position DESC": "Position (descending)",
+        "provider": "Provider",
+        "sort_album": "Album",
+        "sort_artist": "Artist",
+        "sort_name": "Alphabetically",
+        "sort_name DESC": "Alphabetically (descending)",
+        "timestamp_added DESC": "Recently added",
+        "track_number": "Track number",
+        "year": "Release year",
         "position_desc": "Position (descending)",
-        "name": "Name",
-        "name_desc": "Name (descending)",
-        "sort_name": "Sort name",
+        "album": "Album",
+        "artist": "Artist",
+        "name": "Alphabetically",
+        "name_desc": "Alphabetically (descending)",
+        "recent": "Recently added",
+        "year_desc": "Release year (descending)",
+        "duration_desc": "Duration (descending)",
+        "original": "Original",
         "sort_name_desc": "Sort name (descending)",
         "timestamp_added": "Date added",
         "timestamp_added_desc": "Date added (descending",
         "timestamp_modified": "Date updated",
         "timestamp_modified_desc": "Date updated (descending",
-        "album": "Album",
         "album_sort": "Album sort name",
-        "artist": "Artist",
         "artist_sort": "Artist sort name",
-        "track_number": "Track number",
-        "year": "Release year",
-        "year_desc": "Release year (descending)",
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
-        "play_count_desc": "Play count (descending)",
-        "original": "Original",
-        "provider": "Provider"
+        "play_count_desc": "Play count (descending)"
     },
     "state": {
         "idle": "idle",
