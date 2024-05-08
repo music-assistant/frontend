@@ -151,9 +151,9 @@ const keyListener = function (e: KeyboardEvent) {
     store.globalSearchTerm += e.key;
   }
 };
-document.addEventListener('keydown', keyListener);
+document.addEventListener('keyup', keyListener);
 
 onBeforeUnmount(() => {
-  document.removeEventListener('keydown', keyListener);
+  document.removeEventListener('keyup', keyListener);
 });
 </script>
