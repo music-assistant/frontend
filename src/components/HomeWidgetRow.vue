@@ -28,14 +28,7 @@
     </v-toolbar>
     <carousel>
       <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
-        <PanelviewItem
-          :item="item"
-          :show-checkboxes="false"
-          :show-track-number="false"
-          :is-selected="false"
-          @menu="onMenu"
-          @click="onClick"
-        />
+        <PanelviewItemCompact :item="item" @menu="onMenu" @click="onClick" />
       </swiper-slide>
     </carousel>
   </div>
@@ -43,9 +36,8 @@
 
 <script setup lang="ts">
 import Carousel from '@/components/Carousel.vue';
-import PanelviewItem from '@/components/PanelviewItem.vue';
+import PanelviewItemCompact from '@/components/PanelviewItemCompact.vue';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
-import api from '@/plugins/api';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import {
   BrowseFolder,
@@ -54,7 +46,6 @@ import {
   PlayerQueue,
 } from '@/plugins/api/interfaces';
 import router from '@/plugins/router';
-import { store } from '@/plugins/store';
 
 export interface WidgetRow {
   label: string;
@@ -125,6 +116,10 @@ const onClick = function (evt: Event, item: MediaItemType) {
   margin-bottom: 20px;
   margin-left: 0px;
   padding-left: 0px;
+}
+
+.widget-row-panel-item {
+  margin-bottom: 10px;
 }
 
 .v-slide-group__prev {

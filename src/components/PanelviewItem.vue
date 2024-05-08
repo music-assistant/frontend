@@ -7,8 +7,8 @@
     :disabled="!itemIsAvailable(item)"
     @click="onClick"
     @click.right.prevent="onMenu"
-    @mouseover="showSettingDots = true"
-    @mouseleave="showSettingDots = true"
+    @mouseover="showMenuBtn = true"
+    @mouseleave="showMenuBtn = false"
   >
     <v-overlay
       v-if="showCheckboxes"
@@ -104,6 +104,7 @@
       </v-item-group>
       <v-spacer />
       <MAButton
+        v-if="showMenuBtn"
         variant="list"
         icon="mdi-dots-vertical"
         style="padding-right: 0; margin-right: -5px"
@@ -152,7 +153,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // refs
 
-const showSettingDots = ref(false);
+const showMenuBtn = ref(false);
 
 // computed properties
 const HiResDetails = computed(() => {

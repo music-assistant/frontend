@@ -48,7 +48,7 @@
       >
         <template #prepend>
           <provider-icon
-            :domain="api.getProviderManifest(item!.provider)?.domain!"
+            :domain="api.getProviderManifest(item!.provider)?.domain || ''"
             :size="40"
             class="listitem-media-thumb"
           />
@@ -186,6 +186,7 @@ const onMenu = function (evt: Event, item: PlayerConfig) {
         editPlayer(item.player_id);
       },
       icon: 'mdi-cog',
+      disabled: !api.getProvider(item!.provider),
     },
     {
       label: item.enabled ? 'settings.disable' : 'settings.enable',
@@ -194,17 +195,18 @@ const onMenu = function (evt: Event, item: PlayerConfig) {
         toggleEnabled(item);
       },
       icon: 'mdi-cancel',
+      disabled: !api.getProvider(item!.provider),
     },
     {
       label: 'settings.documentation',
       labelArgs: [],
       action: () => {
         openLinkInNewTab(
-          api.getProviderManifest(item!.provider)!.documentation!,
+          api.getProviderManifest(item!.provider)?.documentation || '',
         );
       },
       icon: 'mdi-bookshelf',
-      disabled: !api.getProviderManifest(item!.provider)!.documentation!,
+      disabled: !api.getProviderManifest(item!.provider)?.documentation,
     },
     {
       label: 'settings.delete',

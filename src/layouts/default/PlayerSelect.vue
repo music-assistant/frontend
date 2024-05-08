@@ -35,7 +35,15 @@
         >
           <v-list-item class="playerrow-list-item">
             <template #prepend>
-              <v-icon size="45" :icon="player.icon" color="primary" />
+              <v-icon
+                size="45"
+                :icon="
+                  player.type == PlayerType.PLAYER && player.group_childs.length
+                    ? 'mdi-speaker-multiple'
+                    : player.icon
+                "
+                color="primary"
+              />
             </template>
             <template #title>
               <div>
@@ -78,13 +86,11 @@
 
 <script setup lang="ts">
 import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
-import { Player, PlayerState } from '@/plugins/api/interfaces';
+import { Player, PlayerType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import VolumeControl from '@/components/VolumeControl.vue';
 import { ConnectionState, api } from '@/plugins/api';
 import { getPlayerName, truncateString } from '@/helpers/utils';
-import ListItem from '@/components/mods/ListItem.vue';
-import { VueElement } from 'vue';
 
 const panelItem = ref<number | undefined>(undefined);
 

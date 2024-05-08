@@ -22,7 +22,7 @@
             'duration',
             'duration_desc',
           ]
-        : ['position']
+        : ['default']
     "
     :update-available="updateAvailable"
     :title="$t('playlist_tracks')"

@@ -13,6 +13,7 @@
     <div
       v-else-if="
         $vuetify.theme.current.dark &&
+        providerDomain &&
         api.providerManifests[providerDomain].icon_svg_dark
       "
       :style="`width: ${size}px`"
@@ -21,14 +22,16 @@
     ></div>
     <!-- regular svg icon -->
     <div
-      v-else-if="api.providerManifests[providerDomain].icon_svg"
+      v-else-if="
+        providerDomain && api.providerManifests[providerDomain].icon_svg
+      "
       :style="`width: ${size}px;height: ${size}px`"
       :title="api.providerManifests[providerDomain]!.name"
       v-html="api.providerManifests[providerDomain]!.icon_svg"
     ></div>
     <!-- material design icon -->
     <v-icon
-      v-else-if="api.providerManifests[providerDomain].icon"
+      v-else-if="providerDomain && api.providerManifests[providerDomain].icon"
       :size="size"
       :icon="'mdi-' + api.providerManifests[providerDomain]!.icon"
       :title="api.providerManifests[providerDomain]!.name"
@@ -58,6 +61,7 @@ const props = defineProps<Props>();
 const providerDomain = computed(() => {
   // handle case where provider domain is provided as instance id.
   if (props.domain in api.providers) return api.providers[props.domain].domain;
-  return props.domain;
+  if (props.domain in api.providerManifests) return props.domain;
+  return undefined;
 });
 </script>
