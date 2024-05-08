@@ -587,9 +587,9 @@ const loadData = async function (
     const nextItems = await props.loadPagedData(params.value);
     if (nextItems) {
       if (params.value.offset) {
-        pagedItems.value.push(...nextItems.items);
+        pagedItems.value.push(...(nextItems.items as MediaItemType[]));
       } else {
-        pagedItems.value = nextItems.items;
+        pagedItems.value = nextItems.items as MediaItemType[];
       }
       total.value = nextItems.total;
     }

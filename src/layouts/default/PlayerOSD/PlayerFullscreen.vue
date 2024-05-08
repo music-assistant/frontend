@@ -84,7 +84,7 @@
                 store.curQueueItem.media_item.album
               "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
-              @click="itemClick(store.curQueueItem.media_item.album)"
+              @click="itemClick(store.curQueueItem.media_item.album as Album)"
             >
               {{ store.curQueueItem.media_item.album.name }}
             </v-card-subtitle>
@@ -98,7 +98,9 @@
                 store.curQueueItem.media_item.artists.length
               "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
-              @click="itemClick(store.curQueueItem.media_item.artists[0])"
+              @click="
+                itemClick(store.curQueueItem.media_item.artists[0] as Artist)
+              "
             >
               {{ store.curQueueItem.media_item.artists[0].name }}
             </v-card-subtitle>
@@ -250,6 +252,8 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
 import api from '@/plugins/api';
 import {
+  Album,
+  Artist,
   EventType,
   MediaItemType,
   MediaType,

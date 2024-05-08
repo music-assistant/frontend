@@ -8,8 +8,6 @@ import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
 import { i18n } from '@/plugins/i18n';
-import { isMobileBrowser } from './helpers/utils';
-
 const theme = useTheme();
 
 const setTheme = function () {
@@ -35,8 +33,6 @@ const setTheme = function () {
 onMounted(() => {
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
-
-  store.isMobileBrowser = isMobileBrowser();
 
   // set navigation menu style
   store.navigationMenuStyle =

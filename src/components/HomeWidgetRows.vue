@@ -9,6 +9,7 @@ import api from '@/plugins/api';
 import HomeWidgetRow, { WidgetRow } from '@/components/HomeWidgetRow.vue';
 import { ref } from 'vue';
 import { onActivated } from 'vue';
+import { MediaItemType } from '@/plugins/api/interfaces';
 
 const widgetRows = ref<Record<string, WidgetRow>>({
   recently_played: {
@@ -67,7 +68,7 @@ onActivated(async () => {
     undefined,
     'RANDOM()',
   );
-  widgetRows.value.artists.items = artistItems.items;
+  widgetRows.value.artists.items = artistItems.items as MediaItemType[];
   widgetRows.value.artists.count = artistItems.total;
 
   // library albums widget row
@@ -79,7 +80,7 @@ onActivated(async () => {
     undefined,
     'timestamp_added DESC',
   );
-  widgetRows.value.albums.items = albumItems.items;
+  widgetRows.value.albums.items = albumItems.items as MediaItemType[];
   widgetRows.value.albums.count = albumItems.total;
 
   // library playlist widget row
@@ -90,7 +91,7 @@ onActivated(async () => {
     undefined,
     'timestamp_added DESC',
   );
-  widgetRows.value.playlists.items = playlistItems.items;
+  widgetRows.value.playlists.items = playlistItems.items as MediaItemType[];
   widgetRows.value.playlists.count = playlistItems.total;
 
   // library radios widget row
@@ -101,7 +102,7 @@ onActivated(async () => {
     undefined,
     'timestamp_added DESC',
   );
-  widgetRows.value.radios.items = radioItems.items;
+  widgetRows.value.radios.items = radioItems.items as MediaItemType[];
   widgetRows.value.radios.count = radioItems.total;
 
   // tracks widget
@@ -112,7 +113,7 @@ onActivated(async () => {
     undefined,
     'timestamp_added DESC',
   );
-  widgetRows.value.tracks.items = trackItems.items;
+  widgetRows.value.tracks.items = trackItems.items as MediaItemType[];
   widgetRows.value.tracks.count = trackItems.total;
 });
 
