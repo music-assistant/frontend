@@ -67,14 +67,20 @@
               • {{ item.album.name }}
             </v-item>
             <v-item
-              v-if="'disc_number' in item && item.disc_number && showDiscNumber"
+              v-if="
+                showDiscNumber &&
+                'disc_number' in item &&
+                item.disc_number != null
+              "
             >
               <v-icon style="margin-left: 5px" icon="md:album" />
               {{ item.disc_number }}
             </v-item>
             <v-item
               v-if="
-                'track_number' in item && item.track_number && showTrackNumber
+                showTrackNumber &&
+                'track_number' in item &&
+                item.track_number != null
               "
             >
               <v-icon
@@ -84,7 +90,9 @@
               {{ item.track_number }}
             </v-item>
             <v-item
-              v-else-if="'position' in item && item.position && showPosition"
+              v-else-if="
+                showPosition && 'position' in item && item.position != null
+              "
             >
               <v-icon
                 style="margin-left: 5px"

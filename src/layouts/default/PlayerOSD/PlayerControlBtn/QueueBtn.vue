@@ -8,8 +8,12 @@
       store.activePlayerQueue?.items == 0
     "
     icon="mdi-playlist-play"
+    :color="
+      getValueFromSources(props.icon?.color, [
+        [store.showFullscreenPlayer && store.showQueueItems, 'primary', ''],
+      ])
+    "
     :type="'btn'"
-    :badge="store.showFullscreenPlayer && store.showQueueItems"
     @click="onClick"
   />
 </template>
@@ -19,6 +23,7 @@ import { store } from '@/plugins/store';
 import ResponsiveIcon, {
   ResponsiveIconProps,
 } from '@/components/mods/ResponsiveIcon.vue';
+import { getValueFromSources } from '@/helpers/utils';
 
 // properties
 export interface Props {
