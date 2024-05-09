@@ -4,7 +4,7 @@
     loading="lazy"
     :height="size || '100%'"
     :width="size || '100%'"
-    aspect-ratio="1/1"
+    aspect-ratio="1"
     :src="imgData"
     :class="{ rounded: rounded }"
     contain
