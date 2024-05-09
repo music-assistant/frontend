@@ -374,12 +374,9 @@ const backButtonClick = function () {
   // if we have stored routes, we can safely use history back
   if (store.prevRoute) {
     router.back();
-    // router.push({
-    //   path: store.prevRoute,
-    // });
     return;
   }
-  // fallback to main listing for itemtype
+  // back to main listing for itemtype
   const curRoute = router.currentRoute.value.name?.toString() || '';
   for (const itemType of ['artist', 'album', 'track', 'playlist', 'radio']) {
     if (curRoute.includes(itemType)) {

@@ -265,8 +265,9 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from) => {
-  if (!from?.name) return;
+router.afterEach((to, from) => {
+  if (!from?.path) return;
+  console.log('navigating from ', from.path, ' to ', to.path);
   store.prevRoute = from.path;
 });
 

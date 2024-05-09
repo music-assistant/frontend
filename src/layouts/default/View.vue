@@ -1,14 +1,9 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
     <drawer-navigation v-if="store.navigationMenuStyle == 'vertical'" />
-
     <router-view v-slot="{ Component }">
-      <!-- keep home view and search alive to reduce 'jank' - NOTE: do NOT try this for the library views as it has bad side effects!-->
-      <keep-alive :max="5" :include="['HomeView', 'Search']">
-        <component :is="Component" />
-      </keep-alive>
+      <component :is="Component" />
     </router-view>
-
     <add-to-playlist-dialog />
     <item-context-menu />
     <v-snackbar

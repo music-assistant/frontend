@@ -8,7 +8,7 @@
           ? 'cursor: pointer; width: fit-content;'
           : 'width: fit-content;'
       "
-      @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
+      @click="widgetRow.path ? $router.push(widgetRow.path) : ''"
     >
       <template #prepend><v-icon :icon="widgetRow.icon" /></template>
 
