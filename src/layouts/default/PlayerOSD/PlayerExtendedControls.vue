@@ -1,17 +1,19 @@
 <template>
   <SpeakerBtn
-    v-if="props.player && props.player.isVisible"
-    :color="props.player.color"
+    v-if="player && player.isVisible"
+    :color="player.color"
+    :responsive="true"
   />
   <QueueBtn
-    v-if="props.queue && props.queue.isVisible"
-    :color="props.queue.color"
+    v-if="queue && queue.isVisible"
+    :color="queue.color"
+    style="padding-left: 15px; padding-right: 20px"
   />
   <VolumeBtn
-    v-if="props.volume && props.volume.isVisible"
-    :color="props.volume.color"
-    :volume-size="props.volume.volumeSize"
-    :responsive-volume-size="props.volume.responsiveVolumeSize"
+    v-if="volume && volume.isVisible"
+    :color="volume.color"
+    :volume-size="volume.volumeSize"
+    :responsive-volume-size="volume.responsiveVolumeSize"
   />
 </template>
 

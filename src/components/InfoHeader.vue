@@ -240,7 +240,7 @@
             <provider-icon
               :domain="item.provider"
               :size="25"
-              style="margin-top: 4px"
+              style="margin-top: 6px"
             />
           </div>
 

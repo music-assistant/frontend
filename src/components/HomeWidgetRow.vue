@@ -28,7 +28,16 @@
     </v-toolbar>
     <carousel>
       <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
-        <PanelviewItemCompact :item="item" @menu="onMenu" @click="onClick" />
+        <PanelviewItemCompact
+          :item="item"
+          :permanent-overlay="
+            ![MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO].includes(
+              item.media_type,
+            )
+          "
+          @menu="onMenu"
+          @click="onClick"
+        />
       </swiper-slide>
     </carousel>
   </div>

@@ -148,7 +148,6 @@ import {
   nextTick,
   onMounted,
   watch,
-  toRaw,
 } from 'vue';
 import {
   MediaType,

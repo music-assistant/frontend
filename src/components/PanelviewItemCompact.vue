@@ -10,7 +10,7 @@
     >
       <MediaItemThumb :item="item" />
       <v-overlay
-        :model-value="isHovering || $vuetify.display.mobile"
+        :model-value="isHovering || $vuetify.display.mobile || permanentOverlay"
         style="height: 35%; top: 65%; border-radius: 0"
         contained
         flat
@@ -65,15 +65,16 @@ import {
   MediaType,
 } from '@/plugins/api/interfaces';
 import { getArtistsString, getBrowseFolderName } from '@/helpers/utils';
-import { store } from '@/plugins/store';
 
 // properties
 export interface Props {
   item: MediaItemType;
   size?: number;
+  permanentOverlay?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
+  permanentOverlay: false,
 });
 
 /* eslint-disable no-unused-vars */

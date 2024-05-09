@@ -9,6 +9,7 @@
     "
     icon="mdi-playlist-play"
     :type="'btn'"
+    :badge="store.showFullscreenPlayer && store.showQueueItems"
     @click="onClick"
   />
 </template>
