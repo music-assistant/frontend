@@ -736,6 +736,7 @@ const getFilteredItems = function (
 
 const restoreState = async function () {
   // restore state for this path/itemtype
+  console.log('restore state for ', props.itemtype);
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
   if (savedViewMode && savedViewMode !== 'null') {

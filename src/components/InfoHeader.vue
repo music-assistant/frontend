@@ -371,6 +371,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 };
 
 const backButtonClick = function () {
+  console.log('backButtonClick');
   // if we have stored routes, we can safely use history back
   if (store.prevScrollPos) {
     router.go(-1);

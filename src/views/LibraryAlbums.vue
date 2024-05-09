@@ -27,8 +27,8 @@ defineOptions({
 const updateAvailable = ref<boolean>(false);
 
 const sortKeys: Record<string, string> = {
-  name: 'name',
-  name_desc: 'name DESC',
+  name: 'name COLLATE NOCASE ASC',
+  name_desc: 'name COLLATE NOCASE DESC',
   sort_name: 'sort_name',
   sort_name_desc: 'sort_name DESC',
   artist: 'artists.name, albums.name',

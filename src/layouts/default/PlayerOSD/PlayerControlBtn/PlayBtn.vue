@@ -38,7 +38,7 @@
   <ResponsiveIcon
     v-else-if="props.isVisible"
     v-bind="props.icon"
-    :disabled="!store.activePlayerQueue || store.activePlayerQueue?.items == 0"
+    :disabled="store.activePlayerQueue?.items == 0"
     :icon="props.withCircle ? 'mdi-play-circle' : 'mdi-play'"
     :type="'btn'"
     @click="

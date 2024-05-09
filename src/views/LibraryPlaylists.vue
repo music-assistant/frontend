@@ -42,8 +42,8 @@ const updateAvailable = ref(false);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 
 const sortKeys: Record<string, string> = {
-  name: 'name',
-  name_desc: 'name DESC',
+  name: 'name COLLATE NOCASE ASC',
+  name_desc: 'name COLLATE NOCASE DESC',
   sort_name: 'sort_name',
   sort_name_desc: 'sort_name DESC',
   timestamp_added: 'timestamp_added',

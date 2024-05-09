@@ -14,6 +14,7 @@
           'Search',
           'Browse',
         ]"
+        exclude="ItemsListing"
       >
         <component :is="Component" />
       </keep-alive>
