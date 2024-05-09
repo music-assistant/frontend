@@ -704,6 +704,9 @@ export class MusicAssistantApi {
   }
 
   public playerCommandVolumeSet(playerId: string, newVolume: number) {
+    newVolume = Math.max(newVolume, 0);
+    newVolume = Math.min(newVolume, 100);
+
     this.playerCommand(playerId, 'volume_set', {
       volume_level: newVolume,
     });
