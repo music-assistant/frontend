@@ -14,6 +14,7 @@
     :show-search-button="true"
     :extra-menu-items="extraMenuItems"
     icon="mdi-playlist-play"
+    :restore-state="true"
   />
 </template>
 

@@ -27,112 +27,114 @@
       @click:clear="onClear"
     />
 
-    <Container
-      v-if="expanded"
-      :variant="viewMode == 'panel' ? 'panel' : 'default'"
-    >
-      <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate />
-
-      <v-infinite-scroll
-        :items="pagedItems"
-        :onLoad="loadNextPage"
-        :mode="infiniteScroll ? 'intersect' : 'manual'"
-        :load-more-text="$t('load_more_items')"
-        :empty-text="''"
-        style="overflow-y: unset"
+    <transition name="fade">
+      <Container
+        v-if="expanded"
+        :variant="viewMode == 'panel' ? 'panel' : 'default'"
       >
-        <!-- panel view -->
-        <v-row v-if="viewMode == 'panel'">
-          <v-col
-            v-for="item in pagedItems"
-            :key="item.uri"
-            cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          >
-            <PanelviewItem
-              :item="item"
-              :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
-              :show-track-number="showTrackNumber"
-              :show-favorite="showFavoritesOnlyFilter"
-              :show-actions="['tracks', 'albums'].includes(itemtype)"
-              @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-            />
-          </v-col>
-        </v-row>
+        <!-- loading animation -->
+        <v-progress-linear v-if="loading" indeterminate />
 
-        <!-- list view -->
-        <v-virtual-scroll
-          v-if="viewMode == 'list'"
-          :height="70"
+        <v-infinite-scroll
           :items="pagedItems"
-          style="height: 100%"
+          :onLoad="loadNextPage"
+          :mode="infiniteScroll ? 'intersect' : 'manual'"
+          :load-more-text="$t('load_more_items')"
+          :empty-text="''"
+          style="overflow-y: unset"
         >
-          <template #default="{ item }">
-            <ListviewItem
-              :item="item"
-              :show-track-number="showTrackNumber"
-              :show-disc-number="showTrackNumber"
-              :show-duration="showDuration"
-              :show-favorite="showFavoritesOnlyFilter"
-              :show-menu="showMenu"
-              :show-provider="showProvider"
-              :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
-              :is-selected="isSelected(item)"
-              :show-details="itemtype.includes('versions')"
-              @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-            />
+          <!-- panel view -->
+          <v-row v-if="viewMode == 'panel'">
+            <v-col
+              v-for="item in pagedItems"
+              :key="item.uri"
+              cols="12"
+              :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            >
+              <PanelviewItem
+                :item="item"
+                :is-selected="isSelected(item)"
+                :show-checkboxes="showCheckboxes"
+                :show-track-number="showTrackNumber"
+                :show-favorite="showFavoritesOnlyFilter"
+                :show-actions="['tracks', 'albums'].includes(itemtype)"
+                @select="onSelect"
+                @menu="onMenu"
+                @click="onClick"
+              />
+            </v-col>
+          </v-row>
+
+          <!-- list view -->
+          <v-virtual-scroll
+            v-if="viewMode == 'list'"
+            :height="70"
+            :items="pagedItems"
+            style="height: 100%"
+          >
+            <template #default="{ item }">
+              <ListviewItem
+                :item="item"
+                :show-track-number="showTrackNumber"
+                :show-disc-number="showTrackNumber"
+                :show-duration="showDuration"
+                :show-favorite="showFavoritesOnlyFilter"
+                :show-menu="showMenu"
+                :show-provider="showProvider"
+                :show-album="showAlbum"
+                :show-checkboxes="showCheckboxes"
+                :is-selected="isSelected(item)"
+                :show-details="itemtype.includes('versions')"
+                @select="onSelect"
+                @menu="onMenu"
+                @click="onClick"
+              />
+            </template>
+          </v-virtual-scroll>
+        </v-infinite-scroll>
+
+        <!-- show alert if no item found -->
+        <div v-if="!loading && pagedItems.length == 0">
+          <Alert
+            v-if="
+              !loading &&
+              pagedItems.length == 0 &&
+              (params.search || params.favoritesOnly)
+            "
+            :title="$t('no_content_filter')"
+          >
+            <v-btn
+              v-if="params.search"
+              style="margin-top: 15px"
+              @click="redirectSearch"
+            >
+              {{ $t('try_global_search') }}
+            </v-btn>
+          </Alert>
+          <Alert v-else-if="!loading && pagedItems.length == 0">
+            {{ $t('no_content') }}
+          </Alert>
+        </div>
+
+        <!-- box shown when item(s) selected -->
+        <v-snackbar
+          :model-value="selectedItems.length > 1"
+          :timeout="-1"
+          style="margin-bottom: 120px"
+        >
+          <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
+          <template #actions>
+            <v-btn
+              color="primary"
+              variant="text"
+              @click="(evt: Event) => onMenu(evt, selectedItems)"
+            >
+              {{ $t('actions') }}
+            </v-btn>
           </template>
-        </v-virtual-scroll>
-      </v-infinite-scroll>
-
-      <!-- show alert if no item found -->
-      <div v-if="!loading && pagedItems.length == 0">
-        <Alert
-          v-if="
-            !loading &&
-            pagedItems.length == 0 &&
-            (params.search || params.favoritesOnly)
-          "
-          :title="$t('no_content_filter')"
-        >
-          <v-btn
-            v-if="params.search"
-            style="margin-top: 15px"
-            @click="redirectSearch"
-          >
-            {{ $t('try_global_search') }}
-          </v-btn>
-        </Alert>
-        <Alert v-else-if="!loading && pagedItems.length == 0">
-          {{ $t('no_content') }}
-        </Alert>
-      </div>
-
-      <!-- box shown when item(s) selected -->
-      <v-snackbar
-        :model-value="selectedItems.length > 1"
-        :timeout="-1"
-        style="margin-bottom: 120px"
-      >
-        <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
-        <template #actions>
-          <v-btn
-            color="primary"
-            variant="text"
-            @click="(evt: Event) => onMenu(evt, selectedItems)"
-          >
-            {{ $t('actions') }}
-          </v-btn>
-        </template>
-      </v-snackbar>
-    </Container>
+        </v-snackbar>
+      </Container>
+    </transition>
   </section>
 </template>
 
@@ -146,6 +148,7 @@ import {
   nextTick,
   onMounted,
   watch,
+  toRaw,
 } from 'vue';
 import {
   MediaType,
@@ -167,7 +170,7 @@ import { useI18n } from 'vue-i18n';
 import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
-import { panelViewItemResponsive } from '@/helpers/utils';
+import { panelViewItemResponsive, scrollElement } from '@/helpers/utils';
 
 export interface LoadDataParams {
   offset: number;
@@ -209,6 +212,7 @@ export interface Props {
   infiniteScroll?: boolean;
   path?: string;
   icon?: string;
+  restoreState?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name', 'sort_name'],
@@ -234,7 +238,16 @@ const props = withDefaults(defineProps<Props>(), {
   loadItems: undefined,
   path: undefined,
   icon: undefined,
+  restoreState: false,
 });
+
+export interface StoredState {
+  path: string;
+  scrollPos: number;
+  pagedItems: MediaItemType[];
+  params: LoadDataParams;
+  total: number;
+}
 
 // global refs
 const router = useRouter();
@@ -734,9 +747,8 @@ const getFilteredItems = function (
   return result.slice(params.offset, params.offset + params.limit);
 };
 
-const restoreState = async function () {
-  // restore state for this path/itemtype
-  console.log('restore state for ', props.itemtype);
+const restoreSettings = async function () {
+  // restore settings for this path/itemtype
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
   if (savedViewMode && savedViewMode !== 'null') {
@@ -805,9 +817,6 @@ const restoreState = async function () {
   if (savedSearch && savedSearch !== 'null') {
     params.value.search = savedSearch;
   }
-
-  // load items
-  await loadData(true);
 };
 
 // lifecycle hooks
@@ -841,6 +850,21 @@ if (props.allowKeyHooks) {
   });
 }
 
+if (props.restoreState) {
+  // handle restore state
+  onBeforeUnmount(() => {
+    const key = props.path || props.itemtype;
+    const el = document.querySelector('#cont');
+    store.prevState = {
+      path: key,
+      scrollPos: el?.scrollTop || 0,
+      pagedItems: pagedItems.value,
+      params: params.value,
+      total: total.value || 0,
+    };
+  });
+}
+
 // watchers
 watch(
   () => params.value.search,
@@ -854,10 +878,11 @@ watch(
 );
 watch(
   () => props.path,
-  () => {
+  (newVal) => {
+    console.debug('Path updated to', newVal);
     if (loading.value == true) return;
     allItems.value = [];
-    restoreState();
+    loadData(true);
   },
 );
 watch(
@@ -884,8 +909,26 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  restoreState();
+onMounted(async () => {
+  restoreSettings();
+  // for the main listings (e.g. artists, albums etc.) we remember the scroll position
+  // so we can jump back there on back navigation
+  const key = props.path || props.itemtype;
+  if (props.restoreState && store.prevState?.path == key) {
+    total.value = store.prevState.total;
+    params.value = store.prevState.params;
+    pagedItems.value = store.prevState.pagedItems;
+    // scroll the main listing back to its previous scroll position
+    nextTick(() => {
+      const el = document.getElementById('cont');
+      if (el) {
+        scrollElement(el, store.prevState!.scrollPos, 50);
+      }
+    });
+    loading.value = false;
+  } else {
+    loadData(true);
+  }
 });
 </script>
 

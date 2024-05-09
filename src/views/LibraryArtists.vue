@@ -12,6 +12,7 @@
     :show-search-button="true"
     :sort-keys="sortKeys"
     icon="mdi-account-outline"
+    :restore-state="true"
   />
 </template>
 

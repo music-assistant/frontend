@@ -27,6 +27,8 @@
     :update-available="updateAvailable"
     :title="$t('playlist_tracks')"
     :allow-key-hooks="true"
+    :path="`playlist.${props.itemId}.${props.provider}`"
+    :restore-state="true"
   />
 
   <!-- provider mapping details -->

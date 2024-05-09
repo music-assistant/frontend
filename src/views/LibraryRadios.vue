@@ -22,6 +22,7 @@
       },
     ]"
     icon="mdi-access-point"
+    :restore-state="true"
   />
 </template>
 

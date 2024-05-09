@@ -1,6 +1,8 @@
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive } from 'vue';
 import { Player, PlayerQueue, QueueItem } from './api/interfaces';
+
 import api from './api';
+import { StoredState } from '@/components/ItemsListing.vue';
 
 export enum AlertType {
   ERROR = 'error',
@@ -29,9 +31,10 @@ interface Store {
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
-  prevScrollPos: Record<string, number>;
+  prevState?: StoredState;
   allowExternalImageRetrieval: boolean;
   activeAlert?: Alert;
+  prevRoute?: string;
 }
 
 export const store: Store = reactive({
@@ -68,7 +71,8 @@ export const store: Store = reactive({
     return undefined;
   }),
   globalSearchTerm: undefined,
-  prevScrollPos: {},
+  prevState: undefined,
   allowExternalImageRetrieval: true,
   activeAlert: undefined,
+  prevRoute: undefined,
 });

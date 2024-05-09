@@ -10,6 +10,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     icon="mdi-album"
+    :restore-state="true"
   />
 </template>
 

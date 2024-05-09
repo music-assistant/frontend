@@ -23,6 +23,7 @@
       },
     ]"
     icon="mdi-music-note"
+    :restore-state="true"
   />
 </template>
 

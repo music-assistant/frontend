@@ -3,19 +3,8 @@
     <drawer-navigation v-if="store.navigationMenuStyle == 'vertical'" />
 
     <router-view v-slot="{ Component }">
-      <keep-alive
-        :max="5"
-        :include="[
-          'HomeView',
-          'Artists',
-          'Albums',
-          'Tracks',
-          'Playlists',
-          'Search',
-          'Browse',
-        ]"
-        exclude="ItemsListing"
-      >
+      <!-- keep home view and search alive to reduce 'jank' - NOTE: do NOT try this for the library views as it has bad side effects!-->
+      <keep-alive :max="5" :include="['HomeView', 'Search']">
         <component :is="Component" />
       </keep-alive>
     </router-view>
