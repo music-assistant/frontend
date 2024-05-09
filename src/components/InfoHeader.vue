@@ -373,7 +373,10 @@ const artistClick = function (item: Artist | ItemMapping) {
 const backButtonClick = function () {
   // if we have stored routes, we can safely use history back
   if (store.prevRoute) {
-    router.go(-1);
+    router.back();
+    // router.push({
+    //   path: store.prevRoute,
+    // });
     return;
   }
   // fallback to main listing for itemtype
@@ -420,14 +423,6 @@ const shortDescription = computed(() => {
     );
   }
   return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
-});
-
-const availablePlayers = computed(() => {
-  return Object.values(api.players)
-    .filter((x) => x.available && !x.synced_to)
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
-    );
 });
 </script>
 
