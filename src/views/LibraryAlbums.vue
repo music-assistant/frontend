@@ -4,7 +4,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :sort-keys="Object.keys(sortKeys)"
+    :sort-keys="sortKeys"
     :update-available="updateAvailable"
     :title="$t('albums')"
     :allow-key-hooks="true"
@@ -26,21 +26,21 @@ defineOptions({
 
 const updateAvailable = ref<boolean>(false);
 
-const sortKeys: Record<string, string> = {
-  name: 'name COLLATE NOCASE ASC',
-  name_desc: 'name COLLATE NOCASE DESC',
-  sort_name: 'sort_name',
-  sort_name_desc: 'sort_name DESC',
-  artist: 'artists.name, albums.name',
-  year: 'year',
-  year_desc: 'year DESC',
-  timestamp_added: 'timestamp_added',
-  timestamp_added_desc: 'timestamp_added DESC',
-  last_played: 'last_played',
-  last_played_desc: 'last_played DESC',
-  play_count: 'play_count',
-  play_count_desc: 'play_count DESC',
-};
+const sortKeys = [
+  'name',
+  'name_desc',
+  'sort_name',
+  'sort_name_desc',
+  'artist',
+  'year',
+  'year_desc',
+  'timestamp_added',
+  'timestamp_added_desc',
+  'last_played',
+  'last_played_desc',
+  'play_count',
+  'play_count_desc',
+];
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library
@@ -83,7 +83,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    sortKeys[params.sortBy],
+    params.sortBy,
   );
 };
 </script>

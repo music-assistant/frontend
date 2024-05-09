@@ -6,7 +6,7 @@
     :show-favorites-only-filter="true"
     :show-track-number="false"
     :load-paged-data="loadItems"
-    :sort-keys="Object.keys(sortKeys)"
+    :sort-keys="sortKeys"
     :show-album="true"
     :update-available="updateAvailable"
     :title="$t('tracks')"
@@ -49,24 +49,24 @@ const { t } = useI18n();
 const items = ref<Track[]>([]);
 const updateAvailable = ref<boolean>(false);
 
-const sortKeys: Record<string, string> = {
-  name: 'name COLLATE NOCASE ASC',
-  name_desc: 'name COLLATE NOCASE DESC',
-  sort_name: 'sort_name',
-  sort_name_desc: 'sort_name DESC',
-  artist: 'artists.name, name',
-  year: 'year',
-  year_desc: 'year DESC',
-  album: 'albums.name, tracks.name',
-  duration: 'duration',
-  duration_desc: 'duration DESC',
-  timestamp_added: 'timestamp_added',
-  timestamp_added_desc: 'timestamp_added DESC',
-  last_played: 'last_played',
-  last_played_desc: 'last_played DESC',
-  play_count: 'play_count',
-  play_count_desc: 'play_count DESC',
-};
+const sortKeys = [
+  'name',
+  'name_desc',
+  'sort_name',
+  'sort_name_desc',
+  'artist',
+  'year',
+  'year_desc',
+  'album',
+  'duration',
+  'duration_desc',
+  'timestamp_added',
+  'timestamp_added_desc',
+  'last_played',
+  'last_played_desc',
+  'play_count',
+  'play_count_desc',
+];
 
 onMounted(() => {
   // signal if/when items get added/updated/removed within this library
@@ -110,7 +110,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    sortKeys[params.sortBy],
+    params.sortBy,
   );
 };
 
