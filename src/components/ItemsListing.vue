@@ -169,7 +169,7 @@ import { useI18n } from 'vue-i18n';
 import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
-import { panelViewItemResponsive, scrollElement } from '@/helpers/utils';
+import { panelViewItemResponsive, scrollElement, sleep } from '@/helpers/utils';
 
 export interface LoadDataParams {
   offset: number;
@@ -212,6 +212,7 @@ export interface Props {
   path?: string;
   icon?: string;
   restoreState?: boolean;
+  noServerSideSorting?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name', 'sort_name'],
@@ -238,6 +239,7 @@ const props = withDefaults(defineProps<Props>(), {
   path: undefined,
   icon: undefined,
   restoreState: false,
+  noServerSideSorting: false,
 });
 
 export interface StoredState {
@@ -270,6 +272,7 @@ const selectedItems = ref<MediaItemType[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
+const allItemsReceived = ref(false);
 
 const { t } = useI18n();
 
@@ -310,7 +313,7 @@ const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
   const libraryOnlyStr = params.value.libraryOnly ? 'true' : 'false';
   localStorage.setItem(`libraryFilter.${props.itemtype}`, libraryOnlyStr);
-  loadData(true, undefined, true);
+  loadData(true, true);
 };
 
 const toggleAlbumArtistsFilter = function () {
@@ -361,7 +364,7 @@ const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
 
 const onRefreshClicked = function () {
   emit('refreshClicked');
-  loadData(true, undefined, true);
+  loadData(true, true);
 };
 
 const onClick = function (evt: Event, item: MediaItemType) {
@@ -401,7 +404,7 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
     params.value.sortBy = sort_key;
   }
   localStorage.setItem(`sortBy.${props.itemtype}`, params.value.sortBy);
-  loadData(true, undefined, sort_key == 'original');
+  loadData(true, sort_key == 'original');
 };
 
 const redirectSearch = function () {
@@ -415,7 +418,7 @@ const loadNextPage = function ({ done }: { done: any }) {
     done('empty');
     return;
   }
-  if (total.value && pagedItems.value.length >= total.value) {
+  if (allItemsReceived.value) {
     done('empty');
     return;
   }
@@ -576,11 +579,7 @@ const menuItems = computed(() => {
   return items;
 });
 
-const loadData = async function (
-  clear = false,
-  limit = props.limit,
-  refresh = false,
-) {
+const loadData = async function (clear = false, refresh = false) {
   if (loading.value) {
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
@@ -594,24 +593,65 @@ const loadData = async function (
   }
   params.value.limit = props.limit;
   params.value.refresh = refresh;
+
   if (props.loadPagedData !== undefined) {
-    // call server for paged listing
-    const nextItems = await props.loadPagedData(params.value);
-    if (nextItems) {
+    // server side paged listing (with optional filter/sort)
+    if (props.noServerSideSorting && allItemsReceived.value) {
+      // server side sorting not supported for this endpoint, handle it here
+      params.value.offset = 0;
+      params.value.limit = allItems.value.length;
+      pagedItems.value = getFilteredItems(allItems.value, params.value);
+    } else if (props.noServerSideSorting && params.value.search) {
+      // annoying edge case, user wants to search but server side is paged without sorting/filtering support
+      // we need to fetch all items first to so we can search using a filter
+      allItems.value.push(...pagedItems.value);
+      while (!allItemsReceived.value) {
+        const nextItems = await props.loadPagedData(params.value);
+        allItems.value.push(...(nextItems.items as MediaItemType[]));
+        if (nextItems.total != null) {
+          total.value = nextItems.total;
+        } else if (allItems.value.length != params.value.limit) {
+          total.value = allItems.value.length;
+          break;
+        }
+        if (total.value != null && allItems.value.length >= total.value) {
+          break;
+        }
+        params.value.offset += 50;
+      }
+      allItemsReceived.value = true;
+      params.value.offset = 0;
+      params.value.limit = total.value || params.value.limit;
+      pagedItems.value = getFilteredItems(allItems.value, params.value);
+    } else {
+      // call server for paged listing
+      const nextItems = await props.loadPagedData(params.value);
       if (params.value.offset) {
         pagedItems.value.push(...(nextItems.items as MediaItemType[]));
       } else {
         pagedItems.value = nextItems.items as MediaItemType[];
       }
-      total.value = nextItems.total;
+      // the server should send total attribute as soon as it knows it
+      if (nextItems.total != null) total.value = nextItems.total;
+      // in case the server sends more or less items than limit, treat that as completion
+      else if (nextItems.items.length != params.value.limit) {
+        nextItems.total = pagedItems.value.length;
+      }
+      // mark all items received bool if we're complete
+      allItemsReceived.value =
+        total.value != null && pagedItems.value.length >= total.value;
+      if (allItemsReceived.value && props.noServerSideSorting) {
+        allItems.value = pagedItems.value;
+      }
     }
   } else if (props.loadItems !== undefined) {
     // grab items from loadItems callback
-    if (allItems.value.length === 0 || refresh) {
+    if (!allItemsReceived.value || refresh) {
       // load all items from the callback
       allItems.value = [];
       (allItems.value = await props.loadItems(params.value)), params.value;
       total.value = allItems.value.length;
+      allItemsReceived.value = true;
     }
     // filter
     const nextItems = getFilteredItems(allItems.value, params.value);
@@ -880,7 +920,10 @@ watch(
   (newVal) => {
     console.debug('Path updated to', newVal);
     if (loading.value == true) return;
+    // completely reset if the path changes
+    pagedItems.value = [];
     allItems.value = [];
+    allItemsReceived.value = false;
     loadData(true);
   },
 );

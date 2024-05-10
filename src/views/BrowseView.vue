@@ -12,6 +12,7 @@
       :path="path"
       :allow-key-hooks="true"
       icon="mdi-folder-outline"
+      :no-server-side-sorting="true"
     />
   </section>
 </template>
