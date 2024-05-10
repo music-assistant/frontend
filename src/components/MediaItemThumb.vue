@@ -1,6 +1,5 @@
 <template>
   <v-img
-    ref="imageTag"
     loading="lazy"
     :height="size || '100%'"
     :width="size || '100%'"
