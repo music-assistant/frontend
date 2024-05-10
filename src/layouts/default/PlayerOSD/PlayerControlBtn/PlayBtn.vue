@@ -27,12 +27,12 @@
   <!-- stop button: player is playing other source (not MA)-->
   <ResponsiveIcon
     v-else-if="
-      store.selectedPlayer?.state == PlayerState.PLAYING && props.isVisible
+      store.activePlayer?.state == PlayerState.PLAYING && props.isVisible
     "
     v-bind="props.icon"
     icon="mdi-stop"
     :type="'btn'"
-    @click="api.queueCommandStop(store.selectedPlayer!.player_id)"
+    @click="api.queueCommandStop(store.activePlayer!.player_id)"
   />
   <!-- play button: all other situations - resume the queue (disabled if queue is empty)-->
   <ResponsiveIcon
@@ -43,7 +43,7 @@
     :type="'btn'"
     @click="
       api.queueCommandPlay(
-        store.activePlayerQueue?.queue_id || store.selectedPlayer!.player_id,
+        store.activePlayerQueue?.queue_id || store.activePlayer!.player_id,
       )
     "
   />

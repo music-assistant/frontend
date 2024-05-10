@@ -6,7 +6,7 @@
   />
   <QueueBtn
     v-if="queue && queue.isVisible"
-    :color="queue.color"
+    :color="player.color"
     style="padding-left: 15px; padding-right: 20px"
   />
   <VolumeBtn

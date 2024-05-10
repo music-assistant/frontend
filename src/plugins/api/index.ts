@@ -835,12 +835,12 @@ export class MusicAssistantApi {
   ) {
     if (
       !queue_id &&
-      store.selectedPlayer &&
-      store.selectedPlayer?.active_source in this.players
+      store.activePlayer &&
+      store.activePlayer?.active_source in this.players
     ) {
-      queue_id = store.selectedPlayer?.active_source;
+      queue_id = store.activePlayer?.active_source;
     } else if (!queue_id) {
-      queue_id = store.selectedPlayer?.player_id;
+      queue_id = store.activePlayer?.player_id;
     }
     this.sendCommand('player_queues/play_media', {
       queue_id,
