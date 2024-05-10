@@ -1,9 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { store } from './store';
-import { nextTick } from 'vue';
-import { scrollElement, sleep } from '@/helpers/utils';
-
-const mainListings = ['artists', 'albums', 'tracks', 'playlists', 'browse'];
+import api from './api';
 
 const routes = [
   {
@@ -12,7 +9,7 @@ const routes = [
     children: [
       {
         path: '',
-        redirect: '/home',
+        redirect: api.setUpCompleted.value ? '/home' : '/settings',
         name: 'homeredirect',
       },
       {
@@ -267,7 +264,7 @@ const router = createRouter({
 
 router.afterEach((to, from) => {
   if (!from?.path) return;
-  console.log('navigating from ', from.path, ' to ', to.path);
+  console.debug('navigating from ', from.path, ' to ', to.path);
   store.prevRoute = from.path;
 });
 

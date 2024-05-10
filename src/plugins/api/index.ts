@@ -4,7 +4,7 @@ import { AlertType, store } from '../store';
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { WebsocketBuilder, Websocket, LinearBackoff } from 'websocket-ts';
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import {
   createConnection,
   ERR_HASS_HOST_REQUIRED,
@@ -123,6 +123,18 @@ export class MusicAssistantApi {
       .withBackoff(new LinearBackoff(0, 1000, 12000))
       .build();
   }
+
+  public setUpCompleted = computed(() => {
+    // Return if we have any music or player providers configured
+    // in the future we could replace this if some sort of out of the box setup wizard has been completed
+    return (
+      Object.values(api.providers).filter(
+        (prov) =>
+          [ProviderType.MUSIC, ProviderType.PLAYER].includes(prov.type) &&
+          prov.domain !== 'builtin',
+      ).length > 0
+    );
+  });
 
   public subscribe(
     eventFilter: EventType,

@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import Button from '@/components/mods/Button.vue';
+import api from '@/plugins/api';
 
 const showNavigationMenu = ref(true);
 const enableRail = ref(false);
@@ -72,12 +73,24 @@ export const DEFAULT_MENU_ITEMS = [
 ];
 
 export const getMenuItems = function () {
+  // if the server ha snot yet been setup, we only show (and redirect to) settings
+  if (!api.setUpCompleted.value) {
+    return [
+      {
+        label: 'settings.settings',
+        icon: 'mdi-cog-outline',
+        path: '/settings',
+        isLibraryNode: true,
+      },
+    ];
+  }
   const storedMenuConf = localStorage.getItem('frontend.settings.menu_items');
   const enabledItems: string[] = storedMenuConf
     ? storedMenuConf.split(',')
     : DEFAULT_MENU_ITEMS;
 
   const items: MenuItem[] = [];
+
   if (enabledItems.includes('home')) {
     items.push({
       label: 'home',
