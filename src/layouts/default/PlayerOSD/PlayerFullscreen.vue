@@ -52,13 +52,27 @@
               >
             </div>
 
-            <!-- fallback title when no player selected or no queue active-->
+            <!-- fallback title: show name of active queue or player -->
+            <v-card-title
+              v-else-if="
+                store.activePlayerQueue?.display_name ||
+                store.activePlayer?.display_name
+              "
+              :style="`font-size: ${titleFontSize};cursor:pointer;`"
+              @click="store.showPlayersMenu = true"
+            >
+              {{
+                store.activePlayerQueue?.display_name ||
+                store.activePlayer?.display_name
+              }}
+            </v-card-title>
+            <!-- fallback title when no player selected-->
             <v-card-title
               v-else
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="store.showPlayersMenu = true"
             >
-              {{ store.selectedPlayer?.display_name || $t('no_player') }}
+              {{ store.activePlayer?.display_name || $t('no_player') }}
             </v-card-title>
 
             <!-- subtitle: radio station stream title -->
@@ -107,15 +121,15 @@
             <!-- subtitle: other source active -->
             <v-card-subtitle
               v-if="
-                store.selectedPlayer?.active_source !=
-                store.selectedPlayer?.player_id
+                store.activePlayer?.active_source !=
+                store.activePlayer?.player_id
               "
               :style="`font-size: ${subTitleFontSize}`"
             >
               <!-- TODO: show media details of other source if possible? -->
               {{
                 $t('external_source_active', [
-                  store.selectedPlayer?.active_source,
+                  store.activePlayer?.active_source,
                 ])
               }}
             </v-card-subtitle>

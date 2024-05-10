@@ -43,23 +43,48 @@
       </template>
     </v-toolbar>
 
-    <!-- show alert if no music providers configured-->
-    <Alert
+    <!-- show alert if no music provider configured-->
+    <v-alert
       v-if="
         provType == ProviderType.MUSIC &&
         providerConfigs.filter(
           (x) =>
             x.type == ProviderType.MUSIC &&
             x.domain in api.providerManifests &&
+            !api.providerManifests[x.domain].hidden &&
+            x.domain !== 'builtin',
+        ).length == 0
+      "
+      border="top"
+      border-color="warning"
+      style="margin: 20px"
+      icon="mdi-alert-box-outline"
+    >
+      <b>{{ $t('settings.no_music_providers_detail') }}</b>
+      <br />
+      {{ $t('settings.no_music_providers_detail') }}
+    </v-alert>
+
+    <!-- show alert if no player provider configured-->
+    <v-alert
+      v-if="
+        provType == ProviderType.PLAYER &&
+        providerConfigs.filter(
+          (x) =>
+            x.type == ProviderType.PLAYER &&
+            x.domain in api.providerManifests &&
             !api.providerManifests[x.domain].hidden,
         ).length == 0
       "
-      icon="mdi-radio-tower"
+      border="top"
+      border-color="warning"
+      style="margin: 20px"
+      icon="mdi-alert-box-outline"
     >
-      <b>{{ $t('settings.no_providers') }}</b>
+      <b>{{ $t('settings.no_player_providers_detail') }}</b>
       <br />
-      {{ $t('settings.no_providers_detail') }}
-    </Alert>
+      {{ $t('settings.no_player_providers_detail') }}
+    </v-alert>
 
     <Container>
       <ListItem

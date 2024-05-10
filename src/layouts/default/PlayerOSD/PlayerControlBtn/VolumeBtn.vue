@@ -1,6 +1,6 @@
 <template>
   <!-- active player volume -->
-  <div v-if="props.isVisible && store.selectedPlayer">
+  <div v-if="props.isVisible && store.activePlayer">
     <v-menu
       v-model="showVolume"
       class="volume-control-dialog"
@@ -16,18 +16,18 @@
             :width="volumeSize"
             :is-powered="true"
             :model-value="
-              store.selectedPlayer!.group_childs.length > 0
-                ? Math.round(store.selectedPlayer?.group_volume || 0)
-                : Math.round(store.selectedPlayer?.volume_level || 0)
+              store.activePlayer!.group_childs.length > 0
+                ? Math.round(store.activePlayer?.group_volume || 0)
+                : Math.round(store.activePlayer?.volume_level || 0)
             "
             @update:model-value="
-              store.selectedPlayer!.group_childs.length > 0
+              store.activePlayer!.group_childs.length > 0
                 ? api.playerCommandGroupVolume(
-                    store.selectedPlayer?.player_id || '',
+                    store.activePlayer?.player_id || '',
                     $event,
                   )
                 : api.playerCommandVolumeSet(
-                    store.selectedPlayer?.player_id || '',
+                    store.activePlayer?.player_id || '',
                     $event,
                   )
             "
@@ -47,9 +47,9 @@
                 />
                 <div class="text-caption">
                   {{
-                    store.selectedPlayer!.group_childs.length > 0
-                      ? Math.round(store.selectedPlayer?.group_volume || 0)
-                      : Math.round(store.selectedPlayer?.volume_level || 0)
+                    store.activePlayer!.group_childs.length > 0
+                      ? Math.round(store.activePlayer?.group_volume || 0)
+                      : Math.round(store.activePlayer?.volume_level || 0)
                   }}
                 </div>
               </Button>
@@ -64,9 +64,9 @@
               :style="{ color: props.color ? color : '' }"
             >
               {{
-                store.selectedPlayer!.group_childs.length > 0
-                  ? Math.round(store.selectedPlayer?.group_volume || 0)
-                  : Math.round(store.selectedPlayer?.volume_level || 0)
+                store.activePlayer!.group_childs.length > 0
+                  ? Math.round(store.activePlayer?.group_volume || 0)
+                  : Math.round(store.activePlayer?.volume_level || 0)
               }}
             </div>
           </Button>
@@ -78,25 +78,25 @@
           <v-list-item
             density="compact"
             two-line
-            :title="store.selectedPlayer?.display_name.substring(0, 25)"
+            :title="store.activePlayer?.display_name.substring(0, 25)"
             :subtitle="
-              !store.selectedPlayer?.powered
+              !store.activePlayer?.powered
                 ? $t('state.off')
-                : $t('state.' + store.selectedPlayer?.state)
+                : $t('state.' + store.activePlayer?.state)
             "
           >
             <template #prepend>
               <v-icon
                 size="50"
-                :icon="store.selectedPlayer.icon"
+                :icon="store.activePlayer.icon"
                 color="primary"
               />
             </template>
           </v-list-item>
           <v-divider />
           <VolumeControl
-            v-if="store.selectedPlayer"
-            :player="store.selectedPlayer"
+            v-if="store.activePlayer"
+            :player="store.activePlayer"
           />
         </v-list>
       </v-card>

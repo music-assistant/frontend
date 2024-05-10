@@ -29,7 +29,7 @@
           expand-icon="mdi-chevron-down"
           collapse-icon="mdi-chevron-up"
           @click="
-            store.selectedPlayerId = player.player_id;
+            store.activePlayerId = player.player_id;
             scrollToTop(player.player_id);
           "
         >
@@ -120,11 +120,11 @@ watch(
   },
 );
 watch(
-  () => store.selectedPlayer,
+  () => store.activePlayerId,
   (newVal) => {
     if (newVal) {
       // remember last selected playerId
-      localStorage.setItem('mass.LastPlayerId', newVal.player_id);
+      localStorage.setItem('mass.LastPlayerId', newVal);
     }
   },
 );
@@ -141,7 +141,7 @@ watch(
   () => api.state,
   (newVal) => {
     if (newVal.value != ConnectionState.CONNECTED) {
-      store.selectedPlayerId = undefined;
+      store.activePlayerId = undefined;
     }
   },
   { deep: true },
@@ -178,14 +178,17 @@ const playerActive = function (
 
 const checkDefaultPlayer = function () {
   if (
-    store.selectedPlayer &&
-    playerActive(store.selectedPlayer, false, false, false)
+    store.activePlayer &&
+    playerActive(store.activePlayer, false, false, false)
   )
     return;
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
-    store.selectedPlayerId = newDefaultPlayer.player_id;
-    console.log('Selected new default player: ', newDefaultPlayer.display_name);
+    store.activePlayerId = newDefaultPlayer.player_id;
+    console.debug(
+      'Selected new default player: ',
+      newDefaultPlayer.display_name,
+    );
   }
 };
 

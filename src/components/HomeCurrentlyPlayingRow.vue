@@ -55,10 +55,10 @@ const nowPlayingWidgetRow = computed(() => {
 
 function playerQueueClicked(queue: PlayerQueue) {
   if (queue && queue.queue_id in api.players) {
-    if (store.selectedPlayerId == queue.queue_id) {
+    if (store.activePlayerId == queue.queue_id) {
       store.showFullscreenPlayer = true;
     } else {
-      store.selectedPlayerId = queue.queue_id;
+      store.activePlayerId = queue.queue_id;
     }
   }
 }

@@ -18,7 +18,7 @@ interface Alert {
 }
 
 interface Store {
-  selectedPlayerId?: string;
+  activePlayerId?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
   navigationMenuStyle: string;
@@ -27,7 +27,7 @@ interface Store {
   apiInitialized: boolean;
   apiBaseUrl: string;
   dialogActive: boolean;
-  selectedPlayer?: Player;
+  activePlayer?: Player;
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
@@ -38,7 +38,7 @@ interface Store {
 }
 
 export const store: Store = reactive({
-  selectedPlayerId: undefined,
+  activePlayerId: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
   navigationMenuStyle: 'horizontal',
@@ -47,21 +47,18 @@ export const store: Store = reactive({
   apiInitialized: false,
   apiBaseUrl: '',
   dialogActive: false,
-  selectedPlayer: computed(() => {
-    if (store.selectedPlayerId && store.selectedPlayerId in api.players) {
-      return api.players[store.selectedPlayerId];
+  activePlayer: computed(() => {
+    if (store.activePlayerId && store.activePlayerId in api.players) {
+      return api.players[store.activePlayerId];
     }
     return undefined;
   }),
   activePlayerQueue: computed(() => {
-    if (
-      store.selectedPlayer &&
-      store.selectedPlayer.active_source in api.queues
-    ) {
-      return api.queues[store.selectedPlayer.active_source];
+    if (store.activePlayer && store.activePlayer.active_source in api.queues) {
+      return api.queues[store.activePlayer.active_source];
     }
-    if (store.selectedPlayer && store.selectedPlayer.player_id in api.queues) {
-      return api.queues[store.selectedPlayer.player_id];
+    if (store.activePlayer && store.activePlayer.player_id in api.queues) {
+      return api.queues[store.activePlayer.player_id];
     }
     return undefined;
   }),

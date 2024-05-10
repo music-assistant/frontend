@@ -7,7 +7,7 @@
     @click="store.showPlayersMenu = true"
   >
     <v-badge
-      v-if="store.selectedPlayer?.group_childs.length"
+      v-if="store.activePlayer?.group_childs.length"
       size="small"
       :content="curGroupPlayers"
     >
@@ -50,11 +50,11 @@ const props = defineProps<Props>();
 
 // computed properties
 const curGroupPlayers = computed(() => {
-  if (!store.selectedPlayer) {
+  if (!store.activePlayer) {
     return 0;
   }
   let count = 0;
-  for (const groupChildId of store.selectedPlayer.group_childs) {
+  for (const groupChildId of store.activePlayer.group_childs) {
     const volumeChild = api?.players[groupChildId];
     if (volumeChild && volumeChild.available && volumeChild.powered) {
       count++;
