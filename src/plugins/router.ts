@@ -9,7 +9,7 @@ const routes = [
     children: [
       {
         path: '',
-        redirect: api.setUpCompleted.value ? '/home' : '/settings',
+        redirect: '/home',
         name: 'homeredirect',
       },
       {
