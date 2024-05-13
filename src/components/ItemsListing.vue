@@ -393,6 +393,18 @@ const onClick = function (evt: Event, item: MediaItemType) {
   }
 };
 
+const onPlayClick = function (evt: Event, item: MediaItemType) {
+  if (!itemIsAvailable(item)) {
+    onMenu(evt, item);
+    return;
+  }
+  if (!store.activePlayerId) {
+    store.showPlayersMenu = true;
+    return;
+  }
+  api.playMedia(item.uri, undefined);
+};
+
 const onClear = function () {
   params.value.search = '';
   showSearch.value = false;
@@ -610,9 +622,6 @@ const loadData = async function (clear = false, refresh = false) {
         allItems.value.push(...(nextItems.items as MediaItemType[]));
         if (nextItems.total != null) {
           total.value = nextItems.total;
-        } else if (allItems.value.length != params.value.limit) {
-          total.value = allItems.value.length;
-          break;
         }
         if (total.value != null && allItems.value.length >= total.value) {
           break;
