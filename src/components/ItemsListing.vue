@@ -379,6 +379,13 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
+  } else if (
+    viewMode.value == 'list' &&
+    item.media_type == MediaType.TRACK &&
+    props.parentItem
+  ) {
+    // track clicked in a sublisting (e.g. album/playlist) listview
+    onPlayClick(evt, item);
   } else {
     router.push({
       name: item.media_type,
