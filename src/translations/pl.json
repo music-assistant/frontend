@@ -159,13 +159,10 @@
     "sort": {
         "duration": "Czas trwania",
         "position": "Pozycja",
-        "position DESC": "Pozycja (malejąco)",
         "provider": "Dostawca",
         "sort_album": "Album",
         "sort_artist": "Wykonawca",
         "sort_name": "Alfabetycznie",
-        "sort_name DESC": "Alfabetycznie (malejąco)",
-        "timestamp_added DESC": "Ostatnio dodane",
         "track_number": "Numer ścieżki",
         "year": "Rok wydania",
         "position_desc": "Pozycja (malejąco)",

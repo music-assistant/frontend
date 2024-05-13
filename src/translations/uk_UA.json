@@ -387,13 +387,10 @@
     "sort": {
         "duration": "Тривалість",
         "position": "Позиція",
-        "position DESC": "Позиція (за спаданням)",
         "provider": "Провайдер",
         "sort_album": "Альбом",
         "sort_artist": "Артист",
         "sort_name": "За алфавітом",
-        "sort_name DESC": "За алфавітом (за спаданням)",
-        "timestamp_added DESC": "Нещодавно додані",
         "track_number": "Номер треку",
         "year": "Рік випуску",
         "position_desc": "Позиція (за спаданням)",
