@@ -9,8 +9,6 @@
       :disabled="!itemIsAvailable(item)"
       @click="onClick"
       @click.right.prevent="onMenu"
-      @mouseover="showMenuBtn = true"
-      @mouseleave="showMenuBtn = false"
     >
       <v-overlay
         v-if="showCheckboxes"
@@ -37,16 +35,6 @@
       </v-overlay>
 
       <MediaItemThumb :item="item" style="height: auto" />
-
-      <!-- play button -->
-      <v-btn
-        v-if="isHovering || $vuetify.display.mobile"
-        icon="mdi-play"
-        color="primary"
-        fab
-        style="position: absolute; right: 15px; margin-top: -25px; opacity: 0.8"
-        @click.stop="onPlayClick"
-      />
 
       <v-list-item
         variant="text"
@@ -81,6 +69,16 @@
         </v-list-item-subtitle>
         <v-list-item-subtitle v-else class="line-clamp-1" />
       </v-list-item>
+
+      <!-- play button -->
+      <v-btn
+        v-if="isHovering || $vuetify.display.mobile"
+        icon="mdi-play"
+        color="primary"
+        fab
+        :style="`position: absolute; right: 15px; bottom: ${showActions ? 90 : 35}px; opacity: 0.8`"
+        @click.stop="onPlayClick"
+      />
 
       <v-card-actions v-if="showActions" class="panel-item-actions">
         <v-item-group style="padding: 0">
@@ -117,7 +115,7 @@
         </v-item-group>
         <v-spacer />
         <MAButton
-          v-if="showMenuBtn"
+          v-if="isHovering || $vuetify.display.mobile"
           variant="list"
           icon="mdi-dots-vertical"
           style="padding-right: 0; margin-right: -5px"
@@ -164,10 +162,6 @@ const compProps = withDefaults(defineProps<Props>(), {
   showActions: false,
   showMediaType: false,
 });
-
-// refs
-
-const showMenuBtn = ref(false);
 
 // computed properties
 const HiResDetails = computed(() => {

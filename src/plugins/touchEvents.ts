@@ -18,6 +18,17 @@ const TouchEvents = {
     const touchEndEvent = 'touchend';
     const touchMoveEvent = 'touchmove';
 
+    let supportsPassive = false;
+    try {
+      addEventListener('test', null, {
+        // eslint-disable-next-line
+        get passive() {
+          supportsPassive = true;
+        },
+      });
+      // eslint-disable-next-line
+    } catch (e) { }
+
     // Hold Directive
     app.directive('hold', {
       mounted(el, binding) {
@@ -67,9 +78,21 @@ const TouchEvents = {
           }
         };
 
-        el.addEventListener(touchStartEvent, handleTouchStart);
-        el.addEventListener(touchEndEvent, handleTouchEnd);
-        el.addEventListener(touchMoveEvent, handleTouchMove);
+        el.addEventListener(
+          touchStartEvent,
+          handleTouchStart,
+          supportsPassive ? { passive: true } : false,
+        );
+        el.addEventListener(
+          touchEndEvent,
+          handleTouchEnd,
+          supportsPassive ? { passive: true } : false,
+        );
+        el.addEventListener(
+          touchMoveEvent,
+          handleTouchMove,
+          supportsPassive ? { passive: true } : false,
+        );
 
         el._hold = {
           handleTouchStart,
@@ -101,8 +124,16 @@ const TouchEvents = {
           }
         };
 
-        el.addEventListener(touchStartEvent, handleTouchStart);
-        el.addEventListener(touchEndEvent, handleTouchEnd);
+        el.addEventListener(
+          touchStartEvent,
+          handleTouchStart,
+          supportsPassive ? { passive: true } : false,
+        );
+        el.addEventListener(
+          touchEndEvent,
+          handleTouchEnd,
+          supportsPassive ? { passive: true } : false,
+        );
 
         el._tap = {
           handleTouchStart,
@@ -173,8 +204,16 @@ const TouchEvents = {
           }
         };
 
-        el.addEventListener(touchStartEvent, handleTouchStart);
-        el.addEventListener(touchEndEvent, handleTouchEnd);
+        el.addEventListener(
+          touchStartEvent,
+          handleTouchStart,
+          supportsPassive ? { passive: true } : false,
+        );
+        el.addEventListener(
+          touchEndEvent,
+          handleTouchEnd,
+          supportsPassive ? { passive: true } : false,
+        );
 
         el._swipe = {
           handleTouchStart,
@@ -228,9 +267,21 @@ const TouchEvents = {
           dragging = false;
         };
 
-        el.addEventListener(touchStartEvent, handleTouchStart);
-        el.addEventListener(touchMoveEvent, handleTouchMove);
-        el.addEventListener(touchEndEvent, handleTouchEnd);
+        el.addEventListener(
+          touchStartEvent,
+          handleTouchStart,
+          supportsPassive ? { passive: true } : false,
+        );
+        el.addEventListener(
+          touchMoveEvent,
+          handleTouchMove,
+          supportsPassive ? { passive: true } : false,
+        );
+        el.addEventListener(
+          touchEndEvent,
+          handleTouchEnd,
+          supportsPassive ? { passive: true } : false,
+        );
 
         el._drag = {
           handleTouchStart,
@@ -257,7 +308,11 @@ const TouchEvents = {
           binding.value(event);
         };
 
-        el.addEventListener(touchStartEvent, handleTouchStart);
+        el.addEventListener(
+          touchStartEvent,
+          handleTouchStart,
+          supportsPassive ? { passive: true } : false,
+        );
 
         el._press = {
           handleTouchStart,
@@ -279,7 +334,11 @@ const TouchEvents = {
           binding.value(event);
         };
 
-        el.addEventListener(touchEndEvent, handleTouchEnd);
+        el.addEventListener(
+          touchEndEvent,
+          handleTouchEnd,
+          supportsPassive ? { passive: true } : false,
+        );
 
         el._release = {
           handleTouchEnd,
@@ -309,7 +368,11 @@ const TouchEvents = {
           lastTapTime = currentTime;
         };
 
-        el.addEventListener(touchStartEvent, handleTouchEnd);
+        el.addEventListener(
+          touchStartEvent,
+          handleTouchEnd,
+          supportsPassive ? { passive: true } : false,
+        );
 
         el._doubletap = {
           handleTouchEnd,

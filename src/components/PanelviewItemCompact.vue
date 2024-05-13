@@ -54,6 +54,7 @@
         icon="mdi-play"
         color="primary"
         fab
+        size="small"
         style="position: absolute; right: 10px; bottom: 35px; opacity: 0.8"
         @click.stop="onPlayClick"
       />
@@ -97,8 +98,7 @@ const onClick = function (event: Event) {
 };
 
 const onPlayClick = function (event: Event) {
-  if (props.showCheckboxes) return;
-  emit('play', event, props.item);
+  emit('play', event, compProps.item);
 };
 </script>
 

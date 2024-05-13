@@ -55,12 +55,11 @@
                 :item="item"
                 :is-selected="isSelected(item)"
                 :show-checkboxes="showCheckboxes"
-                :show-track-number="showTrackNumber"
-                :show-favorite="showFavoritesOnlyFilter"
                 :show-actions="['tracks', 'albums'].includes(itemtype)"
                 @select="onSelect"
                 @menu="onMenu"
                 @click="onClick"
+                @play="onPlayClick"
               />
             </v-col>
           </v-row>
@@ -352,6 +351,11 @@ const toggleCheckboxes = function () {
   showCheckboxes.value = !showCheckboxes.value;
 };
 
+const onRefreshClicked = function () {
+  emit('refreshClicked');
+  loadData(true, true);
+};
+
 const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
   showContextMenuForMediaItem(
@@ -360,11 +364,6 @@ const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
     (evt as PointerEvent).clientX,
     (evt as PointerEvent).clientY,
   );
-};
-
-const onRefreshClicked = function () {
-  emit('refreshClicked');
-  loadData(true, true);
 };
 
 const onClick = function (evt: Event, item: MediaItemType) {
@@ -380,7 +379,7 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
+  } else {
     router.push({
       name: item.media_type,
       params: {
@@ -388,12 +387,11 @@ const onClick = function (evt: Event, item: MediaItemType) {
         provider: item.provider,
       },
     });
-  } else {
-    onMenu(evt, item);
   }
 };
 
 const onPlayClick = function (evt: Event, item: MediaItemType) {
+  // play button on item is clicked
   if (!itemIsAvailable(item)) {
     onMenu(evt, item);
     return;

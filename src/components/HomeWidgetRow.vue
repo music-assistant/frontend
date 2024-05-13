@@ -37,6 +37,7 @@
           "
           @menu="onMenu"
           @click="onClick"
+          @play="onPlayClick"
         />
       </swiper-slide>
     </carousel>
@@ -47,6 +48,7 @@
 import Carousel from '@/components/Carousel.vue';
 import PanelviewItemCompact from '@/components/PanelviewItemCompact.vue';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
+import api from '@/plugins/api';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import {
   BrowseFolder,
@@ -55,6 +57,7 @@ import {
   PlayerQueue,
 } from '@/plugins/api/interfaces';
 import router from '@/plugins/router';
+import { store } from '@/plugins/store';
 
 export interface WidgetRow {
   label: string;
@@ -94,7 +97,7 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
+  } else {
     router.push({
       name: item.media_type,
       params: {
@@ -102,9 +105,20 @@ const onClick = function (evt: Event, item: MediaItemType) {
         provider: item.provider,
       },
     });
-  } else {
-    onMenu(evt, item);
   }
+};
+
+const onPlayClick = function (evt: Event, item: MediaItemType) {
+  // play button on item is clicked
+  if (!itemIsAvailable(item)) {
+    onMenu(evt, item);
+    return;
+  }
+  if (!store.activePlayerId) {
+    store.showPlayersMenu = true;
+    return;
+  }
+  api.playMedia(item.uri, undefined);
 };
 </script>
 
