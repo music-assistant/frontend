@@ -84,7 +84,8 @@
         <!-- list view -->
         <v-virtual-scroll
           v-if="viewMode == 'list'"
-          :height="70"
+          :item-height="70"
+          height="100%"
           :items="pagedItems"
           style="height: 100%"
         >
@@ -456,8 +457,6 @@ const loadNextPage = function ({ done }: { done: any }) {
     done('empty');
     return;
   }
-
-  done('loading');
 
   loadData(
     undefined,

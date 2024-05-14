@@ -174,53 +174,51 @@
               />
             </v-tab>
           </v-tabs>
-          <v-infinite-scroll
-            v-if="!loading && queueItems.length"
-            :items="nextItems"
-            :onLoad="loadNextPage"
-            :empty-text="''"
-            height="100%"
-            margin="50"
-            style="overflow-y: hidden"
-          >
-            <!-- list view -->
-            <v-virtual-scroll
-              :item-height="70"
+          <div class="queue-items-scroll-box">
+            <v-infinite-scroll
+              :items="nextItems"
+              :onLoad="loadNextPage"
+              :empty-text="''"
               height="100%"
-              max-height="100%"
-              :items="activeQueuePanel == 0 ? nextItems : previousItems"
             >
-              <template #default="{ item }">
-                <ListItem
-                  link
-                  :show-menu-btn="true"
-                  @click.stop="(e) => openQueueItemMenu(e, item)"
-                  @menu.stop="(e) => openQueueItemMenu(e, item)"
-                >
-                  <template #prepend>
-                    <div class="media-thumb listitem-media-thumb">
-                      <MediaItemThumb size="50" :item="item" />
-                    </div>
-                  </template>
-                  <template #title>
-                    {{ item.name }}
-                  </template>
-                  <template #subtitle>
-                    {{ formatDuration(item.duration) }}
-                    <span
-                      v-if="
-                        item.media_item &&
-                        'album' in item.media_item &&
-                        item.media_item.album
-                      "
-                    >
-                      | {{ item.media_item.album.name }}</span
-                    >
-                  </template>
-                </ListItem>
-              </template>
-            </v-virtual-scroll>
-          </v-infinite-scroll>
+              <!-- list view -->
+              <v-virtual-scroll
+                :item-height="70"
+                max-height="90%"
+                :items="activeQueuePanel == 0 ? nextItems : previousItems"
+              >
+                <template #default="{ item }">
+                  <ListItem
+                    link
+                    :show-menu-btn="true"
+                    @click.stop="(e) => openQueueItemMenu(e, item)"
+                    @menu.stop="(e) => openQueueItemMenu(e, item)"
+                  >
+                    <template #prepend>
+                      <div class="media-thumb listitem-media-thumb">
+                        <MediaItemThumb size="50" :item="item" />
+                      </div>
+                    </template>
+                    <template #title>
+                      {{ item.name }}
+                    </template>
+                    <template #subtitle>
+                      {{ formatDuration(item.duration) }}
+                      <span
+                        v-if="
+                          item.media_item &&
+                          'album' in item.media_item &&
+                          item.media_item.album
+                        "
+                      >
+                        | {{ item.media_item.album.name }}</span
+                      >
+                    </template>
+                  </ListItem>
+                </template>
+              </v-virtual-scroll>
+            </v-infinite-scroll>
+          </div>
         </div>
       </div>
 
@@ -250,10 +248,18 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <FavoriteBtn
+          <ResponsiveIcon
+            :disabled="!store.curQueueItem?.media_item"
+            :icon="
+              store.curQueueItem?.media_item?.favorite
+                ? 'mdi-heart'
+                : 'mdi-heart-outline'
+            "
+            :title="$t('tooltip.favorite')"
+            :type="'btn'"
             class="media-controls-item"
-            max-height="35px"
-            :item="store.curQueueItem?.media_item"
+            max-height="30px"
+            @click="onHeartBtnClick"
           />
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
@@ -292,9 +298,9 @@ import { store } from '@/plugins/store';
 import PlayerTimeline from './PlayerTimeline.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import Button from '@/components/mods/Button.vue';
+import ResponsiveIcon from '@/components/mods/ResponsiveIcon.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import vuetify from '@/plugins/vuetify';
-import FavoriteBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/FavoriteBtn.vue';
 import PlayBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue';
 import NextBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue';
 import PreviousBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue';
@@ -313,10 +319,13 @@ import {
 import { eventbus } from '@/plugins/eventbus';
 import { useDisplay } from 'vuetify';
 import { useI18n } from 'vue-i18n';
+import {
+  ContextMenuItem,
+  showContextMenuForMediaItem,
+} from '../ItemContextMenu.vue';
 
 const { t } = useI18n();
 const { name } = useDisplay();
-const loading = ref(true);
 
 interface Props {
   colorPalette: ImageColorPalette;
@@ -410,7 +419,9 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
         queueCommand(item, 'play_now');
       },
       icon: 'mdi-play-circle-outline',
-      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
+      disabled:
+        itemIndex === store.activePlayerQueue?.current_index ||
+        itemIndex === store.activePlayerQueue?.index_in_buffer,
     },
     {
       label: 'play_next',
@@ -548,27 +559,25 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
   }
 };
 
-const loadItems = async function () {
-  loading.value = true;
-  queueItems.value = [];
+const loadItems = async function (clear = false) {
+  if (clear) {
+    queueItems.value = [];
+  }
+
   if (store.activePlayerQueue) {
+    const offset = queueItems.value.length;
+    const limit = (store.activePlayerQueue.current_index || 0) + 50;
     const result = await api.getPlayerQueueItems(
       store.activePlayerQueue.queue_id,
-      (store.activePlayerQueue.current_index || 0) + 50,
-      0,
+      limit,
+      offset,
     );
-    queueItems.value = result.items as QueueItem[];
+    queueItems.value.push(...(result.items as QueueItem[]));
   }
-  loading.value = false;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ({ done }: { done: any }) {
-  if (loading.value) return;
-  if (queueItems.value.length == 0) {
-    done('empty');
-    return;
-  }
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
     done('empty');
     return;
@@ -577,31 +586,63 @@ const loadNextPage = function ({ done }: { done: any }) {
     done('empty');
     return;
   }
-  done('loading');
-  api
-    .getPlayerQueueItems(
-      store.activePlayerQueue.queue_id,
-      (store.activePlayerQueue.current_index || 0) + 50,
-      0,
-    )
-    .then((pagedItems) => {
-      queueItems.value.push(...(pagedItems.items as QueueItem[]));
-      done('ok');
-    });
+
+  loadItems(false).then(() => {
+    done('ok');
+  });
 };
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {
-  const unsub = api.subscribe(EventType.QUEUE_ITEMS_UPDATED, loadItems);
+  const unsub = api.subscribe(EventType.QUEUE_ITEMS_UPDATED, () => {
+    loadItems(true);
+  });
   onBeforeUnmount(unsub);
 });
+
+const onHeartBtnClick = function (evt: PointerEvent) {
+  // the heart icon/button was clicked
+  if (!store.curQueueItem?.media_item) return;
+  if (!store.curQueueItem.media_item.favorite) {
+    api.toggleFavorite(store.curQueueItem.media_item);
+    return;
+  }
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      label: 'favorites_remove',
+      labelArgs: [],
+      action: () => {
+        api.toggleFavorite(store.curQueueItem!.media_item as MediaItemType);
+      },
+      icon: 'mdi-heart',
+    },
+    {
+      label: 'add_playlist',
+      labelArgs: [],
+      action: () => {
+        eventbus.emit('playlistdialog', {
+          items: [store.curQueueItem!.media_item as MediaItemType],
+        });
+      },
+      icon: 'mdi-plus-circle-outline',
+    },
+  ];
+
+  // open the contextmenu by emitting the event
+  eventbus.emit('contextmenu', {
+    items: menuItems,
+    posX: evt.clientX,
+    posY: evt.clientY,
+  });
+};
 
 // watchers
 watch(
   () => store.showQueueItems,
   (val) => {
     if (val) {
-      loadItems();
+      loadItems(true);
     }
   },
   { immediate: true },
@@ -626,8 +667,8 @@ watch(
 <style scoped>
 .main {
   display: flex;
-  max-height: 75% !important;
-  height: 65% !important;
+  max-height: 58% !important;
+  height: 58% !important;
   padding-bottom: 5px;
 }
 
@@ -639,13 +680,23 @@ watch(
 
 .main-queue-items {
   flex: 50%;
+  height: 100%;
   max-width: 100%;
-  padding-right: 15px;
+  padding-right: 10px;
   padding-left: 15px;
 }
 
-div.v-virtual-scroll::-webkit-scrollbar {
-  display: none;
+.queue-items-scroll-box {
+  max-height: 100%;
+  overflow-y: scroll;
+}
+
+.queue-items-scroll-box::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.v-infinite-scroll--vertical {
+  overflow-y: unset;
 }
 
 .main-media-details-image {
@@ -666,7 +717,8 @@ div.v-virtual-scroll::-webkit-scrollbar {
 }
 
 .player-bottom {
-  max-height: 35% !important;
+  max-height: 25% !important;
+  height: 25% !important;
   margin-top: auto;
   bottom: 0;
   position: unset !important;
