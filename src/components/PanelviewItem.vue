@@ -129,13 +129,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import MediaItemThumb from './MediaItemThumb.vue';
 import MAButton from './mods/Button.vue';
 import {
   BrowseFolder,
   ContentType,
-  type MediaItem,
   type MediaItemType,
   MediaType,
 } from '@/plugins/api/interfaces';
