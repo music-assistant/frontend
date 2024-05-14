@@ -16,36 +16,38 @@
       minWidth: props.staticWidth ? props.staticWidth : props.minWidth,
     }"
   >
-    <v-icon
-      v-if="type === 'icon'"
-      ref="responsiveIcon"
-      class="responsive-icon"
-      :color="color ? color : ''"
-      :icon="props.icon ? props.icon : 'mdi-check'"
-      :width="props.staticWidth ? props.staticWidth : null"
-      :height="props.staticHeight ? props.staticHeight : null"
-    >
-      <!-- Dynamically inherit slots from parent -->
-      <template v-for="(value, name) in $slots as unknown" #[name]>
-        <slot :name="name"></slot>
-      </template>
-    </v-icon>
-    <v-icon
-      v-else-if="type === 'btn'"
-      ref="responsiveIcon"
-      class="responsive-icon"
-      style="cursor: pointer"
-      :color="color ? color : ''"
-      :icon="props.icon ? props.icon : 'mdi-check'"
-      :width="props.staticWidth ? props.staticWidth : null"
-      :height="props.staticHeight ? props.staticHeight : null"
-      :disabled="disabled"
-    >
-      <!-- Dynamically inherit slots from parent -->
-      <template v-for="(value, name) in $slots as unknown" #[name]>
-        <slot :name="name"></slot>
-      </template>
-    </v-icon>
+    <v-badge :model-value="badge == true" color="error" dot>
+      <v-icon
+        v-if="type === 'icon'"
+        ref="responsiveIcon"
+        class="responsive-icon"
+        :color="color ? color : ''"
+        :icon="props.icon ? props.icon : 'mdi-check'"
+        :width="props.staticWidth ? props.staticWidth : null"
+        :height="props.staticHeight ? props.staticHeight : null"
+      >
+        <!-- Dynamically inherit slots from parent -->
+        <template v-for="(value, name) in $slots as unknown" #[name]>
+          <slot :name="name"></slot>
+        </template>
+      </v-icon>
+      <v-icon
+        v-else-if="type === 'btn'"
+        ref="responsiveIcon"
+        class="responsive-icon"
+        style="cursor: pointer"
+        :color="color ? color : ''"
+        :icon="props.icon ? props.icon : 'mdi-check'"
+        :width="props.staticWidth ? props.staticWidth : null"
+        :height="props.staticHeight ? props.staticHeight : null"
+        :disabled="disabled"
+      >
+        <!-- Dynamically inherit slots from parent -->
+        <template v-for="(value, name) in $slots as unknown" #[name]>
+          <slot :name="name"></slot>
+        </template>
+      </v-icon>
+    </v-badge>
   </div>
 </template>
 
@@ -66,6 +68,7 @@ export interface ResponsiveIconProps {
   type?: 'icon' | 'btn';
   color?: string;
   disabled?: boolean;
+  badge?: boolean;
 }
 const props = withDefaults(defineProps<ResponsiveIconProps>(), {
   width: undefined,
@@ -79,6 +82,7 @@ const props = withDefaults(defineProps<ResponsiveIconProps>(), {
   icon: undefined,
   type: 'icon',
   color: undefined,
+  badge: undefined,
 });
 
 const adjustIconSize = () => {

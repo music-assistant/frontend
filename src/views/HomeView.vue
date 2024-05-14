@@ -16,7 +16,8 @@
             ]
       "
     />
-    <Container variant="panel">
+
+    <Container v-if="api.setUpCompleted.value" variant="panel">
       <Suspense>
         <div>
           <HomeCurrentlyPlayingRow />
@@ -34,7 +35,7 @@ import HomeWidgetRows from '@/components/HomeWidgetRows.vue';
 import Toolbar from '@/components/Toolbar.vue';
 import HomeCurrentlyPlayingRow from '@/components/HomeCurrentlyPlayingRow.vue';
 import { ref } from 'vue';
-
+import api from '@/plugins/api';
 const hideSettings = ref(
   localStorage.getItem('frontend.settings.hide_settings') == 'true',
 );

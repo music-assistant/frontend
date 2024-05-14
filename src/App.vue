@@ -3,11 +3,13 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@/plugins/api';
+import { ConnectionState, api } from '@/plugins/api';
 import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
 import { i18n } from '@/plugins/i18n';
+import router from './plugins/router';
+import { sleep } from './helpers/utils';
 const theme = useTheme();
 
 const setTheme = function () {
@@ -71,5 +73,15 @@ onMounted(() => {
     serverAddress = loc.origin + loc.pathname;
   }
   api.initialize(serverAddress);
+
+  // very rude way to redirect the user to the settings page if this is a fresh install
+  sleep(1000).then(() => {
+    if (
+      api.state.value === ConnectionState.CONNECTED &&
+      !api.setUpCompleted.value
+    ) {
+      router.push('/settings');
+    }
+  });
 });
 </script>

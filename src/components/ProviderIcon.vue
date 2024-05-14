@@ -4,7 +4,7 @@
   <div :style="`width:${size}px;margin-left:10px;margin-right:10px`">
     <!-- icon for library-->
     <v-icon
-      v-if="providerDomain == 'library'"
+      v-if="domain && domain == 'library'"
       :size="size"
       icon="mdi-bookshelf"
       :title="$t('item_in_library')"

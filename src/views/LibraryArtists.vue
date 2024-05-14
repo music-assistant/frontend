@@ -10,8 +10,9 @@
     :title="$t('artists')"
     :allow-key-hooks="true"
     :show-search-button="true"
-    :sort-keys="Object.keys(sortKeys)"
+    :sort-keys="sortKeys"
     icon="mdi-account-outline"
+    :restore-state="true"
   />
 </template>
 
@@ -35,18 +36,18 @@ defineOptions({
 const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
 
-const sortKeys: Record<string, string> = {
-  name: 'name',
-  name_desc: 'name DESC',
-  sort_name: 'sort_name',
-  sort_name_desc: 'sort_name DESC',
-  timestamp_added: 'timestamp_added',
-  timestamp_added_desc: 'timestamp_added DESC',
-  last_played: 'last_played',
-  last_played_desc: 'last_played DESC',
-  play_count: 'play_count',
-  play_count_desc: 'play_count DESC',
-};
+const sortKeys = [
+  'name',
+  'name_desc',
+  'sort_name',
+  'sort_name_desc',
+  'timestamp_added',
+  'timestamp_added_desc',
+  'last_played',
+  'last_played_desc',
+  'play_count',
+  'play_count_desc',
+];
 
 const loadItems = async function (params: LoadDataParams) {
   if (params.refresh && !updateAvailable.value) {
@@ -70,7 +71,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
-    sortKeys[params.sortBy],
+    params.sortBy,
     params.albumArtistsFilter,
   );
 };

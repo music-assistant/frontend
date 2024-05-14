@@ -240,7 +240,7 @@
             <provider-icon
               :domain="item.provider"
               :size="25"
-              style="margin-top: 4px"
+              style="margin-top: 6px"
             />
           </div>
 
@@ -372,11 +372,11 @@ const artistClick = function (item: Artist | ItemMapping) {
 
 const backButtonClick = function () {
   // if we have stored routes, we can safely use history back
-  if (store.prevScrollPos) {
-    router.go(-1);
+  if (store.prevRoute) {
+    router.back();
     return;
   }
-  // fallback to main listing for itemtype
+  // back to main listing for itemtype
   const curRoute = router.currentRoute.value.name?.toString() || '';
   for (const itemType of ['artist', 'album', 'track', 'playlist', 'radio']) {
     if (curRoute.includes(itemType)) {
@@ -420,14 +420,6 @@ const shortDescription = computed(() => {
     );
   }
   return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
-});
-
-const availablePlayers = computed(() => {
-  return Object.values(api.players)
-    .filter((x) => x.available && !x.synced_to)
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
-    );
 });
 </script>
 

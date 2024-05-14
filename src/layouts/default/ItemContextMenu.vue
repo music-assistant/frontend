@@ -423,6 +423,15 @@ const radioModeSupported = function (item: MediaItemType | ItemMapping) {
   ) {
     return true;
   }
+  // we also support a generic radio mode if we have ANY provider with similar track feature
+  // and the track is (matched) in the library
+  if (item.provider == 'library') {
+    for (const prov of Object.values(api.providers)) {
+      if (prov.supported_features.includes(ProviderFeature.SIMILAR_TRACKS))
+        return true;
+    }
+  }
+
   return false;
 };
 </script>

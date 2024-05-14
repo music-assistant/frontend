@@ -8,7 +8,7 @@
           ? 'cursor: pointer; width: fit-content;'
           : 'width: fit-content;'
       "
-      @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
+      @click="widgetRow.path ? $router.push(widgetRow.path) : ''"
     >
       <template #prepend><v-icon :icon="widgetRow.icon" /></template>
 
@@ -28,7 +28,16 @@
     </v-toolbar>
     <carousel>
       <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
-        <PanelviewItemCompact :item="item" @menu="onMenu" @click="onClick" />
+        <PanelviewItemCompact
+          :item="item"
+          :permanent-overlay="
+            ![MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO].includes(
+              item.media_type,
+            )
+          "
+          @menu="onMenu"
+          @click="onClick"
+        />
       </swiper-slide>
     </carousel>
   </div>

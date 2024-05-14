@@ -22,11 +22,14 @@
             'duration',
             'duration_desc',
           ]
-        : ['default']
+        : ['position']
     "
     :update-available="updateAvailable"
     :title="$t('playlist_tracks')"
     :allow-key-hooks="true"
+    :path="`playlist.${props.itemId}.${props.provider}`"
+    :restore-state="true"
+    :no-server-side-sorting="true"
   />
 
   <!-- provider mapping details -->

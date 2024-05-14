@@ -4,7 +4,6 @@
     v-model="store.showFullscreenPlayer"
     fullscreen
     :scrim="false"
-    style="overflow: hidden"
     transition="dialog-bottom-transition"
   >
     <v-card :color="darkenBrightColors(coverImageColorCode, 77, 40)">
@@ -53,13 +52,27 @@
               >
             </div>
 
-            <!-- fallback title when no player selected or no queue active-->
+            <!-- fallback title: show name of active queue or player -->
+            <v-card-title
+              v-else-if="
+                store.activePlayerQueue?.display_name ||
+                store.activePlayer?.display_name
+              "
+              :style="`font-size: ${titleFontSize};cursor:pointer;`"
+              @click="store.showPlayersMenu = true"
+            >
+              {{
+                store.activePlayerQueue?.display_name ||
+                store.activePlayer?.display_name
+              }}
+            </v-card-title>
+            <!-- fallback title when no player selected-->
             <v-card-title
               v-else
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="store.showPlayersMenu = true"
             >
-              {{ store.selectedPlayer?.display_name || $t('no_player') }}
+              {{ store.activePlayer?.display_name || $t('no_player') }}
             </v-card-title>
 
             <!-- subtitle: radio station stream title -->
@@ -108,15 +121,15 @@
             <!-- subtitle: other source active -->
             <v-card-subtitle
               v-if="
-                store.selectedPlayer?.active_source !=
-                store.selectedPlayer?.player_id
+                store.activePlayer?.active_source !=
+                store.activePlayer?.player_id
               "
               :style="`font-size: ${subTitleFontSize}`"
             >
               <!-- TODO: show media details of other source if possible? -->
               {{
                 $t('external_source_active', [
-                  store.selectedPlayer?.active_source,
+                  store.activePlayer?.active_source,
                 ])
               }}
             </v-card-subtitle>
@@ -143,24 +156,39 @@
           <v-tabs v-model="activeQueuePanel" hide-slider density="compact">
             <v-tab :value="0">
               {{ $t('queue') }}
-              <v-badge color="grey" :content="nextItems.length" inline />
+              <v-badge
+                color="grey"
+                :content="
+                  (store.activePlayerQueue?.items || 0) -
+                  (store.activePlayerQueue?.current_index || 0)
+                "
+                inline
+              />
             </v-tab>
             <v-tab :value="1">
               {{ $t('played') }}
-              <v-badge color="grey" :content="previousItems.length" inline />
+              <v-badge
+                color="grey"
+                :content="store.activePlayerQueue?.current_index"
+                inline
+              />
             </v-tab>
           </v-tabs>
           <v-infinite-scroll
+            v-if="!loading && queueItems.length"
             :items="nextItems"
             :onLoad="loadNextPage"
             :empty-text="''"
-            style="max-height: 95%; height: 100%; overflow-y: hidden"
+            height="100%"
+            margin="50"
+            style="overflow-y: hidden"
           >
             <!-- list view -->
             <v-virtual-scroll
-              :height="70"
+              :item-height="70"
+              height="100%"
+              max-height="100%"
               :items="activeQueuePanel == 0 ? nextItems : previousItems"
-              style="height: 100%"
             >
               <template #default="{ item }">
                 <ListItem
@@ -288,6 +316,7 @@ import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const { name } = useDisplay();
+const loading = ref(true);
 
 interface Props {
   colorPalette: ImageColorPalette;
@@ -520,6 +549,7 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
 };
 
 const loadItems = async function () {
+  loading.value = true;
   queueItems.value = [];
   if (store.activePlayerQueue) {
     const result = await api.getPlayerQueueItems(
@@ -529,10 +559,12 @@ const loadItems = async function () {
     );
     queueItems.value = result.items as QueueItem[];
   }
+  loading.value = false;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ({ done }: { done: any }) {
+  if (loading.value) return;
   if (queueItems.value.length == 0) {
     done('empty');
     return;
@@ -566,7 +598,7 @@ onMounted(() => {
 
 // watchers
 watch(
-  () => store.activePlayerQueue,
+  () => store.showQueueItems,
   (val) => {
     if (val) {
       loadItems();
@@ -608,6 +640,12 @@ watch(
 .main-queue-items {
   flex: 50%;
   max-width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+div.v-virtual-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .main-media-details-image {

@@ -1,10 +1,9 @@
 <template>
   <v-img
-    ref="imageTag"
     loading="lazy"
     :height="size || '100%'"
     :width="size || '100%'"
-    aspect-ratio="1/1"
+    aspect-ratio="1"
     :src="imgData"
     :class="{ rounded: rounded }"
     contain
@@ -114,6 +113,8 @@ export const getMediaItemImage = function (
   // handle image in queueitem or itemmapping
   if ('image' in mediaItem && mediaItem.image && mediaItem.image.type == type)
     return mediaItem.image;
+  if ('media_item' in mediaItem && mediaItem.media_item)
+    return getMediaItemImage(mediaItem.media_item);
 
   // always prefer album image for tracks
   if ('album' in mediaItem && mediaItem.album) {
