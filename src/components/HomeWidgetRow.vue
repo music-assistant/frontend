@@ -127,13 +127,6 @@ const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
   font-family: 'JetBrains Mono Medium';
 }
 
-.home-card {
-  min-width: 80px;
-  text-align: center;
-  padding-top: 12px;
-  padding-bottom: 8px;
-}
-
 .widget-row {
   margin-bottom: 20px;
   margin-left: 0px;

@@ -150,11 +150,14 @@ defineProps<Props>();
 </script>
 
 <style scoped>
+.v-card {
+  transition: opacity 0.4s ease-in-out;
+  padding: 0px;
+}
 .panel-item {
   height: 75px;
   margin-right: 25px;
   border: none;
-  width: 98%;
   border-style: none !important;
   padding: 10px;
 }
