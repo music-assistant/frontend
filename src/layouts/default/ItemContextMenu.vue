@@ -122,6 +122,8 @@ export const getPlayMenuItems = function (
   if (items.length == 0 || !itemIsAvailable(items[0])) {
     return playMenuItems;
   }
+  if (!store.activePlayerId) return playMenuItems;
+  if (items[0].media_type == MediaType.FOLDER) return playMenuItems;
 
   // Play from here...
   if (items.length == 1 && parentItem && parentItem.uri != items[0].uri) {
@@ -236,7 +238,7 @@ export const getContextMenuItems = function (
   if (items.length == 0) {
     return contextMenuItems;
   }
-
+  if (items[0].media_type == MediaType.FOLDER) return contextMenuItems;
   // show info
   if (
     items.length === 1 &&

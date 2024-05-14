@@ -8,6 +8,24 @@
       @click="onClick"
       @click.right.prevent="onMenu"
     >
+      <v-overlay
+        v-if="showCheckboxes"
+        :model-value="showCheckboxes"
+        contained
+        :scrim="
+          isSelected
+            ? $vuetify.theme.current.dark
+              ? 'rgba(0,0,0,.75)'
+              : 'rgba(255,255,255,.75)'
+            : '#ffffff00'
+        "
+      >
+        <v-checkbox
+          class="panel-item-checkbox"
+          :ripple="false"
+          :model-value="isSelected"
+        />
+      </v-overlay>
       <MediaItemThumb :item="item" />
       <div
         :class="
@@ -43,9 +61,6 @@
           >
             {{ item.owner }}
           </v-list-item-subtitle>
-          <v-list-item-subtitle v-else class="line-clamp-1">
-            {{ $t(item.media_type) }}
-          </v-list-item-subtitle>
         </v-list-item>
       </div>
       <!-- play button -->
@@ -75,10 +90,14 @@ import { getArtistsString, getBrowseFolderName } from '@/helpers/utils';
 export interface Props {
   item: MediaItemType;
   size?: number;
+  isSelected?: boolean;
+  showCheckboxes?: boolean;
   permanentOverlay?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
+  isSelected: false,
+  showCheckboxes: false,
   permanentOverlay: false,
 });
 
@@ -87,19 +106,26 @@ const emit = defineEmits<{
   (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
   (e: 'click', item: MediaItemType, posX: number, posY: number): void;
   (e: 'play', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'select', item: MediaItemType, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {
+  if (compProps.showCheckboxes) return;
   const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
   emit('menu', compProps.item, posX, posY);
 };
 
 const onClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) {
+    emit('select', compProps.item, compProps.isSelected ? false : true);
+    return;
+  }
   emit('click', compProps.item, evt.clientX, evt.clientY);
 };
 
 const onPlayClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) return;
   emit('play', compProps.item, evt.clientX, evt.clientY);
 };
 </script>

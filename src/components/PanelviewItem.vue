@@ -21,11 +21,6 @@
               : 'rgba(255,255,255,.75)'
             : '#ffffff00'
         "
-        @click="
-          (x: boolean) => {
-            emit('select', item, isSelected ? false : true);
-          }
-        "
       >
         <v-checkbox
           class="panel-item-checkbox"
@@ -206,7 +201,10 @@ const onMenu = function (evt: PointerEvent | TouchEvent) {
 };
 
 const onClick = function (evt: PointerEvent) {
-  if (compProps.showCheckboxes) return;
+  if (compProps.showCheckboxes) {
+    emit('select', compProps.item, compProps.isSelected ? false : true);
+    return;
+  }
   emit('click', compProps.item, evt.clientX, evt.clientY);
 };
 
@@ -226,8 +224,10 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .panel-item-checkbox {
   position: absolute;
-  left: 0px;
-  top: 0px;
+  width: 100%;
+  height: auto;
+  left: 0;
+  right: 0;
 }
 
 .panel-item-details {

@@ -27,7 +27,6 @@ import {
   EventType,
 } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
 
 defineOptions({
   name: 'Artists',
