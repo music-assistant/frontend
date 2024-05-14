@@ -159,10 +159,13 @@
     "sort": {
         "duration": "Varighet",
         "position": "Posisjon",
+        "position DESC": "Posisjon (synkende)",
         "provider": "Tilbyder",
         "sort_album": "Album",
         "sort_artist": "Artist",
         "sort_name": "Alfabetisk",
+        "sort_name DESC": "Alfabetisk (synkende)",
+        "timestamp_added DESC": "Nylig lagt til",
         "track_number": "Spornummer",
         "year": "Utgivelsesår",
         "position_desc": "Posisjon (synkende)",
