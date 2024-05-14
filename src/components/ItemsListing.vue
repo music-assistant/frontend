@@ -356,14 +356,14 @@ const onRefreshClicked = function () {
   loadData(true, true);
 };
 
-const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
+const onMenu = function (
+  evt: PointerEvent | TouchEvent,
+  item: MediaItemType | MediaItemType[],
+) {
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    props.parentItem,
-    (evt as PointerEvent).clientX,
-    (evt as PointerEvent).clientY,
-  );
+  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  showContextMenuForMediaItem(mediaItems, props.parentItem, posX, posY);
 };
 
 const onClick = function (evt: Event, item: MediaItemType) {
@@ -400,7 +400,7 @@ const onClick = function (evt: Event, item: MediaItemType) {
 const onPlayClick = function (evt: Event, item: MediaItemType) {
   // play button on item is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt, item);
+    onMenu(evt as PointerEvent, item);
     return;
   }
   if (!store.activePlayerId) {

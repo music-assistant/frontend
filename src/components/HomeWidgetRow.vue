@@ -74,20 +74,20 @@ interface Props {
 
 const { widgetRow } = defineProps<Props>();
 
-const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
+const onMenu = function (
+  evt: PointerEvent | TouchEvent,
+  item: MediaItemType | MediaItemType[],
+) {
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    undefined,
-    (evt as PointerEvent).clientX,
-    (evt as PointerEvent).clientY,
-  );
+  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  showContextMenuForMediaItem(mediaItems, undefined, posX, posY);
 };
 
 const onClick = function (evt: Event, item: MediaItemType) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt, item);
+    onMenu(evt as PointerEvent, item);
     return;
   }
   if (item.media_type == MediaType.FOLDER) {

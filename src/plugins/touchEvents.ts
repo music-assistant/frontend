@@ -18,16 +18,18 @@ const TouchEvents = {
     const touchEndEvent = 'touchend';
     const touchMoveEvent = 'touchmove';
 
+    // test if this browser supports passive mode
+    // https://chromestatus.com/feature/5745543795965952
     let supportsPassive = false;
     try {
-      addEventListener('test', null, {
-        // eslint-disable-next-line
+      addEventListener('test', () => {}, {
         get passive() {
           supportsPassive = true;
+          return undefined;
         },
       });
-      // eslint-disable-next-line
-    } catch (e) { }
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
 
     // Hold Directive
     app.directive('hold', {
