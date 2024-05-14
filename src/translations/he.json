@@ -159,10 +159,13 @@
     "sort": {
         "duration": "משך",
         "position": "מיקום",
+        "position DESC": "מיקום (יורד)",
         "provider": "ספק",
         "sort_album": "אלבום",
         "sort_artist": "אמן",
         "sort_name": "בסדר אלפביתי",
+        "sort_name DESC": "בסדר אלפביתי (יורד)",
+        "timestamp_added DESC": "נוספו לאחרונה",
         "track_number": "מספר שיר",
         "year": "שנת יציאה",
         "position_desc": "מיקום (יורד)",
