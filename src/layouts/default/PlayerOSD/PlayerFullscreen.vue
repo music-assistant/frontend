@@ -36,7 +36,7 @@
           </div>
           <div class="main-media-details-track-info">
             <!-- title -->
-            <div
+            <v-card-title
               v-if="store.curQueueItem?.media_item"
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item as MediaItemType)"
@@ -50,7 +50,7 @@
                 "
                 >( {{ store.curQueueItem.media_item.version }})</span
               >
-            </div>
+            </v-card-title>
 
             <!-- fallback title: show name of active queue or player -->
             <v-card-title
