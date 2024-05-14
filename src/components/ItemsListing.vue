@@ -55,12 +55,11 @@
                 :item="item"
                 :is-selected="isSelected(item)"
                 :show-checkboxes="showCheckboxes"
-                :show-track-number="showTrackNumber"
-                :show-favorite="showFavoritesOnlyFilter"
                 :show-actions="['tracks', 'albums'].includes(itemtype)"
                 @select="onSelect"
                 @menu="onMenu"
                 @click="onClick"
+                @play="onPlayClick"
               />
             </v-col>
           </v-row>
@@ -127,7 +126,10 @@
             <v-btn
               color="primary"
               variant="text"
-              @click="(evt: Event) => onMenu(evt, selectedItems)"
+              @click="
+                (evt: PointerEvent) =>
+                  onMenu(selectedItems, evt.clientX, evt.clientY)
+              "
             >
               {{ $t('actions') }}
             </v-btn>
@@ -352,25 +354,24 @@ const toggleCheckboxes = function () {
   showCheckboxes.value = !showCheckboxes.value;
 };
 
-const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    props.parentItem,
-    (evt as PointerEvent).clientX,
-    (evt as PointerEvent).clientY,
-  );
-};
-
 const onRefreshClicked = function () {
   emit('refreshClicked');
   loadData(true, true);
 };
 
-const onClick = function (evt: Event, item: MediaItemType) {
+const onMenu = function (
+  item: MediaItemType | MediaItemType[],
+  posX: number,
+  posY: number,
+) {
+  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  showContextMenuForMediaItem(mediaItems, props.parentItem, posX, posY);
+};
+
+const onClick = function (item: MediaItemType, posX: number, posY: number) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt, item);
+    onMenu(item, posX, posY);
     return;
   }
   if (item.media_type == MediaType.FOLDER) {
@@ -380,7 +381,14 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
+  } else if (
+    viewMode.value == 'list' &&
+    item.media_type == MediaType.TRACK &&
+    props.parentItem
+  ) {
+    // track clicked in a sublisting (e.g. album/playlist) listview
+    onPlayClick(item, posX, posY);
+  } else {
     router.push({
       name: item.media_type,
       params: {
@@ -388,9 +396,20 @@ const onClick = function (evt: Event, item: MediaItemType) {
         provider: item.provider,
       },
     });
-  } else {
-    onMenu(evt, item);
   }
+};
+
+const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
+  // play button on item is clicked
+  if (!itemIsAvailable(item)) {
+    onMenu(item, posX, posY);
+    return;
+  }
+  if (!store.activePlayerId) {
+    store.showPlayersMenu = true;
+    return;
+  }
+  api.playMedia(item.uri, undefined);
 };
 
 const onClear = function () {
@@ -610,9 +629,6 @@ const loadData = async function (clear = false, refresh = false) {
         allItems.value.push(...(nextItems.items as MediaItemType[]));
         if (nextItems.total != null) {
           total.value = nextItems.total;
-        } else if (allItems.value.length != params.value.limit) {
-          total.value = allItems.value.length;
-          break;
         }
         if (total.value != null && allItems.value.length >= total.value) {
           break;
