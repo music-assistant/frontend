@@ -143,7 +143,8 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .panel-item-details {
   padding: 5px !important;
-  height: 55px;
+  height: 50px;
+  bottom: 5px;
 }
 
 .hiresicon {
@@ -163,7 +164,7 @@ const onPlayClick = function (evt: PointerEvent) {
   background-color: rgba(255, 255, 255, 0.75);
   position: absolute;
   width: 100%;
-  height: 55px;
+  height: 50px;
   bottom: 0px;
   border-radius: 0;
 }
