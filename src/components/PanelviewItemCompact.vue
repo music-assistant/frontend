@@ -82,23 +82,25 @@ const compProps = withDefaults(defineProps<Props>(), {
   permanentOverlay: false,
 });
 
-/* eslint-disable no-unused-vars */
+// emits
 const emit = defineEmits<{
-  (e: 'menu', event: Event, item: MediaItemType): void;
-  (e: 'click', event: Event, item: MediaItemType): void;
-  (e: 'play', event: Event, item: MediaItemType): void;
+  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'play', item: MediaItemType, posX: number, posY: number): void;
 }>();
 
-const onMenu = function (event: Event) {
-  emit('menu', event, compProps.item);
+const onMenu = function (evt: PointerEvent | TouchEvent) {
+  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  emit('menu', compProps.item, posX, posY);
 };
 
-const onClick = function (event: Event) {
-  emit('click', event, compProps.item);
+const onClick = function (evt: PointerEvent) {
+  emit('click', compProps.item, evt.clientX, evt.clientY);
 };
 
-const onPlayClick = function (event: Event) {
-  emit('play', event, compProps.item);
+const onPlayClick = function (evt: PointerEvent) {
+  emit('play', compProps.item, evt.clientX, evt.clientY);
 };
 </script>
 

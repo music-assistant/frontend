@@ -126,7 +126,10 @@
             <v-btn
               color="primary"
               variant="text"
-              @click="(evt: Event) => onMenu(evt, selectedItems)"
+              @click="
+                (evt: PointerEvent) =>
+                  onMenu(selectedItems, evt.clientX, evt.clientY)
+              "
             >
               {{ $t('actions') }}
             </v-btn>
@@ -357,19 +360,18 @@ const onRefreshClicked = function () {
 };
 
 const onMenu = function (
-  evt: PointerEvent | TouchEvent,
   item: MediaItemType | MediaItemType[],
+  posX: number,
+  posY: number,
 ) {
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
-  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
   showContextMenuForMediaItem(mediaItems, props.parentItem, posX, posY);
 };
 
-const onClick = function (evt: Event, item: MediaItemType) {
+const onClick = function (item: MediaItemType, posX: number, posY: number) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt, item);
+    onMenu(item, posX, posY);
     return;
   }
   if (item.media_type == MediaType.FOLDER) {
@@ -385,7 +387,7 @@ const onClick = function (evt: Event, item: MediaItemType) {
     props.parentItem
   ) {
     // track clicked in a sublisting (e.g. album/playlist) listview
-    onPlayClick(evt, item);
+    onPlayClick(item, posX, posY);
   } else {
     router.push({
       name: item.media_type,
@@ -397,10 +399,10 @@ const onClick = function (evt: Event, item: MediaItemType) {
   }
 };
 
-const onPlayClick = function (evt: Event, item: MediaItemType) {
+const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
   // play button on item is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt as PointerEvent, item);
+    onMenu(item, posX, posY);
     return;
   }
   if (!store.activePlayerId) {

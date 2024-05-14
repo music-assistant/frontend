@@ -228,7 +228,7 @@ export interface Props {
 // global refs
 const { t } = useI18n();
 
-const props = withDefaults(defineProps<Props>(), {
+const compProps = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showDiscNumber: true,
   showProvider: true,
@@ -243,8 +243,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 // computed properties
 const HiResDetails = computed(() => {
-  if (!('provider_mappings' in props.item)) return '';
-  for (const prov of props.item.provider_mappings) {
+  if (!('provider_mappings' in compProps.item)) return '';
+  for (const prov of compProps.item.provider_mappings) {
     if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
@@ -269,24 +269,21 @@ const HiResDetails = computed(() => {
 });
 
 // emits
-/* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: 'menu', event: Event, item: MediaItemType): void;
-  (e: 'click', event: Event, item: MediaItemType): void;
+  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
   (e: 'select', item: MediaItemType, selected: boolean): void;
 }>();
-/* eslint-enable no-unused-vars */
 
-// methods
-
-const onMenu = function (event: Event) {
-  if (props.showCheckboxes) return;
-  emit('menu', event, props.item);
+const onMenu = function (evt: PointerEvent | TouchEvent) {
+  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  emit('menu', compProps.item, posX, posY);
 };
 
-const onClick = function (event: Event) {
-  if (props.showCheckboxes) return;
-  emit('click', event, props.item);
+const onClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) return;
+  emit('click', compProps.item, evt.clientX, evt.clientY);
 };
 </script>
 

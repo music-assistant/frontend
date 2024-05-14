@@ -119,7 +119,9 @@
           variant="list"
           icon="mdi-dots-vertical"
           style="padding-right: 0; margin-right: -5px"
-          @click.stop="(v: any) => $emit('menu', v, item)"
+          @click.stop="
+            (evt: PointerEvent) => $emit('menu', item, evt.clientX, evt.clientY)
+          "
         />
       </v-card-actions>
     </v-card>
@@ -190,28 +192,28 @@ const HiResDetails = computed(() => {
 });
 
 // emits
-
-/* eslint-disable no-unused-vars */
 const emit = defineEmits<{
-  (e: 'menu', event: Event, item: MediaItemType): void;
-  (e: 'click', event: Event, item: MediaItemType): void;
-  (e: 'play', event: Event, item: MediaItemType): void;
-  (e: 'select', item: MediaItem, selected: boolean): void;
+  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'play', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'select', item: MediaItemType, selected: boolean): void;
 }>();
 
-const onMenu = function (event: Event) {
+const onMenu = function (evt: PointerEvent | TouchEvent) {
   if (compProps.showCheckboxes) return;
-  emit('menu', event, compProps.item);
+  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  emit('menu', compProps.item, posX, posY);
 };
 
-const onClick = function (event: Event) {
+const onClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit('click', event, compProps.item);
+  emit('click', compProps.item, evt.clientX, evt.clientY);
 };
 
-const onPlayClick = function (event: Event) {
+const onPlayClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit('play', event, compProps.item);
+  emit('play', compProps.item, evt.clientX, evt.clientY);
 };
 </script>
 
