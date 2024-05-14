@@ -7,7 +7,9 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :load-paged-data="loadItems"
-      :sort-keys="['original', 'name', 'name_desc']"
+      :sort-keys="
+        allItemsReceived ? ['original', 'name', 'name_desc'] : ['original']
+      "
       :title="header"
       :path="path"
       :allow-key-hooks="true"
@@ -18,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import api from '@/plugins/api';
@@ -29,6 +31,7 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const { t } = useI18n();
+const allItemsReceived = ref(false);
 
 const header = computed(() => {
   if (!props.path || props.path == 'root') return t('browse');
@@ -38,6 +41,8 @@ const header = computed(() => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  return await api.browse(params.offset, params.limit, props.path);
+  const result = await api.browse(params.offset, params.limit, props.path);
+  allItemsReceived.value = result.total != null;
+  return result;
 };
 </script>

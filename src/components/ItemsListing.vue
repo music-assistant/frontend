@@ -30,17 +30,15 @@
     <Container
       v-if="expanded"
       :variant="viewMode == 'list' ? 'default' : 'panel'"
+      style="overflow-x: hidden"
     >
-      <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate />
-
       <v-infinite-scroll
         :items="pagedItems"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
-        style="overflow-y: unset; overflow-x: hidden"
+        style="overflow-y: hidden; overflow-x: hidden"
       >
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
@@ -319,7 +317,7 @@ const toggleFavoriteFilter = function () {
     `favoriteFilter.${props.path}.${props.itemtype}`,
     favoritesOnlyStr,
   );
-  loadData(true);
+  loadData(undefined, undefined, true);
 };
 
 const toggleLibraryOnlyFilter = function () {
@@ -329,7 +327,7 @@ const toggleLibraryOnlyFilter = function () {
     `libraryFilter.${props.path}.${props.itemtype}`,
     libraryOnlyStr,
   );
-  loadData(true, true);
+  loadData(undefined, undefined, true);
 };
 
 const toggleAlbumArtistsFilter = function () {
@@ -341,7 +339,7 @@ const toggleAlbumArtistsFilter = function () {
     `albumArtistsFilter.${props.path}.${props.itemtype}`,
     albumArtistsOnlyStr,
   );
-  loadData(true);
+  loadData(undefined, undefined, true);
 };
 
 const isSelected = function (item: MediaItemType) {
@@ -429,7 +427,7 @@ const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
 const onClear = function () {
   params.value.search = '';
   showSearch.value = false;
-  loadData(true);
+  loadData(undefined, undefined, true);
 };
 
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
@@ -440,7 +438,7 @@ const changeSort = function (sort_key?: string, sort_desc?: boolean) {
     `sortBy.${props.path}.${props.itemtype}`,
     params.value.sortBy,
   );
-  loadData(true, sort_key == 'original');
+  loadData(undefined, undefined, true);
 };
 
 const redirectSearch = function () {
@@ -461,7 +459,12 @@ const loadNextPage = function ({ done }: { done: any }) {
 
   done('loading');
 
-  loadData(false, false, params.value.offset + props.limit).then(() => {
+  loadData(
+    undefined,
+    undefined,
+    undefined,
+    params.value.offset + props.limit,
+  ).then(() => {
     done('ok');
   });
 };
@@ -628,13 +631,27 @@ const menuItems = computed(() => {
   return items;
 });
 
-const loadData = async function (clear = false, refresh = false, offset = 0) {
+const loadData = async function (
+  clear = false,
+  refresh = false,
+  FilterParamsChanged = false,
+  offset = 0,
+) {
   if (loading.value) {
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
     return;
   }
   loading.value = true;
+
+  if (
+    FilterParamsChanged &&
+    props.loadPagedData !== undefined &&
+    !props.noServerSideSorting
+  ) {
+    // on paged server listings, we need to clear the list on filter params change
+    clear = true;
+  }
 
   if (clear || refresh) {
     offset = 0;
@@ -691,6 +708,7 @@ const loadData = async function (clear = false, refresh = false, offset = 0) {
       pagedItems.value = nextItems;
     }
   }
+  params.value.refresh = false;
   loading.value = false;
 };
 
