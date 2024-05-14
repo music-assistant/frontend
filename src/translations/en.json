@@ -478,6 +478,6 @@
     "create_playlist_on": "Create new playlist on {0}",
     "view": {
         "list": "List view",
-        "panel": "Panel view"
+        "panel": "Thumbs view"
     }
 }
