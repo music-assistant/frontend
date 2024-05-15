@@ -23,9 +23,8 @@ const routes = [
             path: 'player',
             name: 'player',
             component: () => import('@/views/HomeView.vue'),
-            beforeEnter: (to, from, next) => {
+            beforeEnter: () => {
               store.showFullscreenPlayer = true;
-              next();
             },
           },
         ],
