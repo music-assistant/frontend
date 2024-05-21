@@ -408,8 +408,6 @@
         "timestamp_added_desc": "Date added (descending)",
         "timestamp_modified": "Date updated",
         "timestamp_modified_desc": "Date updated (descending)",
-        "album_sort": "Album sort name",
-        "artist_sort": "Artist sort name",
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
