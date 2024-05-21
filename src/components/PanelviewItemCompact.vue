@@ -8,17 +8,30 @@
       @click="onClick"
       @click.right.prevent="onMenu"
     >
-      <MediaItemThumb :item="item" />
       <v-overlay
-        :model-value="isHovering || $vuetify.display.mobile || permanentOverlay"
-        style="height: 35%; top: 65%; border-radius: 0"
+        v-if="showCheckboxes"
+        :model-value="showCheckboxes"
         contained
-        flat
         :scrim="
-          $vuetify.theme.current.dark
-            ? 'rgba(0,0,0,.95)'
-            : 'rgba(255,255,255,.95)'
+          isSelected
+            ? $vuetify.theme.current.dark
+              ? 'rgba(0,0,0,.75)'
+              : 'rgba(255,255,255,.75)'
+            : '#ffffff00'
         "
+      >
+        <v-checkbox
+          class="panel-item-checkbox"
+          :ripple="false"
+          :model-value="isSelected"
+        />
+      </v-overlay>
+      <MediaItemThumb :item="item" />
+      <div
+        :class="
+          $vuetify.theme.current.dark ? 'paneldetails-dark' : 'paneldetails'
+        "
+        :model-value="isHovering || $vuetify.display.mobile || permanentOverlay"
       >
         <v-list-item
           variant="text"
@@ -48,11 +61,18 @@
           >
             {{ item.owner }}
           </v-list-item-subtitle>
-          <v-list-item-subtitle v-else class="line-clamp-1">
-            {{ $t(item.media_type) }}
-          </v-list-item-subtitle>
         </v-list-item>
-      </v-overlay>
+      </div>
+      <!-- play button -->
+      <v-btn
+        v-if="isHovering || $vuetify.display.mobile"
+        icon="mdi-play"
+        color="primary"
+        fab
+        size="small"
+        style="position: absolute; right: 10px; bottom: 35px; opacity: 0.8"
+        @click.stop="onPlayClick"
+      />
     </v-card>
   </v-hover>
 </template>
@@ -70,25 +90,43 @@ import { getArtistsString, getBrowseFolderName } from '@/helpers/utils';
 export interface Props {
   item: MediaItemType;
   size?: number;
+  isSelected?: boolean;
+  showCheckboxes?: boolean;
   permanentOverlay?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
+  isSelected: false,
+  showCheckboxes: false,
   permanentOverlay: false,
 });
 
-/* eslint-disable no-unused-vars */
+// emits
 const emit = defineEmits<{
-  (e: 'menu', event: Event, item: MediaItemType): void;
-  (e: 'click', event: Event, item: MediaItemType): void;
+  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'play', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'select', item: MediaItemType, selected: boolean): void;
 }>();
 
-const onMenu = function (event: Event) {
-  emit('menu', event, compProps.item);
+const onMenu = function (evt: PointerEvent | TouchEvent) {
+  if (compProps.showCheckboxes) return;
+  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  emit('menu', compProps.item, posX, posY);
 };
 
-const onClick = function (event: Event) {
-  emit('click', event, compProps.item);
+const onClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) {
+    emit('select', compProps.item, compProps.isSelected ? false : true);
+    return;
+  }
+  emit('click', compProps.item, evt.clientX, evt.clientY);
+};
+
+const onPlayClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) return;
+  emit('play', compProps.item, evt.clientX, evt.clientY);
 };
 </script>
 
@@ -105,7 +143,8 @@ const onClick = function (event: Event) {
 
 .panel-item-details {
   padding: 5px !important;
-  height: 40px;
+  height: 50px;
+  bottom: 5px;
 }
 
 .hiresicon {
@@ -117,5 +156,21 @@ const onClick = function (event: Event) {
   margin-left: 10px;
   margin-right: 10px;
   filter: invert(100%);
+}
+</style>
+
+<style lang="scss" scoped>
+.paneldetails {
+  background-color: rgba(255, 255, 255, 0.75);
+  position: absolute;
+  width: 100%;
+  height: 50px;
+  bottom: 0px;
+  border-radius: 0;
+}
+
+.paneldetails-dark {
+  @extend .paneldetails;
+  background-color: rgba(0, 0, 0, 0.75);
 }
 </style>

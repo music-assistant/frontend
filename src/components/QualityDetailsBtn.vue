@@ -2,7 +2,7 @@
   <!-- streaming quality details -->
   <v-menu
     v-if="streamDetails"
-    location="bottom end"
+    location="top center"
     :close-on-content-click="false"
   >
     <template #activator="{ props }">
@@ -26,9 +26,9 @@
     <v-card class="mx-auto" width="300">
       <v-list style="overflow: hidden">
         <v-list-item class="list-item list-item-main" :min-height="5">
-          <v-list-item-title class="text-h5 mb-1">
+          <v-card-title>
             {{ $t('stream_details') }}
-          </v-list-item-title>
+          </v-card-title>
         </v-list-item>
         <v-divider />
         <div style="height: 50px; display: flex; align-items: center">

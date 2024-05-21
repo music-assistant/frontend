@@ -47,35 +47,3 @@ const hideSettings = ref(
   margin-inline: auto;
 }
 </style>
-
-<style>
-.home-card {
-  min-width: 80px;
-  text-align: center;
-  padding-top: 12px;
-  padding-bottom: 8px;
-}
-
-.widget-row {
-  margin-bottom: 20px;
-  margin-left: 0px;
-  padding-left: 0px;
-}
-
-.v-slide-group__prev {
-  min-width: 0px !important;
-}
-
-.v-slide-group__prev.v-slide-group__prev--disabled {
-  visibility: hidden;
-  margin-right: -15px;
-}
-
-.v-slide-group__next {
-  min-width: 15px !important;
-}
-
-.v-slide-group__next.v-slide-group__next--disabled {
-  visibility: hidden;
-}
-</style>

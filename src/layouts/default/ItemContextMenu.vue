@@ -122,13 +122,9 @@ export const getPlayMenuItems = function (
   if (items.length == 0 || !itemIsAvailable(items[0])) {
     return playMenuItems;
   }
-  let queueOptNext = QueueOption.NEXT;
-  if (
-    items.length > 10 ||
-    [MediaType.ALBUM, MediaType.PLAYLIST].includes(items[0].media_type)
-  ) {
-    queueOptNext = QueueOption.REPLACE_NEXT;
-  }
+  if (!store.activePlayerId) return playMenuItems;
+  if (items[0].media_type == MediaType.FOLDER) return playMenuItems;
+
   // Play from here...
   if (items.length == 1 && parentItem && parentItem.uri != items[0].uri) {
     // Play from here (playlist track)
@@ -163,7 +159,21 @@ export const getPlayMenuItems = function (
     action: () => {
       api.playMedia(
         items.map((x) => x.uri),
-        undefined,
+        QueueOption.PLAY,
+      );
+    },
+    icon: 'mdi-play-circle-outline',
+    labelArgs: [],
+    disabled: !store.activePlayerQueue,
+  });
+
+  // replace now
+  playMenuItems.push({
+    label: 'play_replace',
+    action: () => {
+      api.playMedia(
+        items.map((x) => x.uri),
+        QueueOption.REPLACE,
       );
     },
     icon: 'mdi-play-circle-outline',
@@ -178,7 +188,7 @@ export const getPlayMenuItems = function (
       action: () => {
         api.playMedia(
           items.map((x) => x.uri),
-          queueOptNext,
+          QueueOption.NEXT,
         );
       },
       icon: 'mdi-skip-next-circle-outline',
@@ -228,7 +238,7 @@ export const getContextMenuItems = function (
   if (items.length == 0) {
     return contextMenuItems;
   }
-
+  if (items[0].media_type == MediaType.FOLDER) return contextMenuItems;
   // show info
   if (
     items.length === 1 &&

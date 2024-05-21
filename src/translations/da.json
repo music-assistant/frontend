@@ -389,10 +389,13 @@
     "sort": {
         "duration": "Varighed",
         "position": "Position",
+        "position DESC": "Position (faldende)",
         "provider": "Udbyder",
         "sort_album": "Album",
         "sort_artist": "Kunstner",
         "sort_name": "Alfabetisk",
+        "sort_name DESC": "Alfabetisk (faldende)",
+        "timestamp_added DESC": "Tilføjet for nylig",
         "track_number": "Nummer",
         "year": "Udgivelsesår",
         "position_desc": "Position",

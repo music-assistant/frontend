@@ -74,7 +74,7 @@
           </div>
         </div>
 
-        <div>
+        <div style="width: 100%">
           <!-- Main title -->
           <v-card-title>
             {{ item.name }}

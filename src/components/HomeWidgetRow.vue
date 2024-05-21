@@ -37,6 +37,7 @@
           "
           @menu="onMenu"
           @click="onClick"
+          @play="onPlayClick"
         />
       </swiper-slide>
     </carousel>
@@ -47,6 +48,7 @@
 import Carousel from '@/components/Carousel.vue';
 import PanelviewItemCompact from '@/components/PanelviewItemCompact.vue';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
+import api from '@/plugins/api';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import {
   BrowseFolder,
@@ -55,6 +57,7 @@ import {
   PlayerQueue,
 } from '@/plugins/api/interfaces';
 import router from '@/plugins/router';
+import { store } from '@/plugins/store';
 
 export interface WidgetRow {
   label: string;
@@ -71,20 +74,19 @@ interface Props {
 
 const { widgetRow } = defineProps<Props>();
 
-const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
+const onMenu = function (
+  item: MediaItemType | MediaItemType[],
+  posX: number,
+  posY: number,
+) {
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    undefined,
-    (evt as PointerEvent).clientX,
-    (evt as PointerEvent).clientY,
-  );
+  showContextMenuForMediaItem(mediaItems, undefined, posX, posY);
 };
 
-const onClick = function (evt: Event, item: MediaItemType) {
+const onClick = function (item: MediaItemType, posX: number, posY: number) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt, item);
+    onMenu(item, posX, posY);
     return;
   }
   if (item.media_type == MediaType.FOLDER) {
@@ -94,7 +96,7 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
+  } else {
     router.push({
       name: item.media_type,
       params: {
@@ -102,9 +104,20 @@ const onClick = function (evt: Event, item: MediaItemType) {
         provider: item.provider,
       },
     });
-  } else {
-    onMenu(evt, item);
   }
+};
+
+const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
+  // play button on item is clicked
+  if (!itemIsAvailable(item)) {
+    onMenu(item, posX, posY);
+    return;
+  }
+  if (!store.activePlayerId) {
+    store.showPlayersMenu = true;
+    return;
+  }
+  api.playMedia(item.uri, undefined);
 };
 </script>
 
@@ -112,13 +125,6 @@ const onClick = function (evt: Event, item: MediaItemType) {
 .header.v-toolbar {
   height: 55px;
   font-family: 'JetBrains Mono Medium';
-}
-
-.home-card {
-  min-width: 80px;
-  text-align: center;
-  padding-top: 12px;
-  padding-bottom: 8px;
 }
 
 .widget-row {

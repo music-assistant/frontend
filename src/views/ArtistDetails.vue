@@ -1,6 +1,8 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
+    <!-- loading animation -->
+    <v-progress-linear v-if="loading" indeterminate />
     <ItemsListing
       v-if="itemDetails"
       itemtype="artisttracks"
@@ -56,9 +58,12 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Artist>();
+const loading = ref(false);
 
 const loadItemDetails = async function () {
+  loading.value = true;
   itemDetails.value = await api.getArtist(props.itemId, props.provider);
+  loading.value = false;
 };
 
 onMounted(() => {

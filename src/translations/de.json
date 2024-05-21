@@ -301,7 +301,7 @@
         },
         "tts_pre_announce": {
             "label": "TTS-Durchsagen vorankündigen",
-            "description": "Wenn eine TTS (Text-zu-Sprache) Nachricht an die Ankündigungsfunktion gesendet wird, füge der Durchsage einen kurzen Ankündigungston (Glockenpfeife) hinzu."
+            "description": "Wenn eine TTS (Text-zu-Sprache) Nachricht an die Ankündigungsfunktion gesendet wird, füge der Durchsage einen kurzen Ankündigungston (Trillerpfeife) hinzu."
         },
         "announce_volume_strategy": {
             "label": "Lautstärkestrategie für Ankündigungen",
@@ -350,6 +350,14 @@
             "label": "Aktivierte Menü Einträge",
             "description": "Konfiguriere, welche Einträge im Menü angezeigt werden\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Knopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du den URL der Seite manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
         },
+        "artwork_pref": {
+            "label": "Präferenz für den Bildabruf",
+            "description": "Darf dieser Client selbstständig (öffentlich zugängliche) Grafiken herunterladen oder muss alles über den Server geroutet werden?\nStandardmäßig ist es dem Client erlaubt, Grafiken direkt aus dem Internet zwischenzuspeichern\/herunterzuladen, um den Server weniger zu belasten.",
+            "options": {
+                "online": "Direkten Abruf erlauben",
+                "server_only": "Routing über den Server erzwingen"
+            }
+        },
         "language": {
             "label": "Sprache",
             "options": {
@@ -369,7 +377,11 @@
         "hide_settings": {
             "label": "Verstecke den Einstellungsknopf",
             "description": "Versteckt den Einstellungsknopf auf der Startseite.\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Einstellungsknopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du den URL der Seite in den Einstellungen manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu den Einstellungen zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
-        }
+        },
+        "no_music_providers": "Keine Musikanbieter konfiguriert",
+        "no_music_providers_detail": "Starte mit Music Assistant, indem du deine Musikanbieter hinzufügst.",
+        "no_player_providers": "Keine Wiedergabe-Gerätanbieter konfiguriert",
+        "no_player_providers_detail": "Konfiguriere die Wiedergabe-Gerätanbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann."
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -379,10 +391,13 @@
     "sort": {
         "duration": "Dauer",
         "position": "Position",
+        "position DESC": "Position (absteigend)",
         "provider": "Anbieter",
         "sort_album": "Album",
         "sort_artist": "Künstler",
         "sort_name": "Alphabetisch",
+        "sort_name DESC": "Alphabetisch (absteigend)",
+        "timestamp_added DESC": "Kürzlich hinzugefügt",
         "track_number": "Titelnummer",
         "year": "Erscheinungsjahr",
         "position_desc": "Position (absteigend)",
@@ -400,7 +415,9 @@
         "timestamp_modified": "Änderungsdatum",
         "timestamp_modified_desc": "Änderungsdatum (absteigend)",
         "last_played": "Zuletzt gespielt",
-        "last_played_desc": "Zuletzt gespielt (absteigend)"
+        "last_played_desc": "Zuletzt gespielt (absteigend)",
+        "play_count": "Wiedergabezähler",
+        "play_count_desc": "Wiedergabezähler (absteigend)"
     },
     "state": {
         "idle": "Inaktiv",
@@ -466,5 +483,6 @@
     "view": {
         "list": "Listen Ansicht",
         "panel": "Panel Ansicht"
-    }
+    },
+    "play_replace": "Jetzt wiedergeben (Warteschlange leeren)"
 }

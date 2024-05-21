@@ -387,27 +387,30 @@
     "shuffle_enabled": "Shuffle is enabled",
     "sort": {
         "duration": "Duration",
-        "duration_desc": "Duration (descending)",
         "position": "Position",
-        "position_desc": "Position (descending)",
+        "position DESC": "Position (descending)",
         "provider": "Provider",
         "sort_album": "Album",
         "sort_artist": "Artist",
-        "sort_name": "Sort name",
-        "sort_name_desc": "Sort name (descending)",
+        "sort_name": "Alphabetically",
+        "sort_name DESC": "Alphabetically (descending)",
+        "timestamp_added DESC": "Recently added",
         "track_number": "Track number",
         "year": "Release year",
-        "year_desc": "Release year (descending)",
+        "position_desc": "Position (descending)",
         "album": "Album",
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
         "recent": "Recently added",
+        "year_desc": "Release year (descending)",
+        "duration_desc": "Duration (descending)",
         "original": "Original",
+        "sort_name_desc": "Sort name (descending)",
         "timestamp_added": "Date added",
-        "timestamp_added_desc": "Date added (descending)",
+        "timestamp_added_desc": "Date added (descending",
         "timestamp_modified": "Date updated",
-        "timestamp_modified_desc": "Date updated (descending)",
+        "timestamp_modified_desc": "Date updated (descending",
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
@@ -476,6 +479,8 @@
     "create_playlist_on": "Create new playlist on {0}",
     "view": {
         "list": "List view",
-        "panel": "Thumbs view"
-    }
+        "panel": "Thumbs view",
+        "panel_compact": "Compact thumbs view"
+    },
+    "play_replace": "Play Now (clear queue)"
 }
