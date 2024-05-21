@@ -357,18 +357,18 @@
             "label": "Language",
             "options": {
                 "auto": "Auto (follow system configuration)",
-                "cs": "CS",
+                "cs": "Czech",
                 "da": "Danish",
                 "de": "German",
                 "en": "English",
-                "es": "Spannish",
+                "es": "Spanish",
                 "fr": "French",
                 "he": "Hebrew",
                 "it": "Italian",
-                "nb": "NB",
+                "nb": "Norwegian",
                 "nl": "Dutch",
                 "pl": "Polish",
-                "uk_UA": "Ukrain"
+                "uk_UA": "Ukrainian"
             }
         },
         "hide_settings": {
