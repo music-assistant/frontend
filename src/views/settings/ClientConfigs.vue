@@ -163,6 +163,17 @@
               />
             </td>
           </tr>
+          <tr>
+            <td>Use TLS for server connection</td>
+            <td>
+              <v-switch
+                v-model="tls"
+                style="height: 56px"
+                label="Relaunch to apply"
+                @change="tlsConfig"
+              />
+            </td>
+          </tr>
         </tbody>
       </v-table>
     </Container>
@@ -186,6 +197,7 @@ const squeezeliteEnabled = ref(true);
 const closeToTrayEnabled = ref(true);
 const port = ref(8095);
 const ip = ref('homeassistant.local');
+const tls = ref(false);
 const version = ref('Loading...');
 
 const outputDevice = ref('default');
@@ -218,6 +230,10 @@ const portConfig = () => {
   localStorage.setItem('mass_port', port.value.toString());
 };
 
+const tlsConfig = () => {
+  localStorage.setItem('mass_tls', tls.value.toString());
+};
+
 const outputDeviceConfig = () => {
   localStorage.setItem('outputDevice', outputDevice.value);
 };
@@ -242,6 +258,7 @@ onMounted(async () => {
     localStorage.getItem('closeToTrayEnabled') === 'true' || true;
   ip.value = localStorage.getItem('mass_ip') || 'homeassistant.local';
   port.value = Number(localStorage.getItem('mass_port')) || 8095;
+  tls.value = localStorage.getItem('mass_tls') === 'true' || false;
   version.value = await getVersion();
 });
 </script>
