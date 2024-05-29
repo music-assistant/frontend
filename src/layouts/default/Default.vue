@@ -1,6 +1,7 @@
 <template>
   <v-app>
     <PlayerSelect />
+    <HelperShortcuts/>
     <MainView v-if="api.state.value == ConnectionState.CONNECTED" />
     <v-overlay v-else>
       <v-progress-circular indeterminate size="64" />
@@ -14,6 +15,7 @@
 import MainView from './View.vue';
 import Footer from './Footer.vue';
 import PlayerSelect from './PlayerSelect.vue';
+import HelperShortcuts from './HelperShortcuts.vue';
 import ReloadPrompt from './ReloadPrompt.vue';
 import { api, ConnectionState } from '@/plugins/api';
 import { store } from '@/plugins/store';
