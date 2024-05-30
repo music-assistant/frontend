@@ -103,7 +103,7 @@ import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
-import { shell } from '@tauri-apps/api';
+import { open } from '@tauri-apps/plugin-shell';
 import { eventbus } from '@/plugins/eventbus';
 
 // global refs
@@ -175,7 +175,7 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  shell.open(url);
+  open(url);
 };
 
 const onMenu = function (evt: Event, item: PlayerConfig) {

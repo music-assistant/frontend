@@ -172,9 +172,8 @@ import ProviderIcon from '@/components/ProviderIcon.vue';
 import { useRouter } from 'vue-router';
 import Button from '@/components/mods/Button.vue';
 import ListItem from '@/components/mods/ListItem.vue';
-import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
-import { shell } from '@tauri-apps/api';
+import { open } from '@tauri-apps/plugin-shell';
 import { $t } from '@/plugins/i18n';
 import { eventbus } from '@/plugins/eventbus';
 
@@ -268,7 +267,7 @@ const reloadProvider = function (providerInstanceId: string) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  shell.open(url);
+  open(url);
 };
 
 const onMenu = function (evt: Event, item: ProviderConfig) {

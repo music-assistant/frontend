@@ -124,7 +124,6 @@ import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrent } from '@tauri-apps/api/window';
-import WebSocket from '@tauri-apps/plugin-websocket';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -143,6 +142,7 @@ const err_message = ref('Error!');
 import { i18n } from '@/plugins/i18n';
 import router from './plugins/router';
 import { sleep } from './helpers/utils';
+import { WebsocketBuilder } from 'websocket-ts';
 const theme = useTheme();
 
 // methods
@@ -157,20 +157,21 @@ const try_start = async () => {
   loading.value = true;
   // Try to connect to the websocket
   let protocol = tls.value ? 'wss' : 'ws';
-  await WebSocket.connect(`${protocol}://${ip.value}:${port.value}/ws`)
-    .then((i) => {
+  new WebsocketBuilder(`${protocol}://${ip.value}:${port.value}/ws`)
+    .onOpen((i, ev) => {
       // If it sucessfully connects, start the app
       start();
-      i.disconnect();
+      i.close();
       loading.value = false;
     })
-    .catch(() => {
+    .onError(() => {
       // If it cant connect throw error
       err_message.value =
         'Could not connect to Music Assistant! Please check the ip and port';
       err.value = true;
       loading.value = false;
-    });
+    })
+    .build();
 };
 
 const discordRpcConfig = () => {

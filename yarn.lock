@@ -1606,13 +1606,6 @@
   dependencies:
     "@tauri-apps/api" "2.0.0-beta.12"
 
-"@tauri-apps/plugin-websocket@^2.0.0-beta":
-  version "2.0.0-beta.4"
-  resolved "https://registry.yarnpkg.com/@tauri-apps/plugin-websocket/-/plugin-websocket-2.0.0-beta.4.tgz#3e8f80c5640d74c18f1346052539e31e00ba2d65"
-  integrity sha512-FEMfFZ1kCFiM2pxiIV0+ifn38pCNQLMLSh9AQaxBgjXqnwQeeBEdO10lYCA08glCn1jz/MgjnCs4x/Z1fnPrXg==
-  dependencies:
-    "@tauri-apps/api" "2.0.0-beta.12"
-
 "@tauri-apps/plugin-window-state@^2.0.0-beta":
   version "2.0.0-beta.5"
   resolved "https://registry.yarnpkg.com/@tauri-apps/plugin-window-state/-/plugin-window-state-2.0.0-beta.5.tgz#c3755823d7a37c9e99f408cbfe055c4a60ad6711"

@@ -97,7 +97,7 @@ import Toolbar from '@/components/Toolbar.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import { reactive } from 'vue';
-import { shell } from '@tauri-apps/api';
+import { open } from '@tauri-apps/plugin-shell';
 
 export interface Props {
   itemDetails: MediaItemType;
@@ -105,7 +105,7 @@ export interface Props {
 defineProps<Props>();
 
 const openLinkInNewTab = function (url: string) {
-  shell.open(url);
+  open(url);
 };
 
 const demoPlayer = reactive<{ [item_id: string]: HTMLAudioElement }>({});

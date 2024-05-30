@@ -345,7 +345,7 @@ import {
   ConfigEntry,
   ConfigValueOption,
 } from '@/plugins/api/interfaces';
-import { shell } from '@tauri-apps/api';
+import { open } from '@tauri-apps/plugin-shell';
 import { $t } from '@/plugins/i18n';
 const router = useRouter();
 import { marked } from 'marked';
@@ -450,7 +450,7 @@ const action = async function (action: string) {
   emit('action', action, getCurrentValues());
 };
 const openLink = function (url: string) {
-  shell.open(url);
+  open(url);
 };
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;

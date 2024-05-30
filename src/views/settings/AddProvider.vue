@@ -63,7 +63,7 @@ import {
 } from '@/plugins/api/interfaces';
 import EditConfig from './EditConfig.vue';
 import { watch } from 'vue';
-import { shell } from '@tauri-apps/api';
+import { open } from '@tauri-apps/plugin-shell';
 
 // global refs
 const router = useRouter();
@@ -83,7 +83,7 @@ onMounted(() => {
     // ignore any events that not match our session id.
     if (evt.object_id !== sessionId) return;
     const url = evt.data as string;
-    shell.open(url);
+    open(url);
   });
   onBeforeUnmount(unsub);
 });

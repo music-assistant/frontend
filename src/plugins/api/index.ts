@@ -3,7 +3,7 @@ import { AlertType, store } from '../store';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import WebSocket from '@tauri-apps/plugin-websocket';
+import { WebsocketBuilder, Websocket, LinearBackoff } from 'websocket-ts';
 import { computed, reactive, ref } from 'vue';
 import {
   createConnection,
@@ -54,7 +54,7 @@ export enum ConnectionState {
 }
 
 export class MusicAssistantApi {
-  private ws?: WebSocket;
+  private ws?: Websocket;
   private commandId: number;
   private _throttleId?: any;
   public baseUrl?: string;
@@ -91,30 +91,37 @@ export class MusicAssistantApi {
     console.log(`Connecting to Music Assistant API ${wsUrl}`);
     this.state.value = ConnectionState.CONNECTING;
     // connect to the websocket api
-    this.ws = await WebSocket.connect(wsUrl)
-      .then((i) => {
+    this.ws = new WebsocketBuilder(wsUrl)
+      .onOpen((i, ev) => {
         console.log('connection opened');
-        return i;
       })
-      .catch(() => {
-        console.log('error on connection');
+      .onClose((i, ev) => {
+        console.log('connection closed');
         this.state.value = ConnectionState.DISCONNECTED;
-        return undefined;
-      });
-    this.ws?.addListener((ev) => {
-      // Message retrieved on the websocket
-      const msg = JSON.parse(ev.data?.toString() || '');
-      if ('event' in msg) {
-        this.handleEventMessage(msg as EventMessage);
-      } else if ('server_version' in msg) {
-        this.handleServerInfoMessage(msg as ServerInfoMessage);
-      } else if ('message_id' in msg) {
-        this.handleResultMessage(msg);
-      } else {
-        // unknown message receoved
-        console.error('received unknown message', msg);
-      }
-    });
+      })
+      .onError((i, ev) => {
+        console.log('error on connection');
+      })
+      .onMessage((i, ev) => {
+        // Message retrieved on the websocket
+        const msg = JSON.parse(ev.data);
+        if ('event' in msg) {
+          this.handleEventMessage(msg as EventMessage);
+        } else if ('server_version' in msg) {
+          this.handleServerInfoMessage(msg as ServerInfoMessage);
+        } else if ('message_id' in msg) {
+          this.handleResultMessage(msg);
+        } else {
+          // unknown message receoved
+          console.error('received unknown message', msg);
+        }
+      })
+      .onRetry((i, ev) => {
+        console.log('retry');
+        this.state.value = ConnectionState.CONNECTING;
+      })
+      .withBackoff(new LinearBackoff(0, 1000, 12000))
+      .build();
   }
 
   public setUpCompleted = computed(() => {
