@@ -15,43 +15,75 @@
       <b>Shortcuts</b>
     </v-card-title>
 
-    <!-- collapsible player rows-->
-    <v-expansion-panels v-model="panelItem" focusable variant="accordion" flat>
-      <v-expansion-panel
-        v-for="player in sortedPlayers"
-        :id="player.player_id"
-        :key="player.player_id"
-        :disabled="!player.available"
-        flat
-        class="shortcutsrow"
-      >
-        <v-expansion-panel-title
-          expand-icon="mdi-chevron-down"
-          collapse-icon="mdi-chevron-up"
-        >
-          sss
-        </v-expansion-panel-title>
-        
-      </v-expansion-panel>
-    </v-expansion-panels>
+    <!-- collapsible keys rows-->
+    <v-row>
+      <v-col class="d-flex flex-column align-center" cols="4">
+        <v-list lines="one">
+          <v-list-item
+            v-for="shortcut in listShortcutsColA"
+            :key="shortcut.key"
+            :title="'Key: ' + shortcut.key"
+            :subtitle="shortcut.description"
+          ></v-list-item>
+        </v-list>
+      </v-col>
+
+      <v-col class="d-flex flex-column align-center" cols="4">
+        <v-list lines="one">
+          <v-list-item
+            v-for="shortcut in listShortcutsColB"
+            :key="shortcut.key"
+            :title="'Key: ' + shortcut.key"
+            :subtitle="shortcut.description"
+          ></v-list-item>
+        </v-list>
+      </v-col>
+      <v-col class="d-flex flex-column align-center" cols="4">
+        <v-list lines="one">
+          <v-list-item
+            v-for="shortcut in listShortcutsColC"
+            :key="shortcut.key"
+            :title="'Key: ' + shortcut.key"
+            :subtitle="shortcut.description"
+          ></v-list-item>
+        </v-list>
+      </v-col>
+
+    </v-row>
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
 import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
-import { Player, PlayerType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import VolumeControl from '@/components/VolumeControl.vue';
-import { ConnectionState, api } from '@/plugins/api';
-import { getPlayerName, truncateString } from '@/helpers/utils';
 
 const panelItem = ref<number | undefined>(undefined);
 
 
-const sortedPlayers = ["aa", "bb"]
+const listShortcutsColA = [
+  {"key": "CTRL + ALT + S", "description": "Enable/Disable shuffle"},
+  {"key": "CTRL + ALT + R", "description": "Enable/Disable repea,t"},
+  {"key": "CTRL + ALT + 1", "description": "Go home"},
+  {"key": "CTRL + ALT + 2", "description": "Go search"},
+  {"key": "CTRL + ALT + 3", "description": "Go Artists"},
+  {"key": "CTRL + ALT + 4", "description": "Go Albums"},
+];
+const listShortcutsColB = [
+  {"key": "CTRL + ALT + 4", "description": "Go Albums"},
+  {"key": "CTRL + ALT + 5", "description": "Go Tracks"},
+  {"key": "CTRL + ALT + 6", "description": "Go Playlists"},
+  {"key": "CTRL + ALT + 7", "description": "Go Radios"},
+  {"key": "CTRL + ALT + 8", "description": "Go Browse"},
+];
+
+const listShortcutsColC = [
+  {"key": "CTRL + SHIFT + S", "description": "Go Settings"},
+  {"key": "CTRL + ARROW LEFT", "description": "Prevoius track"},
+  {"key": "CTRL + ARROW RIGHT", "description": "Next track"},
+  {"key": "SPACE", "description": "Play/Pause"}
+]
 
 const shadowRoot = ref<ShadowRoot>();
-const lastClicked = ref();
 onMounted(() => {
   shadowRoot.value = getCurrentInstance()?.vnode?.el?.getRootNode();
 });
@@ -77,20 +109,5 @@ watch(
   opacity: 0.7;
   margin-top: 10px;
   margin-bottom: 10px;
-}
-
-.playerrow >>> .v-list-item__prepend {
-  width: 58px;
-  margin-left: -5px;
-}
-
-.playerrow >>> .v-expansion-panel-title {
-  padding: 0;
-  padding-right: 10px;
-  height: 60px;
-}
-
-.playerrow >>> .v-expansion-panel-text__wrapper {
-  padding: 0;
 }
 </style>
