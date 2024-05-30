@@ -12,6 +12,7 @@ categories:
       - 'ci'
 template: |
   ## What’s Changed
+
   $CHANGES
 version-resolver:
   major:
