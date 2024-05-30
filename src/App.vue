@@ -119,12 +119,12 @@
 
 <script setup lang="ts">
 import { ConnectionState, api } from '@/plugins/api';
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
-import { invoke } from '@tauri-apps/api/tauri';
-import { appWindow } from '@tauri-apps/api/window';
-import WebSocket from 'tauri-plugin-websocket-api';
+import { invoke } from '@tauri-apps/api/core';
+import { getCurrent } from '@tauri-apps/api/window';
+import WebSocket from '@tauri-apps/plugin-websocket';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -207,18 +207,6 @@ const closeToTrayConfig = () => {
   );
 };
 
-// computed properties
-const activePlayerQueue = computed(() => {
-  if (store.selectedPlayer) {
-    return api.queues[store.selectedPlayer.active_source];
-  }
-  return undefined;
-});
-const curQueueItem = computed(() => {
-  if (activePlayerQueue.value) return activePlayerQueue.value.current_item;
-  return undefined;
-});
-
 onMounted(async () => {
   // Get available output devices
   invoke<string[]>('get_output_devices').then((message) => {
@@ -273,15 +261,17 @@ onMounted(async () => {
 
   // Set inital theme
   setTheme();
-  await appWindow.theme().then((theme) => {
-    if (theme != null) {
-      localStorage.setItem('systemTheme', theme.toString());
-      setTheme();
-    }
-  });
+  await getCurrent()
+    .theme()
+    .then((theme) => {
+      if (theme != null) {
+        localStorage.setItem('systemTheme', theme.toString());
+        setTheme();
+      }
+    });
 
   // Update theme live
-  await appWindow.onThemeChanged(({ payload: newTheme }) => {
+  await getCurrent().onThemeChanged(({ payload: newTheme }) => {
     console.log(`Updated theme: ${newTheme.toString()}`);
     localStorage.setItem('systemTheme', newTheme.toString());
     setTheme();
@@ -328,5 +318,5 @@ const start = () => {
       router.push('/settings');
     }
   });
-});
+};
 </script>

@@ -175,8 +175,8 @@ import Container from '@/components/mods/Container.vue';
 import { useRouter } from 'vue-router';
 import { emit } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
-import { relaunch } from '@tauri-apps/api/process';
-import { invoke } from '@tauri-apps/api/tauri';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from '@tauri-apps/api/core';
 
 // global refs
 const router = useRouter();

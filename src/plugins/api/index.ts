@@ -3,7 +3,7 @@ import { AlertType, store } from '../store';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import WebSocket from 'tauri-plugin-websocket-api';
+import WebSocket from '@tauri-apps/plugin-websocket';
 import { computed, reactive, ref } from 'vue';
 import {
   createConnection,
@@ -101,27 +101,20 @@ export class MusicAssistantApi {
         this.state.value = ConnectionState.DISCONNECTED;
         return undefined;
       });
-    this.ws
-      ?.addListener((ev) => {
-        // Message retrieved on the websocket
-        const msg = JSON.parse(ev.data);
-        if ('event' in msg) {
-          this.handleEventMessage(msg as EventMessage);
-        } else if ('server_version' in msg) {
-          this.handleServerInfoMessage(msg as ServerInfoMessage);
-        } else if ('message_id' in msg) {
-          this.handleResultMessage(msg);
-        } else {
-          // unknown message receoved
-          console.error('received unknown message', msg);
-        }
-      })
-      .onRetry((i, ev) => {
-        console.log('retry');
-        this.state.value = ConnectionState.CONNECTING;
-      })
-      .withBackoff(new LinearBackoff(0, 1000, 12000))
-      .build();
+    this.ws?.addListener((ev) => {
+      // Message retrieved on the websocket
+      const msg = JSON.parse(ev.data?.toString() || '');
+      if ('event' in msg) {
+        this.handleEventMessage(msg as EventMessage);
+      } else if ('server_version' in msg) {
+        this.handleServerInfoMessage(msg as ServerInfoMessage);
+      } else if ('message_id' in msg) {
+        this.handleResultMessage(msg);
+      } else {
+        // unknown message receoved
+        console.error('received unknown message', msg);
+      }
+    });
   }
 
   public setUpCompleted = computed(() => {
