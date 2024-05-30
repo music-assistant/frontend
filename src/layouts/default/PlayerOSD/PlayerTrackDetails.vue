@@ -53,6 +53,9 @@
         <div v-else-if="store.activePlayerQueue?.display_name">
           {{ store.activePlayerQueue?.display_name }}
         </div>
+        <div v-else-if="store.activePlayer?.display_name">
+          {{ store.activePlayer?.display_name }}
+        </div>
         <div v-else @click="store.showPlayersMenu = true">
           {{ $t('no_player') }}
         </div>
@@ -150,13 +153,12 @@
         <!-- 3rd party source active -->
         <div
           v-else-if="
-            store.selectedPlayer?.active_source !=
-            store.selectedPlayer?.player_id
+            store.activePlayer?.active_source != store.activePlayer?.player_id
           "
           class="line-clamp-1"
         >
           {{
-            $t('external_source_active', [store.selectedPlayer?.active_source])
+            $t('external_source_active', [store.activePlayer?.active_source])
           }}
         </div>
       </div>

@@ -8,6 +8,7 @@
 import api from '@/plugins/api';
 import HomeWidgetRow, { WidgetRow } from '@/components/HomeWidgetRow.vue';
 import { ref } from 'vue';
+import { MediaItemType } from '@/plugins/api/interfaces';
 import { onActivated } from 'vue';
 
 const widgetRows = ref<Record<string, WidgetRow>>({
@@ -54,7 +55,7 @@ const widgetRows = ref<Record<string, WidgetRow>>({
   },
 });
 
-onActivated(async () => {
+const loadData = async function () {
   // recently played widget row
   widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(10);
 
@@ -65,9 +66,9 @@ onActivated(async () => {
     undefined,
     20,
     undefined,
-    'RANDOM()',
+    'random',
   );
-  widgetRows.value.artists.items = artistItems.items;
+  widgetRows.value.artists.items = artistItems.items as MediaItemType[];
   widgetRows.value.artists.count = artistItems.total;
 
   // library albums widget row
@@ -77,9 +78,9 @@ onActivated(async () => {
     undefined,
     20,
     undefined,
-    'timestamp_added DESC',
+    'timestamp_added_desc',
   );
-  widgetRows.value.albums.items = albumItems.items;
+  widgetRows.value.albums.items = albumItems.items as MediaItemType[];
   widgetRows.value.albums.count = albumItems.total;
 
   // library playlist widget row
@@ -88,9 +89,9 @@ onActivated(async () => {
     undefined,
     20,
     undefined,
-    'timestamp_added DESC',
+    'timestamp_added_desc',
   );
-  widgetRows.value.playlists.items = playlistItems.items;
+  widgetRows.value.playlists.items = playlistItems.items as MediaItemType[];
   widgetRows.value.playlists.count = playlistItems.total;
 
   // library radios widget row
@@ -99,9 +100,9 @@ onActivated(async () => {
     undefined,
     20,
     undefined,
-    'timestamp_added DESC',
+    'timestamp_added_desc',
   );
-  widgetRows.value.radios.items = radioItems.items;
+  widgetRows.value.radios.items = radioItems.items as MediaItemType[];
   widgetRows.value.radios.count = radioItems.total;
 
   // tracks widget
@@ -110,13 +111,18 @@ onActivated(async () => {
     undefined,
     20,
     undefined,
-    'timestamp_added DESC',
+    'timestamp_added_desc',
   );
-  widgetRows.value.tracks.items = trackItems.items;
+  widgetRows.value.tracks.items = trackItems.items as MediaItemType[];
   widgetRows.value.tracks.count = trackItems.total;
-});
+};
 
-// });
+await loadData();
+
+onActivated(() => {
+  // update the listing when a cached view is reactivated
+  loadData();
+});
 </script>
 
 <style></style>

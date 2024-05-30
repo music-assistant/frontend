@@ -1,24 +1,9 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
     <drawer-navigation v-if="store.navigationMenuStyle == 'vertical'" />
-
     <router-view v-slot="{ Component }">
-      <keep-alive
-        :max="5"
-        :include="[
-          'HomeView',
-          'Artists',
-          'Albums',
-          'Tracks',
-          'Playlists',
-          'Search',
-          'Browse',
-        ]"
-      >
-        <component :is="Component" />
-      </keep-alive>
+      <component :is="Component" />
     </router-view>
-
     <add-to-playlist-dialog />
     <item-context-menu />
     <v-snackbar

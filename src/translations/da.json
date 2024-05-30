@@ -329,6 +329,57 @@
         "icon": {
             "label": "Ikon",
             "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "frontend": "Brugergrænseflade",
+        "frontend_desc": "Konfigurationsindstillinger for Music Assistant-brugergrænsefladen. Bemærk, at disse indstillinger gemmes på enhedsniveau.",
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "auto": "Auto (følger systemkonfigurationen)",
+                "light": "Lys",
+                "dark": "Mørk"
+            }
+        },
+        "menu_style": {
+            "label": "Menu-stil",
+            "options": {
+                "horizontal": "Vandret",
+                "vertical": "Lodret"
+            }
+        },
+        "menu_items": {
+            "label": "Aktiverede menupunkter",
+            "description": "Konfigurer hvilke elementer der skal vises i menuen.\n\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."
+        },
+        "artwork_pref": {
+            "label": "Præference for billedhentning",
+            "description": "Har denne klient lov til selv at downloade (offentligt tilgængelige) illustrationer, eller skal alt sendes gennem serveren?\nSom standard har klienten lov til at cache\/downloade illustrationer direkte fra internetressourcer for at belaste serveren mindre.",
+            "options": {
+                "online": "Tillad direkte hentning",
+                "server_only": "Gennemtving routing via serveren"
+            }
+        },
+        "language": {
+            "label": "Sprog",
+            "options": {
+                "auto": "Auto (følger systemkonfigurationen)",
+                "cs": "Tjekkisk",
+                "da": "Dansk",
+                "de": "Tysk",
+                "en": "Engelsk",
+                "es": "Spansk",
+                "fr": "Fransk",
+                "he": "Hebraisk",
+                "it": "Italiensk",
+                "nb": "Norsk",
+                "nl": "Hollandsk",
+                "pl": "Polsk",
+                "uk_UA": "Ukrainsk"
+            }
+        },
+        "hide_settings": {
+            "label": "Skjul knap til indstillinger",
+            "description": "Skjul indstillingsknappen på startskærmen.\n\n Bemærk, at hvis du deaktiverer indstillinger på startskærmen og i menuen, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller slette browsercookies for at få adgang til indstillingerne igen - brug dem på eget ansvar!"
         }
     },
     "show_info": "Vis info",
@@ -336,6 +387,37 @@
     "shuffle": "Bland",
     "shuffle_disabled": "Bland er deaktiveret",
     "shuffle_enabled": "Bland er aktiveret",
+    "sort": {
+        "duration": "Varighed",
+        "position": "Position",
+        "position DESC": "Position (faldende)",
+        "provider": "Udbyder",
+        "sort_album": "Album",
+        "sort_artist": "Kunstner",
+        "sort_name": "Alfabetisk",
+        "sort_name DESC": "Alfabetisk (faldende)",
+        "timestamp_added DESC": "Tilføjet for nylig",
+        "track_number": "Nummer",
+        "year": "Udgivelsesår",
+        "position_desc": "Position",
+        "album": "Album",
+        "artist": "Kunstner",
+        "name": "Alfabetisk",
+        "name_desc": "Alfabetisk (faldende)",
+        "recent": "Nyligt tilføjet",
+        "year_desc": "Udgivelsesår (faldende)",
+        "duration_desc": "Varighed (faldende)",
+        "original": "Original",
+        "none": "Tom",
+        "timestamp_added": "Dato tilføjet",
+        "timestamp_added_desc": "Dato tilføjet (faldende)",
+        "timestamp_modified": "Dato for opdatering",
+        "timestamp_modified_desc": "Dato for opdatering (faldende)",
+        "last_played": "Sidst spillet",
+        "last_played_desc": "Sidst spillet (faldende)",
+        "play_count": "Antal afspilninger",
+        "play_count_desc": "Antal afspilninger (faldende)"
+    },
     "state": {
         "idle": "keder sig",
         "off": "slukket",
@@ -396,5 +478,9 @@
     "image_url": "Indtast URL'en til et billede eller ikon (valgfrit)",
     "invalid_input": "Input var ugyldigt",
     "new_playlist": "Ny playliste",
-    "create_playlist_on": "Opret ny playliste på {0}"
+    "create_playlist_on": "Opret ny playliste på {0}",
+    "view": {
+        "list": "Listevisning",
+        "panel": "Panelvisning"
+    }
 }

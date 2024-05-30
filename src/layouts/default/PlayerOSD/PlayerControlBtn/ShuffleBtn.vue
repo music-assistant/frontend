@@ -10,7 +10,7 @@
     "
     :color="
       getValueFromSources(props.icon?.color, [
-        [store.activePlayerQueue?.shuffle_enabled, 'secondary', ''],
+        [store.activePlayerQueue?.shuffle_enabled, 'primary', ''],
       ])
     "
     :icon="

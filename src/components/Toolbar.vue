@@ -1,12 +1,7 @@
 <template>
   <v-toolbar :color="color" class="header">
     <template v-if="icon" #prepend>
-      <v-icon
-        :icon="icon"
-        size="large"
-        style="margin-left: 10px"
-        @click="emit('iconClicked')"
-      />
+      <v-btn :icon="icon" size="large" @click="emit('iconClicked')" />
     </template>
 
     <template v-if="title" #title>

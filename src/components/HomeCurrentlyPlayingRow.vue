@@ -7,18 +7,18 @@
         <span class="mr-3">{{ $t('currently_playing') }}</span>
       </template>
     </v-toolbar>
-    <carousel>
+    <swiper>
       <swiper-slide
         v-for="queue in nowPlayingWidgetRow"
         :key="queue.queue_id"
-        style="min-width: 300px; max-width: 500px"
+        style="max-width: 400px; width: 300px"
       >
         <PanelviewPlayerCard
           :queue="queue"
           @click="playerQueueClicked(queue)"
         />
       </swiper-slide>
-    </carousel>
+    </swiper>
   </div>
 </template>
 
@@ -27,7 +27,6 @@ import { computed } from 'vue';
 import { PlayerState, PlayerQueue } from '@/plugins/api/interfaces';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
-import Carousel from '@/components/Carousel.vue';
 import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
 
 const playerStateOrder = {
@@ -55,10 +54,10 @@ const nowPlayingWidgetRow = computed(() => {
 
 function playerQueueClicked(queue: PlayerQueue) {
   if (queue && queue.queue_id in api.players) {
-    if (store.selectedPlayerId == queue.queue_id) {
+    if (store.activePlayerId == queue.queue_id) {
       store.showFullscreenPlayer = true;
     } else {
-      store.selectedPlayerId = queue.queue_id;
+      store.activePlayerId = queue.queue_id;
     }
   }
 }
@@ -69,9 +68,37 @@ function playerQueueClicked(queue: PlayerQueue) {
   height: 55px;
   font-family: 'JetBrains Mono Medium';
 }
+
+.home-card {
+  min-width: 80px;
+  text-align: center;
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+
 .widget-row {
   margin-bottom: 20px;
   margin-left: 0px;
   padding-left: 0px;
+}
+
+.widget-row-panel-item {
+  margin-bottom: 10px;
+}
+.v-slide-group__prev {
+  min-width: 0px !important;
+}
+
+.v-slide-group__prev.v-slide-group__prev--disabled {
+  visibility: hidden;
+  margin-right: -15px;
+}
+
+.v-slide-group__next {
+  min-width: 15px !important;
+}
+
+.v-slide-group__next.v-slide-group__next--disabled {
+  visibility: hidden;
 }
 </style>

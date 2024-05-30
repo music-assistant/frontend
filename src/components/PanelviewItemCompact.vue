@@ -1,0 +1,176 @@
+<template>
+  <v-hover v-slot="{ isHovering, props }">
+    <v-card
+      v-hold="onMenu"
+      v-bind="props"
+      :class="{ 'on-hover': isHovering }"
+      :elevation="isHovering ? 3 : 0"
+      @click="onClick"
+      @click.right.prevent="onMenu"
+    >
+      <v-overlay
+        v-if="showCheckboxes"
+        :model-value="showCheckboxes"
+        contained
+        :scrim="
+          isSelected
+            ? $vuetify.theme.current.dark
+              ? 'rgba(0,0,0,.75)'
+              : 'rgba(255,255,255,.75)'
+            : '#ffffff00'
+        "
+      >
+        <v-checkbox
+          class="panel-item-checkbox"
+          :ripple="false"
+          :model-value="isSelected"
+        />
+      </v-overlay>
+      <MediaItemThumb :item="item" />
+      <div
+        :class="
+          $vuetify.theme.current.dark ? 'paneldetails-dark' : 'paneldetails'
+        "
+        :model-value="isHovering || $vuetify.display.mobile || permanentOverlay"
+      >
+        <v-list-item
+          variant="text"
+          slim
+          tile
+          density="compact"
+          class="panel-item-details"
+        >
+          <v-list-item-title>
+            <span v-if="item.media_type == MediaType.FOLDER">
+              <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
+            </span>
+            <span v-else>{{ item.name }}</span>
+            <span v-if="'version' in item && item.version">
+              - {{ item.version }}</span
+            >
+          </v-list-item-title>
+          <v-list-item-subtitle
+            v-if="'artists' in item && item.artists"
+            class="line-clamp-1"
+          >
+            {{ getArtistsString(item.artists, 1) }}
+          </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-else-if="'owner' in item && item.owner"
+            class="line-clamp-1"
+          >
+            {{ item.owner }}
+          </v-list-item-subtitle>
+        </v-list-item>
+      </div>
+      <!-- play button -->
+      <v-btn
+        v-if="isHovering || $vuetify.display.mobile"
+        icon="mdi-play"
+        color="primary"
+        fab
+        size="small"
+        style="position: absolute; right: 10px; bottom: 35px; opacity: 0.8"
+        @click.stop="onPlayClick"
+      />
+    </v-card>
+  </v-hover>
+</template>
+
+<script setup lang="ts">
+import MediaItemThumb from './MediaItemThumb.vue';
+import {
+  BrowseFolder,
+  type MediaItemType,
+  MediaType,
+} from '@/plugins/api/interfaces';
+import { getArtistsString, getBrowseFolderName } from '@/helpers/utils';
+
+// properties
+export interface Props {
+  item: MediaItemType;
+  size?: number;
+  isSelected?: boolean;
+  showCheckboxes?: boolean;
+  permanentOverlay?: boolean;
+}
+const compProps = withDefaults(defineProps<Props>(), {
+  size: 200,
+  isSelected: false,
+  showCheckboxes: false,
+  permanentOverlay: false,
+});
+
+// emits
+const emit = defineEmits<{
+  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'play', item: MediaItemType, posX: number, posY: number): void;
+  (e: 'select', item: MediaItemType, selected: boolean): void;
+}>();
+
+const onMenu = function (evt: PointerEvent | TouchEvent) {
+  if (compProps.showCheckboxes) return;
+  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  emit('menu', compProps.item, posX, posY);
+};
+
+const onClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) {
+    emit('select', compProps.item, compProps.isSelected ? false : true);
+    return;
+  }
+  emit('click', compProps.item, evt.clientX, evt.clientY);
+};
+
+const onPlayClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) return;
+  emit('play', compProps.item, evt.clientX, evt.clientY);
+};
+</script>
+
+<style scoped>
+.v-card {
+  transition: opacity 0.4s ease-in-out;
+  padding: 0px;
+  margin-bottom: 10px;
+}
+
+.v-card:not(.on-hover) {
+  opacity: 0.75;
+}
+
+.panel-item-details {
+  padding: 5px !important;
+  height: 50px;
+  bottom: 5px;
+}
+
+.hiresicon {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.hiresiconinverted {
+  margin-left: 10px;
+  margin-right: 10px;
+  filter: invert(100%);
+}
+</style>
+
+<style lang="scss" scoped>
+.paneldetails {
+  background-color: rgba(255, 255, 255, 0.75);
+  position: absolute;
+  width: 100%;
+  height: 50px;
+  bottom: 0px;
+  border-radius: 0;
+}
+
+.paneldetails-dark {
+  @extend .paneldetails;
+  background-color: rgba(0, 0, 0, 0.75);
+}
+</style>

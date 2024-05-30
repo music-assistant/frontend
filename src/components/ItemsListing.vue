@@ -29,18 +29,16 @@
 
     <Container
       v-if="expanded"
-      :variant="viewMode == 'panel' ? 'panel' : 'default'"
+      :variant="viewMode == 'list' ? 'default' : 'panel'"
+      style="overflow-x: hidden"
     >
-      <!-- loading animation -->
-      <v-progress-linear v-if="loading" indeterminate />
-
       <v-infinite-scroll
         :items="pagedItems"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
-        style="overflow-y: unset"
+        style="overflow-y: hidden; overflow-x: hidden"
       >
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
@@ -54,12 +52,31 @@
               :item="item"
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
-              :show-track-number="showTrackNumber"
-              :show-favorite="showFavoritesOnlyFilter"
               :show-actions="['tracks', 'albums'].includes(itemtype)"
               @select="onSelect"
               @menu="onMenu"
               @click="onClick"
+              @play="onPlayClick"
+            />
+          </v-col>
+        </v-row>
+
+        <!-- compact panel view -->
+        <v-row v-if="viewMode == 'panel_compact'">
+          <v-col
+            v-for="item in pagedItems"
+            :key="item.uri"
+            cols="12"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          >
+            <PanelviewItemCompact
+              :item="item"
+              :is-selected="isSelected(item)"
+              :show-checkboxes="showCheckboxes"
+              @select="onSelect"
+              @menu="onMenu"
+              @click="onClick"
+              @play="onPlayClick"
             />
           </v-col>
         </v-row>
@@ -67,7 +84,8 @@
         <!-- list view -->
         <v-virtual-scroll
           v-if="viewMode == 'list'"
-          :height="70"
+          :item-height="70"
+          height="100%"
           :items="pagedItems"
           style="height: 100%"
         >
@@ -126,7 +144,10 @@
           <v-btn
             color="primary"
             variant="text"
-            @click="(evt: Event) => onMenu(evt, selectedItems)"
+            @click="
+              (evt: PointerEvent) =>
+                onMenu(selectedItems, evt.clientX, evt.clientY)
+            "
           >
             {{ $t('actions') }}
           </v-btn>
@@ -159,15 +180,16 @@ import {
 import { store } from '@/plugins/store';
 import ListviewItem from './ListviewItem.vue';
 import PanelviewItem from './PanelviewItem.vue';
+import PanelviewItemCompact from './PanelviewItemCompact.vue';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
 import Alert from '@/components/mods/Alert.vue';
 import Container from '@/components/mods/Container.vue';
-import { useI18n } from 'vue-i18n';
 import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
-import { panelViewItemResponsive } from '@/helpers/utils';
+import { panelViewItemResponsive, scrollElement } from '@/helpers/utils';
+import { useI18n } from 'vue-i18n';
 
 export interface LoadDataParams {
   offset: number;
@@ -209,6 +231,8 @@ export interface Props {
   infiniteScroll?: boolean;
   path?: string;
   icon?: string;
+  restoreState?: boolean;
+  noServerSideSorting?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name', 'sort_name'],
@@ -234,10 +258,13 @@ const props = withDefaults(defineProps<Props>(), {
   loadItems: undefined,
   path: undefined,
   icon: undefined,
+  restoreState: false,
+  noServerSideSorting: false,
 });
 
 // global refs
 const router = useRouter();
+const { t } = useI18n();
 
 // local refs
 const params = ref<LoadDataParams>({
@@ -258,13 +285,7 @@ const selectedItems = ref<MediaItemType[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
-
-const { t } = useI18n();
-
-// emitters
-const emit = defineEmits<{
-  (e: 'refreshClicked'): void;
-}>();
+const allItemsReceived = ref(false);
 
 // methods
 const toggleSearch = function () {
@@ -279,26 +300,35 @@ const toggleSearch = function () {
 
 const toggleExpand = function () {
   expanded.value = !expanded.value;
-  localStorage.setItem(`expand.${props.itemtype}`, expanded.value.toString());
+  localStorage.setItem(
+    `expand.${props.path}.${props.itemtype}`,
+    expanded.value.toString(),
+  );
 };
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  localStorage.setItem(`viewMode.${props.itemtype}`, newMode);
+  localStorage.setItem(`viewMode.${props.path}.${props.itemtype}`, newMode);
 };
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
   const favoritesOnlyStr = params.value.favoritesOnly ? 'true' : 'false';
-  localStorage.setItem(`favoriteFilter.${props.itemtype}`, favoritesOnlyStr);
-  loadData(true);
+  localStorage.setItem(
+    `favoriteFilter.${props.path}.${props.itemtype}`,
+    favoritesOnlyStr,
+  );
+  loadData(undefined, undefined, true);
 };
 
 const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
   const libraryOnlyStr = params.value.libraryOnly ? 'true' : 'false';
-  localStorage.setItem(`libraryFilter.${props.itemtype}`, libraryOnlyStr);
-  loadData(true, undefined, true);
+  localStorage.setItem(
+    `libraryFilter.${props.path}.${props.itemtype}`,
+    libraryOnlyStr,
+  );
+  loadData(undefined, undefined, true);
 };
 
 const toggleAlbumArtistsFilter = function () {
@@ -307,10 +337,10 @@ const toggleAlbumArtistsFilter = function () {
     ? 'true'
     : 'false';
   localStorage.setItem(
-    `albumArtistsFilter.${props.itemtype}`,
+    `albumArtistsFilter.${props.path}.${props.itemtype}`,
     albumArtistsOnlyStr,
   );
-  loadData(true);
+  loadData(undefined, undefined, true);
 };
 
 const isSelected = function (item: MediaItemType) {
@@ -337,25 +367,24 @@ const toggleCheckboxes = function () {
   showCheckboxes.value = !showCheckboxes.value;
 };
 
-const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    props.parentItem,
-    (evt as PointerEvent).clientX,
-    (evt as PointerEvent).clientY,
-  );
-};
-
 const onRefreshClicked = function () {
-  emit('refreshClicked');
-  loadData(true, undefined, true);
+  loadData(true, true);
 };
 
-const onClick = function (evt: Event, item: MediaItemType) {
+const onMenu = function (
+  item: MediaItemType | MediaItemType[],
+  posX: number,
+  posY: number,
+) {
+  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  if (mediaItems[0].media_type == MediaType.FOLDER) return;
+  showContextMenuForMediaItem(mediaItems, props.parentItem, posX, posY);
+};
+
+const onClick = function (item: MediaItemType, posX: number, posY: number) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt, item);
+    onMenu(item, posX, posY);
     return;
   }
   if (item.media_type == MediaType.FOLDER) {
@@ -365,7 +394,14 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
+  } else if (
+    viewMode.value == 'list' &&
+    item.media_type == MediaType.TRACK &&
+    props.parentItem
+  ) {
+    // track clicked in a sublisting (e.g. album/playlist) listview
+    onPlayClick(item, posX, posY);
+  } else {
     router.push({
       name: item.media_type,
       params: {
@@ -373,23 +409,37 @@ const onClick = function (evt: Event, item: MediaItemType) {
         provider: item.provider,
       },
     });
-  } else {
-    onMenu(evt, item);
   }
+};
+
+const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
+  // play button on item is clicked
+  if (!itemIsAvailable(item)) {
+    onMenu(item, posX, posY);
+    return;
+  }
+  if (!store.activePlayerId) {
+    store.showPlayersMenu = true;
+    return;
+  }
+  api.playMedia(item.uri, undefined);
 };
 
 const onClear = function () {
   params.value.search = '';
   showSearch.value = false;
-  loadData(true);
+  loadData(undefined, undefined, true);
 };
 
 const changeSort = function (sort_key?: string, sort_desc?: boolean) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
-  localStorage.setItem(`sortBy.${props.itemtype}`, params.value.sortBy);
-  loadData(true, undefined, sort_key == 'original');
+  localStorage.setItem(
+    `sortBy.${props.path}.${props.itemtype}`,
+    params.value.sortBy,
+  );
+  loadData(undefined, undefined, true);
 };
 
 const redirectSearch = function () {
@@ -399,18 +449,21 @@ const redirectSearch = function () {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ({ done }: { done: any }) {
-  if (pagedItems.value.length == 0) {
+  if (pagedItems.value.length == 0 && total.value == 0) {
     done('empty');
     return;
   }
-  if (total.value && pagedItems.value.length >= total.value) {
+  if (allItemsReceived.value) {
     done('empty');
     return;
   }
 
-  done('loading');
-  params.value.offset += props.limit;
-  loadData().then(() => {
+  loadData(
+    undefined,
+    undefined,
+    undefined,
+    params.value.offset + props.limit,
+  ).then(() => {
     done('ok');
   });
 };
@@ -500,6 +553,7 @@ const menuItems = computed(() => {
     items.push({
       label: 'tooltip.sort_options',
       icon: 'mdi-sort',
+      disabled: props.sortKeys.length <= 1,
       subItems: props.sortKeys.map((sortKey) => {
         return {
           label: `sort.${sortKey}`,
@@ -521,6 +575,10 @@ const menuItems = computed(() => {
       icon: 'mdi-magnify',
       action: toggleSearch,
       active: isSearchActive.value,
+      disabled:
+        props.loadPagedData &&
+        props.noServerSideSorting &&
+        !allItemsReceived.value,
     });
   }
 
@@ -545,6 +603,14 @@ const menuItems = computed(() => {
           selectViewMode('panel');
         },
       },
+      {
+        label: 'view.panel_compact',
+        icon: 'mdi-grid',
+        selected: viewMode.value == 'panel_compact',
+        action: () => {
+          selectViewMode('panel_compact');
+        },
+      },
     ],
   });
 
@@ -566,8 +632,9 @@ const menuItems = computed(() => {
 
 const loadData = async function (
   clear = false,
-  limit = props.limit,
   refresh = false,
+  FilterParamsChanged = false,
+  offset = 0,
 ) {
   if (loading.value) {
     // we could potentially be called multiple times due to multiple watchers
@@ -576,32 +643,63 @@ const loadData = async function (
   }
   loading.value = true;
 
-  if (clear || refresh) {
-    params.value.offset = 0;
-    newContentAvailable.value = false;
+  if (
+    FilterParamsChanged &&
+    props.loadPagedData !== undefined &&
+    !props.noServerSideSorting
+  ) {
+    // on paged server listings, we need to clear the list on filter params change
+    clear = true;
   }
+
+  if (clear || refresh) {
+    offset = 0;
+    newContentAvailable.value = false;
+    allItemsReceived.value = false;
+  }
+  params.value.offset = offset;
   params.value.limit = props.limit;
   params.value.refresh = refresh;
-  if (props.loadPagedData !== undefined) {
-    // call server for paged listing
+
+  if (
+    props.loadPagedData !== undefined &&
+    props.noServerSideSorting &&
+    allItemsReceived.value
+  ) {
+    // server side paged listing without filter support - handle filtering in-memory
+    // note that all items of the paged listing must first be received before we can do filtering
+    if (allItems.value.length == 0) {
+      allItems.value = pagedItems.value;
+    }
+    pagedItems.value = getFilteredItems(allItems.value, {
+      offset: 0,
+      limit: total.value || allItems.value.length,
+      sortBy: params.value.sortBy,
+      search: params.value.search,
+    });
+  } else if (props.loadPagedData !== undefined) {
+    // server side paged listing
     const nextItems = await props.loadPagedData(params.value);
-    if (nextItems) {
-      if (params.value.offset) {
-        pagedItems.value.push(...nextItems.items);
-      } else {
-        pagedItems.value = nextItems.items;
-      }
+    if (params.value.offset) {
+      pagedItems.value.push(...(nextItems.items as MediaItemType[]));
+    } else {
+      pagedItems.value = nextItems.items as MediaItemType[];
+    }
+    // the server should send total attribute as soon as it knows it
+    if (nextItems.total != null) {
       total.value = nextItems.total;
+      allItemsReceived.value = pagedItems.value.length >= total.value;
     }
   } else if (props.loadItems !== undefined) {
     // grab items from loadItems callback
-    if (allItems.value.length === 0 || refresh) {
+    if (!allItemsReceived.value || refresh) {
       // load all items from the callback
       allItems.value = [];
       (allItems.value = await props.loadItems(params.value)), params.value;
       total.value = allItems.value.length;
+      allItemsReceived.value = true;
     }
-    // filter
+    // filter items
     const nextItems = getFilteredItems(allItems.value, params.value);
     if (params.value.offset) {
       pagedItems.value.push(...nextItems);
@@ -609,8 +707,206 @@ const loadData = async function (
       pagedItems.value = nextItems;
     }
   }
+  params.value.refresh = false;
   loading.value = false;
 };
+
+const restoreSettings = async function () {
+  // restore settings for this path/itemtype
+  const storKey = `${props.path}.${props.itemtype}`;
+  // get stored/default viewMode for this itemtype
+  const savedViewMode = localStorage.getItem(`viewMode.${storKey}`);
+  if (savedViewMode && savedViewMode !== 'null') {
+    viewMode.value = savedViewMode;
+  } else if (props.itemtype == 'artists') {
+    viewMode.value = 'panel';
+  } else if (props.itemtype == 'albums') {
+    viewMode.value = 'panel';
+  } else {
+    viewMode.value = 'list';
+  }
+  // get stored/default sortBy for this itemtype
+  const savedSortBy = localStorage.getItem(`sortBy.${storKey}`);
+  if (
+    savedSortBy &&
+    savedSortBy !== 'null' &&
+    props.sortKeys.includes(savedSortBy)
+  ) {
+    params.value.sortBy = savedSortBy;
+  } else {
+    params.value.sortBy = props.sortKeys[0];
+  }
+
+  // get stored/default favoriteOnlyFilter for this itemtype
+  if (props.showFavoritesOnlyFilter !== false) {
+    const savedInFavoriteOnlyStr = localStorage.getItem(
+      `favoriteFilter.${storKey}`,
+    );
+    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
+      params.value.favoritesOnly = true;
+    }
+  }
+
+  // get stored/default libraryOnlyFilter for this itemtype
+  if (props.showLibraryOnlyFilter !== false) {
+    const savedLibraryOnlyStr = localStorage.getItem(
+      `libraryFilter.${storKey}`,
+    );
+    if (savedLibraryOnlyStr && savedLibraryOnlyStr == 'true') {
+      params.value.libraryOnly = true;
+    }
+  }
+
+  // get stored/default albumArtistsOnlyFilter for this itemtype
+  if (props.showAlbumArtistsOnlyFilter !== false) {
+    const albumArtistsOnlyStr = localStorage.getItem(
+      `albumArtistsFilter.${storKey}`,
+    );
+    if (albumArtistsOnlyStr) {
+      params.value.albumArtistsFilter = albumArtistsOnlyStr == 'true';
+    }
+  }
+
+  // get stored/default expand property for this itemtype
+  if (props.allowCollapse !== false) {
+    const expandStr = localStorage.getItem(`expand.${storKey}`);
+    if (expandStr) {
+      expanded.value = expandStr == 'true';
+    }
+  }
+
+  // get stored searchquery (but only if we're allowed to store the state)
+  if (props.restoreState) {
+    let savedSearchKey = `search.${storKey}`;
+    if (props.parentItem) savedSearchKey += props.parentItem.item_id;
+    const savedSearch = localStorage.getItem(savedSearchKey);
+    if (savedSearch && savedSearch !== 'null') {
+      params.value.search = savedSearch;
+    }
+  }
+};
+
+// lifecycle hooks
+const keyListener = function (e: KeyboardEvent) {
+  if (store.dialogActive) return;
+  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    // CTRL-A (select all requested)
+    // fetch all items first
+    while (pagedItems.value.length < total.value!) {
+      if (total.value !== undefined && params.value.offset >= total.value) {
+        break;
+      }
+      params.value.offset += props.limit;
+      loadData();
+    }
+    selectedItems.value = pagedItems.value;
+    showCheckboxes.value = true;
+  } else if (!searchHasFocus.value && e.key == 'Backspace') {
+    params.value.search = params.value.search.slice(0, -1);
+  } else if (!searchHasFocus.value && e.key.length == 1) {
+    params.value.search += e.key;
+    showSearch.value = true;
+  }
+};
+
+if (props.allowKeyHooks) {
+  document.addEventListener('keydown', keyListener);
+  onBeforeUnmount(() => {
+    document.removeEventListener('keydown', keyListener);
+  });
+}
+
+if (props.restoreState) {
+  // handle restore state
+  onBeforeUnmount(() => {
+    const key = props.path || props.itemtype;
+    const el = document.querySelector('#cont');
+    store.prevState = {
+      path: key,
+      scrollPos: el?.scrollTop || 0,
+      pagedItems: pagedItems.value,
+      params: params.value,
+      total: total.value || 0,
+    };
+  });
+}
+
+// watchers
+watch(
+  () => params.value.search,
+  (newVal) => {
+    if (newVal) showSearch.value = true;
+    loadData(true);
+    let storKey = `search.${props.path}.${props.itemtype}`;
+    if (props.parentItem) storKey += props.parentItem.item_id;
+    localStorage.setItem(storKey, params.value.search);
+  },
+);
+watch(
+  () => props.path,
+  (newVal) => {
+    console.debug('Path updated to', newVal);
+    if (loading.value == true) return;
+    // completely reset if the path changes
+    pagedItems.value = [];
+    allItems.value = [];
+    loadData(true);
+  },
+);
+watch(
+  () => props.parentItem,
+  () => {
+    if (loading.value == true) return;
+    allItems.value = [];
+    newContentAvailable.value = true;
+  },
+  { deep: true },
+);
+watch(
+  () => props.limit,
+  (newVal) => {
+    params.value.limit = newVal;
+  },
+);
+watch(
+  () => props.updateAvailable,
+  (newVal) => {
+    if (loading.value) return;
+    newContentAvailable.value = newVal;
+  },
+  { immediate: true },
+);
+
+onMounted(async () => {
+  restoreSettings();
+  // for the main listings (e.g. artists, albums etc.) we remember the scroll position
+  // so we can jump back there on back navigation
+  const key = props.path || props.itemtype;
+  if (props.restoreState && store.prevState?.path == key) {
+    total.value = store.prevState.total;
+    params.value = store.prevState.params;
+    pagedItems.value = store.prevState.pagedItems;
+    // scroll the main listing back to its previous scroll position
+    nextTick(() => {
+      const el = document.getElementById('cont');
+      if (el) {
+        scrollElement(el, store.prevState!.scrollPos, 50);
+      }
+    });
+    loading.value = false;
+  } else {
+    loadData(true);
+  }
+});
+
+export interface StoredState {
+  path: string;
+  scrollPos: number;
+  pagedItems: MediaItemType[];
+  params: LoadDataParams;
+  total: number;
+}
 
 const getSortName = function (
   item: MediaItemType | ItemMapping,
@@ -733,159 +1029,6 @@ const getFilteredItems = function (
   }
   return result.slice(params.offset, params.offset + params.limit);
 };
-
-const restoreState = async function () {
-  // restore state for this path/itemtype
-  // get stored/default viewMode for this itemtype
-  const savedViewMode = localStorage.getItem(`viewMode.${props.itemtype}`);
-  if (savedViewMode && savedViewMode !== 'null') {
-    viewMode.value = savedViewMode;
-  } else if (props.itemtype == 'artists') {
-    viewMode.value = 'panel';
-  } else if (props.itemtype == 'albums') {
-    viewMode.value = 'panel';
-  } else {
-    viewMode.value = 'list';
-  }
-  // get stored/default sortBy for this itemtype
-  const savedSortBy = localStorage.getItem(`sortBy.${props.itemtype}`);
-  if (
-    savedSortBy &&
-    savedSortBy !== 'null' &&
-    props.sortKeys.includes(savedSortBy)
-  ) {
-    params.value.sortBy = savedSortBy;
-  } else {
-    params.value.sortBy = props.sortKeys[0];
-  }
-
-  // get stored/default favoriteOnlyFilter for this itemtype
-  if (props.showFavoritesOnlyFilter !== false) {
-    const savedInFavoriteOnlyStr = localStorage.getItem(
-      `favoriteFilter.${props.itemtype}`,
-    );
-    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
-      params.value.favoritesOnly = true;
-    }
-  }
-
-  // get stored/default libraryOnlyFilter for this itemtype
-  if (props.showLibraryOnlyFilter !== false) {
-    const savedLibraryOnlyStr = localStorage.getItem(
-      `libraryFilter.${props.itemtype}`,
-    );
-    if (savedLibraryOnlyStr && savedLibraryOnlyStr == 'true') {
-      params.value.libraryOnly = true;
-    }
-  }
-
-  // get stored/default albumArtistsOnlyFilter for this itemtype
-  if (props.showAlbumArtistsOnlyFilter !== false) {
-    const albumArtistsOnlyStr = localStorage.getItem(
-      `albumArtistsFilter.${props.itemtype}`,
-    );
-    if (albumArtistsOnlyStr) {
-      params.value.albumArtistsFilter = albumArtistsOnlyStr == 'true';
-    }
-  }
-
-  // get stored/default expand property for this itemtype
-  if (props.allowCollapse !== false) {
-    const expandStr = localStorage.getItem(`expand.${props.itemtype}`);
-    if (expandStr) {
-      expanded.value = expandStr == 'true';
-    }
-  }
-
-  // get stored searchquery
-  let storKey = `search.${props.itemtype}`;
-  if (props.parentItem) storKey += props.parentItem.item_id;
-  const savedSearch = localStorage.getItem(storKey);
-  if (savedSearch && savedSearch !== 'null') {
-    params.value.search = savedSearch;
-  }
-
-  // load items
-  await loadData(true);
-};
-
-// lifecycle hooks
-const keyListener = function (e: KeyboardEvent) {
-  if (store.dialogActive) return;
-  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    // CTRL-A (select all requested)
-    // fetch all items first
-    while (pagedItems.value.length < total.value!) {
-      if (total.value !== undefined && params.value.offset >= total.value) {
-        break;
-      }
-      params.value.offset += props.limit;
-      loadData();
-    }
-    selectedItems.value = pagedItems.value;
-    showCheckboxes.value = true;
-  } else if (!searchHasFocus.value && e.key == 'Backspace') {
-    params.value.search = params.value.search.slice(0, -1);
-  } else if (!searchHasFocus.value && e.key.length == 1) {
-    params.value.search += e.key;
-    showSearch.value = true;
-  }
-};
-
-if (props.allowKeyHooks) {
-  document.addEventListener('keydown', keyListener);
-  onBeforeUnmount(() => {
-    document.removeEventListener('keydown', keyListener);
-  });
-}
-
-// watchers
-watch(
-  () => params.value.search,
-  (newVal) => {
-    if (newVal) showSearch.value = true;
-    loadData(true);
-    let storKey = `search.${props.itemtype}`;
-    if (props.parentItem) storKey += props.parentItem.item_id;
-    localStorage.setItem(storKey, params.value.search);
-  },
-);
-watch(
-  () => props.path,
-  () => {
-    if (loading.value == true) return;
-    allItems.value = [];
-    restoreState();
-  },
-);
-watch(
-  () => props.parentItem,
-  () => {
-    if (loading.value == true) return;
-    allItems.value = [];
-    newContentAvailable.value = true;
-  },
-  { deep: true },
-);
-watch(
-  () => props.limit,
-  (newVal) => {
-    params.value.limit = newVal;
-  },
-);
-watch(
-  () => props.updateAvailable,
-  (newVal) => {
-    if (loading.value) return;
-    newContentAvailable.value = newVal;
-  },
-  { immediate: true },
-);
-
-onMounted(() => {
-  restoreState();
-});
 </script>
 
 <style scoped>

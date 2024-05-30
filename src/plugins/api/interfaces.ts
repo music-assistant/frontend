@@ -462,7 +462,7 @@ export interface BrowseFolder extends MediaItem {
 }
 
 export interface PagedItems {
-  items: MediaItemType[];
+  items: Array<MediaItemType | ItemMapping | QueueItem>;
   count: number;
   limit: number;
   offset: number;

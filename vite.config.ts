@@ -29,7 +29,7 @@ export default defineConfig({
       includeAssets: ['robots.txt'],
       manifest: {
         name: 'Music Assistant',
-        short_name: 'Music library manager',
+        short_name: 'Music Assistant',
         description:
           'Music Assistant is a free, opensource Media library manager that connects to your streaming services and a wide range of connected speakers.',
         theme_color: '#424242',

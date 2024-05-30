@@ -2,7 +2,7 @@
   <v-card
     class="panel-item"
     :class="{
-      'panel-item-selected': store.selectedPlayerId == queue.queue_id,
+      'panel-item-selected': store.activePlayerId == queue.queue_id,
       'panel-item-idle': queue.state == PlayerState.PAUSED,
     }"
   >
@@ -96,15 +96,12 @@
           <!-- 3rd party source active -->
           <div
             v-else-if="
-              store.selectedPlayer?.active_source !=
-              store.selectedPlayer?.player_id
+              store.activePlayer?.active_source != store.activePlayer?.player_id
             "
             class="line-clamp-1"
           >
             {{
-              $t('external_source_active', [
-                store.selectedPlayer?.active_source,
-              ])
+              $t('external_source_active', [store.activePlayer?.active_source])
             }}
           </div>
         </div>
@@ -153,11 +150,14 @@ defineProps<Props>();
 </script>
 
 <style scoped>
+.v-card {
+  transition: opacity 0.4s ease-in-out;
+  padding: 0px;
+}
 .panel-item {
   height: 75px;
   margin-right: 25px;
   border: none;
-  width: 98%;
   border-style: none !important;
   padding: 10px;
 }

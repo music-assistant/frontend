@@ -1,22 +1,40 @@
 <template>
-  <!-- active queue -->
-  <Button
-    variant="icon"
+  <ResponsiveIcon
+    v-if="props.isVisible"
+    v-bind="props.icon"
+    :disabled="
+      !store.activePlayerQueue ||
+      !store.activePlayerQueue?.active ||
+      store.activePlayerQueue?.items == 0
+    "
     icon="mdi-playlist-play"
-    :color="color ? color : ''"
+    :color="
+      getValueFromSources(props.icon?.color, [
+        [store.showFullscreenPlayer && store.showQueueItems, 'primary', ''],
+      ])
+    "
+    :type="'btn'"
     @click="onClick"
   />
 </template>
 
 <script setup lang="ts">
 import { store } from '@/plugins/store';
-import Button from '@/components/mods/Button.vue';
+import ResponsiveIcon, {
+  ResponsiveIconProps,
+} from '@/components/mods/ResponsiveIcon.vue';
+import { getValueFromSources } from '@/helpers/utils';
 
 // properties
 export interface Props {
-  color?: string;
+  isVisible?: boolean;
+  icon?: ResponsiveIconProps;
 }
-defineProps<Props>();
+
+const props = withDefaults(defineProps<Props>(), {
+  isVisible: true,
+  icon: undefined,
+});
 
 const onClick = function () {
   if (store.showFullscreenPlayer && store.showQueueItems) {

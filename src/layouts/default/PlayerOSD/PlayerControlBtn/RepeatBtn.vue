@@ -11,8 +11,8 @@
     :color="
       getValueFromSources(props.icon?.color, [
         [store.activePlayerQueue?.repeat_mode == RepeatMode.OFF, null],
-        [store.activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'secondary'],
-        [store.activePlayerQueue?.repeat_mode == RepeatMode.ONE, 'secondary'],
+        [store.activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'primary'],
+        [store.activePlayerQueue?.repeat_mode == RepeatMode.ONE, 'primary'],
       ])
     "
     :icon="

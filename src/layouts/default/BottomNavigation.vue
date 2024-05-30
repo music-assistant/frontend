@@ -12,7 +12,6 @@
       grow
       :show-arrows="false"
       :model-value="activeTab"
-      nav
       color="accent"
       center-active
     >
@@ -33,7 +32,6 @@
       grow
       :show-arrows="false"
       :model-value="activeTab"
-      nav
       color="accent"
     >
       <v-tab

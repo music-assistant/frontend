@@ -78,6 +78,7 @@ export const getMenuItems = function () {
     : DEFAULT_MENU_ITEMS;
 
   const items: MenuItem[] = [];
+
   if (enabledItems.includes('home')) {
     items.push({
       label: 'home',

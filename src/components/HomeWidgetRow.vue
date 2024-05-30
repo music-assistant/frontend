@@ -8,7 +8,7 @@
           ? 'cursor: pointer; width: fit-content;'
           : 'width: fit-content;'
       "
-      @click="widgetRow.path ? $router.replace(widgetRow.path) : ''"
+      @click="widgetRow.path ? $router.push(widgetRow.path) : ''"
     >
       <template #prepend><v-icon :icon="widgetRow.icon" /></template>
 
@@ -28,13 +28,16 @@
     </v-toolbar>
     <carousel>
       <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
-        <PanelviewItem
+        <PanelviewItemCompact
           :item="item"
-          :show-checkboxes="false"
-          :show-track-number="false"
-          :is-selected="false"
+          :permanent-overlay="
+            ![MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO].includes(
+              item.media_type,
+            )
+          "
           @menu="onMenu"
           @click="onClick"
+          @play="onPlayClick"
         />
       </swiper-slide>
     </carousel>
@@ -43,7 +46,7 @@
 
 <script setup lang="ts">
 import Carousel from '@/components/Carousel.vue';
-import PanelviewItem from '@/components/PanelviewItem.vue';
+import PanelviewItemCompact from '@/components/PanelviewItemCompact.vue';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
 import api from '@/plugins/api';
 import { itemIsAvailable } from '@/plugins/api/helpers';
@@ -71,20 +74,19 @@ interface Props {
 
 const { widgetRow } = defineProps<Props>();
 
-const onMenu = function (evt: Event, item: MediaItemType | MediaItemType[]) {
+const onMenu = function (
+  item: MediaItemType | MediaItemType[],
+  posX: number,
+  posY: number,
+) {
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    undefined,
-    (evt as PointerEvent).clientX,
-    (evt as PointerEvent).clientY,
-  );
+  showContextMenuForMediaItem(mediaItems, undefined, posX, posY);
 };
 
-const onClick = function (evt: Event, item: MediaItemType) {
+const onClick = function (item: MediaItemType, posX: number, posY: number) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
-    onMenu(evt, item);
+    onMenu(item, posX, posY);
     return;
   }
   if (item.media_type == MediaType.FOLDER) {
@@ -94,7 +96,7 @@ const onClick = function (evt: Event, item: MediaItemType) {
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (['artist', 'album', 'playlist'].includes(item.media_type)) {
+  } else {
     router.push({
       name: item.media_type,
       params: {
@@ -102,9 +104,20 @@ const onClick = function (evt: Event, item: MediaItemType) {
         provider: item.provider,
       },
     });
-  } else {
-    onMenu(evt, item);
   }
+};
+
+const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
+  // play button on item is clicked
+  if (!itemIsAvailable(item)) {
+    onMenu(item, posX, posY);
+    return;
+  }
+  if (!store.activePlayerId) {
+    store.showPlayersMenu = true;
+    return;
+  }
+  api.playMedia(item.uri, undefined);
 };
 </script>
 
@@ -114,17 +127,14 @@ const onClick = function (evt: Event, item: MediaItemType) {
   font-family: 'JetBrains Mono Medium';
 }
 
-.home-card {
-  min-width: 80px;
-  text-align: center;
-  padding-top: 12px;
-  padding-bottom: 8px;
-}
-
 .widget-row {
   margin-bottom: 20px;
   margin-left: 0px;
   padding-left: 0px;
+}
+
+.widget-row-panel-item {
+  margin-bottom: 10px;
 }
 
 .v-slide-group__prev {
