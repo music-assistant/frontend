@@ -1521,7 +1521,7 @@
   resolved "https://registry.yarnpkg.com/@tauri-apps/api/-/api-2.0.0-beta.12.tgz#0b552086e6382cfd5798537b304d00cbf42db7a1"
   integrity sha512-77OvAnsExtiprnjQcvmDyZGfnIvMF/zVL5+8Vkl1R8o8E3iDtvEJZpbbH1F4dPtNa3gr4byp/5dm8hAa1+r3AA==
 
-"@tauri-apps/api@^2.0.0-beta.13":
+"@tauri-apps/api@^2.0.0-beta":
   version "2.0.0-beta.13"
   resolved "https://registry.yarnpkg.com/@tauri-apps/api/-/api-2.0.0-beta.13.tgz#53ec5117d042d560615afec2d38a6d38ee20ff22"
   integrity sha512-Np1opKANzRMF3lgJ9gDquBCB9SxlE2lRmNpVx1+L6RyzAmigkuh0ZulT5jMnDA3JLsuSDU135r/s4t/Pmx4atg==
@@ -1576,7 +1576,7 @@
   resolved "https://registry.yarnpkg.com/@tauri-apps/cli-win32-x64-msvc/-/cli-win32-x64-msvc-2.0.0-beta.20.tgz#9dd3374271ab617ee640305226ac02fcbb2694b2"
   integrity sha512-SuSiiVQTQPSzWlsxQp/NMzWbzDS9TdVDOw7CCfgiG5wnT2GsxzrcIAVN6i7ILsVFLxrjr0bIgPldSJcdcH84Yw==
 
-"@tauri-apps/cli@^2.0.0-beta.20":
+"@tauri-apps/cli@^2.0.0-beta":
   version "2.0.0-beta.20"
   resolved "https://registry.yarnpkg.com/@tauri-apps/cli/-/cli-2.0.0-beta.20.tgz#c78fd4c4560a0281432a057bfff89f48c1df4e13"
   integrity sha512-707q9uIc2oNrYHd2dtMvxTrpZXVpart5EIktnRymNOpphkLlB6WUBjHD+ga45WqTU6cNGKbYvkKqTNfshNul9Q==
