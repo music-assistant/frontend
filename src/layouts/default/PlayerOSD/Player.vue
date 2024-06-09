@@ -1,8 +1,5 @@
 <template>
-  <div
-    :class="`${useFloatingPlayer ? 'mediacontrols-bg-2' : 'mediacontrols-bg-1'}`"
-    :style="`background: ${backgroundColor};`"
-  ></div>
+  <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
   <PlayerTimeline
     v-if="getBreakpointValue('bp3')"
     v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
@@ -14,13 +11,8 @@
     :is-progress-bar="true"
   />
 
-  <div
-    class="mediacontrols"
-    :style="`padding: ${
-      getBreakpointValue({ breakpoint: 'phone' }) ? 3 : 10
-    }px ${getBreakpointValue({ breakpoint: 'phone' }) ? 10 : 10}px;`"
-  >
-    <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
+  <div class="mediacontrols" :data-mobile="mobile">
+    <div class="mediacontrols-left">
       <PlayerTrackDetails
         :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
         :show-only-artist="getBreakpointValue('bp7') ? false : true"
@@ -28,11 +20,7 @@
         :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
       />
     </div>
-    <div
-      :class="`mediacontrols-bottom-center-${
-        getBreakpointValue('bp3') ? '1' : '2'
-      }`"
-    >
+    <div class="mediacontrols-bottom-center">
       <div style="width: 100%">
         <!-- player control buttons -->
         <PlayerControls
@@ -126,6 +114,7 @@ import {
   imgCoverLight,
 } from '@/components/QualityDetailsBtn.vue';
 import { useTheme } from 'vuetify/lib/framework.mjs';
+import { useDisplay } from 'vuetify';
 
 interface Props {
   useFloatingPlayer: boolean;
@@ -134,6 +123,8 @@ defineProps<Props>();
 
 // global refs
 const theme = useTheme();
+// Custom breakpoint for compatibility with `getBreakpointValue`. Can replace once we switch to using built-in Vuetify breakpoints
+const { mobile } = useDisplay({ mobileBreakpoint: 576 });
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
@@ -186,76 +177,54 @@ watch(
 );
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .mediadetails-streamdetails .icon {
   opacity: 100;
 }
 
 .mediacontrols {
-  display: table;
+  display: flex;
+  align-items: center;
   width: 100%;
+  padding-inline: 10px;
+  padding-block: 10px;
+
+  &[data-mobile='true'] {
+    .mediacontrols-bottom-center {
+      display: none;
+    }
+  }
 }
 
-.mediacontrols-bg-1 {
+.mediacontrols-bg {
   position: absolute;
   width: 100%;
   height: 100%;
   left: 0px;
   top: 0px;
-}
+  background-color: v-bind('backgroundColor');
 
-.mediacontrols-bg-2 {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0px;
-  top: 0px;
-  border-radius: 10px;
+  &[data-floating='true'] {
+    border-radius: 10px;
+  }
 }
 
 .mediacontrols-top-right {
   display: table-row;
 }
 
-.mediacontrols-left-1 {
-  display: table-cell;
-  vertical-align: middle;
-  width: 25%;
-}
-
-.mediacontrols-left-2 {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.mediacontrols-left-1 > div {
-  padding: 0px !important;
-}
-
-.mediacontrols-left-2 > div {
-  padding: 0px !important;
-}
-
-.mediacontrols-bottom-center-1 {
-  display: table-cell;
-  text-align: center;
-  width: 40%;
-  vertical-align: middle;
-}
-
-.mediacontrols-bottom-center-2 {
-  display: none;
-  width: 25%;
+.mediacontrols-left {
+  margin-inline-end: auto;
+  > div {
+    padding: 0px !important;
+  }
 }
 
 .mediacontrols-bottom-right {
-  display: table-cell;
-  text-align: right;
-  vertical-align: middle;
-}
-
-.mediacontrols-bottom-right > div {
-  display: inline-flex;
-  align-items: center;
+  margin-inline-start: auto;
+  > div {
+    display: inline-flex;
+    align-items: center;
+  }
 }
 </style>
