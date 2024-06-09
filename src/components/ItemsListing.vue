@@ -686,9 +686,18 @@ const loadData = async function (
       pagedItems.value = nextItems.items as MediaItemType[];
     }
     // the server should send total attribute as soon as it knows it
-    if (nextItems.total != null) {
+    if (nextItems.total != null && nextItems.total != null) {
       total.value = nextItems.total;
       allItemsReceived.value = pagedItems.value.length >= total.value;
+    } else if (
+      // handle case where the server does not know the total count,
+      // but we know there are no more items (because we received an empty list)
+      total.value == null &&
+      nextItems.total == null &&
+      nextItems.count == 0
+    ) {
+      total.value = pagedItems.value.length;
+      allItemsReceived.value = true;
     }
   } else if (props.loadItems !== undefined) {
     // grab items from loadItems callback
