@@ -286,6 +286,7 @@ const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
 const allItemsReceived = ref(false);
+const firstChunkReceived = ref(false);
 
 // methods
 const toggleSearch = function () {
@@ -453,7 +454,7 @@ const loadNextPage = function ({ done }: { done: any }) {
     done('empty');
     return;
   }
-  if (total.value && pagedItems.value.length >= total.value) {
+  if (allItemsReceived.value) {
     done('empty');
     return;
   }
@@ -656,6 +657,7 @@ const loadData = async function (
     offset = 0;
     newContentAvailable.value = false;
     allItemsReceived.value = false;
+    firstChunkReceived.value = false;
   }
   params.value.offset = offset;
   params.value.limit = props.limit;
@@ -685,6 +687,7 @@ const loadData = async function (
     } else {
       pagedItems.value = nextItems.items as MediaItemType[];
     }
+    firstChunkReceived.value = true;
     // the server should send total attribute as soon as it knows it
     if (nextItems.total != null) {
       total.value = nextItems.total;
@@ -701,12 +704,12 @@ const loadData = async function (
     }
   } else if (props.loadItems !== undefined) {
     // grab items from loadItems callback
-    if (!allItemsReceived.value || refresh) {
+    if (!firstChunkReceived.value || refresh) {
       // load all items from the callback
       allItems.value = [];
       (allItems.value = await props.loadItems(params.value)), params.value;
       total.value = allItems.value.length;
-      allItemsReceived.value = true;
+      firstChunkReceived.value = true;
     }
     // filter items
     const nextItems = getFilteredItems(allItems.value, params.value);
@@ -715,6 +718,8 @@ const loadData = async function (
     } else {
       pagedItems.value = nextItems;
     }
+    // mark allItemsReceived if we have all items
+    allItemsReceived.value = nextItems.length < props.limit;
   }
   params.value.refresh = false;
   loading.value = false;
@@ -956,6 +961,7 @@ const getFilteredItems = function (
       } else if (
         'artists' in item &&
         item.artists &&
+        item.artists.length &&
         item.artists[0].name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
