@@ -453,7 +453,7 @@ const loadNextPage = function ({ done }: { done: any }) {
     done('empty');
     return;
   }
-  if (allItemsReceived.value) {
+  if (total.value && pagedItems.value.length >= total.value) {
     done('empty');
     return;
   }
@@ -686,7 +686,7 @@ const loadData = async function (
       pagedItems.value = nextItems.items as MediaItemType[];
     }
     // the server should send total attribute as soon as it knows it
-    if (nextItems.total != null && nextItems.total != null) {
+    if (nextItems.total != null) {
       total.value = nextItems.total;
       allItemsReceived.value = pagedItems.value.length >= total.value;
     } else if (
