@@ -306,7 +306,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       },
       icon: 'mdi-sync',
       hide:
-        api.providers[item.instance_id]?.available &&
+        !api.providers[item.instance_id]?.available ||
         item.type != ProviderType.MUSIC,
     },
     {

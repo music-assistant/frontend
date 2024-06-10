@@ -16,7 +16,11 @@
   >
     <v-card min-width="260">
       <v-list density="compact" slim tile>
-        <div v-for="menuItem of items" :key="menuItem.label" class="menurow">
+        <div
+          v-for="menuItem of items.filter((x) => !x.hide)"
+          :key="menuItem.label"
+          class="menurow"
+        >
           <v-list-item
             variant="text"
             :title="$t(menuItem.label, menuItem.labelArgs || [])"
