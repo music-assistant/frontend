@@ -78,7 +78,7 @@
                 label="Output device"
                 style="margin-top: 15px; height: 70px"
                 variant="outlined"
-                @change="outputDeviceConfig"
+                @update:modelValue="outputDeviceConfig"
               />
             </td>
           </tr>
@@ -249,6 +249,10 @@ onMounted(async () => {
     message.unshift('default');
 
     availableOutputDevices.value = message;
+    const savedOutputDevice = localStorage.getItem('outputDevice') || 'default';
+    if (message.indexOf(savedOutputDevice) > -1) {
+      outputDevice.value = savedOutputDevice;
+    }
   });
   discordRPCEnabled.value =
     localStorage.getItem('discordRPCEnabled') === 'true' || false;
