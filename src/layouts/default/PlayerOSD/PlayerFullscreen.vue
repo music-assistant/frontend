@@ -7,7 +7,11 @@
     transition="dialog-bottom-transition"
   >
     <v-card :color="darkenBrightColors(coverImageColorCode, 77, 40)">
-      <v-toolbar class="v-toolbar-default" color="transparent">
+      <v-toolbar
+        class="v-toolbar-default"
+        color="transparent"
+        :title="store.activePlayer ? getPlayerName(store.activePlayer) : ''"
+      >
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
             <v-icon icon="mdi-chevron-down" />
@@ -230,7 +234,7 @@
             style="position: absolute; margin-left: 3%; right: auto"
           />
           <VolumeBtn
-            :responsive-volume-size="true"
+            :responsive-volume-size="false"
             style="position: absolute; margin-left: auto; right: 5%"
           />
         </div>
@@ -315,6 +319,7 @@ import {
   ImageColorPalette,
   darkenBrightColors,
   formatDuration,
+  getPlayerName,
 } from '@/helpers/utils';
 import { eventbus } from '@/plugins/eventbus';
 import { useDisplay } from 'vuetify';
@@ -809,5 +814,9 @@ watch(
 .mediacontrols-right > div {
   display: inline-flex;
   align-items: center;
+}
+
+.v-toolbar >>> .v-toolbar-title {
+  text-align: center;
 }
 </style>
