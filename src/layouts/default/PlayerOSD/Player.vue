@@ -219,12 +219,16 @@ watch(
   padding-block: 10px;
 
   .mediacontrols-bottom-center {
-    width: 40%; 
+    width: 40%;
   }
 
   &[data-mobile='true'] {
     .mediacontrols-bottom-center {
       display: none;
+    }
+    .mediacontrols-left {
+      width: unset;
+      border: red 1px solid;
     }
   }
 }
@@ -248,6 +252,7 @@ watch(
 
 .mediacontrols-left {
   margin-inline-end: auto;
+  width: 30%;
   > div {
     padding: 0px !important;
   }
