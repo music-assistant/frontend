@@ -21,39 +21,37 @@
       />
     </div>
     <div class="mediacontrols-bottom-center">
-      <div style="width: 100%">
-        <!-- player control buttons -->
-        <PlayerControls
-          :visible-components="{
-            repeat: { isVisible: getBreakpointValue('bp3') },
-            shuffle: { isVisible: getBreakpointValue('bp3') },
-            play: {
-              isVisible: true,
-              icon: {
-                staticWidth: '50px',
-                staticHeight: '50px',
-              },
+      <!-- player control buttons -->
+      <PlayerControls
+        :visible-components="{
+          repeat: { isVisible: getBreakpointValue('bp3') },
+          shuffle: { isVisible: getBreakpointValue('bp3') },
+          play: {
+            isVisible: true,
+            icon: {
+              staticWidth: '50px',
+              staticHeight: '50px',
             },
-            previous: { isVisible: getBreakpointValue('bp3') },
-            next: { isVisible: getBreakpointValue('bp3') },
-          }"
-        />
-        <!-- progress bar -->
-        <PlayerTimeline
-          v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
-          :color="
-            $vuetify.theme.current.dark
-              ? coverImageColorPalette.lightColor || '#fff'
-              : coverImageColorPalette.darkColor || '#000'
-          "
-          :is-progress-bar="false"
-          :disabled="
-            !store.activePlayerQueue?.active ||
-            store.activePlayerQueue?.current_item?.media_item?.media_type !==
-              MediaType.TRACK
-          "
-        />
-      </div>
+          },
+          previous: { isVisible: getBreakpointValue('bp3') },
+          next: { isVisible: getBreakpointValue('bp3') },
+        }"
+      />
+      <!-- progress bar -->
+      <PlayerTimeline
+        v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
+        :color="
+          $vuetify.theme.current.dark
+            ? coverImageColorPalette.lightColor || '#fff'
+            : coverImageColorPalette.darkColor || '#000'
+        "
+        :is-progress-bar="false"
+        :disabled="
+          !store.activePlayerQueue?.active ||
+          store.activePlayerQueue?.current_item?.media_item?.media_type !==
+            MediaType.TRACK
+        "
+      />
     </div>
     <div class="mediacontrols-bottom-right">
       <div>
@@ -219,6 +217,10 @@ watch(
   width: 100%;
   padding-inline: 10px;
   padding-block: 10px;
+
+  .mediacontrols-bottom-center {
+    width: 40%; 
+  }
 
   &[data-mobile='true'] {
     .mediacontrols-bottom-center {
