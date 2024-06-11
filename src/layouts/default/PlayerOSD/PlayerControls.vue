@@ -1,5 +1,5 @@
 <template>
-  <div v-if="props.visibleComponents" style="display: inline-flex">
+  <div v-if="props.visibleComponents" class="player-controls">
     <!-- shuffle button -->
     <div
       v-if="
@@ -112,6 +112,10 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <style>
+.player-controls {
+  display: flex;
+  justify-content: center;
+}
 .player-controls-elements {
   width: 46px;
   height: 46px;
