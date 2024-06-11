@@ -767,6 +767,28 @@ export class MusicAssistantApi {
     this.playerCommand(playerId, 'unsync');
   }
 
+  public playerCommandSyncMany(
+    target_player: string,
+    child_player_ids: string[],
+  ) {
+    /*
+      Create temporary sync group by joining given players to target player.
+    */
+    this.sendCommand('players/cmd/sync_many', {
+      target_player,
+      child_player_ids,
+    });
+  }
+
+  public playerCommandUnSyncMany(player_ids: string[]) {
+    /*
+      Handle UNSYNC command for all the given players.
+    */
+    this.sendCommand('players/cmd/unsync_many', {
+      player_ids,
+    });
+  }
+
   public playerCommand(
     player_id: string,
     command: string,

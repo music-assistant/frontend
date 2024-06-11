@@ -63,12 +63,11 @@
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
           :volume="{
-            isVisible: true,
+            isVisible: !mobile,
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
         <!-- player mobile control buttons -->
-
         <PlayerControls
           style="padding-right: 5px"
           :visible-components="{
@@ -81,8 +80,8 @@
               }),
               withCircle: false,
               icon: {
-                staticWidth: '48px',
-                staticHeight: '48px',
+                staticWidth: '40px',
+                staticHeight: '40px',
                 color: $vuetify.theme.current.dark ? '#fff' : '#000',
               },
             },
@@ -92,6 +91,32 @@
         />
       </div>
     </div>
+  </div>
+  <div v-if="mobile" class="volume-slider">
+    <PlayerVolume
+      width="100%"
+      color="secondary"
+      :is-powered="store.activePlayer?.powered"
+      :disabled="!store.activePlayer || !store.activePlayer?.powered"
+      :model-value="Math.round(store.activePlayer?.group_volume || 0)"
+      prepend-icon="mdi-volume-minus"
+      append-icon="mdi-volume-plus"
+      @update:model-value="
+        api.playerCommandGroupVolume(store.activePlayerId!, $event)
+      "
+      @click:prepend="
+        api.playerCommandGroupVolume(
+          store.activePlayerId!,
+          store.activePlayer!.group_volume - 5,
+        )
+      "
+      @click:append="
+        api.playerCommandGroupVolume(
+          store.activePlayerId!,
+          store.activePlayer!.group_volume + 5,
+        )
+      "
+    />
   </div>
 </template>
 
@@ -105,6 +130,7 @@ import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
 import PlayerTimeline from './PlayerTimeline.vue';
 import PlayerControls from './PlayerControls.vue';
 import PlayerTrackDetails from './PlayerTrackDetails.vue';
+import PlayerVolume from './PlayerVolume.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
@@ -115,7 +141,7 @@ import {
 } from '@/components/QualityDetailsBtn.vue';
 import { useTheme } from 'vuetify/lib/framework.mjs';
 import { useDisplay } from 'vuetify';
-
+import { api } from '@/plugins/api';
 interface Props {
   useFloatingPlayer: boolean;
 }
@@ -226,5 +252,11 @@ watch(
     display: inline-flex;
     align-items: center;
   }
+}
+
+.volume-slider {
+  width: calc(100% - 30px);
+  margin-bottom: 6px;
+  margin-top: -10px;
 }
 </style>

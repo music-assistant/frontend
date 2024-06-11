@@ -50,13 +50,10 @@
         <div v-else-if="store.curQueueItem">
           {{ store.curQueueItem.name }}
         </div>
-        <div v-else-if="store.activePlayerQueue?.display_name">
-          {{ store.activePlayerQueue?.display_name }}
-        </div>
-        <div v-else-if="store.activePlayer?.display_name">
-          {{ store.activePlayer?.display_name }}
-        </div>
-        <div v-else @click="store.showPlayersMenu = true">
+        <div
+          v-else-if="!store.activePlayer"
+          @click="store.showPlayersMenu = true"
+        >
           {{ $t('no_player') }}
         </div>
       </div>
@@ -141,15 +138,6 @@
         >
           {{ store.curQueueItem.media_item.metadata.description }}
         </div>
-        <!-- queue empty message -->
-        <div
-          v-else-if="
-            store.activePlayerQueue && store.activePlayerQueue.items == 0
-          "
-          class="line-clamp-1"
-        >
-          {{ $t('queue_empty') }}
-        </div>
         <!-- 3rd party source active -->
         <div
           v-else-if="
@@ -161,6 +149,19 @@
             $t('external_source_active', [store.activePlayer?.active_source])
           }}
         </div>
+        <!-- queue empty message -->
+        <div
+          v-else-if="
+            store.activePlayerQueue && store.activePlayerQueue.items == 0
+          "
+          class="line-clamp-1"
+        >
+          {{ $t('queue_empty') }}
+        </div>
+      </div>
+      <!-- active player -->
+      <div v-if="store.activePlayer">
+        {{ getPlayerName(store.activePlayer) }}
       </div>
     </template>
   </v-list-item>
@@ -172,7 +173,11 @@ import { computed } from 'vue';
 import { MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { ImageColorPalette, getArtistsString } from '@/helpers/utils';
+import {
+  ImageColorPalette,
+  getArtistsString,
+  getPlayerName,
+} from '@/helpers/utils';
 import PlayerFullscreen from './PlayerFullscreen.vue';
 import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';

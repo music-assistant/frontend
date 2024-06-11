@@ -26,8 +26,7 @@
         class="playerrow"
       >
         <v-expansion-panel-title
-          expand-icon="mdi-chevron-down"
-          collapse-icon="mdi-chevron-up"
+          hide-actions
           @click="
             store.activePlayerId = player.player_id;
             scrollToTop(player.player_id);
@@ -47,7 +46,7 @@
             </template>
             <template #title>
               <div>
-                <b>{{ truncateString(getPlayerName(player), 20) }}</b>
+                <b>{{ truncateString(getPlayerName(player), 22) }}</b>
               </div>
             </template>
             <template #subtitle>
@@ -114,8 +113,10 @@ const sortedPlayers = computed(() => {
 watch(
   () => store.showPlayersMenu,
   (newVal) => {
-    if (!newVal) {
-      panelItem.value = undefined;
+    if (newVal && panelItem.value == undefined) {
+      panelItem.value = store.activePlayer
+        ? sortedPlayers.value.indexOf(store.activePlayer)
+        : undefined;
     }
   },
 );
@@ -158,7 +159,11 @@ const scrollToTop = function (playerId: string) {
   lastClicked.value = playerId;
   setTimeout(() => {
     const elmnt = shadowRoot.value?.getElementById(playerId);
-    elmnt?.scrollIntoView({ behavior: 'smooth' });
+    elmnt?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+      inline: 'nearest',
+    });
   }, 0);
 };
 
@@ -229,5 +234,12 @@ const selectDefaultPlayer = function () {
 
 .playerrow >>> .v-expansion-panel-text__wrapper {
   padding: 0;
+}
+
+.v-expansion-panel--active {
+  opacity: 1;
+  background-color: rgba(162, 188, 255, 0.1);
+  border-block: solid 1px rgba(0, 0, 0, 0.4);
+  writing-mode: horizontal-tb;
 }
 </style>
