@@ -47,6 +47,11 @@
               : coverImageColorPalette.darkColor || '#000'
           "
           :is-progress-bar="false"
+          :disabled="
+            !store.activePlayerQueue?.active ||
+            store.activePlayerQueue?.current_item?.media_item?.media_type !==
+              MediaType.TRACK
+          "
         />
       </div>
     </div>
@@ -124,7 +129,7 @@
 import { computed, ref, watch } from 'vue';
 //@ts-ignore
 
-import { ImageType } from '@/plugins/api/interfaces';
+import { ImageType, MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
 import PlayerTimeline from './PlayerTimeline.vue';

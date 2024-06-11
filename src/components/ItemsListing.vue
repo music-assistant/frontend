@@ -554,7 +554,8 @@ const menuItems = computed(() => {
     items.push({
       label: 'tooltip.sort_options',
       icon: 'mdi-sort',
-      disabled: props.sortKeys.length <= 1,
+      disabled:
+        props.sortKeys.length <= 1 || loading.value || total.value == null,
       subItems: props.sortKeys.map((sortKey) => {
         return {
           label: `sort.${sortKey}`,
@@ -576,10 +577,7 @@ const menuItems = computed(() => {
       icon: 'mdi-magnify',
       action: toggleSearch,
       active: isSearchActive.value,
-      disabled:
-        props.loadPagedData &&
-        props.noServerSideSorting &&
-        !allItemsReceived.value,
+      disabled: loading.value || total.value == null,
     });
   }
 
@@ -670,6 +668,7 @@ const loadData = async function (
   ) {
     // server side paged listing without filter support - handle filtering in-memory
     // note that all items of the paged listing must first be received before we can do filtering
+    console.log('blaat 1');
     if (allItems.value.length == 0) {
       allItems.value = pagedItems.value;
     }
@@ -680,6 +679,7 @@ const loadData = async function (
       search: params.value.search,
     });
   } else if (props.loadPagedData !== undefined) {
+    console.log('blaat 2');
     // server side paged listing
     const nextItems = await props.loadPagedData(params.value);
     if (params.value.offset) {
@@ -703,6 +703,7 @@ const loadData = async function (
       allItemsReceived.value = true;
     }
   } else if (props.loadItems !== undefined) {
+    console.log('blaat 3');
     // grab items from loadItems callback
     if (!firstChunkReceived.value || refresh) {
       // load all items from the callback
@@ -803,17 +804,9 @@ const restoreSettings = async function () {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
+  if (total.value == null) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    // CTRL-A (select all requested)
-    // fetch all items first
-    while (pagedItems.value.length < total.value!) {
-      if (total.value !== undefined && params.value.offset >= total.value) {
-        break;
-      }
-      params.value.offset += props.limit;
-      loadData();
-    }
     selectedItems.value = pagedItems.value;
     showCheckboxes.value = true;
   } else if (!searchHasFocus.value && e.key == 'Backspace') {
@@ -851,7 +844,7 @@ watch(
   () => params.value.search,
   (newVal) => {
     if (newVal) showSearch.value = true;
-    loadData(true);
+    loadData(undefined, undefined, true);
     let storKey = `search.${props.path}.${props.itemtype}`;
     if (props.parentItem) storKey += props.parentItem.item_id;
     localStorage.setItem(storKey, params.value.search);
