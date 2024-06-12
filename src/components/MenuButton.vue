@@ -39,7 +39,7 @@
       :text="text"
       @click="openMenuOnClick ? (showMenu = !showMenu) : emit('click')"
     >
-      <template v-if="icon" #prepend>
+      <template v-if="icon && text!.length < 12" #prepend>
         <v-icon :icon="icon" size="x-large" />
       </template>
     </v-btn>

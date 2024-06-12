@@ -161,9 +161,9 @@
           >
             <!-- play button with contextmenu -->
             <MenuButton
-              :width="200"
+              :width="220"
               icon="mdi-play-circle-outline"
-              :text="truncateString($t('play'), 12)"
+              :text="truncateString($t('play'), 14)"
               :disabled="!item"
               :open-menu-on-click="!store.activePlayerQueue"
               @click="api.playMedia(item!)"
