@@ -57,20 +57,30 @@ onMounted(() => {
     .addEventListener('change', setTheme);
 
   const handleKeyDown = (e) => {
-      const key = e.key;
-      let keyDetected = true;
+    if (api.state.value === ConnectionState.CONNECTED) {
+      //Ensure the api can communicate with the server
+      if (!store.activePlayerQueue?.active) {
+        //Ensure a player is active
+        const key = e.key;
+        let keyDetected = true;
 
-      if (key === 'MediaPlayPause' || key === 'Space')  api.queueCommandPlayPause(store.activePlayerQueue!.queue_id);
-      else if (key === 'MediaStop') api.queueCommandStop(store.activePlayerQueue!.queue_id);
-      else if (key === 'MediaTrackPrevious') api.queueCommandPrevious(store.activePlayerQueue!.queue_id);
-      else if (key === 'MediaTrackNext')  api.queueCommandNext(store.activePlayerQueue!.queue_id);
-      else if (key === 'AudioVolumeUp') api.playerCommandVolumeUp(store.activePlayer?.player_id || '');
-      else if (key === 'AudioVolumeDown')  api.playerCommandVolumeDown(store.activePlayer?.player_id || '');
-      else if (key === 'AudioVolumeMute') api.playerCommandVolumeMute(store.activePlayer?.player_id || '', !store.activePlayer?.volume_muted  || false );
-      else keyDetected = false;
-    
-      if (keyDetected)
-        e.preventDefault();  
+        if (store.activePlayerQueue && store.activePlayerQueue.active) {
+          //Ensure queue is active to interact with
+          if (key === 'MediaPlayPause' || key === 'Space')  api.queueCommandPlayPause(store.activePlayerQueue!.queue_id);
+          if (key === 'MediaStop') api.queueCommandStop(store.activePlayerQueue!.queue_id);
+          if (key === 'MediaTrackPrevious') api.queueCommandPrevious(store.activePlayerQueue!.queue_id);
+          if (key === 'MediaTrackNext')  api.queueCommandNext(store.activePlayerQueue!.queue_id);
+        }
+
+        else if (key === 'AudioVolumeUp') api.playerCommandVolumeUp(store.activePlayer?.player_id || '');
+        else if (key === 'AudioVolumeDown')  api.playerCommandVolumeDown(store.activePlayer?.player_id || '');
+        else if (key === 'AudioVolumeMute') api.playerCommandVolumeMute(store.activePlayer?.player_id || '', !store.activePlayer?.volume_muted  || false );
+        else keyDetected = false;
+
+        if (keyDetected)
+          e.preventDefault();  
+      }
+    }
   }
 
 
