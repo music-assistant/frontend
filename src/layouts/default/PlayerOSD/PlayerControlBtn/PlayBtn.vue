@@ -50,8 +50,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
 import api from '@/plugins/api';
 import { PlayerState } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';

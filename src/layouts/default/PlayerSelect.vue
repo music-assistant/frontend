@@ -1,5 +1,6 @@
 <template>
   <!-- players side menu -->
+  <v-overlay v-model="store.showPlayersMenu" />
   <v-navigation-drawer
     v-model="store.showPlayersMenu"
     location="right"
@@ -8,7 +9,8 @@
     temporary
     touchless
     width="290"
-    style="z-index: 9999"
+    style="z-index: 999999"
+    z-index="999999"
   >
     <!-- heading with Players as title-->
     <v-card-title class="title">

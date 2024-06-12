@@ -10,7 +10,7 @@
       "
     >
       <template #activator="{ props: menu }">
-        <div v-if="getBreakpointValue('bp5') || !responsiveVolumeSize">
+        <div v-if="getBreakpointValue('bp6') || !responsiveVolumeSize">
           <PlayerVolume
             :style="'margin-right: 0px; margin-left: 0px;'"
             :width="volumeSize"

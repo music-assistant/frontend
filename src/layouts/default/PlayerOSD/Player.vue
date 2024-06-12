@@ -1,15 +1,5 @@
 <template>
   <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-  <PlayerTimeline
-    v-if="getBreakpointValue('bp3')"
-    v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
-    :color="
-      $vuetify.theme.current.dark
-        ? coverImageColorPalette.lightColor || '#fff'
-        : coverImageColorPalette.darkColor || '#000'
-    "
-    :is-progress-bar="true"
-  />
 
   <div class="mediacontrols" :data-mobile="mobile">
     <div class="mediacontrols-left">
@@ -39,7 +29,7 @@
       />
       <!-- progress bar -->
       <PlayerTimeline
-        v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
+        v-if="getBreakpointValue('bp6')"
         :color="
           $vuetify.theme.current.dark
             ? coverImageColorPalette.lightColor || '#fff'
@@ -228,7 +218,6 @@ watch(
     }
     .mediacontrols-left {
       width: unset;
-      border: red 1px solid;
     }
   }
 }

@@ -89,7 +89,6 @@
     </template>
     <!-- subtitle -->
     <template #subtitle>
-      <!-- track: artists(s) + album -->
       <div
         :style="{
           cursor: 'pointer',
@@ -158,10 +157,10 @@
         >
           {{ $t('queue_empty') }}
         </div>
-      </div>
-      <!-- active player -->
-      <div v-if="store.activePlayer">
-        {{ getPlayerName(store.activePlayer) }}
+        <!-- active player -->
+        <div v-if="store.activePlayer">
+          {{ getPlayerName(store.activePlayer) }}
+        </div>
       </div>
     </template>
   </v-list-item>

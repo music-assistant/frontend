@@ -1,17 +1,13 @@
 <template>
   <v-dialog
-    v-if="!store.showPlayersMenu"
     v-model="store.showFullscreenPlayer"
     fullscreen
     :scrim="false"
     transition="dialog-bottom-transition"
+    z-index="9999"
   >
     <v-card :color="darkenBrightColors(coverImageColorCode, 77, 40)">
-      <v-toolbar
-        class="v-toolbar-default"
-        color="transparent"
-        :title="store.activePlayer ? getPlayerName(store.activePlayer) : ''"
-      >
+      <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
             <v-icon icon="mdi-chevron-down" />
@@ -31,7 +27,10 @@
           v-if="getBreakpointValue('bp7') || !store.showQueueItems"
           class="main-media-details"
         >
-          <div class="main-media-details-image">
+          <div
+            v-if="$vuetify.display.height > 600"
+            class="main-media-details-image"
+          >
             <MediaItemThumb
               :item="store.curQueueItem"
               :thumbnail="false"
@@ -224,30 +223,27 @@
             </v-infinite-scroll>
           </div>
         </div>
+
+        <!-- right column: media image (on small but wide screens)-->
+        <div
+          v-if="!store.showQueueItems && $vuetify.display.height <= 600"
+          class="main-queue-items"
+        >
+          <div class="main-media-details-image main-media-details-image-alt">
+            <MediaItemThumb
+              :item="store.curQueueItem"
+              :thumbnail="false"
+              style="max-width: 100%; width: auto"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- player controls (always at bottom)-->
       <div class="player-bottom">
-        <!-- row with player control (left) and volume (right) -->
-        <div style="height: 50px">
-          <SpeakerBtn
-            style="position: absolute; margin-left: 3%; right: auto"
-          />
-          <VolumeBtn
-            :responsive-volume-size="false"
-            style="position: absolute; margin-left: auto; right: 5%"
-          />
-        </div>
         <!-- timeline / progressbar-->
         <div class="row" style="margin-left: 5%; margin-right: 5%">
-          <PlayerTimeline
-            :is-progress-bar="false"
-            :color="
-              $vuetify.theme.current.dark
-                ? props.colorPalette.lightColor
-                : props.colorPalette.darkColor
-            "
-          />
+          <PlayerTimeline :show-labels="true" />
         </div>
 
         <!-- main media control buttons (play, next, previous etc.)-->
@@ -280,6 +276,54 @@
           />
           <QueueBtn class="media-controls-item" max-height="30px" />
         </div>
+
+        <!-- volume control -->
+        <div class="row" style="margin-left: 5%; margin-right: 5%">
+          <PlayerVolume
+            width="100%"
+            :is-powered="store.activePlayer?.powered"
+            :disabled="!store.activePlayer || !store.activePlayer?.powered"
+            :model-value="Math.round(store.activePlayer?.group_volume || 0)"
+            prepend-icon="mdi-volume-minus"
+            append-icon="mdi-volume-plus"
+            @update:model-value="
+              api.playerCommandGroupVolume(store.activePlayerId!, $event)
+            "
+            @click:prepend="
+              api.playerCommandGroupVolume(
+                store.activePlayerId!,
+                store.activePlayer!.group_volume - 5,
+              )
+            "
+            @click:append="
+              api.playerCommandGroupVolume(
+                store.activePlayerId!,
+                store.activePlayer!.group_volume + 5,
+              )
+            "
+          />
+        </div>
+
+        <!-- player select button -->
+        <div
+          v-if="$vuetify.display.height > 800"
+          class="row"
+          style="
+            height: 70px;
+            display: ruby-text;
+            padding-bottom: 15px;
+            padding-top: 15px;
+          "
+        >
+          <v-btn
+            variant="outlined"
+            color="secondary"
+            @click="store.showPlayersMenu = true"
+          >
+            <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
+            {{ store.activePlayer ? getPlayerName(store.activePlayer) : '' }}
+          </v-btn>
+        </div>
       </div>
     </v-card>
   </v-dialog>
@@ -310,9 +354,8 @@ import NextBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue';
 import PreviousBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue';
 import ShuffleBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue';
 import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
+import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
 import QueueBtn from './PlayerControlBtn/QueueBtn.vue';
-import SpeakerBtn from './PlayerControlBtn/SpeakerBtn.vue';
-import VolumeBtn from './PlayerControlBtn/VolumeBtn.vue';
 import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
 import router from '@/plugins/router';
 import {
@@ -324,10 +367,7 @@ import {
 import { eventbus } from '@/plugins/eventbus';
 import { useDisplay } from 'vuetify';
 import { useI18n } from 'vue-i18n';
-import {
-  ContextMenuItem,
-  showContextMenuForMediaItem,
-} from '../ItemContextMenu.vue';
+import { ContextMenuItem } from '../ItemContextMenu.vue';
 
 const { t } = useI18n();
 const { name } = useDisplay();
@@ -672,8 +712,9 @@ watch(
 <style scoped>
 .main {
   display: flex;
-  max-height: 58% !important;
-  height: 58% !important;
+  min-height: 50% !important;
+  height: 50% !important;
+  max-height: 65% !important;
   padding-bottom: 5px;
 }
 
@@ -705,25 +746,36 @@ watch(
 }
 
 .main-media-details-image {
-  height: 70%;
-  max-height: 70%;
+  min-height: 50%;
+  max-height: 80%;
+  height: 60%;
   align-content: center;
-  padding: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 .main-media-details-image.v-img {
   width: auto;
 }
+
+.main-media-details-image-alt {
+  height: 100% !important;
+  max-height: 100% !important;
+  align-content: center;
+  padding: 0px !important;
+}
+
 .main-media-details-track-info {
-  height: 30%;
-  max-height: 30%;
+  height: 20%;
+  max-height: 20%;
   align-content: center;
   text-align: center;
   padding: 20px;
 }
 
 .player-bottom {
-  max-height: 25% !important;
-  height: 25% !important;
+  max-height: 35% !important;
+  min-height: 25% !important;
+  height: 30% !important;
   margin-top: auto;
   bottom: 0;
   position: unset !important;
