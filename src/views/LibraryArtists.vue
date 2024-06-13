@@ -1,7 +1,6 @@
 <template>
   <ItemsListing
     itemtype="artists"
-    :items="items"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
@@ -13,6 +12,7 @@
     :sort-keys="sortKeys"
     icon="mdi-account-outline"
     :restore-state="true"
+    :total="total"
   />
 </template>
 
@@ -20,20 +20,16 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import api from '@/plugins/api';
-import {
-  MediaType,
-  type Artist,
-  EventMessage,
-  EventType,
-} from '@/plugins/api/interfaces';
+import { MediaType, EventMessage, EventType } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
+import { store } from '@/plugins/store';
 
 defineOptions({
   name: 'Artists',
 });
 
-const items = ref<Artist[]>([]);
 const updateAvailable = ref(false);
+const total = ref(store.libraryArtistsCount);
 
 const sortKeys = [
   'name',
@@ -65,6 +61,10 @@ const loadItems = async function (params: LoadDataParams) {
     }
   }
   updateAvailable.value = false;
+  total.value = await api.getLibraryArtistsCount(
+    params.favoritesOnly || false,
+    params.albumArtistsFilter || false,
+  );
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
     params.search,

@@ -11,6 +11,7 @@
     :show-search-button="true"
     icon="mdi-album"
     :restore-state="true"
+    :total="total"
   />
 </template>
 
@@ -20,12 +21,14 @@ import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import api from '@/plugins/api';
 import { MediaType, EventMessage, EventType } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
+import { store } from '@/plugins/store';
 
 defineOptions({
   name: 'Albums',
 });
 
 const updateAvailable = ref<boolean>(false);
+const total = ref(store.libraryAlbumsCount);
 
 const sortKeys = [
   'name',
@@ -79,6 +82,7 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
+  total.value = await api.getLibraryAlbumsCount(params.favoritesOnly || false);
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
