@@ -695,6 +695,7 @@ const loadData = async function (
     }
     // mark allItemsReceived if we have all items
     allItemsReceived.value = nextItems.length < props.limit;
+    console.log('allItems', allItems.value);
   } else if (props.loadPagedData != null) {
     // server side paged listing (with filter support)
     const nextItems = await props.loadPagedData(params.value);
@@ -969,7 +970,7 @@ const getFilteredItems = function (
       }
     }
   } else {
-    result = items;
+    result = [...items];
   }
   // sort
   if (params.sortBy == 'name') {
