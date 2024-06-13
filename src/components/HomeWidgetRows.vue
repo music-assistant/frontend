@@ -6,9 +6,9 @@
 
 <script setup lang="ts">
 import api from '@/plugins/api';
+import { store } from '@/plugins/store';
 import HomeWidgetRow, { WidgetRow } from '@/components/HomeWidgetRow.vue';
 import { ref } from 'vue';
-import { MediaItemType } from '@/plugins/api/interfaces';
 import { onActivated } from 'vue';
 
 const widgetRows = ref<Record<string, WidgetRow>>({
@@ -56,65 +56,67 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 });
 
 const loadData = async function () {
+  store.libraryArtistsCount = await api.getLibraryArtistsCount();
+  store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
+  store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
+  store.libraryRadiosCount = await api.getLibraryRadiosCount();
+  store.libraryTracksCount = await api.getLibraryTracksCount();
+
   // recently played widget row
   widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(10);
 
   // library artists widget row
   // TODO: Find a way to make the images for this row eager load
-  const artistItems = await api.getLibraryArtists(
+  widgetRows.value.artists.items = await api.getLibraryArtists(
     undefined,
     undefined,
     20,
     undefined,
     'random',
   );
-  widgetRows.value.artists.items = artistItems.items as MediaItemType[];
-  widgetRows.value.artists.count = artistItems.total;
+  widgetRows.value.artists.count = store.libraryArtistsCount;
 
   // library albums widget row
   // TODO: Find a way to make the images for this row eager load
-  const albumItems = await api.getLibraryAlbums(
+
+  widgetRows.value.albums.items = await api.getLibraryAlbums(
     undefined,
     undefined,
     20,
     undefined,
     'timestamp_added_desc',
   );
-  widgetRows.value.albums.items = albumItems.items as MediaItemType[];
-  widgetRows.value.albums.count = albumItems.total;
+  widgetRows.value.albums.count = store.libraryAlbumsCount;
 
   // library playlist widget row
-  const playlistItems = await api.getLibraryPlaylists(
+  widgetRows.value.playlists.items = await api.getLibraryPlaylists(
     undefined,
     undefined,
     20,
     undefined,
     'timestamp_added_desc',
   );
-  widgetRows.value.playlists.items = playlistItems.items as MediaItemType[];
-  widgetRows.value.playlists.count = playlistItems.total;
+  widgetRows.value.playlists.count = store.libraryPlaylistsCount;
 
   // library radios widget row
-  const radioItems = await api.getLibraryRadios(
+  widgetRows.value.radios.items = await api.getLibraryRadios(
     undefined,
     undefined,
     20,
     undefined,
     'timestamp_added_desc',
   );
-  widgetRows.value.radios.items = radioItems.items as MediaItemType[];
-  widgetRows.value.radios.count = radioItems.total;
+  widgetRows.value.radios.count = store.libraryRadiosCount;
 
   // tracks widget
-  const trackItems = await api.getLibraryTracks(
+  widgetRows.value.tracks.items = await api.getLibraryTracks(
     undefined,
     undefined,
     20,
     undefined,
     'timestamp_added_desc',
   );
-  widgetRows.value.tracks.items = trackItems.items as MediaItemType[];
-  widgetRows.value.tracks.count = trackItems.total;
+  widgetRows.value.tracks.count = store.libraryTracksCount;
 };
 
 await loadData();

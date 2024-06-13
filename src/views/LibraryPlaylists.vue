@@ -1,7 +1,6 @@
 <template>
   <ItemsListing
     itemtype="playlists"
-    :items="items"
     :show-duration="false"
     :show-provider="true"
     :show-favorites-only-filter="true"
@@ -15,6 +14,7 @@
     :extra-menu-items="extraMenuItems"
     icon="mdi-playlist-play"
     :restore-state="true"
+    :total="total"
   />
 </template>
 
@@ -25,21 +25,21 @@ import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import api from '@/plugins/api';
 import {
   ProviderFeature,
-  type Playlist,
   EventMessage,
   EventType,
   MediaType,
 } from '@/plugins/api/interfaces';
 import { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { sleep } from '@/helpers/utils';
+import { store } from '@/plugins/store';
 
 defineOptions({
   name: 'Playlists',
 });
 
 const { t } = useI18n();
-const items = ref<Playlist[]>([]);
 const updateAvailable = ref(false);
+const total = ref(store.libraryPlaylistsCount);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 
 const sortKeys = [
@@ -75,6 +75,9 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
+  total.value = await api.getLibraryPlaylistsCount(
+    params.favoritesOnly || false,
+  );
   return await api.getLibraryPlaylists(
     params.favoritesOnly || undefined,
     params.search,

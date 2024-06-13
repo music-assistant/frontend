@@ -6,7 +6,7 @@
     transition="dialog-bottom-transition"
     z-index="9999"
   >
-    <v-card :color="darkenBrightColors(coverImageColorCode, 77, 40)">
+    <v-card :color="darkenBrightColors(coverImageColorCode, 70, 80)">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -317,7 +317,7 @@
         >
           <v-btn
             variant="outlined"
-            color="secondary"
+            color="accent"
             @click="store.showPlayersMenu = true"
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
@@ -617,7 +617,7 @@ const loadItems = async function (clear = false) {
       limit,
       offset,
     );
-    queueItems.value.push(...(result.items as QueueItem[]));
+    queueItems.value.push(...result);
   }
 };
 

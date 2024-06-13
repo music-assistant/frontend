@@ -84,23 +84,23 @@
           </tr>
           <tr>
             <td>{{ $t('settings.artists_in_library') }}</td>
-            <td>{{ totalLibraryArtists }}</td>
+            <td>{{ store.libraryArtistsCount }}</td>
           </tr>
           <tr>
             <td>{{ $t('settings.albums_in_library') }}</td>
-            <td>{{ totalLibraryAlbums }}</td>
+            <td>{{ store.libraryAlbumsCount }}</td>
           </tr>
           <tr>
             <td>{{ $t('settings.tracks_in_library') }}</td>
-            <td>{{ totalLibraryTracks }}</td>
+            <td>{{ store.libraryTracksCount }}</td>
           </tr>
           <tr>
             <td>{{ $t('settings.playlists_in_library') }}</td>
-            <td>{{ totalLibraryPlaylists }}</td>
+            <td>{{ store.libraryPlaylistsCount }}</td>
           </tr>
           <tr>
             <td>{{ $t('settings.radio_in_library') }}</td>
-            <td>{{ totalLibraryRadio }}</td>
+            <td>{{ store.libraryRadiosCount }}</td>
           </tr>
           <tr>
             <td>{{ $t('settings.server_logging') }}</td>
@@ -125,17 +125,13 @@ import ListItem from '@/components/mods/ListItem.vue';
 import Container from '@/components/mods/Container.vue';
 import { useRouter } from 'vue-router';
 import { eventbus } from '@/plugins/eventbus';
+import { store } from '@/plugins/store';
 
 // global refs
 const router = useRouter();
 
 // local refs
 const coreConfigs = ref<CoreConfig[]>([]);
-const totalLibraryArtists = ref(0);
-const totalLibraryAlbums = ref(0);
-const totalLibraryTracks = ref(0);
-const totalLibraryPlaylists = ref(0);
-const totalLibraryRadio = ref(0);
 
 // methods
 const editCoreConfig = function (domain: string) {
@@ -175,15 +171,11 @@ const onMenu = function (evt: Event, item: CoreConfig) {
 
 onMounted(async () => {
   coreConfigs.value = await api.getCoreConfigs();
-  totalLibraryArtists.value =
-    (await api.getLibraryArtists(undefined, undefined, 1)).total || 0;
-  totalLibraryAlbums.value =
-    (await api.getLibraryAlbums(undefined, undefined, 1)).total || 0;
-  totalLibraryTracks.value =
-    (await api.getLibraryTracks(undefined, undefined, 1)).total || 0;
-  totalLibraryPlaylists.value =
-    (await api.getLibraryPlaylists(undefined, undefined, 1)).total || 0;
-  totalLibraryRadio.value =
-    (await api.getLibraryRadios(undefined, undefined, 1)).total || 0;
+  // refresh/read the library counts
+  store.libraryArtistsCount = await api.getLibraryArtistsCount();
+  store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
+  store.libraryTracksCount = await api.getLibraryTracksCount();
+  store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
+  store.libraryRadiosCount = await api.getLibraryRadiosCount();
 });
 </script>
