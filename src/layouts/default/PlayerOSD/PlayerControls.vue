@@ -1,59 +1,51 @@
 <template>
-  <div v-if="props.visibleComponents" class="player-controls">
+  <div v-if="visibleComponents" class="player-controls">
     <!-- shuffle button -->
     <div
-      v-if="
-        props.visibleComponents && props.visibleComponents.shuffle?.isVisible
-      "
+      v-if="visibleComponents && visibleComponents.shuffle?.isVisible"
       class="player-controls-elements"
     >
       <ShuffleBtn
         class="media-controls-item"
-        :icon="props.visibleComponents.shuffle.icon"
+        :icon="visibleComponents.shuffle.icon"
       />
     </div>
     <!-- prev button -->
     <div
-      v-if="
-        props.visibleComponents && props.visibleComponents.previous?.isVisible
-      "
+      v-if="visibleComponents && visibleComponents.previous?.isVisible"
       class="player-controls-elements"
     >
       <PreviousBtn
         class="media-controls-item"
-        :icon="props.visibleComponents.previous.icon"
+        :icon="visibleComponents.previous.icon"
       />
     </div>
     <!-- play/pause button: only when MA queue is active -->
-    <div
-      v-if="props.visibleComponents && props.visibleComponents.play?.isVisible"
-    >
+    <div v-if="visibleComponents && visibleComponents.play?.isVisible">
       <PlayBtn
         class="media-controls-item"
-        :with-circle="props.visibleComponents.play.withCircle"
-        :icon="props.visibleComponents.play.icon"
+        :with-circle="visibleComponents.play.withCircle"
+        :icon="visibleComponents.play.icon"
       />
     </div>
     <!-- next button -->
     <div
-      v-if="props.visibleComponents && props.visibleComponents.next?.isVisible"
+      v-if="visibleComponents && visibleComponents.next?.isVisible"
       class="player-controls-elements"
     >
       <NextBtn
-        :icon="props.visibleComponents.next.icon"
+        :icon="visibleComponents.next.icon"
         static-height="24px"
         static-width="24px"
       />
     </div>
     <!-- repeat button -->
     <div
-      v-if="
-        props.visibleComponents && props.visibleComponents.repeat?.isVisible
-      "
+      v-if="visibleComponents && visibleComponents.repeat?.isVisible"
       class="player-controls-elements"
     >
       <RepeatBtn
-        :icon="props.visibleComponents.repeat.icon"
+        :icon="visibleComponents.repeat.icon"
         static-height="24px"
         static-width="24px"
       />
@@ -62,10 +54,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
-import api from '@/plugins/api';
-import { store } from '@/plugins/store';
 import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
 import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
 import ShuffleBtn from './PlayerControlBtn/ShuffleBtn.vue';
@@ -100,7 +88,7 @@ export interface Props {
   };
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   visibleComponents: () => ({
     repeat: { isVisible: true },
     shuffle: { isVisible: true },

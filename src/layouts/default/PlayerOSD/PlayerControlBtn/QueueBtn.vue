@@ -1,7 +1,7 @@
 <template>
   <ResponsiveIcon
-    v-if="props.isVisible"
-    v-bind="props.icon"
+    v-if="isVisible"
+    v-bind="icon"
     :disabled="
       !store.activePlayerQueue ||
       !store.activePlayerQueue?.active ||
@@ -9,12 +9,12 @@
     "
     icon="mdi-playlist-play"
     :color="
-      getValueFromSources(props.icon?.color, [
+      getValueFromSources(icon?.color, [
         [store.showFullscreenPlayer && store.showQueueItems, 'primary', ''],
       ])
     "
     :type="'btn'"
-    @click="onClick"
+    @clicked="onClick"
   />
 </template>
 
@@ -31,7 +31,7 @@ export interface Props {
   icon?: ResponsiveIconProps;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
 });

@@ -1,22 +1,22 @@
 <template>
   <!-- repeat button -->
   <ResponsiveIcon
-    v-if="props.isVisible"
-    v-bind="props.icon"
+    v-if="isVisible"
+    v-bind="icon"
     :disabled="
       !store.activePlayerQueue ||
-      !store.activePlayerQueue?.active ||
-      store.activePlayerQueue?.items == 0
+      !store.activePlayerQueue.active ||
+      store.activePlayerQueue.items == 0
     "
     :color="
-      getValueFromSources(props.icon?.color, [
+      getValueFromSources(icon?.color, [
         [store.activePlayerQueue?.repeat_mode == RepeatMode.OFF, null],
         [store.activePlayerQueue?.repeat_mode == RepeatMode.ALL, 'primary'],
         [store.activePlayerQueue?.repeat_mode == RepeatMode.ONE, 'primary'],
       ])
     "
     :icon="
-      getValueFromSources(props.icon?.icon, [
+      getValueFromSources(icon?.icon, [
         [
           store.activePlayerQueue?.repeat_mode == RepeatMode.OFF,
           'mdi-repeat-off',
@@ -30,7 +30,7 @@
       ])
     "
     :type="'btn'"
-    @click="
+    @clicked="
       api.queueCommandRepeat(
         store.activePlayerQueue?.queue_id || '',
         getValueFromSources(null, [
@@ -53,8 +53,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
 import api from '@/plugins/api';
 import { RepeatMode } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
@@ -68,7 +66,7 @@ export interface Props {
   isVisible?: boolean;
   icon?: ResponsiveIconProps;
 }
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
 });

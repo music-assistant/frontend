@@ -732,6 +732,10 @@ export class MusicAssistantApi {
     return this.getData('players/all');
   }
 
+  public playerCommandPlay(playerId: string) {
+    this.playerCommand(playerId, 'play');
+  }
+
   public playerCommandStop(playerId: string) {
     this.playerCommand(playerId, 'stop');
   }

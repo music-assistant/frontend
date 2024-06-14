@@ -2,19 +2,19 @@
   <div
     ref="responsiveIconHolder"
     :class="[
-      props.type == 'btn'
+      type == 'btn' && !disabled
         ? 'responsive-icon-holder-btn'
         : 'responsive-icon-holder',
-      { disabled: disabled },
     ]"
     :style="{
-      width: props.staticWidth ? props.staticWidth : props.width,
-      height: props.staticWidth ? props.staticWidth : props.height,
-      maxHeight: props.staticHeight ? props.staticHeight : props.maxHeight,
-      maxWidth: props.staticWidth ? props.staticWidth : props.maxWidth,
-      minHeight: props.staticHeight ? props.staticHeight : props.minHeight,
-      minWidth: props.staticWidth ? props.staticWidth : props.minWidth,
+      width: staticWidth ? staticWidth : width,
+      height: staticWidth ? staticWidth : height,
+      maxHeight: staticHeight ? staticHeight : maxHeight,
+      maxWidth: staticWidth ? staticWidth : maxWidth,
+      minHeight: staticHeight ? staticHeight : minHeight,
+      minWidth: staticWidth ? staticWidth : minWidth,
     }"
+    @click="disabled ? $event.preventDefault() : $emit('clicked')"
   >
     <v-badge :model-value="badge == true" color="error" dot>
       <v-icon
@@ -22,9 +22,10 @@
         ref="responsiveIcon"
         class="responsive-icon"
         :color="color ? color : ''"
-        :icon="props.icon ? props.icon : 'mdi-check'"
-        :width="props.staticWidth ? props.staticWidth : null"
-        :height="props.staticHeight ? props.staticHeight : null"
+        :icon="icon ? icon : 'mdi-check'"
+        :width="staticWidth ? staticWidth : null"
+        :height="staticHeight ? staticHeight : null"
+        :disabled="disabled"
       >
         <!-- Dynamically inherit slots from parent -->
         <template v-for="(value, name) in $slots as unknown" #[name]>
@@ -37,9 +38,9 @@
         class="responsive-icon"
         style="cursor: pointer"
         :color="color ? color : ''"
-        :icon="props.icon ? props.icon : 'mdi-check'"
-        :width="props.staticWidth ? props.staticWidth : null"
-        :height="props.staticHeight ? props.staticHeight : null"
+        :icon="icon ? icon : 'mdi-check'"
+        :width="staticWidth ? staticWidth : null"
+        :height="staticHeight ? staticHeight : null"
         :disabled="disabled"
       >
         <!-- Dynamically inherit slots from parent -->
@@ -70,7 +71,7 @@ export interface ResponsiveIconProps {
   disabled?: boolean;
   badge?: boolean;
 }
-const props = withDefaults(defineProps<ResponsiveIconProps>(), {
+withDefaults(defineProps<ResponsiveIconProps>(), {
   width: undefined,
   height: undefined,
   staticWidth: undefined,
@@ -84,6 +85,10 @@ const props = withDefaults(defineProps<ResponsiveIconProps>(), {
   color: undefined,
   badge: undefined,
 });
+
+const emit = defineEmits<{
+  (e: 'clicked'): void;
+}>();
 
 const adjustIconSize = () => {
   if (responsiveIconHolder.value) {
