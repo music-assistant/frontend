@@ -287,19 +287,31 @@
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"
             @update:model-value="
-              api.playerCommandGroupVolume(store.activePlayerId!, $event)
+              store.activePlayer!.group_childs.length > 0
+                ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
+                : api.playerCommandVolumeSet(store.activePlayerId!, $event)
             "
             @click:prepend="
-              api.playerCommandGroupVolume(
-                store.activePlayerId!,
-                store.activePlayer!.group_volume - 5,
-              )
+              store.activePlayer!.group_childs.length > 0
+                ? api.playerCommandGroupVolume(
+                    store.activePlayerId!,
+                    store.activePlayer!.group_volume - 5,
+                  )
+                : api.playerCommandVolumeSet(
+                    store.activePlayerId!,
+                    store.activePlayer!.volume_level - 5,
+                  )
             "
             @click:append="
-              api.playerCommandGroupVolume(
-                store.activePlayerId!,
-                store.activePlayer!.group_volume + 5,
-              )
+              store.activePlayer!.group_childs.length > 0
+                ? api.playerCommandGroupVolume(
+                    store.activePlayerId!,
+                    store.activePlayer!.group_volume + 5,
+                  )
+                : api.playerCommandVolumeSet(
+                    store.activePlayerId!,
+                    store.activePlayer!.volume_level + 5,
+                  )
             "
           />
         </div>

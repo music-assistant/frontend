@@ -554,8 +554,7 @@ const menuItems = computed(() => {
     items.push({
       label: 'tooltip.sort_options',
       icon: 'mdi-sort',
-      disabled:
-        props.sortKeys.length <= 1 || loading.value || total.value == null,
+      disabled: props.sortKeys.length <= 1 || loading.value,
       subItems: props.sortKeys.map((sortKey) => {
         return {
           label: `sort.${sortKey}`,
@@ -672,15 +671,17 @@ const loadData = async function (
     if (allItems.value.length == 0) {
       allItems.value = pagedItems.value;
     }
-    pagedItems.value = getFilteredItems(allItems.value, {
-      offset: 0,
-      limit: total.value || allItems.value.length,
-      sortBy: params.value.sortBy,
-      search: params.value.search,
-    });
-  } else if (props.loadPagedData !== undefined) {
-    console.log('blaat 2');
-    // server side paged listing
+    // filter items in memory
+    const nextItems = getFilteredItems(allItems.value, params.value);
+    if (params.value.offset) {
+      pagedItems.value.push(...nextItems);
+    } else {
+      pagedItems.value = nextItems;
+    }
+    // mark allItemsReceived if we have all items
+    allItemsReceived.value = nextItems.length < props.limit;
+  } else if (props.loadPagedData != null) {
+    // server side paged listing (with filter support)
     const nextItems = await props.loadPagedData(params.value);
     if (params.value.offset) {
       pagedItems.value.push(...(nextItems.items as MediaItemType[]));
@@ -853,7 +854,6 @@ watch(
 watch(
   () => props.path,
   (newVal) => {
-    console.debug('Path updated to', newVal);
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];

@@ -567,6 +567,7 @@ export interface Player {
   volume_muted: boolean;
   group_childs: string[];
   active_source: string;
+  active_group?: string;
   can_sync_with: string[];
   synced_to: string;
   max_sample_rate: number;
