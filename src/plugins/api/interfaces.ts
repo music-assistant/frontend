@@ -461,14 +461,6 @@ export interface BrowseFolder extends MediaItem {
   items?: Array<MediaItemType | BrowseFolder>;
 }
 
-export interface PagedItems {
-  items: Array<MediaItemType | ItemMapping | QueueItem>;
-  count: number;
-  limit: number;
-  offset: number;
-  total?: number;
-}
-
 export interface SearchResults {
   artists: Artist[];
   albums: Album[];

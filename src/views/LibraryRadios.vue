@@ -1,7 +1,6 @@
 <template>
   <ItemsListing
     itemtype="radios"
-    :items="items"
     :show-duration="false"
     :show-provider="false"
     :show-favorites-only-filter="true"
@@ -23,6 +22,7 @@
     ]"
     icon="mdi-access-point"
     :restore-state="true"
+    :total="total"
   />
 </template>
 
@@ -36,18 +36,18 @@ import {
   EventType,
   ImageType,
   MediaType,
-  type Radio,
 } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
 import router from '@/plugins/router';
+import { store } from '@/plugins/store';
 
 defineOptions({
   name: 'Radios',
 });
 
 const { t } = useI18n();
-const items = ref<Radio[]>([]);
 const updateAvailable = ref<boolean>(false);
+const total = ref(store.libraryRadiosCount);
 
 const sortKeys = [
   'name',
@@ -98,6 +98,7 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
+  total.value = await api.getLibraryRadiosCount(params.favoritesOnly || false);
   return await api.getLibraryRadios(
     params.favoritesOnly || undefined,
     params.search,

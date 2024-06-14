@@ -19,7 +19,6 @@ import {
   type Playlist,
   type Player,
   type PlayerQueue,
-  type PagedItems,
   type MediaItemType,
   MediaType,
   type QueueItem,
@@ -183,7 +182,7 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     order_by?: string,
-  ): Promise<PagedItems> {
+  ): Promise<Track[]> {
     return this.getData('music/tracks/library_items', {
       favorite,
       search,
@@ -235,6 +234,36 @@ export class MusicAssistantApi {
     return `${api.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
   }
 
+  public getLibraryArtistsCount(
+    favorite_only: boolean = false,
+    album_artists_only: boolean = false,
+  ): Promise<number> {
+    return this.getData('music/artists/count', {
+      favorite_only,
+      album_artists_only,
+    });
+  }
+  public getLibraryAlbumsCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.getData('music/albums/count', { favorite_only });
+  }
+  public getLibraryTracksCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.getData('music/tracks/count', { favorite_only });
+  }
+  public getLibraryPlaylistsCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.getData('music/playlists/count', { favorite_only });
+  }
+  public getLibraryRadiosCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.getData('music/radios/count', { favorite_only });
+  }
+
   public getLibraryArtists(
     favorite?: boolean,
     search?: string,
@@ -242,7 +271,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     album_artists_only?: boolean,
-  ): Promise<PagedItems> {
+  ): Promise<Artist[]> {
     return this.getData('music/artists/library_items', {
       favorite,
       search,
@@ -293,7 +322,7 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     order_by?: string,
-  ): Promise<PagedItems> {
+  ): Promise<Album[]> {
     return this.getData('music/albums/library_items', {
       favorite,
       search,
@@ -341,7 +370,7 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     order_by?: string,
-  ): Promise<PagedItems> {
+  ): Promise<Playlist[]> {
     return this.getData('music/playlists/library_items', {
       favorite,
       search,
@@ -371,7 +400,7 @@ export class MusicAssistantApi {
     force_refresh?: boolean,
     limit?: number,
     offset?: number,
-  ): Promise<PagedItems> {
+  ): Promise<Track[]> {
     return this.getData('music/playlists/playlist_tracks', {
       item_id,
       provider_instance_id_or_domain,
@@ -414,7 +443,7 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     order_by?: string,
-  ): Promise<PagedItems> {
+  ): Promise<Radio[]> {
     return this.getData('music/radios/library_items', {
       favorite,
       search,
@@ -533,7 +562,7 @@ export class MusicAssistantApi {
     offset: number,
     limit: number,
     path?: string,
-  ): Promise<PagedItems> {
+  ): Promise<MediaItemType[]> {
     // Browse Music providers.
     return this.getData('music/browse', { offset, limit, path });
   }
@@ -568,7 +597,7 @@ export class MusicAssistantApi {
     queue_id: string,
     limit: number,
     offset: number,
-  ): Promise<PagedItems> {
+  ): Promise<QueueItem[]> {
     // Get all QueueItems for given PlayerQueue
     return this.getData('player_queues/items', {
       queue_id,

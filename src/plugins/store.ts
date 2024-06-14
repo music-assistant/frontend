@@ -35,6 +35,11 @@ interface Store {
   allowExternalImageRetrieval: boolean;
   activeAlert?: Alert;
   prevRoute?: string;
+  libraryArtistsCount?: number;
+  libraryAlbumsCount?: number;
+  libraryTracksCount?: number;
+  libraryPlaylistsCount?: number;
+  libraryRadiosCount?: number;
 }
 
 export const store: Store = reactive({
@@ -72,4 +77,9 @@ export const store: Store = reactive({
   allowExternalImageRetrieval: true,
   activeAlert: undefined,
   prevRoute: undefined,
+  libraryArtistsCount: undefined,
+  libraryAlbumsCount: undefined,
+  libraryTracksCount: undefined,
+  libraryPlaylistsCount: undefined,
+  libraryRadiosCount: undefined,
 });
