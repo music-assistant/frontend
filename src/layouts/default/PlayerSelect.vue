@@ -203,14 +203,12 @@ const checkDefaultPlayer = function () {
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
   const lastPlayerId = localStorage.getItem('mass.LastPlayerId');
-  if (lastPlayerId) {
-    if (
-      lastPlayerId in api.players &&
-      playerActive(api.players[lastPlayerId], false, false, false) &&
-      api.players[lastPlayerId].powered
-    ) {
-      return api.players[lastPlayerId];
-    }
+  if (
+    lastPlayerId &&
+    lastPlayerId in api.players &&
+    playerActive(api.players[lastPlayerId], false, false, false)
+  ) {
+    return api.players[lastPlayerId];
   }
 };
 </script>

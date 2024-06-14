@@ -6,7 +6,7 @@
     :disabled="
       !store.activePlayerQueue ||
       !store.activePlayerQueue?.active ||
-      store.activePlayerQueue?.items == 0
+      store.activePlayerQueue?.items <= 1
     "
     icon="mdi-skip-next-outline"
     :type="'btn'"

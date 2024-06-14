@@ -15,7 +15,15 @@
                 :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'"
               />
             </Button>
-            <div class="text-caption">{{ player.group_volume }}</div>
+            <div class="text-caption">
+              {{
+                Math.round(
+                  player.group_childs.length
+                    ? player.group_volume
+                    : player.volume_level,
+                )
+              }}
+            </div>
           </div>
         </div>
       </template>
@@ -31,10 +39,23 @@
             width="100%"
             color="secondary"
             :is-powered="player.powered"
-            :disabled="!player.available || !player.powered"
-            :model-value="Math.round(player.group_volume)"
+            :disabled="
+              !player.available ||
+              !player.powered ||
+              (!player.supported_features.includes(PlayerFeature.VOLUME_SET) &&
+                !player.group_childs.length)
+            "
+            :model-value="
+              Math.round(
+                player.group_childs.length
+                  ? player.group_volume
+                  : player.volume_level,
+              )
+            "
             @update:model-value="
-              api.playerCommandGroupVolume(player.player_id, $event)
+              player.group_childs.length > 0
+                ? api.playerCommandGroupVolume(player.player_id, $event)
+                : api.playerCommandVolumeSet(player.player_id, $event)
             "
           />
         </div>
@@ -120,7 +141,11 @@
               color="secondary"
               :is-powered="childPlayer.powered"
               :disabled="
-                !player.available || (!childPlayer.powered && !showSyncControls)
+                !childPlayer.available ||
+                (!childPlayer.powered && !showSyncControls) ||
+                !childPlayer.supported_features.includes(
+                  PlayerFeature.VOLUME_SET,
+                )
               "
               :model-value="Math.round(childPlayer.volume_level)"
               @update:model-value="
@@ -140,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { Player, PlayerType } from '@/plugins/api/interfaces';
+import { Player, PlayerFeature, PlayerType } from '@/plugins/api/interfaces';
 import { api } from '@/plugins/api';
 import { truncateString, getPlayerName } from '@/helpers/utils';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
