@@ -357,10 +357,14 @@
             "label": "Language",
             "options": {
                 "auto": "Auto (follow system configuration)",
+                "zh_CN": "Chinese (Simplified)"
                 "cs": "Czech",
                 "da": "Danish",
                 "de": "German",
+                "el_GR": "Greek",
                 "en": "English",
+                "en_AU": "English (Australian)",
+                "en_UK": "English (United Kingdom)",
                 "es": "Spanish",
                 "fr": "French",
                 "he": "Hebrew",
@@ -368,6 +372,10 @@
                 "nb": "Norwegian",
                 "nl": "Dutch",
                 "pl": "Polish",
+                "pt_BR": "Portuguese (Brazil)",
+                "sr": "Serbian",
+                "sr_Latn": "Serbian (Latin)",
+                "sv_SE", "Swedish",
                 "uk_UA": "Ukrainian"
             }
         },
@@ -405,9 +413,9 @@
         "sort_name": "Sort name",
         "sort_name_desc": "Sort name (descending)",
         "timestamp_added": "Date added",
-        "timestamp_added_desc": "Date added (descending",
+        "timestamp_added_desc": "Date added (descending)",
         "timestamp_modified": "Date updated",
-        "timestamp_modified_desc": "Date updated (descending",
+        "timestamp_modified_desc": "Date updated (descending)",
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
