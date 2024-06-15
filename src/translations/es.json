@@ -149,7 +149,64 @@
         "download_log": "Descargar archivo de registro",
         "edit_group_members": "Editar miembros del grupo",
         "add_new_provider_button": "Añadir proveedor {0}",
-        "add_group_player": "Añadir reproductor grupal"
+        "add_group_player": "Añadir reproductor grupal",
+        "default": "predeterminado",
+        "category": {
+            "audio": "Audio",
+            "announcements": "Configuración de anuncios",
+            "airplay": "Ajustes específicos de Airplay"
+        },
+        "announce_volume_strategy": {
+            "label": "Estrategia de volumen para anuncios",
+            "options": {
+                "absolute": "Volumen absoluto",
+                "none": "No ajustar el Volumen"
+            }
+        },
+        "announce_volume": {
+            "label": "Volumen para Anuncios"
+        },
+        "announce_volume_min": {
+            "label": "Nivel Mínimo de Volumen para Anuncios"
+        },
+        "announce_volume_max": {
+            "label": "Nivel Máximo de Volumen para Anuncios",
+            "description": "El volumen (ajuste) de los anuncios no debe superar este nivel."
+        },
+        "icon": {
+            "label": "Icono",
+            "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "frontend": "Interfaz de Usuario",
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "light": "Claro",
+                "dark": "Oscuro"
+            }
+        },
+        "menu_style": {
+            "label": "Estilo de menú",
+            "options": {
+                "horizontal": "Horizontal",
+                "vertical": "Vertical"
+            }
+        },
+        "language": {
+            "label": "Idioma",
+            "options": {
+                "da": "Danés",
+                "de": "Alemán",
+                "en": "Inglés",
+                "es": "Español"
+            }
+        },
+        "hide_settings": {
+            "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\n Tenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
+        },
+        "no_music_providers": "No hay Proveedores de Música configurados",
+        "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
+        "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música."
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -177,7 +234,8 @@
         "year_desc": "Año de lanzamiento (descendiente)",
         "duration_desc": "Duración (descendente)",
         "original": "Original",
-        "none": "Vacío"
+        "none": "Vacío",
+        "timestamp_added": "Fecha de adición"
     },
     "state": {
         "idle": "inactivo",
@@ -206,7 +264,8 @@
         "open_provider_link": "Abrir este elemento en el sitio web del proveedor",
         "collapse_expand": "Contraer\/expandir este listado",
         "back": "Atrás",
-        "show_menu": "Mostrar\/ocultar menú"
+        "show_menu": "Mostrar\/ocultar menú",
+        "play_sample": "Reproducir muestra"
     },
     "topresult": "Resultados mas importantes",
     "track": "Pista",
@@ -232,5 +291,12 @@
     "radiobrowser_by_tag": "Por etiqueta",
     "load_more_items": "Cargar más elementos...",
     "radio": "Radio",
-    "create_playlist_on": "Crear nueva lista de reproducción en {0}"
+    "invalid_input": "La entrada no fue válida",
+    "new_playlist": "Nueva lista de reproducción",
+    "create_playlist_on": "Crear nueva lista de reproducción en {0}",
+    "view": {
+        "list": "Vista de Lista",
+        "panel": "Vinsta de Panel"
+    },
+    "play_replace": "Reproducir Ahora (borrar cola)"
 }
