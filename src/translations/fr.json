@@ -30,7 +30,7 @@
     "dark_mode": "Mode sombre",
     "delete_db": "Supprimer l'élément de la base de données",
     "details": "Détails",
-    "enter_url": "Enter the URL you want to manually add to the database",
+    "enter_url": "Entrez l'URL que vous souhaitez ajouter manuellement à la base de données",
     "external_source_active": "Source externe active : {0}",
     "goto_album": "Aller à l'album {0}",
     "goto_artist": "Aller à l'artiste {0}",
@@ -101,7 +101,7 @@
         "documentation": "Documentation",
         "enable": "Activer",
         "enable_player": "Activer ce lecteur",
-        "enable_provider": "Activer cette entrée de fournisseur",
+        "enable_provider": "Activer ce fournisseur d'entrées",
         "enabled": "Activer",
         "invalid_input": "La saisie n'est pas valide",
         "metadataproviders": "Fournisseurs de métadonnées",
@@ -123,13 +123,13 @@
         "playerproviders": "Fournisseurs de lecteurs",
         "players": "Lecteurs",
         "pluginproviders": "Fournisseurs de modules complémentaires",
-        "provider_disabled": "Cette entrée de fournisseur est désactivée",
-        "provider_name": "Nom personnalisé pour cette entrée de fournisseur",
+        "provider_disabled": "Ce fournisseur d'entrées est désactivé",
+        "provider_name": "Nom personnalisé pour ce fournisseur d'entrées",
         "providers": "Fournisseurs",
         "reload": "Recharger",
         "save": "Sauvegarder",
         "settings": "Paramètres",
-        "setup_provider": "Setup provider: {0}",
+        "setup_provider": "Configurer le fournisseur : {0}",
         "sync": "Synchronisez maintenant",
         "sync_running": "Ce fournisseur est en cours de synchronisation",
         "username": "Nom d'utilisateur",
@@ -290,7 +290,7 @@
                 "add": "Ajouter la ou les stations de radio à la fin de la file d'attente."
             }
         },
-        "default": "Par défaut",
+        "default": "par défaut",
         "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
         "category": {
             "audio": "Son",
@@ -445,7 +445,7 @@
         "search": "Afficher\/masquer le champ de recherche",
         "select_items": "Sélectionnez plusieurs éléments",
         "sort_options": "Options de tri",
-        "toggle_view_mode": "Basculer le mode d'affichage liste\/vignettes",
+        "toggle_view_mode": "Basculer le mode d'affichage",
         "filter_favorites": "Afficher uniquement les favoris",
         "favorite": "Marquer\/retirer comme favori",
         "open_provider_link": "Ouvrir cet élément sur le site web du fournisseur",
@@ -486,7 +486,9 @@
     "new_playlist": "Nouvelle liste de lecture",
     "create_playlist_on": "Créer une nouvelle liste de lecture sur {0}",
     "view": {
-        "list": "Vue en liste",
-        "panel": "Vue en panneau"
-    }
+        "list": "Liste",
+        "panel": "Cartes",
+        "panel_compact": "Cartes compactes"
+    },
+    "play_replace": "Jouer maintenant (vider la file d'attente)"
 }
