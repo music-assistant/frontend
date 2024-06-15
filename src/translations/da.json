@@ -379,7 +379,11 @@
         "hide_settings": {
             "label": "Skjul knap til indstillinger",
             "description": "Skjul indstillingsknappen på startskærmen.\n\n Bemærk, at hvis du deaktiverer indstillinger på startskærmen og i menuen, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller slette browsercookies for at få adgang til indstillingerne igen - brug dem på eget ansvar!"
-        }
+        },
+        "no_music_providers": "Ingen musikudbydere konfigureret",
+        "no_music_providers_detail": "Start din Music Assistant-oplevelse ved at tilføje dine musikudbydere.",
+        "no_player_providers": "Ingen afspillerudbydere konfigureret",
+        "no_player_providers_detail": "Konfigurer afspillerudbydere for at vælge enheder, hvor Music Assistant kan afspille din musik."
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
@@ -480,6 +484,8 @@
     "create_playlist_on": "Opret ny playliste på {0}",
     "view": {
         "list": "Listevisning",
-        "panel": "Panelvisning"
-    }
+        "panel": "Panelvisning",
+        "panel_compact": "Kompakt miniaturevisning"
+    },
+    "play_replace": "Afspil nu (ryd køen)"
 }

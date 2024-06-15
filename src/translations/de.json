@@ -482,7 +482,8 @@
     "create_playlist_on": "Erstelle eine neue Playlist auf {0}",
     "view": {
         "list": "Listen Ansicht",
-        "panel": "Panel Ansicht"
+        "panel": "Panel Ansicht",
+        "panel_compact": "Kompakte Raster-Ansicht"
     },
     "play_replace": "Jetzt wiedergeben (Warteschlange leeren)"
 }
