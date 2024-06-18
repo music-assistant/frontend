@@ -1,0 +1,503 @@
+{
+    "actions": "Akce",
+    "add_library": "Přidat do knihovny",
+    "add_playlist": "Přidat do playlistu...",
+    "add_queue": "Přidat do fronty",
+    "add_url_item": "Přidat položku z adresy URL",
+    "album": "Album",
+    "album_tracks": "Skladby alba",
+    "album_type": {
+        "album": "Album",
+        "compilation": "Kompilace",
+        "ep": "EP",
+        "single": "Singl",
+        "unknown": "Neznámý typ alba",
+        "audiobook": "Audiokniha",
+        "podcast": "Podcast"
+    },
+    "albums": "Alba",
+    "appears_on": "Objevuje se na",
+    "artist": "Umělec",
+    "artist_albums": "Alba",
+    "artist_toptracks": "Nejlepší skladby",
+    "artists": "Umělci",
+    "browse": "Procházet",
+    "clear_selection": "Zrušit výběr",
+    "close": "Zavřít",
+    "create_playlist": "Vytvořit nový playlist na {0}",
+    "crossfade_disabled": "Crossfade je zakázán",
+    "crossfade_enabled": "Crossfade je povolen",
+    "dark_mode": "Tmavý režim",
+    "delete_db": "Smazat položku z databáze",
+    "details": "Podrobnosti",
+    "enter_url": "Zadejte adresu URL, kterou chcete ručně přidat do databáze.",
+    "external_source_active": "Aktivní externí zdroj: {0}",
+    "goto_album": "Přejít na album {0}",
+    "goto_artist": "Přejít na umělce {0}",
+    "home": "Domov",
+    "items_selected": "Počet vybraných položek: {0}",
+    "items_total": "Celkový počet položek: {0}",
+    "library": "Knihovna",
+    "loading": "Data se načítají ze serveru.",
+    "mass": "Music Assistant",
+    "new_playlist_name": "Zadejte název nového playlistu",
+    "no_content": "Nebyly nalezeny žádné položky.",
+    "no_content_filter": "Pro aktuální podmínky filtru\/vyhledávání nebyly nalezeny žádné položky.",
+    "no_player": "Není vybrán žádný přehrávač",
+    "off": "Vypnuto",
+    "on": "Zapnuto",
+    "other_versions": "Další verze",
+    "perform_action": "Provést akci u {0} položek",
+    "play": "Přehrát",
+    "play_album_from": "Přehrát album odtud",
+    "play_next": "Přehrát další",
+    "play_now": "Přehrát nyní",
+    "play_on": "Přehrát na: {0}",
+    "play_playlist_from": "Přehrát Playlist odtud",
+    "play_radio": "Spustit rádio",
+    "player_type": {
+        "group": "Skupina",
+        "player": "Přehrávač",
+        "stereo_pair": "Stereofonní pár"
+    },
+    "players": "Přehrávače",
+    "playlist": "Playlist",
+    "playlist_tracks": "Skladby playlistu",
+    "playlists": "Playlisty",
+    "provider_details": "Podrobnosti o poskytovateli",
+    "queue": "Fronta",
+    "queue_clear": "Smazat všechny položky ve frontě",
+    "queue_delete": "Smazat položku",
+    "queue_empty": "Žádné položky ve frontě",
+    "queue_move_down": "Posunout dolů",
+    "queue_move_up": "Posunout nahoru",
+    "queue_next_items": "Další položky",
+    "queue_options": "Možnosti fronty",
+    "queue_previous_items": "Přehrané položky",
+    "queue_radio_based_on": "Fronta se dynamicky plní skladbami na základě {0} :",
+    "queue_radio_enabled": "Režim rádia je povolen",
+    "radios": "Rádio",
+    "read_more": "Přečíst víc",
+    "refresh_item": "Obnovit položku",
+    "remove_library": "Odebrat z knihovny",
+    "remove_playlist": "Odebrat z playlistu",
+    "repeat_mode": "Režim opakování: {0}",
+    "repeatmode": {
+        "all": "Opakovat celou frontu",
+        "off": "Opakování vypnuto",
+        "one": "Opakování jedné skladby"
+    },
+    "search": "Vyhledávání",
+    "settings": {
+        "add_new": "Přidat nový",
+        "add_provider": "Přidat nového poskytovatele",
+        "advanced_settings": "Pokročilá nastavení",
+        "check_docs": "Podívat se na dokumentaci",
+        "codeowners": "Autoři",
+        "config_player": "Konfigurovat přehrávač: {0}",
+        "configure": "Konfigurovat",
+        "delete": "Smazat",
+        "disable": "Zakázat",
+        "documentation": "Dokumentace",
+        "enable": "Povolit",
+        "enable_player": "Povolit tento přehrávač",
+        "enable_provider": "Povolit tuto položku poskytovatele",
+        "enabled": "Povolit",
+        "invalid_input": "Vstup je neplatný",
+        "metadataproviders": "Poskytovatelé metadat",
+        "musicproviders": "Poskytovatelé hudebních služeb",
+        "need_help_setup_provider": "Potřebujete pomoci s nastavením tohoto poskytovatele ?",
+        "no_providers": "Žádní nakonfigurovaní poskytovatelé hudby",
+        "no_providers_detail": "Spusťte aplikaci Music Assistant přidáním poskytovatelů hudby níže.",
+        "not_loaded": "Poskytovatel není (zatím) načten",
+        "password": "Heslo",
+        "player_address": "Adresa",
+        "player_disabled": "Tento přehrávač je zakázán",
+        "player_id": "ID přehrávače",
+        "player_model": "Model",
+        "player_name": "Vlastní název přehrávače",
+        "player_not_available": "Tento přehrávač není (zatím) dostupný",
+        "player_provider": "Poskytovatel",
+        "player_settings": "Nastavení přehrávače",
+        "player_type_label": "Typ přehrávače",
+        "playerproviders": "Poskytovatelé přehrávačů",
+        "players": "Přehrávače",
+        "pluginproviders": "Poskytovatelé pluginů",
+        "provider_disabled": "Tato položka poskytovatele je zakázána",
+        "provider_name": "Vlastní název pro tuto položku zprostředkovatele",
+        "providers": "Poskytovatelé",
+        "reload": "Znovu načíst",
+        "save": "Uložit",
+        "settings": "Nastavení",
+        "setup_provider": "Nastavení poskytovatele: {0}",
+        "sync": "Synchronizovat nyní",
+        "sync_running": "Tento poskytovatel se nyní synchronizuje",
+        "username": "Uživatelské jméno",
+        "core": "Jádro",
+        "core_modules": "Moduly jádra",
+        "server_info": "Informace o serveru",
+        "server_id": "ID serveru",
+        "server_version": "Verze serveru",
+        "server_base_url": "Základní URL",
+        "server_as_addon": "Home Assistant addon",
+        "artists_in_library": "Umělci v knihovně",
+        "albums_in_library": "Alba v knihovně",
+        "tracks_in_library": "Skladby v knihovně",
+        "playlists_in_library": "Playlisty v knihovně",
+        "radio_in_library": "Rádio v knihovně",
+        "server_logging": "Logování serveru",
+        "download_log": "Stáhnout soubor logu",
+        "edit_group_members": "Upravit členy skupiny",
+        "add_new_provider_button": "Přidat {0} poskytovatele",
+        "add_group_player": "Přidat skupinový přehrávač",
+        "group_members": "Členové skupiny",
+        "log_level": {
+            "label": "Úroveň logu",
+            "description": "Nastabení podrobnosti protokolu pro tohoto poskytovatele.",
+            "options": {
+                "global": "Globální",
+                "info": "Info",
+                "warning": "Varování",
+                "error": "Chyba",
+                "debug": "Debug",
+                "GLOBAL": "Globální",
+                "INFO": "Info",
+                "WARNING": "Varování",
+                "ERROR": "Error",
+                "DEBUG": "Debug"
+            }
+        },
+        "flow_mode": {
+            "label": "Povolení režimu toku fronty",
+            "description": "Povolte režim „flow“, kde jsou všechny stopy ve frontě odesílány jako nepřetržitý zvukový stream.\n Použijte pro přehrávače, které nativně nepodporují funkci gapless a\/nebo crossfading, nebo pokud má přehrávač potíže s přechodem mezi skladbami."
+        },
+        "auto_play": {
+            "label": "Automatické přehrávání (obnovení po zapnutí)",
+            "description": "Po zapnutí tohoto přehrávače automaticky spustit přehrávání (pokud jsou položky ve frontě)."
+        },
+        "output_channels": {
+            "label": "Režim výstupního kanálu",
+            "description": "Tento přehrávač můžete nakonfigurovat tak, aby přehrával pouze levý nebo pravý kanál, například pro vytvoření stereo páru se 2 přehrvači.",
+            "options": {
+                "stereo": "Stereo (oba kanály)",
+                "left": "Pouze levý kanál",
+                "right": "Pouze pravý kanál",
+                "mono": "Mono (oba kanály)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Povolení normalizace hlasitosti (na základě EBU-R128)",
+            "description": "Povolit normalizaci hlasitosti na základě standardu EBU-R128 bez ovlivnění dynamického rozsahu"
+        },
+        "volume_normalization_target": {
+            "label": "Cílová úroveň pro normalizaci hlasitosti",
+            "description": "Upravit průměrnou (vnímanou) hlasitost na tuto cílovou úroveň, výchozí je -17 LUFS \n\n **UPOZORNĚNÍ:** Nastavení příliš vysoké úrovně může způsobit oříznutí signálu!"
+        },
+        "eq_bass": {
+            "label": "Ekvalizér: basy",
+            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň basů (nízkých tónů) zvuku."
+        },
+        "eq_mid": {
+            "label": "Ekvalizér: středy",
+            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň středů zvuku."
+        },
+        "eq_treble": {
+            "label": "Ekvalizér: výšky",
+            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň vysokých tónů zvuku."
+        },
+        "crossfade": {
+            "label": "Povolit prolínání",
+            "description": "Povolení prolínání mezi skladbami (fronty)."
+        },
+        "crossfade_duration": {
+            "label": "Doba prolínání",
+            "description": "Doba prolínání mezi skladbami v sekundách (pokud je povoleno)"
+        },
+        "hide_player": {
+            "label": "Skrýt tento přehrávač v uživatelském rozhraní",
+            "description": "Skrýt tento přehrávač v uživatelském rozhraní. \n\nPoznamenejte si, že jej lze stále ovládat a že se zobrazí i ve všech synchronizačních skupinách, do kterých přehrávač patří."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Položky k výběru při přehrávání interpreta  (v knihovně).",
+            "description": "Pokud chcete přehrát interpreta, jaké položky by měly být zařazeny?",
+            "options": {
+                "library_tracks": "Pouze skladby v knihovně",
+                "library_album_tracks": "Všechny skladby ze všech alb v knihovně",
+                "all_tracks": "Všechny (nejlepší) skladby od (všech) poskytovatelů",
+                "all_album_tracks": "Všechny skladby ze všech alb od (všech) poskytovatelů"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Položky k výběru při přehrávání alba  (v knihovně).",
+            "description": "Pokud chcete přehrát interpreta, jaké položky by měly být zařazeny?",
+            "options": {
+                "library_tracks": "Pouze skladby v knihovně",
+                "all_tracks": "Všechny skladby pro album u poskytovatele"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Výchozí možnost fronty pro položky interpreta.",
+            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
+            "options": {
+                "play": "Přehrát skladby interpreta nyní  a ponechat zbývající položky ve frontě.",
+                "replace": "Vymazat frontu a přehrát skladby interpreta [výchozí]",
+                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
+                "replace_next": "Vymazat frontu a přehrát skladby umělce hned po aktuálně přehrávané položce.",
+                "add": "Přidat skladby umělce na konec fronty"
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Výchozí možnost fronty pro položky Alba.",
+            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
+            "options": {
+                "play": "Přehrát skladby z alba nyní  a ponechat zbývající položky ve frontě.",
+                "replace": "Vymazat frontu a přehrát skladby z alba [výchozí]",
+                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
+                "replace_next": "Vymazat frontu a přehrát skladby z alba hned po aktuálně přehrávané položce.",
+                "add": "Přidat skladby z alba na konec fronty"
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Výchozí možnost fronty pro položky skladeb.",
+            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
+            "options": {
+                "play": "Přehrát skladby nyní  a ponechat zbývající položky ve frontě.",
+                "replace": "Vymazat frontu a přehrát skladby [výchozí]",
+                "next": "Přehrát skladby hned po aktuálně přehrávané položce.",
+                "replace_next": "Vymazat frontu a přehrát skladby hned po aktuálně přehrávané položce.",
+                "add": "Přidat skladby na konec fronty"
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Výchozí možnost fronty pro playlisty.",
+            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
+            "options": {
+                "play": "Přehrát skladby z playlistu nyní  a ponechat zbývající položky ve frontě.",
+                "replace": "Vymazat frontu a přehrát skladby z playlistu [výchozí]",
+                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
+                "replace_next": "Vymazat frontu a přehrát skladby z playlistu hned po aktuálně přehrávané položce.",
+                "add": "Přidat skladby z playlistu na konec fronty"
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Výchozí akce zařazení do fronty pro rádia.",
+            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
+            "options": {
+                "play": "Přehrát rádiovou stanici nyní, a ponechat zbývajíci položky ve frontě.",
+                "replace": "Vymazat frontu a přehrát rádiovou stanici [výchozí]",
+                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
+                "replace_next": "Vymazat frontu a přehrát rádiovou stanici hned po aktuálně přehrávané položce.",
+                "add": "Přidat rádiové stanice na konec fronty"
+            }
+        },
+        "default": "výchozí",
+        "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
+        "category": {
+            "audio": "",
+            "advanced": "",
+            "generic": "",
+            "announcements": "",
+            "airplay": ""
+        },
+        "tts_pre_announce": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_strategy": {
+            "label": "",
+            "description": "",
+            "options": {
+                "absolute": "",
+                "relative": "",
+                "percentual": "",
+                "none": ""
+            }
+        },
+        "announce_volume": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_min": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_max": {
+            "label": "",
+            "description": ""
+        },
+        "icon": {
+            "label": "",
+            "description": ""
+        },
+        "frontend": "",
+        "frontend_desc": "",
+        "theme": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "light": "",
+                "dark": ""
+            }
+        },
+        "menu_style": {
+            "label": "",
+            "options": {
+                "horizontal": "",
+                "vertical": ""
+            }
+        },
+        "menu_items": {
+            "label": "",
+            "description": ""
+        },
+        "artwork_pref": {
+            "label": "",
+            "description": "",
+            "options": {
+                "online": "",
+                "server_only": ""
+            }
+        },
+        "language": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "cs": "",
+                "da": "",
+                "de": "",
+                "en": "",
+                "es": "",
+                "fr": "",
+                "he": "",
+                "it": "",
+                "nb": "",
+                "nl": "",
+                "pl": "",
+                "uk_UA": "",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
+            }
+        },
+        "hide_settings": {
+            "label": "",
+            "description": ""
+        },
+        "no_music_providers": "",
+        "no_music_providers_detail": "",
+        "no_player_providers": "",
+        "no_player_providers_detail": ""
+    },
+    "show_info": "Zobrazit informace",
+    "show_select_boxes": "Zobrazit výběrová pole",
+    "shuffle": "Náhodné přehrávání",
+    "shuffle_disabled": "Náhodné přehrávání je vypnuto",
+    "shuffle_enabled": "Náhodné přehrávání je zapnuto",
+    "sort": {
+        "duration": "Doba trvání",
+        "position": "Pozice",
+        "position DESC": "Pozice (sestupně)",
+        "provider": "Poskytovatel",
+        "sort_album": "Album",
+        "sort_artist": "Umělec",
+        "sort_name": "Abecedně",
+        "sort_name DESC": "Abecedně (sestupně)",
+        "timestamp_added DESC": "Nedávno přidané",
+        "track_number": "Číslo stopy",
+        "year": "Rok vydání",
+        "position_desc": "Pozice (sestupně)",
+        "album": "Album",
+        "artist": "Umělec",
+        "name": "Abecedně",
+        "name_desc": "Abecedně (sestupně)",
+        "recent": "Nedávno přidané",
+        "year_desc": "Rok vydání (sestupně)",
+        "duration_desc": "Doba trvání (sestupně)",
+        "original": "Původní",
+        "none": "Žádný",
+        "sort_name_desc": "",
+        "timestamp_added": "",
+        "timestamp_added_desc": "",
+        "timestamp_modified": "",
+        "timestamp_modified_desc": "",
+        "album_sort": "",
+        "artist_sort": "",
+        "last_played": "",
+        "last_played_desc": "",
+        "play_count": "",
+        "play_count_desc": ""
+    },
+    "state": {
+        "idle": "nečinný",
+        "off": "vypnutý",
+        "paused": "pozastavený",
+        "playing": "přehrává"
+    },
+    "stream_details": "Podrobnosti o streamu",
+    "sync_now": "Synchronizovat {0} nyní",
+    "sync_player_to": "Synchronizovat tento přehrávač s:",
+    "sync_running": "Probíhá synchronizace jednoho nebo více poskytovatelů hudby.",
+    "tooltip": {
+        "album_artist_filter": "Filtrování na alba s interprety",
+        "explicit": "Explicitní",
+        "filter_library": "Přepnout filtr v knihovně\/oblíbených",
+        "library": "Přepnout v knihovně\/oblíbených",
+        "linked": "Tato položka zprostředkovatele je spojena s aktuálními údaji o položce",
+        "refresh": "Obnovit seznam položek",
+        "refresh_new_content": "Je k dispozici nový obsah, kliknutím obnovte seznam",
+        "search": "Zobrazit\/skrýt vstup pro vyhledávání",
+        "select_items": "Výběr více položek",
+        "sort_options": "Možnosti řazení",
+        "toggle_view_mode": "Přepnout režim zobrazení mezi seznamem\/náhledy",
+        "filter_favorites": "Zobrazit pouze oblíbené",
+        "favorite": "Označit\/odznačit jako oblíbené",
+        "open_provider_link": "Otevřít tuto položku na webu poskytovatele",
+        "collapse_expand": "Sbalit\/rozbalit tento výpis",
+        "back": "Zpět",
+        "show_menu": "Zobrazit\/skrýt menu",
+        "search_filter_active": "Vyhledávání právě filtruje výsledky",
+        "play_sample": ""
+    },
+    "topresult": "Nejlepší výsledek",
+    "track": "Skladba",
+    "track_number": "Disk {0} Track {1}",
+    "tracks": "Skladby",
+    "try_global_search": "Zkuste globální vyhledávání",
+    "type_to_search": "Pro vyhledávání zadejte sem...",
+    "volume_normalization": "Normalizace hlasitosti",
+    "play_now_replace": "Přehrát nyní (vymazat frontu)",
+    "currently_playing": "Právě hraje",
+    "favorites_add": "Přidat k oblíbeným",
+    "favorites_remove": "Odebrat z oblíbených",
+    "confirm_library_remove": "Opravdu chcete tuto položku z knihovny odstranit ? Všechny položky závislé na této položce budou také rekurzivně odstraněny. Tato položka se odstraní pouze z knihovny. Pokud se jedná o hudební soubor na disku, může se při příští synchronizaci vrátit.",
+    "check_item_on_provider": "Zobrazit {0} v {1}",
+    "check_item_in_library": "Zobrazit {0} v knihovně",
+    "media_details": "Podrobnosti o médiu",
+    "mapped_providers": "Podrobnosti o poskytovateli",
+    "item_in_library": "Tato položka je k dispozici v knihovně",
+    "back": "Zpět",
+    "recently_played": "Nedávno přehrávané",
+    "radiobrowser_by_popularity": "Podle oblíbenosti",
+    "radiobrowser_by_country": "Podle země",
+    "radiobrowser_by_tag": "Podle štítku",
+    "load_more_items": "Načíst další položky...",
+    "radio": "Rádio",
+    "muted": "ztlumeno",
+    "enter_name": "",
+    "image_url": "",
+    "invalid_input": "",
+    "new_playlist": "",
+    "create_playlist_on": "Vytvořit nový playlist na {0}",
+    "view": {
+        "list": "",
+        "panel": "",
+        "panel_compact": ""
+    },
+    "play_replace": ""
+}
