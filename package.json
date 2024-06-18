@@ -47,7 +47,7 @@
     "nanoid": "5.0.7",
     "prettier": "3.3.2",
     "replace-in-file": "7.2.0",
-    "sass": "1.77.4",
+    "sass": "1.77.5",
     "typescript": "5.4.5",
     "vite": "4.5.0",
     "vite-plugin-pwa": "0.20.0",
