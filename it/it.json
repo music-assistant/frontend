@@ -1,0 +1,503 @@
+{
+    "actions": "Azioni",
+    "add_library": "Aggiungi alla libreria",
+    "add_playlist": "Aggiungi a playlist...",
+    "add_queue": "Aggiungi alla coda",
+    "add_url_item": "Aggiungi elemento dall'URL",
+    "album": "Album",
+    "album_tracks": "Tracce album",
+    "album_type": {
+        "album": "Album",
+        "compilation": "Compilation",
+        "ep": "EP",
+        "single": "Singolo",
+        "unknown": "Tipo di album sconosciuto",
+        "audiobook": "",
+        "podcast": ""
+    },
+    "albums": "Album",
+    "appears_on": "Appare su",
+    "artist": "Artista",
+    "artist_albums": "Album",
+    "artist_toptracks": "Le migliori tracce",
+    "artists": "Artisti",
+    "browse": "Sfoglia",
+    "clear_selection": "Cancella selezione",
+    "close": "Chiudi",
+    "create_playlist": "Crea nuova playlist su {0}",
+    "crossfade_disabled": "Crossfade è disabilitato",
+    "crossfade_enabled": "Crossfade è abilitato",
+    "dark_mode": "Modalità scura",
+    "delete_db": "Elimina elemento dal database",
+    "details": "Dettagli",
+    "enter_url": "Immettere l'URL che si desidera aggiungere manualmente al database",
+    "external_source_active": "Sorgente esterna attiva: {0}",
+    "goto_album": "Vai all'album {0}",
+    "goto_artist": "Vai all'artista {0}",
+    "home": "Home",
+    "items_selected": "{0} elemento\/i selezionato\/i",
+    "items_total": "{0} elemento\/i in totale",
+    "library": "Libreria",
+    "loading": "I dati vengono recuperati dal server.",
+    "mass": "Music Assistant",
+    "new_playlist_name": "Inserisci un nuovo per la nuova playlist",
+    "no_content": "Nessun elemento trovato.",
+    "no_content_filter": "Nessun elemento trovato per le attuali condizioni di filtro\/ricerca.",
+    "no_player": "Nessun player selezionato",
+    "off": "Spento",
+    "on": "Acceso",
+    "other_versions": "Altre versioni",
+    "perform_action": "Esegui un'azione su {0} elemento\/i",
+    "play": "Riproduci",
+    "play_album_from": "Riproduci album da qui",
+    "play_next": "Riproduci successivo",
+    "play_now": "Riproduci ora",
+    "play_on": "Riproduci su: {0}",
+    "play_playlist_from": "Riproduci playlist da qui",
+    "play_radio": "Avvia Radio",
+    "player_type": {
+        "group": "Gruppo",
+        "player": "Player",
+        "stereo_pair": "Coppia stereo"
+    },
+    "players": "Player",
+    "playlist": "Playlist",
+    "playlist_tracks": "Tracce della playlist",
+    "playlists": "Playlist",
+    "provider_details": "Dettagli provider",
+    "queue": "Coda",
+    "queue_clear": "Cancella tutti gli elementi in coda",
+    "queue_delete": "Elimina elemento",
+    "queue_empty": "Nessun elemento in coda",
+    "queue_move_down": "Muovi giù",
+    "queue_move_up": "Muovi su",
+    "queue_next_items": "Prossimi elementi",
+    "queue_options": "Opzioni di coda",
+    "queue_previous_items": "Elementi riprodotti",
+    "queue_radio_based_on": "La coda viene riempita dinamicamente con tracce basate su {0}:",
+    "queue_radio_enabled": "La modalità radio è abilitata",
+    "radios": "Radio",
+    "read_more": "leggi di più",
+    "refresh_item": "Aggiorna elemento",
+    "remove_library": "Rimuovi dalla libreria",
+    "remove_playlist": "Rimuovi dalla playlist",
+    "repeat_mode": "Modalità di ripetizione: {0}",
+    "repeatmode": {
+        "all": "Ripeti l'intera coda",
+        "off": "Non ripetere",
+        "one": "Ripeti traccia singola"
+    },
+    "search": "Cerca",
+    "settings": {
+        "add_new": "Aggiungi nuovo",
+        "add_provider": "Aggiungi un nuovo provider",
+        "advanced_settings": "Impostazioni avanzate",
+        "check_docs": "Consulta la documentazione",
+        "codeowners": "Autori\/crediti",
+        "config_player": "Configura player: {0}",
+        "configure": "Configura",
+        "delete": "Cancella",
+        "disable": "Disabilita",
+        "documentation": "Documentazione",
+        "enable": "Abilita",
+        "enable_player": "Abilita questo player",
+        "enable_provider": "Abilita questo provider",
+        "enabled": "Abilita",
+        "invalid_input": "L'input non è valido",
+        "metadataproviders": "Provider di metadati",
+        "musicproviders": "Provider musicali",
+        "need_help_setup_provider": "Hai bisogno di aiuto per impostare questo provider?",
+        "no_providers": "Nessun Provider Musicale configurato",
+        "no_providers_detail": "Inizia la tua esperienza con Music Assistant aggiungendo i tuoi provider musicali qui sotto.",
+        "not_loaded": "Questo provider non è (ancora) caricato",
+        "password": "Password",
+        "player_address": "Indirizzo",
+        "player_disabled": "Questo player è disabilitato",
+        "player_id": "Player ID",
+        "player_model": "Modello",
+        "player_name": "Nome player personalizzato",
+        "player_not_available": "Questo player non è (ancora) disponibile",
+        "player_provider": "Provider",
+        "player_settings": "Impostazioni player",
+        "player_type_label": "Tipo player",
+        "playerproviders": "Player provider",
+        "players": "Player",
+        "pluginproviders": "Plugin providers",
+        "provider_disabled": "Questo provider è disabilitato",
+        "provider_name": "Nome personalizzato per questo provider",
+        "providers": "Provider",
+        "reload": "Ricarica",
+        "save": "Salva",
+        "settings": "Impostazioni",
+        "setup_provider": "Impostazioni provider: {0}",
+        "sync": "Sincronizza ora",
+        "sync_running": "Questo provider si stà sincronizzando",
+        "username": "Nome utente",
+        "core": "",
+        "core_modules": "",
+        "server_info": "",
+        "server_id": "",
+        "server_version": "",
+        "server_base_url": "",
+        "server_as_addon": "",
+        "artists_in_library": "",
+        "albums_in_library": "",
+        "tracks_in_library": "",
+        "playlists_in_library": "",
+        "radio_in_library": "",
+        "server_logging": "",
+        "download_log": "",
+        "edit_group_members": "",
+        "add_new_provider_button": "",
+        "add_group_player": "",
+        "group_members": "",
+        "log_level": {
+            "label": "",
+            "description": "",
+            "options": {
+                "global": "",
+                "info": "",
+                "warning": "",
+                "error": "",
+                "debug": "",
+                "GLOBAL": "",
+                "INFO": "",
+                "WARNING": "",
+                "ERROR": "",
+                "DEBUG": ""
+            }
+        },
+        "flow_mode": {
+            "label": "",
+            "description": ""
+        },
+        "auto_play": {
+            "label": "",
+            "description": ""
+        },
+        "output_channels": {
+            "label": "",
+            "description": "",
+            "options": {
+                "stereo": "",
+                "left": "",
+                "right": "",
+                "mono": ""
+            }
+        },
+        "volume_normalization": {
+            "label": "",
+            "description": ""
+        },
+        "volume_normalization_target": {
+            "label": "",
+            "description": ""
+        },
+        "eq_bass": {
+            "label": "",
+            "description": ""
+        },
+        "eq_mid": {
+            "label": "",
+            "description": ""
+        },
+        "eq_treble": {
+            "label": "",
+            "description": ""
+        },
+        "crossfade": {
+            "label": "",
+            "description": ""
+        },
+        "crossfade_duration": {
+            "label": "",
+            "description": ""
+        },
+        "hide_player": {
+            "label": "",
+            "description": ""
+        },
+        "default_enqueue_select_artist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "library_tracks": "",
+                "library_album_tracks": "",
+                "all_tracks": "",
+                "all_album_tracks": ""
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "",
+            "description": "",
+            "options": {
+                "library_tracks": "",
+                "all_tracks": ""
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default": "",
+        "provider_depends_on_confirm": "",
+        "category": {
+            "audio": "",
+            "advanced": "",
+            "generic": "",
+            "announcements": "",
+            "airplay": ""
+        },
+        "tts_pre_announce": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_strategy": {
+            "label": "",
+            "description": "",
+            "options": {
+                "absolute": "",
+                "relative": "",
+                "percentual": "",
+                "none": ""
+            }
+        },
+        "announce_volume": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_min": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_max": {
+            "label": "",
+            "description": ""
+        },
+        "icon": {
+            "label": "",
+            "description": ""
+        },
+        "frontend": "",
+        "frontend_desc": "",
+        "theme": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "light": "",
+                "dark": ""
+            }
+        },
+        "menu_style": {
+            "label": "",
+            "options": {
+                "horizontal": "",
+                "vertical": ""
+            }
+        },
+        "menu_items": {
+            "label": "",
+            "description": ""
+        },
+        "artwork_pref": {
+            "label": "",
+            "description": "",
+            "options": {
+                "online": "",
+                "server_only": ""
+            }
+        },
+        "language": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "cs": "",
+                "da": "",
+                "de": "",
+                "en": "",
+                "es": "",
+                "fr": "",
+                "he": "",
+                "it": "",
+                "nb": "",
+                "nl": "",
+                "pl": "",
+                "uk_UA": "",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
+            }
+        },
+        "hide_settings": {
+            "label": "",
+            "description": ""
+        },
+        "no_music_providers": "",
+        "no_music_providers_detail": "",
+        "no_player_providers": "",
+        "no_player_providers_detail": ""
+    },
+    "show_info": "Mostra info",
+    "show_select_boxes": "Mostra caselle di selezione",
+    "shuffle": "Riproduzione casuale",
+    "shuffle_disabled": "Riproduzione casuale disabilitata",
+    "shuffle_enabled": "Riproduzione casuale abilitata",
+    "sort": {
+        "duration": "Durata",
+        "position": "Posizione",
+        "position DESC": "Posizione (inversa)",
+        "provider": "Provider",
+        "sort_album": "Album",
+        "sort_artist": "Artista",
+        "sort_name": "Alfabetico",
+        "sort_name DESC": "Alfabetico (inverso)",
+        "timestamp_added DESC": "Aggiunto di recente",
+        "track_number": "Numero traccia",
+        "year": "Anno pubblicazione",
+        "position_desc": "",
+        "album": "",
+        "artist": "",
+        "name": "",
+        "name_desc": "",
+        "recent": "",
+        "year_desc": "",
+        "duration_desc": "",
+        "original": "",
+        "none": "",
+        "sort_name_desc": "",
+        "timestamp_added": "",
+        "timestamp_added_desc": "",
+        "timestamp_modified": "",
+        "timestamp_modified_desc": "",
+        "album_sort": "",
+        "artist_sort": "",
+        "last_played": "",
+        "last_played_desc": "",
+        "play_count": "",
+        "play_count_desc": ""
+    },
+    "state": {
+        "idle": "inattivo",
+        "off": "spento",
+        "paused": "in pausa",
+        "playing": "in riproduzione"
+    },
+    "stream_details": "Dettagli traccia",
+    "sync_now": "Sincronizza {0} ora",
+    "sync_player_to": "Sync this player to:",
+    "sync_running": "Uno o più provider musicali si stanno sincronizzando.",
+    "tooltip": {
+        "album_artist_filter": "Alterna filtro album-artista",
+        "explicit": "Contenuti espliciti",
+        "filter_library": "Alterna filtro in-libreria\/favoriti",
+        "library": "Alterna in-libreria\/favoriti",
+        "linked": "Questo provider è collegato ai dettagli dell'elemento corrente",
+        "refresh": "Aggiorna la lista di elementi",
+        "refresh_new_content": "Nuovi contenuti disponibili, clicca per aggiornare la lista",
+        "search": "Visualizza\/nascondi il campo di ricerca",
+        "select_items": "Seleziona più elementi",
+        "sort_options": "Opzioni di ordinamento",
+        "toggle_view_mode": "Alterna modalità lista\/miniature",
+        "filter_favorites": "",
+        "favorite": "",
+        "open_provider_link": "",
+        "collapse_expand": "",
+        "back": "",
+        "show_menu": "",
+        "search_filter_active": "",
+        "play_sample": ""
+    },
+    "topresult": "Miglior risultato",
+    "track": "Traccia",
+    "track_number": "Disco {0} Traccia {1}",
+    "tracks": "Tracce",
+    "try_global_search": "Tenta la ricerca globale",
+    "type_to_search": "Scrivi qui per cercare...",
+    "volume_normalization": "Normalizzazione volume",
+    "play_now_replace": "",
+    "currently_playing": "",
+    "favorites_add": "",
+    "favorites_remove": "",
+    "confirm_library_remove": "",
+    "check_item_on_provider": "",
+    "check_item_in_library": "",
+    "media_details": "",
+    "mapped_providers": "",
+    "item_in_library": "",
+    "back": "",
+    "recently_played": "",
+    "radiobrowser_by_popularity": "",
+    "radiobrowser_by_country": "",
+    "radiobrowser_by_tag": "",
+    "load_more_items": "",
+    "radio": "",
+    "muted": "",
+    "enter_name": "",
+    "image_url": "",
+    "invalid_input": "",
+    "new_playlist": "",
+    "create_playlist_on": "",
+    "view": {
+        "list": "",
+        "panel": "",
+        "panel_compact": ""
+    },
+    "play_replace": ""
+}
