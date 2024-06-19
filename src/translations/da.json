@@ -373,7 +373,16 @@
                 "nb": "Norsk",
                 "nl": "Hollandsk",
                 "pl": "Polsk",
-                "uk_UA": "Ukrainsk"
+                "uk_UA": "Ukrainsk",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
             }
         },
         "hide_settings": {
@@ -412,10 +421,13 @@
         "duration_desc": "Varighed (faldende)",
         "original": "Original",
         "none": "Tom",
+        "sort_name_desc": "",
         "timestamp_added": "Dato tilføjet",
         "timestamp_added_desc": "Dato tilføjet (faldende)",
         "timestamp_modified": "Dato for opdatering",
         "timestamp_modified_desc": "Dato for opdatering (faldende)",
+        "album_sort": "",
+        "artist_sort": "",
         "last_played": "Sidst spillet",
         "last_played_desc": "Sidst spillet (faldende)",
         "play_count": "Antal afspilninger",

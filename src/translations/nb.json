@@ -149,7 +149,250 @@
         "download_log": "Last ned loggfil",
         "edit_group_members": "Redigere gruppemedlemmer",
         "add_new_provider_button": "Legg til {0} leverandør",
-        "add_group_player": "Legg til gruppespiller"
+        "add_group_player": "Legg til gruppespiller",
+        "group_members": "",
+        "log_level": {
+            "label": "",
+            "description": "",
+            "options": {
+                "global": "",
+                "info": "",
+                "warning": "",
+                "error": "",
+                "debug": "",
+                "GLOBAL": "",
+                "INFO": "",
+                "WARNING": "",
+                "ERROR": "",
+                "DEBUG": ""
+            }
+        },
+        "flow_mode": {
+            "label": "",
+            "description": ""
+        },
+        "auto_play": {
+            "label": "",
+            "description": ""
+        },
+        "output_channels": {
+            "label": "",
+            "description": "",
+            "options": {
+                "stereo": "",
+                "left": "",
+                "right": "",
+                "mono": ""
+            }
+        },
+        "volume_normalization": {
+            "label": "",
+            "description": ""
+        },
+        "volume_normalization_target": {
+            "label": "",
+            "description": ""
+        },
+        "eq_bass": {
+            "label": "",
+            "description": ""
+        },
+        "eq_mid": {
+            "label": "",
+            "description": ""
+        },
+        "eq_treble": {
+            "label": "",
+            "description": ""
+        },
+        "crossfade": {
+            "label": "",
+            "description": ""
+        },
+        "crossfade_duration": {
+            "label": "",
+            "description": ""
+        },
+        "hide_player": {
+            "label": "",
+            "description": ""
+        },
+        "default_enqueue_select_artist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "library_tracks": "",
+                "library_album_tracks": "",
+                "all_tracks": "",
+                "all_album_tracks": ""
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "",
+            "description": "",
+            "options": {
+                "library_tracks": "",
+                "all_tracks": ""
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default": "",
+        "provider_depends_on_confirm": "",
+        "category": {
+            "audio": "",
+            "advanced": "",
+            "generic": "",
+            "announcements": "",
+            "airplay": ""
+        },
+        "tts_pre_announce": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_strategy": {
+            "label": "",
+            "description": "",
+            "options": {
+                "absolute": "",
+                "relative": "",
+                "percentual": "",
+                "none": ""
+            }
+        },
+        "announce_volume": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_min": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_max": {
+            "label": "",
+            "description": ""
+        },
+        "icon": {
+            "label": "",
+            "description": ""
+        },
+        "frontend": "",
+        "frontend_desc": "",
+        "theme": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "light": "",
+                "dark": ""
+            }
+        },
+        "menu_style": {
+            "label": "",
+            "options": {
+                "horizontal": "",
+                "vertical": ""
+            }
+        },
+        "menu_items": {
+            "label": "",
+            "description": ""
+        },
+        "artwork_pref": {
+            "label": "",
+            "description": "",
+            "options": {
+                "online": "",
+                "server_only": ""
+            }
+        },
+        "language": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "cs": "",
+                "da": "",
+                "de": "",
+                "en": "",
+                "es": "",
+                "fr": "",
+                "he": "",
+                "it": "",
+                "nb": "",
+                "nl": "",
+                "pl": "",
+                "uk_UA": "",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
+            }
+        },
+        "hide_settings": {
+            "label": "",
+            "description": ""
+        },
+        "no_music_providers": "",
+        "no_music_providers_detail": "",
+        "no_player_providers": "",
+        "no_player_providers_detail": ""
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
@@ -177,7 +420,18 @@
         "year_desc": "Utgivelsesår (synkende)",
         "duration_desc": "Varighet (synkende)",
         "original": "Original",
-        "none": "Tomt"
+        "none": "Tomt",
+        "sort_name_desc": "",
+        "timestamp_added": "",
+        "timestamp_added_desc": "",
+        "timestamp_modified": "",
+        "timestamp_modified_desc": "",
+        "album_sort": "",
+        "artist_sort": "",
+        "last_played": "",
+        "last_played_desc": "",
+        "play_count": "",
+        "play_count_desc": ""
     },
     "state": {
         "idle": "inaktiv",
@@ -206,7 +460,9 @@
         "open_provider_link": "Åpne dette elementet på leverandørens nettsted",
         "collapse_expand": "Skjul\/vis denne oppføringen",
         "back": "Tilbake",
-        "show_menu": "Vis\/skjul meny"
+        "show_menu": "Vis\/skjul meny",
+        "search_filter_active": "",
+        "play_sample": ""
     },
     "topresult": "Toppresultat",
     "track": "Spor",
@@ -231,5 +487,17 @@
     "radiobrowser_by_country": "Etter land",
     "radiobrowser_by_tag": "Etter merke",
     "load_more_items": "Last inn flere elementer ...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "muted": "",
+    "enter_name": "",
+    "image_url": "",
+    "invalid_input": "",
+    "new_playlist": "",
+    "create_playlist_on": "",
+    "view": {
+        "list": "",
+        "panel": "",
+        "panel_compact": ""
+    },
+    "play_replace": ""
 }

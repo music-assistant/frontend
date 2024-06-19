@@ -361,7 +361,28 @@
         "language": {
             "label": "Taal",
             "options": {
-                "auto": "Automatisch (systeemconfiguratie volgen)"
+                "auto": "Automatisch (systeemconfiguratie volgen)",
+                "cs": "",
+                "da": "",
+                "de": "",
+                "en": "",
+                "es": "",
+                "fr": "",
+                "he": "",
+                "it": "",
+                "nb": "",
+                "nl": "",
+                "pl": "",
+                "uk_UA": "",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
             }
         },
         "hide_settings": {
