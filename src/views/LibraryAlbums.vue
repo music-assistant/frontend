@@ -35,7 +35,6 @@ const sortKeys = [
   'name_desc',
   'sort_name',
   'sort_name_desc',
-  'artist',
   'year',
   'year_desc',
   'timestamp_added',
