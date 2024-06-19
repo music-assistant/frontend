@@ -156,7 +156,12 @@
 
         <!-- right column: queue items-->
         <div v-if="store.showQueueItems" class="main-queue-items">
-          <v-tabs v-model="activeQueuePanel" hide-slider density="compact">
+          <v-tabs
+            v-model="activeQueuePanel"
+            hide-slider
+            density="compact"
+            @click="activeQueuePanelClick"
+          >
             <v-tab :value="0">
               {{ $t('queue') }}
               <v-badge
@@ -179,7 +184,7 @@
           </v-tabs>
           <div class="queue-items-scroll-box">
             <v-infinite-scroll
-              :items="nextItems"
+              v-if="!tempHide"
               :onLoad="loadNextPage"
               :empty-text="''"
               height="100%"
@@ -322,14 +327,16 @@
           class="row"
           style="
             height: 70px;
-            display: ruby-text;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding-bottom: 15px;
             padding-top: 15px;
           "
         >
           <v-btn
+            class="responsive-icon-holder-btn"
             variant="outlined"
-            color="accent"
             @click="store.showPlayersMenu = true"
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
@@ -375,6 +382,7 @@ import {
   darkenBrightColors,
   formatDuration,
   getPlayerName,
+  sleep,
 } from '@/helpers/utils';
 import { eventbus } from '@/plugins/eventbus';
 import { useDisplay } from 'vuetify';
@@ -393,6 +401,7 @@ const props = defineProps<Props>();
 const queueItems = ref<QueueItem[]>([]);
 const coverImageColorCode = ref<string>('');
 const activeQueuePanel = ref(0);
+const tempHide = ref(false);
 
 // Computed properties
 
@@ -694,6 +703,16 @@ const onHeartBtnClick = function (evt: PointerEvent) {
   });
 };
 
+const activeQueuePanelClick = function () {
+  // this hack is needed in order to force refresh the infinite scroller
+  // otherwise it will not attempt to load more items if the end was reached
+  // and then we load new items with a different size
+  tempHide.value = true;
+  sleep(100).then(() => {
+    tempHide.value = false;
+  });
+};
+
 // watchers
 watch(
   () => store.showQueueItems,
@@ -882,5 +901,18 @@ watch(
 
 .v-toolbar >>> .v-toolbar-title {
   text-align: center;
+}
+
+.responsive-icon-holder-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.62;
+  cursor: pointer !important;
+}
+
+.responsive-icon-holder-btn:focus,
+.responsive-icon-holder-btn:hover {
+  opacity: 1;
 }
 </style>

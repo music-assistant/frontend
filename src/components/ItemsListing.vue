@@ -34,7 +34,6 @@
     >
       <v-infinite-scroll
         v-if="!tempHide"
-        :items="pagedItems"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
@@ -188,7 +187,7 @@ import Container from '@/components/mods/Container.vue';
 import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
 import { itemIsAvailable } from '@/plugins/api/helpers';
 import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
-import { panelViewItemResponsive, scrollElement, sleep } from '@/helpers/utils';
+import { panelViewItemResponsive, scrollElement } from '@/helpers/utils';
 import { useI18n } from 'vue-i18n';
 
 export interface LoadDataParams {
