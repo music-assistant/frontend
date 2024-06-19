@@ -1,0 +1,503 @@
+{
+    "actions": "Akcije",
+    "add_library": "Dodajte u biblioteku",
+    "add_playlist": "Dodajte na plejlistu...",
+    "add_queue": "Dodajte u red za reprodukciju",
+    "add_url_item": "Dodajte stavku sa URL-a",
+    "album": "Album",
+    "album_tracks": "Numere albuma",
+    "album_type": {
+        "album": "Album",
+        "compilation": "Kompilacija",
+        "ep": "Produžena verzija (EP)",
+        "single": "Singl",
+        "unknown": "Nepoznata vrsta albuma",
+        "audiobook": "Audio knjiga",
+        "podcast": "Podkast"
+    },
+    "albums": "Albumi",
+    "appears_on": "Pojavljuje se na",
+    "artist": "Izvođač",
+    "artist_albums": "Albumi",
+    "artist_toptracks": "Top numere",
+    "artists": "Izvođači",
+    "browse": "Pretraži",
+    "clear_selection": "",
+    "close": "",
+    "create_playlist": "Kreirajte novu listu pesama na {0}",
+    "crossfade_disabled": "Prelaz je onemogućen",
+    "crossfade_enabled": "Prelaz je omogućen",
+    "dark_mode": "Tamni režim",
+    "delete_db": "Izbrišite stavku iz baze podataka",
+    "details": "",
+    "enter_url": "Unesite URL koji želite da ručno dodate u bazu podataka",
+    "external_source_active": "",
+    "goto_album": "",
+    "goto_artist": "",
+    "home": "",
+    "items_selected": "",
+    "items_total": "",
+    "library": "",
+    "loading": "Podaci se preuzimaju sa servera.",
+    "mass": "Muzički Pomoćnik",
+    "new_playlist_name": "",
+    "no_content": "",
+    "no_content_filter": "Nije pronađena nijedna stavka za trenutne uslove filtera\/pretrage.",
+    "no_player": "",
+    "off": "",
+    "on": "",
+    "other_versions": "",
+    "perform_action": "",
+    "play": "",
+    "play_album_from": "",
+    "play_next": "",
+    "play_now": "",
+    "play_on": "",
+    "play_playlist_from": "",
+    "play_radio": "",
+    "player_type": {
+        "group": "",
+        "player": "",
+        "stereo_pair": ""
+    },
+    "players": "",
+    "playlist": "",
+    "playlist_tracks": "Numere sa liste pesama",
+    "playlists": "Plejliste",
+    "provider_details": "Detalji o provajderu",
+    "queue": "Red za reprodukciju",
+    "queue_clear": "Obriši sve stavke u redu za reprodukciju",
+    "queue_delete": "Izbriši stavku",
+    "queue_empty": "Nema numera u redu za reprodukciju",
+    "queue_move_down": "Pomeri nadole",
+    "queue_move_up": "Pomeri nagore",
+    "queue_next_items": "Sledeće numere",
+    "queue_options": "Opcije čekanja",
+    "queue_previous_items": "Reprodukovane numere",
+    "queue_radio_based_on": "Red za reprodukciju se dinamički popunjava numerama na osnovu {0}:",
+    "queue_radio_enabled": "Radio režim je omogućen",
+    "radios": "Radio",
+    "read_more": "opširnije",
+    "refresh_item": "Osveži stavku",
+    "remove_library": "Ukloni iz biblioteke",
+    "remove_playlist": "Ukloni sa plejliste",
+    "repeat_mode": "Režim ponavljanja: {0}",
+    "repeatmode": {
+        "all": "Ponovi celu listu za reprodukciju",
+        "off": "Isključi ponavljanje",
+        "one": "Ponovi ovu numeru"
+    },
+    "search": "Pretraga",
+    "settings": {
+        "add_new": "Dodaj novi",
+        "add_provider": "Dodaj novog provajdera",
+        "advanced_settings": "Napredna podešavanja",
+        "check_docs": "Proverite dokumentaciju",
+        "codeowners": "Autori\/zasluge",
+        "config_player": "Konfiguriši plejer: {0}",
+        "configure": "Konfiguriši",
+        "delete": "Izbriši",
+        "disable": "Onemogući",
+        "documentation": "Dokumentacija",
+        "enable": "Omogući",
+        "enable_player": "Omogućite ovaj plejer",
+        "enable_provider": "Omogućite unos ovog provajdera",
+        "enabled": "Omogući",
+        "invalid_input": "Unos je nevažeći",
+        "metadataproviders": "Provajderi metapodataka",
+        "musicproviders": "Provajderi muzike",
+        "need_help_setup_provider": "Treba vam pomoć pri podešavanju ovog provajdera?",
+        "no_providers": "Nijedan muzički provajder nije konfigurisan",
+        "no_providers_detail": "Započnite iskustvo sa Muzičkim Pomoćnikom dodavanjem provajdera muzike ispod.",
+        "not_loaded": "Provajder (još) nije učitan",
+        "password": "Lozinka",
+        "player_address": "Adresa",
+        "player_disabled": "Ovaj plejer je onemogućen",
+        "player_id": "ID Plejera",
+        "player_model": "Model",
+        "player_name": "Prilagođeno ime plejera",
+        "player_not_available": "Ovaj plejer trenutno (još) nije dostupan",
+        "player_provider": "Provajder",
+        "player_settings": "Podešavanja plejera",
+        "player_type_label": "Tip plejera",
+        "playerproviders": "Plejer provajdera",
+        "players": "Plejeri",
+        "pluginproviders": "Dodatak provajdera",
+        "provider_disabled": "Ovaj unos provajdera je onemogućen",
+        "provider_name": "Prilagođeno ime za ovaj unos provajdera",
+        "providers": "Provajderi",
+        "reload": "Osveži",
+        "save": "Sačuvaj",
+        "settings": "Podešavanja",
+        "setup_provider": "Podesi provajdera: {0}",
+        "sync": "Sinhronizuj sada",
+        "sync_running": "Ovaj provajder se trenutno sinhronizuje",
+        "username": "Korisničko ime",
+        "core": "Jezgro",
+        "core_modules": "Osnovni moduli jezgra",
+        "server_info": "Informacije o serveru",
+        "server_id": "ID servera",
+        "server_version": "Verzija servera",
+        "server_base_url": "Osnovni URL",
+        "server_as_addon": "Hom Asistant dodatak",
+        "artists_in_library": "Izvođači u biblioteci",
+        "albums_in_library": "Albumi u biblioteci",
+        "tracks_in_library": "Numere u biblioteci",
+        "playlists_in_library": "Liste u biblioteci",
+        "radio_in_library": "Radio u biblioteci",
+        "server_logging": "Evidencija servera",
+        "download_log": "Preuzmite logove",
+        "edit_group_members": "Izmenite članove grupe",
+        "add_new_provider_button": "Dodajte {0} provajdera",
+        "add_group_player": "Dodaj grupni plejer",
+        "group_members": "Članovi grupe",
+        "log_level": {
+            "label": "Nivo dnevnika",
+            "description": "Podesite opširnost dnevnika za ovog provajdera.",
+            "options": {
+                "global": "Globalno",
+                "info": "Info",
+                "warning": "Upozorenje",
+                "error": "Greška",
+                "debug": "Otklanjanje grešaka",
+                "GLOBAL": "Prazno",
+                "INFO": "Prazno",
+                "WARNING": "Prazno",
+                "ERROR": "Prazno",
+                "DEBUG": "Prazno"
+            }
+        },
+        "flow_mode": {
+            "label": "Omogućite režim protoka reda za reprodukciju",
+            "description": "Omogućite režim „protoka“ gde se sve numere u redu za reprodukciju šalju kao kontinuirani audio tok.\nKoristi se za plejere koji izvorno ne podržavaju praznine i\/ili unakrsno preklapanje ili ako plejer ima problema sa prelaskom između numera."
+        },
+        "auto_play": {
+            "label": "Automatski reprodukuj (nastavi po uključenju)",
+            "description": "Kada je ovaj plejer uključen, automatski počinje da reprodukuje (ako ima stavki u redu za reprodukciju)."
+        },
+        "output_channels": {
+            "label": "Režim izlaznog kanala",
+            "description": "Možete da konfigurišete ovaj plejer da reprodukuje samo levi ili desni kanal, na primer da napravite stereo par sa 2 plejera.",
+            "options": {
+                "stereo": "Stereo (oba kanala)",
+                "left": "Samo levi kanal",
+                "right": "Samo desni kanal",
+                "mono": "Mono (oba kanala)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Omogući normalizaciju jačine zvuka (zasnovano na EBU-R128)",
+            "description": "Omogućite normalizaciju jačine zvuka na osnovu standarda EBU-R128 bez uticaja na dinamički opseg"
+        },
+        "volume_normalization_target": {
+            "label": "Ciljni nivo za normalizaciju jačine zvuka",
+            "description": "Podesite prosečnu (opaženu) glasnoću na ovaj ciljni nivo, podrazumevana vrednost je -17 LUFS\n\n **UPOZORENJE:** Postavljanje previsokog nivoa može da dovede do odsecanja!"
+        },
+        "eq_bass": {
+            "label": "Ekvilajzer: bas",
+            "description": "Koristite ugrađeni osnovni ekvilajzer da podesite nivo basa (niskih tonova) zvuka."
+        },
+        "eq_mid": {
+            "label": "Ekvilajzer: srednji",
+            "description": "Koristite ugrađeni osnovni ekvilajzer da podesite srednji nivo zvuka."
+        },
+        "eq_treble": {
+            "label": "Ekvilajzer: visoki tonovi",
+            "description": "Koristite ugrađeni osnovni ekvilajzer da biste podesili nivo visokih tonova zvuka."
+        },
+        "crossfade": {
+            "label": "Omogućite preklapanje",
+            "description": "Omogućite preklapanje numera (u redu za reprodukciju)."
+        },
+        "crossfade_duration": {
+            "label": "Trajanje preklapanja",
+            "description": "Trajanje u sekundama za preklapanje između numera (ako je omogućeno)"
+        },
+        "hide_player": {
+            "label": "Sakrij ovaj plejer u korisničkom interfejsu.",
+            "description": "Sakrij ovaj plejer u korisničkom interfejsu.\n\nImajte na umu da se i dalje može kontrolisati i da će se takođe pojaviti u svim grupama za sinhronizaciju kojoj plejer pripada."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Selektovati stavke kada puštate izvođača (iz biblioteke).",
+            "description": "Ako želite da reprodukujete izvođača, koje stavke bi trebalo da budu u redu za reprodukciju?",
+            "options": {
+                "library_tracks": "Samo nmere u biblioteci",
+                "library_album_tracks": "Sve numere sa svih albuma u biblioteci",
+                "all_tracks": "Sve (najbolje) pesme od (svih) provajdera",
+                "all_album_tracks": "Sve numere sa svih albuma od (svih) provajdera"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Selektovati stavke kada puštate album (iz biblioteke).",
+            "description": "Ako želite da reprodukujete izvođača, koje stavke bi trebalo da budu u redu za reprodukciju?",
+            "options": {
+                "library_tracks": "Samo nmere u biblioteci",
+                "all_tracks": "Sve numere za album kod provajdera"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Podrazumevana opcija čekanja za numeru(e) izvođača.",
+            "description": "Definišite podrazumevanu radnju u redu za ovaj tip medija (ako niste naveli radnju).",
+            "options": {
+                "play": "Pustite numeru(e) izvođača sada i zadržite preostale stavke u redu za reprodukciju.",
+                "replace": "Obrišite red za reprodukciju i pustite numeru(e) izvođača",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) izvođača odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "add": "Dodajte numeru(e) izvođača na kraj reda za reprodukciju."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Podrazumevana opcija čekanja za album.",
+            "description": "Definišite podrazumevanu radnju u redu za ovaj tip medija (ako niste naveli radnju).",
+            "options": {
+                "play": "Pustite album(e) sada i zadržite preostale stavke u redu za reprodukciju.",
+                "replace": "Obrišite red za reprodukciju i pustite album(e)",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite album(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "add": "Dodajte album(e) na kraj reda za reprodukciju."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Podrazumevana opcija čekanja za numere.",
+            "description": "Definišite podrazumevanu radnju u redu za ovaj tip medija (ako niste naveli radnju).",
+            "options": {
+                "play": "Pustite numeru(e) sada i zadržite preostale stavke(e) u redu za reprodukciju.",
+                "replace": "Obrišite red za reprodukciju i pustite numeru(e).",
+                "next": "Pustite numeru(e) odmah posle trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) odmah posle trenutno reprodukovane\/baferovane stavke.",
+                "add": "Dodajte numeru(e) na kraj reda za reprodukciju."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Podrazumevana opcija redosleda za stavke liste za reprodukciju.",
+            "description": "Definišite podrazumevanu radnju u redu za ovaj tip medija (ako niste naveli radnju).",
+            "options": {
+                "play": "Pustite numere sa liste za reprodukciju sada i zadržite preostale stavke u redu za reprodukciju.",
+                "replace": "Obrišite red za reprodukciju i pustite numere sa liste za reprodukciju",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) sa liste za reprodukciju odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "add": "Dodajte numeru(e) sa liste za reprodukciju na kraj reda za reprodukciju."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Podrazumevana opcija čekanja za radio stavku(e).",
+            "description": "Definišite podrazumevanu radnju u redu za ovaj tip medija (ako niste naveli radnju).",
+            "options": {
+                "play": "Pustite radio stanicu sada i zadržite preostale stavke u redu za reprodukciju.",
+                "replace": "Obrišite red za reprodukciju i pustite radio stanicu",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite radio stanicu(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "add": "Dodajte radio stanicu(e) na kraj reda za reprodukciju."
+            }
+        },
+        "default": "Podrazumevano",
+        "provider_depends_on_confirm": "Pre nego što možete da podesite {0}, morate da konfigurišete provajdera {1}, da li želite da to uradite sada?",
+        "category": {
+            "audio": "Audio",
+            "advanced": "Napredna podešavanja",
+            "generic": "Generička podešavanja",
+            "announcements": "Konfiguracija objava",
+            "airplay": "\"Airplay\" specifična podešavanja"
+        },
+        "tts_pre_announce": {
+            "label": "Prethodno najavite TTS objave",
+            "description": "Kada se TTS (pretvaranje teksta u govor) poruka pošalje funkciji objave, dodajte najavu kratkim zvukom pre najave (zvono)."
+        },
+        "announce_volume_strategy": {
+            "label": "Strategija jačine za objave",
+            "description": "Kada se na ovom plejeru emituje objava, kako treba privremeno podesiti jačinu zvuka (koristite u kombinaciji sa donjom vrednošću jačine zvuka).",
+            "options": {
+                "absolute": "Apsolutna jačina",
+                "relative": "Relativno povećanje jačine",
+                "percentual": "Povećanje kačine za fiksni procenat",
+                "none": "Ne podešavaj jačinu zvuka"
+            }
+        },
+        "announce_volume": {
+            "label": "Jačina za objave",
+            "description": "Procentualni, relativni ili apsolutni nivo jačine zvuka koji se koristi sa strategijom za objave."
+        },
+        "announce_volume_min": {
+            "label": "Minimalni  nivo jačine za objave",
+            "description": "Jačina (podešavanje) objava ne bi trebalo da ide ispod ovog nivoa."
+        },
+        "announce_volume_max": {
+            "label": "Maksimalni nivo jačine za objave",
+            "description": "Jačina (podešavanje) objava ne bi trebalo da prelazi ovaj nivo."
+        },
+        "icon": {
+            "label": "Ikona",
+            "description": "Ikona dizajna materijala za ovaj plejer.\n\nPogledajte https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "frontend": "Korisnički interfejs",
+        "frontend_desc": "Podešavanja konfiguracije za korisnički interfejs Muzičkog Pomoćnika (frontend). Imajte na umu da se ova podešavanja čuvaju na nivou uređaja.",
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "auto": "Automatski (prati konfiguraciju sistema)",
+                "light": "Svetla",
+                "dark": "Tamna"
+            }
+        },
+        "menu_style": {
+            "label": "Stil menija",
+            "options": {
+                "horizontal": "Horizontalno",
+                "vertical": "Vertikalno"
+            }
+        },
+        "menu_items": {
+            "label": "Omogućene stavke menija",
+            "description": "Konfigurišite koje stavke će se prikazati u meniju.\n\n Imajte na umu da ako onemogućite podešavanja, možete se zaključati.\n\nU tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik."
+        },
+        "artwork_pref": {
+            "label": "Prvenstvo  za pronalaženje slika",
+            "description": "Da li je ovom klijentu dozvoljeno da preuzme (javno dostupno) umetničko delo ili sve treba da bude rutirano preko servera?\nPodrazumevano je da je klijentu dozvoljeno da kešira\/preuzima umetnička dela direktno sa internet resursa kako bi manje opterećivao server.",
+            "options": {
+                "online": "Dozvoli direktno preuzimanje",
+                "server_only": "Nametnite rutiranje preko servera"
+            }
+        },
+        "language": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "cs": "",
+                "da": "",
+                "de": "",
+                "en": "",
+                "es": "",
+                "fr": "",
+                "he": "",
+                "it": "",
+                "nb": "",
+                "nl": "",
+                "pl": "",
+                "uk_UA": "",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
+            }
+        },
+        "hide_settings": {
+            "label": "",
+            "description": ""
+        },
+        "no_music_providers": "",
+        "no_music_providers_detail": "",
+        "no_player_providers": "",
+        "no_player_providers_detail": ""
+    },
+    "show_info": "Prikaži informacije",
+    "show_select_boxes": "Prikaži okvire za izbor",
+    "shuffle": "Mešanje",
+    "shuffle_disabled": "Mešanje je onemogućeno",
+    "shuffle_enabled": "Mešanje je omogućeno",
+    "sort": {
+        "duration": "Trajanje",
+        "position": "Pozicija",
+        "position DESC": "Pozicija  (opadajuće)",
+        "provider": "Provajder",
+        "sort_album": "Album",
+        "sort_artist": "Izvođač",
+        "sort_name": "Po abecednom redu",
+        "sort_name DESC": "Po abecednom redu (opadajuće)",
+        "timestamp_added DESC": "Nedavno dodato",
+        "track_number": "Broj numere",
+        "year": "Godina objavljivanja",
+        "position_desc": "Pozicija (opadajuće)",
+        "album": "Album",
+        "artist": "Izvođač",
+        "name": "Po abecednom redu",
+        "name_desc": "Po abecednom redu (opadajuće)",
+        "recent": "Nedavno dodato",
+        "year_desc": "Godina izdavanja (opadajuće)",
+        "duration_desc": "Trajanje (opadajuće)",
+        "original": "Original",
+        "none": "Prazno",
+        "sort_name_desc": "Sortiraj po imenu (opadajuće)",
+        "timestamp_added": "Datum dodavanja",
+        "timestamp_added_desc": "Datum dodavanja (opadajući)",
+        "timestamp_modified": "Datum ažuriranja",
+        "timestamp_modified_desc": "Datum ažuriranja (opadajući)",
+        "album_sort": "Sortiranje umetnika po imenu",
+        "artist_sort": "Sortiranje umetnika po imenu",
+        "last_played": "Poslednje reprodukovano",
+        "last_played_desc": "Poslednje reprodukovano (opadajući)",
+        "play_count": "Broj reprodukcija",
+        "play_count_desc": "Broj reprodukcija (opadajući)"
+    },
+    "state": {
+        "idle": "neaktivan",
+        "off": "isključen",
+        "paused": "pauziran",
+        "playing": "reprodukuje"
+    },
+    "stream_details": "Detalji strima",
+    "sync_now": "Sinhronizujte {0} sada",
+    "sync_player_to": "Sinhronizujte ovaj plejer sa:",
+    "sync_running": "Jedan ili više muzičkih provajdera se sinhronizuju.",
+    "tooltip": {
+        "album_artist_filter": "Uključite filter za album-izvođača",
+        "explicit": "Eksplicitno",
+        "filter_library": "Uključite filter u biblioteci\/omiljenim",
+        "library": "Uključi\/isključi u biblioteci\/omiljenim",
+        "linked": "Ovaj provajder je povezan sa aktuelnim detaljima o numeri",
+        "refresh": "Osvežite listu numera",
+        "refresh_new_content": "Dostupan je novi sadržaj, kliknite da biste osvežili listu",
+        "search": "Prikaži\/sakrij unos za pretragu",
+        "select_items": "Izaberite više stavki",
+        "sort_options": "Opcije sortiranja",
+        "toggle_view_mode": "Promeni prikaz lista\/slike",
+        "filter_favorites": "Prikaži samo omiljene",
+        "favorite": "Označi\/ukloni oznaku kao omiljeno",
+        "open_provider_link": "Otvorite ovu stavku na veb lokaciji provajdera",
+        "collapse_expand": "Skupi\/proširi ovu listu",
+        "back": "Nazad",
+        "show_menu": "Prikaži\/sakrij meni",
+        "search_filter_active": "Pretraga trenutno filtrira rezultate",
+        "play_sample": "Pusti uzorak"
+    },
+    "topresult": "Top rezultat",
+    "track": "Numera",
+    "track_number": "Disk {0}, numera {1}",
+    "tracks": "Numere",
+    "try_global_search": "Probajte globalnu pretragu",
+    "type_to_search": "Ukucajte ovde za pretragu...",
+    "volume_normalization": "Normalizacija jačine",
+    "play_now_replace": "Reprodukuj sada (očisti red za reprodukciju)",
+    "currently_playing": "Trenutno se reprodukuje",
+    "favorites_add": "Dodaj u omiljene",
+    "favorites_remove": "Ukloni iz omiljenih",
+    "confirm_library_remove": "Da li ste sigurni da želite da izbrišete ovu stavku iz biblioteke? Sve stavke koje zavise od ove stavke će takođe biti rekurzivno uklonjene. Imajte na umu da će ovo samo ukloniti ovu stavku iz biblioteke. Ako je ovo muzička datoteka na disku, može se vratiti u sledećoj sinhronizaciji.",
+    "check_item_on_provider": "Proverite {0} na {1}",
+    "check_item_in_library": "Proverite {0} u biblioteci",
+    "media_details": "Detalji medija",
+    "mapped_providers": "Detalji o provajderu",
+    "item_in_library": "Ova stavka je dostupna u biblioteci",
+    "back": "Nazad",
+    "recently_played": "Nedavno reprodukovano",
+    "radiobrowser_by_popularity": "Po popularnosti",
+    "radiobrowser_by_country": "Po zemlji",
+    "radiobrowser_by_tag": "Po oznaci (tagu)",
+    "load_more_items": "Učitaj još stavki...",
+    "radio": "Radio",
+    "muted": "utišano",
+    "enter_name": "Unesite novo (prilagođeno) ime",
+    "image_url": "Unesite URL na sliku ili ikonu (opciono)",
+    "invalid_input": "Unos je bio nevažeći",
+    "new_playlist": "Nova lista za reprodukciju",
+    "create_playlist_on": "Kreiraj novu listu za reprodukciju {0}",
+    "view": {
+        "list": "Prikaz liste",
+        "panel": "Panelni prikaz",
+        "panel_compact": ""
+    },
+    "play_replace": ""
+}

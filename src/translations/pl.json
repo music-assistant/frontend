@@ -159,7 +159,12 @@
                 "info": "Informacje",
                 "warning": "Ostrzeżenie",
                 "error": "Błąd",
-                "debug": "Debugowanie"
+                "debug": "Debugowanie",
+                "GLOBAL": "",
+                "INFO": "",
+                "WARNING": "",
+                "ERROR": "",
+                "DEBUG": ""
             }
         },
         "flow_mode": {
@@ -357,6 +362,7 @@
             "label": "Język",
             "options": {
                 "auto": "Auto (zgodnie z konfiguracją systemu)",
+                "cs": "",
                 "da": "duński",
                 "de": "niemiecki",
                 "en": "angielski",
@@ -364,9 +370,19 @@
                 "fr": "francuski",
                 "he": "hebrajszczyzna",
                 "it": "Italian",
+                "nb": "",
                 "nl": "holenderski",
                 "pl": "Polish",
-                "uk_UA": "ukraiński"
+                "uk_UA": "ukraiński",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
             }
         },
         "hide_settings": {

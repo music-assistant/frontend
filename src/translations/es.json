@@ -150,24 +150,176 @@
         "edit_group_members": "Editar miembros del grupo",
         "add_new_provider_button": "Añadir proveedor {0}",
         "add_group_player": "Añadir reproductor grupal",
+        "group_members": "",
+        "log_level": {
+            "label": "",
+            "description": "",
+            "options": {
+                "global": "",
+                "info": "",
+                "warning": "",
+                "error": "",
+                "debug": "",
+                "GLOBAL": "",
+                "INFO": "",
+                "WARNING": "",
+                "ERROR": "",
+                "DEBUG": ""
+            }
+        },
+        "flow_mode": {
+            "label": "",
+            "description": ""
+        },
+        "auto_play": {
+            "label": "",
+            "description": ""
+        },
+        "output_channels": {
+            "label": "",
+            "description": "",
+            "options": {
+                "stereo": "",
+                "left": "",
+                "right": "",
+                "mono": ""
+            }
+        },
+        "volume_normalization": {
+            "label": "",
+            "description": ""
+        },
+        "volume_normalization_target": {
+            "label": "",
+            "description": ""
+        },
+        "eq_bass": {
+            "label": "",
+            "description": ""
+        },
+        "eq_mid": {
+            "label": "",
+            "description": ""
+        },
+        "eq_treble": {
+            "label": "",
+            "description": ""
+        },
+        "crossfade": {
+            "label": "",
+            "description": ""
+        },
+        "crossfade_duration": {
+            "label": "",
+            "description": ""
+        },
+        "hide_player": {
+            "label": "",
+            "description": ""
+        },
+        "default_enqueue_select_artist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "library_tracks": "",
+                "library_album_tracks": "",
+                "all_tracks": "",
+                "all_album_tracks": ""
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "",
+            "description": "",
+            "options": {
+                "library_tracks": "",
+                "all_tracks": ""
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "",
+            "description": "",
+            "options": {
+                "play": "",
+                "replace": "",
+                "next": "",
+                "replace_next": "",
+                "add": ""
+            }
+        },
         "default": "predeterminado",
+        "provider_depends_on_confirm": "",
         "category": {
             "audio": "Audio",
+            "advanced": "",
+            "generic": "",
             "announcements": "Configuración de anuncios",
             "airplay": "Ajustes específicos de Airplay"
         },
+        "tts_pre_announce": {
+            "label": "",
+            "description": ""
+        },
         "announce_volume_strategy": {
             "label": "Estrategia de volumen para anuncios",
+            "description": "",
             "options": {
                 "absolute": "Volumen absoluto",
+                "relative": "",
+                "percentual": "",
                 "none": "No ajustar el Volumen"
             }
         },
         "announce_volume": {
-            "label": "Volumen para Anuncios"
+            "label": "Volumen para Anuncios",
+            "description": ""
         },
         "announce_volume_min": {
-            "label": "Nivel Mínimo de Volumen para Anuncios"
+            "label": "Nivel Mínimo de Volumen para Anuncios",
+            "description": ""
         },
         "announce_volume_max": {
             "label": "Nivel Máximo de Volumen para Anuncios",
@@ -178,9 +330,11 @@
             "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Interfaz de Usuario",
+        "frontend_desc": "",
         "theme": {
             "label": "Tema",
             "options": {
+                "auto": "",
                 "light": "Claro",
                 "dark": "Oscuro"
             }
@@ -192,20 +346,52 @@
                 "vertical": "Vertical"
             }
         },
+        "menu_items": {
+            "label": "",
+            "description": ""
+        },
+        "artwork_pref": {
+            "label": "",
+            "description": "",
+            "options": {
+                "online": "",
+                "server_only": ""
+            }
+        },
         "language": {
             "label": "Idioma",
             "options": {
+                "auto": "",
+                "cs": "",
                 "da": "Danés",
                 "de": "Alemán",
                 "en": "Inglés",
-                "es": "Español"
+                "es": "Español",
+                "fr": "",
+                "he": "",
+                "it": "",
+                "nb": "",
+                "nl": "",
+                "pl": "",
+                "uk_UA": "",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
             }
         },
         "hide_settings": {
+            "label": "",
             "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\n Tenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
         },
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
+        "no_player_providers": "",
         "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música."
     },
     "show_info": "Mostrar información",
@@ -235,7 +421,17 @@
         "duration_desc": "Duración (descendente)",
         "original": "Original",
         "none": "Vacío",
-        "timestamp_added": "Fecha de adición"
+        "sort_name_desc": "",
+        "timestamp_added": "Fecha de adición",
+        "timestamp_added_desc": "",
+        "timestamp_modified": "",
+        "timestamp_modified_desc": "",
+        "album_sort": "",
+        "artist_sort": "",
+        "last_played": "",
+        "last_played_desc": "",
+        "play_count": "",
+        "play_count_desc": ""
     },
     "state": {
         "idle": "inactivo",
@@ -265,6 +461,7 @@
         "collapse_expand": "Contraer\/expandir este listado",
         "back": "Atrás",
         "show_menu": "Mostrar\/ocultar menú",
+        "search_filter_active": "",
         "play_sample": "Reproducir muestra"
     },
     "topresult": "Resultados mas importantes",
@@ -291,12 +488,16 @@
     "radiobrowser_by_tag": "Por etiqueta",
     "load_more_items": "Cargar más elementos...",
     "radio": "Radio",
+    "muted": "",
+    "enter_name": "",
+    "image_url": "",
     "invalid_input": "La entrada no fue válida",
     "new_playlist": "Nueva lista de reproducción",
     "create_playlist_on": "Crear nueva lista de reproducción en {0}",
     "view": {
         "list": "Vista de Lista",
-        "panel": "Vinsta de Panel"
+        "panel": "Vinsta de Panel",
+        "panel_compact": ""
     },
     "play_replace": "Reproducir Ahora (borrar cola)"
 }

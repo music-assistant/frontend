@@ -362,6 +362,7 @@
             "label": "Sprache",
             "options": {
                 "auto": "Automatisch (entsprechend der Systemeinstellung)",
+                "cs": "",
                 "da": "Dänisch",
                 "de": "Deutsch",
                 "en": "Englisch",
@@ -369,9 +370,19 @@
                 "fr": "Französisch",
                 "he": "Hebräisch",
                 "it": "Italienisch",
+                "nb": "",
                 "nl": "Niederländisch",
                 "pl": "Polnisch",
-                "uk_UA": "Ukrainisch"
+                "uk_UA": "Ukrainisch",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
             }
         },
         "hide_settings": {
@@ -410,10 +421,13 @@
         "duration_desc": "Dauer (absteigend)",
         "original": "Standard",
         "none": "Leer",
+        "sort_name_desc": "",
         "timestamp_added": "Datum des Hinzufügens",
         "timestamp_added_desc": "Datum des Hinzufügens (absteigend)",
         "timestamp_modified": "Änderungsdatum",
         "timestamp_modified_desc": "Änderungsdatum (absteigend)",
+        "album_sort": "",
+        "artist_sort": "",
         "last_played": "Zuletzt gespielt",
         "last_played_desc": "Zuletzt gespielt (absteigend)",
         "play_count": "Wiedergabezähler",

@@ -24,7 +24,7 @@
     "browse": "Procházet",
     "clear_selection": "Zrušit výběr",
     "close": "Zavřít",
-    "create_playlist_on": "Vytvořit nový playlist na {0}",
+    "create_playlist": "Vytvořit nový playlist na {0}",
     "crossfade_disabled": "Crossfade je zakázán",
     "crossfade_enabled": "Crossfade je povolen",
     "dark_mode": "Tmavý režim",
@@ -291,13 +291,148 @@
             }
         },
         "default": "výchozí",
-        "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?"
+        "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
+        "category": {
+            "audio": "",
+            "advanced": "",
+            "generic": "",
+            "announcements": "",
+            "airplay": ""
+        },
+        "tts_pre_announce": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_strategy": {
+            "label": "",
+            "description": "",
+            "options": {
+                "absolute": "",
+                "relative": "",
+                "percentual": "",
+                "none": ""
+            }
+        },
+        "announce_volume": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_min": {
+            "label": "",
+            "description": ""
+        },
+        "announce_volume_max": {
+            "label": "",
+            "description": ""
+        },
+        "icon": {
+            "label": "",
+            "description": ""
+        },
+        "frontend": "",
+        "frontend_desc": "",
+        "theme": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "light": "",
+                "dark": ""
+            }
+        },
+        "menu_style": {
+            "label": "",
+            "options": {
+                "horizontal": "",
+                "vertical": ""
+            }
+        },
+        "menu_items": {
+            "label": "",
+            "description": ""
+        },
+        "artwork_pref": {
+            "label": "",
+            "description": "",
+            "options": {
+                "online": "",
+                "server_only": ""
+            }
+        },
+        "language": {
+            "label": "",
+            "options": {
+                "auto": "",
+                "cs": "",
+                "da": "",
+                "de": "",
+                "en": "",
+                "es": "",
+                "fr": "",
+                "he": "",
+                "it": "",
+                "nb": "",
+                "nl": "",
+                "pl": "",
+                "uk_UA": "",
+                "zh_CN": "",
+                "el_GR": "",
+                "en_AU": "",
+                "en_UK": "",
+                "is_IS": "",
+                "pt_BR": "",
+                "sr": "",
+                "sr_Latn": "",
+                "sv_SE": ""
+            }
+        },
+        "hide_settings": {
+            "label": "",
+            "description": ""
+        },
+        "no_music_providers": "",
+        "no_music_providers_detail": "",
+        "no_player_providers": "",
+        "no_player_providers_detail": ""
     },
     "show_info": "Zobrazit informace",
     "show_select_boxes": "Zobrazit výběrová pole",
     "shuffle": "Náhodné přehrávání",
     "shuffle_disabled": "Náhodné přehrávání je vypnuto",
     "shuffle_enabled": "Náhodné přehrávání je zapnuto",
+    "sort": {
+        "duration": "Doba trvání",
+        "position": "Pozice",
+        "position DESC": "Pozice (sestupně)",
+        "provider": "Poskytovatel",
+        "sort_album": "Album",
+        "sort_artist": "Umělec",
+        "sort_name": "Abecedně",
+        "sort_name DESC": "Abecedně (sestupně)",
+        "timestamp_added DESC": "Nedávno přidané",
+        "track_number": "Číslo stopy",
+        "year": "Rok vydání",
+        "position_desc": "Pozice (sestupně)",
+        "album": "Album",
+        "artist": "Umělec",
+        "name": "Abecedně",
+        "name_desc": "Abecedně (sestupně)",
+        "recent": "Nedávno přidané",
+        "year_desc": "Rok vydání (sestupně)",
+        "duration_desc": "Doba trvání (sestupně)",
+        "original": "Původní",
+        "none": "Žádný",
+        "sort_name_desc": "",
+        "timestamp_added": "",
+        "timestamp_added_desc": "",
+        "timestamp_modified": "",
+        "timestamp_modified_desc": "",
+        "album_sort": "",
+        "artist_sort": "",
+        "last_played": "",
+        "last_played_desc": "",
+        "play_count": "",
+        "play_count_desc": ""
+    },
     "state": {
         "idle": "nečinný",
         "off": "vypnutý",
@@ -326,7 +461,8 @@
         "collapse_expand": "Sbalit\/rozbalit tento výpis",
         "back": "Zpět",
         "show_menu": "Zobrazit\/skrýt menu",
-        "search_filter_active": "Vyhledávání právě filtruje výsledky"
+        "search_filter_active": "Vyhledávání právě filtruje výsledky",
+        "play_sample": ""
     },
     "topresult": "Nejlepší výsledek",
     "track": "Skladba",
@@ -352,5 +488,16 @@
     "radiobrowser_by_tag": "Podle štítku",
     "load_more_items": "Načíst další položky...",
     "radio": "Rádio",
-    "muted": "ztlumeno"
+    "muted": "ztlumeno",
+    "enter_name": "",
+    "image_url": "",
+    "invalid_input": "",
+    "new_playlist": "",
+    "create_playlist_on": "Vytvořit nový playlist na {0}",
+    "view": {
+        "list": "",
+        "panel": "",
+        "panel_compact": ""
+    },
+    "play_replace": ""
 }
