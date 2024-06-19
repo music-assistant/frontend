@@ -362,7 +362,7 @@
             "label": "Langue",
             "options": {
                 "auto": "Auto (suivre la configuration du système)",
-                "cs": "CS",
+                "cs": "Tchèque",
                 "da": "Danois",
                 "de": "Allemand",
                 "en": "Anglais",
@@ -370,10 +370,19 @@
                 "fr": "Français",
                 "he": "Hébreu",
                 "it": "Italien",
-                "nb": "NB",
+                "nb": "Norvégien",
                 "nl": "Néerlandais",
                 "pl": "Polonais",
-                "uk_UA": "Ukrainien"
+                "uk_UA": "Ukrainien",
+                "zh_CN": "Chinois (simplifié)",
+                "el_GR": "Grec",
+                "en_AU": "Anglais (australien)",
+                "en_UK": "Anglais (Royaume-Uni)",
+                "is_IS": "Islandais",
+                "pt_BR": "Portugais (Brésil)",
+                "sr": "Serbe",
+                "sr_Latn": "Serbe (latin)",
+                "sv_SE": "Suédois"
             }
         },
         "hide_settings": {
@@ -397,7 +406,7 @@
         "provider": "Fournisseur",
         "sort_album": "Album",
         "sort_artist": "Artiste",
-        "sort_name": "Alphabétiquement",
+        "sort_name": "Nom de tri",
         "sort_name DESC": "Alphabétiquement (descendant)",
         "timestamp_added DESC": "Récemment ajouté",
         "track_number": "Numéro de piste",

@@ -24,7 +24,7 @@
     "browse": "Procházet",
     "clear_selection": "Zrušit výběr",
     "close": "Zavřít",
-    "create_playlist_on": "Vytvořit nový playlist na {0}",
+    "create_playlist": "Vytvořit nový playlist na {0}",
     "crossfade_disabled": "Crossfade je zakázán",
     "crossfade_enabled": "Crossfade je povolen",
     "dark_mode": "Tmavý režim",
@@ -298,6 +298,29 @@
     "shuffle": "Náhodné přehrávání",
     "shuffle_disabled": "Náhodné přehrávání je vypnuto",
     "shuffle_enabled": "Náhodné přehrávání je zapnuto",
+    "sort": {
+        "duration": "Doba trvání",
+        "position": "Pozice",
+        "position DESC": "Pozice (sestupně)",
+        "provider": "Poskytovatel",
+        "sort_album": "Album",
+        "sort_artist": "Umělec",
+        "sort_name": "Abecedně",
+        "sort_name DESC": "Abecedně (sestupně)",
+        "timestamp_added DESC": "Nedávno přidané",
+        "track_number": "Číslo stopy",
+        "year": "Rok vydání",
+        "position_desc": "Pozice (sestupně)",
+        "album": "Album",
+        "artist": "Umělec",
+        "name": "Abecedně",
+        "name_desc": "Abecedně (sestupně)",
+        "recent": "Nedávno přidané",
+        "year_desc": "Rok vydání (sestupně)",
+        "duration_desc": "Doba trvání (sestupně)",
+        "original": "Původní",
+        "none": "Žádný"
+    },
     "state": {
         "idle": "nečinný",
         "off": "vypnutý",
@@ -352,5 +375,6 @@
     "radiobrowser_by_tag": "Podle štítku",
     "load_more_items": "Načíst další položky...",
     "radio": "Rádio",
-    "muted": "ztlumeno"
+    "muted": "ztlumeno",
+    "create_playlist_on": "Vytvořit nový playlist na {0}"
 }
