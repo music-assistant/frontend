@@ -971,21 +971,28 @@ const getFilteredItems = function (
   }
   // sort
   if (params.sortBy == 'name') {
-    result.sort((a, b) => getSortName(a).localeCompare(getSortName(b)));
+    result.sort((a, b) => getSortName(a).localeCompare(
+      getSortName(b), undefined, {numeric: true}
+    ));
   }
   if (params.sortBy == 'sort_name') {
     result.sort((a, b) =>
-      getSortName(a, true).localeCompare(getSortName(b, true)),
+      getSortName(a, true).localeCompare(
+        getSortName(b, true), undefined, {numeric: true}
+      ),
     );
   }
   if (params.sortBy == 'name_desc') {
-    result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
+    result.sort((a, b) => getSortName(b).localeCompare(
+      getSortName(a), undefined, {numeric: true}
+    ));
   }
 
   if (params.sortBy == 'album') {
     result.sort((a, b) =>
       getSortName((a as Track).album).localeCompare(
         getSortName((b as Track).album),
+        undefined, {numeric: true}
       ),
     );
   }
