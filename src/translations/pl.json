@@ -149,7 +149,234 @@
         "download_log": "Pobierz plik logów",
         "edit_group_members": "Edytuj członków grupy",
         "add_new_provider_button": "Dodaj dostawcę {0}",
-        "add_group_player": "Dodaj grupę odtwarzaczy"
+        "add_group_player": "Dodaj grupę odtwarzaczy",
+        "group_members": "Członkowie grupy",
+        "log_level": {
+            "label": "Poziom logowania",
+            "description": "Ustaw szczegółowość logu dla tego dostawcy.",
+            "options": {
+                "global": "Ogólny",
+                "info": "Informacje",
+                "warning": "Ostrzeżenie",
+                "error": "Błąd",
+                "debug": "Debugowanie"
+            }
+        },
+        "flow_mode": {
+            "label": "Włącz tryb przepływu kolejki",
+            "description": "Włącz tryb „przepływu”, w którym wszystkie ścieżki w kolejce są wysyłane jako ciągły strumień audio.\nUżyj w przypadku odtwarzaczy, które natywnie nie obsługują bez przerw i\/lub przenikania, lub jeśli odtwarzacz ma problemy z przełączaniem między ścieżkami."
+        },
+        "auto_play": {
+            "label": "Automatyczne odtwarzanie (wznowienie po włączeniu zasilania)",
+            "description": "Gdy odtwarzacz jest włączany, automatycznie rozpocznij odtwarzanie (jeśli w kolejce znajdują się pozycje)."
+        },
+        "output_channels": {
+            "label": "Tryb kanałów wyjściowych",
+            "description": "Możesz skonfigurować ten odtwarzacz tak, aby odtwarzał tylko lewy lub prawy kanał, na przykład aby utworzyć parę stereo z 2 odtwarzaczy.",
+            "options": {
+                "stereo": "Stereo (oba kanały)",
+                "left": "Tylko lewy kanał",
+                "right": "Tylko prawy kanał",
+                "mono": "Mono (oba kanały)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Włącz normalizację głośności (w oparciu o EBU-R128)",
+            "description": "Włącz normalizację głośności w oparciu o standard EBU-R128 bez wpływu na zakres dynamiki"
+        },
+        "volume_normalization_target": {
+            "label": "Docelowy poziom normalizacji głośności",
+            "description": "Dostosuj średnią (odczuwaną) głośność do poziomu docelowego, wartość domyślna to -17 LUFS\n\n **OSTRZEŻENIE:** Ustawienie zbyt wysokiego poziomu może spowodować zniekształcenia - przycięcie (clipping)!"
+        },
+        "eq_bass": {
+            "label": "Korektor: bas",
+            "description": "Użyj wbudowanego podstawowego korektora, aby wyregulować poziom basów (niskich tonów) w dźwięku."
+        },
+        "eq_mid": {
+            "label": "Korektor: tony średnie",
+            "description": "Użyj wbudowanego podstawowego korektora, aby wyregulować  poziom tonów średnich w dźwięku."
+        },
+        "eq_treble": {
+            "label": "Korektor: tony wysokie",
+            "description": "Użyj wbudowanego podstawowego korektora, aby wyregulować poziom tonów wysokich w dźwięku."
+        },
+        "crossfade": {
+            "label": "Włącz przenikanie",
+            "description": "Włącz płynne przejście pomiędzy ścieżkami (w kolejce)."
+        },
+        "crossfade_duration": {
+            "label": "Czas przejścia",
+            "description": "Czas trwania przejścia między ścieżkami w sekundach (jeśli jest włączony)"
+        },
+        "hide_player": {
+            "label": "Ukryj ten odtwarzacz w interfejsie użytkownika",
+            "description": "Ukryj ten odtwarzacz w interfejsie użytkownika.\n\nPamiętaj, że nadal można nim sterować i pojawi się on także we wszystkich grupach synchronizacji, do których należy odtwarzacz."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Elementy do wyboru podczas odtwarzania artysty (z biblioteki).",
+            "description": "Jeśli chcesz odtworzyć artystę, jakie elementy należy ustawić w kolejce?",
+            "options": {
+                "library_tracks": "Tylko utwory znajdujące się w bibliotece",
+                "library_album_tracks": "Wszystkie utwory ze wszystkich albumów w bibliotece",
+                "all_tracks": "Wszystkie (najlepsze) utwory od (wszystkich) dostawców",
+                "all_album_tracks": "Wszystkie utwory ze wszystkich albumów od (wszystkich) dostawców"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Elementy do wyboru podczas odtwarzania albumu (w bibliotece).",
+            "description": "Jeśli chcesz odtworzyć album, jakie elementy należy umieścić w kolejce?",
+            "options": {
+                "library_tracks": "Tylko utwory znajdujące się w bibliotece",
+                "all_tracks": "Wszystkie utwory z albumu od dostawcy"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Domyślna opcja kolejkowania dla utworów artysty.",
+            "description": "Zdefiniuj domyślną akcję kolejkowania dla tego typu nośnika (jeśli nie określiłeś akcji).",
+            "options": {
+                "play": "Odtwórz teraz utwory wykonawcy i zachowaj pozostałe elementy w kolejce.",
+                "replace": "Wyczyść kolejkę i odtwórz utwory wykonawcy",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwarzaj utwory wykonawcy zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "add": "Dodaj utwory wykonawcy na końcu kolejki."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Domyślna opcja kolejkowania elementów albumu.",
+            "description": "Zdefiniuj domyślną akcję kolejkowania dla tego typu nośnika (jeśli nie określiłeś akcji).",
+            "options": {
+                "play": "Odtwórz teraz utwory z albumu i zachowaj pozostałe elementy w kolejce.",
+                "replace": "Wyczyść kolejkę i odtwórz utwory z albumu",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwórz utwory z albumu zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "add": "Dodaj utwory z albumu na końcu kolejki."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Domyślna opcja kolejkowania utworów",
+            "description": "Zdefiniuj domyślną akcję kolejkowania dla tego typu nośnika (jeśli nie określiłeś akcji).",
+            "options": {
+                "play": "Odtwórz teraz utwory i zachowaj pozostałe elementy w kolejce.",
+                "replace": "Wyczyść kolejkę i odtwórz utwory.",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "add": "Dodaj utwory na końcu kolejki."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Domyślna opcja kolejkowania elementów listy odtwarzania.",
+            "description": "Zdefiniuj domyślną akcję kolejkowania dla tego typu nośnika (jeśli nie określiłeś akcji).",
+            "options": {
+                "play": "Odtwórz teraz utwory z listy odtwarzania i zachowaj pozostałe elementy z kolejki.",
+                "replace": "Wyczyść kolejkę i odtwórz utwory z listy odtwarzania",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwarzaj utwory z listy odtwarzania zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "add": "Dodaj utwory z listy odtwarzania na końcu kolejki."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Domyślna opcja kolejkowania elementów radiowych.",
+            "description": "Zdefiniuj domyślną akcję kolejkowania dla tego typu nośnika (jeśli nie określiłeś akcji).",
+            "options": {
+                "play": "Odtwórz teraz stację radiową i zachowaj pozostałe elementy w kolejce.",
+                "replace": "Wyczyść kolejkę i włącz stację radiową",
+                "next": "Odtwórz element(y) zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwarzaj stacje radiowe zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "add": "Dodaj stacje radiowe na końcu kolejki."
+            }
+        },
+        "default": "domyślnie",
+        "provider_depends_on_confirm": "Zanim będziesz mógł skonfigurować usługę {0}, musisz skonfigurować dostawcę {1}. Czy chcesz to zrobić teraz?",
+        "category": {
+            "audio": "Dźwięk",
+            "advanced": "Zaawansowane ustawienia",
+            "generic": "Ustawienia ogólne",
+            "announcements": "Konfiguracja powiadomień",
+            "airplay": "Ustawienia specyficzne dla Airplay"
+        },
+        "tts_pre_announce": {
+            "label": "Ogłaszaj z wyprzedzeniem powiadomienia TTS",
+            "description": "Gdy wiadomość TTS (zamiana tekstu na mowę) zostanie wysłana do funkcji ogłaszania, należy poprzedzić ogłoszenie krótkim dźwiękiem zapowiedzi (dzwonkiem)."
+        },
+        "announce_volume_strategy": {
+            "label": "Strategia głośności dla powiadomień",
+            "description": "Kiedy do tego odtwarzacza nadawany jest komunikat, jak należy tymczasowo ustawić głośność (użyj w połączeniu z wartością głośności podaną poniżej).",
+            "options": {
+                "absolute": "Głośność bezwzględna",
+                "relative": "Względny wzrost głośności",
+                "percentual": "Wzrost głośności o stały procent",
+                "none": "Nie reguluj głośności"
+            }
+        },
+        "announce_volume": {
+            "label": "Głośność Powiadomień",
+            "description": "Procentowy, względny lub bezwzględny poziom głośności używany w strategii powiadomień."
+        },
+        "announce_volume_min": {
+            "label": "Minimalny poziom głośności powiadomień",
+            "description": "Głośność powiadomień nie powinna spadać poniżej tego poziomu."
+        },
+        "announce_volume_max": {
+            "label": "Maksymalny poziom głośności powiadomień",
+            "description": "Głośność powiadomień nie powinna rosnąć powyżej tego poziomu."
+        },
+        "icon": {
+            "label": "Ikona",
+            "description": "Ikona MDI (Material design icon) dla tego odtwarzacza.\n\nZobacz https:\/\/pictogrammmers.com\/library\/mdi\/."
+        },
+        "frontend": "Interfejs użytkownika",
+        "frontend_desc": "Ustawienia konfiguracyjne interfejsu użytkownika (frontend) Music Assistant. Należy pamiętać, że te ustawienia są przechowywane na poziomie urządzenia.",
+        "theme": {
+            "label": "Motyw",
+            "options": {
+                "auto": "Auto (zgodnie z konfiguracją systemu)",
+                "light": "Jasny",
+                "dark": "Ciemny"
+            }
+        },
+        "menu_style": {
+            "label": "Styl menu",
+            "options": {
+                "horizontal": "Poziomy",
+                "vertical": "Pionowy"
+            }
+        },
+        "menu_items": {
+            "label": "Włączone elementy menu",
+            "description": "Skonfiguruj, które elementy mają być wyświetlane w menu.\n\n Pamiętaj, że jeśli wyłączysz ustawienia, możesz się zablokować.\n\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko."
+        },
+        "artwork_pref": {
+            "label": "Preferencje dotyczące wyszukiwania obrazów",
+            "description": "Czy ten klient może sam pobierać (publicznie dostępne) grafiki, czy też wszystko powinno być kierowane przez serwer?\nDomyślnie klient może buforować\/pobierać grafikę bezpośrednio z zasobów internetowych, aby zmniejszyć obciążenie serwera.",
+            "options": {
+                "online": "Zezwalaj na bezpośrednie pobieranie",
+                "server_only": "Wymuś routing przez serwer"
+            }
+        },
+        "language": {
+            "label": "Język",
+            "options": {
+                "auto": "Auto (zgodnie z konfiguracją systemu)",
+                "da": "duński",
+                "de": "niemiecki",
+                "en": "angielski",
+                "es": "hiszpański",
+                "fr": "francuski",
+                "he": "hebrajszczyzna",
+                "it": "Italian",
+                "nl": "holenderski",
+                "pl": "Polish",
+                "uk_UA": "ukraiński"
+            }
+        },
+        "hide_settings": {
+            "label": "Ukryj przycisk ustawień",
+            "description": "Ukryj przycisk ustawień na ekranie głównym.\n\n Pamiętaj, że jeśli wyłączysz ustawienia na ekranie głównym i w menu, możesz się zablokować.\n\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko!"
+        },
+        "no_music_providers": "Nie skonfigurowano żadnych dostawców muzyki",
+        "no_music_providers_detail": "Rozpocznij korzystanie z Music Assistant, dodając swoich dostawców muzyki.",
+        "no_player_providers": "Nie skonfigurowano żadnych dostawców odtwarzaczy",
+        "no_player_providers_detail": "Skonfiguruj dostawców odtwarzaczy, aby wybrać urządzenia, na których Music Assistant może odtwarzać Twoją muzykę."
     },
     "show_info": "Pokaż informacje",
     "show_select_boxes": "Pokaż pola wyboru",
@@ -177,7 +404,18 @@
         "year_desc": "Rok wydania (malejąco)",
         "duration_desc": "Czas trwania (malejąco)",
         "original": "Oryginał",
-        "none": "Puste"
+        "none": "Puste",
+        "sort_name_desc": "Sortuj nazwę (malejąco)",
+        "timestamp_added": "Sortuj według daty dodania",
+        "timestamp_added_desc": "Sortuj według daty dodania malejąco",
+        "timestamp_modified": "Data aktualizacji",
+        "timestamp_modified_desc": "Data aktualizacji (malejąco)",
+        "album_sort": "Sortowanie albumów po nazwach",
+        "artist_sort": "Sortowanie artystów po nazwach",
+        "last_played": "Ostatnio odtwarzane",
+        "last_played_desc": "Ostatnio odtwarzane (malejąco)",
+        "play_count": "Ilość odtworzeń",
+        "play_count_desc": "Ilość odtworzeń (malejąco)"
     },
     "state": {
         "idle": "bezczynny",
@@ -206,7 +444,9 @@
         "open_provider_link": "Otwórz ten element na internetowej stronie dostawcy",
         "collapse_expand": "Zwiń\/rozwiń tę listę",
         "back": "Powrót",
-        "show_menu": "Pokaż\/Ukryj menu"
+        "show_menu": "Pokaż\/Ukryj menu",
+        "search_filter_active": "Wyszukiwanie obecnie filtruje wyniki",
+        "play_sample": "Odtwórz próbkę"
     },
     "topresult": "Najlepszy wynik",
     "track": "Ścieżka",
@@ -232,5 +472,16 @@
     "radiobrowser_by_tag": "Wg tagu",
     "load_more_items": "Załaduj więcej pozycji...",
     "radio": "Radio",
-    "create_playlist_on": "Utwórz nową listę odtwarzania na {0}"
+    "muted": "wyciszenie",
+    "enter_name": "Wprowadź nową (niestandardową) nazwę",
+    "image_url": "Wprowadź adres URL obrazu lub ikony (opcjonalnie)",
+    "invalid_input": "Wprowadzone dane były nieprawidłowe",
+    "new_playlist": "Nowa playlista",
+    "create_playlist_on": "Utwórz nową listę odtwarzania na {0}",
+    "view": {
+        "list": "Widok listy",
+        "panel": "Widok panelu",
+        "panel_compact": "Kompaktowy widok miniatur"
+    },
+    "play_replace": "Odtwarzaj teraz (wyczyść kolejkę)"
 }

@@ -1,29 +1,13 @@
 <template>
-  <div style="width: 100%">
-    <div
-      v-if="store.activePlayerQueue && !isProgressBar"
-      style="display: flex; flex: 1 1 auto; align-items: center"
-    >
-      <!-- current time detail -->
-      <div
-        class="text-caption"
-        style="cursor: pointer; z-index: 1"
-        @click="
-          showRemainingTime
-            ? (showRemainingTime = false)
-            : (showRemainingTime = true)
-        "
-      >
-        {{ playerCurTimeStr }}
-      </div>
-
+  <div style="width: auto">
+    <div v-if="store.activePlayerQueue" style="width: 100%">
       <v-slider
         v-model="curTimeValue"
         :disabled="
           !store.curQueueItem ||
+          !store.curQueueItem.media_item ||
           store.curQueueItem.media_item?.media_type != MediaType.TRACK
         "
-        :color="props.color"
         style="width: 100%"
         :min="0"
         :max="store.curQueueItem && store.curQueueItem.duration"
@@ -38,30 +22,24 @@
         @end="stopDragging"
       />
 
-      <!-- end time detail -->
-      <div style="z-index: 1" class="text-caption">
-        {{ playerTotalTimeStr }}
+      <div v-if="showLabels" class="time-text-row">
+        <!-- current time detail -->
+        <div
+          class="text-caption time-text-left"
+          @click="
+            showRemainingTime
+              ? (showRemainingTime = false)
+              : (showRemainingTime = true)
+          "
+        >
+          {{ playerCurTimeStr }}
+        </div>
+
+        <!-- end time detail -->
+        <div class="text-caption time-text-right">
+          {{ playerTotalTimeStr }}
+        </div>
       </div>
-    </div>
-    <div
-      v-else-if="store.activePlayerQueue && isProgressBar"
-      style="width: 100%; padding-bottom: 0px"
-    >
-      <v-progress-linear
-        v-model="curTimeValue"
-        :disabled="
-          !store.activePlayerQueue ||
-          !store.curQueueItem ||
-          store.activePlayerQueue?.items == 0
-        "
-        height="70"
-        :color="lightenColor(props.color, 0.15)"
-        :bg-color="props.color"
-        :bg-opacity="1"
-        style="position: absolute; border-radius: 10px"
-        :min="0"
-        :max="store.curQueueItem && store.curQueueItem.duration"
-      />
     </div>
   </div>
 </template>
@@ -75,13 +53,11 @@ import { ref, computed, watch } from 'vue';
 
 // properties
 export interface Props {
-  isProgressBar?: boolean;
-  color?: string;
+  showLabels?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  isProgressBar: false,
-  color: 'accent',
+withDefaults(defineProps<Props>(), {
+  showLabels: false,
 });
 
 // local refs
@@ -103,7 +79,9 @@ const playerCurTimeStr = computed(() => {
   }
 });
 const playerTotalTimeStr = computed(() => {
-  if (!store.curQueueItem) return '0:00';
+  if (!store.curQueueItem) return '';
+  if (!store.curQueueItem.duration) return '';
+  if (store.curQueueItem.media_item?.media_type == MediaType.RADIO) return '';
   const totalSecs = store.curQueueItem.duration;
   return formatDuration(totalSecs);
 });
@@ -143,3 +121,34 @@ const updateTime = (newTime: number) => {
   }
 };
 </script>
+
+<style scoped>
+.time-text-left {
+  text-align: left;
+  display: table-cell;
+}
+.time-text-right {
+  text-align: right;
+  display: table-cell;
+  right: 0;
+}
+.time-text-row {
+  cursor: pointer;
+  height: 8px;
+  flex-basis: 0;
+  flex-grow: 1;
+  max-width: 100%;
+  opacity: 0.6;
+  display: flex;
+  flex: 1 1 auto;
+  margin-top: -10px;
+  margin-bottom: 5px;
+}
+.time-text-row > div {
+  width: calc(100% / 2);
+}
+.v-slider.v-input--horizontal {
+  align-items: center;
+  margin-inline: 0px;
+}
+</style>

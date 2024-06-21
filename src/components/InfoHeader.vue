@@ -55,14 +55,9 @@
             align-content: center;
           "
         >
-          <div
-            v-if="
-              item.media_type &&
-              [MediaType.ARTIST, MediaType.PLAYLIST].includes(item.media_type)
-            "
-          >
+          <div v-if="item.media_type && item.media_type == MediaType.ARTIST">
             <v-avatar size="210" style="margin-bottom: 10%">
-              <MediaItemThumb :item="item" />
+              <MediaItemThumb :item="item" size="calc(100%)" />
             </v-avatar>
           </div>
           <div v-else>
@@ -166,9 +161,9 @@
           >
             <!-- play button with contextmenu -->
             <MenuButton
-              :width="200"
+              :width="220"
               icon="mdi-play-circle-outline"
-              :text="truncateString($t('play'), 12)"
+              :text="truncateString($t('play'), 14)"
               :disabled="!item"
               :open-menu-on-click="!store.activePlayerQueue"
               @click="api.playMedia(item!)"
@@ -342,7 +337,7 @@ watch(
     if (val) {
       fanartImage.value =
         getImageThumbForItem(compProps.item, ImageType.FANART) ||
-        getImageThumbForItem(compProps.item, ImageType.THUMB) ||
+        getImageThumbForItem(compProps.item, ImageType.LANDSCAPE) ||
         imgGradient;
     }
   },

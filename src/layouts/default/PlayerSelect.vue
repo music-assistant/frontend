@@ -1,5 +1,6 @@
 <template>
   <!-- players side menu -->
+  <v-overlay v-model="store.showPlayersMenu" />
   <v-navigation-drawer
     v-model="store.showPlayersMenu"
     location="right"
@@ -8,7 +9,8 @@
     temporary
     touchless
     width="290"
-    style="z-index: 9999"
+    style="z-index: 999999"
+    z-index="999999"
   >
     <!-- heading with Players as title-->
     <v-card-title class="title">
@@ -26,8 +28,7 @@
         class="playerrow"
       >
         <v-expansion-panel-title
-          expand-icon="mdi-chevron-down"
-          collapse-icon="mdi-chevron-up"
+          hide-actions
           @click="
             store.activePlayerId = player.player_id;
             scrollToTop(player.player_id);
@@ -47,7 +48,7 @@
             </template>
             <template #title>
               <div>
-                <b>{{ truncateString(getPlayerName(player), 20) }}</b>
+                <b>{{ truncateString(getPlayerName(player), 22) }}</b>
               </div>
             </template>
             <template #subtitle>
@@ -114,8 +115,10 @@ const sortedPlayers = computed(() => {
 watch(
   () => store.showPlayersMenu,
   (newVal) => {
-    if (!newVal) {
-      panelItem.value = undefined;
+    if (newVal && panelItem.value == undefined) {
+      panelItem.value = store.activePlayer
+        ? sortedPlayers.value.indexOf(store.activePlayer)
+        : undefined;
     }
   },
 );
@@ -158,7 +161,11 @@ const scrollToTop = function (playerId: string) {
   lastClicked.value = playerId;
   setTimeout(() => {
     const elmnt = shadowRoot.value?.getElementById(playerId);
-    elmnt?.scrollIntoView({ behavior: 'smooth' });
+    elmnt?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+      inline: 'nearest',
+    });
   }, 0);
 };
 
@@ -172,6 +179,7 @@ const playerActive = function (
   if (!player.enabled) return false;
   if (!player.available && !allowUnavailable) return false;
   if (player.synced_to && !allowSyncChild) return false;
+  if (player.active_group && !allowSyncChild) return false;
   if (player.hidden && !allowHidden) return false;
   return true;
 };
@@ -195,14 +203,12 @@ const checkDefaultPlayer = function () {
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
   const lastPlayerId = localStorage.getItem('mass.LastPlayerId');
-  if (lastPlayerId) {
-    if (
-      lastPlayerId in api.players &&
-      playerActive(api.players[lastPlayerId], false, false, false) &&
-      api.players[lastPlayerId].powered
-    ) {
-      return api.players[lastPlayerId];
-    }
+  if (
+    lastPlayerId &&
+    lastPlayerId in api.players &&
+    playerActive(api.players[lastPlayerId], false, false, false)
+  ) {
+    return api.players[lastPlayerId];
   }
 };
 </script>
@@ -229,5 +235,12 @@ const selectDefaultPlayer = function () {
 
 .playerrow >>> .v-expansion-panel-text__wrapper {
   padding: 0;
+}
+
+.v-expansion-panel--active {
+  opacity: 1;
+  background-color: rgba(162, 188, 255, 0.1);
+  border-block: solid 1px rgba(0, 0, 0, 0.4);
+  writing-mode: horizontal-tb;
 }
 </style>

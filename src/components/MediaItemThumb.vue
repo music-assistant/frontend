@@ -105,7 +105,6 @@ export const getAvatarImage = function (
 export const getMediaItemImage = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
-  includeFileBased = false,
 ): MediaItemImage | undefined {
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
@@ -118,18 +117,13 @@ export const getMediaItemImage = function (
 
   // always prefer album image for tracks
   if ('album' in mediaItem && mediaItem.album) {
-    const albumImage = getMediaItemImage(
-      mediaItem.album,
-      type,
-      includeFileBased,
-    );
+    const albumImage = getMediaItemImage(mediaItem.album, type);
     if (albumImage) return albumImage;
   }
 
   // handle regular image within mediaitem
   if ('metadata' in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (!img.remotely_accessible && !includeFileBased) continue;
       if (img.type == type) return img;
     }
   }
@@ -137,14 +131,14 @@ export const getMediaItemImage = function (
   // retry with album/track artist(s)
   if ('artists' in mediaItem && mediaItem.artists) {
     for (const artist of mediaItem.artists) {
-      const artistImage = getMediaItemImage(artist, type, includeFileBased);
+      const artistImage = getMediaItemImage(artist, type);
       if (artistImage) return artistImage;
     }
   }
 
   // allow landscape fallback
   if (type == ImageType.THUMB) {
-    return getMediaItemImage(mediaItem, ImageType.LANDSCAPE, includeFileBased);
+    return getMediaItemImage(mediaItem, ImageType.LANDSCAPE);
   }
 };
 
@@ -152,20 +146,20 @@ export const getImageThumbForItem = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
   size?: number,
-  preferImageProxy: boolean = false,
 ): string | undefined {
   if (!mediaItem) return;
   // find image in mediaitem
-  const img = getMediaItemImage(mediaItem, type, true);
+  const img = getMediaItemImage(mediaItem, type);
   if (!img || !img.path) return undefined;
   const checksum =
     'metadata' in mediaItem ? mediaItem.metadata?.cache_checksum : '';
   if (
     !img.remotely_accessible ||
     !store.allowExternalImageRetrieval ||
-    preferImageProxy
+    (!size && img.path.split('//')[0] != window.location.protocol)
   ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
+    // Note that we play it safe here and always enforce the proxy if the schema is different
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     let imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
     if (size) return imageUrl + `&size=${size}`;

@@ -128,7 +128,7 @@ const fetchPlaylists = async function () {
   const refItem = selectedItems.value.length
     ? selectedItems.value[0]
     : undefined;
-  for (const playlist of playlistResults.items as Playlist[]) {
+  for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
     // skip non-editable playlists

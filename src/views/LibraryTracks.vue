@@ -1,7 +1,6 @@
 <template>
   <ItemsListing
     itemtype="tracks"
-    :items="items"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :show-track-number="false"
@@ -24,6 +23,7 @@
     ]"
     icon="mdi-music-note"
     :restore-state="true"
+    :total="total"
   />
 </template>
 
@@ -37,28 +37,24 @@ import {
   EventType,
   ImageType,
   MediaType,
-  type Track,
 } from '@/plugins/api/interfaces';
 import { sleep } from '@/helpers/utils';
 import router from '@/plugins/router';
+import { store } from '@/plugins/store';
 
 defineOptions({
   name: 'Tracks',
 });
 
 const { t } = useI18n();
-const items = ref<Track[]>([]);
 const updateAvailable = ref<boolean>(false);
+const total = ref(store.libraryTracksCount);
 
 const sortKeys = [
   'name',
   'name_desc',
   'sort_name',
   'sort_name_desc',
-  'artist',
-  'year',
-  'year_desc',
-  'album',
   'duration',
   'duration_desc',
   'timestamp_added',
@@ -106,6 +102,7 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
+  total.value = await api.getLibraryTracksCount(params.favoritesOnly || false);
   return await api.getLibraryTracks(
     params.favoritesOnly,
     params.search,

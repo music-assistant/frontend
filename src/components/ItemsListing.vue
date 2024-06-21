@@ -5,7 +5,7 @@
     <Toolbar
       :icon="icon"
       :title="title"
-      :count="total"
+      :count="params.search ? pagedItems.length : total || allItems.length"
       color="transparent"
       :menu-items="menuItems"
     />
@@ -33,7 +33,7 @@
       style="overflow-x: hidden"
     >
       <v-infinite-scroll
-        :items="pagedItems"
+        v-if="!tempHide"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
@@ -172,7 +172,6 @@ import {
   MediaType,
   type Album,
   type MediaItemType,
-  type PagedItems,
   type Track,
   BrowseFolder,
   ItemMapping,
@@ -224,10 +223,11 @@ export interface Props {
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
-  loadPagedData?: (params: LoadDataParams) => Promise<PagedItems>;
+  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   // loadItems callback is provided for flat non-paged listings
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit?: number;
+  total?: number;
   infiniteScroll?: boolean;
   path?: string;
   icon?: string;
@@ -250,6 +250,7 @@ const props = withDefaults(defineProps<Props>(), {
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
+  total: undefined,
   infiniteScroll: true,
   title: undefined,
   showLibraryOnlyFilter: false,
@@ -279,13 +280,14 @@ const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
-const total = ref<number>();
 const loading = ref(false);
 const selectedItems = ref<MediaItemType[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
 const allItemsReceived = ref(false);
+const initialDataReceived = ref(false);
+const tempHide = ref(false);
 
 // methods
 const toggleSearch = function () {
@@ -328,7 +330,7 @@ const toggleLibraryOnlyFilter = function () {
     `libraryFilter.${props.path}.${props.itemtype}`,
     libraryOnlyStr,
   );
-  loadData(undefined, undefined, true);
+  loadData(true, undefined, true);
 };
 
 const toggleAlbumArtistsFilter = function () {
@@ -449,10 +451,6 @@ const redirectSearch = function () {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ({ done }: { done: any }) {
-  if (pagedItems.value.length == 0 && total.value == 0) {
-    done('empty');
-    return;
-  }
   if (allItemsReceived.value) {
     done('empty');
     return;
@@ -553,7 +551,7 @@ const menuItems = computed(() => {
     items.push({
       label: 'tooltip.sort_options',
       icon: 'mdi-sort',
-      disabled: props.sortKeys.length <= 1,
+      disabled: props.sortKeys.length <= 1 || loading.value,
       subItems: props.sortKeys.map((sortKey) => {
         return {
           label: `sort.${sortKey}`,
@@ -575,10 +573,7 @@ const menuItems = computed(() => {
       icon: 'mdi-magnify',
       action: toggleSearch,
       active: isSearchActive.value,
-      disabled:
-        props.loadPagedData &&
-        props.noServerSideSorting &&
-        !allItemsReceived.value,
+      disabled: loading.value,
     });
   }
 
@@ -645,7 +640,7 @@ const loadData = async function (
 
   if (
     FilterParamsChanged &&
-    props.loadPagedData !== undefined &&
+    props.loadPagedData != null &&
     !props.noServerSideSorting
   ) {
     // on paged server listings, we need to clear the list on filter params change
@@ -654,50 +649,68 @@ const loadData = async function (
 
   if (clear || refresh) {
     offset = 0;
-    newContentAvailable.value = false;
+    if (allItemsReceived.value) {
+      // this hack is needed in order to force refresh the infinite scroller
+      // otherwise it will not attempt to load more items if the end was reached
+      // and then we load new items with a different size
+      tempHide.value = true;
+    }
     allItemsReceived.value = false;
+    initialDataReceived.value = false;
+    newContentAvailable.value = false;
   }
   params.value.offset = offset;
   params.value.limit = props.limit;
   params.value.refresh = refresh;
 
-  if (
-    props.loadPagedData !== undefined &&
-    props.noServerSideSorting &&
-    allItemsReceived.value
-  ) {
+  if (props.loadPagedData != null && props.noServerSideSorting) {
     // server side paged listing without filter support - handle filtering in-memory
     // note that all items of the paged listing must first be received before we can do filtering
-    if (allItems.value.length == 0) {
-      allItems.value = pagedItems.value;
+    if (!initialDataReceived.value) {
+      // collect all items first - otherwise filtering is not possible
+
+      pagedItems.value = [];
+      allItems.value = [];
+      let offset = 0;
+      while (!initialDataReceived.value) {
+        const nextItems = await props.loadPagedData({
+          ...params.value,
+          offset,
+        });
+        allItems.value.push(...nextItems);
+        offset += props.limit;
+        if (Math.abs(nextItems.length - props.limit) > 10) {
+          initialDataReceived.value = true;
+          break;
+        }
+      }
     }
-    pagedItems.value = getFilteredItems(allItems.value, {
-      offset: 0,
-      limit: total.value || allItems.value.length,
-      sortBy: params.value.sortBy,
-      search: params.value.search,
-    });
-  } else if (props.loadPagedData !== undefined) {
-    // server side paged listing
+    // filter items in memory
+    const nextItems = getFilteredItems(allItems.value, params.value);
+    if (params.value.offset) {
+      pagedItems.value.push(...nextItems);
+    } else {
+      pagedItems.value = nextItems;
+    }
+    // mark allItemsReceived if we have all items
+    allItemsReceived.value = nextItems.length < props.limit;
+  } else if (props.loadPagedData != null) {
+    // server side paged listing (with filter support)
     const nextItems = await props.loadPagedData(params.value);
     if (params.value.offset) {
-      pagedItems.value.push(...(nextItems.items as MediaItemType[]));
+      pagedItems.value.push(...nextItems);
     } else {
-      pagedItems.value = nextItems.items as MediaItemType[];
+      pagedItems.value = nextItems;
     }
-    // the server should send total attribute as soon as it knows it
-    if (nextItems.total != null) {
-      total.value = nextItems.total;
-      allItemsReceived.value = pagedItems.value.length >= total.value;
-    }
-  } else if (props.loadItems !== undefined) {
-    // grab items from loadItems callback
-    if (!allItemsReceived.value || refresh) {
-      // load all items from the callback
-      allItems.value = [];
-      (allItems.value = await props.loadItems(params.value)), params.value;
-      total.value = allItems.value.length;
+    if (Math.abs(nextItems.length - props.limit) > 10) {
       allItemsReceived.value = true;
+    }
+  } else if (props.loadItems != null) {
+    // grab items from loadItems callback
+    if (!initialDataReceived.value || refresh) {
+      // load all items from the callback
+      allItems.value = await props.loadItems(params.value);
+      initialDataReceived.value = true;
     }
     // filter items
     const nextItems = getFilteredItems(allItems.value, params.value);
@@ -706,9 +719,12 @@ const loadData = async function (
     } else {
       pagedItems.value = nextItems;
     }
+    // mark allItemsReceived if we have all items
+    allItemsReceived.value = nextItems.length < props.limit;
   }
   params.value.refresh = false;
   loading.value = false;
+  tempHide.value = false;
 };
 
 const restoreSettings = async function () {
@@ -789,17 +805,9 @@ const restoreSettings = async function () {
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
+  if (loading.value) return;
   if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    // CTRL-A (select all requested)
-    // fetch all items first
-    while (pagedItems.value.length < total.value!) {
-      if (total.value !== undefined && params.value.offset >= total.value) {
-        break;
-      }
-      params.value.offset += props.limit;
-      loadData();
-    }
     selectedItems.value = pagedItems.value;
     showCheckboxes.value = true;
   } else if (!searchHasFocus.value && e.key == 'Backspace') {
@@ -826,8 +834,10 @@ if (props.restoreState) {
       path: key,
       scrollPos: el?.scrollTop || 0,
       pagedItems: pagedItems.value,
+      allItems: allItems.value,
+      allItemsReceived: allItemsReceived.value,
+      initialDataReceived: initialDataReceived.value,
       params: params.value,
-      total: total.value || 0,
     };
   });
 }
@@ -837,7 +847,7 @@ watch(
   () => params.value.search,
   (newVal) => {
     if (newVal) showSearch.value = true;
-    loadData(true);
+    loadData(undefined, undefined, true);
     let storKey = `search.${props.path}.${props.itemtype}`;
     if (props.parentItem) storKey += props.parentItem.item_id;
     localStorage.setItem(storKey, params.value.search);
@@ -846,7 +856,6 @@ watch(
 watch(
   () => props.path,
   (newVal) => {
-    console.debug('Path updated to', newVal);
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
@@ -884,9 +893,11 @@ onMounted(async () => {
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
   if (props.restoreState && store.prevState?.path == key) {
-    total.value = store.prevState.total;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
+    allItems.value = store.prevState.allItems;
+    allItemsReceived.value = store.prevState.allItemsReceived;
+    initialDataReceived.value = store.prevState.initialDataReceived;
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
       const el = document.getElementById('cont');
@@ -904,8 +915,10 @@ export interface StoredState {
   path: string;
   scrollPos: number;
   pagedItems: MediaItemType[];
+  allItems: MediaItemType[];
+  allItemsReceived: boolean;
+  initialDataReceived: boolean;
   params: LoadDataParams;
-  total: number;
 }
 
 const getSortName = function (
@@ -947,31 +960,39 @@ const getFilteredItems = function (
       } else if (
         'artists' in item &&
         item.artists &&
+        item.artists.length &&
         item.artists[0].name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
       }
     }
   } else {
-    result = items;
+    result = [...items];
   }
   // sort
   if (params.sortBy == 'name') {
-    result.sort((a, b) => getSortName(a).localeCompare(getSortName(b)));
+    result.sort((a, b) => getSortName(a).localeCompare(
+      getSortName(b), undefined, {numeric: true}
+    ));
   }
   if (params.sortBy == 'sort_name') {
     result.sort((a, b) =>
-      getSortName(a, true).localeCompare(getSortName(b, true)),
+      getSortName(a, true).localeCompare(
+        getSortName(b, true), undefined, {numeric: true}
+      ),
     );
   }
   if (params.sortBy == 'name_desc') {
-    result.sort((a, b) => getSortName(b).localeCompare(getSortName(a)));
+    result.sort((a, b) => getSortName(b).localeCompare(
+      getSortName(a), undefined, {numeric: true}
+    ));
   }
 
   if (params.sortBy == 'album') {
     result.sort((a, b) =>
       getSortName((a as Track).album).localeCompare(
         getSortName((b as Track).album),
+        undefined, {numeric: true}
       ),
     );
   }

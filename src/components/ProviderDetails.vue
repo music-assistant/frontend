@@ -15,7 +15,7 @@
             />
           </template>
           <template #title>
-            {{ api.providerManifests[providerMapping.provider_domain].name }}
+            {{ api.providerManifests[providerMapping.provider_domain]?.name }}
           </template>
           <template #subtitle>
             <span

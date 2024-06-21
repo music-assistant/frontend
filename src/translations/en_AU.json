@@ -1,0 +1,16 @@
+{
+    "settings": {
+        "sync": "Synchronise now",
+        "sync_running": "This provider is now being synchronised"
+    },
+    "sync_now": "Synchronise {0} now",
+    "sync_running": "One or more music providers are being synchronised.",
+    "tooltip": {
+        "filter_library": "Toggle in-library\/favourite filter",
+        "library": "Toggle in-library\/favourite",
+        "filter_favorites": "Only show favourites",
+        "favorite": "Mark\/unmark as favourite"
+    },
+    "favorites_add": "Add to favourites",
+    "favorites_remove": "Remove from favourites"
+}

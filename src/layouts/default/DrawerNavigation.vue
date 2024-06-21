@@ -66,7 +66,6 @@ export const DEFAULT_MENU_ITEMS = [
   'albums',
   'tracks',
   'playlists',
-  'tracks',
   'radios',
   'browse',
 ];

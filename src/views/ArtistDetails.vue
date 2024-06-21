@@ -3,6 +3,24 @@
     <InfoHeader :item="itemDetails" />
     <!-- loading animation -->
     <v-progress-linear v-if="loading" indeterminate />
+
+    <ItemsListing
+      v-if="itemDetails"
+      itemtype="artistalbums"
+      :parent-item="itemDetails"
+      :show-provider="true"
+      :show-favorites-only-filter="true"
+      :show-library-only-filter="
+        itemDetails.provider == 'library' &&
+        getStreamingProviderMappings(itemDetails).length > 0
+      "
+      :show-refresh-button="false"
+      :load-items="loadArtistAlbums"
+      :sort-keys="['name', 'sort_name', 'year']"
+      :title="$t('albums')"
+      :allow-collapse="true"
+    />
+    <br />
     <ItemsListing
       v-if="itemDetails"
       itemtype="artisttracks"
@@ -18,23 +36,6 @@
       :load-items="loadArtistTracks"
       :sort-keys="['name', 'sort_name', 'album']"
       :title="$t('tracks')"
-      :allow-collapse="true"
-    />
-    <br />
-    <ItemsListing
-      v-if="itemDetails"
-      itemtype="artistalbums"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="true"
-      :show-library-only-filter="
-        itemDetails.provider == 'library' &&
-        getStreamingProviderMappings(itemDetails).length > 0
-      "
-      :show-refresh-button="false"
-      :load-items="loadArtistAlbums"
-      :sort-keys="['name', 'sort_name', 'year']"
-      :title="$t('albums')"
       :allow-collapse="true"
     />
     <br />

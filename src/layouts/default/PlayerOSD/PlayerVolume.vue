@@ -5,7 +5,7 @@
     @touchend="isThumbHidden = true"
     @mouseenter="isThumbHidden = false"
     @mouseleave="isThumbHidden = true"
-    @wheel="onWheel"
+    @wheel.prevent="onWheel"
     @update:model-value="(value) => $emit('update:model-value', value)"
   >
     <!-- Dynamically inherit slots from parent -->
@@ -39,8 +39,8 @@ export default {
       thumbSize: isThumbHidden.value ? 0 : 10,
       step: 2,
       elevation: 0,
-      disabled: !props.isPowered,
       style: `width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`,
+      disabled: !props.isPowered,
     }));
 
     const playerVolumeProps = computed(() => ({

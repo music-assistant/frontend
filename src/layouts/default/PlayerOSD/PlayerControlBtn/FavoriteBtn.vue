@@ -6,16 +6,13 @@
     :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
     :title="$t('tooltip.favorite')"
     :type="'btn'"
-    @click="onClick"
+    @clicked="onClick"
   />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
 import { type MediaItemType } from '@/plugins/api/interfaces';
 import api from '@/plugins/api';
-import { store } from '@/plugins/store';
 import ResponsiveIcon, {
   ResponsiveIconProps,
 } from '@/components/mods/ResponsiveIcon.vue';

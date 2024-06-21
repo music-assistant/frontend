@@ -461,14 +461,6 @@ export interface BrowseFolder extends MediaItem {
   items?: Array<MediaItemType | BrowseFolder>;
 }
 
-export interface PagedItems {
-  items: Array<MediaItemType | ItemMapping | QueueItem>;
-  count: number;
-  limit: number;
-  offset: number;
-  total?: number;
-}
-
 export interface SearchResults {
   artists: Artist[];
   albums: Album[];
@@ -567,6 +559,7 @@ export interface Player {
   volume_muted: boolean;
   group_childs: string[];
   active_source: string;
+  active_group?: string;
   can_sync_with: string[];
   synced_to: string;
   max_sample_rate: number;

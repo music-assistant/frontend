@@ -1,9 +1,5 @@
 <template>
-  <SpeakerBtn
-    v-if="player && player.isVisible"
-    :color="player.color"
-    :responsive="true"
-  />
+  <SpeakerBtn v-if="player && player.isVisible" :color="player.color" />
   <QueueBtn
     v-if="queue && queue.isVisible"
     :color="player.color"

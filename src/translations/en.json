@@ -173,7 +173,7 @@
         },
         "output_channels": {
             "label": "Output Channel Mode",
-            "description": "You can configure this player to play only the left or right channel, for example to a create a stereo pair with 2 players.",
+            "description": "You can configure this player to play only the left or right channel, for example to create a stereo pair with 2 players.",
             "options": {
                 "stereo": "Stereo (both channels)",
                 "left": "Left channel only",
@@ -191,15 +191,15 @@
         },
         "eq_bass": {
             "label": "Equalizer: bass",
-            "description": "Use the builtin basic equalizer to adjust the bass (low tones) level of the audio."
+            "description": "Use the built-in basic equalizer to adjust the bass (low tones) level of the audio."
         },
         "eq_mid": {
             "label": "Equalizer: mid",
-            "description": "Use the builtin basic equalizer to adjust the mid level of audio."
+            "description": "Use the built-in basic equalizer to adjust the mid level of audio."
         },
         "eq_treble": {
             "label": "Equalizer: treble",
-            "description": "Use the builtin basic equalizer to adjust the treble (high tones) level of audio."
+            "description": "Use the built-in basic equalizer to adjust the treble (high tones) level of audio."
         },
         "crossfade": {
             "label": "Enable crossfade",
@@ -233,7 +233,7 @@
         },
         "default_enqueue_action_artist": {
             "label": "Default enqueue option for Artist item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play artist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the artist track(s)",
@@ -244,7 +244,7 @@
         },
         "default_enqueue_action_album": {
             "label": "Default enqueue option for Album item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play album track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the album track(s)",
@@ -255,7 +255,7 @@
         },
         "default_enqueue_action_track": {
             "label": "Default enqueue option for Track item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the track(s).",
@@ -266,7 +266,7 @@
         },
         "default_enqueue_action_playlist": {
             "label": "Default enqueue option for Playlist item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play playlist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the playlist track(s)",
@@ -277,7 +277,7 @@
         },
         "default_enqueue_action_radio": {
             "label": "Default enqueue option for Radio item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play radio station now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the radio station",
@@ -287,7 +287,7 @@
             }
         },
         "default": "default",
-        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?",
+        "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
             "audio": "Audio",
             "advanced": "Advanced settings",
@@ -348,7 +348,7 @@
         },
         "artwork_pref": {
             "label": "Preference for image retrieval",
-            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server ?\nBy default the client is allowed to cache\/download artwork directly from internet resources to put less stress on the server.",
+            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server ?\nBy default, the client is allowed to cache\/download artwork directly from internet resources to put less stress on the server.",
             "options": {
                 "online": "Allow direct retrieval",
                 "server_only": "Enforce routing though the server"
@@ -369,7 +369,16 @@
                 "nb": "Norwegian",
                 "nl": "Dutch",
                 "pl": "Polish",
-                "uk_UA": "Ukrainian"
+                "uk_UA": "Ukrainian",
+                "zh_CN": "Chinese (Simplified)",
+                "el_GR": "Greek",
+                "en_AU": "English (Australian)",
+                "en_UK": "English (United Kingdom)",
+                "is_IS": "Icelandic",
+                "pt_BR": "Portuguese (Brazil)",
+                "sr": "Serbian",
+                "sr_Latn": "Serbian (Latin)",
+                "sv_SE": "Swedish"
             }
         },
         "hide_settings": {
@@ -387,28 +396,33 @@
     "shuffle_disabled": "Shuffle is disabled",
     "shuffle_enabled": "Shuffle is enabled",
     "sort": {
+        "duration": "Duration",
+        "position": "Position",
+        "position DESC": "Position (descending)",
         "provider": "Provider",
         "sort_album": "Album",
         "sort_artist": "Artist",
+        "sort_name": "Sort name",
+        "sort_name DESC": "Alphabetically (descending)",
+        "timestamp_added DESC": "Recently added",
         "track_number": "Track number",
-        "position": "Position",
+        "year": "Release year",
         "position_desc": "Position (descending)",
         "album": "Album",
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
         "recent": "Recently added",
-        "year": "Release year",
         "year_desc": "Release year (descending)",
-        "duration": "Duration",
         "duration_desc": "Duration (descending)",
         "original": "Original",
-        "sort_name": "Sort name",
         "sort_name_desc": "Sort name (descending)",
         "timestamp_added": "Date added",
-        "timestamp_added_desc": "Date added (descending",
+        "timestamp_added_desc": "Date added (descending)",
         "timestamp_modified": "Date updated",
-        "timestamp_modified_desc": "Date updated (descending",
+        "timestamp_modified_desc": "Date updated (descending)",
+        "album_sort": "Album sort name",
+        "artist_sort": "Artist sort name",
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
@@ -456,7 +470,7 @@
     "currently_playing": "Currently playing",
     "favorites_add": "Add to favorites",
     "favorites_remove": "Remove from favorites",
-    "confirm_library_remove": "Are you sure you want to delete this item from the library ? Any items depending on this item will also recursively be removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return in the next sync.",
+    "confirm_library_remove": "Are you sure you want to delete this item from the library ? Any items depending on this item will also recursively be removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return on the next sync.",
     "check_item_on_provider": "Check {0} on {1}",
     "check_item_in_library": "Check {0} in the library",
     "media_details": "Media details",

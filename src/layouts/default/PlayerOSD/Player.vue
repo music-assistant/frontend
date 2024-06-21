@@ -1,26 +1,8 @@
 <template>
-  <div
-    :class="`${useFloatingPlayer ? 'mediacontrols-bg-2' : 'mediacontrols-bg-1'}`"
-    :style="`background: ${backgroundColor};`"
-  ></div>
-  <PlayerTimeline
-    v-if="getBreakpointValue('bp3')"
-    v-breakpoint="{ breakpoint: 'bp3', condition: 'lt' }"
-    :color="
-      $vuetify.theme.current.dark
-        ? coverImageColorPalette.lightColor || '#fff'
-        : coverImageColorPalette.darkColor || '#000'
-    "
-    :is-progress-bar="true"
-  />
+  <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
 
-  <div
-    class="mediacontrols"
-    :style="`padding: ${
-      getBreakpointValue({ breakpoint: 'phone' }) ? 3 : 10
-    }px ${getBreakpointValue({ breakpoint: 'phone' }) ? 10 : 10}px;`"
-  >
-    <div :class="`mediacontrols-left-${getBreakpointValue('bp3') ? '1' : '2'}`">
+  <div class="mediacontrols" :data-mobile="mobile">
+    <div class="mediacontrols-left">
       <PlayerTrackDetails
         :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
         :show-only-artist="getBreakpointValue('bp7') ? false : true"
@@ -28,39 +10,38 @@
         :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
       />
     </div>
-    <div
-      :class="`mediacontrols-bottom-center-${
-        getBreakpointValue('bp3') ? '1' : '2'
-      }`"
-    >
-      <div style="width: 100%">
-        <!-- player control buttons -->
-        <PlayerControls
-          :visible-components="{
-            repeat: { isVisible: getBreakpointValue('bp3') },
-            shuffle: { isVisible: getBreakpointValue('bp3') },
-            play: {
-              isVisible: true,
-              icon: {
-                staticWidth: '50px',
-                staticHeight: '50px',
-              },
+    <div class="mediacontrols-bottom-center">
+      <!-- player control buttons -->
+      <PlayerControls
+        :visible-components="{
+          repeat: { isVisible: getBreakpointValue('bp3') },
+          shuffle: { isVisible: getBreakpointValue('bp3') },
+          play: {
+            isVisible: true,
+            icon: {
+              staticWidth: '50px',
+              staticHeight: '50px',
             },
-            previous: { isVisible: getBreakpointValue('bp3') },
-            next: { isVisible: getBreakpointValue('bp3') },
-          }"
-        />
-        <!-- progress bar -->
-        <PlayerTimeline
-          v-breakpoint="{ breakpoint: 'mobile', condition: 'gt' }"
-          :color="
-            $vuetify.theme.current.dark
-              ? coverImageColorPalette.lightColor || '#fff'
-              : coverImageColorPalette.darkColor || '#000'
-          "
-          :is-progress-bar="false"
-        />
-      </div>
+          },
+          previous: { isVisible: getBreakpointValue('bp3') },
+          next: { isVisible: getBreakpointValue('bp3') },
+        }"
+      />
+      <!-- progress bar -->
+      <PlayerTimeline
+        v-if="getBreakpointValue('bp6')"
+        :color="
+          $vuetify.theme.current.dark
+            ? coverImageColorPalette.lightColor || '#fff'
+            : coverImageColorPalette.darkColor || '#000'
+        "
+        :is-progress-bar="false"
+        :disabled="
+          !store.activePlayerQueue?.active ||
+          store.activePlayerQueue?.current_item?.media_item?.media_type !==
+            MediaType.TRACK
+        "
+      />
     </div>
     <div class="mediacontrols-bottom-right">
       <div>
@@ -75,12 +56,11 @@
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
           :volume="{
-            isVisible: true,
+            isVisible: !mobile,
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
         <!-- player mobile control buttons -->
-
         <PlayerControls
           style="padding-right: 5px"
           :visible-components="{
@@ -93,8 +73,8 @@
               }),
               withCircle: false,
               icon: {
-                staticWidth: '48px',
-                staticHeight: '48px',
+                staticWidth: '40px',
+                staticHeight: '40px',
                 color: $vuetify.theme.current.dark ? '#fff' : '#000',
               },
             },
@@ -105,18 +85,57 @@
       </div>
     </div>
   </div>
+  <div v-if="mobile" class="volume-slider">
+    <PlayerVolume
+      width="100%"
+      color="secondary"
+      :is-powered="store.activePlayer?.powered"
+      :disabled="!store.activePlayer || !store.activePlayer?.powered"
+      :model-value="Math.round(store.activePlayer?.group_volume || 0)"
+      prepend-icon="mdi-volume-minus"
+      append-icon="mdi-volume-plus"
+      @update:model-value="
+        store.activePlayer!.group_childs.length > 0
+          ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
+          : api.playerCommandVolumeSet(store.activePlayerId!, $event)
+      "
+      @click:prepend="
+        store.activePlayer!.group_childs.length > 0
+          ? api.playerCommandGroupVolume(
+              store.activePlayerId!,
+              store.activePlayer!.group_volume - 5,
+            )
+          : api.playerCommandVolumeSet(
+              store.activePlayerId!,
+              store.activePlayer!.volume_level - 5,
+            )
+      "
+      @click:append="
+        store.activePlayer!.group_childs.length > 0
+          ? api.playerCommandGroupVolume(
+              store.activePlayerId!,
+              store.activePlayer!.group_volume + 5,
+            )
+          : api.playerCommandVolumeSet(
+              store.activePlayerId!,
+              store.activePlayer!.volume_level + 5,
+            )
+      "
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 //@ts-ignore
 
-import { ImageType } from '@/plugins/api/interfaces';
+import { ImageType, MediaType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
 import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
 import PlayerTimeline from './PlayerTimeline.vue';
 import PlayerControls from './PlayerControls.vue';
 import PlayerTrackDetails from './PlayerTrackDetails.vue';
+import PlayerVolume from './PlayerVolume.vue';
 import PlayerExtendedControls from './PlayerExtendedControls.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
 import vuetify from '@/plugins/vuetify';
@@ -126,7 +145,8 @@ import {
   imgCoverLight,
 } from '@/components/QualityDetailsBtn.vue';
 import { useTheme } from 'vuetify/lib/framework.mjs';
-
+import { useDisplay } from 'vuetify';
+import { api } from '@/plugins/api';
 interface Props {
   useFloatingPlayer: boolean;
 }
@@ -134,6 +154,8 @@ defineProps<Props>();
 
 // global refs
 const theme = useTheme();
+// Custom breakpoint for compatibility with `getBreakpointValue`. Can replace once we switch to using built-in Vuetify breakpoints
+const { mobile } = useDisplay({ mobileBreakpoint: 576 });
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
@@ -186,76 +208,68 @@ watch(
 );
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .mediadetails-streamdetails .icon {
   opacity: 100;
 }
 
 .mediacontrols {
-  display: table;
+  display: flex;
+  align-items: center;
   width: 100%;
+  padding-inline: 10px;
+  padding-block: 10px;
+
+  .mediacontrols-bottom-center {
+    width: 40%;
+  }
+
+  &[data-mobile='true'] {
+    .mediacontrols-bottom-center {
+      display: none;
+    }
+    .mediacontrols-left {
+      width: unset;
+    }
+  }
 }
 
-.mediacontrols-bg-1 {
+.mediacontrols-bg {
   position: absolute;
   width: 100%;
   height: 100%;
   left: 0px;
   top: 0px;
-}
+  background-color: v-bind('backgroundColor');
 
-.mediacontrols-bg-2 {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0px;
-  top: 0px;
-  border-radius: 10px;
+  &[data-floating='true'] {
+    border-radius: 10px;
+  }
 }
 
 .mediacontrols-top-right {
   display: table-row;
 }
 
-.mediacontrols-left-1 {
-  display: table-cell;
-  vertical-align: middle;
-  width: 25%;
-}
-
-.mediacontrols-left-2 {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.mediacontrols-left-1 > div {
-  padding: 0px !important;
-}
-
-.mediacontrols-left-2 > div {
-  padding: 0px !important;
-}
-
-.mediacontrols-bottom-center-1 {
-  display: table-cell;
-  text-align: center;
-  width: 40%;
-  vertical-align: middle;
-}
-
-.mediacontrols-bottom-center-2 {
-  display: none;
-  width: 25%;
+.mediacontrols-left {
+  margin-inline-end: auto;
+  width: 30%;
+  > div {
+    padding: 0px !important;
+  }
 }
 
 .mediacontrols-bottom-right {
-  display: table-cell;
-  text-align: right;
-  vertical-align: middle;
+  margin-inline-start: auto;
+  > div {
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
-.mediacontrols-bottom-right > div {
-  display: inline-flex;
-  align-items: center;
+.volume-slider {
+  width: calc(100% - 30px);
+  margin-bottom: 6px;
+  margin-top: -10px;
 }
 </style>

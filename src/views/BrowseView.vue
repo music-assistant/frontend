@@ -7,9 +7,7 @@
       :show-favorites-only-filter="false"
       :show-track-number="false"
       :load-paged-data="loadItems"
-      :sort-keys="
-        allItemsReceived ? ['original', 'name', 'name_desc'] : ['original']
-      "
+      :sort-keys="['original', 'name', 'name_desc']"
       :title="header"
       :path="path"
       :allow-key-hooks="true"
@@ -31,7 +29,6 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const { t } = useI18n();
-const allItemsReceived = ref(false);
 
 const header = computed(() => {
   if (!props.path || props.path == 'root') return t('browse');
@@ -41,8 +38,6 @@ const header = computed(() => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  const result = await api.browse(params.offset, params.limit, props.path);
-  allItemsReceived.value = result.total != null;
-  return result;
+  return await api.browse(params.offset, params.limit, props.path);
 };
 </script>
