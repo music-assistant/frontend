@@ -300,7 +300,7 @@
         },
         "announce_volume_strategy": {
             "label": "Volume strategy for Announcements",
-            "description": "When an announcement is being broadcast to this player, how should the volume be adjusted temporary (use in combination with the volume value below).",
+            "description": "When an announcement is being broadcast to this player, how should the volume be adjusted temporarily (use in combination with the volume value below).",
             "options": {
                 "absolute": "Absolute volume",
                 "relative": "Relative volume increase",
