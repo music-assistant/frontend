@@ -192,7 +192,7 @@ import { useI18n } from 'vue-i18n';
 
 export interface LoadDataParams {
   offset: number;
-  limit: number;
+  limit?: number;
   sortBy: string;
   search: string;
   favoritesOnly?: boolean;
