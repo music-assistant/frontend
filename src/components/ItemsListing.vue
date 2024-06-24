@@ -249,7 +249,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSelectButton: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
-  limit: 50,
+  limit: undefined,
   total: undefined,
   infiniteScroll: true,
   title: undefined,
@@ -270,7 +270,7 @@ const { t } = useI18n();
 // local refs
 const params = ref<LoadDataParams>({
   offset: 0,
-  limit: 50,
+  limit: undefined,
   sortBy: 'name',
   search: '',
   libraryOnly: false,
