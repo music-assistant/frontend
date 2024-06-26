@@ -20,7 +20,7 @@ jobs:
           VAR_LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_RO_API_TOKEN }}
           VAR_LOKALISE_PROJECT_ID: ${{ secrets.LOKALISE_PROJECT_ID }}
         run: |
-            ./bin/lokalise2 --token ${{ env.VAR_LOKALISE_API_TOKEN }} --project-id ${{ env.VAR_LOKALISE_PROJECT_ID }} file download --format json --original-filenames=true --directory-prefix=src/translations
+            ./bin/lokalise2 --token ${{ env.VAR_LOKALISE_API_TOKEN }} --project-id ${{ env.VAR_LOKALISE_PROJECT_ID }} file download --format json --export-empty-as skip --original-filenames=true --directory-prefix=src/translations
       - name: Create Pull Request
         env: 
           GH_TOKEN: ${{ github.token }}
