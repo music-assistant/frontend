@@ -105,7 +105,7 @@
           <tr>
             <td>{{ $t('settings.server_logging') }}</td>
             <td>
-              <a :href="`${api.baseUrl}/log`" target="_blank">{{
+              <a :href="`${api.baseUrl}/music-assistant.log`" target="_blank">{{
                 $t('settings.download_log')
               }}</a>
             </td>
