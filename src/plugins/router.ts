@@ -18,6 +18,16 @@ const routes = [
         component: () =>
           import(/* webpackChunkName: "home" */ '@/views/HomeView.vue'),
         props: true,
+        children: [
+          {
+            path: 'player',
+            name: 'player',
+            component: () => import('@/views/HomeView.vue'),
+            beforeEnter: () => {
+              store.showFullscreenPlayer = true;
+            },
+          },
+        ],
       },
       {
         path: '/search',
