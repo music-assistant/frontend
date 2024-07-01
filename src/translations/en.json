@@ -361,23 +361,16 @@
                 "da": "Danish",
                 "de": "German",
                 "en": "English",
-                "es": "Spanish",
+                "en_AU": "English (Australian)",
+                "en_GB": "English (United Kingdom)",                
                 "fr": "French",
-                "he": "Hebrew",
-                "it": "Italian",
-                "nb": "Norwegian",
                 "nl": "Dutch",
                 "pl": "Polish",
-                "uk_UA": "Ukrainian",
-                "zh_CN": "Chinese (Simplified)",
-                "el_GR": "Greek",
-                "en_AU": "English (Australian)",
-                "en_GB": "English (United Kingdom)",
-                "is_IS": "Icelandic",
-                "pt_BR": "Portuguese (Brazil)",
                 "sr": "Serbian",
                 "sr_Latn": "Serbian (Latin)",
-                "sv_SE": "Swedish"
+                "sv_SE": "Swedish",
+                "uk_UA": "Ukrainian",
+                "zh_CN": "Chinese (Simplified)"
             }
         },
         "hide_settings": {
