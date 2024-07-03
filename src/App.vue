@@ -56,7 +56,7 @@ onMounted(() => {
     .matchMedia('(prefers-color-scheme: dark)')
     .addEventListener('change', setTheme);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: Event) => {
     if (api.state.value === ConnectionState.CONNECTED) {
       //Ensure the api can communicate with the server
       if (!store.activePlayerQueue?.active) {
