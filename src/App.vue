@@ -56,7 +56,7 @@ onMounted(() => {
     .matchMedia('(prefers-color-scheme: dark)')
     .addEventListener('change', setTheme);
 
-  const handleKeyDown = (e: Event) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (api.state.value === ConnectionState.CONNECTED) {
       //Ensure the api can communicate with the server
       if (!store.activePlayerQueue?.active) {
@@ -66,25 +66,31 @@ onMounted(() => {
 
         if (store.activePlayerQueue && store.activePlayerQueue.active) {
           //Ensure queue is active to interact with
-          if (key === 'MediaPlayPause' || key === 'Space')  api.queueCommandPlayPause(store.activePlayerQueue!.queue_id);
-          if (key === 'MediaStop') api.queueCommandStop(store.activePlayerQueue!.queue_id);
-          if (key === 'MediaTrackPrevious') api.queueCommandPrevious(store.activePlayerQueue!.queue_id);
-          if (key === 'MediaTrackNext')  api.queueCommandNext(store.activePlayerQueue!.queue_id);
-        }
-
-        else if (key === 'AudioVolumeUp') api.playerCommandVolumeUp(store.activePlayer?.player_id || '');
-        else if (key === 'AudioVolumeDown')  api.playerCommandVolumeDown(store.activePlayer?.player_id || '');
-        else if (key === 'AudioVolumeMute') api.playerCommandVolumeMute(store.activePlayer?.player_id || '', !store.activePlayer?.volume_muted  || false );
+          if (key === 'MediaPlayPause' || key === 'Space')
+            api.queueCommandPlayPause(store.activePlayerQueue!.queue_id);
+          if (key === 'MediaStop')
+            api.queueCommandStop(store.activePlayerQueue!.queue_id);
+          if (key === 'MediaTrackPrevious')
+            api.queueCommandPrevious(store.activePlayerQueue!.queue_id);
+          if (key === 'MediaTrackNext')
+            api.queueCommandNext(store.activePlayerQueue!.queue_id);
+        } else if (key === 'AudioVolumeUp')
+          api.playerCommandVolumeUp(store.activePlayer?.player_id || '');
+        else if (key === 'AudioVolumeDown')
+          api.playerCommandVolumeDown(store.activePlayer?.player_id || '');
+        else if (key === 'AudioVolumeMute')
+          api.playerCommandVolumeMute(
+            store.activePlayer?.player_id || '',
+            !store.activePlayer?.volume_muted || false,
+          );
         else keyDetected = false;
 
-        if (keyDetected)
-          e.preventDefault();  
+        if (keyDetected) e.preventDefault();
       }
     }
-  }
+  };
 
-
-  window.addEventListener('keydown', handleKeyDown, true)
+  window.addEventListener('keydown', handleKeyDown, true);
   // Initialize API Connection
   // TODO: retrieve serveraddress through discovery and/or user settings ?
   let serverAddress = '';
