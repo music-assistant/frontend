@@ -55,6 +55,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_radio": "Start Radio",
+    "played": "Played",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -363,6 +364,7 @@
                 "en": "English",
                 "en_AU": "English (Australian)",
                 "en_GB": "English (United Kingdom)",                
+                "es": "Spanish",
                 "fr": "French",
                 "nl": "Dutch",
                 "pl": "Polish",
