@@ -383,14 +383,10 @@ export class MusicAssistantApi {
   public getPlaylist(
     item_id: string,
     provider_instance_id_or_domain: string,
-    force_refresh?: boolean,
-    lazy?: boolean,
   ): Promise<Playlist> {
     return this.getData('music/playlists/get_playlist', {
       item_id,
       provider_instance_id_or_domain,
-      force_refresh,
-      lazy,
     });
   }
 
@@ -456,14 +452,10 @@ export class MusicAssistantApi {
   public getRadio(
     item_id: string,
     provider_instance_id_or_domain: string,
-    force_refresh?: boolean,
-    lazy?: boolean,
   ): Promise<Radio> {
     return this.getData('music/radios/get_radio', {
       item_id,
       provider_instance_id_or_domain,
-      force_refresh,
-      lazy,
     });
   }
 
