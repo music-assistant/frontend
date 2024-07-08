@@ -64,20 +64,14 @@
             • {{ item.album.name }}
           </v-item>
           <v-item
-            v-if="
-              showDiscNumber &&
-              'disc_number' in item &&
-              item.disc_number != null
-            "
+            v-if="showDiscNumber && 'disc_number' in item && item.disc_number"
           >
             <v-icon style="margin-left: 5px" icon="md:album" />
             {{ item.disc_number }}
           </v-item>
           <v-item
             v-if="
-              showTrackNumber &&
-              'track_number' in item &&
-              item.track_number != null
+              showTrackNumber && 'track_number' in item && item.track_number
             "
           >
             <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
