@@ -32,15 +32,15 @@
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
     "external_source_active": "External source active: {0}",
-    "goto_album": "Goto album {0}",
-    "goto_artist": "Goto artist {0}",
+    "goto_album": "Go to album {0}",
+    "goto_artist": "Go to artist {0}",
     "home": "Home",
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Enter a new for the new playlist",
+    "new_playlist_name": "Enter a name for the new playlist",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",
@@ -55,6 +55,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_radio": "Start Radio",
+    "played": "Played",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -92,7 +93,7 @@
         "add_new": "Add new",
         "add_provider": "Add a new provider",
         "advanced_settings": "Advanced settings",
-        "check_docs": "Checkout the documentation",
+        "check_docs": "Check out the documentation",
         "codeowners": "Authors\/credits",
         "config_player": "Configure player: {0}",
         "configure": "Configure",
@@ -116,7 +117,7 @@
         "player_id": "Player ID",
         "player_model": "Model",
         "player_name": "Custom player name",
-        "player_not_available": "This player is currently not (yet) available",
+        "player_not_available": "This player is not (yet) available",
         "player_provider": "Provider",
         "player_settings": "Player settings",
         "player_type_label": "Player type",
@@ -164,7 +165,7 @@
         },
         "flow_mode": {
             "label": "Enable queue flow mode",
-            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
+            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream.\nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
         },
         "auto_play": {
             "label": "Automatically play (resume on power on)",
@@ -172,7 +173,7 @@
         },
         "output_channels": {
             "label": "Output Channel Mode",
-            "description": "You can configure this player to play only the left or right channel, for example to a create a stereo pair with 2 players.",
+            "description": "You can configure this player to play only the left or right channel, for example to create a stereo pair with 2 players.",
             "options": {
                 "stereo": "Stereo (both channels)",
                 "left": "Left channel only",
@@ -186,19 +187,19 @@
         },
         "volume_normalization_target": {
             "label": "Target level for volume normalization",
-            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \n\n **WARNING:** Setting the level too high may result in clipping!"
+            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS\n\n**WARNING:** Setting the level too high may result in clipping!"
         },
         "eq_bass": {
             "label": "Equalizer: bass",
-            "description": "Use the builtin basic equalizer to adjust the bass (low tones) level of the audio."
+            "description": "Use the built-in basic equalizer to adjust the bass (low tones) level of the audio."
         },
         "eq_mid": {
             "label": "Equalizer: mid",
-            "description": "Use the builtin basic equalizer to adjust the mid level of audio."
+            "description": "Use the built-in basic equalizer to adjust the mid level of audio."
         },
         "eq_treble": {
             "label": "Equalizer: treble",
-            "description": "Use the builtin basic equalizer to adjust the treble (high tones) level of audio."
+            "description": "Use the built-in basic equalizer to adjust the treble (high tones) level of audio."
         },
         "crossfade": {
             "label": "Enable crossfade",
@@ -210,7 +211,7 @@
         },
         "hide_player": {
             "label": "Hide this player in the user interface",
-            "description": "Hide this player in the user interface. \n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
+            "description": "Hide this player in the user interface.\n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
         },
         "default_enqueue_select_artist": {
             "label": "Items to select when you play a (in-library) artist.",
@@ -232,7 +233,7 @@
         },
         "default_enqueue_action_artist": {
             "label": "Default enqueue option for Artist item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play artist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the artist track(s)",
@@ -243,7 +244,7 @@
         },
         "default_enqueue_action_album": {
             "label": "Default enqueue option for Album item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play album track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the album track(s)",
@@ -254,7 +255,7 @@
         },
         "default_enqueue_action_track": {
             "label": "Default enqueue option for Track item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the track(s).",
@@ -265,7 +266,7 @@
         },
         "default_enqueue_action_playlist": {
             "label": "Default enqueue option for Playlist item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play playlist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the playlist track(s)",
@@ -276,7 +277,7 @@
         },
         "default_enqueue_action_radio": {
             "label": "Default enqueue option for Radio item(s).",
-            "description": "Define the default enqueue action for this mediatype (if you did not specify an action).",
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
             "options": {
                 "play": "Play radio station now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the radio station",
@@ -286,11 +287,11 @@
             }
         },
         "default": "default",
-        "provider_depends_on_confirm": "Before you can setup {0}, you need to have the {1} provider configured, do you want to do that now?",
+        "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
             "audio": "Audio",
             "advanced": "Advanced settings",
-            "generic": "Generic Settings",
+            "generic": "Generic settings",
             "announcements": "Announcements configuration",
             "airplay": "Airplay specific settings"
         },
@@ -300,7 +301,7 @@
         },
         "announce_volume_strategy": {
             "label": "Volume strategy for Announcements",
-            "description": "When an announcement is being broadcast to this player, how should the volume be adjusted temporary (use in combination with the volume value below).",
+            "description": "When an announcement is being broadcast to this player, how should the volume be adjusted temporarily (use in combination with the volume value below)?",
             "options": {
                 "absolute": "Absolute volume",
                 "relative": "Relative volume increase",
@@ -314,18 +315,18 @@
         },
         "announce_volume_min": {
             "label": "Minimum Volume level for Announcements",
-            "description": "The volume (adjustment) of announcements should no go below this level."
+            "description": "The volume (adjustment) of announcements should not go below this level."
         },
         "announce_volume_max": {
             "label": "Maximum Volume level for Announcements",
-            "description": "The volume (adjustment) of announcements should no go above this level."
+            "description": "The volume (adjustment) of announcements should not go above this level."
         },
         "icon": {
             "label": "Icon",
-            "description": "Material design icon for this player. \n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design icon for this player.\n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "User Interface",
-        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored on a device level.",
+        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
         "theme": {
             "label": "Theme",
             "options": {
@@ -343,11 +344,11 @@
         },
         "menu_items": {
             "label": "Enabled menu items",
-            "description": "Configure which items to show in the menu.\n\n Note that if you disable settings you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
+            "description": "Configure which items to show in the menu.\n\nNote that if you disable settings you may lock yourself out.\n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
         },
         "artwork_pref": {
             "label": "Preference for image retrieval",
-            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server ?\nBy default the client is allowed to cache\/download artwork directly from internet resources to put less stress on the server.",
+            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server?\nBy default, the client is allowed to cache\/download artwork directly from internet resources to put less stress on the server.",
             "options": {
                 "online": "Allow direct retrieval",
                 "server_only": "Enforce routing though the server"
@@ -357,32 +358,26 @@
             "label": "Language",
             "options": {
                 "auto": "Auto (follow system configuration)",
-                "zh_CN": "Chinese (Simplified)",
                 "cs": "Czech",
                 "da": "Danish",
                 "de": "German",
-                "el_GR": "Greek",
                 "en": "English",
                 "en_AU": "English (Australian)",
-                "en_UK": "English (United Kingdom)",
+                "en_GB": "English (United Kingdom)",                
                 "es": "Spanish",
                 "fr": "French",
-                "he": "Hebrew",
-                "is_IS": "Icelandic",
-                "it": "Italian",
-                "nb": "Norwegian",
                 "nl": "Dutch",
                 "pl": "Polish",
-                "pt_BR": "Portuguese (Brazil)",
                 "sr": "Serbian",
                 "sr_Latn": "Serbian (Latin)",
                 "sv_SE": "Swedish",
-                "uk_UA": "Ukrainian"
+                "uk_UA": "Ukrainian",
+                "zh_CN": "Chinese (Simplified)"
             }
         },
         "hide_settings": {
-            "label": "Hide button to settings",
-            "description": "Hide settings button on home screen.\n\n Note that if you disable settings on the home screen and in the menu you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
+            "label": "Hide settings button",
+            "description": "Hide settings button on home screen.\n\nNote that if you disable settings on the home screen and in the menu you may lock yourself out.\n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
@@ -397,13 +392,8 @@
     "sort": {
         "duration": "Duration",
         "position": "Position",
-        "position DESC": "Position (descending)",
         "provider": "Provider",
-        "sort_album": "Album",
-        "sort_artist": "Artist",
         "sort_name": "Sort name",
-        "sort_name DESC": "Alphabetically (descending)",
-        "timestamp_added DESC": "Recently added",
         "track_number": "Track number",
         "year": "Release year",
         "position_desc": "Position (descending)",
@@ -420,8 +410,6 @@
         "timestamp_added_desc": "Date added (descending)",
         "timestamp_modified": "Date updated",
         "timestamp_modified_desc": "Date updated (descending)",
-        "album_sort": "Album sort name",
-        "artist_sort": "Artist sort name",
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
@@ -469,7 +457,7 @@
     "currently_playing": "Currently playing",
     "favorites_add": "Add to favorites",
     "favorites_remove": "Remove from favorites",
-    "confirm_library_remove": "Are you sure you want to delete this item from the library ? Any items depending on this item will also recursively be removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return in the next sync.",
+    "confirm_library_remove": "Are you sure you want to delete this item from the library? Any items depending on this item will also be recursively removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return on the next sync.",
     "check_item_on_provider": "Check {0} on {1}",
     "check_item_in_library": "Check {0} in the library",
     "media_details": "Media details",
