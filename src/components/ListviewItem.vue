@@ -78,9 +78,7 @@
             {{ item.track_number }}
           </v-item>
           <v-item
-            v-else-if="
-              showPosition && 'position' in item && item.position != null
-            "
+            v-else-if="showPosition && 'position' in item && item.position"
           >
             <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
             {{ item.position }}

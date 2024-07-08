@@ -338,6 +338,7 @@ watch(
       fanartImage.value =
         getImageThumbForItem(compProps.item, ImageType.FANART) ||
         getImageThumbForItem(compProps.item, ImageType.LANDSCAPE) ||
+        getImageThumbForItem(compProps.item, ImageType.THUMB) ||
         imgGradient;
     }
   },
