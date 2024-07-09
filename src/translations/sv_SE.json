@@ -159,17 +159,12 @@
                 "info": "Information",
                 "warning": "Varning",
                 "error": "Fel",
-                "debug": "Felsökning",
-                "GLOBAL": "Tom",
-                "INFO": "Tom",
-                "WARNING": "Tom",
-                "ERROR": "Tom",
-                "DEBUG": "Tom"
+                "debug": "Felsökning"
             }
         },
         "flow_mode": {
             "label": "Aktivera köflödesläge",
-            "description": "Aktivera \"flödes\"-läget där alla köspår skickas som en kontinuerlig ljudström. \nAnvänds för spelare som inte har inbyggt stöd för gapless och\/eller crossfading eller om spelaren har problem med övergången mellan spåren."
+            "description": "Aktivera \"flödes\"-läget där alla köspår skickas som en kontinuerlig ljudström. \\nAnvänds för spelare som inte har inbyggt stöd för gapless och\/eller crossfading eller om spelaren har problem med övergången mellan spåren."
         },
         "auto_play": {
             "label": "Automatisk uppspelning (återupptas när strömmen slås på)",
@@ -191,7 +186,7 @@
         },
         "volume_normalization_target": {
             "label": "Målnivå för normalisering av volym",
-            "description": "Justera genomsnittlig (upplevd) loudness till denna målnivå, standard är -17 LUFS \n\n **VARNING:** Om nivån ställs in för högt kan det leda till att ljudet klipper (clipping)!"
+            "description": "Justera genomsnittlig (upplevd) loudness till denna målnivå, standard är -17 LUFS \\n\\n **VARNING:** Om nivån ställs in för högt kan det leda till att ljudet klipper (clipping)!"
         },
         "eq_bass": {
             "label": "Equalizer: bas",
@@ -215,7 +210,7 @@
         },
         "hide_player": {
             "label": "Dölj denna spelare i användargränssnittet",
-            "description": "Dölj denna spelare i användargränssnittet. \n\nObservera att den fortfarande kan styras och att den också kommer att visas i alla synkroniseringsgrupper som spelaren tillhör."
+            "description": "Dölj denna spelare i användargränssnittet. \\n\\nObservera att den fortfarande kan styras och att den också kommer att visas i alla synkroniseringsgrupper som spelaren tillhör."
         },
         "default_enqueue_select_artist": {
             "label": "Objekt att välja när du spelar en artist (i biblioteket).",
@@ -327,7 +322,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Material design ikon för den här spelaren. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design ikon för den här spelaren. \\n\\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Användargränssnitt",
         "frontend_desc": "Konfigurationsinställningar för användargränssnittet för Music Assistant (frontend). Observera att dessa inställningar lagras på enhetsnivå.",
@@ -348,11 +343,11 @@
         },
         "menu_items": {
             "label": "Aktiverade menyalternativ",
-            "description": "Konfigurera vilka objekt som ska visas i menyn. \n\nObservera att om du inaktiverar inställningar kan du låsa dig själv. \n\nI så fall måste du manuellt ange sökvägen till inställningarna eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk."
+            "description": "Konfigurera vilka objekt som ska visas i menyn. \\n\\nObservera att om du inaktiverar inställningar kan du låsa dig själv. \\n\\nI så fall måste du manuellt ange sökvägen till inställningarna eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk."
         },
         "artwork_pref": {
             "label": "Inställning för bildhämtning",
-            "description": "Får den här klienten ladda ner (offentligt tillgänglig) konstverk själv eller ska allt dirigeras via servern?\nSom standard tillåts klienten att cache\/ladda ner konstverk direkt från internetresurser för att belasta servern mindre.",
+            "description": "Får den här klienten ladda ner (offentligt tillgänglig) konstverk själv eller ska allt dirigeras via servern?\\nSom standard tillåts klienten att cache\/ladda ner konstverk direkt från internetresurser för att belasta servern mindre.",
             "options": {
                 "online": "Tillåt direkthämtning",
                 "server_only": "Framtvinga routing genom servern"
@@ -366,19 +361,22 @@
                 "da": "Danska",
                 "de": "Tyska",
                 "en": "Engelska",
-                "es": "Spanska",
                 "fr": "Franska",
-                "he": "Hebreiska",
-                "it": "Italienska",
-                "nb": "Norska",
                 "nl": "Holländska",
                 "pl": "Polska",
-                "uk_UA": "Ukrainska"
+                "uk_UA": "Ukrainska",
+                "zh_CN": "Kinesiska (förenklad)",
+                "en_AU": "Engelska (Australien)",
+                "sr": "Serbiska",
+                "sr_Latn": "Serbiska (latinsk)",
+                "sv_SE": "Svenska",
+                "en_GB": "Engelska",
+                "es": "Spanska"
             }
         },
         "hide_settings": {
             "label": "Dölj knapp till inställningar",
-            "description": "Dölj inställningar-knappen på startskärmen.\n\nObservera att om du inaktiverar inställningar på startskärmen och i menyn kan du låsa dig själv ute. \n\nI så fall måste du manuellt ange sökvägen till inställningar eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk!"
+            "description": "Dölj inställningar-knappen på startskärmen.\\n\\nObservera att om du inaktiverar inställningar på startskärmen och i menyn kan du låsa dig själv ute. \\n\\nI så fall måste du manuellt ange sökvägen till inställningar eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk!"
         },
         "no_music_providers": "Inga musikleverantörer har konfigurerats",
         "no_music_providers_detail": "Börja din upplevelse av Music Assistant genom att lägga till dina musikleverantörer.",
@@ -393,13 +391,8 @@
     "sort": {
         "duration": "Varaktighet",
         "position": "Position",
-        "position DESC": "Position (fallande)",
         "provider": "Leverantör",
-        "sort_album": "Album",
-        "sort_artist": "Artist",
         "sort_name": "Alfabetiskt",
-        "sort_name DESC": "Alfabetiskt (fallande)",
-        "timestamp_added DESC": "Nyligen tillagd",
         "track_number": "Låtnummer",
         "year": "Utgivningsår",
         "position_desc": "Position (fallande)",
@@ -411,14 +404,11 @@
         "year_desc": "Utgivningsår (fallande)",
         "duration_desc": "Varaktighet (fallande)",
         "original": "Original",
-        "none": "Tom",
         "sort_name_desc": "Sortera namn (fallande)",
         "timestamp_added": "Datum tillagt",
         "timestamp_added_desc": "Datum tillagt (fallande)",
         "timestamp_modified": "Datum uppdaterat",
         "timestamp_modified_desc": "Datum uppdaterat (fallande)",
-        "album_sort": "Sortering Albumnamn",
-        "artist_sort": "Sortering artistnamn",
         "last_played": "Senast spelade",
         "last_played_desc": "Senast spelade (fallande)",
         "play_count": "Antal spelningar",

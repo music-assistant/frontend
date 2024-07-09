@@ -159,17 +159,12 @@
                 "info": "Info",
                 "warning": "Warnung",
                 "error": "Fehler",
-                "debug": "Debug",
-                "GLOBAL": "Global",
-                "INFO": "Info",
-                "WARNING": "Warnung",
-                "ERROR": "Fehler",
-                "DEBUG": "Debug"
+                "debug": "Debug"
             }
         },
         "flow_mode": {
             "label": "Warteschlangen-\"Flow\"-Modus aktivieren",
-            "description": "Aktiviere den \"Flow\"-Modus, bei dem alle Warteschlangentitel als kontinuierlicher Audiostream gesendet werden. \nVerwende diesen Modus für Wiedergabegeräte, die keine native lückenlosen Crossfade unterstützen, oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
+            "description": "Aktiviere den \"Flow\"-Modus, bei dem alle Warteschlangentitel als kontinuierlicher Audiostream gesendet werden. \\nVerwende diesen Modus für Wiedergabegeräte, die keine native lückenlosen Crossfade unterstützen, oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
         },
         "auto_play": {
             "label": "Automatische Wiedergabe (Fortsetzen beim Einschalten)",
@@ -191,7 +186,7 @@
         },
         "volume_normalization_target": {
             "label": "Zielpegel für die Lautstärkenormalisierung",
-            "description": "Passe die durchschnittliche (wahrgenommene) Lautstärke an diesen Zielpegel an. Der Standardwert ist -17 LUFS \n\n **WARNUNG:** Wenn der Pegel zu hoch eingestellt wird, kann es zu Übersteuerung kommen!"
+            "description": "Passe die durchschnittliche (wahrgenommene) Lautstärke an diesen Zielpegel an. Der Standardwert ist -17 LUFS \\n\\n **WARNUNG:** Wenn der Pegel zu hoch eingestellt wird, kann es zu Übersteuerung kommen!"
         },
         "eq_bass": {
             "label": "Equalizer: Bass",
@@ -215,7 +210,7 @@
         },
         "hide_player": {
             "label": "Wiedergabegerät in der Benutzeroberfläche ausblenden",
-            "description": "Dieses Wiedergabegerät in der Benutzeroberfläche ausblenden. \n\nBeachte, dass dieses Wiedergabegerät weiterhin gesteuert werden kann und auch in allen Synchronisierungsgruppen angezeigt wird, zu denen das Wiedergabegerät gehört."
+            "description": "Dieses Wiedergabegerät in der Benutzeroberfläche ausblenden. \\n\\nBeachte, dass dieses Wiedergabegerät weiterhin gesteuert werden kann und auch in allen Synchronisierungsgruppen angezeigt wird, zu denen das Wiedergabegerät gehört."
         },
         "default_enqueue_select_artist": {
             "label": "Auswählbare Elemente, wenn ein (bibliotheksinterner) Künstler abgespielt wird.",
@@ -294,7 +289,7 @@
         "provider_depends_on_confirm": "Bevor du {0} einrichten kannst, musst du den Anbieter {1} konfigurieren. Möchtest du das jetzt tun?",
         "category": {
             "audio": "Audio",
-            "advanced": "Erweiterte Einstellungen ",
+            "advanced": "Erweiterte Einstellungen",
             "generic": "Allgemeine Einstellungen",
             "announcements": "Einstellungen für Ankündigungen",
             "airplay": "Airplay-spezifische Einstellungen"
@@ -327,7 +322,7 @@
         },
         "icon": {
             "label": "Icon",
-            "description": "Material Design Icon für dieses Wiedergabegerät. \n\nSiehe https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material Design Icon für dieses Wiedergabegerät. \\n\\nSiehe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Benutzeroberfläche",
         "frontend_desc": "Konfigurationen für die Music Assistant Benutzeroberfläche. Diese Einstellungen werden nur auf dem nutzenden Gerät gespeichert.",
@@ -348,11 +343,11 @@
         },
         "menu_items": {
             "label": "Aktivierte Menü Einträge",
-            "description": "Konfiguriere, welche Einträge im Menü angezeigt werden\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Knopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du den URL der Seite manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
+            "description": "Konfiguriere, welche Einträge im Menü angezeigt werden\\n\\nBedenke, dass du dich selbst aussperren könntest, falls du den Knopf auf Startseite und Menü versteckst.\\n\\nIn diesem Fall musst du die URL der Seite manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
         },
         "artwork_pref": {
             "label": "Präferenz für den Bildabruf",
-            "description": "Darf dieser Client selbstständig (öffentlich zugängliche) Grafiken herunterladen oder muss alles über den Server geroutet werden?\nStandardmäßig ist es dem Client erlaubt, Grafiken direkt aus dem Internet zwischenzuspeichern\/herunterzuladen, um den Server weniger zu belasten.",
+            "description": "Darf dieser Client selbstständig (öffentlich zugängliche) Grafiken herunterladen oder muss alles über den Server geroutet werden?\\nStandardmäßig ist es dem Client erlaubt, Grafiken direkt aus dem Internet zwischenzuspeichern\/herunterzuladen, um den Server weniger zu belasten.",
             "options": {
                 "online": "Direkten Abruf erlauben",
                 "server_only": "Routing über den Server erzwingen"
@@ -362,21 +357,26 @@
             "label": "Sprache",
             "options": {
                 "auto": "Automatisch (entsprechend der Systemeinstellung)",
+                "cs": "Tschechisch",
                 "da": "Dänisch",
                 "de": "Deutsch",
                 "en": "Englisch",
-                "es": "Spanisch",
                 "fr": "Französisch",
-                "he": "Hebräisch",
-                "it": "Italienisch",
                 "nl": "Niederländisch",
                 "pl": "Polnisch",
-                "uk_UA": "Ukrainisch"
+                "uk_UA": "Ukrainisch",
+                "zh_CN": "Chinesisch",
+                "en_AU": "Englisch (Australisch)",
+                "sr": "Serbisch",
+                "sr_Latn": "Serbisch (Latein)",
+                "sv_SE": "Schwedisch",
+                "en_GB": "Englisch (Vereinigtes Königreich)",
+                "es": "Spanisch"
             }
         },
         "hide_settings": {
             "label": "Verstecke den Einstellungsknopf",
-            "description": "Versteckt den Einstellungsknopf auf der Startseite.\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Einstellungsknopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du den URL der Seite in den Einstellungen manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu den Einstellungen zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
+            "description": "Versteckt den Einstellungsknopf auf der Startseite.\\n\\nBedenke, dass du dich selbst aussperren könntest, falls du den Einstellungsknopf auf Startseite und Menü versteckst.\\n\\nIn diesem Fall musst du die URL der Seite in den Einstellungen manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu den Einstellungen zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
         },
         "no_music_providers": "Keine Musikanbieter konfiguriert",
         "no_music_providers_detail": "Starte mit Music Assistant, indem du deine Musikanbieter hinzufügst.",
@@ -391,13 +391,8 @@
     "sort": {
         "duration": "Dauer",
         "position": "Position",
-        "position DESC": "Position (absteigend)",
         "provider": "Anbieter",
-        "sort_album": "Album",
-        "sort_artist": "Künstler",
         "sort_name": "Alphabetisch",
-        "sort_name DESC": "Alphabetisch (absteigend)",
-        "timestamp_added DESC": "Kürzlich hinzugefügt",
         "track_number": "Titelnummer",
         "year": "Erscheinungsjahr",
         "position_desc": "Position (absteigend)",
@@ -409,7 +404,7 @@
         "year_desc": "Erscheinungsjahr (absteigend)",
         "duration_desc": "Dauer (absteigend)",
         "original": "Standard",
-        "none": "Leer",
+        "sort_name_desc": "Alphabetisch (absteigend)",
         "timestamp_added": "Datum des Hinzufügens",
         "timestamp_added_desc": "Datum des Hinzufügens (absteigend)",
         "timestamp_modified": "Änderungsdatum",

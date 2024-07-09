@@ -1,0 +1,84 @@
+{
+    "sort": {
+        "position_desc": "Poziție (descrescător)",
+        "name_desc": "Alfabetic (descrescător)",
+        "year_desc": "Anul lansării (descrescător)",
+        "duration_desc": "Durată (descrescător)",
+        "original": "Original",
+        "sort_name_desc": "Nume de sortare (descrescător)",
+        "timestamp_added": "Data adăugării",
+        "timestamp_added_desc": "Data adăugării (descrescător)",
+        "timestamp_modified_desc": "Data actualizării (descrescător)",
+        "last_played": "Ultimul redat",
+        "last_played_desc": "Ultimul redat (descrescător)",
+        "play_count_desc": "Număr de redări (descrescător)"
+    },
+    "recently_played": "Redat recent",
+    "radiobrowser_by_popularity": "După popularitate",
+    "radiobrowser_by_country": "După țară",
+    "radiobrowser_by_tag": "După etichetă",
+    "radio": "Radio",
+    "settings": {
+        "log_level": {
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Avertisment",
+                "error": "Eroare",
+                "debug": "Depanare"
+            }
+        },
+        "auto_play": {
+            "label": "Redare automată (reluare la pornire)"
+        },
+        "output_channels": {
+            "options": {
+                "stereo": "Stereo (ambele canale)",
+                "left": "Doar canalul stâng",
+                "right": "Doar canalul drept",
+                "mono": "Mono (ambele canale)"
+            }
+        },
+        "eq_bass": {
+            "label": "Egalizator: bass"
+        },
+        "default": "implicit",
+        "category": {
+            "audio": "Audio",
+            "advanced": "Setări Avansate",
+            "generic": "Setări Generice"
+        },
+        "announce_volume_strategy": {
+            "options": {
+                "absolute": "Volum absolut",
+                "none": "Nu regla volumul"
+            }
+        },
+        "theme": {
+            "options": {
+                "light": "Luminat",
+                "dark": "Întunecat"
+            }
+        },
+        "menu_style": {
+            "options": {
+                "horizontal": "Orizontal",
+                "vertical": "Vertical"
+            }
+        },
+        "language": {
+            "label": "Limbă",
+            "options": {
+                "de": "Germană",
+                "en": "Engleză",
+                "fr": "Franceză",
+                "pl": "Poloneză",
+                "zh_CN": "Chineză (Simplificată)",
+                "en_AU": "Engleză (Australia)",
+                "sv_SE": "Suedeză"
+            }
+        },
+        "no_music_providers": "Nu este configurat niciun Furnizor de Muzică"
+    },
+    "new_playlist": "Playlist nou"
+}

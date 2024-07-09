@@ -1,17 +1,373 @@
 {
+    "actions": "Actions",
+    "add_library": "Add to library",
+    "add_url_item": "Add item from URL",
+    "album": "Album",
+    "album_tracks": "Album tracks",
+    "album_type": {
+        "album": "Album",
+        "compilation": "Compilation",
+        "ep": "EP",
+        "single": "Single",
+        "audiobook": "Audiobook",
+        "podcast": "Podcast"
+    },
+    "albums": "Albums",
+    "appears_on": "Appears on",
+    "artist": "Artist",
+    "artist_albums": "Albums",
+    "artist_toptracks": "Top tracks",
+    "browse": "Browse",
+    "clear_selection": "Clear selection",
+    "close": "Close",
+    "crossfade_disabled": "Crossfade is disabled",
+    "crossfade_enabled": "Crossfade is enabled",
+    "dark_mode": "Dark mode",
+    "delete_db": "Delete item from database",
+    "details": "Details",
+    "enter_url": "Enter the URL you want to manually add to the database",
+    "home": "Home",
+    "items_total": "{0} total item(s)",
+    "library": "Library",
+    "loading": "Data is being retrieved from the server.",
+    "mass": "Music Assistant",
+    "new_playlist_name": "Enter a name for the new playlist",
+    "no_content": "No items found.",
+    "no_player": "No player selected",
+    "off": "Off",
+    "on": "On",
+    "other_versions": "Other versions",
+    "perform_action": "Perform action on {0} item(s)",
+    "play": "Play",
+    "play_next": "Play Next",
+    "play_now": "Play Now",
+    "play_on": "Play on: {0}",
+    "play_radio": "Start Radio",
+    "player_type": {
+        "group": "Group",
+        "player": "Player"
+    },
+    "players": "Players",
+    "playlist": "Playlist",
+    "playlist_tracks": "Playlist tracks",
+    "playlists": "Playlists",
+    "provider_details": "Provider details",
+    "queue": "Queue",
+    "queue_clear": "Clear all items in queue",
+    "queue_delete": "Delete item",
+    "queue_empty": "No items in the queue",
+    "queue_move_down": "Move down",
+    "queue_move_up": "Move up",
+    "queue_next_items": "Next items",
+    "queue_options": "Queue options",
+    "queue_previous_items": "Played items",
+    "queue_radio_enabled": "Radio mode is enabled",
+    "radios": "Radio",
+    "read_more": "read more",
+    "refresh_item": "Refresh item",
+    "remove_library": "Remove from library",
+    "remove_playlist": "Remove from playlist",
+    "repeatmode": {
+        "all": "Repeat entire queue",
+        "off": "Repeat off",
+        "one": "Repeat single track"
+    },
+    "search": "Search",
     "settings": {
+        "add_new": "Add new",
+        "add_provider": "Add a new provider",
+        "advanced_settings": "Advanced settings",
+        "configure": "Configure",
+        "delete": "Delete",
+        "disable": "Disable",
+        "documentation": "Documentation",
+        "enable": "Enable",
+        "enable_player": "Enable this player",
+        "enable_provider": "Enable this provider entry",
+        "enabled": "Enable",
+        "invalid_input": "The input is invalid",
+        "metadataproviders": "Metadata providers",
+        "musicproviders": "Music providers",
+        "need_help_setup_provider": "Need help setting up this provider ?",
+        "not_loaded": "The provider is not (yet) loaded",
+        "password": "Password",
+        "player_address": "Address",
+        "player_disabled": "This player is disabled",
+        "player_id": "Player ID",
+        "player_model": "Model",
+        "player_name": "Custom player name",
+        "player_not_available": "This player is not (yet) available",
+        "player_provider": "Provider",
+        "player_settings": "Player settings",
+        "player_type_label": "Player type",
+        "playerproviders": "Player providers",
+        "players": "Players",
+        "pluginproviders": "Plugin providers",
+        "provider_disabled": "This provider entry is disabled",
+        "provider_name": "Custom name for this provider entry",
+        "providers": "Providers",
+        "reload": "Reload",
+        "save": "Save",
+        "settings": "Settings",
         "sync": "Synchronize now",
-        "sync_running": "This provider is now being synchronized"
+        "sync_running": "This provider is now being synchronized",
+        "username": "Username",
+        "core": "Core",
+        "core_modules": "Core modules",
+        "server_info": "Server information",
+        "server_id": "Server ID",
+        "server_version": "Server version",
+        "server_base_url": "Base URL",
+        "server_as_addon": "Home Assistant add-on",
+        "artists_in_library": "Artists in library",
+        "albums_in_library": "Albums in library",
+        "tracks_in_library": "Tracks in library",
+        "playlists_in_library": "Playlists in library",
+        "radio_in_library": "Radio in library",
+        "server_logging": "Server logging",
+        "download_log": "Download logfile",
+        "edit_group_members": "Edit group members",
+        "add_group_player": "Add group player",
+        "group_members": "Group members",
+        "log_level": {
+            "label": "Log level",
+            "description": "Set the log verbosity for this provider.",
+            "options": {
+                "global": "Global",
+                "info": "Info",
+                "warning": "Warning",
+                "error": "Error",
+                "debug": "Debug"
+            }
+        },
+        "flow_mode": {
+            "label": "Enable queue flow mode",
+            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \\nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
+        },
+        "auto_play": {
+            "label": "Automatically play (resume on power on)"
+        },
+        "output_channels": {
+            "label": "Output Channel Mode",
+            "description": "You can configure this player to play only the left or right channel, for example to create a stereo pair with 2 players.",
+            "options": {
+                "stereo": "Stereo (both channels)",
+                "left": "Left channel only",
+                "right": "Right channel only"
+            }
+        },
+        "volume_normalization_target": {
+            "label": "Target level for volume normalization",
+            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \\n\\n **WARNING:** Setting the level too high may result in clipping!"
+        },
+        "eq_bass": {
+            "label": "Equalizer: bass",
+            "description": "Use the built-in basic equalizer to adjust the bass (low tones) level of the audio."
+        },
+        "eq_mid": {
+            "label": "Equalizer: mid",
+            "description": "Use the built-in basic equalizer to adjust the mid level of audio."
+        },
+        "eq_treble": {
+            "label": "Equalizer: treble",
+            "description": "Use the built-in basic equalizer to adjust the treble (high tones) level of audio."
+        },
+        "crossfade": {
+            "label": "Enable crossfade",
+            "description": "Enable a crossfade transition between (queue) tracks."
+        },
+        "crossfade_duration": {
+            "label": "Crossfade duration",
+            "description": "Duration in seconds of the crossfade between tracks (if enabled)"
+        },
+        "hide_player": {
+            "label": "Hide this player in the user interface",
+            "description": "Hide this player in the user interface. \\n\\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
+        },
+        "default_enqueue_select_artist": {
+            "options": {
+                "library_tracks": "Only in-library tracks",
+                "library_album_tracks": "All tracks from all albums in the library"
+            }
+        },
+        "default_enqueue_select_album": {
+            "description": "If you want to play an album, what items should be enqueued?",
+            "options": {
+                "library_tracks": "Only in-library tracks",
+                "all_tracks": "All tracks for album on provider"
+            }
+        },
+        "default_enqueue_action_album": {
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
+            "options": {
+                "replace": "Clear the queue and play the album track(s)"
+            }
+        },
+        "default_enqueue_action_radio": {
+            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
+            "options": {
+                "replace": "Clear the queue and play the radio station"
+            }
+        },
+        "default": "default",
+        "category": {
+            "audio": "Audio",
+            "advanced": "Advanced settings",
+            "generic": "Generic settings",
+            "airplay": "Airplay specific settings"
+        },
+        "announce_volume_strategy": {
+            "description": "When an announcement is being broadcast to this player, how should the volume be adjusted temporarily (use in combination with the volume value below)?",
+            "options": {
+                "absolute": "Absolute volume",
+                "relative": "Relative volume increase",
+                "percentual": "Volume increase by fixed percentage",
+                "none": "Do not adjust volume"
+            }
+        },
+        "announce_volume": {
+            "description": "The perceptual, relative or absolute volume level, used with the strategy for announcements."
+        },
+        "icon": {
+            "label": "Icon",
+            "description": "Material design icon for this player. \\n\\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "frontend": "User Interface",
+        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
+        "theme": {
+            "label": "Theme",
+            "options": {
+                "light": "Light",
+                "dark": "Dark"
+            }
+        },
+        "menu_style": {
+            "label": "Menu style",
+            "options": {
+                "horizontal": "Horizontal",
+                "vertical": "Vertical"
+            }
+        },
+        "menu_items": {
+            "label": "Enabled menu items",
+            "description": "Configure which items to show in the menu.\\n\\n Note that if you disable settings you may lock yourself out. \\n\\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
+        },
+        "artwork_pref": {
+            "label": "Preference for image retrieval",
+            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server?\\nBy default, the client is allowed to cache\/download artwork directly from internet resources to put less stress on the server.",
+            "options": {
+                "online": "Allow direct retrieval",
+                "server_only": "Enforce routing though the server"
+            }
+        },
+        "language": {
+            "label": "Language",
+            "options": {
+                "cs": "Czech",
+                "da": "Danish",
+                "de": "German",
+                "en": "English",
+                "fr": "French",
+                "nl": "Dutch",
+                "pl": "Polish",
+                "uk_UA": "Ukrainian",
+                "zh_CN": "Chinese (Simplified)",
+                "en_AU": "English (Australian)",
+                "sr": "Serbian",
+                "sr_Latn": "Serbian (Latin)",
+                "sv_SE": "Swedish"
+            }
+        },
+        "hide_settings": {
+            "label": "Hide settings button",
+            "description": "Hide settings button on home screen.\\n\\n Note that if you disable settings on the home screen and in the menu you may lock yourself out. \\n\\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
+        },
+        "no_music_providers": "No Music Providers configured",
+        "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
+        "no_player_providers_detail": "Configure player providers to select devices where Music Assistant can output your music."
+    },
+    "show_info": "Show info",
+    "show_select_boxes": "Show selection boxes",
+    "shuffle": "Shuffle",
+    "shuffle_disabled": "Shuffle is disabled",
+    "shuffle_enabled": "Shuffle is enabled",
+    "sort": {
+        "duration": "Duration",
+        "position": "Position",
+        "provider": "Provider",
+        "sort_name": "Sort name",
+        "track_number": "Track number",
+        "year": "Release year",
+        "position_desc": "Position (descending)",
+        "album": "Album",
+        "artist": "Artist",
+        "name": "Alphabetically",
+        "name_desc": "Alphabetically (descending)",
+        "recent": "Recently added",
+        "year_desc": "Release year (descending)",
+        "duration_desc": "Duration (descending)",
+        "original": "Original",
+        "sort_name_desc": "Sort name (descending)",
+        "timestamp_added": "Date added",
+        "timestamp_added_desc": "Date added (descending)",
+        "timestamp_modified": "Date updated",
+        "timestamp_modified_desc": "Date updated (descending)",
+        "play_count": "Play count",
+        "play_count_desc": "Play count (descending)"
+    },
+    "state": {
+        "idle": "idle",
+        "off": "off",
+        "paused": "paused",
+        "playing": "playing"
     },
     "sync_now": "Synchronize {0} now",
+    "sync_player_to": "Sync this player to:",
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
+        "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favourite filter",
         "library": "Toggle in-library\/favourite",
+        "refresh": "Refresh the items listing",
+        "refresh_new_content": "New content is available, click to refresh the listing",
+        "search": "Show\/hide search input",
+        "select_items": "Select multiple items",
+        "sort_options": "Sort options",
         "filter_favorites": "Only show favourites",
-        "favorite": "Mark\/unmark as favourite"
+        "favorite": "Mark\/unmark as favourite",
+        "open_provider_link": "Open this item on the provider's website",
+        "back": "Back",
+        "show_menu": "Show\/hide menu",
+        "search_filter_active": "Search is currently filtering results",
+        "play_sample": "Play sample"
     },
+    "topresult": "Top result",
+    "track": "Track",
+    "tracks": "Tracks",
+    "try_global_search": "Try global search",
+    "type_to_search": "Type here to search...",
     "volume_normalization": "Volume normalization",
+    "currently_playing": "Currently playing",
     "favorites_add": "Add to favourites",
-    "favorites_remove": "Remove from favourites"
+    "favorites_remove": "Remove from favourites",
+    "confirm_library_remove": "Are you sure you want to delete this item from the library? Any items depending on this item will also be recursively removed. Note that this will only remove this item from the library. If this is a music file on disk, it may return on the next sync.",
+    "media_details": "Media details",
+    "mapped_providers": "Provider details",
+    "item_in_library": "This item is available in the library",
+    "back": "Back",
+    "recently_played": "Recently played",
+    "radiobrowser_by_popularity": "By popularity",
+    "radiobrowser_by_country": "By country",
+    "radiobrowser_by_tag": "By tag",
+    "load_more_items": "Load more items...",
+    "radio": "Radio",
+    "muted": "muted",
+    "enter_name": "Enter a new (custom) name",
+    "image_url": "Input the URL to an image or icon (optional)",
+    "invalid_input": "The input was invalid",
+    "new_playlist": "New playlist",
+    "view": {
+        "list": "List view",
+        "panel": "Thumbs view"
+    }
 }

@@ -33,8 +33,23 @@
     "goto_album": "Ir para o álbum {0}",
     "goto_artist": "Ir para o artista {0}",
     "settings": {
-        "default_enqueue_action_playlist": {
+        "default_enqueue_action_track": {
             "options": {
+                "play": "Reproduza a(s) faixa(s) agora e mantenha o(s) item(ns) restante(s) da fila.",
+                "replace": "Limpe a fila e reproduza a(s) faixa(s).",
+                "next": "Reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
+                "add": "Adicione a(s) faixa(s) no final da fila."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Opção de enfileiramento padrão para os itens da lista de reprodução.",
+            "description": "Defina a ação de enfileiramento padrão para esse tipo de mídia (se não tiver especificado uma ação).",
+            "options": {
+                "play": "Reproduza a(s) faixa(s) da lista de reprodução agora e mantenha o(s) item(ns) restante(s) da fila.",
+                "replace": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução",
+                "next": "Reproduzir o(s) item(ns) logo após o item atualmente reproduzido\/em buffer.",
+                "replace_next": "Limpa a fila e reproduz a(s) faixa(s) da lista de reprodução logo após o item atualmente reproduzido\/em buffer.",
                 "add": "Adicione a(s) faixa(s) da lista de reprodução no final da fila."
             }
         },
@@ -86,7 +101,7 @@
         },
         "icon": {
             "label": "Ícone",
-            "description": "Ícones para este reprodutor.\n\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
+            "description": "Ícones para este reprodutor.\\n\\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
         },
         "frontend": "Interface de usuário",
         "frontend_desc": "Configurações para a interface de usuário do Music Assistant (frontend). Note que essas configurações são armazenadas no nível do dispositivo.",
@@ -107,11 +122,11 @@
         },
         "menu_items": {
             "label": "Itens de menu ativados",
-            "description": "Configure os itens a serem exibidos no menu.\n\n Note que se você desativar as configurações, você poderá ficar bloqueado.\n\nCaso isso ocorra, para obter acesso novamente você terá que manualmente inserir o caminho para as configurações ou apagar os cookies do seu navegador. Use por sua conta e risco!"
+            "description": "Configure os itens a serem exibidos no menu.\\n\\n Note que se você desativar as configurações, você poderá ficar bloqueado.\\n\\nCaso isso ocorra, para obter acesso novamente você terá que manualmente inserir o caminho para as configurações ou apagar os cookies do seu navegador. Use por sua conta e risco!"
         },
         "artwork_pref": {
             "label": "Preferência por recuperação de imagens",
-            "description": "Esse cliente tem permissão para baixar o próprio trabalho artístico (acessível ao público) ou tudo deve ser roteado pelo servidor?\nPor padrão, o cliente tem permissão para armazenar em cache\/baixar o trabalho artístico diretamente dos recursos da Internet para colocar menos estresse no servidor.",
+            "description": "Esse cliente tem permissão para baixar o próprio trabalho artístico (acessível ao público) ou tudo deve ser roteado pelo servidor?\\nPor padrão, o cliente tem permissão para armazenar em cache\/baixar o trabalho artístico diretamente dos recursos da Internet para colocar menos estresse no servidor.",
             "options": {
                 "online": "Permitir recuperação direta",
                 "server_only": "Forçar roteamento através do servidor"
@@ -125,14 +140,12 @@
                 "da": "Dinamarquês",
                 "de": "Alemão",
                 "en": "Inglês",
-                "es": "Espanhol",
                 "fr": "Francês",
-                "he": "Hebraico",
-                "it": "Italiano",
-                "nb": "Norueguês (Bokmål)",
                 "nl": "Holandês",
                 "pl": "Polonês",
                 "uk_UA": "Ucraniano",
+                "zh_CN": "Chinês (simplificado)",
+                "en_AU": "Inglês (Australiano)",
                 "sr": "Sérvio",
                 "sr_Latn": "Sérvio (latim)",
                 "sv_SE": "Sueco"
@@ -140,7 +153,7 @@
         },
         "hide_settings": {
             "label": "Ocultar o botão nas configurações",
-            "description": "Ocultar botão de configurações na tela inicial.\n\n Note que se você desabilitar botão de configurações na tela inicial e no menu, você poderá ficar bloqueado.\n\nCaso isso ocorra, para obter acesso novamente você terá que manualmente inserir o caminho para as configurações ou apagar os cookies do seu navegador. Use por sua conta e risco!"
+            "description": "Ocultar botão de configurações na tela inicial.\\n\\n Note que se você desabilitar botão de configurações na tela inicial e no menu, você poderá ficar bloqueado.\\n\\nCaso isso ocorra, para obter acesso novamente você terá que manualmente inserir o caminho para as configurações ou apagar os cookies do seu navegador. Use por sua conta e risco!"
         },
         "no_music_providers": "Nenhum provedor de música configurado",
         "no_music_providers_detail": "Comece sua experiência com o Music Assistant adicionando seus provedores de música.",
@@ -162,8 +175,6 @@
         "timestamp_added_desc": "Data de adição (decrescente)",
         "timestamp_modified": "Data de atualização",
         "timestamp_modified_desc": "Data de atualização (decrescente)",
-        "album_sort": "Organizar por nome de álbum",
-        "artist_sort": "Organizar por nome de artista",
         "last_played": "Último reproduzido",
         "last_played_desc": "Último reproduzido (decrescente)",
         "play_count": "Contagem de reprodução",
