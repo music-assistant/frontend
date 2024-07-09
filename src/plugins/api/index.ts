@@ -97,6 +97,10 @@ export class MusicAssistantApi {
       .onClose((i, ev) => {
         console.log('connection closed');
         this.state.value = ConnectionState.DISCONNECTED;
+        this.signalEvent({
+          event: EventType.DISCONNECTED,
+          object_id: '',
+        });
       })
       .onError((i, ev) => {
         console.log('error on connection');
@@ -122,18 +126,6 @@ export class MusicAssistantApi {
       .withBackoff(new LinearBackoff(0, 1000, 12000))
       .build();
   }
-
-  public setUpCompleted = computed(() => {
-    // Return if we have any music or player providers configured
-    // in the future we could replace this if some sort of out of the box setup wizard has been completed
-    return (
-      Object.values(api.providers).filter(
-        (prov) =>
-          [ProviderType.MUSIC, ProviderType.PLAYER].includes(prov.type) &&
-          prov.domain !== 'builtin',
-      ).length > 0
-    );
-  });
 
   public subscribe(
     eventFilter: EventType,
@@ -1221,6 +1213,11 @@ export class MusicAssistantApi {
     this.serverInfo.value = msg;
     // trigger fetch of full state once we are connected to the server
     this._fetchState();
+    this.signalEvent({
+      event: EventType.CONNECTED,
+      object_id: '',
+      data: msg,
+    });
   }
 
   private signalEvent(evt: MassEvent) {

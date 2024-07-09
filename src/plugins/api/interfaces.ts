@@ -134,6 +134,7 @@ export enum EventType {
   AUTH_SESSION = 'auth_session',
   // special types for local subscriptions only
   CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
   ALL = '*',
 }
 
@@ -234,6 +235,7 @@ export interface ServerInfoMessage {
   min_supported_schema_version: number;
   base_url: string;
   homeassistant_addon: boolean;
+  onboard_done: boolean;
 }
 
 export type MessageType =

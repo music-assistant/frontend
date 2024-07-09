@@ -17,7 +17,7 @@
       "
     />
 
-    <Container v-if="api.setUpCompleted.value" variant="panel">
+    <Container v-if="api.serverInfo.value?.onboard_done" variant="panel">
       <Suspense>
         <div>
           <HomeCurrentlyPlayingRow />

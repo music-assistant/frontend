@@ -10,6 +10,7 @@ import { store } from '@/plugins/store';
 import { i18n } from '@/plugins/i18n';
 import router from './plugins/router';
 import { sleep } from './helpers/utils';
+import { EventType } from './plugins/api/interfaces';
 const theme = useTheme();
 
 const setTheme = function () {
@@ -72,20 +73,21 @@ onMounted(() => {
     const loc = window.location;
     serverAddress = loc.origin + loc.pathname;
   }
-  store.loading = true;
-  api.initialize(serverAddress).then(() => {
-    store.loading = false;
-  });
 
-  // very rude way to redirect the user to the settings page if this is a fresh install
-  sleep(1000).then(() => {
-    if (
-      api.state.value === ConnectionState.CONNECTED &&
-      !api.setUpCompleted.value
-    ) {
+  // connect/initialize api
+  store.loading = true;
+  api.subscribe(EventType.CONNECTED, () => {
+    // redirect the user to the settings page if this is a fresh install
+    // TO be replaced with some nice onboarding wizard!
+    if (!api.serverInfo.value!.onboard_done) {
       router.push('/settings');
     }
+    store.loading = false;
   });
+  api.subscribe(EventType.DISCONNECTED, () => {
+    store.loading = true;
+  });
+  api.initialize(serverAddress);
 });
 </script>
 
