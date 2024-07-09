@@ -159,7 +159,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   }
   router.push({ name: 'home' }).then(() => {
     // enforce refresh
-    router.go(0);
+    window.location.reload();
   });
 };
 

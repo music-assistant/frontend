@@ -324,7 +324,7 @@ export const getContextMenuItems = function (
       labelArgs: [],
       action: async () => {
         await api.refreshItem(items[0]);
-        router.go(0);
+        window.location.reload();
       },
       icon: 'mdi-refresh',
     });
@@ -350,7 +350,7 @@ export const getContextMenuItems = function (
         for (const item of items)
           api.removeItemFromLibrary(item.media_type, item.item_id);
         if (items[0].item_id == parentItem?.item_id) router.go(-1);
-        else router.go(0);
+        else window.location.reload();
       },
       icon: 'mdi-bookshelf',
     });
