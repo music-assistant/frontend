@@ -72,7 +72,10 @@ onMounted(() => {
     const loc = window.location;
     serverAddress = loc.origin + loc.pathname;
   }
-  api.initialize(serverAddress);
+  store.loading = true;
+  api.initialize(serverAddress).then(() => {
+    store.loading = false;
+  });
 
   // very rude way to redirect the user to the settings page if this is a fresh install
   sleep(1000).then(() => {
@@ -85,3 +88,9 @@ onMounted(() => {
   });
 });
 </script>
+
+<style>
+body.waiting * {
+  cursor: progress;
+}
+</style>
