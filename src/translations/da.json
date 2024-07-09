@@ -159,12 +159,7 @@
                 "info": "Info",
                 "warning": "Advarsel",
                 "error": "Fejl",
-                "debug": "Fejlsøgning",
-                "GLOBAL": "Global",
-                "INFO": "Info",
-                "WARNING": "Advarsler",
-                "ERROR": "Fejl",
-                "DEBUG": "Fejlfinding"
+                "debug": "Fejlsøgning"
             }
         },
         "flow_mode": {
@@ -301,7 +296,7 @@
         },
         "tts_pre_announce": {
             "label": "Forhåndsannoncering af TTS-meddelelser",
-            "description": "Når en TTS-besked (tekst-til-tale) sendes til Announce-funktionen, tilføjes en kort lyd (klokke) før meddelelsen."
+            "description": "Når en TTS-besked (tekst-til-tale) sendes til meddelelsesfunktionen, tilføjes en kort lyd (klokke) før meddelelsen."
         },
         "announce_volume_strategy": {
             "label": "Lydstyrkestrategi for meddelelser",
@@ -366,14 +361,17 @@
                 "da": "Dansk",
                 "de": "Tysk",
                 "en": "Engelsk",
-                "es": "Spansk",
                 "fr": "Fransk",
-                "he": "Hebraisk",
-                "it": "Italiensk",
-                "nb": "Norsk",
                 "nl": "Hollandsk",
                 "pl": "Polsk",
-                "uk_UA": "Ukrainsk"
+                "uk_UA": "Ukrainsk",
+                "zh_CN": "Kinesisk (forenklet)",
+                "en_AU": "Engelsk (australsk)",
+                "sr": "Serbisk",
+                "sr_Latn": "Serbisk (latin)",
+                "sv_SE": "Svensk",
+                "en_GB": "Engelsk (Storbritannien)",
+                "es": "Spansk"
             }
         },
         "hide_settings": {
@@ -393,13 +391,8 @@
     "sort": {
         "duration": "Varighed",
         "position": "Position",
-        "position DESC": "Position (faldende)",
         "provider": "Udbyder",
-        "sort_album": "Album",
-        "sort_artist": "Kunstner",
         "sort_name": "Alfabetisk",
-        "sort_name DESC": "Alfabetisk (faldende)",
-        "timestamp_added DESC": "Tilføjet for nylig",
         "track_number": "Nummer",
         "year": "Udgivelsesår",
         "position_desc": "Position",
@@ -411,7 +404,7 @@
         "year_desc": "Udgivelsesår (faldende)",
         "duration_desc": "Varighed (faldende)",
         "original": "Original",
-        "none": "Tom",
+        "sort_name_desc": "Alfabetisk (faldende)",
         "timestamp_added": "Dato tilføjet",
         "timestamp_added_desc": "Dato tilføjet (faldende)",
         "timestamp_modified": "Dato for opdatering",

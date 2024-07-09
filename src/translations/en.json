@@ -55,7 +55,6 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_radio": "Start Radio",
-    "played": "Played",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -362,17 +361,17 @@
                 "da": "Danish",
                 "de": "German",
                 "en": "English",
-                "en_AU": "English (Australian)",
-                "en_GB": "English (United Kingdom)",                
-                "es": "Spanish",
                 "fr": "French",
                 "nl": "Dutch",
                 "pl": "Polish",
+                "uk_UA": "Ukrainian",
+                "zh_CN": "Chinese (Simplified)",
+                "en_AU": "English (Australian)",
                 "sr": "Serbian",
                 "sr_Latn": "Serbian (Latin)",
                 "sv_SE": "Swedish",
-                "uk_UA": "Ukrainian",
-                "zh_CN": "Chinese (Simplified)"
+                "en_GB": "English (United Kingdom)",
+                "es": "Spanish"
             }
         },
         "hide_settings": {
@@ -481,5 +480,6 @@
         "panel": "Thumbs view",
         "panel_compact": "Compact thumbs view"
     },
-    "play_replace": "Play Now (clear queue)"
+    "play_replace": "Play Now (clear queue)",
+    "played": "Played"
 }

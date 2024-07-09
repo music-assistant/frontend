@@ -40,7 +40,7 @@
     "library": "Biblioteca",
     "loading": "Los datos se están recuperando del servidor.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Enter a new for the new playlist",
+    "new_playlist_name": "Ingrese un nombre para la nueva lista de reproducción",
     "no_content": "No se han encontrado elementos.",
     "no_content_filter": "No se encontraron elementos para las condiciones actuales de filtro\/búsqueda.",
     "no_player": "Ningún reproductor seleccionado",
@@ -150,24 +150,171 @@
         "edit_group_members": "Editar miembros del grupo",
         "add_new_provider_button": "Añadir proveedor {0}",
         "add_group_player": "Añadir reproductor grupal",
+        "group_members": "Miembros del grupo",
+        "log_level": {
+            "label": "Nivel de registro",
+            "description": "Establezca el nivel de detalle del registro para este proveedor",
+            "options": {
+                "global": "Global",
+                "info": "Información",
+                "warning": "Advertencia",
+                "error": "Error",
+                "debug": "Depurar"
+            }
+        },
+        "flow_mode": {
+            "label": "Habilitar el modo de cola continua",
+            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y\/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
+        },
+        "auto_play": {
+            "label": "Reproducción automática (reanudación al encender)",
+            "description": "Cuando se enciende este reproductor, empieza a reproducir automáticamente (si hay elementos en la cola)."
+        },
+        "output_channels": {
+            "label": "Modo de canal de salida",
+            "description": "Puede configurar este reproductor para que reproduzca solo el canal izquierdo o derecho, por ejemplo para crear un par estéreo con 2 reproductores.",
+            "options": {
+                "stereo": "Estéreo (ambos canales)",
+                "left": "Solo canal izquierdo",
+                "right": "Solo canal derecho",
+                "mono": "Mono (ambos canales)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Activar la normalización del volumen (basado en EBU-R128)",
+            "description": "Habilite la normalización de volumen basada en el estándar EBU-R128 sin afectar el rango dinámico"
+        },
+        "volume_normalization_target": {
+            "label": "Nivel objetivo para la normalización del volumen",
+            "description": "Ajuste el volumen promedio (percibido) a este nivel objetivo, el valor predeterminado es -17 LUFS \n\n **ADVERTENCIA:** ¡Ajustar el nivel demasiado alto puede provocar recortes!"
+        },
+        "eq_bass": {
+            "label": "Ecualizador: graves",
+            "description": "Utiliza el ecualizador básico incorporado para ajustar el nivel de graves (tonos bajos) del audio."
+        },
+        "eq_mid": {
+            "label": "Ecualizador: medio",
+            "description": "Utiliza el ecualizador básico incorporado para ajustar el nivel medio del audio."
+        },
+        "eq_treble": {
+            "label": "Ecualizador: agudos",
+            "description": "Utilice el ecualizador básico incorporado para ajustar el nivel de agudos (tonos altos) del audio."
+        },
+        "crossfade": {
+            "label": "Habilitar fundido cruzado",
+            "description": "Habilite una transición de fundido cruzado entre pistas (cola)"
+        },
+        "crossfade_duration": {
+            "label": "Duración del fundido cruzado",
+            "description": "Duración en segundos del fundido cruzado entre pistas (si está habilitado)"
+        },
+        "hide_player": {
+            "label": "Ocultar este reproductor en la interfaz de usuario",
+            "description": "Oculte este reproductor en la interfaz de usuario. \n\nTenga en cuenta que aún se puede controlar y también aparecerá en cualquier grupo de sincronización al que pertenezca el reproductor."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Elementos que se seleccionan al reproducir un artista (de la biblioteca).",
+            "description": "Si quieres reproducir a un artista, ¿qué elementos deberían ponerse en cola?",
+            "options": {
+                "library_tracks": "Sólo pistas dentro de la biblioteca",
+                "library_album_tracks": "Todas las pistas de todos los álbumes en la biblioteca",
+                "all_tracks": "Todos los (mejores) pistas de (todos) los (proveedores)",
+                "all_album_tracks": "Todas las pistas de todos los álbumes de (todos) los (proveedores)"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Elementos que se seleccionan al reproducir un álbum (de la biblioteca).",
+            "description": "Si quieres reproducir un álbum, ¿qué elementos hay que poner en cola?",
+            "options": {
+                "library_tracks": "Sólo pistas dentro de la biblioteca",
+                "all_tracks": "Todas las pistas del álbum en el proveedor"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Opción de puesta en cola por defecto para el\/los ítem(s) del Artista(s).",
+            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
+            "options": {
+                "play": "Reproducir ahora la(s) pista(s) del artista y mantener el\/los elemento(s) restante(s) en la cola.",
+                "replace": "Borrar la cola y reproducir la(s) pista(s) del artista",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
+                "replace_next": "Vacía la cola y pon la(s) canción(es) del artista inmediatamente después del elemento que se está reproduciendo o en búfer.",
+                "add": "Agregue las pistas del artista al final de la cola de reproducción."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Opción por defecto, encolar elemento(s) del álbum",
+            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
+            "options": {
+                "play": "Reproduce la(s) pista(s) del álbum ahora y mantén el\/los elemento(s) restante(s) en la cola.",
+                "replace": "Borrar la cola y reproducir la(s) pista(s)",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
+                "replace_next": "Borra la cola y pon la(s) canción(es) del álbum inmediatamente después del elemento que se está reproduciendo o en búfer.",
+                "add": "Añade la(s) pista(s) del álbum al final de la cola."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Opción de encolamiento predeterminada para elementos de pista.",
+            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
+            "options": {
+                "play": "Reproduce la(s) pista(s) ahora y conserva el\/los elemento(s) restante(s) en la cola.",
+                "replace": "Borrar la cola y reproducir la(s) pista(s)",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
+                "replace_next": "Vacía la cola y reproduce la\/las pista(s) justo después del ítem actualmente reproducido\/bufferizado",
+                "add": "Añade la(s) pista(s) al final de la cola."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Opción de puesta en cola predeterminada para los elementos de la lista de reproducción.",
+            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
+            "options": {
+                "play": "Reproducir ahora la(s) pista(s) de la lista de reproducción y mantener el\/los elemento(s) restante(s) en la cola.",
+                "replace": "Borrar la cola y reproducir la(s) pista(s) de la lista de reproducción",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
+                "replace_next": "Vacía la cola y pon la(s) canción(es) de la lista inmediatamente después del elemento que se está reproduciendo o en búfer.",
+                "add": "Agregue las pistas de la lista de reproducción al final de la cola"
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Opción de puesta en cola predeterminada para los elementos de radio.",
+            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
+            "options": {
+                "play": "Reproduzca la estación de radio ahora y conserve los elementos restantes de la cola.",
+                "replace": "Limpia la cola y reproduce la estación de radio",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
+                "replace_next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado",
+                "add": "Agregue la(s) estación(es) de radio al final de la cola."
+            }
+        },
         "default": "predeterminado",
+        "provider_depends_on_confirm": "Antes de poder configurar {0}, necesita tener configurado el proveedor {1}, ¿quiere hacerlo ahora?",
         "category": {
             "audio": "Audio",
+            "advanced": "Ajustes avanzados",
+            "generic": "Ajustes",
             "announcements": "Configuración de anuncios",
             "airplay": "Ajustes específicos de Airplay"
         },
+        "tts_pre_announce": {
+            "label": "Preanunciar anuncio TTS",
+            "description": "Cuando se envíe un mensaje TTS (texto a voz) a la función Anunciar, anteponga al anuncio un breve sonido de preanuncio (pitido de campana)."
+        },
         "announce_volume_strategy": {
             "label": "Estrategia de volumen para anuncios",
+            "description": "Cuando se emite un anuncio a este reproductor, ¿cómo debe ajustarse temporalmente el volumen (utilizar en combinación con el valor de volumen indicado a continuación)?",
             "options": {
                 "absolute": "Volumen absoluto",
+                "relative": "Aumento relativo del volumen",
+                "percentual": "Aumento del volumen en un porcentaje fijo",
                 "none": "No ajustar el Volumen"
             }
         },
         "announce_volume": {
-            "label": "Volumen para Anuncios"
+            "label": "Volumen para Anuncios",
+            "description": "El nivel de volumen porcentual, relativo o absoluto, utilizado con la estrategia para los anuncios."
         },
         "announce_volume_min": {
-            "label": "Nivel Mínimo de Volumen para Anuncios"
+            "label": "Nivel Mínimo de Volumen para Anuncios",
+            "description": "El volumen (ajuste) de los anuncios no debe bajar de este nivel"
         },
         "announce_volume_max": {
             "label": "Nivel Máximo de Volumen para Anuncios",
@@ -178,9 +325,11 @@
             "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Interfaz de Usuario",
+        "frontend_desc": "Ajustes de configuración de la interfaz de usuario (frontend) de Music Assistant. Tenga en cuenta que estos ajustes se almacenan a nivel de dispositivo.",
         "theme": {
             "label": "Tema",
             "options": {
+                "auto": "Automático (seguir la configuración del sistema)",
                 "light": "Claro",
                 "dark": "Oscuro"
             }
@@ -192,20 +341,46 @@
                 "vertical": "Vertical"
             }
         },
+        "menu_items": {
+            "label": "Elementos de menú habilitados",
+            "description": "Configure qué elementos mostrar en el menú.\n\nTen en cuenta que si desactivas los ajustes puedes bloquearte.\n\nEn ese caso, tendrá que introducir manualmente la ruta a la configuración o borrar las cookies del navegador para acceder de nuevo a la configuración."
+        },
+        "artwork_pref": {
+            "label": "Preferencia para la obtención de imágenes",
+            "description": "¿Se permite a este cliente descargar (accesible al público) obras de arte por sí mismo o debería todo ser dirigido a través del servidor?\nPor defecto, se permite al cliente almacenar en caché\/descargar obras de arte directamente de recursos de internet para poner menos estrés en el servidor.",
+            "options": {
+                "online": "Permitir la obtención directa",
+                "server_only": "Aplicar enrutamiento a través del servidor"
+            }
+        },
         "language": {
             "label": "Idioma",
             "options": {
+                "auto": "Automático (seguir la configuración del sistema)",
+                "cs": "Checa",
                 "da": "Danés",
                 "de": "Alemán",
                 "en": "Inglés",
+                "fr": "Francés",
+                "nl": "Holandés",
+                "pl": "Polaco",
+                "uk_UA": "Ucraniano",
+                "zh_CN": "Chino (Simplificado)",
+                "en_AU": "Inglés (Australiano)",
+                "sr": "Serbio",
+                "sr_Latn": "Serbio (latín)",
+                "sv_SE": "Sueco",
+                "en_GB": "Inglés (Reino Unido)",
                 "es": "Español"
             }
         },
         "hide_settings": {
-            "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\n Tenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
+            "label": "Ocultar botón de configuración",
+            "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\nTenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
         },
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
+        "no_player_providers": "No hay Proveedores de Música configurados",
         "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música."
     },
     "show_info": "Mostrar información",
@@ -216,13 +391,8 @@
     "sort": {
         "duration": "Duración",
         "position": "Posición",
-        "position DESC": "Posición (descendente)",
         "provider": "Proveedor",
-        "sort_album": "Disco",
-        "sort_artist": "Artista",
         "sort_name": "Alfabéticamente",
-        "sort_name DESC": "Alfabéticamente (descendente)",
-        "timestamp_added DESC": "Añadido recientemente",
         "track_number": "Número de pista",
         "year": "Año de lanzamiento",
         "position_desc": "Posición (descendente)",
@@ -234,8 +404,15 @@
         "year_desc": "Año de lanzamiento (descendiente)",
         "duration_desc": "Duración (descendente)",
         "original": "Original",
-        "none": "Vacío",
-        "timestamp_added": "Fecha de adición"
+        "sort_name_desc": "Ordenar por nombre (descendente)",
+        "timestamp_added": "Fecha de adición",
+        "timestamp_added_desc": "Fecha añadido (descendente)",
+        "timestamp_modified": "Fecha de actualización",
+        "timestamp_modified_desc": "Fecha de actualización (descendente)",
+        "last_played": "Última reproducción",
+        "last_played_desc": "Última reproducción (descendente)",
+        "play_count": "Conteo de reproducciones",
+        "play_count_desc": "Conteo de reproducciones (descendente)"
     },
     "state": {
         "idle": "inactivo",
@@ -265,6 +442,7 @@
         "collapse_expand": "Contraer\/expandir este listado",
         "back": "Atrás",
         "show_menu": "Mostrar\/ocultar menú",
+        "search_filter_active": "La búsqueda está filtrando resultados actualmente",
         "play_sample": "Reproducir muestra"
     },
     "topresult": "Resultados mas importantes",
@@ -291,12 +469,17 @@
     "radiobrowser_by_tag": "Por etiqueta",
     "load_more_items": "Cargar más elementos...",
     "radio": "Radio",
+    "muted": "silenciado",
+    "enter_name": "Introduzca un nuevo nombre (personalizado)",
+    "image_url": "Introduzca la URL de una imagen o icono (opcional)",
     "invalid_input": "La entrada no fue válida",
     "new_playlist": "Nueva lista de reproducción",
     "create_playlist_on": "Crear nueva lista de reproducción en {0}",
     "view": {
         "list": "Vista de Lista",
-        "panel": "Vinsta de Panel"
+        "panel": "Vista de Panel",
+        "panel_compact": "Vista compacta de miniaturas"
     },
-    "play_replace": "Reproducir Ahora (borrar cola)"
+    "play_replace": "Reproducir Ahora (borrar cola)",
+    "played": "Reproducido"
 }

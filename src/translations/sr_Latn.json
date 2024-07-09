@@ -128,12 +128,7 @@
                 "info": "Info",
                 "warning": "Upozorenje",
                 "error": "Greška",
-                "debug": "Otklanjanje grešaka",
-                "GLOBAL": "Prazno",
-                "INFO": "Prazno",
-                "WARNING": "Prazno",
-                "ERROR": "Prazno",
-                "DEBUG": "Prazno"
+                "debug": "Otklanjanje grešaka"
             }
         },
         "flow_mode": {
@@ -336,13 +331,8 @@
     "sort": {
         "duration": "Trajanje",
         "position": "Pozicija",
-        "position DESC": "Pozicija  (opadajuće)",
         "provider": "Provajder",
-        "sort_album": "Album",
-        "sort_artist": "Izvođač",
         "sort_name": "Po abecednom redu",
-        "sort_name DESC": "Po abecednom redu (opadajuće)",
-        "timestamp_added DESC": "Nedavno dodato",
         "track_number": "Broj numere",
         "year": "Godina objavljivanja",
         "position_desc": "Pozicija (opadajuće)",
@@ -354,14 +344,11 @@
         "year_desc": "Godina izdavanja (opadajuće)",
         "duration_desc": "Trajanje (opadajuće)",
         "original": "Original",
-        "none": "Prazno",
         "sort_name_desc": "Sortiraj po imenu (opadajuće)",
         "timestamp_added": "Datum dodavanja",
         "timestamp_added_desc": "Datum dodavanja (opadajući)",
         "timestamp_modified": "Datum ažuriranja",
         "timestamp_modified_desc": "Datum ažuriranja (opadajući)",
-        "album_sort": "Sortiranje umetnika po imenu",
-        "artist_sort": "Sortiranje umetnika po imenu",
         "last_played": "Poslednje reprodukovano",
         "last_played_desc": "Poslednje reprodukovano (opadajući)",
         "play_count": "Broj reprodukcija",
