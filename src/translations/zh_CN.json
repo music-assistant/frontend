@@ -159,12 +159,7 @@
                 "info": "信息",
                 "warning": "提醒",
                 "error": "错误",
-                "debug": "调试",
-                "GLOBAL": "Global",
-                "INFO": "Info",
-                "WARNING": "Warning",
-                "ERROR": "Error",
-                "DEBUG": "Debug"
+                "debug": "调试"
             }
         },
         "flow_mode": {
@@ -366,14 +361,17 @@
                 "da": "丹麦语",
                 "de": "德语",
                 "en": "英语",
-                "es": "西班牙语",
                 "fr": "法语",
-                "he": "希伯来语",
-                "it": "意大利语",
-                "nb": "挪威语",
                 "nl": "荷兰语",
                 "pl": "波兰语",
-                "uk_UA": "乌克兰语"
+                "uk_UA": "乌克兰语",
+                "zh_CN": "简体中文",
+                "en_AU": "英语（澳大利亚）",
+                "sr": "塞尔维亚语",
+                "sr_Latn": "塞尔维亚语（拉丁语)",
+                "sv_SE": "瑞典语",
+                "en_GB": "英语（英国)",
+                "es": "西班牙语"
             }
         },
         "hide_settings": {
@@ -393,13 +391,8 @@
     "sort": {
         "duration": "持续时间",
         "position": "位置",
-        "position DESC": "排名（降序）",
         "provider": "提供程序",
-        "sort_album": "唱片集",
-        "sort_artist": "艺术家",
         "sort_name": "按字母顺序",
-        "sort_name DESC": "按字母顺序（降序）",
-        "timestamp_added DESC": "最近添加",
         "track_number": "曲目编号",
         "year": "发行年份",
         "position_desc": "排名（降序）",
@@ -411,14 +404,11 @@
         "year_desc": "发布年份（降序）",
         "duration_desc": "持续时间（降序）",
         "original": "原创",
-        "none": "none",
         "sort_name_desc": "名称排序（降序）",
         "timestamp_added": "添加日期",
         "timestamp_added_desc": "添加日期（降序）",
         "timestamp_modified": "更新日期",
         "timestamp_modified_desc": "更新日期（降序）",
-        "album_sort": "唱片集名称排序",
-        "artist_sort": "艺术家名称排序",
         "last_played": "上次播放",
         "last_played_desc": "上次播放（倒序）",
         "play_count": "播放次数",

@@ -159,12 +159,7 @@
                 "info": "Info",
                 "warning": "Waarschuwing",
                 "error": "Fout",
-                "debug": "Foutopsporing",
-                "GLOBAL": "Globaal",
-                "INFO": "Informatief",
-                "WARNING": "Waarschuwingen",
-                "ERROR": "Fout",
-                "DEBUG": "Debug"
+                "debug": "Foutopsporing"
             }
         },
         "flow_mode": {
@@ -361,7 +356,22 @@
         "language": {
             "label": "Taal",
             "options": {
-                "auto": "Automatisch (systeemconfiguratie volgen)"
+                "auto": "Automatisch (systeemconfiguratie volgen)",
+                "cs": "Tsjechisch",
+                "da": "Deens",
+                "de": "Duits",
+                "en": "Engels",
+                "fr": "Frans",
+                "nl": "Nederlands",
+                "pl": "Pools",
+                "uk_UA": "Oekraïens",
+                "zh_CN": "Chinees (Vereenvoudigd)",
+                "en_AU": "Engels (Australisch)",
+                "sr": "Servisch",
+                "sr_Latn": "Servisch (Latijn)",
+                "sv_SE": "Zweeds",
+                "en_GB": "Engels (Verenigd Koninkrijk)",
+                "es": "Spaans"
             }
         },
         "hide_settings": {
@@ -381,13 +391,8 @@
     "sort": {
         "duration": "Duur",
         "position": "Positie",
-        "position DESC": "Position (descending)",
         "provider": "Provider",
-        "sort_album": "Album",
-        "sort_artist": "Artiest",
         "sort_name": "Alfabetisch",
-        "sort_name DESC": "Alfabetisch (omgekeerd)",
-        "timestamp_added DESC": "Recently added",
         "track_number": "Tracknummer",
         "year": "Verschijningsdatum\/jaar",
         "position_desc": "Positie (aflopend)",
@@ -399,14 +404,11 @@
         "year_desc": "Jaar van uitgave (aflopend)",
         "duration_desc": "Duur (aflopend)",
         "original": "Origineel",
-        "none": "Geen",
         "sort_name_desc": "Sorteernaam (aflopend)",
         "timestamp_added": "Datum toegevoegd",
         "timestamp_added_desc": "Datum toegevoegd (aflopend)",
         "timestamp_modified": "Datum bijgewerkt",
         "timestamp_modified_desc": "Datum bijgewerkt (aflopend)",
-        "album_sort": "Sorteernaam van album",
-        "artist_sort": "Sorteernaam van artiest",
         "last_played": "Laatst afgespeeld",
         "last_played_desc": "Laatst afgespeeld (aflopend)",
         "play_count": "Aantal keren afgespeeld",
