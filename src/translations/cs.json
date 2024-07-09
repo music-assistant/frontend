@@ -159,12 +159,7 @@
                 "info": "Info",
                 "warning": "Varování",
                 "error": "Chyba",
-                "debug": "Debug",
-                "GLOBAL": "Globální",
-                "INFO": "Info",
-                "WARNING": "Varování",
-                "ERROR": "Error",
-                "DEBUG": "Debug"
+                "debug": "Debug"
             }
         },
         "flow_mode": {
@@ -291,7 +286,26 @@
             }
         },
         "default": "výchozí",
-        "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?"
+        "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
+        "language": {
+            "options": {
+                "cs": "Česky",
+                "da": "Dánský",
+                "de": "Němčina",
+                "en": "Angličtina",
+                "fr": "Francouzština",
+                "nl": "Holandský",
+                "pl": "Polský",
+                "uk_UA": "Ukrajinský",
+                "zh_CN": "Čínština (Zjednodušená)",
+                "en_AU": "Angličtina (Australština)",
+                "sr": "Srbština",
+                "sr_Latn": "Srbština (Latinka)",
+                "sv_SE": "Švédský",
+                "en_GB": "Angličtina (Spojené Království)",
+                "es": "Španělština"
+            }
+        }
     },
     "show_info": "Zobrazit informace",
     "show_select_boxes": "Zobrazit výběrová pole",
@@ -301,13 +315,8 @@
     "sort": {
         "duration": "Doba trvání",
         "position": "Pozice",
-        "position DESC": "Pozice (sestupně)",
         "provider": "Poskytovatel",
-        "sort_album": "Album",
-        "sort_artist": "Umělec",
         "sort_name": "Abecedně",
-        "sort_name DESC": "Abecedně (sestupně)",
-        "timestamp_added DESC": "Nedávno přidané",
         "track_number": "Číslo stopy",
         "year": "Rok vydání",
         "position_desc": "Pozice (sestupně)",
@@ -318,8 +327,7 @@
         "recent": "Nedávno přidané",
         "year_desc": "Rok vydání (sestupně)",
         "duration_desc": "Doba trvání (sestupně)",
-        "original": "Původní",
-        "none": "Žádný"
+        "original": "Původní"
     },
     "state": {
         "idle": "nečinný",
