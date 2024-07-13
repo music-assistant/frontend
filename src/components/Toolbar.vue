@@ -68,7 +68,7 @@
         <v-btn
           v-else-if="
             !enforceOverflowMenu &&
-            (getBreakpointValue('bp3') || menuItem.overflowAllowed == false)
+            (getBreakpointValue('bp5') || menuItem.overflowAllowed == false)
           "
           variant="text"
           style="width: 40px"
@@ -89,7 +89,7 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <div
         v-if="
-          (!getBreakpointValue('bp3') || enforceOverflowMenu) &&
+          (!getBreakpointValue('bp5') || enforceOverflowMenu) &&
           menuItems.filter(
             (x) =>
               x.hide != true &&

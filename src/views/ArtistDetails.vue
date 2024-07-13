@@ -14,6 +14,7 @@
         itemDetails.provider == 'library' &&
         getStreamingProviderMappings(itemDetails).length > 0
       "
+      :show-album-type-filter="true"
       :show-refresh-button="false"
       :load-items="loadArtistAlbums"
       :sort-keys="['name', 'sort_name', 'year']"
