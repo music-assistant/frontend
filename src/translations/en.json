@@ -444,7 +444,8 @@
         "show_menu": "Show/hide menu",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
-        "album_type": "Album type"
+        "album_type": "Album type",
+        "loading": "The server is processing a request or syncing music."
     },
     "topresult": "Top result",
     "track": "Track",
@@ -482,5 +483,6 @@
         "panel_compact": "Compact thumbs view"
     },
     "play_replace": "Play Now (clear queue)",
-    "played": "Played"
+    "played": "Played",
+    "background_task_added": "The action is performed by the server in the background and may take some time to complete. Keep an eye on the server log for progress."
 }

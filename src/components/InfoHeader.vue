@@ -27,6 +27,10 @@
         style="position: absolute"
         :menu-items="item ? getContextMenuItems([item], item) : []"
         :enforce-overflow-menu="true"
+        :show-loading="
+          api.fetchesInProgress.value.length > 0 ||
+          api.syncTasks.value.length > 0
+        "
         @icon-clicked="backButtonClick"
       />
       <v-layout

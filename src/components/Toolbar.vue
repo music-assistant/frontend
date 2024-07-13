@@ -15,6 +15,12 @@
     </template>
 
     <template v-if="menuItems?.length" #append>
+      <v-progress-circular
+        v-if="showLoading"
+        color="primary"
+        indeterminate
+        :title="$t('tooltip.loading')"
+      />
       <div
         v-for="menuItem of menuItems.filter((x) => !x.hide)"
         :key="menuItem.label"
@@ -144,6 +150,9 @@
         </v-menu>
       </div>
     </template>
+    <template v-else #append>
+      <v-progress-circular v-if="showLoading" color="primary" indeterminate />
+    </template>
   </v-toolbar>
 </template>
 
@@ -159,6 +168,7 @@ export interface Props {
   count?: number;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
+  showLoading?: boolean;
 }
 withDefaults(defineProps<Props>(), {
   color: 'transparent',
@@ -167,6 +177,7 @@ withDefaults(defineProps<Props>(), {
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
+  showLoading: undefined,
 });
 
 // emitters
