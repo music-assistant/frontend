@@ -512,15 +512,14 @@ export class MusicAssistantApi {
   public async addItemToFavorites(
     item: string | MediaItemType | ItemMapping,
   ): Promise<void> {
-    // Add an item (uri or mediaitem) to the favorites.
-    const _promise = this.sendCommand('music/favorites/add_item', {
-      item,
-    });
     // optimistically set the value
     if (typeof item !== 'string' && 'favorite' in item) {
       item.favorite = true;
     }
-    return _promise;
+    // Add an item (uri or mediaitem) to the favorites.
+    return this.sendCommand('music/favorites/add_item', {
+      item,
+    });
   }
   public async removeItemFromFavorites(
     media_type: MediaType,
