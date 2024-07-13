@@ -175,7 +175,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
   ): Promise<Track[]> {
-    return this.getData('music/tracks/library_items', {
+    return this.sendCommand('music/tracks/library_items', {
       favorite,
       search,
       limit,
@@ -189,7 +189,7 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     album_uri?: string,
   ): Promise<Track> {
-    return this.getData('music/tracks/get_track', {
+    return this.sendCommand('music/tracks/get_track', {
       item_id,
       provider_instance_id_or_domain,
       album_uri: album_uri,
@@ -200,7 +200,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Track[]> {
-    return this.getData('music/tracks/track_versions', {
+    return this.sendCommand('music/tracks/track_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -211,7 +211,7 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     in_library_only = false,
   ): Promise<Album[]> {
-    return this.getData('music/tracks/track_albums', {
+    return this.sendCommand('music/tracks/track_albums', {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
@@ -230,7 +230,7 @@ export class MusicAssistantApi {
     favorite_only: boolean = false,
     album_artists_only: boolean = false,
   ): Promise<number> {
-    return this.getData('music/artists/count', {
+    return this.sendCommand('music/artists/count', {
       favorite_only,
       album_artists_only,
     });
@@ -238,22 +238,22 @@ export class MusicAssistantApi {
   public getLibraryAlbumsCount(
     favorite_only: boolean = false,
   ): Promise<number> {
-    return this.getData('music/albums/count', { favorite_only });
+    return this.sendCommand('music/albums/count', { favorite_only });
   }
   public getLibraryTracksCount(
     favorite_only: boolean = false,
   ): Promise<number> {
-    return this.getData('music/tracks/count', { favorite_only });
+    return this.sendCommand('music/tracks/count', { favorite_only });
   }
   public getLibraryPlaylistsCount(
     favorite_only: boolean = false,
   ): Promise<number> {
-    return this.getData('music/playlists/count', { favorite_only });
+    return this.sendCommand('music/playlists/count', { favorite_only });
   }
   public getLibraryRadiosCount(
     favorite_only: boolean = false,
   ): Promise<number> {
-    return this.getData('music/radios/count', { favorite_only });
+    return this.sendCommand('music/radios/count', { favorite_only });
   }
 
   public getLibraryArtists(
@@ -264,7 +264,7 @@ export class MusicAssistantApi {
     order_by?: string,
     album_artists_only?: boolean,
   ): Promise<Artist[]> {
-    return this.getData('music/artists/library_items', {
+    return this.sendCommand('music/artists/library_items', {
       favorite,
       search,
       limit,
@@ -278,7 +278,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Artist> {
-    return this.getData('music/artists/get_artist', {
+    return this.sendCommand('music/artists/get_artist', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -289,7 +289,7 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     in_library_only = false,
   ): Promise<Track[]> {
-    return this.getData('music/artists/artist_tracks', {
+    return this.sendCommand('music/artists/artist_tracks', {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
@@ -301,7 +301,7 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     in_library_only = false,
   ): Promise<Album[]> {
-    return this.getData('music/artists/artist_albums', {
+    return this.sendCommand('music/artists/artist_albums', {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
@@ -315,7 +315,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
   ): Promise<Album[]> {
-    return this.getData('music/albums/library_items', {
+    return this.sendCommand('music/albums/library_items', {
       favorite,
       search,
       limit,
@@ -328,7 +328,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Album> {
-    return this.getData('music/albums/get_album', {
+    return this.sendCommand('music/albums/get_album', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -339,7 +339,7 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     in_library_only = false,
   ): Promise<Track[]> {
-    return this.getData('music/albums/album_tracks', {
+    return this.sendCommand('music/albums/album_tracks', {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
@@ -350,7 +350,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Album[]> {
-    return this.getData('music/albums/album_versions', {
+    return this.sendCommand('music/albums/album_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -363,7 +363,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
   ): Promise<Playlist[]> {
-    return this.getData('music/playlists/library_items', {
+    return this.sendCommand('music/playlists/library_items', {
       favorite,
       search,
       limit,
@@ -376,7 +376,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Playlist> {
-    return this.getData('music/playlists/get_playlist', {
+    return this.sendCommand('music/playlists/get_playlist', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -386,20 +386,19 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-    limit?: number,
-    offset?: number,
   ): Promise<Track[]> {
-    return this.getData('music/playlists/playlist_tracks', {
+    return this.sendCommand('music/playlists/playlist_tracks', {
       item_id,
       provider_instance_id_or_domain,
-      limit,
-      offset,
       force_refresh,
     });
   }
 
-  public addPlaylistTracks(db_playlist_id: string | number, uris: string[]) {
-    this.sendCommand('music/playlists/add_playlist_tracks', {
+  public addPlaylistTracks(
+    db_playlist_id: string | number,
+    uris: string[],
+  ): Promise<void> {
+    return this.sendCommand('music/playlists/add_playlist_tracks', {
       db_playlist_id,
       uris,
     });
@@ -408,8 +407,8 @@ export class MusicAssistantApi {
   public removePlaylistTracks(
     db_playlist_id: string | number,
     positions_to_remove: number[],
-  ) {
-    this.sendCommand('music/playlists/remove_playlist_tracks', {
+  ): Promise<void> {
+    return this.sendCommand('music/playlists/remove_playlist_tracks', {
       db_playlist_id,
       positions_to_remove,
     });
@@ -419,7 +418,7 @@ export class MusicAssistantApi {
     name: string,
     provider_instance_or_domain?: string,
   ): Promise<Playlist> {
-    return this.getData('music/playlists/create_playlist', {
+    return this.sendCommand('music/playlists/create_playlist', {
       name,
       provider_instance_or_domain,
     });
@@ -432,7 +431,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
   ): Promise<Radio[]> {
-    return this.getData('music/radios/library_items', {
+    return this.sendCommand('music/radios/library_items', {
       favorite,
       search,
       limit,
@@ -445,7 +444,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Radio> {
-    return this.getData('music/radios/get_radio', {
+    return this.sendCommand('music/radios/get_radio', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -455,7 +454,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<Radio[]> {
-    return this.getData('music/radios/radio_versions', {
+    return this.sendCommand('music/radios/radio_versions', {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -463,7 +462,7 @@ export class MusicAssistantApi {
 
   public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
-    return this.getData('music/item_by_uri', {
+    return this.sendCommand('music/item_by_uri', {
       uri,
     });
   }
@@ -472,7 +471,7 @@ export class MusicAssistantApi {
     media_item: MediaItemType | ItemMapping,
   ): Promise<MediaItemType> {
     // Try to refresh a mediaitem by requesting it's full object or search for substitutes.
-    return this.getData('music/refresh_item', {
+    return this.sendCommand('music/refresh_item', {
       media_item,
     });
   }
@@ -483,16 +482,18 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
   ): Promise<MediaItemType> {
     // Get single music item by id and media type.
-    return this.getData('music/item', {
+    return this.sendCommand('music/item', {
       media_type,
       item_id,
       provider_instance_id_or_domain,
     });
   }
 
-  public async addItemToLibrary(item: string | MediaItemType | ItemMapping) {
+  public async addItemToLibrary(
+    item: string | MediaItemType | ItemMapping,
+  ): Promise<void> {
     // Add an item (uri or mediaitem) to the library.
-    this.sendCommand('music/library/add_item', {
+    return this.sendCommand('music/library/add_item', {
       item,
     });
   }
@@ -500,30 +501,33 @@ export class MusicAssistantApi {
   public async removeItemFromLibrary(
     media_type: MediaType,
     library_item_id: string | number,
-  ) {
+  ): Promise<void> {
     // Remove an item from the library.
-    this.sendCommand('music/library/remove_item', {
+    return this.sendCommand('music/library/remove_item', {
       media_type,
       library_item_id,
     });
   }
 
-  public async addItemToFavorites(item: string | MediaItemType | ItemMapping) {
+  public async addItemToFavorites(
+    item: string | MediaItemType | ItemMapping,
+  ): Promise<void> {
     // Add an item (uri or mediaitem) to the favorites.
-    this.sendCommand('music/favorites/add_item', {
+    const _promise = this.sendCommand('music/favorites/add_item', {
       item,
     });
     // optimistically set the value
     if (typeof item !== 'string' && 'favorite' in item) {
       item.favorite = true;
     }
+    return _promise;
   }
   public async removeItemFromFavorites(
     media_type: MediaType,
     library_item_id: string | number,
-  ) {
+  ): Promise<void> {
     // Add an item (uri or mediaitem) to the favorites.
-    this.sendCommand('music/favorites/remove_item', {
+    return this.sendCommand('music/favorites/remove_item', {
       media_type,
       library_item_id,
     });
@@ -542,13 +546,9 @@ export class MusicAssistantApi {
     }
   }
 
-  public browse(
-    offset: number,
-    limit: number,
-    path?: string,
-  ): Promise<MediaItemType[]> {
+  public browse(path?: string): Promise<MediaItemType[]> {
     // Browse Music providers.
-    return this.getData('music/browse', { offset, limit, path });
+    return this.sendCommand('music/browse', { path });
   }
 
   public search(
@@ -557,14 +557,18 @@ export class MusicAssistantApi {
     limit?: number,
   ): Promise<SearchResults> {
     // Perform global search for media items on all providers.
-    return this.getData('music/search', { search_query, media_types, limit });
+    return this.sendCommand('music/search', {
+      search_query,
+      media_types,
+      limit,
+    });
   }
 
   public async getRecentlyPlayedItems(
     limit = 10,
     media_types: MediaType[] = [MediaType.TRACK, MediaType.RADIO],
   ): Promise<MediaItemType[]> {
-    return this.getData('music/recently_played_items', {
+    return this.sendCommand('music/recently_played_items', {
       limit,
       media_types,
     });
@@ -574,7 +578,7 @@ export class MusicAssistantApi {
 
   public async getPlayerQueues(): Promise<PlayerQueue[]> {
     // Get all registered PlayerQueues
-    return this.getData('player_queues/all');
+    return this.sendCommand('player_queues/all');
   }
 
   public getPlayerQueueItems(
@@ -583,7 +587,7 @@ export class MusicAssistantApi {
     offset: number,
   ): Promise<QueueItem[]> {
     // Get all QueueItems for given PlayerQueue
-    return this.getData('player_queues/items', {
+    return this.sendCommand('player_queues/items', {
       queue_id,
       limit,
       offset,
@@ -702,7 +706,7 @@ export class MusicAssistantApi {
     clearTimeout(this._throttleId);
     // apply a bit of throttling here
     this._throttleId = setTimeout(() => {
-      this.sendCommand(`player_queues/${command}`, {
+      this._sendCommand(`player_queues/${command}`, {
         queue_id,
         ...args,
       });
@@ -713,7 +717,7 @@ export class MusicAssistantApi {
 
   public async getPlayers(): Promise<Player[]> {
     // Get all registered players.
-    return this.getData('players/all');
+    return this.sendCommand('players/all');
   }
 
   public playerCommandPlay(playerId: string) {
@@ -791,7 +795,7 @@ export class MusicAssistantApi {
     /*
       Create temporary sync group by joining given players to target player.
     */
-    this.sendCommand('players/cmd/sync_many', {
+    this._sendCommand('players/cmd/sync_many', {
       target_player,
       child_player_ids,
     });
@@ -801,7 +805,7 @@ export class MusicAssistantApi {
     /*
       Handle UNSYNC command for all the given players.
     */
-    this.sendCommand('players/cmd/unsync_many', {
+    this._sendCommand('players/cmd/unsync_many', {
       player_ids,
     });
   }
@@ -817,7 +821,7 @@ export class MusicAssistantApi {
     clearTimeout(this._throttleId);
     // apply a bit of throttling here (for the volume and seek sliders especially)
     this._throttleId = setTimeout(() => {
-      this.sendCommand(`players/cmd/${command}`, {
+      this._sendCommand(`players/cmd/${command}`, {
         player_id,
         ...args,
       });
@@ -856,7 +860,7 @@ export class MusicAssistantApi {
     members: string[],
   ): Promise<Player> {
     // Save/update PlayerConfig.
-    return this.getData('players/create_group', {
+    return this.sendCommand('players/create_group', {
       provider,
       name,
       members,
@@ -871,7 +875,7 @@ export class MusicAssistantApi {
     radio_mode?: boolean,
     start_item?: string,
     queue_id?: string,
-  ) {
+  ): Promise<void> {
     if (
       !queue_id &&
       store.activePlayer &&
@@ -881,7 +885,7 @@ export class MusicAssistantApi {
     } else if (!queue_id) {
       queue_id = store.activePlayer?.player_id;
     }
-    this.sendCommand('player_queues/play_media', {
+    return this.sendCommand('player_queues/play_media', {
       queue_id,
       media,
       option,
@@ -897,12 +901,15 @@ export class MusicAssistantApi {
     provider_domain?: string,
   ): Promise<ProviderConfig[]> {
     // Return all known provider configurations, optionally filtered by ProviderType or domain.
-    return this.getData('config/providers', { provider_type, provider_domain });
+    return this.sendCommand('config/providers', {
+      provider_type,
+      provider_domain,
+    });
   }
 
   public async getProviderConfig(instance_id: string): Promise<ProviderConfig> {
     // Return configuration for a single provider.
-    return this.getData('config/providers/get', { instance_id });
+    return this.sendCommand('config/providers/get', { instance_id });
   }
 
   public async getProviderConfigEntries(
@@ -916,7 +923,7 @@ export class MusicAssistantApi {
     // instance_id: id of an existing provider instance (None for new instance setup).
     // action: [optional] action key called from config entries UI.
     // values: the (intermediate) raw values for config entries sent with the action.
-    return this.getData('config/providers/get_entries', {
+    return this.sendCommand('config/providers/get_entries', {
       provider_domain,
       instance_id,
       action,
@@ -934,23 +941,23 @@ export class MusicAssistantApi {
     // values: the raw values for config entries that need to be stored/updated.
     // instance_id: id of an existing provider instance (None for new instance setup).
     // action: [optional] action key called from config entries UI.
-    return this.getData('config/providers/save', {
+    return this.sendCommand('config/providers/save', {
       provider_domain,
       values,
       instance_id,
     });
   }
 
-  public removeProviderConfig(instance_id: string) {
+  public removeProviderConfig(instance_id: string): Promise<void> {
     // Remove ProviderConfig.
-    this.sendCommand('config/providers/remove', {
+    return this.sendCommand('config/providers/remove', {
       instance_id,
     });
   }
 
-  public reloadProvider(instance_id: string) {
+  public reloadProvider(instance_id: string): Promise<void> {
     // Reload Provider(instance).
-    this.sendCommand('config/providers/reload', {
+    return this.sendCommand('config/providers/reload', {
       instance_id,
     });
   }
@@ -959,12 +966,12 @@ export class MusicAssistantApi {
 
   public async getPlayerConfigs(provider?: string): Promise<PlayerConfig[]> {
     // Return all known player configurations, optionally filtered by provider domain.
-    return this.getData('config/players', { provider });
+    return this.sendCommand('config/players', { provider });
   }
 
   public async getPlayerConfig(player_id: string): Promise<PlayerConfig> {
     // Return configuration for a single player.
-    return this.getData('config/players/get', { player_id });
+    return this.sendCommand('config/players/get', { player_id });
   }
 
   public async getPlayerConfigValue(
@@ -972,7 +979,7 @@ export class MusicAssistantApi {
     key: string,
   ): Promise<PlayerConfig> {
     // Return single configentry value for a player.
-    return this.getData('config/players/get_value', { player_id, key });
+    return this.sendCommand('config/players/get_value', { player_id, key });
   }
 
   public async savePlayerConfig(
@@ -980,15 +987,15 @@ export class MusicAssistantApi {
     values: Record<string, ConfigValueType>,
   ): Promise<PlayerConfig> {
     // Save/update PlayerConfig.
-    return this.getData('config/players/save', {
+    return this.sendCommand('config/players/save', {
       player_id,
       values,
     });
   }
 
-  public removePlayerConfig(player_id: string) {
+  public removePlayerConfig(player_id: string): Promise<void> {
     // remove the configuration of a player
-    this.sendCommand('config/players/remove', {
+    return this.sendCommand('config/players/remove', {
       player_id,
     });
   }
@@ -997,12 +1004,12 @@ export class MusicAssistantApi {
 
   public async getCoreConfigs(): Promise<CoreConfig[]> {
     // Return all known core configurations
-    return this.getData('config/core');
+    return this.sendCommand('config/core');
   }
 
   public async getCoreConfig(domain: string): Promise<ProviderConfig> {
     // Return configuration for a single core controller.
-    return this.getData('config/core/get', { domain });
+    return this.sendCommand('config/core/get', { domain });
   }
 
   public async getCoreConfigEntries(
@@ -1014,7 +1021,7 @@ export class MusicAssistantApi {
     // domain: (mandatory) domain of the core module.
     // action: [optional] action key called from config entries UI.
     // values: the (intermediate) raw values for config entries sent with the action.
-    return this.getData('config/core/get_entries', {
+    return this.sendCommand('config/core/get_entries', {
       domain,
       action,
       values,
@@ -1029,26 +1036,29 @@ export class MusicAssistantApi {
     // domain: (mandatory) domain of the provider.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
-    return this.getData('config/core/save', {
+    return this.sendCommand('config/core/save', {
       domain,
       values,
     });
   }
 
-  public reloadCoreController(domain: string) {
+  public reloadCoreController(domain: string): Promise<void> {
     // Reload Core controller.
-    this.sendCommand('config/core/reload', {
+    return this.sendCommand('config/core/reload', {
       domain,
     });
   }
 
   // Other (utility) functions
 
-  public startSync(media_types?: MediaType[], providers?: string[]) {
+  public startSync(
+    media_types?: MediaType[],
+    providers?: string[],
+  ): Promise<void> {
     // Start running the sync of (all or selected) musicproviders.
     // media_types: only sync these media types. omit for all.
     // providers: only sync these provider domains. omit for all.
-    this.sendCommand('music/sync', { media_types, providers });
+    return this.sendCommand('music/sync', { media_types, providers });
   }
 
   public getProviderName(provider_domain_or_instance_id: string): string {
@@ -1231,7 +1241,7 @@ export class MusicAssistantApi {
     }
   }
 
-  public getData<Result>(
+  public sendCommand<Result>(
     command: string,
     args?: Record<string, any>,
   ): Promise<Result> {
@@ -1240,11 +1250,11 @@ export class MusicAssistantApi {
     return new Promise((resolve, reject) => {
       this.commands.set(cmdId, { resolve, reject });
       this.fetchesInProgress.value.push(cmdId);
-      this.sendCommand(command, args, cmdId);
+      this._sendCommand(command, args, cmdId);
     });
   }
 
-  public sendCommand(
+  private _sendCommand(
     command: string,
     args?: Record<string, any>,
     msgId?: number,
@@ -1281,17 +1291,20 @@ export class MusicAssistantApi {
       this.queues[queue.queue_id] = queue;
     }
 
-    for (const prov of await this.getData<ProviderManifest[]>(
+    for (const prov of await this.sendCommand<ProviderManifest[]>(
       'providers/manifests',
     )) {
       this.providerManifests[prov.domain] = prov;
     }
 
-    for (const prov of await this.getData<ProviderInstance[]>('providers')) {
+    for (const prov of await this.sendCommand<ProviderInstance[]>(
+      'providers',
+    )) {
       this.providers[prov.instance_id] = prov;
     }
 
-    this.syncTasks.value = await this.getData<SyncTask[]>('music/synctasks');
+    this.syncTasks.value =
+      await this.sendCommand<SyncTask[]>('music/synctasks');
   }
 
   private _genCmdId() {

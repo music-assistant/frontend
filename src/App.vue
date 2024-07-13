@@ -3,13 +3,12 @@
 </template>
 
 <script setup lang="ts">
-import { ConnectionState, api } from '@/plugins/api';
+import { api } from '@/plugins/api';
 import { onMounted } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
 import { i18n } from '@/plugins/i18n';
 import router from './plugins/router';
-import { sleep } from './helpers/utils';
 import { EventType } from './plugins/api/interfaces';
 const theme = useTheme();
 
@@ -90,9 +89,3 @@ onMounted(() => {
   api.initialize(serverAddress);
 });
 </script>
-
-<style>
-body.waiting * {
-  cursor: progress;
-}
-</style>

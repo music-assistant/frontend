@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Enter a name for the new playlist",
     "no_content": "No items found.",
-    "no_content_filter": "No items found for the current filter\/search conditions.",
+    "no_content_filter": "No items found for the current filter/search conditions.",
     "no_player": "No player selected",
     "off": "Off",
     "on": "On",
@@ -93,7 +93,7 @@
         "add_provider": "Add a new provider",
         "advanced_settings": "Advanced settings",
         "check_docs": "Check out the documentation",
-        "codeowners": "Authors\/credits",
+        "codeowners": "Authors/credits",
         "config_player": "Configure player: {0}",
         "configure": "Configure",
         "delete": "Delete",
@@ -164,7 +164,7 @@
         },
         "flow_mode": {
             "label": "Enable queue flow mode",
-            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream.\nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
+            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream.\nUse for players that do not natively support gapless and/or crossfading or if the player has trouble transitioning between tracks."
         },
         "auto_play": {
             "label": "Automatically play (resume on power on)",
@@ -236,8 +236,8 @@
             "options": {
                 "play": "Play artist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the artist track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the artist track(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the artist track(s) right after the currently played/buffered item.",
                 "add": "Add the artist track(s) at the end of the queue."
             }
         },
@@ -247,8 +247,8 @@
             "options": {
                 "play": "Play album track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the album track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the album track(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the album track(s) right after the currently played/buffered item.",
                 "add": "Add the album track(s) at the end of the queue."
             }
         },
@@ -258,8 +258,8 @@
             "options": {
                 "play": "Play track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the track(s).",
-                "next": "Play the track(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the track(s) right after the currently played\/buffered item.",
+                "next": "Play the track(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the track(s) right after the currently played/buffered item.",
                 "add": "Add the track(s) at the end of the queue."
             }
         },
@@ -269,8 +269,8 @@
             "options": {
                 "play": "Play playlist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the playlist track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the playlist track(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the playlist track(s) right after the currently played/buffered item.",
                 "add": "Add the playlist track(s) at the end of the queue."
             }
         },
@@ -280,8 +280,8 @@
             "options": {
                 "play": "Play radio station now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the radio station",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the radio station(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the radio station(s) right after the currently played/buffered item.",
                 "add": "Add the radio station(s) at the end of the queue."
             }
         },
@@ -322,7 +322,7 @@
         },
         "icon": {
             "label": "Icon",
-            "description": "Material design icon for this player.\n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design icon for this player.\n\nSee https://pictogrammers.com/library/mdi/."
         },
         "frontend": "User Interface",
         "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
@@ -347,7 +347,7 @@
         },
         "artwork_pref": {
             "label": "Preference for image retrieval",
-            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server?\nBy default, the client is allowed to cache\/download artwork directly from internet resources to put less stress on the server.",
+            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server?\nBy default, the client is allowed to cache/download artwork directly from internet resources to put less stress on the server.",
             "options": {
                 "online": "Allow direct retrieval",
                 "server_only": "Enforce routing though the server"
@@ -427,23 +427,24 @@
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
         "explicit": "Explicit",
-        "filter_library": "Toggle in-library\/favorite filter",
-        "library": "Toggle in-library\/favorite",
+        "filter_library": "Toggle in-library/favorite filter",
+        "library": "Toggle in-library/favorite",
         "linked": "This provideritem is linked to the current itemdetails",
         "refresh": "Refresh the items listing",
         "refresh_new_content": "New content is available, click to refresh the listing",
-        "search": "Show\/hide search input",
+        "search": "Show/hide search input",
         "select_items": "Select multiple items",
         "sort_options": "Sort options",
-        "toggle_view_mode": "Toggle view mode list\/thumbs",
+        "toggle_view_mode": "Toggle view mode list/thumbs",
         "filter_favorites": "Only show favorites",
-        "favorite": "Mark\/unmark as favorite",
+        "favorite": "Mark/unmark as favorite",
         "open_provider_link": "Open this item on the provider's website",
-        "collapse_expand": "Collapse\/expand this listing",
+        "collapse_expand": "Collapse/expand this listing",
         "back": "Back",
-        "show_menu": "Show\/hide menu",
+        "show_menu": "Show/hide menu",
         "search_filter_active": "Search is currently filtering results",
-        "play_sample": "Play sample"
+        "play_sample": "Play sample",
+        "album_type": "Album type"
     },
     "topresult": "Top result",
     "track": "Track",

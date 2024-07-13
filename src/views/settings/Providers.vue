@@ -260,7 +260,7 @@ const toggleEnabled = function (config: ProviderConfig) {
 
 const reloadProvider = function (providerInstanceId: string) {
   api
-    .getData('config/providers/reload', {
+    .sendCommand('config/providers/reload', {
       instance_id: providerInstanceId,
     })
     .catch((err) => alert(err));

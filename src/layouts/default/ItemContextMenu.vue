@@ -157,20 +157,6 @@ export const getPlayMenuItems = function (
     }
   }
 
-  // Play NOW
-  playMenuItems.push({
-    label: 'play_now',
-    action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        QueueOption.PLAY,
-      );
-    },
-    icon: 'mdi-play-circle-outline',
-    labelArgs: [],
-    disabled: !store.activePlayerQueue,
-  });
-
   // replace now
   playMenuItems.push({
     label: 'play_replace',
@@ -178,6 +164,20 @@ export const getPlayMenuItems = function (
       api.playMedia(
         items.map((x) => x.uri),
         QueueOption.REPLACE,
+      );
+    },
+    icon: 'mdi-play-circle-outline',
+    labelArgs: [],
+    disabled: !store.activePlayerQueue,
+  });
+
+  // Play NOW
+  playMenuItems.push({
+    label: 'play_now',
+    action: () => {
+      api.playMedia(
+        items.map((x) => x.uri),
+        QueueOption.PLAY,
       );
     },
     icon: 'mdi-play-circle-outline',
