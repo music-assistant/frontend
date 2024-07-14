@@ -3,6 +3,7 @@
     <Toolbar
       icon="mdi-cog-outline"
       :title="$t('settings.settings')"
+      :show-loading="true"
       :menu-items="[
         {
           label: 'settings.providers',

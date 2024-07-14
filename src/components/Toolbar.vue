@@ -16,7 +16,11 @@
 
     <template v-if="menuItems?.length" #append>
       <v-progress-circular
-        v-if="showLoading"
+        v-if="
+          showLoading &&
+          (api.fetchesInProgress.value.length > 0 ||
+            api.syncTasks.value.length > 0)
+        "
         color="primary"
         indeterminate
         :title="$t('tooltip.loading')"
@@ -150,8 +154,15 @@
         </v-menu>
       </div>
     </template>
-    <template v-else #append>
-      <v-progress-circular v-if="showLoading" color="primary" indeterminate />
+    <template v-else-if="showLoading" #append>
+      <v-progress-circular
+        v-if="
+          api.fetchesInProgress.value.length > 0 ||
+          api.syncTasks.value.length > 0
+        "
+        color="primary"
+        indeterminate
+      />
     </template>
   </v-toolbar>
 </template>
@@ -159,6 +170,7 @@
 <script setup lang="ts">
 import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
 import { getBreakpointValue } from '../plugins/breakpoint';
+import { api } from '@/plugins/api';
 
 // properties
 export interface Props {

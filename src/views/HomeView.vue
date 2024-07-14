@@ -2,6 +2,7 @@
   <div>
     <Toolbar
       title="Music Assistant"
+      :show-loading="true"
       :menu-items="
         hideSettings
           ? []
