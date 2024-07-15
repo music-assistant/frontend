@@ -1218,8 +1218,8 @@ export class MusicAssistantApi {
     if (DEBUG) {
       console.log('[serverInfo]', msg);
     }
-    this.state.value = ConnectionState.CONNECTED;
     this.serverInfo.value = msg;
+    this.state.value = ConnectionState.CONNECTED;
     // trigger fetch of full state once we are connected to the server
     this._fetchState();
     this.signalEvent({

@@ -81,7 +81,7 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
-  total.value = await api.getLibraryAlbumsCount(params.favoritesOnly || false);
+  setTotals(params);
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
@@ -89,5 +89,13 @@ const loadItems = async function (params: LoadDataParams) {
     params.offset,
     params.sortBy,
   );
+};
+
+const setTotals = async function (params: LoadDataParams) {
+  if (!params.favoritesOnly) {
+    total.value = store.libraryAlbumsCount;
+    return;
+  }
+  total.value = await api.getLibraryAlbumsCount(params.favoritesOnly || false);
 };
 </script>

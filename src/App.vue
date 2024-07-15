@@ -75,12 +75,18 @@ onMounted(() => {
 
   // connect/initialize api
   store.loading = true;
-  api.subscribe(EventType.CONNECTED, () => {
+  api.subscribe(EventType.CONNECTED, async () => {
     // redirect the user to the settings page if this is a fresh install
     // TO be replaced with some nice onboarding wizard!
-    if (!api.serverInfo.value!.onboard_done) {
+    if (api.serverInfo.value?.onboard_done === false) {
+      console.info('Onboarding not done, redirecting to settings');
       router.push('/settings');
     }
+    store.libraryArtistsCount = await api.getLibraryArtistsCount();
+    store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
+    store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
+    store.libraryRadiosCount = await api.getLibraryRadiosCount();
+    store.libraryTracksCount = await api.getLibraryTracksCount();
     store.loading = false;
   });
   api.subscribe(EventType.DISCONNECTED, () => {
