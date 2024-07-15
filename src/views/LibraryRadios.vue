@@ -136,7 +136,7 @@ const addUrl = async function () {
           },
         ];
       }
-      api.addItemToLibrary(item).then(() => router.go(0));
+      api.addItemToLibrary(item).then(() => window.location.reload());
     })
     .catch((e) => alert(e));
 };

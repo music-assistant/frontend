@@ -7,6 +7,7 @@
           ? `${$t('settings.settings')} | ${$t(`settings.${activeTab}`)}`
           : ''
       "
+      :show-loading="true"
       :menu-items="[
         {
           label: 'settings.providers',

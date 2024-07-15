@@ -159,12 +159,7 @@
                 "info": "Information",
                 "warning": "Varning",
                 "error": "Fel",
-                "debug": "Felsökning",
-                "GLOBAL": "Tom",
-                "INFO": "Tom",
-                "WARNING": "Tom",
-                "ERROR": "Tom",
-                "DEBUG": "Tom"
+                "debug": "Felsökning"
             }
         },
         "flow_mode": {
@@ -366,14 +361,17 @@
                 "da": "Danska",
                 "de": "Tyska",
                 "en": "Engelska",
-                "es": "Spanska",
                 "fr": "Franska",
-                "he": "Hebreiska",
-                "it": "Italienska",
-                "nb": "Norska",
                 "nl": "Holländska",
                 "pl": "Polska",
-                "uk_UA": "Ukrainska"
+                "uk_UA": "Ukrainska",
+                "zh_CN": "Kinesiska (förenklad)",
+                "en_AU": "Engelska (Australien)",
+                "sr": "Serbiska",
+                "sr_Latn": "Serbiska (latinsk)",
+                "sv_SE": "Svenska",
+                "en_GB": "Engelska",
+                "es": "Spanska"
             }
         },
         "hide_settings": {
@@ -393,13 +391,8 @@
     "sort": {
         "duration": "Varaktighet",
         "position": "Position",
-        "position DESC": "Position (fallande)",
         "provider": "Leverantör",
-        "sort_album": "Album",
-        "sort_artist": "Artist",
         "sort_name": "Alfabetiskt",
-        "sort_name DESC": "Alfabetiskt (fallande)",
-        "timestamp_added DESC": "Nyligen tillagd",
         "track_number": "Låtnummer",
         "year": "Utgivningsår",
         "position_desc": "Position (fallande)",
@@ -411,14 +404,11 @@
         "year_desc": "Utgivningsår (fallande)",
         "duration_desc": "Varaktighet (fallande)",
         "original": "Original",
-        "none": "Tom",
         "sort_name_desc": "Sortera namn (fallande)",
         "timestamp_added": "Datum tillagt",
         "timestamp_added_desc": "Datum tillagt (fallande)",
         "timestamp_modified": "Datum uppdaterat",
         "timestamp_modified_desc": "Datum uppdaterat (fallande)",
-        "album_sort": "Sortering Albumnamn",
-        "artist_sort": "Sortering artistnamn",
         "last_played": "Senast spelade",
         "last_played_desc": "Senast spelade (fallande)",
         "play_count": "Antal spelningar",

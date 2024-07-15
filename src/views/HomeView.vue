@@ -2,6 +2,7 @@
   <div>
     <Toolbar
       title="Music Assistant"
+      :show-loading="true"
       :menu-items="
         hideSettings
           ? []
@@ -17,7 +18,7 @@
       "
     />
 
-    <Container v-if="api.setUpCompleted.value" variant="panel">
+    <Container variant="panel">
       <Suspense>
         <div>
           <HomeCurrentlyPlayingRow />
@@ -35,7 +36,6 @@ import HomeWidgetRows from '@/components/HomeWidgetRows.vue';
 import Toolbar from '@/components/Toolbar.vue';
 import HomeCurrentlyPlayingRow from '@/components/HomeCurrentlyPlayingRow.vue';
 import { ref } from 'vue';
-import api from '@/plugins/api';
 const hideSettings = ref(
   localStorage.getItem('frontend.settings.hide_settings') == 'true',
 );

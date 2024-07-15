@@ -27,6 +27,7 @@
         style="position: absolute"
         :menu-items="item ? getContextMenuItems([item], item) : []"
         :enforce-overflow-menu="true"
+        :show-loading="true"
         @icon-clicked="backButtonClick"
       />
       <v-layout
@@ -338,6 +339,7 @@ watch(
       fanartImage.value =
         getImageThumbForItem(compProps.item, ImageType.FANART) ||
         getImageThumbForItem(compProps.item, ImageType.LANDSCAPE) ||
+        getImageThumbForItem(compProps.item, ImageType.THUMB) ||
         imgGradient;
     }
   },

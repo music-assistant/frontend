@@ -30,7 +30,7 @@
     <Container
       v-if="expanded"
       :variant="viewMode == 'list' ? 'default' : 'panel'"
-      style="overflow-x: hidden"
+      style="overflow: hidden"
     >
       <v-infinite-scroll
         v-if="!tempHide"
@@ -38,7 +38,7 @@
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
         :empty-text="''"
-        style="overflow-y: hidden; overflow-x: hidden"
+        style="overflow: hidden"
       >
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
@@ -87,7 +87,7 @@
           :item-height="70"
           height="100%"
           :items="pagedItems"
-          style="height: 100%"
+          style="height: 100%; overflow: hidden"
         >
           <template #default="{ item }">
             <ListviewItem
@@ -199,6 +199,7 @@ export interface LoadDataParams {
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
   refresh?: boolean;
+  albumType?: string[];
 }
 // properties
 export interface Props {
@@ -215,6 +216,7 @@ export interface Props {
   showSearchButton?: boolean;
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
+  showAlbumTypeFilter?: boolean;
   updateAvailable?: boolean;
   title?: string;
   hideOnEmpty?: boolean;
@@ -232,7 +234,6 @@ export interface Props {
   path?: string;
   icon?: string;
   restoreState?: boolean;
-  noServerSideSorting?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ['name', 'sort_name'],
@@ -247,6 +248,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
+  showAlbumTypeFilter: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -260,7 +262,6 @@ const props = withDefaults(defineProps<Props>(), {
   path: undefined,
   icon: undefined,
   restoreState: false,
-  noServerSideSorting: false,
 });
 
 // global refs
@@ -433,13 +434,29 @@ const onClear = function () {
   loadData(undefined, undefined, true);
 };
 
-const changeSort = function (sort_key?: string, sort_desc?: boolean) {
+const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
   localStorage.setItem(
     `sortBy.${props.path}.${props.itemtype}`,
     params.value.sortBy,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const changeAlbumTypeFilter = function (albumType: string) {
+  if (params.value.albumType?.includes(albumType))
+    params.value.albumType = params.value.albumType?.filter(
+      (type) => type !== albumType,
+    );
+  else {
+    params.value.albumType = params.value.albumType || [];
+    params.value.albumType.push(albumType);
+  }
+  localStorage.setItem(
+    `albumType.${props.path}.${props.itemtype}`,
+    params.value.albumType.join(','),
   );
   loadData(undefined, undefined, true);
 };
@@ -530,6 +547,24 @@ const menuItems = computed(() => {
         : 'mdi-account-music-outline',
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
+    });
+  }
+
+  // album type filter
+  if (props.showAlbumTypeFilter) {
+    items.push({
+      label: 'tooltip.album_type',
+      icon: 'mdi-album',
+      disabled: loading.value,
+      subItems: ['album', 'single', 'compilation', 'unknown'].map((key) => {
+        return {
+          label: `album_type.${key}`,
+          selected: params.value.albumType?.includes(key),
+          action: () => {
+            changeAlbumTypeFilter(key);
+          },
+        };
+      }),
     });
   }
 
@@ -638,11 +673,7 @@ const loadData = async function (
   }
   loading.value = true;
 
-  if (
-    FilterParamsChanged &&
-    props.loadPagedData != null &&
-    !props.noServerSideSorting
-  ) {
+  if (FilterParamsChanged && props.loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
     clear = true;
   }
@@ -663,38 +694,7 @@ const loadData = async function (
   params.value.limit = props.limit;
   params.value.refresh = refresh;
 
-  if (props.loadPagedData != null && props.noServerSideSorting) {
-    // server side paged listing without filter support - handle filtering in-memory
-    // note that all items of the paged listing must first be received before we can do filtering
-    if (!initialDataReceived.value) {
-      // collect all items first - otherwise filtering is not possible
-
-      pagedItems.value = [];
-      allItems.value = [];
-      let offset = 0;
-      while (!initialDataReceived.value) {
-        const nextItems = await props.loadPagedData({
-          ...params.value,
-          offset,
-        });
-        allItems.value.push(...nextItems);
-        offset += props.limit;
-        if (Math.abs(nextItems.length - props.limit) > 10) {
-          initialDataReceived.value = true;
-          break;
-        }
-      }
-    }
-    // filter items in memory
-    const nextItems = getFilteredItems(allItems.value, params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
-    }
-    // mark allItemsReceived if we have all items
-    allItemsReceived.value = nextItems.length < props.limit;
-  } else if (props.loadPagedData != null) {
+  if (props.loadPagedData != null) {
     // server side paged listing (with filter support)
     const nextItems = await props.loadPagedData(params.value);
     if (params.value.offset) {
@@ -788,6 +788,16 @@ const restoreSettings = async function () {
     const expandStr = localStorage.getItem(`expand.${storKey}`);
     if (expandStr) {
       expanded.value = expandStr == 'true';
+    }
+  }
+
+  // get stored/default albumType filter for this itemtype
+  if (props.showAlbumTypeFilter === true) {
+    const savedAlbumTypeFilterStr = localStorage.getItem(
+      `albumType.${storKey}`,
+    );
+    if (savedAlbumTypeFilterStr) {
+      params.value.albumType = savedAlbumTypeFilterStr.split(',');
     }
   }
 
@@ -971,28 +981,33 @@ const getFilteredItems = function (
   }
   // sort
   if (params.sortBy == 'name') {
-    result.sort((a, b) => getSortName(a).localeCompare(
-      getSortName(b), undefined, {numeric: true}
-    ));
+    result.sort((a, b) =>
+      getSortName(a).localeCompare(getSortName(b), undefined, {
+        numeric: true,
+      }),
+    );
   }
   if (params.sortBy == 'sort_name') {
     result.sort((a, b) =>
-      getSortName(a, true).localeCompare(
-        getSortName(b, true), undefined, {numeric: true}
-      ),
+      getSortName(a, true).localeCompare(getSortName(b, true), undefined, {
+        numeric: true,
+      }),
     );
   }
   if (params.sortBy == 'name_desc') {
-    result.sort((a, b) => getSortName(b).localeCompare(
-      getSortName(a), undefined, {numeric: true}
-    ));
+    result.sort((a, b) =>
+      getSortName(b).localeCompare(getSortName(a), undefined, {
+        numeric: true,
+      }),
+    );
   }
 
   if (params.sortBy == 'album') {
     result.sort((a, b) =>
       getSortName((a as Track).album).localeCompare(
         getSortName((b as Track).album),
-        undefined, {numeric: true}
+        undefined,
+        { numeric: true },
       ),
     );
   }
@@ -1047,6 +1062,12 @@ const getFilteredItems = function (
 
   if (params.favoritesOnly) {
     result = result.filter((x) => x.favorite);
+  }
+
+  if (params.albumType && params.albumType.length > 0) {
+    result = result.filter((x) =>
+      params.albumType?.includes((x as Album).album_type),
+    );
   }
   return result.slice(params.offset, params.offset + params.limit);
 };

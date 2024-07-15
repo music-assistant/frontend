@@ -124,6 +124,13 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ('metadata' in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
+      if (
+        !img.remotely_accessible &&
+        !api.getProvider(img.provider)?.available
+      ) {
+        // skip local images if not remotely accessible
+        continue;
+      }
       if (img.type == type) return img;
     }
   }

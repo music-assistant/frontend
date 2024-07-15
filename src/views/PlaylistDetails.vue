@@ -9,8 +9,7 @@
     :show-favorites-only-filter="false"
     :show-track-number="false"
     :show-refresh-button="true"
-    :load-paged-data="loadPlaylistTracks"
-    :limit="50"
+    :load-items="loadPlaylistTracks"
     :sort-keys="[
       'position',
       'position_desc',
@@ -85,8 +84,6 @@ const loadPlaylistTracks = async function (params: LoadDataParams) {
     props.itemId,
     props.provider,
     params.refresh,
-    params.limit,
-    params.offset,
   );
 };
 </script>

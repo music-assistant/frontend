@@ -15,6 +15,16 @@
     </template>
 
     <template v-if="menuItems?.length" #append>
+      <v-progress-circular
+        v-if="
+          showLoading &&
+          (api.fetchesInProgress.value.length > 0 ||
+            api.syncTasks.value.length > 0)
+        "
+        color="primary"
+        indeterminate
+        :title="$t('tooltip.loading')"
+      />
       <div
         v-for="menuItem of menuItems.filter((x) => !x.hide)"
         :key="menuItem.label"
@@ -68,7 +78,7 @@
         <v-btn
           v-else-if="
             !enforceOverflowMenu &&
-            (getBreakpointValue('bp3') || menuItem.overflowAllowed == false)
+            (getBreakpointValue('bp5') || menuItem.overflowAllowed == false)
           "
           variant="text"
           style="width: 40px"
@@ -89,7 +99,7 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <div
         v-if="
-          (!getBreakpointValue('bp3') || enforceOverflowMenu) &&
+          (!getBreakpointValue('bp5') || enforceOverflowMenu) &&
           menuItems.filter(
             (x) =>
               x.hide != true &&
@@ -144,12 +154,23 @@
         </v-menu>
       </div>
     </template>
+    <template v-else-if="showLoading" #append>
+      <v-progress-circular
+        v-if="
+          api.fetchesInProgress.value.length > 0 ||
+          api.syncTasks.value.length > 0
+        "
+        color="primary"
+        indeterminate
+      />
+    </template>
   </v-toolbar>
 </template>
 
 <script setup lang="ts">
 import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
 import { getBreakpointValue } from '../plugins/breakpoint';
+import { api } from '@/plugins/api';
 
 // properties
 export interface Props {
@@ -159,6 +180,7 @@ export interface Props {
   count?: number;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
+  showLoading?: boolean;
 }
 withDefaults(defineProps<Props>(), {
   color: 'transparent',
@@ -167,6 +189,7 @@ withDefaults(defineProps<Props>(), {
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
+  showLoading: undefined,
 });
 
 // emitters

@@ -97,7 +97,7 @@ import type { MediaItemType, Playlist, Track } from '@/plugins/api/interfaces';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { ProviderFeature } from '@/plugins/api/interfaces';
 import api from '@/plugins/api';
-import { store } from '@/plugins/store';
+import { AlertType, store } from '@/plugins/store';
 import { eventbus, PlaylistDialogEvent } from '@/plugins/eventbus';
 import Toolbar from '@/components/Toolbar.vue';
 import { $t } from '@/plugins/i18n';
@@ -177,7 +177,7 @@ const fetchPlaylists = async function () {
     }
   }
 };
-const addToPlaylist = function (value: MediaItemType) {
+const addToPlaylist = async function (value: MediaItemType) {
   /// add track(s) to playlist
   if (selectedItems.value[0].media_type === MediaType.TRACK) {
     api.addPlaylistTracks(
@@ -187,21 +187,21 @@ const addToPlaylist = function (value: MediaItemType) {
   }
   // add album track(s) to playlist
   else if (selectedItems.value[0].media_type === MediaType.ALBUM) {
-    var albumTracks: Track[] = [];
-    api
-      .getAlbumTracks(
-        selectedItems.value[0].item_id,
-        selectedItems.value[0].provider,
-      )
-      .then((tracks) => {
-        albumTracks = tracks;
-        api.addPlaylistTracks(
-          value.item_id,
-          albumTracks.map((x) => x.uri),
-        );
-      });
+    var albumTracks: Track[] = await api.getAlbumTracks(
+      selectedItems.value[0].item_id,
+      selectedItems.value[0].provider,
+    );
+    api.addPlaylistTracks(
+      value.item_id,
+      albumTracks.map((x) => x.uri),
+    );
   }
   close();
+  store.activeAlert = {
+    type: AlertType.INFO,
+    message: $t('background_task_added'),
+    persistent: false,
+  };
 };
 const newPlaylist = async function (provId: string) {
   const name = prompt($t('new_playlist_name'));

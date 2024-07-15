@@ -40,7 +40,7 @@
     "library": "Bibliothèque",
     "loading": "Les données sont en train d'être extraites du serveur.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Enter a new for the new playlist",
+    "new_playlist_name": "Entrez un nom pour la nouvelle playlist",
     "no_content": "Aucun élément trouvé.",
     "no_content_filter": "Aucun élément trouvé pour les critères de recherche\/filtre actuels.",
     "no_player": "Aucun lecteur sélectionné",
@@ -116,7 +116,7 @@
         "player_id": "Identifiant du lecteur",
         "player_model": "Modèle",
         "player_name": "Nom personnalisé du lecteur",
-        "player_not_available": "Ce lecteur n'est actuellement pas (encore) disponible",
+        "player_not_available": "Ce lecteur n’est pas (encore) disponible",
         "player_provider": "Fournisseur",
         "player_settings": "Paramètres du lecteur",
         "player_type_label": "Type de lecteur",
@@ -160,12 +160,7 @@
                 "info": "Info",
                 "warning": "Alerte",
                 "error": "Erreur",
-                "debug": "Débogage",
-                "GLOBAL": "Vide",
-                "INFO": "Vide",
-                "WARNING": "Vide",
-                "ERROR": "Vide",
-                "DEBUG": "Vide"
+                "debug": "Débogage"
             }
         },
         "flow_mode": {
@@ -178,7 +173,7 @@
         },
         "output_channels": {
             "label": "Mode du canal de sortie",
-            "description": "Vous pouvez configurer ce lecteur pour qu'il ne joue que le canal gauche ou droit, par exemple pour créer une paire stéréo avec 2 lecteurs.",
+            "description": "Vous pouvez configurer ce lecteur pour qu'il joue uniquement le canal gauche ou droit, par exemple pour créer une paire stéréo avec 2 lecteurs.",
             "options": {
                 "stereo": "Stéréo (les deux canaux)",
                 "left": "Canal gauche uniquement",
@@ -192,7 +187,7 @@
         },
         "volume_normalization_target": {
             "label": "Niveau cible pour la normalisation du volume",
-            "description": "Ajuster l'intensité sonore moyenne (perçue) à ce niveau cible, la valeur par défaut étant de -17 LUFS. \n\n **AVERTISSEMENT:** Un niveau trop élevé peut entraîner un écrêtage !"
+            "description": "Ajuster l'intensité sonore moyenne (perçue) à ce niveau cible, la valeur par défaut étant de -17 LUFS.\n\n**AVERTISSEMENT :** Un niveau trop élevé peut entraîner un écrêtage !"
         },
         "eq_bass": {
             "label": "Égaliseur : basse",
@@ -306,7 +301,7 @@
         },
         "announce_volume_strategy": {
             "label": "Stratégie de volume pour les annonces",
-            "description": "Lorsqu'une annonce est diffusée sur ce lecteur, comment le volume doit-il être réglé temporairement (à utiliser en combinaison avec la valeur du volume ci-dessous).",
+            "description": "Lorsqu'une annonce est diffusée sur ce lecteur, comment le volume doit-il être réglé temporairement (à utiliser en combinaison avec la valeur de volume ci-dessous) ?",
             "options": {
                 "absolute": "Volume absolu",
                 "relative": "Augmentation du volume relatif",
@@ -367,27 +362,21 @@
                 "da": "Danois",
                 "de": "Allemand",
                 "en": "Anglais",
-                "es": "Espagnol",
                 "fr": "Français",
-                "he": "Hébreu",
-                "it": "Italien",
-                "nb": "Norvégien",
                 "nl": "Néerlandais",
                 "pl": "Polonais",
                 "uk_UA": "Ukrainien",
                 "zh_CN": "Chinois (simplifié)",
-                "el_GR": "Grec",
                 "en_AU": "Anglais (australien)",
-                "en_UK": "Anglais (Royaume-Uni)",
-                "is_IS": "Islandais",
-                "pt_BR": "Portugais (Brésil)",
                 "sr": "Serbe",
                 "sr_Latn": "Serbe (latin)",
-                "sv_SE": "Suédois"
+                "sv_SE": "Suédois",
+                "en_GB": "Anglais (Royaume-Uni)",
+                "es": "Espagnol"
             }
         },
         "hide_settings": {
-            "label": "Masquer le bouton dans les paramètres",
+            "label": "Masquer le bouton des paramètres",
             "description": "Masquer le bouton des paramètres sur l’écran d’accueil.\n\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\n\nDans ce cas, vous devrez saisir manuellement le chemin d'accès aux paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques !"
         },
         "no_music_providers": "Aucun fournisseur de musique configuré",
@@ -403,13 +392,8 @@
     "sort": {
         "duration": "Durée",
         "position": "Position",
-        "position DESC": "Position (décroissante)",
         "provider": "Fournisseur",
-        "sort_album": "Album",
-        "sort_artist": "Artiste",
-        "sort_name": "Nom de tri",
-        "sort_name DESC": "Alphabétiquement (descendant)",
-        "timestamp_added DESC": "Récemment ajouté",
+        "sort_name": "Titre",
         "track_number": "Numéro de piste",
         "year": "Année de sortie",
         "position_desc": "Position (décroissante)",
@@ -421,14 +405,11 @@
         "year_desc": "Année de sortie (décroissant)",
         "duration_desc": "Durée (décroissant)",
         "original": "Original",
-        "none": "Vide",
         "sort_name_desc": "Trier par nom (décroissant)",
         "timestamp_added": "Date d'ajout",
         "timestamp_added_desc": "Date d'ajout (décroissante)",
         "timestamp_modified": "Date de mise à jour",
         "timestamp_modified_desc": "Date de mise à jour (décroissante)",
-        "album_sort": "Nom de tri de l'album",
-        "artist_sort": "Nom de tri de l'artiste",
         "last_played": "Dernière lecture",
         "last_played_desc": "Dernière lecture (décroissant)",
         "play_count": "Nombre de lectures",

@@ -157,20 +157,6 @@ export const getPlayMenuItems = function (
     }
   }
 
-  // Play NOW
-  playMenuItems.push({
-    label: 'play_now',
-    action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        QueueOption.PLAY,
-      );
-    },
-    icon: 'mdi-play-circle-outline',
-    labelArgs: [],
-    disabled: !store.activePlayerQueue,
-  });
-
   // replace now
   playMenuItems.push({
     label: 'play_replace',
@@ -178,6 +164,20 @@ export const getPlayMenuItems = function (
       api.playMedia(
         items.map((x) => x.uri),
         QueueOption.REPLACE,
+      );
+    },
+    icon: 'mdi-play-circle-outline',
+    labelArgs: [],
+    disabled: !store.activePlayerQueue,
+  });
+
+  // Play NOW
+  playMenuItems.push({
+    label: 'play_now',
+    action: () => {
+      api.playMedia(
+        items.map((x) => x.uri),
+        QueueOption.PLAY,
       );
     },
     icon: 'mdi-play-circle-outline',
@@ -323,8 +323,10 @@ export const getContextMenuItems = function (
       label: 'refresh_item',
       labelArgs: [],
       action: async () => {
+        store.loading = true;
         await api.refreshItem(items[0]);
-        router.go(0);
+        store.loading = false;
+        window.location.reload();
       },
       icon: 'mdi-refresh',
     });
@@ -335,7 +337,9 @@ export const getContextMenuItems = function (
       label: 'add_library',
       labelArgs: [],
       action: () => {
+        store.loading = true;
         for (const item of items) api.addItemToLibrary(item);
+        store.loading = false;
       },
       icon: 'mdi-bookshelf',
     });
@@ -350,7 +354,7 @@ export const getContextMenuItems = function (
         for (const item of items)
           api.removeItemFromLibrary(item.media_type, item.item_id);
         if (items[0].item_id == parentItem?.item_id) router.go(-1);
-        else router.go(0);
+        else window.location.reload();
       },
       icon: 'mdi-bookshelf',
     });
@@ -361,9 +365,11 @@ export const getContextMenuItems = function (
       label: 'favorites_add',
       labelArgs: [],
       action: () => {
+        store.loading = true;
         for (const item of items) {
           api.addItemToFavorites(item);
         }
+        store.loading = false;
       },
       icon: 'mdi-heart-outline',
     });

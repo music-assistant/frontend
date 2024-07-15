@@ -118,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ConnectionState, api } from '@/plugins/api';
+import { api } from '@/plugins/api';
 import { onMounted, ref } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
@@ -141,7 +141,7 @@ const err = ref(false);
 const err_message = ref('Error!');
 import { i18n } from '@/plugins/i18n';
 import router from './plugins/router';
-import { sleep } from './helpers/utils';
+import { EventType } from './plugins/api/interfaces';
 import { WebsocketBuilder } from 'websocket-ts';
 const theme = useTheme();
 
@@ -304,20 +304,22 @@ const start = () => {
   if (discordRPCEnabled.value == true) {
     invoke('start_rpc', { websocket: websocket });
   }
-  api.initialize(frontendServerAddress);
 
-  // Hide setup thing
-  setup.value = false;
-  loading.value = false;
-
-  // very rude way to redirect the user to the settings page if this is a fresh install
-  sleep(1000).then(() => {
-    if (
-      api.state.value === ConnectionState.CONNECTED &&
-      !api.setUpCompleted.value
-    ) {
+  // connect/initialize api
+  store.loading = true;
+  api.subscribe(EventType.CONNECTED, () => {
+    // redirect the user to the settings page if this is a fresh install
+    // TO be replaced with some nice onboarding wizard!
+    if (!api.serverInfo.value!.onboard_done) {
       router.push('/settings');
     }
+    store.loading = false;
+    setup.value = false;
   });
+  api.subscribe(EventType.DISCONNECTED, () => {
+    store.loading = true;
+    setup.value = true;
+  });
+  api.initialize(frontendServerAddress);
 };
 </script>

@@ -67,10 +67,11 @@
             v-if="
               player.type == PlayerType.PLAYER &&
               player.can_sync_with.length &&
-              Object.values(api.players).filter(
+              (Object.values(api.players).filter(
                 (x) =>
                   !x.synced_to && x.can_sync_with.includes(player.player_id),
-              ).length > 0
+              ).length > 0 ||
+                player.group_childs.length > 0)
             "
             class="syncbtn"
           >
