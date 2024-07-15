@@ -123,7 +123,7 @@ import { onMounted, ref } from 'vue';
 import { useTheme } from 'vuetify';
 import { store } from '@/plugins/store';
 import { invoke } from '@tauri-apps/api/core';
-import { getCurrent } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -262,7 +262,7 @@ onMounted(async () => {
 
   // Set inital theme
   setTheme();
-  await getCurrent()
+  await getCurrentWindow()
     .theme()
     .then((theme) => {
       if (theme != null) {
@@ -272,7 +272,7 @@ onMounted(async () => {
     });
 
   // Update theme live
-  await getCurrent().onThemeChanged(({ payload: newTheme }) => {
+  await getCurrentWindow().onThemeChanged(({ payload: newTheme }) => {
     console.log(`Updated theme: ${newTheme.toString()}`);
     localStorage.setItem('systemTheme', newTheme.toString());
     setTheme();
