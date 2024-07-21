@@ -16,7 +16,7 @@ const routes = [
         name: 'home',
         component: () =>
           import(/* webpackChunkName: "home" */ '@/views/HomeView.vue'),
-        props: true,
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
         path: '/search',

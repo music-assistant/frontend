@@ -40,7 +40,7 @@ interface Store {
   libraryTracksCount?: number;
   libraryPlaylistsCount?: number;
   libraryRadiosCount?: number;
-  loading?: boolean;
+  connected?: boolean;
 }
 
 export const store: Store = reactive({
@@ -83,5 +83,5 @@ export const store: Store = reactive({
   libraryTracksCount: undefined,
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
-  loading: false,
+  connected: false,
 });

@@ -74,7 +74,7 @@ onMounted(() => {
   }
 
   // connect/initialize api
-  store.loading = true;
+  store.connected = false;
   api.subscribe(EventType.CONNECTED, async () => {
     // redirect the user to the settings page if this is a fresh install
     // TO be replaced with some nice onboarding wizard!
@@ -87,10 +87,10 @@ onMounted(() => {
     store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
-    store.loading = false;
+    store.connected = true;
   });
   api.subscribe(EventType.DISCONNECTED, () => {
-    store.loading = true;
+    store.connected = false;
   });
   api.initialize(serverAddress);
 });

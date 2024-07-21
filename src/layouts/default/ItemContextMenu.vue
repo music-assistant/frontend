@@ -323,9 +323,7 @@ export const getContextMenuItems = function (
       label: 'refresh_item',
       labelArgs: [],
       action: async () => {
-        store.loading = true;
         await api.refreshItem(items[0]);
-        store.loading = false;
         window.location.reload();
       },
       icon: 'mdi-refresh',
@@ -337,9 +335,7 @@ export const getContextMenuItems = function (
       label: 'add_library',
       labelArgs: [],
       action: () => {
-        store.loading = true;
         for (const item of items) api.addItemToLibrary(item);
-        store.loading = false;
       },
       icon: 'mdi-bookshelf',
     });
@@ -365,11 +361,9 @@ export const getContextMenuItems = function (
       label: 'favorites_add',
       labelArgs: [],
       action: () => {
-        store.loading = true;
         for (const item of items) {
           api.addItemToFavorites(item);
         }
-        store.loading = false;
       },
       icon: 'mdi-heart-outline',
     });
