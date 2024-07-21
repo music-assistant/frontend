@@ -10,6 +10,7 @@ const routes = [
         path: '',
         redirect: '/home',
         name: 'homeredirect',
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
         path: '/home',
