@@ -124,7 +124,7 @@ const addUrl = async function () {
     return;
   }
   api
-    .getItem(MediaType.RADIO, url, 'builtin')
+    .getRadio(url, 'builtin')
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;

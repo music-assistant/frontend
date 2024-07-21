@@ -702,14 +702,10 @@ export class MusicAssistantApi {
     /*
       Handle (throttled) command to player
     */
-    clearTimeout(this._throttleId);
-    // apply a bit of throttling here
-    this._throttleId = setTimeout(() => {
-      this._sendCommand(`player_queues/${command}`, {
-        queue_id,
-        ...args,
-      });
-    }, 200);
+    this._sendCommand(`player_queues/${command}`, {
+      queue_id,
+      ...args,
+    });
   }
 
   // Player related functions/commands

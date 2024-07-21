@@ -1,15 +1,20 @@
 <template>
-  <v-app>
+  <v-app v-if="store.connected">
     <PlayerSelect />
     <MainView />
-    <reload-prompt v-if="store.isInStandaloneMode" />
     <Footer />
-    <v-overlay class="centeredoverlay" persistent :model-value="store.loading">
-      <div>
-        <v-progress-circular color="primary" indeterminate size="64" />
-      </div>
-    </v-overlay>
   </v-app>
+  <v-overlay
+    v-else
+    class="centeredoverlay"
+    persistent
+    :model-value="!store.connected"
+  >
+    <div>
+      <v-progress-circular color="primary" indeterminate size="64" />
+    </div>
+  </v-overlay>
+  <reload-prompt v-if="store.isInStandaloneMode" />
 </template>
 
 <script lang="ts" setup>
