@@ -19,7 +19,7 @@
     "marked": "^13.0.2",
     "mitt": "3.0.1",
     "mobile-detect": "1.4.5",
-    "swiper": "^11.1.4",
+    "swiper": "^11.1.5",
     "vue": "3.4.31",
     "vue-audio-better": "3.0.1",
     "vue-i18n": "9.13.1",
