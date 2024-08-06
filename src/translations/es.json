@@ -443,7 +443,8 @@
         "back": "Atrás",
         "show_menu": "Mostrar\/ocultar menú",
         "search_filter_active": "La búsqueda está filtrando resultados actualmente",
-        "play_sample": "Reproducir muestra"
+        "play_sample": "Reproducir muestra",
+        "album_type": "Tipo de álbum"
     },
     "topresult": "Resultados mas importantes",
     "track": "Pista",
@@ -481,5 +482,6 @@
         "panel_compact": "Vista compacta de miniaturas"
     },
     "play_replace": "Reproducir Ahora (borrar cola)",
-    "played": "Reproducido"
+    "played": "Reproducido",
+    "background_task_added": "Esta acción es realizada por el servidor en segundo plano y puede tardar algún tiempo en completarse. Mantén un ojo en el registro del servidor para seguir el progreso."
 }
