@@ -48,7 +48,7 @@
     "prettier": "3.3.3",
     "replace-in-file": "8.1.0",
     "sass": "1.77.8",
-    "typescript": "5.5.3",
+    "typescript": "5.5.4",
     "vite": "4.5.0",
     "vite-plugin-pwa": "0.20.1",
     "vite-plugin-vuetify": "1.0.2",
