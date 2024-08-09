@@ -140,7 +140,7 @@ const showVolume = ref(false);
   left: unset !important;
   top: unset !important;
 }
-.v-list-item >>> .v-list-item__prepend {
+.v-list-item :deep(.v-list-item__prepend) {
   width: 60px;
   margin-left: -5px;
 }

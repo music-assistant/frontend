@@ -212,7 +212,7 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   font-family: 'JetBrains Mono Medium';
 }
 
-.header.v-toolbar >>> .v-toolbar__content > .v-toolbar__append {
+.header.v-toolbar :deep(.v-toolbar__content) > .v-toolbar__append {
   margin-right: 0px;
 }
 

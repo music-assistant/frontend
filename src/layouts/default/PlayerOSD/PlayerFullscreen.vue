@@ -899,7 +899,7 @@ watch(
   align-items: center;
 }
 
-.v-toolbar >>> .v-toolbar-title {
+.v-toolbar :deep(.v-toolbar-title) {
   text-align: center;
 }
 

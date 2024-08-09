@@ -9,8 +9,6 @@ const routes = [
       {
         path: '',
         redirect: '/home',
-        name: 'homeredirect',
-        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
         path: '/home',
@@ -33,7 +31,6 @@ const routes = [
           import(/* webpackChunkName: "browse" */ '@/views/BrowseView.vue'),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
-
       {
         path: '/artists',
         children: [
@@ -57,7 +54,6 @@ const routes = [
           },
         ],
       },
-
       {
         path: '/albums',
         children: [
@@ -249,7 +245,6 @@ const routes = [
           {
             path: '',
             redirect: '/settings/providers', // default child path
-            name: 'settingsredirect',
           },
         ],
       },

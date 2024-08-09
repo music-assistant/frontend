@@ -451,23 +451,23 @@ const radioModeSupported = function (item: MediaItemType | ItemMapping) {
 </script>
 
 <style scoped>
-.menurow >>> .v-list-item__prepend {
+.menurow :deep(.v-list-item__prepend) {
   width: 45px;
   margin-left: -5px;
 }
 
-.menurow >>> .v-expansion-panel-title {
+.menurow :deep(.v-expansion-panel-title) {
   padding: 0;
   padding-right: 10px;
   min-height: 40px !important;
   height: 40px !important;
 }
 
-.menurow >>> .v-expansion-panel-title--active {
+.menurow :deep(.v-expansion-panel-title--active) {
   height: 40px !important;
 }
 
-.menurow >>> .v-expansion-panel-text__wrapper {
+.menurow :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
 }
 </style>

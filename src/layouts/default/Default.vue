@@ -26,7 +26,7 @@ import { store } from '@/plugins/store';
 </script>
 
 <style scoped>
-.centeredoverlay >>> .v-overlay__content {
+.centeredoverlay :deep(.v-overlay__content) {
   left: 50%;
   right: 50%;
   top: 50%;
