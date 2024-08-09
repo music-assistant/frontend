@@ -443,7 +443,9 @@
         "back": "Terug",
         "show_menu": "Toon of verberg menu",
         "search_filter_active": "De zoekactie toont nu gefilterde resultaten.",
-        "play_sample": "Voorbeeld afspelen"
+        "play_sample": "Voorbeeld afspelen",
+        "album_type": "Album type",
+        "loading": "De server verwerkt een verzoek of synchroniseert muziek"
     },
     "topresult": "Top resultaat",
     "track": "Nummer",
@@ -480,5 +482,7 @@
         "panel": "Thumbnail weergave",
         "panel_compact": "Compacte thumbnails"
     },
-    "play_replace": "Nu afspelen (queue leegmaken)"
+    "play_replace": "Nu afspelen (queue leegmaken)",
+    "played": "Gespeeld",
+    "background_task_added": "De actie wordt door de server op de achtergrond uitgevoerd en kan enige tijd in beslag nemen. Houd het serverlogboek in de gaten voor de voortgang"
 }
