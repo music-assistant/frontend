@@ -287,7 +287,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         toggleEnabled(item);
       },
       icon: 'mdi-cancel',
-      disabled: api.providerManifests[item.domain].builtin,
+      disabled: !api.providerManifests[item.domain].allow_disable,
     },
     {
       label: 'settings.documentation',
@@ -316,10 +316,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         removeProvider(item.instance_id);
       },
       icon: 'mdi-delete',
-      hide:
-        api.providerManifests[item.domain].builtin ||
-        (api.providerManifests[item.domain].load_by_default &&
-          item.domain == item.instance_id),
+      hide: api.providerManifests[item.domain].builtin,
     },
     {
       label: 'settings.reload',

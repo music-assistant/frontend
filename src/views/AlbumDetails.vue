@@ -36,8 +36,16 @@
       :hide-on-empty="true"
     />
     <br />
+    <!-- media images -->
+    <MediaItemImages
+      v-if="itemDetails?.metadata?.images"
+      v-model="itemDetails.metadata.images"
+      @update:model-value="UpdateItemInDb"
+    />
+    <br />
     <!-- provider mapping details -->
     <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
+    <br />
   </section>
 </template>
 
@@ -49,6 +57,7 @@ import { api } from '@/plugins/api';
 import { ref, watch } from 'vue';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import { getStreamingProviderMappings } from '@/helpers/utils';
+import MediaItemImages from '@/components/MediaItemImages.vue';
 
 export interface Props {
   itemId: string;
@@ -82,5 +91,14 @@ const loadAlbumVersions = async function (params: LoadDataParams) {
     itemDetails.value!.item_id,
     itemDetails.value!.provider,
   );
+};
+
+const UpdateItemInDb = async function () {
+  if (!itemDetails.value) return;
+  itemDetails.value = await api.sendCommand('music/artists/update', {
+    item_id: itemDetails.value.item_id,
+    update: itemDetails.value,
+    overwrite: true,
+  });
 };
 </script>

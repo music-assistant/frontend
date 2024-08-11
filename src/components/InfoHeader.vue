@@ -70,9 +70,16 @@
           </div>
         </div>
 
-        <div style="width: 100%">
+        <div style="width: 100%; text-align: left">
           <!-- Main title -->
-          <v-card-title>
+          <img
+            v-if="artistLogo"
+            :src="artistLogo"
+            width="auto"
+            height="80"
+            style="padding-left: 10px"
+          />
+          <v-card-title v-else>
             {{ item.name }}
           </v-card-title>
 
@@ -417,6 +424,12 @@ const shortDescription = computed(() => {
     );
   }
   return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
+});
+
+const artistLogo = computed(() => {
+  if (!compProps.item) return undefined;
+  if (compProps.item.media_type != MediaType.ARTIST) return undefined;
+  return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
 </script>
 

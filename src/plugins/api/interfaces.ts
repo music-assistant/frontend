@@ -590,10 +590,8 @@ export interface ProviderManifest {
   multi_instance: boolean;
   // builtin: whether this provider is a system/builtin and can not disabled/removed
   builtin: boolean;
-  // hidden: whether this provider should be hidden in the (config) UI
-  hidden: boolean;
-  // load_by_default: load this provider by default (mostly used together with `builtin`)
-  load_by_default: boolean;
+  // allow_disable: whether this provider can be disabled (used with builtin)
+  allow_disable: boolean;
   // icon: material design icon
   icon?: string;
   // icon_svg: svg icon (full xml string)
