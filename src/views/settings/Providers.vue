@@ -51,7 +51,6 @@
           (x) =>
             x.type == ProviderType.MUSIC &&
             x.domain in api.providerManifests &&
-            !api.providerManifests[x.domain].hidden &&
             x.domain !== 'builtin',
         ).length == 0
       "
@@ -71,9 +70,7 @@
         provType == ProviderType.PLAYER &&
         providerConfigs.filter(
           (x) =>
-            x.type == ProviderType.PLAYER &&
-            x.domain in api.providerManifests &&
-            !api.providerManifests[x.domain].hidden,
+            x.type == ProviderType.PLAYER && x.domain in api.providerManifests,
         ).length == 0
       "
       border="top"
@@ -191,10 +188,9 @@ const availableProviders = computed(() => {
   return Object.values(api.providerManifests)
     .filter(
       (x) =>
-        !x.hidden &&
         // provider is either multi instance or does not exist at all
-        (x.multi_instance ||
-          !providerConfigs.value.find((y) => y.domain == x.domain)),
+        x.multi_instance ||
+        !providerConfigs.value.find((y) => y.domain == x.domain),
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >
@@ -287,7 +283,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         toggleEnabled(item);
       },
       icon: 'mdi-cancel',
-      disabled: api.providerManifests[item.domain].builtin,
+      disabled: !api.providerManifests[item.domain].allow_disable,
     },
     {
       label: 'settings.documentation',
@@ -316,10 +312,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         removeProvider(item.instance_id);
       },
       icon: 'mdi-delete',
-      hide:
-        api.providerManifests[item.domain].builtin ||
-        (api.providerManifests[item.domain].load_by_default &&
-          item.domain == item.instance_id),
+      hide: api.providerManifests[item.domain].builtin,
     },
     {
       label: 'settings.reload',

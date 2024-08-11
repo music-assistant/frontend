@@ -38,6 +38,7 @@
     <br />
     <!-- provider mapping details -->
     <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
+    <br />
   </section>
 </template>
 
@@ -88,5 +89,14 @@ const loadTrackAlbums = async function (params: LoadDataParams) {
     props.provider,
     params.libraryOnly,
   );
+};
+
+const UpdateItemInDb = async function () {
+  if (!itemDetails.value) return;
+  itemDetails.value = await api.sendCommand('music/tracks/update', {
+    item_id: itemDetails.value.item_id,
+    update: itemDetails.value,
+    overwrite: true,
+  });
 };
 </script>

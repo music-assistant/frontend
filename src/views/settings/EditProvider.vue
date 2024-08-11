@@ -10,7 +10,7 @@
             ])
           }}
         </v-card-title>
-        <v-card-subtitle>
+        <v-card-subtitle style="white-space: normal">
           {{
             api.providerManifests[config.domain].description
           }} </v-card-subtitle
@@ -52,7 +52,7 @@
           v-model="config.enabled"
           :label="$t('settings.enable_provider')"
           color="primary"
-          :disabled="api.providerManifests[config.domain]?.builtin"
+          :disabled="!api.providerManifests[config.domain]?.allow_disable"
         />
       </div>
       <v-divider />

@@ -5,13 +5,15 @@
     </template>
 
     <template v-if="title" #title>
-      {{ title }}
-      <v-badge
-        v-if="count && getBreakpointValue('bp4')"
-        color="grey"
-        :content="count"
-        inline
-      />
+      <div @click="emit('titleClicked')">
+        {{ title }}
+        <v-badge
+          v-if="count && getBreakpointValue('bp4')"
+          color="grey"
+          :content="count"
+          inline
+        />
+      </div>
     </template>
 
     <template v-if="menuItems?.length" #append>
@@ -195,6 +197,7 @@ withDefaults(defineProps<Props>(), {
 // emitters
 const emit = defineEmits<{
   (e: 'iconClicked'): void;
+  (e: 'titleClicked'): void;
 }>();
 </script>
 
