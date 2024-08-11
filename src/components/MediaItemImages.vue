@@ -98,7 +98,6 @@ import Container from '@/components/mods/Container.vue';
 import Toolbar from '@/components/Toolbar.vue';
 import { computed, ref } from 'vue';
 import { eventbus } from '@/plugins/eventbus';
-import { ContextMenuItem } from '@/helpers/contextmenu';
 
 export interface Props {
   modelValue: MediaItemImage[];
@@ -120,18 +119,17 @@ const onMenu = function (
   const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
 
-  const menuItems: ContextMenuItem[] = [
-    {
-      label: 'image_make_primary',
-      icon: 'mdi-star-box',
-      action: () => {
-        makeImagePrimary(image);
-      },
-    },
-  ];
   // open the contextmenu by emitting the event
   eventbus.emit('contextmenu', {
-    items: menuItems,
+    items: [
+      {
+        label: 'image_make_primary',
+        icon: 'mdi-star-box',
+        action: () => {
+          makeImagePrimary(image);
+        },
+      },
+    ],
     posX: posX,
     posY: posY,
   });
