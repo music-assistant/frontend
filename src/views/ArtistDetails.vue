@@ -39,7 +39,7 @@
     <br />
     <!-- media images -->
     <MediaItemImages
-      v-if="itemDetails?.metadata?.images"
+      v-if="itemDetails?.provider == 'library' && itemDetails?.metadata?.images"
       v-model="itemDetails.metadata.images"
       @update:model-value="UpdateItemInDb"
     />

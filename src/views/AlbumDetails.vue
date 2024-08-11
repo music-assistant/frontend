@@ -38,7 +38,7 @@
     <br />
     <!-- media images -->
     <MediaItemImages
-      v-if="itemDetails?.metadata?.images"
+      v-if="itemDetails?.provider == 'library' && itemDetails?.metadata?.images"
       v-model="itemDetails.metadata.images"
       @update:model-value="UpdateItemInDb"
     />
@@ -95,7 +95,7 @@ const loadAlbumVersions = async function (params: LoadDataParams) {
 
 const UpdateItemInDb = async function () {
   if (!itemDetails.value) return;
-  itemDetails.value = await api.sendCommand('music/artists/update', {
+  itemDetails.value = await api.sendCommand('music/albums/update', {
     item_id: itemDetails.value.item_id,
     update: itemDetails.value,
     overwrite: true,
