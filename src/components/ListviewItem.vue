@@ -2,7 +2,6 @@
 <template>
   <ListItem
     link
-    :disabled="!itemIsAvailable(item) || isDisabled"
     :show-menu-btn="showMenu"
     @click.stop="onClick"
     @menu.stop="onMenu"
