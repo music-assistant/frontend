@@ -78,7 +78,7 @@
                 label="Output device"
                 style="margin-top: 15px; height: 70px"
                 variant="outlined"
-                @update:modelValue="outputDeviceConfig"
+                @update:model-value="outputDeviceConfig"
               />
             </td>
           </tr>
