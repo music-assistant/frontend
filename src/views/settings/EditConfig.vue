@@ -564,11 +564,11 @@ div.v-expansion-panel {
   background-color: transparent;
 }
 
-.configrowpanel >>> .v-expansion-panel-title {
+.configrowpanel :deep(.v-expansion-panel-title) {
   padding: 0;
   padding-right: 5px;
 }
-.configrowpanel >>> .v-expansion-panel-text__wrapper {
+.configrowpanel :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
 }
 </style>

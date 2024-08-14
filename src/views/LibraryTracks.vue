@@ -102,7 +102,7 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
-  total.value = await api.getLibraryTracksCount(params.favoritesOnly || false);
+  setTotals(params);
   return await api.getLibraryTracks(
     params.favoritesOnly,
     params.search,
@@ -110,6 +110,14 @@ const loadItems = async function (params: LoadDataParams) {
     params.offset,
     params.sortBy,
   );
+};
+
+const setTotals = async function (params: LoadDataParams) {
+  if (!params.favoritesOnly) {
+    total.value = store.libraryTracksCount;
+    return;
+  }
+  total.value = await api.getLibraryTracksCount(params.favoritesOnly || false);
 };
 
 const addUrl = async function () {
@@ -120,7 +128,7 @@ const addUrl = async function () {
     return;
   }
   api
-    .getItem(MediaType.TRACK, url, 'builtin')
+    .getTrack(url, 'builtin')
     .then((item) => {
       const name = prompt(t('enter_name'), item.name);
       item.name = name || item.name;

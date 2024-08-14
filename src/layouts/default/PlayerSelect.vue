@@ -222,18 +222,18 @@ const selectDefaultPlayer = function () {
   margin-bottom: 10px;
 }
 
-.playerrow >>> .v-list-item__prepend {
+.playerrow :deep(.v-list-item__prepend) {
   width: 58px;
   margin-left: -5px;
 }
 
-.playerrow >>> .v-expansion-panel-title {
+.playerrow :deep(.v-expansion-panel-title) {
   padding: 0;
   padding-right: 10px;
   height: 60px;
 }
 
-.playerrow >>> .v-expansion-panel-text__wrapper {
+.playerrow :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
 }
 

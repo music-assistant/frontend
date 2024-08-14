@@ -8,6 +8,7 @@
       :count="params.search ? pagedItems.length : total || allItems.length"
       color="transparent"
       :menu-items="menuItems"
+      @title-clicked="toggleExpand"
     />
 
     <v-divider />

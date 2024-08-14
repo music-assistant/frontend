@@ -5,13 +5,15 @@
     </template>
 
     <template v-if="title" #title>
-      {{ title }}
-      <v-badge
-        v-if="count && getBreakpointValue('bp4')"
-        color="grey"
-        :content="count"
-        inline
-      />
+      <div @click="emit('titleClicked')">
+        {{ title }}
+        <v-badge
+          v-if="count && getBreakpointValue('bp4')"
+          color="grey"
+          :content="count"
+          inline
+        />
+      </div>
     </template>
 
     <template v-if="menuItems?.length" #append>
@@ -195,6 +197,7 @@ withDefaults(defineProps<Props>(), {
 // emitters
 const emit = defineEmits<{
   (e: 'iconClicked'): void;
+  (e: 'titleClicked'): void;
 }>();
 </script>
 
@@ -212,7 +215,7 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   font-family: 'JetBrains Mono Medium';
 }
 
-.header.v-toolbar >>> .v-toolbar__content > .v-toolbar__append {
+.header.v-toolbar :deep(.v-toolbar__content) > .v-toolbar__append {
   margin-right: 0px;
 }
 

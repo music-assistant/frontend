@@ -75,15 +75,23 @@ const loadItems = async function (params: LoadDataParams) {
     await sleep(500);
   }
   updateAvailable.value = false;
-  total.value = await api.getLibraryPlaylistsCount(
-    params.favoritesOnly || false,
-  );
+  setTotals(params);
   return await api.getLibraryPlaylists(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
     params.offset,
     params.sortBy,
+  );
+};
+
+const setTotals = async function (params: LoadDataParams) {
+  if (!params.favoritesOnly) {
+    total.value = store.libraryPlaylistsCount;
+    return;
+  }
+  total.value = await api.getLibraryPlaylistsCount(
+    params.favoritesOnly || false,
   );
 };
 

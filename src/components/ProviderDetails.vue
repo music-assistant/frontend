@@ -1,8 +1,12 @@
 <template>
   <section style="margin-bottom: 10px">
-    <Toolbar :title="$t('mapped_providers')" />
+    <Toolbar
+      :title="$t('mapped_providers')"
+      :menu-items="toolbarMenuItems"
+      @title-clicked="toggleExpand"
+    />
     <v-divider />
-    <Container>
+    <Container v-if="expanded">
       <v-list>
         <ListItem
           v-for="providerMapping in itemDetails?.provider_mappings"
@@ -96,13 +100,15 @@ import Container from '@/components/mods/Container.vue';
 import Toolbar from '@/components/Toolbar.vue';
 import ProviderIcon from '@/components/ProviderIcon.vue';
 import { getBreakpointValue } from '@/plugins/breakpoint';
-import { reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { open } from '@tauri-apps/plugin-shell';
 
 export interface Props {
   itemDetails: MediaItemType;
 }
 defineProps<Props>();
+
+const expanded = ref(false);
 
 const openLinkInNewTab = function (url: string) {
   open(url);
@@ -129,4 +135,20 @@ const getPreviewUrl = function (provider: string, item_id: string) {
     api.baseUrl
   }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
 };
+
+const toggleExpand = function () {
+  expanded.value = !expanded.value;
+};
+
+const toolbarMenuItems = computed(() => {
+  return [
+    // toggle expand
+    {
+      label: 'tooltip.collapse_expand',
+      icon: expanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down',
+      action: toggleExpand,
+      overflowAllowed: false,
+    },
+  ];
+});
 </script>

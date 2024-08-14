@@ -1,6 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { store } from './store';
-import api from './api';
 
 const routes = [
   {
@@ -10,14 +9,13 @@ const routes = [
       {
         path: '',
         redirect: '/home',
-        name: 'homeredirect',
       },
       {
         path: '/home',
         name: 'home',
         component: () =>
           import(/* webpackChunkName: "home" */ '@/views/HomeView.vue'),
-        props: true,
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
         path: '/search',
@@ -33,7 +31,6 @@ const routes = [
           import(/* webpackChunkName: "browse" */ '@/views/BrowseView.vue'),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
-
       {
         path: '/artists',
         children: [
@@ -57,7 +54,6 @@ const routes = [
           },
         ],
       },
-
       {
         path: '/albums',
         children: [
@@ -258,7 +254,6 @@ const routes = [
           {
             path: '',
             redirect: '/settings/providers', // default child path
-            name: 'settingsredirect',
           },
         ],
       },

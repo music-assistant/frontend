@@ -702,14 +702,10 @@ export class MusicAssistantApi {
     /*
       Handle (throttled) command to player
     */
-    clearTimeout(this._throttleId);
-    // apply a bit of throttling here
-    this._throttleId = setTimeout(() => {
-      this._sendCommand(`player_queues/${command}`, {
-        queue_id,
-        ...args,
-      });
-    }, 200);
+    this._sendCommand(`player_queues/${command}`, {
+      queue_id,
+      ...args,
+    });
   }
 
   // Player related functions/commands
@@ -1218,8 +1214,8 @@ export class MusicAssistantApi {
     if (DEBUG) {
       console.log('[serverInfo]', msg);
     }
-    this.state.value = ConnectionState.CONNECTED;
     this.serverInfo.value = msg;
+    this.state.value = ConnectionState.CONNECTED;
     // trigger fetch of full state once we are connected to the server
     this._fetchState();
     this.signalEvent({

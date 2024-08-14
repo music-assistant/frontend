@@ -61,10 +61,7 @@ const loadItems = async function (params: LoadDataParams) {
     }
   }
   updateAvailable.value = false;
-  total.value = await api.getLibraryArtistsCount(
-    params.favoritesOnly || false,
-    params.albumArtistsFilter || false,
-  );
+  setTotals(params);
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
     params.search,
@@ -72,6 +69,17 @@ const loadItems = async function (params: LoadDataParams) {
     params.offset,
     params.sortBy,
     params.albumArtistsFilter,
+  );
+};
+
+const setTotals = async function (params: LoadDataParams) {
+  if (!params.favoritesOnly && !params.albumArtistsFilter) {
+    total.value = store.libraryArtistsCount;
+    return;
+  }
+  total.value = await api.getLibraryArtistsCount(
+    params.favoritesOnly || false,
+    params.albumArtistsFilter || false,
   );
 };
 

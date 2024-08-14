@@ -56,12 +56,6 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 });
 
 const loadData = async function () {
-  store.libraryArtistsCount = await api.getLibraryArtistsCount();
-  store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
-  store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
-  store.libraryRadiosCount = await api.getLibraryRadiosCount();
-  store.libraryTracksCount = await api.getLibraryTracksCount();
-
   // recently played widget row
   widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(10);
 

@@ -6,7 +6,6 @@
       tile
       hover
       class="panel-item"
-      :disabled="!itemIsAvailable(item)"
       @click="onClick"
       @click.right.prevent="onMenu"
     >
@@ -245,7 +244,7 @@ const onPlayClick = function (evt: PointerEvent) {
   min-height: unset !important;
 }
 
-panel-item-details >>> .v-list-item__content {
+panel-item-details :deep(.v-list-item__content) {
   height: 30px;
 }
 
