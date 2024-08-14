@@ -211,10 +211,6 @@ const closeToTrayConfig = () => {
 onMounted(async () => {
   // Get available output devices
   invoke<string[]>('get_output_devices').then((message) => {
-    // Move default to the top
-    message.splice(message.indexOf('default'), 1);
-    message.unshift('default');
-
     availableOutputDevices.value = message;
   });
 

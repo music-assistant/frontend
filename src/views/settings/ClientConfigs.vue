@@ -244,10 +244,6 @@ const checkForUpdates = async () => {
 
 onMounted(async () => {
   invoke<string[]>('get_output_devices').then((message) => {
-    // Move default to the top
-    message.splice(message.indexOf('default'), 1);
-    message.unshift('default');
-
     availableOutputDevices.value = message;
     const savedOutputDevice = localStorage.getItem('outputDevice') || 'default';
     if (message.indexOf(savedOutputDevice) > -1) {
