@@ -40,7 +40,7 @@
     "library": "Bibliothek",
     "loading": "Daten werden vom Server abgerufen.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Gib eine neue für die neue Playlist ein",
+    "new_playlist_name": "Gib einen neuen Namen für die neue Playlist ein",
     "no_content": "Keine Einträge gefunden.",
     "no_content_filter": "Keine Einträge für die aktuellen Filter-\/Suchkriterien gefunden.",
     "no_player": "Kein Wiedergabegerät ausgewählt",
@@ -190,7 +190,7 @@
         },
         "eq_bass": {
             "label": "Equalizer: Bass",
-            "description": "Verwende den integrierten Basis-Equalizer, um die tiefen Audiofrequenzen anzupassen."
+            "description": "Verwende den integrierten Basis-Equalizer, um die tiefen Audiofrequenzen (Bass) anzupassen."
         },
         "eq_mid": {
             "label": "Equalizer: Mitten",
@@ -224,7 +224,7 @@
         },
         "default_enqueue_select_album": {
             "label": "Elemente, die bei der Wiedergabe eines Albums (aus der Bibliothek) ausgewählt werden sollen.",
-            "description": "Wenn du einen Künstler abspielen möchtest, welche Elemente sollten in die Warteschlange gestellt werden?",
+            "description": "Wenn du ein Album abspielen möchtest, welche Elemente sollten in die Warteschlange aufgenommen werden?",
             "options": {
                 "library_tracks": "Nur Titel in der Bibliothek",
                 "all_tracks": "Alle Titel für das Album beim Anbieter"
@@ -392,7 +392,7 @@
         "duration": "Dauer",
         "position": "Position",
         "provider": "Anbieter",
-        "sort_name": "Alphabetisch",
+        "sort_name": "Namen sortieren",
         "track_number": "Titelnummer",
         "year": "Erscheinungsjahr",
         "position_desc": "Position (absteigend)",
@@ -443,7 +443,9 @@
         "back": "Zurück",
         "show_menu": "Menü anzeigen\/verbergen",
         "search_filter_active": "Die Suche filtert aktuell die Ergebnisse",
-        "play_sample": "Beispiel wiedergeben"
+        "play_sample": "Beispiel wiedergeben",
+        "album_type": "Albumtyp",
+        "loading": "Der Server verarbeitet eine Anfrage oder synchronisiert Musik."
     },
     "topresult": "Top-Ergebnis",
     "track": "Track",
@@ -480,5 +482,7 @@
         "panel": "Panel Ansicht",
         "panel_compact": "Kompakte Raster-Ansicht"
     },
-    "play_replace": "Jetzt wiedergeben (Warteschlange leeren)"
+    "play_replace": "Jetzt wiedergeben (Warteschlange leeren)",
+    "played": "Gespielt",
+    "background_task_added": "Die Aktion wird vom Server im Hintergrund ausgeführt und kann einige Zeit in Anspruch nehmen. Behalte den Fortschritt im Serverprotokoll im Auge."
 }
