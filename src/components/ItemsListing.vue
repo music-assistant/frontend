@@ -556,7 +556,7 @@ const menuItems = computed(() => {
       label: 'tooltip.album_type',
       icon: 'mdi-album',
       disabled: loading.value,
-      subItems: ['album', 'single', 'compilation', 'unknown'].map((key) => {
+      subItems: ['album', 'single', 'ep', 'compilation', 'unknown'].map((key) => {
         return {
           label: `album_type.${key}`,
           selected: params.value.albumType?.includes(key),
