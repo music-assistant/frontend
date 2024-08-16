@@ -445,7 +445,8 @@
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
-        "loading": "The server is processing a request or syncing music."
+        "loading": "The server is processing a request or syncing music.",
+        "primary_image": "This is the primary image for this image type"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -484,5 +485,9 @@
     },
     "play_replace": "Play Now (clear queue)",
     "played": "Played",
-    "background_task_added": "The action is performed by the server in the background and may take some time to complete. Keep an eye on the server log for progress."
+    "background_task_added": "The action is performed by the server in the background and may take some time to complete. Keep an eye on the server log for progress.",
+    "images": "Images",
+    "image_type": "Type",
+    "image_source": "Source",
+    "image_make_primary": "Make primary"
 }

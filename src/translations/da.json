@@ -435,7 +435,7 @@
         "search": "Vis\/skjul søgefelt",
         "select_items": "Vælg flere elementer",
         "sort_options": "Sorteringsmuligheder",
-        "toggle_view_mode": "Skift visning liste\/ikoner",
+        "toggle_view_mode": "Skift visning liste\/panel",
         "filter_favorites": "Vis kun favoritter",
         "favorite": "Markér\/fravælg som favorit",
         "open_provider_link": "Åbn dette element på udbyderens hjemmeside",
@@ -443,7 +443,10 @@
         "back": "Tilbage",
         "show_menu": "Vis\/skjul menu",
         "search_filter_active": "Søgningen filtrerer i øjeblikket resultater",
-        "play_sample": "Afspil prøve"
+        "play_sample": "Afspil prøve",
+        "album_type": "Album type",
+        "loading": "Serveren behandler en anmodning eller synkroniserer musik.",
+        "primary_image": "Dette er det primære billede for denne billedtype"
     },
     "topresult": "Bedste resultat",
     "track": "Spor",
@@ -478,7 +481,13 @@
     "view": {
         "list": "Listevisning",
         "panel": "Panelvisning",
-        "panel_compact": "Kompakt miniaturevisning"
+        "panel_compact": "Kompakt panelvisning"
     },
-    "play_replace": "Afspil nu (ryd køen)"
+    "play_replace": "Afspil nu (ryd køen)",
+    "played": "Afspillet",
+    "background_task_added": "Handlingen udføres af serveren i baggrunden og kan tage lidt tid at gennemføre. Hold øje med serverloggen for at se, hvordan det går.",
+    "images": "Billeder",
+    "image_type": "Type",
+    "image_source": "Kilde",
+    "image_make_primary": "Gør til primær"
 }

@@ -149,17 +149,12 @@ export const getMediaItemImage = function (
   }
 };
 
-export const getImageThumbForItem = function (
-  mediaItem?: MediaItemType | ItemMapping | QueueItem,
-  type: ImageType = ImageType.THUMB,
+export const getImageURL = function (
+  img: MediaItemImage,
   size?: number,
-): string | undefined {
-  if (!mediaItem) return;
-  // find image in mediaitem
-  const img = getMediaItemImage(mediaItem, type);
-  if (!img || !img.path) return undefined;
-  const checksum =
-    'metadata' in mediaItem ? mediaItem.metadata?.cache_checksum : '';
+  checksum?: string,
+): string {
+  if (!checksum) checksum = '';
   if (
     !img.remotely_accessible ||
     !store.allowExternalImageRetrieval ||
@@ -177,6 +172,20 @@ export const getImageThumbForItem = function (
   }
   // else: return image as-is
   return img.path;
+};
+
+export const getImageThumbForItem = function (
+  mediaItem?: MediaItemType | ItemMapping | QueueItem,
+  type: ImageType = ImageType.THUMB,
+  size?: number,
+): string | undefined {
+  if (!mediaItem) return;
+  // find image in mediaitem
+  const img = getMediaItemImage(mediaItem, type);
+  if (!img || !img.path) return undefined;
+  const checksum =
+    'metadata' in mediaItem ? mediaItem.metadata?.cache_checksum : '';
+  return getImageURL(img, size, checksum);
 };
 </script>
 

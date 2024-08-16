@@ -6,7 +6,6 @@
       tile
       hover
       class="panel-item"
-      :disabled="!itemIsAvailable(item)"
       @click="onClick"
       @click.right.prevent="onMenu"
     >
