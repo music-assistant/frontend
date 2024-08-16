@@ -6,7 +6,7 @@
         <v-card-title>
           {{
             $t('settings.setup_provider', [
-              api.providerManifests[config.domain].name,
+              config.name || api.getProvider(config.instance_id)?.name,
             ])
           }}
         </v-card-title>
@@ -41,7 +41,7 @@
         <v-text-field
           v-if="'name' in config"
           v-model="config.name"
-          :placeholder="config?.name"
+          :placeholder="api.getProvider(config.instance_id)?.name"
           :label="$t('settings.provider_name')"
           variant="outlined"
           clearable

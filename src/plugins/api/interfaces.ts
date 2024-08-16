@@ -40,8 +40,7 @@ export enum ImageType {
   BANNER = 'banner',
   CUTOUT = 'cutout',
   BACK = 'back',
-  CDART = 'cdart',
-  EMBEDDED_THUMB = 'embedded_thumb',
+  DISCART = 'discart',
   OTHER = 'other',
 }
 
