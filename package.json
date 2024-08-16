@@ -28,10 +28,10 @@
     "websocket-ts": "2.1.5"
   },
   "devDependencies": {
-    "@fontsource/roboto": "5.0.13",
+    "@fontsource/roboto": "5.0.14",
     "@intlify/unplugin-vue-i18n": "4.0.0",
     "@types/color": "3.0.6",
-    "@types/node": "22.1.0",
+    "@types/node": "22.2.0",
     "@typescript-eslint/eslint-plugin": "7.0.0",
     "@typescript-eslint/parser": "6.21.0",
     "@vitejs/plugin-vue": "4.6.2",
