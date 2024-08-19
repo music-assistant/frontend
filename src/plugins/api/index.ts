@@ -476,6 +476,17 @@ export class MusicAssistantApi {
     });
   }
 
+  public updateMetadata(
+    item: MediaItemType | ItemMapping | string,
+    force_refresh = false,
+  ): Promise<MediaItemType> {
+    // Update an item's (extra) metadata.
+    return this.sendCommand('metadata/update_metadata', {
+      item,
+      force_refresh,
+    });
+  }
+
   public getItem(
     media_type: MediaType,
     item_id: string,

@@ -447,7 +447,11 @@ const action = async function (action: string) {
   emit('action', action, getCurrentValues());
 };
 const openLink = function (url: string) {
-  window.open(url, '_blank');
+  // window.open(url, "_blank");
+  const a = document.createElement('a');
+  a.setAttribute('href', url);
+  a.setAttribute('target', '_blank');
+  a.click();
 };
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;

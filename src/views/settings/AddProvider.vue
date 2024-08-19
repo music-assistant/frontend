@@ -45,7 +45,12 @@
       persistent
       style="display: flex; align-items: center; justify-content: center"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
+      <div v-if="IS_IOS_SAFARI">
+        <a id="auth" href="" target="_blank"
+          ><v-btn>CLICK HERE TO CONTINUE...</v-btn></a
+        >
+      </div>
+      <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
   </section>
 </template>
@@ -70,6 +75,10 @@ const config_entries = ref<ConfigEntry[]>([]);
 const sessionId = nanoid(11);
 const loading = ref(false);
 
+const IS_IOS_SAFARI = /iP(ad|hone|od).*Version\/[\d.]+.*Safari/i.test(
+  navigator.userAgent,
+);
+
 // props
 const props = defineProps<{
   domain: string;
@@ -82,7 +91,15 @@ onMounted(() => {
     // ignore any events that not match our session id.
     if (evt.object_id !== sessionId) return;
     const url = evt.data as string;
-    window.open(url, '_blank')!.focus();
+    // Safari on iOS has a weird limitation that we're not allowed to do window.open,
+    // unless a user interaction has happened. So we need to do this the hard way
+    if (IS_IOS_SAFARI) {
+      const a = document.getElementById('auth') as HTMLAnchorElement;
+      a.setAttribute('href', url);
+      a.click();
+    } else {
+      window.open(url, '_blank')!.focus();
+    }
   });
   onBeforeUnmount(unsub);
 });
