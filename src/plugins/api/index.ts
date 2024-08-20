@@ -502,10 +502,12 @@ export class MusicAssistantApi {
 
   public async addItemToLibrary(
     item: string | MediaItemType | ItemMapping,
+    overwrite_existing = false,
   ): Promise<void> {
     // Add an item (uri or mediaitem) to the library.
     return this.sendCommand('music/library/add_item', {
       item,
+      overwrite_existing,
     });
   }
 

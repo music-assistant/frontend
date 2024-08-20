@@ -345,14 +345,6 @@
             "label": "Enabled menu items",
             "description": "Configure which items to show in the menu.\\n\\nNote that if you disable settings you may lock yourself out.\\n\\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
         },
-        "artwork_pref": {
-            "label": "Preference for image retrieval",
-            "description": "Is this client allowed to download (public accessible) artwork itself or should everything be routed through the server?\\nBy default, the client is allowed to cache/download artwork directly from internet resources to put less stress on the server.",
-            "options": {
-                "online": "Allow direct retrieval",
-                "server_only": "Enforce routing though the server"
-            }
-        },
         "language": {
             "label": "Language",
             "options": {
@@ -490,5 +482,6 @@
     "image_type": "Type",
     "image_source": "Source",
     "image_make_primary": "Make primary",
-    "update_metadata": "Update metadata"
+    "update_metadata": "Update metadata",
+    "cancel": "Cancel"
 }

@@ -409,7 +409,7 @@ export const getContextMenuItems = function (
       label: 'update_metadata',
       labelArgs: [],
       action: async () => {
-        await api.updateMetadata(items[0]);
+        await api.updateMetadata(items[0], true);
         window.location.reload();
       },
       icon: 'mdi-image-album',
