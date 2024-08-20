@@ -86,7 +86,7 @@ watch(
       if (!name.value) name.value = details.name;
       for (const img of details.metadata.images || []) {
         if (img.type == 'thumb') {
-          image.value = img.url;
+          image.value = img.path;
           break;
         }
       }
