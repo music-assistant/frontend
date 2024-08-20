@@ -404,7 +404,9 @@
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
-        "play_count_desc": "Play count (descending)"
+        "play_count_desc": "Play count (descending)",
+        "artist_name": "Album artist",
+        "artist_name_desc": "Album artist (descending)"
     },
     "state": {
         "idle": "idle",

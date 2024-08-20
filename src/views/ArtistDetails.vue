@@ -53,8 +53,13 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import InfoHeader from '@/components/InfoHeader.vue';
-import { ref, watch } from 'vue';
-import { type Artist } from '@/plugins/api/interfaces';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+  EventMessage,
+  EventType,
+  MediaItemType,
+  type Artist,
+} from '@/plugins/api/interfaces';
 import ProviderDetails from '@/components/ProviderDetails.vue';
 import MediaItemImages from '@/components/MediaItemImages.vue';
 import { api } from '@/plugins/api';
@@ -78,6 +83,21 @@ watch(
   },
   { immediate: true },
 );
+
+onMounted(() => {
+  //signal if/when item updates
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_UPDATED,
+    (evt: EventMessage) => {
+      // signal user that there might be updated info available for this item
+      const updatedItem = evt.data as MediaItemType;
+      if (itemDetails.value?.uri == updatedItem.uri) {
+        itemDetails.value = updatedItem as Artist;
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
 
 const loadArtistAlbums = async function (params: LoadDataParams) {
   return await api.getArtistAlbums(
