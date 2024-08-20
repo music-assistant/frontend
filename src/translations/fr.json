@@ -484,5 +484,8 @@
     },
     "play_replace": "Jouer maintenant (vider la file d'attente)",
     "played": "Jouées",
-    "background_task_added": "L'action est effectuée par le serveur en arrière-plan et peut prendre un certain temps. Gardez un œil sur le journal du serveur pour suivre la progression."
+    "background_task_added": "L'action est effectuée par le serveur en arrière-plan et peut prendre un certain temps. Gardez un œil sur le journal du serveur pour suivre la progression.",
+    "images": "Images",
+    "image_type": "Type",
+    "image_source": "Source"
 }

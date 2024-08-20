@@ -287,7 +287,28 @@
         },
         "default": "výchozí",
         "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
+        "category": {
+            "advanced": "Rozšířená nastavení"
+        },
+        "announce_volume_strategy": {
+            "options": {
+                "absolute": "Absolutní objem",
+                "relative": "Relativní nárůst objemu",
+                "none": "Nenastavujte hlasitost"
+            }
+        },
+        "icon": {
+            "label": "Ikona"
+        },
+        "frontend": "Uživatelské rozhraní",
+        "menu_style": {
+            "options": {
+                "horizontal": "Horizontální",
+                "vertical": "Vertikální"
+            }
+        },
         "language": {
+            "label": "Jazyk",
             "options": {
                 "cs": "Česky",
                 "da": "Dánský",
@@ -305,6 +326,9 @@
                 "en_GB": "Angličtina (Spojené Království)",
                 "es": "Španělština"
             }
+        },
+        "hide_settings": {
+            "label": "Skrýt tlačítko nastavení"
         }
     },
     "show_info": "Zobrazit informace",
@@ -327,7 +351,9 @@
         "recent": "Nedávno přidané",
         "year_desc": "Rok vydání (sestupně)",
         "duration_desc": "Doba trvání (sestupně)",
-        "original": "Původní"
+        "original": "Původní",
+        "timestamp_modified": "Datum aktualizace",
+        "last_played": "Naposledy hrané"
     },
     "state": {
         "idle": "nečinný",
@@ -384,5 +410,7 @@
     "load_more_items": "Načíst další položky...",
     "radio": "Rádio",
     "muted": "ztlumeno",
+    "invalid_input": "Vstup byl neplatný",
+    "new_playlist": "Nový seznam skladeb",
     "create_playlist_on": "Vytvořit nový playlist na {0}"
 }
