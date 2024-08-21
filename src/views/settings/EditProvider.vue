@@ -70,11 +70,18 @@
       persistent
       style="display: flex; align-items: center; justify-content: center"
     >
-      <div v-if="IS_IOS_SAFARI">
-        <a id="auth" href="" target="_blank"
-          ><v-btn>CLICK HERE TO CONTINUE...</v-btn></a
+      <v-card v-if="showAuthLink" style="background-color: white">
+        <v-card-title>Authenticating...</v-card-title>
+        <v-card-subtitle
+          >A new tab/popup should be opened where you can
+          authenticate</v-card-subtitle
         >
-      </div>
+        <v-card-actions>
+          <a id="auth" href="" target="_blank"
+            ><v-btn>Click here if the popup did not open</v-btn></a
+          >
+        </v-card-actions>
+      </v-card>
       <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
   </section>
@@ -98,10 +105,7 @@ const router = useRouter();
 const config = ref<ProviderConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
-
-const IS_IOS_SAFARI = /iP(ad|hone|od).*Version\/[\d.]+.*Safari/i.test(
-  navigator.userAgent,
-);
+const showAuthLink = ref(false);
 
 // props
 const props = defineProps<{
@@ -115,15 +119,13 @@ onMounted(() => {
     // ignore any events that not match our session id.
     if (evt.object_id !== sessionId) return;
     const url = evt.data as string;
-    // Safari on iOS has a weird limitation that we're not allowed to do window.open,
+    // Some browsers (e.g. iOS) have a weird limitation that we're not allowed to do window.open,
     // unless a user interaction has happened. So we need to do this the hard way
-    if (IS_IOS_SAFARI) {
+    window.setTimeout(() => {
       const a = document.getElementById('auth') as HTMLAnchorElement;
       a.setAttribute('href', url);
       a.click();
-    } else {
-      window.open(url, '_blank')!.focus();
-    }
+    }, 100);
   });
   onBeforeUnmount(unsub);
 });
@@ -148,13 +150,15 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
-      loading.value = false;
       router.push({ name: 'providersettings' });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
       alert(err);
+    })
+    .finally(() => {
       loading.value = false;
+      showAuthLink.value = false;
     });
 };
 
@@ -184,12 +188,14 @@ const onAction = async function (
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;
       }
-      loading.value = false;
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
       alert(err);
+    })
+    .finally(() => {
       loading.value = false;
+      showAuthLink.value = false;
     });
 };
 </script>
