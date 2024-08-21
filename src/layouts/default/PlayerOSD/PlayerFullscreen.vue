@@ -355,6 +355,7 @@ import api from '@/plugins/api';
 import {
   Album,
   Artist,
+  EventMessage,
   EventType,
   MediaItemType,
   MediaType,
@@ -660,9 +661,13 @@ const loadNextPage = function ({ done }: { done: any }) {
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {
-  const unsub = api.subscribe(EventType.QUEUE_ITEMS_UPDATED, () => {
-    loadItems(true);
-  });
+  const unsub = api.subscribe(
+    EventType.QUEUE_ITEMS_UPDATED,
+    (evt: EventMessage) => {
+      if (evt.object_id != store.activePlayerQueue?.queue_id) return;
+      loadItems(true);
+    },
+  );
   onBeforeUnmount(unsub);
 });
 
@@ -715,11 +720,9 @@ const activeQueuePanelClick = function () {
 
 // watchers
 watch(
-  () => store.showQueueItems,
+  () => store.activePlayerId,
   (val) => {
-    if (val) {
-      loadItems(true);
-    }
+    loadItems(true);
   },
   { immediate: true },
 );
