@@ -103,7 +103,11 @@
         <!-- title -->
         <template #title>
           <div class="line-clamp-1">
-            {{ item.name || api.getProvider(item.instance_id)?.name }}
+            {{
+              item.name ||
+              api.getProvider(item.instance_id)?.name ||
+              api.getProviderName(item.domain)
+            }}
           </div>
         </template>
 

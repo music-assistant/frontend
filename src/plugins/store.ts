@@ -32,7 +32,6 @@ interface Store {
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
   prevState?: StoredState;
-  allowExternalImageRetrieval: boolean;
   activeAlert?: Alert;
   prevRoute?: string;
   libraryArtistsCount?: number;
@@ -75,7 +74,6 @@ export const store: Store = reactive({
   }),
   globalSearchTerm: undefined,
   prevState: undefined,
-  allowExternalImageRetrieval: true,
   activeAlert: undefined,
   prevRoute: undefined,
   libraryArtistsCount: undefined,

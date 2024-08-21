@@ -67,7 +67,7 @@ watch(
 onMounted(() => {
   //signal if/when item updates
   const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_ADDED,
+    EventType.MEDIA_ITEM_UPDATED,
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;

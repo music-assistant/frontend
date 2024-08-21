@@ -41,10 +41,6 @@ onMounted(() => {
     localStorage.getItem('frontend.settings.menu_style') || 'horizontal';
 
   // cache some settings in the store
-  store.allowExternalImageRetrieval =
-    (localStorage.getItem('frontend.settings.artwork_pref') || 'online') ==
-    'online';
-
   const langPref = localStorage.getItem('frontend.settings.language') || 'auto';
   if (langPref !== 'auto') {
     i18n.global.locale.value = langPref;

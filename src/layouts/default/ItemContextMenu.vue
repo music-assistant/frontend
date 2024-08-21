@@ -314,21 +314,7 @@ export const getContextMenuItems = function (
       icon: 'mdi-album',
     });
   }
-  // refresh item
-  if (
-    items.length === 1 &&
-    (items[0] == parentItem || !itemIsAvailable(items[0]))
-  ) {
-    contextMenuItems.push({
-      label: 'refresh_item',
-      labelArgs: [],
-      action: async () => {
-        await api.refreshItem(items[0]);
-        window.location.reload();
-      },
-      icon: 'mdi-refresh',
-    });
-  }
+
   // add to library
   if (items[0].provider != 'library' && itemIsAvailable(items[0])) {
     contextMenuItems.push({
@@ -415,6 +401,32 @@ export const getContextMenuItems = function (
         });
       },
       icon: 'mdi-plus-circle-outline',
+    });
+  }
+  // update metadata
+  if (items.length === 1 && items[0] == parentItem) {
+    contextMenuItems.push({
+      label: 'update_metadata',
+      labelArgs: [],
+      action: async () => {
+        await api.updateMetadata(items[0], true);
+      },
+      icon: 'mdi-image-album',
+    });
+  }
+  // refresh item
+  if (
+    items.length === 1 &&
+    (items[0] == parentItem || !itemIsAvailable(items[0]))
+  ) {
+    contextMenuItems.push({
+      label: 'refresh_item',
+      labelArgs: [],
+      action: async () => {
+        await api.refreshItem(items[0]);
+        window.location.reload();
+      },
+      icon: 'mdi-refresh',
     });
   }
   return contextMenuItems;

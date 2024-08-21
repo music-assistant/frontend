@@ -66,7 +66,7 @@
 
       <!-- play button -->
       <v-btn
-        v-if="isHovering || $vuetify.display.mobile"
+        v-if="(isHovering || $vuetify.display.mobile) && itemIsAvailable(item)"
         icon="mdi-play"
         color="primary"
         fab
