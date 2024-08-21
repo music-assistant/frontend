@@ -42,6 +42,7 @@ import {
   PlayerConfig,
   CoreConfig,
   ItemMapping,
+  AlbumType,
 } from './interfaces';
 
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -237,8 +238,12 @@ export class MusicAssistantApi {
   }
   public getLibraryAlbumsCount(
     favorite_only: boolean = false,
+    album_types?: Array<AlbumType | string>,
   ): Promise<number> {
-    return this.sendCommand('music/albums/count', { favorite_only });
+    return this.sendCommand('music/albums/count', {
+      favorite_only,
+      album_types,
+    });
   }
   public getLibraryTracksCount(
     favorite_only: boolean = false,
@@ -314,6 +319,7 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     order_by?: string,
+    album_types?: Array<AlbumType | string>,
   ): Promise<Album[]> {
     return this.sendCommand('music/albums/library_items', {
       favorite,
@@ -321,6 +327,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      album_types,
     });
   }
 
