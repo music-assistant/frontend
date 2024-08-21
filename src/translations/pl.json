@@ -164,7 +164,7 @@
         },
         "flow_mode": {
             "label": "Włącz tryb przepływu kolejki",
-            "description": "Włącz tryb „przepływu”, w którym wszystkie ścieżki w kolejce są wysyłane jako ciągły strumień audio.\\nUżyj w przypadku odtwarzaczy, które natywnie nie obsługują bez przerw i\/lub przenikania, lub jeśli odtwarzacz ma problemy z przełączaniem między ścieżkami."
+            "description": "Włącz tryb „przepływu”, w którym wszystkie ścieżki w kolejce są wysyłane jako ciągły strumień audio.\nUżyj w przypadku odtwarzaczy, które natywnie nie obsługują bez przerw i\/lub przenikania, lub jeśli odtwarzacz ma problemy z przełączaniem między ścieżkami."
         },
         "auto_play": {
             "label": "Automatyczne odtwarzanie (wznowienie po włączeniu zasilania)",
@@ -186,7 +186,7 @@
         },
         "volume_normalization_target": {
             "label": "Docelowy poziom normalizacji głośności",
-            "description": "Dostosuj średnią (odczuwaną) głośność do poziomu docelowego, wartość domyślna to -17 LUFS\\n\\n **OSTRZEŻENIE:** Ustawienie zbyt wysokiego poziomu może spowodować zniekształcenia — przycięcie (clipping)!"
+            "description": "Dostosuj średnią (odczuwaną) głośność do poziomu docelowego, wartość domyślna to -17 LUFS\n\n **OSTRZEŻENIE:** Ustawienie zbyt wysokiego poziomu może spowodować zniekształcenia — przycięcie (clipping)!"
         },
         "eq_bass": {
             "label": "Korektor: bas",
@@ -210,7 +210,7 @@
         },
         "hide_player": {
             "label": "Ukryj ten odtwarzacz w interfejsie użytkownika",
-            "description": "Ukryj ten odtwarzacz w interfejsie użytkownika.\\n\\nPamiętaj, że nadal można nim sterować i pojawi się on także we wszystkich grupach synchronizacji, do których należy odtwarzacz."
+            "description": "Ukryj ten odtwarzacz w interfejsie użytkownika.\n\nPamiętaj, że nadal można nim sterować i pojawi się on także we wszystkich grupach synchronizacji, do których należy odtwarzacz."
         },
         "default_enqueue_select_artist": {
             "label": "Elementy do wyboru podczas odtwarzania artysty (z biblioteki).",
@@ -322,7 +322,7 @@
         },
         "icon": {
             "label": "Ikona",
-            "description": "Ikona MDI (Material design icon) dla tego odtwarzacza.\\n\\nZobacz https:\/\/pictogrammmers.com\/library\/mdi\/."
+            "description": "Ikona MDI (Material design icon) dla tego odtwarzacza.\n\nZobacz https:\/\/pictogrammmers.com\/library\/mdi\/."
         },
         "frontend": "Interfejs użytkownika",
         "frontend_desc": "Ustawienia konfiguracyjne interfejsu użytkownika (frontend) Music Assistant. Należy pamiętać, że te ustawienia są przechowywane na poziomie urządzenia.",
@@ -343,15 +343,7 @@
         },
         "menu_items": {
             "label": "Włączone elementy menu",
-            "description": "Skonfiguruj, które elementy mają być wyświetlane w menu.\\n\\n Pamiętaj, że jeśli wyłączysz ustawienia, możesz się zablokować.\\n\\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko."
-        },
-        "artwork_pref": {
-            "label": "Preferencje dotyczące wyszukiwania obrazów",
-            "description": "Czy ten klient może sam pobierać (publicznie dostępne) grafiki, czy też wszystko powinno być kierowane przez serwer?\\nDomyślnie klient może buforować\/pobierać grafikę bezpośrednio z zasobów internetowych, aby zmniejszyć obciążenie serwera.",
-            "options": {
-                "online": "Zezwalaj na bezpośrednie pobieranie",
-                "server_only": "Wymuś routing przez serwer"
-            }
+            "description": "Skonfiguruj, które elementy mają być wyświetlane w menu.\n\n Pamiętaj, że jeśli wyłączysz ustawienia, możesz się zablokować.\n\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko."
         },
         "language": {
             "label": "Język",
@@ -376,7 +368,7 @@
         },
         "hide_settings": {
             "label": "Ukryj przycisk ustawień",
-            "description": "Ukryj przycisk ustawień na ekranie głównym.\\n\\n Pamiętaj, że jeśli wyłączysz ustawienia na ekranie głównym i w menu, możesz się zablokować.\\n\\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko!"
+            "description": "Ukryj przycisk ustawień na ekranie głównym.\n\n Pamiętaj, że jeśli wyłączysz ustawienia na ekranie głównym i w menu, możesz się zablokować.\n\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko!"
         },
         "no_music_providers": "Nie skonfigurowano żadnych dostawców muzyki",
         "no_music_providers_detail": "Rozpocznij korzystanie z Music Assistant, dodając swoich dostawców muzyki.",
