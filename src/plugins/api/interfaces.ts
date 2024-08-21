@@ -211,6 +211,7 @@ export interface SuccessResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 
   result: any;
+  partial?: boolean;
 }
 
 export interface ErrorResultMessage extends ResultMessageBase {

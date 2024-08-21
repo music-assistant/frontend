@@ -69,6 +69,7 @@ export class MusicAssistantApi {
   public syncTasks = ref<SyncTask[]>([]);
   public fetchesInProgress = ref<number[]>([]);
   private eventCallbacks: Array<[EventType, string, CallableFunction]>;
+  private partialResult: { [msg_id: string]: Array<any> };
   private commands: Map<
     number,
     {
@@ -81,6 +82,7 @@ export class MusicAssistantApi {
     this.commandId = 0;
     this.eventCallbacks = [];
     this.commands = new Map();
+    this.partialResult = {};
   }
 
   public async initialize(baseUrl: string) {
@@ -1215,6 +1217,20 @@ export class MusicAssistantApi {
     }
 
     if (!resultPromise) return;
+
+    if ('partial' in msg && msg.partial) {
+      // handle partial results (for large listings that are split in multiple messages)
+      if (!(msg.message_id in this.partialResult)) {
+        this.partialResult[msg.message_id] = [];
+      }
+      this.partialResult[msg.message_id].push(...msg.result);
+      return;
+    } else if (msg.message_id in this.partialResult) {
+      // if we have partial results, append them to the final result
+      if ('result' in msg)
+        msg.result = this.partialResult[msg.message_id].concat(msg.result);
+      delete this.partialResult[msg.message_id];
+    }
 
     this.commands.delete(msg.message_id as number);
     this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
