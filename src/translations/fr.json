@@ -363,7 +363,8 @@
                 "sr_Latn": "Serbe (latin)",
                 "sv_SE": "Suédois",
                 "en_GB": "Anglais (Royaume-Uni)",
-                "es": "Espagnol"
+                "es": "Espagnol",
+                "pt_PT": "Portugais"
             }
         },
         "hide_settings": {
@@ -404,7 +405,9 @@
         "last_played": "Dernière lecture",
         "last_played_desc": "Dernière lecture (décroissant)",
         "play_count": "Nombre de lectures",
-        "play_count_desc": "Nombre de lectures (décroissant)"
+        "play_count_desc": "Nombre de lectures (décroissant)",
+        "artist_name": "Artiste de l'album",
+        "artist_name_desc": "Artiste de l'album (décroissant)"
     },
     "state": {
         "idle": "en attente",
@@ -479,5 +482,7 @@
     "background_task_added": "L'action est effectuée par le serveur en arrière-plan et peut prendre un certain temps. Gardez un œil sur le journal du serveur pour suivre la progression.",
     "images": "Images",
     "image_type": "Type",
-    "image_source": "Source"
+    "image_source": "Source",
+    "update_metadata": "Mettre à jour les métadonnées",
+    "cancel": "Annuler"
 }
