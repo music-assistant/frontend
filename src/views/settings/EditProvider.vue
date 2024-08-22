@@ -177,7 +177,7 @@ const onAction = async function (
   }
   // ensure the session id + base url is passed along (for auth actions)
   values['session_id'] = sessionId;
-  values['frontend_base_url'] = api.baseUrl;
+  values['frontend_base_url'] = api.baseUrl!;
   api
     .getProviderConfigEntries(
       config.value!.domain,
