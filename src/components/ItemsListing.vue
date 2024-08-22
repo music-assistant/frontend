@@ -34,7 +34,7 @@
       style="overflow: hidden"
     >
       <v-infinite-scroll
-        v-if="!tempHide"
+        v-if="!tempHide && !(pagedItems.length == 0 && allItemsReceived)"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
@@ -473,7 +473,6 @@ const loadNextPage = function ({ done }: { done: any }) {
     done('empty');
     return;
   }
-
   loadData(
     undefined,
     undefined,

@@ -229,7 +229,7 @@ export class MusicAssistantApi {
     item_id: string,
   ): string {
     const encItemId = encodeURIComponent(encodeURIComponent(item_id));
-    return `${api.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
+    return `${this.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
   }
 
   public getLibraryArtistsCount(

@@ -158,8 +158,9 @@ const onAction = async function (
       values[entry.key] = entry.value;
     }
   }
-  // ensure the session id is passed along
+  // ensure the session id + base url is passed along (for auth actions)
   values['session_id'] = sessionId;
+  values['frontend_base_url'] = api.baseUrl;
   api
     .getProviderConfigEntries(props.domain, undefined, action, values)
     .then((entries) => {
