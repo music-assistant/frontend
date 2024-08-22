@@ -627,6 +627,7 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
 };
 
 const loadItems = async function (clear = false) {
+  tempHide.value = true;
   if (clear) {
     queueItems.value = [];
   }
@@ -641,6 +642,7 @@ const loadItems = async function (clear = false) {
     );
     queueItems.value.push(...result);
   }
+  tempHide.value = false;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
