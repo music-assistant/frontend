@@ -68,6 +68,9 @@ export class MusicAssistantApi {
   );
   public syncTasks = ref<SyncTask[]>([]);
   public fetchesInProgress = ref<number[]>([]);
+  public hasStreamingProviders = computed(() => {
+    return Object.values(this.providers).some((p) => p.is_streaming_provider);
+  });
   private eventCallbacks: Array<[EventType, string, CallableFunction]>;
   private partialResult: { [msg_id: string]: Array<any> };
   private commands: Map<

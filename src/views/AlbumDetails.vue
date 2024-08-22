@@ -8,8 +8,7 @@
       :show-provider="true"
       :show-favorites-only-filter="true"
       :show-library-only-filter="
-        itemDetails.provider == 'library' &&
-        getStreamingProviderMappings(itemDetails).length > 0
+        itemDetails.provider == 'library' && api.hasStreamingProviders.value
       "
       :show-refresh-button="false"
       :load-items="loadAlbumTracks"
