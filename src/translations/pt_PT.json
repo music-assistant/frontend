@@ -1,0 +1,486 @@
+{
+    "actions": "Ações",
+    "add_library": "Adicionar à biblioteca",
+    "add_playlist": "Adicionar à playlist...",
+    "add_queue": "Adicionar à fila",
+    "add_url_item": "Adicionar item a partir de uma URL",
+    "album": "Álbum",
+    "album_tracks": "Faixas do álbum",
+    "album_type": {
+        "album": "Álbum",
+        "compilation": "Compilação",
+        "ep": "EP",
+        "single": "Single",
+        "unknown": "Tipo de álbum desconhecido",
+        "audiobook": "Audiolivro",
+        "podcast": "Podcast"
+    },
+    "albums": "Álbuns",
+    "appears_on": "Incluído em",
+    "artist": "Artista",
+    "artist_albums": "Álbuns",
+    "artist_toptracks": "Top músicas",
+    "artists": "Artistas",
+    "browse": "Explorar",
+    "clear_selection": "Limpar seleção",
+    "close": "Fechar",
+    "create_playlist": "Criar nova playlist em {0}",
+    "crossfade_disabled": "O crossfade está desativado",
+    "crossfade_enabled": "O crossfade está ativado",
+    "dark_mode": "Modo escuro",
+    "delete_db": "Eliminar um item da base de dados",
+    "details": "Detalhes",
+    "enter_url": "Introduz o URL que pretendes adicionar manualmente à base de dados",
+    "external_source_active": "Fonte externa ativada: {0}",
+    "goto_album": "Ir para o álbum {0}",
+    "goto_artist": "Ir para o artista {0}",
+    "home": "Início",
+    "items_selected": "{0} item(s) selecionado(s)",
+    "items_total": "{0} total de item(s)",
+    "library": "Biblioteca",
+    "loading": "Os dados estão a ser recuperados do servidor.",
+    "mass": "Music Assistant",
+    "new_playlist_name": "Introduzir um nome para a nova lista de reprodução",
+    "no_content": "Nenhum item encontrado.",
+    "no_content_filter": "Não foram encontrados itens para as actuais condições de filtragem\/pesquisa.",
+    "no_player": "Nenhum leitor selecionado",
+    "off": "Desligado",
+    "on": "Ligado",
+    "other_versions": "Outras versões",
+    "perform_action": "Realizar acção em {0} item(s)",
+    "play": "Reproduzir",
+    "play_album_from": "Reproduzir o álbum a partir daqui",
+    "play_next": "Reproduzir próximo",
+    "play_now": "Reproduzir agora",
+    "play_on": "Reproduzir em: {0}",
+    "play_playlist_from": "Reproduzir a lista de reprodução a partir daqui",
+    "play_radio": "Iniciar rádio",
+    "player_type": {
+        "group": "Grupo",
+        "player": "Leitor",
+        "stereo_pair": "Par estéreo"
+    },
+    "players": "Leitores",
+    "playlist": "Lista de reprodução",
+    "playlist_tracks": "Faixas da lista de reprodução",
+    "playlists": "Listas de reprodução",
+    "provider_details": "Detalhes do provedor",
+    "queue": "Fila de espera",
+    "queue_clear": "Limpar todos os itens na fila de espera",
+    "queue_delete": "Eliminar item",
+    "queue_empty": "Não há itens na fila de espera",
+    "queue_move_down": "Descer",
+    "queue_move_up": "Subir",
+    "queue_next_items": "Próximos itens",
+    "queue_options": "Opções de fila",
+    "queue_previous_items": "Itens reproduzidos",
+    "queue_radio_based_on": "A fila de espera é preenchida dinamicamente com faixas com base em {0}:",
+    "queue_radio_enabled": "O modo rádio está activado",
+    "radios": "Rádio",
+    "read_more": "ler mais",
+    "refresh_item": "Actualizar item",
+    "remove_library": "Remover da biblioteca",
+    "remove_playlist": "Remover da lista de reprodução",
+    "repeat_mode": "Modo de repetição: {0}",
+    "repeatmode": {
+        "all": "Repetir toda a fila de espera",
+        "off": "Repetir desligado",
+        "one": "Repetir faixa única"
+    },
+    "search": "Pesquisar",
+    "settings": {
+        "add_new": "Adicionar novo",
+        "add_provider": "Adicionar um novo provedor",
+        "advanced_settings": "Configurações avançadas",
+        "check_docs": "Verificar a documentação",
+        "codeowners": "Autores\/créditos",
+        "config_player": "Configurar leitor: {0}",
+        "configure": "Configurar",
+        "delete": "Eliminar",
+        "disable": "Desactivar",
+        "documentation": "Documentação",
+        "enable": "Activar",
+        "enable_player": "Activar este leitor",
+        "enable_provider": "Activar esta entrada de fornecedor",
+        "enabled": "Activar",
+        "invalid_input": "A entrada é inválida",
+        "metadataproviders": "Provedores de metadados",
+        "musicproviders": "Provedores de música",
+        "need_help_setup_provider": "Precisa de ajuda para configurar este provedor?",
+        "no_providers": "Nenhum provedor de música configurado",
+        "no_providers_detail": "Começa a tua experiência com o Music Assistant a adicionar os teus provedores de música abaixo.",
+        "not_loaded": "O provedor (ainda) não está carregado",
+        "password": "Palavra-passe",
+        "player_address": "Endereço",
+        "player_disabled": "Este leitor está desactivado",
+        "player_id": "ID do leitor",
+        "player_model": "Modelo",
+        "player_name": "Nome do leitor personalizado",
+        "player_not_available": "Este leitor não está (ainda) disponível",
+        "player_provider": "Provedor",
+        "player_settings": "Configurações de leitores",
+        "player_type_label": "Tipo de leitor",
+        "playerproviders": "Provedores de reprodução",
+        "players": "Leitores",
+        "pluginproviders": "Plugins de provedores",
+        "provider_disabled": "Esta entrada de provedor está desactivada",
+        "provider_name": "Nome personalizado para esta entrada de provedor",
+        "providers": "Provedores",
+        "reload": "Recarregar",
+        "save": "Guardar",
+        "settings": "Configurações",
+        "setup_provider": "Configurar provedor: {0}",
+        "sync": "Sincronizar agora",
+        "sync_running": "Este provedor está agora a ser sincronizado",
+        "username": "Nome de utilizador",
+        "core": "Núcleo",
+        "core_modules": "Módulos principais",
+        "server_info": "Informações sobre o servidor",
+        "server_id": "ID do servidor",
+        "server_version": "Versão do servidor",
+        "server_base_url": "URL de base",
+        "server_as_addon": "Home Assistant add-on",
+        "artists_in_library": "Artistas na biblioteca",
+        "albums_in_library": "Álbuns na biblioteca",
+        "tracks_in_library": "Faixas na biblioteca",
+        "playlists_in_library": "Listas de reprodução na biblioteca",
+        "radio_in_library": "Rádio na biblioteca",
+        "server_logging": "Registo no servidor",
+        "download_log": "Descarregar ficheiro de registo",
+        "edit_group_members": "Editar membros do grupo",
+        "add_new_provider_button": "Adicionar provedor {0}",
+        "add_group_player": "Adicionar grupo de leitores",
+        "group_members": "Membros do grupo",
+        "log_level": {
+            "label": "Nível de registo",
+            "description": "Define a verbosidade do registo para este provedor.",
+            "options": {
+                "global": "Global",
+                "info": "Informações",
+                "warning": "Aviso",
+                "error": "Erro",
+                "debug": "Depurar"
+            }
+        },
+        "flow_mode": {
+            "label": "Activar o modo de fluxo de espera",
+            "description": "Activa o modo \"flow\" em que todas as faixas da fila são enviadas como um fluxo de áudio contínuo.\nUtilize para leitores que não suportam nativamente gapless e\/ou crossfading ou se o leitor tiver problemas na transição entre faixas."
+        },
+        "auto_play": {
+            "label": "Reprodução automática (retomar ao ligar)",
+            "description": "Quando este leitor for ligado, começa automaticamente a reproduzir (se houver itens na fila de espera)."
+        },
+        "output_channels": {
+            "label": "Modo de canal de saída",
+            "description": "Pode configurar este leitor para reproduzir apenas o canal esquerdo ou direito, por exemplo, para criar um par estéreo com 2 leitores.",
+            "options": {
+                "stereo": "Estéreo (ambos os canais)",
+                "left": "Apenas o canal esquerdo",
+                "right": "Apenas o canal direito",
+                "mono": "Mono (ambos os canais)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Activar a normalização do volume (com base na EBU-R128)",
+            "description": "Permite a normalização do volume com base na norma EBU-R128 sem afectar a gama dinâmica"
+        },
+        "volume_normalization_target": {
+            "label": "Nível alvo para normalização do volume",
+            "description": "Ajustar o volume médio (percebido) para este nível-alvo, a predefinição é -17 LUFS\n\n**AVISO:** Definir o nível demasiado alto pode resultar em clipping!"
+        },
+        "eq_bass": {
+            "label": "Equalizador: graves",
+            "description": "Utiliza o equalizador básico incorporado para ajustar o nível de graves (tons baixos) do áudio."
+        },
+        "eq_mid": {
+            "label": "Equalizador: médio",
+            "description": "Utiliza o equalizador básico incorporado para ajustar o nível médio do áudio."
+        },
+        "eq_treble": {
+            "label": "Equalizador: agudos",
+            "description": "Utiliza o equalizador básico incorporado para ajustar o nível dos agudos (tons altos) do áudio."
+        },
+        "crossfade": {
+            "label": "Activar o crossfade",
+            "description": "Activa uma transição de crossfade entre faixas (em fila)."
+        },
+        "crossfade_duration": {
+            "label": "Duração do crossfade",
+            "description": "Duração em segundos do crossfade entre faixas (se activado)"
+        },
+        "hide_player": {
+            "label": "Ocultar este leitor na interface do utilizador",
+            "description": "Oculta este leitor na interface do utilizador.\n\nAtenção que ainda pode ser controlado e que também aparecerá em quaisquer grupos de sincronização a que o leitor pertença."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Itens a selecionar quando reproduzires um artista (da biblioteca).",
+            "description": "Se quiseres tocar um artista, que itens devem ser colocados na fila de espera?",
+            "options": {
+                "library_tracks": "Apenas faixas da biblioteca",
+                "library_album_tracks": "Todas as faixas de todos os álbuns na biblioteca",
+                "all_tracks": "Todas as faixas (principais) de (todos) os provedores",
+                "all_album_tracks": "Todas as faixas de todos os álbuns de (todos) os provedores"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Itens a selecionar quando reproduzires um álbum (da biblioteca).",
+            "description": "Se quiseres reproduzir um álbum, que itens deverão ser colocados na fila de espera?",
+            "options": {
+                "library_tracks": "Apenas faixas da biblioteca",
+                "all_tracks": "Todas as faixas do álbum no provedor"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Opção de fila de espera predefinida para o(s) item(s) do Artista.",
+            "description": "Definir a acção de fila de espera predefinida para este tipo de suporte de dados (se não tiveres especificado uma acção).",
+            "options": {
+                "play": "Reproduzir a(s) faixa(s) do artista agora e manter o(s) restante(s) item(s) da fila.",
+                "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do artista",
+                "next": "Reproduzir o(s) item(s) logo a seguir ao item actualmente reproduzido\/em buffer.",
+                "replace_next": "Limpar a fila de espera e reproduzir a(s) faixa(s) do artista logo após o item actualmente reproduzido\/em espera.",
+                "add": "Adicionar a(s) faixa(s) do artista no final da fila."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Opção de fila de espera predefinida para o(s) item(s) do álbum.",
+            "description": "Definir a acção de fila de espera predefinida para este tipo de suporte de dados (se não tiveres especificado uma acção).",
+            "options": {
+                "play": "Reproduzir a(s) faixa(s) do álbum agora e manter o(s) restante(s) item(s) da fila.",
+                "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do álbum",
+                "next": "Reproduzir o(s) item(s) logo a seguir ao item atualmente reproduzido\/em buffer.",
+                "replace_next": "Limpra a fila de espera e reproduzir a(s) faixa(s) do álbum logo a seguir ao item actualmente reproduzido\/em espera.",
+                "add": "Adicionar a(s) faixa(s) do álbum no final da fila."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Opção de fila de espera predefinida para o(s) item(s) da faixa.",
+            "description": "Definir a acção de fila de espera predefinida para este tipo de suporte de dados (se não tiveres especificado uma acção).",
+            "options": {
+                "play": "Reproduzir a(s) faixa(s) agora e manter o(s) item(ns) restante(s) da fila.",
+                "replace": "Limpar a fila e reproduzir a(s) faixa(s).",
+                "next": "Reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
+                "add": "Adicionar a(s) faixa(s) no final da fila."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Opção de fila de espera padrão para os itens da lista de reprodução.",
+            "description": "Definir a acção de fila de espera predefinida para este tipo de suporte de dados (se não tiveres especificado uma acção).",
+            "options": {
+                "play": "Reproduzir a(s) faixa(s) da lista de reprodução agora e mantenha o(s) item(s) restante(s) da fila.",
+                "replace": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução",
+                "next": "Reproduzir o(s) item(s) logo após o item actualmente reproduzido\/em buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução logo após o item atualmente reproduzido\/em buffer.",
+                "add": "Adicionar a(s) faixa(s) da lista de reprodução no final da fila."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Opção de fila padrão para itens de rádio.",
+            "description": "Definir a acção de fila de espera predefinida para este tipo de suporte de dados (se não tiveres especificado uma acção).",
+            "options": {
+                "play": "Reproduzir agora a estação de rádio e manter o(s) item(s) restante(s) da fila.",
+                "replace": "Limpar a fila e reproduzir a estação de rádio",
+                "next": "Reproduzir o(s) item(s) logo após o item em reprodução\/buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) estação(ões) de rádio logo após o item em reprodução\/buffer.",
+                "add": "Adicionar a(s) estação(ões) de rádio no final da fila."
+            }
+        },
+        "default": "padrão",
+        "provider_depends_on_confirm": "Antes de poderes configurar {0}, é necessário ter o provedor {1} configurado. Pretendes fazê-lo agora?",
+        "category": {
+            "audio": "Áudio",
+            "advanced": "Configurações avançadas",
+            "generic": "Configurações genéricas",
+            "announcements": "Configuração de anúncios",
+            "airplay": "Configurações específicas do Airplay"
+        },
+        "tts_pre_announce": {
+            "label": "Pré-anunciar anúncios TTS",
+            "description": "Quando uma mensagem TTS (Text-to-speech) for enviada para o recurso Anúncio, acrescentar ao anúncio um som curto de pré-anúncio (apito de campainha)."
+        },
+        "announce_volume_strategy": {
+            "label": "Estratégia de volume para anúncios",
+            "description": "Quando um anúncio está a ser transmitido para este leitor, como deverá ser ajustado temporariamente o volume (utilizar em combinação com o valor de volume abaixo)?",
+            "options": {
+                "absolute": "Volume absoluto",
+                "relative": "Aumento do volume relativo",
+                "percentual": "Aumento de volume por percentagem fixa",
+                "none": "Não ajustar o volume"
+            }
+        },
+        "announce_volume": {
+            "label": "Volume para anúncios",
+            "description": "O nível de volume percentual, relativo ou absoluto, utilizado com a estratégia dos anúncios."
+        },
+        "announce_volume_min": {
+            "label": "Nível mínimo de volume para anúncios",
+            "description": "O volume (regulação) dos anúncios não deve descer abaixo deste nível."
+        },
+        "announce_volume_max": {
+            "label": "Nível máximo de volume para anúncios",
+            "description": "O volume (regulação) dos anúncios não deve ultrapassar este nível."
+        },
+        "icon": {
+            "label": "Ícone",
+            "description": "Ícones para este leitor.\n\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
+        },
+        "frontend": "Interface de utilizador",
+        "frontend_desc": "Definições de configuração para a interface de utilizador do Music Assistant (frontend). De notar que estas definições são armazenadas ao nível do dispositivo.",
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "auto": "Automático (seguir a configuração do sistema)",
+                "light": "Claro",
+                "dark": "Escuro"
+            }
+        },
+        "menu_style": {
+            "label": "Estilo de menu",
+            "options": {
+                "horizontal": "Horizontal",
+                "vertical": "Vertical"
+            }
+        },
+        "menu_items": {
+            "label": "Itens do menu activados",
+            "description": "Configura os itens a serem exibidos no menu.\n\nDe notar que se desativares as configurações, poderás ficar sem acesso ao mesmo.\n\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
+        },
+        "language": {
+            "label": "Idioma",
+            "options": {
+                "auto": "Automático (seguir a configuração do sistema)",
+                "cs": "Checo",
+                "da": "Dinamarquês",
+                "de": "Alemão",
+                "en": "Inglês",
+                "fr": "Francês",
+                "nl": "Neerlandês",
+                "pl": "Polaco",
+                "uk_UA": "Ucraniano",
+                "zh_CN": "Chinês (simplificado)",
+                "en_AU": "Inglês (Australiano)",
+                "sr": "Sérvio",
+                "sr_Latn": "Sérvio (latim)",
+                "sv_SE": "Sueco",
+                "en_GB": "Inglês (Reino Unido)",
+                "es": "Espanhol"
+            }
+        },
+        "hide_settings": {
+            "label": "Esconder botão de configurações",
+            "description": "Esconde o botão de configurações na página inicial.\n\nDe notar que se desativares as configurações na página inicial e no menu, poderás ficar sem acesso ao mesmo.\n\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
+        },
+        "no_music_providers": "Nenhum provedor de música configurado",
+        "no_music_providers_detail": "Começa a tua experiência com o Music Assistant a adicionar os teus provedores de música.",
+        "no_player_providers": "Nenhum provedor de reprodução configurado",
+        "no_player_providers_detail": "Configura os provedores de reprodução para selecionar dispositivos nos quais o Music Assistant pode reproduzir as tuas músicas."
+    },
+    "show_info": "Mostrar informação",
+    "show_select_boxes": "Mostrar caixas de seleção",
+    "shuffle": "Modo aleatório",
+    "shuffle_disabled": "O modo aleatório está desativado",
+    "shuffle_enabled": "O modo aleatório está ativado",
+    "sort": {
+        "duration": "Duração",
+        "position": "Posição",
+        "provider": "Provedor",
+        "sort_name": "Ordenar nome",
+        "track_number": "Número da faixa",
+        "year": "Ano de lançamento",
+        "position_desc": "Posição (decrescente)",
+        "album": "Álbum",
+        "artist": "Artista",
+        "name": "Por ordem alfabética",
+        "name_desc": "Por ordem alfabética (descendente)",
+        "recent": "Adicionado recentemente",
+        "year_desc": "Ano de lançamento (decrescente)",
+        "duration_desc": "Duração (decrescente)",
+        "original": "Original",
+        "sort_name_desc": "Organizar por nome (decrescente)",
+        "timestamp_added": "Data de adição",
+        "timestamp_added_desc": "Data de adição (decrescente)",
+        "timestamp_modified": "Data de atualização",
+        "timestamp_modified_desc": "Data de atualização (decrescente)",
+        "last_played": "Último reproduzido",
+        "last_played_desc": "Último reproduzido (decrescente)",
+        "play_count": "Contagem de reprodução",
+        "play_count_desc": "Contagem de reprodução (decrescente)"
+    },
+    "state": {
+        "idle": "inativo",
+        "off": "desligado",
+        "paused": "pausado",
+        "playing": "A tocar"
+    },
+    "stream_details": "Detalhes do fluxo",
+    "sync_now": "Sincronizar {0} agora",
+    "sync_player_to": "Sincronizar este leitor a:",
+    "sync_running": "Um ou mais provedores de música estão a ser sincronizados.",
+    "tooltip": {
+        "album_artist_filter": "Alternar filtro de álbum-artista",
+        "explicit": "Explícito",
+        "filter_library": "Alternar filtro na biblioteca\/favoritos",
+        "library": "Alternar entre biblioteca\/favoritos",
+        "linked": "Este item do provedor está vinculado aos detalhes do item actual",
+        "refresh": "Actualizar a lista de itens",
+        "refresh_new_content": "Estão disponíveis novos conteúdos, clique para actualizar a lista",
+        "search": "Mostrar\/ocultar a entrada de pesquisa",
+        "select_items": "Selecionar vários itens",
+        "sort_options": "Opções de ordenação",
+        "toggle_view_mode": "Alternar o modo de visualização lista\/miniaturas",
+        "filter_favorites": "Mostrar apenas os favoritos",
+        "favorite": "Marcar\/desmarcar como favorito",
+        "open_provider_link": "Abrir este item no website do provedor",
+        "collapse_expand": "Encolher\/expandir esta lista",
+        "back": "Voltar",
+        "show_menu": "Mostrar\/ocultar menu",
+        "search_filter_active": "A pesquisa está a filtrar os resultados",
+        "play_sample": "Reproduzir amostra",
+        "album_type": "Tipo de álbum",
+        "loading": "O servidor está a processar um pedido ou a sincronizar alguma música.",
+        "primary_image": "Esta é a imagem primária para este tipo de imagem"
+    },
+    "topresult": "Melhor resultado",
+    "track": "Faixa",
+    "track_number": "Disco {0} Faixa {1}",
+    "tracks": "Faixas",
+    "try_global_search": "Tentar a pesquisa global",
+    "type_to_search": "Digite aqui para pesquisar...",
+    "volume_normalization": "Normalização do volume",
+    "play_now_replace": "Reproduzir agora (limpar a fila)",
+    "currently_playing": "Atualmente a tocar",
+    "favorites_add": "Adicionar aos favoritos",
+    "favorites_remove": "Remover dos favoritos",
+    "confirm_library_remove": "Tens a certeza de que pretendes eliminar este item da biblioteca? Quaisquer itens que dependam deste item também serão removidos recursivamente. Nota que isso removerá apenas este item da biblioteca. Se este for um ficheiro de música no disco, poderá regressar na próxima sincronização.",
+    "check_item_on_provider": "Consultar {0} em {1}",
+    "check_item_in_library": "Consultar {0} na biblioteca",
+    "media_details": "Detalhes da media",
+    "mapped_providers": "Dados do provedor",
+    "item_in_library": "Este item está disponível na biblioteca",
+    "back": "Voltar",
+    "recently_played": "Reproduzido recentemente",
+    "radiobrowser_by_popularity": "Por popularidade",
+    "radiobrowser_by_country": "Por país",
+    "radiobrowser_by_tag": "Por etiqueta",
+    "load_more_items": "Carregar mais itens...",
+    "radio": "Rádio",
+    "muted": "silenciado",
+    "enter_name": "Digite um novo nome (personalizado)",
+    "image_url": "Insere o URL de uma imagem ou ícone (opcional)",
+    "invalid_input": "A entrada foi inválida",
+    "new_playlist": "Nova lista de reprodução",
+    "create_playlist_on": "Criar nova lista de reprodução em {0}",
+    "view": {
+        "list": "Vista em lista",
+        "panel": "Vista de miniaturas",
+        "panel_compact": "Vista compactada de miniaturas"
+    },
+    "play_replace": "Reproduzir agora (limpar fila)",
+    "played": "Reproduzido",
+    "background_task_added": "Esta acção é feita pelo servidor em background e pode levar algum tempo a completar. Presta atenção ao registo do servidor para o progresso.",
+    "images": "Imagens",
+    "image_type": "Tipo",
+    "image_source": "Fonte",
+    "image_make_primary": "Tornar primário",
+    "update_metadata": "Atualizar metadados"
+}
