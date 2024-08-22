@@ -121,6 +121,7 @@ onMounted(() => {
     const url = evt.data as string;
     // Some browsers (e.g. iOS) have a weird limitation that we're not allowed to do window.open,
     // unless a user interaction has happened. So we need to do this the hard way
+    showAuthLink.value = true;
     window.setTimeout(() => {
       const a = document.getElementById('auth') as HTMLAnchorElement;
       a.setAttribute('href', url);
