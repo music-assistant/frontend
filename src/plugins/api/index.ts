@@ -732,6 +732,18 @@ export class MusicAssistantApi {
       ...args,
     });
   }
+  public queueCommandTransfer(
+    sourceQueue: string,
+    targetQueue: string,
+    autoPlay?: boolean,
+  ) {
+    // Transfer queue to another queue.
+    this._sendCommand('player_queues/transfer', {
+      source_queue_id: sourceQueue,
+      target_queue_id: targetQueue,
+      auto_play: autoPlay,
+    });
+  }
 
   // Player related functions/commands
 

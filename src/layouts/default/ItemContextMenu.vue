@@ -27,7 +27,35 @@
             :disabled="menuItem.disabled == true"
             :prepend-icon="menuItem.icon"
             :append-icon="menuItem.selected ? 'mdi-check' : undefined"
-            @click="() => (menuItem.action ? menuItem.action() : '')"
+            @click.stop="(e) => menuItemClicked(e, menuItem)"
+          />
+        </div>
+      </v-list>
+    </v-card>
+  </v-menu>
+  <v-menu
+    v-model="showSubmenu"
+    :target="[subMenuPosX, subMenuPosY]"
+    @update:model-value="
+      (v) => {
+        store.dialogActive = v;
+      }
+    "
+  >
+    <v-card min-width="260">
+      <v-list density="compact" slim tile>
+        <div
+          v-for="subMenuItem of subMenuItems.filter((x) => !x.hide)"
+          :key="subMenuItem.label"
+          class="menurow"
+        >
+          <v-list-item
+            variant="text"
+            :title="$t(subMenuItem.label, subMenuItem.labelArgs || [])"
+            :disabled="subMenuItem.disabled == true"
+            :prepend-icon="subMenuItem.icon"
+            :append-icon="subMenuItem.selected ? 'mdi-check' : undefined"
+            @click="(e) => menuItemClicked(e, subMenuItem)"
           />
         </div>
       </v-list>
@@ -46,6 +74,11 @@ const items = ref<ContextMenuItem[]>([]);
 const posX = ref(0);
 const posY = ref(0);
 
+const showSubmenu = ref<boolean>(false);
+const subMenuItems = ref<ContextMenuItem[]>([]);
+const subMenuPosX = ref(0);
+const subMenuPosY = ref(0);
+
 onMounted(() => {
   eventbus.on('contextmenu', async (evt: ItemContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -59,6 +92,24 @@ onMounted(() => {
     eventbus.off('contextmenu');
   });
 });
+
+const menuItemClicked = function (
+  evt: MouseEvent | KeyboardEvent,
+  menuItem: ContextMenuItem,
+) {
+  if (menuItem.subItems) {
+    evt.preventDefault();
+    subMenuItems.value = menuItem.subItems;
+    (subMenuPosX.value = (evt as PointerEvent).clientX),
+      (subMenuPosY.value = (evt as PointerEvent).clientY),
+      (showSubmenu.value = true);
+    return;
+  } else if (menuItem.action) {
+    menuItem.action();
+  }
+  show.value = false;
+  store.dialogActive = false;
+};
 </script>
 
 <script lang="ts">
@@ -88,6 +139,7 @@ export interface ContextMenuItem {
   disabled?: boolean;
   hide?: boolean;
   selected?: boolean;
+  subItems?: ContextMenuItem[];
 }
 
 export const showContextMenuForMediaItem = async function (

@@ -588,6 +588,25 @@ const openQueueMenu = function (evt: Event) {
         ? 'mdi-repeat'
         : 'mdi-repeat-off',
     },
+    {
+      label: 'transfer_queue',
+      icon: 'mdi-swap-horizontal',
+      subItems: Object.values(api.queues)
+        .filter((p) => p.queue_id != store.activePlayerQueue?.queue_id)
+        .map((p) => {
+          return {
+            label: p.display_name,
+            labelArgs: [],
+            action: () => {
+              api.queueCommandTransfer(
+                store.activePlayerQueue!.queue_id,
+                p.queue_id,
+              );
+              store.activePlayerId = p.queue_id;
+            },
+          };
+        }),
+    },
   ];
   eventbus.emit('contextmenu', {
     items: menuItems,
