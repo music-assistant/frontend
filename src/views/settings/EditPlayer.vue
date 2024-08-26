@@ -37,7 +37,9 @@
           >{{ api.players[config.player_id].device_info.manufacturer }} /
           {{ api.players[config.player_id].device_info.model }}
         </v-card-subtitle>
-        <v-card-subtitle v-if="api.players[config.player_id]">
+        <v-card-subtitle
+          v-if="api.players[config.player_id]?.device_info.address"
+        >
           <b>{{ $t('settings.player_address') }}: </b
           >{{ api.players[config.player_id].device_info.address }}
         </v-card-subtitle>

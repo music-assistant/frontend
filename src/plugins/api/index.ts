@@ -886,14 +886,12 @@ export class MusicAssistantApi {
     this.players[playerId].powered = newPower;
   }
 
-  public async createPlayerGroup(
-    provider: string,
+  public async createSyncPlayerGroup(
     name: string,
     members: string[],
   ): Promise<Player> {
-    // Save/update PlayerConfig.
-    return this.sendCommand('players/create_group', {
-      provider,
+    // Create a new Sync playergroup
+    return this.sendCommand('players/create_syncgroup', {
       name,
       members,
     });

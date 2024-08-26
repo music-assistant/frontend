@@ -163,7 +163,6 @@ export enum ProviderFeature {
   PLAYLIST_TRACKS_EDIT = 'playlist_tracks_edit',
   PLAYLIST_CREATE = 'playlist_create',
   // player provider specific features
-  PLAYER_GROUP_CREATE = 'player_group_create',
   SYNC_PLAYERS = 'sync_players',
   // metadata provider specific features
   ARTIST_METADATA = 'artist_metadata',
