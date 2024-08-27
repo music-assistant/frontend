@@ -50,15 +50,11 @@
               <!-- label value -->
               <div v-else-if="conf_entry.type == ConfigEntryType.LABEL">
                 <br />
-                <v-label
-                  style="
-                    margin-left: 8px;
-                    margin-top: 10px;
-                    margin-bottom: 10px;
-                  "
-                >
+                <v-alert variant="outlined" type="info">
                   {{ $t(`settings.${conf_entry.key}.label`, conf_entry.label) }}
-                </v-label>
+                </v-alert>
+                <br />
+                <br />
               </div>
 
               <!-- alert value -->

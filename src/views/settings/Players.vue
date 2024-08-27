@@ -8,33 +8,15 @@
     >
       <template #title> {{ $t('settings.players') }} </template>
       <template #append>
-        <!-- ADD group player button + contextmenu -->
-        <v-menu v-if="provsWithCreateGroupFeature.length" scrim>
-          <template #activator="{ props }">
-            <v-btn v-bind="props" color="accent" variant="outlined">
-              {{ $t('settings.add_group_player') }}
-            </v-btn>
-          </template>
-
-          <v-card>
-            <v-list-item
-              v-for="provider in provsWithCreateGroupFeature"
-              :key="provider.instance_id"
-              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
-              :title="provider.name"
-              @click="addGroupPlayer(provider.instance_id)"
-            >
-              <template #prepend>
-                <provider-icon
-                  :domain="provider.domain"
-                  :size="26"
-                  class="media-thumb"
-                  style="margin-left: 10px"
-                />
-              </template>
-            </v-list-item>
-          </v-card>
-        </v-menu>
+        <!-- ADD syncgroup player button -->
+        <v-btn
+          v-if="playersWithSyncFeature.length"
+          color="accent"
+          variant="outlined"
+          @click="addSyncGroupPlayer"
+        >
+          {{ $t('settings.add_group_player') }}
+        </v-btn>
       </template>
     </v-toolbar>
     <Container>
@@ -118,21 +100,16 @@ const unsub = api.subscribe_multi([EventType.PLAYER_CONFIG_UPDATED], () => {
 onBeforeUnmount(unsub);
 
 // computed properties
-const provsWithCreateGroupFeature = computed(() => {
-  // providers that are enabled and support the PLAYER_GROUP_CREATE or SYNC_PLAYERS feature
-  return Object.values(api.providers)
-    .filter(
-      (x) =>
-        (x.available &&
-          x.supported_features.includes(ProviderFeature.PLAYER_GROUP_CREATE)) ||
-        x.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
-    )
-    .sort((a, b) =>
-      (a.name || api.providerManifests[a.domain].name).toUpperCase() >
-      (b.name || api.providerManifests[b.domain].name).toUpperCase()
-        ? 1
-        : -1,
-    );
+const playersWithSyncFeature = computed(() => {
+  // players that can be synced with other players
+  return Object.values(api.players).filter(
+    (x) =>
+      x.available &&
+      x.can_sync_with.length &&
+      api
+        .getProvider(x.provider)
+        ?.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
+  );
 });
 
 // methods
@@ -156,8 +133,8 @@ const editPlayer = function (playerId: string) {
   }
 };
 
-const addGroupPlayer = function (provider: string) {
-  router.push(`/settings/addgroup/${provider}`);
+const addSyncGroupPlayer = function (provider: string) {
+  router.push('/settings/addsyncgroup');
 };
 
 const toggleEnabled = function (config: PlayerConfig) {

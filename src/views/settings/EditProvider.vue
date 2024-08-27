@@ -6,7 +6,7 @@
         <v-card-title>
           {{
             $t('settings.setup_provider', [
-              api.providerManifests[config.domain].name,
+              config.name || api.getProvider(config.instance_id)?.name,
             ])
           }}
         </v-card-title>
@@ -41,7 +41,7 @@
         <v-text-field
           v-if="'name' in config"
           v-model="config.name"
-          :placeholder="config?.name"
+          :placeholder="api.getProvider(config.instance_id)?.name"
           :label="$t('settings.provider_name')"
           variant="outlined"
           clearable
@@ -70,7 +70,19 @@
       persistent
       style="display: flex; align-items: center; justify-content: center"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
+      <v-card v-if="showAuthLink" style="background-color: white">
+        <v-card-title>Authenticating...</v-card-title>
+        <v-card-subtitle
+          >A new tab/popup should be opened where you can
+          authenticate</v-card-subtitle
+        >
+        <v-card-actions>
+          <a id="auth" href="" target="_blank"
+            ><v-btn>Click here if the popup did not open</v-btn></a
+          >
+        </v-card-actions>
+      </v-card>
+      <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
   </section>
 </template>
@@ -94,6 +106,7 @@ const router = useRouter();
 const config = ref<ProviderConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
+const showAuthLink = ref(false);
 
 // props
 const props = defineProps<{
@@ -132,13 +145,15 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
-      loading.value = false;
       router.push({ name: 'providersettings' });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
       alert(err);
+    })
+    .finally(() => {
       loading.value = false;
+      showAuthLink.value = false;
     });
 };
 
@@ -154,7 +169,7 @@ const onAction = async function (
       values[entry.key] = entry.value;
     }
   }
-  // ensure the session id is passed along
+  // ensure the session id is passed along (for auth actions)
   values['session_id'] = sessionId;
   api
     .getProviderConfigEntries(
@@ -168,12 +183,14 @@ const onAction = async function (
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;
       }
-      loading.value = false;
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
       alert(err);
+    })
+    .finally(() => {
       loading.value = false;
+      showAuthLink.value = false;
     });
 };
 </script>

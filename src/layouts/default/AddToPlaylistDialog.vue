@@ -146,11 +146,12 @@ const fetchPlaylists = async function () {
 
     // either the refItem has a provider match or builtin provider or streaming provider
     if (
-      playListProvider.domain == 'builtin' ||
-      playListProvider.is_streaming_provider ||
-      refItem?.provider_mappings.filter(
-        (x) => x.provider_instance == playListProvider.instance_id,
-      ).length
+      playListProvider &&
+      (playListProvider.domain == 'builtin' ||
+        playListProvider.is_streaming_provider ||
+        refItem?.provider_mappings.filter(
+          (x) => x.provider_instance == playListProvider.instance_id,
+        ).length)
     ) {
       playlists.value.push(playlist);
     }

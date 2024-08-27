@@ -92,7 +92,7 @@
         "add_new": "Lägg till ny",
         "add_provider": "Lägg till en ny leverantör",
         "advanced_settings": "Avancerade inställningar",
-        "check_docs": "Kolla in dokumentationen",
+        "check_docs": "Kontrollera dokumentationen",
         "codeowners": "Författare\/krediter",
         "config_player": "Konfigurera spelare: {0}",
         "configure": "Konfigurera",
@@ -164,7 +164,7 @@
         },
         "flow_mode": {
             "label": "Aktivera köflödesläge",
-            "description": "Aktivera \"flödes\"-läget där alla köspår skickas som en kontinuerlig ljudström. \\nAnvänds för spelare som inte har inbyggt stöd för gapless och\/eller crossfading eller om spelaren har problem med övergången mellan spåren."
+            "description": "Aktivera \"flödes\"-läget där alla låtar i kön skickas som en kontinuerlig ljudström. \nAnvänds för spelare som inte har inbyggt stöd för oavbruten och\/eller övertoning, eller om spelaren har problem med övergången mellan spåren."
         },
         "auto_play": {
             "label": "Automatisk uppspelning (återupptas när strömmen slås på)",
@@ -186,7 +186,7 @@
         },
         "volume_normalization_target": {
             "label": "Målnivå för normalisering av volym",
-            "description": "Justera genomsnittlig (upplevd) loudness till denna målnivå, standard är -17 LUFS \\n\\n **VARNING:** Om nivån ställs in för högt kan det leda till att ljudet klipper (clipping)!"
+            "description": "Justera genomsnittlig (upplevd) ljudnivå till denna målnivå, standard är -17 LUFS \n\n **VARNING:** Om nivån ställs in för högt kan det leda till att ljudet hackar!"
         },
         "eq_bass": {
             "label": "Equalizer: bas",
@@ -201,16 +201,16 @@
             "description": "Använd den inbyggda equalizern för att justera diskantnivån (höga toner) i ljudet."
         },
         "crossfade": {
-            "label": "Aktivera crossfade",
-            "description": "Aktivera en crossfade-övergång mellan spår (kö)."
+            "label": "Aktivera övertoning",
+            "description": "Aktivera en övertoning-övergång mellan spår (kö)."
         },
         "crossfade_duration": {
-            "label": "Varaktighet för crossfade",
-            "description": "Varaktighet i sekunder för crossfade mellan spår (om aktiverad)"
+            "label": "Varaktighet för övertoning",
+            "description": "Varaktighet i sekunder för övertoning mellan spår (om aktiverad)"
         },
         "hide_player": {
             "label": "Dölj denna spelare i användargränssnittet",
-            "description": "Dölj denna spelare i användargränssnittet. \\n\\nObservera att den fortfarande kan styras och att den också kommer att visas i alla synkroniseringsgrupper som spelaren tillhör."
+            "description": "Dölj denna spelare i användargränssnittet. \n\nObservera att den fortfarande kan styras och att den också kommer att visas i alla synkroniseringsgrupper som spelaren tillhör."
         },
         "default_enqueue_select_artist": {
             "label": "Objekt att välja när du spelar en artist (i biblioteket).",
@@ -232,7 +232,7 @@
         },
         "default_enqueue_action_artist": {
             "label": "Standardalternativ för kö för artistobjekt.",
-            "description": "Definiera standardåtgärden för kö för denna mediatyp (om du inte angav något alternativ).",
+            "description": "Definiera standardåtgärden för kö för denna medietyp (om du inte angav något alternativ).",
             "options": {
                 "play": "Spela artistspår nu och behåll de återstående objekten i kön.",
                 "replace": "Rensa kön och spela artistens spår.",
@@ -242,8 +242,8 @@
             }
         },
         "default_enqueue_action_album": {
-            "label": "Standard köalternativ för albumobjekt.",
-            "description": "Definiera standardåtgärden för kö för denna mediatyp (om du inte angav något alternativ).",
+            "label": "Standard kö-alternativ för albumobjekt.",
+            "description": "Definiera standardåtgärden för kö för denna medietyp (om du inte angav något alternativ).",
             "options": {
                 "play": "Spela albumspår nu och behåll de återstående objekten i kön.",
                 "replace": "Rensa kön och spela albumets spår.",
@@ -253,10 +253,10 @@
             }
         },
         "default_enqueue_action_track": {
-            "label": "Standardalternativ för kö för Spåra objekt.",
+            "label": "Standardalternativ för kö för Spår objekt.",
             "description": "Definiera standardåtgärden för att köa för den här medietypen (om du inte har angett någon åtgärd).",
             "options": {
-                "play": "Spela spår nu och behåll de återstående köobjekten.",
+                "play": "Spela spår nu och behåll de återstående objekten i kön.",
                 "replace": "Rensa kön och spela upp spåret\/spåren.",
                 "next": "Spela upp spåret\/spåren direkt efter det objekt som spelas\/buffras för tillfället.",
                 "replace_next": "Rensa kön och spela upp spåret\/spåren direkt efter det objekt som spelas upp\/buffras för tillfället.",
@@ -322,7 +322,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Material design ikon för den här spelaren. \\n\\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design ikon för den här spelaren. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Användargränssnitt",
         "frontend_desc": "Konfigurationsinställningar för användargränssnittet för Music Assistant (frontend). Observera att dessa inställningar lagras på enhetsnivå.",
@@ -343,15 +343,7 @@
         },
         "menu_items": {
             "label": "Aktiverade menyalternativ",
-            "description": "Konfigurera vilka objekt som ska visas i menyn. \\n\\nObservera att om du inaktiverar inställningar kan du låsa dig själv. \\n\\nI så fall måste du manuellt ange sökvägen till inställningarna eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk."
-        },
-        "artwork_pref": {
-            "label": "Inställning för bildhämtning",
-            "description": "Får den här klienten ladda ner (offentligt tillgänglig) konstverk själv eller ska allt dirigeras via servern?\\nSom standard tillåts klienten att cache\/ladda ner konstverk direkt från internetresurser för att belasta servern mindre.",
-            "options": {
-                "online": "Tillåt direkthämtning",
-                "server_only": "Framtvinga routing genom servern"
-            }
+            "description": "Konfigurera vilka objekt som ska visas i menyn. \n\nObservera att om du inaktiverar inställningar kan du låsa dig själv. \n\nI så fall måste du manuellt ange sökvägen till inställningarna eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk."
         },
         "language": {
             "label": "Språk",
@@ -376,7 +368,7 @@
         },
         "hide_settings": {
             "label": "Dölj knapp till inställningar",
-            "description": "Dölj inställningar-knappen på startskärmen.\\n\\nObservera att om du inaktiverar inställningar på startskärmen och i menyn kan du låsa dig själv ute. \\n\\nI så fall måste du manuellt ange sökvägen till inställningar eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk!"
+            "description": "Dölj inställningar-knappen på startskärmen.\n\nObservera att om du inaktiverar inställningar på startskärmen och i menyn kan du låsa dig själv ute. \n\nI så fall måste du manuellt ange sökvägen till inställningar eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk!"
         },
         "no_music_providers": "Inga musikleverantörer har konfigurerats",
         "no_music_providers_detail": "Börja din upplevelse av Music Assistant genom att lägga till dina musikleverantörer.",
@@ -392,7 +384,7 @@
         "duration": "Varaktighet",
         "position": "Position",
         "provider": "Leverantör",
-        "sort_name": "Alfabetiskt",
+        "sort_name": "Sortera på namn",
         "track_number": "Låtnummer",
         "year": "Utgivningsår",
         "position_desc": "Position (fallande)",
@@ -443,7 +435,9 @@
         "back": "Tillbaka",
         "show_menu": "Visa\/dölj menyn",
         "search_filter_active": "Sökningen filtrerar för närvarande resultaten",
-        "play_sample": "Spela upp exempel"
+        "play_sample": "Spela upp exempel",
+        "album_type": "Albumtyp",
+        "loading": "Servern behandlar en begäran eller synkroniserar musik."
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -477,8 +471,10 @@
     "create_playlist_on": "Skapa ny spellista på {0}",
     "view": {
         "list": "Listvy",
-        "panel": "Panelvy",
-        "panel_compact": "Kompakt miniatyrvy"
+        "panel": "Rutnätsvy",
+        "panel_compact": "Kompakt rutsnätsvy"
     },
-    "play_replace": "Spela nu (rensa kö)"
+    "play_replace": "Spela nu (rensa kö)",
+    "played": "Spelade",
+    "background_task_added": "Åtgärden utförs av servern i bakgrunden och kan ta en viss tid att slutföra. Håll ett öga på serverloggen för att se hur det går."
 }

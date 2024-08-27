@@ -120,20 +120,6 @@ onMounted(() => {
       value: enabledMenuItems,
     },
     {
-      key: 'artwork_pref',
-      type: ConfigEntryType.STRING,
-      label: 'artwork_pref',
-      default_value: 'online',
-      required: false,
-      options: [
-        { title: 'online', value: 'online' },
-        { title: 'server_only', value: 'server_only' },
-      ],
-      multi_value: false,
-      category: 'advanced',
-      value: localStorage.getItem('frontend.settings.artwork_pref'),
-    },
-    {
       key: 'hide_settings',
       type: ConfigEntryType.BOOLEAN,
       label: 'hide_settings',

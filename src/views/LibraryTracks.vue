@@ -11,44 +11,39 @@
     :title="$t('tracks')"
     :show-search-button="true"
     :allow-key-hooks="true"
-    :context-menu-items="[
+    :extra-menu-items="[
       {
         label: 'add_url_item',
         labelArgs: [],
         action: () => {
-          addUrl();
+          showAddEditDialog = true;
         },
-        icon: 'mdi-link-plus',
+        icon: 'mdi-playlist-plus',
       },
     ]"
     icon="mdi-music-note"
     :restore-state="true"
     :total="total"
   />
+  <AddManualLink v-model="showAddEditDialog" :type="MediaType.RADIO" />
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
 import api from '@/plugins/api';
-import {
-  EventMessage,
-  EventType,
-  ImageType,
-  MediaType,
-} from '@/plugins/api/interfaces';
+import { EventMessage, EventType, MediaType } from '@/plugins/api/interfaces';
+import AddManualLink from '@/components/AddManualLink.vue';
 import { sleep } from '@/helpers/utils';
-import router from '@/plugins/router';
 import { store } from '@/plugins/store';
 
 defineOptions({
   name: 'Tracks',
 });
 
-const { t } = useI18n();
 const updateAvailable = ref<boolean>(false);
 const total = ref(store.libraryTracksCount);
+const showAddEditDialog = ref(false);
 
 const sortKeys = [
   'name',
@@ -118,38 +113,5 @@ const setTotals = async function (params: LoadDataParams) {
     return;
   }
   total.value = await api.getLibraryTracksCount(params.favoritesOnly || false);
-};
-
-const addUrl = async function () {
-  const url = prompt(t('enter_url'));
-  if (!url) return;
-  if (!url?.startsWith('http')) {
-    alert(t('invalid_input'));
-    return;
-  }
-  api
-    .getTrack(url, 'builtin')
-    .then((item) => {
-      const name = prompt(t('enter_name'), item.name);
-      item.name = name || item.name;
-      delete item.sort_name;
-
-      const imgUrl = prompt(
-        t('image_url'),
-        item.metadata.images?.length ? item.metadata.images[0].path : '',
-      );
-      if (imgUrl) {
-        item.metadata.images = [
-          {
-            type: ImageType.THUMB,
-            path: imgUrl,
-            provider: 'builtin',
-            remotely_accessible: true,
-          },
-        ];
-      }
-      api.addItemToLibrary(item).then(() => window.location.reload());
-    })
-    .catch((e) => alert(e));
 };
 </script>

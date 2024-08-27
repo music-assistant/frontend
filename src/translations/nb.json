@@ -149,7 +149,130 @@
         "download_log": "Last ned loggfil",
         "edit_group_members": "Redigere gruppemedlemmer",
         "add_new_provider_button": "Legg til {0} leverandør",
-        "add_group_player": "Legg til gruppespiller"
+        "add_group_player": "Legg til gruppespiller",
+        "group_members": "Gruppemedlemmer",
+        "log_level": {
+            "label": "Loggnivå",
+            "description": "Angi hvor omfattende loggen skal være for denne leverandøren.",
+            "options": {
+                "info": "Info",
+                "warning": "Advarsel",
+                "error": "Feil",
+                "debug": "Feilsøking"
+            }
+        },
+        "auto_play": {
+            "label": "Automatisk avspilling (gjenopptas når den slås på)"
+        },
+        "output_channels": {
+            "options": {
+                "stereo": "Stereo (begge kanaler)",
+                "left": "Kun venstre kanal",
+                "right": "Kun høyre kanal",
+                "mono": "Mono (begge kanaler)"
+            }
+        },
+        "eq_bass": {
+            "label": "Equalizer: bass"
+        },
+        "eq_treble": {
+            "label": "Equalizer: diskant"
+        },
+        "default_enqueue_action_playlist": {
+            "options": {
+                "add": "Legg til spillelistens spor på slutten av køen."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "options": {
+                "play": "Spill av radiostasjonen nå, og behold de gjenværende elementene i køen.",
+                "replace": "Tøm køen og spill av radiostasjonen",
+                "add": "Legg til radiostasjonen(e) på slutten av køen."
+            }
+        },
+        "default": "standard",
+        "provider_depends_on_confirm": "Før du kan sette opp {0}, må du ha konfigurert {1} -leverandøren. Vil du gjøre det nå?",
+        "category": {
+            "audio": "Lyd",
+            "advanced": "Avanserte innstillinger",
+            "generic": "Generiske innstillinger",
+            "announcements": "Konfigurasjon av kunngjøringer",
+            "airplay": "Airplay-spesifikke innstillinger"
+        },
+        "tts_pre_announce": {
+            "label": "Forhåndsannonsere TTS-kunngjøringer"
+        },
+        "announce_volume_strategy": {
+            "description": "Når en kunngjøring sendes til denne spilleren, hvordan skal volumet justeres midlertidig (bruk i kombinasjon med volumverdien nedenfor)?",
+            "options": {
+                "absolute": "Absolutt volum",
+                "relative": "Relativ volumøkning",
+                "percentual": "Volumøkning med fast prosentandel",
+                "none": "Ikke juster volumet"
+            }
+        },
+        "announce_volume": {
+            "label": "Volum for kunngjøringer"
+        },
+        "announce_volume_min": {
+            "label": "Minimum volumnivå for kunngjøringer",
+            "description": "Volumet (justeringen) av kunngjøringer bør ikke gå under dette nivået."
+        },
+        "announce_volume_max": {
+            "label": "Maksimalt volumnivå for kunngjøringer",
+            "description": "Volumet (justeringen) av kunngjøringer bør ikke gå over dette nivået."
+        },
+        "icon": {
+            "label": "Ikon",
+            "description": "Ikon i materialdesign for denne spilleren.\n\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "frontend": "Brukergrensesnitt",
+        "frontend_desc": "Konfigurasjonsinnstillinger for Music Assistant-brukergrensesnittet (frontend). Merk at disse innstillingene lagres på enhetsnivå.",
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "auto": "Automatisk (følger systemkonfigurasjonen)",
+                "light": "Lys",
+                "dark": "Mørk"
+            }
+        },
+        "menu_style": {
+            "label": "Menystil",
+            "options": {
+                "horizontal": "Vannrett",
+                "vertical": "Loddrett"
+            }
+        },
+        "menu_items": {
+            "label": "Aktiverte menyelementer"
+        },
+        "language": {
+            "label": "Språk",
+            "options": {
+                "auto": "Automatisk (følger systemkonfigurasjonen)",
+                "cs": "Tsjekkisk",
+                "da": "Dansk",
+                "de": "Tysk",
+                "en": "Engelsk",
+                "fr": "Fransk",
+                "nl": "Nederlandsk",
+                "pl": "Polsk",
+                "uk_UA": "Ukrainsk",
+                "zh_CN": "Kinesisk (forenklet)",
+                "en_AU": "Engelsk (australsk)",
+                "sr": "Serbisk",
+                "sr_Latn": "Serbisk (latin)",
+                "sv_SE": "Svensk",
+                "en_GB": "Engelsk (Storbritannia)",
+                "es": "Spansk"
+            }
+        },
+        "hide_settings": {
+            "label": "Skjul innstillingsknappen",
+            "description": "Skjul innstillingsknappen på startskjermen.\n\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\n\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
+        },
+        "no_music_providers": "Ingen musikkleverandører er konfigurert",
+        "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine."
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
@@ -171,7 +294,16 @@
         "recent": "Nylig lagt til",
         "year_desc": "Utgivelsesår (synkende)",
         "duration_desc": "Varighet (synkende)",
-        "original": "Original"
+        "original": "Original",
+        "sort_name_desc": "Sorter navn (synkende)",
+        "timestamp_added": "Dato lagt til",
+        "timestamp_added_desc": "Dato lagt til (synkende)",
+        "timestamp_modified": "Dato oppdatert",
+        "timestamp_modified_desc": "Dato oppdatert (synkende)",
+        "last_played": "Sist spilt",
+        "last_played_desc": "Sist spilt (synkende)",
+        "play_count": "Antall avspillinger",
+        "play_count_desc": "Antall avspillinger (synkende)"
     },
     "state": {
         "idle": "inaktiv",
@@ -200,7 +332,10 @@
         "open_provider_link": "Åpne dette elementet på leverandørens nettsted",
         "collapse_expand": "Skjul\/vis denne oppføringen",
         "back": "Tilbake",
-        "show_menu": "Vis\/skjul meny"
+        "show_menu": "Vis\/skjul meny",
+        "search_filter_active": "Søket filtrerer for øyeblikket resultater",
+        "album_type": "Albumtype",
+        "loading": "Serveren behandler en forespørsel eller synkroniserer musikk."
     },
     "topresult": "Toppresultat",
     "track": "Spor",
@@ -225,5 +360,20 @@
     "radiobrowser_by_country": "Etter land",
     "radiobrowser_by_tag": "Etter merke",
     "load_more_items": "Last inn flere elementer ...",
-    "radio": "Radio"
+    "radio": "Radio",
+    "muted": "dempet",
+    "enter_name": "Skriv inn et nytt (egendefinert) navn",
+    "image_url": "Skriv inn URL-en til et bilde eller ikon (valgfritt)",
+    "invalid_input": "Inndataene var ugyldige",
+    "new_playlist": "Ny spilleliste",
+    "create_playlist_on": "Opprett ny spilleliste på {0}",
+    "view": {
+        "list": "Listevisning"
+    },
+    "play_replace": "Spill nå (tøm køen)",
+    "played": "Avspilte",
+    "background_task_added": "Handlingen utføres av serveren i bakgrunnen og kan ta litt tid å fullføre. Hold øye med serverloggen for å se fremdriften.",
+    "images": "Bilder",
+    "image_type": "Type",
+    "image_source": "Kilde"
 }

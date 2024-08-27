@@ -2,15 +2,13 @@
   <section>
     <v-card-text>
       <!-- header -->
-      <div
-        v-if="provider && provider in api.providers"
-        style="margin-left: -5px; margin-right: -5px"
-      >
+      <div style="margin-left: -5px; margin-right: -5px">
         <v-card-title>
-          {{ $t('settings.add_group_player') }} ({{
-            api.providers[provider].name
-          }})
+          {{ $t('settings.create_sync_group_player') }}
         </v-card-title>
+        <v-card-subtitle style="white-space: break-spaces">
+          {{ $t('settings.create_sync_group_player_desc') }}
+        </v-card-subtitle>
         <br />
         <v-divider />
         <br />
@@ -30,6 +28,8 @@
             clearable
             multiple
             :items="syncPlayers"
+            item-title="name"
+            item-value="player_id"
             :label="$t('settings.group_members')"
             required
           />
@@ -51,7 +51,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '@/plugins/api';
-import { watch } from 'vue';
+import { ProviderFeature } from '@/plugins/api/interfaces';
 
 // global refs
 const router = useRouter();
@@ -59,41 +59,32 @@ const name = ref<string>('');
 const members = ref<string[]>([]);
 const valid = ref<boolean>(false);
 
-// props
-const props = defineProps<{
-  provider: string;
-}>();
-
 // computed properties
 const syncPlayers = computed(() => {
-  return Object.values(api.players)
-    .filter(
+  if (members.value.length > 0) {
+    return Object.values(api.players).filter(
       (x) =>
-        props.provider.startsWith('ugp') ||
-        (api.getProvider(x.provider)?.instance_id == props.provider &&
-          x.can_sync_with.length),
-    )
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
-    )
-    .map((x) => ({ title: x.display_name, value: x.player_id }));
+        x.available &&
+        (x.can_sync_with.includes(members.value[0]) ||
+          x.player_id == members.value[0]) &&
+        api
+          .getProvider(x.provider)
+          ?.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
+    );
+  }
+  return Object.values(api.players).filter(
+    (x) =>
+      x.available &&
+      x.can_sync_with.length &&
+      api
+        .getProvider(x.provider)
+        ?.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
+  );
 });
-
-// watchers
-
-watch(
-  () => props.provider,
-  async (val) => {
-    name.value = '';
-    valid.value = false;
-    members.value = [];
-  },
-  { immediate: true },
-);
 
 // methods
 const onSubmit = async function () {
-  api.createPlayerGroup(props.provider, name.value, members.value);
+  api.createSyncPlayerGroup(name.value, members.value);
   router.push({ name: 'playersettings' });
 };
 </script>

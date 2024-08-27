@@ -12,6 +12,7 @@
     icon="mdi-album"
     :restore-state="true"
     :total="total"
+    :show-album-type-filter="true"
   />
 </template>
 
@@ -43,6 +44,8 @@ const sortKeys = [
   'last_played_desc',
   'play_count',
   'play_count_desc',
+  'artist_name',
+  'artist_name_desc',
 ];
 
 onMounted(() => {
@@ -88,14 +91,18 @@ const loadItems = async function (params: LoadDataParams) {
     params.limit,
     params.offset,
     params.sortBy,
+    params.albumType,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly) {
+  if (!params.favoritesOnly && !params.albumType) {
     total.value = store.libraryAlbumsCount;
     return;
   }
-  total.value = await api.getLibraryAlbumsCount(params.favoritesOnly || false);
+  total.value = await api.getLibraryAlbumsCount(
+    params.favoritesOnly || undefined,
+    params.albumType || undefined,
+  );
 };
 </script>

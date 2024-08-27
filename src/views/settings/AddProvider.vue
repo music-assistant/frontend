@@ -45,7 +45,19 @@
       persistent
       style="display: flex; align-items: center; justify-content: center"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
+      <v-card v-if="showAuthLink" style="background-color: white">
+        <v-card-title>Authenticating...</v-card-title>
+        <v-card-subtitle
+          >A new tab/popup should be opened where you can
+          authenticate</v-card-subtitle
+        >
+        <v-card-actions>
+          <a id="auth" href="" target="_blank"
+            ><v-btn>Click here if the popup did not open</v-btn></a
+          >
+        </v-card-actions>
+      </v-card>
+      <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
   </section>
 </template>
@@ -70,6 +82,7 @@ const router = useRouter();
 const config_entries = ref<ConfigEntry[]>([]);
 const sessionId = nanoid(11);
 const loading = ref(false);
+const showAuthLink = ref(false);
 
 // props
 const props = defineProps<{
@@ -115,13 +128,15 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(props.domain, values)
     .then(() => {
-      loading.value = false;
       router.push({ name: 'providersettings' });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
       alert(err);
+    })
+    .finally(() => {
       loading.value = false;
+      showAuthLink.value = false;
     });
 };
 
@@ -137,18 +152,20 @@ const onAction = async function (
       values[entry.key] = entry.value;
     }
   }
-  // ensure the session id is passed along
+  // ensure the session id is passed along (for auth actions)
   values['session_id'] = sessionId;
   api
     .getProviderConfigEntries(props.domain, undefined, action, values)
     .then((entries) => {
       config_entries.value = entries;
-      loading.value = false;
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
       alert(err);
+    })
+    .finally(() => {
       loading.value = false;
+      showAuthLink.value = false;
     });
 };
 </script>

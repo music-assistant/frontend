@@ -42,6 +42,7 @@ import {
   PlayerConfig,
   CoreConfig,
   ItemMapping,
+  AlbumType,
 } from './interfaces';
 
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -67,7 +68,11 @@ export class MusicAssistantApi {
   );
   public syncTasks = ref<SyncTask[]>([]);
   public fetchesInProgress = ref<number[]>([]);
+  public hasStreamingProviders = computed(() => {
+    return Object.values(this.providers).some((p) => p.is_streaming_provider);
+  });
   private eventCallbacks: Array<[EventType, string, CallableFunction]>;
+  private partialResult: { [msg_id: string]: Array<any> };
   private commands: Map<
     number,
     {
@@ -80,6 +85,7 @@ export class MusicAssistantApi {
     this.commandId = 0;
     this.eventCallbacks = [];
     this.commands = new Map();
+    this.partialResult = {};
   }
 
   public async initialize(baseUrl: string) {
@@ -223,7 +229,7 @@ export class MusicAssistantApi {
     item_id: string,
   ): string {
     const encItemId = encodeURIComponent(encodeURIComponent(item_id));
-    return `${api.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
+    return `${this.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
   }
 
   public getLibraryArtistsCount(
@@ -237,8 +243,12 @@ export class MusicAssistantApi {
   }
   public getLibraryAlbumsCount(
     favorite_only: boolean = false,
+    album_types?: Array<AlbumType | string>,
   ): Promise<number> {
-    return this.sendCommand('music/albums/count', { favorite_only });
+    return this.sendCommand('music/albums/count', {
+      favorite_only,
+      album_types,
+    });
   }
   public getLibraryTracksCount(
     favorite_only: boolean = false,
@@ -314,6 +324,7 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     order_by?: string,
+    album_types?: Array<AlbumType | string>,
   ): Promise<Album[]> {
     return this.sendCommand('music/albums/library_items', {
       favorite,
@@ -321,6 +332,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      album_types,
     });
   }
 
@@ -476,6 +488,17 @@ export class MusicAssistantApi {
     });
   }
 
+  public updateMetadata(
+    item: MediaItemType | ItemMapping | string,
+    force_refresh = false,
+  ): Promise<MediaItemType> {
+    // Update an item's (extra) metadata.
+    return this.sendCommand('metadata/update_metadata', {
+      item,
+      force_refresh,
+    });
+  }
+
   public getItem(
     media_type: MediaType,
     item_id: string,
@@ -491,10 +514,12 @@ export class MusicAssistantApi {
 
   public async addItemToLibrary(
     item: string | MediaItemType | ItemMapping,
+    overwrite_existing = false,
   ): Promise<void> {
     // Add an item (uri or mediaitem) to the library.
     return this.sendCommand('music/library/add_item', {
       item,
+      overwrite_existing,
     });
   }
 
@@ -707,6 +732,18 @@ export class MusicAssistantApi {
       ...args,
     });
   }
+  public queueCommandTransfer(
+    sourceQueue: string,
+    targetQueue: string,
+    autoPlay?: boolean,
+  ) {
+    // Transfer queue to another queue.
+    this._sendCommand('player_queues/transfer', {
+      source_queue_id: sourceQueue,
+      target_queue_id: targetQueue,
+      auto_play: autoPlay,
+    });
+  }
 
   // Player related functions/commands
 
@@ -849,14 +886,12 @@ export class MusicAssistantApi {
     this.players[playerId].powered = newPower;
   }
 
-  public async createPlayerGroup(
-    provider: string,
+  public async createSyncPlayerGroup(
     name: string,
     members: string[],
   ): Promise<Player> {
-    // Save/update PlayerConfig.
-    return this.sendCommand('players/create_group', {
-      provider,
+    // Create a new Sync playergroup
+    return this.sendCommand('players/create_syncgroup', {
       name,
       members,
     });
@@ -1195,6 +1230,20 @@ export class MusicAssistantApi {
     }
 
     if (!resultPromise) return;
+
+    if ('partial' in msg && msg.partial) {
+      // handle partial results (for large listings that are split in multiple messages)
+      if (!(msg.message_id in this.partialResult)) {
+        this.partialResult[msg.message_id] = [];
+      }
+      this.partialResult[msg.message_id].push(...msg.result);
+      return;
+    } else if (msg.message_id in this.partialResult) {
+      // if we have partial results, append them to the final result
+      if ('result' in msg)
+        msg.result = this.partialResult[msg.message_id].concat(msg.result);
+      delete this.partialResult[msg.message_id];
+    }
 
     this.commands.delete(msg.message_id as number);
     this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
