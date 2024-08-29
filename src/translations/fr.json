@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Groupe",
         "player": "Lecteur",
-        "stereo_pair": "Paire stéréo"
+        "stereo_pair": "Paire stéréo",
+        "sync_group": "Groupe de synchronisation"
     },
     "players": "Lecteurs",
     "playlist": "Liste de lecture",
@@ -374,7 +375,9 @@
         "no_music_providers": "Aucun fournisseur de musique configuré",
         "no_music_providers_detail": "Démarrez votre expérience Music Assistant en ajoutant vos fournisseurs de musique.",
         "no_player_providers": "Aucun fournisseur de lecteur n'est configuré",
-        "no_player_providers_detail": "Configurez des fournisseurs de lecteurs pour sélectionner les appareils sur lesquels Music Assistant peut diffuser votre musique."
+        "no_player_providers_detail": "Configurez des fournisseurs de lecteurs pour sélectionner les appareils sur lesquels Music Assistant peut diffuser votre musique.",
+        "create_sync_group_player": "Créer un nouveau groupe de synchronisation",
+        "create_sync_group_player_desc": "Avec un groupe de synchronisation, vous créez un « préréglage » de lecteurs qui peuvent être synchronisés en un seul clic. Cela est utile si vous avez plusieurs lecteurs que vous souhaitez souvent synchroniser.\nCréer un groupe de synchronisation au lieu de synchroniser manuellement les lecteurs à chaque fois présente l'avantage que la file d'attente est conservée sur le groupe lui-même, plutôt que sur les lecteurs individuels.\nNotez que vous ne pouvez sélectionner que des lecteurs pouvant réellement être synchronisés (donc des lecteurs du même type)."
     },
     "show_info": "Afficher les informations",
     "show_select_boxes": "Afficher les cases de sélection",
@@ -484,5 +487,6 @@
     "image_type": "Type",
     "image_source": "Source",
     "update_metadata": "Mettre à jour les métadonnées",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "transfer_queue": "Transférer la file d'attente vers un autre lecteur"
 }
