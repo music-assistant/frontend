@@ -103,6 +103,7 @@
               <v-checkbox
                 v-if="showSyncControls"
                 class="checkbox"
+                :disabled="childPlayer.player_id == player.player_id"
                 :model-value="syncChilds.includes(childPlayer.player_id)"
                 @update:model-value="
                   syncCheckBoxChange(childPlayer.player_id, $event)
@@ -112,6 +113,7 @@
                 <Button
                   icon
                   style="min-height: 20px; height: 25px !important"
+                  :disabled="childPlayer.player_id == player.player_id"
                   @click="api.playerCommandPowerToggle(childPlayer.player_id)"
                 >
                   <v-icon :size="25" icon="mdi-power" />

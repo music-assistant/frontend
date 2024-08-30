@@ -97,6 +97,7 @@
           <VolumeControl
             v-if="store.activePlayer"
             :player="store.activePlayer"
+            style="margin-left: -8px"
           />
         </v-list>
       </v-card>
