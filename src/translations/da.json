@@ -164,7 +164,7 @@
         },
         "flow_mode": {
             "label": "Aktivér flow-tilstand",
-            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
+            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \\nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
         },
         "auto_play": {
             "label": "Start automatisk afspilning",
@@ -186,7 +186,7 @@
         },
         "volume_normalization_target": {
             "label": "Målniveau for volumenormalisering",
-            "description": "Juster gennemsnitlig (opfattet) lydniveau til dette målniveau, standard er -17 LUFS \n\n **ADVARSEL:** Hvis niveauet indstilles for højt, kan det resultere i klipning!"
+            "description": "Juster gennemsnitlig (opfattet) lydniveau til dette målniveau, standard er -17 LUFS \\n\\n **ADVARSEL:** Hvis niveauet indstilles for højt, kan det resultere i klipning!"
         },
         "eq_bass": {
             "label": "Equalizer: bas",
@@ -210,7 +210,7 @@
         },
         "hide_player": {
             "label": "Skjul denne afspiller i brugergrænsefladen",
-            "description": "Skjul denne afspiller i brugergrænsefladen. \n\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
+            "description": "Skjul denne afspiller i brugergrænsefladen. \\n\\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
         },
         "default_enqueue_select_artist": {
             "label": "Elementer, der skal vælges, når du afspiller en kunstner (i biblioteket).",
@@ -322,7 +322,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design ikon for denne afspiller. \\n\\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Brugergrænseflade",
         "frontend_desc": "Konfigurationsindstillinger for Music Assistant-brugergrænsefladen. Bemærk, at disse indstillinger gemmes på enhedsniveau.",
@@ -343,7 +343,7 @@
         },
         "menu_items": {
             "label": "Aktiverede menupunkter",
-            "description": "Konfigurer hvilke elementer der skal vises i menuen.\n\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."
+            "description": "Konfigurer hvilke elementer der skal vises i menuen.\\n\\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \\n\\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."
         },
         "language": {
             "label": "Sprog",
@@ -368,7 +368,7 @@
         },
         "hide_settings": {
             "label": "Skjul knap til indstillinger",
-            "description": "Skjul indstillingsknappen på startskærmen.\n\n Bemærk, at hvis du deaktiverer indstillinger på startskærmen og i menuen, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller slette browsercookies for at få adgang til indstillingerne igen - brug dem på eget ansvar!"
+            "description": "Skjul indstillingsknappen på startskærmen.\\n\\n Bemærk, at hvis du deaktiverer indstillinger på startskærmen og i menuen, kan du låse dig selv ude. \\n\\nI så fald skal du manuelt indtaste stien til indstillingerne eller slette browsercookies for at få adgang til indstillingerne igen - brug dem på eget ansvar!"
         },
         "no_music_providers": "Ingen musikudbydere konfigureret",
         "no_music_providers_detail": "Start din Music Assistant-oplevelse ved at tilføje dine musikudbydere.",

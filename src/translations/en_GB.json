@@ -142,7 +142,7 @@
         },
         "flow_mode": {
             "label": "Enable queue flow mode",
-            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
+            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \\nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
         },
         "auto_play": {
             "label": "Automatically play (resume on power on)"
@@ -158,7 +158,7 @@
         },
         "volume_normalization_target": {
             "label": "Target level for volume normalization",
-            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \n\n **WARNING:** Setting the level too high may result in clipping!"
+            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \\n\\n **WARNING:** Setting the level too high may result in clipping!"
         },
         "eq_bass": {
             "label": "Equalizer: bass",
@@ -182,7 +182,7 @@
         },
         "hide_player": {
             "label": "Hide this player in the user interface",
-            "description": "Hide this player in the user interface. \n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
+            "description": "Hide this player in the user interface. \\n\\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
         },
         "default_enqueue_select_artist": {
             "options": {
@@ -230,7 +230,7 @@
         },
         "icon": {
             "label": "Icon",
-            "description": "Material design icon for this player. \n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design icon for this player. \\n\\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "User Interface",
         "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
@@ -250,7 +250,7 @@
         },
         "menu_items": {
             "label": "Enabled menu items",
-            "description": "Configure which items to show in the menu.\n\n Note that if you disable settings you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
+            "description": "Configure which items to show in the menu.\\n\\n Note that if you disable settings you may lock yourself out. \\n\\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk."
         },
         "language": {
             "label": "Language",
@@ -272,7 +272,7 @@
         },
         "hide_settings": {
             "label": "Hide settings button",
-            "description": "Hide settings button on home screen.\n\n Note that if you disable settings on the home screen and in the menu you may lock yourself out. \n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
+            "description": "Hide settings button on home screen.\\n\\n Note that if you disable settings on the home screen and in the menu you may lock yourself out. \\n\\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
