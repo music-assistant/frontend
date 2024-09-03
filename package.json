@@ -54,6 +54,6 @@
     "vite-plugin-vuetify": "1.0.2",
     "vite-plugin-webfont-dl": "3.9.5",
     "vite-svg-loader": "^5.1.0",
-    "vue-tsc": "2.0.26"
+    "vue-tsc": "2.1.4"
   }
 }
