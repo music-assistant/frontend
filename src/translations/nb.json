@@ -40,7 +40,7 @@
     "library": "Bibliotek",
     "loading": "Data hentes fra serveren.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Skriv inn en ny for den nye spillelisten",
+    "new_playlist_name": "Skriv inn ett navn for den nye spillelisten",
     "no_content": "Ingen elementer funnet.",
     "no_content_filter": "Ingen elementer funnet for gjeldende filter\/søkebetingelser.",
     "no_player": "Ingen spiller valgt",
@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Spiller",
-        "stereo_pair": "Stereopar"
+        "stereo_pair": "Stereopar",
+        "sync_group": "Synkroniser gruppe"
     },
     "players": "Spillere",
     "playlist": "Spilleliste",
@@ -155,16 +156,24 @@
             "label": "Loggnivå",
             "description": "Angi hvor omfattende loggen skal være for denne leverandøren.",
             "options": {
+                "global": "Global",
                 "info": "Info",
                 "warning": "Advarsel",
                 "error": "Feil",
                 "debug": "Feilsøking"
             }
         },
+        "flow_mode": {
+            "label": "Aktiver køflytmodus",
+            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\nBrukes for avspillere som ikke støtter gapless og\/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
+        },
         "auto_play": {
-            "label": "Automatisk avspilling (gjenopptas når den slås på)"
+            "label": "Automatisk avspilling (gjenopptas når den slås på)",
+            "description": "Når denne spilleren er slått PÅ, starter avspillingen automatisk (hvis det finnes elementer i køen)."
         },
         "output_channels": {
+            "label": "Utgangskanalmodus",
+            "description": "Du kan konfigurere denne spilleren til å spille bare venstre eller høyre kanal, for eksempel for å lage et stereopar med 2 spillere.",
             "options": {
                 "stereo": "Stereo (begge kanaler)",
                 "left": "Kun venstre kanal",
@@ -172,21 +181,108 @@
                 "mono": "Mono (begge kanaler)"
             }
         },
+        "volume_normalization": {
+            "label": "Aktiver volumnormalisering (EBU-R128-basert)",
+            "description": "Aktiver volumnormalisering basert på EBU-R128-standarden uten å påvirke dynamisk rekkevidde"
+        },
+        "volume_normalization_target": {
+            "label": "Målnivå for volumnormalisering",
+            "description": "Juster gjennomsnittlig (oppfattet) lydstyrke til dette målnivået, standard er -17 LUFS **ADVARSEL:** Hvis du setter nivået for høyt, kan det føre til klipping!"
+        },
         "eq_bass": {
-            "label": "Equalizer: bass"
+            "label": "Equalizer: bass",
+            "description": "Bruk den innebygde standard equalizeren til å justere bassnivået (lave toner) til lyden."
+        },
+        "eq_mid": {
+            "label": "Equalizer: midt",
+            "description": "Bruk den innebygde standard equalizeren for å justere midtnivået på lyden."
         },
         "eq_treble": {
-            "label": "Equalizer: diskant"
+            "label": "Equalizer: diskant",
+            "description": "Bruk den innebygde standard equalizeren til å justere lydnivået for diskant (høye toner)."
+        },
+        "crossfade": {
+            "label": "Aktiver crossfade",
+            "description": "Aktiver en crossfade-overgang mellom (kø)spor."
+        },
+        "crossfade_duration": {
+            "label": "Crossfade-varighet",
+            "description": "Varighet i sekunder for crossfade mellom spor (hvis aktivert)"
+        },
+        "hide_player": {
+            "label": "Skjul denne spilleren i brukergrensesnittet",
+            "description": "Skjul denne spilleren i brukergrensesnittet. Merk at den fortsatt kan kontrolleres, og den vil også vises i alle synkroniseringsgrupper spilleren tilhører."
+        },
+        "default_enqueue_select_artist": {
+            "label": "Elementer å velge når du spiller en artist  (i biblioteket).",
+            "description": "Hvis du vil spille en artist, hvilke elementer skal settes i kø?",
+            "options": {
+                "library_tracks": "Kun spor i biblioteket",
+                "library_album_tracks": "Alle spor fra alle album i biblioteket",
+                "all_tracks": "Alle (de beste) sporene fra (alle) leverandør(er)",
+                "all_album_tracks": "Alle spor fra alle album fra (alle) leverandør(er)"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "Elementer som skal velges når du spiller av et album (i biblioteket).",
+            "description": "Hvis du vil spille av et album, hvilke elementer skal settes i kø?",
+            "options": {
+                "library_tracks": "Kun spor i biblioteket",
+                "all_tracks": "Alle sporene til albumet hos leverandøren"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "Standard køalternativ for Artist-element(er).",
+            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
+            "options": {
+                "play": "Spill av artistspor nå, og behold de gjenværende køelementene.",
+                "replace": "Tøm køen og spill av artistsporet(ene)",
+                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av artistsporet\/artistsporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "add": "Legg til artistsporet\/artistsporene på slutten av køen."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Standard køalternativ for albumelement(er).",
+            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
+            "options": {
+                "play": "Spill albumspor nå og behold gjenværende køelement(er).",
+                "replace": "Tøm køen og spill av albumsporet\/sporene",
+                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av albumsporet\/-sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "add": "Legg til albumsporet\/sporene på slutten av køen."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Standard køalternativ for sporelement(er).",
+            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
+            "options": {
+                "play": "Spill av sporet\/sporene nå, og behold de gjenværende elementene i køen.",
+                "replace": "Tøm køen og spill av sporene.",
+                "next": "Spill av sporet\/sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av sporet\/sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "add": "Legg til sporet\/sporene på slutten av køen."
+            }
         },
         "default_enqueue_action_playlist": {
+            "label": "Standard køalternativ for spillelisteelement(er).",
+            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
             "options": {
+                "play": "Spill av spillelistens spor nå, og behold de gjenværende elementene i køen.",
+                "replace": "Tøm køen og spill av spillelistens spor",
+                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av spillelistens spor rett etter det elementet som spilles\/bufferes for øyeblikket.",
                 "add": "Legg til spillelistens spor på slutten av køen."
             }
         },
         "default_enqueue_action_radio": {
+            "label": "Standard køalternativ for radioelement(er).",
+            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
             "options": {
                 "play": "Spill av radiostasjonen nå, og behold de gjenværende elementene i køen.",
                 "replace": "Tøm køen og spill av radiostasjonen",
+                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av radiostasjonen(e) rett etter elementet som spilles\/bufres.",
                 "add": "Legg til radiostasjonen(e) på slutten av køen."
             }
         },
@@ -200,9 +296,11 @@
             "airplay": "Airplay-spesifikke innstillinger"
         },
         "tts_pre_announce": {
-            "label": "Forhåndsannonsere TTS-kunngjøringer"
+            "label": "Forhåndsannonsere TTS-kunngjøringer",
+            "description": "Når en TTS-melding (tekst-til-tale) sendes til kunngjøringsfunksjonen, legg til en kort lyd før kunngjøringen (bjellefløyte)."
         },
         "announce_volume_strategy": {
+            "label": "Volumstrategi for kunngjøringer",
             "description": "Når en kunngjøring sendes til denne spilleren, hvordan skal volumet justeres midlertidig (bruk i kombinasjon med volumverdien nedenfor)?",
             "options": {
                 "absolute": "Absolutt volum",
@@ -212,7 +310,8 @@
             }
         },
         "announce_volume": {
-            "label": "Volum for kunngjøringer"
+            "label": "Volum for kunngjøringer",
+            "description": "Det prosentuelle, relative eller absolutte volumnivået som brukes med strategien for kunngjøringer."
         },
         "announce_volume_min": {
             "label": "Minimum volumnivå for kunngjøringer",
@@ -224,7 +323,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Ikon i materialdesign for denne spilleren.\\n\\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Ikon i materialdesign for denne spilleren.\n\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Brukergrensesnitt",
         "frontend_desc": "Konfigurasjonsinnstillinger for Music Assistant-brukergrensesnittet (frontend). Merk at disse innstillingene lagres på enhetsnivå.",
@@ -244,7 +343,8 @@
             }
         },
         "menu_items": {
-            "label": "Aktiverte menyelementer"
+            "label": "Aktiverte menyelementer",
+            "description": "Konfigurer hvilke elementer som skal vises i menyen. \n\n Merk at hvis du deaktiverer innstillinger, kan du låse deg ute. \n\n I så fall må du angi banen til innstillinger manuelt eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen, bruk på egen risiko."
         },
         "language": {
             "label": "Språk",
@@ -264,15 +364,20 @@
                 "sr_Latn": "Serbisk (latin)",
                 "sv_SE": "Svensk",
                 "en_GB": "Engelsk (Storbritannia)",
-                "es": "Spansk"
+                "es": "Spansk",
+                "pt_PT": "Portugisisk"
             }
         },
         "hide_settings": {
             "label": "Skjul innstillingsknappen",
-            "description": "Skjul innstillingsknappen på startskjermen.\\n\\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\\n\\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
+            "description": "Skjul innstillingsknappen på startskjermen.\n\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\n\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
         },
         "no_music_providers": "Ingen musikkleverandører er konfigurert",
-        "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine."
+        "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine.",
+        "no_player_providers": "Ingen spillerleverandører er konfigurert",
+        "no_player_providers_detail": "Konfigurer spillerleverandører for å velge enheter der Music Assistant kan spille av musikken din.",
+        "create_sync_group_player": "Opprett en ny synkroniseringsgruppe",
+        "create_sync_group_player_desc": "Med en synkroniseringsgruppe oppretter du en \"forhåndsinnstilling\" av spillere som kan synkroniseres med ett enkelt klikk. Dette er nyttig hvis du har flere spillere som du ofte ønsker å synkronisere.\nNår du oppretter en synkroniseringsgruppe i stedet for å synkronisere spillerne manuelt hver gang, har det den fordelen at køen holdes på selve gruppen i stedet for på de enkelte spillerne.\nMerk at du bare kan velge spillere som faktisk kan synkroniseres (altså spillere av samme type)."
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
@@ -283,7 +388,7 @@
         "duration": "Varighet",
         "position": "Posisjon",
         "provider": "Tilbyder",
-        "sort_name": "Alfabetisk",
+        "sort_name": "Sorter på navn",
         "track_number": "Spornummer",
         "year": "Utgivelsesår",
         "position_desc": "Posisjon (synkende)",
@@ -303,7 +408,9 @@
         "last_played": "Sist spilt",
         "last_played_desc": "Sist spilt (synkende)",
         "play_count": "Antall avspillinger",
-        "play_count_desc": "Antall avspillinger (synkende)"
+        "play_count_desc": "Antall avspillinger (synkende)",
+        "artist_name": "Album artist",
+        "artist_name_desc": "Album artist (synkende)"
     },
     "state": {
         "idle": "inaktiv",
@@ -334,8 +441,10 @@
         "back": "Tilbake",
         "show_menu": "Vis\/skjul meny",
         "search_filter_active": "Søket filtrerer for øyeblikket resultater",
+        "play_sample": "Spill av eksempel",
         "album_type": "Albumtype",
-        "loading": "Serveren behandler en forespørsel eller synkroniserer musikk."
+        "loading": "Serveren behandler en forespørsel eller synkroniserer musikk.",
+        "primary_image": "Dette er hovedbildet for denne bildetypen"
     },
     "topresult": "Toppresultat",
     "track": "Spor",
@@ -368,12 +477,18 @@
     "new_playlist": "Ny spilleliste",
     "create_playlist_on": "Opprett ny spilleliste på {0}",
     "view": {
-        "list": "Listevisning"
+        "list": "Listevisning",
+        "panel": "Miniatyrbilde visning",
+        "panel_compact": "Kompakt miniatyrbilde visning"
     },
     "play_replace": "Spill nå (tøm køen)",
     "played": "Avspilte",
     "background_task_added": "Handlingen utføres av serveren i bakgrunnen og kan ta litt tid å fullføre. Hold øye med serverloggen for å se fremdriften.",
     "images": "Bilder",
     "image_type": "Type",
-    "image_source": "Kilde"
+    "image_source": "Kilde",
+    "image_make_primary": "Gjør primær",
+    "update_metadata": "Oppdater metadata",
+    "cancel": "Avbryt",
+    "transfer_queue": "Overfør køen til en annen spiller"
 }
