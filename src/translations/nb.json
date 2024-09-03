@@ -224,7 +224,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Ikon i materialdesign for denne spilleren.\n\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Ikon i materialdesign for denne spilleren.\\n\\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Brukergrensesnitt",
         "frontend_desc": "Konfigurasjonsinnstillinger for Music Assistant-brukergrensesnittet (frontend). Merk at disse innstillingene lagres på enhetsnivå.",
@@ -269,7 +269,7 @@
         },
         "hide_settings": {
             "label": "Skjul innstillingsknappen",
-            "description": "Skjul innstillingsknappen på startskjermen.\n\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\n\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
+            "description": "Skjul innstillingsknappen på startskjermen.\\n\\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\\n\\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
         },
         "no_music_providers": "Ingen musikkleverandører er konfigurert",
         "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine."
