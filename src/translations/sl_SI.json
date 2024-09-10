@@ -1,0 +1,161 @@
+{
+    "crossfade_disabled": "Prehod med skladbami je onemogočen",
+    "crossfade_enabled": "Prehod med skladbami je omogočen",
+    "settings": {
+        "need_help_setup_provider": "Potrebujete pomoč pri nastavitvi tega ponudnika?",
+        "download_log": "Prenesite dnevniško datoteko",
+        "volume_normalization_target": {
+            "description": "Prilagodite povprečno (zaznano) glasnost na to ciljno raven. Privzeta vrednost je -17 LUFS\\n\\n**OPOZORILO:** Če nastavite previsoko raven, lahko pride do izrezovanja!"
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Privzeta možnost dodajanja v čakalno vrsto za elemente s seznama predvajanja.",
+            "description": "Določite privzeto dejanje dodajanja v čakalno vrsto za to vrsto medija (če niste določili dejanja).",
+            "options": {
+                "play": "Predvajajte skladbo(-e) s seznama predvajanja zdaj in ohranite preostale elemente čakalne vrste.",
+                "replace": "Počistite čakalno vrsto in predvajajte skladbe s seznama predvajanja",
+                "next": "Predvajajte element(-e) takoj za trenutno predvajanim elementom.",
+                "replace_next": "Počistite čakalno vrsto in predvajajte skladbo(-e) takoj za trenutno predvajanim elementom.",
+                "add": "Dodajte skladbo(-e) na konec čakalne vrste seznama predvajanja."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Privzeta možnost dodajanja v čakalno vrsto za element(-e) Radia.",
+            "description": "Določite privzeto dejanje dodajanja v čakalno vrsto za to vrsto medija (če niste določili dejanja)."
+        },
+        "provider_depends_on_confirm": "Preden lahko nastavite {0}, morate nastaviti ponudnika {1}. Ali želite to storiti zdaj?",
+        "category": {
+            "audio": "Zvok",
+            "advanced": "Napredne nastavitve",
+            "generic": "Splošne nastavitve"
+        },
+        "tts_pre_announce": {
+            "description": "Ko je sporočilo TTS (pretvorba besedila v govor) poslano funkciji Obvestilo, pred obvestilom dodajte kratek zvok (piščalka)."
+        },
+        "announce_volume_strategy": {
+            "label": "Strategija glasnosti za obvestila",
+            "description": "Kako naj se začasno prilagodi glasnost, ko se na tem predvajalniku predvaja sporočilo (uporabi v kombinaciji s spodnjo vrednostjo glasnosti)?",
+            "options": {
+                "absolute": "Absolutna glasnost",
+                "relative": "Relativno povišanje glasnosti",
+                "percentual": "Povišanje glasnosti za določen odstotek",
+                "none": "Ne prilagajaj glasnosti"
+            }
+        },
+        "announce_volume": {
+            "label": "Raven glasnosti za obvestila",
+            "description": "Odstotna, relativna ali absolutna raven glasnosti, ki se uporablja s strategijo za objave."
+        },
+        "announce_volume_min": {
+            "label": "Najnižja raven glasnosti za obvestila",
+            "description": "Glasnost (prilagoditev) obvestil ne sme biti nižja od te ravni."
+        },
+        "announce_volume_max": {
+            "label": "Najvišja raven glasnosti za obvestila",
+            "description": "Glasnost (prilagoditev) obvestil ne sme preseči te ravni."
+        },
+        "icon": {
+            "label": "Ikona",
+            "description": "Ikona oblikovanja materiala za ta predvajalnik.\\n\\nGlej https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "frontend": "Uporabniški vmesnik",
+        "frontend_desc": "Nastavitve uporabniškega vmesnika Music Assistant. Upoštevajte, da so te nastavitve shranjene na ravni naprave.",
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "auto": "Samodejno (sledi konfiguraciji sistema)",
+                "light": "Svetlo",
+                "dark": "Temno"
+            }
+        },
+        "menu_style": {
+            "label": "Slog menija",
+            "options": {
+                "horizontal": "Vodoravno",
+                "vertical": "Navpično"
+            }
+        },
+        "menu_items": {
+            "label": "Omogočeni elementi menija",
+            "description": "Nastavite elemente, ki bodo prikazani v meniju.\\n\\nUpoštevajte, da se v primeru izklopa nastavitev lahko zaklenete.\\n\\nV tem primeru boste morali ročno vnesti pot do nastavitev ali počistiti piškotke brskalnika, da boste znova omogočili dostop do nastavitev. Uporabite na lastno odgovornost."
+        },
+        "language": {
+            "label": "Jezik",
+            "options": {
+                "auto": "Samodejno (sledite konfiguraciji sistema)",
+                "cs": "Češčina",
+                "da": "Danščina",
+                "de": "Nemščina",
+                "en": "Angleščina",
+                "fr": "Francoščina",
+                "nl": "Nizozemščina",
+                "pl": "Poljščina",
+                "uk_UA": "Ukrajinščina",
+                "zh_CN": "Kitajščina (poenostavljena)",
+                "en_AU": "Angleščina (Avstralija)",
+                "sr": "Srbščina",
+                "sr_Latn": "Srbščina (latinščina)",
+                "sv_SE": "Švedščina",
+                "en_GB": "Angleščina (Združeno kraljestvo)",
+                "es": "Španščina",
+                "pt_PT": "Portugalščina",
+                "ko_KR": "Korejščina",
+                "nb": "Norveščina",
+                "ru_RU": "Ruščina"
+            }
+        },
+        "hide_settings": {
+            "label": "Skrij gumb za nastavitve",
+            "description": "Skrij gumb za nastavitve na začetnem zaslonu.\\n\\nUpoštevajte, se lahko zaklenete, če onemogočite nastavitve na začetnem zaslonu in v meniju.\\n\\nV tem primeru boste morali ročno vnesti pot do nastavitev ali počistiti piškotke brskalnika, da boste znova dobili dostop do nastavitev. Uporabljajte na lastno odgovornost!"
+        },
+        "no_music_providers": "Nastavljen ni noben ponudnik glasbe",
+        "no_music_providers_detail": "Začnite izkušnjo Music Assistant z dodajanjem ponudnikov glasbe.",
+        "no_player_providers": "Nastavljen ni noben ponudnik predvajalnika",
+        "no_player_providers_detail": "Nastavi ponudnike predvajalnika tako, da izberejo naprave, v katerih lahko Music Assistant predvaja vašo glasbo.",
+        "create_sync_group_player": "Ustvarite novo skupino za sinhronizacijo",
+        "create_sync_group_player_desc": "S skupino za sinhronizacijo ustvarite »prednastavitev« predvajalnikov, ki jih je mogoče sinhronizirati z enim samim klikom. To je uporabno, če imate več predvajalnikov, ki jih želite pogosto sinhronizirati.\\nPrednost ustvarjanja skupine za sinhronizacijo namesto nenehne ročne sinhronizacije predvajalnikov je v tem, da se čakalna vrsta hrani v skupini in ne na posameznih predvajalnikih.\\nMožen je le izbor predvajalnikov, ki jih je dejansko mogoče sinhronizirati (predvajalnike istega tipa)."
+    },
+    "stream_details": "Podrobnosti pretakanja",
+    "tooltip": {
+        "linked": "Ta element ponudnika je povezan s podrobnostmi trenutnega elementa",
+        "play_sample": "Predvajaj vzorec",
+        "album_type": "Vrsta albuma",
+        "loading": "Strežnik obdeluje zahtevo ali sinhronizira glasbo.",
+        "primary_image": "To je primarna slika za to vrsto slike"
+    },
+    "enter_name": "Vnos novega imena (po meri)",
+    "image_url": "Vnesite URL do slike ali ikone (neobvezno)",
+    "invalid_input": "Vnos je bil neveljaven",
+    "new_playlist": "Nov seznam predvajanja",
+    "create_playlist_on": "Ustvari nov seznam predvajanja na {0}",
+    "sort": {
+        "sort_name_desc": "Ime (padajoče)",
+        "timestamp_added": "Datum dodajanja",
+        "timestamp_added_desc": "Datum dodajanja (padajoče)",
+        "timestamp_modified": "Datum posodobitve",
+        "timestamp_modified_desc": "Datum posodobitve (padajoče)",
+        "last_played": "Zadnje predvajano",
+        "last_played_desc": "Zadnje predvajano (padajoče)",
+        "play_count": "Število predvajanj",
+        "play_count_desc": "Število predvajanj (padajoče)",
+        "artist_name": "Izvajalec",
+        "artist_name_desc": "Izvajalec (padajoče)"
+    },
+    "view": {
+        "list": "Seznam",
+        "panel": "Ploščice",
+        "panel_compact": "Male ikone"
+    },
+    "play_replace": "Predvajaj zdaj (počisti čakalno vrsto)",
+    "played": "Igrano",
+    "background_task_added": "Dejanje izvede strežnik v ozadju in lahko traja nekaj časa. Spremljajte dnevnik strežnika za napredek.",
+    "images": "Slike",
+    "image_type": "Vrsta",
+    "image_source": "Vir",
+    "image_make_primary": "Določi kot primarno",
+    "update_metadata": "Posodobi metapodatke",
+    "cancel": "Prekliči",
+    "transfer_queue": "Prenos čakalne vrste na drugi predvajalnik",
+    "player_type": {
+        "sync_group": "Sinhronizirajte skupino"
+    }
+}

@@ -56,7 +56,8 @@
     "player_type": {
         "group": "Gruppo",
         "player": "Player",
-        "stereo_pair": "Coppia stereo"
+        "stereo_pair": "Coppia stereo",
+        "sync_group": "Gruppo di sincronizzazione"
     },
     "players": "Player",
     "playlist": "Playlist",
@@ -130,7 +131,45 @@
         "setup_provider": "Impostazioni provider: {0}",
         "sync": "Sincronizza ora",
         "sync_running": "Questo provider si stà sincronizzando",
-        "username": "Nome utente"
+        "username": "Nome utente",
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "auto": "Auto (seguire la configurazione sistema)",
+                "light": "Chiaro",
+                "dark": "Scuro"
+            }
+        },
+        "menu_items": {
+            "label": "Elementi attivi del menu"
+        },
+        "language": {
+            "label": "Lingua",
+            "options": {
+                "auto": "Auto (seguire la configurazione sistema)",
+                "cs": "Ceco",
+                "da": "Danese",
+                "de": "Tedesco",
+                "en": "Ingelse",
+                "fr": "Francese",
+                "nl": "Olandese",
+                "pl": "Polacco",
+                "uk_UA": "Ucraino",
+                "zh_CN": "Cinese (Semplificato)",
+                "en_AU": "Inglese (Australiano)",
+                "sr": "Serbo",
+                "sr_Latn": "Serbo (Latino)",
+                "sv_SE": "Svedese",
+                "en_GB": "Inglese (Regno Unito)",
+                "es": "Spagnolo",
+                "pt_PT": "Portoghese",
+                "ko_KR": "Coreano",
+                "nb": "Norvegese",
+                "ru_RU": "Russo"
+            }
+        },
+        "no_music_providers": "Nessuna Sorgente di Musica configurata",
+        "create_sync_group_player": "Crea un nuovo gruppo di sincronizzazione"
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
@@ -166,7 +205,8 @@
         "search": "Visualizza\/nascondi il campo di ricerca",
         "select_items": "Seleziona più elementi",
         "sort_options": "Opzioni di ordinamento",
-        "toggle_view_mode": "Alterna modalità lista\/miniature"
+        "toggle_view_mode": "Alterna modalità lista\/miniature",
+        "primary_image": "Questa è l'immagine principale per questo tipo di immagine"
     },
     "topresult": "Miglior risultato",
     "track": "Traccia",
@@ -174,5 +214,13 @@
     "tracks": "Tracce",
     "try_global_search": "Tenta la ricerca globale",
     "type_to_search": "Scrivi qui per cercare...",
-    "volume_normalization": "Normalizzazione volume"
+    "volume_normalization": "Normalizzazione volume",
+    "play_replace": "Leggi Ora (cancella coda)",
+    "played": "Ascoltata",
+    "images": "Immagini",
+    "image_type": "Tipo",
+    "image_source": "Sorgente",
+    "update_metadata": "Aggiorna metadati",
+    "cancel": "Annulla",
+    "transfer_queue": "Trasferire la coda a un altro lettore"
 }
