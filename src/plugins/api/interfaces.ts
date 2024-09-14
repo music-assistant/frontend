@@ -190,6 +190,15 @@ export enum ConfigEntryType {
   ALERT = 'alert',
 }
 
+export enum VolumeNormalizationMode {
+  DISABLED = 'disabled',
+  DYNAMIC = 'dynamic', // Force dynamic
+  MEASUREMENT_ONLY = 'measurement_only', // Measurement only (no fallback)
+  FALLBACK_FIXED_GAIN = 'fallback_fixed_gain', // Fallback to gain correction
+  FIXED_GAIN = 'fixed_gain', // Fixed gain correction
+  FALLBACK_DYNAMIC = 'fallback_dynamic', // Fallback to dynamic
+}
+
 //// api
 
 export interface CommandMessage {
@@ -479,14 +488,6 @@ export interface AudioFormat {
   bit_rate: number;
 }
 
-export interface LoudnessMeasurement {
-  integrated: number;
-  true_peak: number;
-  lra: number;
-  threshold: number;
-  target_offset: number;
-}
-
 export interface StreamDetails {
   provider: string;
   item_id: string;
@@ -494,10 +495,13 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_title?: string;
   duration?: number;
+  loudness?: number;
+  loudness_album?: number;
+  prefer_album_loudness?: boolean;
+  volume_normalization_mode?: VolumeNormalizationMode;
+  target_loudness?: number;
 
   queue_id?: string;
-  loudness?: LoudnessMeasurement;
-  target_loudness?: number;
 }
 
 // queue_item

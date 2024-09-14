@@ -525,5 +525,9 @@
     "image_make_primary": "Make primary",
     "update_metadata": "Update metadata",
     "cancel": "Cancel",
-    "transfer_queue": "Transfer queue to another player"
+    "transfer_queue": "Transfer queue to another player",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamic volume normalization",
+    "loudness_fixed": "Fixed gain correction"
 }
