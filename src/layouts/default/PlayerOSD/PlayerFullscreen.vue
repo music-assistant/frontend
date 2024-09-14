@@ -51,7 +51,7 @@
                   'version' in store.curQueueItem.media_item &&
                   store.curQueueItem.media_item.version
                 "
-                >( {{ store.curQueueItem.media_item.version }})</span
+                >({{ store.curQueueItem.media_item.version }})</span
               >
             </v-card-title>
 
