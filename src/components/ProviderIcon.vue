@@ -1,7 +1,9 @@
 <template>
   <!-- eslint-disable vue/no-v-html -->
   <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-  <div :style="`width:${size}px;margin-left:10px;margin-right:10px`">
+  <div
+    :style="`width:${size}px;margin-left:10px;margin-right:10px;content-align:center`"
+  >
     <!-- icon for library-->
     <v-icon
       v-if="domain && domain == 'library'"
@@ -16,7 +18,7 @@
         providerDomain &&
         api.providerManifests[providerDomain].icon_svg_dark
       "
-      :style="`width: ${size}px`"
+      :style="`width: ${size}px;align-content: center;`"
       :title="api.providerManifests[providerDomain]!.name"
       v-html="api.providerManifests[providerDomain]!.icon_svg_dark"
     ></div>
@@ -25,7 +27,7 @@
       v-else-if="
         providerDomain && api.providerManifests[providerDomain].icon_svg
       "
-      :style="`width: ${size}px;height: ${size}px`"
+      :style="`width: ${size}px;height: ${size}px;align-content: center;`"
       :title="api.providerManifests[providerDomain]!.name"
       v-html="api.providerManifests[providerDomain]!.icon_svg"
     ></div>
