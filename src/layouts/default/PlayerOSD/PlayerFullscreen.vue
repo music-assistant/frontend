@@ -608,7 +608,9 @@ const openQueueMenu = function (evt: Event) {
             },
           };
         })
-        .sort((a, b) => a.label.localeCompare(b.label)),
+        .sort((a, b) =>
+          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
+        ),
     },
   ];
   eventbus.emit('contextmenu', {
