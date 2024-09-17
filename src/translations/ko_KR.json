@@ -1,0 +1,497 @@
+{
+    "actions": "작업",
+    "add_library": "라이브러리에 추가",
+    "add_playlist": "재생목록에 추가",
+    "add_queue": "대기열에 추가",
+    "add_url_item": "URL에서 항목 추가",
+    "album": "앨범",
+    "album_tracks": "앨범 트랙",
+    "album_type": {
+        "album": "앨범",
+        "compilation": "편집",
+        "ep": "EP",
+        "single": "싱글",
+        "unknown": "알 수 없는 앨범 유형",
+        "audiobook": "오디오북",
+        "podcast": "팟캐스트"
+    },
+    "albums": "앨범",
+    "appears_on": "다음에 표시됩니다.",
+    "artist": "아티스트",
+    "artist_albums": "앨범",
+    "artist_toptracks": "인기 트랙",
+    "artists": "아티스트",
+    "browse": "찾아보기",
+    "clear_selection": "선택 취소",
+    "close": "닫기",
+    "create_playlist": "{0} 에서 새 재생목록 만들기",
+    "crossfade_disabled": "크로스 페이드가 비활성화됨",
+    "crossfade_enabled": "크로스 페이드가 활성화됨",
+    "dark_mode": "다크 모드",
+    "delete_db": "데이터베이스에서 항목 삭제",
+    "details": "세부 정보",
+    "enter_url": "데이터베이스에 수동으로 추가하려는 URL을 입력하세요.",
+    "external_source_active": "외부 소스 활성화: {0}",
+    "goto_album": "앨범 {0} 으로 이동",
+    "goto_artist": "아티스트 {0} 로 이동",
+    "home": "홈",
+    "items_selected": "선택한 항목 {0}개",
+    "items_total": "총 항목 수 {0} 개",
+    "library": "라이브러리",
+    "loading": "서버에서 데이터를 검색 중입니다.",
+    "mass": "Music Assistant",
+    "new_playlist_name": "새 재생목록의 이름을 입력합니다.",
+    "no_content": "항목을 찾을 수 없습니다.",
+    "no_content_filter": "현재 필터\/검색 조건에 맞는 항목을 찾을 수 없습니다.",
+    "no_player": "선택한 플레이어 없음",
+    "off": "꺼짐",
+    "on": "켜짐",
+    "other_versions": "다른 버전",
+    "perform_action": "{0} 항목에 대한 작업 수행",
+    "play": "재생",
+    "play_album_from": "여기에서 앨범 재생",
+    "play_next": "다음 재생",
+    "play_now": "지금 재생",
+    "play_on": "재생: {0}",
+    "play_playlist_from": "여기에서 재생 목록 재생",
+    "play_radio": "라디오 시작",
+    "player_type": {
+        "group": "그룹",
+        "player": "플레이어",
+        "stereo_pair": "스테레오 페어",
+        "sync_group": "동기화 그룹"
+    },
+    "players": "플레이어",
+    "playlist": "재생 목록",
+    "playlist_tracks": "재생목록 트랙",
+    "playlists": "재생 목록",
+    "provider_details": "공급자 세부 정보",
+    "queue": "대기열",
+    "queue_clear": "대기열의 모든 항목 지우기",
+    "queue_delete": "항목 삭제",
+    "queue_empty": "대기열에 항목이 없습니다.",
+    "queue_move_down": "아래로 이동",
+    "queue_move_up": "위로 이동",
+    "queue_next_items": "다음 항목",
+    "queue_options": "대기열 옵션",
+    "queue_previous_items": "재생된 항목",
+    "queue_radio_based_on": "대기열은 {0} 을 기반으로 동적으로 채워집니다:",
+    "queue_radio_enabled": "라디오 모드가 활성화됨",
+    "radios": "라디오",
+    "read_more": "자세히 보기",
+    "refresh_item": "항목 새로 고침",
+    "remove_library": "라이브러리에서 제거",
+    "remove_playlist": "재생목록에서 제거",
+    "repeat_mode": "반복 모드: {0}",
+    "repeatmode": {
+        "all": "전체 대기열 반복",
+        "off": "반복 끄기",
+        "one": "단일 트랙 반복"
+    },
+    "search": "검색",
+    "settings": {
+        "add_new": "새 항목 추가",
+        "add_provider": "새 공급자 추가",
+        "advanced_settings": "고급 설정",
+        "check_docs": "문서를 확인하세요",
+        "codeowners": "저자\/크레딧",
+        "config_player": "플레이어 구성: {0}",
+        "configure": "구성",
+        "delete": "삭제",
+        "disable": "비활성화",
+        "documentation": "문서",
+        "enable": "사용",
+        "enable_player": "이 플레이어 활성화",
+        "enable_provider": "이 공급자 항목 활성화",
+        "enabled": "사용",
+        "invalid_input": "입력이 잘못되었습니다",
+        "metadataproviders": "메타데이터 공급자",
+        "musicproviders": "음원 공급자",
+        "need_help_setup_provider": "이 공급자를 설정하는 데 도움이 필요하신가요?",
+        "no_providers": "구성된 음악 공급자 없음",
+        "no_providers_detail": "아래에 음원 공급자를 추가하여 Music Assistant 경험을 시작하세요.",
+        "not_loaded": "공급자가 (아직) 로드되지 않았습니다.",
+        "password": "비밀번호",
+        "player_address": "주소",
+        "player_disabled": "이 플레이어는 비활성화되었습니다.",
+        "player_id": "플레이어 ID",
+        "player_model": "모델",
+        "player_name": "사용자 지정 플레이어 이름",
+        "player_not_available": "이 플레이어는 (아직) 사용할 수 없습니다.",
+        "player_provider": "공급자",
+        "player_settings": "플레이어 설정",
+        "player_type_label": "플레이어 유형",
+        "playerproviders": "플레이어 공급자",
+        "players": "플레이어",
+        "pluginproviders": "플러그인 공급자",
+        "provider_disabled": "이 공급자 항목은 비활성화되어 있습니다.",
+        "provider_name": "이 공급자 항목에 대한 사용자 정의 이름",
+        "providers": "공급자",
+        "reload": "새로고침",
+        "save": "저장",
+        "settings": "설정",
+        "setup_provider": "공급자 설정: {0}",
+        "sync": "지금 동기화",
+        "sync_running": "이 공급자는 현재 동기화 중입니다.",
+        "username": "사용자 이름",
+        "core": "코어",
+        "core_modules": "코어 모듈",
+        "server_info": "서버 정보",
+        "server_id": "서버 ID",
+        "server_version": "서버 버전",
+        "server_base_url": "기본 URL",
+        "server_as_addon": "홈 어시스턴트 애드온",
+        "artists_in_library": "라이브러리 포함 아티스트",
+        "albums_in_library": "라이브러리 포함 앨범",
+        "tracks_in_library": "라이브러리 포함 트랙",
+        "playlists_in_library": "라이브러리 포함 플레이리스트",
+        "radio_in_library": "라이브러리 포함 라디오",
+        "server_logging": "서버 로깅",
+        "download_log": "로그 파일 다운로드",
+        "edit_group_members": "그룹 구성원 편집",
+        "add_new_provider_button": "{0} 공급자 추가",
+        "add_group_player": "그룹 플레이어 추가",
+        "group_members": "그룹 구성원",
+        "log_level": {
+            "label": "로그 레벨",
+            "description": "이 공급자에 대한 로그 상세 정보를 설정합니다.",
+            "options": {
+                "global": "전역",
+                "info": "정보",
+                "warning": "경고",
+                "error": "오류",
+                "debug": "디버그"
+            }
+        },
+        "flow_mode": {
+            "label": "대기열 Flow 모드 활성화",
+            "description": "모든 대기열 트랙을 연속 오디오 스트림으로 전송하는 'Flow' 모드를 활성화합니다.\\n기본적으로 갭리스 및\/또는 크로스 페이딩을 지원하지 않는 플레이어 또는 플레이어가 트랙 간에 전환하는 데 문제가 있는 경우에 사용합니다."
+        },
+        "auto_play": {
+            "label": "자동 재생 (전원이 켜지면 이어서)",
+            "description": "이 플레이어가 켜져 있으면 자동으로 재생이 시작됩니다(대기열에 항목이 있는 경우)."
+        },
+        "output_channels": {
+            "label": "출력 채널 모드",
+            "description": "이 플레이어를 왼쪽 또는 오른쪽 채널만 재생하도록 구성할 수 있습니다(예: 2명의 플레이어로 스테레오 쌍을 생성하는 경우).",
+            "options": {
+                "stereo": "스테레오 (양쪽 채널)",
+                "left": "왼쪽 채널만",
+                "right": "오른쪽 채널만",
+                "mono": "모노(두 채널 모두)"
+            }
+        },
+        "volume_normalization": {
+            "label": "볼륨 노멀라이즈 활성화(EBU-R128 기반)",
+            "description": "다이나믹 레인지에 영향을 주지 않고 EBU-R128 표준에 기반한 볼륨 노멀라이제이션 활성화"
+        },
+        "volume_normalization_target": {
+            "label": "볼륨 노멀라이즈 목표 수준",
+            "description": "평균(감지) 음량을 이 목표 레벨로 조정합니다. 기본값은 -17 LUFS입니다. \\n\\n **경고:** 레벨을 너무 높게 설정하면 클리핑이 발생할 수 있습니다!"
+        },
+        "eq_bass": {
+            "label": "이퀄라이저:베이스",
+            "description": "내장된 기본 이퀄라이저를 사용하여 오디오의 저음(저음) 레벨을 조정합니다."
+        },
+        "eq_mid": {
+            "label": "이퀄라이저: 중간",
+            "description": "내장된 기본 이퀄라이저를 사용하여 오디오의 중간 레벨을 조정할 수 있습니다."
+        },
+        "eq_treble": {
+            "label": "이퀄라이저: 고음",
+            "description": "내장된 기본 이퀄라이저를 사용하여 오디오의 고음(고음) 레벨을 조정할 수 있습니다."
+        },
+        "crossfade": {
+            "label": "크로스 페이드 활성화",
+            "description": "(대기열) 트랙 간 크로스 페이드 전환을 활성화합니다."
+        },
+        "crossfade_duration": {
+            "label": "크로스 페이드 지속 시간",
+            "description": "트랙 간 크로스 페이드의 지속 시간(초)(활성화된 경우)"
+        },
+        "hide_player": {
+            "label": "사용자 인터페이스에서 이 플레이어 숨기기",
+            "description": "사용자 인터페이스에서 이 플레이어를 숨깁니다.\\n\\n이 플레이어는 여전히 제어할 수 있으며 플레이어가 속한 모든 동기화 그룹에도 표시됩니다."
+        },
+        "default_enqueue_select_artist": {
+            "label": "(라이브러리 내) 아티스트를 플레이할 때 선택할 항목입니다.",
+            "description": "아티스트를 플레이하려면 어떤 아이템을 대기열에 넣어야 하나요?",
+            "options": {
+                "library_tracks": "라이브러리 포함 플레이리스트",
+                "library_album_tracks": "(모든) 제공업체의 모든 앨범에 있는 모든 트랙",
+                "all_tracks": "(모든) 제공업체의 모든 (상단) 트랙",
+                "all_album_tracks": "(모든) 제공업체의 모든 앨범에 있는 모든 트랙"
+            }
+        },
+        "default_enqueue_select_album": {
+            "label": "(라이브러리 내) 앨범을 재생할 때 선택할 항목입니다.",
+            "description": "앨범을 재생하려면 어떤 항목을 대기열에 넣어야 하나요?",
+            "options": {
+                "library_tracks": "라이브러리 내 트랙만",
+                "all_tracks": "공급자의 앨범에 대한 모든 트랙"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "label": "재생 목록 항목에 대한 기본 대기열 옵션입니다.",
+            "description": "이 미디어 유형에 대한 기본 대기열 작업을 정의합니다(작업을 지정하지 않은 경우).",
+            "options": {
+                "play": "재생 목록 트랙을 지금 재생하고 나머지 대기열 항목을 유지합니다.",
+                "replace": "대기열을 지우고 아티스트 트랙을 재생합니다.",
+                "next": "현재 플레이\/버퍼링 중인 항목 바로 뒤에 항목을을 플레이합니다",
+                "replace_next": "대기열을 지우고 현재 재생\/버퍼링된 항목 바로 뒤에 있는 재생 목록 트랙을 재생합니다.",
+                "add": "대기열 끝에 아티스트 트랙을 추가합니다."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "앨범 항목에 대한 기본 대기열 옵션입니다.",
+            "description": "이 미디어 유형에 대한 기본 대기열 작업을 정의합니다.\\n(작업을 지정하지 않은 경우)",
+            "options": {
+                "play": "지금 앨범 트랙을 재생하고 나머지 대기열 항목을 유지합니다.",
+                "replace": "대기열을 지우고 앨범 트랙을 재생합니다.",
+                "next": "현재 플레이\/버퍼링 중인 항목 바로 뒤에 항목을을 플레이합니다",
+                "replace_next": "대기열을 지우고 현재 재생\/버퍼링된 항목 바로 뒤에 있는 재생 목록 트랙을 재생합니다.",
+                "add": "대기열 끝에 트랙을 추가합니다."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "트랙의 기본 대기열 옵션입니다.",
+            "description": "이 미디어 유형에 대한 기본 대기열 작업을 정의합니다(작업을 지정하지 않은 경우).",
+            "options": {
+                "play": "지금 앨범 트랙을 재생하고 나머지 대기열 항목을 유지합니다.",
+                "replace": "대기열을 지우고 트랙을 재생합니다.",
+                "next": "현재 플레이\/버퍼링 중인 항목 바로 뒤에 항목을을 플레이합니다",
+                "replace_next": "대기열을 지우고 현재 재생\/버퍼링된 항목 바로 뒤에 있는 재생 목록 트랙을 재생합니다.",
+                "add": "대기열 끝에 트랙을 추가합니다."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "재생 목록 항목에 대한 기본 대기열 옵션입니다.",
+            "description": "이 미디어 유형에 대한 기본 대기열 작업을 정의합니다(작업을 지정하지 않은 경우).",
+            "options": {
+                "play": "재생 목록 트랙을 지금 재생하고 나머지 대기열 항목을 유지합니다.",
+                "replace": "대기열을 지우고 재생 목록을 재생합니다.",
+                "next": "현재 재생된\/버퍼링된 항목 바로 뒤에 항목을 재생합니다.",
+                "replace_next": "대기열을 지우고 현재 재생\/버퍼링된 항목 바로 뒤에 있는 재생 목록 트랙을 재생합니다.",
+                "add": "재생 목록 대기열 끝에 트랙을 추가합니다."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "라디오 항목에 대한 기본 대기열 옵션입니다.",
+            "description": "이 미디어 유형에 대한 기본 대기열 작업을 정의합니다(작업을 지정하지 않은 경우).",
+            "options": {
+                "play": "대기열을 유지하면서 지금 라디오 방송을 재생합니다",
+                "replace": "대기열을 지우고 라디오 방송 재생",
+                "next": "현재 플레이\/버퍼링 중인 항목 바로 뒤에 항목을을 플레이합니다",
+                "replace_next": "대기열을 지우고 현재 재생\/버퍼링 중인 항목 바로 뒤에 있는 라디오 방송국을 재생합니다.",
+                "add": "대기열 끝에 라디오 방송국을 추가합니다."
+            }
+        },
+        "default": "기본값",
+        "provider_depends_on_confirm": "{0} 설정하기 전에 {1} 공급자를 구성해야 합니다. 지금 구성하시겠습니까?",
+        "category": {
+            "audio": "오디오",
+            "advanced": "고급 설정",
+            "generic": "일반 설정",
+            "announcements": "공지사항 구성",
+            "airplay": "Airplay 관련 설정"
+        },
+        "tts_pre_announce": {
+            "label": "사전안내 TTS 방송",
+            "description": "안내방송 기능으로 TTS(텍스트 음성 변환) 메시지를 보낼 때는 짧은 사전 안내음(벨 휘슬)을 추가하여 공지사항을 전합니다."
+        },
+        "announce_volume_strategy": {
+            "label": "공지사항의 볼륨 수준",
+            "description": "이 플레이어로 안내 방송을 할 때 일시적으로 볼륨을 어떻게 조정해야 하나요(아래 볼륨 값과 함께 사용)?",
+            "options": {
+                "absolute": "절대 볼륨",
+                "relative": "상대 볼륨 증가",
+                "percentual": "고정 비율로 볼륨 증가",
+                "none": "볼륨을 조정하지 마세요"
+            }
+        },
+        "announce_volume": {
+            "label": "안내 방송의 볼륨",
+            "description": "안내 방송에 사용되는 백분율, 상대적 또는 절대적 볼륨 수준."
+        },
+        "announce_volume_min": {
+            "label": "안내 방송의 최소 볼륨 수준",
+            "description": "안내 방송의 볼륨(조정)은 이 수준 이하로 내려가면 안 됩니다"
+        },
+        "announce_volume_max": {
+            "label": "안내 방송의 최대 볼륨 수준",
+            "description": "안내 방송의 볼륨(조정)은 이 수준을 넘지 않아야 합니다"
+        },
+        "icon": {
+            "label": "아이콘",
+            "description": "이 플레이어의 디자인 아이콘입니다\\n\\nhttps:\/\/pictogrammers.com\/library\/mdi\/ 참조하십시오."
+        },
+        "frontend": "유저 인터페이스",
+        "frontend_desc": "Music Assistant 사용자 인터페이스(프런트엔드)에 대한 구성 설정입니다. 이러한 설정은 장치 수준에서 저장됩니다.",
+        "theme": {
+            "label": "테마",
+            "options": {
+                "auto": "자동 (시스템 설정을 따릅니다)",
+                "light": "라이트모드",
+                "dark": "다크모드"
+            }
+        },
+        "menu_style": {
+            "label": "메뉴 스타일",
+            "options": {
+                "horizontal": "가로",
+                "vertical": "세로"
+            }
+        },
+        "menu_items": {
+            "label": "사용가능한 메뉴 항목",
+            "description": "메뉴에 표시할 항목을 구성합니다.\\n\\n설정을 비활성화하면 스스로 잠길 수 있다는 점에 유의하세요.\\n\\n이 경우 설정에 다시 액세스하려면 설정 경로를 수동으로 입력하거나 브라우저 쿠키를 지워야 하며, 이는 사용자의 책임 하에 사용해야 합니다."
+        },
+        "language": {
+            "label": "언어",
+            "options": {
+                "auto": "자동 (시스템 설정을 따릅니다)",
+                "cs": "체코어",
+                "da": "덴마크어",
+                "de": "독일어",
+                "en": "영어",
+                "fr": "프랑스어",
+                "nl": "네덜란드어",
+                "pl": "폴란드어",
+                "uk_UA": "우크라이나어",
+                "zh_CN": "중국어(간체)",
+                "en_AU": "영어(오스트레일리아)",
+                "sr": "세르비아어",
+                "sr_Latn": "세르비아어(라틴 문자)",
+                "sv_SE": "스웨덴어",
+                "en_GB": "영어(영국)",
+                "es": "스페인어",
+                "pt_PT": "포르투갈어",
+                "ko_KR": "한국어",
+                "nb": "노르웨이어",
+                "ru_RU": "러시아어"
+            }
+        },
+        "hide_settings": {
+            "label": "설정 버튼 숨기기",
+            "description": "홈 화면에서 설정 버튼을 숨깁니다.\\n\\n홈 화면과 메뉴에서 설정을 비활성화하면 자신을 잠금 상태로 만들 수 있습니다.\\n\\n그런 경우에는 설정으로 가는 경로를 수동으로 입력하거나 브라우저 쿠키를 지워서 다시 설정에 접근할 수 있습니다, 자신의 책임하에 사용하세요!"
+        },
+        "no_music_providers": "구성된 음원 공급자가 없습니다.",
+        "no_music_providers_detail": "음악 제공업체를 추가하여 Music Assistant 시작합니다.",
+        "no_player_providers": "플레이어 제공자가 구성되지 않았습니다.",
+        "no_player_providers_detail": "Music Assistant가 음악을 출력할 수 있는 장치를 선택하도록 플레이어 공급자를 구성합니다.",
+        "create_sync_group_player": "새 동기화 그룹 만들기",
+        "create_sync_group_player_desc": "동기화 그룹을 사용하면 한 번의 클릭으로 동기화할 수 있는 플레이어의 '사전 설정'을 만들 수 있습니다. 이는 종종 동기화하고 싶은 여러 플레이어가 있는 경우 유용합니다.\\n매번 플레이어를 수동으로 동기화하는 대신 동기화 그룹을 만들면 대기열이 개별 플레이어 대신 그룹 자체에 유지되는 이점이 있습니다.\\n실제로 동기화할 수 있는 플레이어만 선택할 수 있습니다(따라서 동일한 유형의 플레이어만 선택할 수 있습니다)."
+    },
+    "show_info": "정보 표시",
+    "show_select_boxes": "선택 상자 표시",
+    "shuffle": "무작위",
+    "shuffle_disabled": "무작위 비활성화됨",
+    "shuffle_enabled": "무작위 활성화됨",
+    "sort": {
+        "duration": "재생시간",
+        "position": "순위",
+        "provider": "공급자",
+        "sort_name": "이름순",
+        "track_number": "트랙 번호",
+        "year": "출시 연도",
+        "position_desc": "순위 (내림차순)",
+        "album": "앨범",
+        "artist": "아티스트",
+        "name": "이름순",
+        "name_desc": "이름순 (내림차순)",
+        "recent": "최근에 추가됨",
+        "year_desc": "발매년도 (내림차순)",
+        "duration_desc": "재생시간 (내림차순)",
+        "original": "오리지널",
+        "sort_name_desc": "이름순 (내림차순)",
+        "timestamp_added": "최신순",
+        "timestamp_added_desc": "최신순 (내림차순)",
+        "timestamp_modified": "업데이트순",
+        "timestamp_modified_desc": "업데이트순 (내림차순)",
+        "last_played": "최근 재생순",
+        "last_played_desc": "최근 재생순 (내림차순)",
+        "play_count": "재생 횟수",
+        "play_count_desc": "재생 횟수 (내림차순)",
+        "artist_name": "아티스트",
+        "artist_name_desc": "아티스트 (내림차순)"
+    },
+    "state": {
+        "idle": "idle",
+        "off": "꺼짐",
+        "paused": "일시 정지",
+        "playing": "재생 중"
+    },
+    "stream_details": "스트림 세부 정보",
+    "sync_now": "지금 {0} 동기화하세요",
+    "sync_player_to": "이 플레이어를 동기화합니다:",
+    "sync_running": "하나 이상의 음악 제공업체가 동기화 중입니다.",
+    "tooltip": {
+        "album_artist_filter": "앨범 아티스트 필터 전환",
+        "explicit": "명백한",
+        "filter_library": "라이브러리\/즐겨찾기 필터 전환",
+        "library": "라이브러리\/즐겨찾기 전환",
+        "linked": "이 공급자항목은 현재 항목 세부정보에 연결되어 있습니다.",
+        "refresh": "항목 목록 새로 고침",
+        "refresh_new_content": "새로운 콘텐츠가 제공됩니다. 목록을 새로 고치려면 클릭하세요.",
+        "search": "검색 입력 표시\/숨기기",
+        "select_items": "여러 항목 선택",
+        "sort_options": "정렬 옵션",
+        "toggle_view_mode": "보기 모드 목록\/썸네일 전환",
+        "filter_favorites": "즐겨찾기만 표시",
+        "favorite": "즐겨찾기로 표시\/표시 해제",
+        "open_provider_link": "공급자의 웹 사이트에서 이 항목을 엽니다.",
+        "collapse_expand": "이 목록 접기\/펼치기",
+        "back": "뒤로",
+        "show_menu": "메뉴 표시\/숨기기",
+        "search_filter_active": "현재 검색 결과를 필터링하고 있습니다.",
+        "play_sample": "간편 재생",
+        "album_type": "앨범 유형",
+        "loading": "서버가 요청을 처리하거나 음악을 동기화하고 있습니다",
+        "primary_image": "이 이미지 유형의 기본 이미지입니다"
+    },
+    "topresult": "상위 결과",
+    "track": "트랙",
+    "track_number": "디스크 {0} 트랙 {1}",
+    "tracks": "트랙",
+    "try_global_search": "전역 검색 시도",
+    "type_to_search": "검색하려면 여기에 입력하세요...",
+    "volume_normalization": "볼륨 노멀라이즈",
+    "play_now_replace": "지금 플레이(대기열 지우기)",
+    "currently_playing": "현재 재생 중",
+    "favorites_add": "즐겨찾기에 추가",
+    "favorites_remove": "즐겨찾기에서 제거",
+    "confirm_library_remove": "라이브러리에서 이 항목을 삭제하시겠습니까? 이 항목에 따라 모든 항목도 재귀적으로 제거됩니다. 이렇게 하면 라이브러리에서 이 항목만 제거된다는 점에 유의하세요. 디스크에 있는 음악 파일인 경우 다음 동기화 시 다시 돌아올 수 있습니다.",
+    "check_item_on_provider": "{1}에서 {0} 선택",
+    "check_item_in_library": "라이브러리의 {0} 선택",
+    "media_details": "미디어 세부 정보",
+    "mapped_providers": "공급자 세부 정보",
+    "item_in_library": "이 항목은 라이브러리에서 사용할 수 있습니다.",
+    "back": "뒤로",
+    "recently_played": "최근 재생됨",
+    "radiobrowser_by_popularity": "인기도별",
+    "radiobrowser_by_country": "국가별",
+    "radiobrowser_by_tag": "태그별",
+    "load_more_items": "더 많은 항목 불러오기...",
+    "radio": "라디오",
+    "muted": "음소거",
+    "enter_name": "새로운 (사용자 정의) 이름을 입력하세요",
+    "image_url": "이미지나 아이콘의 URL을 입력하세요 (선택 사항)",
+    "invalid_input": "입력이 잘못되었습니다",
+    "new_playlist": "새 재생 목록",
+    "create_playlist_on": "{0}에서 새 재생목록 만들기",
+    "view": {
+        "list": "리스트 보기",
+        "panel": "썸네일 보기",
+        "panel_compact": "간략한 썸네일 보기"
+    },
+    "play_replace": "즉시 재생 (대기열 지우기)",
+    "played": "재생됨",
+    "background_task_added": "이 작업은 백그라운드에서 서버에 의해 수행되며 완료하는 데 다소 시간이 걸릴 수 있습니다. 서버 로그에서 진행 상황을 주시하십시오.",
+    "images": "이미지",
+    "image_type": "타입",
+    "image_source": "소스",
+    "image_make_primary": "기본으로 설정",
+    "update_metadata": "메타데이터 업데이트",
+    "cancel": "취소",
+    "transfer_queue": "대기열을 다른 플레이어로 전송"
+}

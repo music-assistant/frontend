@@ -164,7 +164,7 @@
         },
         "flow_mode": {
             "label": "Habilitar el modo de cola continua",
-            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y\/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
+            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y\/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
         },
         "auto_play": {
             "label": "Reproducción automática (reanudación al encender)",
@@ -186,7 +186,7 @@
         },
         "volume_normalization_target": {
             "label": "Nivel objetivo para la normalización del volumen",
-            "description": "Ajuste el volumen promedio (percibido) a este nivel objetivo, el valor predeterminado es -17 LUFS \n\n **ADVERTENCIA:** ¡Ajustar el nivel demasiado alto puede provocar recortes!"
+            "description": "Ajuste el volumen promedio (percibido) a este nivel objetivo, el valor predeterminado es -17 LUFS \\n\\n **ADVERTENCIA:** ¡Ajustar el nivel demasiado alto puede provocar recortes!"
         },
         "eq_bass": {
             "label": "Ecualizador: graves",
@@ -210,7 +210,7 @@
         },
         "hide_player": {
             "label": "Ocultar este reproductor en la interfaz de usuario",
-            "description": "Oculte este reproductor en la interfaz de usuario. \n\nTenga en cuenta que aún se puede controlar y también aparecerá en cualquier grupo de sincronización al que pertenezca el reproductor."
+            "description": "Oculte este reproductor en la interfaz de usuario. \\n\\nTenga en cuenta que aún se puede controlar y también aparecerá en cualquier grupo de sincronización al que pertenezca el reproductor."
         },
         "default_enqueue_select_artist": {
             "label": "Elementos que se seleccionan al reproducir un artista (de la biblioteca).",
@@ -322,7 +322,7 @@
         },
         "icon": {
             "label": "Icono",
-            "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Icono Material Design para este reproductor. \\n\\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Interfaz de Usuario",
         "frontend_desc": "Ajustes de configuración de la interfaz de usuario (frontend) de Music Assistant. Tenga en cuenta que estos ajustes se almacenan a nivel de dispositivo.",
@@ -343,7 +343,7 @@
         },
         "menu_items": {
             "label": "Elementos de menú habilitados",
-            "description": "Configure qué elementos mostrar en el menú.\n\nTen en cuenta que si desactivas los ajustes puedes bloquearte.\n\nEn ese caso, tendrá que introducir manualmente la ruta a la configuración o borrar las cookies del navegador para acceder de nuevo a la configuración."
+            "description": "Configure qué elementos mostrar en el menú.\\n\\nTen en cuenta que si desactivas los ajustes puedes bloquearte.\\n\\nEn ese caso, tendrá que introducir manualmente la ruta a la configuración o borrar las cookies del navegador para acceder de nuevo a la configuración."
         },
         "language": {
             "label": "Idioma",
@@ -363,12 +363,16 @@
                 "sr_Latn": "Serbio (latín)",
                 "sv_SE": "Sueco",
                 "en_GB": "Inglés (Reino Unido)",
-                "es": "Español"
+                "es": "Español",
+                "pt_PT": "Portugués",
+                "ko_KR": "Coreano",
+                "nb": "Noruego",
+                "ru_RU": "Ruso"
             }
         },
         "hide_settings": {
             "label": "Ocultar botón de configuración",
-            "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\nTenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
+            "description": "Ocultar el botón de configuración en la pantalla de inicio. \\n\\nTenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \\n\\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
         },
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
@@ -480,5 +484,7 @@
     "background_task_added": "Esta acción es realizada por el servidor en segundo plano y puede tardar algún tiempo en completarse. Mantén un ojo en el registro del servidor para seguir el progreso.",
     "images": "Imágenes",
     "image_type": "Tipo",
-    "image_make_primary": "Hacer primario"
+    "image_make_primary": "Hacer primario",
+    "update_metadata": "Actualizar metadatos",
+    "cancel": "Cancelar"
 }

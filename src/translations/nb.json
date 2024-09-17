@@ -165,7 +165,7 @@
         },
         "flow_mode": {
             "label": "Aktiver køflytmodus",
-            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\nBrukes for avspillere som ikke støtter gapless og\/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
+            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\\nBrukes for avspillere som ikke støtter gapless og\/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
         },
         "auto_play": {
             "label": "Automatisk avspilling (gjenopptas når den slås på)",
@@ -323,7 +323,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Ikon i materialdesign for denne spilleren.\n\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Ikon i materialdesign for denne spilleren.\\n\\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Brukergrensesnitt",
         "frontend_desc": "Konfigurasjonsinnstillinger for Music Assistant-brukergrensesnittet (frontend). Merk at disse innstillingene lagres på enhetsnivå.",
@@ -344,7 +344,7 @@
         },
         "menu_items": {
             "label": "Aktiverte menyelementer",
-            "description": "Konfigurer hvilke elementer som skal vises i menyen. \n\n Merk at hvis du deaktiverer innstillinger, kan du låse deg ute. \n\n I så fall må du angi banen til innstillinger manuelt eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen, bruk på egen risiko."
+            "description": "Konfigurer hvilke elementer som skal vises i menyen. \\n\\n Merk at hvis du deaktiverer innstillinger, kan du låse deg ute. \\n\\n I så fall må du angi banen til innstillinger manuelt eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen, bruk på egen risiko."
         },
         "language": {
             "label": "Språk",
@@ -365,19 +365,22 @@
                 "sv_SE": "Svensk",
                 "en_GB": "Engelsk (Storbritannia)",
                 "es": "Spansk",
-                "pt_PT": "Portugisisk"
+                "pt_PT": "Portugisisk",
+                "ko_KR": "Koreansk",
+                "nb": "Norsk",
+                "ru_RU": "Russisk"
             }
         },
         "hide_settings": {
             "label": "Skjul innstillingsknappen",
-            "description": "Skjul innstillingsknappen på startskjermen.\n\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\n\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
+            "description": "Skjul innstillingsknappen på startskjermen.\\n\\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\\n\\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
         },
         "no_music_providers": "Ingen musikkleverandører er konfigurert",
         "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine.",
         "no_player_providers": "Ingen spillerleverandører er konfigurert",
         "no_player_providers_detail": "Konfigurer spillerleverandører for å velge enheter der Music Assistant kan spille av musikken din.",
         "create_sync_group_player": "Opprett en ny synkroniseringsgruppe",
-        "create_sync_group_player_desc": "Med en synkroniseringsgruppe oppretter du en \"forhåndsinnstilling\" av spillere som kan synkroniseres med ett enkelt klikk. Dette er nyttig hvis du har flere spillere som du ofte ønsker å synkronisere.\nNår du oppretter en synkroniseringsgruppe i stedet for å synkronisere spillerne manuelt hver gang, har det den fordelen at køen holdes på selve gruppen i stedet for på de enkelte spillerne.\nMerk at du bare kan velge spillere som faktisk kan synkroniseres (altså spillere av samme type)."
+        "create_sync_group_player_desc": "Med en synkroniseringsgruppe oppretter du en \"forhåndsinnstilling\" av spillere som kan synkroniseres med ett enkelt klikk. Dette er nyttig hvis du har flere spillere som du ofte ønsker å synkronisere.\\nNår du oppretter en synkroniseringsgruppe i stedet for å synkronisere spillerne manuelt hver gang, har det den fordelen at køen holdes på selve gruppen i stedet for på de enkelte spillerne.\\nMerk at du bare kan velge spillere som faktisk kan synkroniseres (altså spillere av samme type)."
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",

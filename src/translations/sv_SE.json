@@ -363,7 +363,11 @@
                 "sr_Latn": "Serbiska (latinsk)",
                 "sv_SE": "Svenska",
                 "en_GB": "Engelska",
-                "es": "Spanska"
+                "es": "Spanska",
+                "pt_PT": "Portugisiska",
+                "ko_KR": "Koreanska",
+                "nb": "Norska",
+                "ru_RU": "Ryska"
             }
         },
         "hide_settings": {
@@ -476,5 +480,6 @@
     },
     "play_replace": "Spela nu (rensa kö)",
     "played": "Spelade",
-    "background_task_added": "Åtgärden utförs av servern i bakgrunden och kan ta en viss tid att slutföra. Håll ett öga på serverloggen för att se hur det går."
+    "background_task_added": "Åtgärden utförs av servern i bakgrunden och kan ta en viss tid att slutföra. Håll ett öga på serverloggen för att se hur det går.",
+    "update_metadata": "Uppdatera metadata"
 }

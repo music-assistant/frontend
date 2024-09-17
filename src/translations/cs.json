@@ -324,7 +324,11 @@
                 "sr_Latn": "Srbština (Latinka)",
                 "sv_SE": "Švédský",
                 "en_GB": "Angličtina (Spojené Království)",
-                "es": "Španělština"
+                "es": "Španělština",
+                "pt_PT": "Portugalština",
+                "ko_KR": "Korejština",
+                "nb": "Norština",
+                "ru_RU": "Ruština"
             }
         },
         "hide_settings": {
@@ -412,5 +416,6 @@
     "muted": "ztlumeno",
     "invalid_input": "Vstup byl neplatný",
     "new_playlist": "Nový seznam skladeb",
-    "create_playlist_on": "Vytvořit nový playlist na {0}"
+    "create_playlist_on": "Vytvořit nový playlist na {0}",
+    "cancel": "Zrušit"
 }
