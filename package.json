@@ -24,7 +24,7 @@
     "vue-audio-better": "3.0.1",
     "vue-i18n": "9.14.0",
     "vue-router": "4.4.5",
-    "vuetify": "3.7.1",
+    "vuetify": "3.7.2",
     "websocket-ts": "2.1.5"
   },
   "devDependencies": {
