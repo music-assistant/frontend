@@ -363,7 +363,11 @@
                 "sr_Latn": "Sérvio (latim)",
                 "sv_SE": "Sueco",
                 "en_GB": "Inglês (Reino Unido)",
-                "es": "Espanhol"
+                "es": "Espanhol",
+                "pt_PT": "Português",
+                "ko_KR": "Coreano",
+                "nb": "Norueguês",
+                "ru_RU": "Russo"
             }
         },
         "hide_settings": {
@@ -482,5 +486,6 @@
     "image_type": "Tipo",
     "image_source": "Fonte",
     "image_make_primary": "Tornar primário",
-    "update_metadata": "Atualizar metadados"
+    "update_metadata": "Atualizar metadados",
+    "cancel": "Cancelar"
 }
