@@ -12,7 +12,7 @@
     "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@intlify/unplugin-vue-i18n": "5.2.0",
+    "@intlify/unplugin-vue-i18n": "4.0.0",
     "@mdi/font": "7.4.47",
     "@mdi/js": "7.4.47",
     "@tauri-apps/api": "^2.0.0-rc.5",
@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@fontsource/roboto": "5.1.0",
-    "@intlify/unplugin-vue-i18n": "5.2.0",
+    "@intlify/unplugin-vue-i18n": "4.0.0",
     "@tauri-apps/cli": "^2.0.0-rc.16",
     "@types/color": "3.0.6",
     "@types/node": "22.5.5",
