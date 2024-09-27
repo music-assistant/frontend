@@ -51,7 +51,7 @@
                   'version' in store.curQueueItem.media_item &&
                   store.curQueueItem.media_item.version
                 "
-                >( {{ store.curQueueItem.media_item.version }})</span
+                >({{ store.curQueueItem.media_item.version }})</span
               >
             </v-card-title>
 
@@ -592,7 +592,9 @@ const openQueueMenu = function (evt: Event) {
       label: 'transfer_queue',
       icon: 'mdi-swap-horizontal',
       subItems: Object.values(api.queues)
-        .filter((p) => p.queue_id != store.activePlayerQueue?.queue_id)
+        .filter(
+          (p) => p.queue_id != store.activePlayerQueue?.queue_id && p.available,
+        )
         .map((p) => {
           return {
             label: p.display_name,
@@ -605,7 +607,10 @@ const openQueueMenu = function (evt: Event) {
               store.activePlayerId = p.queue_id;
             },
           };
-        }),
+        })
+        .sort((a, b) =>
+          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
+        ),
     },
   ];
   eventbus.emit('contextmenu', {

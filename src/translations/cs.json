@@ -164,7 +164,7 @@
         },
         "flow_mode": {
             "label": "Povolení režimu toku fronty",
-            "description": "Povolte režim „flow“, kde jsou všechny stopy ve frontě odesílány jako nepřetržitý zvukový stream.\n Použijte pro přehrávače, které nativně nepodporují funkci gapless a\/nebo crossfading, nebo pokud má přehrávač potíže s přechodem mezi skladbami."
+            "description": "Povolte režim „flow“, kde jsou všechny stopy ve frontě odesílány jako nepřetržitý zvukový stream.\\n Použijte pro přehrávače, které nativně nepodporují funkci gapless a\/nebo crossfading, nebo pokud má přehrávač potíže s přechodem mezi skladbami."
         },
         "auto_play": {
             "label": "Automatické přehrávání (obnovení po zapnutí)",
@@ -186,7 +186,7 @@
         },
         "volume_normalization_target": {
             "label": "Cílová úroveň pro normalizaci hlasitosti",
-            "description": "Upravit průměrnou (vnímanou) hlasitost na tuto cílovou úroveň, výchozí je -17 LUFS \n\n **UPOZORNĚNÍ:** Nastavení příliš vysoké úrovně může způsobit oříznutí signálu!"
+            "description": "Upravit průměrnou (vnímanou) hlasitost na tuto cílovou úroveň, výchozí je -17 LUFS \\n\\n **UPOZORNĚNÍ:** Nastavení příliš vysoké úrovně může způsobit oříznutí signálu!"
         },
         "eq_bass": {
             "label": "Ekvalizér: basy",
@@ -210,7 +210,7 @@
         },
         "hide_player": {
             "label": "Skrýt tento přehrávač v uživatelském rozhraní",
-            "description": "Skrýt tento přehrávač v uživatelském rozhraní. \n\nPoznamenejte si, že jej lze stále ovládat a že se zobrazí i ve všech synchronizačních skupinách, do kterých přehrávač patří."
+            "description": "Skrýt tento přehrávač v uživatelském rozhraní. \\n\\nPoznamenejte si, že jej lze stále ovládat a že se zobrazí i ve všech synchronizačních skupinách, do kterých přehrávač patří."
         },
         "default_enqueue_select_artist": {
             "label": "Položky k výběru při přehrávání interpreta  (v knihovně).",
@@ -324,7 +324,11 @@
                 "sr_Latn": "Srbština (Latinka)",
                 "sv_SE": "Švédský",
                 "en_GB": "Angličtina (Spojené Království)",
-                "es": "Španělština"
+                "es": "Španělština",
+                "pt_PT": "Portugalština",
+                "ko_KR": "Korejština",
+                "nb": "Norština",
+                "ru_RU": "Ruština"
             }
         },
         "hide_settings": {
@@ -412,5 +416,6 @@
     "muted": "ztlumeno",
     "invalid_input": "Vstup byl neplatný",
     "new_playlist": "Nový seznam skladeb",
-    "create_playlist_on": "Vytvořit nový playlist na {0}"
+    "create_playlist_on": "Vytvořit nový playlist na {0}",
+    "cancel": "Zrušit"
 }

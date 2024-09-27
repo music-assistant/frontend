@@ -508,6 +508,11 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
 };
 
 const markdownToHtml = function (text: string) {
+  // text = text.replaceAll(/\\n\\n/g, "<br /><br />").replace(/\\n/g, "<br /> ");
+  text = text
+    .replaceAll(/\\n/g, '<br />')
+    .replaceAll('\n', '<br />')
+    .replaceAll(' \\', '<br />');
   return marked(text);
 };
 

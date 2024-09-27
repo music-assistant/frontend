@@ -165,7 +165,7 @@
         },
         "flow_mode": {
             "label": "\"flow mode\" inschakelen",
-            "description": "Schakel de \"flow\" modus in waarbij alle tracks in de wachtrij als een continue audiostream worden verzonden. \nGebruik dit voor spelers die gapless en\/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen tracks."
+            "description": "Schakel de \"flow\" modus in waarbij alle tracks in de wachtrij als een continue audiostream worden verzonden. \\nGebruik dit voor spelers die gapless en\/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen tracks."
         },
         "auto_play": {
             "label": "Automatisch afspelen (hervatten bij inschakelen)",
@@ -187,7 +187,7 @@
         },
         "volume_normalization_target": {
             "label": "Doelniveau voor volumenormalisatie",
-            "description": "Pas de gemiddelde (waargenomen) luidheid aan naar dit doelniveau, standaard is -17 LUFS \n\n **WAARSCHUWING:** Als u het niveau te hoog instelt, kan dit leiden tot clipping!"
+            "description": "Pas de gemiddelde (waargenomen) luidheid aan naar dit doelniveau, standaard is -17 LUFS \\n\\n **WAARSCHUWING:** Als u het niveau te hoog instelt, kan dit leiden tot clipping!"
         },
         "eq_bass": {
             "label": "Equalizer: bas",
@@ -211,7 +211,7 @@
         },
         "hide_player": {
             "label": "Verberg deze speler in de gebruikersinterface",
-            "description": "Verberg deze speler in de gebruikersinterface. \n\nMerk op dat het nog steeds kan worden bestuurd en het zal ook verschijnen in alle synchronisatiegroepen waartoe de speler behoort."
+            "description": "Verberg deze speler in de gebruikersinterface. \\n\\nMerk op dat het nog steeds kan worden bestuurd en het zal ook verschijnen in alle synchronisatiegroepen waartoe de speler behoort."
         },
         "default_enqueue_select_artist": {
             "label": "Te selecteren items wanneer je een artiest (uit de bibliotheek) afspeelt.",
@@ -323,7 +323,7 @@
         },
         "icon": {
             "label": "Pictogram",
-            "description": "Material design-pictogram voor deze speler. \n\nZie https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design-pictogram voor deze speler. \\n\\nZie https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Gebruikersinterface",
         "frontend_desc": "Configuratie-instellingen voor de gebruikersinterface van de muziekassistent (frontend). Houd er rekening mee dat deze instellingen op apparaatniveau worden opgeslagen.",
@@ -344,7 +344,7 @@
         },
         "menu_items": {
             "label": "Ingeschakelde menu-items",
-            "description": "Configureer welke items in het menu moeten worden weergegeven.\n\n Merk op dat je jezelf kunt uitsluiten als je instellingen uitschakelt. \n\nIn dat geval moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen om weer toegang te krijgen tot de instellingen, gebruik op eigen risico."
+            "description": "Configureer welke items in het menu moeten worden weergegeven.\\n\\n Merk op dat je jezelf kunt uitsluiten als je instellingen uitschakelt. \\n\\nIn dat geval moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen om weer toegang te krijgen tot de instellingen, gebruik op eigen risico."
         },
         "language": {
             "label": "Taal",
@@ -364,12 +364,16 @@
                 "sr_Latn": "Servisch (Latijn)",
                 "sv_SE": "Zweeds",
                 "en_GB": "Engels (Verenigd Koninkrijk)",
-                "es": "Spaans"
+                "es": "Spaans",
+                "pt_PT": "Portugees",
+                "ko_KR": "Koreaans",
+                "nb": "Noors",
+                "ru_RU": "Russisch"
             }
         },
         "hide_settings": {
             "label": "Verberg knop naar instellingen",
-            "description": "Verberg de instellingenknop op het startscherm.\n\n Let op: als je de instellingen op het startscherm en in het menu uitschakelt, kun je jezelf buitensluiten. \n\nIn dat geval moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen om weer toegang te krijgen tot de instellingen, gebruik op eigen risico!"
+            "description": "Verberg de instellingenknop op het startscherm.\\n\\n Let op: als je de instellingen op het startscherm en in het menu uitschakelt, kun je jezelf buitensluiten. \\n\\nIn dat geval moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen om weer toegang te krijgen tot de instellingen, gebruik op eigen risico!"
         },
         "no_music_providers": "Geen muziekaanbieders geconfigureerd",
         "no_music_providers_detail": "Begin je Music Assistant-ervaring door je muziekproviders toe te voegen.",
@@ -477,5 +481,6 @@
     },
     "play_replace": "Nu afspelen (queue leegmaken)",
     "played": "Gespeeld",
-    "background_task_added": "De actie wordt door de server op de achtergrond uitgevoerd en kan enige tijd in beslag nemen. Houd het serverlogboek in de gaten voor de voortgang"
+    "background_task_added": "De actie wordt door de server op de achtergrond uitgevoerd en kan enige tijd in beslag nemen. Houd het serverlogboek in de gaten voor de voortgang",
+    "cancel": "Annuleren"
 }

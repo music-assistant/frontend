@@ -134,7 +134,7 @@ import { itemIsAvailable } from '@/plugins/api/helpers';
 export interface ContextMenuItem {
   label: string;
   labelArgs?: Array<string | number>;
-  action?: CallableFunction;
+  action?: () => void;
   icon?: string;
   disabled?: boolean;
   hide?: boolean;

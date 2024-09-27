@@ -28,7 +28,7 @@
             clearable
             multiple
             :items="syncPlayers"
-            item-title="name"
+            item-title="display_name"
             item-value="player_id"
             :label="$t('settings.group_members')"
             required

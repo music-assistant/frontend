@@ -95,8 +95,9 @@
         <template #prepend>
           <provider-icon
             :domain="item.domain"
-            :size="40"
+            :size="50"
             class="listitem-media-thumb"
+            style="margin-top: 5px; margin-bottom: 5px"
           />
         </template>
 

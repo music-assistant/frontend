@@ -78,6 +78,7 @@ a {
   height: 50px;
   width: 50px;
   margin-right: 10px;
+  align-content: center;
 }
 
 .v-slider.v-input--horizontal .v-input__control {
