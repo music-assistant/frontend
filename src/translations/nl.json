@@ -367,7 +367,9 @@
                 "pt_PT": "Portugees",
                 "ko_KR": "Koreaans",
                 "nb": "Noors",
-                "ru_RU": "Russisch"
+                "ru_RU": "Russisch",
+                "pt_BR": "Portugees (Brazilië)",
+                "sl_SI": "Sloveens"
             }
         },
         "hide_settings": {

@@ -367,7 +367,9 @@
                 "pt_PT": "Português",
                 "ko_KR": "Coreano",
                 "nb": "Norueguês",
-                "ru_RU": "Russo"
+                "ru_RU": "Russo",
+                "pt_BR": "Português (Brasil)",
+                "sl_SI": "Esloveno"
             }
         },
         "hide_settings": {

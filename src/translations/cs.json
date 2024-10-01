@@ -328,7 +328,9 @@
                 "pt_PT": "Portugalština",
                 "ko_KR": "Korejština",
                 "nb": "Norština",
-                "ru_RU": "Ruština"
+                "ru_RU": "Ruština",
+                "pt_BR": "Portugalština (Brazílie)",
+                "sl_SI": "Slovinština"
             }
         },
         "hide_settings": {
