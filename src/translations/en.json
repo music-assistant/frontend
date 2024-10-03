@@ -532,7 +532,7 @@
     "snapcast_config_initial volume_description": "Volume assigned to new snapclients [percent]",
     "snapcast_config_transport_codec_description": "This is the codec used by snapserver to send audio to clients.",
     "snapcast_config_chunk_ms_description": "Default source stream read chunk size [ms].\\n\\nThe server will continuously read this number of milliseconds from the source into buffer and pass this buffer to the encoder. The encoded buffer is sent to the clients. Some codecs have a higher latency and will need more data, e.g. Flac will need ~26ms chunks",
-    "snapcast_config_external_server_description": "Music Assistant by default already includes a Snapserver. \\n\\n Checking this option allows you to connect to your own/external existing Snapserver and not use the builtin one provided by Music Assistant."
+    "snapcast_config_external_server_description": "Music Assistant by default already includes a Snapserver.\\n\\n Checking this option allows you to connect to your own/external existing Snapserver and not use the builtin one provided by Music Assistant."
 
 
 }
