@@ -529,7 +529,9 @@
     "cancel": "Cancel",
     "transfer_queue": "Transfer queue to another player",
     "snapcast_config_buffer_size_description": "Buffer[ms]. The end-to-end latency, from capturing a sample on the snapserver until the sample is played-out on the client.",
-    "snapcast_config_buffer_initial volume_description": "Volume assigned to new snapclients [percent]",
-    "snapcast_config_buffer_transport_codec_description": "This is the codec used by snapserver to send audio to clients."
+    "snapcast_config_initial volume_description": "Volume assigned to new snapclients [percent]",
+    "snapcast_config_transport_codec_description": "This is the codec used by snapserver to send audio to clients.",
+    "snapcast_config_chunk_ms_description": "Default source stream read chunk size [ms].\\n\\nThe server will continuously read this number of milliseconds from the source into buffer and pass this buffer to the encoder. The encoded buffer is sent to the clients. Some codecs have a higher latency and will need more data, e.g. Flac will need ~26ms chunks"
+
 
 }
