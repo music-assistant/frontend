@@ -293,7 +293,8 @@
             "advanced": "Advanced settings",
             "generic": "Generic settings",
             "announcements": "Announcements configuration",
-            "airplay": "Airplay specific settings"
+            "airplay": "Airplay specific settings",
+            "builtin_snapserver": "Built-in Snapserver Settings"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -414,6 +415,39 @@
         "volume_normalization_fixed_gain_radio": {
             "label": "Fixed\/fallback gain adjustment for radio",
             "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalization method' setting).\\nUse a positive value to increase the volume, a negative value to decrease the volume.\\n\\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
+        },
+        "snapcast_server_built_in_buffer_size": {
+            "label": "Buffer size",
+            "description": "Buffer [ms]. The end-to-end latency, from capturing a sample on the snapserver until the sample is played-out on the client."
+        },
+        "snapcast_server_built_in_initial_volume": {
+            "label": "Initial volume",
+            "description": "Volume [percent] assigned to new snapclients."
+        },
+        "snapcast_server_built_in_codec": {
+            "label": "Default transport codec",
+            "description": "This is the codec used by snapserver to send audio to clients."
+        },
+        "snapcast_server_built_in_chunk_ms": {
+            "label": "Chunk size",
+            "description": "Default source stream read chunk size [ms].\\n\\nThe server will continuously read this number of milliseconds from the source into buffer and pass this buffer to the encoder. The encoded buffer is sent to the clients. Some codecs have a higher latency and will need more data, e.g. Flac will need ~26ms chunks"
+        },
+        "snapcast_server_built_in_send_muted": {
+            "label": "Send audio to muted clients"
+        },
+        "snapcast_use_external_server": {
+            "label": "Use existing Snapserver",
+            "description": "Music Assistant by default already includes a Snapserver.\\n\\n Checking this option allows you to connect to your own/external existing Snapserver and not use the builtin one provided by Music Assistant."
+        },
+        "snapcast_server_host": {
+            "label": "Snapcast server IP"
+        },
+        "snapcast_server_control_port": {
+            "label": "Snapcast control port"
+        },
+        "snapcast_stream_idle_threshold": {
+            "label": "Snapcast idle threshold stream parameter",
+            "description": "The duration [ms] between the stream becomes mute and the stream is considered idle. A too small value may cause problems with TTS announcements."
         }
     },
     "show_info": "Show info",
@@ -533,6 +567,4 @@
     "snapcast_config_transport_codec_description": "This is the codec used by snapserver to send audio to clients.",
     "snapcast_config_chunk_ms_description": "Default source stream read chunk size [ms].\\n\\nThe server will continuously read this number of milliseconds from the source into buffer and pass this buffer to the encoder. The encoded buffer is sent to the clients. Some codecs have a higher latency and will need more data, e.g. Flac will need ~26ms chunks",
     "snapcast_config_external_server_description": "Music Assistant by default already includes a Snapserver.\\n\\n Checking this option allows you to connect to your own/external existing Snapserver and not use the builtin one provided by Music Assistant."
-
-
 }
