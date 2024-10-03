@@ -527,5 +527,9 @@
     "image_make_primary": "Make primary",
     "update_metadata": "Update metadata",
     "cancel": "Cancel",
-    "transfer_queue": "Transfer queue to another player"
+    "transfer_queue": "Transfer queue to another player",
+    "snapcast_config_buffer_size_description": "Buffer[ms]. The end-to-end latency, from capturing a sample on the snapserver until the sample is played-out on the client.",
+    "snapcast_config_buffer_initial volume_description": "Volume assigned to new snapclients [percent]",
+    "snapcast_config_buffer_transport_codec_description": "This is the codec used by snapserver to send audio to clients."
+
 }
