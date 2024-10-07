@@ -483,5 +483,7 @@
     "play_replace": "Nu afspelen (queue leegmaken)",
     "played": "Gespeeld",
     "background_task_added": "De actie wordt door de server op de achtergrond uitgevoerd en kan enige tijd in beslag nemen. Houd het serverlogboek in de gaten voor de voortgang",
-    "cancel": "Annuleren"
+    "cancel": "Annuleren",
+    "dont_stop_the_music_enabled": "Don't stop the music is ingeschakeld",
+    "dont_stop_the_music_disabled": "Don't stop the music is uitgeschakeld"
 }

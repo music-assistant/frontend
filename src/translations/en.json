@@ -527,5 +527,7 @@
     "image_make_primary": "Make primary",
     "update_metadata": "Update metadata",
     "cancel": "Cancel",
-    "transfer_queue": "Transfer queue to another player"
+    "transfer_queue": "Transfer queue to another player",
+    "dont_stop_the_music_enabled": "Don't stop the music is enabled",
+    "dont_stop_the_music_disabled": "Don't stop the music is disabled"
 }

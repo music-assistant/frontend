@@ -719,6 +719,14 @@ export class MusicAssistantApi {
       this.queueCommandRepeat(queueId, RepeatMode.OFF);
     }
   }
+  public queueCommandDontStopTheMusic(queueId: string, dont_stop_the_music_enabled: boolean) {
+    // Configure dont_stop_the_music setting on the the queue.
+    this.playerQueueCommand(queueId, 'dont_stop_the_music', { dont_stop_the_music_enabled });
+  }
+  public queueCommandDontStopTheMusicToggle(queueId: string) {
+    // Toggle dont_stop_the_music mode of a queue
+    this.queueCommandDontStopTheMusic(queueId, !this.queues[queueId].dont_stop_the_music_enabled);
+  }
   public playerQueueCommand(
     queue_id: string,
     command: string,
