@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Grupo",
         "player": "Reproductor",
-        "stereo_pair": "Pareja estéreo"
+        "stereo_pair": "Pareja estéreo",
+        "sync_group": "Grupo de sincronización"
     },
     "players": "Reproductores",
     "playlist": "Lista de reproducción",
@@ -367,7 +368,9 @@
                 "pt_PT": "Portugués",
                 "ko_KR": "Coreano",
                 "nb": "Noruego",
-                "ru_RU": "Ruso"
+                "ru_RU": "Ruso",
+                "pt_BR": "Portugués (Brasil)",
+                "sl_SI": "Esloveno"
             }
         },
         "hide_settings": {
@@ -377,7 +380,23 @@
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
         "no_player_providers": "No hay Proveedores de Música configurados",
-        "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música."
+        "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música.",
+        "create_sync_group_player": "Crear un nuevo grupo de sincronización",
+        "create_sync_group_player_desc": "Con un grupo de sincronización se crea un \"preajuste\" de reproductores que se pueden sincronizar con un solo clic. Esto es útil si tienes varios reproductores que quieres sincronizar a menudo.\\nCrear un grupo de sincronización en lugar de sincronizar manualmente los reproductores cada vez tiene la ventaja de que la cola se mantiene en el propio grupo, en lugar de en los reproductores individuales.\\nTenga en cuenta que sólo puede seleccionar los reproductores que realmente se pueden sincronizar (es decir, reproductores del mismo tipo).",
+        "volume_normalization_radio": {
+            "label": "Método de normalización de volumen a utilizar para transmisiones de radio",
+            "options": {
+                "disabled": "Deshabilitado",
+                "dynamic": "Forzar Dinamico"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Método de normalización de volumen para utilizar en pistas",
+            "options": {
+                "disabled": "Deshabilitado",
+                "fixed_gain": "Corrección de ganancia fija"
+            }
+        }
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -408,7 +427,9 @@
         "last_played": "Última reproducción",
         "last_played_desc": "Última reproducción (descendente)",
         "play_count": "Conteo de reproducciones",
-        "play_count_desc": "Conteo de reproducciones (descendente)"
+        "play_count_desc": "Conteo de reproducciones (descendente)",
+        "artist_name": "Artista del álbum",
+        "artist_name_desc": "Artista del álbum (descendente)"
     },
     "state": {
         "idle": "inactivo",
@@ -484,7 +505,9 @@
     "background_task_added": "Esta acción es realizada por el servidor en segundo plano y puede tardar algún tiempo en completarse. Mantén un ojo en el registro del servidor para seguir el progreso.",
     "images": "Imágenes",
     "image_type": "Tipo",
+    "image_source": "Fuente",
     "image_make_primary": "Hacer primario",
     "update_metadata": "Actualizar metadatos",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "transfer_queue": "Transferir la cola a otro reproductor"
 }
