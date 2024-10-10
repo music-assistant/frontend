@@ -1,6 +1,6 @@
 <!-- This is very similar to HomeWidgetRow. Should probably refactor at some point to clean up -->
 <template>
-  <div v-if="nowPlayingWidgetRow.length" class="widget-row">
+  <div v-if="activePlayers.length" class="widget-row">
     <v-toolbar class="header" color="transparent" style="width: fit-content">
       <template #prepend><v-icon icon="mdi-play-circle-outline" /></template>
       <template #title>
@@ -9,13 +9,14 @@
     </v-toolbar>
     <swiper>
       <swiper-slide
-        v-for="queue in nowPlayingWidgetRow"
-        :key="queue.queue_id"
-        style="max-width: 400px; width: 300px"
+        v-for="player in activePlayers"
+        :key="player.player_id"
+        style="max-width: 340px; width: 340px"
       >
         <PanelviewPlayerCard
-          :queue="queue"
-          @click="playerQueueClicked(queue)"
+          :player="player"
+          style="width: 300px; height: 80px; max-height: 80px"
+          @click="playerClicked(player)"
         />
       </swiper-slide>
     </swiper>
@@ -24,7 +25,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { PlayerState, PlayerQueue } from '@/plugins/api/interfaces';
+import { PlayerState, Player } from '@/plugins/api/interfaces';
 import api from '@/plugins/api';
 import { store } from '@/plugins/store';
 import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
@@ -35,29 +36,27 @@ const playerStateOrder = {
   [PlayerState.IDLE]: 2,
 } as const;
 
-const nowPlayingWidgetRow = computed(() => {
-  return Object.values(api.queues)
+const activePlayers = computed(() => {
+  return Object.values(api.players)
     .filter(
       (x) =>
-        x.active &&
-        x.items > 0 &&
-        x.queue_id in api.players &&
-        api.players[x.queue_id].powered &&
+        x.powered &&
+        // hide synced players or group child's
+        !x.synced_to &&
+        !x.active_group &&
         // only show players that are playing or paused
-        [PlayerState.PLAYING, PlayerState.PAUSED].includes(
-          api.players[x.queue_id].state,
-        ),
+        [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state),
     )
     .sort((a, b) => a.display_name.localeCompare(b.display_name))
     .sort((a, b) => playerStateOrder[a.state] - playerStateOrder[b.state]);
 });
 
-function playerQueueClicked(queue: PlayerQueue) {
-  if (queue && queue.queue_id in api.players) {
-    if (store.activePlayerId == queue.queue_id) {
+function playerClicked(player: Player) {
+  if (player && player.player_id in api.players) {
+    if (store.activePlayerId == player.player_id) {
       store.showFullscreenPlayer = true;
     } else {
-      store.activePlayerId = queue.queue_id;
+      store.activePlayerId = player.player_id;
     }
   }
 }

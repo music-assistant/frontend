@@ -27,6 +27,7 @@ export default {
     // eslint-disable-next-line vue/require-default-prop
     style: String,
     isPowered: Boolean,
+    allowWheel: Boolean,
   },
   emits: ['update:model-value'],
   setup(props, ctx) {
@@ -49,6 +50,7 @@ export default {
     }));
 
     const onWheel = ({ deltaY }: WheelEvent) => {
+      if (!props.allowWheel) return;
       const step = playerVolumeProps.value.step;
 
       const volumeValue = ctx.attrs['model-value'] as number;

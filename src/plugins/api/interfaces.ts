@@ -100,7 +100,7 @@ export enum PlayerState {
 export enum PlayerType {
   PLAYER = 'player', // A regular player.
   GROUP = 'group', // A (dedicated) group player or playergroup.
-  SYNC_GROUP = 'sync_group', // A group/preset of players that can be synced together.
+  STEREO_PAIR = 'stereo_pair',
 }
 
 export enum PlayerFeature {
@@ -541,6 +541,18 @@ export interface DeviceInfo {
   manufacturer: string;
 }
 
+export interface PlayerMedia {
+  uri: string; // uri or other identifier of the loaded media
+  media_type: MediaType;
+  title?: string; // optional
+  artist?: string; // optional
+  album?: string; // optional
+  image_url?: string; // optional
+  duration?: number; // optional
+  queue_id?: string; // only present for requests from queue controller
+  queue_item_id?: string; // only present for requests from queue controller
+}
+
 export interface Player {
   player_id: string;
   provider: string;
@@ -552,8 +564,7 @@ export interface Player {
   supported_features: PlayerFeature[];
   elapsed_time: number;
   elapsed_time_last_updated: number;
-  current_url: string;
-  current_item: string;
+  current_media?: PlayerMedia;
   state: PlayerState;
 
   volume_level: number;
@@ -561,7 +572,6 @@ export interface Player {
   group_childs: string[];
   active_source: string;
   active_group?: string;
-  can_sync_with: string[];
   synced_to: string;
   max_sample_rate: number;
   enabled: boolean;
@@ -607,6 +617,7 @@ export interface ProviderInstance {
   domain: string;
   name: string;
   instance_id: string;
+  lookup_key: string;
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider?: boolean;

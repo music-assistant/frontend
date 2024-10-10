@@ -234,11 +234,11 @@ const routes = [
             props: true,
           },
           {
-            path: 'addsyncgroup',
-            name: 'addsyncgroup',
+            path: 'addgroup',
+            name: 'addgroup',
             component: () =>
               import(
-                /* webpackChunkName: "addsyncgroup" */ '@/views/settings/AddSyncGroupPlayer.vue'
+                /* webpackChunkName: "addgroup" */ '@/views/settings/AddPlayerGroup.vue'
               ),
             props: true,
           },

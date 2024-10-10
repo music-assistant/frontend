@@ -5,6 +5,7 @@
       v-model="showVolume"
       class="volume-control-dialog"
       :close-on-content-click="false"
+      location="top"
       :scrim="
         $vuetify.theme.current.dark ? 'rgba(0,0,0,.75)' : 'rgba(0,0,0,.85)'
       "
@@ -73,33 +74,23 @@
         </div>
       </template>
 
-      <v-card :min-width="300">
-        <v-list style="overflow: hidden" lines="two">
-          <v-list-item
-            density="compact"
-            two-line
-            :title="store.activePlayer?.display_name.substring(0, 25)"
-            :subtitle="
-              !store.activePlayer?.powered
-                ? $t('state.off')
-                : $t('state.' + store.activePlayer?.state)
-            "
-          >
-            <template #prepend>
-              <v-icon
-                size="50"
-                :icon="store.activePlayer.icon"
-                color="primary"
-              />
-            </template>
-          </v-list-item>
-          <v-divider />
-          <VolumeControl
-            v-if="store.activePlayer"
-            :player="store.activePlayer"
-            style="margin-left: -8px"
-          />
-        </v-list>
+      <v-card
+        :min-width="300"
+        style="
+          overflow: hidden;
+          padding-top: 20px;
+          padding-bottom: 20px;
+          padding-right: 20px;
+        "
+      >
+        <VolumeControl
+          v-if="store.activePlayer"
+          :player="store.activePlayer"
+          :force-show-sub-players="true"
+          :show-sync-controls="false"
+          :hide-heading-row="false"
+          style="margin-left: 18px"
+        />
       </v-card>
     </v-menu>
   </div>
@@ -141,10 +132,7 @@ const showVolume = ref(false);
   left: unset !important;
   top: unset !important;
 }
-.v-list-item :deep(.v-list-item__prepend) {
-  width: 60px;
-  margin-left: -5px;
-}
+
 .v-overlay__scrim {
   opacity: 0.4;
 }
