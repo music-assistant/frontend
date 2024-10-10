@@ -168,8 +168,7 @@
                 "ru_RU": "Russo"
             }
         },
-        "no_music_providers": "Nessuna Sorgente di Musica configurata",
-        "create_sync_group_player": "Crea un nuovo gruppo di sincronizzazione"
+        "no_music_providers": "Nessuna Sorgente di Musica configurata"
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
