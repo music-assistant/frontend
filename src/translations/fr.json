@@ -165,7 +165,7 @@
         },
         "flow_mode": {
             "label": "Activer le mode \"flux\" pour la file d'attente",
-            "description": "Activer le mode 'flux' où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et\/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
+            "description": "Activer le mode 'flux' où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et\/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
         },
         "auto_play": {
             "label": "Lecture automatique (reprise à l'allumage)",
@@ -187,7 +187,7 @@
         },
         "volume_normalization_target": {
             "label": "Niveau cible pour la normalisation du volume",
-            "description": "Ajuster l'intensité sonore moyenne (perçue) à ce niveau cible, la valeur par défaut étant de -17 LUFS.\\n\\n**AVERTISSEMENT :** Un niveau trop élevé peut entraîner un écrêtage !"
+            "description": "Ajuster l'intensité sonore moyenne (perçue) à ce niveau cible, la valeur par défaut étant de -17 LUFS.\n\n**AVERTISSEMENT :** Un niveau trop élevé peut entraîner un écrêtage !"
         },
         "eq_bass": {
             "label": "Égaliseur : basse",
@@ -211,7 +211,7 @@
         },
         "hide_player": {
             "label": "Masquer ce lecteur dans l'interface utilisateur",
-            "description": "Masquez ce lecteur dans l’interface utilisateur. \\n\\nNotez qu’il peut toujours être contrôlé et qu’il apparaîtra également dans tous les groupes de synchronisation auxquels ce lecteur appartient."
+            "description": "Masquez ce lecteur dans l’interface utilisateur. \n\nNotez qu’il peut toujours être contrôlé et qu’il apparaîtra également dans tous les groupes de synchronisation auxquels ce lecteur appartient."
         },
         "default_enqueue_select_artist": {
             "label": "Éléments à sélectionner lors de la lecture d'un artiste (de la bibliothèque).",
@@ -323,7 +323,7 @@
         },
         "icon": {
             "label": "Icône",
-            "description": "Icône Material design pour ce lecteur.\\n\\nVoir https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Icône Material design pour ce lecteur.\n\nVoir https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Interface utilisateur",
         "frontend_desc": "Paramètres de configuration pour l'interface utilisateur de Music Assistant (frontend). Notez que ces paramètres sont stockés au niveau de l’appareil.",
@@ -344,7 +344,7 @@
         },
         "menu_items": {
             "label": "Éléments de menu activés",
-            "description": "Configurer les éléments à afficher dans le menu.\\n\\nNotez que si vous désactivez les paramètres, vous pourriez vous bloquer l'accès.\\n\\nDans ce cas, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques."
+            "description": "Configurer les éléments à afficher dans le menu.\n\nNotez que si vous désactivez les paramètres, vous pourriez vous bloquer l'accès.\n\nDans ce cas, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques."
         },
         "language": {
             "label": "Langue",
@@ -375,14 +375,12 @@
         },
         "hide_settings": {
             "label": "Masquer le bouton des paramètres",
-            "description": "Masquer le bouton des paramètres sur l’écran d’accueil.\\n\\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\\n\\nDans ce cas, vous devrez saisir manuellement le chemin d'accès aux paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques !"
+            "description": "Masquer le bouton des paramètres sur l’écran d’accueil.\n\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\n\nDans ce cas, vous devrez saisir manuellement le chemin d'accès aux paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques !"
         },
         "no_music_providers": "Aucun fournisseur de musique configuré",
         "no_music_providers_detail": "Démarrez votre expérience Music Assistant en ajoutant vos fournisseurs de musique.",
         "no_player_providers": "Aucun fournisseur de lecteur n'est configuré",
         "no_player_providers_detail": "Configurez des fournisseurs de lecteurs pour sélectionner les appareils sur lesquels Music Assistant peut diffuser votre musique.",
-        "create_sync_group_player": "Créer un nouveau groupe de synchronisation",
-        "create_sync_group_player_desc": "Avec un groupe de synchronisation, vous créez un « préréglage » de lecteurs qui peuvent être synchronisés en un seul clic. Cela est utile si vous avez plusieurs lecteurs que vous souhaitez souvent synchroniser.\\nCréer un groupe de synchronisation au lieu de synchroniser manuellement les lecteurs à chaque fois présente l'avantage que la file d'attente est conservée sur le groupe lui-même, plutôt que sur les lecteurs individuels.\\nNotez que vous ne pouvez sélectionner que des lecteurs pouvant réellement être synchronisés (donc des lecteurs du même type).",
         "volume_normalization_radio": {
             "options": {
                 "disabled": "Désactivée"
