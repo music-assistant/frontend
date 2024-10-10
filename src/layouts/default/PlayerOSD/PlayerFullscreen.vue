@@ -612,6 +612,16 @@ const openQueueMenu = function (evt: Event) {
           a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
         ),
     },
+    {
+      label: store.activePlayerQueue!.dont_stop_the_music_enabled
+        ? 'dont_stop_the_music_enabled' 
+        : 'dont_stop_the_music_disabled',
+      labelArgs: [],
+      action: () => {
+        api.queueCommandDontStopTheMusicToggle(store.activePlayerQueue!.queue_id);
+      },
+      icon: 'mdi-all-inclusive'
+    }
   ];
   eventbus.emit('contextmenu', {
     items: menuItems,
