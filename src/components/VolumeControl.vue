@@ -1,151 +1,173 @@
 <template>
-  <v-list style="overflow: hidden" lines="two">
+  <v-list style="overflow: hidden; padding: 0" lines="two">
     <!-- main (or group) volume/power -->
-    <v-list-item>
+    <!-- mute btn + player name + optional sync checkbox-->
+    <v-list-item
+      v-if="!hideHeadingRow"
+      class="volumesliderrow"
+      :link="false"
+      :style="player.powered ? 'opacity: 1' : 'opacity: 0.6'"
+      @click.stop
+    >
       <template #prepend>
-        <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
-          <div class="text-center">
-            <Button
-              icon
-              style="height: 25px !important"
-              @click="setGroupPower(player, !player.powered)"
-            >
-              <v-icon
-                :size="25"
-                :icon="player.volume_muted ? 'mdi-volume-off' : 'mdi-power'"
-              />
-            </Button>
-            <div class="text-caption">
-              {{
-                Math.round(
-                  player.group_childs.length
-                    ? player.group_volume
-                    : player.volume_level,
-                )
-              }}
-            </div>
-          </div>
-        </div>
+        <v-icon
+          :size="25"
+          :icon="player.icon"
+          style="margin-left: 6px; opacity: 0.6"
+        />
       </template>
-
       <template #default>
-        <div
-          class="volumesliderrow"
-          :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'"
+        <h5>{{ getPlayerName(player, 27) }}</h5>
+      </template>
+    </v-list-item>
+    <!-- mute btn + volume slider + volume level text (or collapse btn)-->
+    <v-list-item
+      class="volumesliderrow"
+      :link="false"
+      :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.35'"
+      @click.stop
+    >
+      <template #prepend>
+        <!-- mute button -->
+        <Button
+          icon
+          style="height: 25px"
+          :disabled="
+            player.type == PlayerType.GROUP || player.group_childs.length > 0
+          "
+          @click="api.playerCommandMuteToggle(player.player_id)"
         >
-          <h6>{{ getPlayerName(player, 27) }}</h6>
-          <PlayerVolume
-            class="vc-slider"
-            width="100%"
-            color="secondary"
-            :is-powered="player.powered"
-            :disabled="
-              !player.available ||
-              !player.powered ||
-              (!player.supported_features.includes(PlayerFeature.VOLUME_SET) &&
-                !player.group_childs.length)
-            "
-            :model-value="
-              Math.round(
-                player.group_childs.length
-                  ? player.group_volume
-                  : player.volume_level,
-              )
-            "
-            @update:model-value="
-              player.group_childs.length > 0
-                ? api.playerCommandGroupVolume(player.player_id, $event)
-                : api.playerCommandVolumeSet(player.player_id, $event)
+          <v-icon
+            :size="25"
+            :icon="
+              player.volume_muted ? 'mdi-volume-mute' : 'mdi-volume-medium'
             "
           />
-        </div>
+        </Button>
+      </template>
+      <template #default>
+        <PlayerVolume
+          color="secondary"
+          width="100%"
+          :is-powered="player.powered"
+          :disabled="
+            !player.available ||
+            !player.powered ||
+            (!player.supported_features.includes(PlayerFeature.VOLUME_SET) &&
+              !player.group_childs.length)
+          "
+          :model-value="
+            Math.round(
+              player.group_childs.length
+                ? player.group_volume
+                : player.volume_level,
+            )
+          "
+          @update:model-value="
+            player.group_childs.length > 0
+              ? api.playerCommandGroupVolume(player.player_id, $event)
+              : api.playerCommandVolumeSet(player.player_id, $event)
+          "
+        />
       </template>
       <template #append>
-        <div :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.5'">
-          <!-- sync button -->
-          <div
-            v-if="
-              player.type == PlayerType.PLAYER &&
-              player.can_sync_with.length &&
-              (Object.values(api.players).filter(
-                (x) =>
-                  !x.synced_to && x.can_sync_with.includes(player.player_id),
-              ).length > 0 ||
-                player.group_childs.length > 0)
-            "
-            class="syncbtn"
-          >
-            <Button icon @click="toggleSyncControls">
-              <v-icon>mdi-link-variant</v-icon>
-            </Button>
-          </div>
+        <div class="text-caption volumecaption">
+          {{
+            Math.round(
+              player.group_childs.length
+                ? player.group_volume
+                : player.volume_level,
+            )
+          }}
         </div>
       </template>
     </v-list-item>
 
-    <!-- volume player rows -->
-    <div v-if="player.group_childs.length > 0 || showSyncControls">
-      <v-divider style="margin-top: 7px; margin-bottom: 7px" />
-      <v-list-item
+    <!-- (child) volume player rows -->
+    <div
+      v-if="
+        showSubPlayers &&
+        player.powered &&
+        (player.group_childs.length > 0 || showSyncControls)
+      "
+    >
+      <v-divider style="margin-top: 10px; margin-bottom: 15px" />
+
+      <div
         v-for="childPlayer in getVolumePlayers(player, !showSyncControls)"
         :key="childPlayer.player_id"
-        density="compact"
-        :style="
-          childPlayer.powered || showSyncControls
-            ? 'opacity: 0.75'
-            : 'opacity: 0.5'
-        "
-        @click.stop
       >
-        <template #prepend>
-          <div>
-            <div class="text-center">
-              <v-checkbox
-                v-if="showSyncControls"
-                class="checkbox"
-                :disabled="childPlayer.player_id == player.player_id"
-                :model-value="syncChilds.includes(childPlayer.player_id)"
-                @update:model-value="
-                  syncCheckBoxChange(childPlayer.player_id, $event)
+        <!-- player icon + player name + optional sync checkbox-->
+        <v-list-item
+          class="volumesliderrow"
+          :link="false"
+          :style="
+            childPlayer.powered || showSyncControls
+              ? 'opacity: 0.75'
+              : 'opacity: 0.4'
+          "
+          @click.stop
+        >
+          <template #prepend>
+            <v-icon
+              :size="30"
+              :icon="childPlayer.icon"
+              style="margin-left: 6px; opacity: 0.6"
+            />
+          </template>
+          <template #default>
+            <h6>{{ truncateString(childPlayer.display_name, 27) }}</h6>
+          </template>
+          <template #append>
+            <v-checkbox
+              v-if="showSyncControls"
+              :ripple="false"
+              :disabled="childPlayer.player_id == player.player_id"
+              :model-value="
+                player.group_childs.includes(childPlayer.player_id) ||
+                childPlayer.player_id == player.player_id
+              "
+              size="22"
+              class="checkbox"
+              @update:model-value="
+                syncCheckBoxChange(childPlayer.player_id, $event)
+              "
+            />
+          </template>
+        </v-list-item>
+        <!-- mute btn + volume slider + volume level text-->
+        <v-list-item
+          class="volumesliderrow"
+          :disabled="
+            !childPlayer.supported_features.includes(PlayerFeature.VOLUME_SET)
+          "
+          :link="false"
+          :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.4'"
+          @click.stop
+        >
+          <template #prepend>
+            <Button
+              icon
+              style="height: 25px"
+              @click="api.playerCommandMuteToggle(childPlayer.player_id)"
+            >
+              <v-icon
+                :size="25"
+                :icon="
+                  childPlayer.volume_muted
+                    ? 'mdi-volume-mute'
+                    : 'mdi-volume-medium'
                 "
               />
-              <div v-else>
-                <Button
-                  icon
-                  style="min-height: 20px; height: 25px !important"
-                  :disabled="childPlayer.player_id == player.player_id"
-                  @click="api.playerCommandPowerToggle(childPlayer.player_id)"
-                >
-                  <v-icon :size="25" icon="mdi-power" />
-                </Button>
-                <div v-if="childPlayer.volume_muted" class="text-caption">
-                  {{ $t('muted') }}
-                </div>
-                <div v-else class="text-caption">
-                  {{ childPlayer.volume_level }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </template>
-
-        <template #default>
-          <div
-            class="volumesliderrow"
-            :style="
-              childPlayer.powered || showSyncControls
-                ? 'opacity: 0.75'
-                : 'opacity: 0.5'
-            "
-          >
-            <h6>{{ truncateString(childPlayer.display_name, 27) }}</h6>
+            </Button>
+          </template>
+          <template #default>
             <PlayerVolume
-              width="100%"
               color="secondary"
+              width="100%"
               :is-powered="childPlayer.powered"
               :disabled="
                 !childPlayer.available ||
-                (!childPlayer.powered && !showSyncControls) ||
                 !childPlayer.supported_features.includes(
                   PlayerFeature.VOLUME_SET,
                 )
@@ -155,59 +177,84 @@
                 api.playerCommandVolumeSet(childPlayer.player_id, $event)
               "
             />
-          </div>
-        </template>
-      </v-list-item>
+          </template>
+          <template #append>
+            <div class="text-caption volumecaption">
+              {{ childPlayer.volume_level }}
+            </div>
+          </template>
+        </v-list-item>
+        <div style="height: 14px"></div>
+      </div>
     </div>
-    <v-list-item v-if="showSyncControls">
-      <v-btn color="primary" width="100%" @click="saveSyncMembersClicked">{{
-        $t('apply')
-      }}</v-btn>
-    </v-list-item>
   </v-list>
 </template>
 
 <script setup lang="ts">
-import { Player, PlayerFeature, PlayerType } from '@/plugins/api/interfaces';
+import {
+  Player,
+  PlayerFeature,
+  PlayerState,
+  PlayerType,
+} from '@/plugins/api/interfaces';
 import { api } from '@/plugins/api';
 import { truncateString, getPlayerName } from '@/helpers/utils';
 import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
 import Button from '@/components/mods/Button.vue';
-import { ref } from 'vue';
 
 export interface Props {
   player: Player;
+  showSyncControls?: boolean;
+  showSubPlayers?: boolean;
+  hideHeadingRow?: boolean;
 }
 const compProps = defineProps<Props>();
 
-const showSyncControls = ref<boolean>(false);
-const syncChilds = ref<string[]>([]);
+let timeOutId: NodeJS.Timeout | undefined = undefined;
 
 const getVolumePlayers = function (player: Player, includeSelf = true) {
   const items: Player[] = [];
-  if (
-    includeSelf &&
-    player.type != PlayerType.GROUP &&
-    player.type != PlayerType.SYNC_GROUP
-  ) {
+  if (includeSelf && player.type != PlayerType.GROUP) {
     items.push(player);
   }
   for (const groupChildId of player.group_childs) {
     const volumeChild = api?.players[groupChildId];
-
     if (volumeChild && volumeChild.available && !items.includes(volumeChild)) {
       items.push(volumeChild);
     }
   }
-  if (showSyncControls.value && player.type == PlayerType.PLAYER) {
+  // when syncontrols are enabled, show all sync-able players
+  if (compProps.showSyncControls && player.type == PlayerType.PLAYER) {
     for (const syncPlayerId of Object.keys(api?.players)) {
       const syncPlayer = api?.players[syncPlayerId];
+
+      if (syncPlayer.provider !== player.provider) continue;
+
+      // skip unavailable players
+      if (!syncPlayer.available) continue;
+
+      // skip if player is already synced to another player
+      if (syncPlayer.synced_to && syncPlayer.synced_to != player.player_id)
+        continue;
+
+      // skip if player a group active
       if (
-        syncPlayer &&
-        syncPlayer.available &&
-        syncPlayer.can_sync_with.includes(player.player_id) &&
-        !items.includes(syncPlayer)
-      ) {
+        syncPlayer.active_group &&
+        syncPlayer.active_group != player.player_id
+      )
+        continue;
+
+      // skip if player is already playing other content
+      if (
+        syncPlayer.active_source &&
+        syncPlayer.state == PlayerState.PLAYING &&
+        ![player.player_id, syncPlayer.player_id].includes(
+          syncPlayer.active_source,
+        )
+      )
+        continue;
+
+      if (!items.includes(syncPlayer)) {
         items.push(syncPlayer);
       }
     }
@@ -217,66 +264,63 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
   );
   return items;
 };
-const setGroupPower = function (player: Player, powered: boolean) {
-  if (
-    player.type == PlayerType.GROUP ||
-    player.type == PlayerType.SYNC_GROUP ||
-    player.group_childs.length > 0
-  ) {
-    // send power command to all group child players
-    api.playerCommandGroupPower(player.player_id, powered);
-  } else {
-    // regular power command to single player (or special group player)
-    api.playerCommandPower(player.player_id, powered);
-  }
-};
-const toggleSyncControls = function () {
-  showSyncControls.value = !showSyncControls.value;
-  syncChilds.value = [...compProps.player.group_childs];
-};
+
 const syncCheckBoxChange = function (playerId: string, value: boolean | null) {
-  if (value) syncChilds.value.push(playerId);
-  else syncChilds.value = syncChilds.value.filter((x) => x != playerId);
-};
-const saveSyncMembersClicked = function () {
-  // unsync removed players
-  const removedSyncPlayers = compProps.player.group_childs.filter(
-    (x) => !syncChilds.value.includes(x),
-  );
-  if (removedSyncPlayers.length > 0) {
-    api.playerCommandUnSyncMany(removedSyncPlayers);
+  if (value) {
+    api.players[compProps.player.player_id].group_childs.push(playerId);
+    clearTimeout(timeOutId);
+    timeOutId = setTimeout(() => {
+      api.playerCommandSyncMany(
+        compProps.player.player_id,
+        api.players[compProps.player.player_id].group_childs,
+      );
+    }, 1000);
+  } else {
+    api.players[compProps.player.player_id].group_childs = api.players[
+      compProps.player.player_id
+    ].group_childs.filter((x) => x != playerId);
+    // power off will also unsync
+    api.playerCommandPower(playerId, false);
   }
-  // sync new players
-  api.playerCommandSyncMany(compProps.player.player_id, syncChilds.value);
-  showSyncControls.value = false;
 };
 </script>
 
 <style scoped>
-.syncbtn {
-  width: 30px;
-  padding-left: 13px;
-}
 .volumesliderrow {
   margin-top: 0px;
   padding-top: 0px;
   padding-bottom: 0px;
+  height: 30px;
+  min-height: 30px;
 }
 
-.v-list-item__prepend {
-  width: 58px;
-  margin-left: -5px;
-  height: 25px;
+.volumecaption {
+  width: 25px;
+  text-align: right;
+  margin-right: -8px;
 }
-.v-list-item {
-  padding-top: 0px;
-  padding-bottom: 0px;
+
+.volumesliderrow :deep(.v-list-item__prepend) {
+  width: 40px;
+  margin-left: -25px;
+}
+
+.powerbtn {
+  height: 22px;
 }
 
 .checkbox {
-  min-height: 20px;
+  margin-right: -5px;
+  width: 25px;
+  margin-top: -30px;
+  height: 22px !important;
+  min-height: 22px !important;
+  display: unset;
+}
+
+.syncbtn {
+  margin-right: -32px;
   height: 25px !important;
-  margin-top: -25px;
-  padding: 0;
+  padding-bottom: 20px;
 }
 </style>

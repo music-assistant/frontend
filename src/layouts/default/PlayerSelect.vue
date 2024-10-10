@@ -8,120 +8,92 @@
     clipped
     temporary
     touchless
-    width="290"
-    style="z-index: 999999"
-    z-index="999999"
+    :width="$vuetify.display.mobile ? 500 : 400"
+    style="z-index: 99999"
+    z-index="99999"
   >
-    <!-- heading with Players as title-->
-    <v-card-title class="title">
-      <b>{{ $t('players') }}</b>
-    </v-card-title>
-
-    <!-- collapsible player rows-->
-    <v-expansion-panels v-model="panelItem" focusable variant="accordion" flat>
-      <v-expansion-panel
-        v-for="player in sortedPlayers"
-        :id="player.player_id"
-        :key="player.player_id"
-        :disabled="!player.available"
-        flat
-        class="playerrow"
+    <div>
+      <!-- heading with Players as title-->
+      <v-card-title class="title">
+        <b>{{ $t('players') }}</b>
+      </v-card-title>
+      <!-- close button -->
+      <Button
+        variant="icon"
+        style="float: right; top: -40px; height: 0"
+        @click="store.showPlayersMenu = false"
       >
-        <v-expansion-panel-title
-          hide-actions
-          @click="
-            store.activePlayerId = player.player_id;
-            scrollToTop(player.player_id);
+        <v-icon size="30">mdi-window-close</v-icon>
+      </Button>
+
+      <v-list flat style="margin: 5px 5px">
+        <PanelviewPlayerCard
+          v-for="player in sortedPlayers.filter((x) => x.powered)"
+          :id="player.player_id"
+          :key="player.player_id"
+          :player="player"
+          :show-volume-control="true"
+          :show-menu-button="true"
+          :show-sub-players="
+            showSubPlayers && player.player_id == store.activePlayerId
           "
+          :show-sync-controls="player.type == PlayerType.PLAYER"
+          @click="playerClicked(player)"
+        />
+      </v-list>
+
+      <v-expansion-panels variant="accordion" flat class="expansion">
+        <v-expansion-panel
+          :title="$t('powered_off_players')"
+          style="padding: 0"
         >
-          <v-list-item class="playerrow-list-item">
-            <template #prepend>
-              <v-icon
-                size="45"
-                :icon="
-                  player.type == PlayerType.PLAYER && player.group_childs.length
-                    ? 'mdi-speaker-multiple'
-                    : player.icon
-                "
-                color="primary"
+          <v-expansion-panel-text style="padding: 0">
+            <v-list flat>
+              <PanelviewPlayerCard
+                v-for="player in sortedPlayers.filter((x) => !x.powered)"
+                :id="player.player_id"
+                :key="player.player_id"
+                :player="player"
+                :show-volume-control="true"
+                :show-menu-button="true"
+                :show-sub-players="player.player_id == store.activePlayerId"
+                @click="playerClicked(player)"
               />
-            </template>
-            <template #title>
-              <div>
-                <b>{{ truncateString(getPlayerName(player), 22) }}</b>
-              </div>
-            </template>
-            <template #subtitle>
-              <div
-                v-if="!player.powered"
-                class="text-body-2"
-                style="line-height: 1em"
-              >
-                {{ $t('state.off') }}
-              </div>
-              <div
-                v-else-if="
-                  player.active_source != player.player_id &&
-                  api.queues[player.active_source]
-                "
-                class="text-body-2"
-                style="line-height: 1em"
-              >
-                {{ $t('state.' + player.state) }} ({{
-                  api.queues[player.active_source].display_name
-                }})
-              </div>
-              <div v-else class="text-body-2" style="line-height: 1em">
-                {{ $t('state.' + player.state) }}
-              </div>
-            </template>
-          </v-list-item>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text>
-          <VolumeControl :player="player" />
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-    </v-expansion-panels>
+            </v-list>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </div>
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue';
-import { Player, PlayerType } from '@/plugins/api/interfaces';
+import { computed, onMounted, ref, watch } from 'vue';
+import { Player, PlayerState, PlayerType } from '@/plugins/api/interfaces';
 import { store } from '@/plugins/store';
-import VolumeControl from '@/components/VolumeControl.vue';
 import { ConnectionState, api } from '@/plugins/api';
-import { getPlayerName, truncateString } from '@/helpers/utils';
+import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
+import Button from '@/components/mods/Button.vue';
 
-const panelItem = ref<number | undefined>(undefined);
+const showSubPlayers = ref(false);
 
 // computed properties
 const sortedPlayers = computed(() => {
-  const res: Player[] = [];
-  for (const player_id in api?.players) {
-    const player = api?.players[player_id];
-    // ignore disabled/hidden/synced players
-    if (!playerActive(player, true)) continue;
-    res.push(player);
-  }
-  return res
-    .slice()
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-    );
+  return (
+    Object.values(api.players)
+      .filter((x) =>
+        // hide synced players or group child's
+        playerActive(x, false, false, false),
+      )
+      .sort((a, b) =>
+        a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
+      )
+      // sort by power state - powered players on top
+      .sort((a, b) => Number(b.powered) - Number(a.powered))
+  );
 });
 
 //watchers
-watch(
-  () => store.showPlayersMenu,
-  (newVal) => {
-    if (newVal && panelItem.value == undefined) {
-      panelItem.value = store.activePlayer
-        ? sortedPlayers.value.indexOf(store.activePlayer)
-        : undefined;
-    }
-  },
-);
 watch(
   () => store.activePlayerId,
   (newVal) => {
@@ -134,7 +106,7 @@ watch(
 watch(
   () => api.players,
   (newVal) => {
-    if (newVal) {
+    if (newVal && !store.activePlayer) {
       checkDefaultPlayer();
     }
   },
@@ -150,24 +122,19 @@ watch(
   { deep: true },
 );
 
-const shadowRoot = ref<ShadowRoot>();
-const lastClicked = ref();
+function playerClicked(player: Player, close: boolean = false) {
+  if (store.activePlayerId == player.player_id) {
+    showSubPlayers.value = !showSubPlayers.value;
+  } else {
+    showSubPlayers.value = false;
+    store.activePlayerId = player.player_id;
+  }
+  if (close) store.showPlayersMenu = false;
+}
+
 onMounted(() => {
-  shadowRoot.value = getCurrentInstance()?.vnode?.el?.getRootNode();
   checkDefaultPlayer();
 });
-const scrollToTop = function (playerId: string) {
-  if (lastClicked.value == playerId) return;
-  lastClicked.value = playerId;
-  setTimeout(() => {
-    const elmnt = shadowRoot.value?.getElementById(playerId);
-    elmnt?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-      inline: 'nearest',
-    });
-  }, 0);
-};
 
 const playerActive = function (
   player: Player,
@@ -177,10 +144,16 @@ const playerActive = function (
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
-  if (!player.available && !allowUnavailable) return false;
+  if (!allowHidden && player.hidden) return false;
+  if (!allowUnavailable && !player.available) return false;
   if (player.synced_to && !allowSyncChild) return false;
-  if (player.active_group && !allowSyncChild) return false;
-  if (player.hidden && !allowHidden) return false;
+  if (
+    !allowSyncChild &&
+    player.type == PlayerType.PLAYER &&
+    player.active_group
+  )
+    return false;
+
   return true;
 };
 
@@ -193,10 +166,6 @@ const checkDefaultPlayer = function () {
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
     store.activePlayerId = newDefaultPlayer.player_id;
-    console.debug(
-      'Selected new default player: ',
-      newDefaultPlayer.display_name,
-    );
   }
 };
 
@@ -218,29 +187,11 @@ const selectDefaultPlayer = function () {
   font-family: 'JetBrains Mono Medium';
   font-size: x-large;
   opacity: 0.7;
-  margin-top: 10px;
-  margin-bottom: 10px;
 }
-
-.playerrow :deep(.v-list-item__prepend) {
-  width: 58px;
-  margin-left: -5px;
+.expansion :deep(.v-expansion-panel-title) {
+  padding: 10px 16px;
 }
-
-.playerrow :deep(.v-expansion-panel-title) {
-  padding: 0;
-  padding-right: 10px;
-  height: 60px;
-}
-
-.playerrow :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.v-expansion-panel--active {
-  opacity: 1;
-  background-color: rgba(162, 188, 255, 0.1);
-  border-block: solid 1px rgba(0, 0, 0, 0.4);
-  writing-mode: horizontal-tb;
+.expansion :deep(.v-expansion-panel-text__wrapper) {
+  padding: 10px 5px;
 }
 </style>

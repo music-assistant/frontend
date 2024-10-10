@@ -763,6 +763,12 @@ export class MusicAssistantApi {
   public playerCommandPlay(playerId: string) {
     this.playerCommand(playerId, 'play');
   }
+  public playerCommandPause(playerId: string) {
+    this.playerCommand(playerId, 'pause');
+  }
+  public playerCommandPlayPause(playerId: string) {
+    this.playerCommand(playerId, 'play_pause');
+  }
 
   public playerCommandStop(playerId: string) {
     this.playerCommand(playerId, 'stop');
@@ -796,6 +802,13 @@ export class MusicAssistantApi {
       muted,
     });
     this.players[playerId].volume_muted = muted;
+  }
+
+  public playerCommandMuteToggle(playerId: string) {
+    this.playerCommandVolumeMute(
+      playerId,
+      !this.players[playerId].volume_muted,
+    );
   }
 
   public playerCommandSync(playerId: string, target_player: string) {
@@ -884,22 +897,14 @@ export class MusicAssistantApi {
     this.players[playerId].group_volume = newVolume;
   }
 
-  public playerCommandGroupPower(playerId: string, newPower: boolean) {
-    /*
-      Send POWER command to given playergroup.
-    */
-    this.playerCommand(playerId, 'group_power', {
-      power: newPower,
-    });
-    this.players[playerId].powered = newPower;
-  }
-
-  public async createSyncPlayerGroup(
+  public async createPlayerGroup(
+    group_type: string,
     name: string,
     members: string[],
   ): Promise<Player> {
     // Create a new Sync playergroup
-    return this.sendCommand('players/create_syncgroup', {
+    return this.sendCommand('player_group/create', {
+      group_type,
       name,
       members,
     });

@@ -8,6 +8,8 @@
     v-model="show"
     :target="[posX, posY]"
     scrim
+    style="z-index: 999999"
+    z-index="999999"
     @update:model-value="
       (v) => {
         store.dialogActive = v;
@@ -36,6 +38,8 @@
   <v-menu
     v-model="showSubmenu"
     :target="[subMenuPosX, subMenuPosY]"
+    style="z-index: 999999"
+    z-index="999999"
     @update:model-value="
       (v) => {
         store.dialogActive = v;

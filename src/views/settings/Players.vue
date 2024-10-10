@@ -13,7 +13,7 @@
           v-if="playersWithSyncFeature.length"
           color="accent"
           variant="outlined"
-          @click="addSyncGroupPlayer"
+          @click="addPlayerGroup"
         >
           {{ $t('settings.add_group_player') }}
         </v-btn>
@@ -26,7 +26,7 @@
         show-menu-btn
         link
         @menu="(evt: Event) => onMenu(evt, item)"
-        @click="editPlayer(item.player_id)"
+        @click="editPlayer(item.player_id, item.provider)"
       >
         <template #prepend>
           <provider-icon
@@ -104,7 +104,6 @@ const playersWithSyncFeature = computed(() => {
   return Object.values(api.players).filter(
     (x) =>
       x.available &&
-      x.can_sync_with.length &&
       api
         .getProvider(x.provider)
         ?.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
@@ -125,15 +124,15 @@ const removePlayerConfig = function (playerId: string) {
   );
 };
 
-const editPlayer = function (playerId: string) {
-  if (playerId in api.players) {
-    // only allow edit if player is alive/available
+const editPlayer = function (playerId: string, provider: string) {
+  if (provider in api.providers) {
+    // only allow edit if provider is available
     router.push(`/settings/editplayer/${playerId}`);
   }
 };
 
-const addSyncGroupPlayer = function (provider: string) {
-  router.push('/settings/addsyncgroup');
+const addPlayerGroup = function (provider: string) {
+  router.push('/settings/addgroup');
 };
 
 const toggleEnabled = function (config: PlayerConfig) {
@@ -160,7 +159,7 @@ const onMenu = function (evt: Event, item: PlayerConfig) {
       label: 'settings.configure',
       labelArgs: [],
       action: () => {
-        editPlayer(item.player_id);
+        editPlayer(item.player_id, item.provider);
       },
       icon: 'mdi-cog',
       disabled: !api.getProvider(item!.provider),
