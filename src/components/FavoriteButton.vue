@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type MediaItemType } from '@/plugins/api/interfaces';
-import api from '@/plugins/api';
-import Button from '@/components/mods/Button.vue';
+import { type MediaItemType } from "@/plugins/api/interfaces";
+import api from "@/plugins/api";
+import Button from "@/components/mods/Button.vue";
 
 interface Props {
   item: MediaItemType;

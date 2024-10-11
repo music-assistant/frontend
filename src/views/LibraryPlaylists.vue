@@ -19,22 +19,22 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
-import api from '@/plugins/api';
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import api from "@/plugins/api";
 import {
   ProviderFeature,
   EventMessage,
   EventType,
   MediaType,
-} from '@/plugins/api/interfaces';
-import { ToolBarMenuItem } from '@/components/Toolbar.vue';
-import { sleep } from '@/helpers/utils';
-import { store } from '@/plugins/store';
+} from "@/plugins/api/interfaces";
+import { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { sleep } from "@/helpers/utils";
+import { store } from "@/plugins/store";
 
 defineOptions({
-  name: 'Playlists',
+  name: "Playlists",
 });
 
 const { t } = useI18n();
@@ -43,18 +43,18 @@ const total = ref(store.libraryPlaylistsCount);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 
 const sortKeys = [
-  'name',
-  'name_desc',
-  'sort_name',
-  'sort_name_desc',
-  'timestamp_added',
-  'timestamp_added_desc',
-  'timestamp_modified',
-  'timestamp_modified_desc',
-  'last_played',
-  'last_played_desc',
-  'play_count',
-  'play_count_desc',
+  "name",
+  "name_desc",
+  "sort_name",
+  "sort_name_desc",
+  "timestamp_added",
+  "timestamp_added_desc",
+  "timestamp_modified",
+  "timestamp_modified_desc",
+  "last_played",
+  "last_played_desc",
+  "play_count",
+  "play_count_desc",
 ];
 
 const loadItems = async function (params: LoadDataParams) {
@@ -103,18 +103,18 @@ onMounted(() => {
       x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
   )) {
     playListCreateItems.push({
-      label: 'create_playlist_on',
+      label: "create_playlist_on",
       labelArgs: [prov.name],
       action: () => {
         newPlaylist(prov.instance_id);
       },
-      icon: 'mdi-playlist-plus',
+      icon: "mdi-playlist-plus",
     });
   }
   if (playListCreateItems.length) {
     extraMenuItems.value.push({
-      label: 'create_playlist_on',
-      icon: 'mdi-playlist-plus',
+      label: "create_playlist_on",
+      icon: "mdi-playlist-plus",
       subItems: playListCreateItems,
     });
   }
@@ -127,7 +127,7 @@ onMounted(() => {
     ],
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
-      if (evt.object_id?.startsWith('library://playlist')) {
+      if (evt.object_id?.startsWith("library://playlist")) {
         updateAvailable.value = true;
       }
     },
@@ -136,7 +136,7 @@ onMounted(() => {
 });
 
 const newPlaylist = async function (provId: string) {
-  const name = prompt(t('new_playlist_name'));
+  const name = prompt(t("new_playlist_name"));
   if (!name) return;
   await api
     .createPlaylist(name, provId)

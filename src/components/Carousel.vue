@@ -10,14 +10,14 @@
 </template>
 
 <script setup lang="ts">
-import { panelViewItemResponsive } from '@/helpers/utils';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { onMounted } from 'vue';
+import { panelViewItemResponsive } from "@/helpers/utils";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { onMounted } from "vue";
 
 onMounted(() => {
   document.documentElement.style.setProperty(
-    '--swiper-navigation-color',
-    'primary',
+    "--swiper-navigation-color",
+    "primary",
   );
 });
 </script>

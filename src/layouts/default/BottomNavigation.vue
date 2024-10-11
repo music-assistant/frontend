@@ -48,7 +48,7 @@
         <template #activator="{ props }">
           <v-tab key="library" v-bind="props" value="library">
             <v-icon size="xx-large">mdi-bookshelf</v-icon>
-            <span class="menuButton">{{ $t('library') }}</span>
+            <span class="menuButton">{{ $t("library") }}</span>
           </v-tab>
         </template>
 
@@ -67,10 +67,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import router from '@/plugins/router';
-import { getMenuItems } from './DrawerNavigation.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+import { computed } from "vue";
+import router from "@/plugins/router";
+import { getMenuItems } from "./DrawerNavigation.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 
 export interface Props {
   height: number;
@@ -82,13 +82,13 @@ const menuItems = getMenuItems();
 const activeTab = computed(() => {
   for (const menuItem of menuItems) {
     if (router.currentRoute.value.path.startsWith(menuItem.path)) {
-      if (!getBreakpointValue('tablet') && menuItem.isLibraryNode) {
-        return 'library';
+      if (!getBreakpointValue("tablet") && menuItem.isLibraryNode) {
+        return "library";
       }
       return menuItem.label;
     }
   }
-  return '';
+  return "";
 });
 </script>
 

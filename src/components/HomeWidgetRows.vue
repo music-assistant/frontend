@@ -5,52 +5,52 @@
 </template>
 
 <script setup lang="ts">
-import api from '@/plugins/api';
-import { store } from '@/plugins/store';
-import HomeWidgetRow, { WidgetRow } from '@/components/HomeWidgetRow.vue';
-import { ref } from 'vue';
-import { onActivated } from 'vue';
+import api from "@/plugins/api";
+import { store } from "@/plugins/store";
+import HomeWidgetRow, { WidgetRow } from "@/components/HomeWidgetRow.vue";
+import { ref } from "vue";
+import { onActivated } from "vue";
 
 const widgetRows = ref<Record<string, WidgetRow>>({
   recently_played: {
-    label: 'recently_played',
-    icon: 'mdi-motion-play',
+    label: "recently_played",
+    icon: "mdi-motion-play",
     items: [],
   },
   artists: {
-    label: 'artists',
-    icon: 'mdi-account-music',
-    path: '/artists',
+    label: "artists",
+    icon: "mdi-account-music",
+    path: "/artists",
     items: [],
   },
   albums: {
-    label: 'albums',
-    icon: 'mdi-album',
-    path: '/albums',
+    label: "albums",
+    icon: "mdi-album",
+    path: "/albums",
     items: [],
   },
   playlists: {
-    label: 'playlists',
-    icon: 'mdi-playlist-music',
-    path: '/playlists',
+    label: "playlists",
+    icon: "mdi-playlist-music",
+    path: "/playlists",
     items: [],
   },
   tracks: {
-    label: 'tracks',
-    icon: 'mdi-file-music',
-    path: '/tracks',
+    label: "tracks",
+    icon: "mdi-file-music",
+    path: "/tracks",
     items: [],
   },
   radios: {
-    label: 'radios',
-    icon: 'mdi-radio',
-    path: '/radios',
+    label: "radios",
+    icon: "mdi-radio",
+    path: "/radios",
     items: [],
   },
   browse: {
-    label: 'browse',
-    icon: 'mdi-folder',
-    path: '/browse',
+    label: "browse",
+    icon: "mdi-folder",
+    path: "/browse",
     items: [],
   },
 });
@@ -66,7 +66,7 @@ const loadData = async function () {
     undefined,
     20,
     undefined,
-    'random',
+    "random",
   );
   widgetRows.value.artists.count = store.libraryArtistsCount;
 
@@ -78,7 +78,7 @@ const loadData = async function () {
     undefined,
     20,
     undefined,
-    'timestamp_added_desc',
+    "timestamp_added_desc",
   );
   widgetRows.value.albums.count = store.libraryAlbumsCount;
 
@@ -88,7 +88,7 @@ const loadData = async function () {
     undefined,
     20,
     undefined,
-    'timestamp_added_desc',
+    "timestamp_added_desc",
   );
   widgetRows.value.playlists.count = store.libraryPlaylistsCount;
 
@@ -98,7 +98,7 @@ const loadData = async function () {
     undefined,
     20,
     undefined,
-    'timestamp_added_desc',
+    "timestamp_added_desc",
   );
   widgetRows.value.radios.count = store.libraryRadiosCount;
 
@@ -108,7 +108,7 @@ const loadData = async function () {
     undefined,
     20,
     undefined,
-    'timestamp_added_desc',
+    "timestamp_added_desc",
   );
   widgetRows.value.tracks.count = store.libraryTracksCount;
 };

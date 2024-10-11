@@ -7,7 +7,6 @@
       class="volumesliderrow"
       :link="false"
       :style="player.powered ? 'opacity: 1' : 'opacity: 0.6'"
-      @click.stop
     >
       <template #prepend>
         <v-icon
@@ -25,7 +24,6 @@
       class="volumesliderrow"
       :link="false"
       :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.35'"
-      @click.stop
     >
       <template #prepend>
         <!-- mute button -->
@@ -71,7 +69,10 @@
         />
       </template>
       <template #append>
-        <div class="text-caption volumecaption">
+        <v-icon v-if="canExpand && !showSubPlayers" class="expandbtn">
+          mdi-chevron-down
+        </v-icon>
+        <div v-else class="text-caption volumecaption">
           {{
             Math.round(
               player.group_childs.length
@@ -196,11 +197,12 @@ import {
   PlayerFeature,
   PlayerState,
   PlayerType,
-} from '@/plugins/api/interfaces';
-import { api } from '@/plugins/api';
-import { truncateString, getPlayerName } from '@/helpers/utils';
-import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
-import Button from '@/components/mods/Button.vue';
+} from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import { truncateString, getPlayerName } from "@/helpers/utils";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import Button from "@/components/mods/Button.vue";
+import { computed } from "vue";
 
 export interface Props {
   player: Player;
@@ -211,6 +213,10 @@ export interface Props {
 const compProps = defineProps<Props>();
 
 let timeOutId: NodeJS.Timeout | undefined = undefined;
+
+const canExpand = computed(() => {
+  return compProps.player.group_childs.length > 0;
+});
 
 const getVolumePlayers = function (player: Player, includeSelf = true) {
   const items: Player[] = [];
@@ -295,14 +301,21 @@ const syncCheckBoxChange = function (playerId: string, value: boolean | null) {
 }
 
 .volumecaption {
-  width: 25px;
+  width: 28px;
   text-align: right;
   margin-right: -8px;
+}
+
+.expandbtn {
+  margin-right: -12px;
 }
 
 .volumesliderrow :deep(.v-list-item__prepend) {
   width: 40px;
   margin-left: -25px;
+}
+.volumesliderrow :deep(.v-list-item__append) {
+  width: 20px;
 }
 
 .powerbtn {

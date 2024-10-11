@@ -4,10 +4,10 @@
       <!-- header -->
       <div style="margin-left: -5px; margin-right: -5px">
         <v-card-title>
-          {{ $t('settings.add_group_player') }}
+          {{ $t("settings.add_group_player") }}
         </v-card-title>
         <v-card-subtitle style="white-space: break-spaces">
-          {{ $t('settings.add_group_player_desc') }}
+          {{ $t("settings.add_group_player_desc") }}
         </v-card-subtitle>
         <br />
         <v-divider />
@@ -46,12 +46,12 @@
           />
           <br />
           <v-btn block color="primary" :disabled="!valid" @click="onSubmit">
-            {{ $t('settings.save') }}
+            {{ $t("settings.save") }}
           </v-btn>
         </v-form>
         <br />
         <v-btn block @click="router.back()">
-          {{ $t('close') }}
+          {{ $t("close") }}
         </v-btn>
       </div>
     </v-card-text>
@@ -59,23 +59,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { api } from '@/plugins/api';
-import { ProviderFeature } from '@/plugins/api/interfaces';
-import { group } from 'console';
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
+import { api } from "@/plugins/api";
+import { ProviderFeature } from "@/plugins/api/interfaces";
+import { group } from "console";
 
 // global refs
 const router = useRouter();
-const group_type = ref<string>('universal');
-const name = ref<string>('');
+const group_type = ref<string>("universal");
+const name = ref<string>("");
 const members = ref<string[]>([]);
 const valid = ref<boolean>(false);
 
 // computed properties
 const groupTypes = computed(() => {
   return [
-    { name: 'Universal', instance_id: 'universal' },
+    { name: "Universal", instance_id: "universal" },
     ...Object.values(api.providers).filter((x) =>
       x.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
     ),
@@ -87,14 +87,14 @@ const syncPlayers = computed(() => {
     (x) =>
       x.available &&
       // prevent group-in-group (for now)
-      !x.provider.startsWith('player_group') &&
-      (x.provider == group_type.value || group_type.value == 'universal'),
+      !x.provider.startsWith("player_group") &&
+      (x.provider == group_type.value || group_type.value == "universal"),
   );
 });
 
 // methods
 const onSubmit = async function () {
   api.createPlayerGroup(group_type.value, name.value, members.value);
-  router.push({ name: 'playersettings' });
+  router.push({ name: "playersettings" });
 };
 </script>

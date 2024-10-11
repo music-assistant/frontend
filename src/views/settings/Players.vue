@@ -6,7 +6,7 @@
       color="transparent"
       style="height: 55px"
     >
-      <template #title> {{ $t('settings.players') }} </template>
+      <template #title> {{ $t("settings.players") }} </template>
       <template #append>
         <!-- ADD syncgroup player button -->
         <v-btn
@@ -15,7 +15,7 @@
           variant="outlined"
           @click="addPlayerGroup"
         >
-          {{ $t('settings.add_group_player') }}
+          {{ $t("settings.add_group_player") }}
         </v-btn>
       </template>
     </v-toolbar>
@@ -73,19 +73,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, watch, computed } from 'vue';
-import { api } from '@/plugins/api';
+import { ref, onBeforeUnmount, watch, computed } from "vue";
+import { api } from "@/plugins/api";
 import {
   EventType,
   PlayerConfig,
   ProviderFeature,
-} from '@/plugins/api/interfaces';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import { useRouter } from 'vue-router';
-import Button from '@/components/mods/Button.vue';
-import ListItem from '@/components/mods/ListItem.vue';
-import Container from '@/components/mods/Container.vue';
-import { eventbus } from '@/plugins/eventbus';
+} from "@/plugins/api/interfaces";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { useRouter } from "vue-router";
+import Button from "@/components/mods/Button.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import Container from "@/components/mods/Container.vue";
+import { eventbus } from "@/plugins/eventbus";
 
 // global refs
 const router = useRouter();
@@ -132,7 +132,7 @@ const editPlayer = function (playerId: string, provider: string) {
 };
 
 const addPlayerGroup = function (provider: string) {
-  router.push('/settings/addgroup');
+  router.push("/settings/addgroup");
 };
 
 const toggleEnabled = function (config: PlayerConfig) {
@@ -150,50 +150,50 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  window.open(url, "_blank");
 };
 
 const onMenu = function (evt: Event, item: PlayerConfig) {
   const menuItems = [
     {
-      label: 'settings.configure',
+      label: "settings.configure",
       labelArgs: [],
       action: () => {
         editPlayer(item.player_id, item.provider);
       },
-      icon: 'mdi-cog',
+      icon: "mdi-cog",
       disabled: !api.getProvider(item!.provider),
     },
     {
-      label: item.enabled ? 'settings.disable' : 'settings.enable',
+      label: item.enabled ? "settings.disable" : "settings.enable",
       labelArgs: [],
       action: () => {
         toggleEnabled(item);
       },
-      icon: 'mdi-cancel',
+      icon: "mdi-cancel",
       disabled: !api.getProvider(item!.provider),
     },
     {
-      label: 'settings.documentation',
+      label: "settings.documentation",
       labelArgs: [],
       action: () => {
         openLinkInNewTab(
-          api.getProviderManifest(item!.provider)?.documentation || '',
+          api.getProviderManifest(item!.provider)?.documentation || "",
         );
       },
-      icon: 'mdi-bookshelf',
+      icon: "mdi-bookshelf",
       disabled: !api.getProviderManifest(item!.provider)?.documentation,
     },
     {
-      label: 'settings.delete',
+      label: "settings.delete",
       labelArgs: [],
       action: () => {
         removePlayerConfig(item.player_id);
       },
-      icon: 'mdi-delete',
+      icon: "mdi-delete",
     },
   ];
-  eventbus.emit('contextmenu', {
+  eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,

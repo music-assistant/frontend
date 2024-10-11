@@ -53,13 +53,13 @@
 </template>
 
 <script setup lang="ts">
-import api from '@/plugins/api';
-import { RepeatMode } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
+import api from "@/plugins/api";
+import { RepeatMode } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import ResponsiveIcon, {
   ResponsiveIconProps,
-} from '@/components/mods/ResponsiveIcon.vue';
-import { getValueFromSources } from '@/helpers/utils';
+} from "@/components/mods/ResponsiveIcon.vue";
+import { getValueFromSources } from "@/helpers/utils";
 
 // properties
 export interface Props {

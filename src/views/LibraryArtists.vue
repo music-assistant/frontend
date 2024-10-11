@@ -17,31 +17,31 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
-import api from '@/plugins/api';
-import { MediaType, EventMessage, EventType } from '@/plugins/api/interfaces';
-import { sleep } from '@/helpers/utils';
-import { store } from '@/plugins/store';
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import api from "@/plugins/api";
+import { MediaType, EventMessage, EventType } from "@/plugins/api/interfaces";
+import { sleep } from "@/helpers/utils";
+import { store } from "@/plugins/store";
 
 defineOptions({
-  name: 'Artists',
+  name: "Artists",
 });
 
 const updateAvailable = ref(false);
 const total = ref(store.libraryArtistsCount);
 
 const sortKeys = [
-  'name',
-  'name_desc',
-  'sort_name',
-  'sort_name_desc',
-  'timestamp_added',
-  'timestamp_added_desc',
-  'last_played',
-  'last_played_desc',
-  'play_count',
-  'play_count_desc',
+  "name",
+  "name_desc",
+  "sort_name",
+  "sort_name_desc",
+  "timestamp_added",
+  "timestamp_added_desc",
+  "last_played",
+  "last_played_desc",
+  "play_count",
+  "play_count_desc",
 ];
 
 const loadItems = async function (params: LoadDataParams) {
@@ -93,7 +93,7 @@ onMounted(() => {
     ],
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
-      if (evt.object_id?.startsWith('library://artist')) {
+      if (evt.object_id?.startsWith("library://artist")) {
         updateAvailable.value = true;
       }
     },

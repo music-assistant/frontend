@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from "vue";
 
 // properties
 export interface ResponsiveIconProps {
@@ -66,7 +66,7 @@ export interface ResponsiveIconProps {
   minWidth?: string;
   minHeight?: string;
   icon?: string;
-  type?: 'icon' | 'btn';
+  type?: "icon" | "btn";
   color?: string;
   disabled?: boolean;
   badge?: boolean;
@@ -78,16 +78,16 @@ withDefaults(defineProps<ResponsiveIconProps>(), {
   staticHeight: undefined,
   maxWidth: undefined,
   maxHeight: undefined,
-  minWidth: '24px',
-  minHeight: '24px',
+  minWidth: "24px",
+  minHeight: "24px",
   icon: undefined,
-  type: 'icon',
+  type: "icon",
   color: undefined,
   badge: undefined,
 });
 
 const emit = defineEmits<{
-  (e: 'clicked'): void;
+  (e: "clicked"): void;
 }>();
 
 const adjustIconSize = () => {
@@ -105,11 +105,11 @@ const responsiveIcon = ref();
 
 onMounted(() => {
   adjustIconSize();
-  window.addEventListener('resize', adjustIconSize);
+  window.addEventListener("resize", adjustIconSize);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', adjustIconSize);
+  window.removeEventListener("resize", adjustIconSize);
 });
 </script>
 

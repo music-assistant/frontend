@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { store } from '@/plugins/store';
-import Button from '@/components/mods/Button.vue';
+import { store } from "@/plugins/store";
+import Button from "@/components/mods/Button.vue";
 
 // properties
 export interface Props {

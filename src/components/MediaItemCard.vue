@@ -45,9 +45,9 @@
         >
           <v-icon style="margin-inline-start: 0px" :size="35">
             {{
-              store.activePlayerQueue?.state == 'playing'
-                ? 'mdi-pause-circle-outline'
-                : 'mdi-play-circle-outline'
+              store.activePlayerQueue?.state == "playing"
+                ? "mdi-pause-circle-outline"
+                : "mdi-play-circle-outline"
             }}
           </v-icon>
         </Button>
@@ -57,18 +57,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch } from "vue";
 
-import api from '@/plugins/api';
-import { ImageType, Track, Radio } from '@/plugins/api/interfaces';
+import api from "@/plugins/api";
+import { ImageType, Track, Radio } from "@/plugins/api/interfaces";
 import MediaItemThumb, {
   getImageThumbForItem,
-} from '@/components/MediaItemThumb.vue';
-import { iconFallback } from '@/components/QualityDetailsBtn.vue';
-import { getArtistsString } from '@/helpers/utils';
-import Button from '@/components/mods/Button.vue';
-import ListItem from '@/components/mods/ListItem.vue';
-import { store } from '@/plugins/store';
+} from "@/components/MediaItemThumb.vue";
+import { iconFallback } from "@/components/QualityDetailsBtn.vue";
+import { getArtistsString } from "@/helpers/utils";
+import Button from "@/components/mods/Button.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
@@ -80,11 +80,11 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Title',
-  subtitle: 'Subtitle',
-  text: 'Text',
+  title: "Title",
+  subtitle: "Subtitle",
+  text: "Text",
   image: iconFallback,
-  queueId: '',
+  queueId: "",
 });
 
 // local refs

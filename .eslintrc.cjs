@@ -20,11 +20,10 @@ module.exports = {
   ],
   plugins: ['prettier', '@typescript-eslint'],
   rules: {
-    quotes: ['error', 'single'],
+    quotes: ['error', 'double'],
     'prettier/prettier': [
       'error',
       {
-        singleQuote: true,
         endOfLine: 'auto',
       },
     ],

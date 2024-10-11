@@ -2,7 +2,7 @@
   <!-- core modules -->
   <div style="margin-bottom: 10px">
     <v-toolbar color="transparent">
-      <template #title>{{ $t('settings.core_modules') }} </template>
+      <template #title>{{ $t("settings.core_modules") }} </template>
     </v-toolbar>
     <Container>
       <ListItem
@@ -53,25 +53,25 @@
   <!-- server information -->
   <div style="margin-bottom: 10px">
     <v-toolbar color="transparent">
-      <template #title>{{ $t('settings.server_info') }} </template>
+      <template #title>{{ $t("settings.server_info") }} </template>
     </v-toolbar>
     <Container>
       <v-table>
         <tbody>
           <tr>
-            <td>{{ $t('settings.server_id') }}</td>
+            <td>{{ $t("settings.server_id") }}</td>
             <td>{{ api.serverInfo.value?.server_id }}</td>
           </tr>
           <tr>
-            <td>{{ $t('settings.server_version') }}</td>
+            <td>{{ $t("settings.server_version") }}</td>
             <td>{{ api.serverInfo.value?.server_version }}</td>
           </tr>
           <tr v-if="!api.serverInfo.value?.homeassistant_addon">
-            <td>{{ $t('settings.server_base_url') }}</td>
+            <td>{{ $t("settings.server_base_url") }}</td>
             <td>{{ api.serverInfo.value?.base_url }}</td>
           </tr>
           <tr>
-            <td>{{ $t('settings.server_as_addon') }}</td>
+            <td>{{ $t("settings.server_as_addon") }}</td>
             <td>
               <v-icon
                 :icon="
@@ -83,30 +83,30 @@
             </td>
           </tr>
           <tr>
-            <td>{{ $t('settings.artists_in_library') }}</td>
+            <td>{{ $t("settings.artists_in_library") }}</td>
             <td>{{ store.libraryArtistsCount }}</td>
           </tr>
           <tr>
-            <td>{{ $t('settings.albums_in_library') }}</td>
+            <td>{{ $t("settings.albums_in_library") }}</td>
             <td>{{ store.libraryAlbumsCount }}</td>
           </tr>
           <tr>
-            <td>{{ $t('settings.tracks_in_library') }}</td>
+            <td>{{ $t("settings.tracks_in_library") }}</td>
             <td>{{ store.libraryTracksCount }}</td>
           </tr>
           <tr>
-            <td>{{ $t('settings.playlists_in_library') }}</td>
+            <td>{{ $t("settings.playlists_in_library") }}</td>
             <td>{{ store.libraryPlaylistsCount }}</td>
           </tr>
           <tr>
-            <td>{{ $t('settings.radio_in_library') }}</td>
+            <td>{{ $t("settings.radio_in_library") }}</td>
             <td>{{ store.libraryRadiosCount }}</td>
           </tr>
           <tr>
-            <td>{{ $t('settings.server_logging') }}</td>
+            <td>{{ $t("settings.server_logging") }}</td>
             <td>
               <a :href="`${api.baseUrl}/music-assistant.log`" target="_blank">{{
-                $t('settings.download_log')
+                $t("settings.download_log")
               }}</a>
             </td>
           </tr>
@@ -117,15 +117,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { api } from '@/plugins/api';
-import { CoreConfig } from '@/plugins/api/interfaces';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import ListItem from '@/components/mods/ListItem.vue';
-import Container from '@/components/mods/Container.vue';
-import { useRouter } from 'vue-router';
-import { eventbus } from '@/plugins/eventbus';
-import { store } from '@/plugins/store';
+import { ref, onMounted } from "vue";
+import { api } from "@/plugins/api";
+import { CoreConfig } from "@/plugins/api/interfaces";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import Container from "@/components/mods/Container.vue";
+import { useRouter } from "vue-router";
+import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 
 // global refs
 const router = useRouter();
@@ -139,30 +139,30 @@ const editCoreConfig = function (domain: string) {
 };
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  window.open(url, "_blank");
 };
 
 const onMenu = function (evt: Event, item: CoreConfig) {
   const menuItems = [
     {
-      label: 'settings.configure',
+      label: "settings.configure",
       labelArgs: [],
       action: () => {
         editCoreConfig(item.domain);
       },
-      icon: 'mdi-cog',
+      icon: "mdi-cog",
     },
     {
-      label: 'settings.documentation',
+      label: "settings.documentation",
       labelArgs: [],
       action: () => {
         openLinkInNewTab(api.providerManifests[item.domain].documentation!);
       },
-      icon: 'mdi-bookshelf',
+      icon: "mdi-bookshelf",
       disabled: !api.providerManifests[item.domain].documentation,
     },
   ];
-  eventbus.emit('contextmenu', {
+  eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,

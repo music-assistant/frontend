@@ -101,7 +101,7 @@
                     width="35"
                   />
                 </template>
-                <span>{{ $t('tooltip.explicit') }}</span>
+                <span>{{ $t("tooltip.explicit") }}</span>
               </v-tooltip>
             </v-card-subtitle>
 
@@ -127,7 +127,7 @@
                   v-if="artistindex + 1 < item.artists.length"
                   :key="artistindex"
                   style="color: accent"
-                  >{{ ' / ' }}</span
+                  >{{ " / " }}</span
                 >
               </span>
             </v-card-subtitle>
@@ -291,7 +291,7 @@
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <v-card-actions>
           <v-btn color="primary" block @click="showFullInfo = false">
-            {{ $t('close') }}
+            {{ $t("close") }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -300,29 +300,29 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from './ProviderIcon.vue';
-import { store } from '@/plugins/store';
-import { useDisplay } from 'vuetify';
-import { api } from '@/plugins/api';
-import { ImageType, Track, MediaType } from '@/plugins/api/interfaces';
+import ProviderIcon from "./ProviderIcon.vue";
+import { store } from "@/plugins/store";
+import { useDisplay } from "vuetify";
+import { api } from "@/plugins/api";
+import { ImageType, Track, MediaType } from "@/plugins/api/interfaces";
 import type {
   Album,
   Artist,
   ItemMapping,
   MediaItemType,
-} from '@/plugins/api/interfaces';
-import { computed, ref, watch } from 'vue';
-import MediaItemThumb from './MediaItemThumb.vue';
-import MenuButton from './MenuButton.vue';
-import { getImageThumbForItem } from './MediaItemThumb.vue';
-import { useRouter } from 'vue-router';
-import { truncateString, parseBool } from '@/helpers/utils';
+} from "@/plugins/api/interfaces";
+import { computed, ref, watch } from "vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import MenuButton from "./MenuButton.vue";
+import { getImageThumbForItem } from "./MediaItemThumb.vue";
+import { useRouter } from "vue-router";
+import { truncateString, parseBool } from "@/helpers/utils";
 import {
   getContextMenuItems,
   getPlayMenuItems,
-} from '@/layouts/default/ItemContextMenu.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import { useI18n } from 'vue-i18n';
+} from "@/layouts/default/ItemContextMenu.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -333,7 +333,7 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
 
-const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url)
+const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
 const router = useRouter();
@@ -356,7 +356,7 @@ watch(
 const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked
   router.push({
-    name: 'album',
+    name: "album",
     params: {
       itemId: item.item_id,
       provider: item.provider,
@@ -366,7 +366,7 @@ const albumClick = function (item: Album | ItemMapping) {
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
   router.push({
-    name: 'artist',
+    name: "artist",
     params: {
       itemId: item.item_id,
       provider: item.provider,
@@ -381,8 +381,8 @@ const backButtonClick = function () {
     return;
   }
   // back to main listing for itemtype
-  const curRoute = router.currentRoute.value.name?.toString() || '';
-  for (const itemType of ['artist', 'album', 'track', 'playlist', 'radio']) {
+  const curRoute = router.currentRoute.value.name?.toString() || "";
+  for (const itemType of ["artist", "album", "track", "playlist", "radio"]) {
     if (curRoute.includes(itemType)) {
       router.push({
         name: `${itemType}s`,
@@ -391,39 +391,39 @@ const backButtonClick = function () {
     }
   }
   router.push({
-    name: 'home',
+    name: "home",
   });
 };
 
 const rawDescription = computed(() => {
-  if (!compProps.item) return '';
+  if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
     return compProps.item.metadata.description;
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
-  } else if ('artists' in compProps.item) {
+  } else if ("artists" in compProps.item) {
     compProps.item.artists.forEach(function (artist: Artist | ItemMapping) {
-      if ('metadata' in artist && artist.metadata.description) {
+      if ("metadata" in artist && artist.metadata.description) {
         return artist.metadata.description;
       }
     });
   }
-  return '';
+  return "";
 });
 
 const fullDescription = computed(() => {
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, '<br /><br />');
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, "<br /><br />");
 });
 const shortDescription = computed(() => {
   const maxChars = mobile.value ? 160 : 300;
   if (rawDescription.value.length > maxChars) {
     return (
       rawDescription.value
-        .replace(/(\r\n|\n|\r)/gm, ' ')
-        .substring(0, maxChars) + '...'
+        .replace(/(\r\n|\n|\r)/gm, " ")
+        .substring(0, maxChars) + "..."
     );
   }
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, " ");
 });
 
 const artistLogo = computed(() => {

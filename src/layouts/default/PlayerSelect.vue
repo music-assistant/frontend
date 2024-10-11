@@ -15,7 +15,7 @@
     <div>
       <!-- heading with Players as title-->
       <v-card-title class="title">
-        <b>{{ $t('players') }}</b>
+        <b>{{ $t("players") }}</b>
       </v-card-title>
       <!-- close button -->
       <Button
@@ -68,12 +68,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
-import { Player, PlayerState, PlayerType } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import { ConnectionState, api } from '@/plugins/api';
-import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
-import Button from '@/components/mods/Button.vue';
+import { computed, onMounted, ref, watch } from "vue";
+import { Player, PlayerState, PlayerType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { ConnectionState, api } from "@/plugins/api";
+import PanelviewPlayerCard from "@/components/PanelviewPlayerCard.vue";
+import Button from "@/components/mods/Button.vue";
 
 const showSubPlayers = ref(false);
 
@@ -99,7 +99,7 @@ watch(
   (newVal) => {
     if (newVal) {
       // remember last selected playerId
-      localStorage.setItem('mass.LastPlayerId', newVal);
+      localStorage.setItem("mass.LastPlayerId", newVal);
     }
   },
 );
@@ -171,7 +171,7 @@ const checkDefaultPlayer = function () {
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  const lastPlayerId = localStorage.getItem('mass.LastPlayerId');
+  const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&
@@ -184,7 +184,7 @@ const selectDefaultPlayer = function () {
 
 <style scoped>
 .title {
-  font-family: 'JetBrains Mono Medium';
+  font-family: "JetBrains Mono Medium";
   font-size: x-large;
   opacity: 0.7;
 }

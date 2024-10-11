@@ -4,7 +4,7 @@
     <v-toolbar class="header" color="transparent" style="width: fit-content">
       <template #prepend><v-icon icon="mdi-play-circle-outline" /></template>
       <template #title>
-        <span class="mr-3">{{ $t('currently_playing') }}</span>
+        <span class="mr-3">{{ $t("currently_playing") }}</span>
       </template>
     </v-toolbar>
     <swiper>
@@ -24,11 +24,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { PlayerState, Player } from '@/plugins/api/interfaces';
-import api from '@/plugins/api';
-import { store } from '@/plugins/store';
-import PanelviewPlayerCard from '@/components/PanelviewPlayerCard.vue';
+import { computed } from "vue";
+import { PlayerState, Player } from "@/plugins/api/interfaces";
+import api from "@/plugins/api";
+import { store } from "@/plugins/store";
+import PanelviewPlayerCard from "@/components/PanelviewPlayerCard.vue";
 
 const playerStateOrder = {
   [PlayerState.PLAYING]: 1,
@@ -65,7 +65,7 @@ function playerClicked(player: Player) {
 <style scoped>
 .header.v-toolbar {
   height: 55px;
-  font-family: 'JetBrains Mono Medium';
+  font-family: "JetBrains Mono Medium";
 }
 
 .home-card {

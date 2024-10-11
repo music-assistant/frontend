@@ -88,19 +88,19 @@
 </template>
 
 <script setup lang="ts">
-import { iconHiRes } from '@/components/QualityDetailsBtn.vue';
+import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
 import {
   MediaType,
   ProviderMapping,
   type MediaItemType,
-} from '@/plugins/api/interfaces';
-import { api } from '@/plugins/api';
-import ListItem from '@/components/mods/ListItem.vue';
-import Container from '@/components/mods/Container.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { computed, reactive, ref } from 'vue';
+} from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import ListItem from "@/components/mods/ListItem.vue";
+import Container from "@/components/mods/Container.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { computed, reactive, ref } from "vue";
 
 export interface Props {
   itemDetails: MediaItemType;
@@ -110,7 +110,7 @@ defineProps<Props>();
 const expanded = ref(false);
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  window.open(url, "_blank");
 };
 
 const demoPlayer = reactive<{ [item_id: string]: HTMLAudioElement }>({});
@@ -143,8 +143,8 @@ const toolbarMenuItems = computed(() => {
   return [
     // toggle expand
     {
-      label: 'tooltip.collapse_expand',
-      icon: expanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down',
+      label: "tooltip.collapse_expand",
+      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
       action: toggleExpand,
       overflowAllowed: false,
     },

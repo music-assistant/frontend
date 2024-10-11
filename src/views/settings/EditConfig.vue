@@ -16,7 +16,7 @@
       >
         <v-expansion-panel-title>
           <h3>
-            {{ $t('settings.category.' + panel, panel) }}
+            {{ $t("settings.category." + panel, panel) }}
           </h3>
         </v-expansion-panel-title>
         <br />
@@ -281,12 +281,12 @@
       :disabled="!requiredValuesPresent"
       @click="submit"
     >
-      {{ $t('settings.save') }}
+      {{ $t("settings.save") }}
     </v-btn>
   </v-form>
   <br />
   <v-btn block @click="router.back()">
-    {{ $t('close') }}
+    {{ $t("close") }}
   </v-btn>
   <v-dialog
     :model-value="showHelpInfo !== undefined"
@@ -297,7 +297,7 @@
       <v-card-text>
         <h2>
           {{
-            $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || '')
+            $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || "")
           }}
         </h2>
       </v-card-text>
@@ -320,11 +320,11 @@
           v-if="showHelpInfo?.help_link"
           @click="openLink(showHelpInfo!.help_link!)"
         >
-          {{ $t('read_more') }}
+          {{ $t("read_more") }}
         </v-btn>
         <v-spacer />
         <v-btn color="primary" @click="showHelpInfo = undefined">
-          {{ $t('close') }}
+          {{ $t("close") }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -332,18 +332,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, VNodeRef, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, VNodeRef, computed, watch } from "vue";
+import { useRouter } from "vue-router";
 import {
   ConfigEntryType,
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
   ConfigEntry,
   ConfigValueOption,
-} from '@/plugins/api/interfaces';
-import { $t } from '@/plugins/i18n';
+} from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 const router = useRouter();
-import { marked } from 'marked';
+import { marked } from "marked";
 
 export interface Props {
   configEntries: ConfigEntry[];
@@ -351,15 +351,15 @@ export interface Props {
 }
 
 const emit = defineEmits<{
-  (e: 'submit', values: Record<string, ConfigValueType>): void;
-  (e: 'action', action: string, values: Record<string, ConfigValueType>): void;
+  (e: "submit", values: Record<string, ConfigValueType>): void;
+  (e: "action", action: string, values: Record<string, ConfigValueType>): void;
 }>();
 
 // global refs
 const entries = ref<ConfigEntry[]>();
 const valid = ref(false);
 const form = ref<VNodeRef>();
-const activePanel = ref<string>('generic');
+const activePanel = ref<string>("generic");
 const showPasswordValues = ref(false);
 const showHelpInfo = ref<ConfigEntry>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
@@ -370,8 +370,8 @@ const props = defineProps<Props>();
 // computed props
 const panels = computed(() => {
   const allCategories = entries.value!.map((x) => x.category);
-  if (allCategories.filter((x) => x == 'generic').length) {
-    return new Set(['generic', ...allCategories]);
+  if (allCategories.filter((x) => x == "generic").length) {
+    return new Set(["generic", ...allCategories]);
   } else {
     return new Set(allCategories);
   }
@@ -439,18 +439,18 @@ const validate = async function () {
 const submit = async function () {
   // submit button is pressed
   if (await validate()) {
-    emit('submit', getCurrentValues());
+    emit("submit", getCurrentValues());
   }
 };
 const action = async function (action: string) {
   // call config entries action
-  emit('action', action, getCurrentValues());
+  emit("action", action, getCurrentValues());
 };
 const openLink = function (url: string) {
   // window.open(url, "_blank");
-  const a = document.createElement('a');
-  a.setAttribute('href', url);
-  a.setAttribute('target', '_blank');
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("target", "_blank");
   a.click();
 };
 const isNullOrUndefined = function (value: unknown) {
@@ -503,7 +503,7 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
       value: orgOption.value,
     };
     if (option.value == entry.default_value) {
-      option.title += ` [${$t('settings.default')}]`;
+      option.title += ` [${$t("settings.default")}]`;
     }
     options.push(option);
   }
@@ -513,9 +513,9 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
 const markdownToHtml = function (text: string) {
   // text = text.replaceAll(/\\n\\n/g, "<br /><br />").replace(/\\n/g, "<br /> ");
   text = text
-    .replaceAll(/\\n/g, '<br />')
-    .replaceAll('\n', '<br />')
-    .replaceAll(' \\', '<br />');
+    .replaceAll(/\\n/g, "<br />")
+    .replaceAll("\n", "<br />")
+    .replaceAll(" \\", "<br />");
   return marked(text);
 };
 
@@ -527,10 +527,10 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
     (
       $t(
         `settings.${conf_entry?.key}.description`,
-        conf_entry.description || ' ',
+        conf_entry.description || " ",
       ) ||
       conf_entry.help_link ||
-      ' '
+      " "
     )?.length > 1
   );
 };

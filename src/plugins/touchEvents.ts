@@ -1,4 +1,4 @@
-import { App } from 'vue';
+import { App } from "vue";
 
 interface TouchEventsOptions {
   holdDuration?: number;
@@ -14,15 +14,15 @@ const TouchEvents = {
     const doubleTapThreshold = options?.doubleTapThreshold || 300;
     const holdThreshold = options?.holdThreshold || 10;
 
-    const touchStartEvent = 'touchstart';
-    const touchEndEvent = 'touchend';
-    const touchMoveEvent = 'touchmove';
+    const touchStartEvent = "touchstart";
+    const touchEndEvent = "touchend";
+    const touchMoveEvent = "touchmove";
 
     // test if this browser supports passive mode
     // https://chromestatus.com/feature/5745543795965952
     let supportsPassive = false;
     try {
-      addEventListener('test', () => {}, {
+      addEventListener("test", () => {}, {
         get passive() {
           supportsPassive = true;
           return undefined;
@@ -32,13 +32,13 @@ const TouchEvents = {
     } catch (e) {}
 
     // Hold Directive
-    app.directive('hold', {
+    app.directive("hold", {
       mounted(el, binding) {
         const touchStartEvent =
-          'ontouchstart' in window ? 'touchstart' : 'mousedown';
-        const touchEndEvent = 'ontouchstart' in window ? 'touchend' : 'mouseup';
+          "ontouchstart" in window ? "touchstart" : "mousedown";
+        const touchEndEvent = "ontouchstart" in window ? "touchend" : "mouseup";
         const touchMoveEvent =
-          'ontouchstart' in window ? 'touchmove' : 'mousemove';
+          "ontouchstart" in window ? "touchmove" : "mousemove";
         let holdTimeout: number | null = null;
         let startX: number | null = null;
         let startY: number | null = null;
@@ -112,7 +112,7 @@ const TouchEvents = {
     });
 
     // Tap Directive
-    app.directive('tap', {
+    app.directive("tap", {
       mounted(el, binding) {
         let touchStartTime: number | null = null;
 
@@ -151,11 +151,11 @@ const TouchEvents = {
     });
 
     // Swipe Directive
-    app.directive('swipe', {
+    app.directive("swipe", {
       mounted(el, binding) {
         const touchStartEvent =
-          'ontouchstart' in window ? 'touchstart' : 'mousedown';
-        const touchEndEvent = 'ontouchstart' in window ? 'touchend' : 'mouseup';
+          "ontouchstart" in window ? "touchstart" : "mousedown";
+        const touchEndEvent = "ontouchstart" in window ? "touchend" : "mouseup";
         let startX: number | null = null;
         let startY: number | null = null;
 
@@ -176,24 +176,24 @@ const TouchEvents = {
           const absDistanceX = Math.abs(distanceX);
           const absDistanceY = Math.abs(distanceY);
 
-          let direction: 'right' | 'left' | 'up' | 'down' | null = null;
+          let direction: "right" | "left" | "up" | "down" | null = null;
 
           if (absDistanceX > swipeThreshold || absDistanceY > swipeThreshold) {
             if (absDistanceX >= absDistanceY) {
-              direction = distanceX > 0 ? 'right' : 'left';
+              direction = distanceX > 0 ? "right" : "left";
             } else {
-              direction = distanceY > 0 ? 'down' : 'up';
+              direction = distanceY > 0 ? "down" : "up";
             }
           }
 
           if (direction) {
-            if (binding.modifiers.right && direction === 'right') {
+            if (binding.modifiers.right && direction === "right") {
               binding.value(direction);
-            } else if (binding.modifiers.left && direction === 'left') {
+            } else if (binding.modifiers.left && direction === "left") {
               binding.value(direction);
-            } else if (binding.modifiers.up && direction === 'up') {
+            } else if (binding.modifiers.up && direction === "up") {
               binding.value(direction);
-            } else if (binding.modifiers.down && direction === 'down') {
+            } else if (binding.modifiers.down && direction === "down") {
               binding.value(direction);
             } else if (
               !binding.modifiers.right &&
@@ -231,7 +231,7 @@ const TouchEvents = {
     });
 
     // Drag Directive
-    app.directive('drag', {
+    app.directive("drag", {
       mounted(el, binding) {
         let startX: number | null = null;
         let startY: number | null = null;
@@ -301,10 +301,10 @@ const TouchEvents = {
     });
 
     // Press Directive
-    app.directive('press', {
+    app.directive("press", {
       mounted(el, binding) {
         const touchStartEvent =
-          'ontouchstart' in window ? 'touchstart' : 'mousedown';
+          "ontouchstart" in window ? "touchstart" : "mousedown";
 
         const handleTouchStart = (event: TouchEvent) => {
           binding.value(event);
@@ -328,9 +328,9 @@ const TouchEvents = {
     });
 
     // Release Directive
-    app.directive('release', {
+    app.directive("release", {
       mounted(el, binding) {
-        const touchEndEvent = 'ontouchstart' in window ? 'touchend' : 'mouseup';
+        const touchEndEvent = "ontouchstart" in window ? "touchend" : "mouseup";
 
         const handleTouchEnd = (event: TouchEvent) => {
           binding.value(event);
@@ -354,10 +354,10 @@ const TouchEvents = {
     });
 
     // DoubleTap Directive
-    app.directive('doubletap', {
+    app.directive("doubletap", {
       mounted(el, binding) {
         const touchStartEvent =
-          'ontouchstart' in window ? 'touchstart' : 'mousedown';
+          "ontouchstart" in window ? "touchstart" : "mousedown";
         let lastTapTime = 0;
 
         const handleTouchEnd = (event: TouchEvent) => {

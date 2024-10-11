@@ -54,7 +54,7 @@
           v-else-if="!store.activePlayer"
           @click="store.showPlayersMenu = true"
         >
-          {{ $t('no_player') }}
+          {{ $t("no_player") }}
         </div>
       </div>
     </template>
@@ -145,7 +145,7 @@
           class="line-clamp-1"
         >
           {{
-            $t('external_source_active', [store.activePlayer?.active_source])
+            $t("external_source_active", [store.activePlayer?.active_source])
           }}
         </div>
         <!-- queue empty message -->
@@ -155,7 +155,7 @@
           "
           class="line-clamp-1"
         >
-          {{ $t('queue_empty') }}
+          {{ $t("queue_empty") }}
         </div>
         <!-- active player -->
         <div v-if="store.activePlayer">
@@ -167,19 +167,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
-import { MediaType } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import MediaItemThumb from '@/components/MediaItemThumb.vue';
+import { MediaType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import {
   ImageColorPalette,
   getArtistsString,
   getPlayerName,
-} from '@/helpers/utils';
-import PlayerFullscreen from './PlayerFullscreen.vue';
-import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+} from "@/helpers/utils";
+import PlayerFullscreen from "./PlayerFullscreen.vue";
+import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 
 // properties
 interface Props {
@@ -192,7 +192,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
   showQualityDetailsBtn: true,
-  primaryColor: '',
+  primaryColor: "",
 });
 
 // computed properties

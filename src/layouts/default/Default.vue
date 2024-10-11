@@ -18,11 +18,11 @@
 </template>
 
 <script lang="ts" setup>
-import MainView from './View.vue';
-import Footer from './Footer.vue';
-import PlayerSelect from './PlayerSelect.vue';
-import ReloadPrompt from './ReloadPrompt.vue';
-import { store } from '@/plugins/store';
+import MainView from "./View.vue";
+import Footer from "./Footer.vue";
+import PlayerSelect from "./PlayerSelect.vue";
+import ReloadPrompt from "./ReloadPrompt.vue";
+import { store } from "@/plugins/store";
 </script>
 
 <style scoped>

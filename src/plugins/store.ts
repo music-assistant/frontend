@@ -1,14 +1,14 @@
-import { computed, reactive } from 'vue';
-import { Player, PlayerQueue, QueueItem } from './api/interfaces';
+import { computed, reactive } from "vue";
+import { Player, PlayerQueue, QueueItem } from "./api/interfaces";
 
-import api from './api';
-import { StoredState } from '@/components/ItemsListing.vue';
+import api from "./api";
+import { StoredState } from "@/components/ItemsListing.vue";
 
 export enum AlertType {
-  ERROR = 'error',
-  WARNING = 'warning',
-  INFO = 'info',
-  SUCCESS = 'success',
+  ERROR = "error",
+  WARNING = "warning",
+  INFO = "info",
+  SUCCESS = "success",
 }
 
 interface Alert {
@@ -46,11 +46,11 @@ export const store: Store = reactive({
   activePlayerId: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
-  navigationMenuStyle: 'horizontal',
+  navigationMenuStyle: "horizontal",
   showFullscreenPlayer: false,
   showQueueItems: false,
   apiInitialized: false,
-  apiBaseUrl: '',
+  apiBaseUrl: "",
   dialogActive: false,
   activePlayer: computed(() => {
     if (store.activePlayerId && store.activePlayerId in api.players) {

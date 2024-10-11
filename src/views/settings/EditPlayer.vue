@@ -12,16 +12,16 @@
       >
         <v-card-title>
           {{
-            $t('settings.config_player', [
+            $t("settings.config_player", [
               config.name || api.players[config.player_id].name,
             ])
           }}
         </v-card-title>
         <v-card-subtitle>
-          <b>{{ $t('settings.player_id') }}: </b>{{ config.player_id }}
+          <b>{{ $t("settings.player_id") }}: </b>{{ config.player_id }}
         </v-card-subtitle>
         <v-card-subtitle>
-          <b>{{ $t('settings.player_provider') }}: </b
+          <b>{{ $t("settings.player_provider") }}: </b
           >{{ api.getProviderManifest(config.provider)?.name }}
           (
           {{ api.getProviderManifest(config.provider)?.description }})
@@ -29,22 +29,22 @@
             v-if="api.getProviderManifest(config.provider)?.documentation"
             :href="api.getProviderManifest(config.provider)?.documentation"
             target="_blank"
-            >{{ $t('settings.check_docs') }}</a
+            >{{ $t("settings.check_docs") }}</a
           >
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t('settings.player_model') }}: </b
+          <b>{{ $t("settings.player_model") }}: </b
           >{{ api.players[config.player_id].device_info.manufacturer }} /
           {{ api.players[config.player_id].device_info.model }}
         </v-card-subtitle>
         <v-card-subtitle
           v-if="api.players[config.player_id]?.device_info.address"
         >
-          <b>{{ $t('settings.player_address') }}: </b
+          <b>{{ $t("settings.player_address") }}: </b
           >{{ api.players[config.player_id].device_info.address }}
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t('settings.player_type_label') }}: </b
+          <b>{{ $t("settings.player_type_label") }}: </b
           >{{ $t(`player_type.${api.players[config.player_id].type}`) }}
         </v-card-subtitle>
         <br />
@@ -85,12 +85,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { api } from '@/plugins/api';
-import { ConfigValueType, PlayerConfig } from '@/plugins/api/interfaces';
-import EditConfig from './EditConfig.vue';
-import { watch } from 'vue';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { api } from "@/plugins/api";
+import { ConfigValueType, PlayerConfig } from "@/plugins/api/interfaces";
+import EditConfig from "./EditConfig.vue";
+import { watch } from "vue";
 
 // global refs
 const router = useRouter();
@@ -115,10 +115,10 @@ watch(
 
 // methods
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
-  values['enabled'] = config.value!.enabled;
-  values['name'] = config.value!.name || null;
+  values["enabled"] = config.value!.enabled;
+  values["name"] = config.value!.name || null;
   api.savePlayerConfig(props.playerId!, values);
-  router.push({ name: 'playersettings' });
+  router.push({ name: "playersettings" });
 };
 </script>
 

@@ -77,7 +77,7 @@
         <div class="v-list-item-subtitle" style="white-space: nowrap">
           <!-- player powered off -->
           <div v-if="!player.powered">
-            {{ $t('off') }}
+            {{ $t("off") }}
           </div>
           <!-- track: artists(s) + album -->
           <div
@@ -109,13 +109,13 @@
           <div v-else-if="curQueueItem?.media_item?.metadata.description">
             {{ curQueueItem?.media_item.metadata.description }}
           </div>
-          <!-- queue empty message -->
-          <div v-else-if="playerQueue?.items == 0">
-            {{ $t('queue_empty') }}
-          </div>
           <!-- 3rd party source active -->
           <div v-else-if="player.active_source != player.player_id">
-            {{ $t('external_source_active', [player.active_source]) }}
+            {{ $t("external_source_active", [player.active_source]) }}
+          </div>
+          <!-- queue empty message -->
+          <div v-else-if="playerQueue?.items == 0">
+            {{ $t("queue_empty") }}
           </div>
         </div>
       </template>
@@ -180,26 +180,27 @@
 </template>
 
 <script setup lang="ts">
-import api from '@/plugins/api';
+import api from "@/plugins/api";
 import {
   MediaType,
   Player,
   PlayerFeature,
   PlayerState,
   PlayerType,
-} from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { imgCoverDark } from '@/components/QualityDetailsBtn.vue';
-import { getArtistsString } from '@/helpers/utils';
-import { computed, ref } from 'vue';
-import { getPlayerName } from '@/helpers/utils';
-import Button from '@/components/mods/Button.vue';
-import VolumeControl from '@/components/VolumeControl.vue';
-import { eventbus } from '@/plugins/eventbus';
-import router from '@/plugins/router';
-import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
+} from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
+import { getArtistsString } from "@/helpers/utils";
+import { computed } from "vue";
+import { getPlayerName } from "@/helpers/utils";
+import Button from "@/components/mods/Button.vue";
+import VolumeControl from "@/components/VolumeControl.vue";
+import { eventbus } from "@/plugins/eventbus";
+import router from "@/plugins/router";
+import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 // properties
 export interface Props {
   player: Player;
@@ -226,64 +227,8 @@ const curQueueItem = computed(() => {
 });
 
 const openPlayerMenu = function (evt: Event) {
-  const menuItems: ContextMenuItem[] = [
-    {
-      label: compProps.player.powered ? 'power_off_player' : 'power_on_player',
-      labelArgs: [],
-      action: () => {
-        api.playerCommandPowerToggle(compProps.player.player_id);
-      },
-      icon: 'mdi-power',
-    },
-  ];
-
-  // add 'transfer queue' menu item
-  if (playerQueue?.value?.items) {
-    menuItems.push({
-      label: 'transfer_queue',
-      icon: 'mdi-swap-horizontal',
-      subItems: Object.values(api.queues)
-        .filter((p) => p.queue_id != playerQueue.value!.queue_id && p.available)
-        .map((p) => {
-          return {
-            label: p.display_name,
-            labelArgs: [],
-            action: () => {
-              api.queueCommandTransfer(playerQueue.value!.queue_id, p.queue_id);
-              store.activePlayerId = p.queue_id;
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
-    });
-  }
-  // add 'clear queue' menu item
-  if (playerQueue?.value?.items) {
-    menuItems.push({
-      label: 'queue_clear',
-      labelArgs: [],
-      action: () => {
-        api.queueCommandClear(playerQueue.value!.queue_id);
-      },
-      icon: 'mdi-cancel',
-    });
-  }
-  // add player settings
-  menuItems.push({
-    label: 'settings.player_settings',
-    labelArgs: [],
-    action: () => {
-      store.showFullscreenPlayer = false;
-      store.showPlayersMenu = false;
-      router.push(`/settings/editplayer/${compProps.player.player_id}`);
-    },
-    icon: 'mdi-cog-outline',
-  });
-
-  eventbus.emit('contextmenu', {
-    items: menuItems,
+  eventbus.emit("contextmenu", {
+    items: getPlayerMenuItems(compProps.player, playerQueue.value),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
   });

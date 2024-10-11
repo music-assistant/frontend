@@ -8,23 +8,23 @@
       >
         <v-card-title>
           {{
-            $t('settings.setup_provider', [api.providerManifests[domain].name])
+            $t("settings.setup_provider", [api.providerManifests[domain].name])
           }}
         </v-card-title>
         <v-card-subtitle>
           {{ api.providerManifests[domain].description }} </v-card-subtitle
         ><br />
         <v-card-subtitle v-if="api.providerManifests[domain].codeowners.length">
-          <b>{{ $t('settings.codeowners') }}: </b
-          >{{ api.providerManifests[domain].codeowners.join(' / ') }}
+          <b>{{ $t("settings.codeowners") }}: </b
+          >{{ api.providerManifests[domain].codeowners.join(" / ") }}
         </v-card-subtitle>
 
         <v-card-subtitle v-if="api.providerManifests[domain].documentation">
-          <b>{{ $t('settings.need_help_setup_provider') }} </b>&nbsp;
+          <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
             :href="api.providerManifests[domain].documentation"
             target="_blank"
-            >{{ $t('settings.check_docs') }}</a
+            >{{ $t("settings.check_docs") }}</a
           >
         </v-card-subtitle>
       </div>
@@ -63,18 +63,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { nanoid } from 'nanoid';
-import { useRouter } from 'vue-router';
-import { api } from '@/plugins/api';
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { nanoid } from "nanoid";
+import { useRouter } from "vue-router";
+import { api } from "@/plugins/api";
 import {
   ConfigValueType,
   ConfigEntry,
   EventType,
   EventMessage,
-} from '@/plugins/api/interfaces';
-import EditConfig from './EditConfig.vue';
-import { watch } from 'vue';
+} from "@/plugins/api/interfaces";
+import EditConfig from "./EditConfig.vue";
+import { watch } from "vue";
 
 // global refs
 const router = useRouter();
@@ -99,8 +99,8 @@ onMounted(() => {
     // unless a user interaction has happened. So we need to do this the hard way
     showAuthLink.value = true;
     window.setTimeout(() => {
-      const a = document.getElementById('auth') as HTMLAnchorElement;
-      a.setAttribute('href', url);
+      const a = document.getElementById("auth") as HTMLAnchorElement;
+      a.setAttribute("href", url);
       a.click();
     }, 100);
   });
@@ -134,7 +134,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(props.domain, values)
     .then(() => {
-      router.push({ name: 'providersettings' });
+      router.push({ name: "providersettings" });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
@@ -159,7 +159,7 @@ const onAction = async function (
     }
   }
   // ensure the session id is passed along (for auth actions)
-  values['session_id'] = sessionId;
+  values["session_id"] = sessionId;
   api
     .getProviderConfigEntries(props.domain, undefined, action, values)
     .then((entries) => {

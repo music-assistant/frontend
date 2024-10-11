@@ -126,11 +126,11 @@
             style="margin-top: 15px"
             @click="redirectSearch"
           >
-            {{ $t('try_global_search') }}
+            {{ $t("try_global_search") }}
           </v-btn>
         </Alert>
         <Alert v-else-if="!loading && pagedItems.length == 0">
-          {{ $t('no_content') }}
+          {{ $t("no_content") }}
         </Alert>
       </div>
 
@@ -140,7 +140,7 @@
         :timeout="-1"
         style="margin-bottom: 120px"
       >
-        <span>{{ $t('items_selected', [selectedItems.length]) }}</span>
+        <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
           <v-btn
             color="primary"
@@ -150,7 +150,7 @@
                 onMenu(selectedItems, evt.clientX, evt.clientY)
             "
           >
-            {{ $t('actions') }}
+            {{ $t("actions") }}
           </v-btn>
         </template>
       </v-snackbar>
@@ -168,7 +168,7 @@ import {
   nextTick,
   onMounted,
   watch,
-} from 'vue';
+} from "vue";
 import {
   MediaType,
   type Album,
@@ -176,20 +176,20 @@ import {
   type Track,
   BrowseFolder,
   ItemMapping,
-} from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import ListviewItem from './ListviewItem.vue';
-import PanelviewItem from './PanelviewItem.vue';
-import PanelviewItemCompact from './PanelviewItemCompact.vue';
-import { useRouter } from 'vue-router';
-import { api } from '@/plugins/api';
-import Alert from '@/components/mods/Alert.vue';
-import Container from '@/components/mods/Container.vue';
-import Toolbar, { ToolBarMenuItem } from '@/components/Toolbar.vue';
-import { itemIsAvailable } from '@/plugins/api/helpers';
-import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
-import { panelViewItemResponsive, scrollElement } from '@/helpers/utils';
-import { useI18n } from 'vue-i18n';
+} from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import ListviewItem from "./ListviewItem.vue";
+import PanelviewItem from "./PanelviewItem.vue";
+import PanelviewItemCompact from "./PanelviewItemCompact.vue";
+import { useRouter } from "vue-router";
+import { api } from "@/plugins/api";
+import Alert from "@/components/mods/Alert.vue";
+import Container from "@/components/mods/Container.vue";
+import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { itemIsAvailable } from "@/plugins/api/helpers";
+import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
+import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
+import { useI18n } from "vue-i18n";
 
 export interface LoadDataParams {
   offset: number;
@@ -237,7 +237,7 @@ export interface Props {
   restoreState?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  sortKeys: () => ['name', 'sort_name'],
+  sortKeys: () => ["name", "sort_name"],
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
@@ -273,11 +273,11 @@ const { t } = useI18n();
 const params = ref<LoadDataParams>({
   offset: 0,
   limit: 50,
-  sortBy: 'name',
-  search: '',
+  sortBy: "name",
+  search: "",
   libraryOnly: false,
 });
-const viewMode = ref('list');
+const viewMode = ref("list");
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
@@ -297,7 +297,7 @@ const toggleSearch = function () {
   else {
     showSearch.value = true;
     nextTick(() => {
-      document.getElementById('searchInput')?.focus();
+      document.getElementById("searchInput")?.focus();
     });
   }
 };
@@ -317,7 +317,7 @@ const selectViewMode = function (newMode: string) {
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
-  const favoritesOnlyStr = params.value.favoritesOnly ? 'true' : 'false';
+  const favoritesOnlyStr = params.value.favoritesOnly ? "true" : "false";
   localStorage.setItem(
     `favoriteFilter.${props.path}.${props.itemtype}`,
     favoritesOnlyStr,
@@ -327,7 +327,7 @@ const toggleFavoriteFilter = function () {
 
 const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
-  const libraryOnlyStr = params.value.libraryOnly ? 'true' : 'false';
+  const libraryOnlyStr = params.value.libraryOnly ? "true" : "false";
   localStorage.setItem(
     `libraryFilter.${props.path}.${props.itemtype}`,
     libraryOnlyStr,
@@ -338,8 +338,8 @@ const toggleLibraryOnlyFilter = function () {
 const toggleAlbumArtistsFilter = function () {
   params.value.albumArtistsFilter = !params.value.albumArtistsFilter;
   const albumArtistsOnlyStr = params.value.albumArtistsFilter
-    ? 'true'
-    : 'false';
+    ? "true"
+    : "false";
   localStorage.setItem(
     `albumArtistsFilter.${props.path}.${props.itemtype}`,
     albumArtistsOnlyStr,
@@ -393,13 +393,13 @@ const onClick = function (item: MediaItemType, posX: number, posY: number) {
   }
   if (item.media_type == MediaType.FOLDER) {
     router.push({
-      name: 'browse',
+      name: "browse",
       query: {
         path: (item as BrowseFolder).path,
       },
     });
   } else if (
-    viewMode.value == 'list' &&
+    viewMode.value == "list" &&
     item.media_type == MediaType.TRACK &&
     props.parentItem
   ) {
@@ -430,7 +430,7 @@ const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
 };
 
 const onClear = function () {
-  params.value.search = '';
+  params.value.search = "";
   showSearch.value = false;
   loadData(undefined, undefined, true);
 };
@@ -457,20 +457,20 @@ const changeAlbumTypeFilter = function (albumType: string) {
   }
   localStorage.setItem(
     `albumType.${props.path}.${props.itemtype}`,
-    params.value.albumType.join(','),
+    params.value.albumType.join(","),
   );
   loadData(undefined, undefined, true);
 };
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
-  router.push({ name: 'search' });
+  router.push({ name: "search" });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadNextPage = function ({ done }: { done: any }) {
   if (allItemsReceived.value) {
-    done('empty');
+    done("empty");
     return;
   }
   loadData(
@@ -479,7 +479,7 @@ const loadNextPage = function ({ done }: { done: any }) {
     undefined,
     params.value.offset + props.limit,
   ).then(() => {
-    done('ok');
+    done("ok");
   });
 };
 
@@ -497,8 +497,8 @@ const menuItems = computed(() => {
   if (props.allowCollapse === true && !expanded.value) {
     return [
       {
-        label: 'tooltip.collapse_expand',
-        icon: 'mdi-chevron-down',
+        label: "tooltip.collapse_expand",
+        icon: "mdi-chevron-down",
         action: toggleExpand,
         overflowAllowed: false,
       },
@@ -510,10 +510,10 @@ const menuItems = computed(() => {
   // toggle select menu item
   if (props.showSelectButton !== false) {
     items.push({
-      label: 'tooltip.select_items',
+      label: "tooltip.select_items",
       icon: showCheckboxes.value
-        ? 'mdi-checkbox-multiple-outline'
-        : 'mdi-checkbox-multiple-blank-outline',
+        ? "mdi-checkbox-multiple-outline"
+        : "mdi-checkbox-multiple-blank-outline",
       action: toggleCheckboxes,
       active: showCheckboxes.value,
     });
@@ -521,8 +521,8 @@ const menuItems = computed(() => {
   // library only filter
   if (props.showLibraryOnlyFilter === true) {
     items.push({
-      label: 'tooltip.filter_library',
-      icon: 'mdi-bookshelf',
+      label: "tooltip.filter_library",
+      icon: "mdi-bookshelf",
       action: toggleLibraryOnlyFilter,
       active: params.value.libraryOnly,
     });
@@ -531,8 +531,8 @@ const menuItems = computed(() => {
   // favorites only filter
   if (props.showFavoritesOnlyFilter === true) {
     items.push({
-      label: 'tooltip.filter_favorites',
-      icon: params.value.favoritesOnly ? 'mdi-heart' : 'mdi-heart-outline',
+      label: "tooltip.filter_favorites",
+      icon: params.value.favoritesOnly ? "mdi-heart" : "mdi-heart-outline",
       action: toggleFavoriteFilter,
       active: params.value.favoritesOnly,
     });
@@ -541,10 +541,10 @@ const menuItems = computed(() => {
   // album artists only filter
   if (props.showAlbumArtistsOnlyFilter === true) {
     items.push({
-      label: 'tooltip.album_artist_filter',
+      label: "tooltip.album_artist_filter",
       icon: params.value.albumArtistsFilter
-        ? 'mdi-account-music'
-        : 'mdi-account-music-outline',
+        ? "mdi-account-music"
+        : "mdi-account-music-outline",
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
     });
@@ -553,10 +553,10 @@ const menuItems = computed(() => {
   // album type filter
   if (props.showAlbumTypeFilter) {
     items.push({
-      label: 'tooltip.album_type',
-      icon: 'mdi-album',
+      label: "tooltip.album_type",
+      icon: "mdi-album",
       disabled: loading.value,
-      subItems: ['album', 'single', 'ep', 'compilation', 'unknown'].map(
+      subItems: ["album", "single", "ep", "compilation", "unknown"].map(
         (key) => {
           return {
             label: `album_type.${key}`,
@@ -574,9 +574,9 @@ const menuItems = computed(() => {
   if (props.showRefreshButton !== false || newContentAvailable.value) {
     items.push({
       label: newContentAvailable.value
-        ? 'tooltip.refresh_new_content'
-        : 'tooltip.refresh',
-      icon: 'mdi-refresh',
+        ? "tooltip.refresh_new_content"
+        : "tooltip.refresh",
+      icon: "mdi-refresh",
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
@@ -586,8 +586,8 @@ const menuItems = computed(() => {
   // sort options
   if (props.sortKeys?.length) {
     items.push({
-      label: 'tooltip.sort_options',
-      icon: 'mdi-sort',
+      label: "tooltip.sort_options",
+      icon: "mdi-sort",
       disabled: props.sortKeys.length <= 1 || loading.value,
       subItems: props.sortKeys.map((sortKey) => {
         return {
@@ -605,9 +605,9 @@ const menuItems = computed(() => {
   if (props.showSearchButton !== false) {
     items.push({
       label: isSearchActive.value
-        ? 'tooltip.search_filter_active'
-        : 'tooltip.search',
-      icon: 'mdi-magnify',
+        ? "tooltip.search_filter_active"
+        : "tooltip.search",
+      icon: "mdi-magnify",
       action: toggleSearch,
       active: isSearchActive.value,
       disabled: loading.value,
@@ -616,31 +616,31 @@ const menuItems = computed(() => {
 
   // toggle view mode
   items.push({
-    label: 'tooltip.toggle_view_mode',
-    icon: viewMode.value == 'list' ? 'mdi-view-list' : 'mdi-grid',
+    label: "tooltip.toggle_view_mode",
+    icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
     subItems: [
       {
-        label: 'view.list',
-        icon: 'mdi-view-list',
-        selected: viewMode.value == 'list',
+        label: "view.list",
+        icon: "mdi-view-list",
+        selected: viewMode.value == "list",
         action: () => {
-          selectViewMode('list');
+          selectViewMode("list");
         },
       },
       {
-        label: 'view.panel',
-        icon: 'mdi-grid',
-        selected: viewMode.value == 'panel',
+        label: "view.panel",
+        icon: "mdi-grid",
+        selected: viewMode.value == "panel",
         action: () => {
-          selectViewMode('panel');
+          selectViewMode("panel");
         },
       },
       {
-        label: 'view.panel_compact',
-        icon: 'mdi-grid',
-        selected: viewMode.value == 'panel_compact',
+        label: "view.panel_compact",
+        icon: "mdi-grid",
+        selected: viewMode.value == "panel_compact",
         action: () => {
-          selectViewMode('panel_compact');
+          selectViewMode("panel_compact");
         },
       },
     ],
@@ -653,8 +653,8 @@ const menuItems = computed(() => {
   // toggle expand
   if (props.allowCollapse === true) {
     items.push({
-      label: 'tooltip.collapse_expand',
-      icon: 'mdi-chevron-up',
+      label: "tooltip.collapse_expand",
+      icon: "mdi-chevron-up",
       action: toggleExpand,
     });
   }
@@ -734,20 +734,20 @@ const restoreSettings = async function () {
   const storKey = `${props.path}.${props.itemtype}`;
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${storKey}`);
-  if (savedViewMode && savedViewMode !== 'null') {
+  if (savedViewMode && savedViewMode !== "null") {
     viewMode.value = savedViewMode;
-  } else if (props.itemtype == 'artists') {
-    viewMode.value = 'panel';
-  } else if (props.itemtype == 'albums') {
-    viewMode.value = 'panel';
+  } else if (props.itemtype == "artists") {
+    viewMode.value = "panel";
+  } else if (props.itemtype == "albums") {
+    viewMode.value = "panel";
   } else {
-    viewMode.value = 'list';
+    viewMode.value = "list";
   }
   // get stored/default sortBy for this itemtype
   const savedSortBy = localStorage.getItem(`sortBy.${storKey}`);
   if (
     savedSortBy &&
-    savedSortBy !== 'null' &&
+    savedSortBy !== "null" &&
     props.sortKeys.includes(savedSortBy)
   ) {
     params.value.sortBy = savedSortBy;
@@ -760,7 +760,7 @@ const restoreSettings = async function () {
     const savedInFavoriteOnlyStr = localStorage.getItem(
       `favoriteFilter.${storKey}`,
     );
-    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == 'true') {
+    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == "true") {
       params.value.favoritesOnly = true;
     }
   }
@@ -770,7 +770,7 @@ const restoreSettings = async function () {
     const savedLibraryOnlyStr = localStorage.getItem(
       `libraryFilter.${storKey}`,
     );
-    if (savedLibraryOnlyStr && savedLibraryOnlyStr == 'true') {
+    if (savedLibraryOnlyStr && savedLibraryOnlyStr == "true") {
       params.value.libraryOnly = true;
     }
   }
@@ -781,7 +781,7 @@ const restoreSettings = async function () {
       `albumArtistsFilter.${storKey}`,
     );
     if (albumArtistsOnlyStr) {
-      params.value.albumArtistsFilter = albumArtistsOnlyStr == 'true';
+      params.value.albumArtistsFilter = albumArtistsOnlyStr == "true";
     }
   }
 
@@ -789,7 +789,7 @@ const restoreSettings = async function () {
   if (props.allowCollapse !== false) {
     const expandStr = localStorage.getItem(`expand.${storKey}`);
     if (expandStr) {
-      expanded.value = expandStr == 'true';
+      expanded.value = expandStr == "true";
     }
   }
 
@@ -799,7 +799,7 @@ const restoreSettings = async function () {
       `albumType.${storKey}`,
     );
     if (savedAlbumTypeFilterStr) {
-      params.value.albumType = savedAlbumTypeFilterStr.split(',');
+      params.value.albumType = savedAlbumTypeFilterStr.split(",");
     }
   }
 
@@ -808,7 +808,7 @@ const restoreSettings = async function () {
     let savedSearchKey = `search.${storKey}`;
     if (props.parentItem) savedSearchKey += props.parentItem.item_id;
     const savedSearch = localStorage.getItem(savedSearchKey);
-    if (savedSearch && savedSearch !== 'null') {
+    if (savedSearch && savedSearch !== "null") {
       params.value.search = savedSearch;
     }
   }
@@ -818,11 +818,11 @@ const restoreSettings = async function () {
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
   if (loading.value) return;
-  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+  if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectedItems.value = pagedItems.value;
     showCheckboxes.value = true;
-  } else if (!searchHasFocus.value && e.key == 'Backspace') {
+  } else if (!searchHasFocus.value && e.key == "Backspace") {
     params.value.search = params.value.search.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
     params.value.search += e.key;
@@ -831,9 +831,9 @@ const keyListener = function (e: KeyboardEvent) {
 };
 
 if (props.allowKeyHooks) {
-  document.addEventListener('keydown', keyListener);
+  document.addEventListener("keydown", keyListener);
   onBeforeUnmount(() => {
-    document.removeEventListener('keydown', keyListener);
+    document.removeEventListener("keydown", keyListener);
   });
 }
 
@@ -841,7 +841,7 @@ if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
     const key = props.path || props.itemtype;
-    const el = document.querySelector('#cont');
+    const el = document.querySelector("#cont");
     store.prevState = {
       path: key,
       scrollPos: el?.scrollTop || 0,
@@ -912,7 +912,7 @@ onMounted(async () => {
     initialDataReceived.value = store.prevState.initialDataReceived;
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
-      const el = document.getElementById('cont');
+      const el = document.getElementById("cont");
       if (el) {
         scrollElement(el, store.prevState!.scrollPos, 50);
       }
@@ -937,11 +937,11 @@ const getSortName = function (
   item: MediaItemType | ItemMapping,
   preferSortName = false,
 ) {
-  if (!item) return '';
-  if ('label' in item && item.label && item.name)
+  if (!item) return "";
+  if ("label" in item && item.label && item.name)
     return t(item.label, [item.name]);
-  if ('label' in item && item.label) return t(item.label);
-  if (preferSortName && 'sort_name' in item && item.sort_name)
+  if ("label" in item && item.label) return t(item.label);
+  if (preferSortName && "sort_name" in item && item.sort_name)
     return item.sort_name;
   return item.name;
 };
@@ -960,17 +960,17 @@ const getFilteredItems = function (
       if (item.name.toLowerCase().includes(searchStr)) {
         result.push(item);
       } else if (
-        'artist' in item &&
+        "artist" in item &&
         item.artist?.name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
       } else if (
-        'album' in item &&
+        "album" in item &&
         item.album?.name.toLowerCase().includes(searchStr)
       ) {
         result.push(item);
       } else if (
-        'artists' in item &&
+        "artists" in item &&
         item.artists &&
         item.artists.length &&
         item.artists[0].name.toLowerCase().includes(searchStr)
@@ -982,21 +982,21 @@ const getFilteredItems = function (
     result = [...items];
   }
   // sort
-  if (params.sortBy == 'name') {
+  if (params.sortBy == "name") {
     result.sort((a, b) =>
       getSortName(a).localeCompare(getSortName(b), undefined, {
         numeric: true,
       }),
     );
   }
-  if (params.sortBy == 'sort_name') {
+  if (params.sortBy == "sort_name") {
     result.sort((a, b) =>
       getSortName(a, true).localeCompare(getSortName(b, true), undefined, {
         numeric: true,
       }),
     );
   }
-  if (params.sortBy == 'name_desc') {
+  if (params.sortBy == "name_desc") {
     result.sort((a, b) =>
       getSortName(b).localeCompare(getSortName(a), undefined, {
         numeric: true,
@@ -1004,7 +1004,7 @@ const getFilteredItems = function (
     );
   }
 
-  if (params.sortBy == 'album') {
+  if (params.sortBy == "album") {
     result.sort((a, b) =>
       getSortName((a as Track).album).localeCompare(
         getSortName((b as Track).album),
@@ -1013,14 +1013,14 @@ const getFilteredItems = function (
       ),
     );
   }
-  if (params.sortBy == 'artist') {
+  if (params.sortBy == "artist") {
     result.sort((a, b) =>
       getSortName((a as Track).artists[0]).localeCompare(
         getSortName((b as Track).artists[0]),
       ),
     );
   }
-  if (params.sortBy == 'track_number') {
+  if (params.sortBy == "track_number") {
     result.sort(
       (a, b) =>
         ((a as Track).track_number || 0) - ((b as Track).track_number || 0),
@@ -1030,35 +1030,35 @@ const getFilteredItems = function (
         ((a as Track).disc_number || 0) - ((b as Track).disc_number || 0),
     );
   }
-  if (params.sortBy == 'position') {
+  if (params.sortBy == "position") {
     result.sort(
       (a, b) => ((a as Track).position || 0) - ((b as Track).position || 0),
     );
   }
-  if (params.sortBy == 'position_desc') {
+  if (params.sortBy == "position_desc") {
     result.sort(
       (a, b) => ((b as Track).position || 0) - ((a as Track).position || 0),
     );
   }
-  if (params.sortBy == 'year') {
+  if (params.sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }
-  if (params.sortBy == 'recent') {
+  if (params.sortBy == "recent") {
     result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
   }
 
-  if (params.sortBy == 'duration') {
+  if (params.sortBy == "duration") {
     result.sort(
       (a, b) => ((a as Track).duration || 0) - ((b as Track).duration || 0),
     );
   }
-  if (params.sortBy == 'duration_desc') {
+  if (params.sortBy == "duration_desc") {
     result.sort(
       (a, b) => ((b as Track).duration || 0) - ((a as Track).duration || 0),
     );
   }
 
-  if (params.sortBy == 'provider') {
+  if (params.sortBy == "provider") {
     result.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 

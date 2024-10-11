@@ -54,12 +54,12 @@
 </template>
 
 <script setup lang="ts">
-import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
-import ShuffleBtn from './PlayerControlBtn/ShuffleBtn.vue';
-import PlayBtn from './PlayerControlBtn/PlayBtn.vue';
-import PreviousBtn from './PlayerControlBtn/PreviousBtn.vue';
-import NextBtn from './PlayerControlBtn/NextBtn.vue';
+import { ResponsiveIconProps } from "@/components/mods/ResponsiveIcon.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import ShuffleBtn from "./PlayerControlBtn/ShuffleBtn.vue";
+import PlayBtn from "./PlayerControlBtn/PlayBtn.vue";
+import PreviousBtn from "./PlayerControlBtn/PreviousBtn.vue";
+import NextBtn from "./PlayerControlBtn/NextBtn.vue";
 
 // properties
 export interface Props {

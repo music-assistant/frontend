@@ -19,8 +19,8 @@
 </template>
 
 <script lang="ts" setup>
-import DrawerNavigation from './DrawerNavigation.vue';
-import AddToPlaylistDialog from './AddToPlaylistDialog.vue';
-import ItemContextMenu from './ItemContextMenu.vue';
-import { store } from '@/plugins/store';
+import DrawerNavigation from "./DrawerNavigation.vue";
+import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import ItemContextMenu from "./ItemContextMenu.vue";
+import { store } from "@/plugins/store";
 </script>

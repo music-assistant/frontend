@@ -170,9 +170,9 @@
 </template>
 
 <script setup lang="ts">
-import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
-import { getBreakpointValue } from '../plugins/breakpoint';
-import { api } from '@/plugins/api';
+import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import { getBreakpointValue } from "../plugins/breakpoint";
+import { api } from "@/plugins/api";
 
 // properties
 export interface Props {
@@ -185,7 +185,7 @@ export interface Props {
   showLoading?: boolean;
 }
 withDefaults(defineProps<Props>(), {
-  color: 'transparent',
+  color: "transparent",
   icon: undefined,
   title: undefined,
   count: undefined,
@@ -196,8 +196,8 @@ withDefaults(defineProps<Props>(), {
 
 // emitters
 const emit = defineEmits<{
-  (e: 'iconClicked'): void;
-  (e: 'titleClicked'): void;
+  (e: "iconClicked"): void;
+  (e: "titleClicked"): void;
 }>();
 </script>
 
@@ -212,7 +212,7 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 <style scoped>
 .header.v-toolbar {
   height: 55px;
-  font-family: 'JetBrains Mono Medium';
+  font-family: "JetBrains Mono Medium";
 }
 
 .header.v-toolbar :deep(.v-toolbar__content) > .v-toolbar__append {

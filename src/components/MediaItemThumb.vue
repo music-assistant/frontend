@@ -12,21 +12,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 import type {
   ItemMapping,
   MediaItemImage,
   MediaItemType,
   QueueItem,
-} from '@/plugins/api/interfaces';
-import { ImageType, MediaType } from '@/plugins/api/interfaces';
-import { api } from '@/plugins/api';
-import { useTheme } from 'vuetify';
+} from "@/plugins/api/interfaces";
+import { ImageType, MediaType } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import { useTheme } from "vuetify";
 import {
   imgCoverDark,
   imgCoverLight,
   iconFolder,
-} from '@/components/QualityDetailsBtn.vue';
+} from "@/components/QualityDetailsBtn.vue";
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -38,7 +38,7 @@ export interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   item: undefined,
-  size: '100%',
+  size: "100%",
   fallback: undefined,
   rounded: true,
   thumbnail: true,
@@ -47,7 +47,7 @@ const props = withDefaults(defineProps<Props>(), {
 const theme = useTheme();
 
 function getThumbSize() {
-  if (typeof props.size == 'number') {
+  if (typeof props.size == "number") {
     return props.size;
   } else if (props.thumbnail) return 256;
   else return 0;
@@ -58,12 +58,12 @@ function getFallbackImage() {
   if (props.fallback) return props.fallback;
   if (
     props.item &&
-    'media_type' in props.item &&
+    "media_type" in props.item &&
     props.item.media_type == MediaType.FOLDER
   )
     return iconFolder;
-  if (!props.item) return '';
-  if (!props.item.name) return '';
+  if (!props.item) return "";
+  if (!props.item.name) return "";
   return getAvatarImage(
     props.item.name,
     theme.current.value.dark,
@@ -107,19 +107,19 @@ export const getMediaItemImage = function (
   if (!mediaItem) return undefined;
 
   // handle image in queueitem or itemmapping
-  if ('image' in mediaItem && mediaItem.image && mediaItem.image.type == type)
+  if ("image" in mediaItem && mediaItem.image && mediaItem.image.type == type)
     return mediaItem.image;
-  if ('media_item' in mediaItem && mediaItem.media_item)
+  if ("media_item" in mediaItem && mediaItem.media_item)
     return getMediaItemImage(mediaItem.media_item);
 
   // always prefer album image for tracks
-  if ('album' in mediaItem && mediaItem.album) {
+  if ("album" in mediaItem && mediaItem.album) {
     const albumImage = getMediaItemImage(mediaItem.album, type);
     if (albumImage) return albumImage;
   }
 
   // handle regular image within mediaitem
-  if ('metadata' in mediaItem && mediaItem.metadata.images) {
+  if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
       if (
         !img.remotely_accessible &&
@@ -133,7 +133,7 @@ export const getMediaItemImage = function (
   }
 
   // retry with album/track artist(s)
-  if ('artists' in mediaItem && mediaItem.artists) {
+  if ("artists" in mediaItem && mediaItem.artists) {
     for (const artist of mediaItem.artists) {
       const artistImage = getMediaItemImage(artist, type);
       if (artistImage) return artistImage;
@@ -151,12 +151,12 @@ export const getImageURL = function (
   size?: number,
   checksum?: string,
 ): string {
-  if (!checksum) checksum = '';
-  if (!img || !img.path) return '';
-  if (img.path.startsWith('data:image')) return img.path;
+  if (!checksum) checksum = "";
+  if (!img || !img.path) return "";
+  if (img.path.startsWith("data:image")) return img.path;
   if (
     !img.remotely_accessible ||
-    (!size && img.path.split('//')[0] != window.location.protocol)
+    (!size && img.path.split("//")[0] != window.location.protocol)
   ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     // Note that we play it safe here and always enforce the proxy if the schema is different
@@ -179,7 +179,7 @@ export const getImageThumbForItem = function (
   const img = getMediaItemImage(mediaItem, type);
   if (!img || !img.path) return undefined;
   const checksum =
-    'metadata' in mediaItem ? mediaItem.metadata?.cache_checksum : '';
+    "metadata" in mediaItem ? mediaItem.metadata?.cache_checksum : "";
   return getImageURL(img, size, checksum);
 };
 </script>

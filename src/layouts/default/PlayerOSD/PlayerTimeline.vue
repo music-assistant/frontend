@@ -45,11 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import api from '@/plugins/api';
-import { MediaType } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import { formatDuration, lightenColor } from '@/helpers/utils';
-import { ref, computed, watch } from 'vue';
+import api from "@/plugins/api";
+import { MediaType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { formatDuration, lightenColor } from "@/helpers/utils";
+import { ref, computed, watch } from "vue";
 
 // properties
 export interface Props {
@@ -69,7 +69,7 @@ const tempTime = ref(0);
 
 // computed properties
 const playerCurTimeStr = computed(() => {
-  if (!store.curQueueItem) return '0:00';
+  if (!store.curQueueItem) return "0:00";
   if (showRemainingTime.value) {
     return `-${formatDuration(
       store.curQueueItem.duration - curQueueItemTime.value,
@@ -79,9 +79,9 @@ const playerCurTimeStr = computed(() => {
   }
 });
 const playerTotalTimeStr = computed(() => {
-  if (!store.curQueueItem) return '';
-  if (!store.curQueueItem.duration) return '';
-  if (store.curQueueItem.media_item?.media_type == MediaType.RADIO) return '';
+  if (!store.curQueueItem) return "";
+  if (!store.curQueueItem.duration) return "";
+  if (store.curQueueItem.media_item?.media_type == MediaType.RADIO) return "";
   const totalSecs = store.curQueueItem.duration;
   return formatDuration(totalSecs);
 });
@@ -115,7 +115,7 @@ const stopDragging = () => {
 const updateTime = (newTime: number) => {
   if (!isDragging.value) {
     api.queueCommandSeek(
-      store.activePlayerQueue?.queue_id || '',
+      store.activePlayerQueue?.queue_id || "",
       Math.round(newTime),
     );
   }

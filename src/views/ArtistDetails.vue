@@ -49,19 +49,19 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
-import InfoHeader from '@/components/InfoHeader.vue';
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import InfoHeader from "@/components/InfoHeader.vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   EventMessage,
   EventType,
   MediaItemType,
   type Artist,
-} from '@/plugins/api/interfaces';
-import ProviderDetails from '@/components/ProviderDetails.vue';
-import MediaItemImages from '@/components/MediaItemImages.vue';
-import { api } from '@/plugins/api';
-import { getStreamingProviderMappings } from '@/helpers/utils';
+} from "@/plugins/api/interfaces";
+import ProviderDetails from "@/components/ProviderDetails.vue";
+import MediaItemImages from "@/components/MediaItemImages.vue";
+import { api } from "@/plugins/api";
+import { getStreamingProviderMappings } from "@/helpers/utils";
 
 export interface Props {
   itemId: string;
@@ -115,7 +115,7 @@ const loadArtistTracks = async function (params: LoadDataParams) {
 
 const UpdateItemInDb = async function () {
   if (!itemDetails.value) return;
-  itemDetails.value = await api.sendCommand('music/artists/update', {
+  itemDetails.value = await api.sendCommand("music/artists/update", {
     item_id: itemDetails.value.item_id,
     update: itemDetails.value,
     overwrite: true,

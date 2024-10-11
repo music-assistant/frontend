@@ -15,7 +15,7 @@
         >
           <template #activator="{ props }">
             <v-btn v-bind="props" color="accent" variant="outlined">
-              {{ $t('settings.add_new_provider_button', [provType]) }}
+              {{ $t("settings.add_new_provider_button", [provType]) }}
             </v-btn>
           </template>
 
@@ -59,9 +59,9 @@
       style="margin: 20px"
       icon="mdi-alert-box-outline"
     >
-      <b>{{ $t('settings.no_music_providers_detail') }}</b>
+      <b>{{ $t("settings.no_music_providers_detail") }}</b>
       <br />
-      {{ $t('settings.no_music_providers_detail') }}
+      {{ $t("settings.no_music_providers_detail") }}
     </v-alert>
 
     <!-- show alert if no player provider configured-->
@@ -78,9 +78,9 @@
       style="margin: 20px"
       icon="mdi-alert-box-outline"
     >
-      <b>{{ $t('settings.no_player_providers_detail') }}</b>
+      <b>{{ $t("settings.no_player_providers_detail") }}</b>
       <br />
-      {{ $t('settings.no_player_providers_detail') }}
+      {{ $t("settings.no_player_providers_detail") }}
     </v-alert>
 
     <Container>
@@ -162,22 +162,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch } from 'vue';
-import { api } from '@/plugins/api';
+import { ref, computed, onBeforeUnmount, watch } from "vue";
+import { api } from "@/plugins/api";
 import {
   EventType,
   ProviderConfig,
   ProviderManifest,
   ProviderType,
-} from '@/plugins/api/interfaces';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import { useRouter } from 'vue-router';
-import Button from '@/components/mods/Button.vue';
-import ListItem from '@/components/mods/ListItem.vue';
-import Alert from '@/components/mods/Alert.vue';
-import Container from '@/components/mods/Container.vue';
-import { $t } from '@/plugins/i18n';
-import { eventbus } from '@/plugins/eventbus';
+} from "@/plugins/api/interfaces";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { useRouter } from "vue-router";
+import Button from "@/components/mods/Button.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import Alert from "@/components/mods/Alert.vue";
+import Container from "@/components/mods/Container.vue";
+import { $t } from "@/plugins/i18n";
+import { eventbus } from "@/plugins/eventbus";
 
 // global refs
 const router = useRouter();
@@ -234,7 +234,7 @@ const addProvider = function (provider: ProviderManifest) {
       const depProvName = api.getProviderName(provider.depends_on);
       if (
         confirm(
-          $t('settings.provider_depends_on_confirm', [
+          $t("settings.provider_depends_on_confirm", [
             provider.name,
             depProvName,
           ]),
@@ -261,74 +261,74 @@ const toggleEnabled = function (config: ProviderConfig) {
 
 const reloadProvider = function (providerInstanceId: string) {
   api
-    .sendCommand('config/providers/reload', {
+    .sendCommand("config/providers/reload", {
       instance_id: providerInstanceId,
     })
     .catch((err) => alert(err));
 };
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  window.open(url, "_blank");
 };
 
 const onMenu = function (evt: Event, item: ProviderConfig) {
   const menuItems = [
     {
-      label: 'settings.configure',
+      label: "settings.configure",
       labelArgs: [],
       action: () => {
         editProvider(item.instance_id);
       },
-      icon: 'mdi-cog',
+      icon: "mdi-cog",
     },
     {
-      label: item.enabled ? 'settings.disable' : 'settings.enable',
+      label: item.enabled ? "settings.disable" : "settings.enable",
       labelArgs: [],
       action: () => {
         toggleEnabled(item);
       },
-      icon: 'mdi-cancel',
+      icon: "mdi-cancel",
       disabled: !api.providerManifests[item.domain].allow_disable,
     },
     {
-      label: 'settings.documentation',
+      label: "settings.documentation",
       labelArgs: [],
       action: () => {
         openLinkInNewTab(api.providerManifests[item.domain].documentation!);
       },
-      icon: 'mdi-bookshelf',
+      icon: "mdi-bookshelf",
       disabled: !api.providerManifests[item.domain].documentation,
     },
     {
-      label: 'settings.sync',
+      label: "settings.sync",
       labelArgs: [],
       action: () => {
         api.startSync(undefined, [item.instance_id]);
       },
-      icon: 'mdi-sync',
+      icon: "mdi-sync",
       hide:
         !api.providers[item.instance_id]?.available ||
         item.type != ProviderType.MUSIC,
     },
     {
-      label: 'settings.delete',
+      label: "settings.delete",
       labelArgs: [],
       action: () => {
         removeProvider(item.instance_id);
       },
-      icon: 'mdi-delete',
+      icon: "mdi-delete",
       hide: api.providerManifests[item.domain].builtin,
     },
     {
-      label: 'settings.reload',
+      label: "settings.reload",
       labelArgs: [],
       action: () => {
         reloadProvider(item.instance_id);
       },
-      icon: 'mdi-refresh',
+      icon: "mdi-refresh",
     },
   ];
-  eventbus.emit('contextmenu', {
+  eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
@@ -351,6 +351,6 @@ watch(
 }
 .titlebar.v-toolbar {
   height: 55px;
-  font-family: 'JetBrains Mono Medium';
+  font-family: "JetBrains Mono Medium";
 }
 </style>

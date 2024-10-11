@@ -97,13 +97,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import api from '@/plugins/api';
-import { store } from '@/plugins/store';
-import VolumeControl from '@/components/VolumeControl.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import Button from '@/components/mods/Button.vue';
-import PlayerVolume from '../PlayerVolume.vue';
+import { ref } from "vue";
+import api from "@/plugins/api";
+import { store } from "@/plugins/store";
+import VolumeControl from "@/components/VolumeControl.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import Button from "@/components/mods/Button.vue";
+import PlayerVolume from "../PlayerVolume.vue";
 
 // properties
 export interface Props {
@@ -115,10 +115,10 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  volumeSize: '150px',
+  volumeSize: "150px",
   responsiveVolumeSize: true,
   isVisible: true,
-  color: '',
+  color: "",
 });
 
 //refs

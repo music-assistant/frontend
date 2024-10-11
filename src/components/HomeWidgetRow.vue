@@ -45,19 +45,19 @@
 </template>
 
 <script setup lang="ts">
-import Carousel from '@/components/Carousel.vue';
-import PanelviewItemCompact from '@/components/PanelviewItemCompact.vue';
-import { showContextMenuForMediaItem } from '@/layouts/default/ItemContextMenu.vue';
-import api from '@/plugins/api';
-import { itemIsAvailable } from '@/plugins/api/helpers';
+import Carousel from "@/components/Carousel.vue";
+import PanelviewItemCompact from "@/components/PanelviewItemCompact.vue";
+import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
+import api from "@/plugins/api";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
   MediaType,
   PlayerQueue,
-} from '@/plugins/api/interfaces';
-import router from '@/plugins/router';
-import { store } from '@/plugins/store';
+} from "@/plugins/api/interfaces";
+import router from "@/plugins/router";
+import { store } from "@/plugins/store";
 
 export interface WidgetRow {
   label: string;
@@ -91,7 +91,7 @@ const onClick = function (item: MediaItemType, posX: number, posY: number) {
   }
   if (item.media_type == MediaType.FOLDER) {
     router.push({
-      name: 'browse',
+      name: "browse",
       query: {
         path: (item as BrowseFolder).path,
       },
@@ -124,7 +124,7 @@ const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
 <style scoped>
 .header.v-toolbar {
   height: 55px;
-  font-family: 'JetBrains Mono Medium';
+  font-family: "JetBrains Mono Medium";
 }
 
 .widget-row {
