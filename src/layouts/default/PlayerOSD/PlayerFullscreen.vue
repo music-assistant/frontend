@@ -389,6 +389,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { useDisplay } from "vuetify";
 import { useI18n } from "vue-i18n";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 
 const { t } = useI18n();
 const { name } = useDisplay();
@@ -546,87 +547,9 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
 };
 
 const openQueueMenu = function (evt: Event) {
-  const menuItems = [
-    {
-      label: "settings.player_settings",
-      labelArgs: [],
-      action: () => {
-        store.showFullscreenPlayer = false;
-        router.push(
-          `/settings/editplayer/${store.activePlayerQueue!.queue_id}`,
-        );
-      },
-      icon: "mdi-cog-outline",
-    },
-    {
-      label: "queue_clear",
-      labelArgs: [],
-      action: () => {
-        api.queueCommandClear(store.activePlayerQueue!.queue_id);
-      },
-      icon: "mdi-cancel",
-    },
-    {
-      label: store.activePlayerQueue!.shuffle_enabled
-        ? "shuffle_enabled"
-        : "shuffle_disabled",
-      labelArgs: [],
-      action: () => {
-        api.queueCommandShuffleToggle(store.activePlayerQueue!.queue_id);
-      },
-      icon: store.activePlayerQueue!.shuffle_enabled
-        ? "mdi-shuffle"
-        : "mdi-shuffle-disabled",
-    },
-    {
-      label: "repeat_mode",
-      labelArgs: [t(`repeatmode.${store.activePlayerQueue!.repeat_mode}`)],
-      action: () => {
-        api.queueCommandRepeatToggle(store.activePlayerQueue!.queue_id);
-      },
-      icon: store.activePlayerQueue!.shuffle_enabled
-        ? "mdi-repeat"
-        : "mdi-repeat-off",
-    },
-    {
-      label: "transfer_queue",
-      icon: "mdi-swap-horizontal",
-      subItems: Object.values(api.queues)
-        .filter(
-          (p) => p.queue_id != store.activePlayerQueue?.queue_id && p.available,
-        )
-        .map((p) => {
-          return {
-            label: p.display_name,
-            labelArgs: [],
-            action: () => {
-              api.queueCommandTransfer(
-                store.activePlayerQueue!.queue_id,
-                p.queue_id,
-              );
-              store.activePlayerId = p.queue_id;
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
-    },
-    {
-      label: store.activePlayerQueue!.dont_stop_the_music_enabled
-        ? "dont_stop_the_music_enabled"
-        : "dont_stop_the_music_disabled",
-      labelArgs: [],
-      action: () => {
-        api.queueCommandDontStopTheMusicToggle(
-          store.activePlayerQueue!.queue_id,
-        );
-      },
-      icon: "mdi-all-inclusive",
-    },
-  ];
+  if (!store.activePlayer) return;
   eventbus.emit("contextmenu", {
-    items: menuItems,
+    items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
   });

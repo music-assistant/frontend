@@ -4,7 +4,7 @@
     <!-- mute btn + player name + optional sync checkbox-->
     <v-list-item
       v-if="!hideHeadingRow"
-      class="volumesliderrow"
+      class="volumesliderrow heading"
       :link="false"
       :style="player.powered ? 'opacity: 1' : 'opacity: 0.6'"
     >
@@ -17,6 +17,16 @@
       </template>
       <template #default>
         <h5>{{ getPlayerName(player, 27) }}</h5>
+      </template>
+      <template #append>
+        <!-- power button -->
+        <Button
+          class="powerbtn"
+          variant="icon"
+          @click="api.playerCommandPowerToggle(player.player_id)"
+        >
+          <v-icon :size="25" icon="mdi-power" />
+        </Button>
       </template>
     </v-list-item>
     <!-- mute btn + volume slider + volume level text (or collapse btn)-->
@@ -202,7 +212,7 @@ import { api } from "@/plugins/api";
 import { truncateString, getPlayerName } from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import Button from "@/components/mods/Button.vue";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 export interface Props {
   player: Player;
@@ -211,8 +221,9 @@ export interface Props {
   hideHeadingRow?: boolean;
 }
 const compProps = defineProps<Props>();
-
-let timeOutId: NodeJS.Timeout | undefined = undefined;
+const playersToSync = ref<string[]>([]);
+const playersToUnSync = ref<string[]>([]);
+const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
 
 const canExpand = computed(() => {
   return compProps.player.group_childs.length > 0;
@@ -229,7 +240,7 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
       items.push(volumeChild);
     }
   }
-  // when syncontrols are enabled, show all sync-able players
+  // when syncontrols are enabled, show all syncable players
   if (compProps.showSyncControls && player.type == PlayerType.PLAYER) {
     for (const syncPlayerId of Object.keys(api?.players)) {
       const syncPlayer = api?.players[syncPlayerId];
@@ -239,11 +250,7 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
       // skip unavailable players
       if (!syncPlayer.available) continue;
 
-      // skip if player is already synced to another player
-      if (syncPlayer.synced_to && syncPlayer.synced_to != player.player_id)
-        continue;
-
-      // skip if player a group active
+      // skip if player has a group active
       if (
         syncPlayer.active_group &&
         syncPlayer.active_group != player.player_id
@@ -271,23 +278,85 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
   return items;
 };
 
-const syncCheckBoxChange = function (playerId: string, value: boolean | null) {
-  if (value) {
-    api.players[compProps.player.player_id].group_childs.push(playerId);
-    clearTimeout(timeOutId);
-    timeOutId = setTimeout(() => {
-      api.playerCommandSyncMany(
-        compProps.player.player_id,
-        api.players[compProps.player.player_id].group_childs,
-      );
-    }, 1000);
-  } else {
-    api.players[compProps.player.player_id].group_childs = api.players[
-      compProps.player.player_id
-    ].group_childs.filter((x) => x != playerId);
-    // power off will also unsync
-    api.playerCommandPower(playerId, false);
+const playerCommandPowerOffUnsyncMany = async function (player_ids: string[]) {
+  /*
+      Handle power off (and unsync) command for all the given players.
+    */
+  for (const playerId of player_ids) {
+    if (api.players[playerId].powered)
+      // power off will also unsync in the backend
+      await api.playerCommandPower(playerId, false);
+    else await api.playerCommandUnSync(playerId);
   }
+};
+
+const syncCheckBoxChange = async function (
+  syncPlayerId: string,
+  value: boolean | null,
+) {
+  const parentPlayerId = compProps.player.player_id;
+
+  console.log("syncCheckBoxChange", syncPlayerId, value);
+  if (value) {
+    // add syncPlayerId to syncgroup
+    if (playersToUnSync.value.includes(syncPlayerId)) {
+      // remove syncPlayerId from the unSync list if needed
+      playersToUnSync.value = playersToUnSync.value.filter(
+        (x) => x != syncPlayerId,
+      );
+    }
+    if (!playersToSync.value.includes(syncPlayerId)) {
+      playersToSync.value.push(syncPlayerId);
+    }
+    // optimistically update player state
+    api.players[parentPlayerId].group_childs.push(syncPlayerId);
+  } else {
+    // remove player from syncgroup
+    if (playersToSync.value.includes(syncPlayerId)) {
+      // remove syncPlayerId from the sync list if needed
+      playersToSync.value = playersToSync.value.filter(
+        (x) => x != syncPlayerId,
+      );
+    }
+    if (!playersToUnSync.value.includes(syncPlayerId)) {
+      playersToUnSync.value.push(syncPlayerId);
+    }
+    // optimistically update player state
+    api.players[parentPlayerId].group_childs = api.players[
+      parentPlayerId
+    ].group_childs.filter((x) => x != syncPlayerId);
+  }
+
+  // clear existing debounce timer
+  if (timeOutId.value != null) clearTimeout(timeOutId.value);
+
+  // execute (un)sync with a debounce timer to account for someone
+  // changing multiple checkboxes in quick succession
+
+  timeOutId.value = setTimeout(async () => {
+    if (playersToUnSync.value.length > 0) {
+      // power off will also unsync
+      playerCommandPowerOffUnsyncMany(playersToUnSync.value)
+        .catch(async () => {
+          // restore state if command failed
+          api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
+        })
+        .finally(() => {
+          playersToUnSync.value = [];
+        });
+    }
+    if (playersToSync.value.length > 0) {
+      api
+        .playerCommandSyncMany(parentPlayerId, playersToSync.value)
+        .catch(async () => {
+          // restore state if command failed
+          api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
+        })
+        .finally(() => {
+          playersToSync.value = [];
+        });
+    }
+  }, 2000);
 };
 </script>
 
@@ -300,6 +369,11 @@ const syncCheckBoxChange = function (playerId: string, value: boolean | null) {
   min-height: 30px;
 }
 
+.heading {
+  margin-bottom: 5px;
+  height: 35px;
+}
+
 .volumecaption {
   width: 28px;
   text-align: right;
@@ -309,6 +383,9 @@ const syncCheckBoxChange = function (playerId: string, value: boolean | null) {
 .expandbtn {
   margin-right: -12px;
 }
+.powerbtn {
+  right: 8px;
+}
 
 .volumesliderrow :deep(.v-list-item__prepend) {
   width: 40px;
@@ -316,10 +393,6 @@ const syncCheckBoxChange = function (playerId: string, value: boolean | null) {
 }
 .volumesliderrow :deep(.v-list-item__append) {
   width: 20px;
-}
-
-.powerbtn {
-  height: 22px;
 }
 
 .checkbox {

@@ -175,6 +175,7 @@
       :show-sync-controls="showSyncControls"
       :hide-heading-row="true"
       :show-sub-players="showSubPlayers"
+      @click.stop
     />
   </v-card>
 </template>
@@ -184,7 +185,6 @@ import api from "@/plugins/api";
 import {
   MediaType,
   Player,
-  PlayerFeature,
   PlayerState,
   PlayerType,
 } from "@/plugins/api/interfaces";
@@ -215,7 +215,11 @@ const playerQueue = computed(() => {
   if (compProps.player && compProps.player.active_source in api.queues) {
     return api.queues[compProps.player.active_source];
   }
-  if (compProps.player && compProps.player.player_id in api.queues) {
+  if (
+    compProps.player &&
+    !compProps.player.active_source &&
+    compProps.player.player_id in api.queues
+  ) {
     return api.queues[compProps.player.player_id];
   }
   return undefined;
@@ -300,7 +304,6 @@ const openPlayerMenu = function (evt: Event) {
   margin-top: 5px;
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.3);
-  display: inline-table;
 }
 
 .icon-thumb {

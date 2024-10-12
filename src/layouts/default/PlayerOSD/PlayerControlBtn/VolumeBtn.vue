@@ -86,7 +86,7 @@
         <VolumeControl
           v-if="store.activePlayer"
           :player="store.activePlayer"
-          :force-show-sub-players="true"
+          :show-sub-players="true"
           :show-sync-controls="false"
           :hide-heading-row="false"
           style="margin-left: 18px"

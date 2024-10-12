@@ -7,22 +7,15 @@ import {
   PlayerQueue,
   PlayerFeature,
   PlayerType,
+  RepeatMode,
 } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
 export const getPlayerMenuItems = (
-  player?: Player,
+  player: Player,
   playerQueue?: PlayerQueue,
 ): ContextMenuItem[] => {
-  if (!player && !playerQueue) return [];
-  if (!player) player = api.players[playerQueue!.queue_id];
-  if (!playerQueue && player.active_source in api.queues) {
-    playerQueue = api.queues[player.active_source];
-  } else if (!playerQueue && player.player_id in api.queues) {
-    playerQueue = api.queues[player.player_id];
-  }
-
   // power off/on
   const menuItems: ContextMenuItem[] = [
     {
@@ -72,21 +65,76 @@ export const getPlayerMenuItems = (
         ),
     });
   }
+  // add enable/disable shuffle menu item
+  if (playerQueue) {
+    menuItems.push({
+      label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
+      labelArgs: [],
+      action: () => {
+        api.queueCommandShuffleToggle(playerQueue.queue_id);
+      },
+      icon: playerQueue.shuffle_enabled
+        ? "mdi-shuffle-disabled"
+        : "mdi-shuffle",
+    });
+  }
+
+  // add repeat mode item
+  if (playerQueue) {
+    menuItems.push({
+      label: "select_repeat_mode",
+      labelArgs: [],
+      subItems: [
+        {
+          label: "repeat_mode.off",
+          labelArgs: [],
+          action: () => {
+            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.OFF);
+          },
+          selected: playerQueue.repeat_mode == RepeatMode.OFF,
+        },
+        {
+          label: "repeat_mode.all",
+          labelArgs: [],
+          action: () => {
+            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.ALL);
+          },
+          selected: playerQueue.repeat_mode == RepeatMode.ALL,
+        },
+        {
+          label: "repeat_mode.one",
+          labelArgs: [],
+          action: () => {
+            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.ONE);
+          },
+          selected: playerQueue.repeat_mode == RepeatMode.ONE,
+        },
+      ],
+      icon: "mdi-repeat",
+    });
+  }
 
   // add 'transfer queue' menu item
   if (playerQueue?.items) {
     menuItems.push({
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
-      subItems: Object.values(api.queues)
-        .filter((p) => p.queue_id != playerQueue!.queue_id && p.available)
+      subItems: Object.values(api.players)
+        .filter(
+          (p) =>
+            p.player_id != playerQueue!.queue_id &&
+            p.player_id != player.player_id &&
+            p.available &&
+            p.enabled &&
+            !p.synced_to,
+        )
         .map((p) => {
           return {
             label: p.display_name,
             labelArgs: [],
             action: () => {
-              api.queueCommandTransfer(playerQueue!.queue_id, p.queue_id);
-              store.activePlayerId = p.queue_id;
+              api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
+              store.activePlayerId = p.player_id;
             },
           };
         })
@@ -104,6 +152,19 @@ export const getPlayerMenuItems = (
         api.queueCommandClear(playerQueue!.queue_id);
       },
       icon: "mdi-cancel",
+    });
+  }
+  // add 'don't stop the music' menu item
+  if (playerQueue && "dont_stop_the_music_enabled" in playerQueue) {
+    menuItems.push({
+      label: playerQueue.dont_stop_the_music_enabled
+        ? "dont_stop_the_music_disable"
+        : "dont_stop_the_music_enable",
+      labelArgs: [],
+      action: () => {
+        api.queueCommandDontStopTheMusicToggle(playerQueue.queue_id);
+      },
+      icon: "mdi-all-inclusive",
     });
   }
   // add player settings

@@ -8,7 +8,7 @@
     clipped
     temporary
     touchless
-    :width="$vuetify.display.mobile ? 500 : 400"
+    :width="500"
     style="z-index: 99999"
     z-index="99999"
   >
@@ -37,7 +37,9 @@
           :show-sub-players="
             showSubPlayers && player.player_id == store.activePlayerId
           "
-          :show-sync-controls="player.type == PlayerType.PLAYER"
+          :show-sync-controls="
+            player.supported_features.includes(PlayerFeature.SYNC)
+          "
           @click="playerClicked(player)"
         />
       </v-list>
@@ -54,9 +56,10 @@
                 :id="player.player_id"
                 :key="player.player_id"
                 :player="player"
-                :show-volume-control="true"
+                :show-volume-control="false"
                 :show-menu-button="true"
-                :show-sub-players="player.player_id == store.activePlayerId"
+                :show-sub-players="false"
+                :show-sync-controls="false"
                 @click="playerClicked(player)"
               />
             </v-list>
@@ -69,7 +72,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { Player, PlayerState, PlayerType } from "@/plugins/api/interfaces";
+import {
+  Player,
+  PlayerFeature,
+  PlayerState,
+  PlayerType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";
 import PanelviewPlayerCard from "@/components/PanelviewPlayerCard.vue";

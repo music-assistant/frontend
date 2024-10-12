@@ -82,8 +82,8 @@
     "refresh_item": "Refresh item",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
-    "repeat_mode": "Repeat mode: {0}",
-    "repeatmode": {
+    "select_repeat_mode": "Select repeat mode",
+    "repeat_mode": {
         "all": "Repeat entire queue",
         "off": "Repeat off",
         "one": "Repeat single track"
@@ -419,8 +419,8 @@
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
-    "shuffle_disabled": "Shuffle is disabled",
-    "shuffle_enabled": "Shuffle is enabled",
+    "shuffle_disable": "Disable shuffle",
+    "shuffle_enable": "Enable shuffle",
     "sort": {
         "duration": "Duration",
         "position": "Position",
@@ -532,6 +532,6 @@
     "sync_player_with": "Synchronize with another player",
     "open_player_settings": "Open player settings",
     "powered_off_players": "Powered off players",
-    "dont_stop_the_music_enabled": "Don't stop the music is enabled",
-    "dont_stop_the_music_disabled": "Don't stop the music is disabled"
+    "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
+    "dont_stop_the_music_disable": "Disable 'Don't stop the music!'"
 }

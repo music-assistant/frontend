@@ -6,7 +6,7 @@
     @mouseenter="isThumbHidden = false"
     @mouseleave="isThumbHidden = true"
     @wheel.prevent="onWheel"
-    @update:model-value="(value) => $emit('update:model-value', value)"
+    @end="(value) => $emit('update:model-value', value)"
   >
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>

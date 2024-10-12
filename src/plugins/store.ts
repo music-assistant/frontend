@@ -62,7 +62,12 @@ export const store: Store = reactive({
     if (store.activePlayer && store.activePlayer.active_source in api.queues) {
       return api.queues[store.activePlayer.active_source];
     }
-    if (store.activePlayer && store.activePlayer.player_id in api.queues) {
+    if (
+      store.activePlayer &&
+      !store.activePlayer.active_source &&
+      store.activePlayer.player_id in api.queues &&
+      api.queues[store.activePlayer.player_id].active
+    ) {
       return api.queues[store.activePlayer.player_id];
     }
     return undefined;

@@ -767,59 +767,71 @@ export class MusicAssistantApi {
     // Get all registered players.
     return this.sendCommand("players/all");
   }
-
-  public playerCommandPlay(playerId: string) {
-    this.playerCommand(playerId, "play");
-  }
-  public playerCommandPause(playerId: string) {
-    this.playerCommand(playerId, "pause");
-  }
-  public playerCommandPlayPause(playerId: string) {
-    this.playerCommand(playerId, "play_pause");
+  public async getPlayer(player_id: string): Promise<Player> {
+    return this.sendCommand("players/get", {
+      player_id,
+      raise_unavailable: true,
+    });
   }
 
-  public playerCommandStop(playerId: string) {
-    this.playerCommand(playerId, "stop");
+  public playerCommandPlay(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "play");
+  }
+  public playerCommandPause(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "pause");
+  }
+  public playerCommandPlayPause(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "play_pause");
   }
 
-  public playerCommandPower(playerId: string, powered: boolean) {
-    this.playerCommand(playerId, "power", { powered });
+  public playerCommandStop(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "stop");
   }
 
-  public playerCommandPowerToggle(playerId: string) {
-    this.playerCommandPower(playerId, !this.players[playerId].powered);
+  public playerCommandPower(playerId: string, powered: boolean): Promise<void> {
+    return this.playerCommand(playerId, "power", { powered });
   }
 
-  public playerCommandVolumeSet(playerId: string, newVolume: number) {
+  public playerCommandPowerToggle(playerId: string): Promise<void> {
+    return this.playerCommandPower(playerId, !this.players[playerId].powered);
+  }
+
+  public async playerCommandVolumeSet(playerId: string, newVolume: number) {
     newVolume = Math.max(newVolume, 0);
     newVolume = Math.min(newVolume, 100);
 
-    this.playerCommand(playerId, "volume_set", {
+    await this.playerCommand(playerId, "volume_set", {
       volume_level: newVolume,
     });
     this.players[playerId].volume_level = newVolume;
   }
-  public playerCommandVolumeUp(playerId: string) {
-    this.playerCommand(playerId, "volume_up");
+  public playerCommandVolumeUp(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "volume_up");
   }
-  public playerCommandVolumeDown(playerId: string) {
-    this.playerCommand(playerId, "volume_down");
+  public playerCommandVolumeDown(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "volume_down");
   }
-  public playerCommandVolumeMute(playerId: string, muted: boolean) {
-    this.playerCommand(playerId, "volume_mute", {
+  public playerCommandVolumeMute(
+    playerId: string,
+    muted: boolean,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "volume_mute", {
       muted,
     });
     this.players[playerId].volume_muted = muted;
   }
 
-  public playerCommandMuteToggle(playerId: string) {
-    this.playerCommandVolumeMute(
+  public playerCommandMuteToggle(playerId: string): Promise<void> {
+    return this.playerCommandVolumeMute(
       playerId,
       !this.players[playerId].volume_muted,
     );
   }
 
-  public playerCommandSync(playerId: string, target_player: string) {
+  public playerCommandSync(
+    playerId: string,
+    target_player: string,
+  ): Promise<void> {
     /*
       Handle SYNC command for given player.
 
@@ -831,12 +843,12 @@ export class MusicAssistantApi {
           - player_id: player_id of the player to handle the command.
           - target_player: player_id of the syncgroup master or group player.
     */
-    this.playerCommand(playerId, "sync", {
+    return this.playerCommand(playerId, "sync", {
       target_player,
     });
   }
 
-  public playerCommandUnSync(playerId: string) {
+  public playerCommandUnSync(playerId: string): Promise<void> {
     /*
       Handle UNSYNC command for given player.
 
@@ -846,27 +858,27 @@ export class MusicAssistantApi {
 
           - player_id: player_id of the player to handle the command.
     */
-    this.playerCommand(playerId, "unsync");
+    return this.playerCommand(playerId, "unsync");
   }
 
   public playerCommandSyncMany(
     target_player: string,
     child_player_ids: string[],
-  ) {
+  ): Promise<void> {
     /*
       Create temporary sync group by joining given players to target player.
     */
-    this._sendCommand("players/cmd/sync_many", {
+    return this.sendCommand("players/cmd/sync_many", {
       target_player,
       child_player_ids,
     });
   }
 
-  public playerCommandUnSyncMany(player_ids: string[]) {
+  public playerCommandUnSyncMany(player_ids: string[]): Promise<void> {
     /*
       Handle UNSYNC command for all the given players.
     */
-    this._sendCommand("players/cmd/unsync_many", {
+    return this.sendCommand("players/cmd/unsync_many", {
       player_ids,
     });
   }
@@ -875,18 +887,14 @@ export class MusicAssistantApi {
     player_id: string,
     command: string,
     args?: Record<string, any>,
-  ) {
+  ): Promise<void> {
     /*
-      Handle (throttled) command to player
+      Handle command to player
     */
-    clearTimeout(this._throttleId);
-    // apply a bit of throttling here (for the volume and seek sliders especially)
-    this._throttleId = setTimeout(() => {
-      this._sendCommand(`players/cmd/${command}`, {
-        player_id,
-        ...args,
-      });
-    }, 200);
+    return this.sendCommand(`players/cmd/${command}`, {
+      player_id,
+      ...args,
+    });
   }
 
   // PlayerGroup related functions/commands
