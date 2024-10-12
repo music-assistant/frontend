@@ -21,7 +21,6 @@
     <Container variant="panel">
       <Suspense>
         <div>
-          <HomeCurrentlyPlayingRow />
           <HomeWidgetRows />
         </div>
         <template #fallback><v-progress-circular indeterminate /> </template>
@@ -34,7 +33,6 @@
 import Container from "@/components/mods/Container.vue";
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import HomeCurrentlyPlayingRow from "@/components/HomeCurrentlyPlayingRow.vue";
 import { ref, watch } from "vue";
 import { store } from "@/plugins/store";
 import api from "@/plugins/api";
