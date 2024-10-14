@@ -14,7 +14,7 @@
         "@mdi/font": "7.4.47",
         "@mdi/js": "7.4.47",
         "color": "4.2.3",
-        "colorthief": "2.4.0",
+        "colorthief": "2.6.0",
         "home-assistant-js-websocket": "9.4.0",
         "marked": "^14.1.2",
         "mitt": "3.0.1",
