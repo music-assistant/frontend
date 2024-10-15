@@ -80,12 +80,6 @@
     "refresh_item": "Aggiorna elemento",
     "remove_library": "Rimuovi dalla libreria",
     "remove_playlist": "Rimuovi dalla playlist",
-    "repeat_mode": "Modalità di ripetizione: {0}",
-    "repeatmode": {
-        "all": "Ripeti l'intera coda",
-        "off": "Non ripetere",
-        "one": "Ripeti traccia singola"
-    },
     "search": "Cerca",
     "settings": {
         "add_new": "Aggiungi nuovo",
@@ -173,8 +167,6 @@
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
     "shuffle": "Riproduzione casuale",
-    "shuffle_disabled": "Riproduzione casuale disabilitata",
-    "shuffle_enabled": "Riproduzione casuale abilitata",
     "sort": {
         "duration": "Durata",
         "position": "Posizione",
@@ -191,7 +183,6 @@
     },
     "stream_details": "Dettagli traccia",
     "sync_now": "Sincronizza {0} ora",
-    "sync_player_to": "Sync this player to:",
     "sync_running": "Uno o più provider musicali si stanno sincronizzando.",
     "tooltip": {
         "album_artist_filter": "Alterna filtro album-artista",

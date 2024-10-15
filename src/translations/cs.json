@@ -81,12 +81,6 @@
     "refresh_item": "Obnovit položku",
     "remove_library": "Odebrat z knihovny",
     "remove_playlist": "Odebrat z playlistu",
-    "repeat_mode": "Režim opakování: {0}",
-    "repeatmode": {
-        "all": "Opakovat celou frontu",
-        "off": "Opakování vypnuto",
-        "one": "Opakování jedné skladby"
-    },
     "search": "Vyhledávání",
     "settings": {
         "add_new": "Přidat nový",
@@ -340,8 +334,6 @@
     "show_info": "Zobrazit informace",
     "show_select_boxes": "Zobrazit výběrová pole",
     "shuffle": "Náhodné přehrávání",
-    "shuffle_disabled": "Náhodné přehrávání je vypnuto",
-    "shuffle_enabled": "Náhodné přehrávání je zapnuto",
     "sort": {
         "duration": "Doba trvání",
         "position": "Pozice",
@@ -369,7 +361,6 @@
     },
     "stream_details": "Podrobnosti o streamu",
     "sync_now": "Synchronizovat {0} nyní",
-    "sync_player_to": "Synchronizovat tento přehrávač s:",
     "sync_running": "Probíhá synchronizace jednoho nebo více poskytovatelů hudby.",
     "tooltip": {
         "album_artist_filter": "Filtrování na alba s interprety",

@@ -81,12 +81,6 @@
     "refresh_item": "רענן פריט",
     "remove_library": "הסר מהספרייה",
     "remove_playlist": "הסר מרשימת ההשמעה",
-    "repeat_mode": "מצב חזרה: {0}",
-    "repeatmode": {
-        "all": "חזור על כל הרשימה",
-        "off": "כבה ריפיט",
-        "one": "חזור על שיר בודד"
-    },
     "search": "חיפוש",
     "settings": {
         "add_new": "הוסף חדש",
@@ -154,8 +148,6 @@
     "show_info": "הצג מידע",
     "show_select_boxes": "הצג תיבות בחירה",
     "shuffle": "ערבוב",
-    "shuffle_disabled": "ערבוב מושבת",
-    "shuffle_enabled": "ערבוב מופעל",
     "sort": {
         "duration": "משך",
         "position": "מיקום",
@@ -181,7 +173,6 @@
     },
     "stream_details": "פרטי ההשמעה",
     "sync_now": "סנכרן את {0} כעת",
-    "sync_player_to": "סנכרן את הנגן הזה ל:",
     "sync_running": "ספק מוזיקה אחד או יותר עוברים סנכרון.",
     "tooltip": {
         "album_artist_filter": "החלף את מסנן האלבום-אמן",

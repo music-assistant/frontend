@@ -82,12 +82,6 @@
     "refresh_item": "Rafraichir l'élément",
     "remove_library": "Supprimer de la bibliothèque",
     "remove_playlist": "Supprimer de la liste de lecture",
-    "repeat_mode": "Mode de répétition : {0}",
-    "repeatmode": {
-        "all": "Répéter la file d'attente",
-        "off": "Répétition désactivée",
-        "one": "Répéter une seule piste"
-    },
     "search": "Rechercher",
     "settings": {
         "add_new": "Ajouter un nouveau",
@@ -165,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Activer le mode \"flux\" pour la file d'attente",
-            "description": "Activer le mode 'flux' où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et\/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
+            "description": "Activer le mode 'flux' où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et\/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
         },
         "auto_play": {
             "label": "Lecture automatique (reprise à l'allumage)",
@@ -187,7 +181,7 @@
         },
         "volume_normalization_target": {
             "label": "Niveau cible pour la normalisation du volume",
-            "description": "Ajuster l'intensité sonore moyenne (perçue) à ce niveau cible, la valeur par défaut étant de -17 LUFS.\n\n**AVERTISSEMENT :** Un niveau trop élevé peut entraîner un écrêtage !"
+            "description": "Ajuster l'intensité sonore moyenne (perçue) à ce niveau cible, la valeur par défaut étant de -17 LUFS.\\n\\n**AVERTISSEMENT :** Un niveau trop élevé peut entraîner un écrêtage !"
         },
         "eq_bass": {
             "label": "Égaliseur : basse",
@@ -211,7 +205,7 @@
         },
         "hide_player": {
             "label": "Masquer ce lecteur dans l'interface utilisateur",
-            "description": "Masquez ce lecteur dans l’interface utilisateur. \n\nNotez qu’il peut toujours être contrôlé et qu’il apparaîtra également dans tous les groupes de synchronisation auxquels ce lecteur appartient."
+            "description": "Masquez ce lecteur dans l’interface utilisateur. \\n\\nNotez qu’il peut toujours être contrôlé et qu’il apparaîtra également dans tous les groupes de synchronisation auxquels ce lecteur appartient."
         },
         "default_enqueue_select_artist": {
             "label": "Éléments à sélectionner lors de la lecture d'un artiste (de la bibliothèque).",
@@ -323,7 +317,7 @@
         },
         "icon": {
             "label": "Icône",
-            "description": "Icône Material design pour ce lecteur.\n\nVoir https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Icône Material design pour ce lecteur.\\n\\nVoir https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Interface utilisateur",
         "frontend_desc": "Paramètres de configuration pour l'interface utilisateur de Music Assistant (frontend). Notez que ces paramètres sont stockés au niveau de l’appareil.",
@@ -344,7 +338,7 @@
         },
         "menu_items": {
             "label": "Éléments de menu activés",
-            "description": "Configurer les éléments à afficher dans le menu.\n\nNotez que si vous désactivez les paramètres, vous pourriez vous bloquer l'accès.\n\nDans ce cas, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques."
+            "description": "Configurer les éléments à afficher dans le menu.\\n\\nNotez que si vous désactivez les paramètres, vous pourriez vous bloquer l'accès.\\n\\nDans ce cas, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques."
         },
         "language": {
             "label": "Langue",
@@ -375,7 +369,7 @@
         },
         "hide_settings": {
             "label": "Masquer le bouton des paramètres",
-            "description": "Masquer le bouton des paramètres sur l’écran d’accueil.\n\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\n\nDans ce cas, vous devrez saisir manuellement le chemin d'accès aux paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques !"
+            "description": "Masquer le bouton des paramètres sur l’écran d’accueil.\\n\\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\\n\\nDans ce cas, vous devrez saisir manuellement le chemin d'accès aux paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques !"
         },
         "no_music_providers": "Aucun fournisseur de musique configuré",
         "no_music_providers_detail": "Démarrez votre expérience Music Assistant en ajoutant vos fournisseurs de musique.",
@@ -390,8 +384,6 @@
     "show_info": "Afficher les informations",
     "show_select_boxes": "Afficher les cases de sélection",
     "shuffle": "Aléatoire",
-    "shuffle_disabled": "La lecture aléatoire est désactivée",
-    "shuffle_enabled": "La lecture aléatoire est activée",
     "sort": {
         "duration": "Durée",
         "position": "Position",
@@ -428,7 +420,6 @@
     },
     "stream_details": "Détails du flux",
     "sync_now": "Synchronisez {0} maintenant",
-    "sync_player_to": "Synchronisez ce lecteur avec :",
     "sync_running": "Un ou plusieurs fournisseurs de musique sont en cours de synchronisation.",
     "tooltip": {
         "album_artist_filter": "Basculer le filtre d'album-artiste",

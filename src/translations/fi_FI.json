@@ -9,40 +9,105 @@
     "album_type": {
         "album": "Albumi",
         "compilation": "Kokoelma",
+        "ep": "EP",
+        "single": "Single",
         "unknown": "Tuntematon albumin tyyppi"
     },
     "albums": "Albumit",
+    "appears_on": "Esiintyy",
     "artist": "Artisti",
+    "artist_albums": "Albumit",
     "artists": "Artistit",
     "browse": "Selaa",
     "clear_selection": "Tyhjennä valinta",
     "close": "Sulje",
+    "dark_mode": "Pimeä tila",
+    "delete_db": "Poista kohde tietokannasta",
+    "details": "Tiedot",
+    "enter_url": "Anna URL-osoite, jonka haluat lisätä manuaalisesti tietokantaan",
+    "external_source_active": "Ulkoinen lähde aktiivinen: {0}",
+    "goto_album": "Mene albumiin {0}",
+    "goto_artist": "Mene artistiin {0}",
     "home": "Koti",
+    "items_selected": "{0} kohde(tta) valittuna",
+    "items_total": "yhteensä {0} kohde(tta)",
     "library": "Kirjasto",
+    "loading": "Tietoja haetaan palvelimelta",
+    "mass": "Music Assistant",
+    "new_playlist_name": "Anna uudelle soittolistalle nimi",
+    "no_content": "Kohteita ei löytynyt.",
+    "no_player": "Ei soitinta valittuna",
+    "off": "Pois päältä",
+    "on": "Päällä",
+    "other_versions": "Muut versiot",
     "play": "Soita",
+    "play_album_from": "Soita albumi tästä alkaen",
     "play_next": "Soita seuraavaksi",
     "play_now": "Soita nyt",
+    "play_on": "Soita kohteessa: {0}",
+    "play_playlist_from": "Soita soittolista tästä alkaen",
     "play_radio": "Käynnistä Radio",
+    "player_type": {
+        "group": "Ryhmä",
+        "player": "Soitin",
+        "stereo_pair": "Stereopari"
+    },
     "players": "Soittimet",
     "playlist": "Soittolista",
     "playlists": "Soittolistat",
     "provider_details": "Tarjoajan tiedot",
     "queue": "Jono",
+    "queue_clear": "Tyhjennä jono",
     "queue_delete": "Poista kohde",
+    "queue_empty": "Ei kohteita jonossa",
+    "queue_move_down": "Siirrä alaspäin",
+    "queue_move_up": "Siirrä ylöspäin",
+    "queue_next_items": "Seuraavat kohteet",
+    "queue_options": "Jonon asetukset",
     "queue_previous_items": "Soitetut kohteet",
+    "queue_radio_enabled": "Radio-tila on päällä",
     "radios": "Radio",
     "read_more": "lue lisää",
+    "refresh_item": "Päivitä kohde",
+    "remove_library": "Poista kirjastosta",
+    "remove_playlist": "Poista soittolistasta",
     "search": "Haku",
     "settings": {
         "add_new": "Lisää uusi",
         "add_provider": "Lisää uusi tarjoaja",
         "advanced_settings": "Lisäasetukset",
+        "check_docs": "Lue dokumentaatio",
+        "codeowners": "Tekijät\/krediitit",
+        "config_player": "Määritä soitin: {0}",
+        "configure": "Määritä",
+        "delete": "Poista",
+        "disable": "Poista käytöstä",
+        "documentation": "Dokumentaatio",
+        "enable": "Ota käyttöön",
+        "enable_player": "Ota tämä soitin käyttöön",
+        "enable_provider": "Ota tämä toimittaja käyttöön",
+        "enabled": "Käytössä",
+        "invalid_input": "Syöte on virheellinen",
+        "metadataproviders": "Metatietojen toimittaja",
+        "musicproviders": "Musiikin toimittajat",
+        "need_help_setup_provider": "Tarvitsetko apua toimittajan määrittämisessä?",
+        "no_providers": "Ei musiikintomittajia määrittynä",
         "icon": {
             "label": "Ikoni"
         },
         "language": {
             "options": {
                 "es": "Espanjan kieli"
+            }
+        },
+        "volume_normalization_radio": {
+            "options": {
+                "disabled": "Pois käytöstä"
+            }
+        },
+        "volume_normalization_tracks": {
+            "options": {
+                "disabled": "Pois käytöstä"
             }
         }
     },
