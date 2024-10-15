@@ -67,7 +67,7 @@
     "playlists": "Playlists",
     "provider_details": "Provider details",
     "queue": "Queue",
-    "queue_clear": "Clear all items in queue",
+    "queue_clear": "Clear queue",
     "queue_delete": "Delete item",
     "queue_empty": "No items in the queue",
     "queue_move_down": "Move down",

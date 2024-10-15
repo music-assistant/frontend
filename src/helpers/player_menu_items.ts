@@ -29,28 +29,27 @@ export const getPlayerMenuItems = (
   ];
 
   // add 'synchronize with' menu item
+  const playersToSyncWith = Object.values(api.players).filter(
+    (p) =>
+      p.player_id != player.player_id &&
+      p.available &&
+      p.enabled &&
+      p.provider == player.provider &&
+      p.supported_features.includes(PlayerFeature.SYNC) &&
+      !p.synced_to,
+  );
   if (
     player.supported_features.includes(PlayerFeature.SYNC) &&
     !player.synced_to &&
     player.type == PlayerType.PLAYER &&
-    player.group_childs.length == 0
+    player.group_childs.length == 0 &&
+    playersToSyncWith.length > 0
   ) {
     menuItems.push({
       label: "sync_player_with",
       labelArgs: [],
       icon: "mdi-link-variant",
-      subItems: Object.values(api.players)
-        .filter(
-          (p) =>
-            p.player_id != player.player_id &&
-            p.available &&
-            p.enabled &&
-            p.provider == player.provider &&
-            p.type == PlayerType.PLAYER &&
-            p.group_childs.length == 0 &&
-            p.supported_features.includes(PlayerFeature.SYNC) &&
-            !p.synced_to,
-        )
+      subItems: playersToSyncWith
         .map((p) => {
           return {
             label: p.display_name,

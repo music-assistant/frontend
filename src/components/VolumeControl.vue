@@ -23,7 +23,7 @@
         <Button
           class="powerbtn"
           variant="icon"
-          @click="api.playerCommandPowerToggle(player.player_id)"
+          @click.stop="api.playerCommandPowerToggle(player.player_id)"
         >
           <v-icon :size="25" icon="mdi-power" />
         </Button>
@@ -43,7 +43,7 @@
           :disabled="
             player.type == PlayerType.GROUP || player.group_childs.length > 0
           "
-          @click="api.playerCommandMuteToggle(player.player_id)"
+          @click.stop="api.playerCommandMuteToggle(player.player_id)"
         >
           <v-icon
             :size="25"
@@ -71,6 +71,7 @@
                 : player.volume_level,
             )
           "
+          @click.stop
           @update:model-value="
             player.group_childs.length > 0
               ? api.playerCommandGroupVolume(player.player_id, $event)
@@ -101,6 +102,7 @@
         player.powered &&
         (player.group_childs.length > 0 || showSyncControls)
       "
+      @click.stop
     >
       <v-divider style="margin-top: 10px; margin-bottom: 15px" />
 

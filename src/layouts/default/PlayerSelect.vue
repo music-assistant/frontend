@@ -27,7 +27,7 @@
       </Button>
 
       <v-list flat style="margin: 5px 5px">
-        <PanelviewPlayerCard
+        <PlayerCard
           v-for="player in sortedPlayers.filter((x) => x.powered)"
           :id="player.player_id"
           :key="player.player_id"
@@ -51,7 +51,7 @@
         >
           <v-expansion-panel-text style="padding: 0">
             <v-list flat>
-              <PanelviewPlayerCard
+              <PlayerCard
                 v-for="player in sortedPlayers.filter((x) => !x.powered)"
                 :id="player.player_id"
                 :key="player.player_id"
@@ -80,7 +80,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";
-import PanelviewPlayerCard from "@/components/PanelviewPlayerCard.vue";
+import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
 
 const showSubPlayers = ref(false);

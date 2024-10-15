@@ -13,7 +13,9 @@
         <v-card-title>
           {{
             $t("settings.config_player", [
-              config.name || api.players[config.player_id].name,
+              config.name ||
+                api.players[config.player_id]?.name ||
+                config.default_name,
             ])
           }}
         </v-card-title>
@@ -23,13 +25,12 @@
         <v-card-subtitle>
           <b>{{ $t("settings.player_provider") }}: </b
           >{{ api.getProviderManifest(config.provider)?.name }}
-          (
-          {{ api.getProviderManifest(config.provider)?.description }})
           <a
             v-if="api.getProviderManifest(config.provider)?.documentation"
             :href="api.getProviderManifest(config.provider)?.documentation"
             target="_blank"
-            >{{ $t("settings.check_docs") }}</a
+          >
+            [{{ $t("settings.check_docs") }}]</a
           >
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">

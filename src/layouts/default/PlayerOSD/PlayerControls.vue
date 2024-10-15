@@ -20,11 +20,13 @@
         :icon="visibleComponents.previous.icon"
       />
     </div>
-    <!-- play/pause button: only when MA queue is active -->
+    <!-- play/pause button -->
     <div v-if="visibleComponents && visibleComponents.play?.isVisible">
       <PlayBtn
+        :player="store.activePlayer"
+        :player-queue="store.activePlayerQueue"
         class="media-controls-item"
-        :with-circle="visibleComponents.play.withCircle"
+        :icon-style="visibleComponents.play.withCircle ? 'circle' : ''"
         :icon="visibleComponents.play.icon"
       />
     </div>
@@ -60,6 +62,7 @@ import ShuffleBtn from "./PlayerControlBtn/ShuffleBtn.vue";
 import PlayBtn from "./PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "./PlayerControlBtn/PreviousBtn.vue";
 import NextBtn from "./PlayerControlBtn/NextBtn.vue";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {

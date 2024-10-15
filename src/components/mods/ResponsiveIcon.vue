@@ -14,7 +14,7 @@
       minHeight: staticHeight ? staticHeight : minHeight,
       minWidth: staticWidth ? staticWidth : minWidth,
     }"
-    @click="disabled ? $event.preventDefault() : $emit('clicked')"
+    @click.stop="disabled ? $event.preventDefault() : $emit('clicked')"
   >
     <v-badge :model-value="badge == true" color="error" dot>
       <v-icon

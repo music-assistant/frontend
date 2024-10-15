@@ -229,6 +229,29 @@
                 variant="outlined"
                 @click:clear="conf_entry.value = conf_entry.default_value"
               />
+              <!-- value with dropdown -->
+              <v-combobox
+                v-else-if="
+                  conf_entry.type == ConfigEntryType.STRING &&
+                  conf_entry.multi_value
+                "
+                v-model="conf_entry.value as string[]"
+                multiple
+                chips
+                :clearable="true"
+                :disabled="checkDisabled(conf_entry)"
+                :label="
+                  $t(`settings.${conf_entry.key}.label`, conf_entry.label)
+                "
+                :required="conf_entry.required"
+                :rules="[
+                  (v) =>
+                    !(!v && conf_entry.required) ||
+                    $t('settings.invalid_input'),
+                ]"
+                variant="outlined"
+                @click:clear="conf_entry.value = []"
+              />
               <!-- all other: textbox with single value -->
               <v-text-field
                 v-else

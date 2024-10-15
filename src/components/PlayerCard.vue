@@ -91,7 +91,7 @@
             {{ getArtistsString(curQueueItem?.media_item.artists) }} •
             {{ curQueueItem?.media_item.album.name }}
           </div>
-          <!-- track/album fallback: artist present -->
+          <!-- track fallback: (only artist, no album) -->
           <div
             v-else-if="
               curQueueItem?.media_item &&
@@ -133,28 +133,16 @@
             >mdi-power</v-icon
           ></Button
         >
-        <!-- pause button (only when playing) -->
-        <Button
-          v-else-if="player.state == PlayerState.PLAYING"
+        <!-- play/pause button -->
+        <PlayBtn
+          v-if="player.powered"
+          :player="player"
+          :player-queue="playerQueue"
           class="player-command-btn"
-          @click.stop="api.playerCommandPlayPause(player.player_id)"
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-pause-circle-outline</v-icon
-          ></Button
-        >
-        <!-- play button (disabled if we can't play)-->
-        <Button
-          v-else
-          variant="icon"
-          class="player-command-btn"
-          :disabled="!playerQueue?.items && !player.current_media"
-          @click.stop="api.playerCommandPlay(player.player_id)"
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-play-circle-outline</v-icon
-          ></Button
-        >
+          style="height: 50px"
+          icon-style="circle-outline"
+        />
+        <!-- menu button -->
         <Button
           v-if="showMenuButton"
           variant="icon"
@@ -175,7 +163,6 @@
       :show-sync-controls="showSyncControls"
       :hide-heading-row="true"
       :show-sub-players="showSubPlayers"
-      @click.stop
     />
   </v-card>
 </template>
@@ -198,8 +185,7 @@ import { getPlayerName } from "@/helpers/utils";
 import Button from "@/components/mods/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { eventbus } from "@/plugins/eventbus";
-import router from "@/plugins/router";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 // properties
 export interface Props {

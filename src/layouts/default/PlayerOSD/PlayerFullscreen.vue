@@ -31,21 +31,39 @@
             v-if="$vuetify.display.height > 600"
             class="main-media-details-image"
           >
+            <v-img
+              v-if="
+                !store.curQueueItem?.image &&
+                store.activePlayer?.current_media?.image_url
+              "
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.activePlayer.current_media.image_url"
+            />
             <MediaItemThumb
+              v-else
               :item="store.curQueueItem"
               :thumbnail="false"
               style="max-width: 100%; width: auto"
+              :fallback="
+                $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
+              "
             />
           </div>
           <div class="main-media-details-track-info">
-            <!-- title -->
+            <!-- player name as title if its powered off-->
             <v-card-title
-              v-if="store.curQueueItem?.media_item"
+              v-if="store.activePlayer?.powered == false"
+              :style="`font-size: ${titleFontSize};`"
+            >
+              {{ store.activePlayer?.display_name }}
+            </v-card-title>
+            <!-- queue item media item + optional version-->
+            <v-card-title
+              v-else-if="store.curQueueItem?.media_item"
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item as MediaItemType)"
             >
               {{ store.curQueueItem.media_item.name }}
-              <!-- append version if needed -->
               <span
                 v-if="
                   'version' in store.curQueueItem.media_item &&
@@ -55,21 +73,20 @@
               >
             </v-card-title>
 
-            <!-- fallback title: show name of active queue or player -->
-            <v-card-title
-              v-else-if="
-                store.activePlayerQueue?.display_name ||
-                store.activePlayer?.display_name
-              "
-              :style="`font-size: ${titleFontSize};cursor:pointer;`"
-              @click="store.showPlayersMenu = true"
-            >
-              {{
-                store.activePlayerQueue?.display_name ||
-                store.activePlayer?.display_name
-              }}
+            <!-- external source current media item present -->
+            <v-card-title v-else-if="store.activePlayer?.current_media?.title">
+              <div v-if="store.activePlayer?.current_media?.artist">
+                {{ store.activePlayer?.current_media?.artist }}
+              </div>
+              <div
+                v-if="store.activePlayer?.current_media?.title"
+                :style="`font-size: ${subTitleFontSize};`"
+              >
+                {{ store.activePlayer?.current_media?.title }}
+              </div>
             </v-card-title>
-            <!-- fallback title when no player selected-->
+
+            <!-- no player selected message -->
             <v-card-title
               v-else
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
@@ -77,6 +94,16 @@
             >
               {{ store.activePlayer?.display_name || $t("no_player") }}
             </v-card-title>
+
+            <!-- SUBTITLE -->
+
+            <!-- SUBTITLE: player powered off -->
+            <v-card-subtitle
+              v-if="!store.activePlayer?.powered"
+              class="text-h6 text-md-h5 text-lg-h4"
+            >
+              {{ $t("off") }}
+            </v-card-subtitle>
 
             <!-- subtitle: radio station stream title -->
             <v-card-subtitle
@@ -123,13 +150,11 @@
 
             <!-- subtitle: other source active -->
             <v-card-subtitle
-              v-if="
+              v-else-if="
                 store.activePlayer?.active_source !=
                 store.activePlayer?.player_id
               "
-              :style="`font-size: ${subTitleFontSize}`"
             >
-              <!-- TODO: show media details of other source if possible? -->
               {{
                 $t("external_source_active", [
                   store.activePlayer?.active_source,
@@ -272,7 +297,12 @@
             max-height="30px"
           />
           <PreviousBtn class="media-controls-item" max-height="45px" />
-          <PlayBtn class="media-controls-item" max-height="100px" />
+          <PlayBtn
+            :player="store.activePlayer"
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="100px"
+          />
           <NextBtn class="media-controls-item" max-height="45px" />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
@@ -359,6 +389,7 @@ import {
   EventType,
   MediaItemType,
   MediaType,
+  PlayerType,
   QueueItem,
   Track,
 } from "@/plugins/api/interfaces";
@@ -377,6 +408,10 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import {
+  imgCoverLight,
+  imgCoverDark,
+} from "@/components/QualityDetailsBtn.vue";
 import router from "@/plugins/router";
 import {
   ImageColorPalette,

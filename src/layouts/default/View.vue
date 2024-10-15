@@ -13,6 +13,8 @@
       close-on-content-click
       position="sticky"
       :timeout="store.activeAlert?.persistent ? -1 : 5000"
+      z-index="999999"
+      style="z-index: 999999"
       @update:model-value="() => (store.activeAlert = undefined)"
     />
   </v-main>

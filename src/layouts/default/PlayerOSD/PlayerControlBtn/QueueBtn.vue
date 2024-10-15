@@ -2,7 +2,12 @@
   <ResponsiveIcon
     v-if="isVisible"
     v-bind="icon"
-    :disabled="!store.activePlayerId"
+    :disabled="
+      !store.activePlayerId ||
+      (store.showFullscreenPlayer &&
+        !store.curQueueItem &&
+        !store.showQueueItems)
+    "
     icon="mdi-playlist-play"
     :color="
       getValueFromSources(icon?.color, [

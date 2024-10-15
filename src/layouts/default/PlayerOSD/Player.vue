@@ -22,6 +22,7 @@
               staticWidth: '50px',
               staticHeight: '50px',
             },
+            withCircle: useFloatingPlayer,
           },
           previous: { isVisible: getBreakpointValue('bp3') },
           next: { isVisible: getBreakpointValue('bp3') },
