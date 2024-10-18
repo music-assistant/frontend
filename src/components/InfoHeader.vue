@@ -173,7 +173,7 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
-              :open-menu-on-click="!store.activePlayerQueue"
+              :open-menu-on-click="!store.activePlayer"
               @click="api.playMedia(item!)"
             >
               <template #menu>
@@ -190,8 +190,7 @@
                           variant="text"
                           :title="$t('play_on')"
                           :subtitle="
-                            store.activePlayerQueue?.display_name ||
-                            $t('no_player')
+                            store.activePlayer?.display_name || $t('no_player')
                           "
                           @click.stop="store.showPlayersMenu = true"
                         />
@@ -203,7 +202,7 @@
                     density="compact"
                     slim
                     tile
-                    :disabled="!store.activePlayerQueue"
+                    :disabled="!store.activePlayer"
                   >
                     <div
                       v-for="menuItem of getPlayMenuItems([item], item)"

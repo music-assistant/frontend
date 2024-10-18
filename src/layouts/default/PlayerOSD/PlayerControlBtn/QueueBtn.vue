@@ -15,7 +15,7 @@
       ])
     "
     :type="'btn'"
-    @clicked="onClick"
+    @click="onClick"
   />
 </template>
 

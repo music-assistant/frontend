@@ -110,6 +110,7 @@ export enum PlayerFeature {
   PAUSE = "pause",
   SYNC = "sync",
   SEEK = "seek",
+  NEXT_PREVIOUS = "next_previous",
   ENQUEUE_NEXT = "enqueue_next",
 }
 

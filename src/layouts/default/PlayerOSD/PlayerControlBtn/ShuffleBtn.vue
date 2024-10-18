@@ -1,33 +1,26 @@
 <template>
   <!-- shuffle button -->
   <ResponsiveIcon
-    v-if="isVisible"
+    v-if="isVisible && playerQueue"
     v-bind="icon"
-    :disabled="
-      !store.activePlayerQueue ||
-      !store.activePlayerQueue?.active ||
-      store.activePlayerQueue?.items == 0
-    "
+    :disabled="!playerQueue.active || playerQueue.items == 0"
     :color="
       getValueFromSources(icon?.color, [
-        [store.activePlayerQueue?.shuffle_enabled, 'primary', ''],
+        [playerQueue.shuffle_enabled, 'primary', ''],
       ])
     "
     :icon="
       getValueFromSources(icon?.icon, [
-        [store.activePlayerQueue?.shuffle_enabled, 'mdi-shuffle'],
-        [
-          store.activePlayerQueue?.shuffle_enabled == false,
-          'mdi-shuffle-disabled',
-        ],
+        [playerQueue.shuffle_enabled, 'mdi-shuffle'],
+        [playerQueue.shuffle_enabled == false, 'mdi-shuffle-disabled'],
         [true, 'mdi-shuffle'],
       ])
     "
     :type="'btn'"
-    @clicked="
+    @click="
       api.queueCommandShuffle(
-        store.activePlayerQueue?.queue_id || '',
-        store.activePlayerQueue?.shuffle_enabled ? false : true,
+        playerQueue.queue_id,
+        playerQueue.shuffle_enabled ? false : true,
       )
     "
   />
@@ -35,14 +28,15 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
 import ResponsiveIcon, {
   ResponsiveIconProps,
 } from "@/components/mods/ResponsiveIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
+import { PlayerQueue } from "@/plugins/api/interfaces";
 
 // properties
 export interface Props {
+  playerQueue: PlayerQueue | undefined;
   isVisible?: boolean;
   icon?: ResponsiveIconProps;
 }

@@ -45,7 +45,12 @@
             required
           />
           <br />
-          <v-btn block color="primary" :disabled="!valid" @click="onSubmit">
+          <v-btn
+            block
+            color="primary"
+            :disabled="!valid || members.length == 0"
+            @click="onSubmit"
+          >
             {{ $t("settings.save") }}
           </v-btn>
         </v-form>
@@ -63,7 +68,6 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";
-import { group } from "console";
 
 // global refs
 const router = useRouter();

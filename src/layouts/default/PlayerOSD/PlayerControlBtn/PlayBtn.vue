@@ -1,29 +1,12 @@
 <template>
-  <!-- play/pause button: only when MA queue is active -->
+  <!-- play/pause button: disabled if no content -->
   <ResponsiveIcon
-    v-if="isVisible && playerQueue"
+    v-if="isVisible && player"
     v-bind="icon"
-    :disabled="playerQueue.items == 0"
+    :disabled="!queueCanPlay && !playerCanPlay"
     :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
     :type="'btn'"
-    @clicked="api.queueCommandPlayPause(playerQueue!.queue_id)"
-  />
-  <!-- stop button: player is playing other source (not MA)-->
-  <ResponsiveIcon
-    v-else-if="isVisible && player?.state == PlayerState.PLAYING"
-    v-bind="icon"
-    icon="mdi-stop"
-    :type="'btn'"
-    @click="api.queueCommandStop(player!.player_id)"
-  />
-  <!-- play button: all other situations-->
-  <ResponsiveIcon
-    v-else-if="isVisible"
-    v-bind="icon"
-    :disabled="!player?.active_source"
-    :icon="`mdi-play-${iconStyle}`"
-    :type="'btn'"
-    @clicked="api.playerCommandPlay(player?.player_id!)"
+    @click="api.playerCommandPlayPause(player.player_id)"
   />
 </template>
 
@@ -51,7 +34,16 @@ const compProps = withDefaults(defineProps<Props>(), {
   icon: undefined,
   iconStyle: "circle",
 });
-
+const queueCanPlay = computed(() => {
+  if (!compProps.playerQueue) return false;
+  return compProps.playerQueue.items > 0;
+});
+const playerCanPlay = computed(() => {
+  if (!compProps.player) return false;
+  if (compProps.playerQueue?.active) return false;
+  if (!compProps.player.current_media) return false;
+  return true;
+});
 const baseIcon = computed(() => {
   if (compProps.player?.state == PlayerState.PLAYING) {
     return "mdi-pause";

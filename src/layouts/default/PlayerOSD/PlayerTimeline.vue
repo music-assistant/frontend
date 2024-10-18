@@ -109,14 +109,10 @@ const startDragging = function () {
 
 const stopDragging = () => {
   isDragging.value = false;
-  updateTime(tempTime.value);
-};
-
-const updateTime = (newTime: number) => {
-  if (!isDragging.value) {
-    api.queueCommandSeek(
-      store.activePlayerQueue?.queue_id || "",
-      Math.round(newTime),
+  if (!isDragging.value && store.activePlayer) {
+    api.playerCommandSeek(
+      store.activePlayer.player_id,
+      Math.round(tempTime.value),
     );
   }
 };

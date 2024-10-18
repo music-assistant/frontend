@@ -14,7 +14,7 @@
       minHeight: staticHeight ? staticHeight : minHeight,
       minWidth: staticWidth ? staticWidth : minWidth,
     }"
-    @click.stop="disabled ? $event.preventDefault() : $emit('clicked')"
+    @click="disabled ? $event.preventDefault() : $emit('click', $event)"
   >
     <v-badge :model-value="badge == true" color="error" dot>
       <v-icon
@@ -87,7 +87,7 @@ withDefaults(defineProps<ResponsiveIconProps>(), {
 });
 
 const emit = defineEmits<{
-  (e: "clicked"): void;
+  (e: "click", evt: MouseEvent): void;
 }>();
 
 const adjustIconSize = () => {

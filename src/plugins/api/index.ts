@@ -617,31 +617,6 @@ export class MusicAssistantApi {
       offset,
     });
   }
-
-  public queueCommandPlay(queueId: string) {
-    // Handle PLAY command for given queue.
-    this.playerQueueCommand(queueId, "play");
-  }
-  public queueCommandPause(queueId: string) {
-    // Handle PAUSE command for given queue.
-    this.playerQueueCommand(queueId, "pause");
-  }
-  public queueCommandPlayPause(queueId: string) {
-    // Toggle play/pause on given playerqueue.
-    this.playerQueueCommand(queueId, "play_pause");
-  }
-  public queueCommandStop(queueId: string) {
-    // Handle STOP command for given queue.
-    this.playerQueueCommand(queueId, "stop");
-  }
-  public queueCommandNext(queueId: string) {
-    // Handle NEXT TRACK command for given queue.
-    this.playerQueueCommand(queueId, "next");
-  }
-  public queueCommandPrevious(queueId: string) {
-    // Handle PREVIOUS TRACK command for given queue.
-    this.playerQueueCommand(queueId, "previous");
-  }
   public queueCommandClear(queueId: string) {
     // Clear all items in the queue.
     this.playerQueueCommand(queueId, "clear");
@@ -783,9 +758,17 @@ export class MusicAssistantApi {
   public playerCommandPlayPause(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "play_pause");
   }
-
   public playerCommandStop(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "stop");
+  }
+  public playerCommandNext(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "next");
+  }
+  public playerCommandPrevious(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "previous");
+  }
+  public playerCommandSeek(playerId: string, position: number) {
+    this.playerCommand(playerId, "seek", { position });
   }
 
   public playerCommandPower(playerId: string, powered: boolean): Promise<void> {
@@ -938,7 +921,7 @@ export class MusicAssistantApi {
     if (
       !queue_id &&
       store.activePlayer &&
-      store.activePlayer?.active_source in this.players
+      store.activePlayer?.active_source in this.queues
     ) {
       queue_id = store.activePlayer?.active_source;
     } else if (!queue_id) {

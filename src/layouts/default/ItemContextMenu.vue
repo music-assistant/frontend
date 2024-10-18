@@ -182,7 +182,7 @@ export const getPlayMenuItems = function (
   if (items.length == 0 || !itemIsAvailable(items[0])) {
     return playMenuItems;
   }
-  if (!store.activePlayerId) return playMenuItems;
+  if (!store.activePlayer) return playMenuItems;
   if (items[0].media_type == MediaType.FOLDER) return playMenuItems;
 
   // Play from here...

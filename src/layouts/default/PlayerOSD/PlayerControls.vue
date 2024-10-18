@@ -6,6 +6,7 @@
       class="player-controls-elements"
     >
       <ShuffleBtn
+        :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.shuffle.icon"
       />
@@ -16,6 +17,8 @@
       class="player-controls-elements"
     >
       <PreviousBtn
+        :player="store.activePlayer"
+        :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.previous.icon"
       />
@@ -36,6 +39,8 @@
       class="player-controls-elements"
     >
       <NextBtn
+        :player="store.activePlayer"
+        :player-queue="store.activePlayerQueue"
         :icon="visibleComponents.next.icon"
         static-height="24px"
         static-width="24px"
@@ -47,6 +52,7 @@
       class="player-controls-elements"
     >
       <RepeatBtn
+        :player-queue="store.activePlayerQueue"
         :icon="visibleComponents.repeat.icon"
         static-height="24px"
         static-width="24px"

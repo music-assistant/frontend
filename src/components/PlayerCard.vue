@@ -13,15 +13,18 @@
     <v-list-item class="panel-item-details" flat :ripple="false">
       <!-- prepend: media thumb -->
       <template #prepend>
-        <div v-if="player.powered" class="player-media-thumb">
+        <div class="player-media-thumb">
           <MediaItemThumb
-            v-if="curQueueItem?.media_item || curQueueItem?.image"
+            v-if="
+              (player.powered && curQueueItem?.media_item) ||
+              curQueueItem?.image
+            "
             class="media-thumb"
             size="55"
             :item="curQueueItem?.media_item || curQueueItem"
             :fallback="imgCoverDark"
           />
-          <div v-else-if="player.current_media?.image_url">
+          <div v-else-if="player.powered && player.current_media?.image_url">
             <v-img
               class="media-thumb"
               size="55"
@@ -127,7 +130,10 @@
           v-if="!player.powered"
           variant="icon"
           class="player-command-btn"
-          @click.stop="api.playerCommandPowerToggle(player.player_id)"
+          @click="
+            api.playerCommandPowerToggle(player.player_id);
+            store.activePlayerId = player.player_id;
+          "
           ><v-icon
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
             >mdi-power</v-icon
@@ -141,6 +147,10 @@
           class="player-command-btn"
           style="height: 50px"
           icon-style="circle-outline"
+          @click.stop="
+            if (player.state != PlayerState.PLAYING)
+              store.activePlayerId = player.player_id;
+          "
         />
         <!-- menu button -->
         <Button

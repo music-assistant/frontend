@@ -279,6 +279,7 @@
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
           <ResponsiveIcon
+            v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
             :icon="
               store.curQueueItem?.media_item?.favorite
@@ -293,27 +294,47 @@
           />
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
+            :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
           />
-          <PreviousBtn class="media-controls-item" max-height="45px" />
+          <PreviousBtn
+            :player="store.activePlayer"
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="45px"
+          />
           <PlayBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="100px"
           />
-          <NextBtn class="media-controls-item" max-height="45px" />
+          <NextBtn
+            :player="store.activePlayer"
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="45px"
+          />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
+            :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="35px"
           />
-          <QueueBtn class="media-controls-item" max-height="30px" />
+          <QueueBtn
+            v-if="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="30px"
+          />
         </div>
 
         <!-- volume control -->
-        <div class="row" style="margin-left: 5%; margin-right: 5%">
+        <div
+          v-if="store.activePlayer"
+          class="row"
+          style="margin-left: 5%; margin-right: 5%"
+        >
           <PlayerVolume
             width="100%"
             :is-powered="store.activePlayer?.powered"
@@ -389,7 +410,6 @@ import {
   EventType,
   MediaItemType,
   MediaType,
-  PlayerType,
   QueueItem,
   Track,
 } from "@/plugins/api/interfaces";
@@ -667,7 +687,7 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const onHeartBtnClick = function (evt: PointerEvent) {
+const onHeartBtnClick = function (evt: PointerEvent | MouseEvent) {
   // the heart icon/button was clicked
   if (!store.curQueueItem?.media_item) return;
   if (!store.curQueueItem.media_item.favorite) {

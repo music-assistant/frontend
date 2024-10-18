@@ -6,7 +6,7 @@
     :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
     :title="$t('tooltip.favorite')"
     :type="'btn'"
-    @clicked="onClick"
+    @click="onClick"
   />
 </template>
 
