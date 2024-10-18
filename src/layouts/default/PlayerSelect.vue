@@ -72,12 +72,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import {
-  Player,
-  PlayerFeature,
-  PlayerState,
-  PlayerType,
-} from "@/plugins/api/interfaces";
+import { Player, PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";

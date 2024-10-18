@@ -243,7 +243,11 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
     }
   }
   // when syncontrols are enabled, show all syncable players
-  if (compProps.showSyncControls && player.type == PlayerType.PLAYER) {
+  if (
+    compProps.showSyncControls &&
+    player.type == PlayerType.PLAYER &&
+    player.supported_features.includes(PlayerFeature.SYNC)
+  ) {
     for (const syncPlayerId of Object.keys(api?.players)) {
       const syncPlayer = api?.players[syncPlayerId];
 
@@ -274,6 +278,38 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
       }
     }
   }
+  // special feature: dynamic member management of a syncgroup
+  else if (
+    compProps.showSyncControls &&
+    player.type == PlayerType.GROUP &&
+    player.supported_features.includes(PlayerFeature.SYNC) &&
+    player.player_id.startsWith("syncgroup_")
+  ) {
+    const provType = api.players[player.group_childs[0]].provider;
+    for (const syncPlayer of Object.values(api?.players)) {
+      if (syncPlayer.provider !== provType) continue;
+      // skip unavailable players
+      if (!syncPlayer.available) continue;
+      // skip if player has (another) group active
+      if (
+        syncPlayer.active_group &&
+        syncPlayer.active_group != player.player_id
+      )
+        continue;
+      // skip if player is already playing other content
+      if (
+        syncPlayer.active_source &&
+        syncPlayer.state == PlayerState.PLAYING &&
+        ![player.player_id, syncPlayer.player_id].includes(
+          syncPlayer.active_source,
+        )
+      )
+        continue;
+      if (!items.includes(syncPlayer)) {
+        items.push(syncPlayer);
+      }
+    }
+  }
   items.sort((a, b) =>
     a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
   );
@@ -285,7 +321,7 @@ const playerCommandPowerOffUnsyncMany = async function (player_ids: string[]) {
       Handle power off (and unsync) command for all the given players.
     */
   for (const playerId of player_ids) {
-    if (api.players[playerId].powered)
+    if (api.players[playerId].powered && !api.players[playerId].active_group)
       // power off will also unsync in the backend
       await api.playerCommandPower(playerId, false);
     else await api.playerCommandUnSync(playerId);
