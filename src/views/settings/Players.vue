@@ -86,6 +86,7 @@ import Button from "@/components/mods/Button.vue";
 import ListItem from "@/components/mods/ListItem.vue";
 import Container from "@/components/mods/Container.vue";
 import { eventbus } from "@/plugins/eventbus";
+import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 
 // global refs
 const router = useRouter();
@@ -153,44 +154,50 @@ const openLinkInNewTab = function (url: string) {
   window.open(url, "_blank");
 };
 
-const onMenu = function (evt: Event, item: PlayerConfig) {
-  const menuItems = [
+const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
+  const menuItems: ContextMenuItem[] = [
     {
       label: "settings.configure",
       labelArgs: [],
       action: () => {
-        editPlayer(item.player_id, item.provider);
+        editPlayer(playerConfig.player_id, playerConfig.provider);
       },
       icon: "mdi-cog",
-      disabled: !api.getProvider(item!.provider),
+      disabled: !api.getProvider(playerConfig!.provider),
     },
     {
-      label: item.enabled ? "settings.disable" : "settings.enable",
+      label: playerConfig.enabled ? "settings.disable" : "settings.enable",
       labelArgs: [],
       action: () => {
-        toggleEnabled(item);
+        toggleEnabled(playerConfig);
       },
       icon: "mdi-cancel",
-      disabled: !api.getProvider(item!.provider),
+      hide: !api.getProvider(playerConfig!.provider),
     },
     {
       label: "settings.documentation",
       labelArgs: [],
       action: () => {
         openLinkInNewTab(
-          api.getProviderManifest(item!.provider)?.documentation || "",
+          api.getProviderManifest(playerConfig!.provider)?.documentation || "",
         );
       },
       icon: "mdi-bookshelf",
-      disabled: !api.getProviderManifest(item!.provider)?.documentation,
+      disabled: !api.getProviderManifest(playerConfig!.provider)?.documentation,
     },
     {
       label: "settings.delete",
       labelArgs: [],
       action: () => {
-        removePlayerConfig(item.player_id);
+        removePlayerConfig(playerConfig.player_id);
       },
       icon: "mdi-delete",
+      hide: !(
+        !api.players[playerConfig.player_id]?.available ||
+        api
+          .getProvider(playerConfig.provider)
+          ?.supported_features.includes(ProviderFeature.REMOVE_PLAYER)
+      ),
     },
   ];
   eventbus.emit("contextmenu", {
