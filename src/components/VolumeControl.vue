@@ -151,9 +151,6 @@
         <!-- mute btn + volume slider + volume level text-->
         <v-list-item
           class="volumesliderrow"
-          :disabled="
-            !childPlayer.supported_features.includes(PlayerFeature.VOLUME_SET)
-          "
           :link="false"
           :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.4'"
           @click.stop
@@ -161,6 +158,11 @@
           <template #prepend>
             <Button
               icon
+              :disabled="
+                !childPlayer.supported_features.includes(
+                  PlayerFeature.VOLUME_MUTE,
+                )
+              "
               style="height: 25px"
               @click="api.playerCommandMuteToggle(childPlayer.player_id)"
             >
@@ -192,7 +194,14 @@
             />
           </template>
           <template #append>
-            <div class="text-caption volumecaption">
+            <div
+              v-if="
+                childPlayer.supported_features.includes(
+                  PlayerFeature.VOLUME_SET,
+                )
+              "
+              class="text-caption volumecaption"
+            >
               {{ childPlayer.volume_level }}
             </div>
           </template>

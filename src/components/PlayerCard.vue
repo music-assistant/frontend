@@ -24,7 +24,11 @@
             :item="curQueueItem?.media_item || curQueueItem"
             :fallback="imgCoverDark"
           />
-          <div v-else-if="player.powered && player.current_media?.image_url">
+          <div
+            v-else-if="
+              player.powered && !playerQueue && player.current_media?.image_url
+            "
+          >
             <v-img
               class="media-thumb"
               size="55"
