@@ -192,6 +192,15 @@ export enum ConfigEntryType {
   ALERT = "alert",
 }
 
+export enum VolumeNormalizationMode {
+  DISABLED = "disabled",
+  DYNAMIC = "dynamic",
+  MEASUREMENT_ONLY = "measurement_only",
+  FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
+  FIXED_GAIN = "fixed_gain",
+  FALLBACK_DYNAMIC = "fallback_dynamic",
+}
+
 //// api
 
 export interface CommandMessage {
@@ -498,8 +507,12 @@ export interface StreamDetails {
   duration?: number;
 
   queue_id?: string;
-  loudness?: LoudnessMeasurement;
+  fade_in?: boolean;
+  loudness?: number;
+  loudness_album?: number;
+  prefer_album_loudness?: boolean;
   target_loudness?: number;
+  volume_normalization_mode?: VolumeNormalizationMode;
 }
 
 // queue_item
