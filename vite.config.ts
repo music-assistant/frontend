@@ -9,6 +9,8 @@ import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import svgLoader from 'vite-svg-loader';
 import path from 'path';
 
+const host = process.env.TAURI_DEV_HOST;
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
@@ -70,9 +72,16 @@ export default defineConfig({
   clearScreen: false,
   // tauri expects a fixed port, fail if that port is not available
   server: {
+    host: host || false,
     port: 1420,
-    host: true,
     strictPort: true,
+    hmr: host
+      ? {
+          protocol: 'ws',
+          host: host,
+          port: 1430,
+        }
+      : undefined,
   },
   // to make use of `TAURI_DEBUG` and other env variables
   // https://tauri.studio/v1/api/config#buildconfig.beforedevcommand
