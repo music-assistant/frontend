@@ -4,6 +4,10 @@
     :space-between="24"
     :free-mode="true"
     :navigation="getBreakpointValue({ breakpoint: 'mobile' }) ? false : true"
+    :mousewheel="{
+      forceToAxis: true,
+      releaseOnEdges: true
+    }"
   >
     <slot></slot>
   </swiper>
