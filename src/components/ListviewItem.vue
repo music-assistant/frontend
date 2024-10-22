@@ -3,6 +3,7 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
+    :class="{ unavailable: !itemIsAvailable(item) }"
     @click.stop="onClick"
     @menu.stop="onMenu"
   >
@@ -279,6 +280,10 @@ const onClick = function (evt: PointerEvent) {
 </script>
 
 <style scoped>
+.unavailable {
+  opacity: 0.3;
+}
+
 .hiresicon {
   margin-top: 5px;
   margin-right: 15px;

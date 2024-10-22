@@ -6,7 +6,7 @@
     :navigation="getBreakpointValue({ breakpoint: 'mobile' }) ? false : true"
     :mousewheel="{
       forceToAxis: true,
-      releaseOnEdges: true
+      releaseOnEdges: true,
     }"
   >
     <slot></slot>

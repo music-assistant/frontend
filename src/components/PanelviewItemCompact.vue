@@ -3,7 +3,7 @@
     <v-card
       v-hold="onMenu"
       v-bind="props"
-      :class="{ 'on-hover': isHovering }"
+      :class="{ 'on-hover': isHovering, unavailable: !itemIsAvailable(item) }"
       :elevation="isHovering ? 3 : 0"
       @click="onClick"
       @click.right.prevent="onMenu"
@@ -85,6 +85,7 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { getArtistsString, getBrowseFolderName } from "@/helpers/utils";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 
 // properties
 export interface Props {
@@ -139,6 +140,10 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .v-card:not(.on-hover) {
   opacity: 0.75;
+}
+
+.v-card.unavailable {
+  opacity: 0.3;
 }
 
 .panel-item-details {

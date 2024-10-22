@@ -6,6 +6,7 @@
       tile
       hover
       class="panel-item"
+      :class="{ unavailable: !itemIsAvailable(item) }"
       @click="onClick"
       @click.right.prevent="onMenu"
     >
@@ -214,6 +215,10 @@ const onPlayClick = function (evt: PointerEvent) {
 </script>
 
 <style scoped>
+.v-card.unavailable {
+  opacity: 0.3;
+}
+
 .panel-item {
   height: 100%;
   padding: 10px;

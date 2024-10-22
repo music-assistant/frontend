@@ -196,7 +196,7 @@ export const getPlayMenuItems = function (
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
-        disabled: !store.activePlayerQueue,
+        disabled: !store.activePlayer,
       });
     }
     // Play from here (album track)
@@ -208,7 +208,7 @@ export const getPlayMenuItems = function (
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
-        disabled: !store.activePlayerQueue,
+        disabled: !store.activePlayer,
       });
     }
   }
@@ -224,7 +224,7 @@ export const getPlayMenuItems = function (
     },
     icon: "mdi-play-circle-outline",
     labelArgs: [],
-    disabled: !store.activePlayerQueue,
+    disabled: !store.activePlayer,
   });
 
   // Play NOW
@@ -238,7 +238,7 @@ export const getPlayMenuItems = function (
     },
     icon: "mdi-play-circle-outline",
     labelArgs: [],
-    disabled: !store.activePlayerQueue,
+    disabled: !store.activePlayer,
   });
 
   // Play NEXT
@@ -253,7 +253,7 @@ export const getPlayMenuItems = function (
       },
       icon: "mdi-skip-next-circle-outline",
       labelArgs: [],
-      disabled: !store.activePlayerQueue,
+      disabled: !store.activePlayer,
     });
   }
   // Add to Queue
@@ -267,7 +267,7 @@ export const getPlayMenuItems = function (
     },
     icon: "mdi-playlist-plus",
     labelArgs: [],
-    disabled: !store.activePlayerQueue,
+    disabled: !store.activePlayer,
   });
 
   // Start Radio
@@ -283,7 +283,7 @@ export const getPlayMenuItems = function (
       },
       icon: "mdi-radio-tower",
       labelArgs: [],
-      disabled: !store.activePlayerQueue,
+      disabled: !store.activePlayer,
     });
   }
 
