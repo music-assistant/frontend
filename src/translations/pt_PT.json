@@ -81,12 +81,6 @@
     "refresh_item": "Actualizar item",
     "remove_library": "Remover da biblioteca",
     "remove_playlist": "Remover da lista de reprodução",
-    "repeat_mode": "Modo de repetição: {0}",
-    "repeatmode": {
-        "all": "Repetir toda a fila de espera",
-        "off": "Repetir desligado",
-        "one": "Repetir faixa única"
-    },
     "search": "Pesquisar",
     "settings": {
         "add_new": "Adicionar novo",
@@ -384,8 +378,6 @@
     "show_info": "Mostrar informação",
     "show_select_boxes": "Mostrar caixas de seleção",
     "shuffle": "Modo aleatório",
-    "shuffle_disabled": "O modo aleatório está desativado",
-    "shuffle_enabled": "O modo aleatório está ativado",
     "sort": {
         "duration": "Duração",
         "position": "Posição",
@@ -420,7 +412,6 @@
     },
     "stream_details": "Detalhes do fluxo",
     "sync_now": "Sincronizar {0} agora",
-    "sync_player_to": "Sincronizar este leitor a:",
     "sync_running": "Um ou mais provedores de música estão a ser sincronizados.",
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",

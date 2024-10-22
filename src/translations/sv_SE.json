@@ -81,12 +81,6 @@
     "refresh_item": "Uppdatera objekt",
     "remove_library": "Ta bort från biblioteket",
     "remove_playlist": "Ta bort från spellistan",
-    "repeat_mode": "Läge för upprepning: {0}",
-    "repeatmode": {
-        "all": "Upprepa hela kön",
-        "off": "Upprepa av",
-        "one": "Upprepa enkelspår"
-    },
     "search": "Sök",
     "settings": {
         "add_new": "Lägg till ny",
@@ -382,8 +376,6 @@
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
     "shuffle": "Blanda",
-    "shuffle_disabled": "Blandning är inaktiverat",
-    "shuffle_enabled": "Blandning är aktiverat",
     "sort": {
         "duration": "Varaktighet",
         "position": "Position",
@@ -418,7 +410,6 @@
     },
     "stream_details": "Strömdetaljer",
     "sync_now": "Synkronisera {0} nu",
-    "sync_player_to": "Synkronisera denna spelare till:",
     "sync_running": "En eller flera musikleverantörer synkroniseras.",
     "tooltip": {
         "album_artist_filter": "Växla album-artist-filter",

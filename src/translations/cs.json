@@ -81,12 +81,6 @@
     "refresh_item": "Obnovit položku",
     "remove_library": "Odebrat z knihovny",
     "remove_playlist": "Odebrat z playlistu",
-    "repeat_mode": "Režim opakování: {0}",
-    "repeatmode": {
-        "all": "Opakovat celou frontu",
-        "off": "Opakování vypnuto",
-        "one": "Opakování jedné skladby"
-    },
     "search": "Vyhledávání",
     "settings": {
         "add_new": "Přidat nový",
@@ -335,13 +329,13 @@
         },
         "hide_settings": {
             "label": "Skrýt tlačítko nastavení"
-        }
+        },
+        "group_type": "Typ skupiny",
+        "add_group_player_desc": "U poskytovatelů přehrávačů\/ekosystémů, které poskytují nativní seskupování\/synchronizaci, se automaticky vytvoří synchronizační skupina, což znamená, že pokud přehráváte na této skupině přehrávačů, budou členské přehrávače automaticky synchronizovány. \\n\\nU přehrávačů\/ekosystémů, které seskupování nepodporují, nebo v případě, že chcete seskupit přehrávače z různých ekosystémů, můžete použít typ skupiny Universal, který bude distribuovat stejný zvuk do všech členských přehrávačů (ale ne synchronizovaně). \\n\\nPoznámka: někteří poskytovatelé seskupování podporují, ale k provedení seskupení je třeba použít nativní aplikaci. Příkladem jsou přehrávače založené na službě Google Cast, kde lze skupiny Google Cast vytvářet pouze v aplikaci Google Home."
     },
     "show_info": "Zobrazit informace",
     "show_select_boxes": "Zobrazit výběrová pole",
     "shuffle": "Náhodné přehrávání",
-    "shuffle_disabled": "Náhodné přehrávání je vypnuto",
-    "shuffle_enabled": "Náhodné přehrávání je zapnuto",
     "sort": {
         "duration": "Doba trvání",
         "position": "Pozice",
@@ -369,7 +363,6 @@
     },
     "stream_details": "Podrobnosti o streamu",
     "sync_now": "Synchronizovat {0} nyní",
-    "sync_player_to": "Synchronizovat tento přehrávač s:",
     "sync_running": "Probíhá synchronizace jednoho nebo více poskytovatelů hudby.",
     "tooltip": {
         "album_artist_filter": "Filtrování na alba s interprety",
@@ -419,5 +412,20 @@
     "invalid_input": "Vstup byl neplatný",
     "new_playlist": "Nový seznam skladeb",
     "create_playlist_on": "Vytvořit nový playlist na {0}",
-    "cancel": "Zrušit"
+    "cancel": "Zrušit",
+    "power_on_player": "Zapnout",
+    "power_off_player": "Vypnout",
+    "powered_off_players": "Vypnuté přehrávače",
+    "sync_player_with": "Propojit s jiným přehrávačem",
+    "open_player_settings": "Nastavení",
+    "select_repeat_mode": "Vyběr režimu opakování",
+    "repeat_mode": {
+        "all": "Opakovat celou frontu",
+        "off": "Opakování vypnuto",
+        "one": "Opakovat jednu skladbu"
+    },
+    "shuffle_disable": "Zakázat promíchání",
+    "shuffle_enable": "Povolit promíchání",
+    "dont_stop_the_music_enable": "Povolit \"Nevypínej hudbu!\"",
+    "dont_stop_the_music_disable": "Zakázat \"Nevypínej hudbu!\""
 }

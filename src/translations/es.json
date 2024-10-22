@@ -82,12 +82,6 @@
     "refresh_item": "Refrescar elemento",
     "remove_library": "Eliminar de la biblioteca",
     "remove_playlist": "Eliminar de la lista de reproducción",
-    "repeat_mode": "Modo de repetición: {0}",
-    "repeatmode": {
-        "all": "Repetir la cola entera",
-        "off": "Repetir apagado",
-        "one": "Repetir una pista"
-    },
     "search": "Buscar",
     "settings": {
         "add_new": "Añadir nuevo",
@@ -165,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Habilitar el modo de cola continua",
-            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y\/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
+            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y\/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
         },
         "auto_play": {
             "label": "Reproducción automática (reanudación al encender)",
@@ -187,7 +181,7 @@
         },
         "volume_normalization_target": {
             "label": "Nivel objetivo para la normalización del volumen",
-            "description": "Ajuste el volumen promedio (percibido) a este nivel objetivo, el valor predeterminado es -17 LUFS \n\n **ADVERTENCIA:** ¡Ajustar el nivel demasiado alto puede provocar recortes!"
+            "description": "Ajuste el volumen promedio (percibido) a este nivel objetivo, el valor predeterminado es -17 LUFS \\n\\n **ADVERTENCIA:** ¡Ajustar el nivel demasiado alto puede provocar recortes!"
         },
         "eq_bass": {
             "label": "Ecualizador: graves",
@@ -211,7 +205,7 @@
         },
         "hide_player": {
             "label": "Ocultar este reproductor en la interfaz de usuario",
-            "description": "Oculte este reproductor en la interfaz de usuario. \n\nTenga en cuenta que aún se puede controlar y también aparecerá en cualquier grupo de sincronización al que pertenezca el reproductor."
+            "description": "Oculte este reproductor en la interfaz de usuario. \\n\\nTenga en cuenta que aún se puede controlar y también aparecerá en cualquier grupo de sincronización al que pertenezca el reproductor."
         },
         "default_enqueue_select_artist": {
             "label": "Elementos que se seleccionan al reproducir un artista (de la biblioteca).",
@@ -323,7 +317,7 @@
         },
         "icon": {
             "label": "Icono",
-            "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Icono Material Design para este reproductor. \\n\\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Interfaz de Usuario",
         "frontend_desc": "Ajustes de configuración de la interfaz de usuario (frontend) de Music Assistant. Tenga en cuenta que estos ajustes se almacenan a nivel de dispositivo.",
@@ -344,7 +338,7 @@
         },
         "menu_items": {
             "label": "Elementos de menú habilitados",
-            "description": "Configure qué elementos mostrar en el menú.\n\nTen en cuenta que si desactivas los ajustes puedes bloquearte.\n\nEn ese caso, tendrá que introducir manualmente la ruta a la configuración o borrar las cookies del navegador para acceder de nuevo a la configuración."
+            "description": "Configure qué elementos mostrar en el menú.\\n\\nTen en cuenta que si desactivas los ajustes puedes bloquearte.\\n\\nEn ese caso, tendrá que introducir manualmente la ruta a la configuración o borrar las cookies del navegador para acceder de nuevo a la configuración."
         },
         "language": {
             "label": "Idioma",
@@ -375,7 +369,7 @@
         },
         "hide_settings": {
             "label": "Ocultar botón de configuración",
-            "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\nTenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
+            "description": "Ocultar el botón de configuración en la pantalla de inicio. \\n\\nTenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \\n\\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
         },
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
@@ -383,24 +377,33 @@
         "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música.",
         "volume_normalization_radio": {
             "label": "Método de normalización de volumen a utilizar para transmisiones de radio",
+            "description": "Establezca la estrategia de normalización de volumen preferida para los transmisiones de radio. \\nDe forma predeterminada, Music Assistant recopila una medición de la sonoridad (media percibida) de la emisora de radio según la especificación EBU-R128 y, a continuación, ajusta la ganancia\/volumen general de la transmisión de acuerdo con dicha medición para que el rango dinámico del audio no se vea afectado. Si no existe (todavía) ninguna medición para una emisora de radio, Music Assistant utilizará un filtro de nivelación de sonoridad dinámico (pero menos preciso).\\n\\nSUGERENCIA: Las emisiones de radio suelen tener niveles de volumen variables, especialmente durante los anuncios y las cuñas publicitarias.\\nPuede optar por aplicar una normalización dinámica del volumen a las transmisiones de radio, incluso si existe una medición (media) de la sonoridad de la emisora de radio. \\n \\n**Opciones\\n\\n - Desactivado - No aplicar la normalización de volumen en absoluto para los flujos de radio. \\n  - Forzar dinámico - Aplicar la normalización de volumen dinámica en todo momento. \\n  - Solo Medición (sin retroceso) - Aplicar corrección (global) de volumen\/ganancia basada en la medición almacenada. Si no tenemos ninguna medición, no aplicar normalización.\\n  - Aplicar corrección de ganancia\/volumen (global) basada en la medición almacenada. Si no tenemos ninguna medición, se aplica una corrección de ganancia predefinida.\\n - Corrección de ganancia fija - Aplicar siempre la corrección de volumen\/ganancia fija.\\n  - Volver a dinámico - Elegir automáticamente la mejor opción: Aplicar la corrección (global) de volumen\/ganancia basada en la medición almacenada si tenemos alguna, permitir volver al modo dinámico si no hay ninguna medición disponible.",
             "options": {
                 "disabled": "Deshabilitado",
-                "dynamic": "Forzar Dinamico"
+                "dynamic": "Forzar Dinamico",
+                "measurement_only": "Sólo medición (sin retroceso)",
+                "fallback_fixed_gain": "Volver a corrección de ganancia",
+                "fixed_gain": "Corrección de ganancia fija",
+                "fallback_dynamic": "Volver a dinámico"
             }
         },
         "volume_normalization_tracks": {
             "label": "Método de normalización de volumen para utilizar en pistas",
             "options": {
                 "disabled": "Deshabilitado",
-                "fixed_gain": "Corrección de ganancia fija"
+                "dynamic": "Forzar dinamico",
+                "measurement_only": "Solo medición (sin retroceso)",
+                "fallback_fixed_gain": "Retroceder a ganancia fija",
+                "fixed_gain": "Corrección de ganancia fija",
+                "fallback_dynamic": "Retroceder a dinamico"
             }
-        }
+        },
+        "group_type": "Tipo de grupo",
+        "add_group_player_desc": "Para los proveedores\/ecosistemas de reproductores que proporcionan agrupación\/sincronización nativa, se creará automáticamente un grupo de sincronizado, lo que significa que si reproduce en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente. \\n\\nPara los reproductores\/ecosistemas que no admiten la agrupación, o en caso de que desee agrupar reproductores de distintos ecosistemas, puede utilizar el tipo de grupo Universal, que distribuirá el mismo audio a todos los reproductores miembros (pero no de forma sincronizada). \\n\\nTenga en cuenta que algunos proveedores admiten la agrupación, pero debe utilizar la aplicación nativa para realizarla. Un ejemplo son los reproductores basados en Google Cast, en los que solo se pueden crear grupos de Google Cast dentro de la aplicación Google Home. "
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
     "shuffle": "Aleatorio",
-    "shuffle_disabled": "Aleatorio está deshabilitado",
-    "shuffle_enabled": "Aleatorio está habilitado",
     "sort": {
         "duration": "Duración",
         "position": "Posición",
@@ -437,7 +440,6 @@
     },
     "stream_details": "Detalles del flujo",
     "sync_now": "Sincronizar {0} ahora",
-    "sync_player_to": "Sincronizar este reproductor a:",
     "sync_running": "Uno o más proveedores de música están siendo sincronizados.",
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",
@@ -507,5 +509,20 @@
     "image_make_primary": "Hacer primario",
     "update_metadata": "Actualizar metadatos",
     "cancel": "Cancelar",
-    "transfer_queue": "Transferir la cola a otro reproductor"
+    "transfer_queue": "Transferir la cola a otro reproductor",
+    "power_on_player": "Encender",
+    "power_off_player": "Apagar",
+    "powered_off_players": "Reproductores apagados",
+    "sync_player_with": "Sincronizar con otro reproductor",
+    "open_player_settings": "Abrir ajustes del reproductor",
+    "select_repeat_mode": "Selecciona el modo de repetición",
+    "repeat_mode": {
+        "all": "Repetir la cola entera",
+        "off": "Repetir apagado",
+        "one": "Repetir una pista"
+    },
+    "shuffle_disable": "Deshabilitar reproducción aleatoria",
+    "shuffle_enable": "Activar reproducción aleatoria",
+    "dont_stop_the_music_enable": "Habilita '¡No pares la música!",
+    "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'"
 }

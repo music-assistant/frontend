@@ -82,12 +82,6 @@
     "refresh_item": "Osveži element",
     "remove_library": "Odstrani iz knjižnice",
     "remove_playlist": "Odstrani s seznama predvajanja",
-    "repeat_mode": "Način ponavljanja: {0}",
-    "repeatmode": {
-        "all": "Ponovi celotno čakalno vrsto",
-        "off": "Ponovitev izklopljena",
-        "one": "Ponavljanje posamezne skladbe"
-    },
     "search": "Iskanje",
     "settings": {
         "add_new": "Dodajte novo",
@@ -378,15 +372,11 @@
         "no_music_providers": "Noben ponudnik glasbe ni konfiguriran",
         "no_music_providers_detail": "Začnite izkušnjo Music Assistant z dodajanjem ponudnikov glasbe.",
         "no_player_providers": "Noben ponudnik predvajalnika ni konfiguriran",
-        "no_player_providers_detail": "Konfiguriraj ponudnike predvajalnika tako, da izberejo naprave, v katerih lahko Music Assistant predvaja vašo glasbo.",
-        "create_sync_group_player": "Ustvarite novo skupino za sinhronizacijo",
-        "create_sync_group_player_desc": "S skupino za sinhronizacijo ustvarite »prednastavitev« predvajalnikov, ki jih je mogoče sinhronizirati z enim samim klikom. To je uporabno, če imate več predvajalnikov, ki jih želite pogosto sinhronizirati.\\nPrednost ustvarjanja skupine za sinhronizacijo namesto nenehne ročne sinhronizacije predvajalnikov je v tem, da se čakalna vrsta hrani v skupini in ne na posameznih predvajalnikih.\\nMožen je le izbor predvajalnikov, ki jih je dejansko mogoče sinhronizirati (predvajalnike istega tipa)."
+        "no_player_providers_detail": "Konfiguriraj ponudnike predvajalnika tako, da izberejo naprave, v katerih lahko Music Assistant predvaja vašo glasbo."
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži izbirna polja",
     "shuffle": "Naključno",
-    "shuffle_disabled": "Naključno predvajanje je onemogočeno",
-    "shuffle_enabled": "Naključno predvajanje je omogočeno",
     "sort": {
         "duration": "Trajanje",
         "position": "Položaj",
@@ -423,7 +413,6 @@
     },
     "stream_details": "Podrobnosti pretakanja",
     "sync_now": "Sinhronizirajte {0} zdaj",
-    "sync_player_to": "Sinhronizirajte ta predvajalnik z:",
     "sync_running": "Poteka sinhronizacija enega ali več ponudnikov glasbe.",
     "tooltip": {
         "album_artist_filter": "Preklopite filter album-umetnik",
