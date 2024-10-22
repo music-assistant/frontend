@@ -81,12 +81,6 @@
     "refresh_item": "刷新项目",
     "remove_library": "从媒体库中删除",
     "remove_playlist": "从播放列表中删除",
-    "repeat_mode": "重复模式： {0}",
-    "repeatmode": {
-        "all": "重复整个队列",
-        "off": "关闭重复",
-        "one": "单曲重复"
-    },
     "search": "搜索",
     "settings": {
         "add_new": "添加新内容",
@@ -363,7 +357,9 @@
                 "sr_Latn": "塞尔维亚语（拉丁语)",
                 "sv_SE": "瑞典语",
                 "en_GB": "英语（英国)",
-                "es": "西班牙语"
+                "es": "西班牙语",
+                "pt_BR": "葡萄牙语（巴西)",
+                "sl_SI": "斯洛文尼亚语"
             }
         },
         "hide_settings": {
@@ -378,8 +374,6 @@
     "show_info": "显示信息",
     "show_select_boxes": "显示选择框",
     "shuffle": "随机播放",
-    "shuffle_disabled": "已禁用随机播放",
-    "shuffle_enabled": "已启用随机播放",
     "sort": {
         "duration": "持续时间",
         "position": "位置",
@@ -416,7 +410,6 @@
     },
     "stream_details": "流媒体详情",
     "sync_now": "立即同步{0}",
-    "sync_player_to": "将此播放器同步到：",
     "sync_running": "一个或多个音乐提供程序正在同步。",
     "tooltip": {
         "album_artist_filter": "过滤唱片集-艺术家",

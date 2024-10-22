@@ -82,12 +82,6 @@
     "refresh_item": "항목 새로 고침",
     "remove_library": "라이브러리에서 제거",
     "remove_playlist": "재생목록에서 제거",
-    "repeat_mode": "반복 모드: {0}",
-    "repeatmode": {
-        "all": "전체 대기열 반복",
-        "off": "반복 끄기",
-        "one": "단일 트랙 반복"
-    },
     "search": "검색",
     "settings": {
         "add_new": "새 항목 추가",
@@ -378,15 +372,11 @@
         "no_music_providers": "구성된 음원 공급자가 없습니다.",
         "no_music_providers_detail": "음악 제공업체를 추가하여 Music Assistant 시작합니다.",
         "no_player_providers": "플레이어 제공자가 구성되지 않았습니다.",
-        "no_player_providers_detail": "Music Assistant가 음악을 출력할 수 있는 장치를 선택하도록 플레이어 공급자를 구성합니다.",
-        "create_sync_group_player": "새 동기화 그룹 만들기",
-        "create_sync_group_player_desc": "동기화 그룹을 사용하면 한 번의 클릭으로 동기화할 수 있는 플레이어의 '사전 설정'을 만들 수 있습니다. 이는 종종 동기화하고 싶은 여러 플레이어가 있는 경우 유용합니다.\\n매번 플레이어를 수동으로 동기화하는 대신 동기화 그룹을 만들면 대기열이 개별 플레이어 대신 그룹 자체에 유지되는 이점이 있습니다.\\n실제로 동기화할 수 있는 플레이어만 선택할 수 있습니다(따라서 동일한 유형의 플레이어만 선택할 수 있습니다)."
+        "no_player_providers_detail": "Music Assistant가 음악을 출력할 수 있는 장치를 선택하도록 플레이어 공급자를 구성합니다."
     },
     "show_info": "정보 표시",
     "show_select_boxes": "선택 상자 표시",
     "shuffle": "무작위",
-    "shuffle_disabled": "무작위 비활성화됨",
-    "shuffle_enabled": "무작위 활성화됨",
     "sort": {
         "duration": "재생시간",
         "position": "순위",
@@ -423,7 +413,6 @@
     },
     "stream_details": "스트림 세부 정보",
     "sync_now": "지금 {0} 동기화하세요",
-    "sync_player_to": "이 플레이어를 동기화합니다:",
     "sync_running": "하나 이상의 음악 제공업체가 동기화 중입니다.",
     "tooltip": {
         "album_artist_filter": "앨범 아티스트 필터 전환",

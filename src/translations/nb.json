@@ -82,12 +82,6 @@
     "refresh_item": "Oppdater element",
     "remove_library": "Fjern fra biblioteket",
     "remove_playlist": "Fjern fra spilleliste",
-    "repeat_mode": "Gjentakelsesmodus: {0}",
-    "repeatmode": {
-        "all": "Gjenta hele spillekøen",
-        "off": "Gjenta av",
-        "one": "Gjenta enkeltspor"
-    },
     "search": "Søk",
     "settings": {
         "add_new": "Legg til",
@@ -165,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Aktiver køflytmodus",
-            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\nBrukes for avspillere som ikke støtter gapless og\/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
+            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\\nBrukes for avspillere som ikke støtter gapless og\/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
         },
         "auto_play": {
             "label": "Automatisk avspilling (gjenopptas når den slås på)",
@@ -323,7 +317,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Ikon i materialdesign for denne spilleren.\n\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Ikon i materialdesign for denne spilleren.\\n\\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Brukergrensesnitt",
         "frontend_desc": "Konfigurasjonsinnstillinger for Music Assistant-brukergrensesnittet (frontend). Merk at disse innstillingene lagres på enhetsnivå.",
@@ -344,7 +338,7 @@
         },
         "menu_items": {
             "label": "Aktiverte menyelementer",
-            "description": "Konfigurer hvilke elementer som skal vises i menyen. \n\n Merk at hvis du deaktiverer innstillinger, kan du låse deg ute. \n\n I så fall må du angi banen til innstillinger manuelt eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen, bruk på egen risiko."
+            "description": "Konfigurer hvilke elementer som skal vises i menyen. \\n\\n Merk at hvis du deaktiverer innstillinger, kan du låse deg ute. \\n\\n I så fall må du angi banen til innstillinger manuelt eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen, bruk på egen risiko."
         },
         "language": {
             "label": "Språk",
@@ -373,7 +367,7 @@
         },
         "hide_settings": {
             "label": "Skjul innstillingsknappen",
-            "description": "Skjul innstillingsknappen på startskjermen.\n\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\n\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
+            "description": "Skjul innstillingsknappen på startskjermen.\\n\\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\\n\\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
         },
         "no_music_providers": "Ingen musikkleverandører er konfigurert",
         "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine.",
@@ -383,8 +377,6 @@
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
     "shuffle": "Tilfeldig rekkefølge",
-    "shuffle_disabled": "Tilfeldig rekkefølge er deaktivert",
-    "shuffle_enabled": "Tilfeldig rekkefølge er aktivert",
     "sort": {
         "duration": "Varighet",
         "position": "Posisjon",
@@ -421,7 +413,6 @@
     },
     "stream_details": "Strømmedetaljer",
     "sync_now": "Synkroniser {0} nå",
-    "sync_player_to": "Synkroniser denne spilleren til:",
     "sync_running": "En eller flere musikkleverandører synkroniseres.",
     "tooltip": {
         "album_artist_filter": "Veksle mellom filter for album-artist",
