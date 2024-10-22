@@ -12,13 +12,89 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.vars.outputs.tag }}
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - uses: googleapis/release-please-action@v4
         with:
           # this assumes that you have created a personal access token
           # (PAT) and configured it as a GitHub action secret named
           # `MY_RELEASE_PLEASE_TOKEN` (this secret name is not important).
-          token:  ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           # this is a built-in strategy in release-please, see "Action Inputs"
           # for more options
           release-type: simple
+
+  build-release-artifact:
+    name: Build Release Artifact
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    needs: release-please
+    env:
+      version: ${{ needs.release-please.outputs.version }}
+      PYTHON_VERSION: "3.10"
+      NODE_VERSION: "18.x"
+      NODE_OPTIONS: --max_old_space_size=6144
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Get tag
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: |
+          yarn install
+          python3 -m pip install build tomli tomli-w
+
+      - name: Set Python project version from tag
+        shell: python
+        run: |-
+          import tomli
+          import tomli_w
+
+          with open("pyproject.toml", "rb") as f:
+            pyproject = tomli.load(f)
+
+          pyproject["project"]["version"] = "${{ env.version }}"
+
+          with open("pyproject.toml", "wb") as f:
+            tomli_w.dump(pyproject, f)
+
+      - name: Build and release package
+        run: |
+          yarn build
+          rm -rf dist music_assistant_frontend.egg-info
+          python3 -m build
+
+      - name: Publish release to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.10.3
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+
+      - name: Create Server repo PR
+        uses: music-assistant/frontend-release-pr-action@main
+        with:
+          github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          new_release_version: ${{ env.version }}
