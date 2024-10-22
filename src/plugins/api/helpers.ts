@@ -3,13 +3,15 @@
 import api from ".";
 import { MediaItemType, ItemMapping, MediaType } from "./interfaces";
 
-export const itemIsAvailable = function (item: MediaItemType | ItemMapping) {
+export const itemIsAvailable = function (
+  item: MediaItemType | ItemMapping,
+): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
   if ("provider_mappings" in item) {
     for (const x of item.provider_mappings) {
       if (x.available && api.providers[x.provider_instance]?.available)
         return true;
     }
-  } else if ("available" in item) return item.available;
+  } else if ("available" in item) return item.available as boolean;
   return false;
 };

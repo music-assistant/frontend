@@ -6,7 +6,7 @@
       tile
       hover
       class="panel-item"
-      :class="{ unavailable: !itemIsAvailable(item) }"
+      :class="{ unavailable: !isAvailable }"
       @click="onClick"
       @click.right.prevent="onMenu"
     >
@@ -67,7 +67,7 @@
 
       <!-- play button -->
       <v-btn
-        v-if="(isHovering || $vuetify.display.mobile) && itemIsAvailable(item)"
+        v-if="(isHovering || store.isTouchscreen) && isAvailable"
         icon="mdi-play"
         color="primary"
         fab
@@ -138,10 +138,10 @@ import {
   getBrowseFolderName,
   parseBool,
 } from "@/helpers/utils";
-import { itemIsAvailable } from "@/plugins/api/helpers";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import FavouriteButton from "@/components/FavoriteButton.vue";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
@@ -151,12 +151,14 @@ export interface Props {
   showCheckboxes?: boolean;
   showMediaType?: boolean;
   showActions?: boolean;
+  isAvailable?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
   showActions: false,
   showMediaType: false,
+  isAvailable: true,
 });
 
 // computed properties

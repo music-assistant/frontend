@@ -35,6 +35,7 @@
               item.media_type,
             )
           "
+          :is-available="itemIsAvailable(item)"
           @menu="onMenu"
           @click="onClick"
           @play="onPlayClick"

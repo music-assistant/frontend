@@ -3,6 +3,7 @@ import { Player, PlayerQueue, QueueItem } from "./api/interfaces";
 
 import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
+import { isTouchscreenDevice } from "@/helpers/utils";
 
 export enum AlertType {
   ERROR = "error",
@@ -40,6 +41,7 @@ interface Store {
   libraryPlaylistsCount?: number;
   libraryRadiosCount?: number;
   connected?: boolean;
+  isTouchscreen: boolean;
 }
 
 export const store: Store = reactive({
@@ -87,4 +89,5 @@ export const store: Store = reactive({
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
   connected: false,
+  isTouchscreen: isTouchscreenDevice(),
 });

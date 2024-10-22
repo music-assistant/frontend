@@ -3,7 +3,7 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
-    :class="{ unavailable: !itemIsAvailable(item) }"
+    :class="{ unavailable: !isAvailable }"
     @click.stop="onClick"
     @menu.stop="onMenu"
   >
@@ -198,7 +198,6 @@ import { useI18n } from "vue-i18n";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import ListItem from "@/components/mods/ListItem.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
 
 // properties
 export interface Props {
@@ -213,6 +212,7 @@ export interface Props {
   showDuration?: boolean;
   isSelected: boolean;
   isDisabled?: boolean;
+  isAvailable?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
 }
@@ -231,6 +231,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   showDuration: true,
   showCheckboxes: false,
   isDisabled: false,
+  isAvailable: true,
 });
 
 // computed properties

@@ -3,7 +3,7 @@
     <v-card
       v-hold="onMenu"
       v-bind="props"
-      :class="{ 'on-hover': isHovering, unavailable: !itemIsAvailable(item) }"
+      :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
       :elevation="isHovering ? 3 : 0"
       @click="onClick"
       @click.right.prevent="onMenu"
@@ -65,7 +65,7 @@
       </div>
       <!-- play button -->
       <v-btn
-        v-if="isHovering || $vuetify.display.mobile"
+        v-if="(isHovering || store.isTouchscreen) && isAvailable"
         icon="mdi-play"
         color="primary"
         fab
@@ -85,7 +85,7 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { getArtistsString, getBrowseFolderName } from "@/helpers/utils";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
@@ -94,12 +94,14 @@ export interface Props {
   isSelected?: boolean;
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
+  isAvailable?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
   isSelected: false,
   showCheckboxes: false,
   permanentOverlay: false,
+  isAvailable: true,
 });
 
 // emits
