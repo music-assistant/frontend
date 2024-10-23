@@ -156,7 +156,8 @@ export const getImageURL = function (
   if (img.path.startsWith("data:image")) return img.path;
   if (
     !img.remotely_accessible ||
-    (!size && img.path.split("//")[0] != window.location.protocol)
+    size ||
+    img.path.split("//")[0] != window.location.protocol
   ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     // Note that we play it safe here and always enforce the proxy if the schema is different
