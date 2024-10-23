@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.9.10](https://github.com/music-assistant/frontend/compare/v2.9.9...v2.9.10) (2024-10-23)
+
+
+### Bug Fixes
+
+* Correct check if image proxy should be used ([ce08d5d](https://github.com/music-assistant/frontend/commit/ce08d5d26593fc373c62278a1e0dae0263a941e6))
+* endless loop in queue items retrieval ([306314b](https://github.com/music-assistant/frontend/commit/306314b3702158692e4fd3e2bb04ad7fd42b4597))
+* Queue items list refresh issues ([138d5e4](https://github.com/music-assistant/frontend/commit/138d5e4297fe50ee19909ca0fc17b7213bffc504))
+
 ## [2.9.9](https://github.com/music-assistant/frontend/compare/v2.9.8...v2.9.9) (2024-10-22)
 
 
