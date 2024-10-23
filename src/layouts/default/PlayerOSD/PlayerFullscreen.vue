@@ -410,6 +410,7 @@ import {
   EventType,
   MediaItemType,
   MediaType,
+  PlayerQueue,
   QueueItem,
   Track,
 } from "@/plugins/api/interfaces";
@@ -640,29 +641,15 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
   }
 };
 
-const loadItems = async function (clear = false) {
-  if (clear) {
-    tempHide.value = true;
-    queueItems.value = [];
-    await sleep(100);
-    tempHide.value = false;
-    return;
-  }
-
-  if (store.activePlayerQueue) {
-    const offset = queueItems.value.length;
-    const limit = (store.activePlayerQueue.current_index || 0) + 50;
-    const result = await api.getPlayerQueueItems(
-      store.activePlayerQueue.queue_id,
-      limit,
-      offset,
-    );
-    queueItems.value.push(...result);
-  }
+const resetItems = async function () {
+  tempHide.value = true;
+  queueItems.value = [];
+  await sleep(100);
+  tempHide.value = false;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ({ done }: { done: any }) {
+const loadNextPage = async function ({ done }: { done: any }) {
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
     done("empty");
     return;
@@ -671,10 +658,19 @@ const loadNextPage = function ({ done }: { done: any }) {
     done("empty");
     return;
   }
-
-  loadItems(false).then(() => {
+  const offset = queueItems.value.length;
+  const limit = (store.activePlayerQueue.current_index || 0) + 50;
+  const result = await api.getPlayerQueueItems(
+    store.activePlayerQueue.queue_id,
+    limit,
+    offset,
+  );
+  queueItems.value.push(...result);
+  if (result.length < 50) {
+    done("empty");
+  } else {
     done("ok");
-  });
+  }
 };
 
 // listen for item updates to refresh items when that happens
@@ -683,7 +679,8 @@ onMounted(() => {
     EventType.QUEUE_ITEMS_UPDATED,
     (evt: EventMessage) => {
       if (evt.object_id != store.activePlayerQueue?.queue_id) return;
-      loadItems(true);
+      const queue = evt.data as PlayerQueue;
+      resetItems();
     },
   );
   onBeforeUnmount(unsub);
@@ -740,7 +737,7 @@ const activeQueuePanelClick = function () {
 watch(
   () => store.activePlayerId,
   (val) => {
-    loadItems(true);
+    resetItems();
   },
   { immediate: true },
 );
