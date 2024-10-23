@@ -641,9 +641,12 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
 };
 
 const loadItems = async function (clear = false) {
-  tempHide.value = true;
   if (clear) {
+    tempHide.value = true;
     queueItems.value = [];
+    await sleep(100);
+    tempHide.value = false;
+    return;
   }
 
   if (store.activePlayerQueue) {
@@ -656,7 +659,6 @@ const loadItems = async function (clear = false) {
     );
     queueItems.value.push(...result);
   }
-  tempHide.value = false;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
