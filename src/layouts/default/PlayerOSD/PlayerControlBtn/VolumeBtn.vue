@@ -21,6 +21,7 @@
                 ? Math.round(store.activePlayer?.group_volume || 0)
                 : Math.round(store.activePlayer?.volume_level || 0)
             "
+            :allow-wheel="true"
             @update:model-value="
               store.activePlayer!.group_childs.length > 0
                 ? api.playerCommandGroupVolume(
@@ -89,6 +90,7 @@
           :show-sub-players="true"
           :show-sync-controls="false"
           :hide-heading-row="false"
+          :allow-wheel="true"
           style="margin-left: 18px"
         />
       </v-card>

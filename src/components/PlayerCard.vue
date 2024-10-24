@@ -177,6 +177,7 @@
       :show-sync-controls="showSyncControls"
       :hide-heading-row="true"
       :show-sub-players="showSubPlayers"
+      :allow-wheel="false"
     />
   </v-card>
 </template>

@@ -187,6 +187,7 @@
                   PlayerFeature.VOLUME_SET,
                 )
               "
+              :allow-wheel="allowWheel"
               :model-value="Math.round(childPlayer.volume_level)"
               @update:model-value="
                 api.playerCommandVolumeSet(childPlayer.player_id, $event)
@@ -230,6 +231,7 @@ export interface Props {
   showSyncControls?: boolean;
   showSubPlayers?: boolean;
   hideHeadingRow?: boolean;
+  allowWheel?: boolean;
 }
 const compProps = defineProps<Props>();
 const playersToSync = ref<string[]>([]);

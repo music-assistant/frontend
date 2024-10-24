@@ -342,6 +342,7 @@
             :model-value="Math.round(store.activePlayer?.group_volume || 0)"
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"
+            :allow-wheel="true"
             @update:model-value="
               store.activePlayer!.group_childs.length > 0
                 ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
