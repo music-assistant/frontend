@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.9.11](https://github.com/music-assistant/frontend/compare/v2.9.10...v2.9.11) (2024-10-24)
+
+
+### Bug Fixes
+
+* Don't request thumb for unavailable item/provider ([ecaa985](https://github.com/music-assistant/frontend/commit/ecaa9857d0d8d29315a8e3fe1add39f64f4b3f2a))
+* Dont count unavailable players in sync player name ([7013a54](https://github.com/music-assistant/frontend/commit/7013a5453424d89eeb4eb15019af82f88d6ff781))
+
 ## [2.9.10](https://github.com/music-assistant/frontend/compare/v2.9.9...v2.9.10) (2024-10-23)
 
 
