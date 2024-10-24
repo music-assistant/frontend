@@ -67,9 +67,7 @@
                   style="margin-right: 25px"
                 >
                   {{
-                    $t("image_source") +
-                    ": " +
-                    api.getProvider(image.provider)?.name
+                    $t("image_source") + ": " + getProviderName(image.provider)
                   }}
                 </v-list-item-subtitle>
                 <v-icon
@@ -133,6 +131,11 @@ const onMenu = function (
     posX: posX,
     posY: posY,
   });
+};
+
+const getProviderName = function (provider: string) {
+  if (api.getProvider(provider)) return api.getProvider(provider)!.name;
+  return provider;
 };
 
 const onClick = function (evt: PointerEvent, image: MediaItemImage) {

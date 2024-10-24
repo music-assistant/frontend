@@ -465,7 +465,10 @@ export const getContextMenuItems = function (
       label: "update_metadata",
       labelArgs: [],
       action: async () => {
-        await api.updateMetadata(items[0], true);
+        const updatedInfo = await api.updateMetadata(items[0], true);
+        if (updatedInfo) {
+          Object.assign(items[0], updatedInfo);
+        }
       },
       icon: "mdi-image-album",
     });
@@ -479,8 +482,10 @@ export const getContextMenuItems = function (
       label: "refresh_item",
       labelArgs: [],
       action: async () => {
-        await api.refreshItem(items[0]);
-        window.location.reload();
+        const updatedInfo = await api.refreshItem(items[0]);
+        if (updatedInfo) {
+          Object.assign(items[0], updatedInfo);
+        }
       },
       icon: "mdi-refresh",
     });

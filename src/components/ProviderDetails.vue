@@ -11,6 +11,10 @@
         <ListItem
           v-for="providerMapping in itemDetails?.provider_mappings"
           :key="providerMapping.provider_instance"
+          :disabled="
+            !providerMapping.available ||
+            !api.getProvider(providerMapping.provider_instance)
+          "
         >
           <template #prepend>
             <ProviderIcon
