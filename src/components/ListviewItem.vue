@@ -20,7 +20,7 @@
         />
       </div>
       <div v-else class="media-thumb listitem-media-thumb">
-        <MediaItemThumb size="50" :item="item" />
+        <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
       </div>
     </template>
 

@@ -26,7 +26,7 @@
           :model-value="isSelected"
         />
       </v-overlay>
-      <MediaItemThumb :item="item" />
+      <MediaItemThumb :item="isAvailable ? item : undefined" />
       <div
         :class="
           $vuetify.theme.current.dark ? 'paneldetails-dark' : 'paneldetails'

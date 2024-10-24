@@ -107,7 +107,12 @@ export const getMediaItemImage = function (
   if (!mediaItem) return undefined;
 
   // handle image in queueitem or itemmapping
-  if ("image" in mediaItem && mediaItem.image && mediaItem.image.type == type)
+  if (
+    "image" in mediaItem &&
+    mediaItem.image &&
+    mediaItem.image.type == type &&
+    imageProviderIsAvailable(mediaItem.image.provider)
+  )
     return mediaItem.image;
   if ("media_item" in mediaItem && mediaItem.media_item)
     return getMediaItemImage(mediaItem.media_item);
@@ -121,14 +126,12 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (
-        !img.remotely_accessible &&
-        !api.getProvider(img.provider)?.available
-      ) {
+      if (!img.remotely_accessible) {
         // skip local images if not remotely accessible
         continue;
       }
-      if (img.type == type) return img;
+      if (img.type == type && imageProviderIsAvailable(img.provider))
+        return img;
     }
   }
 
@@ -182,6 +185,11 @@ export const getImageThumbForItem = function (
   const checksum =
     "metadata" in mediaItem ? mediaItem.metadata?.cache_checksum : "";
   return getImageURL(img, size, checksum);
+};
+
+const imageProviderIsAvailable = function (provider: string) {
+  if (provider == "http" || provider == "builtin") return true;
+  return api.getProvider(provider)?.available === true;
 };
 </script>
 

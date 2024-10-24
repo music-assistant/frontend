@@ -29,7 +29,10 @@
         />
       </v-overlay>
 
-      <MediaItemThumb :item="item" style="height: auto" />
+      <MediaItemThumb
+        :item="isAvailable ? item : undefined"
+        style="height: auto"
+      />
 
       <v-list-item
         variant="text"
