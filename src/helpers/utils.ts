@@ -2,15 +2,13 @@ import {
   Artist,
   BrowseFolder,
   ItemMapping,
-  MediaItem,
   MediaItemType,
-  MediaType,
   Player,
   PlayerType,
   ProviderMapping,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { store } from "@/plugins/store";
+import { api } from "@/plugins/api";
 
 import Color from "color";
 //@ts-ignore
@@ -132,11 +130,12 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
 
 export const getPlayerName = function (player: Player, truncate = 26) {
   if (!player) return "";
-  if (player.type != PlayerType.GROUP && player.group_childs.length > 1) {
-    // create pretty name for syncgroup (e.g. playername +2)
-    // TODO: move to API and only count available players
+  const availableChildPlayers = player.group_childs.filter(
+    (x) => api.players[x]?.available && x != player.player_id,
+  );
+  if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
     return `${truncateString(player.display_name, truncate - 3)} +${
-      player.group_childs.length - 1
+      availableChildPlayers.length
     }`;
   }
   return truncateString(player.display_name, truncate);
