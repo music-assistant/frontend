@@ -126,10 +126,6 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (!img.remotely_accessible) {
-        // skip local images if not remotely accessible
-        continue;
-      }
       if (img.type == type && imageProviderIsAvailable(img.provider))
         return img;
     }
@@ -188,7 +184,7 @@ export const getImageThumbForItem = function (
 };
 
 const imageProviderIsAvailable = function (provider: string) {
-  if (provider == "http" || provider == "builtin") return true;
+  if (provider === "http" || provider === "builtin") return true;
   return api.getProvider(provider)?.available === true;
 };
 </script>
