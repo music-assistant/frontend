@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Entrez un nom pour la nouvelle playlist",
     "no_content": "Aucun élément trouvé.",
-    "no_content_filter": "Aucun élément trouvé pour les critères de recherche\/filtre actuels.",
+    "no_content_filter": "Aucun élément trouvé pour les critères de recherche/filtre actuels.",
     "no_player": "Aucun lecteur sélectionné",
     "off": "Désactivé",
     "on": "Activé",
@@ -75,7 +75,7 @@
     "queue_next_items": "Éléments suivant",
     "queue_options": "Option de la file d'attente",
     "queue_previous_items": "Éléments joués",
-    "queue_radio_based_on": "La file d'attente est remplie dynamiquement de pistes basées sur {0} :",
+    "queue_radio_based_on": "La file d'attente est remplie dynamiquement de pistes basées sur:",
     "queue_radio_enabled": "Le mode radio est activé",
     "radios": "Radio",
     "read_more": "en savoir plus",
@@ -88,7 +88,7 @@
         "add_provider": "Ajouter un nouveau fournisseur",
         "advanced_settings": "Paramètres avancés",
         "check_docs": "Consultez la documentation",
-        "codeowners": "Auteurs\/crédits",
+        "codeowners": "Auteurs/crédits",
         "config_player": "Configurer le lecteur : {0}",
         "configure": "Configurer",
         "delete": "Supprimer",
@@ -159,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Activer le mode \"flux\" pour la file d'attente",
-            "description": "Activer le mode 'flux' où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et\/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
+            "description": "Activer le mode 'flux' où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
         },
         "auto_play": {
             "label": "Lecture automatique (reprise à l'allumage)",
@@ -231,8 +231,8 @@
             "options": {
                 "play": "Jouez le(s) titre(s) de l’artiste maintenant et conservez le(s) élément(s) restant(s) dans la file d’attente.",
                 "replace": "Vider la file d’attente et jouer le(s) titre(s) de l’artiste",
-                "next": "Jouez le(s) élément(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
-                "replace_next": "Effacer la file d'attente et lire le(s) morceau(x) de l'artiste juste après l'élément actuellement lu\/mis en mémoire tampon.",
+                "next": "Jouez le(s) élément(s) juste après l'élément actuellement joué/mis en mémoire tampon.",
+                "replace_next": "Effacer la file d'attente et lire le(s) morceau(x) de l'artiste juste après l'élément actuellement lu/mis en mémoire tampon.",
                 "add": "Ajouter la ou les pistes de l'artiste à la fin de la file d'attente."
             }
         },
@@ -242,7 +242,7 @@
             "options": {
                 "play": "Lire les pistes de l'album maintenant et conserver les autres éléments de la file d'attente.",
                 "replace": "Effacer la file d'attente et lire le(s) titre(s) de l'album",
-                "next": "Jouer le(s) piste(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
+                "next": "Jouer le(s) piste(s) juste après l'élément actuellement joué/mis en mémoire tampon.",
                 "replace_next": "Effacer la file d'attente et lire le(s) titre(s) de l'album juste après l'élément en cours de lecture ou de mise en mémoire tampon.",
                 "add": "Ajouter la ou les pistes de l'album à la fin de la file d'attente."
             }
@@ -253,8 +253,8 @@
             "options": {
                 "play": "Lire le(s) morceau(x) maintenant et conserver le(s) morceau(x) restant(s) dans la file d'attente.",
                 "replace": "Effacer la file d'attente et lire la ou les pistes.",
-                "next": "Lit le(s) morceau(s) juste après l'élément actuellement lu\/mis en mémoire tampon.",
-                "replace_next": "Efface la file d'attente et lit la (les) piste(s) juste après l'élément actuellement lu\/mis en mémoire tampon.",
+                "next": "Lit le(s) morceau(s) juste après l'élément actuellement lu/mis en mémoire tampon.",
+                "replace_next": "Efface la file d'attente et lit la (les) piste(s) juste après l'élément actuellement lu/mis en mémoire tampon.",
                 "add": "Ajouter la ou les pistes à la fin de la file d'attente."
             }
         },
@@ -264,8 +264,8 @@
             "options": {
                 "play": "Lire la ou les pistes de la liste de lecture maintenant et conserver les éléments restants dans la file d'attente.",
                 "replace": "Effacer la file d'attente et lire la ou les pistes de la liste de lecture",
-                "next": "Jouer le(s) élément(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
-                "replace_next": "Effacer la file d'attente et lit la (les) piste(s) de la playlist de lecture juste après l'élément actuellement lu\/mis en mémoire tampon.",
+                "next": "Jouer le(s) élément(s) juste après l'élément actuellement joué/mis en mémoire tampon.",
+                "replace_next": "Effacer la file d'attente et lit la (les) piste(s) de la playlist de lecture juste après l'élément actuellement lu/mis en mémoire tampon.",
                 "add": "Ajoutez le(s) titre(s) de la playlist à la fin de la file d’attente."
             }
         },
@@ -275,8 +275,8 @@
             "options": {
                 "play": "Écouter la station de radio maintenant et conserver le(s) élément(s) restant(s) dans la file d'attente.",
                 "replace": "Effacer la file d'attente et diffuser la station de radio",
-                "next": "Jouer le(s) élément(s) juste après l'élément actuellement joué\/mis en mémoire tampon.",
-                "replace_next": "Efface la file d'attente et joue la ou les stations de radio juste après l'élément actuellement joué\/mis en mémoire tampon.",
+                "next": "Jouer le(s) élément(s) juste après l'élément actuellement joué/mis en mémoire tampon.",
+                "replace_next": "Efface la file d'attente et joue la ou les stations de radio juste après l'élément actuellement joué/mis en mémoire tampon.",
                 "add": "Ajouter la ou les stations de radio à la fin de la file d'attente."
             }
         },
@@ -317,7 +317,7 @@
         },
         "icon": {
             "label": "Icône",
-            "description": "Icône Material design pour ce lecteur.\\n\\nVoir https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Icône Material design pour ce lecteur.\\n\\nVoir https://pictogrammers.com/library/mdi/."
         },
         "frontend": "Interface utilisateur",
         "frontend_desc": "Paramètres de configuration pour l'interface utilisateur de Music Assistant (frontend). Notez que ces paramètres sont stockés au niveau de l’appareil.",
@@ -430,21 +430,21 @@
     "tooltip": {
         "album_artist_filter": "Basculer le filtre d'album-artiste",
         "explicit": "Explicite",
-        "filter_library": "Basculer le filtre dans la bibliothèque\/favori",
-        "library": "Basculer en bibliothèque\/favori",
+        "filter_library": "Basculer le filtre dans la bibliothèque/favori",
+        "library": "Basculer en bibliothèque/favori",
         "linked": "Cet élément de fournisseur est lié aux détails de l'élément actuel",
         "refresh": "Actualiser la liste des éléments",
         "refresh_new_content": "Nouveau contenu est disponible, cliquez pour actualiser la liste",
-        "search": "Afficher\/masquer le champ de recherche",
+        "search": "Afficher/masquer le champ de recherche",
         "select_items": "Sélectionnez plusieurs éléments",
         "sort_options": "Options de tri",
         "toggle_view_mode": "Basculer le mode d'affichage",
         "filter_favorites": "Afficher uniquement les favoris",
-        "favorite": "Marquer\/retirer comme favori",
+        "favorite": "Marquer/retirer comme favori",
         "open_provider_link": "Ouvrir cet élément sur le site web du fournisseur",
-        "collapse_expand": "Réduire\/développer cette liste",
+        "collapse_expand": "Réduire/développer cette liste",
         "back": "Précédent",
-        "show_menu": "Afficher\/masquer le menu",
+        "show_menu": "Afficher/masquer le menu",
         "search_filter_active": "Les résultats de la recherche sont filtrés",
         "play_sample": "Jouer un extrait",
         "album_type": "Type d'album",

@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Introduzir um nome para a nova lista de reprodução",
     "no_content": "Nenhum item encontrado.",
-    "no_content_filter": "Não foram encontrados itens para as actuais condições de filtragem\/pesquisa.",
+    "no_content_filter": "Não foram encontrados itens para as actuais condições de filtragem/pesquisa.",
     "no_player": "Nenhum leitor selecionado",
     "off": "Desligado",
     "on": "Ligado",
@@ -74,7 +74,7 @@
     "queue_next_items": "Próximos itens",
     "queue_options": "Opções de fila",
     "queue_previous_items": "Itens reproduzidos",
-    "queue_radio_based_on": "A fila de espera é preenchida dinamicamente com faixas com base em {0}:",
+    "queue_radio_based_on": "A fila de espera é preenchida dinamicamente com faixas com base em:",
     "queue_radio_enabled": "O modo rádio está activado",
     "radios": "Rádio",
     "read_more": "ler mais",
@@ -87,7 +87,7 @@
         "add_provider": "Adicionar um novo provedor",
         "advanced_settings": "Configurações avançadas",
         "check_docs": "Verificar a documentação",
-        "codeowners": "Autores\/créditos",
+        "codeowners": "Autores/créditos",
         "config_player": "Configurar leitor: {0}",
         "configure": "Configurar",
         "delete": "Eliminar",
@@ -158,7 +158,7 @@
         },
         "flow_mode": {
             "label": "Activar o modo de fluxo de espera",
-            "description": "Activa o modo \"flow\" em que todas as faixas da fila são enviadas como um fluxo de áudio contínuo.\\nUtilize para leitores que não suportam nativamente gapless e\/ou crossfading ou se o leitor tiver problemas na transição entre faixas."
+            "description": "Activa o modo \"flow\" em que todas as faixas da fila são enviadas como um fluxo de áudio contínuo.\\nUtilize para leitores que não suportam nativamente gapless e/ou crossfading ou se o leitor tiver problemas na transição entre faixas."
         },
         "auto_play": {
             "label": "Reprodução automática (retomar ao ligar)",
@@ -230,8 +230,8 @@
             "options": {
                 "play": "Reproduzir a(s) faixa(s) do artista agora e manter o(s) restante(s) item(s) da fila.",
                 "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do artista",
-                "next": "Reproduzir o(s) item(s) logo a seguir ao item actualmente reproduzido\/em buffer.",
-                "replace_next": "Limpar a fila de espera e reproduzir a(s) faixa(s) do artista logo após o item actualmente reproduzido\/em espera.",
+                "next": "Reproduzir o(s) item(s) logo a seguir ao item actualmente reproduzido/em buffer.",
+                "replace_next": "Limpar a fila de espera e reproduzir a(s) faixa(s) do artista logo após o item actualmente reproduzido/em espera.",
                 "add": "Adicionar a(s) faixa(s) do artista no final da fila."
             }
         },
@@ -241,8 +241,8 @@
             "options": {
                 "play": "Reproduzir a(s) faixa(s) do álbum agora e manter o(s) restante(s) item(s) da fila.",
                 "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do álbum",
-                "next": "Reproduzir o(s) item(s) logo a seguir ao item atualmente reproduzido\/em buffer.",
-                "replace_next": "Limpra a fila de espera e reproduzir a(s) faixa(s) do álbum logo a seguir ao item actualmente reproduzido\/em espera.",
+                "next": "Reproduzir o(s) item(s) logo a seguir ao item atualmente reproduzido/em buffer.",
+                "replace_next": "Limpra a fila de espera e reproduzir a(s) faixa(s) do álbum logo a seguir ao item actualmente reproduzido/em espera.",
                 "add": "Adicionar a(s) faixa(s) do álbum no final da fila."
             }
         },
@@ -252,8 +252,8 @@
             "options": {
                 "play": "Reproduzir a(s) faixa(s) agora e manter o(s) item(ns) restante(s) da fila.",
                 "replace": "Limpar a fila e reproduzir a(s) faixa(s).",
-                "next": "Reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
+                "next": "Reproduzir a(s) faixa(s) logo após o item atualmente reproduzido/em buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo após o item atualmente reproduzido/em buffer.",
                 "add": "Adicionar a(s) faixa(s) no final da fila."
             }
         },
@@ -263,8 +263,8 @@
             "options": {
                 "play": "Reproduzir a(s) faixa(s) da lista de reprodução agora e mantenha o(s) item(s) restante(s) da fila.",
                 "replace": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução",
-                "next": "Reproduzir o(s) item(s) logo após o item actualmente reproduzido\/em buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução logo após o item atualmente reproduzido\/em buffer.",
+                "next": "Reproduzir o(s) item(s) logo após o item actualmente reproduzido/em buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução logo após o item atualmente reproduzido/em buffer.",
                 "add": "Adicionar a(s) faixa(s) da lista de reprodução no final da fila."
             }
         },
@@ -274,8 +274,8 @@
             "options": {
                 "play": "Reproduzir agora a estação de rádio e manter o(s) item(s) restante(s) da fila.",
                 "replace": "Limpar a fila e reproduzir a estação de rádio",
-                "next": "Reproduzir o(s) item(s) logo após o item em reprodução\/buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) estação(ões) de rádio logo após o item em reprodução\/buffer.",
+                "next": "Reproduzir o(s) item(s) logo após o item em reprodução/buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) estação(ões) de rádio logo após o item em reprodução/buffer.",
                 "add": "Adicionar a(s) estação(ões) de rádio no final da fila."
             }
         },
@@ -316,7 +316,7 @@
         },
         "icon": {
             "label": "Ícone",
-            "description": "Ícones para este leitor.\\n\\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
+            "description": "Ícones para este leitor.\\n\\nVeja mais em: https://pictogrammers.com/library/mdi/"
         },
         "frontend": "Interface de utilizador",
         "frontend_desc": "Definições de configuração para a interface de utilizador do Music Assistant (frontend). De notar que estas definições são armazenadas ao nível do dispositivo.",
@@ -416,21 +416,21 @@
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",
         "explicit": "Explícito",
-        "filter_library": "Alternar filtro na biblioteca\/favoritos",
-        "library": "Alternar entre biblioteca\/favoritos",
+        "filter_library": "Alternar filtro na biblioteca/favoritos",
+        "library": "Alternar entre biblioteca/favoritos",
         "linked": "Este item do provedor está vinculado aos detalhes do item actual",
         "refresh": "Actualizar a lista de itens",
         "refresh_new_content": "Estão disponíveis novos conteúdos, clique para actualizar a lista",
-        "search": "Mostrar\/ocultar a entrada de pesquisa",
+        "search": "Mostrar/ocultar a entrada de pesquisa",
         "select_items": "Selecionar vários itens",
         "sort_options": "Opções de ordenação",
-        "toggle_view_mode": "Alternar o modo de visualização lista\/miniaturas",
+        "toggle_view_mode": "Alternar o modo de visualização lista/miniaturas",
         "filter_favorites": "Mostrar apenas os favoritos",
-        "favorite": "Marcar\/desmarcar como favorito",
+        "favorite": "Marcar/desmarcar como favorito",
         "open_provider_link": "Abrir este item no website do provedor",
-        "collapse_expand": "Encolher\/expandir esta lista",
+        "collapse_expand": "Encolher/expandir esta lista",
         "back": "Voltar",
-        "show_menu": "Mostrar\/ocultar menu",
+        "show_menu": "Mostrar/ocultar menu",
         "search_filter_active": "A pesquisa está a filtrar os resultados",
         "play_sample": "Reproduzir amostra",
         "album_type": "Tipo de álbum",

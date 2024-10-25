@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Skriv inn ett navn for den nye spillelisten",
     "no_content": "Ingen elementer funnet.",
-    "no_content_filter": "Ingen elementer funnet for gjeldende filter\/søkebetingelser.",
+    "no_content_filter": "Ingen elementer funnet for gjeldende filter/søkebetingelser.",
     "no_player": "Ingen spiller valgt",
     "off": "Av",
     "on": "På",
@@ -75,7 +75,7 @@
     "queue_next_items": "Neste elementer",
     "queue_options": "Alternativer for spillekøen",
     "queue_previous_items": "Avspilte elementer",
-    "queue_radio_based_on": "Spillekøen fylles dynamisk med spor basert på {0}:",
+    "queue_radio_based_on": "Spillekøen fylles dynamisk med spor basert på:",
     "queue_radio_enabled": "Radiomodus er aktivert",
     "radios": "Radio",
     "read_more": "Les mer",
@@ -88,7 +88,7 @@
         "add_provider": "Legg til en ny leverandør",
         "advanced_settings": "Avanserte innstillinger",
         "check_docs": "Sjekk ut dokumentasjonen",
-        "codeowners": "Forfattere\/rettighetshavere",
+        "codeowners": "Forfattere/rettighetshavere",
         "config_player": "Konfigurer spiller: {0}",
         "configure": "Konfigurer",
         "delete": "Slett",
@@ -159,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Aktiver køflytmodus",
-            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\\nBrukes for avspillere som ikke støtter gapless og\/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
+            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\\nBrukes for avspillere som ikke støtter gapless og/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
         },
         "auto_play": {
             "label": "Automatisk avspilling (gjenopptas når den slås på)",
@@ -231,9 +231,9 @@
             "options": {
                 "play": "Spill av artistspor nå, og behold de gjenværende køelementene.",
                 "replace": "Tøm køen og spill av artistsporet(ene)",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av artistsporet\/artistsporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "add": "Legg til artistsporet\/artistsporene på slutten av køen."
+                "next": "Spill av elementet/elementene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av artistsporet/artistsporene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "add": "Legg til artistsporet/artistsporene på slutten av køen."
             }
         },
         "default_enqueue_action_album": {
@@ -241,21 +241,21 @@
             "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
             "options": {
                 "play": "Spill albumspor nå og behold gjenværende køelement(er).",
-                "replace": "Tøm køen og spill av albumsporet\/sporene",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av albumsporet\/-sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "add": "Legg til albumsporet\/sporene på slutten av køen."
+                "replace": "Tøm køen og spill av albumsporet/sporene",
+                "next": "Spill av elementet/elementene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av albumsporet/-sporene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "add": "Legg til albumsporet/sporene på slutten av køen."
             }
         },
         "default_enqueue_action_track": {
             "label": "Standard køalternativ for sporelement(er).",
             "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
             "options": {
-                "play": "Spill av sporet\/sporene nå, og behold de gjenværende elementene i køen.",
+                "play": "Spill av sporet/sporene nå, og behold de gjenværende elementene i køen.",
                 "replace": "Tøm køen og spill av sporene.",
-                "next": "Spill av sporet\/sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av sporet\/sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "add": "Legg til sporet\/sporene på slutten av køen."
+                "next": "Spill av sporet/sporene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av sporet/sporene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "add": "Legg til sporet/sporene på slutten av køen."
             }
         },
         "default_enqueue_action_playlist": {
@@ -264,8 +264,8 @@
             "options": {
                 "play": "Spill av spillelistens spor nå, og behold de gjenværende elementene i køen.",
                 "replace": "Tøm køen og spill av spillelistens spor",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av spillelistens spor rett etter det elementet som spilles\/bufferes for øyeblikket.",
+                "next": "Spill av elementet/elementene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av spillelistens spor rett etter det elementet som spilles/bufferes for øyeblikket.",
                 "add": "Legg til spillelistens spor på slutten av køen."
             }
         },
@@ -275,8 +275,8 @@
             "options": {
                 "play": "Spill av radiostasjonen nå, og behold de gjenværende elementene i køen.",
                 "replace": "Tøm køen og spill av radiostasjonen",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av radiostasjonen(e) rett etter elementet som spilles\/bufres.",
+                "next": "Spill av elementet/elementene rett etter det elementet som spilles/bufferes for øyeblikket.",
+                "replace_next": "Tøm køen og spill av radiostasjonen(e) rett etter elementet som spilles/bufres.",
                 "add": "Legg til radiostasjonen(e) på slutten av køen."
             }
         },
@@ -317,7 +317,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Ikon i materialdesign for denne spilleren.\\n\\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Ikon i materialdesign for denne spilleren.\\n\\nSe https://pictogrammers.com/library/mdi/."
         },
         "frontend": "Brukergrensesnitt",
         "frontend_desc": "Konfigurasjonsinnstillinger for Music Assistant-brukergrensesnittet (frontend). Merk at disse innstillingene lagres på enhetsnivå.",
@@ -417,21 +417,21 @@
     "tooltip": {
         "album_artist_filter": "Veksle mellom filter for album-artist",
         "explicit": "Eksplisitt",
-        "filter_library": "Veksle mellom bibliotek-\/favorittfilter",
-        "library": "Veksle mellom bibliotek\/favoritt",
+        "filter_library": "Veksle mellom bibliotek-/favorittfilter",
+        "library": "Veksle mellom bibliotek/favoritt",
         "linked": "Denne provideritem er knyttet til gjeldende itemdetails",
         "refresh": "Oppdater listen",
         "refresh_new_content": "Nytt innhold er tilgjengelig, klikk for å oppdatere listen",
-        "search": "Vis\/skjul søkeinndata",
+        "search": "Vis/skjul søkeinndata",
         "select_items": "Velg flere elementer",
         "sort_options": "Sorteringsalternativer",
-        "toggle_view_mode": "Veksle visningsmodus liste\/tommelfinger",
+        "toggle_view_mode": "Veksle visningsmodus liste/tommelfinger",
         "filter_favorites": "Vis kun favoritter",
-        "favorite": "Merk\/fjern merking som favoritt",
+        "favorite": "Merk/fjern merking som favoritt",
         "open_provider_link": "Åpne dette elementet på leverandørens nettsted",
-        "collapse_expand": "Skjul\/vis denne oppføringen",
+        "collapse_expand": "Skjul/vis denne oppføringen",
         "back": "Tilbake",
-        "show_menu": "Vis\/skjul meny",
+        "show_menu": "Vis/skjul meny",
         "search_filter_active": "Søket filtrerer for øyeblikket resultater",
         "play_sample": "Spill av eksempel",
         "album_type": "Albumtype",

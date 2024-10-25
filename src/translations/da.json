@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Indtast et navn til den nye afspilningsliste",
     "no_content": "Ingen emner fundet.",
-    "no_content_filter": "Der blev ikke fundet nogen emner med det aktuelle filter\/søgekriterie",
+    "no_content_filter": "Der blev ikke fundet nogen emner med det aktuelle filter/søgekriterie",
     "no_player": "Ingen afspiller valgt",
     "off": "Fra",
     "on": "Til",
@@ -74,7 +74,7 @@
     "queue_next_items": "Næste emner",
     "queue_options": "Indstillinger for kø",
     "queue_previous_items": "Afspillede emner",
-    "queue_radio_based_on": "Køen fyldes dynamisk med spor baseret på {0}:",
+    "queue_radio_based_on": "Køen fyldes dynamisk med spor baseret på:",
     "queue_radio_enabled": "Radiotilstand er aktiveret",
     "radios": "Radio",
     "read_more": "Læs mere",
@@ -87,7 +87,7 @@
         "add_provider": "Tilføj en ny udbyder",
         "advanced_settings": "Avancerede indstillinger",
         "check_docs": "Tjek dokumentationen",
-        "codeowners": "Udviklere\/tak",
+        "codeowners": "Udviklere/tak",
         "config_player": "Konfigurer afspiller: {0}",
         "configure": "Konfigurer",
         "delete": "Slet",
@@ -158,7 +158,7 @@
         },
         "flow_mode": {
             "label": "Aktivér flow-tilstand",
-            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \\nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
+            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \\nBruges til afspillere, der ikke understøtter gapless og/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
         },
         "auto_play": {
             "label": "Start automatisk afspilning",
@@ -228,10 +228,10 @@
             "label": "Standard kø-indstilling for artist-element.",
             "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
             "options": {
-                "play": "Afspil kunstnerens nummer\/numre nu, og behold resten af køen.",
-                "replace": "Ryd køen, og afspil kunstnerens nummer\/numre [default].",
-                "next": "Afspil elementet\/elementerne efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil kunstnerens nummer\/numre efter det aktuelle element.",
+                "play": "Afspil kunstnerens nummer/numre nu, og behold resten af køen.",
+                "replace": "Ryd køen, og afspil kunstnerens nummer/numre [default].",
+                "next": "Afspil elementet/elementerne efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil kunstnerens nummer/numre efter det aktuelle element.",
                 "add": "Tilføj kunstnerens spor i bunden af køen."
             }
         },
@@ -239,22 +239,22 @@
             "label": "Standard kø-indstilling for albums.",
             "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
             "options": {
-                "play": "Afspil albumnummeret\/-numrene nu, og behold de(t) resterende køelement(er).",
-                "replace": "Ryd køen, og afspil albumnummeret\/-numrene [standard].",
-                "next": "Afspil elementet\/elementerne efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil albumnummeret\/-numrene lige efter det aktuelle nummer.",
-                "add": "Tilføj albumnummeret\/-numrene i bunden af køen."
+                "play": "Afspil albumnummeret/-numrene nu, og behold de(t) resterende køelement(er).",
+                "replace": "Ryd køen, og afspil albumnummeret/-numrene [standard].",
+                "next": "Afspil elementet/elementerne efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil albumnummeret/-numrene lige efter det aktuelle nummer.",
+                "add": "Tilføj albumnummeret/-numrene i bunden af køen."
             }
         },
         "default_enqueue_action_track": {
             "label": "Standard kø-indstilling for numre.",
             "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
             "options": {
-                "play": "Afspil nummeret\/numrene, og behold de(t) resterende køelement(er). [standard]",
-                "replace": "Ryd køen, og afspil nummeret\/numrene.",
-                "next": "Afspil nummeret\/numrene efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil nummeret\/numrene efter det aktuelle element.",
-                "add": "Tilføj nummeret\/numrene i bunden af køen."
+                "play": "Afspil nummeret/numrene, og behold de(t) resterende køelement(er). [standard]",
+                "replace": "Ryd køen, og afspil nummeret/numrene.",
+                "next": "Afspil nummeret/numrene efter det aktuelle element.",
+                "replace_next": "Ryd køen, og afspil nummeret/numrene efter det aktuelle element.",
+                "add": "Tilføj nummeret/numrene i bunden af køen."
             }
         },
         "default_enqueue_action_playlist": {
@@ -316,7 +316,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Material design ikon for denne afspiller. \\n\\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design ikon for denne afspiller. \\n\\n Se https://pictogrammers.com/library/mdi/."
         },
         "frontend": "Brugergrænseflade",
         "frontend_desc": "Konfigurationsindstillinger for Music Assistant-brugergrænsefladen. Bemærk, at disse indstillinger gemmes på enhedsniveau.",
@@ -419,16 +419,16 @@
         "linked": "Denne udbyder er knyttet til de aktuelle detaljer",
         "refresh": "Opdater listen",
         "refresh_new_content": "Der er nyt indhold tilgængeligt, klik for at opdatere listen",
-        "search": "Vis\/skjul søgefelt",
+        "search": "Vis/skjul søgefelt",
         "select_items": "Vælg flere elementer",
         "sort_options": "Sorteringsmuligheder",
-        "toggle_view_mode": "Skift visning liste\/panel",
+        "toggle_view_mode": "Skift visning liste/panel",
         "filter_favorites": "Vis kun favoritter",
-        "favorite": "Markér\/fravælg som favorit",
+        "favorite": "Markér/fravælg som favorit",
         "open_provider_link": "Åbn dette element på udbyderens hjemmeside",
-        "collapse_expand": "Skjul\/udvid listen",
+        "collapse_expand": "Skjul/udvid listen",
         "back": "Tilbage",
-        "show_menu": "Vis\/skjul menu",
+        "show_menu": "Vis/skjul menu",
         "search_filter_active": "Søgningen filtrerer i øjeblikket resultater",
         "play_sample": "Afspil prøve",
         "album_type": "Album type",

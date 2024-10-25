@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Wprowadź nazwę nowej listy odtwarzania",
     "no_content": "Nie znaleziono pozycji.",
-    "no_content_filter": "Nie odnaleziono elementów dla aktualnych opcji filtra\/wyszukiwania.",
+    "no_content_filter": "Nie odnaleziono elementów dla aktualnych opcji filtra/wyszukiwania.",
     "no_player": "Nie wybrano odtwarzacza",
     "off": "Wyłączony",
     "on": "Włączony",
@@ -74,7 +74,7 @@
     "queue_next_items": "Kolejne pozycje",
     "queue_options": "Opcje kolejki",
     "queue_previous_items": "Poprzednie utwory",
-    "queue_radio_based_on": "Kolejka jest automatycznie wypełniana utworami na podstawie {0}:",
+    "queue_radio_based_on": "Kolejka jest automatycznie wypełniana utworami na podstawie:",
     "queue_radio_enabled": "Tryb radiowy aktywny",
     "radios": "Radio",
     "read_more": "czytaj więcej",
@@ -87,7 +87,7 @@
         "add_provider": "Dodaj nowego dostawcę",
         "advanced_settings": "Ustawienia zaawansowane",
         "check_docs": "Sprawdź dokumentację",
-        "codeowners": "Autorzy\/uznanie",
+        "codeowners": "Autorzy/uznanie",
         "config_player": "Konfiguruj odtwarzacz: {0}",
         "configure": "Konfiguruj",
         "delete": "Usuń",
@@ -158,7 +158,7 @@
         },
         "flow_mode": {
             "label": "Włącz tryb przepływu kolejki",
-            "description": "Włącz tryb „przepływu”, w którym wszystkie ścieżki w kolejce są wysyłane jako ciągły strumień audio.\\nUżyj w przypadku odtwarzaczy, które natywnie nie obsługują bez przerw i\/lub przenikania, lub jeśli odtwarzacz ma problemy z przełączaniem między ścieżkami."
+            "description": "Włącz tryb „przepływu”, w którym wszystkie ścieżki w kolejce są wysyłane jako ciągły strumień audio.\\nUżyj w przypadku odtwarzaczy, które natywnie nie obsługują bez przerw i/lub przenikania, lub jeśli odtwarzacz ma problemy z przełączaniem między ścieżkami."
         },
         "auto_play": {
             "label": "Automatyczne odtwarzanie (wznowienie po włączeniu zasilania)",
@@ -230,8 +230,8 @@
             "options": {
                 "play": "Odtwórz teraz utwory wykonawcy i zachowaj pozostałe elementy w kolejce.",
                 "replace": "Wyczyść kolejkę i odtwórz utwory wykonawcy",
-                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
-                "replace_next": "Wyczyść kolejkę i odtwarzaj utwory wykonawcy zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwarzaj utwory wykonawcy zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
                 "add": "Dodaj utwory wykonawcy na końcu kolejki."
             }
         },
@@ -241,8 +241,8 @@
             "options": {
                 "play": "Odtwórz teraz utwory z albumu i zachowaj pozostałe elementy w kolejce.",
                 "replace": "Wyczyść kolejkę i odtwórz utwory z albumu",
-                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
-                "replace_next": "Wyczyść kolejkę i odtwórz utwory z albumu zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwórz utwory z albumu zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
                 "add": "Dodaj utwory z albumu na końcu kolejki."
             }
         },
@@ -252,8 +252,8 @@
             "options": {
                 "play": "Odtwórz teraz utwory i zachowaj pozostałe elementy w kolejce.",
                 "replace": "Wyczyść kolejkę i odtwórz utwory.",
-                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
-                "replace_next": "Wyczyść kolejkę i odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwórz utwory zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
                 "add": "Dodaj utwory na końcu kolejki."
             }
         },
@@ -263,8 +263,8 @@
             "options": {
                 "play": "Odtwórz teraz utwory z listy odtwarzania i zachowaj pozostałe elementy z kolejki.",
                 "replace": "Wyczyść kolejkę i odtwórz utwory z listy odtwarzania",
-                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
-                "replace_next": "Wyczyść kolejkę i odtwarzaj utwory z listy odtwarzania zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "next": "Odtwórz utwory zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwarzaj utwory z listy odtwarzania zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
                 "add": "Dodaj utwory z listy odtwarzania na końcu kolejki."
             }
         },
@@ -274,8 +274,8 @@
             "options": {
                 "play": "Odtwórz teraz stację radiową i zachowaj pozostałe elementy w kolejce.",
                 "replace": "Wyczyść kolejkę i włącz stację radiową",
-                "next": "Odtwórz element(y) zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
-                "replace_next": "Wyczyść kolejkę i odtwarzaj stacje radiowe zaraz po aktualnie odtwarzanym\/buforowanym elemencie.",
+                "next": "Odtwórz element(y) zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
+                "replace_next": "Wyczyść kolejkę i odtwarzaj stacje radiowe zaraz po aktualnie odtwarzanym/buforowanym elemencie.",
                 "add": "Dodaj stacje radiowe na końcu kolejki."
             }
         },
@@ -316,7 +316,7 @@
         },
         "icon": {
             "label": "Ikona",
-            "description": "Ikona MDI (Material design icon) dla tego odtwarzacza.\\n\\nZobacz https:\/\/pictogrammmers.com\/library\/mdi\/."
+            "description": "Ikona MDI (Material design icon) dla tego odtwarzacza.\\n\\nZobacz https://pictogrammmers.com/library/mdi/."
         },
         "frontend": "Interfejs użytkownika",
         "frontend_desc": "Ustawienia konfiguracyjne interfejsu użytkownika (frontend) Music Assistant. Należy pamiętać, że te ustawienia są przechowywane na poziomie urządzenia.",
@@ -408,23 +408,23 @@
     "sync_now": "Synchronizuj {0} teraz",
     "sync_running": "Trwa synchronizacja co najmniej jednego dostawcy muzyki",
     "tooltip": {
-        "album_artist_filter": "Przełącz filtr Wykonawca\/Album",
+        "album_artist_filter": "Przełącz filtr Wykonawca/Album",
         "explicit": "Dokładny",
-        "filter_library": "Przełącz filtr Ulubione\/Biblioteczne",
-        "library": "Przełącz Ulubione\/Biblioteczne",
+        "filter_library": "Przełącz filtr Ulubione/Biblioteczne",
+        "library": "Przełącz Ulubione/Biblioteczne",
         "linked": "Ten dostawca jest połączony z aktualnymi szczegółami elementu",
         "refresh": "Odśwież listę",
         "refresh_new_content": "Nowe zawartość jest dostępna. Kliknij, aby odświeżyć listę",
-        "search": "Pokaż\/ukryj dane wyszukiwania",
+        "search": "Pokaż/ukryj dane wyszukiwania",
         "select_items": "Wybierz wiele elementów",
         "sort_options": "Opcje sortowania",
-        "toggle_view_mode": "Przełącz widok Lista\/Miniatura",
+        "toggle_view_mode": "Przełącz widok Lista/Miniatura",
         "filter_favorites": "Pokaż tylko Ulubione",
-        "favorite": "Zaznacz\/odznacz jako Ulubione",
+        "favorite": "Zaznacz/odznacz jako Ulubione",
         "open_provider_link": "Otwórz ten element na internetowej stronie dostawcy",
-        "collapse_expand": "Zwiń\/rozwiń tę listę",
+        "collapse_expand": "Zwiń/rozwiń tę listę",
         "back": "Powrót",
-        "show_menu": "Pokaż\/Ukryj menu",
+        "show_menu": "Pokaż/Ukryj menu",
         "search_filter_active": "Wyszukiwanie obecnie filtruje wyniki",
         "play_sample": "Odtwórz próbkę",
         "album_type": "Typ albumu",

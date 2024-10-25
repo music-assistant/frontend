@@ -14,8 +14,30 @@
           </Button>
         </template>
         <template #append>
-          <Button icon @click="store.showFullscreenPlayer = false">
-            <v-icon icon="mdi-dots-vertical" @click.stop="openQueueMenu" />
+          <v-menu v-if="store.activePlayerQueue?.radio_source.length" scrim>
+            <template #activator="{ props }">
+              <Button v-bind="props" icon>
+                <v-icon color="accent" icon="mdi-radio-tower" />
+              </Button>
+            </template>
+
+            <v-card
+              :title="$t('queue_radio_enabled')"
+              :subtitle="$t('queue_radio_based_on')"
+            >
+              <template #text>
+                <div
+                  v-for="source in store.activePlayerQueue?.radio_source"
+                  :key="source.uri"
+                >
+                  <a @click="itemClick(source)">{{ source.name }}</a>
+                </div>
+              </template>
+            </v-card>
+          </v-menu>
+
+          <Button icon @click.stop="openQueueMenu">
+            <v-icon icon="mdi-dots-vertical" />
           </Button>
         </template>
       </v-toolbar>

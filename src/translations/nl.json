@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Enter a new for the new playlist",
     "no_content": "Geen items gevonden.",
-    "no_content_filter": "Geen items gevonden voor de huidige zoek\/filter instellingen.",
+    "no_content_filter": "Geen items gevonden voor de huidige zoek/filter instellingen.",
     "no_player": "Geen speler geselecteerd",
     "off": "Uit",
     "on": "Aan",
@@ -74,7 +74,7 @@
     "queue_next_items": "Aankomende items",
     "queue_options": "Wachtrij opties",
     "queue_previous_items": "Reeds afgespeelde items",
-    "queue_radio_based_on": "De wachtrij wordt dynamisch gevuld met nummers gebaseerd op {0}:",
+    "queue_radio_based_on": "De wachtrij wordt dynamisch gevuld met nummers gebaseerd op:",
     "queue_radio_enabled": "Radio modus is ingeschakeld",
     "radios": "Radio",
     "read_more": "meer lezen",
@@ -87,7 +87,7 @@
         "add_provider": "Add a new provider",
         "advanced_settings": "Advanced settings",
         "check_docs": "Checkout the documentation",
-        "codeowners": "Authors\/credits",
+        "codeowners": "Authors/credits",
         "config_player": "Configure player: {0}",
         "configure": "Configure",
         "delete": "Delete",
@@ -158,7 +158,7 @@
         },
         "flow_mode": {
             "label": "\"flow mode\" inschakelen",
-            "description": "Schakel de \"flow\" modus in waarbij alle tracks in de wachtrij als een continue audiostream worden verzonden. \\nGebruik dit voor spelers die gapless en\/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen tracks."
+            "description": "Schakel de \"flow\" modus in waarbij alle tracks in de wachtrij als een continue audiostream worden verzonden. \\nGebruik dit voor spelers die gapless en/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen tracks."
         },
         "auto_play": {
             "label": "Automatisch afspelen (hervatten bij inschakelen)",
@@ -263,8 +263,8 @@
             "options": {
                 "play": "Speel nu de afspeellijst en hou de overige nummers in de wachtrij.",
                 "replace": "Wis de wachtrij en speel de nummers van de afspeellijst",
-                "next": "Speel het item(s) direct na het nu afgespeelde\/gebufferde item af.",
-                "replace_next": "Wis de wachtrij en speel de afspeellijsttrack(s) af direct na het huidige afgespeelde\/gebufferde item.",
+                "next": "Speel het item(s) direct na het nu afgespeelde/gebufferde item af.",
+                "replace_next": "Wis de wachtrij en speel de afspeellijsttrack(s) af direct na het huidige afgespeelde/gebufferde item.",
                 "add": "Voeg de track(s) van de afspeellijst toe aan het einde van de wachtrij."
             }
         },
@@ -274,8 +274,8 @@
             "options": {
                 "play": "Speel het radiostation af en bewaar de resterende wachtrij-item(s).",
                 "replace": "Wis de wachtrij en speel het radiostation af",
-                "next": "Speel het item of de items direct na het momenteel afgespeelde\/gebufferde item af.",
-                "replace_next": "Wis de wachtrij en speel de radiozender(s) af direct na het huidige afgespeelde\/gebufferde item.",
+                "next": "Speel het item of de items direct na het momenteel afgespeelde/gebufferde item af.",
+                "replace_next": "Wis de wachtrij en speel de radiozender(s) af direct na het huidige afgespeelde/gebufferde item.",
                 "add": "Voeg de radiozender(s) toe aan het einde van de wachtrij."
             }
         },
@@ -316,7 +316,7 @@
         },
         "icon": {
             "label": "Pictogram",
-            "description": "Material design-pictogram voor deze speler. \\n\\nZie https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design-pictogram voor deze speler. \\n\\nZie https://pictogrammers.com/library/mdi/."
         },
         "frontend": "Gebruikersinterface",
         "frontend_desc": "Configuratie-instellingen voor de gebruikersinterface van de muziekassistent (frontend). Houd er rekening mee dat deze instellingen op apparaatniveau worden opgeslagen.",
@@ -375,7 +375,7 @@
         "no_player_providers": "Geen player providers geconfigureerd",
         "no_player_providers_detail": "Configureer player providers om apparaten te selecteren waarop Music Assistant je muziek kan uitvoeren.",
         "group_type": "Grouptype",
-        "add_group_player_desc": "Voor spelerproviders\/ecosystemen die native groepering\/synchronisatie bieden, wordt er automatisch een syncgroup aangemaakt. Dit betekent dat als u naar deze spelergroep speelt, de spelers van de leden automatisch worden gesynchroniseerd. \\n\\nVoor spelers\/ecosystemen die geen groepering ondersteunen, of als u spelers van verschillende ecosystemen wilt groeperen, kunt u het type Universal Group gebruiken. Dit type distribueert dezelfde audio naar alle spelers van de leden (maar niet synchroon). \\n\\nHoud er rekening mee dat sommige providers wel groepering ondersteunen, maar dat u de native app moet gebruiken om de groepering uit te voeren. Een voorbeeld zijn op Google Cast gebaseerde spelers, waarbij u alleen Google Cast-groepen kunt maken in de Google Home-app. "
+        "add_group_player_desc": "Voor spelerproviders/ecosystemen die native groepering/synchronisatie bieden, wordt er automatisch een syncgroup aangemaakt. Dit betekent dat als u naar deze spelergroep speelt, de spelers van de leden automatisch worden gesynchroniseerd. \\n\\nVoor spelers/ecosystemen die geen groepering ondersteunen, of als u spelers van verschillende ecosystemen wilt groeperen, kunt u het type Universal Group gebruiken. Dit type distribueert dezelfde audio naar alle spelers van de leden (maar niet synchroon). \\n\\nHoud er rekening mee dat sommige providers wel groepering ondersteunen, maar dat u de native app moet gebruiken om de groepering uit te voeren. Een voorbeeld zijn op Google Cast gebaseerde spelers, waarbij u alleen Google Cast-groepen kunt maken in de Google Home-app. "
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -386,7 +386,7 @@
         "provider": "Provider",
         "sort_name": "Sorteernaam",
         "track_number": "Tracknummer",
-        "year": "Verschijningsdatum\/jaar",
+        "year": "Verschijningsdatum/jaar",
         "position_desc": "Positie (aflopend)",
         "album": "Album",
         "artist": "Artiest",
@@ -416,21 +416,21 @@
     "sync_now": "Synchronize {0} now",
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
-        "album_artist_filter": "Schakel filter in\/uit om enkel albumartiesten te tonen",
+        "album_artist_filter": "Schakel filter in/uit om enkel albumartiesten te tonen",
         "explicit": "Expliciet",
-        "filter_library": "Het filter in\/uitschakelen om enkel bibliotheek items te tonen",
-        "library": "Markeer als bibliotheek\/favoriet",
+        "filter_library": "Het filter in/uitschakelen om enkel bibliotheek items te tonen",
+        "library": "Markeer als bibliotheek/favoriet",
         "linked": "Dit provideritem is gelinkt aan de itemdetails",
         "refresh": "De lijst verversen",
         "refresh_new_content": "Er is nieuwe inhoud beschikbaar, klik om te verversen",
-        "search": "Toon\/verberg zoekinvoer",
+        "search": "Toon/verberg zoekinvoer",
         "select_items": "Meerdere items selecteren",
         "sort_options": "Sorteer opties",
-        "toggle_view_mode": "Wissel voorbeeld\/lijst weergave",
-        "filter_favorites": "Het filter in\/uitschakelen om enkel favorieten te tonen",
+        "toggle_view_mode": "Wissel voorbeeld/lijst weergave",
+        "filter_favorites": "Het filter in/uitschakelen om enkel favorieten te tonen",
         "favorite": "Favoriet",
         "open_provider_link": "Open dit item op de website van de provider",
-        "collapse_expand": "lijst in\/uitklappen",
+        "collapse_expand": "lijst in/uitklappen",
         "back": "Terug",
         "show_menu": "Toon of verberg menu",
         "search_filter_active": "De zoekactie toont nu gefilterde resultaten.",

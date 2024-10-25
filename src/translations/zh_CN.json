@@ -42,7 +42,7 @@
     "mass": "音乐助理",
     "new_playlist_name": "为新播放列表输入新内容",
     "no_content": "未找到项目",
-    "no_content_filter": "未找到符合当前过滤\/搜索条件的项目",
+    "no_content_filter": "未找到符合当前过滤/搜索条件的项目",
     "no_player": "未选择播放器",
     "off": "关闭",
     "on": "打开",
@@ -74,7 +74,7 @@
     "queue_next_items": "下一项",
     "queue_options": "队列选项",
     "queue_previous_items": "播放项目",
-    "queue_radio_based_on": "队列动态填充基于{0}的轨道",
+    "queue_radio_based_on": "队列动态填充基于的轨道",
     "queue_radio_enabled": "已启用收音机模式",
     "radios": "收音机",
     "read_more": "阅读更多",
@@ -87,7 +87,7 @@
         "add_provider": "添加新提供程序",
         "advanced_settings": "高级设置",
         "check_docs": "查看文档",
-        "codeowners": "作者\/致谢",
+        "codeowners": "作者/致谢",
         "config_player": "配置播放器： {0}",
         "configure": "配置",
         "delete": "删除",
@@ -158,7 +158,7 @@
         },
         "flow_mode": {
             "label": "启用队列流模式",
-            "description": "启用“流”模式，其中所有队列曲目都作为连续音频流发送。\\n用于本机不支持无间隙和\/或交叉火力的播放器，或者在曲目之间转换时遇到困难的播放器"
+            "description": "启用“流”模式，其中所有队列曲目都作为连续音频流发送。\\n用于本机不支持无间隙和/或交叉火力的播放器，或者在曲目之间转换时遇到困难的播放器"
         },
         "auto_play": {
             "label": "自动播放（开机后继续）",
@@ -230,8 +230,8 @@
             "options": {
                 "play": "立即播放艺术家曲目并保留剩余的队列项目",
                 "replace": "清除队列并播放艺术家曲目",
-                "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清除队列并在当前播放\/缓冲的项目之后立即播放艺术家曲目",
+                "next": "在当前播放/缓冲的项目之后立即播放项目",
+                "replace_next": "清除队列并在当前播放/缓冲的项目之后立即播放艺术家曲目",
                 "add": "在队列末尾添加艺术家曲目"
             }
         },
@@ -241,8 +241,8 @@
             "options": {
                 "play": "立即播放唱片集并保留剩余的队列项目",
                 "replace": "清除队列并播放唱片集",
-                "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清除队列并在当前播放\/缓冲的项目之后立即播放唱片集曲目",
+                "next": "在当前播放/缓冲的项目之后立即播放项目",
+                "replace_next": "清除队列并在当前播放/缓冲的项目之后立即播放唱片集曲目",
                 "add": "在队列末尾添加唱片集曲目"
             }
         },
@@ -252,8 +252,8 @@
             "options": {
                 "play": "立即播放曲目并保留剩余的队列项目",
                 "replace": "清空队列并播放曲目",
-                "next": "播放当前播放\/缓冲项目后的曲目",
-                "replace_next": "清除队列并播放当前播放\/缓冲项目后的曲目",
+                "next": "播放当前播放/缓冲项目后的曲目",
+                "replace_next": "清除队列并播放当前播放/缓冲项目后的曲目",
                 "add": "在队列末尾添加曲目"
             }
         },
@@ -263,8 +263,8 @@
             "options": {
                 "play": "立即播放播放列表曲目并保留剩余的队列项目",
                 "replace": "清除队列并播放播放列表曲目",
-                "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清除队列并在当前播放\/缓冲的项目之后立即播放播放列表曲目",
+                "next": "在当前播放/缓冲的项目之后立即播放项目",
+                "replace_next": "清除队列并在当前播放/缓冲的项目之后立即播放播放列表曲目",
                 "add": "添加曲目到播放列表末尾"
             }
         },
@@ -274,8 +274,8 @@
             "options": {
                 "play": "立即播放电台并保留剩余的队列项目",
                 "replace": "清空队列并播放广播电台",
-                "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清除队列，然后在当前播放\/缓冲的项目之后播放电台",
+                "next": "在当前播放/缓冲的项目之后立即播放项目",
+                "replace_next": "清除队列，然后在当前播放/缓冲的项目之后播放电台",
                 "add": "将无线电台添加到队列的末尾"
             }
         },
@@ -316,7 +316,7 @@
         },
         "icon": {
             "label": "Icon图标",
-            "description": "此播放器的MDI图标,参见https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "此播放器的MDI图标,参见https://pictogrammers.com/library/mdi/."
         },
         "frontend": "用户界面",
         "frontend_desc": "音乐助手用户界面（前端）的配置设置。请注意，这些设置存储在设备级别。",
@@ -414,21 +414,21 @@
     "tooltip": {
         "album_artist_filter": "过滤唱片集-艺术家",
         "explicit": "显式",
-        "filter_library": "在媒体库\/过滤收藏夹中切换",
-        "library": "在媒体库\/收藏夹中切换",
+        "filter_library": "在媒体库/过滤收藏夹中切换",
+        "library": "在媒体库/收藏夹中切换",
         "linked": "该提供程序项目与当前项目详细信息相关联",
         "refresh": "刷新项目列表",
         "refresh_new_content": "有新内容可用，单击刷新列表",
-        "search": "显示\/隐藏搜索",
+        "search": "显示/隐藏搜索",
         "select_items": "选择多个项目",
         "sort_options": "排序选项",
-        "toggle_view_mode": "切换视图模式列表\/缩略图",
+        "toggle_view_mode": "切换视图模式列表/缩略图",
         "filter_favorites": "仅显示收藏夹",
-        "favorite": "标记\/取消标记为收藏",
+        "favorite": "标记/取消标记为收藏",
         "open_provider_link": "在提供程序的网站上打开此项目",
-        "collapse_expand": "折叠\/展开此列表",
+        "collapse_expand": "折叠/展开此列表",
         "back": "返回",
-        "show_menu": "显示\/隐藏菜单",
+        "show_menu": "显示/隐藏菜单",
         "search_filter_active": "筛选搜索的结果",
         "play_sample": "播放示例",
         "album_type": "Albumtype",
@@ -455,7 +455,7 @@
     "back": "返回",
     "recently_played": "最近播放",
     "radiobrowser_by_popularity": "按受欢迎程度",
-    "radiobrowser_by_country": "按国家\/地区",
+    "radiobrowser_by_country": "按国家/地区",
     "radiobrowser_by_tag": "按标签",
     "load_more_items": "加载更多项目",
     "radio": "收音机",

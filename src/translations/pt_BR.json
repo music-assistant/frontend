@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Insira um nome para a nova lista de reprodução",
     "no_content": "Nenhum item encontrado.",
-    "no_content_filter": "Nenhum item encontrado para o filtro\/condições de pesquisa atuais.",
+    "no_content_filter": "Nenhum item encontrado para o filtro/condições de pesquisa atuais.",
     "no_player": "Nenhum reprodutor selecionado",
     "off": "Desligado",
     "on": "Ligado",
@@ -75,7 +75,7 @@
     "queue_next_items": "Próximos itens",
     "queue_options": "Opções de fila",
     "queue_previous_items": "Itens reproduzidos",
-    "queue_radio_based_on": "A fila é preenchida dinamicamente com faixas baseadas em {0}:",
+    "queue_radio_based_on": "A fila é preenchida dinamicamente com faixas baseadas em:",
     "queue_radio_enabled": "Modo rádio está ativado",
     "radios": "Rádio",
     "read_more": "leia mais",
@@ -88,7 +88,7 @@
         "add_provider": "Adicionar novo provedor",
         "advanced_settings": "Configurações avançadas",
         "check_docs": "Verifique a documentação",
-        "codeowners": "Autores\/créditos",
+        "codeowners": "Autores/créditos",
         "config_player": "Configurar o player: {0}",
         "configure": "Configurar",
         "delete": "Excluir",
@@ -159,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Habilitar modo de file \"flow\"",
-            "description": "Habilitar o modo \"flow\" onde todas as faixas da fila são enviadas como um fluxo de áudio contínuo. Use para reprodutores que não suportam nativamente gapless e\/ou crossfading ou se o reprodutor tiver problemas para fazer a transição entre as faixas."
+            "description": "Habilitar o modo \"flow\" onde todas as faixas da fila são enviadas como um fluxo de áudio contínuo. Use para reprodutores que não suportam nativamente gapless e/ou crossfading ou se o reprodutor tiver problemas para fazer a transição entre as faixas."
         },
         "auto_play": {
             "label": "Reproduzir automaticamente (continuar ao ligar)",
@@ -231,8 +231,8 @@
             "options": {
                 "play": "Reproduza a(s) faixa(s) do artista agora e mantenha o(s) item(ns) restante(s) da fila.",
                 "replace": "Limpar a fila e reproduzir a(s) faixa(s) do artista",
-                "next": "Reproduzir o(s) item(ns) logo após o item reproduzido\/carregado atualmente.",
-                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) do artista logo após o item reproduzido\/carregado atualmente.",
+                "next": "Reproduzir o(s) item(ns) logo após o item reproduzido/carregado atualmente.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) do artista logo após o item reproduzido/carregado atualmente.",
                 "add": "Adicione a(s) faixa(s) do artista ao final da fila."
             }
         },
@@ -242,8 +242,8 @@
             "options": {
                 "play": "Reproduza a(s) faixa(s) do álbum agora e mantenha o(s) item(ns) restante(s) da fila.",
                 "replace": "Limpar a fila e reproduzir a(s) faixa(s) do álbum",
-                "next": "Reproduzir o(s) item(ns) logo após o item reproduzido\/carregado atualmente.",
-                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) do álbum logo após o item reproduzido\/carregado atualmente.",
+                "next": "Reproduzir o(s) item(ns) logo após o item reproduzido/carregado atualmente.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) do álbum logo após o item reproduzido/carregado atualmente.",
                 "add": "Adicione a(s) faixa(s) do álbum ao final da fila."
             }
         },
@@ -253,8 +253,8 @@
             "options": {
                 "play": "Reproduza a(s) faixa(s) agora e mantenha o(s) item(ns) restante(s) da fila.",
                 "replace": "Limpe a fila e reproduza a(s) faixa(s).",
-                "next": "Reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo após o item atualmente reproduzido\/em buffer.",
+                "next": "Reproduzir a(s) faixa(s) logo após o item atualmente reproduzido/em buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo após o item atualmente reproduzido/em buffer.",
                 "add": "Adicione a(s) faixa(s) no final da fila."
             }
         },
@@ -264,8 +264,8 @@
             "options": {
                 "play": "Reproduza a(s) faixa(s) da lista de reprodução agora e mantenha o(s) item(ns) restante(s) da fila.",
                 "replace": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução",
-                "next": "Reproduzir o(s) item(ns) logo após o item atualmente reproduzido\/em buffer.",
-                "replace_next": "Limpa a fila e reproduz a(s) faixa(s) da lista de reprodução logo após o item atualmente reproduzido\/em buffer.",
+                "next": "Reproduzir o(s) item(ns) logo após o item atualmente reproduzido/em buffer.",
+                "replace_next": "Limpa a fila e reproduz a(s) faixa(s) da lista de reprodução logo após o item atualmente reproduzido/em buffer.",
                 "add": "Adicione a(s) faixa(s) da lista de reprodução no final da fila."
             }
         },
@@ -275,8 +275,8 @@
             "options": {
                 "play": "Reproduza a estação de rádio agora e mantenha o(s) item(ns) restante(s) da fila.",
                 "replace": "Limpar a fila e reproduzir a estação de rádio",
-                "next": "Reproduzir o(s) item(ns) logo após o item em reprodução\/buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) estação(ões) de rádio logo após o item em reprodução\/buffer.",
+                "next": "Reproduzir o(s) item(ns) logo após o item em reprodução/buffer.",
+                "replace_next": "Limpar a fila e reproduzir a(s) estação(ões) de rádio logo após o item em reprodução/buffer.",
                 "add": "Adicione a(s) estação(ões) de rádio no final da fila."
             }
         },
@@ -317,7 +317,7 @@
         },
         "icon": {
             "label": "Ícone",
-            "description": "Ícones para este reprodutor.\\n\\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
+            "description": "Ícones para este reprodutor.\\n\\nVeja mais em: https://pictogrammers.com/library/mdi/"
         },
         "frontend": "Interface de usuário",
         "frontend_desc": "Definições de configuração para a interface de usuário do Music Assistant (frontend). Observe que essas configurações são armazenadas no nível do dispositivo.",
@@ -377,7 +377,7 @@
         "no_player_providers_detail": "Configure os provedores de reprodutores para selecionar dispositivos nos quais o Music Assistant pode reproduzir suas músicas.",
         "volume_normalization_radio": {
             "label": "Método de normalização de volume a ser usado para estações de rádio",
-            "description": "Defina o método de normalização de volume preferida para estações de rádio.\\nO Music Assistant usa uma medição da intensidade sonora (média percebida) das faixas de acordo com a especificação EBU-R128 para ajustar o ganho\/volume geral, de forma que a dinâmica do áudio não seja afetada. Quando não houver nenhuma (ainda) medição para uma estação de rádio, o Music Assistant, por padrão, recorrerá a um filtro de nivelamento de volume dinâmico (mas menos preciso).\\n\\nDica: Estações de rádio tem níveis de volume variáveis, principalmente durante anúncios e comerciais. Você pode escolher \"Forçar Dinâmico\" para normalização de rádios, mesmo que a medição da intensidade sonora exista, balanceando ainda mais o volume.\\n\\n**Opções:**\\n\\n- Desativado: não aplique normalização de volume para estações de rádio.\\n- Forçar Dinâmico: Aplique o nivelamento dinâmico de volume em todos os momentos.\\n- Somente medição (sem retorno): Aplique correção de volume\/ganho com base na medição armazenada. Se não houver nenhuma medição, não aplique normalização.\\n- Retorno para correção de ganho: Aplique correção de volume\/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, recorra a uma correção de ganho predefinida.\\n- Correção de ganho fixo: Sempre aplicar a correção de volume\/ganho fixo.\\n- Retorno ao dinâmico: Aplique correção de volume\/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, force dinâmico.",
+            "description": "Defina o método de normalização de volume preferida para estações de rádio.\\nO Music Assistant usa uma medição da intensidade sonora (média percebida) das faixas de acordo com a especificação EBU-R128 para ajustar o ganho/volume geral, de forma que a dinâmica do áudio não seja afetada. Quando não houver nenhuma (ainda) medição para uma estação de rádio, o Music Assistant, por padrão, recorrerá a um filtro de nivelamento de volume dinâmico (mas menos preciso).\\n\\nDica: Estações de rádio tem níveis de volume variáveis, principalmente durante anúncios e comerciais. Você pode escolher \"Forçar Dinâmico\" para normalização de rádios, mesmo que a medição da intensidade sonora exista, balanceando ainda mais o volume.\\n\\n**Opções:**\\n\\n- Desativado: não aplique normalização de volume para estações de rádio.\\n- Forçar Dinâmico: Aplique o nivelamento dinâmico de volume em todos os momentos.\\n- Somente medição (sem retorno): Aplique correção de volume/ganho com base na medição armazenada. Se não houver nenhuma medição, não aplique normalização.\\n- Retorno para correção de ganho: Aplique correção de volume/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, recorra a uma correção de ganho predefinida.\\n- Correção de ganho fixo: Sempre aplicar a correção de volume/ganho fixo.\\n- Retorno ao dinâmico: Aplique correção de volume/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, force dinâmico.",
             "options": {
                 "disabled": "Desativado",
                 "dynamic": "Forçar dinâmico",
@@ -389,7 +389,7 @@
         },
         "volume_normalization_tracks": {
             "label": "Método de normalização de volume a ser usado para faixas",
-            "description": "Defina o método de normalização de volume preferida para faixas\/músicas.\\nO Music Assistant usa uma medição da intensidade sonora (média percebida) das faixas de acordo com a especificação EBU-R128 para ajustar o ganho\/volume geral, de forma que a dinâmica do áudio não seja afetada.\\nEssas medições são fornecidas pelo provedor de streaming ou, no caso de arquivos locais, podem estar contidas nas tags ID3 (ReplayGain 2.0 \/ Opus R128).\\nSe a medição não for fornecida, o Music Assistant executará automaticamente uma medição quando\/depois que a faixa for reproduzida pela primeira vez. Quando não houver nenhuma (ainda) medição para uma faixa, o Music Assistant, por padrão, recorrerá a um filtro de nivelamento de volume dinâmico (mas menos preciso). Isso garante que não haja grandes picos\/quedas no nível de volume entre as faixas, mesmo que ainda não haja uma medição precisa, mas o nivelador dinâmico pode, às vezes, comprimir um pouco a faixa dinâmica, embora isso não deva ser audível na maioria dos casos.\\n\\n**Opções:**\\n\\n- Desativado: não aplique normalização de volume para faixas\/músicas.\\n- Forçar Dinâmico: Aplique o nivelamento dinâmico de volume em todos os momentos.\\n- Somente medição (sem retorno): Aplique correção de volume\/ganho com base na medição armazenada. Se não houver nenhuma medição, não aplique normalização.\\n- Retorno para correção de ganho: Aplique correção de volume\/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, recorra a uma correção de ganho predefinida.\\n- Correção de ganho fixo: Sempre aplicar a correção de volume\/ganho fixo.\\n- Retorno ao dinâmico: Aplique correção de volume\/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, force dinâmico.",
+            "description": "Defina o método de normalização de volume preferida para faixas/músicas.\\nO Music Assistant usa uma medição da intensidade sonora (média percebida) das faixas de acordo com a especificação EBU-R128 para ajustar o ganho/volume geral, de forma que a dinâmica do áudio não seja afetada.\\nEssas medições são fornecidas pelo provedor de streaming ou, no caso de arquivos locais, podem estar contidas nas tags ID3 (ReplayGain 2.0 / Opus R128).\\nSe a medição não for fornecida, o Music Assistant executará automaticamente uma medição quando/depois que a faixa for reproduzida pela primeira vez. Quando não houver nenhuma (ainda) medição para uma faixa, o Music Assistant, por padrão, recorrerá a um filtro de nivelamento de volume dinâmico (mas menos preciso). Isso garante que não haja grandes picos/quedas no nível de volume entre as faixas, mesmo que ainda não haja uma medição precisa, mas o nivelador dinâmico pode, às vezes, comprimir um pouco a faixa dinâmica, embora isso não deva ser audível na maioria dos casos.\\n\\n**Opções:**\\n\\n- Desativado: não aplique normalização de volume para faixas/músicas.\\n- Forçar Dinâmico: Aplique o nivelamento dinâmico de volume em todos os momentos.\\n- Somente medição (sem retorno): Aplique correção de volume/ganho com base na medição armazenada. Se não houver nenhuma medição, não aplique normalização.\\n- Retorno para correção de ganho: Aplique correção de volume/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, recorra a uma correção de ganho predefinida.\\n- Correção de ganho fixo: Sempre aplicar a correção de volume/ganho fixo.\\n- Retorno ao dinâmico: Aplique correção de volume/ganho (geral) com base na medição armazenada. Se não houver nenhuma medição, force dinâmico.",
             "options": {
                 "disabled": "Desativado",
                 "dynamic": "Forçar dinâmico",
@@ -400,15 +400,15 @@
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "label": "Ajuste de ganho fixo\/retorno para trilhas",
-            "description": "Correção de ganho fixo\/retorno a ser aplicada a um áudio de faixa (depende da configuração \"Método de normalização de volume\"). Use um valor positivo para aumentar o volume e um valor negativo para diminuir o volume.\\n\\nEssa configuração é usada quando o método de normalização de volume é definido como \"Correção de ganho fixo\" ou \"Retorno para correção de ganho\"."
+            "label": "Ajuste de ganho fixo/retorno para trilhas",
+            "description": "Correção de ganho fixo/retorno a ser aplicada a um áudio de faixa (depende da configuração \"Método de normalização de volume\"). Use um valor positivo para aumentar o volume e um valor negativo para diminuir o volume.\\n\\nEssa configuração é usada quando o método de normalização de volume é definido como \"Correção de ganho fixo\" ou \"Retorno para correção de ganho\"."
         },
         "volume_normalization_fixed_gain_radio": {
-            "label": "Ajuste de ganho fixo\/retorno para rádio",
-            "description": "Correção de ganho fixo\/retorno a ser aplicada a uma estação de rádio (depende da configuração \"Método de normalização de volume\"). Use um valor positivo para aumentar o volume e um valor negativo para diminuir o volume.\\n\\nEssa configuração é usada quando o método de normalização de volume é definido como \"Correção de ganho fixo\" ou \"Retorno para correção de ganho\"."
+            "label": "Ajuste de ganho fixo/retorno para rádio",
+            "description": "Correção de ganho fixo/retorno a ser aplicada a uma estação de rádio (depende da configuração \"Método de normalização de volume\"). Use um valor positivo para aumentar o volume e um valor negativo para diminuir o volume.\\n\\nEssa configuração é usada quando o método de normalização de volume é definido como \"Correção de ganho fixo\" ou \"Retorno para correção de ganho\"."
         },
         "group_type": "Tipo de grupo",
-        "add_group_player_desc": "Para provedores\/ecossistemas de players que oferecem agrupamento\/sincronização nativos, um syncgroup será criado automaticamente, o que significa que, se você reproduzir nesse Player Group, os players membros serão sincronizados automaticamente. \\n\\nPara players\/ecossistemas que não suportam agrupamento, ou caso você queira agrupar players de diferentes ecossistemas, é possível usar o tipo de grupo Universal, que distribuirá o mesmo áudio para todos os players membros (mas não em sincronia). \\n\\nObserve que alguns provedores são compatíveis com o agrupamento, mas você precisa usar o aplicativo nativo para realizar o agrupamento. Um exemplo são os players baseados no Google Cast, em que você só pode criar grupos do Google Cast no aplicativo Google Home. "
+        "add_group_player_desc": "Para provedores/ecossistemas de players que oferecem agrupamento/sincronização nativos, um syncgroup será criado automaticamente, o que significa que, se você reproduzir nesse Player Group, os players membros serão sincronizados automaticamente. \\n\\nPara players/ecossistemas que não suportam agrupamento, ou caso você queira agrupar players de diferentes ecossistemas, é possível usar o tipo de grupo Universal, que distribuirá o mesmo áudio para todos os players membros (mas não em sincronia). \\n\\nObserve que alguns provedores são compatíveis com o agrupamento, mas você precisa usar o aplicativo nativo para realizar o agrupamento. Um exemplo são os players baseados no Google Cast, em que você só pode criar grupos do Google Cast no aplicativo Google Home. "
     },
     "show_info": "Mostrar informação",
     "show_select_boxes": "Mostrar caixas de seleção",
@@ -453,21 +453,21 @@
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",
         "explicit": "Explícito",
-        "filter_library": "Alternar filtro na biblioteca\/favorito",
-        "library": "Alternar na biblioteca\/favorito",
+        "filter_library": "Alternar filtro na biblioteca/favorito",
+        "library": "Alternar na biblioteca/favorito",
         "linked": "Esse item do provedor está vinculado aos detalhes do item atual",
         "refresh": "Atualizar a listagem de itens",
         "refresh_new_content": "Novo conteúdo disponível, clique para atualizar a listagem",
-        "search": "Mostrar\/ocultar campo de busca",
+        "search": "Mostrar/ocultar campo de busca",
         "select_items": "Selecione múltiplos itens",
         "sort_options": "Opções de ordenação",
-        "toggle_view_mode": "Alternar o modo de exibição lista\/miniatura",
+        "toggle_view_mode": "Alternar o modo de exibição lista/miniatura",
         "filter_favorites": "Mostrar somente favoritos",
-        "favorite": "Marcar\/desmarcar como favorito",
+        "favorite": "Marcar/desmarcar como favorito",
         "open_provider_link": "Abrir esse item no site do provedor",
-        "collapse_expand": "Recolher\/expandir essa listagem",
+        "collapse_expand": "Recolher/expandir essa listagem",
         "back": "Voltar",
-        "show_menu": "Mostrar\/ocultar menu",
+        "show_menu": "Mostrar/ocultar menu",
         "search_filter_active": "A pesquisa está filtrando os resultados",
         "play_sample": "Reproduzir amostra",
         "album_type": "Tipo de álbum",
