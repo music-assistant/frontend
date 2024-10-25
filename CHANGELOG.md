@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.9.12](https://github.com/music-assistant/frontend/compare/v2.9.11...v2.9.12) (2024-10-25)
+
+
+### Features
+
+* Show visual indicator when Dont stop the music is enabled ([b3a738f](https://github.com/music-assistant/frontend/commit/b3a738f8c6e87402e75d50be313a647805783d43))
+
+
+### Bug Fixes
+
+* Allow mousewheel volume control (except in player select) ([faa766c](https://github.com/music-assistant/frontend/commit/faa766cbffa28774148b9941a1b7047de05a4e56))
+* some minor UI glitches fixed ([be482d9](https://github.com/music-assistant/frontend/commit/be482d989f8457708c45399c8e70627ed0030a36))
+
 ## [2.9.11](https://github.com/music-assistant/frontend/compare/v2.9.10...v2.9.11) (2024-10-24)
 
 
