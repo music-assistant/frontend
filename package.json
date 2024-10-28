@@ -29,7 +29,7 @@
     },
     "devDependencies": {
         "@fontsource/roboto": "5.1.0",
-        "@types/color": "3.0.6",
+        "@types/color": "4.2.0",
         "@types/node": "22.7.7",
         "@typescript-eslint/eslint-plugin": "7.0.0",
         "@typescript-eslint/parser": "6.21.0",
