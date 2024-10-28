@@ -372,25 +372,13 @@
             "
             @click:prepend="
               store.activePlayer!.group_childs.length > 0
-                ? api.playerCommandGroupVolume(
-                    store.activePlayerId!,
-                    store.activePlayer!.group_volume - 5,
-                  )
-                : api.playerCommandVolumeSet(
-                    store.activePlayerId!,
-                    store.activePlayer!.volume_level - 5,
-                  )
+                ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
+                : api.playerCommandVolumeDown(store.activePlayerId!)
             "
             @click:append="
               store.activePlayer!.group_childs.length > 0
-                ? api.playerCommandGroupVolume(
-                    store.activePlayerId!,
-                    store.activePlayer!.group_volume + 5,
-                  )
-                : api.playerCommandVolumeSet(
-                    store.activePlayerId!,
-                    store.activePlayer!.volume_level + 5,
-                  )
+                ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
+                : api.playerCommandVolumeUp(store.activePlayerId!)
             "
           />
         </div>

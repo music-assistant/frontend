@@ -895,6 +895,12 @@ export class MusicAssistantApi {
     });
     this.players[playerId].group_volume = newVolume;
   }
+  public playerCommandGroupVolumeUp(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "group_volume_up");
+  }
+  public playerCommandGroupVolumeDown(playerId: string): Promise<void> {
+    return this.playerCommand(playerId, "group_volume_down");
+  }
 
   public async createPlayerGroup(
     group_type: string,
