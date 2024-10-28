@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.13](https://github.com/music-assistant/frontend/compare/v2.9.12...v2.9.13) (2024-10-25)
+
+
+### Bug Fixes
+
+* Local images being ignored ([9854345](https://github.com/music-assistant/frontend/commit/98543459a13a0d31fdf9a23b6087893ff887968f))
+
 ## [2.9.12](https://github.com/music-assistant/frontend/compare/v2.9.11...v2.9.12) (2024-10-25)
 
 
