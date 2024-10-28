@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.14](https://github.com/music-assistant/frontend/compare/v2.9.13...v2.9.14) (2024-10-28)
+
+
+### Bug Fixes
+
+* Volume up/down should call the backend ([ae97e45](https://github.com/music-assistant/frontend/commit/ae97e45900ea0e846890b5b3efcf5be988110416))
+
 ## [2.9.13](https://github.com/music-assistant/frontend/compare/v2.9.12...v2.9.13) (2024-10-25)
 
 
