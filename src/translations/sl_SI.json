@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Vnesite ime novega seznama predvajanja",
     "no_content": "Ni najdenih elementov.",
-    "no_content_filter": "Za trenutne pogoje filtriranja/iskanja ni bilo najdenih nobenih elementov.",
+    "no_content_filter": "Za trenutne pogoje filtriranja\/iskanja ni bilo najdenih nobenih elementov.",
     "no_player": "Noben predvajalnik ni izbran",
     "off": "Izklopljeno",
     "on": "Na",
@@ -75,7 +75,7 @@
     "queue_next_items": "Naslednji predmeti",
     "queue_options": "Možnosti čakalne vrste",
     "queue_previous_items": "Predvajani predmeti",
-    "queue_radio_based_on": "Čakalna vrsta se dinamično napolni s skladbami, ki temeljijo na:",
+    "queue_radio_based_on": "Čakalna vrsta se dinamično napolni s skladbami, ki temeljijo na {0}:",
     "queue_radio_enabled": "Radijski način je omogočen",
     "radios": "Radio",
     "read_more": "preberi več",
@@ -88,7 +88,7 @@
         "add_provider": "Dodajanje novega ponudnika",
         "advanced_settings": "Napredne nastavitve",
         "check_docs": "Preverite dokumentacijo",
-        "codeowners": "Avtorji/zasluge",
+        "codeowners": "Avtorji\/zasluge",
         "config_player": "Konfiguriraj predvajalnik: {0}",
         "configure": "Konfiguriraj",
         "delete": "Izbriši",
@@ -159,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Omogoči način pretoka čakalne vrste",
-            "description": "Omogočite način \"flow\", pri katerem se vse skladbe v čakalni vrsti pošiljajo kot neprekinjen zvočni tok.\\nUporabite za predvajalnike, ki ne podpirajo prečnega preklapljanja in/ali predvajanja brez presledkov, oz. če ima predvajalnik težave pri prehodu med skladbami."
+            "description": "Omogočite način \"flow\", pri katerem se vse skladbe v čakalni vrsti pošiljajo kot neprekinjen zvočni tok.\\nUporabite za predvajalnike, ki ne podpirajo prečnega preklapljanja in\/ali predvajanja brez presledkov, oz. če ima predvajalnik težave pri prehodu med skladbami."
         },
         "auto_play": {
             "label": "Samodejno predvajanje (nadaljevanje ob vklopu)",
@@ -276,7 +276,7 @@
                 "play": "Predvajajte radijsko postajo zdaj in obdržite preostale elemente čakalne vrste.",
                 "replace": "Počistite čakalno vrsto in predvajajte radijsko postajo",
                 "next": "Predvajajte element(-e) takoj za trenutno predvajanim elementom.",
-                "replace_next": "Počistite čakalno vrsto in predvajajte radijsko(-e) postajo(-e) takoj za trenutno predvajanim/shranjenim elementom.",
+                "replace_next": "Počistite čakalno vrsto in predvajajte radijsko(-e) postajo(-e) takoj za trenutno predvajanim\/shranjenim elementom.",
                 "add": "Dodajte radijsko(-e) postajo(-e) na konec čakalne vrste."
             }
         },
@@ -317,7 +317,7 @@
         },
         "icon": {
             "label": "Ikona",
-            "description": "Ikona oblikovanja materiala za ta predvajalnik.\\n\\nGlej https://pictogrammers.com/library/mdi/."
+            "description": "Ikona oblikovanja materiala za ta predvajalnik.\\n\\nGlej https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Uporabniški vmesnik",
         "frontend_desc": "Konfiguracijske nastavitve uporabniškega vmesnika Music Assistant. Upoštevajte, da so te nastavitve shranjene na ravni naprave.",
@@ -417,21 +417,21 @@
     "tooltip": {
         "album_artist_filter": "Preklopite filter album-umetnik",
         "explicit": "Izrecno",
-        "filter_library": "Preklopi filter v knjižnici/priljubljeno",
-        "library": "Preklop med knjižnico/priljubljeno",
+        "filter_library": "Preklopi filter v knjižnici\/priljubljeno",
+        "library": "Preklop med knjižnico\/priljubljeno",
         "linked": "Ta element ponudnika je povezan s podrobnostmi trenutnega elementa",
         "refresh": "Osvežite seznam predmetov",
         "refresh_new_content": "Na voljo je nova vsebina, kliknite, da osvežite seznam",
-        "search": "Prikaži/skrij vnos za iskanje",
+        "search": "Prikaži\/skrij vnos za iskanje",
         "select_items": "Izberite več elementov",
         "sort_options": "Možnosti razvrščanja",
-        "toggle_view_mode": "Preklapljanje načina pogleda seznam/ploščice",
+        "toggle_view_mode": "Preklapljanje načina pogleda seznam\/ploščice",
         "filter_favorites": "Prikaži samo priljubljene",
-        "favorite": "Označi/odznači kot priljubljeno",
+        "favorite": "Označi\/odznači kot priljubljeno",
         "open_provider_link": "Odprite ta element na spletnem mestu ponudnika",
-        "collapse_expand": "Strni/razširi ta seznam",
+        "collapse_expand": "Strni\/razširi ta seznam",
         "back": "Nazaj",
-        "show_menu": "Prikaži/skrij meni",
+        "show_menu": "Prikaži\/skrij meni",
         "search_filter_active": "Iskanje trenutno filtrira rezultate",
         "play_sample": "Predvajaj vzorec",
         "album_type": "Vrsta albuma",

@@ -30,7 +30,7 @@
     "enter_url": "Unesite URL koji želite da ručno dodate u bazu podataka",
     "loading": "Podaci se preuzimaju sa servera.",
     "mass": "Muzički Pomoćnik",
-    "no_content_filter": "Nije pronađena nijedna stavka za trenutne uslove filtera/pretrage.",
+    "no_content_filter": "Nije pronađena nijedna stavka za trenutne uslove filtera\/pretrage.",
     "playlist_tracks": "Numere sa liste pesama",
     "playlists": "Plejliste",
     "provider_details": "Detalji o provajderu",
@@ -43,7 +43,7 @@
     "queue_next_items": "Sledeće numere",
     "queue_options": "Opcije čekanja",
     "queue_previous_items": "Reprodukovane numere",
-    "queue_radio_based_on": "Red za reprodukciju se dinamički popunjava numerama na osnovu:",
+    "queue_radio_based_on": "Red za reprodukciju se dinamički popunjava numerama na osnovu {0}:",
     "queue_radio_enabled": "Radio režim je omogućen",
     "radios": "Radio",
     "read_more": "opširnije",
@@ -56,7 +56,7 @@
         "add_provider": "Dodaj novog provajdera",
         "advanced_settings": "Napredna podešavanja",
         "check_docs": "Proverite dokumentaciju",
-        "codeowners": "Autori/zasluge",
+        "codeowners": "Autori\/zasluge",
         "config_player": "Konfiguriši plejer: {0}",
         "configure": "Konfiguriši",
         "delete": "Izbriši",
@@ -127,7 +127,7 @@
         },
         "flow_mode": {
             "label": "Omogućite režim protoka reda za reprodukciju",
-            "description": "Omogućite režim „protoka“ gde se sve numere u redu za reprodukciju šalju kao kontinuirani audio tok.\\nKoristi se za plejere koji izvorno ne podržavaju praznine i/ili unakrsno preklapanje ili ako plejer ima problema sa prelaskom između numera."
+            "description": "Omogućite režim „protoka“ gde se sve numere u redu za reprodukciju šalju kao kontinuirani audio tok.\\nKoristi se za plejere koji izvorno ne podržavaju praznine i\/ili unakrsno preklapanje ili ako plejer ima problema sa prelaskom između numera."
         },
         "auto_play": {
             "label": "Automatski reprodukuj (nastavi po uključenju)",
@@ -199,8 +199,8 @@
             "options": {
                 "play": "Pustite numeru(e) izvođača sada i zadržite preostale stavke u redu za reprodukciju.",
                 "replace": "Obrišite red za reprodukciju i pustite numeru(e) izvođača",
-                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane/baferovane stavke.",
-                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) izvođača odmah nakon trenutno reprodukovane/baferovane stavke.",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) izvođača odmah nakon trenutno reprodukovane\/baferovane stavke.",
                 "add": "Dodajte numeru(e) izvođača na kraj reda za reprodukciju."
             }
         },
@@ -210,8 +210,8 @@
             "options": {
                 "play": "Pustite album(e) sada i zadržite preostale stavke u redu za reprodukciju.",
                 "replace": "Obrišite red za reprodukciju i pustite album(e)",
-                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane/baferovane stavke.",
-                "replace_next": "Obrišite red za reprodukciju i pustite album(e) odmah nakon trenutno reprodukovane/baferovane stavke.",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite album(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
                 "add": "Dodajte album(e) na kraj reda za reprodukciju."
             }
         },
@@ -221,8 +221,8 @@
             "options": {
                 "play": "Pustite numeru(e) sada i zadržite preostale stavke(e) u redu za reprodukciju.",
                 "replace": "Obrišite red za reprodukciju i pustite numeru(e).",
-                "next": "Pustite numeru(e) odmah posle trenutno reprodukovane/baferovane stavke.",
-                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) odmah posle trenutno reprodukovane/baferovane stavke.",
+                "next": "Pustite numeru(e) odmah posle trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) odmah posle trenutno reprodukovane\/baferovane stavke.",
                 "add": "Dodajte numeru(e) na kraj reda za reprodukciju."
             }
         },
@@ -232,8 +232,8 @@
             "options": {
                 "play": "Pustite numere sa liste za reprodukciju sada i zadržite preostale stavke u redu za reprodukciju.",
                 "replace": "Obrišite red za reprodukciju i pustite numere sa liste za reprodukciju",
-                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane/baferovane stavke.",
-                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) sa liste za reprodukciju odmah nakon trenutno reprodukovane/baferovane stavke.",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite numeru(e) sa liste za reprodukciju odmah nakon trenutno reprodukovane\/baferovane stavke.",
                 "add": "Dodajte numeru(e) sa liste za reprodukciju na kraj reda za reprodukciju."
             }
         },
@@ -243,8 +243,8 @@
             "options": {
                 "play": "Pustite radio stanicu sada i zadržite preostale stavke u redu za reprodukciju.",
                 "replace": "Obrišite red za reprodukciju i pustite radio stanicu",
-                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane/baferovane stavke.",
-                "replace_next": "Obrišite red za reprodukciju i pustite radio stanicu(e) odmah nakon trenutno reprodukovane/baferovane stavke.",
+                "next": "Pustite stavku(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
+                "replace_next": "Obrišite red za reprodukciju i pustite radio stanicu(e) odmah nakon trenutno reprodukovane\/baferovane stavke.",
                 "add": "Dodajte radio stanicu(e) na kraj reda za reprodukciju."
             }
         },
@@ -285,7 +285,7 @@
         },
         "icon": {
             "label": "Ikona",
-            "description": "Ikona dizajna materijala za ovaj plejer.\\n\\nPogledajte https://pictogrammers.com/library/mdi/."
+            "description": "Ikona dizajna materijala za ovaj plejer.\\n\\nPogledajte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Korisnički interfejs",
         "frontend_desc": "Podešavanja konfiguracije za korisnički interfejs Muzičkog Pomoćnika (frontend). Imajte na umu da se ova podešavanja čuvaju na nivou uređaja.",
@@ -350,21 +350,21 @@
     "tooltip": {
         "album_artist_filter": "Uključite filter za album-izvođača",
         "explicit": "Eksplicitno",
-        "filter_library": "Uključite filter u biblioteci/omiljenim",
-        "library": "Uključi/isključi u biblioteci/omiljenim",
+        "filter_library": "Uključite filter u biblioteci\/omiljenim",
+        "library": "Uključi\/isključi u biblioteci\/omiljenim",
         "linked": "Ovaj provajder je povezan sa aktuelnim detaljima o numeri",
         "refresh": "Osvežite listu numera",
         "refresh_new_content": "Dostupan je novi sadržaj, kliknite da biste osvežili listu",
-        "search": "Prikaži/sakrij unos za pretragu",
+        "search": "Prikaži\/sakrij unos za pretragu",
         "select_items": "Izaberite više stavki",
         "sort_options": "Opcije sortiranja",
-        "toggle_view_mode": "Promeni prikaz lista/slike",
+        "toggle_view_mode": "Promeni prikaz lista\/slike",
         "filter_favorites": "Prikaži samo omiljene",
-        "favorite": "Označi/ukloni oznaku kao omiljeno",
+        "favorite": "Označi\/ukloni oznaku kao omiljeno",
         "open_provider_link": "Otvorite ovu stavku na veb lokaciji provajdera",
-        "collapse_expand": "Skupi/proširi ovu listu",
+        "collapse_expand": "Skupi\/proširi ovu listu",
         "back": "Nazad",
-        "show_menu": "Prikaži/sakrij meni",
+        "show_menu": "Prikaži\/sakrij meni",
         "search_filter_active": "Pretraga trenutno filtrira rezultate",
         "play_sample": "Pusti uzorak"
     },
