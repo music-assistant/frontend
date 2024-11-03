@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Ingrese un nombre para la nueva lista de reproducción",
     "no_content": "No se han encontrado elementos.",
-    "no_content_filter": "No se encontraron elementos para las condiciones actuales de filtro/búsqueda.",
+    "no_content_filter": "No se encontraron elementos para las condiciones actuales de filtro\/búsqueda.",
     "no_player": "Ningún reproductor seleccionado",
     "off": "Apagado",
     "on": "Encendido",
@@ -75,7 +75,7 @@
     "queue_next_items": "Siguientes elementos",
     "queue_options": "Opciones de cola",
     "queue_previous_items": "Elementos reproducidos",
-    "queue_radio_based_on": "La cola se genera dinámicamente en pistas basadas en:",
+    "queue_radio_based_on": "La cola se genera dinámicamente en pistas basadas en {0}:",
     "queue_radio_enabled": "El modo de radio está habilitado",
     "radios": "Radio",
     "read_more": "leer más",
@@ -88,7 +88,7 @@
         "add_provider": "Añadir un proveedor nuevo",
         "advanced_settings": "Ajustes avanzados",
         "check_docs": "Consulta la documentación",
-        "codeowners": "Autores/créditos",
+        "codeowners": "Autores\/créditos",
         "config_player": "Configurar reproductor: {0}",
         "configure": "Configurar",
         "delete": "Eliminar",
@@ -159,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Habilitar el modo de cola continua",
-            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
+            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y\/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
         },
         "auto_play": {
             "label": "Reproducción automática (reanudación al encender)",
@@ -226,12 +226,12 @@
             }
         },
         "default_enqueue_action_artist": {
-            "label": "Opción de puesta en cola por defecto para el/los ítem(s) del Artista(s).",
+            "label": "Opción de puesta en cola por defecto para el\/los ítem(s) del Artista(s).",
             "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
             "options": {
-                "play": "Reproducir ahora la(s) pista(s) del artista y mantener el/los elemento(s) restante(s) en la cola.",
+                "play": "Reproducir ahora la(s) pista(s) del artista y mantener el\/los elemento(s) restante(s) en la cola.",
                 "replace": "Borrar la cola y reproducir la(s) pista(s) del artista",
-                "next": "Reproduce el/los ítem(s) justo después del ítem actualmente reproducido/bufferizado.",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
                 "replace_next": "Vacía la cola y pon la(s) canción(es) del artista inmediatamente después del elemento que se está reproduciendo o en búfer.",
                 "add": "Agregue las pistas del artista al final de la cola de reproducción."
             }
@@ -240,9 +240,9 @@
             "label": "Opción por defecto, encolar elemento(s) del álbum",
             "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
             "options": {
-                "play": "Reproduce la(s) pista(s) del álbum ahora y mantén el/los elemento(s) restante(s) en la cola.",
+                "play": "Reproduce la(s) pista(s) del álbum ahora y mantén el\/los elemento(s) restante(s) en la cola.",
                 "replace": "Borrar la cola y reproducir la(s) pista(s)",
-                "next": "Reproduce el/los ítem(s) justo después del ítem actualmente reproducido/bufferizado.",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
                 "replace_next": "Borra la cola y pon la(s) canción(es) del álbum inmediatamente después del elemento que se está reproduciendo o en búfer.",
                 "add": "Añade la(s) pista(s) del álbum al final de la cola."
             }
@@ -251,10 +251,10 @@
             "label": "Opción de encolamiento predeterminada para elementos de pista.",
             "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
             "options": {
-                "play": "Reproduce la(s) pista(s) ahora y conserva el/los elemento(s) restante(s) en la cola.",
+                "play": "Reproduce la(s) pista(s) ahora y conserva el\/los elemento(s) restante(s) en la cola.",
                 "replace": "Borrar la cola y reproducir la(s) pista(s)",
-                "next": "Reproduce el/los ítem(s) justo después del ítem actualmente reproducido/bufferizado.",
-                "replace_next": "Vacía la cola y reproduce la/las pista(s) justo después del ítem actualmente reproducido/bufferizado",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
+                "replace_next": "Vacía la cola y reproduce la\/las pista(s) justo después del ítem actualmente reproducido\/bufferizado",
                 "add": "Añade la(s) pista(s) al final de la cola."
             }
         },
@@ -262,9 +262,9 @@
             "label": "Opción de puesta en cola predeterminada para los elementos de la lista de reproducción.",
             "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
             "options": {
-                "play": "Reproducir ahora la(s) pista(s) de la lista de reproducción y mantener el/los elemento(s) restante(s) en la cola.",
+                "play": "Reproducir ahora la(s) pista(s) de la lista de reproducción y mantener el\/los elemento(s) restante(s) en la cola.",
                 "replace": "Borrar la cola y reproducir la(s) pista(s) de la lista de reproducción",
-                "next": "Reproduce el/los ítem(s) justo después del ítem actualmente reproducido/bufferizado.",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
                 "replace_next": "Vacía la cola y pon la(s) canción(es) de la lista inmediatamente después del elemento que se está reproduciendo o en búfer.",
                 "add": "Agregue las pistas de la lista de reproducción al final de la cola"
             }
@@ -275,8 +275,8 @@
             "options": {
                 "play": "Reproduzca la estación de radio ahora y conserve los elementos restantes de la cola.",
                 "replace": "Limpia la cola y reproduce la estación de radio",
-                "next": "Reproduce el/los ítem(s) justo después del ítem actualmente reproducido/bufferizado.",
-                "replace_next": "Reproduce el/los ítem(s) justo después del ítem actualmente reproducido/bufferizado",
+                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
+                "replace_next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado",
                 "add": "Agregue la(s) estación(es) de radio al final de la cola."
             }
         },
@@ -317,7 +317,7 @@
         },
         "icon": {
             "label": "Icono",
-            "description": "Icono Material Design para este reproductor. \\n\\nConsulte https://pictogrammers.com/library/mdi/."
+            "description": "Icono Material Design para este reproductor. \\n\\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Interfaz de Usuario",
         "frontend_desc": "Ajustes de configuración de la interfaz de usuario (frontend) de Music Assistant. Tenga en cuenta que estos ajustes se almacenan a nivel de dispositivo.",
@@ -377,7 +377,7 @@
         "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música.",
         "volume_normalization_radio": {
             "label": "Método de normalización de volumen a utilizar para transmisiones de radio",
-            "description": "Establezca la estrategia de normalización de volumen preferida para los transmisiones de radio. \\nDe forma predeterminada, Music Assistant recopila una medición de la sonoridad (media percibida) de la emisora de radio según la especificación EBU-R128 y, a continuación, ajusta la ganancia/volumen general de la transmisión de acuerdo con dicha medición para que el rango dinámico del audio no se vea afectado. Si no existe (todavía) ninguna medición para una emisora de radio, Music Assistant utilizará un filtro de nivelación de sonoridad dinámico (pero menos preciso).\\n\\nSUGERENCIA: Las emisiones de radio suelen tener niveles de volumen variables, especialmente durante los anuncios y las cuñas publicitarias.\\nPuede optar por aplicar una normalización dinámica del volumen a las transmisiones de radio, incluso si existe una medición (media) de la sonoridad de la emisora de radio. \\n \\n**Opciones\\n\\n - Desactivado - No aplicar la normalización de volumen en absoluto para los flujos de radio. \\n  - Forzar dinámico - Aplicar la normalización de volumen dinámica en todo momento. \\n  - Solo Medición (sin retroceso) - Aplicar corrección (global) de volumen/ganancia basada en la medición almacenada. Si no tenemos ninguna medición, no aplicar normalización.\\n  - Aplicar corrección de ganancia/volumen (global) basada en la medición almacenada. Si no tenemos ninguna medición, se aplica una corrección de ganancia predefinida.\\n - Corrección de ganancia fija - Aplicar siempre la corrección de volumen/ganancia fija.\\n  - Volver a dinámico - Elegir automáticamente la mejor opción: Aplicar la corrección (global) de volumen/ganancia basada en la medición almacenada si tenemos alguna, permitir volver al modo dinámico si no hay ninguna medición disponible.",
+            "description": "Establezca la estrategia de normalización de volumen preferida para los transmisiones de radio. \\nDe forma predeterminada, Music Assistant recopila una medición de la sonoridad (media percibida) de la emisora de radio según la especificación EBU-R128 y, a continuación, ajusta la ganancia\/volumen general de la transmisión de acuerdo con dicha medición para que el rango dinámico del audio no se vea afectado. Si no existe (todavía) ninguna medición para una emisora de radio, Music Assistant utilizará un filtro de nivelación de sonoridad dinámico (pero menos preciso).\\n\\nSUGERENCIA: Las emisiones de radio suelen tener niveles de volumen variables, especialmente durante los anuncios y las cuñas publicitarias.\\nPuede optar por aplicar una normalización dinámica del volumen a las transmisiones de radio, incluso si existe una medición (media) de la sonoridad de la emisora de radio. \\n \\n**Opciones\\n\\n - Desactivado - No aplicar la normalización de volumen en absoluto para los flujos de radio. \\n  - Forzar dinámico - Aplicar la normalización de volumen dinámica en todo momento. \\n  - Solo Medición (sin retroceso) - Aplicar corrección (global) de volumen\/ganancia basada en la medición almacenada. Si no tenemos ninguna medición, no aplicar normalización.\\n  - Aplicar corrección de ganancia\/volumen (global) basada en la medición almacenada. Si no tenemos ninguna medición, se aplica una corrección de ganancia predefinida.\\n - Corrección de ganancia fija - Aplicar siempre la corrección de volumen\/ganancia fija.\\n  - Volver a dinámico - Elegir automáticamente la mejor opción: Aplicar la corrección (global) de volumen\/ganancia basada en la medición almacenada si tenemos alguna, permitir volver al modo dinámico si no hay ninguna medición disponible.",
             "options": {
                 "disabled": "Deshabilitado",
                 "dynamic": "Forzar Dinamico",
@@ -399,7 +399,7 @@
             }
         },
         "group_type": "Tipo de grupo",
-        "add_group_player_desc": "Para los proveedores/ecosistemas de reproductores que proporcionan agrupación/sincronización nativa, se creará automáticamente un grupo de sincronizado, lo que significa que si reproduce en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente. \\n\\nPara los reproductores/ecosistemas que no admiten la agrupación, o en caso de que desee agrupar reproductores de distintos ecosistemas, puede utilizar el tipo de grupo Universal, que distribuirá el mismo audio a todos los reproductores miembros (pero no de forma sincronizada). \\n\\nTenga en cuenta que algunos proveedores admiten la agrupación, pero debe utilizar la aplicación nativa para realizarla. Un ejemplo son los reproductores basados en Google Cast, en los que solo se pueden crear grupos de Google Cast dentro de la aplicación Google Home. "
+        "add_group_player_desc": "Para los proveedores\/ecosistemas de reproductores que proporcionan agrupación\/sincronización nativa, se creará automáticamente un grupo de sincronizado, lo que significa que si reproduce en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente. \\n\\nPara los reproductores\/ecosistemas que no admiten la agrupación, o en caso de que desee agrupar reproductores de distintos ecosistemas, puede utilizar el tipo de grupo Universal, que distribuirá el mismo audio a todos los reproductores miembros (pero no de forma sincronizada). \\n\\nTenga en cuenta que algunos proveedores admiten la agrupación, pero debe utilizar la aplicación nativa para realizarla. Un ejemplo son los reproductores basados en Google Cast, en los que solo se pueden crear grupos de Google Cast dentro de la aplicación Google Home. "
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -444,21 +444,21 @@
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",
         "explicit": "Explícito",
-        "filter_library": "Alternar filtro en la biblioteca/favorito",
-        "library": "Alternar en biblioteca/favorito",
+        "filter_library": "Alternar filtro en la biblioteca\/favorito",
+        "library": "Alternar en biblioteca\/favorito",
         "linked": "Este artículo del proveedor está vinculado a los detalles del elemento actual",
         "refresh": "Actualizar la lista de elementos",
         "refresh_new_content": "Hay nuevo contenido disponible, haga clic para actualizar la lista",
-        "search": "Mostrar/ocultar entrada de búsqueda",
+        "search": "Mostrar\/ocultar entrada de búsqueda",
         "select_items": "Seleccionar varios elementos",
         "sort_options": "Opciones de ordenación",
-        "toggle_view_mode": "Alternar modo de vista lista/miniaturas",
+        "toggle_view_mode": "Alternar modo de vista lista\/miniaturas",
         "filter_favorites": "Alternar filtro en la favorito",
-        "favorite": "Marcar/desmarcar como favorito",
+        "favorite": "Marcar\/desmarcar como favorito",
         "open_provider_link": "Abrir este elemento en el sitio web del proveedor",
-        "collapse_expand": "Contraer/expandir este listado",
+        "collapse_expand": "Contraer\/expandir este listado",
         "back": "Atrás",
-        "show_menu": "Mostrar/ocultar menú",
+        "show_menu": "Mostrar\/ocultar menú",
         "search_filter_active": "La búsqueda está filtrando resultados actualmente",
         "play_sample": "Reproducir muestra",
         "album_type": "Tipo de álbum",

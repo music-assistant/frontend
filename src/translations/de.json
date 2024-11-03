@@ -42,7 +42,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Gib einen neuen Namen für die neue Playlist ein",
     "no_content": "Keine Einträge gefunden.",
-    "no_content_filter": "Keine Einträge für die aktuellen Filter-/Suchkriterien gefunden.",
+    "no_content_filter": "Keine Einträge für die aktuellen Filter-\/Suchkriterien gefunden.",
     "no_player": "Kein Wiedergabegerät ausgewählt",
     "off": "Aus",
     "on": "An",
@@ -75,7 +75,7 @@
     "queue_next_items": "Nächste Titel",
     "queue_options": "Warteschlangen-Einstellungen",
     "queue_previous_items": "Gespielte Titel",
-    "queue_radio_based_on": "Die Warteschlange wird dynamisch mit Titeln gefüllt, die auf basieren:",
+    "queue_radio_based_on": "Die Warteschlange wird dynamisch mit Titeln gefüllt, die auf {0} basieren:",
     "queue_radio_enabled": "Radio Modus ist aktiviert",
     "radios": "Radio",
     "read_more": "Lese mehr",
@@ -88,7 +88,7 @@
         "add_provider": "Einen neuen Anbieter hinzufügen",
         "advanced_settings": "Erweiterte Einstellungen",
         "check_docs": "Dokumentation ansehen",
-        "codeowners": "Autoren/Credits",
+        "codeowners": "Autoren\/Credits",
         "config_player": "Wiedergabegerät konfigurieren: {0}",
         "configure": "Konfigurieren",
         "delete": "Löschen",
@@ -230,10 +230,10 @@
             "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Spiele jetzt die Titel des Künstlers und behalte die verbleibenden Elemente in der Warteschlange.",
-                "replace": "Lösche die Warteschlange und spiele den/die Künstler-Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem derzeit abgespielten/gepufferten Titel ab.",
-                "replace_next": "Warteschlange leeren und den/die Titel direkt nach dem aktuell gespielten/gepufferten Element abspielen.",
-                "add": "Füge den/die Titel des Künstlers am Ende der Warteschlange hinzu."
+                "replace": "Lösche die Warteschlange und spiele den\/die Künstler-Titel ab.",
+                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
+                "replace_next": "Warteschlange leeren und den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element abspielen.",
+                "add": "Füge den\/die Titel des Künstlers am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_album": {
@@ -241,21 +241,21 @@
             "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Albumtitel jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
-                "replace": "Lösche die Warteschlange und spiele den/die Album-Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem derzeit abgespielten/gepufferten Titel ab.",
-                "replace_next": "Warteschlange leeren und Albumtitel direkt nach dem aktuell abgespielten/gepufferten Titel abspielen.",
-                "add": "Füge den/die Album-Titel am Ende der Warteschlange hinzu."
+                "replace": "Lösche die Warteschlange und spiele den\/die Album-Titel ab.",
+                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
+                "replace_next": "Warteschlange leeren und Albumtitel direkt nach dem aktuell abgespielten\/gepufferten Titel abspielen.",
+                "add": "Füge den\/die Album-Titel am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_track": {
             "label": "Standardmäßige Warteschlangenoption für Titel.",
             "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine Aktion definiert wurde).",
             "options": {
-                "play": "Spiele jetzt den/die Titel ab und behalte die verbleibenden Warteschlangenelemente.",
-                "replace": "Lösche die Warteschlange und spiele den/die Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem aktuell gespielten/gepufferten Element ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den/die Titel direkt nach dem aktuell gespielten/gepufferten Element ab.",
-                "add": "Füge den/die Titel am Ende der Warteschlange hinzu."
+                "play": "Spiele jetzt den\/die Titel ab und behalte die verbleibenden Warteschlangenelemente.",
+                "replace": "Lösche die Warteschlange und spiele den\/die Titel ab.",
+                "next": "Spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "add": "Füge den\/die Titel am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_playlist": {
@@ -264,9 +264,9 @@
             "options": {
                 "play": "Playlist jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
                 "replace": "Lösche die Warteschlange und spiele die Playlist-Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem derzeit abgespielten/gepufferten Titel ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den/die Titel direkt nach dem aktuell gespielten/gepufferten Element der Playlist ab.",
-                "add": "Füge den/die Playlist-Titel am Ende der Warteschlange hinzu."
+                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element der Playlist ab.",
+                "add": "Füge den\/die Playlist-Titel am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_radio": {
@@ -275,9 +275,9 @@
             "options": {
                 "play": "Spiele jetzt den Radiosender ab und behalte die verbleibenden Warteschlangenelemente.",
                 "replace": "Lösche die Warteschlange und spiele den Radiosender ab",
-                "next": "Spiele das/die Element(e) direkt nach dem aktuell gespielten/gepufferten Element ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den/die Radiosender direkt nach dem aktuell wiedergegebenen/gepufferten Element ab.",
-                "add": "Füge den/die Radiosender am Ende der Warteschlange hinzu."
+                "next": "Spiele das\/die Element(e) direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Radiosender direkt nach dem aktuell wiedergegebenen\/gepufferten Element ab.",
+                "add": "Füge den\/die Radiosender am Ende der Warteschlange hinzu."
             }
         },
         "default": "Standard",
@@ -317,7 +317,7 @@
         },
         "icon": {
             "label": "Icon",
-            "description": "Material Design Icon für dieses Wiedergabegerät. \\n\\nSiehe https://pictogrammers.com/library/mdi/."
+            "description": "Material Design Icon für dieses Wiedergabegerät. \\n\\nSiehe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Benutzeroberfläche",
         "frontend_desc": "Konfigurationen für die Music Assistant Benutzeroberfläche. Diese Einstellungen werden nur auf dem nutzenden Gerät gespeichert.",
@@ -377,7 +377,7 @@
         "no_player_providers_detail": "Konfiguriere die Wiedergabe-Gerätanbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann.",
         "volume_normalization_radio": {
             "label": "Methode zur Normalisierung der Lautstärke für Radiostreams",
-            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Radiostreams ein.\\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\\n\\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\\n\\nOptionen:\\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet.    - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-/Pegelkorrektur an.\\n- Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Radiostreams ein.\\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\\n\\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\\n\\nOptionen:\\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet.    - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\\n- Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Ausgeschaltet",
                 "dynamic": "Erzwinge dynamisch",
@@ -386,20 +386,20 @@
         },
         "volume_normalization_tracks": {
             "label": "Lautstärkenormalisierungsmethode für Titel",
-            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Tracks/Songs ein.\\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel/Die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 / Opus R128).\\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\\n\\nOptionen:\\n- Deaktiviert – Keine Lautstärkenormalisierung für Radiostreams anwenden.\\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.    - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet.  -Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-/Pegelkorrektur an.\\n- \"Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Tracks\/Songs ein.\\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/Die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\\n\\nOptionen:\\n- Deaktiviert – Keine Lautstärkenormalisierung für Radiostreams anwenden.\\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.    - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet.  -Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\\n- \"Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Deaktiviert",
                 "dynamic": "Erzwinge dynamic"
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "description": "Feste/fallback Gainkorrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung 'Lautstärkenormalisierungsmethode').\\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\\n\\nDiese Einstellung wird verwendet, wenn die Lautstärke-Normalisierungsmethode auf \"Feste Gainkorrektur\" oder \"Fallback auf Gainkorrektur\" eingestellt ist"
+            "description": "Feste\/fallback Gainkorrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung 'Lautstärkenormalisierungsmethode').\\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\\n\\nDiese Einstellung wird verwendet, wenn die Lautstärke-Normalisierungsmethode auf \"Feste Gainkorrektur\" oder \"Fallback auf Gainkorrektur\" eingestellt ist"
         },
         "volume_normalization_fixed_gain_radio": {
-            "description": "Feste/fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\\n\\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'fallback auf Gainkorrektur' eingestellt ist."
+            "description": "Feste\/fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\\n\\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'fallback auf Gainkorrektur' eingestellt ist."
         },
         "group_type": "Art der Gruppe",
-        "add_group_player_desc": "\\nBei Player-Anbietern/Ökosystemen, die eine native Gruppierung/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, d. h., wenn Sie diese Playergruppe abspielen, werden die Player-Mitglieder automatisch synchronisiert. \\n\\nFür Player/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \\n\\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können"
+        "add_group_player_desc": "\\nBei Player-Anbietern\/Ökosystemen, die eine native Gruppierung\/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, d. h., wenn Sie diese Playergruppe abspielen, werden die Player-Mitglieder automatisch synchronisiert. \\n\\nFür Player\/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \\n\\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -444,21 +444,21 @@
     "tooltip": {
         "album_artist_filter": "Nach Album-Künstlern filtern",
         "explicit": "Explizit",
-        "filter_library": "Nach Elementen in Bibliothek/Favoriten filtern",
-        "library": "Bibliothek/Favorit umschalten",
+        "filter_library": "Nach Elementen in Bibliothek\/Favoriten filtern",
+        "library": "Bibliothek\/Favorit umschalten",
         "linked": "Dieser Anbieter ist mit den aktuellen Details des Elements verknüpft",
         "refresh": "Liste aktualisieren",
         "refresh_new_content": "Neue Inhalte verfügbar. Zum Aktualisieren, hier klicken",
-        "search": "Sucheingabe ein-/ausblenden",
+        "search": "Sucheingabe ein-\/ausblenden",
         "select_items": "Mehrere Elemente wählen",
         "sort_options": "Sortieroptionen",
         "toggle_view_mode": "Anzeigemodus zwischen Listen- und Raster-Ansicht umschalten",
         "filter_favorites": "Nur Favoriten anzeigen",
-        "favorite": "Als Favorit hinzufügen/entfernen",
+        "favorite": "Als Favorit hinzufügen\/entfernen",
         "open_provider_link": "Auf Website des Anbieters ansehen",
-        "collapse_expand": "Auflistung aus-/einklappen",
+        "collapse_expand": "Auflistung aus-\/einklappen",
         "back": "Zurück",
-        "show_menu": "Menü anzeigen/verbergen",
+        "show_menu": "Menü anzeigen\/verbergen",
         "search_filter_active": "Die Suche filtert aktuell die Ergebnisse",
         "play_sample": "Beispiel wiedergeben",
         "album_type": "Albumtyp",
