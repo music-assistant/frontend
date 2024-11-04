@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.15](https://github.com/music-assistant/frontend/compare/v2.9.14...v2.9.15) (2024-11-04)
+
+
+### Bug Fixes
+
+* Always show add group player button ([17ca019](https://github.com/music-assistant/frontend/commit/17ca0194098b6467f9daaefc86cd5359b6e4199c))
+
 ## [2.9.14](https://github.com/music-assistant/frontend/compare/v2.9.13...v2.9.14) (2024-10-28)
 
 
