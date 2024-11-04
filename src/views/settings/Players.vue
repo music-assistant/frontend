@@ -8,13 +8,8 @@
     >
       <template #title> {{ $t("settings.players") }} </template>
       <template #append>
-        <!-- ADD syncgroup player button -->
-        <v-btn
-          v-if="playersWithSyncFeature.length"
-          color="accent"
-          variant="outlined"
-          @click="addPlayerGroup"
-        >
+        <!-- ADD group player button -->
+        <v-btn color="accent" variant="outlined" @click="addPlayerGroup">
           {{ $t("settings.add_group_player") }}
         </v-btn>
       </template>
