@@ -67,7 +67,7 @@
     "playlists": "Listes de lecture",
     "provider_details": "Détails du fournisseur",
     "queue": "File d'attente",
-    "queue_clear": "Effacer tous les éléments en file d'attente",
+    "queue_clear": "Vider la file d'attente",
     "queue_delete": "Supprimer l'élément",
     "queue_empty": "Aucun élément dans la file d'attente",
     "queue_move_down": "Déplacer vers le bas",
