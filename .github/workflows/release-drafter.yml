@@ -88,7 +88,7 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v2.1.0
         with:
           tag_name: ${{ env.version }}
           files: |
