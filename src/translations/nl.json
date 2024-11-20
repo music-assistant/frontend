@@ -479,5 +479,7 @@
     "cancel": "Annuleren",
     "power_on_player": "De speler inschakelen",
     "power_off_player": "De speler uitschakelen",
-    "powered_off_players": "Uitgeschakelde spelers"
+    "powered_off_players": "Uitgeschakelde spelers",
+    "shuffle_disable": "Shuffle uitschakelen",
+    "shuffle_enable": "Shuffle inschakelen"
 }
