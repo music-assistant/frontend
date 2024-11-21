@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.16](https://github.com/music-assistant/frontend/compare/v2.9.15...v2.9.16) (2024-11-21)
+
+
+### Features
+
+* Adjust to api changes for player grouping ([e1c5820](https://github.com/music-assistant/frontend/commit/e1c58207f2519be34da49d38324944713e7e287a))
+
 ## [2.9.15](https://github.com/music-assistant/frontend/compare/v2.9.14...v2.9.15) (2024-11-04)
 
 
