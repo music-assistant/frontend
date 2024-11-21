@@ -464,7 +464,7 @@ const { name } = useDisplay();
 interface Props {
   colorPalette: ImageColorPalette;
 }
-const props = defineProps<Props>();
+const compProps = defineProps<Props>();
 
 // Local refs
 const queueItems = ref<QueueItem[]>([]);
@@ -754,7 +754,7 @@ watch(
 );
 
 watch(
-  () => props.colorPalette,
+  () => compProps.colorPalette,
   (result) => {
     if (!result.darkColor || !result.lightColor) {
       coverImageColorCode.value = vuetify.theme.current.value.dark

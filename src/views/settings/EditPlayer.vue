@@ -39,10 +39,10 @@
           {{ api.players[config.player_id].device_info.model }}
         </v-card-subtitle>
         <v-card-subtitle
-          v-if="api.players[config.player_id]?.device_info.address"
+          v-if="api.players[config.player_id]?.device_info.ip_address"
         >
           <b>{{ $t("settings.player_address") }}: </b
-          >{{ api.players[config.player_id].device_info.address }}
+          >{{ api.players[config.player_id].device_info.ip_address }}
         </v-card-subtitle>
         <v-card-subtitle v-if="api.players[config.player_id]">
           <b>{{ $t("settings.player_type_label") }}: </b
