@@ -244,69 +244,40 @@ const canExpand = computed(() => {
 
 const getVolumePlayers = function (player: Player, includeSelf = true) {
   const items: Player[] = [];
+  // include leader player in case of manually grouped players
   if (includeSelf && player.type != PlayerType.GROUP) {
     items.push(player);
   }
+  // always include group_childs
   for (const groupChildId of player.group_childs) {
     const volumeChild = api?.players[groupChildId];
     if (volumeChild && volumeChild.available && !items.includes(volumeChild)) {
       items.push(volumeChild);
     }
   }
-  // when syncontrols are enabled, show all syncable players
+  // when groupcontrols are enabled, show all groupable players
   if (
     compProps.showSyncControls &&
-    player.type == PlayerType.PLAYER &&
-    player.supported_features.includes(PlayerFeature.SYNC)
+    player.supported_features.includes(PlayerFeature.SET_MEMBERS)
   ) {
-    for (const syncPlayerId of Object.keys(api?.players)) {
-      const syncPlayer = api?.players[syncPlayerId];
-
-      if (syncPlayer.provider !== player.provider) continue;
-
-      // skip unavailable players
-      if (!syncPlayer.available) continue;
-
-      // skip if player has a group active
-      if (
-        syncPlayer.active_group &&
-        syncPlayer.active_group != player.player_id
-      )
-        continue;
-
-      // skip if player is already playing other content
-      if (
-        syncPlayer.active_source &&
-        syncPlayer.state == PlayerState.PLAYING &&
-        ![player.player_id, syncPlayer.player_id].includes(
-          syncPlayer.active_source,
-        )
-      )
-        continue;
-
-      if (!items.includes(syncPlayer)) {
-        items.push(syncPlayer);
-      }
-    }
-  }
-  // special feature: dynamic member management of a syncgroup
-  else if (
-    compProps.showSyncControls &&
-    player.type == PlayerType.GROUP &&
-    player.supported_features.includes(PlayerFeature.SYNC) &&
-    player.player_id.startsWith("syncgroup_")
-  ) {
-    const provType = api.players[player.group_childs[0]].provider;
     for (const syncPlayer of Object.values(api?.players)) {
-      if (syncPlayer.provider !== provType) continue;
+      if (syncPlayer.player_id == player.player_id) continue;
+      if (
+        !player.can_group_with.includes(syncPlayer.player_id) &&
+        !player.can_group_with.includes(syncPlayer.provider)
+      ) {
+        continue;
+      }
       // skip unavailable players
       if (!syncPlayer.available) continue;
+
       // skip if player has (another) group active
       if (
         syncPlayer.active_group &&
         syncPlayer.active_group != player.player_id
       )
         continue;
+
       // skip if player is already playing other content
       if (
         syncPlayer.active_source &&
@@ -316,6 +287,7 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
         )
       )
         continue;
+
       if (!items.includes(syncPlayer)) {
         items.push(syncPlayer);
       }
@@ -335,7 +307,7 @@ const playerCommandPowerOffUnsyncMany = async function (player_ids: string[]) {
     if (api.players[playerId].powered && !api.players[playerId].active_group)
       // power off will also unsync in the backend
       await api.playerCommandPower(playerId, false);
-    else await api.playerCommandUnSync(playerId);
+    else await api.playerCommandUnGroup(playerId);
   }
 };
 
@@ -345,7 +317,6 @@ const syncCheckBoxChange = async function (
 ) {
   const parentPlayerId = compProps.player.player_id;
 
-  console.log("syncCheckBoxChange", syncPlayerId, value);
   if (value) {
     // add syncPlayerId to syncgroup
     if (playersToUnSync.value.includes(syncPlayerId)) {
@@ -396,7 +367,7 @@ const syncCheckBoxChange = async function (
     }
     if (playersToSync.value.length > 0) {
       api
-        .playerCommandSyncMany(parentPlayerId, playersToSync.value)
+        .playerCommandGroupMany(parentPlayerId, playersToSync.value)
         .catch(async () => {
           // restore state if command failed
           api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);

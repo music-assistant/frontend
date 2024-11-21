@@ -811,57 +811,56 @@ export class MusicAssistantApi {
     );
   }
 
-  public playerCommandSync(
+  public playerCommandGroup(
     playerId: string,
     target_player: string,
   ): Promise<void> {
     /*
-      Handle SYNC command for given player.
+      Handle GROUP command for given player.
 
-      Join/add the given player(id) to the given (master) player/sync group.
-      If the player is already synced to another player, it will be unsynced there first.
-      If the target player itself is already synced to another player, this will fail.
-      If the player can not be synced with the given target player, this will fail.
+      Join/add the given player(id) to the given (leader) player/sync group.
+      If the target player itself is already synced to another player, this may fail.
+      If the player can not be synced with the given target player, this may fail.
 
           - player_id: player_id of the player to handle the command.
-          - target_player: player_id of the syncgroup master or group player.
+          - target_player: player_id of the syncgroup leader or group player.
     */
-    return this.playerCommand(playerId, "sync", {
+    return this.playerCommand(playerId, "group", {
       target_player,
     });
   }
 
-  public playerCommandUnSync(playerId: string): Promise<void> {
+  public playerCommandUnGroup(playerId: string): Promise<void> {
     /*
-      Handle UNSYNC command for given player.
+      Handle UNGROUP command for given player.
 
-      Remove the given player from any syncgroups it currently is synced to.
-      If the player is not currently synced to any other player,
+      Remove the given player from any (sync)groups it currently is synced to.
+      If the player is not currently grouped to any other player,
       this will silently be ignored.
 
           - player_id: player_id of the player to handle the command.
     */
-    return this.playerCommand(playerId, "unsync");
+    return this.playerCommand(playerId, "ungroup");
   }
 
-  public playerCommandSyncMany(
+  public playerCommandGroupMany(
     target_player: string,
     child_player_ids: string[],
   ): Promise<void> {
     /*
-      Create temporary sync group by joining given players to target player.
+      Join given player(s) to target player.
     */
-    return this.sendCommand("players/cmd/sync_many", {
+    return this.sendCommand("players/cmd/group_many", {
       target_player,
       child_player_ids,
     });
   }
 
-  public playerCommandUnSyncMany(player_ids: string[]): Promise<void> {
+  public playerCommandUnGroupMany(player_ids: string[]): Promise<void> {
     /*
-      Handle UNSYNC command for all the given players.
+      Handle UNGROUP command for all the given players.
     */
-    return this.sendCommand("players/cmd/unsync_many", {
+    return this.sendCommand("players/cmd/ungroup_many", {
       player_ids,
     });
   }
@@ -906,12 +905,14 @@ export class MusicAssistantApi {
     group_type: string,
     name: string,
     members: string[],
+    dynamic = false,
   ): Promise<Player> {
     // Create a new Sync playergroup
     return this.sendCommand("player_group/create", {
       group_type,
       name,
       members,
+      dynamic,
     });
   }
 

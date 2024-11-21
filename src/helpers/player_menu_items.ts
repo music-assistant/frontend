@@ -35,11 +35,11 @@ export const getPlayerMenuItems = (
       p.available &&
       p.enabled &&
       p.provider == player.provider &&
-      p.supported_features.includes(PlayerFeature.SYNC) &&
+      p.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
       !p.synced_to,
   );
   if (
-    player.supported_features.includes(PlayerFeature.SYNC) &&
+    player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
     !player.synced_to &&
     player.type == PlayerType.PLAYER &&
     player.group_childs.length == 0 &&
@@ -55,7 +55,7 @@ export const getPlayerMenuItems = (
             label: p.display_name,
             labelArgs: [],
             action: () => {
-              api.playerCommandSync(player.player_id, p.player_id);
+              api.playerCommandGroup(player.player_id, p.player_id);
             },
           };
         })

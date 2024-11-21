@@ -49,8 +49,6 @@ export enum AlbumType {
   SINGLE = "single",
   COMPILATION = "compilation",
   EP = "ep",
-  PODCAST = "podcast",
-  AUDIOBOOK = "audiobook",
   UNKNOWN = "unknown",
 }
 
@@ -108,7 +106,7 @@ export enum PlayerFeature {
   VOLUME_SET = "volume_set",
   VOLUME_MUTE = "volume_mute",
   PAUSE = "pause",
-  SYNC = "sync",
+  SET_MEMBERS = "set_members",
   SEEK = "seek",
   NEXT_PREVIOUS = "next_previous",
   ENQUEUE_NEXT = "enqueue_next",
@@ -553,8 +551,12 @@ export interface PlayerQueue {
 
 export interface DeviceInfo {
   model: string;
-  address: string;
   manufacturer: string;
+  software_version?: string;
+  model_id?: string;
+  manufacturer_id?: string;
+  ip_address?: string;
+  mac_address?: string;
 }
 
 export interface PlayerMedia {
@@ -567,6 +569,13 @@ export interface PlayerMedia {
   duration?: number; // optional
   queue_id?: string; // only present for requests from queue controller
   queue_item_id?: string; // only present for requests from queue controller
+}
+
+export interface PlayerSource {
+  id: string;
+  name: string;
+  is_mass: boolean;
+  passive: boolean;
 }
 
 export interface Player {
@@ -587,9 +596,11 @@ export interface Player {
   volume_muted: boolean;
   group_childs: string[];
   active_source: string;
+  source_list: PlayerSource[];
   active_group?: string;
   synced_to: string;
-  max_sample_rate: number;
+  can_group_with: string[];
+
   enabled: boolean;
   group_volume: number;
   display_name: string;

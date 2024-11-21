@@ -38,7 +38,7 @@
             showSubPlayers && player.player_id == store.activePlayerId
           "
           :show-sync-controls="
-            player.supported_features.includes(PlayerFeature.SYNC)
+            player.supported_features.includes(PlayerFeature.SET_MEMBERS)
           "
           @click="playerClicked(player)"
         />

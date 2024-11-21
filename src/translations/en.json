@@ -372,7 +372,7 @@
                 "sr_Latn": "Serbian (Latin)",
                 "sv_SE": "Swedish",
                 "uk_UA": "Ukrainian",
-                "zh_CN": "Chinese (Simplified)"   
+                "zh_CN": "Chinese (Simplified)"
             }
         },
         "hide_settings": {
@@ -416,7 +416,11 @@
             "description": "Fixed/fallback gain correction to apply to a radio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
         "group_type": "Group type",
-        "add_group_player_desc": "For player providers/ecosystems that provide native grouping/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized. \n\nFor players/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app."
+        "add_group_player_desc": "For player providers/ecosystems that provide native grouping/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized. \n\nFor players/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app.",
+        "dynamic_members": {
+            "label": "Dynamic group members",
+            "description": "Allow members to (temporary) join/leave the group dynamically, so the group more or less behaves the same like manually syncing players together, with the main difference being that the groupplayer will hold the queue."
+        }
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",

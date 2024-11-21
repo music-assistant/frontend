@@ -25,6 +25,22 @@
             required
             :disabled="members.length > 0"
           />
+          <!-- dynamic mode -->
+          <v-switch
+            v-model="dynamic"
+            color="primary"
+            :label="$t('settings.dynamic_members.label')"
+          />
+          <v-card-subtitle
+            style="
+              white-space: break-spaces;
+              padding-left: 0;
+              margin-top: -25px;
+              margin-bottom: 35px;
+            "
+          >
+            {{ $t("settings.dynamic_members.description") }}
+          </v-card-subtitle>
           <!-- name field -->
           <v-text-field
             v-model="name"
@@ -48,7 +64,7 @@
           <v-btn
             block
             color="primary"
-            :disabled="!valid || members.length == 0"
+            :disabled="!valid || (members.length == 0 && !dynamic)"
             @click="onSubmit"
           >
             {{ $t("settings.save") }}
@@ -74,6 +90,7 @@ const router = useRouter();
 const group_type = ref<string>("universal");
 const name = ref<string>("");
 const members = ref<string[]>([]);
+const dynamic = ref<boolean>(false);
 const valid = ref<boolean>(false);
 
 // computed properties
@@ -98,7 +115,12 @@ const syncPlayers = computed(() => {
 
 // methods
 const onSubmit = async function () {
-  api.createPlayerGroup(group_type.value, name.value, members.value);
+  api.createPlayerGroup(
+    group_type.value,
+    name.value,
+    members.value,
+    dynamic.value,
+  );
   router.push({ name: "playersettings" });
 };
 </script>
