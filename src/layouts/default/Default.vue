@@ -63,7 +63,6 @@ watch(
 watch(
   showFullscreenPlayer,
   (showFullscreenPlayer) => {
-    // showFullscreenPlayer if the param player is defined at all
     store.showFullscreenPlayer = !!showFullscreenPlayer;
   },
   { immediate: true },
