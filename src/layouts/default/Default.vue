@@ -57,7 +57,7 @@ watch([targetPlayer, player], ([targetPlayer, player]) => {
 
       }
 
-    //showFullscreenPlayer if the param player is defined at all
+    // showFullscreenPlayer if the param player is defined at all
     store.showFullscreenPlayer = !!player;
   },
   { immediate: true },
