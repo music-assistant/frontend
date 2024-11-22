@@ -43,7 +43,6 @@ const props = defineProps<Props>();
 const hideSettings = ref(
   localStorage.getItem("frontend.settings.hide_settings") == "true",
 );
-
 </script>
 
 <style scoped>
