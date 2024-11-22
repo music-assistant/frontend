@@ -5,6 +5,7 @@ const routes = [
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
+    props: (route: { query: Record<string, any> }) => ({ ...route.query }),
     children: [
       {
         path: "",
@@ -256,6 +257,22 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes,
 });
+
+// // Global navigation guard to preserve query params
+// router.beforeEach((to, from, next) => {
+//   // we want to keep frameless between navigation
+//   console.log(JSON.stringify(from.query) !== JSON.stringify(to.query), from, to)
+//   if (to.path && JSON.stringify(from.query) !== JSON.stringify(to.query)) {
+//     const frameless = to.query?.frameless || from.query?.frameless
+//     // Merge current query params with the new ones if they exist
+//     const mergedQuery = !!frameless ? { ...to.query, frameless } : to.query ;
+//     console.log({mergedQuery})
+//     next({ path: to.path, query: mergedQuery });
+//   } else {
+//     next()
+//   }
+
+// });
 
 router.afterEach((to, from) => {
   if (!from?.path) return;

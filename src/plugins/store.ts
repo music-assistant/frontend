@@ -41,6 +41,7 @@ interface Store {
   libraryPlaylistsCount?: number;
   libraryRadiosCount?: number;
   connected?: boolean;
+  frameless?: boolean;
   isTouchscreen: boolean;
 }
 
@@ -89,5 +90,6 @@ export const store: Store = reactive({
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
   connected: false,
+  frameless: false,
   isTouchscreen: isTouchscreenDevice(),
 });
