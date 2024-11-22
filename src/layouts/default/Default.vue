@@ -67,7 +67,7 @@ watch(frameless, (frameless)=>{
   if(frameless){
     framelessState.value = true
   }
-}, {immediate: true})
+}, { immediate: true })
 </script>
 
 <style scoped>
