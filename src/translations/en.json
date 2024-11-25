@@ -537,6 +537,7 @@
     "power_off_player": "Power off",
     "sync_player_with": "Synchronize with another player",
     "open_player_settings": "Open settings",
+    "open_dsp_settings": "Open DSP settings",
     "powered_off_players": "Unpowered players",
     "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
     "dont_stop_the_music_disable": "Disable 'Don't stop the music!'"
