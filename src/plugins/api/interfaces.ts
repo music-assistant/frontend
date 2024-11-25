@@ -5,6 +5,53 @@ export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
 export const MASS_LOGO_ONLINE =
   "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png";
 
+/// dsp
+
+export enum DSPFilterType {
+  PARAMETRIC_EQ = "parametric_eq",
+}
+
+export enum ParametricEQBandType {
+  PEAK = "peak",
+  HIGH_SHELF = "high_shelf",
+  LOW_SHELF = "low_shelf",
+  HIGH_PASS = "high_pass",
+  LOW_PASS = "low_pass",
+  NOTCH = "notch",
+}
+
+// Base interface for all DSP filters
+export interface DSPFilterBase {
+  type: DSPFilterType;
+  enabled: boolean;
+}
+
+export interface ParametricEQBand {
+  frequency: number;
+  q: number;
+  gain: number;
+  type: ParametricEQBandType;
+  enabled: boolean;
+}
+
+// Specific filter types
+export interface ParametricEQFilter extends DSPFilterBase {
+  type: DSPFilterType.PARAMETRIC_EQ;
+  bands: Array<ParametricEQBand>;
+}
+
+// Union type for all possible filters
+export type DSPFilter = ParametricEQFilter;
+
+// Main DSP chain configuration
+export interface DSPConfig {
+  enabled: boolean;
+  filters: DSPFilter[];
+  input_gain: number;
+  output_gain: number;
+  output_limiter: boolean;
+}
+
 /// enums
 
 export enum MediaType {
