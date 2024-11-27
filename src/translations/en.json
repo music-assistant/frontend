@@ -450,13 +450,19 @@
                     "notch": "Notch"
                 }
             },
+            "tone_control": {
+                "bass_level": "Bass Level",
+                "mid_level": "Mid Level",
+                "treble_level": "Treble Level"
+            },
             "parameter": {
                 "frequency": "Frequency",
                 "gain": "Gain",
                 "q_factor": "Q Factor"
             },
             "types": {
-                "parametric_eq": "Parametric EQ"
+                "parametric_eq": "Parametric EQ",
+                "tone_control": "Tone Control"
             }
         }
     },

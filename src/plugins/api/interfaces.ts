@@ -9,6 +9,7 @@ export const MASS_LOGO_ONLINE =
 
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
+  TONE_CONTROL = "tone_control",
 }
 
 export enum ParametricEQBandType {
@@ -40,8 +41,15 @@ export interface ParametricEQFilter extends DSPFilterBase {
   bands: Array<ParametricEQBand>;
 }
 
+export interface ToneControlFilter extends DSPFilterBase {
+  type: DSPFilterType.TONE_CONTROL;
+  bass_level: number;
+  mid_level: number;
+  treble_level: number;
+}
+
 // Union type for all possible filters
-export type DSPFilter = ParametricEQFilter;
+export type DSPFilter = ParametricEQFilter | ToneControlFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
