@@ -102,7 +102,13 @@
               v-if="
                 dsp.filters[selectedStage].type === DSPFilterType.PARAMETRIC_EQ
               "
-              v-model="dsp.filters[selectedStage]"
+              v-model="dsp.filters[selectedStage] as ParametricEQFilter"
+            />
+            <DSPToneControl
+              v-if="
+                dsp.filters[selectedStage].type === DSPFilterType.TONE_CONTROL
+              "
+              v-model="dsp.filters[selectedStage] as ToneControlFilter"
             />
           </v-card>
         </v-col>
@@ -142,11 +148,14 @@ import {
   ParametricEQBandType,
   DSPFilter,
   DSPFilterType,
+  ParametricEQFilter,
+  ToneControlFilter,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
+import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -193,7 +202,15 @@ const addFilter = () => {
         bands: [],
       };
       break;
-
+    case DSPFilterType.TONE_CONTROL:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.TONE_CONTROL,
+        bass_level: 0,
+        mid_level: 0,
+        treble_level: 0,
+      };
+      break;
     default:
       return;
   }
