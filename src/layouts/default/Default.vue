@@ -1,8 +1,8 @@
 <template>
   <v-app v-if="store.connected">
+    <Footer />
     <PlayerSelect />
     <MainView />
-    <Footer />
   </v-app>
   <v-overlay
     v-else

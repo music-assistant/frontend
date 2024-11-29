@@ -1,11 +1,11 @@
 <template>
   <v-toolbar :color="color" class="header">
     <template v-if="icon" #prepend>
-      <v-btn :icon="icon" size="large" @click="emit('iconClicked')" />
+      <v-icon :icon="icon" size="large" />
     </template>
 
     <template v-if="title" #title>
-      <div @click="emit('titleClicked')">
+      <div>
         {{ title }}
         <v-badge
           v-if="count && getBreakpointValue('bp4')"
@@ -193,12 +193,6 @@ withDefaults(defineProps<Props>(), {
   enforceOverflowMenu: false,
   showLoading: undefined,
 });
-
-// emitters
-const emit = defineEmits<{
-  (e: "iconClicked"): void;
-  (e: "titleClicked"): void;
-}>();
 </script>
 
 <script lang="ts">
