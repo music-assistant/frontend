@@ -5,6 +5,7 @@ const routes = [
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
+    props: (route: { query: Record<string, any> }) => ({ ...route.query }),
     children: [
       {
         path: "",
