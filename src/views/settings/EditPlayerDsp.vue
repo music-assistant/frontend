@@ -11,12 +11,12 @@
       <v-alert v-if="!dsp.enabled" type="info" class="mt-4" color="transparent">
         {{ $t("settings.dsp.disabled_message") }}
       </v-alert>
-      <v-row :class="{ 'justify-center': isMobile }" class="flex-nowrap">
+      <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
         <!-- Timeline Column -->
         <v-col
-          v-if="!isMobile || selectedStage === null"
+          v-if="!mobile || selectedStage === null"
           class="flex-grow-0 flex-shrink-0"
-          :class="{ 'border-e pr-4': !isMobile }"
+          :class="{ 'border-e pr-4': !mobile }"
           align-self="start"
         >
           <DSPPipeline
@@ -34,7 +34,7 @@
           <!-- Toolbar of the selected item -->
           <v-toolbar density="compact">
             <v-btn
-              v-if="isMobile"
+              v-if="mobile"
               class="hidden-xs-only"
               icon
               @click="selectedStage = null"
@@ -45,7 +45,7 @@
             <v-btn
               v-if="
                 typeof selectedStage === 'number' &&
-                !isMobile &&
+                !mobile &&
                 selectedStage > 0
               "
               icon
@@ -56,7 +56,7 @@
             <v-btn
               v-if="
                 typeof selectedStage === 'number' &&
-                !isMobile &&
+                !mobile &&
                 selectedStage < dsp.filters.length - 1
               "
               icon
@@ -142,6 +142,7 @@
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
 import {
   DSPConfig,
@@ -169,7 +170,7 @@ const selectedStage = ref<number | null | "input" | "output">(null);
 const showAddFilterDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value < 1300);
+const { mobile } = useDisplay();
 
 const filterTypes = Object.values(DSPFilterType).map((value) => {
   return {
@@ -244,16 +245,8 @@ const removeFilter = (index: number) => {
 
 // Watchers
 
-const handleResize = () => {
-  windowWidth.value = window.innerWidth;
-};
-window.addEventListener("resize", handleResize);
-onUnmounted(() => {
-  window.removeEventListener("resize", handleResize);
-});
-
 watch(
-  isMobile,
+  mobile,
   (mobile) => {
     if (!mobile && selectedStage.value === null) {
       selectStage("input");
