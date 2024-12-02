@@ -269,19 +269,27 @@
                       </div>
                     </template>
                     <template #title>
-                      {{ item.name }}
+                      <MarqueeText :sync="listviewMarqueeSync">
+                        {{ item.name }}
+                      </MarqueeText>
                     </template>
                     <template #subtitle>
-                      {{ formatDuration(item.duration) }}
-                      <span
-                        v-if="
-                          item.media_item &&
-                          'album' in item.media_item &&
-                          item.media_item.album
-                        "
-                      >
-                        | {{ item.media_item.album.name }}</span
-                      >
+                      <div class="d-flex">
+                        <span style="white-space: nowrap" class="pr-1">
+                          {{ formatDuration(item.duration) }} |
+                        </span>
+                        <MarqueeText :sync="listviewMarqueeSync">
+                          <span
+                            v-if="
+                              item.media_item &&
+                              'album' in item.media_item &&
+                              item.media_item.album
+                            "
+                          >
+                            {{ item.media_item.album.name }}
+                          </span>
+                        </MarqueeText>
+                      </div>
                     </template>
                   </ListItem>
                 </template>
@@ -482,6 +490,8 @@ interface Props {
 }
 const compProps = defineProps<Props>();
 
+// Sync the listview and player separately
+const listviewMarqueeSync = new MarqueeTextSync();
 const playerMarqueeSync = new MarqueeTextSync();
 
 // Local refs
