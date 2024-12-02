@@ -7,11 +7,11 @@
       }}</v-toolbar-title>
     </v-toolbar>
 
-    <v-container>
+    <v-container class="pa-4">
       <v-alert v-if="!dsp.enabled" type="info" class="mt-4" color="transparent">
         {{ $t("settings.dsp.disabled_message") }}
       </v-alert>
-      <v-row>
+      <v-row :class="{ 'justify-center': isMobile }" class="flex-nowrap">
         <!-- Timeline Column -->
         <v-col
           v-if="!isMobile || selectedStage === null"
@@ -30,7 +30,7 @@
         </v-col>
 
         <!-- Filter Settings Panel -->
-        <v-col v-if="selectedStage != null">
+        <v-col v-if="selectedStage != null" style="min-width: 0">
           <!-- Toolbar of the selected item -->
           <v-toolbar density="compact">
             <v-btn

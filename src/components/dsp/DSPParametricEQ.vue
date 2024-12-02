@@ -399,7 +399,8 @@ const drawGrid = (ctx: CanvasRenderingContext2D, viewport: Viewport) => {
 
   // Draw gain lines
   const gains = [];
-  const gainStep = (viewport.max_gain - viewport.min_gain) / 10;
+  const gainRange = viewport.max_gain - viewport.min_gain;
+  const gainStep = Math.ceil(gainRange / (viewport.height / 30));
 
   for (
     let gain = viewport.min_gain;
