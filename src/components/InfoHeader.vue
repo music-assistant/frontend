@@ -40,6 +40,8 @@
           padding-left: 15px;
           align-items: center;
           padding-right: 15px;
+          display: flex;
+          width: 100%;
         "
       >
         <!-- left side: cover image -->
@@ -54,6 +56,7 @@
             margin-bottom: 15px;
             margin-right: 24px;
             align-content: center;
+            flex-shrink: 0;
           "
         >
           <div v-if="item.media_type && item.media_type == MediaType.ARTIST">
@@ -70,7 +73,7 @@
           </div>
         </div>
 
-        <div style="width: 100%; text-align: left">
+        <div style="min-width: 0">
           <!-- Main title -->
           <img
             v-if="artistLogo"
