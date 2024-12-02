@@ -83,7 +83,9 @@
             style="padding-left: 10px"
           />
           <v-card-title v-else>
-            {{ item.name }}
+            <MarqueeText :sync="marqueeSync">
+              {{ item.name }}
+            </MarqueeText>
           </v-card-title>
 
           <!-- other details -->
@@ -119,20 +121,22 @@
                 color="primary"
                 icon="mdi-account-music"
               />
-              <span
-                v-for="(artist, artistindex) in item.artists"
-                :key="artist.item_id"
-              >
-                <a style="color: accent" @click="artistClick(artist)">{{
-                  artist.name
-                }}</a>
+              <MarqueeText :sync="marqueeSync">
                 <span
-                  v-if="artistindex + 1 < item.artists.length"
-                  :key="artistindex"
-                  style="color: accent"
-                  >{{ " / " }}</span
+                  v-for="(artist, artistindex) in item.artists"
+                  :key="artist.item_id"
                 >
-              </span>
+                  <a style="color: accent" @click="artistClick(artist)">{{
+                    artist.name
+                  }}</a>
+                  <span
+                    v-if="artistindex + 1 < item.artists.length"
+                    :key="artistindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- playlist owner -->
@@ -146,7 +150,9 @@
                 small
                 icon="mdi-account-music"
               />
-              <a style="color: primary">{{ item.owner }}</a>
+              <MarqueeText :sync="marqueeSync">
+                <a style="color: primary">{{ item.owner }}</a>
+              </MarqueeText>
             </v-card-subtitle>
 
             <v-card-subtitle
@@ -159,10 +165,12 @@
                 small
                 icon="mdi-album"
               />
-              <a
-                style="color: secondary"
-                @click="albumClick((item as Track)?.album)"
-                >{{ item.album.name }}</a
+              <MarqueeText :sync="marqueeSync">
+                <a
+                  style="color: secondary"
+                  @click="albumClick((item as Track)?.album)"
+                  >{{ item.album.name }}</a
+                ></MarqueeText
               >
             </v-card-subtitle>
           </div>
@@ -331,6 +339,8 @@ import {
 } from "@/layouts/default/ItemContextMenu.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { useI18n } from "vue-i18n";
+import MarqueeText from "./MarqueeText.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 
 // properties
 export interface Props {
@@ -344,6 +354,7 @@ const { mobile } = useDisplay();
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
+const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
 const { t } = useI18n();
 
