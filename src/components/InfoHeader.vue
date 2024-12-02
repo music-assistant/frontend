@@ -108,7 +108,7 @@
             <!-- item artists -->
             <v-card-subtitle
               v-if="'artists' in item && item.artists"
-              class="title accent--text"
+              class="title accent--text d-flex"
             >
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
@@ -133,7 +133,10 @@
             </v-card-subtitle>
 
             <!-- playlist owner -->
-            <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
+            <v-card-subtitle
+              v-if="'owner' in item && item.owner"
+              class="title d-flex"
+            >
               <v-icon
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
@@ -143,7 +146,10 @@
               <a style="color: primary">{{ item.owner }}</a>
             </v-card-subtitle>
 
-            <v-card-subtitle v-if="'album' in item && item.album">
+            <v-card-subtitle
+              v-if="'album' in item && item.album"
+              class="d-flex"
+            >
               <v-icon
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
