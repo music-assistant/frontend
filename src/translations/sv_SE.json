@@ -361,7 +361,9 @@
                 "pt_PT": "Portugisiska",
                 "ko_KR": "Koreanska",
                 "nb": "Norska",
-                "ru_RU": "Ryska"
+                "ru_RU": "Ryska",
+                "hu_HU": "Ungerska",
+                "it": "Italienska"
             }
         },
         "hide_settings": {

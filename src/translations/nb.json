@@ -362,7 +362,9 @@
                 "pt_PT": "Portugisisk",
                 "ko_KR": "Koreansk",
                 "nb": "Norsk",
-                "ru_RU": "Russisk"
+                "ru_RU": "Russisk",
+                "hu_HU": "Ungarsk",
+                "it": "Italiensk"
             }
         },
         "hide_settings": {
