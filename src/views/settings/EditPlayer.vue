@@ -72,6 +72,11 @@
           color="primary"
           :disabled="api.getProviderManifest(config.provider)?.builtin"
         />
+
+        <!-- DSP Config Button -->
+        <v-btn @click="openDspConfig">
+          {{ $t("open_dsp_settings") }}
+        </v-btn>
       </div>
       <br />
       <v-divider />
@@ -120,6 +125,10 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["name"] = config.value!.name || null;
   api.savePlayerConfig(props.playerId!, values);
   router.push({ name: "playersettings" });
+};
+
+const openDspConfig = function () {
+  router.push(`/settings/editplayer/${props.playerId}/dsp`);
 };
 </script>
 
