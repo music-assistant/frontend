@@ -1,5 +1,6 @@
 <template>
   <router-view />
+  <PlayerBrowserMediaControls />
 </template>
 
 <script setup lang="ts">
@@ -10,6 +11,7 @@ import { store } from "@/plugins/store";
 import { i18n } from "@/plugins/i18n";
 import router from "./plugins/router";
 import { EventType } from "./plugins/api/interfaces";
+import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 const theme = useTheme();
 
 const setTheme = function () {
