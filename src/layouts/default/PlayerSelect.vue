@@ -2,6 +2,7 @@
   <!-- players side menu -->
   <v-overlay v-model="store.showPlayersMenu" />
   <v-navigation-drawer
+    v-if="store.showPlayersMenu"
     v-model="store.showPlayersMenu"
     location="right"
     app
