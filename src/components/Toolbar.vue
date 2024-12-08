@@ -1,11 +1,17 @@
 <template>
   <v-toolbar :color="color" class="header">
     <template v-if="icon" #prepend>
-      <v-icon :icon="icon" size="large" />
+      <v-btn
+        v-if="iconAsButton"
+        :icon="icon"
+        size="large"
+        @click="emit('iconClicked')"
+      />
+      <v-icon v-else :icon="icon" size="large" />
     </template>
 
     <template v-if="title" #title>
-      <div>
+      <button @click="emit('titleClicked')">
         {{ title }}
         <v-badge
           v-if="count && getBreakpointValue('bp4')"
@@ -13,7 +19,7 @@
           :content="count"
           inline
         />
-      </div>
+      </button>
     </template>
 
     <template v-if="menuItems?.length" #append>
@@ -183,6 +189,7 @@ export interface Props {
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
   showLoading?: boolean;
+  iconAsButton?: boolean;
 }
 withDefaults(defineProps<Props>(), {
   color: "transparent",
@@ -192,7 +199,14 @@ withDefaults(defineProps<Props>(), {
   menuItems: undefined,
   enforceOverflowMenu: false,
   showLoading: undefined,
+  iconAsButton: false,
 });
+
+// emitters
+const emit = defineEmits<{
+  (e: "iconClicked"): void;
+  (e: "titleClicked"): void;
+}>();
 </script>
 
 <script lang="ts">
