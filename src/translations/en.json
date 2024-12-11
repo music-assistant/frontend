@@ -214,7 +214,7 @@
             "description": "Hide this player in the user interface.\n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
         },
         "default_enqueue_select_artist": {
-            "label": "Items to select when you play a (in-library) artist.",
+            "label": "Items to select when you play an (in-library) artist.",
             "description": "If you want to play an artist, what items should be enqueued?",
             "options": {
                 "library_tracks": "Only in-library tracks",
@@ -224,7 +224,7 @@
             }
         },
         "default_enqueue_select_album": {
-            "label": "Items to select when you play a (in-library) album.",
+            "label": "Items to select when you play an (in-library) album.",
             "description": "If you want to play an album, what items should be enqueued?",
             "options": {
                 "library_tracks": "Only in-library tracks",
@@ -377,7 +377,7 @@
         },
         "hide_settings": {
             "label": "Hide settings button",
-            "description": "Hide settings button on home screen.\n\nNote that if you disable settings on the home screen and in the menu you may lock yourself out.\n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
+            "description": "Hide settings button on the home screen.\n\nNote that if you disable settings on the home screen and in the menu you may lock yourself out.\n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
@@ -419,7 +419,7 @@
         "add_group_player_desc": "For player providers/ecosystems that provide native grouping/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized. \n\nFor players/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app.",
         "dynamic_members": {
             "label": "Dynamic group members",
-            "description": "Allow members to (temporary) join/leave the group dynamically, so the group more or less behaves the same like manually syncing players together, with the main difference being that the groupplayer will hold the queue."
+            "description": "Allow members to (temporarily) join/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
         }
     },
     "show_info": "Show info",
@@ -477,7 +477,7 @@
         "sort_options": "Sort options",
         "toggle_view_mode": "Toggle view mode list/thumbs",
         "filter_favorites": "Only show favorites",
-        "favorite": "Mark/unmark as favorite",
+        "favorite": "Mark/unmark as a favorite",
         "open_provider_link": "Open this item on the provider's website",
         "collapse_expand": "Collapse/expand this listing",
         "back": "Back",
