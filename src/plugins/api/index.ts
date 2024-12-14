@@ -43,6 +43,7 @@ import {
   CoreConfig,
   ItemMapping,
   AlbumType,
+  DSPConfig,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -1046,6 +1047,24 @@ export class MusicAssistantApi {
     // remove the configuration of a player
     return this.sendCommand("config/players/remove", {
       player_id,
+    });
+  }
+
+  // DSP related functions
+
+  public async getDSPConfig(player_id: string): Promise<DSPConfig> {
+    // Return the DSP configuration for a player.
+    return this.sendCommand("config/players/dsp/get", { player_id });
+  }
+
+  public async saveDSPConfig(
+    player_id: string,
+    config: DSPConfig,
+  ): Promise<DSPConfig> {
+    // Save/update the DSP configuration for a player.
+    return this.sendCommand("config/players/dsp/save", {
+      player_id,
+      config,
     });
   }
 

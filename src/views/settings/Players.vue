@@ -127,6 +127,10 @@ const editPlayer = function (playerId: string, provider: string) {
   }
 };
 
+const editPlayerDsp = function (playerId: string) {
+  router.push(`/settings/editplayer/${playerId}/dsp`);
+};
+
 const addPlayerGroup = function (provider: string) {
   router.push("/settings/addgroup");
 };
@@ -159,6 +163,14 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       },
       icon: "mdi-cog",
       disabled: !api.getProvider(playerConfig!.provider),
+    },
+    {
+      label: "open_dsp_settings",
+      labelArgs: [],
+      action: () => {
+        editPlayerDsp(playerConfig.player_id);
+      },
+      icon: "mdi-equalizer",
     },
     {
       label: playerConfig.enabled ? "settings.disable" : "settings.enable",

@@ -178,5 +178,17 @@ export const getPlayerMenuItems = (
     icon: "mdi-cog-outline",
   });
 
+  // add shortcut to dsp settings
+  menuItems.push({
+    label: "open_dsp_settings",
+    labelArgs: [],
+    action: () => {
+      store.showFullscreenPlayer = false;
+      store.showPlayersMenu = false;
+      router.push(`/settings/editplayer/${player.player_id}/dsp`);
+    },
+    icon: "mdi-equalizer",
+  });
+
   return menuItems;
 };
