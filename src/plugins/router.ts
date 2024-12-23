@@ -226,6 +226,15 @@ const routes = [
             props: true,
           },
           {
+            path: "editplayer/:playerId/dsp",
+            name: "editplayerdsp",
+            component: () =>
+              import(
+                /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
+              ),
+            props: true,
+          },
+          {
             path: "editcore/:domain",
             name: "editcore",
             component: () =>

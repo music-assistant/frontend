@@ -420,6 +420,50 @@
         "dynamic_members": {
             "label": "Dynamic group members",
             "description": "Allow members to (temporarily) join/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
+        },
+        "dsp": {
+            "configure_on": "Configuring DSP on: {name}",
+            "disabled_message": "DSP is currently disabled. Enable it using the switch above",
+            "input": "Input",
+            "output": "Output",
+            "enable_output_limiter": "Enable Output Limiter to prevent clipping",
+            "filter": {
+                "add": "Add Filter",
+                "type": "Filter Type",
+                "new": "New {type}"
+            },
+            "move_up": "Move Up",
+            "move_down": "Move Down",
+            "delete_filter": "Delete Filter",
+            "parametric_eq": {
+                "add_band": "Add Band",
+                "delete_band": "Delete Band",
+                "filter_type": "Filter Type",
+                "band": "Band {index}",
+                "enable_band": "Enable Band",
+                "filter_types": {
+                    "peak": "Peak",
+                    "low_shelf": "Low Shelf",
+                    "high_shelf": "High Shelf",
+                    "low_pass": "Low Pass",
+                    "high_pass": "High Pass",
+                    "notch": "Notch"
+                }
+            },
+            "tone_control": {
+                "bass_level": "Bass Level",
+                "mid_level": "Mid Level",
+                "treble_level": "Treble Level"
+            },
+            "parameter": {
+                "frequency": "Frequency",
+                "gain": "Gain",
+                "q_factor": "Q Factor"
+            },
+            "types": {
+                "parametric_eq": "Parametric EQ",
+                "tone_control": "Tone Control"
+            }
         }
     },
     "show_info": "Show info",
@@ -537,6 +581,7 @@
     "power_off_player": "Power off",
     "sync_player_with": "Synchronize with another player",
     "open_player_settings": "Open settings",
+    "open_dsp_settings": "Open DSP settings",
     "powered_off_players": "Unpowered players",
     "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
     "dont_stop_the_music_disable": "Disable 'Don't stop the music!'"
