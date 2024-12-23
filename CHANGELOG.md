@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://github.com/music-assistant/frontend/compare/v2.9.16...v2.10.0) (2024-12-23)
+
+
+### Features
+
+* Add a frameless param ([#745](https://github.com/music-assistant/frontend/issues/745)) ([e5350f1](https://github.com/music-assistant/frontend/commit/e5350f1133922389081d0a8e7c742af9ce46689b))
+
 ## [2.9.16](https://github.com/music-assistant/frontend/compare/v2.9.16...v2.9.16) (2024-11-21)
 
 
