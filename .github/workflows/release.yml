@@ -3,47 +3,43 @@ name: Publish releases
 on:
   release:
     types: [published]
-
 env:
-  PYTHON_VERSION: "3.12"
+  PYTHON_VERSION: "3.10"
   NODE_VERSION: "18.x"
   NODE_OPTIONS: --max_old_space_size=6144
 
-jobs:
-  build-artifact:
-    name: Builds precompiled version of the frontend and release as pypi package
-    runs-on: ubuntu-latest
+# Set default workflow permissions
+# All scopes not mentioned here are set to no access
+# https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+permissions:
+  actions: none
 
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.vars.outputs.tag }}
+    permissions:
+      contents: write # Required to upload release assets
     steps:
-      - uses: actions/checkout@v4.1.4
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
       - name: Get tag
         id: vars
-        run: >-
-          echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: Validate version number
-        run: >-
-          if [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
-            if ! [[ "${{ steps.vars.outputs.tag }}" =~ "b" || "${{ steps.vars.outputs.tag }}" =~ "rc" ]]; then
-            echo "Pre-release: Tag is missing beta suffix (${{ steps.vars.outputs.tag }})"
-              exit 1
-            fi
-          else
-            if [[ "${{ steps.vars.outputs.tag }}" =~ "b" || "${{ steps.vars.outputs.tag }}" =~ "rc" ]]; then
-              echo "Release: Tag must not have a beta (or rc) suffix (${{ steps.vars.outputs.tag }})"
-              exit 1
-            fi
-          fi
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: yarn
-
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5.3.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: |
@@ -71,21 +67,24 @@ jobs:
           python3 -m build
 
       - name: Publish release to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.12.3
+        uses: pypa/gh-action-pypi-publish@v1.10.3
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2.2.0
+        uses: softprops/action-gh-release@v2.0.8
         with:
-          tag_name: ${{ steps.vars.outputs.tag }}
           files: |
             dist/*.whl
             dist/*.tar.gz
 
-      - name: Create Server repo PR
-        uses: music-assistant/frontend-release-pr-action@main
+  server-repo-pr:
+    name: Server repo PR
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: music-assistant/frontend-release-pr-action@main
         with:
           github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
-          new_release_version: ${{ steps.vars.outputs.tag }}
+          new_release_version: ${{ needs.release.outputs.version }}
