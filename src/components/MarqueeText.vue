@@ -194,9 +194,9 @@ const visibilityObserver = new IntersectionObserver(
 );
 
 // Lifecycle Hooks
-onMounted(() => {
-  if (!containerRef.value || !scrollingRef.value) return;
 
+// Setup observers and initial measurements
+const setup = () => {
   nextTick(() => {
     if (!containerRef.value || !scrollingRef.value) return;
 
@@ -204,7 +204,7 @@ onMounted(() => {
     scrollingWidth.value = scrollingRef.value.scrollWidth;
     containerWidth.value = containerRef.value.clientWidth;
   });
-
+  if (!containerRef.value || !scrollingRef.value) return;
   // Setup observers
   scrollingObserver.observe(scrollingRef.value, {
     childList: true,
@@ -215,10 +215,10 @@ onMounted(() => {
   });
   containerObserver.observe(containerRef.value);
   visibilityObserver.observe(containerRef.value);
-});
+};
 
-onBeforeUnmount(() => {
-  // Cleanup observers and animation
+// Cleanup observers and animation
+const cleanup = () => {
   if (animationController) {
     animationController.abort();
     animationController = null;
@@ -227,6 +227,17 @@ onBeforeUnmount(() => {
   scrollingObserver.disconnect();
   containerObserver.disconnect();
   visibilityObserver.disconnect();
+  isVisible.value = false;
+};
+
+onMounted(() => {
+  if (props.disabled !== true) {
+    setup();
+  }
+});
+
+onBeforeUnmount(() => {
+  cleanup();
 });
 
 // Watch for changes that require animation restart
@@ -236,6 +247,16 @@ watch(
     startScrollCycle();
   },
   { flush: "post" },
+);
+watch(
+  () => props.disabled,
+  () => {
+    if (props.disabled === true) {
+      cleanup();
+    } else {
+      setup();
+    }
+  },
 );
 </script>
 
