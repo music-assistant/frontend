@@ -29,9 +29,9 @@ import {
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 
 // Animation Constants
-const SCROLL_SPEED = 60; // Scrolling speed in pixels per second
+const SCROLL_SPEED = 30; // Scrolling speed in pixels per second
 const START_DELAY = 2000; // Delay before starting scroll (milliseconds)
-const END_DELAY = 2000; // Delay after scroll completion (milliseconds)
+const END_DELAY = 4000; // Delay after scroll completion (milliseconds)
 const RESET_ANIMATION_DURATION_MS = 1000; // Duration for reset animation (milliseconds)
 
 // DOM References and State Management
