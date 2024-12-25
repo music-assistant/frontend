@@ -256,7 +256,7 @@
                 max-height="90%"
                 :items="activeQueuePanel == 0 ? nextItems : previousItems"
               >
-                <template #default="{ item }">
+                <template #default="{ item, index }">
                   <ListItem
                     link
                     :show-menu-btn="true"
@@ -269,19 +269,34 @@
                       </div>
                     </template>
                     <template #title>
-                      {{ item.name }}
+                      <!-- only scroll the currently playing track -->
+                      <MarqueeText
+                        :sync="playerMarqueeSync"
+                        :disabled="index != 0 || activeQueuePanel != 0"
+                      >
+                        {{ item.name }}
+                      </MarqueeText>
                     </template>
                     <template #subtitle>
-                      {{ formatDuration(item.duration) }}
-                      <span
-                        v-if="
-                          item.media_item &&
-                          'album' in item.media_item &&
-                          item.media_item.album
-                        "
-                      >
-                        | {{ item.media_item.album.name }}</span
-                      >
+                      <div class="d-flex">
+                        <span style="white-space: nowrap" class="pr-1">
+                          {{ formatDuration(item.duration) }} |
+                        </span>
+                        <MarqueeText
+                          :sync="playerMarqueeSync"
+                          :disabled="index != 0 || activeQueuePanel != 0"
+                        >
+                          <span
+                            v-if="
+                              item.media_item &&
+                              'album' in item.media_item &&
+                              item.media_item.album
+                            "
+                          >
+                            {{ item.media_item.album.name }}
+                          </span>
+                        </MarqueeText>
+                      </div>
                     </template>
                   </ListItem>
                 </template>
