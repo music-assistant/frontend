@@ -46,6 +46,7 @@ const isVisible = ref(false);
 // Props Definition
 const props = defineProps<{
   sync?: MarqueeTextSync; // Optional sync helper for coordinating multiple marquees
+  disabled?: boolean; // Disable scrolling animation
 }>();
 
 // Register with the sync helper if provided
@@ -104,6 +105,7 @@ const startScrollCycle = async () => {
 
   // Check if scrolling is necessary
   if (
+    props.disabled === true ||
     maxOffsetPosition.value <= 0 ||
     scrollDuration.value <= 0 ||
     !isVisible.value
@@ -229,7 +231,7 @@ onBeforeUnmount(() => {
 
 // Watch for changes that require animation restart
 watch(
-  [maxOffsetPosition, isVisible],
+  [maxOffsetPosition, isVisible, () => props.disabled],
   () => {
     startScrollCycle();
   },
