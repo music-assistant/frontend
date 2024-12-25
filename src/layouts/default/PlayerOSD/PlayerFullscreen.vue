@@ -262,6 +262,8 @@
                     :show-menu-btn="true"
                     @click.stop="(e) => openQueueItemMenu(e, item)"
                     @menu.stop="(e) => openQueueItemMenu(e, item)"
+                    @mouseenter="hoveredQueueIndex = index"
+                    @mouseleave="hoveredQueueIndex = -1"
                   >
                     <template #prepend>
                       <div class="media-thumb listitem-media-thumb">
@@ -269,10 +271,19 @@
                       </div>
                     </template>
                     <template #title>
-                      <!-- only scroll the currently playing track -->
+                      <!-- only scroll the currently playing track, or when hovered with a separete sync group -->
                       <MarqueeText
-                        :sync="playerMarqueeSync"
-                        :disabled="index != 0 || activeQueuePanel != 0"
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
+                        "
                       >
                         {{ item.name }}
                       </MarqueeText>
@@ -283,8 +294,17 @@
                           {{ formatDuration(item.duration) }} |
                         </span>
                         <MarqueeText
-                          :sync="playerMarqueeSync"
-                          :disabled="index != 0 || activeQueuePanel != 0"
+                          :sync="
+                            index == 0 && activeQueuePanel == 0
+                              ? playerMarqueeSync
+                              : hoveredMarqueeSync
+                          "
+                          :disabled="
+                            !(
+                              (index == 0 && activeQueuePanel == 0) ||
+                              hoveredQueueIndex == index
+                            )
+                          "
                         >
                           <span
                             v-if="
@@ -498,6 +518,8 @@ interface Props {
 const compProps = defineProps<Props>();
 
 const playerMarqueeSync = new MarqueeTextSync();
+const hoveredQueueIndex = ref(-1);
+const hoveredMarqueeSync = new MarqueeTextSync();
 
 // Local refs
 const queueItems = ref<QueueItem[]>([]);
