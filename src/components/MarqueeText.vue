@@ -42,6 +42,7 @@ const scrollingWidth = ref(0);
 const offsetPosition = ref(0);
 const isForwardScroll = ref(false);
 const isVisible = ref(false);
+const justEnabled = ref(false);
 
 // Props Definition
 const props = defineProps<{
@@ -147,9 +148,11 @@ const startScrollCycle = async () => {
 
       // Hold at the start of the text (including time required for reset animation and sync)
       await delay(
-        RESET_ANIMATION_DURATION_MS + START_DELAY + extraStartDelay,
+        (justEnabled.value ? 0 : RESET_ANIMATION_DURATION_MS + START_DELAY) +
+          extraStartDelay,
         ctrl.signal,
       );
+      justEnabled.value = false;
 
       // Start the scrolling to the end
       isForwardScroll.value = true;
@@ -254,6 +257,7 @@ watch(
     if (props.disabled === true) {
       cleanup();
     } else {
+      justEnabled.value = true;
       setup();
     }
   },
