@@ -85,26 +85,32 @@
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item as MediaItemType)"
             >
-              {{ store.curQueueItem.media_item.name }}
-              <span
-                v-if="
-                  'version' in store.curQueueItem.media_item &&
-                  store.curQueueItem.media_item.version
-                "
-                >({{ store.curQueueItem.media_item.version }})</span
-              >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.name }}
+                <span
+                  v-if="
+                    'version' in store.curQueueItem.media_item &&
+                    store.curQueueItem.media_item.version
+                  "
+                  >({{ store.curQueueItem.media_item.version }})</span
+                >
+              </MarqueeText>
             </v-card-title>
 
             <!-- external source current media item present -->
             <v-card-title v-else-if="store.activePlayer?.current_media?.title">
               <div v-if="store.activePlayer?.current_media?.artist">
-                {{ store.activePlayer?.current_media?.artist }}
+                <MarqueeText :sync="playerMarqueeSync">
+                  {{ store.activePlayer?.current_media?.artist }}
+                </MarqueeText>
               </div>
               <div
                 v-if="store.activePlayer?.current_media?.title"
                 :style="`font-size: ${subTitleFontSize};`"
               >
-                {{ store.activePlayer?.current_media?.title }}
+                <MarqueeText :sync="playerMarqueeSync">
+                  {{ store.activePlayer?.current_media?.title }}
+                </MarqueeText>
               </div>
             </v-card-title>
 
@@ -114,7 +120,9 @@
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="store.showPlayersMenu = true"
             >
-              {{ store.activePlayer?.display_name || $t("no_player") }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.activePlayer?.display_name || $t("no_player") }}
+              </MarqueeText>
             </v-card-title>
 
             <!-- SUBTITLE -->
@@ -138,7 +146,9 @@
                 radioTitleClick(store.curQueueItem.streamdetails.stream_title)
               "
             >
-              {{ store.curQueueItem.streamdetails.stream_title }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.streamdetails.stream_title }}
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- subtitle: album -->
@@ -151,7 +161,9 @@
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item.album as Album)"
             >
-              {{ store.curQueueItem.media_item.album.name }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.album.name }}
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- subtitle: artist(s) -->
@@ -167,7 +179,9 @@
                 itemClick(store.curQueueItem.media_item.artists[0] as Artist)
               "
             >
-              {{ store.curQueueItem.media_item.artists[0].name }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.artists[0].name }}
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- subtitle: other source active -->
@@ -242,12 +256,14 @@
                 max-height="90%"
                 :items="activeQueuePanel == 0 ? nextItems : previousItems"
               >
-                <template #default="{ item }">
+                <template #default="{ item, index }">
                   <ListItem
                     link
                     :show-menu-btn="true"
                     @click.stop="(e) => openQueueItemMenu(e, item)"
                     @menu.stop="(e) => openQueueItemMenu(e, item)"
+                    @mouseenter="hoveredQueueIndex = index"
+                    @mouseleave="hoveredQueueIndex = -1"
                   >
                     <template #prepend>
                       <div class="media-thumb listitem-media-thumb">
@@ -255,19 +271,52 @@
                       </div>
                     </template>
                     <template #title>
-                      {{ item.name }}
-                    </template>
-                    <template #subtitle>
-                      {{ formatDuration(item.duration) }}
-                      <span
-                        v-if="
-                          item.media_item &&
-                          'album' in item.media_item &&
-                          item.media_item.album
+                      <!-- only scroll the currently playing track, or when hovered with a separete sync group -->
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
                         "
                       >
-                        | {{ item.media_item.album.name }}</span
-                      >
+                        {{ item.name }}
+                      </MarqueeText>
+                    </template>
+                    <template #subtitle>
+                      <div class="d-flex">
+                        <span style="white-space: nowrap" class="pr-1">
+                          {{ formatDuration(item.duration) }} |
+                        </span>
+                        <MarqueeText
+                          :sync="
+                            index == 0 && activeQueuePanel == 0
+                              ? playerMarqueeSync
+                              : hoveredMarqueeSync
+                          "
+                          :disabled="
+                            !(
+                              (index == 0 && activeQueuePanel == 0) ||
+                              hoveredQueueIndex == index
+                            )
+                          "
+                        >
+                          <span
+                            v-if="
+                              item.media_item &&
+                              'album' in item.media_item &&
+                              item.media_item.album
+                            "
+                          >
+                            {{ item.media_item.album.name }}
+                          </span>
+                        </MarqueeText>
+                      </div>
                     </template>
                   </ListItem>
                 </template>
@@ -440,6 +489,8 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import MarqueeText from "@/components/MarqueeText.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   imgCoverLight,
   imgCoverDark,
@@ -465,6 +516,10 @@ interface Props {
   colorPalette: ImageColorPalette;
 }
 const compProps = defineProps<Props>();
+
+const playerMarqueeSync = new MarqueeTextSync();
+const hoveredQueueIndex = ref(-1);
+const hoveredMarqueeSync = new MarqueeTextSync();
 
 // Local refs
 const queueItems = ref<QueueItem[]>([]);

@@ -67,14 +67,16 @@
           v-else-if="store.curQueueItem?.media_item"
           @click="store.showFullscreenPlayer = true"
         >
-          {{ store.curQueueItem.media_item.name }}
-          <span
-            v-if="
-              'version' in store.curQueueItem.media_item &&
-              store.curQueueItem.media_item.version
-            "
-            >({{ store.curQueueItem.media_item.version }})</span
-          >
+          <MarqueeText :sync="marqueeSync">
+            {{ store.curQueueItem.media_item.name }}
+            <span
+              v-if="
+                'version' in store.curQueueItem.media_item &&
+                store.curQueueItem.media_item.version
+              "
+              >({{ store.curQueueItem.media_item.version }})</span
+            >
+          </MarqueeText>
         </div>
         <!-- queue item fallback: queue item name -->
         <div v-else-if="store.curQueueItem">
@@ -141,66 +143,68 @@
         class="line-clamp-1"
         @click="store.showFullscreenPlayer = true"
       >
-        <!-- player powered off -->
-        <div v-if="!store.activePlayer?.powered">
-          {{ $t("off") }}
-        </div>
-        <!-- track: artists(s) + album -->
-        <div
-          v-else-if="
-            store.curQueueItem &&
-            store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
-            'album' in store.curQueueItem.media_item &&
-            store.curQueueItem.media_item.album &&
-            !props.showOnlyArtist
-          "
-        >
-          {{ getArtistsString(store.curQueueItem.media_item.artists) }} •
-          {{ store.curQueueItem.media_item.album.name }}
-        </div>
-        <!-- track fallback: (only artist, no album) -->
-        <div
-          v-else-if="
-            store.curQueueItem &&
-            store.curQueueItem.media_item &&
-            'artists' in store.curQueueItem.media_item &&
-            store.curQueueItem.media_item.artists.length > 0
-          "
-        >
-          {{ store.curQueueItem.media_item.artists[0].name }}
-        </div>
-        <!-- radio live metadata -->
-        <div
-          v-else-if="store.curQueueItem?.streamdetails?.stream_title"
-          class="line-clamp-1"
-        >
-          {{ store.curQueueItem?.streamdetails?.stream_title }}
-        </div>
-        <!-- other description -->
-        <div
-          v-else-if="
-            store.curQueueItem &&
-            store.curQueueItem.media_item?.metadata.description
-          "
-          class="line-clamp-1"
-        >
-          {{ store.curQueueItem.media_item.metadata.description }}
-        </div>
-        <!-- external source artist -->
-        <div v-else-if="store.activePlayer?.current_media?.artist">
-          {{ store.activePlayer.current_media.artist }}
-        </div>
-        <!-- 3rd party source active -->
-        <div
-          v-else-if="
-            store.activePlayer?.active_source != store.activePlayer?.player_id
-          "
-          class="line-clamp-1"
-        >
-          {{
-            $t("external_source_active", [store.activePlayer?.active_source])
-          }}
-        </div>
+        <MarqueeText :sync="marqueeSync">
+          <!-- player powered off -->
+          <div v-if="!store.activePlayer?.powered">
+            {{ $t("off") }}
+          </div>
+          <!-- track: artists(s) + album -->
+          <div
+            v-else-if="
+              store.curQueueItem &&
+              store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
+              'album' in store.curQueueItem.media_item &&
+              store.curQueueItem.media_item.album &&
+              !props.showOnlyArtist
+            "
+          >
+            {{ getArtistsString(store.curQueueItem.media_item.artists) }} •
+            {{ store.curQueueItem.media_item.album.name }}
+          </div>
+          <!-- track fallback: (only artist, no album) -->
+          <div
+            v-else-if="
+              store.curQueueItem &&
+              store.curQueueItem.media_item &&
+              'artists' in store.curQueueItem.media_item &&
+              store.curQueueItem.media_item.artists.length > 0
+            "
+          >
+            {{ store.curQueueItem.media_item.artists[0].name }}
+          </div>
+          <!-- radio live metadata -->
+          <div
+            v-else-if="store.curQueueItem?.streamdetails?.stream_title"
+            class="line-clamp-1"
+          >
+            {{ store.curQueueItem?.streamdetails?.stream_title }}
+          </div>
+          <!-- other description -->
+          <div
+            v-else-if="
+              store.curQueueItem &&
+              store.curQueueItem.media_item?.metadata.description
+            "
+            class="line-clamp-1"
+          >
+            {{ store.curQueueItem.media_item.metadata.description }}
+          </div>
+          <!-- external source artist -->
+          <div v-else-if="store.activePlayer?.current_media?.artist">
+            {{ store.activePlayer.current_media.artist }}
+          </div>
+          <!-- 3rd party source active -->
+          <div
+            v-else-if="
+              store.activePlayer?.active_source != store.activePlayer?.player_id
+            "
+            class="line-clamp-1"
+          >
+            {{
+              $t("external_source_active", [store.activePlayer?.active_source])
+            }}
+          </div>
+        </MarqueeText>
         <!-- active player -->
         <div v-if="store.activePlayer && store.activePlayer?.powered">
           {{ getPlayerName(store.activePlayer) }}
@@ -228,6 +232,10 @@ import {
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import MarqueeText from "@/components/MarqueeText.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+
+const marqueeSync = new MarqueeTextSync();
 
 // properties
 interface Props {
