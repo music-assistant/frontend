@@ -69,11 +69,11 @@
               </div>
             </template>
             <template #title>
-              <div>{{ $t('new_playlist') }}</div>
+              <div>{{ $t("new_playlist") }}</div>
             </template>
             <template #subtitle>
               <div>
-                {{ $t('create_playlist_on', [api.providers[providerId].name]) }}
+                {{ $t("create_playlist_on", [api.providers[providerId].name]) }}
               </div>
             </template>
             <template #append>
@@ -90,17 +90,17 @@
 </template>
 
 <script setup lang="ts">
-import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import { MediaType } from '@/plugins/api/interfaces';
-import type { MediaItemType, Playlist, Track } from '@/plugins/api/interfaces';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { ProviderFeature } from '@/plugins/api/interfaces';
-import api from '@/plugins/api';
-import { AlertType, store } from '@/plugins/store';
-import { eventbus, PlaylistDialogEvent } from '@/plugins/eventbus';
-import Toolbar from '@/components/Toolbar.vue';
-import { $t } from '@/plugins/i18n';
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { MediaType } from "@/plugins/api/interfaces";
+import type { MediaItemType, Playlist, Track } from "@/plugins/api/interfaces";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { ProviderFeature } from "@/plugins/api/interfaces";
+import api from "@/plugins/api";
+import { AlertType, store } from "@/plugins/store";
+import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
+import Toolbar from "@/components/Toolbar.vue";
+import { $t } from "@/plugins/i18n";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
@@ -109,14 +109,14 @@ const parentItem = ref<MediaItemType>();
 const selectedItems = ref<MediaItemType[]>([]);
 
 onMounted(() => {
-  eventbus.on('playlistdialog', async (evt: PlaylistDialogEvent) => {
+  eventbus.on("playlistdialog", async (evt: PlaylistDialogEvent) => {
     show.value = true;
     selectedItems.value = evt.items;
     parentItem.value = evt.parentItem;
     await fetchPlaylists();
   });
   onBeforeUnmount(() => {
-    eventbus.off('playlistdialog');
+    eventbus.off("playlistdialog");
   });
 });
 
@@ -147,7 +147,7 @@ const fetchPlaylists = async function () {
     // either the refItem has a provider match or builtin provider or streaming provider
     if (
       playListProvider &&
-      (playListProvider.domain == 'builtin' ||
+      (playListProvider.domain == "builtin" ||
         playListProvider.is_streaming_provider ||
         refItem?.provider_mappings.filter(
           (x) => x.provider_instance == playListProvider.instance_id,
@@ -168,7 +168,7 @@ const fetchPlaylists = async function () {
       continue;
     // either the refItem has a provider match or builtin provider
     if (
-      provider.domain == 'builtin' ||
+      provider.domain == "builtin" ||
       provider.is_streaming_provider ||
       refItem?.provider_mappings.filter(
         (x) => x.provider_instance == provider.instance_id,
@@ -200,12 +200,12 @@ const addToPlaylist = async function (value: MediaItemType) {
   close();
   store.activeAlert = {
     type: AlertType.INFO,
-    message: $t('background_task_added'),
+    message: $t("background_task_added"),
     persistent: false,
   };
 };
 const newPlaylist = async function (provId: string) {
-  const name = prompt($t('new_playlist_name'));
+  const name = prompt($t("new_playlist_name"));
   if (!name) return;
   const newPlaylist = await api.createPlaylist(name, provId);
   addToPlaylist(newPlaylist);

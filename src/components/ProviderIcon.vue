@@ -50,8 +50,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { api } from '@/plugins/api';
+import { computed } from "vue";
+import { api } from "@/plugins/api";
 
 export interface Props {
   domain: string;

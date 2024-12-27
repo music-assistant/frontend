@@ -32,18 +32,18 @@
 </template>
 
 <script setup lang="ts">
-import BottomNavigation from './BottomNavigation.vue';
-import Player from './PlayerOSD/Player.vue';
-import { store } from '@/plugins/store';
-import { computed } from 'vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+import BottomNavigation from "./BottomNavigation.vue";
+import Player from "./PlayerOSD/Player.vue";
+import { store } from "@/plugins/store";
+import { computed } from "vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 
 const useFloatingPlayer = computed(() => {
-  return store.navigationMenuStyle == 'horizontal';
+  return store.navigationMenuStyle == "horizontal";
 });
 
 const bottomNavHeight = computed(() => {
-  if (store.navigationMenuStyle != 'horizontal') return 0;
+  if (store.navigationMenuStyle != "horizontal") return 0;
   if (store.isInStandaloneMode) {
     // for iOS standalone we need extra padding at the bottom due to the apphandle
     return 100;

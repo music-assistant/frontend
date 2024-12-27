@@ -62,28 +62,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
-import Toolbar from '@/components/Toolbar.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import Toolbar from "@/components/Toolbar.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 
 // global refs
 const router = useRouter();
 
 // computed properties
 const activeTab = computed(() => {
-  if (router.currentRoute.value.name?.toString().includes('player')) {
-    return 'players';
+  if (router.currentRoute.value.name?.toString().includes("player")) {
+    return "players";
   }
-  if (router.currentRoute.value.name?.toString().includes('core')) {
-    return 'core';
+  if (router.currentRoute.value.name?.toString().includes("core")) {
+    return "core";
   }
-  if (router.currentRoute.value.name?.toString().includes('frontend')) {
-    return 'frontend';
+  if (router.currentRoute.value.name?.toString().includes("frontend")) {
+    return "frontend";
   }
-  if (router.currentRoute.value.name?.toString().includes('client')) {
-    return 'client';
+  if (router.currentRoute.value.name?.toString().includes("client")) {
+    return "client";
   }
-  return 'providers';
+  return "providers";
 });
 </script>

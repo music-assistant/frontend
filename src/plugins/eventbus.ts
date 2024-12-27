@@ -1,8 +1,8 @@
 // Global, simple eventbus
 
-import mitt, { Emitter } from 'mitt';
-import { MediaItemType } from './api/interfaces';
-import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
+import mitt, { Emitter } from "mitt";
+import { MediaItemType } from "./api/interfaces";
+import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 
 export type PlaylistDialogEvent = {
   items: MediaItemType[];

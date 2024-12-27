@@ -8,17 +8,17 @@
 </template>
 
 <script lang="ts">
-import { ButtonProps } from '@/plugins/api/interfaces';
-import vuetify from '@/plugins/vuetify';
-import { defineProps, computed } from 'vue';
+import { ButtonProps } from "@/plugins/api/interfaces";
+import vuetify from "@/plugins/vuetify";
+import { defineProps, computed } from "vue";
 
 export default {
   props: {
     variant: {
       type: String,
-      default: 'default',
+      default: "default",
       validator: (value: string) => {
-        const allowedVariants = ['default', 'panel'];
+        const allowedVariants = ["default", "panel"];
         return allowedVariants.includes(value);
       },
     },
@@ -26,20 +26,20 @@ export default {
   setup(props, ctx) {
     const btnDefault = {};
 
-    const containerDefault = computed(() => ({ class: 'container-default' }));
+    const containerDefault = computed(() => ({ class: "container-default" }));
 
     const containerPanel = computed(() => ({
       class: vuetify.theme.current.value.dark
-        ? 'container-default container-panels-dark'
-        : 'container-default container-panels-light',
+        ? "container-default container-panels-dark"
+        : "container-default container-panels-light",
     }));
 
     const btnProps = computed(() => {
       const variant = props.variant;
       switch (variant) {
-        case 'default':
+        case "default":
           return containerDefault.value;
-        case 'panel':
+        case "panel":
           return containerPanel.value;
         default:
           return containerDefault.value;

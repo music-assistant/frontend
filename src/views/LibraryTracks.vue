@@ -29,16 +29,16 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
-import api from '@/plugins/api';
-import { EventMessage, EventType, MediaType } from '@/plugins/api/interfaces';
-import AddManualLink from '@/components/AddManualLink.vue';
-import { sleep } from '@/helpers/utils';
-import { store } from '@/plugins/store';
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import api from "@/plugins/api";
+import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import AddManualLink from "@/components/AddManualLink.vue";
+import { sleep } from "@/helpers/utils";
+import { store } from "@/plugins/store";
 
 defineOptions({
-  name: 'Tracks',
+  name: "Tracks",
 });
 
 const updateAvailable = ref<boolean>(false);
@@ -46,18 +46,18 @@ const total = ref(store.libraryTracksCount);
 const showAddEditDialog = ref(false);
 
 const sortKeys = [
-  'name',
-  'name_desc',
-  'sort_name',
-  'sort_name_desc',
-  'duration',
-  'duration_desc',
-  'timestamp_added',
-  'timestamp_added_desc',
-  'last_played',
-  'last_played_desc',
-  'play_count',
-  'play_count_desc',
+  "name",
+  "name_desc",
+  "sort_name",
+  "sort_name_desc",
+  "duration",
+  "duration_desc",
+  "timestamp_added",
+  "timestamp_added_desc",
+  "last_played",
+  "last_played_desc",
+  "play_count",
+  "play_count_desc",
 ];
 
 onMounted(() => {
@@ -70,7 +70,7 @@ onMounted(() => {
     ],
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
-      if (evt.object_id?.startsWith('library://track')) {
+      if (evt.object_id?.startsWith("library://track")) {
         updateAvailable.value = true;
       }
     },

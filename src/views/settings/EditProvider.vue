@@ -5,7 +5,7 @@
       <div v-if="config && api.providerManifests[config.domain]">
         <v-card-title>
           {{
-            $t('settings.setup_provider', [
+            $t("settings.setup_provider", [
               config.name || api.getProvider(config.instance_id)?.name,
             ])
           }}
@@ -18,18 +18,18 @@
         <v-card-subtitle
           v-if="api.providerManifests[config.domain].codeowners.length"
         >
-          <b>{{ $t('settings.codeowners') }}: </b
-          >{{ api.providerManifests[config.domain].codeowners.join(' / ') }}
+          <b>{{ $t("settings.codeowners") }}: </b
+          >{{ api.providerManifests[config.domain].codeowners.join(" / ") }}
         </v-card-subtitle>
 
         <v-card-subtitle
           v-if="api.providerManifests[config.domain].documentation"
         >
-          <b>{{ $t('settings.need_help_setup_provider') }} </b>&nbsp;
+          <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
             :href="api.providerManifests[config.domain].documentation"
             target="_blank"
-            >{{ $t('settings.check_docs') }}</a
+            >{{ $t("settings.check_docs") }}</a
           >
         </v-card-subtitle>
         <br />
@@ -88,18 +88,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { api } from '@/plugins/api';
+import { ref, onMounted, onBeforeUnmount, watch } from "vue";
+import { useRouter } from "vue-router";
+import { api } from "@/plugins/api";
 import {
   ProviderConfig,
   ConfigValueType,
   EventMessage,
   EventType,
-} from '@/plugins/api/interfaces';
-import EditConfig from './EditConfig.vue';
-import { nanoid } from 'nanoid';
-import { open } from '@tauri-apps/plugin-shell';
+} from "@/plugins/api/interfaces";
+import EditConfig from "./EditConfig.vue";
+import { nanoid } from "nanoid";
+import { open } from "@tauri-apps/plugin-shell";
 
 // global refs
 const router = useRouter();
@@ -140,12 +140,12 @@ watch(
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   // save new provider config
   loading.value = true;
-  values['enabled'] = config.value!.enabled;
-  values['name'] = config.value!.name || null;
+  values["enabled"] = config.value!.enabled;
+  values["name"] = config.value!.name || null;
   api
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
-      router.push({ name: 'providersettings' });
+      router.push({ name: "providersettings" });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
@@ -170,7 +170,7 @@ const onAction = async function (
     }
   }
   // ensure the session id is passed along (for auth actions)
-  values['session_id'] = sessionId;
+  values["session_id"] = sessionId;
   api
     .getProviderConfigEntries(
       config.value!.domain,

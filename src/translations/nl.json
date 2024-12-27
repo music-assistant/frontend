@@ -81,12 +81,6 @@
     "refresh_item": "Vernieuwen",
     "remove_library": "Verwijder uit bibliotheek",
     "remove_playlist": "Verwijder uit playlist",
-    "repeat_mode": "Repeat mode: {0}",
-    "repeatmode": {
-        "all": "Herhaal gehele afspeellijst",
-        "off": "Herhalen uitgeschakeld",
-        "one": "Herhaal enkel nummer"
-    },
     "search": "Zoeken",
     "settings": {
         "add_new": "Add new",
@@ -368,7 +362,9 @@
                 "pt_PT": "Portugees",
                 "ko_KR": "Koreaans",
                 "nb": "Noors",
-                "ru_RU": "Russisch"
+                "ru_RU": "Russisch",
+                "pt_BR": "Portugees (Brazilië)",
+                "sl_SI": "Sloveens"
             }
         },
         "hide_settings": {
@@ -378,13 +374,13 @@
         "no_music_providers": "Geen muziekaanbieders geconfigureerd",
         "no_music_providers_detail": "Begin je Music Assistant-ervaring door je muziekproviders toe te voegen.",
         "no_player_providers": "Geen player providers geconfigureerd",
-        "no_player_providers_detail": "Configureer player providers om apparaten te selecteren waarop Music Assistant je muziek kan uitvoeren."
+        "no_player_providers_detail": "Configureer player providers om apparaten te selecteren waarop Music Assistant je muziek kan uitvoeren.",
+        "group_type": "Grouptype",
+        "add_group_player_desc": "Voor spelerproviders\/ecosystemen die native groepering\/synchronisatie bieden, wordt er automatisch een syncgroup aangemaakt. Dit betekent dat als u naar deze spelergroep speelt, de spelers van de leden automatisch worden gesynchroniseerd. \\n\\nVoor spelers\/ecosystemen die geen groepering ondersteunen, of als u spelers van verschillende ecosystemen wilt groeperen, kunt u het type Universal Group gebruiken. Dit type distribueert dezelfde audio naar alle spelers van de leden (maar niet synchroon). \\n\\nHoud er rekening mee dat sommige providers wel groepering ondersteunen, maar dat u de native app moet gebruiken om de groepering uit te voeren. Een voorbeeld zijn op Google Cast gebaseerde spelers, waarbij u alleen Google Cast-groepen kunt maken in de Google Home-app. "
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
     "shuffle": "Shuffle",
-    "shuffle_disabled": "Shuffle is disabled",
-    "shuffle_enabled": "Shuffle is enabled",
     "sort": {
         "duration": "Duur",
         "position": "Positie",
@@ -419,7 +415,6 @@
     },
     "stream_details": "Streamdetails",
     "sync_now": "Synchronize {0} now",
-    "sync_player_to": "Sync this player to:",
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Schakel filter in\/uit om enkel albumartiesten te tonen",
@@ -482,5 +477,10 @@
     "play_replace": "Nu afspelen (queue leegmaken)",
     "played": "Gespeeld",
     "background_task_added": "De actie wordt door de server op de achtergrond uitgevoerd en kan enige tijd in beslag nemen. Houd het serverlogboek in de gaten voor de voortgang",
-    "cancel": "Annuleren"
+    "cancel": "Annuleren",
+    "power_on_player": "De speler inschakelen",
+    "power_off_player": "De speler uitschakelen",
+    "powered_off_players": "Uitgeschakelde spelers",
+    "shuffle_disable": "Shuffle uitschakelen",
+    "shuffle_enable": "Shuffle inschakelen"
 }

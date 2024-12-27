@@ -8,21 +8,21 @@
 </template>
 
 <script lang="ts">
-import { ButtonProps } from '@/plugins/api/interfaces';
-import { computed } from 'vue';
+import { ButtonProps } from "@/plugins/api/interfaces";
+import { computed } from "vue";
 
 export default {
   props: {
     variant: {
       type: String,
-      default: 'default',
+      default: "default",
       validator: (value: string) => {
         const allowedVariants = [
-          'plain',
-          'default',
-          'responsive',
-          'icon',
-          'list',
+          "plain",
+          "default",
+          "responsive",
+          "icon",
+          "list",
         ];
         return allowedVariants.includes(value);
       },
@@ -33,11 +33,11 @@ export default {
 
     const btnResponsive = computed(() => ({
       ...btnDefault,
-      class: 'v-btn--variant-responsive',
+      class: "v-btn--variant-responsive",
       ripple: true,
       icon: true,
       style:
-        'height: min(calc(100vw - 40px), calc(100vh - 340px)); width: min(calc(100vw - 40px), calc(100vh - 340px));',
+        "height: min(calc(100vw - 40px), calc(100vh - 340px)); width: min(calc(100vw - 40px), calc(100vh - 340px));",
     }));
 
     const btnIcon = computed(() => ({
@@ -47,21 +47,21 @@ export default {
 
     const btnList = computed(() => ({
       ...btnDefault,
-      density: 'comfortable',
+      density: "comfortable",
     }));
 
     const btnProps = computed<ButtonProps>(() => {
       const variant = props.variant;
       switch (variant) {
-        case 'default':
+        case "default":
           return btnDefault;
-        case 'plain':
+        case "plain":
           return btnDefault;
-        case 'responsive':
+        case "responsive":
           return btnResponsive.value;
-        case 'icon':
+        case "icon":
           return btnIcon.value;
-        case 'list':
+        case "list":
           return btnList.value;
         default:
           return btnDefault;

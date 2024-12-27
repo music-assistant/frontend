@@ -3,7 +3,7 @@
   <div>
     <v-toolbar color="transparent">
       <template #title
-        >{{ $t('settings.client') }} {{ $t('settings') }}</template
+        >{{ $t("settings.client") }} {{ $t("settings") }}</template
       >
     </v-toolbar>
     <Container>
@@ -131,7 +131,7 @@
       </v-table>
     </Container>
     <v-toolbar color="transparent">
-      <template #title>Connection {{ $t('settings') }}</template>
+      <template #title>Connection {{ $t("settings") }}</template>
     </v-toolbar>
     <Container>
       <v-table>
@@ -181,13 +181,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import Container from '@/components/mods/Container.vue';
-import { useRouter } from 'vue-router';
-import { emit } from '@tauri-apps/api/event';
-import { getVersion } from '@tauri-apps/api/app';
-import { relaunch } from '@tauri-apps/plugin-process';
-import { invoke } from '@tauri-apps/api/core';
+import { ref, onMounted } from "vue";
+import Container from "@/components/mods/Container.vue";
+import { useRouter } from "vue-router";
+import { emit } from "@tauri-apps/api/event";
+import { getVersion } from "@tauri-apps/api/app";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { invoke } from "@tauri-apps/api/core";
 
 // global refs
 const router = useRouter();
@@ -196,69 +196,69 @@ const discordRPCEnabled = ref(false);
 const squeezeliteEnabled = ref(true);
 const closeToTrayEnabled = ref(true);
 const port = ref(8095);
-const ip = ref('homeassistant.local');
+const ip = ref("homeassistant.local");
 const tls = ref(false);
-const version = ref('Loading...');
+const version = ref("Loading...");
 
-const outputDevice = ref('default');
-const availableOutputDevices = ref(['default']);
+const outputDevice = ref("default");
+const availableOutputDevices = ref(["default"]);
 
 // methods
 const discordRpcConfig = () => {
-  localStorage.setItem('discordRPCEnabled', discordRPCEnabled.value.toString());
+  localStorage.setItem("discordRPCEnabled", discordRPCEnabled.value.toString());
 };
 
 const closeToTrayConfig = () => {
   localStorage.setItem(
-    'closeToTrayEnabled',
+    "closeToTrayEnabled",
     closeToTrayEnabled.value.toString(),
   );
 };
 
 const squeezeliteConfig = () => {
   localStorage.setItem(
-    'squeezeliteEnabled',
+    "squeezeliteEnabled",
     squeezeliteEnabled.value.toString(),
   );
 };
 
 const ipConfig = () => {
-  localStorage.setItem('mass_ip', ip.value.toString());
+  localStorage.setItem("mass_ip", ip.value.toString());
 };
 
 const portConfig = () => {
-  localStorage.setItem('mass_port', port.value.toString());
+  localStorage.setItem("mass_port", port.value.toString());
 };
 
 const tlsConfig = () => {
-  localStorage.setItem('mass_tls', tls.value.toString());
+  localStorage.setItem("mass_tls", tls.value.toString());
 };
 
 const outputDeviceConfig = () => {
-  localStorage.setItem('outputDevice', outputDevice.value);
+  localStorage.setItem("outputDevice", outputDevice.value);
 };
 
 const checkForUpdates = async () => {
-  await emit('tauri://update');
+  await emit("tauri://update");
 };
 
 onMounted(async () => {
-  invoke<string[]>('get_output_devices').then((message) => {
+  invoke<string[]>("get_output_devices").then((message) => {
     availableOutputDevices.value = message;
-    const savedOutputDevice = localStorage.getItem('outputDevice') || 'default';
+    const savedOutputDevice = localStorage.getItem("outputDevice") || "default";
     if (message.indexOf(savedOutputDevice) > -1) {
       outputDevice.value = savedOutputDevice;
     }
   });
   discordRPCEnabled.value =
-    localStorage.getItem('discordRPCEnabled') === 'true' || false;
+    localStorage.getItem("discordRPCEnabled") === "true" || false;
   squeezeliteEnabled.value =
-    localStorage.getItem('squeezeliteEnabled') === 'true' || true;
+    localStorage.getItem("squeezeliteEnabled") === "true" || true;
   closeToTrayEnabled.value =
-    localStorage.getItem('closeToTrayEnabled') === 'true' || true;
-  ip.value = localStorage.getItem('mass_ip') || 'homeassistant.local';
-  port.value = Number(localStorage.getItem('mass_port')) || 8095;
-  tls.value = localStorage.getItem('mass_tls') === 'true' || false;
+    localStorage.getItem("closeToTrayEnabled") === "true" || true;
+  ip.value = localStorage.getItem("mass_ip") || "homeassistant.local";
+  port.value = Number(localStorage.getItem("mass_port")) || 8095;
+  tls.value = localStorage.getItem("mass_tls") === "true" || false;
   version.value = await getVersion();
 });
 </script>

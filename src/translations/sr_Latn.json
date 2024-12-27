@@ -50,12 +50,6 @@
     "refresh_item": "Osveži stavku",
     "remove_library": "Ukloni iz biblioteke",
     "remove_playlist": "Ukloni sa plejliste",
-    "repeat_mode": "Režim ponavljanja: {0}",
-    "repeatmode": {
-        "all": "Ponovi celu listu za reprodukciju",
-        "off": "Isključi ponavljanje",
-        "one": "Ponovi ovu numeru"
-    },
     "search": "Pretraga",
     "settings": {
         "add_new": "Dodaj novi",
@@ -318,8 +312,6 @@
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",
     "shuffle": "Mešanje",
-    "shuffle_disabled": "Mešanje je onemogućeno",
-    "shuffle_enabled": "Mešanje je omogućeno",
     "sort": {
         "duration": "Trajanje",
         "position": "Pozicija",
@@ -354,7 +346,6 @@
     },
     "stream_details": "Detalji strima",
     "sync_now": "Sinhronizujte {0} sada",
-    "sync_player_to": "Sinhronizujte ovaj plejer sa:",
     "sync_running": "Jedan ili više muzičkih provajdera se sinhronizuju.",
     "tooltip": {
         "album_artist_filter": "Uključite filter za album-izvođača",

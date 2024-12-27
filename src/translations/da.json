@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Afspiller",
-        "stereo_pair": "Par i stereo"
+        "stereo_pair": "Par i stereo",
+        "sync_group": "Synkroniseringsgruppe"
     },
     "players": "Afspillere",
     "playlist": "Afspilningsliste",
@@ -81,12 +82,6 @@
     "refresh_item": "Opdater emne",
     "remove_library": "Fjern fra biblioteket",
     "remove_playlist": "Fjern fra afspilningslisten",
-    "repeat_mode": "Gentag: {0}",
-    "repeatmode": {
-        "all": "Gentag hele køen",
-        "off": "Gentag deaktiveret",
-        "one": "Gentag enkelt spor"
-    },
     "search": "Søg",
     "settings": {
         "add_new": "Tilføj ny",
@@ -368,7 +363,11 @@
                 "pt_PT": "Portugisisk",
                 "ko_KR": "Koreansk",
                 "nb": "Norsk",
-                "ru_RU": "Russisk"
+                "ru_RU": "Russisk",
+                "pt_BR": "Portugisisk (Brasilien)",
+                "sl_SI": "Slovensk",
+                "hu_HU": "Ungarsk",
+                "it": "Italiensk"
             }
         },
         "hide_settings": {
@@ -378,13 +377,45 @@
         "no_music_providers": "Ingen musikudbydere konfigureret",
         "no_music_providers_detail": "Start din Music Assistant-oplevelse ved at tilføje dine musikudbydere.",
         "no_player_providers": "Ingen afspillerudbydere konfigureret",
-        "no_player_providers_detail": "Konfigurer afspillerudbydere for at vælge enheder, hvor Music Assistant kan afspille din musik."
+        "no_player_providers_detail": "Konfigurer afspillerudbydere for at vælge enheder, hvor Music Assistant kan afspille din musik.",
+        "volume_normalization_radio": {
+            "label": "Volumen-normaliseringsmetode til brug for radiostreams",
+            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for radiostreams. \\nSom standard indsamler Music Assistant en måling af radiostationens (gennemsnitlige opfattede) loudness i henhold til EBU-R128-specifikationen og justerer derefter den samlede forstærkning\/lydstyrke af streamen i henhold til denne måling, så lydens dynamiske område ikke påvirkes. Når der (endnu) ikke findes nogen måling for en radiostation, vil Music Assistant falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter.\\n\\nTIP: Radiostreams har ofte varierende lydstyrke, især under meddelelser og reklamer.\\nDu kan vælge at gennemtvinge dynamisk lydstyrkenormalisering for radiostreams, selv om der findes en (gennemsnitlig) lydstyrkemåling for radiostationen. \\n \\n**Indstillinger:**\\n\\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme. \\n  - Gennemtving dynamisk: Gennemtving altid dynamisk lydstyrkejustering. \\n  - Kun måling (ingen justering): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes ikke normalisering.\\n  - Fald tilbage forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, benyttes på en foruddefineret forstærkningskorrektion.\\n  - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion.\\n  - Fald tilbage til dynamisk - Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\\n",
+            "options": {
+                "disabled": "Deaktiveret",
+                "dynamic": "Gennemtving dynamisk",
+                "measurement_only": "Kun måling (ingen justering)",
+                "fallback_fixed_gain": "Fald tilbage til forstærkningskorrektion",
+                "fixed_gain": "Fast forstærkningskorrektion",
+                "fallback_dynamic": "Fald tilbage til dynamisk"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Volumen-normaliseringsmetode til brug for spor",
+            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for spor\/sange.\\nMusic Assistant bruger en måling af sporets (gennemsnitlige opfattede) lydstyrke i henhold til EBU-R128-specifikationen til at justere den samlede forstærkning\/lydstyrke i strømmen uden at påvirke lydens dynamiske område.\\nDisse målinger leveres enten af streamingudbyderen, eller i tilfælde af lokale filer kan de være indeholdt i ID3-tags (ReplayGain 2.0 \/ Opus R128).\\nHvis målingen ikke er angivet, vil Music Assistant automatisk udføre en måling, når\/efter sporet afspilles (første gang). Når der (endnu) ikke findes nogen måling for et nummer, vil Music Assistant som standard falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter. Det sikrer, at der ikke er store stigninger\/fald i lydstyrken mellem numrene, selvom der endnu ikke er nogen nøjagtig måling, men det dynamiske udjævningsfilter kan nogle gange komprimere det dynamiske område en smule, selvom det ikke burde være hørbart i de fleste tilfælde.\\n\\n\\n**Valgmuligheder:**\\n\\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme.\\n - Gennemtving dynamisk: Gennemtving altid dynamisk volumenudjævning. \\n - Kun måling (ingen tilbagefald): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes der ikke normalisering. \\n - Fallback til forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, faldes tilbage til en foruddefineret forstærkningskorrektion. \\n - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion. \\n - Fallback til dynamisk: Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\\n",
+            "options": {
+                "disabled": "Deaktiveret",
+                "dynamic": "Gennemtving dynamisk",
+                "measurement_only": "Kun måling (ingen fallback)",
+                "fallback_fixed_gain": "Fald tilbage til forstærkningskorrektion",
+                "fixed_gain": "Fast forstærkningskorrektion",
+                "fallback_dynamic": "Fald tilbage til dynamisk"
+            }
+        },
+        "volume_normalization_fixed_gain_tracks": {
+            "label": "Fast\/standard gain-justering for spor",
+            "description": "Fast\/standard gain-korrektion, der skal anvendes på et spors lydstrøm (afhænger af indstillingen \"Volume normalization method\").\\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\\n\\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "label": "Fast\/standard gain-justering for radio",
+            "description": "Fast\/standard forstærkningskorrektion, der skal anvendes på en radiostream (afhænger af indstillingen \"Volume normalization method\").\\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\\n\\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
+        },
+        "group_type": "Gruppetype",
+        "add_group_player_desc": "For afspillerudbydere, der tilbyder indbygget gruppering\/synkronisering, oprettes der automatisk en synkroniseringsgruppe, hvilket betyder, at hvis du spiller til denne afspillergruppe, synkroniseres afspillerne automatisk. \\n\\nFor afspillereudbydere, der ikke understøtter gruppering, eller hvis du vil gruppere afspillere fra forskellige udbydere, kan du bruge gruppetypen \"Universal\", som vil distribuere den samme lyd til alle afspillere (dog ikke synkroniseret). \\n\\nBemærk, at nogle udbydere understøtter gruppering, men du skal bruge den oprindelige app til at udføre grupperingen. Et eksempel er Google Cast-baserede afspillere, hvor du kun kan oprette Google Cast-grupper i Google Home-appen."
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
     "shuffle": "Bland",
-    "shuffle_disabled": "Bland er deaktiveret",
-    "shuffle_enabled": "Bland er aktiveret",
     "sort": {
         "duration": "Varighed",
         "position": "Position",
@@ -409,7 +440,9 @@
         "last_played": "Sidst spillet",
         "last_played_desc": "Sidst spillet (faldende)",
         "play_count": "Antal afspilninger",
-        "play_count_desc": "Antal afspilninger (faldende)"
+        "play_count_desc": "Antal afspilninger (faldende)",
+        "artist_name": "Albumkunstner",
+        "artist_name_desc": "Albumkunstner (faldende)"
     },
     "state": {
         "idle": "keder sig",
@@ -419,7 +452,6 @@
     },
     "stream_details": "Stream-detaljer",
     "sync_now": "Synkroniser {0} nu",
-    "sync_player_to": "Synkroniser denne afspiller med:",
     "sync_running": "En eller flere musikudbydere er ved at blive synkroniseret.",
     "tooltip": {
         "album_artist_filter": "Skift album-kunstner-filter",
@@ -487,5 +519,22 @@
     "image_type": "Type",
     "image_source": "Kilde",
     "image_make_primary": "Gør til primær",
-    "update_metadata": "Opdater metadata"
+    "update_metadata": "Opdater metadata",
+    "cancel": "Annuller",
+    "transfer_queue": "Overfør kø",
+    "power_on_player": "Tænd",
+    "power_off_player": "Sluk",
+    "powered_off_players": "Slukkede afspillere",
+    "sync_player_with": "Synkroniser med en anden spiller",
+    "open_player_settings": "Åbn indstillinger",
+    "select_repeat_mode": "Vælg gentagelsestilstand",
+    "repeat_mode": {
+        "all": "Gentag hele køen",
+        "off": "Deaktivér gentag",
+        "one": "Gentag enkelt spor"
+    },
+    "shuffle_disable": "Deaktivér bland",
+    "shuffle_enable": "Aktivér bland",
+    "dont_stop_the_music_enable": "Aktiver \"Stop ikke musikken!",
+    "dont_stop_the_music_disable": "Deaktiver \"Stop ikke musikken!"
 }

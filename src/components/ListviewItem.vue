@@ -3,6 +3,7 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
+    :class="{ unavailable: !isAvailable }"
     @click.stop="onClick"
     @menu.stop="onMenu"
   >
@@ -19,7 +20,7 @@
         />
       </div>
       <div v-else class="media-thumb listitem-media-thumb">
-        <MediaItemThumb size="50" :item="item" />
+        <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
       </div>
     </template>
 
@@ -44,7 +45,7 @@
             width="35"
           />
         </template>
-        <span>{{ $t('tooltip.explicit') }}</span>
+        <span>{{ $t("tooltip.explicit") }}</span>
       </v-tooltip>
     </template>
 
@@ -88,7 +89,7 @@
       <!-- album: albumtype + artists + year -->
       <div v-else-if="item.media_type == MediaType.ALBUM && 'year' in item">
         <span v-if="item.album_type != AlbumType.UNKNOWN"
-          >{{ $t('album_type.' + item.album_type) }} •
+          >{{ $t("album_type." + item.album_type) }} •
         </span>
         <span>{{ getArtistsString(item.artists) }}</span>
         <span v-if="item.year"> • {{ item.year }}</span>
@@ -175,29 +176,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { VTooltip } from 'vuetify/components';
-import MediaItemThumb from './MediaItemThumb.vue';
-import { iconHiRes } from './QualityDetailsBtn.vue';
-import ProviderIcon from './ProviderIcon.vue';
+import { computed } from "vue";
+import { VTooltip } from "vuetify/components";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import { iconHiRes } from "./QualityDetailsBtn.vue";
+import ProviderIcon from "./ProviderIcon.vue";
 import {
   ContentType,
   type BrowseFolder,
   type MediaItemType,
   MediaType,
   AlbumType,
-} from '@/plugins/api/interfaces';
+} from "@/plugins/api/interfaces";
 import {
   formatDuration,
   parseBool,
   getArtistsString,
   getBrowseFolderName,
-} from '@/helpers/utils';
-import { useI18n } from 'vue-i18n';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import ListItem from '@/components/mods/ListItem.vue';
-import FavouriteButton from '@/components/FavoriteButton.vue';
-import { itemIsAvailable } from '@/plugins/api/helpers';
+} from "@/helpers/utils";
+import { useI18n } from "vue-i18n";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import ListItem from "@/components/mods/ListItem.vue";
+import FavouriteButton from "@/components/FavoriteButton.vue";
 
 // properties
 export interface Props {
@@ -212,6 +212,7 @@ export interface Props {
   showDuration?: boolean;
   isSelected: boolean;
   isDisabled?: boolean;
+  isAvailable?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
 }
@@ -230,11 +231,12 @@ const compProps = withDefaults(defineProps<Props>(), {
   showDuration: true,
   showCheckboxes: false,
   isDisabled: false,
+  isAvailable: true,
 });
 
 // computed properties
 const HiResDetails = computed(() => {
-  if (!('provider_mappings' in compProps.item)) return '';
+  if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
     if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
@@ -256,29 +258,33 @@ const HiResDetails = computed(() => {
       } bits`;
     }
   }
-  return '';
+  return "";
 });
 
 // emits
 const emit = defineEmits<{
-  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'select', item: MediaItemType, selected: boolean): void;
+  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
+  (e: "click", item: MediaItemType, posX: number, posY: number): void;
+  (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {
-  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
-  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
-  emit('menu', compProps.item, posX, posY);
+  const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
+  emit("menu", compProps.item, posX, posY);
 };
 
 const onClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit('click', compProps.item, evt.clientX, evt.clientY);
+  emit("click", compProps.item, evt.clientX, evt.clientY);
 };
 </script>
 
 <style scoped>
+.unavailable {
+  opacity: 0.3;
+}
+
 .hiresicon {
   margin-top: 5px;
   margin-right: 15px;

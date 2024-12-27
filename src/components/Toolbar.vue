@@ -1,11 +1,17 @@
 <template>
   <v-toolbar :color="color" class="header">
     <template v-if="icon" #prepend>
-      <v-btn :icon="icon" size="large" @click="emit('iconClicked')" />
+      <v-btn
+        v-if="iconAsButton"
+        :icon="icon"
+        size="large"
+        @click="emit('iconClicked')"
+      />
+      <v-icon v-else :icon="icon" size="large" />
     </template>
 
     <template v-if="title" #title>
-      <div @click="emit('titleClicked')">
+      <button @click="emit('titleClicked')">
         {{ title }}
         <v-badge
           v-if="count && getBreakpointValue('bp4')"
@@ -13,7 +19,7 @@
           :content="count"
           inline
         />
-      </div>
+      </button>
     </template>
 
     <template v-if="menuItems?.length" #append>
@@ -170,9 +176,9 @@
 </template>
 
 <script setup lang="ts">
-import { ContextMenuItem } from '@/layouts/default/ItemContextMenu.vue';
-import { getBreakpointValue } from '../plugins/breakpoint';
-import { api } from '@/plugins/api';
+import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import { getBreakpointValue } from "../plugins/breakpoint";
+import { api } from "@/plugins/api";
 
 // properties
 export interface Props {
@@ -183,21 +189,23 @@ export interface Props {
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
   showLoading?: boolean;
+  iconAsButton?: boolean;
 }
 withDefaults(defineProps<Props>(), {
-  color: 'transparent',
+  color: "transparent",
   icon: undefined,
   title: undefined,
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
   showLoading: undefined,
+  iconAsButton: false,
 });
 
 // emitters
 const emit = defineEmits<{
-  (e: 'iconClicked'): void;
-  (e: 'titleClicked'): void;
+  (e: "iconClicked"): void;
+  (e: "titleClicked"): void;
 }>();
 </script>
 
@@ -212,7 +220,7 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 <style scoped>
 .header.v-toolbar {
   height: 55px;
-  font-family: 'JetBrains Mono Medium';
+  font-family: "JetBrains Mono Medium";
 }
 
 .header.v-toolbar :deep(.v-toolbar__content) > .v-toolbar__append {

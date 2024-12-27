@@ -2,7 +2,12 @@
   <ResponsiveIcon
     v-if="isVisible"
     v-bind="icon"
-    :disabled="!store.activePlayerId"
+    :disabled="
+      !store.activePlayerId ||
+      (store.showFullscreenPlayer &&
+        !store.curQueueItem &&
+        !store.showQueueItems)
+    "
     icon="mdi-playlist-play"
     :color="
       getValueFromSources(icon?.color, [
@@ -10,16 +15,16 @@
       ])
     "
     :type="'btn'"
-    @clicked="onClick"
+    @click="onClick"
   />
 </template>
 
 <script setup lang="ts">
-import { store } from '@/plugins/store';
+import { store } from "@/plugins/store";
 import ResponsiveIcon, {
   ResponsiveIconProps,
-} from '@/components/mods/ResponsiveIcon.vue';
-import { getValueFromSources } from '@/helpers/utils';
+} from "@/components/mods/ResponsiveIcon.vue";
+import { getValueFromSources } from "@/helpers/utils";
 
 // properties
 export interface Props {

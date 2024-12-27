@@ -47,8 +47,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { store } from '@/plugins/store';
+import { ref } from "vue";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
@@ -70,6 +70,6 @@ const showMenu = ref(false);
 
 // emitters
 const emit = defineEmits<{
-  (e: 'click'): void;
+  (e: "click"): void;
 }>();
 </script>

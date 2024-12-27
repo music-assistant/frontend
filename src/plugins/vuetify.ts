@@ -5,15 +5,15 @@
  */
 
 // Styles
-import '@mdi/font/css/materialdesignicons.css';
-import 'material-design-icons-iconfont/dist/material-design-icons.css';
-import 'vuetify/styles';
-import colors from 'vuetify/lib/util/colors';
-import { aliases as defaultAliases, mdi } from 'vuetify/iconsets/mdi';
-import { md } from 'vuetify/iconsets/md';
+import "@mdi/font/css/materialdesignicons.css";
+import "material-design-icons-iconfont/dist/material-design-icons.css";
+import "vuetify/styles";
+import colors from "vuetify/lib/util/colors";
+import { aliases as defaultAliases, mdi } from "vuetify/iconsets/mdi";
+import { md } from "vuetify/iconsets/md";
 
 // Composables
-import { IconAliases, createVuetify } from 'vuetify';
+import { IconAliases, createVuetify } from "vuetify";
 
 const aliases: IconAliases = {
   ...defaultAliases,
@@ -23,7 +23,7 @@ export default createVuetify(
   // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
   {
     icons: {
-      defaultSet: 'mdi',
+      defaultSet: "mdi",
       aliases,
       sets: {
         md,
@@ -31,7 +31,7 @@ export default createVuetify(
       },
     },
     display: {
-      mobileBreakpoint: 'md',
+      mobileBreakpoint: "md",
       thresholds: {
         xs: 0,
         sm: 340,
@@ -41,7 +41,7 @@ export default createVuetify(
       },
     },
     theme: {
-      defaultTheme: 'light',
+      defaultTheme: "light",
       themes: {
         light: {
           dark: false,

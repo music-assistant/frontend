@@ -22,6 +22,7 @@
               staticWidth: '50px',
               staticHeight: '50px',
             },
+            withCircle: useFloatingPlayer,
           },
           previous: { isVisible: getBreakpointValue('bp3') },
           next: { isVisible: getBreakpointValue('bp3') },
@@ -126,27 +127,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch } from "vue";
 //@ts-ignore
 
-import { ImageType, MediaType } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import { getImageThumbForItem } from '@/components/MediaItemThumb.vue';
-import PlayerTimeline from './PlayerTimeline.vue';
-import PlayerControls from './PlayerControls.vue';
-import PlayerTrackDetails from './PlayerTrackDetails.vue';
-import PlayerVolume from './PlayerVolume.vue';
-import PlayerExtendedControls from './PlayerExtendedControls.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import vuetify from '@/plugins/vuetify';
-import { ImageColorPalette, getColorPalette } from '@/helpers/utils';
+import { ImageType, MediaType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
+import PlayerTimeline from "./PlayerTimeline.vue";
+import PlayerControls from "./PlayerControls.vue";
+import PlayerTrackDetails from "./PlayerTrackDetails.vue";
+import PlayerVolume from "./PlayerVolume.vue";
+import PlayerExtendedControls from "./PlayerExtendedControls.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import vuetify from "@/plugins/vuetify";
+import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
 import {
   imgCoverDark,
   imgCoverLight,
-} from '@/components/QualityDetailsBtn.vue';
-import { useTheme } from 'vuetify/lib/framework.mjs';
-import { useDisplay } from 'vuetify';
-import { api } from '@/plugins/api';
+} from "@/components/QualityDetailsBtn.vue";
+import { useTheme } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
+import { api } from "@/plugins/api";
 interface Props {
   useFloatingPlayer: boolean;
 }
@@ -159,34 +160,34 @@ const { mobile } = useDisplay({ mobileBreakpoint: 576 });
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
-  '0': '',
-  '1': '',
-  '2': '',
-  '3': '',
-  '4': '',
-  '5': '',
-  lightColor: '',
-  darkColor: '',
+  "0": "",
+  "1": "",
+  "2": "",
+  "3": "",
+  "4": "",
+  "5": "",
+  lightColor: "",
+  darkColor: "",
 });
 
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD
 const img = new Image();
 img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
-img.crossOrigin = 'Anonymous';
-img.addEventListener('load', function () {
+img.crossOrigin = "Anonymous";
+img.addEventListener("load", function () {
   coverImageColorPalette.value = getColorPalette(img);
 });
 
 const backgroundColor = computed(() => {
   if (vuetify.theme.current.value.dark) {
     if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
-      return coverImageColorPalette.value.darkColor + '26';
-    return 'CCCCCC26';
+      return coverImageColorPalette.value.darkColor + "26";
+    return "CCCCCC26";
   }
   if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
-    return coverImageColorPalette.value.lightColor + '26';
-  return 'CCCCCC26';
+    return coverImageColorPalette.value.lightColor + "26";
+  return "CCCCCC26";
 });
 
 // watchers
@@ -198,11 +199,11 @@ watch(
     if (store.curQueueItem?.media_item) {
       img.src =
         getImageThumbForItem(store.curQueueItem.media_item, ImageType.THUMB) ||
-        '';
+        "";
     } else if (store.curQueueItem) {
-      img.src = getImageThumbForItem(store.curQueueItem, ImageType.THUMB) || '';
+      img.src = getImageThumbForItem(store.curQueueItem, ImageType.THUMB) || "";
     } else {
-      img.src = '';
+      img.src = "";
     }
   },
 );
@@ -224,7 +225,7 @@ watch(
     width: 40%;
   }
 
-  &[data-mobile='true'] {
+  &[data-mobile="true"] {
     .mediacontrols-bottom-center {
       display: none;
     }
@@ -240,9 +241,9 @@ watch(
   height: 100%;
   left: 0px;
   top: 0px;
-  background-color: v-bind('backgroundColor');
+  background-color: v-bind("backgroundColor");
 
-  &[data-floating='true'] {
+  &[data-floating="true"] {
     border-radius: 10px;
   }
 }

@@ -28,8 +28,8 @@
 </template>
 
 <script lang="ts">
-import { computed } from 'vue';
-import MAButton from './Button.vue';
+import { computed } from "vue";
+import MAButton from "./Button.vue";
 
 export default {
   components: { MAButton },

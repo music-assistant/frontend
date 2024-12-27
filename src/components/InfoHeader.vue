@@ -40,6 +40,8 @@
           padding-left: 15px;
           align-items: center;
           padding-right: 15px;
+          display: flex;
+          width: 100%;
         "
       >
         <!-- left side: cover image -->
@@ -54,6 +56,7 @@
             margin-bottom: 15px;
             margin-right: 24px;
             align-content: center;
+            flex-shrink: 0;
           "
         >
           <div v-if="item.media_type && item.media_type == MediaType.ARTIST">
@@ -70,7 +73,7 @@
           </div>
         </div>
 
-        <div style="width: 100%; text-align: left">
+        <div style="min-width: 0">
           <!-- Main title -->
           <img
             v-if="artistLogo"
@@ -80,7 +83,9 @@
             style="padding-left: 10px"
           />
           <v-card-title v-else>
-            {{ item.name }}
+            <MarqueeText :sync="marqueeSync">
+              {{ item.name }}
+            </MarqueeText>
           </v-card-title>
 
           <!-- other details -->
@@ -101,14 +106,14 @@
                     width="35"
                   />
                 </template>
-                <span>{{ $t('tooltip.explicit') }}</span>
+                <span>{{ $t("tooltip.explicit") }}</span>
               </v-tooltip>
             </v-card-subtitle>
 
             <!-- item artists -->
             <v-card-subtitle
               v-if="'artists' in item && item.artists"
-              class="title accent--text"
+              class="title accent--text d-flex"
             >
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
@@ -116,44 +121,56 @@
                 color="primary"
                 icon="mdi-account-music"
               />
-              <span
-                v-for="(artist, artistindex) in item.artists"
-                :key="artist.item_id"
-              >
-                <a style="color: accent" @click="artistClick(artist)">{{
-                  artist.name
-                }}</a>
+              <MarqueeText :sync="marqueeSync">
                 <span
-                  v-if="artistindex + 1 < item.artists.length"
-                  :key="artistindex"
-                  style="color: accent"
-                  >{{ ' / ' }}</span
+                  v-for="(artist, artistindex) in item.artists"
+                  :key="artist.item_id"
                 >
-              </span>
+                  <a style="color: accent" @click="artistClick(artist)">{{
+                    artist.name
+                  }}</a>
+                  <span
+                    v-if="artistindex + 1 < item.artists.length"
+                    :key="artistindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- playlist owner -->
-            <v-card-subtitle v-if="'owner' in item && item.owner" class="title">
+            <v-card-subtitle
+              v-if="'owner' in item && item.owner"
+              class="title d-flex"
+            >
               <v-icon
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
                 small
                 icon="mdi-account-music"
               />
-              <a style="color: primary">{{ item.owner }}</a>
+              <MarqueeText :sync="marqueeSync">
+                <a style="color: primary">{{ item.owner }}</a>
+              </MarqueeText>
             </v-card-subtitle>
 
-            <v-card-subtitle v-if="'album' in item && item.album">
+            <v-card-subtitle
+              v-if="'album' in item && item.album"
+              class="d-flex"
+            >
               <v-icon
                 color="primary"
                 style="margin-left: -3px; margin-right: 3px"
                 small
                 icon="mdi-album"
               />
-              <a
-                style="color: secondary"
-                @click="albumClick((item as Track)?.album)"
-                >{{ item.album.name }}</a
+              <MarqueeText :sync="marqueeSync">
+                <a
+                  style="color: secondary"
+                  @click="albumClick((item as Track)?.album)"
+                  >{{ item.album.name }}</a
+                ></MarqueeText
               >
             </v-card-subtitle>
           </div>
@@ -173,7 +190,7 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
-              :open-menu-on-click="!store.activePlayerQueue"
+              :open-menu-on-click="!store.activePlayer"
               @click="api.playMedia(item!)"
             >
               <template #menu>
@@ -190,8 +207,7 @@
                           variant="text"
                           :title="$t('play_on')"
                           :subtitle="
-                            store.activePlayerQueue?.display_name ||
-                            $t('no_player')
+                            store.activePlayer?.display_name || $t('no_player')
                           "
                           @click.stop="store.showPlayersMenu = true"
                         />
@@ -203,7 +219,7 @@
                     density="compact"
                     slim
                     tile
-                    :disabled="!store.activePlayerQueue"
+                    :disabled="!store.activePlayer"
                   >
                     <div
                       v-for="menuItem of getPlayMenuItems([item], item)"
@@ -291,7 +307,7 @@
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <v-card-actions>
           <v-btn color="primary" block @click="showFullInfo = false">
-            {{ $t('close') }}
+            {{ $t("close") }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -300,29 +316,31 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from './ProviderIcon.vue';
-import { store } from '@/plugins/store';
-import { useDisplay } from 'vuetify';
-import { api } from '@/plugins/api';
-import { ImageType, Track, MediaType } from '@/plugins/api/interfaces';
+import ProviderIcon from "./ProviderIcon.vue";
+import { store } from "@/plugins/store";
+import { useDisplay } from "vuetify";
+import { api } from "@/plugins/api";
+import { ImageType, Track, MediaType } from "@/plugins/api/interfaces";
 import type {
   Album,
   Artist,
   ItemMapping,
   MediaItemType,
-} from '@/plugins/api/interfaces';
-import { computed, ref, watch } from 'vue';
-import MediaItemThumb from './MediaItemThumb.vue';
-import MenuButton from './MenuButton.vue';
-import { getImageThumbForItem } from './MediaItemThumb.vue';
-import { useRouter } from 'vue-router';
-import { truncateString, parseBool } from '@/helpers/utils';
+} from "@/plugins/api/interfaces";
+import { computed, ref, watch } from "vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import MenuButton from "./MenuButton.vue";
+import { getImageThumbForItem } from "./MediaItemThumb.vue";
+import { useRouter } from "vue-router";
+import { truncateString, parseBool } from "@/helpers/utils";
 import {
   getContextMenuItems,
   getPlayMenuItems,
-} from '@/layouts/default/ItemContextMenu.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import { useI18n } from 'vue-i18n';
+} from "@/layouts/default/ItemContextMenu.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import { useI18n } from "vue-i18n";
+import MarqueeText from "./MarqueeText.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 
 // properties
 export interface Props {
@@ -333,9 +351,10 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
 
-const imgGradient = new URL('../assets/info_gradient.jpg', import.meta.url)
+const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
+const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
 const { t } = useI18n();
 
@@ -356,7 +375,7 @@ watch(
 const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked
   router.push({
-    name: 'album',
+    name: "album",
     params: {
       itemId: item.item_id,
       provider: item.provider,
@@ -366,7 +385,7 @@ const albumClick = function (item: Album | ItemMapping) {
 const artistClick = function (item: Artist | ItemMapping) {
   // album entry clicked
   router.push({
-    name: 'artist',
+    name: "artist",
     params: {
       itemId: item.item_id,
       provider: item.provider,
@@ -381,8 +400,8 @@ const backButtonClick = function () {
     return;
   }
   // back to main listing for itemtype
-  const curRoute = router.currentRoute.value.name?.toString() || '';
-  for (const itemType of ['artist', 'album', 'track', 'playlist', 'radio']) {
+  const curRoute = router.currentRoute.value.name?.toString() || "";
+  for (const itemType of ["artist", "album", "track", "playlist", "radio"]) {
     if (curRoute.includes(itemType)) {
       router.push({
         name: `${itemType}s`,
@@ -391,39 +410,39 @@ const backButtonClick = function () {
     }
   }
   router.push({
-    name: 'home',
+    name: "home",
   });
 };
 
 const rawDescription = computed(() => {
-  if (!compProps.item) return '';
+  if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
     return compProps.item.metadata.description;
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
-  } else if ('artists' in compProps.item) {
+  } else if ("artists" in compProps.item) {
     compProps.item.artists.forEach(function (artist: Artist | ItemMapping) {
-      if ('metadata' in artist && artist.metadata.description) {
+      if ("metadata" in artist && artist.metadata.description) {
         return artist.metadata.description;
       }
     });
   }
-  return '';
+  return "";
 });
 
 const fullDescription = computed(() => {
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, '<br /><br />');
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, "<br /><br />");
 });
 const shortDescription = computed(() => {
   const maxChars = mobile.value ? 160 : 300;
   if (rawDescription.value.length > maxChars) {
     return (
       rawDescription.value
-        .replace(/(\r\n|\n|\r)/gm, ' ')
-        .substring(0, maxChars) + '...'
+        .replace(/(\r\n|\n|\r)/gm, " ")
+        .substring(0, maxChars) + "..."
     );
   }
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, ' ');
+  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, " ");
 });
 
 const artistLogo = computed(() => {

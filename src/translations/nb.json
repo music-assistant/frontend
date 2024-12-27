@@ -82,12 +82,6 @@
     "refresh_item": "Oppdater element",
     "remove_library": "Fjern fra biblioteket",
     "remove_playlist": "Fjern fra spilleliste",
-    "repeat_mode": "Gjentakelsesmodus: {0}",
-    "repeatmode": {
-        "all": "Gjenta hele spillekøen",
-        "off": "Gjenta av",
-        "one": "Gjenta enkeltspor"
-    },
     "search": "Søk",
     "settings": {
         "add_new": "Legg til",
@@ -368,7 +362,9 @@
                 "pt_PT": "Portugisisk",
                 "ko_KR": "Koreansk",
                 "nb": "Norsk",
-                "ru_RU": "Russisk"
+                "ru_RU": "Russisk",
+                "hu_HU": "Ungarsk",
+                "it": "Italiensk"
             }
         },
         "hide_settings": {
@@ -378,15 +374,11 @@
         "no_music_providers": "Ingen musikkleverandører er konfigurert",
         "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine.",
         "no_player_providers": "Ingen spillerleverandører er konfigurert",
-        "no_player_providers_detail": "Konfigurer spillerleverandører for å velge enheter der Music Assistant kan spille av musikken din.",
-        "create_sync_group_player": "Opprett en ny synkroniseringsgruppe",
-        "create_sync_group_player_desc": "Med en synkroniseringsgruppe oppretter du en \"forhåndsinnstilling\" av spillere som kan synkroniseres med ett enkelt klikk. Dette er nyttig hvis du har flere spillere som du ofte ønsker å synkronisere.\\nNår du oppretter en synkroniseringsgruppe i stedet for å synkronisere spillerne manuelt hver gang, har det den fordelen at køen holdes på selve gruppen i stedet for på de enkelte spillerne.\\nMerk at du bare kan velge spillere som faktisk kan synkroniseres (altså spillere av samme type)."
+        "no_player_providers_detail": "Konfigurer spillerleverandører for å velge enheter der Music Assistant kan spille av musikken din."
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
     "shuffle": "Tilfeldig rekkefølge",
-    "shuffle_disabled": "Tilfeldig rekkefølge er deaktivert",
-    "shuffle_enabled": "Tilfeldig rekkefølge er aktivert",
     "sort": {
         "duration": "Varighet",
         "position": "Posisjon",
@@ -423,7 +415,6 @@
     },
     "stream_details": "Strømmedetaljer",
     "sync_now": "Synkroniser {0} nå",
-    "sync_player_to": "Synkroniser denne spilleren til:",
     "sync_running": "En eller flere musikkleverandører synkroniseres.",
     "tooltip": {
         "album_artist_filter": "Veksle mellom filter for album-artist",

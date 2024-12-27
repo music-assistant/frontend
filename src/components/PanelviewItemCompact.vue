@@ -3,7 +3,7 @@
     <v-card
       v-hold="onMenu"
       v-bind="props"
-      :class="{ 'on-hover': isHovering }"
+      :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
       :elevation="isHovering ? 3 : 0"
       @click="onClick"
       @click.right.prevent="onMenu"
@@ -26,7 +26,7 @@
           :model-value="isSelected"
         />
       </v-overlay>
-      <MediaItemThumb :item="item" />
+      <MediaItemThumb :item="isAvailable ? item : undefined" />
       <div
         :class="
           $vuetify.theme.current.dark ? 'paneldetails-dark' : 'paneldetails'
@@ -65,7 +65,7 @@
       </div>
       <!-- play button -->
       <v-btn
-        v-if="isHovering || $vuetify.display.mobile"
+        v-if="(isHovering || store.isTouchscreen) && isAvailable"
         icon="mdi-play"
         color="primary"
         fab
@@ -78,13 +78,14 @@
 </template>
 
 <script setup lang="ts">
-import MediaItemThumb from './MediaItemThumb.vue';
+import MediaItemThumb from "./MediaItemThumb.vue";
 import {
   BrowseFolder,
   type MediaItemType,
   MediaType,
-} from '@/plugins/api/interfaces';
-import { getArtistsString, getBrowseFolderName } from '@/helpers/utils';
+} from "@/plugins/api/interfaces";
+import { getArtistsString, getBrowseFolderName } from "@/helpers/utils";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
@@ -93,40 +94,42 @@ export interface Props {
   isSelected?: boolean;
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
+  isAvailable?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
   isSelected: false,
   showCheckboxes: false,
   permanentOverlay: false,
+  isAvailable: true,
 });
 
 // emits
 const emit = defineEmits<{
-  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'play', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'select', item: MediaItemType, selected: boolean): void;
+  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
+  (e: "click", item: MediaItemType, posX: number, posY: number): void;
+  (e: "play", item: MediaItemType, posX: number, posY: number): void;
+  (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {
   if (compProps.showCheckboxes) return;
-  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
-  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
-  emit('menu', compProps.item, posX, posY);
+  const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
+  emit("menu", compProps.item, posX, posY);
 };
 
 const onClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) {
-    emit('select', compProps.item, compProps.isSelected ? false : true);
+    emit("select", compProps.item, compProps.isSelected ? false : true);
     return;
   }
-  emit('click', compProps.item, evt.clientX, evt.clientY);
+  emit("click", compProps.item, evt.clientX, evt.clientY);
 };
 
 const onPlayClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit('play', compProps.item, evt.clientX, evt.clientY);
+  emit("play", compProps.item, evt.clientX, evt.clientY);
 };
 </script>
 
@@ -139,6 +142,10 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .v-card:not(.on-hover) {
   opacity: 0.75;
+}
+
+.v-card.unavailable {
+  opacity: 0.3;
 }
 
 .panel-item-details {

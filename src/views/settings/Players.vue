@@ -6,16 +6,11 @@
       color="transparent"
       style="height: 55px"
     >
-      <template #title> {{ $t('settings.players') }} </template>
+      <template #title> {{ $t("settings.players") }} </template>
       <template #append>
-        <!-- ADD syncgroup player button -->
-        <v-btn
-          v-if="playersWithSyncFeature.length"
-          color="accent"
-          variant="outlined"
-          @click="addSyncGroupPlayer"
-        >
-          {{ $t('settings.add_group_player') }}
+        <!-- ADD group player button -->
+        <v-btn color="accent" variant="outlined" @click="addPlayerGroup">
+          {{ $t("settings.add_group_player") }}
         </v-btn>
       </template>
     </v-toolbar>
@@ -26,7 +21,7 @@
         show-menu-btn
         link
         @menu="(evt: Event) => onMenu(evt, item)"
-        @click="editPlayer(item.player_id)"
+        @click="editPlayer(item.player_id, item.provider)"
       >
         <template #prepend>
           <provider-icon
@@ -73,20 +68,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, watch, computed } from 'vue';
-import { api } from '@/plugins/api';
+import { ref, onBeforeUnmount, watch, computed } from "vue";
+import { api } from "@/plugins/api";
 import {
   EventType,
   PlayerConfig,
   ProviderFeature,
-} from '@/plugins/api/interfaces';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import { useRouter } from 'vue-router';
-import Button from '@/components/mods/Button.vue';
-import ListItem from '@/components/mods/ListItem.vue';
-import Container from '@/components/mods/Container.vue';
-import { open } from '@tauri-apps/plugin-shell';
-import { eventbus } from '@/plugins/eventbus';
+} from "@/plugins/api/interfaces";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { useRouter } from "vue-router";
+import Button from "@/components/mods/Button.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import Container from "@/components/mods/Container.vue";
+import { open } from "@tauri-apps/plugin-shell";
+import { eventbus } from "@/plugins/eventbus";
+import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 
 // global refs
 const router = useRouter();
@@ -105,7 +101,6 @@ const playersWithSyncFeature = computed(() => {
   return Object.values(api.players).filter(
     (x) =>
       x.available &&
-      x.can_sync_with.length &&
       api
         .getProvider(x.provider)
         ?.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
@@ -126,15 +121,19 @@ const removePlayerConfig = function (playerId: string) {
   );
 };
 
-const editPlayer = function (playerId: string) {
-  if (playerId in api.players) {
-    // only allow edit if player is alive/available
+const editPlayer = function (playerId: string, provider: string) {
+  if (provider in api.providers) {
+    // only allow edit if provider is available
     router.push(`/settings/editplayer/${playerId}`);
   }
 };
 
-const addSyncGroupPlayer = function (provider: string) {
-  router.push('/settings/addsyncgroup');
+const editPlayerDsp = function (playerId: string) {
+  router.push(`/settings/editplayer/${playerId}/dsp`);
+};
+
+const addPlayerGroup = function (provider: string) {
+  router.push("/settings/addgroup");
 };
 
 const toggleEnabled = function (config: PlayerConfig) {
@@ -155,47 +154,61 @@ const openLinkInNewTab = function (url: string) {
   open(url);
 };
 
-const onMenu = function (evt: Event, item: PlayerConfig) {
-  const menuItems = [
+const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
+  const menuItems: ContextMenuItem[] = [
     {
-      label: 'settings.configure',
+      label: "settings.configure",
       labelArgs: [],
       action: () => {
-        editPlayer(item.player_id);
+        editPlayer(playerConfig.player_id, playerConfig.provider);
       },
-      icon: 'mdi-cog',
-      disabled: !api.getProvider(item!.provider),
+      icon: "mdi-cog",
+      disabled: !api.getProvider(playerConfig!.provider),
     },
     {
-      label: item.enabled ? 'settings.disable' : 'settings.enable',
+      label: "open_dsp_settings",
       labelArgs: [],
       action: () => {
-        toggleEnabled(item);
+        editPlayerDsp(playerConfig.player_id);
       },
-      icon: 'mdi-cancel',
-      disabled: !api.getProvider(item!.provider),
+      icon: "mdi-equalizer",
     },
     {
-      label: 'settings.documentation',
+      label: playerConfig.enabled ? "settings.disable" : "settings.enable",
+      labelArgs: [],
+      action: () => {
+        toggleEnabled(playerConfig);
+      },
+      icon: "mdi-cancel",
+      hide: !api.getProvider(playerConfig!.provider),
+    },
+    {
+      label: "settings.documentation",
       labelArgs: [],
       action: () => {
         openLinkInNewTab(
-          api.getProviderManifest(item!.provider)?.documentation || '',
+          api.getProviderManifest(playerConfig!.provider)?.documentation || "",
         );
       },
-      icon: 'mdi-bookshelf',
-      disabled: !api.getProviderManifest(item!.provider)?.documentation,
+      icon: "mdi-bookshelf",
+      disabled: !api.getProviderManifest(playerConfig!.provider)?.documentation,
     },
     {
-      label: 'settings.delete',
+      label: "settings.delete",
       labelArgs: [],
       action: () => {
-        removePlayerConfig(item.player_id);
+        removePlayerConfig(playerConfig.player_id);
       },
-      icon: 'mdi-delete',
+      icon: "mdi-delete",
+      hide: !(
+        !api.players[playerConfig.player_id]?.available ||
+        api
+          .getProvider(playerConfig.provider)
+          ?.supported_features.includes(ProviderFeature.REMOVE_PLAYER)
+      ),
     },
   ];
-  eventbus.emit('contextmenu', {
+  eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,

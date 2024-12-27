@@ -6,7 +6,7 @@
     @mouseenter="isThumbHidden = false"
     @mouseleave="isThumbHidden = true"
     @wheel.prevent="onWheel"
-    @update:model-value="(value) => $emit('update:model-value', value)"
+    @end="(value) => $emit('update:model-value', value)"
   >
     <!-- Dynamically inherit slots from parent -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref } from "vue";
 
 export default {
   props: {
@@ -27,13 +27,14 @@ export default {
     // eslint-disable-next-line vue/require-default-prop
     style: String,
     isPowered: Boolean,
+    allowWheel: Boolean,
   },
-  emits: ['update:model-value'],
+  emits: ["update:model-value"],
   setup(props, ctx) {
     const isThumbHidden = ref(true);
 
     const playerVolumeDefaults = computed(() => ({
-      class: 'player-volume',
+      class: "player-volume",
       hideDetails: true,
       trackSize: 2,
       thumbSize: isThumbHidden.value ? 0 : 10,
@@ -49,12 +50,13 @@ export default {
     }));
 
     const onWheel = ({ deltaY }: WheelEvent) => {
+      if (!props.allowWheel) return;
       const step = playerVolumeProps.value.step;
 
-      const volumeValue = ctx.attrs['model-value'] as number;
+      const volumeValue = ctx.attrs["model-value"] as number;
       const volumeDelta = deltaY < 0 ? step : -step;
 
-      ctx.emit('update:model-value', volumeValue + volumeDelta);
+      ctx.emit("update:model-value", volumeValue + volumeDelta);
     };
 
     return { isThumbHidden, playerVolumeProps, onWheel };

@@ -21,7 +21,6 @@
     <Container variant="panel">
       <Suspense>
         <div>
-          <HomeCurrentlyPlayingRow />
           <HomeWidgetRows />
         </div>
         <template #fallback><v-progress-circular indeterminate /> </template>
@@ -31,13 +30,10 @@
 </template>
 
 <script setup lang="ts">
-import Container from '@/components/mods/Container.vue';
-import HomeWidgetRows from '@/components/HomeWidgetRows.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import HomeCurrentlyPlayingRow from '@/components/HomeCurrentlyPlayingRow.vue';
-import { ref, watch } from 'vue';
-import { store } from '@/plugins/store';
-import api from '@/plugins/api';
+import Container from "@/components/mods/Container.vue";
+import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import { ref } from "vue";
 
 export interface Props {
   player?: string;
@@ -45,33 +41,7 @@ export interface Props {
 const props = defineProps<Props>();
 
 const hideSettings = ref(
-  localStorage.getItem('frontend.settings.hide_settings') == 'true',
-);
-
-const urlParams = new URLSearchParams(window.location.search);
-console.log(urlParams.toString());
-
-watch(
-  () => props.player,
-  (val) => {
-    console.error('props.player', val);
-    if (!val || val == 'false') return;
-    if (typeof val === 'string') {
-      // val can be either player id or player name
-      if (val in api.players) {
-        store.activePlayerId = api.players[val].player_id;
-      } else {
-        for (const player of Object.values(api.players)) {
-          if (player.display_name.toLowerCase() === val.toLowerCase()) {
-            store.activePlayerId = player.player_id;
-            break;
-          }
-        }
-      }
-    }
-    store.showFullscreenPlayer = true;
-  },
-  { immediate: true },
+  localStorage.getItem("frontend.settings.hide_settings") == "true",
 );
 </script>
 

@@ -54,13 +54,13 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { ref, onBeforeUnmount, onMounted, watch } from 'vue';
-import { SearchResults, type MediaItemType } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import ItemsListing from '@/components/ItemsListing.vue';
-import Container from '@/components/mods/Container.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import { api } from '@/plugins/api';
+import { ref, onBeforeUnmount, onMounted, watch } from "vue";
+import { SearchResults, type MediaItemType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import ItemsListing from "@/components/ItemsListing.vue";
+import Container from "@/components/mods/Container.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import { api } from "@/plugins/api";
 
 // local refs
 const deferredSearch = ref();
@@ -83,7 +83,7 @@ watch(
 
 const loadSearchResults = async function () {
   loading.value = true;
-  localStorage.setItem('globalsearch', store.globalSearchTerm || '');
+  localStorage.setItem("globalsearch", store.globalSearchTerm || "");
 
   if (store.globalSearchTerm) {
     searchResult.value = await api.search(store.globalSearchTerm);
@@ -97,22 +97,22 @@ const loadSearchResults = async function () {
 const filteredItems = function (itemType: string) {
   if (!searchResult.value) return [];
 
-  if (itemType == 'artists') {
+  if (itemType == "artists") {
     return searchResult.value.artists;
   }
-  if (itemType == 'albums') {
+  if (itemType == "albums") {
     return searchResult.value.albums;
   }
-  if (itemType == 'tracks') {
+  if (itemType == "tracks") {
     return searchResult.value.tracks;
   }
-  if (itemType == 'playlists') {
+  if (itemType == "playlists") {
     return searchResult.value.playlists;
   }
-  if (itemType == 'radio') {
+  if (itemType == "radio") {
     return searchResult.value.radio;
   }
-  if (itemType == 'topresult') {
+  if (itemType == "topresult") {
     const result: MediaItemType[] = [];
     for (const results of [
       searchResult.value.tracks,
@@ -136,8 +136,8 @@ const filteredItems = function (itemType: string) {
 
 onMounted(() => {
   if (!store.globalSearchTerm) {
-    const savedSearch = localStorage.getItem('globalsearch');
-    if (savedSearch && savedSearch !== 'null') {
+    const savedSearch = localStorage.getItem("globalsearch");
+    if (savedSearch && savedSearch !== "null") {
       store.globalSearchTerm = savedSearch;
     }
   }
@@ -145,15 +145,15 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (!searchHasFocus.value && e.key == 'Backspace' && store.globalSearchTerm) {
+  if (!searchHasFocus.value && e.key == "Backspace" && store.globalSearchTerm) {
     store.globalSearchTerm = store.globalSearchTerm.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
     store.globalSearchTerm += e.key;
   }
 };
-document.addEventListener('keyup', keyListener);
+document.addEventListener("keyup", keyListener);
 
 onBeforeUnmount(() => {
-  document.removeEventListener('keyup', keyListener);
+  document.removeEventListener("keyup", keyListener);
 });
 </script>

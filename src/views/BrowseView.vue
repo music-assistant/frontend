@@ -17,11 +17,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import api from '@/plugins/api';
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import api from "@/plugins/api";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 
 export interface Props {
   path?: string;
@@ -30,10 +30,10 @@ const props = defineProps<Props>();
 const { t } = useI18n();
 
 const header = computed(() => {
-  if (!props.path || props.path == 'root') return t('browse');
-  if (getBreakpointValue('bp6')) return t('browse') + ' | ' + props.path;
-  if (getBreakpointValue('bp3')) return props.path;
-  return t('browse');
+  if (!props.path || props.path == "root") return t("browse");
+  if (getBreakpointValue("bp6")) return t("browse") + " | " + props.path;
+  if (getBreakpointValue("bp3")) return props.path;
+  return t("browse");
 });
 
 const loadItems = async function (params: LoadDataParams) {

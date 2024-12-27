@@ -27,7 +27,7 @@
       <v-list style="overflow: hidden">
         <v-list-item class="list-item list-item-main" :min-height="5">
           <v-card-title>
-            {{ $t('stream_details') }}
+            {{ $t("stream_details") }}
           </v-card-title>
         </v-list-item>
         <v-divider />
@@ -81,11 +81,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import api from '@/plugins/api';
-import { store } from '@/plugins/store';
-import { ContentType } from '@/plugins/api/interfaces';
+import { computed } from "vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import api from "@/plugins/api";
+import { store } from "@/plugins/store";
+import { ContentType } from "@/plugins/api/interfaces";
 
 // computed properties
 const streamDetails = computed(() => {
@@ -103,23 +103,23 @@ const getContentTypeIcon = function (contentType: ContentType) {
 </script>
 
 <script lang="ts">
-export const iconFallback = new URL('@/assets/fallback.png', import.meta.url)
+export const iconFallback = new URL("@/assets/fallback.png", import.meta.url)
   .href;
-export const iconAac = new URL('@/assets/aac.png', import.meta.url).href;
-export const iconFlac = new URL('@/assets/flac.png', import.meta.url).href;
-export const iconMp3 = new URL('@/assets/mp3.png', import.meta.url).href;
-export const iconOgg = new URL('@/assets/ogg.png', import.meta.url).href;
-export const iconVorbis = new URL('@/assets/vorbis.png', import.meta.url).href;
-export const iconM4a = new URL('@/assets/m4a.png', import.meta.url).href;
-export const iconHiRes = new URL('@/assets/hires.png', import.meta.url).href;
+export const iconAac = new URL("@/assets/aac.png", import.meta.url).href;
+export const iconFlac = new URL("@/assets/flac.png", import.meta.url).href;
+export const iconMp3 = new URL("@/assets/mp3.png", import.meta.url).href;
+export const iconOgg = new URL("@/assets/ogg.png", import.meta.url).href;
+export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
+export const iconM4a = new URL("@/assets/m4a.png", import.meta.url).href;
+export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
 
-export const imgCoverDark = new URL('@/assets/cover_dark.png', import.meta.url)
+export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)
   .href;
 export const imgCoverLight = new URL(
-  '@/assets/cover_light.png',
+  "@/assets/cover_light.png",
   import.meta.url,
 ).href;
-export const iconFolder = new URL('@/assets/folder.svg', import.meta.url).href;
+export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 </script>
 
 <style>

@@ -1,77 +1,78 @@
-import { createRouter, createWebHashHistory } from 'vue-router';
-import { store } from './store';
+import { createRouter, createWebHashHistory } from "vue-router";
+import { store } from "./store";
 
 const routes = [
   {
-    path: '/',
-    component: () => import('@/layouts/default/Default.vue'),
+    path: "/",
+    component: () => import("@/layouts/default/Default.vue"),
+    props: (route: { query: Record<string, any> }) => ({ ...route.query }),
     children: [
       {
-        path: '',
-        redirect: '/home',
+        path: "",
+        redirect: "/home",
       },
       {
-        path: '/home',
-        name: 'home',
+        path: "/home",
+        name: "home",
         component: () =>
-          import(/* webpackChunkName: "home" */ '@/views/HomeView.vue'),
+          import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
-        path: '/search',
-        name: 'search',
+        path: "/search",
+        name: "search",
         component: () =>
-          import(/* webpackChunkName: "search" */ '@/views/Search.vue'),
+          import(/* webpackChunkName: "search" */ "@/views/Search.vue"),
         props: true,
       },
       {
-        path: '/browse',
-        name: 'browse',
+        path: "/browse",
+        name: "browse",
         component: () =>
-          import(/* webpackChunkName: "browse" */ '@/views/BrowseView.vue'),
+          import(/* webpackChunkName: "browse" */ "@/views/BrowseView.vue"),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
-        path: '/artists',
+        path: "/artists",
         children: [
           {
-            path: '',
-            name: 'artists',
+            path: "",
+            name: "artists",
             component: () =>
               import(
-                /* webpackChunkName: "artists" */ '@/views/LibraryArtists.vue'
+                /* webpackChunkName: "artists" */ "@/views/LibraryArtists.vue"
               ),
             props: true,
           },
           {
-            path: ':provider/:itemId',
-            name: 'artist',
+            path: ":provider/:itemId",
+            name: "artist",
             component: () =>
               import(
-                /* webpackChunkName: "artist" */ '@/views/ArtistDetails.vue'
+                /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
               ),
             props: true,
           },
         ],
       },
       {
-        path: '/albums',
+        path: "/albums",
         children: [
           {
-            path: '',
-            name: 'albums',
+            path: "",
+            name: "albums",
             component: () =>
               import(
-                /* webpackChunkName: "albums" */ '@/views/LibraryAlbums.vue'
+                /* webpackChunkName: "albums" */ "@/views/LibraryAlbums.vue"
               ),
             props: true,
           },
           {
-            path: ':provider/:itemId',
-            name: 'album',
+            path: ":provider/:itemId",
+            name: "album",
             component: () =>
               import(
-                /* webpackChunkName: "album" */ '@/views/AlbumDetails.vue'
+                /* webpackChunkName: "album" */ "@/views/AlbumDetails.vue"
               ),
             props: true,
           },
@@ -79,23 +80,23 @@ const routes = [
       },
 
       {
-        path: '/tracks',
+        path: "/tracks",
         children: [
           {
-            path: '',
-            name: 'tracks',
+            path: "",
+            name: "tracks",
             component: () =>
               import(
-                /* webpackChunkName: "tracks" */ '@/views/LibraryTracks.vue'
+                /* webpackChunkName: "tracks" */ "@/views/LibraryTracks.vue"
               ),
             props: true,
           },
           {
-            path: ':provider/:itemId',
-            name: 'track',
+            path: ":provider/:itemId",
+            name: "track",
             component: () =>
               import(
-                /* webpackChunkName: "track" */ '@/views/TrackDetails.vue'
+                /* webpackChunkName: "track" */ "@/views/TrackDetails.vue"
               ),
             props: (route: { params: any; query: any }) => ({
               ...route.params,
@@ -106,23 +107,23 @@ const routes = [
       },
 
       {
-        path: '/playlists',
+        path: "/playlists",
         children: [
           {
-            path: '',
-            name: 'playlists',
+            path: "",
+            name: "playlists",
             component: () =>
               import(
-                /* webpackChunkName: "playlists" */ '@/views/LibraryPlaylists.vue'
+                /* webpackChunkName: "playlists" */ "@/views/LibraryPlaylists.vue"
               ),
             props: true,
           },
           {
-            path: ':provider/:itemId',
-            name: 'playlist',
+            path: ":provider/:itemId",
+            name: "playlist",
             component: () =>
               import(
-                /* webpackChunkName: "playlist" */ '@/views/PlaylistDetails.vue'
+                /* webpackChunkName: "playlist" */ "@/views/PlaylistDetails.vue"
               ),
             props: true,
           },
@@ -130,34 +131,34 @@ const routes = [
       },
 
       {
-        path: '/radios',
+        path: "/radios",
         children: [
           {
-            path: '',
-            name: 'radios',
+            path: "",
+            name: "radios",
             component: () =>
               import(
-                /* webpackChunkName: "radios" */ '@/views/LibraryRadios.vue'
+                /* webpackChunkName: "radios" */ "@/views/LibraryRadios.vue"
               ),
             props: true,
           },
           {
-            path: ':provider/:itemId',
-            name: 'radio',
+            path: ":provider/:itemId",
+            name: "radio",
             component: () =>
               import(
-                /* webpackChunkName: "radio" */ '@/views/RadioDetails.vue'
+                /* webpackChunkName: "radio" */ "@/views/RadioDetails.vue"
               ),
             props: true,
           },
         ],
       },
       {
-        path: '/settings',
-        name: 'settings',
+        path: "/settings",
+        name: "settings",
         component: () =>
           import(
-            /* webpackChunkName: "settings" */ '@/views/settings/Settings.vue'
+            /* webpackChunkName: "settings" */ "@/views/settings/Settings.vue"
           ),
         props: true,
         children: [
@@ -207,53 +208,53 @@ const routes = [
             props: true,
           },
           {
-            path: 'addprovider/:domain',
-            name: 'addprovider',
+            path: "editprovider/:instanceId",
+            name: "editprovider",
             component: () =>
               import(
-                /* webpackChunkName: "addprovider" */ '@/views/settings/AddProvider.vue'
+                /* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"
               ),
             props: true,
           },
           {
-            path: 'editprovider/:instanceId',
-            name: 'editprovider',
+            path: "editplayer/:playerId",
+            name: "editplayer",
             component: () =>
               import(
-                /* webpackChunkName: "editprovider" */ '@/views/settings/EditProvider.vue'
+                /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"
               ),
             props: true,
           },
           {
-            path: 'editplayer/:playerId',
-            name: 'editplayer',
+            path: "editplayer/:playerId/dsp",
+            name: "editplayerdsp",
             component: () =>
               import(
-                /* webpackChunkName: "editplayer" */ '@/views/settings/EditPlayer.vue'
+                /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
               ),
             props: true,
           },
           {
-            path: 'editcore/:domain',
-            name: 'editcore',
+            path: "editcore/:domain",
+            name: "editcore",
             component: () =>
               import(
-                /* webpackChunkName: "editcore" */ '@/views/settings/EditCoreConfig.vue'
+                /* webpackChunkName: "editcore" */ "@/views/settings/EditCoreConfig.vue"
               ),
             props: true,
           },
           {
-            path: 'addsyncgroup',
-            name: 'addsyncgroup',
+            path: "addgroup",
+            name: "addgroup",
             component: () =>
               import(
-                /* webpackChunkName: "addsyncgroup" */ '@/views/settings/AddSyncGroupPlayer.vue'
+                /* webpackChunkName: "addgroup" */ "@/views/settings/AddPlayerGroup.vue"
               ),
             props: true,
           },
           {
-            path: '',
-            redirect: '/settings/providers', // default child path
+            path: "",
+            redirect: "/settings/providers", // default child path
           },
         ],
       },
@@ -268,7 +269,7 @@ const router = createRouter({
 
 router.afterEach((to, from) => {
   if (!from?.path) return;
-  console.debug('navigating from ', from.path, ' to ', to.path);
+  console.debug("navigating from ", from.path, " to ", to.path);
   store.prevRoute = from.path;
 });
 

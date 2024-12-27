@@ -13,14 +13,16 @@
       close-on-content-click
       position="sticky"
       :timeout="store.activeAlert?.persistent ? -1 : 5000"
+      z-index="999999"
+      style="z-index: 999999"
       @update:model-value="() => (store.activeAlert = undefined)"
     />
   </v-main>
 </template>
 
 <script lang="ts" setup>
-import DrawerNavigation from './DrawerNavigation.vue';
-import AddToPlaylistDialog from './AddToPlaylistDialog.vue';
-import ItemContextMenu from './ItemContextMenu.vue';
-import { store } from '@/plugins/store';
+import DrawerNavigation from "./DrawerNavigation.vue";
+import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import ItemContextMenu from "./ItemContextMenu.vue";
+import { store } from "@/plugins/store";
 </script>

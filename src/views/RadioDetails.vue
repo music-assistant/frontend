@@ -23,14 +23,14 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
-import InfoHeader from '@/components/InfoHeader.vue';
-import { ref } from 'vue';
-import type { Radio } from '@/plugins/api/interfaces';
-import ProviderDetails from '@/components/ProviderDetails.vue';
-import { api } from '@/plugins/api';
-import { watch } from 'vue';
-import { getStreamingProviderMappings } from '@/helpers/utils';
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import InfoHeader from "@/components/InfoHeader.vue";
+import { ref } from "vue";
+import type { Radio } from "@/plugins/api/interfaces";
+import ProviderDetails from "@/components/ProviderDetails.vue";
+import { api } from "@/plugins/api";
+import { watch } from "vue";
+import { getStreamingProviderMappings } from "@/helpers/utils";
 
 export interface Props {
   itemId: string;
@@ -53,7 +53,7 @@ watch(
 
 const loadRadioVersions = async function (params: LoadDataParams) {
   const allVersions: Radio[] = [];
-  if (props.provider == 'library') {
+  if (props.provider == "library") {
     const radioVersions = await api.getRadioVersions(
       props.itemId,
       props.provider,

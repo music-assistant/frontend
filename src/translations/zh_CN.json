@@ -58,7 +58,8 @@
     "player_type": {
         "group": "组",
         "player": "播放器",
-        "stereo_pair": "立体声配对"
+        "stereo_pair": "立体声配对",
+        "sync_group": "同步组"
     },
     "players": "播放器",
     "playlist": "播放列表",
@@ -74,19 +75,13 @@
     "queue_next_items": "下一项",
     "queue_options": "队列选项",
     "queue_previous_items": "播放项目",
-    "queue_radio_based_on": "队列动态填充基于{0}的轨道",
+    "queue_radio_based_on": "队列动态填充基于{0}的歌曲",
     "queue_radio_enabled": "已启用收音机模式",
     "radios": "收音机",
     "read_more": "阅读更多",
     "refresh_item": "刷新项目",
     "remove_library": "从媒体库中删除",
     "remove_playlist": "从播放列表中删除",
-    "repeat_mode": "重复模式： {0}",
-    "repeatmode": {
-        "all": "重复整个队列",
-        "off": "关闭重复",
-        "one": "单曲重复"
-    },
     "search": "搜索",
     "settings": {
         "add_new": "添加新内容",
@@ -202,7 +197,7 @@
         },
         "crossfade": {
             "label": "启用交叉渐变",
-            "description": "启用（队列）轨道之间的交叉淡入淡出过渡"
+            "description": "启用（队列）歌曲之间的交叉淡入淡出过渡"
         },
         "crossfade_duration": {
             "label": "淡入淡出持续时间",
@@ -275,14 +270,14 @@
             }
         },
         "default_enqueue_action_radio": {
-            "label": "Radio项目的默认入队选项",
+            "label": "收音机项目的默认入队选项",
             "description": "定义此中介类型的默认入队操作（如果未指定操作）",
             "options": {
-                "play": "立即播放电台并保留剩余的队列项目",
-                "replace": "清空队列并播放广播电台",
+                "play": "立即播放收音机并保留剩余的队列项目",
+                "replace": "清空队列并播放收音机",
                 "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清除队列，然后在当前播放\/缓冲的项目之后播放电台",
-                "add": "将无线电台添加到队列的末尾"
+                "replace_next": "清除队列，然后在当前播放\/缓冲的项目之后播放收音机",
+                "add": "将收音机添加到队列的末尾"
             }
         },
         "default": "默认",
@@ -363,7 +358,15 @@
                 "sr_Latn": "塞尔维亚语（拉丁语)",
                 "sv_SE": "瑞典语",
                 "en_GB": "英语（英国)",
-                "es": "西班牙语"
+                "es": "西班牙语",
+                "pt_PT": "葡萄牙语",
+                "ko_KR": "朝鲜语",
+                "nb": "挪威语",
+                "ru_RU": "俄语",
+                "pt_BR": "葡萄牙语（巴西)",
+                "sl_SI": "斯洛文尼亚语",
+                "hu_HU": "匈牙利语",
+                "it": "意大利语"
             }
         },
         "hide_settings": {
@@ -373,13 +376,49 @@
         "no_music_providers": "未配置音乐提供程序",
         "no_music_providers_detail": "添加音乐提供程序，开始您的音乐助手体验!",
         "no_player_providers": "未配置播放器提供程序",
-        "no_player_providers_detail": "配置播放器提供程序,以选择音乐助手可以输出音乐的设备"
+        "no_player_providers_detail": "配置播放器提供程序,以选择音乐助手可以输出音乐的设备",
+        "volume_normalization_radio": {
+            "label": "用于收音机流的体积归一化方法",
+            "description": "为收音机流设置首选音量正常化策略。 \\n默认情况下，音乐助理会根据 EBU-R128 规范收集电台（平均感知）响度的测量值，然后根据测量值调整音流的整体增益\/音量，这样就不会影响音频的动态范围。如果还没有广播电台的测量结果，音乐助理将退回到动态（但不太准确）响度均衡滤波器。\\n\\n提示：广播流通常会有不同的响度级别，尤其是在广播和广告期间。\\n即使存在广播电台的（平均）响度测量值，您也可以选择对广播流执行动态音量归一化。 \\n \\n**选项：**\\n\\n - 禁用 - 完全不对收音机数据流应用音量正常化。 \\n  - 强制动态 - 始终执行动态音量均衡。 \\n  - 仅测量（无回退）- 根据存储的测量结果应用（整体）音量\/增益校正。如果我们没有任何测量值，则不应用归一化。\\n  - 回退至增益修正 - 根据存储的测量值应用（整体）音量\/增益修正。如果没有任何测量值，则回退到预定义的增益修正。\\n - 固定增益修正 - 始终应用固定音量\/增益修正。\\n  - 回退到动态 - 自动选择最佳选项：如果有测量值，则根据存储的测量值应用（整体）音量\/增益修正；如果没有测量值，则允许回退到动态模式。",
+            "options": {
+                "disabled": "关闭",
+                "dynamic": "强制动态",
+                "measurement_only": "仅测量（无回退）",
+                "fallback_fixed_gain": "回退以获得校正",
+                "fixed_gain": "固定增益校正",
+                "fallback_dynamic": "动态回退"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "用于歌曲的体积归一化方法",
+            "description": "为曲目\/歌曲设置首选的音量正常化策略。\\n音乐助理根据 EBU-R128 规范测量曲目的（平均感知）响度，在不影响音频动态范围的情况下调整流的整体增益\/音量。\\n这些测量值要么由流媒体提供商提供，要么在本地文件中包含在 ID3 标签中（ReplayGain 2.0 \/ Opus R128）。\\n如果未提供测量值，Music Assistant 将在曲目（首次）播放时\/后自动执行测量。当某一音轨还没有测量值时，音乐助理将默认使用动态（但不太准确）响度均衡滤波器。这样即使还没有准确的测量，也能确保音轨之间的音量不会出现大的峰值\/下降，但动态均衡器有时会压缩一些动态范围，不过在大多数情况下应该听不到。\\n\\n\\n**选项：**\\n\\n - 禁用 - 完全不对收音机数据流应用音量正常化。\\n - 强制动态 - 始终执行动态音量均衡。 \\n - 仅测量（无回退）- 根据存储的测量结果应用（整体）音量\/增益校正。如果我们没有任何测量值，则不应用归一化。 \\n - 回退至增益修正 - 根据存储的测量值应用（整体）音量\/增益修正。如果没有任何测量值，则回退到预定义的增益修正。 \\n - 固定增益修正 - 始终应用固定音量\/增益修正。 \\n - 回退到动态 - 自动选择最佳选项：如果有测量值，则根据存储的测量值应用（整体）音量\/增益修正；如果没有测量值，则允许回退到动态模式。",
+            "options": {
+                "disabled": "关闭",
+                "dynamic": "强制动态",
+                "measurement_only": "仅测量（无回退）",
+                "fallback_fixed_gain": "回退以获得校正",
+                "fixed_gain": "固定增益校正",
+                "fallback_dynamic": "动态回退"
+            }
+        },
+        "volume_normalization_fixed_gain_tracks": {
+            "label": "音轨的固定\/回退增益调整",
+            "description": "应用于音轨流的固定\/回退增益校正（取决于“音量归一化方法”设置）。\\n使用正值可增加音量，使用负值可减小音量。\\n当\"音量归一化方法\"设置为“固定增益校正”或“回退到增益校正”时，使用此设置。"
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "label": "收音机的固定\/回退增益调整",
+            "description": "应用于收音机的固定\/回退增益校正（取决于“音量归一化方法”设置）。\\n使用正值可增加音量，使用负值可减小音量。\\n当\"音量归一化方法\"设置为“固定增益校正”或“回退到增益校正”时，使用此设置。"
+        },
+        "group_type": "组类型",
+        "add_group_player_desc": "对于提供本地分组\/同步功能的播放器提供商\/生态系统，将自动创建一个同步组，这意味着如果您在此播放器组中播放，成员播放器将自动同步。 \\n\\n对于不支持分组的播放器\/生态系统，或者如果要对来自不同生态系统的播放器进行分组，可以使用通用分组类型，它将向所有成员播放器分发相同的音频（但不同步）。 \\n\\n请注意，有些提供商确实支持分组，但你需要使用本机应用程序来执行分组。例如，基于 Google Cast 的播放器只能在 Google Home 应用程序中创建 Google Cast 群组。",
+        "dynamic_members": {
+            "label": "动态组成员",
+            "description": "允许成员（临时）加入\/离开组，因此，该组或多或少的行为类似于手动将播放器同步在一起，主要区别在于，群发播放器将保持队列."
+        }
     },
     "show_info": "显示信息",
     "show_select_boxes": "显示选择框",
     "shuffle": "随机播放",
-    "shuffle_disabled": "已禁用随机播放",
-    "shuffle_enabled": "已启用随机播放",
     "sort": {
         "duration": "持续时间",
         "position": "位置",
@@ -405,8 +444,8 @@
         "last_played_desc": "上次播放（倒序）",
         "play_count": "播放次数",
         "play_count_desc": "播放次数（倒序）",
-        "artist_name": "Album artiest",
-        "artist_name_desc": "Album artiest (aflopend)"
+        "artist_name": "专辑艺术家",
+        "artist_name_desc": "专辑艺术家（降序）"
     },
     "state": {
         "idle": "闲置",
@@ -416,7 +455,6 @@
     },
     "stream_details": "流媒体详情",
     "sync_now": "立即同步{0}",
-    "sync_player_to": "将此播放器同步到：",
     "sync_running": "一个或多个音乐提供程序正在同步。",
     "tooltip": {
         "album_artist_filter": "过滤唱片集-艺术家",
@@ -438,14 +476,14 @@
         "show_menu": "显示\/隐藏菜单",
         "search_filter_active": "筛选搜索的结果",
         "play_sample": "播放示例",
-        "album_type": "Albumtype",
-        "loading": "De server verwerkt een verzoek of is muziek aan het synchroniseren",
-        "primary_image": "Dit is de primaire afbeelding voor dit type"
+        "album_type": "专辑类型",
+        "loading": "服务器正在处理请求或同步音乐。",
+        "primary_image": "这是此图像类型的主要图像"
     },
     "topresult": "最佳结果",
-    "track": "轨道",
-    "track_number": "光盘{0} 轨道{1}",
-    "tracks": "轨道",
+    "track": "歌曲",
+    "track_number": "光盘{0} 歌曲{1}",
+    "tracks": "歌曲",
     "try_global_search": "尝试全局搜索",
     "type_to_search": "在这里输入以搜索...",
     "volume_normalization": "音量标准化",
@@ -478,12 +516,28 @@
         "panel_compact": "缩略图视图"
     },
     "play_replace": "立即播放(清除播放列表)",
-    "played": "Afgespeeld",
-    "background_task_added": "De actie wordt door de server in de achtergrond uitgevoerd en kan even duren. Houd de server log in de gaten voor voortgang.",
-    "images": "Afbeeldingen",
-    "image_type": "Type",
-    "image_source": "Bron",
-    "image_make_primary": "Maak primair",
-    "update_metadata": "Metadata updaten",
-    "cancel": "Annuleren"
+    "played": "已播放",
+    "background_task_added": "该操作由服务器在后台执行，可能需要一些时间才能完成。请密切关注服务器日志以了解进度。",
+    "images": "图片",
+    "image_type": "类型",
+    "image_source": "源",
+    "image_make_primary": "设为主要",
+    "update_metadata": "更新元数据",
+    "cancel": "关闭",
+    "transfer_queue": "转移队列",
+    "power_on_player": "打开",
+    "power_off_player": "关闭",
+    "powered_off_players": "未使用的播放器",
+    "sync_player_with": "与其他播放器同步",
+    "open_player_settings": "打开设置",
+    "select_repeat_mode": "选择循环模式",
+    "repeat_mode": {
+        "all": "队列循环",
+        "off": "关闭循环",
+        "one": "单曲循环"
+    },
+    "shuffle_disable": "禁用随机播放",
+    "shuffle_enable": "启用随机播放",
+    "dont_stop_the_music_enable": "启用“不要停止音乐！”",
+    "dont_stop_the_music_disable": "禁用“不要停止音乐！”"
 }

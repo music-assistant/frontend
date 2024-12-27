@@ -6,6 +6,7 @@
       tile
       hover
       class="panel-item"
+      :class="{ unavailable: !isAvailable }"
       @click="onClick"
       @click.right.prevent="onMenu"
     >
@@ -28,7 +29,10 @@
         />
       </v-overlay>
 
-      <MediaItemThumb :item="item" style="height: auto" />
+      <MediaItemThumb
+        :item="isAvailable ? item : undefined"
+        style="height: auto"
+      />
 
       <v-list-item
         variant="text"
@@ -66,7 +70,7 @@
 
       <!-- play button -->
       <v-btn
-        v-if="(isHovering || $vuetify.display.mobile) && itemIsAvailable(item)"
+        v-if="(isHovering || store.isTouchscreen) && isAvailable"
         icon="mdi-play"
         color="primary"
         fab
@@ -123,24 +127,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import MediaItemThumb from './MediaItemThumb.vue';
-import MAButton from './mods/Button.vue';
+import { computed } from "vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import MAButton from "./mods/Button.vue";
 import {
   BrowseFolder,
   ContentType,
   type MediaItemType,
   MediaType,
-} from '@/plugins/api/interfaces';
+} from "@/plugins/api/interfaces";
 import {
   getArtistsString,
   getBrowseFolderName,
   parseBool,
-} from '@/helpers/utils';
-import { itemIsAvailable } from '@/plugins/api/helpers';
-import { iconHiRes } from './QualityDetailsBtn.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import FavouriteButton from '@/components/FavoriteButton.vue';
+} from "@/helpers/utils";
+import { iconHiRes } from "./QualityDetailsBtn.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import FavouriteButton from "@/components/FavoriteButton.vue";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
@@ -150,12 +154,14 @@ export interface Props {
   showCheckboxes?: boolean;
   showMediaType?: boolean;
   showActions?: boolean;
+  isAvailable?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
   showActions: false,
   showMediaType: false,
+  isAvailable: true,
 });
 
 // computed properties
@@ -181,39 +187,43 @@ const HiResDetails = computed(() => {
       } bits`;
     }
   }
-  return '';
+  return "";
 });
 
 // emits
 const emit = defineEmits<{
-  (e: 'menu', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'click', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'play', item: MediaItemType, posX: number, posY: number): void;
-  (e: 'select', item: MediaItemType, selected: boolean): void;
+  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
+  (e: "click", item: MediaItemType, posX: number, posY: number): void;
+  (e: "play", item: MediaItemType, posX: number, posY: number): void;
+  (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {
   if (compProps.showCheckboxes) return;
-  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
-  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
-  emit('menu', compProps.item, posX, posY);
+  const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
+  emit("menu", compProps.item, posX, posY);
 };
 
 const onClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) {
-    emit('select', compProps.item, compProps.isSelected ? false : true);
+    emit("select", compProps.item, compProps.isSelected ? false : true);
     return;
   }
-  emit('click', compProps.item, evt.clientX, evt.clientY);
+  emit("click", compProps.item, evt.clientX, evt.clientY);
 };
 
 const onPlayClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit('play', compProps.item, evt.clientX, evt.clientY);
+  emit("play", compProps.item, evt.clientX, evt.clientY);
 };
 </script>
 
 <style scoped>
+.v-card.unavailable {
+  opacity: 0.3;
+}
+
 .panel-item {
   height: 100%;
   padding: 10px;

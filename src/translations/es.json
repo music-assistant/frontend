@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Grupo",
         "player": "Reproductor",
-        "stereo_pair": "Pareja estéreo"
+        "stereo_pair": "Pareja estéreo",
+        "sync_group": "Grupo de sincronización"
     },
     "players": "Reproductores",
     "playlist": "Lista de reproducción",
@@ -81,12 +82,6 @@
     "refresh_item": "Refrescar elemento",
     "remove_library": "Eliminar de la biblioteca",
     "remove_playlist": "Eliminar de la lista de reproducción",
-    "repeat_mode": "Modo de repetición: {0}",
-    "repeatmode": {
-        "all": "Repetir la cola entera",
-        "off": "Repetir apagado",
-        "one": "Repetir una pista"
-    },
     "search": "Buscar",
     "settings": {
         "add_new": "Añadir nuevo",
@@ -367,7 +362,11 @@
                 "pt_PT": "Portugués",
                 "ko_KR": "Coreano",
                 "nb": "Noruego",
-                "ru_RU": "Ruso"
+                "ru_RU": "Ruso",
+                "pt_BR": "Portugués (Brasil)",
+                "sl_SI": "Esloveno",
+                "hu_HU": "Húngaro",
+                "it": "Italiano"
             }
         },
         "hide_settings": {
@@ -377,13 +376,36 @@
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
         "no_player_providers": "No hay Proveedores de Música configurados",
-        "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música."
+        "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música.",
+        "volume_normalization_radio": {
+            "label": "Método de normalización de volumen a utilizar para transmisiones de radio",
+            "description": "Establezca la estrategia de normalización de volumen preferida para los transmisiones de radio. \\nDe forma predeterminada, Music Assistant recopila una medición de la sonoridad (media percibida) de la emisora de radio según la especificación EBU-R128 y, a continuación, ajusta la ganancia\/volumen general de la transmisión de acuerdo con dicha medición para que el rango dinámico del audio no se vea afectado. Si no existe (todavía) ninguna medición para una emisora de radio, Music Assistant utilizará un filtro de nivelación de sonoridad dinámico (pero menos preciso).\\n\\nSUGERENCIA: Las emisiones de radio suelen tener niveles de volumen variables, especialmente durante los anuncios y las cuñas publicitarias.\\nPuede optar por aplicar una normalización dinámica del volumen a las transmisiones de radio, incluso si existe una medición (media) de la sonoridad de la emisora de radio. \\n \\n**Opciones\\n\\n - Desactivado - No aplicar la normalización de volumen en absoluto para los flujos de radio. \\n  - Forzar dinámico - Aplicar la normalización de volumen dinámica en todo momento. \\n  - Solo Medición (sin retroceso) - Aplicar corrección (global) de volumen\/ganancia basada en la medición almacenada. Si no tenemos ninguna medición, no aplicar normalización.\\n  - Aplicar corrección de ganancia\/volumen (global) basada en la medición almacenada. Si no tenemos ninguna medición, se aplica una corrección de ganancia predefinida.\\n - Corrección de ganancia fija - Aplicar siempre la corrección de volumen\/ganancia fija.\\n  - Volver a dinámico - Elegir automáticamente la mejor opción: Aplicar la corrección (global) de volumen\/ganancia basada en la medición almacenada si tenemos alguna, permitir volver al modo dinámico si no hay ninguna medición disponible.",
+            "options": {
+                "disabled": "Deshabilitado",
+                "dynamic": "Forzar Dinamico",
+                "measurement_only": "Sólo medición (sin retroceso)",
+                "fallback_fixed_gain": "Volver a corrección de ganancia",
+                "fixed_gain": "Corrección de ganancia fija",
+                "fallback_dynamic": "Volver a dinámico"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Método de normalización de volumen para utilizar en pistas",
+            "options": {
+                "disabled": "Deshabilitado",
+                "dynamic": "Forzar dinamico",
+                "measurement_only": "Solo medición (sin retroceso)",
+                "fallback_fixed_gain": "Retroceder a ganancia fija",
+                "fixed_gain": "Corrección de ganancia fija",
+                "fallback_dynamic": "Retroceder a dinamico"
+            }
+        },
+        "group_type": "Tipo de grupo",
+        "add_group_player_desc": "Para los proveedores\/ecosistemas de reproductores que proporcionan agrupación\/sincronización nativa, se creará automáticamente un grupo de sincronizado, lo que significa que si reproduce en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente. \\n\\nPara los reproductores\/ecosistemas que no admiten la agrupación, o en caso de que desee agrupar reproductores de distintos ecosistemas, puede utilizar el tipo de grupo Universal, que distribuirá el mismo audio a todos los reproductores miembros (pero no de forma sincronizada). \\n\\nTenga en cuenta que algunos proveedores admiten la agrupación, pero debe utilizar la aplicación nativa para realizarla. Un ejemplo son los reproductores basados en Google Cast, en los que solo se pueden crear grupos de Google Cast dentro de la aplicación Google Home. "
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
     "shuffle": "Aleatorio",
-    "shuffle_disabled": "Aleatorio está deshabilitado",
-    "shuffle_enabled": "Aleatorio está habilitado",
     "sort": {
         "duration": "Duración",
         "position": "Posición",
@@ -408,7 +430,9 @@
         "last_played": "Última reproducción",
         "last_played_desc": "Última reproducción (descendente)",
         "play_count": "Conteo de reproducciones",
-        "play_count_desc": "Conteo de reproducciones (descendente)"
+        "play_count_desc": "Conteo de reproducciones (descendente)",
+        "artist_name": "Artista del álbum",
+        "artist_name_desc": "Artista del álbum (descendente)"
     },
     "state": {
         "idle": "inactivo",
@@ -418,7 +442,6 @@
     },
     "stream_details": "Detalles del flujo",
     "sync_now": "Sincronizar {0} ahora",
-    "sync_player_to": "Sincronizar este reproductor a:",
     "sync_running": "Uno o más proveedores de música están siendo sincronizados.",
     "tooltip": {
         "album_artist_filter": "Alternar filtro de álbum-artista",
@@ -484,7 +507,24 @@
     "background_task_added": "Esta acción es realizada por el servidor en segundo plano y puede tardar algún tiempo en completarse. Mantén un ojo en el registro del servidor para seguir el progreso.",
     "images": "Imágenes",
     "image_type": "Tipo",
+    "image_source": "Fuente",
     "image_make_primary": "Hacer primario",
     "update_metadata": "Actualizar metadatos",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "transfer_queue": "Transferir la cola a otro reproductor",
+    "power_on_player": "Encender",
+    "power_off_player": "Apagar",
+    "powered_off_players": "Reproductores apagados",
+    "sync_player_with": "Sincronizar con otro reproductor",
+    "open_player_settings": "Abrir ajustes del reproductor",
+    "select_repeat_mode": "Selecciona el modo de repetición",
+    "repeat_mode": {
+        "all": "Repetir la cola entera",
+        "off": "Repetir apagado",
+        "one": "Repetir una pista"
+    },
+    "shuffle_disable": "Deshabilitar reproducción aleatoria",
+    "shuffle_enable": "Activar reproducción aleatoria",
+    "dont_stop_the_music_enable": "Habilita '¡No pares la música!",
+    "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'"
 }

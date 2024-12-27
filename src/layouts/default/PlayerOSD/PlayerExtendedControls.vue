@@ -14,9 +14,9 @@
 </template>
 
 <script setup lang="ts">
-import QueueBtn from './PlayerControlBtn/QueueBtn.vue';
-import SpeakerBtn from './PlayerControlBtn/SpeakerBtn.vue';
-import VolumeBtn from './PlayerControlBtn/VolumeBtn.vue';
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
+import VolumeBtn from "./PlayerControlBtn/VolumeBtn.vue";
 
 // properties
 export interface Props {
@@ -43,7 +43,7 @@ const props = withDefaults(defineProps<Props>(), {
   player: () => ({ isVisible: true }),
   volume: () => ({
     isVisible: true,
-    volumeSize: '150px',
+    volumeSize: "150px",
     responsiveVolumeSize: false,
   }),
 });

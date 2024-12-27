@@ -67,7 +67,7 @@
     "playlists": "Listes de lecture",
     "provider_details": "Détails du fournisseur",
     "queue": "File d'attente",
-    "queue_clear": "Effacer tous les éléments en file d'attente",
+    "queue_clear": "Vider la file d'attente",
     "queue_delete": "Supprimer l'élément",
     "queue_empty": "Aucun élément dans la file d'attente",
     "queue_move_down": "Déplacer vers le bas",
@@ -82,12 +82,6 @@
     "refresh_item": "Rafraichir l'élément",
     "remove_library": "Supprimer de la bibliothèque",
     "remove_playlist": "Supprimer de la liste de lecture",
-    "repeat_mode": "Mode de répétition : {0}",
-    "repeatmode": {
-        "all": "Répéter la file d'attente",
-        "off": "Répétition désactivée",
-        "one": "Répéter une seule piste"
-    },
     "search": "Rechercher",
     "settings": {
         "add_new": "Ajouter un nouveau",
@@ -369,7 +363,9 @@
                 "pt_PT": "Portugais",
                 "ko_KR": "Coréen",
                 "nb": "Norvégien",
-                "ru_RU": "Russe"
+                "ru_RU": "Russe",
+                "pt_BR": "Portugais (Brésil)",
+                "sl_SI": "Slovène"
             }
         },
         "hide_settings": {
@@ -380,9 +376,13 @@
         "no_music_providers_detail": "Démarrez votre expérience Music Assistant en ajoutant vos fournisseurs de musique.",
         "no_player_providers": "Aucun fournisseur de lecteur n'est configuré",
         "no_player_providers_detail": "Configurez des fournisseurs de lecteurs pour sélectionner les appareils sur lesquels Music Assistant peut diffuser votre musique.",
-        "create_sync_group_player": "Créer un nouveau groupe de synchronisation",
-        "create_sync_group_player_desc": "Avec un groupe de synchronisation, vous créez un « préréglage » de lecteurs qui peuvent être synchronisés en un seul clic. Cela est utile si vous avez plusieurs lecteurs que vous souhaitez souvent synchroniser.\\nCréer un groupe de synchronisation au lieu de synchroniser manuellement les lecteurs à chaque fois présente l'avantage que la file d'attente est conservée sur le groupe lui-même, plutôt que sur les lecteurs individuels.\\nNotez que vous ne pouvez sélectionner que des lecteurs pouvant réellement être synchronisés (donc des lecteurs du même type).",
         "volume_normalization_radio": {
+            "label": "Méthode de normalisation du volume à utiliser pour les flux radio",
+            "options": {
+                "disabled": "Désactivée"
+            }
+        },
+        "volume_normalization_tracks": {
             "options": {
                 "disabled": "Désactivée"
             }
@@ -391,8 +391,6 @@
     "show_info": "Afficher les informations",
     "show_select_boxes": "Afficher les cases de sélection",
     "shuffle": "Aléatoire",
-    "shuffle_disabled": "La lecture aléatoire est désactivée",
-    "shuffle_enabled": "La lecture aléatoire est activée",
     "sort": {
         "duration": "Durée",
         "position": "Position",
@@ -429,7 +427,6 @@
     },
     "stream_details": "Détails du flux",
     "sync_now": "Synchronisez {0} maintenant",
-    "sync_player_to": "Synchronisez ce lecteur avec :",
     "sync_running": "Un ou plusieurs fournisseurs de musique sont en cours de synchronisation.",
     "tooltip": {
         "album_artist_filter": "Basculer le filtre d'album-artiste",
@@ -497,5 +494,20 @@
     "image_source": "Source",
     "update_metadata": "Mettre à jour les métadonnées",
     "cancel": "Annuler",
-    "transfer_queue": "Transférer la file d'attente vers un autre lecteur"
+    "transfer_queue": "Transférer la file d'attente vers un autre lecteur",
+    "power_on_player": "Allumer",
+    "power_off_player": "Éteindre",
+    "powered_off_players": "Lecteurs éteints",
+    "sync_player_with": "Synchroniser avec un autre lecteur",
+    "open_player_settings": "Ouvrir les paramètres",
+    "select_repeat_mode": "Sélectionner le mode de répétition",
+    "repeat_mode": {
+        "all": "Répéter toute la file d'attente",
+        "off": "Répétition désactivée",
+        "one": "Répéter une seule piste"
+    },
+    "shuffle_disable": "Désactiver la lecture aléatoire",
+    "shuffle_enable": "Activer la lecture aléatoire",
+    "dont_stop_the_music_enable": "Activer « N'arrêtez pas la musique ! »",
+    "dont_stop_the_music_disable": "Désactiver « N'arrêtez pas la musique ! »"
 }

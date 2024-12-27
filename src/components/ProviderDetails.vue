@@ -11,6 +11,10 @@
         <ListItem
           v-for="providerMapping in itemDetails?.provider_mappings"
           :key="providerMapping.provider_instance"
+          :disabled="
+            !providerMapping.available ||
+            !api.getProvider(providerMapping.provider_instance)
+          "
         >
           <template #prepend>
             <ProviderIcon
@@ -88,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { iconHiRes } from '@/components/QualityDetailsBtn.vue';
+import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
 import {
   MediaType,
   ProviderMapping,
@@ -144,8 +148,8 @@ const toolbarMenuItems = computed(() => {
   return [
     // toggle expand
     {
-      label: 'tooltip.collapse_expand',
-      icon: expanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down',
+      label: "tooltip.collapse_expand",
+      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
       action: toggleExpand,
       overflowAllowed: false,
     },

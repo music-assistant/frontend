@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from 'vue';
+import { computed, defineComponent, PropType } from "vue";
 
 interface IconProps {
   darkMode?: boolean;
@@ -29,12 +29,12 @@ export default defineComponent({
     height: {
       type: String as PropType<string>,
       required: false,
-      default: '1.4em',
+      default: "1.4em",
     },
     width: {
       type: String as PropType<string>,
       required: false,
-      default: '1.4em',
+      default: "1.4em",
     },
     name: {
       type: String as PropType<string>,

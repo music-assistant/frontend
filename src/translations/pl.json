@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Grupa",
         "player": "Odtwarzacz",
-        "stereo_pair": "Para Stereo"
+        "stereo_pair": "Para Stereo",
+        "sync_group": "Grupa synchronizacji"
     },
     "players": "Odtwarzacze",
     "playlist": "Lista odtwarzania",
@@ -81,12 +82,6 @@
     "refresh_item": "Odśwież",
     "remove_library": "Usuń z biblioteki",
     "remove_playlist": "Usuń z playlisty",
-    "repeat_mode": "Tryb powtarzania: {0}",
-    "repeatmode": {
-        "all": "Powtarzanie całej kolejki",
-        "off": "Powtarzanie wyłączone",
-        "one": "Powtórz pojedynczy utwór"
-    },
     "search": "Szukaj",
     "settings": {
         "add_new": "Dodaj nowe",
@@ -363,7 +358,15 @@
                 "sr_Latn": "serbski (łacina)",
                 "sv_SE": "szwedzki",
                 "en_GB": "angielski (Wielka Brytania)",
-                "es": "hiszpański"
+                "es": "hiszpański",
+                "pt_PT": "portugalski",
+                "ko_KR": "koreański",
+                "nb": "norweski",
+                "ru_RU": "rosyjski",
+                "pt_BR": "portugalski (Brazylia)",
+                "sl_SI": "słoweński",
+                "hu_HU": "węgierski",
+                "it": "Włoski"
             }
         },
         "hide_settings": {
@@ -373,13 +376,12 @@
         "no_music_providers": "Nie skonfigurowano żadnych dostawców muzyki",
         "no_music_providers_detail": "Rozpocznij korzystanie z Music Assistant, dodając swoich dostawców muzyki.",
         "no_player_providers": "Nie skonfigurowano żadnych dostawców odtwarzaczy",
-        "no_player_providers_detail": "Skonfiguruj dostawców odtwarzaczy, aby wybrać urządzenia, na których Music Assistant może odtwarzać Twoją muzykę."
+        "no_player_providers_detail": "Skonfiguruj dostawców odtwarzaczy, aby wybrać urządzenia, na których Music Assistant może odtwarzać Twoją muzykę.",
+        "group_type": "Typ grupy"
     },
     "show_info": "Pokaż informacje",
     "show_select_boxes": "Pokaż pola wyboru",
     "shuffle": "Odtwarzanie losowe",
-    "shuffle_disabled": "Wyłączone odtwarzanie losowe",
-    "shuffle_enabled": "Załączone odtwarzanie losowe",
     "sort": {
         "duration": "Czas trwania",
         "position": "Pozycja",
@@ -404,7 +406,9 @@
         "last_played": "Ostatnio odtwarzane",
         "last_played_desc": "Ostatnio odtwarzane (malejąco)",
         "play_count": "Ilość odtworzeń",
-        "play_count_desc": "Ilość odtworzeń (malejąco)"
+        "play_count_desc": "Ilość odtworzeń (malejąco)",
+        "artist_name": "Wykonawca albumu",
+        "artist_name_desc": "Wykonawca albumu (malejąco)"
     },
     "state": {
         "idle": "bezczynny",
@@ -414,7 +418,6 @@
     },
     "stream_details": "Szczegóły przesyłania",
     "sync_now": "Synchronizuj {0} teraz",
-    "sync_player_to": "Zsynchronizuj ten odtwarzacz z:",
     "sync_running": "Trwa synchronizacja co najmniej jednego dostawcy muzyki",
     "tooltip": {
         "album_artist_filter": "Przełącz filtr Wykonawca\/Album",
@@ -481,5 +484,23 @@
     "images": "Obrazy",
     "image_type": "Typ",
     "image_source": "Źródło",
-    "image_make_primary": "Ustaw podstawowym"
+    "image_make_primary": "Ustaw podstawowym",
+    "update_metadata": "Aktualizuj metadane",
+    "cancel": "Anuluj",
+    "transfer_queue": "Transferuj kolejkę",
+    "power_on_player": "Włącz",
+    "power_off_player": "Wyłącz",
+    "powered_off_players": "Wyłączone odtwarzacze",
+    "sync_player_with": "Synchronizuj z innym odtwarzaczem",
+    "open_player_settings": "Otwórz ustawienia",
+    "select_repeat_mode": "Wybierz tryb powtarzania",
+    "repeat_mode": {
+        "all": "Powtarzanie całej kolejki",
+        "off": "Powtarzanie wyłączone",
+        "one": "Powtarzanie pojedynczego utworu"
+    },
+    "shuffle_disable": "Wyłącz odtwarzanie losowe",
+    "shuffle_enable": "Włącz odtwarzanie losowe",
+    "dont_stop_the_music_enable": "Włącz opcję „Nie zatrzymuj muzyki!”",
+    "dont_stop_the_music_disable": "Wyłącz opcję „Nie zatrzymuj muzyki!”"
 }

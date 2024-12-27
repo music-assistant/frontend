@@ -1,193 +1,257 @@
-import { ComputedRef } from 'vue';
+import { ComputedRef } from "vue";
 
 /// constants
-export const SECURE_STRING_SUBSTITUTE = 'this_value_is_encrypted';
+export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
 export const MASS_LOGO_ONLINE =
-  'https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png';
+  "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png";
+
+/// dsp
+
+export enum DSPFilterType {
+  PARAMETRIC_EQ = "parametric_eq",
+  TONE_CONTROL = "tone_control",
+}
+
+export enum ParametricEQBandType {
+  PEAK = "peak",
+  HIGH_SHELF = "high_shelf",
+  LOW_SHELF = "low_shelf",
+  HIGH_PASS = "high_pass",
+  LOW_PASS = "low_pass",
+  NOTCH = "notch",
+}
+
+// Base interface for all DSP filters
+export interface DSPFilterBase {
+  type: DSPFilterType;
+  enabled: boolean;
+}
+
+export interface ParametricEQBand {
+  frequency: number;
+  q: number;
+  gain: number;
+  type: ParametricEQBandType;
+  enabled: boolean;
+}
+
+// Specific filter types
+export interface ParametricEQFilter extends DSPFilterBase {
+  type: DSPFilterType.PARAMETRIC_EQ;
+  bands: Array<ParametricEQBand>;
+}
+
+export interface ToneControlFilter extends DSPFilterBase {
+  type: DSPFilterType.TONE_CONTROL;
+  bass_level: number;
+  mid_level: number;
+  treble_level: number;
+}
+
+// Union type for all possible filters
+export type DSPFilter = ParametricEQFilter | ToneControlFilter;
+
+// Main DSP chain configuration
+export interface DSPConfig {
+  enabled: boolean;
+  filters: DSPFilter[];
+  input_gain: number;
+  output_gain: number;
+  output_limiter: boolean;
+}
 
 /// enums
 
 export enum MediaType {
-  ARTIST = 'artist',
-  ALBUM = 'album',
-  TRACK = 'track',
-  PLAYLIST = 'playlist',
-  RADIO = 'radio',
-  FOLDER = 'folder',
-  UNKNOWN = 'unknown',
+  ARTIST = "artist",
+  ALBUM = "album",
+  TRACK = "track",
+  PLAYLIST = "playlist",
+  RADIO = "radio",
+  FOLDER = "folder",
+  UNKNOWN = "unknown",
 }
 
 export enum LinkType {
-  WEBSITE = 'website',
-  FACEBOOK = 'facebook',
-  TWITTER = 'twitter',
-  LASTFM = 'lastfm',
-  YOUTUBE = 'youtube',
-  INSTAGRAM = 'instagram',
-  SNAPCHAT = 'snapchat',
-  TIKTOK = 'tiktok',
-  DISCOGS = 'discogs',
-  WIKIPEDIA = 'wikipedia',
-  ALLMUSIC = 'allmusic',
+  WEBSITE = "website",
+  FACEBOOK = "facebook",
+  TWITTER = "twitter",
+  LASTFM = "lastfm",
+  YOUTUBE = "youtube",
+  INSTAGRAM = "instagram",
+  SNAPCHAT = "snapchat",
+  TIKTOK = "tiktok",
+  DISCOGS = "discogs",
+  WIKIPEDIA = "wikipedia",
+  ALLMUSIC = "allmusic",
 }
 
 export enum ImageType {
-  THUMB = 'thumb',
-  LANDSCAPE = 'landscape',
-  FANART = 'fanart',
-  LOGO = 'logo',
-  CLEARART = 'clearart',
-  BANNER = 'banner',
-  CUTOUT = 'cutout',
-  BACK = 'back',
-  DISCART = 'discart',
-  OTHER = 'other',
+  THUMB = "thumb",
+  LANDSCAPE = "landscape",
+  FANART = "fanart",
+  LOGO = "logo",
+  CLEARART = "clearart",
+  BANNER = "banner",
+  CUTOUT = "cutout",
+  BACK = "back",
+  DISCART = "discart",
+  OTHER = "other",
 }
 
 export enum AlbumType {
-  ALBUM = 'album',
-  SINGLE = 'single',
-  COMPILATION = 'compilation',
-  EP = 'ep',
-  PODCAST = 'podcast',
-  AUDIOBOOK = 'audiobook',
-  UNKNOWN = 'unknown',
+  ALBUM = "album",
+  SINGLE = "single",
+  COMPILATION = "compilation",
+  EP = "ep",
+  UNKNOWN = "unknown",
 }
 
 export enum ContentType {
-  OGG = 'ogg',
-  FLAC = 'flac',
-  MP3 = 'mp3',
-  AAC = 'aac',
-  MPEG = 'mpeg',
-  ALAC = 'alac',
-  WAV = 'wav',
-  AIFF = 'aiff',
-  WMA = 'wma',
-  M4B = 'm4b',
-  M4A = 'm4a',
-  DSF = 'dsf',
-  WAVPACK = 'wv',
-  PCM_S16LE = 's16le', // PCM signed 16-bit little-endian
-  PCM_S24LE = 's24le', // PCM signed 24-bit little-endian
-  PCM_S32LE = 's32le', // PCM signed 32-bit little-endian
-  PCM_F32LE = 'f32le', // PCM 32-bit floating-point little-endian
-  PCM_F64LE = 'f64le', // PCM 64-bit floating-point little-endian
-  MPEG_DASH = 'dash',
-  UNKNOWN = '?',
+  OGG = "ogg",
+  FLAC = "flac",
+  MP3 = "mp3",
+  AAC = "aac",
+  MPEG = "mpeg",
+  ALAC = "alac",
+  WAV = "wav",
+  AIFF = "aiff",
+  WMA = "wma",
+  M4B = "m4b",
+  M4A = "m4a",
+  DSF = "dsf",
+  WAVPACK = "wv",
+  PCM_S16LE = "s16le", // PCM signed 16-bit little-endian
+  PCM_S24LE = "s24le", // PCM signed 24-bit little-endian
+  PCM_S32LE = "s32le", // PCM signed 32-bit little-endian
+  PCM_F32LE = "f32le", // PCM 32-bit floating-point little-endian
+  PCM_F64LE = "f64le", // PCM 64-bit floating-point little-endian
+  MPEG_DASH = "dash",
+  UNKNOWN = "?",
 }
 
 export enum QueueOption {
-  PLAY = 'play',
-  REPLACE = 'replace',
-  NEXT = 'next',
-  REPLACE_NEXT = 'replace_next',
-  ADD = 'add',
+  PLAY = "play",
+  REPLACE = "replace",
+  NEXT = "next",
+  REPLACE_NEXT = "replace_next",
+  ADD = "add",
 }
 
 export enum RepeatMode {
-  OFF = 'off', // no repeat at all
-  ONE = 'one', // repeat current/single track
-  ALL = 'all', // repeat entire queue
+  OFF = "off", // no repeat at all
+  ONE = "one", // repeat current/single track
+  ALL = "all", // repeat entire queue
 }
 
 export enum PlayerState {
-  IDLE = 'idle',
-  PAUSED = 'paused',
-  PLAYING = 'playing',
+  IDLE = "idle",
+  PAUSED = "paused",
+  PLAYING = "playing",
 }
 
 export enum PlayerType {
-  PLAYER = 'player', // A regular player.
-  GROUP = 'group', // A (dedicated) group player or playergroup.
-  SYNC_GROUP = 'sync_group', // A group/preset of players that can be synced together.
+  PLAYER = "player", // A regular player.
+  GROUP = "group", // A (dedicated) group player or playergroup.
+  STEREO_PAIR = "stereo_pair",
 }
 
 export enum PlayerFeature {
-  POWER = 'power',
-  VOLUME_SET = 'volume_set',
-  VOLUME_MUTE = 'volume_mute',
-  PAUSE = 'pause',
-  SYNC = 'sync',
-  SEEK = 'seek',
-  ENQUEUE_NEXT = 'enqueue_next',
+  POWER = "power",
+  VOLUME_SET = "volume_set",
+  VOLUME_MUTE = "volume_mute",
+  PAUSE = "pause",
+  SET_MEMBERS = "set_members",
+  SEEK = "seek",
+  NEXT_PREVIOUS = "next_previous",
+  ENQUEUE_NEXT = "enqueue_next",
 }
 
 export enum EventType {
-  PLAYER_ADDED = 'player_added',
-  PLAYER_UPDATED = 'player_updated',
-  PLAYER_REMOVED = 'player_removed',
-  PLAYER_SETTINGS_UPDATED = 'player_settings_updated',
-  QUEUE_ADDED = 'queue_added',
-  QUEUE_UPDATED = 'queue_updated',
-  QUEUE_ITEMS_UPDATED = 'queue_items_updated',
-  QUEUE_TIME_UPDATED = 'queue_time_updated',
-  QUEUE_SETTINGS_UPDATED = 'queue_settings_updated',
-  SHUTDOWN = 'application_shutdown',
-  MEDIA_ITEM_ADDED = 'media_item_added',
-  MEDIA_ITEM_UPDATED = 'media_item_updated',
-  MEDIA_ITEM_DELETED = 'media_item_deleted',
-  PROVIDERS_UPDATED = 'providers_updated',
-  PLAYER_CONFIG_UPDATED = 'player_config_updated',
-  SYNC_TASKS_UPDATED = 'sync_tasks_updated',
-  AUTH_SESSION = 'auth_session',
+  PLAYER_ADDED = "player_added",
+  PLAYER_UPDATED = "player_updated",
+  PLAYER_REMOVED = "player_removed",
+  PLAYER_SETTINGS_UPDATED = "player_settings_updated",
+  QUEUE_ADDED = "queue_added",
+  QUEUE_UPDATED = "queue_updated",
+  QUEUE_ITEMS_UPDATED = "queue_items_updated",
+  QUEUE_TIME_UPDATED = "queue_time_updated",
+  QUEUE_SETTINGS_UPDATED = "queue_settings_updated",
+  SHUTDOWN = "application_shutdown",
+  MEDIA_ITEM_ADDED = "media_item_added",
+  MEDIA_ITEM_UPDATED = "media_item_updated",
+  MEDIA_ITEM_DELETED = "media_item_deleted",
+  PROVIDERS_UPDATED = "providers_updated",
+  PLAYER_CONFIG_UPDATED = "player_config_updated",
+  SYNC_TASKS_UPDATED = "sync_tasks_updated",
+  AUTH_SESSION = "auth_session",
   // special types for local subscriptions only
-  CONNECTED = 'connected',
-  DISCONNECTED = 'disconnected',
-  ALL = '*',
+  CONNECTED = "connected",
+  DISCONNECTED = "disconnected",
+  ALL = "*",
 }
 
 export enum ProviderFeature {
   // browse/explore/recommendations
-  BROWSE = 'browse',
-  SEARCH = 'search',
-  RECOMMENDATIONS = 'recommendations',
+  BROWSE = "browse",
+  SEARCH = "search",
+  RECOMMENDATIONS = "recommendations",
   // library feature per mediatype
-  LIBRARY_ARTISTS = 'library_artists',
-  LIBRARY_ALBUMS = 'library_albums',
-  LIBRARY_TRACKS = 'library_tracks',
-  LIBRARY_PLAYLISTS = 'library_playlists',
-  LIBRARY_RADIOS = 'library_radios',
+  LIBRARY_ARTISTS = "library_artists",
+  LIBRARY_ALBUMS = "library_albums",
+  LIBRARY_TRACKS = "library_tracks",
+  LIBRARY_PLAYLISTS = "library_playlists",
+  LIBRARY_RADIOS = "library_radios",
   // additional library features
-  ARTIST_ALBUMS = 'artist_albums',
-  ARTIST_TOPTRACKS = 'artist_toptracks',
+  ARTIST_ALBUMS = "artist_albums",
+  ARTIST_TOPTRACKS = "artist_toptracks",
   // library edit (=add/remove) feature per mediatype
-  LIBRARY_ARTISTS_EDIT = 'library_artists_edit',
-  LIBRARY_ALBUMS_EDIT = 'library_albums_edit',
-  LIBRARY_TRACKS_EDIT = 'library_tracks_edit',
-  LIBRARY_PLAYLISTS_EDIT = 'library_playlists_edit',
-  LIBRARY_RADIOS_EDIT = 'library_radios_edit',
+  LIBRARY_ARTISTS_EDIT = "library_artists_edit",
+  LIBRARY_ALBUMS_EDIT = "library_albums_edit",
+  LIBRARY_TRACKS_EDIT = "library_tracks_edit",
+  LIBRARY_PLAYLISTS_EDIT = "library_playlists_edit",
+  LIBRARY_RADIOS_EDIT = "library_radios_edit",
   // bonus features
-  SIMILAR_TRACKS = 'similar_tracks',
+  SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features
-  PLAYLIST_TRACKS_EDIT = 'playlist_tracks_edit',
-  PLAYLIST_CREATE = 'playlist_create',
+  PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
+  PLAYLIST_CREATE = "playlist_create",
   // player provider specific features
-  SYNC_PLAYERS = 'sync_players',
+  SYNC_PLAYERS = "sync_players",
+  REMOVE_PLAYER = "remove_player",
   // metadata provider specific features
-  ARTIST_METADATA = 'artist_metadata',
-  ALBUM_METADATA = 'album_metadata',
-  TRACK_METADATA = 'track_metadata',
+  ARTIST_METADATA = "artist_metadata",
+  ALBUM_METADATA = "album_metadata",
+  TRACK_METADATA = "track_metadata",
 }
 
 export enum ProviderType {
-  MUSIC = 'music',
-  PLAYER = 'player',
-  METADATA = 'metadata',
-  PLUGIN = 'plugin',
+  MUSIC = "music",
+  PLAYER = "player",
+  METADATA = "metadata",
+  PLUGIN = "plugin",
 }
 
 export enum ConfigEntryType {
-  BOOLEAN = 'boolean',
-  STRING = 'string',
-  SECURE_STRING = 'secure_string',
-  INTEGER = 'integer',
-  FLOAT = 'float',
-  LABEL = 'label',
-  DIVIDER = 'divider',
-  ACTION = 'action',
-  ICON = 'icon',
-  ALERT = 'alert',
+  BOOLEAN = "boolean",
+  STRING = "string",
+  SECURE_STRING = "secure_string",
+  INTEGER = "integer",
+  FLOAT = "float",
+  LABEL = "label",
+  DIVIDER = "divider",
+  ACTION = "action",
+  ICON = "icon",
+  ALERT = "alert",
+}
+
+export enum VolumeNormalizationMode {
+  DISABLED = "disabled",
+  DYNAMIC = "dynamic",
+  MEASUREMENT_ONLY = "measurement_only",
+  FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
+  FIXED_GAIN = "fixed_gain",
+  FALLBACK_DYNAMIC = "fallback_dynamic",
 }
 
 //// api
@@ -496,8 +560,12 @@ export interface StreamDetails {
   duration?: number;
 
   queue_id?: string;
-  loudness?: LoudnessMeasurement;
+  fade_in?: boolean;
+  loudness?: number;
+  loudness_album?: number;
+  prefer_album_loudness?: boolean;
   target_loudness?: number;
+  volume_normalization_mode?: VolumeNormalizationMode;
 }
 
 // queue_item
@@ -522,6 +590,7 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
+  dont_stop_the_music_enabled: boolean;
   repeat_mode: RepeatMode;
   current_index?: number;
   index_in_buffer?: number;
@@ -537,8 +606,31 @@ export interface PlayerQueue {
 
 export interface DeviceInfo {
   model: string;
-  address: string;
   manufacturer: string;
+  software_version?: string;
+  model_id?: string;
+  manufacturer_id?: string;
+  ip_address?: string;
+  mac_address?: string;
+}
+
+export interface PlayerMedia {
+  uri: string; // uri or other identifier of the loaded media
+  media_type: MediaType;
+  title?: string; // optional
+  artist?: string; // optional
+  album?: string; // optional
+  image_url?: string; // optional
+  duration?: number; // optional
+  queue_id?: string; // only present for requests from queue controller
+  queue_item_id?: string; // only present for requests from queue controller
+}
+
+export interface PlayerSource {
+  id: string;
+  name: string;
+  is_mass: boolean;
+  passive: boolean;
 }
 
 export interface Player {
@@ -552,18 +644,18 @@ export interface Player {
   supported_features: PlayerFeature[];
   elapsed_time: number;
   elapsed_time_last_updated: number;
-  current_url: string;
-  current_item: string;
+  current_media?: PlayerMedia;
   state: PlayerState;
 
   volume_level: number;
   volume_muted: boolean;
   group_childs: string[];
   active_source: string;
+  source_list: PlayerSource[];
   active_group?: string;
-  can_sync_with: string[];
   synced_to: string;
-  max_sample_rate: number;
+  can_group_with: string[];
+
   enabled: boolean;
   group_volume: number;
   display_name: string;
@@ -607,6 +699,7 @@ export interface ProviderInstance {
   domain: string;
   name: string;
   instance_id: string;
+  lookup_key: string;
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider?: boolean;

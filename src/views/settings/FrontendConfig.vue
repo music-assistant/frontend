@@ -1,10 +1,10 @@
 <template>
   <section>
     <v-toolbar color="transparent">
-      <template #title>{{ $t('settings.frontend') }} </template>
+      <template #title>{{ $t("settings.frontend") }} </template>
     </v-toolbar>
     <v-card-text style="margin-left: -5px; margin-right: -5px">
-      <v-card-subtitle> {{ $t('settings.frontend_desc') }} </v-card-subtitle>
+      <v-card-subtitle> {{ $t("settings.frontend_desc") }} </v-card-subtitle>
       <br />
       <br />
 
@@ -29,17 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 import {
   ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
-} from '@/plugins/api/interfaces';
-import EditConfig from './EditConfig.vue';
-import { onMounted } from 'vue';
-import { $t, i18n } from '@/plugins/i18n';
-import { DEFAULT_MENU_ITEMS } from '@/layouts/default/DrawerNavigation.vue';
+} from "@/plugins/api/interfaces";
+import EditConfig from "./EditConfig.vue";
+import { onMounted } from "vue";
+import { $t, i18n } from "@/plugins/i18n";
+import { DEFAULT_MENU_ITEMS } from "@/layouts/default/DrawerNavigation.vue";
 
 // global refs
 const router = useRouter();
@@ -47,87 +47,87 @@ const config = ref<ConfigEntry[]>([]);
 const loading = ref(false);
 
 onMounted(() => {
-  const storedMenuConf = localStorage.getItem('frontend.settings.menu_items');
+  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledMenuItems: string[] = storedMenuConf
-    ? storedMenuConf.split(',')
+    ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
 
   config.value = [
     {
-      key: 'theme',
+      key: "theme",
       type: ConfigEntryType.STRING,
-      label: 'theme',
-      default_value: 'auto',
+      label: "theme",
+      default_value: "auto",
       required: false,
       options: [
-        { title: 'auto', value: 'auto' },
-        { title: 'dark', value: 'dark' },
-        { title: 'light', value: 'light' },
+        { title: "auto", value: "auto" },
+        { title: "dark", value: "dark" },
+        { title: "light", value: "light" },
       ],
       multi_value: false,
-      category: 'generic',
-      value: localStorage.getItem('frontend.settings.theme'),
+      category: "generic",
+      value: localStorage.getItem("frontend.settings.theme"),
     },
     {
-      key: 'language',
+      key: "language",
       type: ConfigEntryType.STRING,
-      label: 'language',
-      default_value: 'auto',
+      label: "language",
+      default_value: "auto",
       required: false,
       options: [
-        { title: 'auto', value: 'auto' },
+        { title: "auto", value: "auto" },
         ...i18n.global.availableLocales.map((x) => {
           return { title: x, value: x };
         }),
       ],
       multi_value: false,
-      category: 'generic',
-      value: localStorage.getItem('frontend.settings.language'),
+      category: "generic",
+      value: localStorage.getItem("frontend.settings.language"),
     },
     {
-      key: 'menu_style',
+      key: "menu_style",
       type: ConfigEntryType.STRING,
-      label: 'menu_style',
-      default_value: 'horizontal',
+      label: "menu_style",
+      default_value: "horizontal",
       required: false,
       options: [
-        { title: 'horizontal', value: 'horizontal' },
-        { title: 'vertical', value: 'vertical' },
+        { title: "horizontal", value: "horizontal" },
+        { title: "vertical", value: "vertical" },
       ],
       multi_value: false,
-      category: 'generic',
-      value: localStorage.getItem('frontend.settings.menu_style'),
+      category: "generic",
+      value: localStorage.getItem("frontend.settings.menu_style"),
     },
     {
-      key: 'menu_items',
+      key: "menu_items",
       type: ConfigEntryType.STRING,
-      label: 'menu_items',
+      label: "menu_items",
       default_value: DEFAULT_MENU_ITEMS,
       required: false,
       options: [
-        { title: $t('home'), value: 'home' },
-        { title: $t('search'), value: 'search' },
-        { title: $t('artists'), value: 'artists' },
-        { title: $t('albums'), value: 'albums' },
-        { title: $t('tracks'), value: 'tracks' },
-        { title: $t('playlists'), value: 'playlists' },
-        { title: $t('radios'), value: 'radios' },
-        { title: $t('browse'), value: 'browse' },
-        { title: $t('settings.settings'), value: 'settings' },
+        { title: $t("home"), value: "home" },
+        { title: $t("search"), value: "search" },
+        { title: $t("artists"), value: "artists" },
+        { title: $t("albums"), value: "albums" },
+        { title: $t("tracks"), value: "tracks" },
+        { title: $t("playlists"), value: "playlists" },
+        { title: $t("radios"), value: "radios" },
+        { title: $t("browse"), value: "browse" },
+        { title: $t("settings.settings"), value: "settings" },
       ],
       multi_value: true,
-      category: 'generic',
+      category: "generic",
       value: enabledMenuItems,
     },
     {
-      key: 'hide_settings',
+      key: "hide_settings",
       type: ConfigEntryType.BOOLEAN,
-      label: 'hide_settings',
+      label: "hide_settings",
       default_value: false,
       required: false,
       multi_value: false,
-      category: 'advanced',
-      value: localStorage.getItem('frontend.settings.hide_settings') == 'true',
+      category: "advanced",
+      value: localStorage.getItem("frontend.settings.hide_settings") == "true",
     },
   ];
 });
@@ -143,7 +143,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
       localStorage.removeItem(storageKey);
     }
   }
-  router.push({ name: 'home' }).then(() => {
+  router.push({ name: "home" }).then(() => {
     // enforce refresh
     window.location.reload();
   });

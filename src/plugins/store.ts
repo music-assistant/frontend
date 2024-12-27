@@ -1,14 +1,15 @@
-import { computed, reactive } from 'vue';
-import { Player, PlayerQueue, QueueItem } from './api/interfaces';
+import { computed, reactive } from "vue";
+import { Player, PlayerQueue, QueueItem } from "./api/interfaces";
 
-import api from './api';
-import { StoredState } from '@/components/ItemsListing.vue';
+import api from "./api";
+import { StoredState } from "@/components/ItemsListing.vue";
+import { isTouchscreenDevice } from "@/helpers/utils";
 
 export enum AlertType {
-  ERROR = 'error',
-  WARNING = 'warning',
-  INFO = 'info',
-  SUCCESS = 'success',
+  ERROR = "error",
+  WARNING = "warning",
+  INFO = "info",
+  SUCCESS = "success",
 }
 
 interface Alert {
@@ -40,17 +41,18 @@ interface Store {
   libraryPlaylistsCount?: number;
   libraryRadiosCount?: number;
   connected?: boolean;
+  isTouchscreen: boolean;
 }
 
 export const store: Store = reactive({
   activePlayerId: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
-  navigationMenuStyle: 'horizontal',
+  navigationMenuStyle: "horizontal",
   showFullscreenPlayer: false,
   showQueueItems: false,
   apiInitialized: false,
-  apiBaseUrl: '',
+  apiBaseUrl: "",
   dialogActive: false,
   activePlayer: computed(() => {
     if (store.activePlayerId && store.activePlayerId in api.players) {
@@ -62,7 +64,12 @@ export const store: Store = reactive({
     if (store.activePlayer && store.activePlayer.active_source in api.queues) {
       return api.queues[store.activePlayer.active_source];
     }
-    if (store.activePlayer && store.activePlayer.player_id in api.queues) {
+    if (
+      store.activePlayer &&
+      !store.activePlayer.active_source &&
+      store.activePlayer.player_id in api.queues &&
+      api.queues[store.activePlayer.player_id].active
+    ) {
       return api.queues[store.activePlayer.player_id];
     }
     return undefined;
@@ -82,4 +89,5 @@ export const store: Store = reactive({
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
   connected: false,
+  isTouchscreen: isTouchscreenDevice(),
 });

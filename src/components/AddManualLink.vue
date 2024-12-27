@@ -30,14 +30,14 @@
         <v-card-actions>
           <v-spacer />
           <v-btn variant="outlined" @click="model = false">{{
-            $t('cancel')
+            $t("cancel")
           }}</v-btn>
           <v-btn
             variant="flat"
             color="primary"
             :disabled="loading"
             @click="save"
-            >{{ $t('save') }}</v-btn
+            >{{ $t("save") }}</v-btn
           >
         </v-card-actions>
       </div>
@@ -46,12 +46,12 @@
 </template>
 
 <script setup lang="ts">
-import { ImageType, MediaType } from '@/plugins/api/interfaces';
-import type { Radio, Track } from '@/plugins/api/interfaces';
-import { ref, watch } from 'vue';
-import api from '@/plugins/api';
-import { store } from '@/plugins/store';
-import Toolbar from '@/components/Toolbar.vue';
+import { ImageType, MediaType } from "@/plugins/api/interfaces";
+import type { Radio, Track } from "@/plugins/api/interfaces";
+import { ref, watch } from "vue";
+import api from "@/plugins/api";
+import { store } from "@/plugins/store";
+import Toolbar from "@/components/Toolbar.vue";
 
 export interface Props {
   type: MediaType;
@@ -59,9 +59,9 @@ export interface Props {
 
 const model = defineModel<boolean>();
 const compProps = defineProps<Props>();
-const url = ref<string>('');
-const name = ref<string>('');
-const image = ref<string>('');
+const url = ref<string>("");
+const name = ref<string>("");
+const image = ref<string>("");
 const loading = ref<boolean>(false);
 const itemDetails = ref<Radio | Track>();
 
@@ -70,9 +70,9 @@ watch(
   (active) => {
     if (active != null) store.dialogActive = active;
     if (active == false) {
-      url.value = '';
-      name.value = '';
-      image.value = '';
+      url.value = "";
+      name.value = "";
+      image.value = "";
       itemDetails.value = undefined;
     }
   },
@@ -85,7 +85,7 @@ watch(
     if (details) {
       if (!name.value) name.value = details.name;
       for (const img of details.metadata.images || []) {
-        if (img.type == 'thumb') {
+        if (img.type == "thumb") {
           image.value = img.path;
           break;
         }
@@ -95,13 +95,13 @@ watch(
 );
 
 const fetchItemDetails = () => {
-  if (!url.value || !url.value.startsWith('http')) {
+  if (!url.value || !url.value.startsWith("http")) {
     return;
   }
   loading.value = true;
   if (compProps.type == MediaType.RADIO) {
     api
-      .getRadio(url.value, 'builtin')
+      .getRadio(url.value, "builtin")
       .then((x) => {
         itemDetails.value = x;
       })
@@ -114,7 +114,7 @@ const fetchItemDetails = () => {
       });
   } else {
     api
-      .getTrack(url.value, 'builtin')
+      .getTrack(url.value, "builtin")
       .then((x) => {
         itemDetails.value = x;
       })
@@ -140,7 +140,7 @@ const save = function () {
       {
         type: ImageType.THUMB,
         path: image.value,
-        provider: 'builtin',
+        provider: "builtin",
         remotely_accessible: true,
       },
     ];

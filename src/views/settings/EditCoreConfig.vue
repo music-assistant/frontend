@@ -5,7 +5,7 @@
       <div v-if="config" style="margin-left: -5px; margin-right: -5px">
         <v-card-title>
           {{
-            $t('settings.setup_provider', [
+            $t("settings.setup_provider", [
               api.providerManifests[config.domain].name,
             ])
           }}
@@ -18,18 +18,18 @@
         <v-card-subtitle
           v-if="api.providerManifests[config.domain].codeowners.length"
         >
-          <b>{{ $t('settings.codeowners') }}: </b
-          >{{ api.providerManifests[config.domain].codeowners.join(' / ') }}
+          <b>{{ $t("settings.codeowners") }}: </b
+          >{{ api.providerManifests[config.domain].codeowners.join(" / ") }}
         </v-card-subtitle>
 
         <v-card-subtitle
           v-if="api.providerManifests[config.domain].documentation"
         >
-          <b>{{ $t('settings.need_help_setup_provider') }} </b>&nbsp;
+          <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
             :href="api.providerManifests[config.domain].documentation"
             target="_blank"
-            >{{ $t('settings.check_docs') }}</a
+            >{{ $t("settings.check_docs") }}</a
           >
         </v-card-subtitle>
         <br />
@@ -58,12 +58,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { api } from '@/plugins/api';
-import { CoreConfig, ConfigValueType } from '@/plugins/api/interfaces';
-import EditConfig from './EditConfig.vue';
-import { nanoid } from 'nanoid';
+import { ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { api } from "@/plugins/api";
+import { CoreConfig, ConfigValueType } from "@/plugins/api/interfaces";
+import EditConfig from "./EditConfig.vue";
+import { nanoid } from "nanoid";
 
 // global refs
 const router = useRouter();
@@ -95,7 +95,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .saveCoreConfig(config.value!.domain, values)
     .then(() => {
       loading.value = false;
-      router.push({ name: 'providersettings' });
+      router.push({ name: "providersettings" });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
@@ -117,7 +117,7 @@ const onAction = async function (
     }
   }
   // ensure the session id is passed along
-  values['session_id'] = sessionId;
+  values["session_id"] = sessionId;
   api
     .getCoreConfigEntries(config.value!.domain, action, values)
     .then((entries) => {

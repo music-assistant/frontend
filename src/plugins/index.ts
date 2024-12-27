@@ -5,13 +5,13 @@
  */
 
 // Plugins
-import vuetify from './vuetify';
-import router from './router';
-import { i18n } from './i18n';
-import touchEvents from './touchEvents';
-import breakpoint from './breakpoint';
-import swiper from './swiper';
-import type { App } from 'vue';
+import vuetify from "./vuetify";
+import router from "./router";
+import { i18n } from "./i18n";
+import touchEvents from "./touchEvents";
+import breakpoint from "./breakpoint";
+import swiper from "./swiper";
+import type { App } from "vue";
 
 export function registerPlugins(app: App) {
   app

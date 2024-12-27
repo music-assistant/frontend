@@ -43,8 +43,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import Button from '@/components/mods/Button.vue';
+import { ref } from "vue";
+import Button from "@/components/mods/Button.vue";
 
 const showNavigationMenu = ref(true);
 const enableRail = ref(false);
@@ -60,93 +60,93 @@ export interface MenuItem {
 }
 
 export const DEFAULT_MENU_ITEMS = [
-  'home',
-  'search',
-  'artists',
-  'albums',
-  'tracks',
-  'playlists',
-  'radios',
-  'browse',
+  "home",
+  "search",
+  "artists",
+  "albums",
+  "tracks",
+  "playlists",
+  "radios",
+  "browse",
 ];
 
 export const getMenuItems = function () {
-  const storedMenuConf = localStorage.getItem('frontend.settings.menu_items');
+  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledItems: string[] = storedMenuConf
-    ? storedMenuConf.split(',')
+    ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
 
   const items: MenuItem[] = [];
 
-  if (enabledItems.includes('home')) {
+  if (enabledItems.includes("home")) {
     items.push({
-      label: 'home',
-      icon: 'mdi-home-outline',
-      path: '/home',
+      label: "home",
+      icon: "mdi-home-outline",
+      path: "/home",
       isLibraryNode: false,
     });
   }
-  if (enabledItems.includes('search')) {
+  if (enabledItems.includes("search")) {
     items.push({
-      label: 'search',
-      icon: 'mdi-magnify',
-      path: '/search',
+      label: "search",
+      icon: "mdi-magnify",
+      path: "/search",
       isLibraryNode: false,
     });
   }
-  if (enabledItems.includes('artists')) {
+  if (enabledItems.includes("artists")) {
     items.push({
-      label: 'artists',
-      icon: 'mdi-account-outline',
-      path: '/artists',
+      label: "artists",
+      icon: "mdi-account-outline",
+      path: "/artists",
       isLibraryNode: true,
     });
   }
-  if (enabledItems.includes('albums')) {
+  if (enabledItems.includes("albums")) {
     items.push({
-      label: 'albums',
-      icon: 'mdi-album',
-      path: '/albums',
+      label: "albums",
+      icon: "mdi-album",
+      path: "/albums",
       isLibraryNode: true,
     });
   }
-  if (enabledItems.includes('tracks')) {
+  if (enabledItems.includes("tracks")) {
     items.push({
-      label: 'tracks',
-      icon: 'mdi-music-note',
-      path: '/tracks',
+      label: "tracks",
+      icon: "mdi-music-note",
+      path: "/tracks",
       isLibraryNode: true,
     });
   }
-  if (enabledItems.includes('playlists')) {
+  if (enabledItems.includes("playlists")) {
     items.push({
-      label: 'playlists',
-      icon: 'mdi-playlist-play',
-      path: '/playlists',
+      label: "playlists",
+      icon: "mdi-playlist-play",
+      path: "/playlists",
       isLibraryNode: true,
     });
   }
-  if (enabledItems.includes('radios')) {
+  if (enabledItems.includes("radios")) {
     items.push({
-      label: 'radios',
-      icon: 'mdi-access-point',
-      path: '/radios',
+      label: "radios",
+      icon: "mdi-access-point",
+      path: "/radios",
       isLibraryNode: true,
     });
   }
-  if (enabledItems.includes('browse')) {
+  if (enabledItems.includes("browse")) {
     items.push({
-      label: 'browse',
-      icon: 'mdi-folder-outline',
-      path: '/browse',
+      label: "browse",
+      icon: "mdi-folder-outline",
+      path: "/browse",
       isLibraryNode: true,
     });
   }
-  if (enabledItems.includes('settings')) {
+  if (enabledItems.includes("settings")) {
     items.push({
-      label: 'settings.settings',
-      icon: 'mdi-cog-outline',
-      path: '/settings',
+      label: "settings.settings",
+      icon: "mdi-cog-outline",
+      path: "/settings",
       isLibraryNode: true,
     });
   }
@@ -157,7 +157,7 @@ export const getMenuItems = function () {
 <style scoped>
 .logo_text {
   margin-left: 0px;
-  font-family: 'JetBrains Mono Medium';
+  font-family: "JetBrains Mono Medium";
   font-size: larger;
   font-weight: 500;
 }

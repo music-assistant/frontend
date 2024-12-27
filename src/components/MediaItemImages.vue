@@ -60,16 +60,14 @@
                 class="panel-item-details"
               >
                 <v-list-item-title width="95%">
-                  {{ $t('image_type') + ': ' + image.type }}
+                  {{ $t("image_type") + ": " + image.type }}
                 </v-list-item-title>
                 <v-list-item-subtitle
                   class="line-clamp-1"
                   style="margin-right: 25px"
                 >
                   {{
-                    $t('image_source') +
-                    ': ' +
-                    api.getProvider(image.provider)?.name
+                    $t("image_source") + ": " + getProviderName(image.provider)
                   }}
                 </v-list-item-subtitle>
                 <v-icon
@@ -90,14 +88,14 @@
 </template>
 
 <script setup lang="ts">
-import { getImageURL } from '@/components/MediaItemThumb.vue';
-import { ImageType, type MediaItemImage } from '@/plugins/api/interfaces';
-import { panelViewItemResponsive } from '@/helpers/utils';
-import { api } from '@/plugins/api';
-import Container from '@/components/mods/Container.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import { computed, ref } from 'vue';
-import { eventbus } from '@/plugins/eventbus';
+import { getImageURL } from "@/components/MediaItemThumb.vue";
+import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
+import { panelViewItemResponsive } from "@/helpers/utils";
+import { api } from "@/plugins/api";
+import Container from "@/components/mods/Container.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import { computed, ref } from "vue";
+import { eventbus } from "@/plugins/eventbus";
 
 export interface Props {
   modelValue: MediaItemImage[];
@@ -106,25 +104,25 @@ const compProps = defineProps<Props>();
 
 const expanded = ref(false);
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(["update:modelValue"]);
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, '_blank');
+  window.open(url, "_blank");
 };
 
 const onMenu = function (
   evt: PointerEvent | TouchEvent,
   image: MediaItemImage,
 ) {
-  const posX = 'clientX' in evt ? evt.clientX : evt.touches[0].clientX;
-  const posY = 'clientY' in evt ? evt.clientY : evt.touches[0].clientY;
+  const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
+  const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
 
   // open the contextmenu by emitting the event
-  eventbus.emit('contextmenu', {
+  eventbus.emit("contextmenu", {
     items: [
       {
-        label: 'image_make_primary',
-        icon: 'mdi-star-box',
+        label: "image_make_primary",
+        icon: "mdi-star-box",
         action: () => {
           makeImagePrimary(image);
         },
@@ -133,6 +131,11 @@ const onMenu = function (
     posX: posX,
     posY: posY,
   });
+};
+
+const getProviderName = function (provider: string) {
+  if (api.getProvider(provider)) return api.getProvider(provider)!.name;
+  return provider;
 };
 
 const onClick = function (evt: PointerEvent, image: MediaItemImage) {
@@ -144,18 +147,18 @@ const toggleExpand = function () {
 };
 
 const makeImagePrimary = function (image: MediaItemImage) {
-  console.log('MakeImagePrimary', image);
+  console.log("MakeImagePrimary", image);
   const images = [image];
   images.push(...compProps.modelValue.filter((x) => x != image));
-  emit('update:modelValue', images);
+  emit("update:modelValue", images);
 };
 
 const toolbarMenuItems = computed(() => {
   return [
     // toggle expand
     {
-      label: 'tooltip.collapse_expand',
-      icon: expanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down',
+      label: "tooltip.collapse_expand",
+      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
       action: toggleExpand,
       overflowAllowed: false,
     },

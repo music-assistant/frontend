@@ -6,6 +6,7 @@
       class="player-controls-elements"
     >
       <ShuffleBtn
+        :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.shuffle.icon"
       />
@@ -16,15 +17,19 @@
       class="player-controls-elements"
     >
       <PreviousBtn
+        :player="store.activePlayer"
+        :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.previous.icon"
       />
     </div>
-    <!-- play/pause button: only when MA queue is active -->
+    <!-- play/pause button -->
     <div v-if="visibleComponents && visibleComponents.play?.isVisible">
       <PlayBtn
+        :player="store.activePlayer"
+        :player-queue="store.activePlayerQueue"
         class="media-controls-item"
-        :with-circle="visibleComponents.play.withCircle"
+        :icon-style="visibleComponents.play.withCircle ? 'circle' : ''"
         :icon="visibleComponents.play.icon"
       />
     </div>
@@ -34,6 +39,8 @@
       class="player-controls-elements"
     >
       <NextBtn
+        :player="store.activePlayer"
+        :player-queue="store.activePlayerQueue"
         :icon="visibleComponents.next.icon"
         static-height="24px"
         static-width="24px"
@@ -45,6 +52,7 @@
       class="player-controls-elements"
     >
       <RepeatBtn
+        :player-queue="store.activePlayerQueue"
         :icon="visibleComponents.repeat.icon"
         static-height="24px"
         static-width="24px"
@@ -54,12 +62,13 @@
 </template>
 
 <script setup lang="ts">
-import { ResponsiveIconProps } from '@/components/mods/ResponsiveIcon.vue';
-import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
-import ShuffleBtn from './PlayerControlBtn/ShuffleBtn.vue';
-import PlayBtn from './PlayerControlBtn/PlayBtn.vue';
-import PreviousBtn from './PlayerControlBtn/PreviousBtn.vue';
-import NextBtn from './PlayerControlBtn/NextBtn.vue';
+import { ResponsiveIconProps } from "@/components/mods/ResponsiveIcon.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import ShuffleBtn from "./PlayerControlBtn/ShuffleBtn.vue";
+import PlayBtn from "./PlayerControlBtn/PlayBtn.vue";
+import PreviousBtn from "./PlayerControlBtn/PreviousBtn.vue";
+import NextBtn from "./PlayerControlBtn/NextBtn.vue";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {

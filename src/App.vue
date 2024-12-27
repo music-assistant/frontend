@@ -115,15 +115,16 @@
     >
   </div>
   <router-view v-if="!setup && !loading" />
+  <PlayerBrowserMediaControls />
 </template>
 
 <script setup lang="ts">
-import { api } from '@/plugins/api';
-import { onMounted, ref } from 'vue';
-import { useTheme } from 'vuetify';
-import { store } from '@/plugins/store';
-import { invoke } from '@tauri-apps/api/core';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { api } from "@/plugins/api";
+import { onMounted, ref } from "vue";
+import { useTheme } from "vuetify";
+import { store } from "@/plugins/store";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 const setup = ref(true);
 const discordRPCEnabled = ref(false);
@@ -131,32 +132,33 @@ const squeezeliteEnabled = ref(true);
 const closeToTrayEnabled = ref(true);
 const port = ref(8095);
 const slimprotoPort = ref(3483);
-const ip = ref('homeassistant.local');
+const ip = ref("homeassistant.local");
 const tls = ref(false);
-const themeSetting = ref('light');
-const outputDevice = ref('default');
-const availableOutputDevices = ref(['default']);
+const themeSetting = ref("light");
+const outputDevice = ref("default");
+const availableOutputDevices = ref(["default"]);
 const loading = ref(true);
 const err = ref(false);
-const err_message = ref('Error!');
-import { i18n } from '@/plugins/i18n';
-import router from './plugins/router';
-import { EventType } from './plugins/api/interfaces';
-import { WebsocketBuilder } from 'websocket-ts';
+const err_message = ref("Error!");
+import { i18n } from "@/plugins/i18n";
+import router from "./plugins/router";
+import { EventType } from "./plugins/api/interfaces";
+import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import { WebsocketBuilder } from "websocket-ts";
 const theme = useTheme();
 
 // methods
 const try_start = async () => {
   // Save ip and port
-  localStorage.setItem('mass_ip', ip.value);
-  localStorage.setItem('mass_port', port.value.toString());
-  localStorage.setItem('mass_tls', tls.value.toString());
-  localStorage.setItem('slimprotoPort', slimprotoPort.value.toString());
-  localStorage.setItem('outputDevice', outputDevice.value);
+  localStorage.setItem("mass_ip", ip.value);
+  localStorage.setItem("mass_port", port.value.toString());
+  localStorage.setItem("mass_tls", tls.value.toString());
+  localStorage.setItem("slimprotoPort", slimprotoPort.value.toString());
+  localStorage.setItem("outputDevice", outputDevice.value);
 
   loading.value = true;
   // Try to connect to the websocket
-  let protocol = tls.value ? 'wss' : 'ws';
+  let protocol = tls.value ? "wss" : "ws";
   new WebsocketBuilder(`${protocol}://${ip.value}:${port.value}/ws`)
     .onOpen((i, ev) => {
       // If it sucessfully connects, start the app
@@ -167,7 +169,7 @@ const try_start = async () => {
     .onError(() => {
       // If it cant connect throw error
       err_message.value =
-        'Could not connect to Music Assistant! Please check the ip and port';
+        "Could not connect to Music Assistant! Please check the ip and port";
       err.value = true;
       loading.value = false;
     })
@@ -175,70 +177,70 @@ const try_start = async () => {
 };
 
 const discordRpcConfig = () => {
-  localStorage.setItem('discordRPCEnabled', discordRPCEnabled.value.toString());
+  localStorage.setItem("discordRPCEnabled", discordRPCEnabled.value.toString());
 };
 
 const themeSettingConfig = () => {
-  localStorage.setItem('frontend.settings.theme', themeSetting.value);
+  localStorage.setItem("frontend.settings.theme", themeSetting.value);
   setTheme();
 };
 
 const setTheme = () => {
-  const themePref = localStorage.getItem('frontend.settings.theme') || 'auto';
-  if (themePref == 'dark') {
-    theme.global.name.value = 'dark';
-  } else if (themePref == 'light') {
-    theme.global.name.value = 'light';
+  const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
+  if (themePref == "dark") {
+    theme.global.name.value = "dark";
+  } else if (themePref == "light") {
+    theme.global.name.value = "light";
   } else {
-    theme.global.name.value = localStorage.getItem('systemTheme') || 'light';
+    theme.global.name.value = localStorage.getItem("systemTheme") || "light";
   }
 };
 
 const squeezeliteConfig = () => {
   localStorage.setItem(
-    'squeezeliteEnabled',
+    "squeezeliteEnabled",
     squeezeliteEnabled.value.toString(),
   );
 };
 
 const closeToTrayConfig = () => {
   localStorage.setItem(
-    'closeToTrayEnabled',
+    "closeToTrayEnabled",
     closeToTrayEnabled.value.toString(),
   );
 };
 
 onMounted(async () => {
   // Get available output devices
-  invoke<string[]>('get_output_devices').then((message) => {
+  invoke<string[]>("get_output_devices").then((message) => {
     availableOutputDevices.value = message;
   });
 
   // Set to previus settings
-  let ip_storage = localStorage.getItem('mass_ip') || 'homeassistant.local';
-  let port_storage = Number(localStorage.getItem('mass_port')) || 8095;
-  let tls_storage = localStorage.getItem('mass_tls') === 'true' || false;
-  let output_device_setting = localStorage.getItem('outputDevice') || 'default';
+  let ip_storage = localStorage.getItem("mass_ip") || "homeassistant.local";
+  let port_storage = Number(localStorage.getItem("mass_port")) || 8095;
+  let tls_storage = localStorage.getItem("mass_tls") === "true" || false;
+  let output_device_setting = localStorage.getItem("outputDevice") || "default";
   let slimproto_port_storage =
-    Number(localStorage.getItem('slimprotoPort')) || 3483;
+    Number(localStorage.getItem("slimprotoPort")) || 3483;
   let start_discord_rpc =
-    localStorage.getItem('discordRPCEnabled') === 'true' || false;
+    localStorage.getItem("discordRPCEnabled") === "true" || false;
   let start_squeezelite =
-    localStorage.getItem('squeezeliteEnabled') === 'true' || true;
-  let theme_setting = localStorage.getItem('frontend.settings.theme') || 'auto';
+    localStorage.getItem("squeezeliteEnabled") === "true" || true;
+  let theme_setting = localStorage.getItem("frontend.settings.theme") || "auto";
   let tray_setting =
-    localStorage.getItem('closeToTrayEnabled') === 'true' || true;
+    localStorage.getItem("closeToTrayEnabled") === "true" || true;
 
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
 
   // set navigation menu style
   store.navigationMenuStyle =
-    localStorage.getItem('frontend.settings.menu_style') || 'horizontal';
+    localStorage.getItem("frontend.settings.menu_style") || "horizontal";
 
   // cache some settings in the store
-  const langPref = localStorage.getItem('frontend.settings.language') || 'auto';
-  if (langPref !== 'auto') {
+  const langPref = localStorage.getItem("frontend.settings.language") || "auto";
+  if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
   }
 
@@ -258,7 +260,7 @@ onMounted(async () => {
     .theme()
     .then((theme) => {
       if (theme != null) {
-        localStorage.setItem('systemTheme', theme.toString());
+        localStorage.setItem("systemTheme", theme.toString());
         setTheme();
       }
     });
@@ -266,12 +268,12 @@ onMounted(async () => {
   // Update theme live
   await getCurrentWindow().onThemeChanged(({ payload: newTheme }) => {
     console.log(`Updated theme: ${newTheme.toString()}`);
-    localStorage.setItem('systemTheme', newTheme.toString());
+    localStorage.setItem("systemTheme", newTheme.toString());
     setTheme();
   });
 
   // Try to start the app with saved config
-  if (localStorage.getItem('mass_ip')) {
+  if (localStorage.getItem("mass_ip")) {
     try_start();
   } else {
     loading.value = false;
@@ -279,22 +281,22 @@ onMounted(async () => {
 });
 
 const start = () => {
-  let protocolHTTP = tls.value ? 'https' : 'http';
-  let protocolWS = tls.value ? 'wss' : 'ws';
+  let protocolHTTP = tls.value ? "https" : "http";
+  let protocolWS = tls.value ? "wss" : "ws";
   // The server adress and websocket address
   let frontendServerAddress = `${protocolHTTP}://${ip.value}:${port.value}/`;
   let websocket = `${protocolWS}://${ip.value}:${port.value}/ws`;
 
   // Start discord rpc, squeezelite and the web app
   if (squeezeliteEnabled.value == true) {
-    invoke('start_sqzlite', {
+    invoke("start_sqzlite", {
       ip: ip.value.toString(),
       outputDevice: outputDevice.value.toString(),
       port: slimprotoPort.value.toString(),
     });
   }
   if (discordRPCEnabled.value == true) {
-    invoke('start_rpc', { websocket: websocket });
+    invoke("start_rpc", { websocket: websocket });
   }
 
   // connect/initialize api
@@ -303,8 +305,8 @@ const start = () => {
     // redirect the user to the settings page if this is a fresh install
     // TO be replaced with some nice onboarding wizard!
     if (api.serverInfo.value?.onboard_done === false) {
-      console.info('Onboarding not done, redirecting to settings');
-      router.push('/settings');
+      console.info("Onboarding not done, redirecting to settings");
+      router.push("/settings");
     }
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
     store.libraryAlbumsCount = await api.getLibraryAlbumsCount();

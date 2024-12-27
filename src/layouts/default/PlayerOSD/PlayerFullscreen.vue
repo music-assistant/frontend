@@ -14,8 +14,30 @@
           </Button>
         </template>
         <template #append>
-          <Button icon @click="store.showFullscreenPlayer = false">
-            <v-icon icon="mdi-dots-vertical" @click.stop="openQueueMenu" />
+          <v-menu v-if="store.activePlayerQueue?.radio_source.length" scrim>
+            <template #activator="{ props }">
+              <Button v-bind="props" icon>
+                <v-icon color="accent" icon="mdi-radio-tower" />
+              </Button>
+            </template>
+
+            <v-card
+              :title="$t('queue_radio_enabled')"
+              :subtitle="$t('queue_radio_based_on')"
+            >
+              <template #text>
+                <div
+                  v-for="source in store.activePlayerQueue?.radio_source"
+                  :key="source.uri"
+                >
+                  <a @click="itemClick(source)">{{ source.name }}</a>
+                </div>
+              </template>
+            </v-card>
+          </v-menu>
+
+          <Button icon @click.stop="openQueueMenu">
+            <v-icon icon="mdi-dots-vertical" />
           </Button>
         </template>
       </v-toolbar>
@@ -31,52 +53,87 @@
             v-if="$vuetify.display.height > 600"
             class="main-media-details-image"
           >
+            <v-img
+              v-if="
+                !store.curQueueItem?.image &&
+                store.activePlayer?.current_media?.image_url
+              "
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.activePlayer.current_media.image_url"
+            />
             <MediaItemThumb
+              v-else
               :item="store.curQueueItem"
               :thumbnail="false"
               style="max-width: 100%; width: auto"
+              :fallback="
+                $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
+              "
             />
           </div>
           <div class="main-media-details-track-info">
-            <!-- title -->
+            <!-- player name as title if its powered off-->
             <v-card-title
-              v-if="store.curQueueItem?.media_item"
+              v-if="store.activePlayer?.powered == false"
+              :style="`font-size: ${titleFontSize};`"
+            >
+              {{ store.activePlayer?.display_name }}
+            </v-card-title>
+            <!-- queue item media item + optional version-->
+            <v-card-title
+              v-else-if="store.curQueueItem?.media_item"
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item as MediaItemType)"
             >
-              {{ store.curQueueItem.media_item.name }}
-              <!-- append version if needed -->
-              <span
-                v-if="
-                  'version' in store.curQueueItem.media_item &&
-                  store.curQueueItem.media_item.version
-                "
-                >({{ store.curQueueItem.media_item.version }})</span
-              >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.name }}
+                <span
+                  v-if="
+                    'version' in store.curQueueItem.media_item &&
+                    store.curQueueItem.media_item.version
+                  "
+                  >({{ store.curQueueItem.media_item.version }})</span
+                >
+              </MarqueeText>
             </v-card-title>
 
-            <!-- fallback title: show name of active queue or player -->
-            <v-card-title
-              v-else-if="
-                store.activePlayerQueue?.display_name ||
-                store.activePlayer?.display_name
-              "
-              :style="`font-size: ${titleFontSize};cursor:pointer;`"
-              @click="store.showPlayersMenu = true"
-            >
-              {{
-                store.activePlayerQueue?.display_name ||
-                store.activePlayer?.display_name
-              }}
+            <!-- external source current media item present -->
+            <v-card-title v-else-if="store.activePlayer?.current_media?.title">
+              <div v-if="store.activePlayer?.current_media?.artist">
+                <MarqueeText :sync="playerMarqueeSync">
+                  {{ store.activePlayer?.current_media?.artist }}
+                </MarqueeText>
+              </div>
+              <div
+                v-if="store.activePlayer?.current_media?.title"
+                :style="`font-size: ${subTitleFontSize};`"
+              >
+                <MarqueeText :sync="playerMarqueeSync">
+                  {{ store.activePlayer?.current_media?.title }}
+                </MarqueeText>
+              </div>
             </v-card-title>
-            <!-- fallback title when no player selected-->
+
+            <!-- no player selected message -->
             <v-card-title
               v-else
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="store.showPlayersMenu = true"
             >
-              {{ store.activePlayer?.display_name || $t('no_player') }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.activePlayer?.display_name || $t("no_player") }}
+              </MarqueeText>
             </v-card-title>
+
+            <!-- SUBTITLE -->
+
+            <!-- SUBTITLE: player powered off -->
+            <v-card-subtitle
+              v-if="!store.activePlayer?.powered"
+              class="text-h6 text-md-h5 text-lg-h4"
+            >
+              {{ $t("off") }}
+            </v-card-subtitle>
 
             <!-- subtitle: radio station stream title -->
             <v-card-subtitle
@@ -89,7 +146,9 @@
                 radioTitleClick(store.curQueueItem.streamdetails.stream_title)
               "
             >
-              {{ store.curQueueItem.streamdetails.stream_title }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.streamdetails.stream_title }}
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- subtitle: album -->
@@ -102,7 +161,9 @@
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item.album as Album)"
             >
-              {{ store.curQueueItem.media_item.album.name }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.album.name }}
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- subtitle: artist(s) -->
@@ -118,20 +179,20 @@
                 itemClick(store.curQueueItem.media_item.artists[0] as Artist)
               "
             >
-              {{ store.curQueueItem.media_item.artists[0].name }}
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.artists[0].name }}
+              </MarqueeText>
             </v-card-subtitle>
 
             <!-- subtitle: other source active -->
             <v-card-subtitle
-              v-if="
+              v-else-if="
                 store.activePlayer?.active_source !=
                 store.activePlayer?.player_id
               "
-              :style="`font-size: ${subTitleFontSize}`"
             >
-              <!-- TODO: show media details of other source if possible? -->
               {{
-                $t('external_source_active', [
+                $t("external_source_active", [
                   store.activePlayer?.active_source,
                 ])
               }}
@@ -144,7 +205,7 @@
               "
               :style="`font-size: ${subTitleFontSize}`"
             >
-              {{ $t('queue_empty') }}
+              {{ $t("queue_empty") }}
             </v-card-subtitle>
 
             <!-- streamdetails/contenttype button-->
@@ -163,7 +224,7 @@
             @click="activeQueuePanelClick"
           >
             <v-tab :value="0">
-              {{ $t('queue') }}
+              {{ $t("queue") }}
               <v-badge
                 color="grey"
                 :content="
@@ -174,7 +235,7 @@
               />
             </v-tab>
             <v-tab :value="1">
-              {{ $t('played') }}
+              {{ $t("played") }}
               <v-badge
                 color="grey"
                 :content="store.activePlayerQueue?.current_index"
@@ -195,12 +256,14 @@
                 max-height="90%"
                 :items="activeQueuePanel == 0 ? nextItems : previousItems"
               >
-                <template #default="{ item }">
+                <template #default="{ item, index }">
                   <ListItem
                     link
                     :show-menu-btn="true"
                     @click.stop="(e) => openQueueItemMenu(e, item)"
                     @menu.stop="(e) => openQueueItemMenu(e, item)"
+                    @mouseenter="hoveredQueueIndex = index"
+                    @mouseleave="hoveredQueueIndex = -1"
                   >
                     <template #prepend>
                       <div class="media-thumb listitem-media-thumb">
@@ -208,19 +271,52 @@
                       </div>
                     </template>
                     <template #title>
-                      {{ item.name }}
-                    </template>
-                    <template #subtitle>
-                      {{ formatDuration(item.duration) }}
-                      <span
-                        v-if="
-                          item.media_item &&
-                          'album' in item.media_item &&
-                          item.media_item.album
+                      <!-- only scroll the currently playing track, or when hovered with a separete sync group -->
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
                         "
                       >
-                        | {{ item.media_item.album.name }}</span
-                      >
+                        {{ item.name }}
+                      </MarqueeText>
+                    </template>
+                    <template #subtitle>
+                      <div class="d-flex">
+                        <span style="white-space: nowrap" class="pr-1">
+                          {{ formatDuration(item.duration) }} |
+                        </span>
+                        <MarqueeText
+                          :sync="
+                            index == 0 && activeQueuePanel == 0
+                              ? playerMarqueeSync
+                              : hoveredMarqueeSync
+                          "
+                          :disabled="
+                            !(
+                              (index == 0 && activeQueuePanel == 0) ||
+                              hoveredQueueIndex == index
+                            )
+                          "
+                        >
+                          <span
+                            v-if="
+                              item.media_item &&
+                              'album' in item.media_item &&
+                              item.media_item.album
+                            "
+                          >
+                            {{ item.media_item.album.name }}
+                          </span>
+                        </MarqueeText>
+                      </div>
                     </template>
                   </ListItem>
                 </template>
@@ -254,6 +350,7 @@
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
           <ResponsiveIcon
+            v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
             :icon="
               store.curQueueItem?.media_item?.favorite
@@ -268,22 +365,47 @@
           />
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
+            :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
           />
-          <PreviousBtn class="media-controls-item" max-height="45px" />
-          <PlayBtn class="media-controls-item" max-height="100px" />
-          <NextBtn class="media-controls-item" max-height="45px" />
+          <PreviousBtn
+            :player="store.activePlayer"
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="45px"
+          />
+          <PlayBtn
+            :player="store.activePlayer"
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="100px"
+          />
+          <NextBtn
+            :player="store.activePlayer"
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="45px"
+          />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
+            :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="35px"
           />
-          <QueueBtn class="media-controls-item" max-height="30px" />
+          <QueueBtn
+            v-if="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="30px"
+          />
         </div>
 
         <!-- volume control -->
-        <div class="row" style="margin-left: 5%; margin-right: 5%">
+        <div
+          v-if="store.activePlayer"
+          class="row"
+          style="margin-left: 5%; margin-right: 5%"
+        >
           <PlayerVolume
             width="100%"
             :is-powered="store.activePlayer?.powered"
@@ -291,6 +413,7 @@
             :model-value="Math.round(store.activePlayer?.group_volume || 0)"
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"
+            :allow-wheel="true"
             @update:model-value="
               store.activePlayer!.group_childs.length > 0
                 ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
@@ -298,25 +421,13 @@
             "
             @click:prepend="
               store.activePlayer!.group_childs.length > 0
-                ? api.playerCommandGroupVolume(
-                    store.activePlayerId!,
-                    store.activePlayer!.group_volume - 5,
-                  )
-                : api.playerCommandVolumeSet(
-                    store.activePlayerId!,
-                    store.activePlayer!.volume_level - 5,
-                  )
+                ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
+                : api.playerCommandVolumeDown(store.activePlayerId!)
             "
             @click:append="
               store.activePlayer!.group_childs.length > 0
-                ? api.playerCommandGroupVolume(
-                    store.activePlayerId!,
-                    store.activePlayer!.group_volume + 5,
-                  )
-                : api.playerCommandVolumeSet(
-                    store.activePlayerId!,
-                    store.activePlayer!.volume_level + 5,
-                  )
+                ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
+                : api.playerCommandVolumeUp(store.activePlayerId!)
             "
           />
         </div>
@@ -340,7 +451,7 @@
             @click="store.showPlayersMenu = true"
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
-            {{ store.activePlayer ? getPlayerName(store.activePlayer) : '' }}
+            {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </v-btn>
         </div>
       </div>
@@ -349,9 +460,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import MediaItemThumb from '@/components/MediaItemThumb.vue';
-import api from '@/plugins/api';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import api from "@/plugins/api";
 import {
   Album,
   Artist,
@@ -359,36 +470,44 @@ import {
   EventType,
   MediaItemType,
   MediaType,
+  PlayerQueue,
   QueueItem,
   Track,
-} from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
-import PlayerTimeline from './PlayerTimeline.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import Button from '@/components/mods/Button.vue';
-import ResponsiveIcon from '@/components/mods/ResponsiveIcon.vue';
-import ListItem from '@/components/mods/ListItem.vue';
-import vuetify from '@/plugins/vuetify';
-import PlayBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue';
-import NextBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue';
-import PreviousBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue';
-import ShuffleBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue';
-import RepeatBtn from '@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue';
-import PlayerVolume from '@/layouts/default/PlayerOSD/PlayerVolume.vue';
-import QueueBtn from './PlayerControlBtn/QueueBtn.vue';
-import QualityDetailsBtn from '@/components/QualityDetailsBtn.vue';
-import router from '@/plugins/router';
+} from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import PlayerTimeline from "./PlayerTimeline.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import Button from "@/components/mods/Button.vue";
+import ResponsiveIcon from "@/components/mods/ResponsiveIcon.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import vuetify from "@/plugins/vuetify";
+import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
+import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
+import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
+import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import MarqueeText from "@/components/MarqueeText.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import {
+  imgCoverLight,
+  imgCoverDark,
+} from "@/components/QualityDetailsBtn.vue";
+import router from "@/plugins/router";
 import {
   ImageColorPalette,
   darkenBrightColors,
   formatDuration,
   getPlayerName,
   sleep,
-} from '@/helpers/utils';
-import { eventbus } from '@/plugins/eventbus';
-import { useDisplay } from 'vuetify';
-import { useI18n } from 'vue-i18n';
-import { ContextMenuItem } from '../ItemContextMenu.vue';
+} from "@/helpers/utils";
+import { eventbus } from "@/plugins/eventbus";
+import { useDisplay } from "vuetify";
+import { useI18n } from "vue-i18n";
+import { ContextMenuItem } from "../ItemContextMenu.vue";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 
 const { t } = useI18n();
 const { name } = useDisplay();
@@ -396,11 +515,15 @@ const { name } = useDisplay();
 interface Props {
   colorPalette: ImageColorPalette;
 }
-const props = defineProps<Props>();
+const compProps = defineProps<Props>();
+
+const playerMarqueeSync = new MarqueeTextSync();
+const hoveredQueueIndex = ref(-1);
+const hoveredMarqueeSync = new MarqueeTextSync();
 
 // Local refs
 const queueItems = ref<QueueItem[]>([]);
-const coverImageColorCode = ref<string>('');
+const coverImageColorCode = ref<string>("");
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
 
@@ -419,39 +542,39 @@ const previousItems = computed(() => {
 
 const titleFontSize = computed(() => {
   switch (name.value) {
-    case 'xs':
-      return '1.2em';
-    case 'sm':
-      return '1.6em';
-    case 'md':
-      return '2em';
-    case 'lg':
-      return store.showQueueItems ? '1.5em' : '2.5em';
-    case 'xl':
-      return store.showQueueItems ? '1.6em' : '3em';
-    case 'xxl':
-      return store.showQueueItems ? '1.7em' : '3.2em';
+    case "xs":
+      return "1.2em";
+    case "sm":
+      return "1.6em";
+    case "md":
+      return "2em";
+    case "lg":
+      return store.showQueueItems ? "1.5em" : "2.5em";
+    case "xl":
+      return store.showQueueItems ? "1.6em" : "3em";
+    case "xxl":
+      return store.showQueueItems ? "1.7em" : "3.2em";
     default:
-      return '1.0em.';
+      return "1.0em.";
   }
 });
 
 const subTitleFontSize = computed(() => {
   switch (name.value) {
-    case 'xs':
-      return '1.0em';
-    case 'sm':
-      return '1.2em';
-    case 'md':
-      return '1.7em';
-    case 'lg':
-      return store.showQueueItems ? '1.0em' : '1.6em';
-    case 'xl':
-      return store.showQueueItems ? '1.2em' : '2em';
-    case 'xxl':
-      return store.showQueueItems ? '1.2em' : '2em';
+    case "xs":
+      return "1.0em";
+    case "sm":
+      return "1.2em";
+    case "md":
+      return "1.7em";
+    case "lg":
+      return store.showQueueItems ? "1.0em" : "1.6em";
+    case "xl":
+      return store.showQueueItems ? "1.2em" : "2em";
+    case "xxl":
+      return store.showQueueItems ? "1.2em" : "2em";
     default:
-      return '1.0em.';
+      return "1.0em.";
   }
 });
 
@@ -472,7 +595,7 @@ const itemClick = function (item: MediaItemType) {
 const radioTitleClick = function (streamTitle: string) {
   // radio station title clicked
   store.globalSearchTerm = streamTitle;
-  router.push({ name: 'search' });
+  router.push({ name: "search" });
   store.showFullscreenPlayer = false;
 };
 
@@ -480,65 +603,65 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
   const itemIndex = queueItems.value.indexOf(item);
   const menuItems = [
     {
-      label: 'play_now',
+      label: "play_now",
       labelArgs: [],
       action: () => {
-        queueCommand(item, 'play_now');
+        queueCommand(item, "play_now");
       },
-      icon: 'mdi-play-circle-outline',
+      icon: "mdi-play-circle-outline",
       disabled:
         itemIndex === store.activePlayerQueue?.current_index ||
         itemIndex === store.activePlayerQueue?.index_in_buffer,
     },
     {
-      label: 'play_next',
+      label: "play_next",
       labelArgs: [],
       action: () => {
-        queueCommand(item, 'move_next');
+        queueCommand(item, "move_next");
       },
-      icon: 'mdi-skip-next-circle-outline',
+      icon: "mdi-skip-next-circle-outline",
       disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
     },
     {
-      label: 'queue_move_up',
+      label: "queue_move_up",
       labelArgs: [],
       action: () => {
-        queueCommand(item, 'up');
+        queueCommand(item, "up");
       },
-      icon: 'mdi-arrow-up',
+      icon: "mdi-arrow-up",
       disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
     },
     {
-      label: 'queue_move_down',
+      label: "queue_move_down",
       labelArgs: [],
       action: () => {
-        queueCommand(item, 'down');
+        queueCommand(item, "down");
       },
-      icon: 'mdi-arrow-down',
+      icon: "mdi-arrow-down",
       disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
     },
     {
-      label: 'queue_delete',
+      label: "queue_delete",
       labelArgs: [],
       action: () => {
-        queueCommand(item, 'delete');
+        queueCommand(item, "delete");
       },
-      icon: 'mdi-delete',
+      icon: "mdi-delete",
       disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
     },
   ];
   if (item?.media_item?.media_type == MediaType.TRACK) {
     menuItems.push({
-      label: 'show_info',
+      label: "show_info",
       labelArgs: [],
       action: () => {
         itemClick(item.media_item as Track);
       },
-      icon: 'mdi-information-outline',
+      icon: "mdi-information-outline",
       disabled: false,
     });
   }
-  eventbus.emit('contextmenu', {
+  eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
@@ -546,75 +669,9 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
 };
 
 const openQueueMenu = function (evt: Event) {
-  const menuItems = [
-    {
-      label: 'settings.player_settings',
-      labelArgs: [],
-      action: () => {
-        store.showFullscreenPlayer = false;
-        router.push(
-          `/settings/editplayer/${store.activePlayerQueue!.queue_id}`,
-        );
-      },
-      icon: 'mdi-cog-outline',
-    },
-    {
-      label: 'queue_clear',
-      labelArgs: [],
-      action: () => {
-        api.queueCommandClear(store.activePlayerQueue!.queue_id);
-      },
-      icon: 'mdi-cancel',
-    },
-    {
-      label: store.activePlayerQueue!.shuffle_enabled
-        ? 'shuffle_enabled'
-        : 'shuffle_disabled',
-      labelArgs: [],
-      action: () => {
-        api.queueCommandShuffleToggle(store.activePlayerQueue!.queue_id);
-      },
-      icon: store.activePlayerQueue!.shuffle_enabled
-        ? 'mdi-shuffle'
-        : 'mdi-shuffle-disabled',
-    },
-    {
-      label: 'repeat_mode',
-      labelArgs: [t(`repeatmode.${store.activePlayerQueue!.repeat_mode}`)],
-      action: () => {
-        api.queueCommandRepeatToggle(store.activePlayerQueue!.queue_id);
-      },
-      icon: store.activePlayerQueue!.shuffle_enabled
-        ? 'mdi-repeat'
-        : 'mdi-repeat-off',
-    },
-    {
-      label: 'transfer_queue',
-      icon: 'mdi-swap-horizontal',
-      subItems: Object.values(api.queues)
-        .filter(
-          (p) => p.queue_id != store.activePlayerQueue?.queue_id && p.available,
-        )
-        .map((p) => {
-          return {
-            label: p.display_name,
-            labelArgs: [],
-            action: () => {
-              api.queueCommandTransfer(
-                store.activePlayerQueue!.queue_id,
-                p.queue_id,
-              );
-              store.activePlayerId = p.queue_id;
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
-    },
-  ];
-  eventbus.emit('contextmenu', {
-    items: menuItems,
+  if (!store.activePlayer) return;
+  eventbus.emit("contextmenu", {
+    items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
   });
@@ -622,27 +679,27 @@ const openQueueMenu = function (evt: Event) {
 
 const queueCommand = function (item: QueueItem | undefined, command: string) {
   if (!item || !store.activePlayerQueue) return;
-  if (command == 'play_now') {
+  if (command == "play_now") {
     api.queueCommandPlayIndex(
       store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
-  } else if (command == 'move_next') {
+  } else if (command == "move_next") {
     api.queueCommandMoveNext(
       store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
-  } else if (command == 'up') {
+  } else if (command == "up") {
     api.queueCommandMoveUp(
       store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
-  } else if (command == 'down') {
+  } else if (command == "down") {
     api.queueCommandMoveDown(
       store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );
-  } else if (command == 'delete') {
+  } else if (command == "delete") {
     api.queueCommandDelete(
       store.activePlayerQueue?.queue_id,
       item.queue_item_id,
@@ -650,39 +707,36 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
   }
 };
 
-const loadItems = async function (clear = false) {
+const resetItems = async function () {
   tempHide.value = true;
-  if (clear) {
-    queueItems.value = [];
-  }
-
-  if (store.activePlayerQueue) {
-    const offset = queueItems.value.length;
-    const limit = (store.activePlayerQueue.current_index || 0) + 50;
-    const result = await api.getPlayerQueueItems(
-      store.activePlayerQueue.queue_id,
-      limit,
-      offset,
-    );
-    queueItems.value.push(...result);
-  }
+  queueItems.value = [];
+  await sleep(100);
   tempHide.value = false;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ({ done }: { done: any }) {
+const loadNextPage = async function ({ done }: { done: any }) {
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
-    done('empty');
+    done("empty");
     return;
   }
   if (queueItems.value.length >= store.activePlayerQueue?.items) {
-    done('empty');
+    done("empty");
     return;
   }
-
-  loadItems(false).then(() => {
-    done('ok');
-  });
+  const offset = queueItems.value.length;
+  const limit = (store.activePlayerQueue.current_index || 0) + 50;
+  const result = await api.getPlayerQueueItems(
+    store.activePlayerQueue.queue_id,
+    limit,
+    offset,
+  );
+  queueItems.value.push(...result);
+  if (result.length < 50) {
+    done("empty");
+  } else {
+    done("ok");
+  }
 };
 
 // listen for item updates to refresh items when that happens
@@ -691,13 +745,14 @@ onMounted(() => {
     EventType.QUEUE_ITEMS_UPDATED,
     (evt: EventMessage) => {
       if (evt.object_id != store.activePlayerQueue?.queue_id) return;
-      loadItems(true);
+      const queue = evt.data as PlayerQueue;
+      resetItems();
     },
   );
   onBeforeUnmount(unsub);
 });
 
-const onHeartBtnClick = function (evt: PointerEvent) {
+const onHeartBtnClick = function (evt: PointerEvent | MouseEvent) {
   // the heart icon/button was clicked
   if (!store.curQueueItem?.media_item) return;
   if (!store.curQueueItem.media_item.favorite) {
@@ -707,27 +762,27 @@ const onHeartBtnClick = function (evt: PointerEvent) {
 
   const menuItems: ContextMenuItem[] = [
     {
-      label: 'favorites_remove',
+      label: "favorites_remove",
       labelArgs: [],
       action: () => {
         api.toggleFavorite(store.curQueueItem!.media_item as MediaItemType);
       },
-      icon: 'mdi-heart',
+      icon: "mdi-heart",
     },
     {
-      label: 'add_playlist',
+      label: "add_playlist",
       labelArgs: [],
       action: () => {
-        eventbus.emit('playlistdialog', {
+        eventbus.emit("playlistdialog", {
           items: [store.curQueueItem!.media_item as MediaItemType],
         });
       },
-      icon: 'mdi-plus-circle-outline',
+      icon: "mdi-plus-circle-outline",
     },
   ];
 
   // open the contextmenu by emitting the event
-  eventbus.emit('contextmenu', {
+  eventbus.emit("contextmenu", {
     items: menuItems,
     posX: evt.clientX,
     posY: evt.clientY,
@@ -748,18 +803,18 @@ const activeQueuePanelClick = function () {
 watch(
   () => store.activePlayerId,
   (val) => {
-    loadItems(true);
+    resetItems();
   },
   { immediate: true },
 );
 
 watch(
-  () => props.colorPalette,
+  () => compProps.colorPalette,
   (result) => {
     if (!result.darkColor || !result.lightColor) {
       coverImageColorCode.value = vuetify.theme.current.value.dark
-        ? '#000'
-        : '#fff';
+        ? "#000"
+        : "#fff";
     } else {
       coverImageColorCode.value = vuetify.theme.current.value.dark
         ? result.darkColor

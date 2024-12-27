@@ -32,17 +32,17 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
-import InfoHeader from '@/components/InfoHeader.vue';
-import ProviderDetails from '@/components/ProviderDetails.vue';
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import InfoHeader from "@/components/InfoHeader.vue";
+import ProviderDetails from "@/components/ProviderDetails.vue";
 import {
   EventType,
   type Playlist,
   type EventMessage,
   type MediaItemType,
-} from '@/plugins/api/interfaces';
-import { api } from '@/plugins/api';
-import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
+} from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import { watch, ref, onMounted, onBeforeUnmount } from "vue";
 
 export interface Props {
   itemId: string;

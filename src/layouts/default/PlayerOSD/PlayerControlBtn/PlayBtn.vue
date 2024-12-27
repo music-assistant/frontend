@@ -1,57 +1,53 @@
 <template>
-  <!-- play/pause button: only when MA queue is active -->
+  <!-- play/pause button: disabled if no content -->
   <ResponsiveIcon
-    v-if="isVisible && store.activePlayerQueue?.active"
+    v-if="isVisible && player"
     v-bind="icon"
-    :disabled="store.activePlayerQueue.items == 0"
-    :icon="
-      store.activePlayerQueue?.state == 'playing'
-        ? withCircle
-          ? 'mdi-pause-circle'
-          : 'mdi-pause'
-        : withCircle
-          ? 'mdi-play-circle'
-          : 'mdi-play'
-    "
+    :disabled="!queueCanPlay && !playerCanPlay"
+    :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
     :type="'btn'"
-    @clicked="api.queueCommandPlayPause(store.activePlayerQueue!.queue_id)"
-  />
-  <!-- stop button: player is playing other source (not MA)-->
-  <ResponsiveIcon
-    v-else-if="isVisible && store.activePlayer?.state == PlayerState.PLAYING"
-    v-bind="icon"
-    icon="mdi-stop"
-    :type="'btn'"
-    @click="api.queueCommandStop(store.activePlayer!.player_id)"
-  />
-  <!-- play button: all other situations-->
-  <ResponsiveIcon
-    v-else-if="isVisible"
-    v-bind="icon"
-    :disabled="!store.activePlayerId || !store.activePlayer?.active_source"
-    :icon="withCircle ? 'mdi-play-circle' : 'mdi-play'"
-    :type="'btn'"
-    @clicked="api.playerCommandPlay(store.activePlayerId!)"
+    @click="api.playerCommandPlayPause(player.player_id)"
   />
 </template>
 
 <script setup lang="ts">
-import api from '@/plugins/api';
-import { PlayerState } from '@/plugins/api/interfaces';
-import { store } from '@/plugins/store';
+import api from "@/plugins/api";
+import { PlayerState, Player, PlayerQueue } from "@/plugins/api/interfaces";
 import ResponsiveIcon, {
   ResponsiveIconProps,
-} from '@/components/mods/ResponsiveIcon.vue';
+} from "@/components/mods/ResponsiveIcon.vue";
+import { computed } from "vue";
 
 // properties
 export interface Props {
+  player: Player | undefined;
+  playerQueue?: PlayerQueue;
   isVisible?: boolean;
   withCircle?: boolean;
   icon?: ResponsiveIconProps;
+  iconStyle?: string;
 }
-withDefaults(defineProps<Props>(), {
+const compProps = withDefaults(defineProps<Props>(), {
+  playerQueue: undefined,
   isVisible: true,
   withCircle: true,
   icon: undefined,
+  iconStyle: "circle",
+});
+const queueCanPlay = computed(() => {
+  if (!compProps.playerQueue) return false;
+  return compProps.playerQueue.items > 0;
+});
+const playerCanPlay = computed(() => {
+  if (!compProps.player) return false;
+  if (compProps.playerQueue?.active) return false;
+  if (!compProps.player.current_media) return false;
+  return true;
+});
+const baseIcon = computed(() => {
+  if (compProps.player?.state == PlayerState.PLAYING) {
+    return "mdi-pause";
+  }
+  return "mdi-play";
 });
 </script>

@@ -49,14 +49,14 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from '@/components/ItemsListing.vue';
-import InfoHeader from '@/components/InfoHeader.vue';
-import { type Album } from '@/plugins/api/interfaces';
-import { api } from '@/plugins/api';
-import { ref, watch } from 'vue';
-import ProviderDetails from '@/components/ProviderDetails.vue';
-import { getStreamingProviderMappings } from '@/helpers/utils';
-import MediaItemImages from '@/components/MediaItemImages.vue';
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import InfoHeader from "@/components/InfoHeader.vue";
+import { type Album } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import { ref, watch } from "vue";
+import ProviderDetails from "@/components/ProviderDetails.vue";
+import { getStreamingProviderMappings } from "@/helpers/utils";
+import MediaItemImages from "@/components/MediaItemImages.vue";
 
 export interface Props {
   itemId: string;
@@ -94,7 +94,7 @@ const loadAlbumVersions = async function (params: LoadDataParams) {
 
 const UpdateItemInDb = async function () {
   if (!itemDetails.value) return;
-  itemDetails.value = await api.sendCommand('music/albums/update', {
+  itemDetails.value = await api.sendCommand("music/albums/update", {
     item_id: itemDetails.value.item_id,
     update: itemDetails.value,
     overwrite: true,
