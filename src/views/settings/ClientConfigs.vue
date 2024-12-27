@@ -84,6 +84,32 @@
           </tr>
           <tr>
             <td>
+              Squeezelite Port (Relaunch to apply)
+              <v-tooltip text="The port squeezelite should use.">
+                <template #activator="{ props }">
+                  <v-icon
+                    style="margin-left: 3px; margin-bottom: 1px"
+                    size="20"
+                    icon="mdi-information-outline"
+                    v-bind="props"
+                  />
+                </template>
+              </v-tooltip>
+            </td>
+            <td>
+              <v-text-field
+                v-model="slimprotoPort"
+                style="margin-top: 15px; height: 70px"
+                variant="outlined"
+                type="number"
+                label="Port"
+                placeholder="3483"
+                @change="slimprotoPortConfig"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
               Discord RPC
               <v-tooltip
                 text="Wether or not to show music activity on Discord."
@@ -202,6 +228,7 @@ const version = ref("Loading...");
 
 const outputDevice = ref("default");
 const availableOutputDevices = ref(["default"]);
+const slimprotoPort = ref(3483);
 
 // methods
 const discordRpcConfig = () => {
@@ -238,6 +265,10 @@ const outputDeviceConfig = () => {
   localStorage.setItem("outputDevice", outputDevice.value);
 };
 
+const slimprotoPortConfig = () => {
+  localStorage.setItem("slimprotoPort", slimprotoPort.value.toString());
+};
+
 const checkForUpdates = async () => {
   await emit("tauri://update");
 };
@@ -259,6 +290,7 @@ onMounted(async () => {
   ip.value = localStorage.getItem("mass_ip") || "homeassistant.local";
   port.value = Number(localStorage.getItem("mass_port")) || 8095;
   tls.value = localStorage.getItem("mass_tls") === "true" || false;
+  slimprotoPort.value = Number(localStorage.getItem("slimprotoPort")) || 3483;
   version.value = await getVersion();
 });
 </script>
