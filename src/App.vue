@@ -291,7 +291,8 @@ const start = () => {
   if (squeezeliteEnabled.value == true) {
     invoke("start_sqzlite", {
       ip: ip.value.toString(),
-      outputDevice: outputDevice.value.toString(),
+      // outputDevice: outputDevice.value.toString(),
+      outputDevice: "default",
       port: slimprotoPort.value.toString(),
     });
   }
