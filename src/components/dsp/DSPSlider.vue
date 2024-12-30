@@ -10,6 +10,7 @@
         hide-details
         class="flex-grow-1 pr-4"
         density="compact"
+        color="primary"
       />
       <v-text-field
         v-model="displayValue"

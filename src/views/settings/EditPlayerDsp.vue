@@ -1,7 +1,12 @@
 <template>
   <section v-if="dsp">
     <v-toolbar color="transparent" class="border-b">
-      <v-switch v-model="dsp.enabled" hide-details class="pl-4" />
+      <v-switch
+        v-model="dsp.enabled"
+        hide-details
+        color="primary"
+        class="pl-4"
+      />
       <v-toolbar-title>{{
         $t("settings.dsp.configure_on", { name: playerName })
       }}</v-toolbar-title>
@@ -69,6 +74,7 @@
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
               hide-details
+              color="primary"
               class="mr-4"
             />
             <v-btn

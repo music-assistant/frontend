@@ -47,7 +47,7 @@
             :label="$t('settings.dsp.parametric_eq.enable_band')"
             density="comfortable"
             hide-details
-            inset
+            color="primary"
           />
           <v-spacer />
           <v-btn
