@@ -1,21 +1,23 @@
 <template>
   <v-container class="pa-2">
     <!-- Frequency Response Graph with Dark Theme Support -->
-    <v-card class="mb-4" elevation="2">
+    <v-card elevation="0" color="transparent">
       <div ref="graphContainer" class="graph-container">
         <canvas ref="canvas" class="frequency-graph"></canvas>
       </div>
     </v-card>
 
     <!-- Band Management Section -->
-    <v-card class="mb-4" elevation="2">
-      <v-card-title class="d-flex align-center px-4 py-2" />
-
+    <v-card
+      elevation="0"
+      color="transparent"
+      class="border-t border-b rounded-0"
+    >
       <!-- Band Selection with Visual Indicators -->
       <v-card-text class="pa-0">
         <v-chip-group
           v-model="selectedBandIndex"
-          class="mb-4 pa-2"
+          class="mb-0 pa-2"
           mandatory
           selected-class="primary"
         >
@@ -38,7 +40,7 @@
     </v-card>
 
     <!-- Band Controls Card -->
-    <v-card v-if="selectedBand" elevation="2">
+    <v-card v-if="selectedBand" elevation="0" color="transparent">
       <v-card-text>
         <!-- Band Header -->
         <div class="d-flex align-center mb-4">
@@ -69,20 +71,15 @@
               :label="$t('settings.dsp.parametric_eq.filter_type')"
               variant="outlined"
               density="comfortable"
-              class="mb-4"
             />
           </v-col>
 
           <v-col cols="12">
-            <DSPSlider
-              v-model="selectedBand.frequency"
-              type="frequency"
-              class="mb-4"
-            />
+            <DSPSlider v-model="selectedBand.frequency" type="frequency" />
           </v-col>
 
           <v-col v-if="showGainParameter(selectedBand.type)" cols="12">
-            <DSPSlider v-model="selectedBand.gain" type="gain" class="mb-4" />
+            <DSPSlider v-model="selectedBand.gain" type="gain" />
           </v-col>
 
           <v-col cols="12">

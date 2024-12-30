@@ -40,6 +40,7 @@
           <v-toolbar
             density="compact"
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+            class="border-b"
           >
             <v-btn
               v-if="mobile"
