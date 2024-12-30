@@ -37,7 +37,10 @@
         <!-- Filter Settings Panel -->
         <v-col v-if="selectedStage != null" style="min-width: 0">
           <!-- Toolbar of the selected item -->
-          <v-toolbar density="compact">
+          <v-toolbar
+            density="compact"
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+          >
             <v-btn
               v-if="mobile"
               class="hidden-xs-only"
@@ -87,12 +90,20 @@
           </v-toolbar>
 
           <!-- Settings of the Input stage -->
-          <v-card v-if="selectedStage === 'input'" flat>
+          <v-card
+            v-if="selectedStage === 'input'"
+            flat
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+          >
             <DSPSlider v-model="dsp.input_gain" type="gain" />
           </v-card>
 
           <!-- Settings of the Output stage -->
-          <v-card v-else-if="selectedStage === 'output'" flat>
+          <v-card
+            v-else-if="selectedStage === 'output'"
+            flat
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+          >
             <v-card-item>
               <DSPSlider v-model="dsp.output_gain" type="gain" />
               <v-checkbox
@@ -103,7 +114,11 @@
           </v-card>
 
           <!-- Settings of the selected DSP Filter -->
-          <v-card v-else flat>
+          <v-card
+            v-else
+            flat
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+          >
             <DSPParametricEQ
               v-if="
                 dsp.filters[selectedStage].type === DSPFilterType.PARAMETRIC_EQ
