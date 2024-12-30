@@ -221,6 +221,7 @@ const addFilter = () => {
   switch (newFilterType.value) {
     case DSPFilterType.PARAMETRIC_EQ:
       filter = {
+        preamp: 0,
         enabled: true,
         type: DSPFilterType.PARAMETRIC_EQ,
         bands: [],
