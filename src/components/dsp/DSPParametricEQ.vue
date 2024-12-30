@@ -188,6 +188,11 @@ const importApoSettings = (content: string) => {
           });
         }
       }
+    } else if (line.startsWith("Preamp")) {
+      const match = line.match(/Preamp:\s*(-?\d+\.?\d*)\s+dB/);
+      if (match) {
+        peq.value.preamp = parseFloat(match[1]);
+      }
     }
   }
 
@@ -225,11 +230,11 @@ const openApoFileImport = () => {
 };
 
 const exportApoSettings = () => {
-  let content = "Preamp: 0 dB\n";
+  let content = `Preamp: ${preamp.value.toFixed(2)} dB\n`;
 
-  peq.value.bands.forEach((band) => {
+  peq.value.bands.forEach((band, index) => {
     const apoType = bandTypeToApo[band.type];
-    content += `Filter: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
+    content += `Filter ${index + 1}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
   });
   const blob = new Blob([content], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
