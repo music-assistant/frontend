@@ -1,5 +1,5 @@
 <template>
-  <v-card flat>
+  <v-card flat color="transparent">
     <v-card-text class="d-flex align-center gap-4">
       <v-slider
         v-model="model"
@@ -10,6 +10,7 @@
         hide-details
         class="flex-grow-1 pr-4"
         density="compact"
+        color="primary"
       />
       <v-text-field
         v-model="displayValue"
