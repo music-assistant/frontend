@@ -75,7 +75,7 @@
     "queue_next_items": "Éléments suivant",
     "queue_options": "Option de la file d'attente",
     "queue_previous_items": "Éléments joués",
-    "queue_radio_based_on": "La file d'attente est remplie dynamiquement de pistes basées sur {0} :",
+    "queue_radio_based_on": "La file d'attente est remplie dynamiquement avec des pistes en fonction de :",
     "queue_radio_enabled": "Le mode radio est activé",
     "radios": "Radio",
     "read_more": "en savoir plus",
@@ -364,7 +364,9 @@
                 "nb": "Norvégien",
                 "ru_RU": "Russe",
                 "pt_BR": "Portugais (Brésil)",
-                "sl_SI": "Slovène"
+                "sl_SI": "Slovène",
+                "hu_HU": "Hongrois",
+                "it": "Italien"
             }
         },
         "hide_settings": {
@@ -493,7 +495,7 @@
     "image_source": "Source",
     "update_metadata": "Mettre à jour les métadonnées",
     "cancel": "Annuler",
-    "transfer_queue": "Transférer la file d'attente vers un autre lecteur",
+    "transfer_queue": "Transférer la file d'attente",
     "power_on_player": "Allumer",
     "power_off_player": "Éteindre",
     "powered_off_players": "Lecteurs éteints",
