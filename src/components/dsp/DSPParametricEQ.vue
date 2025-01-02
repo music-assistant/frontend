@@ -1,5 +1,26 @@
 <template>
   <v-container class="pa-2">
+    <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
+    <div class="d-flex justify-end">
+      <v-btn variant="outlined" class="mr-2" @click="openApoFileImport">
+        <v-icon start>mdi-file-import</v-icon>
+        {{ $t("settings.dsp.parametric_eq.import_apo") }}
+      </v-btn>
+
+      <v-btn variant="outlined" class="mr-2" @click="exportApoSettings">
+        <v-icon start>mdi-file-export</v-icon>
+        {{ $t("settings.dsp.parametric_eq.export_apo") }}
+      </v-btn>
+
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept=".txt"
+        class="d-none"
+        @change="handleApoUpload"
+      />
+    </div>
+
     <!-- Frequency Response Graph with Dark Theme Support -->
     <v-card elevation="0" color="transparent">
       <div ref="graphContainer" class="graph-container">
@@ -100,6 +121,117 @@ import {
 import DSPSlider from "./DSPSlider.vue";
 import { $t } from "@/plugins/i18n";
 import { useTheme } from "vuetify";
+
+const apoToBandType: Record<string, ParametricEQBandType> = {
+  PK: ParametricEQBandType.PEAK,
+  PEQ: ParametricEQBandType.PEAK,
+  HP: ParametricEQBandType.HIGH_PASS,
+  HPQ: ParametricEQBandType.HIGH_PASS,
+  LP: ParametricEQBandType.LOW_PASS,
+  LPQ: ParametricEQBandType.LOW_PASS,
+  LS: ParametricEQBandType.LOW_SHELF,
+  HS: ParametricEQBandType.HIGH_SHELF,
+  NO: ParametricEQBandType.NOTCH,
+  // Currently not supported are:
+  // Modal, BP, LSC x dB, HS x dB, AP, LS with dB slope, HS with dB slope
+  // and any other non Parametric EQ types
+};
+
+const bandTypeToApo: Record<ParametricEQBandType, string> = {
+  [ParametricEQBandType.PEAK]: "PK",
+  [ParametricEQBandType.HIGH_PASS]: "HP",
+  [ParametricEQBandType.LOW_PASS]: "LP",
+  [ParametricEQBandType.LOW_SHELF]: "LS",
+  [ParametricEQBandType.HIGH_SHELF]: "HS",
+  [ParametricEQBandType.NOTCH]: "NO",
+};
+
+const importApoSettings = (content: string) => {
+  const filters = [];
+  const lines = content.split("\n");
+  const bands: ParametricEQBand[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith("Filter")) {
+      // Parses filter settings from REW or Equalizer APO text format.
+      // Syntax of APO (from https://sourceforge.net/p/equalizerapo/wiki/Configuration%20reference/):
+      // Filter <n>: ON <Type> Fc <Frequency> Hz Gain <Gain value> dB Q <Q value>
+      // Filter <n>: ON <Type> Fc <Frequency> Hz Gain <Gain value> dB BW Oct <Bandwidth value>
+      // Matches patterns like:
+      // - "Filter 1: ON PK Fc 29.15 Hz Gain -9.60 dB Q 1.007" (REW)
+      // - "Filter: ON PK 29.15 Hz -9.60 dB 1.007" (EQ APO)
+      const match = line.match(
+        /Filter(?:\s+\d+)?:\s+(ON|OFF)\s+(\w+)\s+(?:Fc\s+)?(\d+\.?\d*)\s*(?:Hz)?\s+(?:Gain\s+)?(-?\d+\.?\d*)\s+dB\s+(?:(?:Q\s+)?(\d+\.?\d*)|(?:BW\s+Oct\s+)(\d+\.?\d*))/,
+      );
+
+      if (match) {
+        const [_, enabled, type, frequency, gain, q, bw] = match;
+        // Convert BW to Q if BW is present
+        const finalQ = bw ? bandwidthToQ(parseFloat(bw)) : parseFloat(q);
+        if (type !== "None") {
+          bands.push({
+            frequency: parseFloat(frequency),
+            gain: parseFloat(gain),
+            q: parseFloat(q),
+            type: apoToBandType[type] || ParametricEQBandType.PEAK,
+            enabled: enabled === "ON",
+          });
+        }
+      }
+    }
+  }
+
+  // Update the PEQ bands
+  peq.value.bands = bands;
+  selectedBandIndex.value = 0;
+};
+
+// Helper function to convert bandwidth to Q factor
+function bandwidthToQ(bw: number): number {
+  // from https://sengpielaudio.com/calculator-bandwidth.htm
+  return Math.sqrt(Math.pow(2, bw)) / (Math.pow(2, bw) - 1);
+}
+
+const handleApoUpload = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        importApoSettings(e.target.result as string);
+      }
+    };
+
+    reader.readAsText(file);
+  }
+};
+
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+const openApoFileImport = () => {
+  fileInputRef.value?.click();
+};
+
+const exportApoSettings = () => {
+  let content = "Preamp: 0 dB\n";
+
+  peq.value.bands.forEach((band) => {
+    const apoType = bandTypeToApo[band.type];
+    content += `Filter: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
+  });
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `music_assistant_eq_settings_${new Date().toISOString().split("T")[0]}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const theme = useTheme();
 
