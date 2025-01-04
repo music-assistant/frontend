@@ -116,7 +116,7 @@
 
       <!-- show alert if no item found -->
       <div v-if="!loading && pagedItems.length == 0">
-        <Alert
+        <v-alert
           v-if="
             !loading &&
             pagedItems.length == 0 &&
@@ -131,10 +131,10 @@
           >
             {{ $t("try_global_search") }}
           </v-btn>
-        </Alert>
-        <Alert v-else-if="!loading && pagedItems.length == 0">
+        </v-alert>
+        <v-alert v-else-if="!loading && pagedItems.length == 0">
           {{ $t("no_content") }}
-        </Alert>
+        </v-alert>
       </div>
 
       <!-- box shown when item(s) selected -->
@@ -186,7 +186,6 @@ import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import Alert from "@/components/mods/Alert.vue";
 import Container from "@/components/mods/Container.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
