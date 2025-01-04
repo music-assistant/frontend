@@ -78,7 +78,6 @@ const routes = [
           },
         ],
       },
-
       {
         path: "/tracks",
         children: [
@@ -105,7 +104,6 @@ const routes = [
           },
         ],
       },
-
       {
         path: "/playlists",
         children: [
@@ -129,7 +127,52 @@ const routes = [
           },
         ],
       },
-
+      {
+        path: "/podcasts",
+        children: [
+          {
+            path: "",
+            name: "podcasts",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcasts" */ "@/views/LibraryPodcasts.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId",
+            name: "podcast",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcast" */ "@/views/PodcastDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
+      {
+        path: "/audiobooks",
+        children: [
+          {
+            path: "",
+            name: "audiobooks",
+            component: () =>
+              import(
+                /* webpackChunkName: "audiobooks" */ "@/views/LibraryAudiobooks.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId",
+            name: "audiobook",
+            component: () =>
+              import(
+                /* webpackChunkName: "audiobook" */ "@/views/AudiobookDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
       {
         path: "/radios",
         children: [

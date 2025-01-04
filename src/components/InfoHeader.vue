@@ -139,6 +139,33 @@
               </MarqueeText>
             </v-card-subtitle>
 
+            <!-- audiobook author(s) -->
+            <v-card-subtitle
+              v-if="'authors' in item && item.authors"
+              class="title accent--text d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-music"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(author, authorindex) in item.authors"
+                  :key="author"
+                >
+                  <a style="color: accent">{{ author }}</a>
+                  <span
+                    v-if="authorindex + 1 < item.authors.length"
+                    :key="authorindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
+
             <!-- playlist owner -->
             <v-card-subtitle
               v-if="'owner' in item && item.owner"

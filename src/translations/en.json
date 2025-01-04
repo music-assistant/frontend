@@ -21,6 +21,14 @@
     "artist_albums": "Albums",
     "artist_toptracks": "Top tracks",
     "artists": "Artists",
+    "audiobook": "Audiobook",
+    "audiobooks": "Audiobooks",
+    "chapter": "Chapter",
+    "chapters": "Chapters",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "episode": "Episode",
+    "episodes": "Episodes",
     "browse": "Browse",
     "clear_selection": "Clear selection",
     "close": "Close",
@@ -584,5 +592,10 @@
     "open_dsp_settings": "Open DSP settings",
     "powered_off_players": "Unpowered players",
     "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
-    "dont_stop_the_music_disable": "Disable 'Don't stop the music!'"
+    "dont_stop_the_music_disable": "Disable 'Don't stop the music!'",
+    "item_fully_played": "This item has been fully played",
+    "item_in_progress": "This item has been partially played",
+    "duration_in_seconds": "{0} seconds",
+    "mark_played": "Mark as played",
+    "mark_unplayed": "Mark as unplayed"
 }

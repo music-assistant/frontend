@@ -102,12 +102,8 @@
       <div v-else-if="'owner' in item && item.owner">
         {{ item.owner }}
       </div>
-      <!-- radio description -->
-      <div
-        v-else-if="
-          item.media_type == MediaType.RADIO && item.metadata.description
-        "
-      >
+      <!-- description -->
+      <div v-else-if="'metadata' in item && item.metadata?.description">
         {{ item.metadata.description }}
       </div>
       <!-- media type label -->
@@ -140,6 +136,19 @@
         "
         :size="24"
       />
+
+      <!-- fully played or in progress icon -->
+      <!-- only used for podcast-episodes and audiobook-chapters -->
+      <v-icon
+        v-if="'fully_played' in item && item.fully_played"
+        :title="$t('item_fully_played')"
+        >mdi-check</v-icon
+      >
+      <v-icon
+        v-else-if="'resume_position_ms' in item && item.resume_position_ms"
+        :title="$t('item_in_progress')"
+        >mdi-clock-fast</v-icon
+      >
 
       <!-- favorite (heart) icon -->
       <div

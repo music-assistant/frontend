@@ -40,6 +40,8 @@ interface Store {
   libraryTracksCount?: number;
   libraryPlaylistsCount?: number;
   libraryRadiosCount?: number;
+  libraryPodcastsCount?: number;
+  libraryAudiobooksCount?: number;
   connected?: boolean;
   isTouchscreen: boolean;
 }
