@@ -104,7 +104,16 @@
       </div>
       <!-- description -->
       <div v-else-if="'metadata' in item && item.metadata?.description">
-        {{ item.metadata.description }}
+        <span v-if="getBreakpointValue('bp6')">{{
+          truncateString(item.metadata.description, 300)
+        }}</span>
+        <span v-else-if="getBreakpointValue('bp4')">{{
+          truncateString(item.metadata.description, 200)
+        }}</span>
+        <span v-else-if="getBreakpointValue('bp3')">{{
+          truncateString(item.metadata.description, 150)
+        }}</span>
+        <span v-else>{{ truncateString(item.metadata.description, 80) }}</span>
       </div>
       <!-- media type label -->
       <div v-else-if="'media_type' in item && !item.provider_mappings">
@@ -202,6 +211,7 @@ import {
   parseBool,
   getArtistsString,
   getBrowseFolderName,
+  truncateString,
 } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
 import { getBreakpointValue } from "@/plugins/breakpoint";
