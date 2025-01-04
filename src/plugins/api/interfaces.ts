@@ -618,7 +618,7 @@ export interface QueueItem {
   duration: number;
   sort_index: number;
   streamdetails?: StreamDetails;
-  media_item?: Track | Radio;
+  media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
 }
 

@@ -1,6 +1,6 @@
 <template>
   <section>
-    <Toolbar icon="mdi-magnify" :title="$t('search')" />
+    <Toolbar icon="mdi-magnify" :title="$t('global_search')" />
 
     <Container variant="default">
       <v-text-field
@@ -49,7 +49,7 @@
           v-if="searchResult && !loading"
           :widget-row="{
             label: 'tracks',
-            icon: 'file-music',
+            icon: 'mdi-file-music',
             items: searchResult.tracks,
             count: searchResult.tracks.length,
           }"

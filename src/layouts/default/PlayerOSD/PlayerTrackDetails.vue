@@ -164,13 +164,32 @@
           <!-- track fallback: (only artist, no album) -->
           <div
             v-else-if="
-              store.curQueueItem &&
-              store.curQueueItem.media_item &&
+              store.curQueueItem?.media_item &&
               'artists' in store.curQueueItem.media_item &&
               store.curQueueItem.media_item.artists.length > 0
             "
           >
             {{ store.curQueueItem.media_item.artists[0].name }}
+          </div>
+          <!-- podcast episode - podcast name as subtitle -->
+          <div
+            v-else-if="
+              store.curQueueItem?.media_item &&
+              'podcast' in store.curQueueItem.media_item &&
+              store.curQueueItem.media_item.podcast?.name
+            "
+          >
+            {{ store.curQueueItem.media_item.podcast.name }}
+          </div>
+          <!-- audiobook chapter - audiobook name as subtitle -->
+          <div
+            v-else-if="
+              store.curQueueItem?.media_item &&
+              'audiobook' in store.curQueueItem.media_item &&
+              store.curQueueItem.media_item.audiobook?.name
+            "
+          >
+            {{ store.curQueueItem.media_item.audiobook.name }}
           </div>
           <!-- radio live metadata -->
           <div
@@ -181,13 +200,15 @@
           </div>
           <!-- other description -->
           <div
-            v-else-if="
-              store.curQueueItem &&
-              store.curQueueItem.media_item?.metadata.description
-            "
+            v-else-if="store.curQueueItem?.media_item?.metadata.description"
             class="line-clamp-1"
           >
-            {{ store.curQueueItem.media_item.metadata.description }}
+            {{
+              truncateString(
+                store.curQueueItem.media_item.metadata.description,
+                100,
+              )
+            }}
           </div>
           <!-- external source artist -->
           <div v-else-if="store.activePlayer?.current_media?.artist">
@@ -228,6 +249,7 @@ import {
   ImageColorPalette,
   getArtistsString,
   getPlayerName,
+  truncateString,
 } from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";

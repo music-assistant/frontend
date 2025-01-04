@@ -175,9 +175,8 @@
       <div
         v-if="
           showDuration &&
-          item.media_type == MediaType.TRACK &&
           'duration' in item &&
-          item.duration != undefined &&
+          item.duration &&
           getBreakpointValue('bp0')
         "
       >

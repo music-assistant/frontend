@@ -600,5 +600,6 @@
     "duration_in_seconds": "{0} seconds",
     "mark_played": "Mark as played",
     "mark_unplayed": "Mark as unplayed",
-    "searchtype_all": "All"
+    "searchtype_all": "All",
+    "global_search": "Global search"
 }
