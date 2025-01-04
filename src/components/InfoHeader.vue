@@ -141,24 +141,51 @@
 
             <!-- audiobook author(s) -->
             <v-card-subtitle
-              v-if="'authors' in item && item.authors"
+              v-if="'authors' in item && item.authors.length > 0"
               class="title accent--text d-flex"
             >
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
                 small
                 color="primary"
-                icon="mdi-account-music"
+                icon="mdi-account-edit"
               />
               <MarqueeText :sync="marqueeSync">
                 <span
                   v-for="(author, authorindex) in item.authors"
                   :key="author"
                 >
-                  <a style="color: accent">{{ author }}</a>
+                  <span style="color: accent">{{ author }}</span>
                   <span
                     v-if="authorindex + 1 < item.authors.length"
                     :key="authorindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- audiobook narrator(s) -->
+            <v-card-subtitle
+              v-if="'narrators' in item && item.narrators.length > 0"
+              class="title accent--text d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-voice"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(narrator, narratorIndex) in item.narrators"
+                  :key="narrator"
+                >
+                  <span style="color: accent">{{ narrator }}</span>
+                  <span
+                    v-if="narratorIndex + 1 < item.narrators.length"
+                    :key="narratorIndex"
                     style="color: accent"
                     >{{ " / " }}</span
                   >
