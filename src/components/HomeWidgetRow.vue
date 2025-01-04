@@ -1,5 +1,5 @@
 <template>
-  <div v-if="widgetRow.items.length" class="widget-row">
+  <div class="widget-row">
     <v-toolbar
       class="header"
       color="transparent"
@@ -26,7 +26,10 @@
         </template>
       </template>
     </v-toolbar>
-    <carousel>
+    <v-alert v-if="widgetRow.items.length == 0">
+      {{ $t("no_content") }}
+    </v-alert>
+    <carousel v-else>
       <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
         <PanelviewItemCompact
           :item="item"

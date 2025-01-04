@@ -1,5 +1,5 @@
 import { computed, reactive } from "vue";
-import { Player, PlayerQueue, QueueItem } from "./api/interfaces";
+import { MediaType, Player, PlayerQueue, QueueItem } from "./api/interfaces";
 
 import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
@@ -32,6 +32,7 @@ interface Store {
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
+  globalSearchType?: MediaType;
   prevState?: StoredState;
   activeAlert?: Alert;
   prevRoute?: string;
@@ -82,6 +83,7 @@ export const store: Store = reactive({
     return undefined;
   }),
   globalSearchTerm: undefined,
+  globalSearchType: undefined,
   prevState: undefined,
   activeAlert: undefined,
   prevRoute: undefined,

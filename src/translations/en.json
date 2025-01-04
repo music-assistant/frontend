@@ -599,5 +599,6 @@
     "item_in_progress": "This item has been partially played",
     "duration_in_seconds": "{0} seconds",
     "mark_played": "Mark as played",
-    "mark_unplayed": "Mark as unplayed"
+    "mark_unplayed": "Mark as unplayed",
+    "searchtype_all": "All"
 }

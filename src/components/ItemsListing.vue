@@ -468,6 +468,21 @@ const changeAlbumTypeFilter = function (albumType: string) {
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
+  if (props.itemtype == "artists") {
+    store.globalSearchType = MediaType.ARTIST;
+  } else if (props.itemtype == "albums") {
+    store.globalSearchType = MediaType.ALBUM;
+  } else if (props.itemtype == "tracks") {
+    store.globalSearchType = MediaType.TRACK;
+  } else if (props.itemtype == "playlists") {
+    store.globalSearchType = MediaType.PLAYLIST;
+  } else if (props.itemtype == "audiobooks") {
+    store.globalSearchType = MediaType.AUDIOBOOK;
+  } else if (props.itemtype == "podcasts") {
+    store.globalSearchType = MediaType.PODCAST;
+  } else if (props.itemtype == "radios") {
+    store.globalSearchType = MediaType.RADIO;
+  }
   router.push({ name: "search" });
 };
 
@@ -735,7 +750,7 @@ const loadData = async function (
 
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
-  const storKey = `${props.path}.${props.itemtype}`;
+  const storKey = props.itemtype || props.path;
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${storKey}`);
   if (savedViewMode && savedViewMode !== "null") {

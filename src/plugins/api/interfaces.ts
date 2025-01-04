@@ -571,6 +571,8 @@ export interface SearchResults {
   tracks: Track[];
   playlists: Playlist[];
   radio: Radio[];
+  podcasts: Podcast[];
+  audiobooks: Audiobook[];
 }
 
 export interface AudioFormat {
