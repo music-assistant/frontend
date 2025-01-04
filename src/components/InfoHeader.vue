@@ -28,7 +28,7 @@
         :menu-items="item ? getContextMenuItems([item], item) : []"
         :enforce-overflow-menu="true"
         :show-loading="true"
-        @icon-clicked="backButtonClick"
+        :icon-action="backButtonClick"
       />
       <v-layout
         v-if="item"
