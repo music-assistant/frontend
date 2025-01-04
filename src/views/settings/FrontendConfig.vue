@@ -39,7 +39,8 @@ import {
 import EditConfig from "./EditConfig.vue";
 import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
-import { DEFAULT_MENU_ITEMS } from "@/layouts/default/DrawerNavigation.vue";
+import { store } from "@/plugins/store";
+import { DEFAULT_MENU_ITEMS } from "@/constants";
 
 // global refs
 const router = useRouter();
@@ -50,7 +51,7 @@ onMounted(() => {
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
-    : DEFAULT_MENU_ITEMS;
+    : store.defaultMenuItems;
 
   config.value = [
     {
@@ -111,6 +112,8 @@ onMounted(() => {
         { title: $t("albums"), value: "albums" },
         { title: $t("tracks"), value: "tracks" },
         { title: $t("playlists"), value: "playlists" },
+        { title: $t("audiobooks"), value: "audiobooks" },
+        { title: $t("podcasts"), value: "podcasts" },
         { title: $t("radios"), value: "radios" },
         { title: $t("browse"), value: "browse" },
         { title: $t("settings.settings"), value: "settings" },

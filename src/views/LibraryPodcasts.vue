@@ -12,7 +12,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :extra-menu-items="extraMenuItems"
-    icon="mdi-podcast-play"
+    icon="mdi-podcast"
     :restore-state="true"
     :total="total"
   />

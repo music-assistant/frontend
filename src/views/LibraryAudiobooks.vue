@@ -12,7 +12,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :extra-menu-items="extraMenuItems"
-    icon="mdi-audiobook-play"
+    icon="mdi-book-play-outline"
     :restore-state="true"
     :total="total"
   />
