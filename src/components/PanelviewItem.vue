@@ -96,16 +96,16 @@
               </v-tooltip>
             </v-icon>
           </v-item>
-          <!-- disc/track number/position-->
-          <v-item
-            v-if="
-              ('track_number' in item && item.track_number) ||
-              ('position' in item && item.position)
-            "
-          >
+          <!-- disc/track number-->
+          <v-item v-if="'track_number' in item && item.track_number">
             <v-icon size="small" icon="mdi-music-circle-outline" />
             <span v-if="item.disc_number">{{ item.disc_number }}/</span
-            >{{ item.track_number || item.position }}
+            >{{ item.track_number }}
+          </v-item>
+          <!-- position-->
+          <v-item v-else-if="'position' in item && item.position">
+            <v-icon size="small" icon="mdi-music-circle-outline" />
+            {{ item.position }}
           </v-item>
           <v-item v-if="getBreakpointValue('bp3')">
             <FavouriteButton :item="item" />

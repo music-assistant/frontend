@@ -1,3 +1,7 @@
+<!--
+ Comment marcelveldt 2025-01-04: Not sure about the purpose of these mods
+ What can we do to get rid of these mods/hacks and just use the standard Vuetify components?
+-->
 <template>
   <div
     ref="responsiveIconHolder"
@@ -28,6 +32,7 @@
         :disabled="disabled"
       >
         <!-- Dynamically inherit slots from parent -->
+        <!-- @vue-ignore -->
         <template v-for="(value, name) in $slots as unknown" #[name]>
           <slot :name="name"></slot>
         </template>

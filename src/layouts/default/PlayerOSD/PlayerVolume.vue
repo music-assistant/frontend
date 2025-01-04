@@ -9,6 +9,7 @@
     @end="(value) => $emit('update:model-value', value)"
   >
     <!-- Dynamically inherit slots from parent -->
+    <!-- @vue-ignore -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
       <slot :name="name"></slot>
     </template>

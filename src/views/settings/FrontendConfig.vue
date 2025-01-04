@@ -39,7 +39,6 @@ import {
 import EditConfig from "./EditConfig.vue";
 import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 
 // global refs
@@ -51,7 +50,7 @@ onMounted(() => {
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
-    : store.defaultMenuItems;
+    : DEFAULT_MENU_ITEMS;
 
   config.value = [
     {
