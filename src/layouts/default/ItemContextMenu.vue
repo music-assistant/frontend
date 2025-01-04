@@ -303,6 +303,13 @@ export const getContextMenuItems = function (
   if (
     items.length === 1 &&
     items[0] !== parentItem &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+    ].includes(items[0].media_type) &&
     itemIsAvailable(items[0])
   ) {
     contextMenuItems.push({
@@ -372,7 +379,18 @@ export const getContextMenuItems = function (
   }
 
   // add to library
-  if (items[0].provider != "library" && itemIsAvailable(items[0])) {
+  if (
+    items[0].provider != "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+    ].includes(items[0].media_type) &&
+    itemIsAvailable(items[0])
+  ) {
     contextMenuItems.push({
       label: "add_library",
       labelArgs: [],
@@ -383,7 +401,17 @@ export const getContextMenuItems = function (
     });
   }
   // remove from library
-  if (items[0].provider == "library") {
+  if (
+    items[0].provider == "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+    ].includes(items[0].media_type)
+  ) {
     contextMenuItems.push({
       label: "remove_library",
       labelArgs: [],
@@ -398,7 +426,18 @@ export const getContextMenuItems = function (
     });
   }
   // add to favorites
-  if ("favorite" in items[0] && !items[0].favorite) {
+  if (
+    "favorite" in items[0] &&
+    !items[0].favorite &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+    ].includes(items[0].media_type)
+  ) {
     contextMenuItems.push({
       label: "favorites_add",
       labelArgs: [],
@@ -411,7 +450,18 @@ export const getContextMenuItems = function (
     });
   }
   // remove from favorites
-  if ("favorite" in items[0] && items[0].favorite) {
+  if (
+    "favorite" in items[0] &&
+    items[0].favorite &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+    ].includes(items[0].media_type)
+  ) {
     contextMenuItems.push({
       label: "favorites_remove",
       labelArgs: [],

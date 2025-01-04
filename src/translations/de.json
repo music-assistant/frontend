@@ -75,7 +75,7 @@
     "queue_next_items": "Nächste Titel",
     "queue_options": "Warteschlangen-Einstellungen",
     "queue_previous_items": "Gespielte Titel",
-    "queue_radio_based_on": "Die Warteschlange wird dynamisch mit Titeln gefüllt, die auf {0} basieren:",
+    "queue_radio_based_on": "Die Warteschlange wird dynamisch mit Titeln gefüllt, basierend auf:",
     "queue_radio_enabled": "Radio Modus ist aktiviert",
     "radios": "Radio",
     "read_more": "Lese mehr",
@@ -401,7 +401,46 @@
             "description": "Feste\/fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\\n\\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'fallback auf Gainkorrektur' eingestellt ist."
         },
         "group_type": "Art der Gruppe",
-        "add_group_player_desc": "\\nBei Player-Anbietern\/Ökosystemen, die eine native Gruppierung\/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, d. h., wenn Sie diese Playergruppe abspielen, werden die Player-Mitglieder automatisch synchronisiert. \\n\\nFür Player\/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \\n\\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können"
+        "add_group_player_desc": "\\nBei Player-Anbietern\/Ökosystemen, die eine native Gruppierung\/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, d. h., wenn Sie diese Playergruppe abspielen, werden die Player-Mitglieder automatisch synchronisiert. \\n\\nFür Player\/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \\n\\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können",
+        "dsp": {
+            "filter": {
+                "add": "Filter Hinzufügen",
+                "type": "Filter Typ",
+                "new": "Neuer {type}"
+            },
+            "move_up": "Nach oben",
+            "move_down": "Nach unten",
+            "delete_filter": "Filter löschen",
+            "parametric_eq": {
+                "add_band": "Band hinzufügen",
+                "delete_band": "Band löschen",
+                "filter_type": "Filter Typ",
+                "band": "Band {index}",
+                "enable_band": "Band aktivieren",
+                "filter_types": {
+                    "peak": "Spitzen",
+                    "low_shelf": "Low-Shelf",
+                    "high_shelf": "High-Shelf",
+                    "low_pass": "Tiefpass",
+                    "high_pass": "Hochpass",
+                    "notch": "Engpass"
+                }
+            },
+            "tone_control": {
+                "bass_level": "Basspegel",
+                "mid_level": "Mittenpegel",
+                "treble_level": "Höhenpegel"
+            },
+            "parameter": {
+                "frequency": "Frequenz",
+                "gain": "Verstärkung",
+                "q_factor": "Q-Faktor"
+            },
+            "types": {
+                "parametric_eq": "Parametrischer EQ",
+                "tone_control": "Klangregelung"
+            }
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -478,7 +517,7 @@
     "currently_playing": "Wird gerade abgespielt",
     "favorites_add": "Zu Favoriten hinzufügen",
     "favorites_remove": "Aus Favoriten entfernen",
-    "confirm_library_remove": "Dieses Element wirklich aus der Bibliothek entfernen? Alle von diesem Element abhängigen Daten werden ebenfalls rekursiv entfernt. Beachte, dass dieses Element dadurch nur aus der Bibliothek entfernt wird. Falls es sich um eine Musikdatei auf der Festplatte handelt wird diese nicht gelöscht und bei der nächsten Synchronisierung möglicherweise wieder angezeigt.",
+    "confirm_library_remove": "Dieses Element wirklich aus der Bibliothek entfernen? Alle von diesem Element abhängigen Daten werden ebenfalls rekursiv entfernt. Beachte, dass dieses Element dadurch nur aus der Bibliothek entfernt wird. Falls es sich um eine Musikdatei auf der Festplatte handelt, wird diese nicht gelöscht und bei der nächsten Synchronisierung möglicherweise wieder angezeigt.",
     "check_item_on_provider": "Prüfe {0} auf {1}",
     "check_item_in_library": "{0} in Bibliothek prüfen",
     "media_details": "Mediendetails",
@@ -526,5 +565,6 @@
     "shuffle_disable": "Deaktiviere Zufallswiedergabe",
     "shuffle_enable": "Aktiviere Zufallswiedergabe",
     "dont_stop_the_music_enable": "'Dont stop the music!' einschalten",
-    "dont_stop_the_music_disable": "'Dont stop the Music!' auschalten"
+    "dont_stop_the_music_disable": "'Dont stop the Music!' auschalten",
+    "open_dsp_settings": "DSP Einstellungen öffnen"
 }

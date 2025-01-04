@@ -402,7 +402,9 @@ const onClick = function (item: MediaItemType, posX: number, posY: number) {
     });
   } else if (
     viewMode.value == "list" &&
-    item.media_type == MediaType.TRACK &&
+    [MediaType.TRACK, MediaType.EPISODE, MediaType.CHAPTER].includes(
+      item.media_type,
+    ) &&
     props.parentItem
   ) {
     // track clicked in a sublisting (e.g. album/playlist) listview

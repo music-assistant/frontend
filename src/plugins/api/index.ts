@@ -44,6 +44,12 @@ import {
   ItemMapping,
   AlbumType,
   DSPConfig,
+  Audiobook,
+  Chapter,
+  Podcast,
+  Episode,
+  PlayableMediaItemType,
+  MediaItemTypeOrItemMapping,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -267,6 +273,18 @@ export class MusicAssistantApi {
     return this.sendCommand("music/radios/count", { favorite_only });
   }
 
+  public getLibraryPodcastsCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/podcasts/count", { favorite_only });
+  }
+
+  public getLibraryAudiobooksCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/audiobooks/count", { favorite_only });
+  }
+
   public getLibraryArtists(
     favorite?: boolean,
     search?: string,
@@ -473,6 +491,100 @@ export class MusicAssistantApi {
     });
   }
 
+  // Audiobook related endpoints
+  public getLibraryAudiobooks(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+  ): Promise<Audiobook[]> {
+    return this.sendCommand("music/audiobooks/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+    });
+  }
+
+  public getAudiobook(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Audiobook> {
+    return this.sendCommand("music/audiobooks/get_audiobook", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getAudiobookVersions(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Audiobook[]> {
+    return this.sendCommand("music/audiobooks/audiobook_versions", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getAudiobookChapters(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Chapter[]> {
+    return this.sendCommand("music/audiobooks/audiobook_chapters", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  // Podcast related endpoints
+  public getLibraryPodcasts(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+  ): Promise<Podcast[]> {
+    return this.sendCommand("music/podcasts/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+    });
+  }
+
+  public getPodcast(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Podcast> {
+    return this.sendCommand("music/podcasts/get_podcast", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public gePodcastVersions(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Podcast[]> {
+    return this.sendCommand("music/podcasts/podcast_versions", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getPodcastEpisodes(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Episode[]> {
+    return this.sendCommand("music/podcasts/podcast_episodes", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
     return this.sendCommand("music/item_by_uri", {
@@ -596,6 +708,35 @@ export class MusicAssistantApi {
     return this.sendCommand("music/recently_played_items", {
       limit,
       media_types,
+    });
+  }
+
+  public markItemPlayed(
+    media_type: MediaType,
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    fully_played?: boolean,
+    seconds_played?: number,
+  ): Promise<void> {
+    // Mark item as played in the playlog
+    return this.sendCommand("music/mark_played", {
+      media_type,
+      item_id,
+      provider_instance_id_or_domain,
+      fully_played,
+      seconds_played,
+    });
+  }
+  public markItemUnPlayed(
+    media_type: MediaType,
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<void> {
+    // Mark item as unplayed in the playlog
+    return this.sendCommand("music/mark_unplayed", {
+      media_type,
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -920,10 +1061,14 @@ export class MusicAssistantApi {
   // Play Media related functions
 
   public playMedia(
-    media: string | string[] | MediaItemType | MediaItemType[],
+    media:
+      | MediaItemTypeOrItemMapping
+      | MediaItemTypeOrItemMapping[]
+      | string
+      | string[],
     option?: QueueOption,
     radio_mode?: boolean,
-    start_item?: string,
+    start_item?: PlayableMediaItemType | string,
     queue_id?: string,
   ): Promise<void> {
     if (

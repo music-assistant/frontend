@@ -68,6 +68,10 @@ export enum MediaType {
   TRACK = "track",
   PLAYLIST = "playlist",
   RADIO = "radio",
+  AUDIOBOOK = "audiobook",
+  CHAPTER = "chapter",
+  PODCAST = "podcast",
+  EPISODE = "episodem",
   FOLDER = "folder",
   UNKNOWN = "unknown",
 }
@@ -512,13 +516,48 @@ export interface Radio extends MediaItem {
   duration?: number;
 }
 
+export interface Audiobook extends MediaItem {
+  publisher: string;
+  total_chapters: number;
+  authors: string[];
+  narrators: string[];
+}
+
+export interface Chapter extends MediaItem {
+  position: number;
+  audiobook: Audiobook | ItemMapping;
+  duration: number;
+  fully_played: boolean;
+  resume_position_ms: number;
+}
+
+export interface Podcast extends MediaItem {
+  publisher?: string;
+  total_episodes?: number;
+}
+
+export interface Episode extends MediaItem {
+  position: number;
+  podcast: Podcast | ItemMapping;
+  duration: number;
+  fully_played: boolean;
+  resume_position_ms: number;
+}
+
 export type MediaItemType =
   | Artist
   | Album
   | Track
   | Radio
   | Playlist
+  | Audiobook
+  | Chapter
+  | Podcast
+  | Episode
   | BrowseFolder;
+
+export type PlayableMediaItemType = Track | Radio | Chapter | Episode;
+export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface BrowseFolder extends MediaItem {
   path?: string;
