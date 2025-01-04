@@ -184,6 +184,34 @@
               </MarqueeText>
             </v-card-subtitle>
 
+            <!-- subtitle: podcast name -->
+            <v-card-subtitle
+              v-if="
+                store.curQueueItem?.media_item &&
+                'podcast' in store.curQueueItem.media_item &&
+                store.curQueueItem.media_item.podcast
+              "
+              :style="`font-size: ${subTitleFontSize};`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.podcast.name }}
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- subtitle: audiobook name -->
+            <v-card-subtitle
+              v-if="
+                store.curQueueItem?.media_item &&
+                'audiobook' in store.curQueueItem.media_item &&
+                store.curQueueItem.media_item.audiobook
+              "
+              :style="`font-size: ${subTitleFontSize};`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.audiobook.name }}
+              </MarqueeText>
+            </v-card-subtitle>
+
             <!-- subtitle: other source active -->
             <v-card-subtitle
               v-else-if="
@@ -271,7 +299,7 @@
                       </div>
                     </template>
                     <template #title>
-                      <!-- only scroll the currently playing track, or when hovered with a separete sync group -->
+                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
                       <MarqueeText
                         :sync="
                           index == 0 && activeQueuePanel == 0
