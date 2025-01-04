@@ -449,6 +449,8 @@
                 "filter_type": "Filter Type",
                 "band": "Band {index}",
                 "enable_band": "Enable Band",
+                "import_apo": "Import APO/REW Preset",
+                "export_apo": "Export APO Preset",
                 "filter_types": {
                     "peak": "Peak",
                     "low_shelf": "Low Shelf",
