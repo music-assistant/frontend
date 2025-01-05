@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-2">
     <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
-    <div class="d-flex justify-end">
+    <v-card-item class="d-flex justify-end">
       <v-btn variant="outlined" class="mr-2" @click="openApoFileImport">
         <v-icon start>mdi-file-import</v-icon>
         {{ $t("settings.dsp.parametric_eq.import_apo") }}
@@ -19,7 +19,7 @@
         class="d-none"
         @change="handleApoUpload"
       />
-    </div>
+    </v-card-item>
 
     <!-- Frequency Response Graph with Dark Theme Support -->
     <v-card elevation="0" color="transparent">
@@ -61,10 +61,10 @@
     </v-card>
 
     <!-- Band Controls Card -->
-    <v-card v-if="selectedBand" elevation="0" color="transparent">
-      <v-card-text>
+    <template v-if="selectedBand">
+      <v-card-item>
         <!-- Band Header -->
-        <div class="d-flex align-center mb-4">
+        <div class="d-flex align-center">
           <v-switch
             v-model="selectedBand.enabled"
             :label="$t('settings.dsp.parametric_eq.enable_band')"
@@ -82,33 +82,29 @@
             {{ $t("settings.dsp.parametric_eq.delete_band") }}
           </v-btn>
         </div>
+      </v-card-item>
 
-        <!-- Filter Controls -->
-        <v-row dense>
-          <v-col cols="12">
-            <v-select
-              v-model="selectedBand.type"
-              :items="filterTypes"
-              :label="$t('settings.dsp.parametric_eq.filter_type')"
-              variant="outlined"
-              density="comfortable"
-            />
-          </v-col>
+      <!-- Filter Controls -->
+      <v-select
+        v-model="selectedBand.type"
+        :items="filterTypes"
+        :label="$t('settings.dsp.parametric_eq.filter_type')"
+        variant="outlined"
+        density="comfortable"
+        class="pa-4"
+        hide-details
+      />
 
-          <v-col cols="12">
-            <DSPSlider v-model="selectedBand.frequency" type="frequency" />
-          </v-col>
+      <DSPSlider v-model="selectedBand.frequency" type="frequency" />
 
-          <v-col v-if="showGainParameter(selectedBand.type)" cols="12">
-            <DSPSlider v-model="selectedBand.gain" type="gain" />
-          </v-col>
+      <DSPSlider
+        v-if="showGainParameter(selectedBand.type)"
+        v-model="selectedBand.gain"
+        type="gain"
+      />
 
-          <v-col cols="12">
-            <DSPSlider v-model="selectedBand.q" type="q" />
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+      <DSPSlider v-model="selectedBand.q" type="q" />
+    </template>
   </v-container>
 </template>
 <script setup lang="ts">
