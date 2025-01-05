@@ -1,12 +1,14 @@
 <template>
   <v-card flat color="transparent">
     <v-card-text class="d-flex align-center gap-4">
+      <span style="min-width: 100px" class="v-label pl-2">{{
+        config.label
+      }}</span>
       <v-slider
         v-model="model"
         :min="config.min"
         :max="config.max"
         :step="config.step"
-        :label="config.label"
         hide-details
         class="flex-grow-1 pr-4"
         density="compact"
