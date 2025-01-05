@@ -110,6 +110,7 @@
               <v-checkbox
                 v-model="dsp.output_limiter"
                 :label="$t('settings.dsp.enable_output_limiter')"
+                hide-details
               />
             </v-card-item>
           </v-card>
