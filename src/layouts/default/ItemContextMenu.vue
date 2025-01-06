@@ -131,6 +131,7 @@ import {
   Track,
   ItemMapping,
   MediaItemType,
+  PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -214,7 +215,7 @@ export const getPlayMenuItems = function (
     // Play from here (podcast episode)
     if (parentItem.media_type == MediaType.PODCAST) {
       playMenuItems.push({
-        label: "play_album_from",
+        label: "play_from_here",
         action: () => {
           api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
         },
@@ -521,6 +522,40 @@ export const getContextMenuItems = function (
       icon: "mdi-plus-circle-outline",
     });
   }
+
+  if (items.length === 1 && "fully_played" in items[0]) {
+    // mark unplayed
+    if (items[0].fully_played || items[0].resume_position_ms > 0) {
+      contextMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await api.markItemUnPlayed(
+            items[0].media_type,
+            items[0].item_id,
+            items[0].provider,
+          );
+          (items[0] as PodcastEpisode).fully_played = false;
+        },
+      });
+    } else {
+      // mark played
+      contextMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await api.markItemPlayed(
+            items[0].media_type,
+            items[0].item_id,
+            items[0].provider,
+            true,
+          );
+          (items[0] as PodcastEpisode).fully_played = true;
+        },
+      });
+    }
+  }
+
   // update metadata
   if (items.length === 1 && items[0] == parentItem) {
     contextMenuItems.push({

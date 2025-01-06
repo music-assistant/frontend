@@ -24,9 +24,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import { eventbus } from "@/plugins/eventbus";
 
 export interface Props {
   itemId: string;
@@ -62,51 +59,4 @@ onMounted(() => {
   );
   onBeforeUnmount(unsub);
 });
-
-const onMenu = function (
-  item: MediaItemType | MediaItemType[],
-  posX: number,
-  posY: number,
-) {
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  const menuItems: ContextMenuItem[] = [];
-  const chapter = mediaItems[0] as Chapter;
-  if (chapter.fully_played || chapter.resume_position_ms > 0) {
-    menuItems.push({
-      label: "mark_unplayed",
-      action: async () => {
-        await api.markItemUnPlayed(
-          chapter.media_type,
-          chapter.item_id,
-          chapter.provider,
-        );
-        loadItemDetails();
-      },
-    });
-  } else {
-    menuItems.push({
-      label: "mark_played",
-      action: async () => {
-        await api.markItemPlayed(
-          chapter.media_type,
-          chapter.item_id,
-          chapter.provider,
-          true,
-        );
-        loadItemDetails();
-      },
-    });
-  }
-  // open the contextmenu by emitting the event
-  eventbus.emit("contextmenu", {
-    items: menuItems,
-    posX: posX,
-    posY: posY,
-  });
-};
-
-const onClick = function (item: MediaItemType, posX: number, posY: number) {
-  if (!itemDetails.value || !itemIsAvailable(item)) return;
-  api.playMedia(itemDetails.value.uri, undefined, undefined, item.uri);
-};
 </script>

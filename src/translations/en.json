@@ -601,5 +601,6 @@
     "mark_played": "Mark as played",
     "mark_unplayed": "Mark as unplayed",
     "searchtype_all": "All",
-    "global_search": "Global search"
+    "global_search": "Global search",
+    "play_from_here": "Play from here"
 }
