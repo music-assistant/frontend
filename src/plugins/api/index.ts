@@ -45,9 +45,8 @@ import {
   AlbumType,
   DSPConfig,
   Audiobook,
-  Chapter,
   Podcast,
-  Episode,
+  PodcastEpisode,
   PlayableMediaItemType,
   MediaItemTypeOrItemMapping,
 } from "./interfaces";
@@ -528,16 +527,6 @@ export class MusicAssistantApi {
     });
   }
 
-  public getAudiobookChapters(
-    item_id: string,
-    provider_instance_id_or_domain: string,
-  ): Promise<Chapter[]> {
-    return this.sendCommand("music/audiobooks/audiobook_chapters", {
-      item_id,
-      provider_instance_id_or_domain,
-    });
-  }
-
   // Podcast related endpoints
   public getLibraryPodcasts(
     favorite?: boolean,
@@ -578,7 +567,7 @@ export class MusicAssistantApi {
   public getPodcastEpisodes(
     item_id: string,
     provider_instance_id_or_domain: string,
-  ): Promise<Episode[]> {
+  ): Promise<PodcastEpisode[]> {
     return this.sendCommand("music/podcasts/podcast_episodes", {
       item_id,
       provider_instance_id_or_domain,

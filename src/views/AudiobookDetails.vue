@@ -2,30 +2,10 @@
   <InfoHeader :item="itemDetails" />
 
   <!-- audiobook chapters -->
-  <div style="margin-top: 10px">
-    <Toolbar :title="$t('chapters')" />
-    <v-divider />
-    <Container>
-      <v-list>
-        <ListviewItem
-          v-for="chapter in chapters"
-          :key="chapter.uri"
-          :item="chapter"
-          :show-track-number="false"
-          :show-disc-number="false"
-          :show-duration="true"
-          :show-favorite="false"
-          :show-menu="true"
-          :show-provider="false"
-          :show-album="false"
-          :show-checkboxes="false"
-          :is-selected="false"
-          @menu="onMenu"
-          @click="onClick"
-        />
-      </v-list>
-    </Container>
-  </div>
+  <Chapters
+    v-if="itemDetails && itemDetails.metadata?.chapters"
+    :item-details="itemDetails"
+  />
 
   <!-- provider mapping details -->
   <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
@@ -33,19 +13,17 @@
 
 <script setup lang="ts">
 import InfoHeader from "@/components/InfoHeader.vue";
-import Container from "@/components/mods/Container.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import ListviewItem from "@/components/ListviewItem.vue";
-import Toolbar from "@/components/Toolbar.vue";
+import Chapters from "@/components/Chapters.vue";
+
 import {
-  Chapter,
   EventType,
   type Audiobook,
   type EventMessage,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
-import { watch, ref, onMounted, onBeforeUnmount, computed } from "vue";
+import { watch, ref, onMounted, onBeforeUnmount } from "vue";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import { eventbus } from "@/plugins/eventbus";
@@ -57,11 +35,9 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Audiobook>();
-const chapters = ref<Chapter[]>([]);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getAudiobook(props.itemId, props.provider);
-  chapters.value = await api.getAudiobookChapters(props.itemId, props.provider);
 };
 
 watch(

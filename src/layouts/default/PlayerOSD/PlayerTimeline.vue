@@ -6,7 +6,7 @@
         :disabled="
           !store.curQueueItem ||
           !store.curQueueItem.media_item ||
-          store.curQueueItem.media_item?.media_type != MediaType.TRACK
+          !store.curQueueItem.duration
         "
         style="width: 100%"
         :min="0"

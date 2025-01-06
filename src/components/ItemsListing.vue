@@ -402,13 +402,12 @@ const onClick = function (item: MediaItemType, posX: number, posY: number) {
     });
   } else if (
     viewMode.value == "list" &&
-    [MediaType.TRACK, MediaType.EPISODE, MediaType.CHAPTER].includes(
-      item.media_type,
-    ) &&
+    [MediaType.TRACK, MediaType.PODCAST_EPISODE].includes(item.media_type) &&
     props.parentItem
   ) {
     // track clicked in a sublisting (e.g. album/playlist) listview
-    onPlayClick(item, posX, posY);
+    // open menu to show play options
+    onMenu(item, posX, posY);
   } else {
     router.push({
       name: item.media_type,

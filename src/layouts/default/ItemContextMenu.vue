@@ -211,6 +211,18 @@ export const getPlayMenuItems = function (
         disabled: !store.activePlayer,
       });
     }
+    // Play from here (podcast episode)
+    if (parentItem.media_type == MediaType.PODCAST) {
+      playMenuItems.push({
+        label: "play_album_from",
+        action: () => {
+          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
+        },
+        icon: "mdi-play-circle-outline",
+        labelArgs: [],
+        disabled: !store.activePlayer,
+      });
+    }
   }
 
   // replace now

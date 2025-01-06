@@ -1,47 +1,44 @@
 <template>
   <InfoHeader :item="itemDetails" />
-  <!-- Podcast Episodes listing -->
-  <div style="margin-top: 10px">
-    <Toolbar :title="$t('episodes')" />
-    <v-divider />
-    <Container>
-      <v-list>
-        <ListviewItem
-          v-for="episode in episodes"
-          :key="episode.uri"
-          :item="episode"
-          :show-track-number="false"
-          :show-disc-number="false"
-          :show-duration="true"
-          :show-favorite="false"
-          :show-menu="true"
-          :show-provider="false"
-          :show-album="false"
-          :show-checkboxes="false"
-          :is-selected="false"
-          @menu="onMenu"
-          @click="onClick"
-        />
-      </v-list>
-    </Container>
-  </div>
+  <ItemsListing
+    v-if="itemDetails"
+    itemtype="podcastepisodes"
+    :parent-item="itemDetails"
+    :show-provider="false"
+    :show-library="false"
+    :show-favorites-only-filter="false"
+    :show-track-number="true"
+    :show-refresh-button="true"
+    :load-items="loadPodcastEpisodes"
+    :sort-keys="[
+      'position',
+      'position_desc',
+      'name',
+      'duration',
+      'duration_desc',
+    ]"
+    :update-available="updateAvailable"
+    :title="$t('podcast_episodes')"
+    :allow-key-hooks="true"
+    :path="`podcast.${props.itemId}.${props.provider}`"
+    :restore-state="true"
+    :no-server-side-sorting="true"
+  />
 
   <!-- provider mapping details -->
   <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/mods/Container.vue";
-import ListviewItem from "@/components/ListviewItem.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import Toolbar from "@/components/Toolbar.vue";
 import {
   EventType,
   type Podcast,
   type EventMessage,
   type MediaItemType,
-  Episode,
+  PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
@@ -56,11 +53,9 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Podcast>();
-const episodes = ref<Episode[]>([]);
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPodcast(props.itemId, props.provider);
-  episodes.value = await api.getPodcastEpisodes(props.itemId, props.provider);
 };
 
 watch(
@@ -93,7 +88,7 @@ const onMenu = function (
 ) {
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
   const menuItems: ContextMenuItem[] = [];
-  const episode = mediaItems[0] as Episode;
+  const episode = mediaItems[0] as PodcastEpisode;
   if (episode.fully_played || episode.resume_position_ms > 0) {
     menuItems.push({
       label: "mark_unplayed",
@@ -131,5 +126,9 @@ const onMenu = function (
 const onClick = function (item: MediaItemType, posX: number, posY: number) {
   if (!itemDetails.value || !itemIsAvailable(item)) return;
   api.playMedia(itemDetails.value.uri, undefined, undefined, item.uri);
+};
+
+const loadPodcastEpisodes = async function (params: LoadDataParams) {
+  return await api.getPodcastEpisodes(props.itemId, props.provider);
 };
 </script>
