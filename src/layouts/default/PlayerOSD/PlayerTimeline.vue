@@ -118,7 +118,6 @@ const chapterTicks = computed(() => {
       ticks[chapter.start] = chapter.name;
     });
   }
-  console.log("ticks", ticks);
   return ticks;
 });
 
