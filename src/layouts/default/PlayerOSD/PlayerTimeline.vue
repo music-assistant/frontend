@@ -10,17 +10,29 @@
         "
         style="width: 100%"
         :min="0"
-        :max="store.curQueueItem && store.curQueueItem.duration"
+        :max="store.curQueueItem?.duration"
         hide-details
         :track-size="2"
         :thumb-size="isThumbHidden ? 0 : 10"
+        :show-ticks="chapterTicks ? 'always' : false"
+        :ticks="chapterTicks"
+        tick-size="4"
         @touchstart="isThumbHidden = false"
         @touchend="isThumbHidden = true"
         @mouseenter="isThumbHidden = false"
         @mouseleave="isThumbHidden = true"
         @start="startDragging"
         @end="stopDragging"
-      />
+      >
+        <template #tick-label="{ tick }">
+          <a
+            v-if="showLabels && !isThumbHidden"
+            class="text-caption"
+            @click="chapterClicked(tick.value)"
+            >{{ tick.label }}</a
+          >
+        </template>
+      </v-slider>
 
       <div v-if="showLabels" class="time-text-row">
         <!-- current time detail -->
@@ -48,7 +60,7 @@
 import api from "@/plugins/api";
 import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { formatDuration, lightenColor } from "@/helpers/utils";
+import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch } from "vue";
 
 // properties
@@ -95,6 +107,17 @@ const curQueueItemTime = computed(() => {
   return 0;
 });
 
+const chapterTicks = computed(() => {
+  const ticks: Record<number, string> = {};
+  if (store.curQueueItem?.media_item?.metadata?.chapters) {
+    store.curQueueItem.media_item.metadata.chapters.forEach((chapter) => {
+      ticks[chapter.start] = chapter.name;
+    });
+  }
+  console.log("ticks", ticks);
+  return ticks;
+});
+
 //watch
 watch(curQueueItemTime, (newTime) => {
   if (!isDragging.value) {
@@ -114,6 +137,22 @@ const stopDragging = () => {
       store.activePlayer.player_id,
       Math.round(tempTime.value),
     );
+  }
+};
+
+const chapterClicked = function (chaperPos: number) {
+  if (store.curQueueItem?.media_item?.metadata?.chapters) {
+    for (const chapter of store.curQueueItem.media_item.metadata.chapters) {
+      if (chapter.start == chaperPos) {
+        api.playMedia(
+          store.curQueueItem.media_item.uri,
+          undefined,
+          undefined,
+          chapter.position.toString(),
+        );
+        return;
+      }
+    }
   }
 };
 </script>
