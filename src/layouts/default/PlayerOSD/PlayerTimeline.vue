@@ -6,7 +6,8 @@
         :disabled="
           !store.curQueueItem ||
           !store.curQueueItem.media_item ||
-          !store.curQueueItem.duration
+          !store.curQueueItem.duration ||
+          store.curQueueItem.media_item.media_type == MediaType.RADIO
         "
         style="width: 100%"
         :min="0"
