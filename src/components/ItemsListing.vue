@@ -306,34 +306,29 @@ const toggleSearch = function () {
 
 const toggleExpand = function () {
   expanded.value = !expanded.value;
-  localStorage.setItem(
-    `expand.${props.path}.${props.itemtype}`,
-    expanded.value.toString(),
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`expand.${storKey}`, expanded.value.toString());
 };
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  localStorage.setItem(`viewMode.${props.path}.${props.itemtype}`, newMode);
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`viewMode.${storKey}`, newMode);
 };
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
   const favoritesOnlyStr = params.value.favoritesOnly ? "true" : "false";
-  localStorage.setItem(
-    `favoriteFilter.${props.path}.${props.itemtype}`,
-    favoritesOnlyStr,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`favoriteFilter.${storKey}`, favoritesOnlyStr);
   loadData(undefined, undefined, true);
 };
 
 const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
   const libraryOnlyStr = params.value.libraryOnly ? "true" : "false";
-  localStorage.setItem(
-    `libraryFilter.${props.path}.${props.itemtype}`,
-    libraryOnlyStr,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`libraryFilter.${storKey}`, libraryOnlyStr);
   loadData(true, undefined, true);
 };
 
@@ -342,10 +337,8 @@ const toggleAlbumArtistsFilter = function () {
   const albumArtistsOnlyStr = params.value.albumArtistsFilter
     ? "true"
     : "false";
-  localStorage.setItem(
-    `albumArtistsFilter.${props.path}.${props.itemtype}`,
-    albumArtistsOnlyStr,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`albumArtistsFilter.${storKey}`, albumArtistsOnlyStr);
   loadData(undefined, undefined, true);
 };
 
@@ -442,10 +435,8 @@ const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
-  localStorage.setItem(
-    `sortBy.${props.path}.${props.itemtype}`,
-    params.value.sortBy,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`sortBy.${storKey}`, params.value.sortBy);
   loadData(undefined, undefined, true);
 };
 
@@ -458,8 +449,9 @@ const changeAlbumTypeFilter = function (albumType: string) {
     params.value.albumType = params.value.albumType || [];
     params.value.albumType.push(albumType);
   }
+  const storKey = `${props.path}.${props.itemtype}`;
   localStorage.setItem(
-    `albumType.${props.path}.${props.itemtype}`,
+    `albumType.${storKey}`,
     params.value.albumType.join(","),
   );
   loadData(undefined, undefined, true);
@@ -749,7 +741,7 @@ const loadData = async function (
 
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
-  const storKey = props.itemtype || props.path;
+  const storKey = `${props.path}.${props.itemtype}`;
   // get stored/default viewMode for this itemtype
   const savedViewMode = localStorage.getItem(`viewMode.${storKey}`);
   if (savedViewMode && savedViewMode !== "null") {

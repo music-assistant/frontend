@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="podcasts"
+    path="librarypodcasts"
     :show-duration="false"
     :show-provider="true"
     :show-favorites-only-filter="true"

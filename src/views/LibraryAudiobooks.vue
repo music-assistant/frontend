@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="audiobooks"
+    path="libraryaudiobooks"
     :show-duration="false"
     :show-provider="true"
     :show-favorites-only-filter="true"

@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="albums"
+    path="libraryalbums"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"

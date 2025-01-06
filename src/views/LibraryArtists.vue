@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="artists"
+    path="libraryartists"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"

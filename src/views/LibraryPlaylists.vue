@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="playlists"
+    path="libraryplaylists"
     :show-duration="false"
     :show-provider="true"
     :show-favorites-only-filter="true"

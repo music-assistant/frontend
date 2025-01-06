@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="tracks"
+    path="librarytracks"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :show-track-number="false"

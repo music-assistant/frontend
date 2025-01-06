@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="radios"
+    path="libraryradios"
     :show-duration="false"
     :show-provider="false"
     :show-favorites-only-filter="true"
