@@ -186,7 +186,10 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       labelArgs: [],
       action: () => {
         openLinkInNewTab(
-          api.getProviderManifest(playerConfig!.provider)?.documentation || "",
+          api.getDocumentationAddress(
+            api.getProviderManifest(playerConfig!.provider)?.documentation ||
+              "",
+          ),
         );
       },
       icon: "mdi-bookshelf",

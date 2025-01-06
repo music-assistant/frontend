@@ -156,7 +156,11 @@ const onMenu = function (evt: Event, item: CoreConfig) {
       label: "settings.documentation",
       labelArgs: [],
       action: () => {
-        openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+        openLinkInNewTab(
+          api.getDocumentationAddress(
+            api.providerManifests[item.domain].documentation!,
+          ),
+        );
       },
       icon: "mdi-bookshelf",
       disabled: !api.providerManifests[item.domain].documentation,

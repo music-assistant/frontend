@@ -27,7 +27,11 @@
           >{{ api.getProviderManifest(config.provider)?.name }}
           <a
             v-if="api.getProviderManifest(config.provider)?.documentation"
-            :href="api.getProviderManifest(config.provider)?.documentation"
+            :href="
+              api.getDocumentationAddress(
+                api.getProviderManifest(config.provider)?.documentation!,
+              )
+            "
             target="_blank"
           >
             [{{ $t("settings.check_docs") }}]</a

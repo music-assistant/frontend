@@ -22,7 +22,11 @@
         <v-card-subtitle v-if="api.providerManifests[domain].documentation">
           <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
-            :href="api.providerManifests[domain].documentation"
+            :href="
+              api.getDocumentationAddress(
+                api.providerManifests[domain].documentation!,
+              )
+            "
             target="_blank"
             >{{ $t("settings.check_docs") }}</a
           >
