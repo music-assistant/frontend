@@ -26,7 +26,11 @@
       >
         <template #tick-label="{ tick }">
           <a
-            v-if="showLabels && !isThumbHidden"
+            v-if="
+              showLabels &&
+              !isThumbHidden &&
+              Object.values(chapterTicks).length < 6
+            "
             class="text-caption"
             @click="chapterClicked(tick.value)"
             >{{ tick.label }}</a
