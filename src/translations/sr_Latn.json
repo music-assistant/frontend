@@ -307,6 +307,9 @@
         "menu_items": {
             "label": "Omogućene stavke menija",
             "description": "Konfigurišite koje stavke će se prikazati u meniju.\\n\\n Imajte na umu da ako onemogućite podešavanja, možete se zaključati.\\n\\nU tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik."
+        },
+        "hide_settings": {
+            "description": "Sakrij dugme za podešavanja na početnom ekranu. \\n \\n Imajte na umu da ako onemogućite podešavanja na početnom ekranu i u meniju, možete se zaključati. \\n \\n U tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik!"
         }
     },
     "show_info": "Prikaži informacije",
@@ -401,5 +404,18 @@
     "view": {
         "list": "Prikaz liste",
         "panel": "Panelni prikaz"
-    }
+    },
+    "audiobook": "Audio knjiga",
+    "audiobooks": "Audio knjige",
+    "chapter": "Poglavlje",
+    "chapters": "Poglavlja",
+    "podcast": "Podkast",
+    "podcasts": "Podkasti",
+    "item_fully_played": "Ova stavka je u potpunosti reprodukovana",
+    "item_in_progress": "Ova stavka je delimično reprodukovana",
+    "duration_in_seconds": "{0} sekundi",
+    "mark_played": "Označi kao izvođeno",
+    "mark_unplayed": "Označi kao neizvođeno",
+    "searchtype_all": "Sve",
+    "global_search": "Globalna pretraga"
 }
