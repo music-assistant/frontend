@@ -28,23 +28,16 @@ import ReloadPrompt from "./ReloadPrompt.vue";
 import { store } from "@/plugins/store";
 import { toRefs, watch, ref } from "vue";
 import api from "@/plugins/api";
-
-export interface Props {
-  showFullscreenPlayer?: boolean;
-  player?: string;
-  frameless?: boolean;
-}
-
-const props = defineProps<Props>();
+import { useRoute } from "vue-router";
 
 // keep this in a ref so that we keep it while navigating. But restart it if page is fully reloaded
 const framelessState = ref(false);
 
-const { showFullscreenPlayer, player, frameless } = toRefs(props);
-
+const route = useRoute();
 watch(
-  player,
+  () => route.query.player,
   (newActivePlayer) => {
+    console.log(newActivePlayer, "newActivePlayer");
     if (!newActivePlayer) return;
     // newActivePlayer can be either player id or player name
     const newPlayerId = Object.values(api.players).find((p) => {
@@ -61,14 +54,14 @@ watch(
   { immediate: true },
 );
 watch(
-  showFullscreenPlayer,
+  () => route.query.showFullscreenPlayer,
   (showFullscreenPlayer) => {
     store.showFullscreenPlayer = !!showFullscreenPlayer;
   },
   { immediate: true },
 );
 watch(
-  frameless,
+  () => route.query.frameless,
   (frameless) => {
     if (frameless) {
       framelessState.value = true;

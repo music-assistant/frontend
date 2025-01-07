@@ -5,7 +5,6 @@ const routes = [
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
-    props: (route: { query: Record<string, any> }) => ({ ...route.query }),
     children: [
       {
         path: "",
@@ -16,7 +15,6 @@ const routes = [
         name: "home",
         component: () =>
           import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
-        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
         path: "/search",
