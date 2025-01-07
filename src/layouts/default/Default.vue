@@ -37,13 +37,13 @@ const route = useRoute();
 watch(
   () => route.query.player,
   (newActivePlayer) => {
-    console.log(newActivePlayer, "newActivePlayer");
     if (!newActivePlayer) return;
     // newActivePlayer can be either player id or player name
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
         p.player_id === newActivePlayer ||
-        p.display_name.toLowerCase() === newActivePlayer.toLowerCase()
+        p.display_name.toLowerCase() ===
+          newActivePlayer.toString().toLowerCase()
       );
     })?.player_id;
 
