@@ -414,6 +414,47 @@
         "dynamic_members": {
             "label": "Membros dinâmicos do grupo",
             "description": "Permitir que os membros entrem\/saiam do grupo (temporariamente) de forma dinâmica, de modo que o grupo se comporte mais ou menos da mesma forma que a sincronização manual de reprodutores, com a principal diferença de que o reprodutor do grupo manterá a fila."
+        },
+        "dsp": {
+            "configure_on": "Configuração do DSP em: {name}",
+            "disabled_message": "O DSP está desativado no momento. Ative-o usando a chave acima",
+            "input": "Entrada",
+            "output": "Saída",
+            "enable_output_limiter": "Ativar o limitador de saída para evitar cortes",
+            "filter": {
+                "add": "Adicionar filtro",
+                "type": "Tipo de filtro",
+                "new": "Novo {type}"
+            },
+            "move_up": "Mover para cima",
+            "move_down": "Mover para baixo",
+            "delete_filter": "Excluir filtro",
+            "parametric_eq": {
+                "add_band": "Adicionar banda",
+                "delete_band": "Excluir banda",
+                "filter_type": "Tipo de filtro",
+                "band": "Banda {index}",
+                "enable_band": "Ativar banda",
+                "filter_types": {
+                    "peak": "Pico",
+                    "low_pass": "Passa-baixa",
+                    "high_pass": "Passa-alta"
+                }
+            },
+            "tone_control": {
+                "bass_level": "Nível de graves",
+                "mid_level": "Nível de médios",
+                "treble_level": "Nível de agudos"
+            },
+            "parameter": {
+                "frequency": "Frequência",
+                "gain": "Ganho",
+                "q_factor": "Fator Q"
+            },
+            "types": {
+                "parametric_eq": "EQ paramétrico",
+                "tone_control": "Controle de tom"
+            }
         }
     },
     "show_info": "Mostrar informação",
@@ -539,5 +580,6 @@
     "shuffle_disable": "Desativar ordem aleatória",
     "shuffle_enable": "Ativar ordem aleatória",
     "dont_stop_the_music_enable": "Ative 'Não pare a música!'",
-    "dont_stop_the_music_disable": "Desative 'Não pare a música!'"
+    "dont_stop_the_music_disable": "Desative 'Não pare a música!'",
+    "open_dsp_settings": "Abrir configurações de DSP"
 }
