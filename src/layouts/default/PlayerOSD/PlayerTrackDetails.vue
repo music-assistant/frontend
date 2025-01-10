@@ -294,4 +294,10 @@ const streamDetails = computed(() => {
   background-color: rgba(0, 0, 0, 0.3);
   display: inline-table;
 }
+
+/* this fixes missing subtitle items on webkit*/
+.v-list-item-subtitle {
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+}
 </style>
