@@ -631,7 +631,12 @@ export interface StreamDetails {
   prefer_album_loudness?: boolean;
   target_loudness?: number;
   volume_normalization_mode?: VolumeNormalizationMode;
+  // In case of grouped playback, this will contain the DSP details for
+  // the leader (keep in mind that PlayerGroups have no leader!)
   dsp?: DSPDetails;
+  // In case of grouped playback, this will contain the DSP details for
+  // all other players of the group (indexed by player_id)
+  dsp_grouped_childs?: Record<string, DSPDetails>;
 }
 
 // queue_item
