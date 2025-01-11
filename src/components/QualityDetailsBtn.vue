@@ -86,7 +86,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { ContentType, VolumeNormalizationMode } from "@/plugins/api/interfaces";
-import { $t } from '@/plugins/i18n';
+import { $t } from "@/plugins/i18n";
 
 // computed properties
 const streamDetails = computed(() => {
@@ -105,20 +105,20 @@ const loudness = computed(() => {
     sd.loudness !== null
   ) {
     if (sd.prefer_album_loudness && sd.loudness_album !== null) {
-      return $t('loudness_measurement_album', [sd.loudness_album?.toFixed(2)]);
+      return $t("loudness_measurement_album", [sd.loudness_album?.toFixed(2)]);
     } else {
-      return $t('loudness_measurement', [sd.loudness?.toFixed(2)]);
+      return $t("loudness_measurement", [sd.loudness?.toFixed(2)]);
     }
   } else if (
     sd.volume_normalization_mode == VolumeNormalizationMode.DYNAMIC ||
     sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_DYNAMIC
   ) {
-    return $t('loudness_dynamic');
+    return $t("loudness_dynamic");
   } else if (
     sd.volume_normalization_mode == VolumeNormalizationMode.FIXED_GAIN ||
     sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_FIXED_GAIN
   ) {
-    return $t('loudness_fixed');
+    return $t("loudness_fixed");
   } else {
     return null;
   }
