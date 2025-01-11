@@ -93,7 +93,7 @@ const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
 });
 const loudness = computed(() => {
-  let sd = streamDetails.value;
+  const sd = streamDetails.value;
   if (!sd) return null;
 
   if (
