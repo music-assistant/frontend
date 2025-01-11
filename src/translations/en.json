@@ -602,5 +602,9 @@
     "mark_unplayed": "Mark as unplayed",
     "searchtype_all": "All",
     "global_search": "Global search",
-    "play_from_here": "Play from here"
+    "play_from_here": "Play from here",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamic volume normalization",
+    "loudness_fixed": "Fixed gain correction"
 }
