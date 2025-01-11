@@ -60,6 +60,25 @@ export interface DSPConfig {
   output_limiter: boolean;
 }
 
+// DSPDetails used in StreamDetails
+export enum DSPState {
+  ENABLED = "enabled",
+  DISABLED = "disabled",
+  DISABLED_BY_UNSUPPORTED_GROUP = "disabled_by_unsupported_group",
+}
+
+// This describes the DSP configuration as applied,
+// even when the DSP state is disabled. For example,
+// output_limiter can remain true while the DSP is disabled.
+// All filters in the list are guaranteed to be enabled.
+export interface DSPDetails {
+  state: DSPState;
+  input_gain: number;
+  filters: DSPFilter[];
+  output_gain: number;
+  output_limiter: boolean;
+}
+
 /// enums
 
 export enum MediaType {
@@ -612,6 +631,7 @@ export interface StreamDetails {
   prefer_album_loudness?: boolean;
   target_loudness?: number;
   volume_normalization_mode?: VolumeNormalizationMode;
+  dsp?: DSPDetails;
 }
 
 // queue_item
