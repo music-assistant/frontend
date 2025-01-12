@@ -448,7 +448,7 @@
 
         <!-- player select button -->
         <div
-          v-if="$vuetify.display.height > 800"
+          v-if="showExpandedPlayerSelectButton"
           class="row"
           style="
             height: 70px;
@@ -590,6 +590,10 @@ const subTitleFontSize = computed(() => {
     default:
       return "1.0em.";
   }
+});
+
+const showExpandedPlayerSelectButton = computed(() => {
+  return vuetify.display.height.value > 800;
 });
 
 // methods
