@@ -36,6 +36,8 @@
             </v-card>
           </v-menu>
 
+          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
+
           <Button icon @click.stop="openQueueMenu">
             <v-icon icon="mdi-dots-vertical" />
           </Button>
@@ -504,6 +506,7 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   imgCoverLight,
