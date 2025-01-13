@@ -73,6 +73,7 @@ export enum DSPState {
 // All filters in the list are guaranteed to be enabled.
 export interface DSPDetails {
   state: DSPState;
+  is_leader: boolean;
   input_gain: number;
   filters: DSPFilter[];
   output_gain: number;
@@ -631,12 +632,11 @@ export interface StreamDetails {
   prefer_album_loudness?: boolean;
   target_loudness?: number;
   volume_normalization_mode?: VolumeNormalizationMode;
-  // In case of grouped playback, this will contain the DSP details for
-  // the leader (keep in mind that PlayerGroups have no leader!)
-  dsp?: DSPDetails;
-  // In case of grouped playback, this will contain the DSP details for
-  // all other players of the group (indexed by player_id)
-  dsp_grouped_childs?: Record<string, DSPDetails>;
+  // This contains the DSPDetails of all players in the group.
+  // In case of single player playback, dict will contain only one entry.
+  // The leader will have is_leader set to True.
+  // (keep in mind that PlayerGroups have no (explicit) leader!)
+  dsp?: Record<string, DSPDetails>;
 }
 
 // queue_item
