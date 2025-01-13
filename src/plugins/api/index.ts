@@ -1302,14 +1302,10 @@ export class MusicAssistantApi {
     ) {
       return org_address.replace(
         "music-assistant.io/",
-        "music-assistant.io/beta/",
+        "beta.music-assistant.io/",
       );
-    } else {
-      return org_address.replace(
-        "music-assistant.io/",
-        "music-assistant.io/stable/",
-      );
-    }
+    } 
+    else return org_address;
   }
 
   public getProviderManifest(
