@@ -16,7 +16,7 @@
         "color": "4.2.3",
         "colorthief": "2.6.0",
         "home-assistant-js-websocket": "9.4.0",
-        "marked": "^15.0.5",
+        "marked": "^15.0.6",
         "mitt": "3.0.1",
         "mobile-detect": "1.4.5",
         "swiper": "^11.2.0",
