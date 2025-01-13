@@ -36,6 +36,8 @@
             </v-card>
           </v-menu>
 
+          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
+
           <Button icon @click.stop="openQueueMenu">
             <v-icon icon="mdi-dots-vertical" />
           </Button>
@@ -55,6 +57,13 @@
           >
             <v-img
               v-if="
+                store.curQueueItem?.streamdetails?.stream_metadata?.image_url
+              "
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.curQueueItem.streamdetails.stream_metadata.image_url"
+            />
+            <v-img
+              v-else-if="
                 !store.curQueueItem?.image &&
                 store.activePlayer?.current_media?.image_url
               "
@@ -98,7 +107,12 @@
             </v-card-title>
 
             <!-- external source current media item present -->
-            <v-card-title v-else-if="store.activePlayer?.current_media?.title">
+            <v-card-title
+              v-else-if="
+                !store.activePlayerQueue &&
+                store.activePlayer?.current_media?.title
+              "
+            >
               <div v-if="store.activePlayer?.current_media?.artist">
                 <MarqueeText :sync="playerMarqueeSync">
                   {{ store.activePlayer?.current_media?.artist }}
@@ -137,17 +151,26 @@
 
             <!-- subtitle: radio station stream title -->
             <v-card-subtitle
-              v-if="
-                store.curQueueItem?.media_item?.media_type == MediaType.RADIO &&
-                store.curQueueItem?.streamdetails?.stream_title
-              "
+              v-if="store.curQueueItem?.streamdetails?.stream_metadata?.title"
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
-                radioTitleClick(store.curQueueItem.streamdetails.stream_title)
+                radioTitleClick(
+                  store.curQueueItem?.streamdetails?.stream_metadata?.artist +
+                    ' - ' +
+                    store.curQueueItem.streamdetails.stream_metadata.title,
+                )
               "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.streamdetails.stream_title }}
+                <span
+                  v-if="
+                    store.curQueueItem?.streamdetails?.stream_metadata?.artist
+                  "
+                  >{{
+                    store.curQueueItem.streamdetails.stream_metadata.artist
+                  }}
+                  - </span
+                >{{ store.curQueueItem.streamdetails.stream_metadata.title }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -448,7 +471,7 @@
 
         <!-- player select button -->
         <div
-          v-if="$vuetify.display.height > 800"
+          v-if="showExpandedPlayerSelectButton"
           class="row"
           style="
             height: 70px;
@@ -504,6 +527,7 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   imgCoverLight,
@@ -590,6 +614,10 @@ const subTitleFontSize = computed(() => {
     default:
       return "1.0em.";
   }
+});
+
+const showExpandedPlayerSelectButton = computed(() => {
+  return vuetify.display.height.value > 800;
 });
 
 // methods

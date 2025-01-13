@@ -82,6 +82,7 @@ import ListItem from "@/components/mods/ListItem.vue";
 import Container from "@/components/mods/Container.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -149,10 +150,6 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
   );
 };
 
-const openLinkInNewTab = function (url: string) {
-  window.open(url, "_blank");
-};
-
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   const menuItems: ContextMenuItem[] = [
     {
@@ -186,10 +183,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       labelArgs: [],
       action: () => {
         openLinkInNewTab(
-          api.getDocumentationAddress(
-            api.getProviderManifest(playerConfig!.provider)?.documentation ||
-              "",
-          ),
+          api.getProviderManifest(playerConfig!.provider)?.documentation || "",
         );
       },
       icon: "mdi-bookshelf",

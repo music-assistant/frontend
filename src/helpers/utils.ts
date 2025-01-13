@@ -13,7 +13,21 @@ import { api } from "@/plugins/api";
 import Color from "color";
 //@ts-ignore
 import ColorThief from "colorthief";
-const colorThief = new ColorThief();
+
+export const openLinkInNewTab = function (url: string) {
+  if (!url) return url;
+  // auto-translate music-assistant.io links to beta site
+  if (
+    api &&
+    api.serverInfo &&
+    api.serverInfo.value &&
+    (api.serverInfo.value.server_version == "0.0.0" ||
+      api.serverInfo.value.server_version.includes("b"))
+  ) {
+    url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
+  }
+  window.open(url, "_blank");
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean | undefined | null) => {

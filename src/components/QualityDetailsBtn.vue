@@ -59,7 +59,7 @@
         </div>
 
         <div
-          v-if="streamDetails.target_loudness"
+          v-if="loudness"
           style="height: 50px; display: flex; align-items: center"
         >
           <img
@@ -73,7 +73,7 @@
                 : 'object-fit: contain;filter: invert(100%);'
             "
           />
-          {{ streamDetails.target_loudness }} dB
+          {{ loudness }}
         </div>
       </v-list>
     </v-card>
@@ -85,11 +85,43 @@ import { computed } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
-import { ContentType } from "@/plugins/api/interfaces";
+import { ContentType, VolumeNormalizationMode } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 
 // computed properties
 const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
+});
+const loudness = computed(() => {
+  const sd = streamDetails.value;
+  if (!sd) return null;
+
+  if (
+    (sd.volume_normalization_mode == VolumeNormalizationMode.MEASUREMENT_ONLY ||
+      sd.volume_normalization_mode ==
+        VolumeNormalizationMode.FALLBACK_FIXED_GAIN ||
+      sd.volume_normalization_mode ==
+        VolumeNormalizationMode.FALLBACK_DYNAMIC) &&
+    sd.loudness !== null
+  ) {
+    if (sd.prefer_album_loudness && sd.loudness_album !== null) {
+      return $t("loudness_measurement_album", [sd.loudness_album?.toFixed(2)]);
+    } else {
+      return $t("loudness_measurement", [sd.loudness?.toFixed(2)]);
+    }
+  } else if (
+    sd.volume_normalization_mode == VolumeNormalizationMode.DYNAMIC ||
+    sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_DYNAMIC
+  ) {
+    return $t("loudness_dynamic");
+  } else if (
+    sd.volume_normalization_mode == VolumeNormalizationMode.FIXED_GAIN ||
+    sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_FIXED_GAIN
+  ) {
+    return $t("loudness_fixed");
+  } else {
+    return null;
+  }
 });
 const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;

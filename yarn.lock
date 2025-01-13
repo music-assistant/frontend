@@ -4190,10 +4190,10 @@ magic-string@^0.30.11:
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.0"
 
-marked@^15.0.5:
-  version "15.0.5"
-  resolved "https://registry.yarnpkg.com/marked/-/marked-15.0.5.tgz#1b5c58a2fb56afe57379f8cc721ab60e0450a5b5"
-  integrity sha512-xN+kSuqHjxWg+Q47yhhZMUP+kO1qHobvXkkm6FX+7N6lDvanLDd8H7AQ0jWDDyq+fDt/cSrJaBGyWYHXy0KQWA==
+marked@^15.0.6:
+  version "15.0.6"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-15.0.6.tgz#8165f16afb6f4b30a35bdcee657c3b8415820a8f"
+  integrity sha512-Y07CUOE+HQXbVDCGl3LXggqJDbXDP2pArc2C1N1RRMN0ONiShoSsIInMd5Gsxupe7fKLpgimTV+HOJ9r7bA+pg==
 
 material-design-icons-iconfont@6.7.0:
   version "6.7.0"
@@ -5299,10 +5299,10 @@ svgo@^3.0.2:
     csso "^5.0.5"
     picocolors "^1.0.0"
 
-swiper@^11.2.0:
-  version "11.2.0"
-  resolved "https://registry.yarnpkg.com/swiper/-/swiper-11.2.0.tgz#fbef83ab8fe165ceff82c69177a57033809cb1c2"
-  integrity sha512-rjjAKgDEs+grR2eQshVDCcE4KNPC7CI294nfcbV9gE8WCsLdvOYXDeZKUYevqAZZp8j5hE7kpT3dAGVKFBWlxQ==
+swiper@^11.2.1:
+  version "11.2.1"
+  resolved "https://registry.yarnpkg.com/swiper/-/swiper-11.2.1.tgz#0f3fcafa30301a1c76e3ef9e85979ac2daeefc18"
+  integrity sha512-62G69+iQRIfUqTmJkWpZDcX891Ra8O9050ckt1/JI2H+0483g+gq0m7gINecDqMtDh2zt5dK+uzBRxGhGOOvQA==
 
 symbol-tree@^3.2.4:
   version "3.2.4"
@@ -5643,10 +5643,10 @@ vite-plugin-vuetify@2.0.4:
     debug "^4.3.3"
     upath "^2.0.1"
 
-vite-plugin-webfont-dl@3.10.3:
-  version "3.10.3"
-  resolved "https://registry.yarnpkg.com/vite-plugin-webfont-dl/-/vite-plugin-webfont-dl-3.10.3.tgz#d31e1b8bda08c2e0cb43c8382e0658ef7727e118"
-  integrity sha512-9rRla7tYeDPRAApWWUdv0lGnU/rc2heyeH6EWj8PvGOuyLkbZo8mHo0QJpBBGKrwPyhadhN08iQhTKoFqQPIfA==
+vite-plugin-webfont-dl@3.10.4:
+  version "3.10.4"
+  resolved "https://registry.yarnpkg.com/vite-plugin-webfont-dl/-/vite-plugin-webfont-dl-3.10.4.tgz#dd043692435cc51cacb6e966dffbcef881aed95f"
+  integrity sha512-Odn+9JO0Wz67pSiGGA0IZS7c+m3/KFRFI370WRiP5x20TZFobtaLdIcvfb1pZelRhOIzKndfsoLWrq8144mjzw==
   dependencies:
     axios "^1"
     clean-css "^5"
