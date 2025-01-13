@@ -24,6 +24,7 @@ interface Store {
   showPlayersMenu: boolean;
   navigationMenuStyle: string;
   showFullscreenPlayer: boolean;
+  frameless: boolean;
   showQueueItems: boolean;
   apiInitialized: boolean;
   apiBaseUrl: string;
@@ -53,6 +54,7 @@ export const store: Store = reactive({
   showPlayersMenu: false,
   navigationMenuStyle: "horizontal",
   showFullscreenPlayer: false,
+  frameless: false,
   showQueueItems: false,
   apiInitialized: false,
   apiBaseUrl: "",
