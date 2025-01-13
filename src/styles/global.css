@@ -200,7 +200,7 @@ h6 {
   margin-bottom: 0;
 }
 
-/* Workaround for vuetify issue https://github.com/vuetifyjs/vuetify/issues/16994 */
+/* Workaround for vuetify issue https://github.com/vuetifyjs/vuetify/issues/1197 */
 html {
   overflow-y: hidden !important;
 }
