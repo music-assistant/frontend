@@ -36,6 +36,8 @@
             </v-card>
           </v-menu>
 
+          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
+
           <Button icon @click.stop="openQueueMenu">
             <v-icon icon="mdi-dots-vertical" />
           </Button>
@@ -448,7 +450,7 @@
 
         <!-- player select button -->
         <div
-          v-if="$vuetify.display.height > 800"
+          v-if="showExpandedPlayerSelectButton"
           class="row"
           style="
             height: 70px;
@@ -504,6 +506,7 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   imgCoverLight,
@@ -590,6 +593,10 @@ const subTitleFontSize = computed(() => {
     default:
       return "1.0em.";
   }
+});
+
+const showExpandedPlayerSelectButton = computed(() => {
+  return vuetify.display.height.value > 800;
 });
 
 // methods
