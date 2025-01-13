@@ -2,8 +2,9 @@
   <v-app v-if="store.connected">
     <MainView v-if="framelessState" />
     <template v-else>
-      <Footer />
       <PlayerSelect />
+      <Footer />
+
       <MainView />
     </template>
   </v-app>

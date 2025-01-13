@@ -177,6 +177,7 @@ import ListItem from "@/components/mods/ListItem.vue";
 import Container from "@/components/mods/Container.vue";
 import { $t } from "@/plugins/i18n";
 import { eventbus } from "@/plugins/eventbus";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -266,10 +267,6 @@ const reloadProvider = function (providerInstanceId: string) {
     .catch((err) => alert(err));
 };
 
-const openLinkInNewTab = function (url: string) {
-  window.open(url, "_blank");
-};
-
 const onMenu = function (evt: Event, item: ProviderConfig) {
   const menuItems = [
     {
@@ -293,11 +290,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       label: "settings.documentation",
       labelArgs: [],
       action: () => {
-        openLinkInNewTab(
-          api.getDocumentationAddress(
-            api.providerManifests[item.domain].documentation!,
-          ),
-        );
+        openLinkInNewTab(api.providerManifests[item.domain].documentation!);
       },
       icon: "mdi-bookshelf",
       disabled: !api.providerManifests[item.domain].documentation,

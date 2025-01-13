@@ -27,12 +27,11 @@
           >{{ api.getProviderManifest(config.provider)?.name }}
           <a
             v-if="api.getProviderManifest(config.provider)?.documentation"
-            :href="
-              api.getDocumentationAddress(
+            @click="
+              openLinkInNewTab(
                 api.getProviderManifest(config.provider)?.documentation!,
               )
             "
-            target="_blank"
           >
             [{{ $t("settings.check_docs") }}]</a
           >
@@ -101,6 +100,7 @@ import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerConfig } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();

@@ -1292,26 +1292,6 @@ export class MusicAssistantApi {
     return undefined;
   }
 
-  public getDocumentationAddress(org_address: string) {
-    // substitute the org_address with the correct documentation address
-    if (!org_address.includes("music-assistant.io/")) return org_address;
-    org_address = org_address.replace("/stable", "").replace("/beta", "");
-    if (
-      this.serverInfo.value?.server_version.includes("b") ||
-      this.serverInfo.value?.server_version == "0.0.0"
-    ) {
-      return org_address.replace(
-        "music-assistant.io/",
-        "music-assistant.io/beta/",
-      );
-    } else {
-      return org_address.replace(
-        "music-assistant.io/",
-        "music-assistant.io/stable/",
-      );
-    }
-  }
-
   public getProviderManifest(
     provider_domain_or_instance_id: string,
   ): ProviderManifest | undefined {
