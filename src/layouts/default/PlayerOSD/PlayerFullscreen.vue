@@ -57,6 +57,13 @@
           >
             <v-img
               v-if="
+                store.curQueueItem?.streamdetails?.stream_metadata?.image_url
+              "
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.curQueueItem.streamdetails.stream_metadata.image_url"
+            />
+            <v-img
+              v-else-if="
                 !store.curQueueItem?.image &&
                 store.activePlayer?.current_media?.image_url
               "
@@ -100,7 +107,12 @@
             </v-card-title>
 
             <!-- external source current media item present -->
-            <v-card-title v-else-if="store.activePlayer?.current_media?.title">
+            <v-card-title
+              v-else-if="
+                !store.activePlayerQueue &&
+                store.activePlayer?.current_media?.title
+              "
+            >
               <div v-if="store.activePlayer?.current_media?.artist">
                 <MarqueeText :sync="playerMarqueeSync">
                   {{ store.activePlayer?.current_media?.artist }}
@@ -139,17 +151,26 @@
 
             <!-- subtitle: radio station stream title -->
             <v-card-subtitle
-              v-if="
-                store.curQueueItem?.media_item?.media_type == MediaType.RADIO &&
-                store.curQueueItem?.streamdetails?.stream_title
-              "
+              v-if="store.curQueueItem?.streamdetails?.stream_metadata?.title"
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
-                radioTitleClick(store.curQueueItem.streamdetails.stream_title)
+                radioTitleClick(
+                  store.curQueueItem?.streamdetails?.stream_metadata?.artist +
+                    ' - ' +
+                    store.curQueueItem.streamdetails.stream_metadata.title,
+                )
               "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.streamdetails.stream_title }}
+                <span
+                  v-if="
+                    store.curQueueItem?.streamdetails?.stream_metadata?.artist
+                  "
+                  >{{
+                    store.curQueueItem.streamdetails.stream_metadata.artist
+                  }}
+                  - </span
+                >{{ store.curQueueItem.streamdetails.stream_metadata.title }}
               </MarqueeText>
             </v-card-subtitle>
 

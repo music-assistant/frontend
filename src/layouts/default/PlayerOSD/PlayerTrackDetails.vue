@@ -14,8 +14,23 @@
         }px; `"
         @click="store.showFullscreenPlayer = true"
       >
+        <div
+          v-if="
+            store.activePlayer?.powered &&
+            store.curQueueItem?.streamdetails?.stream_metadata?.image_url
+          "
+        >
+          <v-img
+            class="media-thumb"
+            style="border-radius: 4px"
+            size="55"
+            :src="store.curQueueItem.streamdetails.stream_metadata.image_url"
+          />
+        </div>
         <MediaItemThumb
-          v-if="store.curQueueItem?.media_item || store.curQueueItem?.image"
+          v-else-if="
+            store.curQueueItem?.media_item || store.curQueueItem?.image
+          "
           :item="store.curQueueItem?.media_item || store.curQueueItem"
           :fallback="imgCoverDark"
         />
@@ -83,24 +98,20 @@
           {{ store.curQueueItem.name }}
         </div>
         <!-- external source current media item present -->
-        <div v-else-if="store.activePlayer?.current_media?.title">
-          {{ store.activePlayer.current_media.title }}
-        </div>
-        <!-- no player selected message -->
-        <div
-          v-else-if="!store.activePlayer"
-          @click="store.showPlayersMenu = true"
-        >
-          {{ $t("no_player") }}
-        </div>
-        <!-- queue empty message -->
         <div
           v-else-if="
-            store.activePlayerQueue && store.activePlayerQueue.items == 0
+            !store.activePlayerQueue && store.activePlayer?.current_media?.title
           "
-          class="line-clamp-1"
         >
-          {{ $t("queue_empty") }}
+          {{ store.activePlayer.current_media.title }}
+        </div>
+        <!-- fallback: display player name -->
+        <div v-else-if="store.activePlayer">
+          {{ store.activePlayer?.display_name }}
+        </div>
+        <!-- no player selected message -->
+        <div v-else @click="store.showPlayersMenu = true">
+          {{ $t("no_player") }}
         </div>
       </div>
     </template>
@@ -183,10 +194,18 @@
           </div>
           <!-- radio live metadata -->
           <div
-            v-else-if="store.curQueueItem?.streamdetails?.stream_title"
+            v-else-if="
+              store.curQueueItem?.streamdetails?.stream_metadata?.title
+            "
             class="line-clamp-1"
           >
-            {{ store.curQueueItem?.streamdetails?.stream_title }}
+            <span
+              v-if="store.curQueueItem?.streamdetails?.stream_metadata?.artist"
+              >{{
+                store.curQueueItem.streamdetails.stream_metadata.artist
+              }}
+              - </span
+            >{{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
           </div>
           <!-- other description -->
           <div
@@ -201,19 +220,34 @@
             }}
           </div>
           <!-- external source artist -->
-          <div v-else-if="store.activePlayer?.current_media?.artist">
+          <div
+            v-else-if="
+              !store.activePlayerQueue &&
+              store.activePlayer?.active_source &&
+              store.activePlayer?.current_media?.artist
+            "
+          >
             {{ store.activePlayer.current_media.artist }}
           </div>
           <!-- 3rd party source active -->
           <div
             v-else-if="
-              store.activePlayer?.active_source != store.activePlayer?.player_id
+              !store.activePlayerQueue && store.activePlayer?.active_source
             "
             class="line-clamp-1"
           >
             {{
               $t("external_source_active", [store.activePlayer?.active_source])
             }}
+          </div>
+          <!-- queue empty message -->
+          <div
+            v-else-if="
+              store.activePlayerQueue && store.activePlayerQueue.items == 0
+            "
+            class="line-clamp-1"
+          >
+            {{ $t("queue_empty") }}
           </div>
         </MarqueeText>
         <!-- active player -->

@@ -73,7 +73,7 @@
           <div v-else-if="curQueueItem">
             {{ curQueueItem?.name }}
           </div>
-          <div v-else-if="player.current_media?.title">
+          <div v-else-if="!playerQueue && player.current_media?.title">
             {{ player.current_media.title }}
           </div>
         </div>
@@ -109,15 +109,17 @@
             {{ curQueueItem?.media_item.artists[0].name }}
           </div>
           <!-- radio live metadata -->
-          <div v-else-if="curQueueItem?.streamdetails?.stream_title">
-            {{ curQueueItem?.streamdetails?.stream_title }}
+          <div v-else-if="curQueueItem?.streamdetails?.stream_metadata">
+            <span v-if="curQueueItem?.streamdetails?.stream_metadata?.artist"
+              >{{ curQueueItem.streamdetails.stream_metadata.artist }} - </span
+            >{{ curQueueItem?.streamdetails?.stream_metadata.title }}
           </div>
           <!-- other description -->
           <div v-else-if="curQueueItem?.media_item?.metadata.description">
             {{ curQueueItem?.media_item.metadata.description }}
           </div>
           <!-- 3rd party source active -->
-          <div v-else-if="player.active_source != player.player_id">
+          <div v-else-if="!playerQueue && player.active_source">
             {{ $t("external_source_active", [player.active_source]) }}
           </div>
           <!-- queue empty message -->
