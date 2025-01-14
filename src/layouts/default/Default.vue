@@ -33,15 +33,16 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 watch(
-  () => route.query.player,
-  (newActivePlayer) => {
+  // make sure it's retriggered when players array is populated
+  [() => route.query.player, () => Object.keys(api.players).length],
+  ([newActivePlayer]) => {
     if (!newActivePlayer) return;
+    const newPlayerString = newActivePlayer.toString().toLowerCase();
     // newActivePlayer can be either player id or player name
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
-        p.player_id === newActivePlayer ||
-        p.display_name.toLowerCase() ===
-          newActivePlayer.toString().toLowerCase()
+        p.player_id.toLowerCase() === newPlayerString ||
+        p.display_name.toLowerCase() === newPlayerString
       );
     })?.player_id;
 
