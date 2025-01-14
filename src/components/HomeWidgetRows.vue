@@ -111,6 +111,9 @@ const loadData = async function () {
     "timestamp_added_desc",
   );
   widgetRows.value.tracks.count = store.libraryTracksCount;
+
+  // tracks widget
+  widgetRows.value.browse.items = await api.browse();
 };
 
 await loadData();
