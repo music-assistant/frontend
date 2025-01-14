@@ -35,12 +35,13 @@ const framelessState = ref(false);
 
 const route = useRoute();
 watch(
-  [() => route.query.player, () => api.players], // watch both the route and api.players
-  ([newActivePlayer, players]) => {
+  // make sure it's retriggered when players array is populated
+  [() => route.query.player, () => Object.keys(api.players).length],
+  ([newActivePlayer]) => {
     if (!newActivePlayer) return;
     const newPlayerString = newActivePlayer.toString().toLowerCase();
     // newActivePlayer can be either player id or player name
-    const newPlayerId = Object.values(players).find((p) => {
+    const newPlayerId = Object.values(api.players).find((p) => {
       return (
         p.player_id.toLowerCase() === newPlayerString ||
         p.display_name.toLowerCase() === newPlayerString
