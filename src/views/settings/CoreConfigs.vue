@@ -126,6 +126,7 @@ import Container from "@/components/mods/Container.vue";
 import { useRouter } from "vue-router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -136,10 +137,6 @@ const coreConfigs = ref<CoreConfig[]>([]);
 // methods
 const editCoreConfig = function (domain: string) {
   router.push(`/settings/editcore/${domain}`);
-};
-
-const openLinkInNewTab = function (url: string) {
-  window.open(url, "_blank");
 };
 
 const onMenu = function (evt: Event, item: CoreConfig) {
@@ -156,11 +153,7 @@ const onMenu = function (evt: Event, item: CoreConfig) {
       label: "settings.documentation",
       labelArgs: [],
       action: () => {
-        openLinkInNewTab(
-          api.getDocumentationAddress(
-            api.providerManifests[item.domain].documentation!,
-          ),
-        );
+        openLinkInNewTab(api.providerManifests[item.domain].documentation!);
       },
       icon: "mdi-bookshelf",
       disabled: !api.providerManifests[item.domain].documentation,

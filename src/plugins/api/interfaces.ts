@@ -590,12 +590,19 @@ export interface LoudnessMeasurement {
   target_offset: number;
 }
 
+export interface LivestreamMetadata {
+  title?: string;
+  artist?: string;
+  album?: string;
+  image_url?: string;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
   audio_format: AudioFormat;
   media_type: MediaType;
-  stream_title?: string;
+  stream_metadata?: LivestreamMetadata;
   duration?: number;
 
   queue_id?: string;
