@@ -168,6 +168,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
         editPlayerDsp(playerConfig.player_id);
       },
       icon: "mdi-equalizer",
+      disabled: !api.players[playerConfig.player_id]?.available,
     },
     {
       label: playerConfig.enabled ? "settings.disable" : "settings.enable",
