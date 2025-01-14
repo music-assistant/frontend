@@ -56,6 +56,7 @@ import api from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
+  ItemMapping,
   MediaItemType,
   MediaType,
   PlayerQueue,
@@ -67,7 +68,7 @@ export interface WidgetRow {
   label: string;
   icon: string;
   path?: string;
-  items: MediaItemType[];
+  items: Array<MediaItemType | ItemMapping>;
   count?: number;
   queues?: PlayerQueue[];
 }

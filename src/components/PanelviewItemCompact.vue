@@ -61,6 +61,12 @@
           >
             {{ item.owner }}
           </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-else-if="!('provider_mappings' in item)"
+            class="line-clamp-1"
+          >
+            {{ $t(item.media_type) }}
+          </v-list-item-subtitle>
         </v-list-item>
       </div>
       <!-- play button -->
@@ -81,6 +87,7 @@
 import MediaItemThumb from "./MediaItemThumb.vue";
 import {
   BrowseFolder,
+  ItemMapping,
   type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
@@ -89,7 +96,7 @@ import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
-  item: MediaItemType;
+  item: MediaItemType | ItemMapping;
   size?: number;
   isSelected?: boolean;
   showCheckboxes?: boolean;
@@ -106,10 +113,25 @@ const compProps = withDefaults(defineProps<Props>(), {
 
 // emits
 const emit = defineEmits<{
-  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
-  (e: "click", item: MediaItemType, posX: number, posY: number): void;
-  (e: "play", item: MediaItemType, posX: number, posY: number): void;
-  (e: "select", item: MediaItemType, selected: boolean): void;
+  (
+    e: "menu",
+    item: MediaItemType | ItemMapping,
+    posX: number,
+    posY: number,
+  ): void;
+  (
+    e: "click",
+    item: MediaItemType | ItemMapping,
+    posX: number,
+    posY: number,
+  ): void;
+  (
+    e: "play",
+    item: MediaItemType | ItemMapping,
+    posX: number,
+    posY: number,
+  ): void;
+  (e: "select", item: MediaItemType | ItemMapping, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {

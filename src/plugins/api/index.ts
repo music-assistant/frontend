@@ -692,8 +692,8 @@ export class MusicAssistantApi {
 
   public async getRecentlyPlayedItems(
     limit = 10,
-    media_types: MediaType[] = [MediaType.TRACK, MediaType.RADIO],
-  ): Promise<MediaItemType[]> {
+    media_types?: MediaType[],
+  ): Promise<ItemMapping[]> {
     return this.sendCommand("music/recently_played_items", {
       limit,
       media_types,
