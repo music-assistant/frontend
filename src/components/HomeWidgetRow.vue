@@ -56,8 +56,7 @@ import api from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
-  ItemMapping,
-  MediaItemType,
+  MediaItemTypeOrItemMapping,
   MediaType,
   PlayerQueue,
 } from "@/plugins/api/interfaces";
@@ -68,7 +67,7 @@ export interface WidgetRow {
   label: string;
   icon: string;
   path?: string;
-  items: Array<MediaItemType | ItemMapping>;
+  items: MediaItemTypeOrItemMapping[];
   count?: number;
   queues?: PlayerQueue[];
 }
@@ -80,15 +79,21 @@ interface Props {
 const { widgetRow } = defineProps<Props>();
 
 const onMenu = function (
-  item: MediaItemType | MediaItemType[],
+  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
   posX: number,
   posY: number,
 ) {
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
+    ? item
+    : [item];
   showContextMenuForMediaItem(mediaItems, undefined, posX, posY);
 };
 
-const onClick = function (item: MediaItemType, posX: number, posY: number) {
+const onClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
     onMenu(item, posX, posY);
@@ -112,7 +117,11 @@ const onClick = function (item: MediaItemType, posX: number, posY: number) {
   }
 };
 
-const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
+const onPlayClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+) {
   // play button on item is clicked
   if (!itemIsAvailable(item)) {
     onMenu(item, posX, posY);

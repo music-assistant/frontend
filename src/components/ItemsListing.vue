@@ -179,6 +179,7 @@ import {
   type Track,
   BrowseFolder,
   ItemMapping,
+  MediaItemTypeOrItemMapping,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import ListviewItem from "./ListviewItem.vue";
@@ -285,7 +286,7 @@ const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
 const loading = ref(false);
-const selectedItems = ref<MediaItemType[]>([]);
+const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
@@ -342,11 +343,14 @@ const toggleAlbumArtistsFilter = function () {
   loadData(undefined, undefined, true);
 };
 
-const isSelected = function (item: MediaItemType) {
+const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
 };
 
-const onSelect = function (item: MediaItemType, selected: boolean) {
+const onSelect = function (
+  item: MediaItemTypeOrItemMapping,
+  selected: boolean,
+) {
   if (selected) {
     if (!selectedItems.value.includes(item)) selectedItems.value.push(item);
   } else {
@@ -371,16 +375,22 @@ const onRefreshClicked = function () {
 };
 
 const onMenu = function (
-  item: MediaItemType | MediaItemType[],
+  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
   posX: number,
   posY: number,
 ) {
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
+    ? item
+    : [item];
   if (mediaItems[0].media_type == MediaType.FOLDER) return;
   showContextMenuForMediaItem(mediaItems, props.parentItem, posX, posY);
 };
 
-const onClick = function (item: MediaItemType, posX: number, posY: number) {
+const onClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+) {
   // mediaItem in the list is clicked
   if (!itemIsAvailable(item)) {
     onMenu(item, posX, posY);
@@ -412,7 +422,11 @@ const onClick = function (item: MediaItemType, posX: number, posY: number) {
   }
 };
 
-const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
+const onPlayClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+) {
   // play button on item is clicked
   if (!itemIsAvailable(item)) {
     onMenu(item, posX, posY);

@@ -132,6 +132,7 @@ import {
   ItemMapping,
   MediaItemType,
   PodcastEpisode,
+  MediaItemTypeOrItemMapping,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -148,14 +149,16 @@ export interface ContextMenuItem {
 }
 
 export const showContextMenuForMediaItem = async function (
-  item: MediaItemType | MediaItemType[],
+  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
   posX = 0,
   posY = 0,
   includePlayItems = true,
 ) {
   // show ContextMenu for given MediaItem(s)
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
+    ? item
+    : [item];
   if (mediaItems.length == 0) return;
 
   const menuItems: ContextMenuItem[] = [];
@@ -176,7 +179,7 @@ export const showContextMenuForMediaItem = async function (
 };
 
 export const getPlayMenuItems = function (
-  items: Array<MediaItemType | ItemMapping>,
+  items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
@@ -304,7 +307,7 @@ export const getPlayMenuItems = function (
 };
 
 export const getContextMenuItems = function (
-  items: Array<MediaItemType | ItemMapping>,
+  items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
 ) {
   const contextMenuItems: ContextMenuItem[] = [];
@@ -590,7 +593,7 @@ export const getContextMenuItems = function (
   return contextMenuItems;
 };
 
-const radioModeSupported = function (item: MediaItemType | ItemMapping) {
+const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
   if ("provider_mappings" in item) {
     for (const provId of item.provider_mappings) {
       if (
