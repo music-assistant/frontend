@@ -1,6 +1,8 @@
 <template>
   <v-main id="cont" class="overflow-y-auto" style="height: 0px">
-    <drawer-navigation v-if="store.navigationMenuStyle == 'vertical'" />
+    <drawer-navigation
+      v-if="store.navigationMenuStyle == 'vertical' && !store.frameless"
+    />
     <router-view v-slot="{ Component }">
       <component :is="Component" />
     </router-view>

@@ -1,6 +1,6 @@
 <template>
   <v-app v-if="store.connected">
-    <MainView v-if="framelessState" />
+    <MainView v-if="store.frameless" />
     <template v-else>
       <PlayerSelect />
       <Footer />
@@ -30,9 +30,6 @@ import { store } from "@/plugins/store";
 import { toRefs, watch, ref } from "vue";
 import api from "@/plugins/api";
 import { useRoute } from "vue-router";
-
-// keep this in a ref so that we keep it while navigating. But restart it if page is fully reloaded
-const framelessState = ref(false);
 
 const route = useRoute();
 watch(
@@ -66,7 +63,7 @@ watch(
   () => route.query.frameless,
   (frameless) => {
     if (frameless) {
-      framelessState.value = true;
+      store.frameless = true;
     }
   },
   { immediate: true },

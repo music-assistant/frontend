@@ -36,18 +36,29 @@ html {
 }
 
 * {
-  -webkit-user-drag: none; /* iOS Safari */
-  -khtml-user-drag: none; /* Konqueror HTML */
-  -moz-user-drag: none; /* Old versions of Firefox */
-  -o-user-drag: none; /* Internet Explorer/Edge */
-  user-drag: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+  -webkit-user-drag: none;
+  /* iOS Safari */
+  -khtml-user-drag: none;
+  /* Konqueror HTML */
+  -moz-user-drag: none;
+  /* Old versions of Firefox */
+  -o-user-drag: none;
+  /* Internet Explorer/Edge */
+  user-drag: none;
+  /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Old versions of Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+  -webkit-touch-callout: none;
+  /* iOS Safari */
+  -webkit-user-select: none;
+  /* Safari */
+  -khtml-user-select: none;
+  /* Konqueror HTML */
+  -moz-user-select: none;
+  /* Old versions of Firefox */
+  -ms-user-select: none;
+  /* Internet Explorer/Edge */
+  user-select: none;
+  /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
 a {
@@ -187,4 +198,9 @@ h6 {
 .mh6 {
   margin-top: 1rem;
   margin-bottom: 0;
+}
+
+/* Workaround for vuetify issue https://github.com/vuetifyjs/vuetify/issues/1197 */
+html {
+  overflow-y: hidden !important;
 }
