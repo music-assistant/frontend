@@ -85,7 +85,19 @@
 
     <Container>
       <ListItem
-        v-for="item in providerConfigs.filter((x) => x.type == provType)"
+        v-for="item in providerConfigs
+          .filter((x) => x.type == provType)
+          .sort((a, b) =>
+            (
+              a.name ||
+              api.getProvider(a.instance_id)?.name ||
+              api.getProviderName(a.domain)
+            ).localeCompare(
+              b.name ||
+                api.getProvider(b.instance_id)?.name ||
+                api.getProviderName(b.domain),
+            ),
+          )"
         :key="item.instance_id"
         show-menu-btn
         link
