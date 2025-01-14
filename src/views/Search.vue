@@ -158,7 +158,7 @@ watch(
     clearTimeout(throttleId.value);
     throttleId.value = setTimeout(() => {
       loadSearchResults(store.globalSearchTerm, store.globalSearchType);
-    }, 500);
+    }, 1000);
   },
   { immediate: true },
 );
