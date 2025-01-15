@@ -75,6 +75,42 @@
           />
           {{ loudness }}
         </div>
+
+        <!-- For now, a very simple DSP indicator -->
+        <div
+          v-if="dsp_state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+          style="height: 50px; display: flex; align-items: center"
+        >
+          <img
+            height="30"
+            width="50"
+            contain
+            src="@/assets/DSP_off.png"
+            :style="
+              $vuetify.theme.current.dark
+                ? 'object-fit: contain;'
+                : 'object-fit: contain;filter: invert(100%);'
+            "
+          />
+          {{ $t("dsp_disabled_by_unsupported_group") }}
+        </div>
+        <div
+          v-else-if="dsp_state == DSPState.ENABLED"
+          style="height: 50px; display: flex; align-items: center"
+        >
+          <img
+            height="30"
+            width="50"
+            contain
+            src="@/assets/DSP.png"
+            :style="
+              $vuetify.theme.current.dark
+                ? 'object-fit: contain;'
+                : 'object-fit: contain;filter: invert(100%);'
+            "
+          />
+          {{ $t("dsp_active") }}
+        </div>
       </v-list>
     </v-card>
   </v-menu>
@@ -85,7 +121,11 @@ import { computed } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
-import { ContentType, VolumeNormalizationMode } from "@/plugins/api/interfaces";
+import {
+  ContentType,
+  DSPState,
+  VolumeNormalizationMode,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
 // computed properties
@@ -122,6 +162,20 @@ const loudness = computed(() => {
   } else {
     return null;
   }
+});
+// This is tempoary until the details show the whole DSP pipeline
+const dsp_state = computed(() => {
+  const dsp = streamDetails.value?.dsp;
+  if (!dsp) return DSPState.DISABLED;
+  let at_least_one_working = Object.values(dsp).some(
+    (d) => d.state == DSPState.ENABLED,
+  );
+  let at_least_one_unsupported = Object.values(dsp).some(
+    (d) => d.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP,
+  );
+  if (at_least_one_unsupported) return DSPState.DISABLED_BY_UNSUPPORTED_GROUP;
+  else if (at_least_one_working) return DSPState.ENABLED;
+  else return DSPState.DISABLED;
 });
 const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;
