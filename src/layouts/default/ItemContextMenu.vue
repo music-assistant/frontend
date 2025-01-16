@@ -325,6 +325,7 @@ export const getContextMenuItems = function (
       MediaType.AUDIOBOOK,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
+      MediaType.TRACK,
     ].includes(items[0].media_type) &&
     itemIsAvailable(items[0])
   ) {

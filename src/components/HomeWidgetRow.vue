@@ -39,6 +39,7 @@
             )
           "
           :is-available="itemIsAvailable(item)"
+          :is-playable="itemIsPlayable(item)"
           @menu="onMenu"
           @click="onClick"
           @play="onPlayClick"
@@ -53,7 +54,7 @@ import Carousel from "@/components/Carousel.vue";
 import PanelviewItemCompact from "@/components/PanelviewItemCompact.vue";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import api from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { itemIsAvailable, itemIsPlayable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemTypeOrItemMapping,

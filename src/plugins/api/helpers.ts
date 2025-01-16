@@ -1,7 +1,12 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import { MediaItemType, ItemMapping, MediaType } from "./interfaces";
+import {
+  MediaItemType,
+  ItemMapping,
+  MediaType,
+  BrowseFolder,
+} from "./interfaces";
 
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
@@ -13,5 +18,27 @@ export const itemIsAvailable = function (
         return true;
     }
   } else if ("available" in item) return item.available as boolean;
+  return false;
+};
+
+export const itemIsPlayable = function (
+  item: MediaItemType | ItemMapping,
+): boolean {
+  if (
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.PLAYLIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PODCAST,
+      MediaType.PODCAST_EPISODE,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(item.media_type)
+  )
+    return true;
+  if (item.media_type == MediaType.FOLDER) {
+    return !(item as BrowseFolder).path?.endsWith("://");
+  }
   return false;
 };
