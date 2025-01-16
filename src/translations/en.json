@@ -606,5 +606,7 @@
     "loudness_measurement": "{0} LUFS",
     "loudness_measurement_album": "{0} LUFS (album)",
     "loudness_dynamic": "Dynamic volume normalization",
-    "loudness_fixed": "Fixed gain correction"
+    "loudness_fixed": "Fixed gain correction",
+    "dsp_disabled_by_unsupported_group": "Not supported for this group type",
+    "dsp_active": "Active"
 }
