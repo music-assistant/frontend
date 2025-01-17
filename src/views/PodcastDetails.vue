@@ -93,11 +93,7 @@ const onMenu = function (
     menuItems.push({
       label: "mark_unplayed",
       action: async () => {
-        await api.markItemUnPlayed(
-          episode.media_type,
-          episode.item_id,
-          episode.provider,
-        );
+        await api.markItemUnPlayed(episode);
         loadItemDetails();
       },
     });
@@ -105,12 +101,7 @@ const onMenu = function (
     menuItems.push({
       label: "mark_played",
       action: async () => {
-        await api.markItemPlayed(
-          episode.media_type,
-          episode.item_id,
-          episode.provider,
-          true,
-        );
+        await api.markItemPlayed(episode, true);
         loadItemDetails();
       },
     });

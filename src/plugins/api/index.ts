@@ -701,31 +701,23 @@ export class MusicAssistantApi {
   }
 
   public markItemPlayed(
-    media_type: MediaType,
-    item_id: string,
-    provider_instance_id_or_domain: string,
+    media_item: MediaItemTypeOrItemMapping,
     fully_played?: boolean,
     seconds_played?: number,
   ): Promise<void> {
     // Mark item as played in the playlog
     return this.sendCommand("music/mark_played", {
-      media_type,
-      item_id,
-      provider_instance_id_or_domain,
+      media_item,
       fully_played,
       seconds_played,
     });
   }
   public markItemUnPlayed(
-    media_type: MediaType,
-    item_id: string,
-    provider_instance_id_or_domain: string,
+    media_item: MediaItemTypeOrItemMapping,
   ): Promise<void> {
     // Mark item as unplayed in the playlog
     return this.sendCommand("music/mark_unplayed", {
-      media_type,
-      item_id,
-      provider_instance_id_or_domain,
+      media_item,
     });
   }
 

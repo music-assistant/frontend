@@ -534,11 +534,7 @@ export const getContextMenuItems = function (
         label: "mark_unplayed",
         icon: "mdi-clock-fast",
         action: async () => {
-          await api.markItemUnPlayed(
-            items[0].media_type,
-            items[0].item_id,
-            items[0].provider,
-          );
+          await api.markItemUnPlayed(items[0]);
           (items[0] as PodcastEpisode).fully_played = false;
         },
       });
@@ -548,12 +544,7 @@ export const getContextMenuItems = function (
         label: "mark_played",
         icon: "mdi-clock-fast",
         action: async () => {
-          await api.markItemPlayed(
-            items[0].media_type,
-            items[0].item_id,
-            items[0].provider,
-            true,
-          );
+          await api.markItemPlayed(items[0], true);
           (items[0] as PodcastEpisode).fully_played = true;
         },
       });
