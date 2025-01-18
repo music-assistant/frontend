@@ -77,7 +77,10 @@
         />
 
         <!-- DSP Config Button -->
-        <v-btn @click="openDspConfig">
+        <v-btn
+          v-if="api.players[config.player_id].type !== PlayerType.GROUP"
+          @click="openDspConfig"
+        >
           {{ $t("open_dsp_settings") }}
         </v-btn>
       </div>
@@ -97,7 +100,11 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { ConfigValueType, PlayerConfig } from "@/plugins/api/interfaces";
+import {
+  ConfigValueType,
+  PlayerConfig,
+  PlayerType,
+} from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 import { openLinkInNewTab } from "@/helpers/utils";

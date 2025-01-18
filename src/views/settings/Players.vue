@@ -73,6 +73,7 @@ import { api } from "@/plugins/api";
 import {
   EventType,
   PlayerConfig,
+  PlayerType,
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -169,6 +170,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       },
       icon: "mdi-equalizer",
       disabled: !api.players[playerConfig.player_id]?.available,
+      hide: api.players[playerConfig.player_id]?.type === PlayerType.GROUP,
     },
     {
       label: playerConfig.enabled ? "settings.disable" : "settings.enable",
