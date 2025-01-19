@@ -6,12 +6,14 @@
       :show-library="false"
       :show-favorites-only-filter="false"
       :show-track-number="false"
+      :load-paged-data="loadItems"
       :load-items="loadItems"
       :sort-keys="['original', 'name', 'name_desc']"
       :title="header"
       :path="path"
       :allow-key-hooks="true"
       icon="mdi-folder-outline"
+      :restore-state="true"
     />
   </section>
 </template>
@@ -37,6 +39,6 @@ const header = computed(() => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  return await api.browse(props.path);
+  return await api.browse(props.path, params.limit, params.offset);
 };
 </script>

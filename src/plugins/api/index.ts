@@ -256,16 +256,19 @@ export class MusicAssistantApi {
       album_types,
     });
   }
+
   public getLibraryTracksCount(
     favorite_only: boolean = false,
   ): Promise<number> {
     return this.sendCommand("music/tracks/count", { favorite_only });
   }
+
   public getLibraryPlaylistsCount(
     favorite_only: boolean = false,
   ): Promise<number> {
     return this.sendCommand("music/playlists/count", { favorite_only });
   }
+
   public getLibraryRadiosCount(
     favorite_only: boolean = false,
   ): Promise<number> {
@@ -672,9 +675,13 @@ export class MusicAssistantApi {
     }
   }
 
-  public browse(path?: string): Promise<MediaItemType[]> {
+  public browse(
+    path?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<MediaItemType[]> {
     // Browse Music providers.
-    return this.sendCommand("music/browse", { path });
+    return this.sendCommand("music/browse", { path, limit, offset });
   }
 
   public search(
