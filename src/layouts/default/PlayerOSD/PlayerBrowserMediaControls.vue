@@ -67,7 +67,12 @@ onMounted(() => {
     apiCommandWithCurrentPlayer(api.playerCommandPlay.bind(api));
   });
   navigator.mediaSession.setActionHandler("pause", () => {
-    apiCommandWithCurrentPlayer(api.playerCommandPause.bind(api));
+    // workaround-alert: delay the pause command a tiny bit
+    // to workaround a browser bug where pause is sent if a laptop/computer
+    // goes to standby (lid closed). This issue seems to only exist on Chromium based browsers.
+    setTimeout(() => {
+      apiCommandWithCurrentPlayer(api.playerCommandPause.bind(api));
+    }, 250);
   });
   navigator.mediaSession.setActionHandler("nexttrack", () => {
     apiCommandWithCurrentPlayer(api.playerCommandNext.bind(api));
