@@ -226,12 +226,13 @@
               v-else-if="
                 store.activePlayer?.active_source !=
                   store.activePlayer?.player_id &&
+                store.activePlayer?.active_source &&
                 store.activePlayer?.active_source in api.queues
               "
             >
               {{
                 $t("external_source_active", [
-                  api.queues[store.activePlayer?.active_source]?.display_name,
+                  api.queues[store.activePlayer.active_source]?.display_name,
                 ])
               }}
             </v-card-subtitle>
