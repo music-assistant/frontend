@@ -387,6 +387,10 @@
             "options": {
                 "disabled": "Désactivée"
             }
+        },
+        "dynamic_members": {
+            "label": "Membres dynamiques du groupe",
+            "description": "Permettez aux membres de rejoindre\/quitter (temporairement) le groupe de manière dynamique, de sorte que le groupe se comporte plus ou moins de la même manière que la synchronisation manuelle des lecteurs, la principale différence étant que le joueur du groupe maintiendra la file d’attente."
         }
     },
     "show_info": "Afficher les informations",
