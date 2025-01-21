@@ -27,6 +27,17 @@ export const getPlayerMenuItems = (
       icon: "mdi-power",
     },
   ];
+  // add stop playback menu item
+  if (player?.state == "playing") {
+    menuItems.push({
+      label: "stop_playback",
+      labelArgs: [],
+      action: () => {
+        api.playerCommandStop(player.player_id);
+      },
+      icon: "mdi-stop",
+    });
+  }
 
   // add 'synchronize with' menu item
   const playersToSyncWith = Object.values(api.players).filter(
@@ -34,7 +45,8 @@ export const getPlayerMenuItems = (
       p.player_id != player.player_id &&
       p.available &&
       p.enabled &&
-      p.provider == player.provider &&
+      (p.can_group_with.includes(player.provider) ||
+        p.can_group_with.includes(player.player_id)) &&
       p.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
       !p.synced_to,
   );

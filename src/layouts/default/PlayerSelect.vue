@@ -15,52 +15,122 @@
   >
     <div>
       <!-- heading with Players as title-->
-      <v-card-title class="title">
-        <b>{{ $t("players") }}</b>
-      </v-card-title>
-      <!-- close button -->
-      <Button
-        variant="icon"
-        style="float: right; top: -40px; height: 0"
-        @click="store.showPlayersMenu = false"
+      <v-card-title
+        class="title"
+        style="padding-top: 20px; padding-bottom: 20px"
       >
-        <v-icon size="30">mdi-window-close</v-icon>
-      </Button>
+        <b>{{ $t("players") }}</b>
+        <div style="float: right; margin-right: -20px">
+          <!-- settings button -->
+          <Button variant="icon" :to="{ name: 'playersettings' }">
+            <v-icon size="30">mdi-cog-outline</v-icon>
+          </Button>
+          <!-- close button -->
+          <Button variant="icon" @click="store.showPlayersMenu = false">
+            <v-icon size="30">mdi-window-close</v-icon>
+          </Button>
+        </div>
+      </v-card-title>
 
-      <v-list flat style="margin: 5px 5px">
-        <PlayerCard
-          v-for="player in sortedPlayers.filter((x) => x.powered)"
-          :id="player.player_id"
-          :key="player.player_id"
-          :player="player"
-          :show-volume-control="true"
-          :show-menu-button="true"
-          :show-sub-players="
-            showSubPlayers && player.player_id == store.activePlayerId
-          "
-          :show-sync-controls="
-            player.supported_features.includes(PlayerFeature.SET_MEMBERS)
-          "
-          @click="playerClicked(player)"
-        />
-      </v-list>
+      <v-divider />
 
-      <v-expansion-panels variant="accordion" flat class="expansion">
-        <v-expansion-panel
-          :title="$t('powered_off_players')"
-          style="padding: 0"
-        >
+      <v-expansion-panels
+        variant="accordion"
+        flat
+        class="expansion"
+        :model-value="0"
+      >
+        <v-expansion-panel style="padding: 0">
+          <v-expansion-panel-title
+            ><h3>
+              {{ $t("currently_playing_players") }}
+            </h3></v-expansion-panel-title
+          >
           <v-expansion-panel-text style="padding: 0">
-            <v-list flat>
+            <v-list flat style="margin: -20px 3px 5px 3px">
               <PlayerCard
-                v-for="player in sortedPlayers.filter((x) => !x.powered)"
+                v-for="player in sortedPlayers.filter(
+                  (x) =>
+                    [PlayerState.PLAYING, PlayerState.PAUSED].includes(
+                      x.state,
+                    ) ||
+                    (x.player_id == store.activePlayerId && x.powered),
+                )"
+                :id="player.player_id"
+                :key="player.player_id"
+                :player="player"
+                :show-volume-control="true"
+                :show-menu-button="true"
+                :show-sub-players="
+                  showSubPlayers && player.player_id == store.activePlayerId
+                "
+                :show-sync-controls="
+                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
+                "
+                @click="playerClicked(player)"
+              />
+              <v-alert
+                v-if="
+                  sortedPlayers.filter((x) =>
+                    [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state),
+                  ).length == 0
+                "
+                >{{ $t("no_player_playing") }}</v-alert
+              >
+            </v-list>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+        <v-expansion-panel style="padding: 0">
+          <v-expansion-panel-title
+            ><h3>
+              {{ $t("all_players") }}
+            </h3></v-expansion-panel-title
+          >
+          <v-expansion-panel-text style="padding: 0">
+            <v-list flat style="margin: -20px 3px 5px 3px">
+              <PlayerCard
+                v-for="player in sortedPlayers.filter(
+                  (x) => x.type != PlayerType.GROUP,
+                )"
                 :id="player.player_id"
                 :key="player.player_id"
                 :player="player"
                 :show-volume-control="false"
                 :show-menu-button="true"
-                :show-sub-players="false"
-                :show-sync-controls="false"
+                :show-sub-players="
+                  showSubPlayers && player.player_id == store.activePlayerId
+                "
+                :show-sync-controls="
+                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
+                "
+                @click="playerClicked(player)"
+              />
+            </v-list>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+        <v-expansion-panel style="padding: 0">
+          <v-expansion-panel-title
+            ><h3>
+              {{ $t("all_groups") }}
+            </h3></v-expansion-panel-title
+          >
+          <v-expansion-panel-text style="padding: 0">
+            <v-list flat style="margin: -20px 3px 5px 3px">
+              <PlayerCard
+                v-for="player in sortedPlayers.filter(
+                  (x) => x.type == PlayerType.GROUP,
+                )"
+                :id="player.player_id"
+                :key="player.player_id"
+                :player="player"
+                :show-volume-control="true"
+                :show-menu-button="true"
+                :show-sub-players="
+                  showSubPlayers && player.player_id == store.activePlayerId
+                "
+                :show-sync-controls="
+                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
+                "
                 @click="playerClicked(player)"
               />
             </v-list>
@@ -73,7 +143,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { Player, PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
+import {
+  Player,
+  PlayerFeature,
+  PlayerType,
+  PlayerState,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
@@ -83,18 +158,14 @@ const showSubPlayers = ref(false);
 
 // computed properties
 const sortedPlayers = computed(() => {
-  return (
-    Object.values(api.players)
-      .filter((x) =>
-        // hide synced players or group child's
-        playerActive(x, false, false, false),
-      )
-      .sort((a, b) =>
-        a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-      )
-      // sort by power state - powered players on top
-      .sort((a, b) => Number(b.powered) - Number(a.powered))
-  );
+  return Object.values(api.players)
+    .filter((x) =>
+      // hide synced players or group child's
+      playerActive(x, false, false, false),
+    )
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
+    );
 });
 
 //watchers

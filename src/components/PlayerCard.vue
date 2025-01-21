@@ -131,9 +131,28 @@
 
       <!-- power/play/pause + menu button -->
       <template #append>
+        <!-- play/pause button -->
+        <Button
+          v-if="
+            player.state == PlayerState.PAUSED ||
+            player.state == PlayerState.PLAYING ||
+            playerQueue?.items
+          "
+          variant="icon"
+          class="player-command-btn"
+          @click="
+            api.playerCommandPlayPause(player.player_id);
+            store.activePlayerId = player.player_id;
+          "
+          ><v-icon
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
+            :icon="
+              player.state == PlayerState.PLAYING ? 'mdi-pause' : 'mdi-play'
+            "
+        /></Button>
         <!-- power button -->
         <Button
-          v-if="!player.powered"
+          v-else
           variant="icon"
           class="player-command-btn"
           @click="
@@ -145,19 +164,6 @@
             >mdi-power</v-icon
           ></Button
         >
-        <!-- play/pause button -->
-        <PlayBtn
-          v-if="player.powered"
-          :player="player"
-          :player-queue="playerQueue"
-          class="player-command-btn"
-          style="height: 50px"
-          icon-style="circle-outline"
-          @click.stop="
-            if (player.state != PlayerState.PLAYING)
-              store.activePlayerId = player.player_id;
-          "
-        />
         <!-- menu button -->
         <Button
           v-if="showMenuButton"
