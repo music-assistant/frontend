@@ -28,6 +28,7 @@ module.exports = {
       },
     ],
     'vue/multi-word-component-names': 'off',
+    'vue/no-v-text-v-html-on-component': 'off',
     'vue/attribute-hyphenation': ['error', 'always', {ignore: ['onLoad']}],
     'no-unused-vars': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',

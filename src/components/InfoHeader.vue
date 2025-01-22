@@ -386,7 +386,7 @@ import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useRouter } from "vue-router";
-import { truncateString, parseBool } from "@/helpers/utils";
+import { truncateString, parseBool, markdownToHtml } from "@/helpers/utils";
 import {
   getContextMenuItems,
   getPlayMenuItems,
@@ -485,18 +485,15 @@ const rawDescription = computed(() => {
 });
 
 const fullDescription = computed(() => {
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, "<br /><br />");
+  return markdownToHtml(rawDescription.value);
 });
+
 const shortDescription = computed(() => {
   const maxChars = mobile.value ? 160 : 300;
   if (rawDescription.value.length > maxChars) {
-    return (
-      rawDescription.value
-        .replace(/(\r\n|\n|\r)/gm, " ")
-        .substring(0, maxChars) + "..."
-    );
+    return fullDescription.value.substring(0, maxChars) + "...";
   }
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, " ");
+  return fullDescription.value;
 });
 
 const artistLogo = computed(() => {

@@ -9,6 +9,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { api } from "@/plugins/api";
+import { marked } from "marked";
 
 import Color from "color";
 //@ts-ignore
@@ -491,3 +492,11 @@ export function isTouchscreenDevice() {
   }
   return result;
 }
+
+export const markdownToHtml = function (text: string): string {
+  text = text
+    .replaceAll(/\\n/g, "<br />")
+    .replaceAll("\n", "<br />")
+    .replaceAll(" \\", "<br />");
+  return marked(text) as string;
+};

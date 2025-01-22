@@ -364,9 +364,9 @@ import {
   ConfigEntry,
   ConfigValueOption,
 } from "@/plugins/api/interfaces";
+import { markdownToHtml } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 const router = useRouter();
-import { marked } from "marked";
 
 export interface Props {
   configEntries: ConfigEntry[];
@@ -531,15 +531,6 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
     options.push(option);
   }
   return options;
-};
-
-const markdownToHtml = function (text: string) {
-  // text = text.replaceAll(/\\n\\n/g, "<br /><br />").replace(/\\n/g, "<br /> ");
-  text = text
-    .replaceAll(/\\n/g, "<br />")
-    .replaceAll("\n", "<br />")
-    .replaceAll(" \\", "<br />");
-  return marked(text);
 };
 
 const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
