@@ -225,6 +225,18 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   object-fit: contain;
 }
 
+.streamdetails-separator {
+  height: 12.5px;
+  display: flex;
+  align-items: center;
+  margin-top: 12.5px;
+  border-style: dotted;
+  border-width: 1px;
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
+}
+
 .v-theme--dark .streamdetails-icon {
   filter: none;
 }
