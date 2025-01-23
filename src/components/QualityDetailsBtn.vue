@@ -31,46 +31,56 @@
           </v-card-title>
         </v-list-item>
         <v-divider />
-        <div class="streamdetails-item">
-          <ProviderIcon
-            :domain="streamDetails.provider"
-            :size="35"
-            style="object-fit: contain; margin-left: 10px; margin-right: 5px"
-          />
-          {{
-            api.providerManifests[streamDetails.provider]?.name ||
-            api.providers[streamDetails.provider]?.name
-          }}
-        </div>
+        <div class="d-flex">
+          <div>
+            <div class="streamdetails-item">
+              <ProviderIcon
+                :domain="streamDetails.provider"
+                :size="35"
+                style="
+                  object-fit: contain;
+                  margin-left: 10px;
+                  margin-right: 5px;
+                "
+              />
+              {{
+                api.providerManifests[streamDetails.provider]?.name ||
+                api.providers[streamDetails.provider]?.name
+              }}
+            </div>
 
-        <div class="streamdetails-item">
-          <img
-            class="streamdetails-icon"
-            :src="getContentTypeIcon(streamDetails.audio_format.content_type)"
-          />
-          {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
-          {{ streamDetails.audio_format.bit_depth }} bits
-        </div>
+            <div class="streamdetails-item">
+              <img
+                class="streamdetails-icon"
+                :src="
+                  getContentTypeIcon(streamDetails.audio_format.content_type)
+                "
+              />
+              {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
+              {{ streamDetails.audio_format.bit_depth }} bits
+            </div>
 
-        <div v-if="loudness" class="streamdetails-item">
-          <img class="streamdetails-icon" src="@/assets/level.png" />
-          {{ loudness }}
-        </div>
+            <div v-if="loudness" class="streamdetails-item">
+              <img class="streamdetails-icon" src="@/assets/level.png" />
+              {{ loudness }}
+            </div>
 
-        <!-- For now, a very simple DSP indicator -->
-        <div
-          v-if="dsp_state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
-          class="streamdetails-item"
-        >
-          <img class="streamdetails-icon" src="@/assets/DSP_off.png" />
-          {{ $t("dsp_disabled_by_unsupported_group") }}
-        </div>
-        <div
-          v-else-if="dsp_state == DSPState.ENABLED"
-          class="streamdetails-item"
-        >
-          <img class="streamdetails-icon" src="@/assets/DSP.png" />
-          {{ $t("dsp_active") }}
+            <!-- For now, a very simple DSP indicator -->
+            <div
+              v-if="dsp_state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+              class="streamdetails-item"
+            >
+              <img class="streamdetails-icon" src="@/assets/DSP_off.png" />
+              {{ $t("dsp_disabled_by_unsupported_group") }}
+            </div>
+            <div
+              v-else-if="dsp_state == DSPState.ENABLED"
+              class="streamdetails-item"
+            >
+              <img class="streamdetails-icon" src="@/assets/DSP.png" />
+              {{ $t("dsp_active") }}
+            </div>
+          </div>
         </div>
       </v-list>
     </v-card>
