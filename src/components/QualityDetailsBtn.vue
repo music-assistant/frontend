@@ -31,7 +31,7 @@
           </v-card-title>
         </v-list-item>
         <v-divider />
-        <div style="height: 50px; display: flex; align-items: center">
+        <div class="streamdetails-item">
           <ProviderIcon
             :domain="streamDetails.provider"
             :size="35"
@@ -43,72 +43,33 @@
           }}
         </div>
 
-        <div style="height: 50px; display: flex; align-items: center">
+        <div class="streamdetails-item">
           <img
-            height="30"
-            width="50"
+            class="streamdetails-icon"
             :src="getContentTypeIcon(streamDetails.audio_format.content_type)"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
           />
           {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
           {{ streamDetails.audio_format.bit_depth }} bits
         </div>
 
-        <div
-          v-if="loudness"
-          style="height: 50px; display: flex; align-items: center"
-        >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/level.png"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
+        <div v-if="loudness" class="streamdetails-item">
+          <img class="streamdetails-icon" src="@/assets/level.png" />
           {{ loudness }}
         </div>
 
         <!-- For now, a very simple DSP indicator -->
         <div
           v-if="dsp_state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
-          style="height: 50px; display: flex; align-items: center"
+          class="streamdetails-item"
         >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/DSP_off.png"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
+          <img class="streamdetails-icon" src="@/assets/DSP_off.png" />
           {{ $t("dsp_disabled_by_unsupported_group") }}
         </div>
         <div
           v-else-if="dsp_state == DSPState.ENABLED"
-          style="height: 50px; display: flex; align-items: center"
+          class="streamdetails-item"
         >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/DSP.png"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
+          <img class="streamdetails-icon" src="@/assets/DSP.png" />
           {{ $t("dsp_active") }}
         </div>
       </v-list>
@@ -239,5 +200,26 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   margin-left: 5px;
   flex-flow: column;
   margin: 0px;
+}
+
+.streamdetails-item {
+  height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.streamdetails-icon {
+  height: 30px;
+  width: 50px;
+  contain: contain;
+  object-fit: contain;
+}
+
+.v-theme--dark .streamdetails-icon {
+  filter: none;
+}
+
+.v-theme--light .streamdetails-icon {
+  filter: invert(100%);
 }
 </style>
