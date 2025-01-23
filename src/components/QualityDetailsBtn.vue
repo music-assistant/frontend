@@ -31,7 +31,7 @@
           </v-card-title>
         </v-list-item>
         <v-divider />
-        <div class="d-flex">
+        <div class="d-flex ml-2 mr-2">
           <div>
             <div class="streamdetails-item">
               <ProviderIcon
