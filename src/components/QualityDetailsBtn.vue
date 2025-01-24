@@ -4,6 +4,7 @@
     v-if="streamDetails"
     location="top center"
     :close-on-content-click="false"
+    scrim
   >
     <template #activator="{ props }">
       <v-chip
