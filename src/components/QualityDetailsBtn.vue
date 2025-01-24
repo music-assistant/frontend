@@ -160,7 +160,7 @@
                   class="streamdetails-separator"
                   style="width: 58px; margin-right: 10px"
                 ></div>
-                Output
+                {{ api.players[player_id].name }}
                 <div
                   class="streamdetails-separator flex-fill"
                   style="margin-left: 10px"
