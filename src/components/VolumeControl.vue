@@ -3,7 +3,7 @@
     <!-- main (or group) volume/power -->
     <!-- mute btn + player name + optional sync checkbox-->
     <v-list-item
-      v-if="!hideHeadingRow"
+      v-if="showHeadingRow"
       class="volumesliderrow heading"
       :link="false"
       :style="player.powered ? 'opacity: 1' : 'opacity: 0.6'"
@@ -31,6 +31,7 @@
     </v-list-item>
     <!-- mute btn + volume slider + volume level text (or collapse btn)-->
     <v-list-item
+      v-if="showVolumeControl"
       class="volumesliderrow"
       :link="false"
       :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.35'"
@@ -60,7 +61,6 @@
           :is-powered="player.powered"
           :disabled="
             !player.available ||
-            !player.powered ||
             (!player.supported_features.includes(PlayerFeature.VOLUME_SET) &&
               !player.group_childs.length)
           "
@@ -98,9 +98,7 @@
     <!-- (child) volume player rows -->
     <div
       v-if="
-        showSubPlayers &&
-        player.powered &&
-        (player.group_childs.length > 0 || showSyncControls)
+        showSubPlayers && (player.group_childs.length > 0 || showSyncControls)
       "
       @click.stop
     >
@@ -230,7 +228,8 @@ export interface Props {
   player: Player;
   showSyncControls?: boolean;
   showSubPlayers?: boolean;
-  hideHeadingRow?: boolean;
+  showHeadingRow?: boolean;
+  showVolumeControl?: boolean;
   allowWheel?: boolean;
 }
 const compProps = defineProps<Props>();

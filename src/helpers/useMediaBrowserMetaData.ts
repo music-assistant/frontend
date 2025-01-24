@@ -7,10 +7,10 @@ function playerMediaToMetadata(item: QueueItem) {
   let album: string | undefined;
 
   //here we cast to Track to access properties that are only available on Track
-  if (item.media_item!.media_type === MediaType.TRACK) {
+  if (item.media_item?.media_type === MediaType.TRACK) {
     const currentMedia = item.media_item as Track;
     artist = currentMedia.artists.map((a) => a.name).join(", ");
-    album = currentMedia.album.name;
+    album = currentMedia.album?.name;
   }
 
   return new MediaMetadata({
@@ -29,7 +29,7 @@ export function useMediaBrowserMetaData() {
     () => store.curQueueItem,
     (newMedia) => {
       if (!newMedia || !newMedia.media_item) return;
-      //Lets make sure that the new media isnt spammed
+      //Lets make sure that the new media isn't spammed
       if (newMedia.media_item.uri === currentMediaUri) return;
       const newMediaMetaData = playerMediaToMetadata(newMedia);
       currentMediaUri = newMedia.media_item.uri;

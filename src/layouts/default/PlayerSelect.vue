@@ -34,52 +34,35 @@
 
       <v-divider />
 
+      <v-list flat style="margin: 10px 5px 15px 5px">
+        <PlayerCard
+          v-for="player in sortedPlayers.filter(
+            (x) =>
+              [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state) ||
+              (api.queues[x.player_id]?.items > 0 && x.powered) ||
+              x.player_id == store.activePlayerId,
+          )"
+          :id="player.player_id"
+          :key="player.player_id"
+          :player="player"
+          :show-volume-control="true"
+          :show-menu-button="true"
+          :show-sub-players="
+            showSubPlayers && player.player_id == store.activePlayerId
+          "
+          :show-sync-controls="
+            player.supported_features.includes(PlayerFeature.SET_MEMBERS)
+          "
+          @click="playerClicked(player)"
+        />
+      </v-list>
+
       <v-expansion-panels
+        v-model="selectedPanel"
         variant="accordion"
         flat
         class="expansion"
-        :model-value="0"
       >
-        <v-expansion-panel style="padding: 0">
-          <v-expansion-panel-title
-            ><h3>
-              {{ $t("currently_playing_players") }}
-            </h3></v-expansion-panel-title
-          >
-          <v-expansion-panel-text style="padding: 0">
-            <v-list flat style="margin: -20px 3px 5px 3px">
-              <PlayerCard
-                v-for="player in sortedPlayers.filter(
-                  (x) =>
-                    [PlayerState.PLAYING, PlayerState.PAUSED].includes(
-                      x.state,
-                    ) ||
-                    (x.player_id == store.activePlayerId && x.powered),
-                )"
-                :id="player.player_id"
-                :key="player.player_id"
-                :player="player"
-                :show-volume-control="true"
-                :show-menu-button="true"
-                :show-sub-players="
-                  showSubPlayers && player.player_id == store.activePlayerId
-                "
-                :show-sync-controls="
-                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
-                "
-                @click="playerClicked(player)"
-              />
-              <v-alert
-                v-if="
-                  sortedPlayers.filter((x) =>
-                    [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state),
-                  ).length == 0
-                "
-                >{{ $t("no_player_playing") }}</v-alert
-              >
-            </v-list>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
         <v-expansion-panel style="padding: 0">
           <v-expansion-panel-title
             ><h3>
@@ -95,10 +78,12 @@
                 :id="player.player_id"
                 :key="player.player_id"
                 :player="player"
-                :show-volume-control="false"
+                :show-volume-control="true"
                 :show-menu-button="true"
                 :show-sub-players="
-                  showSubPlayers && player.player_id == store.activePlayerId
+                  showSubPlayers &&
+                  player.player_id == store.activePlayerId &&
+                  player.group_childs.length > 0
                 "
                 :show-sync-controls="
                   player.supported_features.includes(PlayerFeature.SET_MEMBERS)
@@ -155,6 +140,7 @@ import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
 
 const showSubPlayers = ref(false);
+const selectedPanel = ref<number | null>(null);
 
 // computed properties
 const sortedPlayers = computed(() => {

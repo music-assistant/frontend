@@ -131,6 +131,20 @@
 
       <!-- power/play/pause + menu button -->
       <template #append>
+        <!-- power button -->
+        <Button
+          v-if="player.supported_features.includes(PlayerFeature.POWER)"
+          variant="icon"
+          class="player-command-btn"
+          @click.stop="
+            api.playerCommandPowerToggle(player.player_id);
+            store.activePlayerId = player.player_id;
+          "
+          ><v-icon
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
+            >mdi-power</v-icon
+          ></Button
+        >
         <!-- play/pause button -->
         <Button
           v-if="
@@ -140,7 +154,7 @@
           "
           variant="icon"
           class="player-command-btn"
-          @click="
+          @click.stop="
             api.playerCommandPlayPause(player.player_id);
             store.activePlayerId = player.player_id;
           "
@@ -150,20 +164,7 @@
               player.state == PlayerState.PLAYING ? 'mdi-pause' : 'mdi-play'
             "
         /></Button>
-        <!-- power button -->
-        <Button
-          v-else
-          variant="icon"
-          class="player-command-btn"
-          @click="
-            api.playerCommandPowerToggle(player.player_id);
-            store.activePlayerId = player.player_id;
-          "
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-power</v-icon
-          ></Button
-        >
+
         <!-- menu button -->
         <Button
           v-if="showMenuButton"
@@ -180,11 +181,12 @@
       </template>
     </v-list-item>
     <VolumeControl
-      v-if="showVolumeControl && player.powered"
+      v-if="showVolumeControl"
       :player="player"
       :show-sync-controls="showSyncControls"
-      :hide-heading-row="true"
+      :show-heading-row="false"
       :show-sub-players="showSubPlayers"
+      :show-volume-control="player.powered"
       :allow-wheel="false"
     />
   </v-card>
@@ -197,6 +199,7 @@ import {
   Player,
   PlayerState,
   PlayerType,
+  PlayerFeature,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
