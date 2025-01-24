@@ -34,6 +34,8 @@
             <div class="line-space"></div>
             <!-- Fileinfo -->
             <div class="line-space"></div>
+            <!-- Volume Normalization -->
+            <div class="line-space"></div>
             <!-- Branch if multiple players playing -->
             <div class="line-branch-start-left"></div>
             <!-- Player -->
@@ -48,8 +50,6 @@
               ></div>
               <div v-else-if="index > 0" class="line-branch-split-left"></div>
               <template v-if="index != dsp_length - 1">
-                <!-- Volume Normalization -->
-                <div class="line-straight"></div>
                 <!-- DSP -->
                 <div
                   v-if="dsp.state == DSPState.ENABLED"
@@ -75,6 +75,8 @@
             <div class="line-start"></div>
             <!-- Fileinfo -->
             <div class="line-straight"></div>
+            <!-- Volume Normalization -->
+            <div class="line-with-dot"></div>
             <!-- Branch if multiple players playing -->
             <div v-if="dsp_length >= 2" class="line-branch-start-right"></div>
             <div v-else class="line-straight-halve"></div>
@@ -85,8 +87,6 @@
             >
               <!-- rejoin the original stream -->
               <div v-if="index > 0" class="line-branch-rejoin-right"></div>
-              <!-- Volume Normalization -->
-              <div class="line-with-dot"></div>
               <!-- DSP -->
               <div
                 v-if="dsp.state == DSPState.ENABLED"
@@ -142,6 +142,11 @@
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
             </div>
+            <!-- Volume Normalization -->
+            <div v-if="loudness" class="streamdetails-item">
+              <img class="streamdetails-icon" src="@/assets/level.png" />
+              {{ loudness }}
+            </div>
 
             <template
               v-for="(dsp, player_id) in streamDetails.dsp"
@@ -158,10 +163,6 @@
                   class="streamdetails-separator flex-fill"
                   style="margin-left: 10px"
                 ></div>
-              </div>
-              <div v-if="loudness" class="streamdetails-item">
-                <img class="streamdetails-icon" src="@/assets/level.png" />
-                {{ loudness }}
               </div>
               <!-- DSP -->
               <div
