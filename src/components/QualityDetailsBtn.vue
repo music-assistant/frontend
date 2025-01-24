@@ -32,7 +32,96 @@
         </v-list-item>
         <v-divider />
         <div class="d-flex ml-2 mr-2">
+          <!-- Second line showing audio stream shared by multiple players -->
+          <div v-if="dsp_length >= 2">
+            <!-- Input header -->
+            <div class="line-space-halve"></div>
+            <!-- Provider -->
+            <div class="line-space"></div>
+            <!-- Fileinfo -->
+            <div class="line-space"></div>
+            <!-- Branch if multiple players playing -->
+            <div class="line-branch-start-left"></div>
+            <!-- Player -->
+            <template
+              v-for="(dsp, player_id, index) in streamDetails.dsp"
+              :key="player_id"
+            >
+              <!-- rejoin the original stream -->
+              <div
+                v-if="index == dsp_length - 1"
+                class="line-branch-end-left"
+              ></div>
+              <div v-else-if="index > 0" class="line-branch-split-left"></div>
+              <template v-if="index != dsp_length - 1">
+                <!-- Volume Normalization -->
+                <div class="line-straight"></div>
+                <!-- DSP -->
+                <div
+                  v-if="dsp.state == DSPState.ENABLED"
+                  class="line-straight"
+                ></div>
+                <div
+                  v-else-if="
+                    dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP
+                  "
+                  class="line-straight"
+                ></div>
+                <!-- Player Provider-->
+                <div class="line-straight"></div>
+                <!-- Player-->
+                <div class="line-straight"></div>
+              </template>
+            </template>
+          </div>
           <div>
+            <!-- Input header -->
+            <div class="line-space-halve"></div>
+            <!-- Provider -->
+            <div class="line-start"></div>
+            <!-- Fileinfo -->
+            <div class="line-straight"></div>
+            <!-- Branch if multiple players playing -->
+            <div v-if="dsp_length >= 2" class="line-branch-start-right"></div>
+            <div v-else class="line-straight-halve"></div>
+            <!-- Player -->
+            <template
+              v-for="(dsp, player_id, index) in streamDetails.dsp"
+              :key="player_id"
+            >
+              <!-- rejoin the original stream -->
+              <div v-if="index > 0" class="line-branch-rejoin-right"></div>
+              <!-- Volume Normalization -->
+              <div class="line-with-dot"></div>
+              <!-- DSP -->
+              <div
+                v-if="dsp.state == DSPState.ENABLED"
+                class="line-with-dot"
+              ></div>
+              <div
+                v-else-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+                class="line-straight"
+              ></div>
+              <!-- Player Provider-->
+              <div class="line-straight"></div>
+              <!-- Player-->
+              <div class="line-end"></div>
+            </template>
+          </div>
+          <div class="w-100">
+            <!-- Input header -->
+            <div class="d-flex">
+              <div
+                class="streamdetails-separator"
+                style="width: 58px; margin-right: 10px"
+              ></div>
+              Input
+              <div
+                class="streamdetails-separator flex-fill"
+                style="margin-left: 10px"
+              ></div>
+            </div>
+            <!-- Provider -->
             <div class="streamdetails-item">
               <ProviderIcon
                 :domain="streamDetails.provider"
@@ -48,7 +137,7 @@
                 api.providers[streamDetails.provider]?.name
               }}
             </div>
-
+            <!-- Fileinfo -->
             <div class="streamdetails-item">
               <img
                 class="streamdetails-icon"
