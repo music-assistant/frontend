@@ -241,7 +241,7 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   filter: none;
 }
 
-.v-theme--light .streamdetails-icon {
+.v-theme--light .streamdetails-icon:not(.v-icon) {
   filter: invert(100%);
 }
 
