@@ -337,6 +337,14 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   object-fit: contain;
 }
 
+.v-theme--dark .streamdetails-icon {
+  filter: none;
+}
+
+.v-theme--light .streamdetails-icon:not(.v-icon) {
+  filter: invert(100%);
+}
+
 .streamdetails-separator {
   height: 12.5px;
   display: flex;
@@ -347,14 +355,6 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   border-bottom: none;
   border-left: none;
   border-right: none;
-}
-
-.v-theme--dark .streamdetails-icon {
-  filter: none;
-}
-
-.v-theme--light .streamdetails-icon:not(.v-icon) {
-  filter: invert(100%);
 }
 
 .line-space {
