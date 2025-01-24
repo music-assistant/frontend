@@ -60,26 +60,64 @@
               {{ streamDetails.audio_format.bit_depth }} bits
             </div>
 
-            <div v-if="loudness" class="streamdetails-item">
-              <img class="streamdetails-icon" src="@/assets/level.png" />
-              {{ loudness }}
-            </div>
-
-            <!-- For now, a very simple DSP indicator -->
-            <div
-              v-if="dsp_state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
-              class="streamdetails-item"
+            <template
+              v-for="(dsp, player_id) in streamDetails.dsp"
+              :key="player_id"
             >
-              <img class="streamdetails-icon" src="@/assets/DSP_off.png" />
-              {{ $t("dsp_disabled_by_unsupported_group") }}
-            </div>
-            <div
-              v-else-if="dsp_state == DSPState.ENABLED"
-              class="streamdetails-item"
-            >
-              <img class="streamdetails-icon" src="@/assets/DSP.png" />
-              {{ $t("dsp_active") }}
-            </div>
+              <!-- Separator -->
+              <div class="d-flex">
+                <div
+                  class="streamdetails-separator"
+                  style="width: 58px; margin-right: 10px"
+                ></div>
+                Output
+                <div
+                  class="streamdetails-separator flex-fill"
+                  style="margin-left: 10px"
+                ></div>
+              </div>
+              <div v-if="loudness" class="streamdetails-item">
+                <img class="streamdetails-icon" src="@/assets/level.png" />
+                {{ loudness }}
+              </div>
+              <!-- DSP -->
+              <div
+                v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+                class="streamdetails-item"
+              >
+                <img class="streamdetails-icon" src="@/assets/DSP_off.png" />
+                {{ $t("dsp_disabled_by_unsupported_group") }}
+              </div>
+              <div
+                v-else-if="dsp.state == DSPState.ENABLED"
+                class="streamdetails-item"
+              >
+                <img class="streamdetails-icon" src="@/assets/DSP.png" />
+                {{ $t("dsp_active") }}
+              </div>
+              <!-- Player Provider -->
+              <div v-if="streamDetails.dsp" class="streamdetails-item">
+                <ProviderIcon
+                  :domain="api.players[player_id].provider"
+                  :size="35"
+                  style="
+                    object-fit: contain;
+                    margin-left: 10px;
+                    margin-right: 5px;
+                  "
+                />
+                {{
+                  api.providerManifests[api.players[player_id].provider]
+                    ?.name ||
+                  api.providers[api.players[player_id].provider]?.name
+                }}
+              </div>
+              <!-- Player -->
+              <div v-if="streamDetails.dsp" class="streamdetails-item">
+                <v-icon class="streamdetails-icon">mdi-speaker</v-icon>
+                {{ api.players[player_id].name }}
+              </div>
+            </template>
           </div>
         </div>
       </v-list>
@@ -134,19 +172,10 @@ const loudness = computed(() => {
     return null;
   }
 });
-// This is tempoary until the details show the whole DSP pipeline
-const dsp_state = computed(() => {
-  const dsp = streamDetails.value?.dsp;
-  if (!dsp) return DSPState.DISABLED;
-  let at_least_one_working = Object.values(dsp).some(
-    (d) => d.state == DSPState.ENABLED,
-  );
-  let at_least_one_unsupported = Object.values(dsp).some(
-    (d) => d.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP,
-  );
-  if (at_least_one_unsupported) return DSPState.DISABLED_BY_UNSUPPORTED_GROUP;
-  else if (at_least_one_working) return DSPState.ENABLED;
-  else return DSPState.DISABLED;
+const dsp_length = computed(() => {
+  return streamDetails.value?.dsp
+    ? Object.keys(streamDetails.value.dsp).length
+    : 0;
 });
 const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;
