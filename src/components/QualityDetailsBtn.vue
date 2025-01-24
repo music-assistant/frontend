@@ -424,9 +424,9 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   position: absolute;
   transform: translate(-50%, -50%);
   margin-top: 25px;
-  height: 16px;
-  width: 16px;
-  background-color: gray;
+  height: 14px;
+  width: 14px;
+  background-color: rgba(var(--v-theme-on-surface));
   border-radius: 50%;
 }
 
@@ -435,8 +435,8 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   position: absolute;
   transform: translate(-50%, -50%);
   margin-top: 25px;
-  height: 14px;
-  width: 14px;
+  height: 10px;
+  width: 10px;
   background-color: rgb(var(--v-theme-secondary));
   border-radius: 50%;
 }
