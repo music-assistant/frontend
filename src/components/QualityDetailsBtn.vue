@@ -52,13 +52,13 @@
               <template v-if="index != dsp_length - 1">
                 <!-- DSP -->
                 <div
-                  v-if="dsp.state == DSPState.ENABLED"
+                  v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
                   class="line-straight"
                 ></div>
                 <div
-                  v-else-if="
-                    dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP
-                  "
+                  v-for="(filter, filter_index) in dsp.filters"
+                  v-else
+                  :key="filter_index"
                   class="line-straight"
                 ></div>
                 <!-- Player Provider-->
@@ -89,12 +89,14 @@
               <div v-if="index > 0" class="line-branch-rejoin-right"></div>
               <!-- DSP -->
               <div
-                v-if="dsp.state == DSPState.ENABLED"
-                class="line-with-dot"
+                v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+                class="line-straight"
               ></div>
               <div
-                v-else-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
-                class="line-straight"
+                v-for="(filter, filter_index) in dsp.filters"
+                v-else
+                :key="filter_index"
+                class="line-with-dot"
               ></div>
               <!-- Player Provider-->
               <div class="line-straight"></div>
@@ -173,11 +175,13 @@
                 {{ $t("dsp_disabled_by_unsupported_group") }}
               </div>
               <div
-                v-else-if="dsp.state == DSPState.ENABLED"
+                v-for="(filter, index) in dsp.filters"
+                v-else
+                :key="index"
                 class="streamdetails-item"
               >
                 <img class="streamdetails-icon" src="@/assets/DSP.png" />
-                {{ $t("dsp_active") }}
+                {{ $t("settings.dsp.types." + filter.type) }}
               </div>
               <!-- Player Provider -->
               <div v-if="streamDetails.dsp" class="streamdetails-item">
