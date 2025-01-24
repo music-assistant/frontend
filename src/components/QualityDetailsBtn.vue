@@ -25,12 +25,6 @@
     </template>
     <v-card class="mx-auto" width="300">
       <v-list style="overflow: hidden">
-        <v-list-item class="list-item list-item-main" :min-height="5">
-          <v-card-title>
-            {{ $t("stream_details") }}
-          </v-card-title>
-        </v-list-item>
-        <v-divider />
         <div class="d-flex ml-2 mr-2">
           <!-- Second line showing audio stream shared by multiple players -->
           <div v-if="dsp_length >= 2">
