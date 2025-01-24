@@ -160,7 +160,7 @@
                   class="streamdetails-separator"
                   style="width: 58px; margin-right: 10px"
                 ></div>
-                {{ api.players[player_id].name }}
+                {{ api.players[player_id]?.name || "Output" }}
                 <div
                   class="streamdetails-separator flex-fill"
                   style="margin-left: 10px"
@@ -185,25 +185,43 @@
               </div>
               <!-- Player Provider -->
               <div v-if="streamDetails.dsp" class="streamdetails-item">
-                <ProviderIcon
-                  :domain="api.players[player_id].provider"
-                  :size="35"
-                  style="
-                    object-fit: contain;
-                    margin-left: 10px;
-                    margin-right: 5px;
-                  "
-                />
-                {{
-                  api.providerManifests[api.players[player_id].provider]
-                    ?.name ||
-                  api.providers[api.players[player_id].provider]?.name
-                }}
+                <template v-if="api.players[player_id]">
+                  <ProviderIcon
+                    :domain="api.players[player_id].provider"
+                    :size="35"
+                    style="
+                      object-fit: contain;
+                      margin-left: 10px;
+                      margin-right: 5px;
+                    "
+                  />
+                  {{
+                    api.providerManifests[api.players[player_id].provider]
+                      ?.name ||
+                    api.providers[api.players[player_id].provider]?.name
+                  }}
+                </template>
+                <template v-else>
+                  <!-- This should not happen -->
+                  <v-icon class="streamdetails-icon"
+                    >mdi-alert-circle-outline</v-icon
+                  >
+                  Player not found
+                </template>
               </div>
               <!-- Player -->
               <div v-if="streamDetails.dsp" class="streamdetails-item">
-                <v-icon class="streamdetails-icon">mdi-speaker</v-icon>
-                {{ api.players[player_id].name }}
+                <template v-if="api.players[player_id]">
+                  <v-icon class="streamdetails-icon">mdi-speaker</v-icon>
+                  {{ api.players[player_id].name }}
+                </template>
+                <template v-else>
+                  <!-- This should not happen -->
+                  <v-icon class="streamdetails-icon"
+                    >mdi-alert-circle-outline</v-icon
+                  >
+                  {{ player_id }}
+                </template>
               </div>
             </template>
           </div>
