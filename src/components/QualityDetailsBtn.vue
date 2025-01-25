@@ -293,6 +293,85 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.M4A) return iconM4a;
   return iconFallback;
 };
+
+enum QualityTier {
+  LOW = 0,
+  GOOD = 1,
+  HIRES = 3,
+}
+
+const inputQualityTier = computed(() => {
+  const sd = streamDetails.value;
+  if (!sd) return QualityTier.LOW;
+
+  if (sd.audio_format.bit_depth > 16 || sd.audio_format.sample_rate > 48000) {
+    return QualityTier.HIRES;
+  } else if (
+    [
+      ContentType.FLAC,
+      ContentType.ALAC,
+      ContentType.WAV,
+      ContentType.AIFF,
+      ContentType.PCM_S16LE,
+      ContentType.PCM_S24LE,
+      ContentType.PCM_S32LE,
+      ContentType.PCM_F32LE,
+      ContentType.PCM_F64LE,
+      ContentType.DSF,
+      // FIXME: this and ContentType.is_lossless (in server repo) assumes that wavpack is lossless,
+      // and m4a/m4b is lossy. This is not always true.
+      ContentType.WAVPACK,
+    ].includes(sd.audio_format.content_type)
+  ) {
+    return QualityTier.GOOD;
+  } else {
+    return QualityTier.LOW;
+  }
+});
+const outputQualityTiers = computed(() => {
+  const tiers: Record<string, QualityTier> = {};
+  if (!streamDetails.value?.dsp) {
+    return tiers;
+  }
+  for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
+    // TODO: finish
+    tiers[player_id] = QualityTier.HIRES;
+  }
+  return tiers;
+});
+
+const qualityTierToColor = function (tier: QualityTier) {
+  switch (tier) {
+    case QualityTier.LOW:
+      return "orange";
+    case QualityTier.GOOD:
+      return "lightgreen";
+    case QualityTier.HIRES:
+      return "cyan";
+  }
+};
+
+const combinedOutputQualityTiers = computed(() => {
+  // like outputQualityTiers, but limited by the input quality
+  const tiers: Record<string, QualityTier> = {};
+  if (!streamDetails.value?.dsp) {
+    return tiers;
+  }
+  const inputTier = inputQualityTier.value;
+  for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
+    // Output quality can never be higher than input quality
+    tiers[player_id] = Math.min(outputQualityTiers.value[player_id], inputTier);
+  }
+  return tiers;
+});
+
+const minOutputQualityTier = computed(() => {
+  return Math.min(...Object.values(combinedOutputQualityTiers.value));
+});
+
+const maxOutputQualityTier = computed(() => {
+  return Math.max(...Object.values(combinedOutputQualityTiers.value));
+});
 </script>
 
 <script lang="ts">
