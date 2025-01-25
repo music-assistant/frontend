@@ -19,8 +19,20 @@
         :ripple="false"
         v-bind="props"
       >
-        <div class="d-flex justify-center" style="width: 100%">
-          {{ streamDetails.audio_format.content_type.toUpperCase() }}
+        <div
+          class="quality-tier-dot"
+          :style="{
+            backgroundColor: qualityTierToColor(maxOutputQualityTier),
+          }"
+        ></div>
+        <div v-if="minOutputQualityTier == QualityTier.LOW">
+          LQ
+        </div>
+        <div v-else-if="minOutputQualityTier == QualityTier.GOOD">
+          HQ
+        </div>
+        <div v-else-if="minOutputQualityTier == QualityTier.HIRES">
+          HR
         </div>
       </v-chip>
     </template>
@@ -430,14 +442,11 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 
 .mediadetails-content-type-btn {
   height: 25px !important;
-  width: 50px !important;
-  padding: 5px !important;
+  padding: 7px !important;
   font-weight: 500;
   font-size: 10px !important;
   letter-spacing: 0.1em;
   border-radius: 2px;
-  margin-left: 5px;
-  flex-flow: column;
   margin: 0px;
 }
 
