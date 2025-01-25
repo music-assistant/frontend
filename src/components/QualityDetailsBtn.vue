@@ -110,7 +110,13 @@
             <div class="d-flex">
               <div
                 class="streamdetails-separator"
-                style="width: 58px; margin-right: 10px"
+                style="width: 40px; margin-right: 10px"
+              ></div>
+              <div
+                class="quality-tier-dot"
+                :style="{
+                  backgroundColor: qualityTierToColor(inputQualityTier),
+                }"
               ></div>
               Input
               <div
@@ -159,7 +165,15 @@
               <div class="d-flex">
                 <div
                   class="streamdetails-separator"
-                  style="width: 58px; margin-right: 10px"
+                  style="width: 40px; margin-right: 10px"
+                ></div>
+                <div
+                  class="quality-tier-dot"
+                  :style="{
+                    backgroundColor: qualityTierToColor(
+                      outputQualityTiers[player_id],
+                    ),
+                  }"
                 ></div>
                 {{ api.players[player_id]?.name || "Output" }}
                 <div
@@ -654,5 +668,13 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   width: 10px;
   background-color: rgb(var(--v-theme-secondary));
   border-radius: 50%;
+}
+
+.quality-tier-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  margin: auto;
+  margin-right: 10px;
 }
 </style>
