@@ -208,7 +208,7 @@
                 class="streamdetails-item"
               >
                 <img class="streamdetails-icon" src="@/assets/DSP.png" />
-                {{ $t("settings.dsp.types." + filter.type) }}
+                {{ dspFilterText(filter) }}
               </div>
               <!-- Player Provider -->
               <div v-if="streamDetails.dsp" class="streamdetails-item">
@@ -265,6 +265,8 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   ContentType,
+  DSPFilter,
+  DSPFilterType,
   DSPState,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -398,6 +400,18 @@ const minOutputQualityTier = computed(() => {
 const maxOutputQualityTier = computed(() => {
   return Math.max(...Object.values(combinedOutputQualityTiers.value));
 });
+
+const dspFilterText = function (filter: DSPFilter) {
+  let text = $t("settings.dsp.types." + filter.type)
+  if (filter.type === DSPFilterType.PARAMETRIC_EQ) {
+    const enabledBandsCount = filter.bands.filter((band) => band.enabled).length;
+    if (enabledBandsCount === 1)
+      text += ` (1 band)`;
+    else
+      text += ` (${enabledBandsCount} bands)`;
+  }
+  return text;
+};
 </script>
 
 <script lang="ts">
