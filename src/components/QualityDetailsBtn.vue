@@ -187,7 +187,7 @@
                     ),
                   }"
                 ></div>
-                {{ api.players[player_id]?.name || "Output" }}
+                Output
                 <div
                   class="streamdetails-separator flex-fill"
                   style="margin-left: 10px"
