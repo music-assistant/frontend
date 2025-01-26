@@ -142,6 +142,7 @@
                   margin-left: 10px;
                   margin-right: 5px;
                 "
+                :monochrome="true"
               />
               {{
                 api.providerManifests[streamDetails.provider]?.name ||
@@ -223,6 +224,7 @@
                       margin-left: 10px;
                       margin-right: 5px;
                     "
+                    :monochrome="true"
                   />
                   {{ api.players[player_id].name }}
                 </template>
