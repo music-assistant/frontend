@@ -71,6 +71,7 @@ export enum DSPState {
 // even when the DSP state is disabled. For example,
 // output_limiter can remain true while the DSP is disabled.
 // All filters in the list are guaranteed to be enabled.
+// output_format is the format that will be sent to the output device (if known).
 export interface DSPDetails {
   state: DSPState;
   is_leader: boolean;
@@ -78,6 +79,7 @@ export interface DSPDetails {
   filters: DSPFilter[];
   output_gain: number;
   output_limiter: boolean;
+  output_format?: AudioFormat;
 }
 
 /// enums
