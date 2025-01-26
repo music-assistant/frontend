@@ -760,6 +760,8 @@ export interface ProviderManifest {
   icon_svg?: string;
   // icon_svg_dark: optional separate dark svg icon (full xml string)
   icon_svg_dark?: string;
+  // icon_svg_dark: optional separate monochrome svg icon (full xml string)
+  icon_svg_monochrome?: string;
   // depends on: domain of another provider that is required for this provider
   depends_on?: string;
 }
