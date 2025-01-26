@@ -18,7 +18,8 @@
         providerDomain &&
         api.providerManifests[providerDomain].icon_svg_dark
       "
-      :style="`width: ${size}px;align-content: center;`"
+      class="d-flex align-center justify-center"
+      :style="`width: ${size}px;height: ${size}px;align-content: center;`"
       :title="api.providerManifests[providerDomain]!.name"
       v-html="api.providerManifests[providerDomain]!.icon_svg_dark"
     ></div>
@@ -27,6 +28,7 @@
       v-else-if="
         providerDomain && api.providerManifests[providerDomain].icon_svg
       "
+      class="d-flex align-center justify-center"
       :style="`width: ${size}px;height: ${size}px;align-content: center;`"
       :title="api.providerManifests[providerDomain]!.name"
       v-html="api.providerManifests[providerDomain]!.icon_svg"
