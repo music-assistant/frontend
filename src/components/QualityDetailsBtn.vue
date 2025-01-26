@@ -136,12 +136,8 @@
             <div class="streamdetails-item">
               <ProviderIcon
                 :domain="streamDetails.provider"
-                :size="35"
-                style="
-                  object-fit: contain;
-                  margin-left: 10px;
-                  margin-right: 5px;
-                "
+                :size="30"
+                class="streamdetails-icon"
                 :monochrome="true"
               />
               {{
@@ -218,12 +214,8 @@
                 <template v-if="api.players[player_id]">
                   <ProviderIcon
                     :domain="api.players[player_id].provider"
-                    :size="35"
-                    style="
-                      object-fit: contain;
-                      margin-left: 10px;
-                      margin-right: 5px;
-                    "
+                    :size="30"
+                    class="streamdetails-icon"
                     :monochrome="true"
                   />
                   {{ api.players[player_id].name }}
