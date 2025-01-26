@@ -152,7 +152,7 @@
             <!-- Fileinfo -->
             <div class="streamdetails-item">
               <img
-                class="streamdetails-icon"
+                class="streamdetails-icon invert-on-light-mode"
                 :src="
                   getContentTypeIcon(streamDetails.audio_format.content_type)
                 "
@@ -162,7 +162,7 @@
             </div>
             <!-- Volume Normalization -->
             <div v-if="loudness" class="streamdetails-item">
-              <img class="streamdetails-icon" src="@/assets/level.png" />
+              <img class="streamdetails-icon invert-on-light-mode" src="@/assets/level.png" />
               {{ loudness }}
             </div>
 
@@ -195,7 +195,7 @@
                 v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
                 class="streamdetails-item"
               >
-                <img class="streamdetails-icon" src="@/assets/DSP_off.png" />
+                <img class="streamdetails-icon invert-on-light-mode" src="@/assets/DSP_off.png" />
                 {{ $t("dsp_unsupported") }}
                 <v-tooltip location="top" :openOnClick="true">
                   <template #activator="{ props }">
@@ -210,13 +210,13 @@
                 :key="index"
                 class="streamdetails-item"
               >
-                <img class="streamdetails-icon" src="@/assets/DSP.png" />
+                <img class="streamdetails-icon invert-on-light-mode" src="@/assets/DSP.png" />
                 {{ dspFilterText(filter) }}
               </div>
               <!-- Player Output format -->
               <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="streamdetails-item">
                 <img
-                  class="streamdetails-icon"
+                  class="streamdetails-icon invert-on-light-mode"
                   :src="
                     getContentTypeIcon(streamDetails.dsp[player_id].output_format.content_type)
                   "
@@ -482,11 +482,11 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   object-fit: contain;
 }
 
-.v-theme--dark .streamdetails-icon {
+.invert-on-light-mode {
   filter: none;
 }
 
-.v-theme--light .streamdetails-icon:not(.v-icon) {
+.v-theme--light .invert-on-light-mode {
   filter: invert(100%);
 }
 
