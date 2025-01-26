@@ -11,6 +11,18 @@
       icon="mdi-bookshelf"
       :title="$t('item_in_library')"
     />
+    <!-- monochrome icon-->
+    <div
+      v-else-if="
+        props.monochrome &&
+        providerDomain &&
+        api.providerManifests[providerDomain].icon_svg_monochrome
+      "
+      class="d-flex align-center justify-center"
+      :style="`width: ${size}px;height: ${size}px;align-content: center;${$vuetify.theme.current.dark ? '' : 'filter: invert(1);'}`"
+      :title="api.providerManifests[providerDomain]!.name"
+      v-html="api.providerManifests[providerDomain]!.icon_svg_monochrome"
+    ></div>
     <!-- dark mode and dark svg icon-->
     <div
       v-else-if="
@@ -59,6 +71,7 @@ export interface Props {
   domain: string;
   size: number;
   dark?: boolean;
+  monochrome?: boolean;
 }
 const props = defineProps<Props>();
 
