@@ -74,6 +74,8 @@
                   :key="filter_index"
                   class="line-straight"
                 ></div>
+                <!-- Player Output format -->
+                <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="line-straight"></div>
                 <!-- Player -->
                 <div class="line-straight"></div>
               </template>
@@ -109,6 +111,8 @@
                 :key="filter_index"
                 class="line-with-dot"
               ></div>
+              <!-- Player Output format -->
+              <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="line-with-dot"></div>
               <!-- Player-->
               <div class="line-end"></div>
             </template>
@@ -208,6 +212,23 @@
               >
                 <img class="streamdetails-icon" src="@/assets/DSP.png" />
                 {{ dspFilterText(filter) }}
+              </div>
+              <!-- Player Output format -->
+              <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="streamdetails-item">
+                <img
+                  class="streamdetails-icon"
+                  :src="
+                    getContentTypeIcon(streamDetails.dsp[player_id].output_format.content_type)
+                  "
+                />
+                {{ streamDetails.dsp[player_id].output_format.sample_rate / 1000 }} kHz /
+                {{ streamDetails.dsp[player_id].output_format.bit_depth }} bits
+                <v-tooltip location="top" :openOnClick="true">
+                  <template #activator="{ props }">
+                  <v-icon class="ml-2" size="small" v-bind="props">mdi-information</v-icon>
+                  </template>
+                    Audio is converted into this format before being sent to the player.
+                </v-tooltip>
               </div>
               <!-- Player -->
               <div v-if="streamDetails.dsp" class="streamdetails-item">
