@@ -340,8 +340,14 @@ const outputQualityTiers = computed(() => {
     return tiers;
   }
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
-    // TODO: finish
-    tiers[player_id] = QualityTier.HIRES;
+    // TODO: we just assume that a player is hires
+    // reason for this is to show "HR" in cases the input file is hires
+    // at a later point we should get the actual output resolution sent to the player
+    let player_tier = QualityTier.HIRES;
+    if (dsp.output_format && dsp.output_format.content_type == ContentType.MP3) {
+      player_tier = QualityTier.LOW;
+    }
+    tiers[player_id] = player_tier;
   }
   return tiers;
 });
