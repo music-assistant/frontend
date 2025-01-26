@@ -74,9 +74,7 @@
                   :key="filter_index"
                   class="line-straight"
                 ></div>
-                <!-- Player Provider-->
-                <div class="line-straight"></div>
-                <!-- Player-->
+                <!-- Player -->
                 <div class="line-straight"></div>
               </template>
             </template>
@@ -111,8 +109,6 @@
                 :key="filter_index"
                 class="line-with-dot"
               ></div>
-              <!-- Player Provider-->
-              <div class="line-straight"></div>
               <!-- Player-->
               <div class="line-end"></div>
             </template>
@@ -216,7 +212,7 @@
                 <img class="streamdetails-icon" src="@/assets/DSP.png" />
                 {{ dspFilterText(filter) }}
               </div>
-              <!-- Player Provider -->
+              <!-- Player -->
               <div v-if="streamDetails.dsp" class="streamdetails-item">
                 <template v-if="api.players[player_id]">
                   <ProviderIcon
@@ -228,24 +224,6 @@
                       margin-right: 5px;
                     "
                   />
-                  {{
-                    api.providerManifests[api.players[player_id].provider]
-                      ?.name ||
-                    api.providers[api.players[player_id].provider]?.name
-                  }}
-                </template>
-                <template v-else>
-                  <!-- This should not happen -->
-                  <v-icon class="streamdetails-icon"
-                    >mdi-alert-circle-outline</v-icon
-                  >
-                  Player not found
-                </template>
-              </div>
-              <!-- Player -->
-              <div v-if="streamDetails.dsp" class="streamdetails-item">
-                <template v-if="api.players[player_id]">
-                  <v-icon class="streamdetails-icon">mdi-speaker</v-icon>
                   {{ api.players[player_id].name }}
                 </template>
                 <template v-else>
@@ -253,7 +231,7 @@
                   <v-icon class="streamdetails-icon"
                     >mdi-alert-circle-outline</v-icon
                   >
-                  {{ player_id }}
+                  Player not found
                 </template>
               </div>
             </template>
