@@ -199,7 +199,13 @@
                 class="streamdetails-item"
               >
                 <img class="streamdetails-icon" src="@/assets/DSP_off.png" />
-                {{ $t("dsp_disabled_by_unsupported_group") }}
+                {{ $t("dsp_unsupported") }}
+                <v-tooltip location="top" :openOnClick="true">
+                  <template #activator="{ props }">
+                  <v-icon class="ml-2" size="small" v-bind="props">mdi-information</v-icon>
+                  </template>
+                  {{ $t("dsp_disabled_by_unsupported_group") }}
+                </v-tooltip>
               </div>
               <div
                 v-for="(filter, index) in dsp.filters"
