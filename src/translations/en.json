@@ -606,8 +606,10 @@
     "loudness_measurement_album": "{0} LUFS (album)",
     "loudness_dynamic": "Dynamic volume normalization",
     "loudness_fixed": "Fixed gain correction",
-    "dsp_unsupported": "Not supported",
-    "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback",
+    "streamdetails": {
+        "dsp_unsupported": "Not supported",
+        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback"
+    },
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
     "all_players": "All players",
