@@ -361,11 +361,13 @@ const outputQualityTiers = computed(() => {
     return tiers;
   }
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
-    // TODO: we just assume that a player is hires
-    // reason for this is to show "HR" in cases the input file is hires
-    // at a later point we should get the actual output resolution sent to the player
-    let player_tier = QualityTier.HIRES;
+    // Default to good/lossless
+    let player_tier = QualityTier.GOOD;
+    if (dsp.output_format && (dsp.output_format.bit_depth > 16 || dsp.output_format.sample_rate > 48000)) {
+      player_tier = QualityTier.HIRES;
+    }
     if (dsp.output_format && dsp.output_format.content_type == ContentType.MP3) {
+      // MP3 is always low quality
       player_tier = QualityTier.LOW;
     }
     tiers[player_id] = player_tier;
