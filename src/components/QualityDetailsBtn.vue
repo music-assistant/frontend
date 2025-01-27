@@ -180,7 +180,7 @@
                   class="quality-tier-dot"
                   :style="{
                     backgroundColor: qualityTierToColor(
-                      outputQualityTiers[player_id],
+                      combinedOutputQualityTiers[player_id],
                     ),
                   }"
                 ></div>
