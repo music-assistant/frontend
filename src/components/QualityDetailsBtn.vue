@@ -227,7 +227,7 @@
                   <template #activator="{ props }">
                   <v-icon class="ml-2" size="small" v-bind="props">mdi-information</v-icon>
                   </template>
-                    Audio is converted into this format before being sent to the player.
+                    Audio is converted into the '{{ streamDetails.dsp[player_id].output_format.content_type }}' format before being sent to the player.
                 </v-tooltip>
               </div>
               <!-- Player -->
