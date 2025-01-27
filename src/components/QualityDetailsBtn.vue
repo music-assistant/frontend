@@ -312,6 +312,15 @@ const dsp_length = computed(() => {
     ? Object.keys(streamDetails.value.dsp).length
     : 0;
 });
+const isPcm = function(contentType: ContentType) {
+  return [
+    ContentType.PCM_S16LE,
+    ContentType.PCM_S24LE,
+    ContentType.PCM_S32LE,
+    ContentType.PCM_F32LE,
+    ContentType.PCM_F64LE,
+  ].includes(contentType);
+};
 const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;
   if (contentType == ContentType.FLAC) return iconFlac;
@@ -319,6 +328,7 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.MPEG) return iconMp3;
   if (contentType == ContentType.OGG) return iconOgg;
   if (contentType == ContentType.M4A) return iconM4a;
+  if (isPcm(contentType)) return iconPcm;
   return iconFallback;
 };
 
@@ -454,6 +464,7 @@ export const iconOgg = new URL("@/assets/ogg.png", import.meta.url).href;
 export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
 export const iconM4a = new URL("@/assets/m4a.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
+export const iconPcm = new URL("@/assets/pcm.svg", import.meta.url).href;
 
 export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)
   .href;
