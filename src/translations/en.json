@@ -612,7 +612,7 @@
         "output_format_info": "Audio is converted into the '{0}' format before being sent to the player.",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
-        "dsp_unsupported": "Not supported",
+        "dsp_unsupported": "DSP not supported",
         "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback"
     },
     "dsp_active": "Active",
