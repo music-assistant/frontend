@@ -118,15 +118,16 @@
     <!-- append chip(s): quality -->
     <template #append>
       <!-- format -->
-      <div 
-      class="pl-4"
+      <div
         v-if="
           streamDetails?.audio_format.content_type &&
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
-        ">
-      <QualityDetailsBtn></QualityDetailsBtn>
-        </div>
+        "
+        class="pl-4"
+      >
+        <QualityDetailsBtn />
+      </div>
     </template>
     <!-- subtitle -->
     <template #subtitle>
@@ -260,7 +261,9 @@ import {
   truncateString,
 } from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
-import QualityDetailsBtn, { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
+import QualityDetailsBtn, {
+  imgCoverDark,
+} from "@/components/QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import MarqueeText from "@/components/MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";

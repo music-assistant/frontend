@@ -25,15 +25,9 @@
             backgroundColor: qualityTierToColor(maxOutputQualityTier),
           }"
         ></div>
-        <div v-if="maxOutputQualityTier == QualityTier.LOW">
-          LQ
-        </div>
-        <div v-else-if="maxOutputQualityTier == QualityTier.GOOD">
-          HQ
-        </div>
-        <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">
-          HR
-        </div>
+        <div v-if="maxOutputQualityTier == QualityTier.LOW">LQ</div>
+        <div v-else-if="maxOutputQualityTier == QualityTier.GOOD">HQ</div>
+        <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">HR</div>
       </v-chip>
     </template>
     <v-card class="mx-auto" width="350">
@@ -75,7 +69,13 @@
                   class="line-straight"
                 ></div>
                 <!-- Player Output format -->
-                <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="line-straight"></div>
+                <div
+                  v-if="
+                    streamDetails.dsp &&
+                    streamDetails.dsp[player_id].output_format
+                  "
+                  class="line-straight"
+                ></div>
                 <!-- Player -->
                 <div class="line-straight"></div>
               </template>
@@ -112,8 +112,21 @@
                 class="line-with-dot"
               ></div>
               <!-- Player Output format -->
-              <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format && hasUnmodifiedSampleRate[player_id]" class="line-straight"></div>
-              <div v-else-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="line-with-dot"></div>
+              <div
+                v-if="
+                  streamDetails.dsp &&
+                  streamDetails.dsp[player_id].output_format &&
+                  hasUnmodifiedSampleRate[player_id]
+                "
+                class="line-straight"
+              ></div>
+              <div
+                v-else-if="
+                  streamDetails.dsp &&
+                  streamDetails.dsp[player_id].output_format
+                "
+                class="line-with-dot"
+              ></div>
               <!-- Player-->
               <div class="line-end"></div>
             </template>
@@ -163,7 +176,10 @@
             </div>
             <!-- Volume Normalization -->
             <div v-if="loudness" class="streamdetails-item">
-              <img class="streamdetails-icon invert-on-light-mode" src="@/assets/level.png" />
+              <img
+                class="streamdetails-icon invert-on-light-mode"
+                src="@/assets/level.png"
+              />
               {{ loudness }}
             </div>
 
@@ -196,11 +212,16 @@
                 v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
                 class="streamdetails-item"
               >
-                <img class="streamdetails-icon invert-on-dark-mode" src="@/assets/dsp-disabled.svg" />
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp-disabled.svg"
+                />
                 {{ $t("streamdetails.dsp_unsupported") }}
-                <v-tooltip location="top" :openOnClick="true">
+                <v-tooltip location="top" :open-on-click="true">
                   <template #activator="{ props }">
-                  <v-icon class="ml-2" size="small" v-bind="props">mdi-information</v-icon>
+                    <v-icon class="ml-2" size="small" v-bind="props"
+                      >mdi-information</v-icon
+                    >
                   </template>
                   {{ $t("streamdetails.dsp_disabled_by_unsupported_group") }}
                 </v-tooltip>
@@ -211,24 +232,44 @@
                 :key="index"
                 class="streamdetails-item"
               >
-                <img class="streamdetails-icon invert-on-dark-mode" src="@/assets/dsp.svg" />
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
                 {{ dspFilterText(filter) }}
               </div>
               <!-- Player Output format -->
-              <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="streamdetails-item">
+              <div
+                v-if="
+                  streamDetails.dsp &&
+                  streamDetails.dsp[player_id].output_format
+                "
+                class="streamdetails-item"
+              >
                 <img
                   class="streamdetails-icon invert-on-light-mode"
                   :src="
-                    getContentTypeIcon(streamDetails.dsp[player_id].output_format.content_type)
+                    getContentTypeIcon(
+                      streamDetails.dsp[player_id].output_format.content_type,
+                    )
                   "
                 />
-                {{ streamDetails.dsp[player_id].output_format.sample_rate / 1000 }} kHz /
+                {{
+                  streamDetails.dsp[player_id].output_format.sample_rate / 1000
+                }}
+                kHz /
                 {{ streamDetails.dsp[player_id].output_format.bit_depth }} bits
-                <v-tooltip location="top" :openOnClick="true">
+                <v-tooltip location="top" :open-on-click="true">
                   <template #activator="{ props }">
-                  <v-icon class="ml-2" size="small" v-bind="props">mdi-information</v-icon>
+                    <v-icon class="ml-2" size="small" v-bind="props"
+                      >mdi-information</v-icon
+                    >
                   </template>
-                    {{ $t("streamdetails.output_format_info", [streamDetails.dsp[player_id].output_format.content_type]) }}
+                  {{
+                    $t("streamdetails.output_format_info", [
+                      streamDetails.dsp[player_id].output_format.content_type,
+                    ])
+                  }}
                 </v-tooltip>
               </div>
               <!-- Player -->
@@ -312,7 +353,7 @@ const dsp_length = computed(() => {
     ? Object.keys(streamDetails.value.dsp).length
     : 0;
 });
-const isPcm = function(contentType: ContentType) {
+const isPcm = function (contentType: ContentType) {
   return [
     ContentType.PCM_S16LE,
     ContentType.PCM_S24LE,
@@ -374,10 +415,17 @@ const outputQualityTiers = computed(() => {
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
     // Default to good/lossless
     let player_tier = QualityTier.GOOD;
-    if (dsp.output_format && (dsp.output_format.bit_depth > 16 || dsp.output_format.sample_rate > 48000)) {
+    if (
+      dsp.output_format &&
+      (dsp.output_format.bit_depth > 16 ||
+        dsp.output_format.sample_rate > 48000)
+    ) {
       player_tier = QualityTier.HIRES;
     }
-    if (dsp.output_format && dsp.output_format.content_type == ContentType.MP3) {
+    if (
+      dsp.output_format &&
+      dsp.output_format.content_type == ContentType.MP3
+    ) {
       // MP3 is always low quality
       player_tier = QualityTier.LOW;
     }
@@ -412,7 +460,7 @@ const combinedOutputQualityTiers = computed(() => {
 });
 
 const hasUnmodifiedSampleRate = computed(() => {
-  const tiers: Record<string, Boolean> = {};
+  const tiers: Record<string, boolean> = {};
   if (!streamDetails.value?.dsp) {
     return tiers;
   }
@@ -420,8 +468,7 @@ const hasUnmodifiedSampleRate = computed(() => {
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
     if (!dsp.output_format) {
       tiers[player_id] = true;
-    }
-    else if (dsp.output_format.content_type == ContentType.MP3) {
+    } else if (dsp.output_format.content_type == ContentType.MP3) {
       tiers[player_id] = false;
     } else if (dsp.output_format.sample_rate != sample_rate) {
       // We ignore bitrate changes, since we already convert to 32bit internally
@@ -442,13 +489,14 @@ const maxOutputQualityTier = computed(() => {
 });
 
 const dspFilterText = function (filter: DSPFilter) {
-  let text = $t("settings.dsp.types." + filter.type)
+  let text = $t("settings.dsp.types." + filter.type);
   if (filter.type === DSPFilterType.PARAMETRIC_EQ) {
-    const enabledBandsCount = filter.bands.filter((band) => band.enabled).length;
+    const enabledBandsCount = filter.bands.filter(
+      (band) => band.enabled,
+    ).length;
     if (enabledBandsCount === 1)
       text += ` (${$t("streamdetails.eq_band_count_singular")})`;
-    else
-      text += ` (${$t("streamdetails.eq_band_count", [enabledBandsCount])})`;
+    else text += ` (${$t("streamdetails.eq_band_count", [enabledBandsCount])})`;
   }
   return text;
 };
