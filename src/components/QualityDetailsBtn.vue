@@ -196,7 +196,7 @@
                 v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
                 class="streamdetails-item"
               >
-                <img class="streamdetails-icon invert-on-light-mode" src="@/assets/DSP_off.png" />
+                <img class="streamdetails-icon invert-on-dark-mode" src="@/assets/dsp-disabled.svg" />
                 {{ $t("streamdetails.dsp_unsupported") }}
                 <v-tooltip location="top" :openOnClick="true">
                   <template #activator="{ props }">
@@ -211,7 +211,7 @@
                 :key="index"
                 class="streamdetails-item"
               >
-                <img class="streamdetails-icon invert-on-light-mode" src="@/assets/DSP.png" />
+                <img class="streamdetails-icon invert-on-dark-mode" src="@/assets/dsp.svg" />
                 {{ dspFilterText(filter) }}
               </div>
               <!-- Player Output format -->
@@ -512,6 +512,14 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 }
 
 .v-theme--light .invert-on-light-mode {
+  filter: invert(100%);
+}
+
+.invert-on-dark-mode {
+  filter: none;
+}
+
+.v-theme--dark .invert-on-dark-mode {
   filter: invert(100%);
 }
 
