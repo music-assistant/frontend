@@ -131,7 +131,7 @@
                   backgroundColor: qualityTierToColor(inputQualityTier),
                 }"
               ></div>
-              Input
+              {{ $t("streamdetails.input_header") }}
               <div
                 class="streamdetails-separator flex-fill"
                 style="margin-left: 10px"
@@ -185,7 +185,7 @@
                     ),
                   }"
                 ></div>
-                Output
+                {{ $t("streamdetails.output_header") }}
                 <div
                   class="streamdetails-separator flex-fill"
                   style="margin-left: 10px"
@@ -228,7 +228,7 @@
                   <template #activator="{ props }">
                   <v-icon class="ml-2" size="small" v-bind="props">mdi-information</v-icon>
                   </template>
-                    Audio is converted into the '{{ streamDetails.dsp[player_id].output_format.content_type }}' format before being sent to the player.
+                    {{ $t("streamdetails.output_format_info", [streamDetails.dsp[player_id].output_format.content_type]) }}
                 </v-tooltip>
               </div>
               <!-- Player -->
@@ -436,9 +436,9 @@ const dspFilterText = function (filter: DSPFilter) {
   if (filter.type === DSPFilterType.PARAMETRIC_EQ) {
     const enabledBandsCount = filter.bands.filter((band) => band.enabled).length;
     if (enabledBandsCount === 1)
-      text += ` (1 band)`;
+      text += ` (${$t("streamdetails.eq_band_count_singular")})`;
     else
-      text += ` (${enabledBandsCount} bands)`;
+      text += ` (${$t("streamdetails.eq_band_count", [enabledBandsCount])})`;
   }
   return text;
 };
