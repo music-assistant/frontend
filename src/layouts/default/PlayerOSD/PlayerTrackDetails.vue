@@ -118,31 +118,15 @@
     <!-- append chip(s): quality -->
     <template #append>
       <!-- format -->
-      <v-chip
+      <div 
+      class="pl-4"
         v-if="
           streamDetails?.audio_format.content_type &&
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
-        "
-        :disabled="
-          !store.activePlayerQueue ||
-          !store.activePlayerQueue?.active ||
-          store.activePlayerQueue?.items == 0
-        "
-        class="player-track-content-type"
-        :style="
-          $vuetify.theme.current.dark
-            ? 'color: #000; background: #fff; margin-left: 15px;'
-            : 'color: #fff; background: #000; margin-left: 15px;'
-        "
-        label
-        :ripple="false"
-        v-bind="props"
-      >
-        <div class="d-flex justify-center" style="width: 100%">
-          {{ streamDetails.audio_format.content_type.toUpperCase() }}
+        ">
+      <QualityDetailsBtn></QualityDetailsBtn>
         </div>
-      </v-chip>
     </template>
     <!-- subtitle -->
     <template #subtitle>
@@ -276,7 +260,7 @@ import {
   truncateString,
 } from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
-import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
+import QualityDetailsBtn, { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import MarqueeText from "@/components/MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
