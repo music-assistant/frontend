@@ -25,13 +25,13 @@
             backgroundColor: qualityTierToColor(maxOutputQualityTier),
           }"
         ></div>
-        <div v-if="minOutputQualityTier == QualityTier.LOW">
+        <div v-if="maxOutputQualityTier == QualityTier.LOW">
           LQ
         </div>
-        <div v-else-if="minOutputQualityTier == QualityTier.GOOD">
+        <div v-else-if="maxOutputQualityTier == QualityTier.GOOD">
           HQ
         </div>
-        <div v-else-if="minOutputQualityTier == QualityTier.HIRES">
+        <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">
           HR
         </div>
       </v-chip>
