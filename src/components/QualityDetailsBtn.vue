@@ -112,7 +112,8 @@
                 class="line-with-dot"
               ></div>
               <!-- Player Output format -->
-              <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="line-with-dot"></div>
+              <div v-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format && hasUnmodifiedSampleRate[player_id]" class="line-straight"></div>
+              <div v-else-if="streamDetails.dsp && streamDetails.dsp[player_id].output_format" class="line-with-dot"></div>
               <!-- Player-->
               <div class="line-end"></div>
             </template>
@@ -396,6 +397,28 @@ const combinedOutputQualityTiers = computed(() => {
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
     // Output quality can never be higher than input quality
     tiers[player_id] = Math.min(outputQualityTiers.value[player_id], inputTier);
+  }
+  return tiers;
+});
+
+const hasUnmodifiedSampleRate = computed(() => {
+  const tiers: Record<string, Boolean> = {};
+  if (!streamDetails.value?.dsp) {
+    return tiers;
+  }
+  const sample_rate = streamDetails.value.audio_format.sample_rate;
+  for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
+    if (!dsp.output_format) {
+      tiers[player_id] = true;
+    }
+    else if (dsp.output_format.content_type == ContentType.MP3) {
+      tiers[player_id] = false;
+    } else if (dsp.output_format.sample_rate != sample_rate) {
+      // We ignore bitrate changes, since we already convert to 32bit internally
+      tiers[player_id] = false;
+    } else {
+      tiers[player_id] = true;
+    }
   }
   return tiers;
 });
