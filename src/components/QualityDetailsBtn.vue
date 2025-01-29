@@ -184,7 +184,8 @@
               <img
                 class="streamdetails-icon invert-on-light-mode"
                 :src="
-                  getContentTypeIcon(streamDetails.audio_format.content_type)
+                  getContentTypeIcon(streamDetails.audio_format.content_type) ||
+                  iconFallback
                 "
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
@@ -309,7 +310,7 @@
                   :src="
                     getContentTypeIcon(
                       streamDetails.dsp[player_id].output_format.content_type,
-                    )
+                    ) || iconFallback
                   "
                 />
                 {{
@@ -428,7 +429,7 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.OGG) return iconOgg;
   if (contentType == ContentType.M4A) return iconM4a;
   if (isPcm(contentType)) return iconPcm;
-  return iconFallback;
+  return null;
 };
 
 enum QualityTier {
