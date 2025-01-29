@@ -57,6 +57,11 @@
               ></div>
               <div v-else-if="index > 0" class="line-branch-split-left"></div>
               <template v-if="index != dsp_length - 1">
+                <!-- Input gain -->
+                <div
+                  v-if="dsp.input_gain && dsp.input_gain != 0"
+                  class="line-straight"
+                ></div>
                 <!-- DSP -->
                 <div
                   v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
@@ -66,6 +71,11 @@
                   v-for="(filter, filter_index) in dsp.filters"
                   v-else
                   :key="filter_index"
+                  class="line-straight"
+                ></div>
+                <!-- Output gain -->
+                <div
+                  v-if="dsp.output_gain && dsp.output_gain != 0"
                   class="line-straight"
                 ></div>
                 <!-- Player Output format -->
@@ -100,6 +110,11 @@
             >
               <!-- rejoin the original stream -->
               <div v-if="index > 0" class="line-branch-rejoin-right"></div>
+              <!-- Input gain -->
+              <div
+                v-if="dsp.input_gain && dsp.input_gain != 0"
+                class="line-with-dot"
+              ></div>
               <!-- DSP -->
               <div
                 v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
@@ -109,6 +124,11 @@
                 v-for="(filter, filter_index) in dsp.filters"
                 v-else
                 :key="filter_index"
+                class="line-with-dot"
+              ></div>
+              <!-- Output gain -->
+              <div
+                v-if="dsp.output_gain && dsp.output_gain != 0"
                 class="line-with-dot"
               ></div>
               <!-- Player Output format -->
@@ -199,6 +219,19 @@
                   style="margin-left: 10px"
                 ></div>
               </div>
+              <!-- Input gain -->
+              <div
+                v-if="dsp.input_gain && dsp.input_gain != 0"
+                class="streamdetails-item"
+              >
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
+                {{
+                  $t("streamdetails.input_gain", [dsp.input_gain.toFixed(1)])
+                }}
+              </div>
               <!-- DSP -->
               <div
                 v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
@@ -229,6 +262,19 @@
                   src="@/assets/dsp.svg"
                 />
                 {{ dspFilterText(filter) }}
+              </div>
+              <!-- Output gain -->
+              <div
+                v-if="dsp.output_gain && dsp.output_gain != 0"
+                class="streamdetails-item"
+              >
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
+                {{
+                  $t("streamdetails.output_gain", [dsp.input_gain.toFixed(1)])
+                }}
               </div>
               <!-- Player Output format -->
               <div
