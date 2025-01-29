@@ -617,7 +617,15 @@
         "output_limiter": "Output Limiter",
         "output_limiter_info": "Automatically reduces very loud sounds to prevent distortion and protect your speakers",
         "dsp_unsupported": "DSP not supported",
-        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback"
+        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback",
+        "file_info": {
+            "container": "Container: {0}",
+            "codec": "Codec: {0}",
+            "bit_rate": "Bit rate: {0} kbps",
+            "sample_rate": "Sample rate: {0} kHz",
+            "channels": "Channels: {0}",
+            "bit_depth": "Bit depth: {0}"
+        }
     },
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",

@@ -187,6 +187,48 @@
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
+              <v-tooltip location="top" :open-on-click="true">
+                <template #activator="{ props }">
+                  <v-icon class="ml-2" size="small" v-bind="props"
+                    >mdi-information</v-icon
+                  >
+                </template>
+                {{
+                  $t("streamdetails.file_info.container", [
+                    streamDetails.audio_format.content_type,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.codec", [
+                    streamDetails.audio_format.codec_type,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.bit_depth", [
+                    streamDetails.audio_format.bit_depth,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.sample_rate", [
+                    (streamDetails.audio_format.sample_rate / 1000).toFixed(1),
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.channels", [
+                    streamDetails.audio_format.channels,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.bit_rate", [
+                    streamDetails.audio_format.bit_rate.toFixed(0),
+                  ])
+                }}
+              </v-tooltip>
             </div>
             <!-- Volume Normalization -->
             <div v-if="loudness" class="streamdetails-item">
