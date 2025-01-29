@@ -513,9 +513,15 @@ const inputQualityTier = computed(() => {
   const sd = streamDetails.value;
   if (!sd) return QualityTier.LOW;
 
+  let content_type = sd.audio_format.content_type;
+  if (sd.audio_format.codec_type !== ContentType.UNKNOWN) {
+    // Prefer making this decision based on codec type
+    content_type = sd.audio_format.codec_type;
+  }
+
   if (sd.audio_format.bit_depth > 16 || sd.audio_format.sample_rate > 48000) {
     return QualityTier.HIRES;
-  } else if (isContentTypeLossless(sd.audio_format.content_type)) {
+  } else if (isContentTypeLossless(content_type)) {
     return QualityTier.GOOD;
   } else {
     return QualityTier.LOW;
