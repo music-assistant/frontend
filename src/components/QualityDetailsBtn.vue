@@ -183,10 +183,7 @@
             <div class="streamdetails-item">
               <img
                 class="streamdetails-icon invert-on-light-mode"
-                :src="
-                  getContentTypeIcon(streamDetails.audio_format.content_type) ||
-                  iconFallback
-                "
+                :src="inputFileIcon"
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
@@ -431,6 +428,19 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (isPcm(contentType)) return iconPcm;
   return null;
 };
+const inputFileIcon = computed(() => {
+  if (!streamDetails.value) return iconFallback;
+  let icon = getContentTypeIcon(streamDetails.value.audio_format.codec_type);
+  if (icon === null) {
+    // Codec has no icon, try to fall back to container icon
+    icon = getContentTypeIcon(streamDetails.value.audio_format.content_type);
+  }
+  if (icon === null) {
+    // No icon found, fall back to generic icon
+    icon = iconFallback;
+  }
+  return icon;
+});
 
 enum QualityTier {
   LOW = 0,
