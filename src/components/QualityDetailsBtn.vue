@@ -498,19 +498,18 @@ const inputQualityTier = computed(() => {
     return QualityTier.HIRES;
   } else if (
     [
-      ContentType.FLAC,
-      ContentType.ALAC,
-      ContentType.WAV,
-      ContentType.AIFF,
-      ContentType.PCM_S16LE,
-      ContentType.PCM_S24LE,
-      ContentType.PCM_S32LE,
-      ContentType.PCM_F32LE,
-      ContentType.PCM_F64LE,
       ContentType.DSF,
-      // FIXME: this and ContentType.is_lossless (in server repo) assumes that wavpack is lossless,
-      // and m4a/m4b is lossy. This is not always true.
+      ContentType.FLAC,
+      ContentType.AIFF,
+      ContentType.WAV,
+      ContentType.ALAC,
       ContentType.WAVPACK,
+      ContentType.TAK,
+      ContentType.APE,
+      ContentType.TRUEHD,
+      ContentType.DSD_LSBF,
+      ContentType.DSD_MSBF,
+      ContentType.RA_144,
     ].includes(sd.audio_format.content_type)
   ) {
     return QualityTier.GOOD;
