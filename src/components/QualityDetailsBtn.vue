@@ -490,28 +490,32 @@ enum QualityTier {
   HIRES = 3,
 }
 
+const isContentTypeLossless = function (contentType: ContentType) {
+  return [
+    ContentType.DSF,
+    ContentType.FLAC,
+    ContentType.AIFF,
+    ContentType.WAV,
+    ContentType.ALAC,
+    ContentType.WAVPACK,
+    ContentType.TAK,
+    ContentType.APE,
+    ContentType.TRUEHD,
+    ContentType.DSD_LSBF,
+    ContentType.DSD_MSBF,
+    ContentType.DSD_LSBF_PLANAR,
+    ContentType.DSD_MSBF_PLANAR,
+    ContentType.RA_144,
+  ].includes(contentType);
+};
+
 const inputQualityTier = computed(() => {
   const sd = streamDetails.value;
   if (!sd) return QualityTier.LOW;
 
   if (sd.audio_format.bit_depth > 16 || sd.audio_format.sample_rate > 48000) {
     return QualityTier.HIRES;
-  } else if (
-    [
-      ContentType.DSF,
-      ContentType.FLAC,
-      ContentType.AIFF,
-      ContentType.WAV,
-      ContentType.ALAC,
-      ContentType.WAVPACK,
-      ContentType.TAK,
-      ContentType.APE,
-      ContentType.TRUEHD,
-      ContentType.DSD_LSBF,
-      ContentType.DSD_MSBF,
-      ContentType.RA_144,
-    ].includes(sd.audio_format.content_type)
-  ) {
+  } else if (isContentTypeLossless(sd.audio_format.content_type)) {
     return QualityTier.GOOD;
   } else {
     return QualityTier.LOW;
