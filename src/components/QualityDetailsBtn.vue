@@ -78,6 +78,8 @@
                   v-if="dsp.output_gain && dsp.output_gain != 0"
                   class="line-straight"
                 ></div>
+                <!-- Output limiter-->
+                <div v-if="dsp.output_limiter" class="line-straight"></div>
                 <!-- Player Output format -->
                 <div
                   v-if="
@@ -131,6 +133,8 @@
                 v-if="dsp.output_gain && dsp.output_gain != 0"
                 class="line-with-dot"
               ></div>
+              <!-- Output limiter-->
+              <div v-if="dsp.output_limiter" class="line-with-dot"></div>
               <!-- Player Output format -->
               <div
                 v-if="
@@ -275,6 +279,22 @@
                 {{
                   $t("streamdetails.output_gain", [dsp.input_gain.toFixed(1)])
                 }}
+              </div>
+              <!-- Output limiter-->
+              <div v-if="dsp.output_limiter" class="streamdetails-item">
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
+                {{ $t("streamdetails.output_limiter") }}
+                <v-tooltip location="top" :open-on-click="true">
+                  <template #activator="{ props }">
+                    <v-icon class="ml-2" size="small" v-bind="props"
+                      >mdi-information</v-icon
+                    >
+                  </template>
+                  {{ $t("streamdetails.output_limiter_info") }}
+                </v-tooltip>
               </div>
               <!-- Player Output format -->
               <div

@@ -614,6 +614,8 @@
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",
         "output_gain": "Output Gain ({0} dB)",
+        "output_limiter": "Output Limiter",
+        "output_limiter_info": "Automatically reduces very loud sounds to prevent distortion and protect your speakers",
         "dsp_unsupported": "DSP not supported",
         "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback"
     },
