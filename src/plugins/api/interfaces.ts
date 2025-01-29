@@ -597,6 +597,7 @@ export interface SearchResults {
 
 export interface AudioFormat {
   content_type: ContentType;
+  codec_type: ContentType;
   sample_rate: number;
   bit_depth: number;
   channels: number;
