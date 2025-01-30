@@ -515,7 +515,6 @@
         "paused": "paused",
         "playing": "playing"
     },
-    "stream_details": "Streamdetails",
     "sync_now": "Synchronize {0} now",
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
@@ -607,7 +606,27 @@
     "loudness_measurement_album": "{0} LUFS (album)",
     "loudness_dynamic": "Dynamic volume normalization",
     "loudness_fixed": "Fixed gain correction",
-    "dsp_disabled_by_unsupported_group": "Not supported for this group type",
+    "streamdetails": {
+        "input_header": "Input",
+        "output_header": "Output",
+        "output_format_info": "Audio is converted into the '{0}' format before being sent to the player.",
+        "eq_band_count": "{0} bands",
+        "eq_band_count_singular": "1 band",
+        "input_gain": "Input Gain ({0} dB)",
+        "output_gain": "Output Gain ({0} dB)",
+        "output_limiter": "Output Limiter",
+        "output_limiter_info": "Automatically reduces very loud sounds to prevent distortion and protect your speakers",
+        "dsp_unsupported": "DSP not supported",
+        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback",
+        "file_info": {
+            "container": "Container: {0}",
+            "codec": "Codec: {0}",
+            "bit_rate": "Bit rate: {0} kbps",
+            "sample_rate": "Sample rate: {0} kHz",
+            "channels": "Channels: {0}",
+            "bit_depth": "Bit depth: {0}"
+        }
+    },
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
     "all_players": "All players",

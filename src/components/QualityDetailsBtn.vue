@@ -4,6 +4,7 @@
     v-if="streamDetails"
     location="top center"
     :close-on-content-click="false"
+    scrim
   >
     <template #activator="{ props }">
       <v-chip
@@ -18,98 +19,378 @@
         :ripple="false"
         v-bind="props"
       >
-        <div class="d-flex justify-center" style="width: 100%">
-          {{ streamDetails.audio_format.content_type.toUpperCase() }}
-        </div>
+        <div
+          class="quality-tier-dot"
+          :style="{
+            backgroundColor: qualityTierToColor(maxOutputQualityTier),
+          }"
+        ></div>
+        <div v-if="maxOutputQualityTier == QualityTier.LOW">LQ</div>
+        <div v-else-if="maxOutputQualityTier == QualityTier.GOOD">HQ</div>
+        <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">HR</div>
       </v-chip>
     </template>
-    <v-card class="mx-auto" width="300">
+    <v-card class="mx-auto" width="350">
       <v-list style="overflow: hidden">
-        <v-list-item class="list-item list-item-main" :min-height="5">
-          <v-card-title>
-            {{ $t("stream_details") }}
-          </v-card-title>
-        </v-list-item>
-        <v-divider />
-        <div style="height: 50px; display: flex; align-items: center">
-          <ProviderIcon
-            :domain="streamDetails.provider"
-            :size="35"
-            style="object-fit: contain; margin-left: 10px; margin-right: 5px"
-          />
-          {{
-            api.providerManifests[streamDetails.provider]?.name ||
-            api.providers[streamDetails.provider]?.name
-          }}
-        </div>
+        <div class="d-flex ml-2 mr-2">
+          <!-- Second line showing audio stream shared by multiple players -->
+          <div v-if="dsp_length >= 2">
+            <!-- Input header -->
+            <div class="line-space-halve"></div>
+            <!-- Provider -->
+            <div class="line-space"></div>
+            <!-- Fileinfo -->
+            <div class="line-space"></div>
+            <!-- Volume Normalization -->
+            <div class="line-space"></div>
+            <!-- Branch if multiple players playing -->
+            <div class="line-branch-start-left"></div>
+            <!-- Player -->
+            <template
+              v-for="(dsp, player_id, index) in streamDetails.dsp"
+              :key="player_id"
+            >
+              <!-- rejoin the original stream -->
+              <div
+                v-if="index == dsp_length - 1"
+                class="line-branch-end-left"
+              ></div>
+              <div v-else-if="index > 0" class="line-branch-split-left"></div>
+              <template v-if="index != dsp_length - 1">
+                <!-- Input gain -->
+                <div
+                  v-if="dsp.input_gain && dsp.input_gain != 0"
+                  class="line-straight"
+                ></div>
+                <!-- DSP -->
+                <div
+                  v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+                  class="line-straight"
+                ></div>
+                <div
+                  v-for="(filter, filter_index) in dsp.filters"
+                  v-else
+                  :key="filter_index"
+                  class="line-straight"
+                ></div>
+                <!-- Output gain -->
+                <div
+                  v-if="dsp.output_gain && dsp.output_gain != 0"
+                  class="line-straight"
+                ></div>
+                <!-- Output limiter-->
+                <div v-if="dsp.output_limiter" class="line-straight"></div>
+                <!-- Player Output format -->
+                <div
+                  v-if="
+                    streamDetails.dsp &&
+                    streamDetails.dsp[player_id].output_format
+                  "
+                  class="line-straight"
+                ></div>
+                <!-- Player -->
+                <div class="line-straight"></div>
+              </template>
+            </template>
+          </div>
+          <div>
+            <!-- Input header -->
+            <div class="line-space-halve"></div>
+            <!-- Provider -->
+            <div class="line-start"></div>
+            <!-- Fileinfo -->
+            <div class="line-straight"></div>
+            <!-- Volume Normalization -->
+            <div class="line-with-dot"></div>
+            <!-- Branch if multiple players playing -->
+            <div v-if="dsp_length >= 2" class="line-branch-start-right"></div>
+            <div v-else class="line-straight-halve"></div>
+            <!-- Player -->
+            <template
+              v-for="(dsp, player_id, index) in streamDetails.dsp"
+              :key="player_id"
+            >
+              <!-- rejoin the original stream -->
+              <div v-if="index > 0" class="line-branch-rejoin-right"></div>
+              <!-- Input gain -->
+              <div
+                v-if="dsp.input_gain && dsp.input_gain != 0"
+                class="line-with-dot"
+              ></div>
+              <!-- DSP -->
+              <div
+                v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+                class="line-straight"
+              ></div>
+              <div
+                v-for="(filter, filter_index) in dsp.filters"
+                v-else
+                :key="filter_index"
+                class="line-with-dot"
+              ></div>
+              <!-- Output gain -->
+              <div
+                v-if="dsp.output_gain && dsp.output_gain != 0"
+                class="line-with-dot"
+              ></div>
+              <!-- Output limiter-->
+              <div v-if="dsp.output_limiter" class="line-with-dot"></div>
+              <!-- Player Output format -->
+              <div
+                v-if="
+                  streamDetails.dsp &&
+                  streamDetails.dsp[player_id].output_format
+                "
+                class="line-with-dot"
+              ></div>
+              <!-- Player-->
+              <div class="line-end"></div>
+            </template>
+          </div>
+          <div class="w-100">
+            <!-- Input header -->
+            <div class="d-flex">
+              <div
+                class="streamdetails-separator"
+                style="width: 40px; margin-right: 10px"
+              ></div>
+              <div
+                class="quality-tier-dot"
+                :style="{
+                  backgroundColor: qualityTierToColor(inputQualityTier),
+                }"
+              ></div>
+              {{ $t("streamdetails.input_header") }}
+              <div
+                class="streamdetails-separator flex-fill"
+                style="margin-left: 10px"
+              ></div>
+            </div>
+            <!-- Provider -->
+            <div class="streamdetails-item">
+              <ProviderIcon
+                :domain="streamDetails.provider"
+                :size="30"
+                class="streamdetails-icon"
+                :monochrome="true"
+              />
+              {{
+                api.providerManifests[streamDetails.provider]?.name ||
+                api.providers[streamDetails.provider]?.name
+              }}
+            </div>
+            <!-- Fileinfo -->
+            <div class="streamdetails-item">
+              <img
+                class="streamdetails-icon invert-on-light-mode"
+                :src="inputFileIcon"
+              />
+              {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
+              {{ streamDetails.audio_format.bit_depth }} bits
+              <v-tooltip location="top" :open-on-click="true">
+                <template #activator="{ props }">
+                  <v-icon class="ml-2" size="small" v-bind="props"
+                    >mdi-information</v-icon
+                  >
+                </template>
+                {{
+                  $t("streamdetails.file_info.container", [
+                    streamDetails.audio_format.content_type,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.codec", [
+                    streamDetails.audio_format.codec_type,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.bit_depth", [
+                    streamDetails.audio_format.bit_depth,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.sample_rate", [
+                    (streamDetails.audio_format.sample_rate / 1000).toFixed(1),
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.channels", [
+                    streamDetails.audio_format.channels,
+                  ])
+                }}
+                <br />
+                {{
+                  $t("streamdetails.file_info.bit_rate", [
+                    streamDetails.audio_format.bit_rate.toFixed(0),
+                  ])
+                }}
+              </v-tooltip>
+            </div>
+            <!-- Volume Normalization -->
+            <div v-if="loudness" class="streamdetails-item">
+              <img
+                class="streamdetails-icon invert-on-light-mode"
+                src="@/assets/level.png"
+              />
+              {{ loudness }}
+            </div>
 
-        <div style="height: 50px; display: flex; align-items: center">
-          <img
-            height="30"
-            width="50"
-            :src="getContentTypeIcon(streamDetails.audio_format.content_type)"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
-          {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
-          {{ streamDetails.audio_format.bit_depth }} bits
-        </div>
-
-        <div
-          v-if="loudness"
-          style="height: 50px; display: flex; align-items: center"
-        >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/level.png"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
-          {{ loudness }}
-        </div>
-
-        <!-- For now, a very simple DSP indicator -->
-        <div
-          v-if="dsp_state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
-          style="height: 50px; display: flex; align-items: center"
-        >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/DSP_off.png"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
-          {{ $t("dsp_disabled_by_unsupported_group") }}
-        </div>
-        <div
-          v-else-if="dsp_state == DSPState.ENABLED"
-          style="height: 50px; display: flex; align-items: center"
-        >
-          <img
-            height="30"
-            width="50"
-            contain
-            src="@/assets/DSP.png"
-            :style="
-              $vuetify.theme.current.dark
-                ? 'object-fit: contain;'
-                : 'object-fit: contain;filter: invert(100%);'
-            "
-          />
-          {{ $t("dsp_active") }}
+            <template
+              v-for="(dsp, player_id) in streamDetails.dsp"
+              :key="player_id"
+            >
+              <!-- Separator -->
+              <div class="d-flex">
+                <div
+                  class="streamdetails-separator"
+                  style="width: 40px; margin-right: 10px"
+                ></div>
+                <div
+                  class="quality-tier-dot"
+                  :style="{
+                    backgroundColor: qualityTierToColor(
+                      combinedOutputQualityTiers[player_id],
+                    ),
+                  }"
+                ></div>
+                {{ $t("streamdetails.output_header") }}
+                <div
+                  class="streamdetails-separator flex-fill"
+                  style="margin-left: 10px"
+                ></div>
+              </div>
+              <!-- Input gain -->
+              <div
+                v-if="dsp.input_gain && dsp.input_gain != 0"
+                class="streamdetails-item"
+              >
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
+                {{
+                  $t("streamdetails.input_gain", [dsp.input_gain.toFixed(1)])
+                }}
+              </div>
+              <!-- DSP -->
+              <div
+                v-if="dsp.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP"
+                class="streamdetails-item"
+              >
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp-disabled.svg"
+                />
+                {{ $t("streamdetails.dsp_unsupported") }}
+                <v-tooltip location="top" :open-on-click="true">
+                  <template #activator="{ props }">
+                    <v-icon class="ml-2" size="small" v-bind="props"
+                      >mdi-information</v-icon
+                    >
+                  </template>
+                  {{ $t("streamdetails.dsp_disabled_by_unsupported_group") }}
+                </v-tooltip>
+              </div>
+              <div
+                v-for="(filter, index) in dsp.filters"
+                v-else
+                :key="index"
+                class="streamdetails-item"
+              >
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
+                {{ dspFilterText(filter) }}
+              </div>
+              <!-- Output gain -->
+              <div
+                v-if="dsp.output_gain && dsp.output_gain != 0"
+                class="streamdetails-item"
+              >
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
+                {{
+                  $t("streamdetails.output_gain", [dsp.input_gain.toFixed(1)])
+                }}
+              </div>
+              <!-- Output limiter-->
+              <div v-if="dsp.output_limiter" class="streamdetails-item">
+                <img
+                  class="streamdetails-icon invert-on-dark-mode"
+                  src="@/assets/dsp.svg"
+                />
+                {{ $t("streamdetails.output_limiter") }}
+                <v-tooltip location="top" :open-on-click="true">
+                  <template #activator="{ props }">
+                    <v-icon class="ml-2" size="small" v-bind="props"
+                      >mdi-information</v-icon
+                    >
+                  </template>
+                  {{ $t("streamdetails.output_limiter_info") }}
+                </v-tooltip>
+              </div>
+              <!-- Player Output format -->
+              <div
+                v-if="
+                  streamDetails.dsp &&
+                  streamDetails.dsp[player_id].output_format
+                "
+                class="streamdetails-item"
+              >
+                <img
+                  class="streamdetails-icon invert-on-light-mode"
+                  :src="
+                    getContentTypeIcon(
+                      streamDetails.dsp[player_id].output_format.content_type,
+                    ) || iconFallback
+                  "
+                />
+                {{
+                  streamDetails.dsp[player_id].output_format.sample_rate / 1000
+                }}
+                kHz /
+                {{ streamDetails.dsp[player_id].output_format.bit_depth }} bits
+                <v-tooltip location="top" :open-on-click="true">
+                  <template #activator="{ props }">
+                    <v-icon class="ml-2" size="small" v-bind="props"
+                      >mdi-information</v-icon
+                    >
+                  </template>
+                  {{
+                    $t("streamdetails.output_format_info", [
+                      streamDetails.dsp[player_id].output_format.content_type,
+                    ])
+                  }}
+                </v-tooltip>
+              </div>
+              <!-- Player -->
+              <div v-if="streamDetails.dsp" class="streamdetails-item">
+                <template v-if="api.players[player_id]">
+                  <ProviderIcon
+                    :domain="api.players[player_id].provider"
+                    :size="30"
+                    class="streamdetails-icon"
+                    :monochrome="true"
+                  />
+                  {{ api.players[player_id].name }}
+                </template>
+                <template v-else>
+                  <!-- This should not happen -->
+                  <v-icon class="streamdetails-icon"
+                    >mdi-alert-circle-outline</v-icon
+                  >
+                  Player not found
+                </template>
+              </div>
+            </template>
+          </div>
         </div>
       </v-list>
     </v-card>
@@ -123,6 +404,8 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   ContentType,
+  DSPFilter,
+  DSPFilterType,
   DSPState,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -163,20 +446,20 @@ const loudness = computed(() => {
     return null;
   }
 });
-// This is tempoary until the details show the whole DSP pipeline
-const dsp_state = computed(() => {
-  const dsp = streamDetails.value?.dsp;
-  if (!dsp) return DSPState.DISABLED;
-  let at_least_one_working = Object.values(dsp).some(
-    (d) => d.state == DSPState.ENABLED,
-  );
-  let at_least_one_unsupported = Object.values(dsp).some(
-    (d) => d.state == DSPState.DISABLED_BY_UNSUPPORTED_GROUP,
-  );
-  if (at_least_one_unsupported) return DSPState.DISABLED_BY_UNSUPPORTED_GROUP;
-  else if (at_least_one_working) return DSPState.ENABLED;
-  else return DSPState.DISABLED;
+const dsp_length = computed(() => {
+  return streamDetails.value?.dsp
+    ? Object.keys(streamDetails.value.dsp).length
+    : 0;
 });
+const isPcm = function (contentType: ContentType) {
+  return [
+    ContentType.PCM_S16LE,
+    ContentType.PCM_S24LE,
+    ContentType.PCM_S32LE,
+    ContentType.PCM_F32LE,
+    ContentType.PCM_F64LE,
+  ].includes(contentType);
+};
 const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.AAC) return iconAac;
   if (contentType == ContentType.FLAC) return iconFlac;
@@ -184,7 +467,137 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.MPEG) return iconMp3;
   if (contentType == ContentType.OGG) return iconOgg;
   if (contentType == ContentType.M4A) return iconM4a;
-  return iconFallback;
+  if (isPcm(contentType)) return iconPcm;
+  return null;
+};
+const inputFileIcon = computed(() => {
+  if (!streamDetails.value) return iconFallback;
+  let icon = getContentTypeIcon(streamDetails.value.audio_format.codec_type);
+  if (icon === null) {
+    // Codec has no icon, try to fall back to container icon
+    icon = getContentTypeIcon(streamDetails.value.audio_format.content_type);
+  }
+  if (icon === null) {
+    // No icon found, fall back to generic icon
+    icon = iconFallback;
+  }
+  return icon;
+});
+
+enum QualityTier {
+  LOW = 0,
+  GOOD = 1,
+  HIRES = 3,
+}
+
+const isContentTypeLossless = function (contentType: ContentType) {
+  return [
+    ContentType.DSF,
+    ContentType.FLAC,
+    ContentType.AIFF,
+    ContentType.WAV,
+    ContentType.ALAC,
+    ContentType.WAVPACK,
+    ContentType.TAK,
+    ContentType.APE,
+    ContentType.TRUEHD,
+    ContentType.DSD_LSBF,
+    ContentType.DSD_MSBF,
+    ContentType.DSD_LSBF_PLANAR,
+    ContentType.DSD_MSBF_PLANAR,
+    ContentType.RA_144,
+  ].includes(contentType);
+};
+
+const inputQualityTier = computed(() => {
+  const sd = streamDetails.value;
+  if (!sd) return QualityTier.LOW;
+
+  let content_type = sd.audio_format.content_type;
+  if (sd.audio_format.codec_type !== ContentType.UNKNOWN) {
+    // Prefer making this decision based on codec type
+    content_type = sd.audio_format.codec_type;
+  }
+
+  if (sd.audio_format.bit_depth > 16 || sd.audio_format.sample_rate > 48000) {
+    return QualityTier.HIRES;
+  } else if (isContentTypeLossless(content_type)) {
+    return QualityTier.GOOD;
+  } else {
+    return QualityTier.LOW;
+  }
+});
+const outputQualityTiers = computed(() => {
+  const tiers: Record<string, QualityTier> = {};
+  if (!streamDetails.value?.dsp) {
+    return tiers;
+  }
+  for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
+    // Default to good/lossless
+    let player_tier = QualityTier.GOOD;
+    if (
+      dsp.output_format &&
+      (dsp.output_format.bit_depth > 16 ||
+        dsp.output_format.sample_rate > 48000)
+    ) {
+      player_tier = QualityTier.HIRES;
+    }
+    if (
+      dsp.output_format &&
+      dsp.output_format.content_type == ContentType.MP3
+    ) {
+      // MP3 is always low quality
+      player_tier = QualityTier.LOW;
+    }
+    tiers[player_id] = player_tier;
+  }
+  return tiers;
+});
+
+const qualityTierToColor = function (tier: QualityTier) {
+  switch (tier) {
+    case QualityTier.LOW:
+      return "orange";
+    case QualityTier.GOOD:
+      return "lightgreen";
+    case QualityTier.HIRES:
+      return "cyan";
+  }
+};
+
+const combinedOutputQualityTiers = computed(() => {
+  // like outputQualityTiers, but limited by the input quality
+  const tiers: Record<string, QualityTier> = {};
+  if (!streamDetails.value?.dsp) {
+    return tiers;
+  }
+  const inputTier = inputQualityTier.value;
+  for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
+    // Output quality can never be higher than input quality
+    tiers[player_id] = Math.min(outputQualityTiers.value[player_id], inputTier);
+  }
+  return tiers;
+});
+
+const minOutputQualityTier = computed(() => {
+  return Math.min(...Object.values(combinedOutputQualityTiers.value));
+});
+
+const maxOutputQualityTier = computed(() => {
+  return Math.max(...Object.values(combinedOutputQualityTiers.value));
+});
+
+const dspFilterText = function (filter: DSPFilter) {
+  let text = $t("settings.dsp.types." + filter.type);
+  if (filter.type === DSPFilterType.PARAMETRIC_EQ) {
+    const enabledBandsCount = filter.bands.filter(
+      (band) => band.enabled,
+    ).length;
+    if (enabledBandsCount === 1)
+      text += ` (${$t("streamdetails.eq_band_count_singular")})`;
+    else text += ` (${$t("streamdetails.eq_band_count", [enabledBandsCount])})`;
+  }
+  return text;
 };
 </script>
 
@@ -198,6 +611,7 @@ export const iconOgg = new URL("@/assets/ogg.png", import.meta.url).href;
 export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
 export const iconM4a = new URL("@/assets/m4a.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
+export const iconPcm = new URL("@/assets/pcm.svg", import.meta.url).href;
 
 export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)
   .href;
@@ -230,14 +644,256 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 
 .mediadetails-content-type-btn {
   height: 25px !important;
-  width: 50px !important;
-  padding: 5px !important;
+  padding: 7px !important;
   font-weight: 500;
   font-size: 10px !important;
   letter-spacing: 0.1em;
   border-radius: 2px;
-  margin-left: 5px;
-  flex-flow: column;
   margin: 0px;
+}
+
+.streamdetails-item {
+  height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.streamdetails-icon {
+  height: 30px;
+  width: 50px;
+  contain: contain;
+  object-fit: contain;
+}
+
+.invert-on-light-mode {
+  filter: none;
+}
+
+.v-theme--light .invert-on-light-mode {
+  filter: invert(100%);
+}
+
+.invert-on-dark-mode {
+  filter: none;
+}
+
+.v-theme--dark .invert-on-dark-mode {
+  filter: invert(100%);
+}
+
+.streamdetails-separator {
+  height: 12.5px;
+  display: flex;
+  align-items: center;
+  margin-top: 12.5px;
+  border-style: dotted;
+  border-width: 1px;
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
+}
+
+.line-space {
+  height: 50px;
+  width: 16px;
+}
+
+.line-space-halve {
+  height: 25px;
+  width: 16px;
+}
+
+.line-start {
+  border-top-left-radius: 12.5px;
+  height: 25px;
+  width: 16px;
+  margin-top: 25px;
+  margin-left: 8px;
+  border-width: 1px;
+  border-style: solid;
+  border-bottom: none;
+  border-right: none;
+}
+
+.line-branch-start-left {
+  height: 25px;
+  width: 16px;
+}
+
+.line-branch-start-left::before {
+  content: "";
+  height: 14px; /* + 2 * 1px border */
+  width: 14px; /* + 2 * 1px border */
+  border-width: 1px;
+  border-style: solid;
+  border-bottom: none;
+  border-right: none;
+  margin-top: 11px; /* -1 since the border is 1px */
+  border-top-left-radius: 12px;
+  margin-left: 8px;
+  position: absolute;
+}
+
+.line-branch-start-right {
+  height: 25px;
+  width: 16px;
+  margin-left: 8px;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.line-branch-start-right::before {
+  content: "";
+  height: 12px;
+  width: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 12px;
+  transform: translate(-100%, 0%);
+  position: absolute;
+}
+
+.line-branch-split-left {
+  height: 25px;
+  width: 8px;
+  border-style: solid;
+  border-width: 1px;
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+  margin-left: 8px;
+}
+
+.line-branch-split-left::before {
+  content: "";
+  height: 12px;
+  width: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 12px;
+  position: absolute;
+  transform: translate(-1px, 0); /* -1 since the border is 1px */
+}
+
+.line-branch-end-left {
+  height: 25px;
+  width: 8px;
+  margin-left: 8px;
+}
+
+.line-branch-end-left::before {
+  content: "";
+  height: 12px;
+  width: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 12px;
+  position: absolute;
+}
+
+.line-branch-rejoin-right {
+  height: 25px;
+  width: 8px;
+  margin-left: 8px;
+}
+
+.line-branch-rejoin-right::before {
+  content: "";
+  height: 14px; /* + 2 * 1px border */
+  width: 14px; /* + 2 * 1px border */
+  border-width: 1px;
+  border-style: solid;
+  border-bottom: none;
+  border-left: none;
+  margin-left: 1px;
+  margin-top: 11px; /* -1 since the border is 1px */
+  border-top-right-radius: 12px;
+  position: absolute;
+  transform: translate(-100%, 0%);
+}
+
+.line-end {
+  border-bottom-left-radius: 12.5px;
+  height: 25px;
+  width: 16px;
+  margin-bottom: 25px;
+  margin-left: 8px;
+  border-width: 1px;
+  border-style: solid;
+  border-top: none;
+  border-right: none;
+}
+
+.line-straight {
+  height: 50px;
+  width: 16px;
+  margin-left: 8px;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.line-straight-halve {
+  height: 25px;
+  width: 16px;
+  margin-left: 8px;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.line-with-dot {
+  height: 50px;
+  width: 16px;
+  margin-left: 8px;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  position: relative;
+}
+
+.line-with-dot::before {
+  content: "";
+  position: absolute;
+  transform: translate(-50%, -50%);
+  margin-top: 25px;
+  height: 14px;
+  width: 14px;
+  background-color: rgba(var(--v-theme-on-surface));
+  border-radius: 50%;
+}
+
+.line-with-dot::after {
+  content: "";
+  position: absolute;
+  transform: translate(-50%, -50%);
+  margin-top: 25px;
+  height: 10px;
+  width: 10px;
+  background-color: rgb(var(--v-theme-secondary));
+  border-radius: 50%;
+}
+
+.quality-tier-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  margin: auto;
+  margin-right: 10px;
 }
 </style>

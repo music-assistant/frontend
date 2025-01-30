@@ -71,6 +71,7 @@ export enum DSPState {
 // even when the DSP state is disabled. For example,
 // output_limiter can remain true while the DSP is disabled.
 // All filters in the list are guaranteed to be enabled.
+// output_format is the format that will be sent to the output device (if known).
 export interface DSPDetails {
   state: DSPState;
   is_leader: boolean;
@@ -78,6 +79,7 @@ export interface DSPDetails {
   filters: DSPFilter[];
   output_gain: number;
   output_limiter: boolean;
+  output_format?: AudioFormat;
 }
 
 /// enums
@@ -130,27 +132,83 @@ export enum AlbumType {
   UNKNOWN = "unknown",
 }
 
+// Enum with audio content/container types supported by ffmpeg.
 export enum ContentType {
-  OGG = "ogg",
-  FLAC = "flac",
-  MP3 = "mp3",
-  AAC = "aac",
-  MPEG = "mpeg",
-  ALAC = "alac",
-  WAV = "wav",
-  AIFF = "aiff",
-  WMA = "wma",
-  M4B = "m4b",
-  M4A = "m4a",
-  DSF = "dsf",
-  WAVPACK = "wv",
-  PCM_S16LE = "s16le", // PCM signed 16-bit little-endian
-  PCM_S24LE = "s24le", // PCM signed 24-bit little-endian
-  PCM_S32LE = "s32le", // PCM signed 32-bit little-endian
-  PCM_F32LE = "f32le", // PCM 32-bit floating-point little-endian
-  PCM_F64LE = "f64le", // PCM 64-bit floating-point little-endian
-  MPEG_DASH = "dash",
-  UNKNOWN = "?",
+  // --- Containers ---
+  OGG = "ogg", // Ogg container (Vorbis/Opus/FLAC)
+  WAV = "wav", // WAV container (usually PCM)
+  AIFF = "aiff", // AIFF container
+  MPEG = "mpeg", // MPEG-PS/MPEG-TS container
+  M4A = "m4a", // MPEG-4 Audio (AAC/ALAC)
+  MP4A = "mp4a", // MPEG-4 Audio (AAC/ALAC)
+  MP4 = "mp4", // MPEG-4 container
+  M4B = "m4b", // MPEG-4 Audiobook
+  DSF = "dsf", // DSD Stream File
+
+  // --- Can both be a container and codec ---
+  FLAC = "flac", // FLAC lossless audio
+  MP3 = "mp3", // MPEG-1 Audio Layer III
+  WMA = "wma", // Windows Media Audio
+  WMAV2 = "wmav2", // Windows Media Audio v2
+  WMAPRO = "wmapro", // Windows Media Audio Professional
+  WAVPACK = "wavpack", // WavPack lossless
+  TAK = "tak", // Tom's Lossless Audio Kompressor
+  APE = "ape", // Monkey's Audio
+  MUSEPACK = "mpc", // MusePack
+
+  // --- Codecs ---
+  AAC = "aac", // Advanced Audio Coding
+  ALAC = "alac", // Apple Lossless Audio Codec
+  OPUS = "opus", // Opus audio codec
+  VORBIS = "vorbis", // Ogg Vorbis compression
+  AC3 = "ac3", // Dolby Digital (common in DVDs)
+  EAC3 = "eac3", // Dolby Digital Plus (streaming/4K)
+  DTS = "dts", // Digital Theater System
+  TRUEHD = "truehd", // Dolby TrueHD (lossless)
+  DTSHD = "dtshd", // DTS-HD Master Audio
+  DTSX = "dtsx", // DTS:X immersive audio
+  COOK = "cook", // RealAudio Cook Codec
+  RA_144 = "ralf", // RealAudio Lossless
+  MP2 = "mp2", // MPEG-1 Audio Layer II
+  MP1 = "mp1", // MPEG-1 Audio Layer I
+  DRA = "dra", // Chinese Digital Rise Audio
+  ATRAC3 = "atrac3", // Sony MiniDisc format
+
+  // --- PCM Codecs ---
+  PCM_S16LE = "s16le", // PCM 16-bit little-endian
+  PCM_S24LE = "s24le", // PCM 24-bit little-endian
+  PCM_S32LE = "s32le", // PCM 32-bit little-endian
+  PCM_F32LE = "f32le", // PCM 32-bit float
+  PCM_F64LE = "f64le", // PCM 64-bit float
+  PCM_S16BE = "s16be", // PCM 16-bit big-endian
+  PCM_S24BE = "s24be", // PCM 24-bit big-endian
+  PCM_S32BE = "s32be", // PCM 32-bit big-endian
+  PCM_BLURAY = "pcm_bluray", // Blu-ray specific PCM
+  PCM_DVD = "pcm_dvd", // DVD specific PCM
+
+  // --- ADPCM Codecs ---
+  ADPCM_IMA = "adpcm_ima_qt", // QuickTime variant
+  ADPCM_MS = "adpcm_ms", // Microsoft variant
+  ADPCM_SWF = "adpcm_swf", // Flash audio
+
+  // --- PDM Codecs ---
+  DSD_LSBF = "dsd_lsbf", // DSD least-significant-bit first
+  DSD_MSBF = "dsd_msbf", // DSD most-significant-bit first
+  DSD_LSBF_PLANAR = "dsd_lsbf_planar", // DSD planar least-significant-bit first
+  DSD_MSBF_PLANAR = "dsd_msbf_planar", // DSD planar most-significant-bit first
+
+  // --- Voice Codecs ---
+  AMR = "amr_nb", // Adaptive Multi-Rate Narrowband, voice codec
+  AMR_WB = "amr_wb", // Adaptive Multi-Rate Wideband, voice codec
+  SPEEX = "speex", // Open-source voice codec, voice codec
+  PCM_ALAW = "alaw", // G.711 A-law, voice codec
+  PCM_MULAW = "mulaw", // G.711 µ-law, voice codec
+  G722 = "g722", // ITU-T 7 kHz audio
+  G726 = "g726", // ADPCM telephone quality
+
+  // --- Special ---
+  PCM = "pcm", // PCM generic (details determined later)
+  UNKNOWN = "?", // Unknown type
 }
 
 export enum QueueOption {
@@ -595,6 +653,7 @@ export interface SearchResults {
 
 export interface AudioFormat {
   content_type: ContentType;
+  codec_type: ContentType;
   sample_rate: number;
   bit_depth: number;
   channels: number;
