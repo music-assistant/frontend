@@ -14,7 +14,7 @@
             "label": "Equaliser: treble",
             "description": "Use the built-in basic equaliser to adjust the treble (high tones) level of audio."
         },
-        "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised. \\n\\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \\n\\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app."
+        "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised. \n\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app."
     },
     "sync_now": "Synchronise {0} now",
     "sync_running": "One or more music providers are being synchronised.",

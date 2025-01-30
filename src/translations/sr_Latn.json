@@ -22,6 +22,7 @@
     "artist_toptracks": "Top numere",
     "artists": "Izvođači",
     "browse": "Pretraži",
+    "clear_selection": "Obriši izbor",
     "create_playlist": "Kreirajte novu listu pesama na {0}",
     "crossfade_disabled": "Prelaz je onemogućen",
     "crossfade_enabled": "Prelaz je omogućen",
@@ -127,7 +128,7 @@
         },
         "flow_mode": {
             "label": "Omogućite režim protoka reda za reprodukciju",
-            "description": "Omogućite režim „protoka“ gde se sve numere u redu za reprodukciju šalju kao kontinuirani audio tok.\\nKoristi se za plejere koji izvorno ne podržavaju praznine i\/ili unakrsno preklapanje ili ako plejer ima problema sa prelaskom između numera."
+            "description": "Omogućite režim „protoka“ gde se sve numere u redu za reprodukciju šalju kao kontinuirani audio tok.\nKoristi se za plejere koji izvorno ne podržavaju praznine i\/ili unakrsno preklapanje ili ako plejer ima problema sa prelaskom između numera."
         },
         "auto_play": {
             "label": "Automatski reprodukuj (nastavi po uključenju)",
@@ -149,7 +150,7 @@
         },
         "volume_normalization_target": {
             "label": "Ciljni nivo za normalizaciju jačine zvuka",
-            "description": "Podesite prosečnu (opaženu) glasnoću na ovaj ciljni nivo, podrazumevana vrednost je -17 LUFS\\n\\n **UPOZORENJE:** Postavljanje previsokog nivoa može da dovede do odsecanja!"
+            "description": "Podesite prosečnu (opaženu) glasnoću na ovaj ciljni nivo, podrazumevana vrednost je -17 LUFS\n\n **UPOZORENJE:** Postavljanje previsokog nivoa može da dovede do odsecanja!"
         },
         "eq_bass": {
             "label": "Ekvilajzer: bas",
@@ -173,7 +174,7 @@
         },
         "hide_player": {
             "label": "Sakrij ovaj plejer u korisničkom interfejsu.",
-            "description": "Sakrij ovaj plejer u korisničkom interfejsu.\\n\\nImajte na umu da se i dalje može kontrolisati i da će se takođe pojaviti u svim grupama za sinhronizaciju kojoj plejer pripada."
+            "description": "Sakrij ovaj plejer u korisničkom interfejsu.\n\nImajte na umu da se i dalje može kontrolisati i da će se takođe pojaviti u svim grupama za sinhronizaciju kojoj plejer pripada."
         },
         "default_enqueue_select_artist": {
             "label": "Selektovati stavke kada puštate izvođača (iz biblioteke).",
@@ -285,7 +286,7 @@
         },
         "icon": {
             "label": "Ikona",
-            "description": "Ikona dizajna materijala za ovaj plejer.\\n\\nPogledajte https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Ikona dizajna materijala za ovaj plejer.\n\nPogledajte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Korisnički interfejs",
         "frontend_desc": "Podešavanja konfiguracije za korisnički interfejs Muzičkog Pomoćnika (frontend). Imajte na umu da se ova podešavanja čuvaju na nivou uređaja.",
@@ -306,10 +307,10 @@
         },
         "menu_items": {
             "label": "Omogućene stavke menija",
-            "description": "Konfigurišite koje stavke će se prikazati u meniju.\\n\\n Imajte na umu da ako onemogućite podešavanja, možete se zaključati.\\n\\nU tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik."
+            "description": "Konfigurišite koje stavke će se prikazati u meniju.\n\n Imajte na umu da ako onemogućite podešavanja, možete se zaključati.\n\nU tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik."
         },
         "hide_settings": {
-            "description": "Sakrij dugme za podešavanja na početnom ekranu. \\n \\n Imajte na umu da ako onemogućite podešavanja na početnom ekranu i u meniju, možete se zaključati. \\n \\n U tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik!"
+            "description": "Sakrij dugme za podešavanja na početnom ekranu. \n \n Imajte na umu da ako onemogućite podešavanja na početnom ekranu i u meniju, možete se zaključati. \n \n U tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik!"
         }
     },
     "show_info": "Prikaži informacije",

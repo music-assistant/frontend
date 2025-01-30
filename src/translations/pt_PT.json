@@ -158,7 +158,7 @@
         },
         "flow_mode": {
             "label": "Activar o modo de fluxo de espera",
-            "description": "Activa o modo \"flow\" em que todas as faixas da fila são enviadas como um fluxo de áudio contínuo.\\nUtilize para leitores que não suportam nativamente gapless e\/ou crossfading ou se o leitor tiver problemas na transição entre faixas."
+            "description": "Activa o modo \"flow\" em que todas as faixas da fila são enviadas como um fluxo de áudio contínuo.\nUtilize para leitores que não suportam nativamente gapless e\/ou crossfading ou se o leitor tiver problemas na transição entre faixas."
         },
         "auto_play": {
             "label": "Reprodução automática (retomar ao ligar)",
@@ -180,7 +180,7 @@
         },
         "volume_normalization_target": {
             "label": "Nível alvo para normalização do volume",
-            "description": "Ajustar o volume médio (percebido) para este nível-alvo, a predefinição é -17 LUFS\\n\\n**AVISO:** Definir o nível demasiado alto pode resultar em clipping!"
+            "description": "Ajustar o volume médio (percebido) para este nível-alvo, a predefinição é -17 LUFS\n\n**AVISO:** Definir o nível demasiado alto pode resultar em clipping!"
         },
         "eq_bass": {
             "label": "Equalizador: graves",
@@ -204,7 +204,7 @@
         },
         "hide_player": {
             "label": "Ocultar este leitor na interface do utilizador",
-            "description": "Oculta este leitor na interface do utilizador.\\n\\nAtenção que ainda pode ser controlado e que também aparecerá em quaisquer grupos de sincronização a que o leitor pertença."
+            "description": "Oculta este leitor na interface do utilizador.\n\nAtenção que ainda pode ser controlado e que também aparecerá em quaisquer grupos de sincronização a que o leitor pertença."
         },
         "default_enqueue_select_artist": {
             "label": "Itens a selecionar quando reproduzires um artista (da biblioteca).",
@@ -316,7 +316,7 @@
         },
         "icon": {
             "label": "Ícone",
-            "description": "Ícones para este leitor.\\n\\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
+            "description": "Ícones para este leitor.\n\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
         },
         "frontend": "Interface de utilizador",
         "frontend_desc": "Definições de configuração para a interface de utilizador do Music Assistant (frontend). De notar que estas definições são armazenadas ao nível do dispositivo.",
@@ -337,7 +337,7 @@
         },
         "menu_items": {
             "label": "Itens do menu activados",
-            "description": "Configura os itens a serem exibidos no menu.\\n\\nDe notar que se desativares as configurações, poderás ficar sem acesso ao mesmo.\\n\\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
+            "description": "Configura os itens a serem exibidos no menu.\n\nDe notar que se desativares as configurações, poderás ficar sem acesso ao mesmo.\n\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
         },
         "language": {
             "label": "Idioma",
@@ -368,7 +368,7 @@
         },
         "hide_settings": {
             "label": "Esconder botão de configurações",
-            "description": "Esconde o botão de configurações na página inicial.\\n\\nDe notar que se desativares as configurações na página inicial e no menu, poderás ficar sem acesso ao mesmo.\\n\\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
+            "description": "Esconde o botão de configurações na página inicial.\n\nDe notar que se desativares as configurações na página inicial e no menu, poderás ficar sem acesso ao mesmo.\n\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
         },
         "no_music_providers": "Nenhum provedor de música configurado",
         "no_music_providers_detail": "Começa a tua experiência com o Music Assistant a adicionar os teus provedores de música.",
