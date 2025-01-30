@@ -42,6 +42,9 @@
           mandatory
           selected-class="primary"
         >
+          <v-chip :key="-1" :value="-1" filter variant="elevated">
+            {{ $t("settings.dsp.parametric_eq.preamp", { index: 100 }) }}
+          </v-chip>
           <v-chip
             v-for="(band, index) in peq.bands"
             :key="index"
@@ -57,6 +60,16 @@
             {{ $t("settings.dsp.parametric_eq.add_band") }}
           </v-chip>
         </v-chip-group>
+      </v-card-text>
+    </v-card>
+    <v-card v-if="selectedBandIndex === -1" elevation="0" color="transparent">
+      <v-card-text>
+        <!-- Filter Controls -->
+        <v-row dense>
+          <v-col cols="12">
+            <DSPSlider v-model="preamp" type="gain" />
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
@@ -146,6 +159,7 @@ const importApoSettings = (content: string) => {
   const filters = [];
   const lines = content.split("\n");
   const bands: ParametricEQBand[] = [];
+  peq.value.preamp = 0;
 
   for (const line of lines) {
     if (line.startsWith("Filter")) {
@@ -174,12 +188,17 @@ const importApoSettings = (content: string) => {
           });
         }
       }
+    } else if (line.startsWith("Preamp")) {
+      const match = line.match(/Preamp:\s*(-?\d+\.?\d*)\s+dB/);
+      if (match) {
+        peq.value.preamp = parseFloat(match[1]);
+      }
     }
   }
 
   // Update the PEQ bands
   peq.value.bands = bands;
-  selectedBandIndex.value = 0;
+  selectedBandIndex.value = -1;
 };
 
 // Helper function to convert bandwidth to Q factor
@@ -211,11 +230,11 @@ const openApoFileImport = () => {
 };
 
 const exportApoSettings = () => {
-  let content = "Preamp: 0 dB\n";
+  let content = `Preamp: ${preamp.value.toFixed(2)} dB\n`;
 
-  peq.value.bands.forEach((band) => {
+  peq.value.bands.forEach((band, index) => {
     const apoType = bandTypeToApo[band.type];
-    content += `Filter: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
+    content += `Filter ${index + 1}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
   });
   const blob = new Blob([content], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
@@ -295,7 +314,7 @@ const drawGraph = () => {
 
   const width = ctx.canvas.width / 2;
   const height = ctx.canvas.height / 2;
-  const totalResponse = new Float32Array(width);
+  const totalResponse = new Float32Array(width).fill(peq.value.preamp ?? 0);
 
   // Draw individual filter responses
   peq.value.bands.forEach((band, index) => {
@@ -412,10 +431,18 @@ const biquadFilters = computed(() => {
   return peq.value.bands.map((band) => createBiquadFilter(audioContext, band));
 });
 
-const selectedBandIndex = ref(0);
+const selectedBandIndex = ref(-1);
 
 // Computed property for the selected band
 const selectedBand = computed(() => peq.value.bands[selectedBandIndex.value]);
+
+// Since preamp could be undefined if the EQ was made with an older version
+const preamp = computed({
+  get: () => peq.value.preamp ?? 0,
+  set: (value) => {
+    peq.value.preamp = value;
+  },
+})
 
 const removeBand = (index: number) => {
   peq.value.bands.splice(index, 1);
@@ -439,6 +466,7 @@ const addBand = () => {
 
 // Watch for changes and redraw
 watch(() => peq.value.bands, drawGraph, { deep: true });
+watch(() => peq.value.preamp, drawGraph);
 watch(() => selectedBandIndex.value, drawGraph);
 watch(() => theme.global.current.value.dark, drawGraph);
 

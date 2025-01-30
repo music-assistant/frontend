@@ -37,6 +37,7 @@ export interface ParametricEQBand {
 
 // Specific filter types
 export interface ParametricEQFilter extends DSPFilterBase {
+  preamp?: number;
   type: DSPFilterType.PARAMETRIC_EQ;
   bands: Array<ParametricEQBand>;
 }
