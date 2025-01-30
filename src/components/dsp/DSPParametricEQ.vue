@@ -198,7 +198,7 @@ const importApoSettings = (content: string) => {
 
   // Update the PEQ bands
   peq.value.bands = bands;
-  selectedBandIndex.value = 0;
+  selectedBandIndex.value = -1;
 };
 
 // Helper function to convert bandwidth to Q factor
@@ -431,7 +431,7 @@ const biquadFilters = computed(() => {
   return peq.value.bands.map((band) => createBiquadFilter(audioContext, band));
 });
 
-const selectedBandIndex = ref(0);
+const selectedBandIndex = ref(-1);
 
 // Computed property for the selected band
 const selectedBand = computed(() => peq.value.bands[selectedBandIndex.value]);
