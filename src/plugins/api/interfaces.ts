@@ -691,6 +691,7 @@ export interface StreamDetails {
   prefer_album_loudness?: boolean;
   target_loudness?: number;
   volume_normalization_mode?: VolumeNormalizationMode;
+  volume_normalization_gain_correct?: number;
   // This contains the DSPDetails of all players in the group.
   // In case of single player playback, dict will contain only one entry.
   // The leader will have is_leader set to True.

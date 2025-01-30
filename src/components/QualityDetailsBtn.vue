@@ -237,6 +237,70 @@
                 src="@/assets/level.png"
               />
               {{ loudness }}
+              <v-tooltip location="top" :open-on-click="true" max-width="350">
+                <template #activator="{ props }">
+                  <v-icon class="ml-2" size="small" v-bind="props"
+                    >mdi-information</v-icon
+                  >
+                </template>
+                <div
+                  v-if="
+                    streamDetails.volume_normalization_mode ==
+                      VolumeNormalizationMode.MEASUREMENT_ONLY &&
+                    streamDetails.prefer_album_loudness &&
+                    streamDetails.loudness_album != null
+                  "
+                >
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.mode.measurement_album",
+                    )
+                  }}
+                </div>
+                <div v-else>
+                  {{
+                    $t(
+                      `streamdetails.volume_normalization.mode.${streamDetails.volume_normalization_mode}`,
+                    )
+                  }}
+                </div>
+                <br />
+                <br />
+                {{
+                  $t("streamdetails.volume_normalization.target_level", [
+                    streamDetails.target_loudness,
+                  ])
+                }}
+                <div v-if="streamDetails.loudness != null">
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.integrated_loudness",
+                      [streamDetails.loudness],
+                    )
+                  }}
+                  <br />
+                </div>
+                <div v-if="streamDetails.loudness_album != null">
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.integrated_album_loudness",
+                      [streamDetails.loudness_album],
+                    )
+                  }}
+                  <br />
+                </div>
+                <div
+                  v-if="streamDetails.volume_normalization_gain_correct != null"
+                >
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.applied_gain_correction",
+                      [streamDetails.volume_normalization_gain_correct],
+                    )
+                  }}
+                  <br />
+                </div>
+              </v-tooltip>
             </div>
 
             <template
@@ -419,12 +483,19 @@ const loudness = computed(() => {
   const sd = streamDetails.value;
   if (!sd) return null;
 
+  // prefer new dedicated volume_normalization_gain_correct attribute
+  // which just contains the gain correction that is applied to the stream
+  if (sd.volume_normalization_gain_correct != null) {
+    const prefix = sd.volume_normalization_gain_correct > 0 ? "+" : "";
+    return $t("volume_normalization_gain_correction", [
+      prefix + sd.volume_normalization_gain_correct,
+    ]);
+  }
+
+  // fallback to just displaying the measurement value or the dynamic/fixed gain mode
+  // TODO: remove this at some point in the future
   if (
-    (sd.volume_normalization_mode == VolumeNormalizationMode.MEASUREMENT_ONLY ||
-      sd.volume_normalization_mode ==
-        VolumeNormalizationMode.FALLBACK_FIXED_GAIN ||
-      sd.volume_normalization_mode ==
-        VolumeNormalizationMode.FALLBACK_DYNAMIC) &&
+    sd.volume_normalization_mode == VolumeNormalizationMode.MEASUREMENT_ONLY &&
     sd.loudness !== null
   ) {
     if (sd.prefer_album_loudness && sd.loudness_album !== null) {
@@ -432,14 +503,10 @@ const loudness = computed(() => {
     } else {
       return $t("loudness_measurement", [sd.loudness?.toFixed(2)]);
     }
-  } else if (
-    sd.volume_normalization_mode == VolumeNormalizationMode.DYNAMIC ||
-    sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_DYNAMIC
-  ) {
+  } else if (sd.volume_normalization_mode == VolumeNormalizationMode.DYNAMIC) {
     return $t("loudness_dynamic");
   } else if (
-    sd.volume_normalization_mode == VolumeNormalizationMode.FIXED_GAIN ||
-    sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_FIXED_GAIN
+    sd.volume_normalization_mode == VolumeNormalizationMode.FIXED_GAIN
   ) {
     return $t("loudness_fixed");
   } else {
