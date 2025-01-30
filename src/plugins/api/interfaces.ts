@@ -4,9 +4,9 @@ import { ComputedRef } from "vue";
 export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
 export const MASS_LOGO_ONLINE =
   "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png";
+export const PLAYER_CONTROL_NONE = "none";
 
 /// dsp
-
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
@@ -769,28 +769,31 @@ export interface Player {
   type: PlayerType;
   name: string;
   available: boolean;
-  powered: boolean;
   device_info: DeviceInfo;
   supported_features: PlayerFeature[];
-  elapsed_time: number;
-  elapsed_time_last_updated: number;
-  current_media?: PlayerMedia;
-  state: PlayerState;
+  can_group_with: string[];
+  enabled: boolean;
 
-  volume_level: number;
-  volume_muted: boolean;
+  elapsed_time?: number;
+  elapsed_time_last_updated?: number;
+  current_media?: PlayerMedia;
+  state?: PlayerState;
+  powered?: boolean;
+  volume_level?: number;
+  volume_muted?: boolean;
   group_childs: string[];
-  active_source: string;
+  active_source?: string;
   source_list: PlayerSource[];
   active_group?: string;
-  synced_to: string;
-  can_group_with: string[];
+  synced_to?: string;
 
-  enabled: boolean;
   group_volume: number;
   display_name: string;
   hidden: boolean;
   icon: string;
+  power_control: string;
+  volume_control: string;
+  mute_control: string;
 }
 
 // provider

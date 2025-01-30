@@ -38,9 +38,8 @@
         <PlayerCard
           v-for="player in sortedPlayers.filter(
             (x) =>
-              [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state) ||
-              (api.queues[x.player_id]?.items > 0 && x.powered) ||
-              x.player_id == store.activePlayerId,
+              [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state!) ||
+              (api.queues[x.player_id]?.items > 0 && x.powered != false),
           )"
           :id="player.player_id"
           :key="player.player_id"
@@ -81,9 +80,7 @@
                 :show-volume-control="true"
                 :show-menu-button="true"
                 :show-sub-players="
-                  showSubPlayers &&
-                  player.player_id == store.activePlayerId &&
-                  player.group_childs.length > 0
+                  showSubPlayers && player.player_id == store.activePlayerId
                 "
                 :show-sync-controls="
                   player.supported_features.includes(PlayerFeature.SET_MEMBERS)
@@ -93,7 +90,10 @@
             </v-list>
           </v-expansion-panel-text>
         </v-expansion-panel>
-        <v-expansion-panel style="padding: 0">
+        <v-expansion-panel
+          v-if="sortedPlayers.filter((x) => x.type == PlayerType.GROUP).length"
+          style="padding: 0"
+        >
           <v-expansion-panel-title
             ><h3>
               {{ $t("all_groups") }}

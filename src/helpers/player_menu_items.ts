@@ -8,6 +8,7 @@ import {
   PlayerFeature,
   PlayerType,
   RepeatMode,
+  PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -16,17 +17,18 @@ export const getPlayerMenuItems = (
   player: Player,
   playerQueue?: PlayerQueue,
 ): ContextMenuItem[] => {
+  const menuItems: ContextMenuItem[] = [];
   // power off/on
-  const menuItems: ContextMenuItem[] = [
-    {
+  if (player?.power_control != PLAYER_CONTROL_NONE) {
+    menuItems.push({
       label: player.powered ? "power_off_player" : "power_on_player",
       labelArgs: [],
       action: () => {
         api.playerCommandPowerToggle(player.player_id);
       },
       icon: "mdi-power",
-    },
-  ];
+    });
+  }
   // add stop playback menu item
   if (player?.state == "playing") {
     menuItems.push({

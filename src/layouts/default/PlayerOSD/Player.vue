@@ -57,7 +57,10 @@
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
           :volume="{
-            isVisible: !mobile,
+            isVisible:
+              !mobile &&
+              (store.activePlayer?.volume_control != PLAYER_CONTROL_NONE ||
+                store.activePlayer?.group_childs.length > 0),
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
@@ -86,12 +89,19 @@
       </div>
     </div>
   </div>
-  <div v-if="mobile" class="volume-slider">
+  <div
+    v-if="
+      mobile &&
+      (store.activePlayer?.volume_control != PLAYER_CONTROL_NONE ||
+        store.activePlayer?.group_childs.length > 0)
+    "
+    class="volume-slider"
+  >
     <PlayerVolume
       width="100%"
       color="secondary"
-      :is-powered="store.activePlayer?.powered"
-      :disabled="!store.activePlayer || !store.activePlayer?.powered"
+      :is-powered="store.activePlayer?.powered != false"
+      :disabled="!store.activePlayer || !store.activePlayer?.available"
       :model-value="Math.round(store.activePlayer?.group_volume || 0)"
       prepend-icon="mdi-volume-minus"
       append-icon="mdi-volume-plus"
@@ -102,25 +112,13 @@
       "
       @click:prepend="
         store.activePlayer!.group_childs.length > 0
-          ? api.playerCommandGroupVolume(
-              store.activePlayerId!,
-              store.activePlayer!.group_volume - 5,
-            )
-          : api.playerCommandVolumeSet(
-              store.activePlayerId!,
-              store.activePlayer!.volume_level - 5,
-            )
+          ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
+          : api.playerCommandVolumeDown(store.activePlayerId!)
       "
       @click:append="
         store.activePlayer!.group_childs.length > 0
-          ? api.playerCommandGroupVolume(
-              store.activePlayerId!,
-              store.activePlayer!.group_volume + 5,
-            )
-          : api.playerCommandVolumeSet(
-              store.activePlayerId!,
-              store.activePlayer!.volume_level + 5,
-            )
+          ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
+          : api.playerCommandVolumeUp(store.activePlayerId!)
       "
     />
   </div>
@@ -130,7 +128,11 @@
 import { computed, ref, watch } from "vue";
 //@ts-ignore
 
-import { ImageType, MediaType } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  PLAYER_CONTROL_NONE,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";

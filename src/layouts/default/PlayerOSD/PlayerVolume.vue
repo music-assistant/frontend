@@ -27,7 +27,6 @@ export default {
     height: String,
     // eslint-disable-next-line vue/require-default-prop
     style: String,
-    isPowered: Boolean,
     allowWheel: Boolean,
   },
   emits: ["update:model-value"],
@@ -42,7 +41,6 @@ export default {
       step: 2,
       elevation: 0,
       style: `width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`,
-      disabled: !props.isPowered,
     }));
 
     const playerVolumeProps = computed(() => ({

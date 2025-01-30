@@ -301,7 +301,8 @@
             "advanced": "Advanced settings",
             "generic": "Generic settings",
             "announcements": "Announcements configuration",
-            "airplay": "Airplay specific settings"
+            "airplay": "Airplay specific settings",
+            "player_controls": "Player controls"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -428,6 +429,18 @@
         "dynamic_members": {
             "label": "Dynamic group members",
             "description": "Allow members to (temporarily) join/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
+        },
+        "power_control": {
+            "label": "Power control",
+            "description": "Define/override the power control behavior for this player.\nIt allows you for example to redirect the power on/off commands to a different appliance, or use a fake power control if your player does not support power on/off commands but you like to have a dedicated state for a player not in use."
+        },
+        "volume_control": {
+            "label": "Volume control",
+            "description": "Define/override the volume control behavior for this player.\nIt allows you for example to redirect the volume control commands to a different appliance, or disable it completely."
+        },
+        "mute_control": {
+            "label": "Mute control",
+            "description": "Define/override the mute control behavior for this player.\nIt allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
         },
         "dsp": {
             "configure_on": "Configuring DSP on: {name}",

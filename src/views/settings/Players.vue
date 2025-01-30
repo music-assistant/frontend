@@ -123,7 +123,7 @@ const removePlayerConfig = function (playerId: string) {
 };
 
 const editPlayer = function (playerId: string, provider: string) {
-  if (provider in api.providers) {
+  if (api.getProvider(provider)) {
     // only allow edit if provider is available
     router.push(`/settings/editplayer/${playerId}`);
   }
