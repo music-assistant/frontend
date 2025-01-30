@@ -187,7 +187,7 @@
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
-              <v-tooltip location="top" :open-on-click="true">
+              <v-tooltip location="top" :open-on-click="true" max-width="300">
                 <template #activator="{ props }">
                   <v-icon class="ml-2" size="small" v-bind="props"
                     >mdi-information</v-icon
@@ -222,12 +222,14 @@
                     streamDetails.audio_format.channels,
                   ])
                 }}
-                <br />
-                {{
-                  $t("streamdetails.file_info.bit_rate", [
-                    streamDetails.audio_format.bit_rate.toFixed(0),
-                  ])
-                }}
+                <span v-if="streamDetails.audio_format.bit_rate">
+                  <br />
+                  {{
+                    $t("streamdetails.file_info.bit_rate", [
+                      streamDetails.audio_format.bit_rate.toFixed(0),
+                    ])
+                  }}
+                </span>
               </v-tooltip>
             </div>
             <!-- Volume Normalization -->
@@ -237,6 +239,70 @@
                 src="@/assets/level.png"
               />
               {{ loudness }}
+              <v-tooltip location="top" :open-on-click="true" max-width="300">
+                <template #activator="{ props }">
+                  <v-icon class="ml-2" size="small" v-bind="props"
+                    >mdi-information</v-icon
+                  >
+                </template>
+                <span
+                  v-if="
+                    streamDetails.volume_normalization_mode ==
+                      VolumeNormalizationMode.MEASUREMENT_ONLY &&
+                    streamDetails.prefer_album_loudness &&
+                    streamDetails.loudness_album != null
+                  "
+                >
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.mode.measurement_album",
+                    )
+                  }}
+                </span>
+                <span v-else>
+                  {{
+                    $t(
+                      `streamdetails.volume_normalization.mode.${streamDetails.volume_normalization_mode}`,
+                    )
+                  }}
+                </span>
+                <br />
+                <br />
+                {{
+                  $t("streamdetails.volume_normalization.target_level", [
+                    streamDetails.target_loudness,
+                  ])
+                }}
+                <span v-if="streamDetails.loudness != null">
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.integrated_loudness",
+                      [streamDetails.loudness],
+                    )
+                  }}
+                  <br />
+                </span>
+                <span v-if="streamDetails.loudness_album != null">
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.integrated_album_loudness",
+                      [streamDetails.loudness_album],
+                    )
+                  }}
+                  <br />
+                </span>
+                <span
+                  v-if="streamDetails.volume_normalization_gain_correct != null"
+                >
+                  {{
+                    $t(
+                      "streamdetails.volume_normalization.applied_gain_correction",
+                      [streamDetails.volume_normalization_gain_correct],
+                    )
+                  }}
+                  <br />
+                </span>
+              </v-tooltip>
             </div>
 
             <template
@@ -286,7 +352,7 @@
                   src="@/assets/dsp-disabled.svg"
                 />
                 {{ $t("streamdetails.dsp_unsupported") }}
-                <v-tooltip location="top" :open-on-click="true">
+                <v-tooltip location="top" :open-on-click="true" max-width="300">
                   <template #activator="{ props }">
                     <v-icon class="ml-2" size="small" v-bind="props"
                       >mdi-information</v-icon
@@ -327,7 +393,7 @@
                   src="@/assets/dsp.svg"
                 />
                 {{ $t("streamdetails.output_limiter") }}
-                <v-tooltip location="top" :open-on-click="true">
+                <v-tooltip location="top" :open-on-click="true" max-width="300">
                   <template #activator="{ props }">
                     <v-icon class="ml-2" size="small" v-bind="props"
                       >mdi-information</v-icon
@@ -357,7 +423,7 @@
                 }}
                 kHz /
                 {{ streamDetails.dsp[player_id].output_format.bit_depth }} bits
-                <v-tooltip location="top" :open-on-click="true">
+                <v-tooltip location="top" :open-on-click="true" max-width="300">
                   <template #activator="{ props }">
                     <v-icon class="ml-2" size="small" v-bind="props"
                       >mdi-information</v-icon
@@ -419,12 +485,19 @@ const loudness = computed(() => {
   const sd = streamDetails.value;
   if (!sd) return null;
 
+  // prefer new dedicated volume_normalization_gain_correct attribute
+  // which just contains the gain correction that is applied to the stream
+  if (sd.volume_normalization_gain_correct != null) {
+    const prefix = sd.volume_normalization_gain_correct > 0 ? "+" : "";
+    return $t("volume_normalization_gain_correction", [
+      prefix + sd.volume_normalization_gain_correct,
+    ]);
+  }
+
+  // fallback to just displaying the measurement value or the dynamic/fixed gain mode
+  // TODO: remove this at some point in the future
   if (
-    (sd.volume_normalization_mode == VolumeNormalizationMode.MEASUREMENT_ONLY ||
-      sd.volume_normalization_mode ==
-        VolumeNormalizationMode.FALLBACK_FIXED_GAIN ||
-      sd.volume_normalization_mode ==
-        VolumeNormalizationMode.FALLBACK_DYNAMIC) &&
+    sd.volume_normalization_mode == VolumeNormalizationMode.MEASUREMENT_ONLY &&
     sd.loudness !== null
   ) {
     if (sd.prefer_album_loudness && sd.loudness_album !== null) {
@@ -432,14 +505,10 @@ const loudness = computed(() => {
     } else {
       return $t("loudness_measurement", [sd.loudness?.toFixed(2)]);
     }
-  } else if (
-    sd.volume_normalization_mode == VolumeNormalizationMode.DYNAMIC ||
-    sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_DYNAMIC
-  ) {
+  } else if (sd.volume_normalization_mode == VolumeNormalizationMode.DYNAMIC) {
     return $t("loudness_dynamic");
   } else if (
-    sd.volume_normalization_mode == VolumeNormalizationMode.FIXED_GAIN ||
-    sd.volume_normalization_mode == VolumeNormalizationMode.FALLBACK_FIXED_GAIN
+    sd.volume_normalization_mode == VolumeNormalizationMode.FIXED_GAIN
   ) {
     return $t("loudness_fixed");
   } else {

@@ -604,6 +604,7 @@
     "play_from_here": "Play from here",
     "loudness_measurement": "{0} LUFS",
     "loudness_measurement_album": "{0} LUFS (album)",
+    "volume_normalization_gain_correction": "{0} dB",
     "loudness_dynamic": "Dynamic volume normalization",
     "loudness_fixed": "Fixed gain correction",
     "streamdetails": {
@@ -625,6 +626,18 @@
             "sample_rate": "Sample rate: {0} kHz",
             "channels": "Channels: {0}",
             "bit_depth": "Bit depth: {0}"
+        },
+        "volume_normalization": {
+            "target_level": "Target level: {0} LUFS",
+            "integrated_loudness": "Measured (integrated) loudness: {0} LUFS",
+            "integrated_album_loudness": "Album loudness: {0} LUFS",
+            "applied_gain_correction": "Applied gain correction: {0} dB",
+            "mode": {
+                "dynamic": "Volume normalization is active in the dynamic mode.",
+                "measurement_only": "Volume normalization is active based on a stored measurement of the (integrated) loudness of the audio.",
+                "measurement_album": "Volume normalization is active based on a stored measurement of the (integrated) loudness of the album.",
+                "fixed_gain": "Volume normalization is active based on fixed gain correction."
+            }
         }
     },
     "dsp_active": "Active",
