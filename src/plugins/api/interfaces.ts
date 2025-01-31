@@ -244,9 +244,12 @@ export enum PlayerFeature {
   VOLUME_MUTE = "volume_mute",
   PAUSE = "pause",
   SET_MEMBERS = "set_members",
+  MULTI_DEVICE_DSP = "multi_device_dsp",
   SEEK = "seek",
   NEXT_PREVIOUS = "next_previous",
-  ENQUEUE_NEXT = "enqueue_next",
+  PLAY_ANNOUNCEMENT = "play_announcement",
+  ENQUEUE = "enqueue",
+  SELECT_SOURCE = "select_source",
 }
 
 export enum EventType {

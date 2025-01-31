@@ -30,7 +30,7 @@ export const getPlayerMenuItems = (
     });
   }
   // add stop playback menu item
-  if (player?.state == "playing") {
+  if (player?.state == "playing" || player?.state == "paused") {
     menuItems.push({
       label: "stop_playback",
       labelArgs: [],
@@ -167,6 +167,34 @@ export const getPlayerMenuItems = (
       icon: "mdi-cancel",
     });
   }
+
+  // add 'select source' menu item
+  const selectableSources = player.source_list.filter((s) => !s.passive);
+  if (
+    player.supported_features.includes(PlayerFeature.SELECT_SOURCE) &&
+    !player.synced_to &&
+    selectableSources.length > 0
+  ) {
+    menuItems.push({
+      label: "select_source",
+      labelArgs: [],
+      icon: "mdi-import",
+      subItems: selectableSources
+        .map((s) => {
+          return {
+            label: s.name,
+            labelArgs: [],
+            action: () => {
+              api.playerCommandGroupSelectSource(player.player_id, s.id);
+            },
+          };
+        })
+        .sort((a, b) =>
+          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
+        ),
+    });
+  }
+
   // add 'don't stop the music' menu item
   if (playerQueue && "dont_stop_the_music_enabled" in playerQueue) {
     menuItems.push({

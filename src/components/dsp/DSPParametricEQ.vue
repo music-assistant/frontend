@@ -442,7 +442,7 @@ const preamp = computed({
   set: (value) => {
     peq.value.preamp = value;
   },
-})
+});
 
 const removeBand = (index: number) => {
   peq.value.bands.splice(index, 1);

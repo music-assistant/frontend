@@ -659,5 +659,6 @@
     "all_players": "All players",
     "all_groups": "All groups",
     "no_player_playing": "No players are currently playing",
-    "stop_playback": "Stop playback"
+    "stop_playback": "Stop playback",
+    "select_source": "Select source"
 }

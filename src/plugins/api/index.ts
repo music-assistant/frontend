@@ -1039,6 +1039,13 @@ export class MusicAssistantApi {
     });
   }
 
+  public playerCommandGroupSelectSource(
+    playerId: string,
+    source: string,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "select_source", { source });
+  }
+
   // Play Media related functions
 
   public playMedia(
