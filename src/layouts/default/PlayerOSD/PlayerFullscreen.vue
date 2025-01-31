@@ -57,6 +57,7 @@
           >
             <v-img
               v-if="
+                store.activePlayer?.powered != false &&
                 store.curQueueItem?.streamdetails?.stream_metadata?.image_url
               "
               style="max-width: 100%; width: auto; border-radius: 4px"
@@ -64,6 +65,7 @@
             />
             <v-img
               v-else-if="
+                store.activePlayer?.powered != false &&
                 !store.curQueueItem?.image &&
                 store.activePlayer?.current_media?.image_url
               "
@@ -71,13 +73,18 @@
               :src="store.activePlayer.current_media.image_url"
             />
             <MediaItemThumb
-              v-else
+              v-else-if="store.activePlayer?.powered != false"
               :item="store.curQueueItem"
               :thumbnail="false"
               style="max-width: 100%; width: auto"
               :fallback="
                 $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
               "
+            />
+            <v-img
+              v-else
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="$vuetify.theme.current.dark ? imgCoverDark : imgCoverLight"
             />
           </div>
           <div class="main-media-details-track-info">
@@ -143,7 +150,7 @@
 
             <!-- SUBTITLE: player powered off -->
             <v-card-subtitle
-              v-if="!store.activePlayer?.powered"
+              v-if="store.activePlayer?.powered == false"
               class="text-h6 text-md-h5 text-lg-h4"
             >
               {{ $t("off") }}
@@ -151,7 +158,10 @@
 
             <!-- subtitle: radio station stream title -->
             <v-card-subtitle
-              v-if="store.curQueueItem?.streamdetails?.stream_metadata?.title"
+              v-if="
+                store.curQueueItem?.streamdetails?.stream_metadata?.title &&
+                store.activePlayer?.powered != false
+              "
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
                 radioTitleClick(
@@ -179,7 +189,8 @@
               v-if="
                 store.curQueueItem?.media_item &&
                 'album' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.album
+                store.curQueueItem.media_item.album &&
+                store.activePlayer?.powered != false
               "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item.album as Album)"
@@ -195,7 +206,8 @@
               v-if="
                 store.curQueueItem?.media_item &&
                 'artists' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.artists.length
+                store.curQueueItem.media_item.artists.length &&
+                store.activePlayer?.powered != false
               "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="
@@ -241,7 +253,8 @@
             <v-card-subtitle
               v-else-if="
                 store.activePlayer?.active_source !=
-                store.activePlayer?.player_id
+                  store.activePlayer?.player_id &&
+                store.activePlayer?.powered != false
               "
             >
               {{
@@ -254,7 +267,9 @@
             <!-- subtitle: queue empty -->
             <v-card-subtitle
               v-else-if="
-                store.activePlayerQueue && store.activePlayerQueue.items == 0
+                store.activePlayerQueue &&
+                store.activePlayerQueue.items == 0 &&
+                store.activePlayer?.powered != false
               "
               :style="`font-size: ${subTitleFontSize}`"
             >
@@ -262,7 +277,10 @@
             </v-card-subtitle>
 
             <!-- streamdetails/contenttype button-->
-            <div style="margin: auto; padding-top: 20px">
+            <div
+              v-if="store.activePlayer?.powered != false"
+              style="margin: auto; padding-top: 20px"
+            >
               <QualityDetailsBtn />
             </div>
           </div>
@@ -461,8 +479,8 @@
         >
           <PlayerVolume
             width="100%"
-            :is-powered="store.activePlayer?.powered"
-            :disabled="!store.activePlayer || !store.activePlayer?.powered"
+            :is-powered="store.activePlayer?.powered != false"
+            :disabled="!store.activePlayer || !store.activePlayer?.available"
             :model-value="Math.round(store.activePlayer?.group_volume || 0)"
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"

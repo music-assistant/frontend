@@ -1054,7 +1054,7 @@ export class MusicAssistantApi {
   ): Promise<void> {
     if (
       !queue_id &&
-      store.activePlayer &&
+      store.activePlayer?.active_source &&
       store.activePlayer?.active_source in this.queues
     ) {
       queue_id = store.activePlayer?.active_source;

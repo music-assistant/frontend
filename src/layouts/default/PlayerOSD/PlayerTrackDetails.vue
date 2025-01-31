@@ -16,7 +16,7 @@
       >
         <div
           v-if="
-            store.activePlayer?.powered &&
+            store.activePlayer?.powered != false &&
             store.curQueueItem?.streamdetails?.stream_metadata?.image_url
           "
         >
@@ -29,14 +29,15 @@
         </div>
         <MediaItemThumb
           v-else-if="
-            store.curQueueItem?.media_item || store.curQueueItem?.image
+            store.activePlayer?.powered != false &&
+            (store.curQueueItem?.media_item || store.curQueueItem?.image)
           "
           :item="store.curQueueItem?.media_item || store.curQueueItem"
           :fallback="imgCoverDark"
         />
         <div
           v-else-if="
-            store.activePlayer?.powered &&
+            store.activePlayer?.powered != false &&
             store.activePlayer?.current_media?.image_url
           "
         >
@@ -141,7 +142,7 @@
       >
         <MarqueeText :sync="marqueeSync">
           <!-- player powered off -->
-          <div v-if="!store.activePlayer?.powered">
+          <div v-if="store.activePlayer?.powered == false">
             {{ $t("off") }}
           </div>
           <!-- track: artists(s) + album -->
@@ -236,7 +237,7 @@
           </div>
         </MarqueeText>
         <!-- active player -->
-        <div v-if="store.activePlayer && store.activePlayer?.powered">
+        <div v-if="store.activePlayer && store.activePlayer?.powered != false">
           {{ getPlayerName(store.activePlayer) }}
         </div>
       </div>

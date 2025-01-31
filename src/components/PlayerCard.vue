@@ -5,9 +5,10 @@
     :class="{
       'panel-item-selected': player.player_id == store.activePlayerId,
       'panel-item-idle': player.state == PlayerState.IDLE,
-      'panel-item-off': !player.powered,
+      'panel-item-off': player.powered == false,
     }"
     :ripple="false"
+    :disabled="!player.available"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">
@@ -16,7 +17,7 @@
         <div class="player-media-thumb">
           <MediaItemThumb
             v-if="
-              (player.powered && curQueueItem?.media_item) ||
+              (player.powered != false && curQueueItem?.media_item) ||
               curQueueItem?.image
             "
             class="media-thumb"
@@ -26,7 +27,9 @@
           />
           <div
             v-else-if="
-              player.powered && !playerQueue && player.current_media?.image_url
+              player.powered != false &&
+              !playerQueue &&
+              player.current_media?.image_url
             "
           >
             <v-img
@@ -57,7 +60,7 @@
       <!-- subtitle: media item title -->
       <template #subtitle>
         <div
-          v-if="player.powered"
+          v-if="player.powered != false"
           style="font-size: 0.85rem; font-weight: 500; white-space: nowrap"
         >
           <div v-if="curQueueItem?.media_item">
@@ -83,7 +86,7 @@
       <template #default>
         <div class="v-list-item-subtitle" style="white-space: nowrap">
           <!-- player powered off -->
-          <div v-if="!player.powered">
+          <div v-if="player.powered == false">
             {{ $t("off") }}
           </div>
           <!-- track: artists(s) + album -->
@@ -131,20 +134,6 @@
 
       <!-- power/play/pause + menu button -->
       <template #append>
-        <!-- power button -->
-        <Button
-          v-if="player.supported_features.includes(PlayerFeature.POWER)"
-          variant="icon"
-          class="player-command-btn"
-          @click.stop="
-            api.playerCommandPowerToggle(player.player_id);
-            store.activePlayerId = player.player_id;
-          "
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-power</v-icon
-          ></Button
-        >
         <!-- play/pause button -->
         <Button
           v-if="
@@ -164,6 +153,20 @@
               player.state == PlayerState.PLAYING ? 'mdi-pause' : 'mdi-play'
             "
         /></Button>
+        <!-- power button -->
+        <Button
+          v-if="player.power_control != PLAYER_CONTROL_NONE"
+          variant="icon"
+          class="player-command-btn"
+          @click.stop="
+            api.playerCommandPowerToggle(player.player_id);
+            store.activePlayerId = player.player_id;
+          "
+          ><v-icon
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
+            >mdi-power</v-icon
+          ></Button
+        >
 
         <!-- menu button -->
         <Button
@@ -186,7 +189,7 @@
       :show-sync-controls="showSyncControls"
       :show-heading-row="false"
       :show-sub-players="showSubPlayers"
-      :show-volume-control="player.powered"
+      :show-volume-control="player.powered != false"
       :allow-wheel="false"
     />
   </v-card>
@@ -199,7 +202,7 @@ import {
   Player,
   PlayerState,
   PlayerType,
-  PlayerFeature,
+  PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
@@ -224,7 +227,11 @@ export interface Props {
 const compProps = defineProps<Props>();
 
 const playerQueue = computed(() => {
-  if (compProps.player && compProps.player.active_source in api.queues) {
+  if (
+    compProps.player &&
+    compProps.player.active_source &&
+    compProps.player.active_source in api.queues
+  ) {
     return api.queues[compProps.player.active_source];
   }
   if (

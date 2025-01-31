@@ -7,7 +7,8 @@
           !store.curQueueItem ||
           !store.curQueueItem.media_item ||
           !store.curQueueItem.duration ||
-          store.curQueueItem.media_item.media_type == MediaType.RADIO
+          store.curQueueItem.media_item.media_type == MediaType.RADIO ||
+          store.activePlayer?.powered == false
         "
         style="width: 100%"
         :min="0"
