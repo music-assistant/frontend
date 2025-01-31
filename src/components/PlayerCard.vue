@@ -227,7 +227,11 @@ export interface Props {
 const compProps = defineProps<Props>();
 
 const playerQueue = computed(() => {
-  if (compProps.player && compProps.player.active_source in api.queues) {
+  if (
+    compProps.player &&
+    compProps.player.active_source &&
+    compProps.player.active_source in api.queues
+  ) {
     return api.queues[compProps.player.active_source];
   }
   if (
