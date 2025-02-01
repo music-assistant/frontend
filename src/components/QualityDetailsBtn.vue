@@ -34,7 +34,7 @@
       <v-list style="overflow: hidden">
         <div class="d-flex ml-2 mr-2">
           <!-- Second line showing audio stream shared by multiple players -->
-          <div v-if="dsp_length >= 2">
+          <div v-if="dsp_grouped.length >= 2">
             <!-- Input header -->
             <div class="line-space-halve"></div>
             <!-- Provider -->
@@ -47,16 +47,16 @@
             <div class="line-branch-start-left"></div>
             <!-- Player -->
             <template
-              v-for="(dsp, player_id, index) in streamDetails.dsp"
-              :key="player_id"
+              v-for="({ dsp, player_id, players }, index) in dsp_grouped"
+              :key="index"
             >
               <!-- rejoin the original stream -->
               <div
-                v-if="index == dsp_length - 1"
+                v-if="index == dsp_grouped.length - 1"
                 class="line-branch-end-left"
               ></div>
               <div v-else-if="index > 0" class="line-branch-split-left"></div>
-              <template v-if="index != dsp_length - 1">
+              <template v-if="index != dsp_grouped.length - 1">
                 <!-- Input gain -->
                 <div
                   v-if="dsp.input_gain && dsp.input_gain != 0"
@@ -89,7 +89,11 @@
                   class="line-straight"
                 ></div>
                 <!-- Player -->
-                <div class="line-straight"></div>
+                <div
+                  v-for="(_player, i) in players"
+                  :key="i"
+                  class="line-straight"
+                ></div>
               </template>
             </template>
           </div>
@@ -103,12 +107,15 @@
             <!-- Volume Normalization -->
             <div class="line-with-dot"></div>
             <!-- Branch if multiple players playing -->
-            <div v-if="dsp_length >= 2" class="line-branch-start-right"></div>
+            <div
+              v-if="dsp_grouped.length >= 2"
+              class="line-branch-start-right"
+            ></div>
             <div v-else class="line-straight-halve"></div>
             <!-- Player -->
             <template
-              v-for="(dsp, player_id, index) in streamDetails.dsp"
-              :key="player_id"
+              v-for="({ dsp, player_id, players }, index) in dsp_grouped"
+              :key="index"
             >
               <!-- rejoin the original stream -->
               <div v-if="index > 0" class="line-branch-rejoin-right"></div>
@@ -144,7 +151,10 @@
                 class="line-with-dot"
               ></div>
               <!-- Player-->
-              <div class="line-end"></div>
+              <template v-for="(player, i) in players" :key="i">
+                <div v-if="i === players.length - 1" class="line-end"></div>
+                <div v-else class="line-branch-output"></div>
+              </template>
             </template>
           </div>
           <div class="w-100">
@@ -306,8 +316,8 @@
             </div>
 
             <template
-              v-for="(dsp, player_id) in streamDetails.dsp"
-              :key="player_id"
+              v-for="({ dsp, player_id, players }, index) in dsp_grouped"
+              :key="index"
             >
               <!-- Separator -->
               <div class="d-flex">
@@ -362,9 +372,9 @@
                 </v-tooltip>
               </div>
               <div
-                v-for="(filter, index) in dsp.filters"
+                v-for="(filter, i) in dsp.filters"
                 v-else
-                :key="index"
+                :key="i"
                 class="streamdetails-item"
               >
                 <img
@@ -437,15 +447,19 @@
                 </v-tooltip>
               </div>
               <!-- Player -->
-              <div v-if="streamDetails.dsp" class="streamdetails-item">
-                <template v-if="api.players[player_id]">
+              <div
+                v-for="(player, i) in players"
+                :key="i"
+                class="streamdetails-item"
+              >
+                <template v-if="api.players[player]">
                   <ProviderIcon
-                    :domain="api.players[player_id].provider"
+                    :domain="api.players[player].provider"
                     :size="30"
                     class="streamdetails-icon"
                     :monochrome="true"
                   />
-                  {{ api.players[player_id].name }}
+                  {{ api.players[player].name }}
                 </template>
                 <template v-else>
                   <!-- This should not happen -->
@@ -515,10 +529,27 @@ const loudness = computed(() => {
     return null;
   }
 });
-const dsp_length = computed(() => {
-  return streamDetails.value?.dsp
-    ? Object.keys(streamDetails.value.dsp).length
-    : 0;
+
+// Groups players with identical DSPDetails (and therefore output format) together
+const dsp_grouped = computed(() => {
+  if (!streamDetails.value || !streamDetails.value.dsp) return [];
+  let grouped = [];
+  for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
+    let identical_dsp = grouped.find(
+      (g) => JSON.stringify(g.dsp) === JSON.stringify(dsp),
+    );
+    if (identical_dsp) {
+      identical_dsp.players.push(player_id);
+    } else {
+      grouped.push({
+        dsp: dsp,
+        player_id: player_id,
+        players: [player_id],
+      });
+    }
+  }
+
+  return grouped;
 });
 const isPcm = function (contentType: ContentType) {
   return [
@@ -847,6 +878,30 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   border-top: none;
   border-right: none;
   border-bottom-left-radius: 12px;
+  position: absolute;
+  transform: translate(-1px, 0); /* -1 since the border is 1px */
+}
+
+.line-branch-output {
+  height: 50px;
+  width: 16px;
+  margin-left: 8px;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.line-branch-output::before {
+  content: "";
+  height: 25px;
+  width: 16px;
+  border-width: 1px;
+  border-style: solid;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 12.5px;
   position: absolute;
   transform: translate(-1px, 0); /* -1 since the border is 1px */
 }
