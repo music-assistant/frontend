@@ -625,6 +625,7 @@
         "input_header": "Input",
         "output_header": "Output",
         "output_format_info": "Audio is converted into the '{0}' format before being sent to the player.",
+        "click_to_expand": "Click to show all players",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",

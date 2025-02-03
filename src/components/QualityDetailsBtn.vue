@@ -89,11 +89,19 @@
                   class="line-straight"
                 ></div>
                 <!-- Player -->
-                <div
-                  v-for="(_player, i) in players"
-                  :key="i"
-                  class="line-straight"
-                ></div>
+                <template
+                  v-if="
+                    player_id in is_dsp_group_expanded &&
+                    is_dsp_group_expanded[player_id]
+                  "
+                >
+                  <div
+                    v-for="(_player, i) in players"
+                    :key="i"
+                    class="line-straight"
+                  ></div
+                ></template>
+                <div v-else class="line-straight"></div>
               </template>
             </template>
           </div>
@@ -151,10 +159,17 @@
                 class="line-with-dot"
               ></div>
               <!-- Player-->
-              <template v-for="(player, i) in players" :key="i">
-                <div v-if="i === players.length - 1" class="line-end"></div>
-                <div v-else class="line-branch-output"></div>
-              </template>
+              <template
+                v-if="
+                  player_id in is_dsp_group_expanded &&
+                  is_dsp_group_expanded[player_id]
+                "
+              >
+                <template v-for="(player, i) in players" :key="i">
+                  <div v-if="i === players.length - 1" class="line-end"></div>
+                  <div v-else class="line-branch-output"></div> </template
+              ></template>
+              <div v-else class="line-end"></div>
             </template>
           </div>
           <div class="w-100">
@@ -447,19 +462,63 @@
                 </v-tooltip>
               </div>
               <!-- Player -->
-              <div
-                v-for="(player, i) in players"
-                :key="i"
-                class="streamdetails-item"
+              <template
+                v-if="
+                  player_id in is_dsp_group_expanded &&
+                  is_dsp_group_expanded[player_id]
+                "
               >
-                <template v-if="api.players[player]">
+                <div
+                  v-for="(player, i) in players"
+                  :key="i"
+                  class="streamdetails-item"
+                  @click="is_dsp_group_expanded[player_id] = false"
+                >
+                  <template v-if="api.players[player]">
+                    <ProviderIcon
+                      :domain="api.players[player].provider"
+                      :size="30"
+                      class="streamdetails-icon"
+                      :monochrome="true"
+                    />
+                    {{ api.players[player].display_name }}
+                  </template>
+                  <template v-else>
+                    <!-- This should not happen -->
+                    <v-icon class="streamdetails-icon"
+                      >mdi-alert-circle-outline</v-icon
+                    >
+                    Player not found
+                  </template>
+                </div>
+              </template>
+              <div
+                v-else
+                class="streamdetails-item"
+                @click="is_dsp_group_expanded[player_id] = true"
+              >
+                <template v-if="api.players[player_id]">
                   <ProviderIcon
-                    :domain="api.players[player].provider"
+                    :domain="api.players[player_id].provider"
                     :size="30"
                     class="streamdetails-icon"
                     :monochrome="true"
                   />
-                  {{ api.players[player].display_name }}
+                  <template v-if="players.length == 1">
+                    {{ api.players[player_id].display_name }}
+                  </template>
+                  <template v-else>
+                    {{ api.players[player_id].display_name }} +
+                    {{ players.length - 1 }}
+                    <v-tooltip location="top" max-width="300">
+                      <template #activator="{ props }">
+                        <v-icon class="ml-2" size="small" v-bind="props"
+                          >mdi-information</v-icon
+                        >
+                      </template>
+                      {{ $t("streamdetails.click_to_expand") }}
+                    </v-tooltip>
+                  </template>
                 </template>
                 <template v-else>
                   <!-- This should not happen -->
@@ -478,7 +537,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
@@ -551,6 +610,8 @@ const dsp_grouped = computed(() => {
 
   return grouped;
 });
+// Each output "group" can be individually expanded
+const is_dsp_group_expanded = ref<Record<string, boolean>>({});
 const isPcm = function (contentType: ContentType) {
   return [
     ContentType.PCM_S16LE,
