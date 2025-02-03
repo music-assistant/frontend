@@ -75,7 +75,6 @@ export enum DSPState {
 // output_format is the format that will be sent to the output device (if known).
 export interface DSPDetails {
   state: DSPState;
-  is_leader: boolean;
   input_gain: number;
   filters: DSPFilter[];
   output_gain: number;
@@ -698,8 +697,6 @@ export interface StreamDetails {
   volume_normalization_gain_correct?: number;
   // This contains the DSPDetails of all players in the group.
   // In case of single player playback, dict will contain only one entry.
-  // The leader will have is_leader set to True.
-  // (keep in mind that PlayerGroups have no (explicit) leader!)
   dsp?: Record<string, DSPDetails>;
 }
 
