@@ -453,7 +453,6 @@
         "paused": "In pausa",
         "playing": "In riproduzione"
     },
-    "stream_details": "Dettagli traccia",
     "sync_now": "Sincronizza {0} ora",
     "sync_running": "Uno o più provider musicali si stanno sincronizzando.",
     "tooltip": {

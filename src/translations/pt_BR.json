@@ -287,7 +287,8 @@
             "advanced": "Configurações avançadas",
             "generic": "Configurações genéricas",
             "announcements": "Configuração de anúncios",
-            "airplay": "Configurações específicas do Airplay"
+            "airplay": "Configurações específicas do Airplay",
+            "player_controls": "Controles do reprodutor"
         },
         "tts_pre_announce": {
             "label": "Pré-anunciar anúncios TTS",
@@ -444,7 +445,8 @@
                     "notch": "Notch"
                 },
                 "import_apo": "Importar predefinição APO\/REW",
-                "export_apo": "Exportar predefinição APO"
+                "export_apo": "Exportar predefinição APO",
+                "preamp": "Pré-amplificador"
             },
             "tone_control": {
                 "bass_level": "Nível de graves",
@@ -460,6 +462,15 @@
                 "parametric_eq": "EQ paramétrico",
                 "tone_control": "Controle de tom"
             }
+        },
+        "power_control": {
+            "label": "Controle de potência"
+        },
+        "volume_control": {
+            "label": "Controle de volume"
+        },
+        "mute_control": {
+            "label": "Controle de mudo"
         }
     },
     "show_info": "Mostrar informação",
@@ -499,7 +510,6 @@
         "paused": "pausado",
         "playing": "reproduzindo"
     },
-    "stream_details": "Detalhes do fluxo",
     "sync_now": "Sincronizar {0} agora",
     "sync_running": "Um ou mais provedores de música estão sendo sincronizados.",
     "tooltip": {
@@ -607,11 +617,38 @@
     "loudness_measurement_album": "{0} LUFS (álbum)",
     "loudness_dynamic": "Normalização dinâmica de volume",
     "loudness_fixed": "Correção de ganho fixo",
-    "dsp_disabled_by_unsupported_group": "Não suportado para este tipo de grupo",
     "dsp_active": "Ativo",
     "currently_playing_players": "Reproduzindo atualmente",
     "all_players": "Todos os reprodutores",
     "all_groups": "Todos os grupos",
     "no_player_playing": "Nenhum reprodutor está reproduzindo no momento",
-    "stop_playback": "Parar reprodução"
+    "stop_playback": "Parar reprodução",
+    "streamdetails": {
+        "input_header": "Entrada",
+        "output_header": "Saída",
+        "eq_band_count": "{0} bandas",
+        "eq_band_count_singular": "1 banda",
+        "input_gain": "Ganho de entrada ({0} dB)",
+        "output_gain": "Ganho de saída ({0} dB)",
+        "output_limiter": "Limitador de saída",
+        "dsp_unsupported": "DSP não suportado",
+        "file_info": {
+            "container": "Contêiner: {0}",
+            "codec": "Codec: {0}",
+            "bit_rate": "Taxa de bits: {0} kbps",
+            "sample_rate": "Taxa de amostragem: {0} kHz",
+            "channels": "Canais: {0}",
+            "bit_depth": "Profundidade de bits: {0}"
+        },
+        "volume_normalization": {
+            "integrated_album_loudness": "Volume do álbum: {0} LUFS",
+            "applied_gain_correction": "Correção de ganho aplicada: {0} dB",
+            "mode": {
+                "dynamic": "A normalização de volume está ativa no modo dinâmico.",
+                "fixed_gain": "A normalização do volume está ativa com base na correção de ganho fixo."
+            }
+        }
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Selecione a fonte"
 }

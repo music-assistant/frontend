@@ -440,7 +440,6 @@
         "paused": "pausado",
         "playing": "reproduciendo"
     },
-    "stream_details": "Detalles del flujo",
     "sync_now": "Sincronizar {0} ahora",
     "sync_running": "Uno o más proveedores de música están siendo sincronizados.",
     "tooltip": {

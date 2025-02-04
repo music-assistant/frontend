@@ -410,7 +410,6 @@
         "paused": "pausad",
         "playing": "spelar"
     },
-    "stream_details": "Strömdetaljer",
     "sync_now": "Synkronisera {0} nu",
     "sync_running": "En eller flera musikleverantörer synkroniseras.",
     "tooltip": {

@@ -416,7 +416,6 @@
         "paused": "pauza",
         "playing": "odtwarza"
     },
-    "stream_details": "Szczegóły przesyłania",
     "sync_now": "Synchronizuj {0} teraz",
     "sync_running": "Trwa synchronizacja co najmniej jednego dostawcy muzyki",
     "tooltip": {

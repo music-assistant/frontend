@@ -348,7 +348,6 @@
         "paused": "pauziran",
         "playing": "reprodukuje"
     },
-    "stream_details": "Detalji strima",
     "sync_now": "Sinhronizujte {0} sada",
     "sync_running": "Jedan ili više muzičkih provajdera se sinhronizuju.",
     "tooltip": {

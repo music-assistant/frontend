@@ -453,7 +453,6 @@
         "paused": "zaustavljeno",
         "playing": "igranje"
     },
-    "stream_details": "Podrobnosti pretakanja",
     "sync_now": "Sinhronizirajte {0} zdaj",
     "sync_running": "Poteka sinhronizacija enega ali več ponudnikov glasbe.",
     "tooltip": {

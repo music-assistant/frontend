@@ -449,7 +449,6 @@
         "paused": "stoppet",
         "playing": "spiller"
     },
-    "stream_details": "Stream-detaljer",
     "sync_now": "Synkroniser {0} nu",
     "sync_running": "En eller flere musikudbydere er ved at blive synkroniseret.",
     "tooltip": {

@@ -453,7 +453,6 @@
         "paused": "暂停",
         "playing": "正在播放"
     },
-    "stream_details": "流媒体详情",
     "sync_now": "立即同步{0}",
     "sync_running": "一个或多个音乐提供程序正在同步。",
     "tooltip": {
