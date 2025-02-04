@@ -144,7 +144,7 @@
         "download_log": "Télécharger le fichier journal",
         "edit_group_members": "Modifier les membres du groupe",
         "add_new_provider_button": "Ajouter un fournisseur de {0}",
-        "add_group_player": "Ajouter un lecteur de groupe",
+        "add_group_player": "Ajouter un groupe de lecteurs",
         "group_members": "Membres du groupe",
         "log_level": {
             "label": "Niveau des logs",
@@ -159,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Activer le mode \"flux\" pour la file d'attente",
-            "description": "Activer le mode 'flux' où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et\/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
+            "description": "Activer le mode « flux » où toutes les pistes de la file d'attente sont envoyées sous forme de flux audio continu.\nUtilisez-le pour les lecteurs qui ne prennent pas en charge nativement le passage sans interruption et\/ou le fondu enchaîné, ou si le lecteur rencontre des problèmes lors de la transition entre les pistes"
         },
         "auto_play": {
             "label": "Lecture automatique (reprise à l'allumage)",
@@ -287,7 +287,8 @@
             "advanced": "Paramètres avancés",
             "generic": "Paramètres génériques",
             "announcements": "Configuration des annonces",
-            "airplay": "Paramètres spécifiques à Airplay"
+            "airplay": "Paramètres spécifiques à Airplay",
+            "player_controls": "Contrôles du lecteur"
         },
         "tts_pre_announce": {
             "label": "Pré-annoncer les annonces TTS",
@@ -379,18 +380,100 @@
         "no_player_providers_detail": "Configurez des fournisseurs de lecteurs pour sélectionner les appareils sur lesquels Music Assistant peut diffuser votre musique.",
         "volume_normalization_radio": {
             "label": "Méthode de normalisation du volume à utiliser pour les flux radio",
+            "description": "Définit la stratégie de normalisation du volume préférée pour les flux radio.\nPar défaut, Music Assistant collecte une mesure de la puissance sonore (perçue en moyenne) de la station radio selon la spécification EBU-R128, puis ajuste le gain\/volume global du flux en fonction de cette mesure sans affecter la plage dynamique de l'audio. Lorsqu'aucune mesure n'existe (encore) pour une station radio, Music Assistant se replie sur un filtre de nivellement dynamique (mais moins précis) de la puissance sonore.\n\nCONSEIL : Les flux radio ont souvent des niveaux sonores variables, particulièrement pendant les annonces et les publicités.\nVous pouvez choisir de forcer la normalisation dynamique du volume pour les flux radio, même si une mesure (moyenne) de la puissance sonore existe pour la station.\n\n**Options :**\n\n- Désactivé - n'applique aucune normalisation du volume pour les flux radio.\n- Force dynamique - Force le nivellement dynamique du volume en permanence.\n- Mesure uniquement (sans repli) - Applique une correction de volume\/gain (globale) basée sur la mesure enregistrée. Si nous n'avons aucune mesure, n'applique pas de normalisation.\n- Repli vers correction de gain - Applique une correction de volume\/gain (globale) basée sur la mesure enregistrée. Si nous n'avons aucune mesure, repli vers une correction de gain prédéfinie.\n- Correction de gain fixe - Applique toujours la correction de volume\/gain fixe.\n- Repli vers dynamique - Choisit automatiquement la meilleure option : Applique une correction de volume\/gain (globale) basée sur la mesure enregistrée si disponible, permet le repli vers le mode dynamique si aucune mesure n'est disponible.",
             "options": {
-                "disabled": "Désactivée"
+                "disabled": "Désactivée",
+                "dynamic": "Force dynamique",
+                "measurement_only": "Mesure uniquement (sans repli)",
+                "fallback_fixed_gain": "Repli vers correction de gain",
+                "fixed_gain": "Correction de gain fixe",
+                "fallback_dynamic": "Repli vers dynamique"
             }
         },
         "volume_normalization_tracks": {
+            "label": "Méthode de normalisation du volume à utiliser pour les pistes",
+            "description": "Définit la stratégie de normalisation du volume préférée pour les pistes\/chansons. Music Assistant utilise une mesure de la puissance sonore (perçue en moyenne) des pistes selon la spécification EBU-R128 pour ajuster le gain\/volume global du flux sans affecter la plage dynamique de l'audio. Ces mesures sont soit fournies par le service de streaming, soit, dans le cas des fichiers locaux, peuvent être contenues dans les balises ID3 (ReplayGain 2.0 \/ Opus R128). Si la mesure n'est pas fournie, Music Assistant effectuera automatiquement une mesure lorsque\/après que la piste est (pour la première fois) jouée. Lorsqu'aucune mesure n'existe (encore) pour une piste, Music Assistant utilisera par défaut un filtre de nivellement dynamique (mais moins précis). Cela garantit l'absence de pics\/chutes importants dans le niveau de volume entre les pistes, même s'il n'y a pas encore de mesure précise, mais le niveleur dynamique peut parfois comprimer légèrement la plage dynamique, bien que cela ne soit généralement pas audible.\n\n\n**Options :**\n\n- Désactivé - n'applique aucune normalisation du volume.\n- Force dynamique - Force le nivellement dynamique du volume en permanence.\n- Mesure uniquement (sans repli) - Applique une correction de volume\/gain (globale) basée sur la mesure enregistrée. Si nous n'avons aucune mesure, n'applique pas de normalisation.\n- Repli vers correction de gain - Applique une correction de volume\/gain (globale) basée sur la mesure enregistrée. Si nous n'avons aucune mesure, repli vers une correction de gain prédéfinie.\n- Correction de gain fixe - Applique toujours la correction de volume\/gain fixe.\n- Repli vers dynamique - Choisit automatiquement la meilleure option : Applique une correction de volume\/gain (globale) basée sur la mesure enregistrée si disponible, permet le repli vers le mode dynamique si aucune mesure n'est disponible.\n",
             "options": {
-                "disabled": "Désactivée"
+                "disabled": "Désactivée",
+                "dynamic": "Force dynamique",
+                "measurement_only": "Mesure uniquement (sans repli)",
+                "fallback_fixed_gain": "Repli vers correction de gain",
+                "fixed_gain": "Correction de gain fixe",
+                "fallback_dynamic": "Repli vers dynamique"
             }
         },
+        "volume_normalization_fixed_gain_tracks": {
+            "label": "Ajustement du gain fixe\/repli pour les pistes",
+            "description": "Correction de gain fixe\/repli à appliquer à un flux audio de piste (dépend du paramètre 'Méthode de normalisation du volume'). Utilisez une valeur positive pour augmenter le volume, une valeur négative pour diminuer le volume.\n\nCe paramètre est utilisé lorsque la méthode de normalisation du volume est définie sur 'Correction de gain fixe' ou 'Repli vers correction de gain'."
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "label": "Ajustement du gain fixe\/repli pour la radio",
+            "description": "Correction de gain fixe\/repli à appliquer à un flux radio (dépend du paramètre 'Méthode de normalisation du volume'). Utilisez une valeur positive pour augmenter le volume, une valeur négative pour diminuer le volume.\n\nCe paramètre est utilisé lorsque la méthode de normalisation du volume est définie sur 'Correction de gain fixe' ou 'Repli vers correction de gain'."
+        },
+        "group_type": "Type de groupe",
+        "add_group_player_desc": "Pour les fournisseurs\/écosystèmes de lecteurs qui proposent un groupement\/synchronisation natif, un groupe de synchronisation sera automatiquement créé. Ainsi, si vous lancez la lecture sur ce Groupe de Lecteurs, les lecteurs membres seront automatiquement synchronisés.\n\nPour les lecteurs\/écosystèmes qui ne prennent pas en charge le groupement, ou si vous souhaitez grouper des lecteurs de différents écosystèmes, vous pouvez utiliser le type de groupe Universel, qui diffusera le même audio sur tous les lecteurs membres (mais pas de manière synchronisée).\n\nNotez que certains fournisseurs prennent en charge le groupement, mais vous devez utiliser l'application native pour effectuer le groupement. Un exemple est celui des lecteurs basés sur Google Cast, où vous ne pouvez créer des groupes Google Cast que dans l'application Google Home.",
         "dynamic_members": {
             "label": "Membres dynamiques du groupe",
             "description": "Permettez aux membres de rejoindre\/quitter (temporairement) le groupe de manière dynamique, de sorte que le groupe se comporte plus ou moins de la même manière que la synchronisation manuelle des lecteurs, la principale différence étant que le joueur du groupe maintiendra la file d’attente."
+        },
+        "dsp": {
+            "configure_on": "Configuration DSP de : {name}",
+            "disabled_message": "Le DSP est actuellement désactivé. Activez-le en utilisant l'interrupteur ci-dessus",
+            "input": "Entrée",
+            "output": "Sortie",
+            "enable_output_limiter": "Activer le limiteur de sortie pour éviter l'écrêtage",
+            "filter": {
+                "add": "Ajouter un filtre",
+                "type": "Type de filtre",
+                "new": "Nouveau {type}"
+            },
+            "move_up": "Déplacer vers le haut",
+            "move_down": "Déplacer vers le bas",
+            "delete_filter": "Supprimer le filtre",
+            "parametric_eq": {
+                "add_band": "Ajouter une bande",
+                "delete_band": "Supprimer la bande",
+                "filter_type": "Type de filtre",
+                "band": "Bande {index}",
+                "enable_band": "Activer la bande",
+                "filter_types": {
+                    "peak": "Crête",
+                    "low_shelf": "Plateau bas",
+                    "high_shelf": "Plateau haut",
+                    "low_pass": "Passe-bas",
+                    "high_pass": "Passe-haut",
+                    "notch": "Coupe-bande"
+                },
+                "import_apo": "Importer un préréglage APO\/REW",
+                "export_apo": "Exporter le préréglage APO",
+                "preamp": "Préamplification"
+            },
+            "tone_control": {
+                "bass_level": "Niveau des graves",
+                "mid_level": "Niveau des médiums",
+                "treble_level": "Niveau des aigus"
+            },
+            "parameter": {
+                "frequency": "Fréquence",
+                "gain": "Gain",
+                "q_factor": "Facteur Q"
+            },
+            "types": {
+                "parametric_eq": "Égaliseur paramétrique",
+                "tone_control": "Contrôle de tonalité"
+            }
+        },
+        "power_control": {
+            "label": "Contrôle de l'alimentation",
+            "description": "Définit\/remplace le comportement du contrôle d'alimentation pour ce lecteur. Cela permet par exemple de rediriger les commandes marche\/arrêt vers un autre appareil, ou d'utiliser un contrôle d'alimentation simulé si votre lecteur ne prend pas en charge les commandes marche\/arrêt mais que vous souhaitez avoir un état dédié pour un lecteur non utilisé."
+        },
+        "volume_control": {
+            "label": "Contrôle du volume",
+            "description": "Définit\/remplace le comportement du contrôle de volume pour ce lecteur. Cela permet par exemple de rediriger les commandes de volume vers un autre appareil, ou de les désactiver complètement."
+        },
+        "mute_control": {
+            "label": "Contrôle de la sourdine",
+            "description": "Définit\/remplace le comportement de la commande de sourdine pour ce lecteur. Cela permet par exemple de rediriger les commandes de sourdine vers un autre appareil, ou de les désactiver complètement.\n\nNous proposons une option de sourdine 'simulée', qui simule la mise en sourdine en réglant le volume à 0 et en restaurant le volume lors de la désactivation de la sourdine."
         }
     },
     "show_info": "Afficher les informations",
@@ -430,7 +513,6 @@
         "paused": "en pause",
         "playing": "En cours de lecture"
     },
-    "stream_details": "Détails du flux",
     "sync_now": "Synchronisez {0} maintenant",
     "sync_running": "Un ou plusieurs fournisseurs de musique sont en cours de synchronisation.",
     "tooltip": {
@@ -462,7 +544,7 @@
     "tracks": "Pistes",
     "try_global_search": "Essayer une recherche globale",
     "type_to_search": "Écrivez ici pour rechercher ...",
-    "volume_normalization": "Normalisation des volumes",
+    "volume_normalization": "Normalisation du volume",
     "play_now_replace": "Jouer maintenant (vider la file d'attente)",
     "currently_playing": "En cours de lecture",
     "favorites_add": "Ajouter aux favoris",
@@ -514,5 +596,67 @@
     "shuffle_disable": "Désactiver la lecture aléatoire",
     "shuffle_enable": "Activer la lecture aléatoire",
     "dont_stop_the_music_enable": "Activer « N'arrêtez pas la musique ! »",
-    "dont_stop_the_music_disable": "Désactiver « N'arrêtez pas la musique ! »"
+    "dont_stop_the_music_disable": "Désactiver « N'arrêtez pas la musique ! »",
+    "open_dsp_settings": "Ouvrir les paramètres DSP",
+    "audiobook": "Livre audio",
+    "audiobooks": "Livres audio",
+    "chapter": "Chapitre",
+    "chapters": "Chapitres",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "item_fully_played": "Cet élément a été entièrement lu",
+    "item_in_progress": "Cet élément a été partiellement lu",
+    "duration_in_seconds": "{0} secondes",
+    "mark_played": "Marquer comme lu",
+    "mark_unplayed": "Marquer comme non lu",
+    "searchtype_all": "Tous",
+    "global_search": "Recherche globale",
+    "podcast_episode": "Épisode",
+    "podcast_episodes": "Épisodes",
+    "play_from_here": "Lire à partir d'ici",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Normalisation dynamique du volume",
+    "loudness_fixed": "Correction de gain fixe",
+    "dsp_active": "Actif",
+    "currently_playing_players": "En cours de lecture",
+    "all_players": "Tous les lecteurs",
+    "all_groups": "Tous les groupes",
+    "no_player_playing": "Aucun lecteur ne joue actuellement",
+    "stop_playback": "Arrêter la lecture",
+    "streamdetails": {
+        "input_header": "Entrée",
+        "output_header": "Sortie",
+        "output_format_info": "L'audio est converti au format « {0} » avant d'être envoyé au lecteur.",
+        "eq_band_count": "{0} bandes",
+        "eq_band_count_singular": "1 bande",
+        "input_gain": "Gain d'entrée ({0} dB)",
+        "output_gain": "Gain de sortie ({0} dB)",
+        "output_limiter": "Limiteur de sortie",
+        "output_limiter_info": "Réduit automatiquement les sons très forts pour éviter la distorsion et protéger vos haut-parleurs",
+        "dsp_unsupported": "DSP non pris en charge",
+        "dsp_disabled_by_unsupported_group": "Ce fournisseur de lecteur ne prend pas en charge le DSP avec la lecture synchronisée",
+        "file_info": {
+            "container": "Conteneur : {0}",
+            "codec": "Codec : {0}",
+            "bit_rate": "Débit binaire : {0} kbps",
+            "sample_rate": "Fréquence d'échantillonnage : {0} kHz",
+            "channels": "Canaux : {0}",
+            "bit_depth": "Profondeur de bits : {0}"
+        },
+        "volume_normalization": {
+            "target_level": "Niveau cible : {0} LUFS",
+            "integrated_loudness": "Niveau sonore mesuré (intégré) : {0} LUFS",
+            "integrated_album_loudness": "Niveau sonore de l'album : {0} LUFS",
+            "applied_gain_correction": "Correction de gain appliquée : {0} dB",
+            "mode": {
+                "dynamic": "La normalisation du volume est active en mode dynamique.",
+                "measurement_only": "La normalisation du volume est active selon une mesure enregistrée de la puissance sonore (intégrée) de l'audio.",
+                "measurement_album": "La normalisation du volume est active selon une mesure enregistrée de la puissance sonore (intégrée) de l'album.",
+                "fixed_gain": "La normalisation du volume est active avec une correction de gain fixe."
+            }
+        }
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Sélectionner la source"
 }

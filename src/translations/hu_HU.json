@@ -499,7 +499,6 @@
         "paused": "szünetel",
         "playing": "lejátszás"
     },
-    "stream_details": "Adatfolyam részletei",
     "sync_now": "{0} szinkronizálása most",
     "sync_running": "Egy vagy több zeneszolgáltató szinkronizálása folyamatban van.",
     "tooltip": {
@@ -607,7 +606,6 @@
     "loudness_measurement_album": "{0} LUFS (album)",
     "loudness_dynamic": "Dinamikus hangerő normalizálás",
     "loudness_fixed": "Fix erősítés korrekció",
-    "dsp_disabled_by_unsupported_group": "Nem támogatott ennél a csoporttípusnál",
     "dsp_active": "Aktív",
     "currently_playing_players": "Jelenleg lejátszás alatt",
     "all_players": "Minden lejátszó",

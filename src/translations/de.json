@@ -479,7 +479,6 @@
         "paused": "Pausiert",
         "playing": "spielt gerade"
     },
-    "stream_details": "Stream Details",
     "sync_now": "Synchronisiert {0}",
     "sync_running": "Ein oder mehrere Musikanbieter werden synchronisiert.",
     "tooltip": {

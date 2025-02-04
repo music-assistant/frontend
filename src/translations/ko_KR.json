@@ -453,7 +453,6 @@
         "paused": "일시 정지",
         "playing": "재생 중"
     },
-    "stream_details": "스트림 세부 정보",
     "sync_now": "지금 {0} 동기화하세요",
     "sync_running": "하나 이상의 음악 제공업체가 동기화 중입니다.",
     "tooltip": {
