@@ -459,7 +459,7 @@
                     class="streamdetails-icon"
                     :monochrome="true"
                   />
-                  {{ api.players[player].name }}
+                  {{ api.players[player].display_name }}
                 </template>
                 <template v-else>
                   <!-- This should not happen -->
