@@ -819,6 +819,18 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   align-items: center;
 }
 
+@media (max-width: 400px) {
+  .streamdetails-item {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 370px) {
+  .streamdetails-item {
+    font-size: 0.8rem;
+  }
+}
+
 .streamdetails-icon {
   height: 30px;
   width: 50px;
