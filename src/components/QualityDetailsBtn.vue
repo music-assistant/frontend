@@ -30,7 +30,7 @@
         <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">HR</div>
       </v-chip>
     </template>
-    <v-card class="mx-auto" width="350">
+    <v-card class="mx-auto" width="380">
       <v-list style="overflow: hidden">
         <div class="d-flex ml-2 mr-2">
           <!-- Second line showing audio stream shared by multiple players -->
