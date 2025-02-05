@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Group",
         "player": "Player",
-        "stereo_pair": "Stereo Pair"
+        "stereo_pair": "Stereo Pair",
+        "sync_group": "Synchronisatiegroep"
     },
     "players": "Spelers",
     "playlist": "Afspeellijst",
@@ -286,7 +287,8 @@
             "advanced": "Geavanceerde instellingen",
             "generic": "Algemene instellingen",
             "announcements": "Configuratie van aankondigingen (announce)",
-            "airplay": "Airplay-specifieke instellingen"
+            "airplay": "Airplay-specifieke instellingen",
+            "player_controls": "Spelerbedieningen"
         },
         "tts_pre_announce": {
             "label": "Kondig TTS-aankondigingen vooraf aan",
@@ -363,7 +365,9 @@
                 "nb": "Noors",
                 "ru_RU": "Russisch",
                 "pt_BR": "Portugees (Brazilië)",
-                "sl_SI": "Sloveens"
+                "sl_SI": "Sloveens",
+                "hu_HU": "Hungarian",
+                "it": "Italian"
             }
         },
         "hide_settings": {
@@ -374,8 +378,103 @@
         "no_music_providers_detail": "Begin je Music Assistant-ervaring door je muziekproviders toe te voegen.",
         "no_player_providers": "Geen player providers geconfigureerd",
         "no_player_providers_detail": "Configureer player providers om apparaten te selecteren waarop Music Assistant je muziek kan uitvoeren.",
+        "volume_normalization_radio": {
+            "label": "Volumenormalisatiemethode om te gebruiken voor radiostreams",
+            "description": "Stel de voorkeursstrategie voor volumenormalisatie voor radiostreams in. \nStandaard verzamelt Music Assistant een meting van de (gemiddeld waargenomen) luidheid van het radiostation volgens de EBU-R128-specificatie en past vervolgens de totale versterking\/het volume van de stream aan op basis van die meting, zodat het dynamisch bereik van de audio niet wordt beïnvloed. Wanneer er (nog) geen meting bestaat voor een radiozender, zal Music Assistant terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter.\n\nTIP: Radiostreams hebben vaak verschillende luidheidsniveaus, vooral tijdens aankondigingen en commercials.\nU kunt ervoor kiezen om dynamische volumenormalisatie altijd af te dwingen voor radiostreams, zelfs als er een (gemiddelde) luidheidsmeting voor het radiostation bestaat. \n \n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams. \n  - Forceer Dynamische modus - Dwing te allen tijde dynamische volumenivellering af. \n  - Alleen meting (geen fallback) - Pas volumenormalisatie toe op basis van een opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe.\n  - Terugval naar versterkingscorrectie - Pas volumenormalisatie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie.\n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe.\n  - Terugval naar dynamisch - Kies automatisch de beste optie: Pas volumenormalisatie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
+            "options": {
+                "disabled": "Uitgeschakeld",
+                "dynamic": "Forceer dynamische modus",
+                "measurement_only": "Alleen meting (geen fallback)",
+                "fallback_fixed_gain": "Val terug op vaste versterkingscorrectie",
+                "fixed_gain": "Vaste versterkingscorrectie",
+                "fallback_dynamic": "Terugvallen op dynamisch"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Volumenormalisatiemethode om te gebruiken voor tracks",
+            "description": "Stel de voorkeursstrategie voor volumenormalisatie in voor tracks\/liedjes.\n\nMusic Assistant gebruikt een meting van de (gemiddeld waargenomen) luidheid van de tracks volgens de EBU-R128-specificatie om de totale versterking\/volume van de stream aan te passen zonder het dynamische bereik van de audio te beïnvloeden.\nDeze metingen worden ofwel verstrekt door de streamingprovider of, in het geval van lokale bestanden, kunnen worden opgenomen in de ID3-tags (ReplayGain 2.0 \/ Opus R128).\n\nAls de meting niet wordt opgegeven, voert Music Assistant automatisch een meting uit wanneer\/nadat het nummer (voor het eerst) is afgespeeld. Wanneer er (nog) geen meting bestaat voor een nummer, zal Music Assistant standaard terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter. Dit zorgt ervoor dat er geen verschillen in het volumeniveau tussen tracks zijn, zelfs als er nog geen nauwkeurige meting is, maar de dynamische leveler kan het dynamisch bereik soms een beetje comprimeren, hoewel dat in de meeste gevallen niet hoorbaar zou moeten zijn.\n\n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams.\n - Dynamische kracht - Dwing ten allen tijde dynamische volumenormalisatie af. \n - Alleen meting (geen terugval) - Pas (algemene) volume-\/versterkingscorrectie toe op basis van de opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe. \n - Terugval naar versterkingscorrectie - Pas volume-\/versterkingscorrectie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie. \n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe. \n - Terugval naar dynamisch - Kies automatisch de beste optie: Pas (algemene) volume-\/versterkingscorrectie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
+            "options": {
+                "disabled": "Uitgeschakeld",
+                "dynamic": "Forceer dynamische modus",
+                "measurement_only": "Alleen meten (geen fallback)",
+                "fallback_fixed_gain": "Terugvallen op vaste versterkingscorrectie",
+                "fixed_gain": "Vaste versterkingscorrectie",
+                "fallback_dynamic": "Terugvallen op dynamisch"
+            }
+        },
+        "volume_normalization_fixed_gain_tracks": {
+            "label": "Vaste\/fallback gain aanpassing voor tracks",
+            "description": "Vaste\/fallback-versterkingscorrectie om toe te passen op een audiostream van een track (hangt af van de instelling 'Volumenormaliseringsmethode').\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt als de volumenormaliseringsmethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "label": "Vaste\/fallback versterkingsaanpassing voor radio",
+            "description": "Vaste\/fallback versterkingscorrectie om toe te passen op een radiostream (afhankelijk van de instelling 'Volumenormalisatiemethode').\n\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt wanneer de volumenormalisatiemethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
+        },
         "group_type": "Grouptype",
-        "add_group_player_desc": "Voor spelerproviders\/ecosystemen die native groepering\/synchronisatie bieden, wordt er automatisch een syncgroup aangemaakt. Dit betekent dat als u naar deze spelergroep speelt, de spelers van de leden automatisch worden gesynchroniseerd. \n\nVoor spelers\/ecosystemen die geen groepering ondersteunen, of als u spelers van verschillende ecosystemen wilt groeperen, kunt u het type Universal Group gebruiken. Dit type distribueert dezelfde audio naar alle spelers van de leden (maar niet synchroon). \n\nHoud er rekening mee dat sommige providers wel groepering ondersteunen, maar dat u de native app moet gebruiken om de groepering uit te voeren. Een voorbeeld zijn op Google Cast gebaseerde spelers, waarbij u alleen Google Cast-groepen kunt maken in de Google Home-app. "
+        "add_group_player_desc": "Voor spelerproviders\/ecosystemen die native groepering\/synchronisatie bieden, wordt er automatisch een syncgroup aangemaakt. Dit betekent dat als u naar deze spelergroep speelt, de spelers van de leden automatisch worden gesynchroniseerd. \n\nVoor spelers\/ecosystemen die geen groepering ondersteunen, of als u spelers van verschillende ecosystemen wilt groeperen, kunt u het type Universal Group gebruiken. Dit type distribueert dezelfde audio naar alle spelers van de leden (maar niet synchroon). \n\nHoud er rekening mee dat sommige providers wel groepering ondersteunen, maar dat u de native app moet gebruiken om de groepering uit te voeren. Een voorbeeld zijn op Google Cast gebaseerde spelers, waarbij u alleen Google Cast-groepen kunt maken in de Google Home-app. ",
+        "dynamic_members": {
+            "label": "Dynamische groepsleden",
+            "description": "Sta leden toe om (tijdelijk) dynamisch lid te worden van de groep, zodat de groep zich min of meer hetzelfde gedraagt als het handmatig synchroniseren van spelers samen, met als belangrijkste verschil dat de groepsspeler de wachtrij vasthoudt."
+        },
+        "dsp": {
+            "configure_on": "DSP configureren op: {name}",
+            "disabled_message": "DSP is momenteel uitgeschakeld. Schakel het in met de bovenstaande schakelaar",
+            "input": "Invoer",
+            "output": "Uitvoer",
+            "enable_output_limiter": "Schakel Output Limiter in om clipping te voorkomen",
+            "filter": {
+                "add": "Filter toevoegen",
+                "type": "Filtertype",
+                "new": "Nieuw {type}"
+            },
+            "move_up": "Verplaats omhoog",
+            "move_down": "Verplaats omlaag",
+            "delete_filter": "Filter verwijderen",
+            "parametric_eq": {
+                "add_band": "Band toevoegen",
+                "delete_band": "Band verwijderen",
+                "filter_type": "Filter Type",
+                "band": "Band {index}",
+                "enable_band": "Band inschakelen",
+                "filter_types": {
+                    "peak": "Peak",
+                    "low_shelf": "Low Shelf",
+                    "high_shelf": "High Shelf",
+                    "low_pass": "Low Pass",
+                    "high_pass": "High Pass",
+                    "notch": "Notch"
+                },
+                "import_apo": "APO\/REW preset importeren",
+                "export_apo": "APO preset exporteren",
+                "preamp": "Preamp"
+            },
+            "tone_control": {
+                "bass_level": "Lage tonen",
+                "mid_level": "Midden tonen",
+                "treble_level": "Hoge tonen"
+            },
+            "parameter": {
+                "frequency": "Frequentie",
+                "gain": "Gain",
+                "q_factor": "Q-factor"
+            },
+            "types": {
+                "parametric_eq": "Parametrische EQ",
+                "tone_control": "Toonregeling"
+            }
+        },
+        "power_control": {
+            "label": "Power control",
+            "description": "Definieer\/aanpas het gedrag van de aan\/uit bediening voor deze speler.\nHiermee kunt u bijvoorbeeld de aan\/uit-commando's omleiden naar een ander apparaat, of een nep aan\/uit gebruiken als uw speler geen aan\/uit-commando's ondersteunt, maar u een speciale status wilt voor een speler die niet in gebruik is."
+        },
+        "volume_control": {
+            "label": "Volume control",
+            "description": "Definieer\/aanpas het gedrag van de volumeregeling voor deze speler.\nHiermee kun je bijvoorbeeld de volumeregelingscommando's omleiden naar een ander apparaat of het volledig uitschakelen."
+        },
+        "mute_control": {
+            "label": "Mute-bediening",
+            "description": "Definieer\/aanpas het mute bedieningsgedrag voor deze speler.\nHiermee kun je bijvoorbeeld de mute-control omleiden naar een ander apparaat of het volledig uitschakelen.\n\nWe bieden een 'nep' mute control die het dempen simuleert door het volume op 0 te zetten en het volume te herstellen wanneer het dempen wordt opgeheven."
+        }
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -404,7 +503,9 @@
         "last_played": "Laatst afgespeeld",
         "last_played_desc": "Laatst afgespeeld (aflopend)",
         "play_count": "Aantal keren afgespeeld",
-        "play_count_desc": "Aantal keren afgespeeld (aflopend)"
+        "play_count_desc": "Aantal keren afgespeeld (aflopend)",
+        "artist_name": "Albumartiest",
+        "artist_name_desc": "Albumartiest (aflopend)"
     },
     "state": {
         "idle": "gestopt",
@@ -435,7 +536,8 @@
         "search_filter_active": "De zoekactie toont nu gefilterde resultaten.",
         "play_sample": "Voorbeeld afspelen",
         "album_type": "Album type",
-        "loading": "De server verwerkt een verzoek of synchroniseert muziek"
+        "loading": "De server verwerkt een verzoek of synchroniseert muziek",
+        "primary_image": "Dit is de primaire afbeelding voor dit afbeeldingstype"
     },
     "topresult": "Top resultaat",
     "track": "Nummer",
@@ -475,10 +577,89 @@
     "play_replace": "Nu afspelen (queue leegmaken)",
     "played": "Gespeeld",
     "background_task_added": "De actie wordt door de server op de achtergrond uitgevoerd en kan enige tijd in beslag nemen. Houd het serverlogboek in de gaten voor de voortgang",
+    "images": "Afbeeldingen",
+    "image_type": "Type",
+    "image_source": "Bron",
+    "image_make_primary": "Maak primair",
+    "update_metadata": "Metadata bijwerken",
     "cancel": "Annuleren",
+    "transfer_queue": "Wachtrij overzetten",
     "power_on_player": "De speler inschakelen",
     "power_off_player": "De speler uitschakelen",
     "powered_off_players": "Uitgeschakelde spelers",
+    "sync_player_with": "Synchroniseren met een andere speler",
+    "open_player_settings": "Instellingen openen",
+    "select_repeat_mode": "Selecteer de herhaalmodus",
+    "repeat_mode": {
+        "all": "Herhaal de hele wachtrij",
+        "off": "Herhalen uitgeschakeld",
+        "one": "Herhaal enkel nummer"
+    },
     "shuffle_disable": "Shuffle uitschakelen",
-    "shuffle_enable": "Shuffle inschakelen"
+    "shuffle_enable": "Shuffle inschakelen",
+    "dont_stop_the_music_enable": "'Don't stop the music' inschakelen",
+    "dont_stop_the_music_disable": "'Don't stop the music!' uitschakelen",
+    "open_dsp_settings": "Open DSP-instellingen",
+    "audiobook": "Luisterboek",
+    "audiobooks": "Luisterboeken",
+    "chapter": "Hoofdstuk",
+    "chapters": "Hoofdstukken",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "item_fully_played": "Dit item is volledig afgespeeld",
+    "item_in_progress": "Dit item is gedeeltelijk afgespeeld",
+    "duration_in_seconds": "{0} seconden",
+    "mark_played": "Markeer als afgespeeld",
+    "mark_unplayed": "Markeer als niet afgespeeld",
+    "searchtype_all": "Alle",
+    "global_search": "Globaal zoeken",
+    "podcast_episode": "Aflevering",
+    "podcast_episodes": "Afleveringen",
+    "play_from_here": "Speel vanaf hier",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamische volumenormalisatie",
+    "loudness_fixed": "Vaste versterkingscorrectie",
+    "dsp_active": "Actief",
+    "currently_playing_players": "Momenteel aan het spelen",
+    "all_players": "Alle spelers",
+    "all_groups": "Alle groepen",
+    "no_player_playing": "Er zijn momenteel geen spelers aan het spelen",
+    "stop_playback": "Afspelen stoppen",
+    "streamdetails": {
+        "input_header": "Invoer",
+        "output_header": "Uitvoer",
+        "output_format_info": "Audio wordt geconverteerd naar het '{0}' formaat voordat het naar de speler wordt gestuurd.",
+        "eq_band_count": "{0} bands",
+        "eq_band_count_singular": "1 band",
+        "input_gain": "Ingangsversterking ({0} dB)",
+        "output_gain": "Uitgangsversterking ( {0} dB)",
+        "output_limiter": "Uitgangsbegrenzer",
+        "output_limiter_info": "Reduceert automatisch zeer harde geluiden om vervorming te voorkomen en je luidsprekers te beschermen.",
+        "dsp_unsupported": "DSP niet ondersteund",
+        "dsp_disabled_by_unsupported_group": "Deze spelerprovider biedt geen ondersteuning voor DSP met gesynchroniseerd afspelen.",
+        "file_info": {
+            "container": "Container: {0}",
+            "codec": "Codec: {0}",
+            "bit_rate": "Bitsnelheid: {0} kbps",
+            "sample_rate": "Samplefrequentie: {0} kHz",
+            "channels": "Kanalen: {0}",
+            "bit_depth": "Bitdiepte: {0}"
+        },
+        "volume_normalization": {
+            "target_level": "Doelniveau: {0} LUFS.",
+            "integrated_loudness": "Gemeten (geïntegreerde) loudness: {0} LUFS.",
+            "integrated_album_loudness": "Album loudness: {0} LUFS.",
+            "applied_gain_correction": "Toegepaste versterkingscorrectie: {0} Db.",
+            "mode": {
+                "dynamic": "Volumenormalisatie is actief in de dynamische modus.",
+                "measurement_only": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) luidheid van de audio.",
+                "measurement_album": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) luidheid van het album.",
+                "fixed_gain": "Volumenormalisatie is actief op basis van vaste versterkingscorrectie."
+            }
+        },
+        "click_to_expand": "Klik om alle spelers te tonen"
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Bron selecteren"
 }

@@ -287,7 +287,8 @@
             "advanced": "Avancerede indstillinger",
             "generic": "Generelle indstillinger",
             "announcements": "Konfiguration af meddelelser",
-            "airplay": "Airplay-specifikke indstillinger"
+            "airplay": "Airplay-specifikke indstillinger",
+            "player_controls": "Afspillerstyring"
         },
         "tts_pre_announce": {
             "label": "Forhåndsannoncering af TTS-meddelelser",
@@ -410,7 +411,70 @@
             "description": "Fast\/standard forstærkningskorrektion, der skal anvendes på en radiostream (afhænger af indstillingen \"Volume normalization method\").\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\n\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
         },
         "group_type": "Gruppetype",
-        "add_group_player_desc": "For afspillerudbydere, der tilbyder indbygget gruppering\/synkronisering, oprettes der automatisk en synkroniseringsgruppe, hvilket betyder, at hvis du spiller til denne afspillergruppe, synkroniseres afspillerne automatisk. \n\nFor afspillereudbydere, der ikke understøtter gruppering, eller hvis du vil gruppere afspillere fra forskellige udbydere, kan du bruge gruppetypen \"Universal\", som vil distribuere den samme lyd til alle afspillere (dog ikke synkroniseret). \n\nBemærk, at nogle udbydere understøtter gruppering, men du skal bruge den oprindelige app til at udføre grupperingen. Et eksempel er Google Cast-baserede afspillere, hvor du kun kan oprette Google Cast-grupper i Google Home-appen."
+        "add_group_player_desc": "For afspillerudbydere, der tilbyder indbygget gruppering\/synkronisering, oprettes der automatisk en synkroniseringsgruppe, hvilket betyder, at hvis du spiller til denne afspillergruppe, synkroniseres afspillerne automatisk. \n\nFor afspillereudbydere, der ikke understøtter gruppering, eller hvis du vil gruppere afspillere fra forskellige udbydere, kan du bruge gruppetypen \"Universal\", som vil distribuere den samme lyd til alle afspillere (dog ikke synkroniseret). \n\nBemærk, at nogle udbydere understøtter gruppering, men du skal bruge den oprindelige app til at udføre grupperingen. Et eksempel er Google Cast-baserede afspillere, hvor du kun kan oprette Google Cast-grupper i Google Home-appen.",
+        "dynamic_members": {
+            "label": "Dynamiske gruppemedlemmer",
+            "description": "Tillad medlemmer (midlertidigt) at tilslutte sig\/forlade gruppen dynamisk, så gruppen mere eller mindre opfører sig på samme måde som manuel synkronisering af afspillere, med den største forskel, at gruppeafspilleren holder køen."
+        },
+        "dsp": {
+            "configure_on": "Konfiguration af DSP på: {name}",
+            "disabled_message": "DSP er i øjeblikket deaktiveret. Aktivér den ved hjælp af knappen ovenfor",
+            "input": "Indgang",
+            "output": "Udgang",
+            "enable_output_limiter": "Aktivér udgangsbegrænsning for at forhindre 'clipping'",
+            "filter": {
+                "add": "Tilføj filter",
+                "type": "Filtertype",
+                "new": "Ny {type}"
+            },
+            "move_up": "Flyt op",
+            "move_down": "Flyt ned",
+            "delete_filter": "Slet filter",
+            "parametric_eq": {
+                "add_band": "Tilføj bånd",
+                "delete_band": "Slet bånd",
+                "filter_type": "Filtertype",
+                "band": "Bånd {index}",
+                "enable_band": "Aktiver bånd",
+                "filter_types": {
+                    "peak": "Peak",
+                    "low_shelf": "Low Shelf",
+                    "high_shelf": "High Shelf",
+                    "low_pass": "Low Pass",
+                    "high_pass": "High Pass",
+                    "notch": "Notch"
+                },
+                "import_apo": "Importer APO\/REW-forudindstilling",
+                "export_apo": "Eksporter APO-forudindstilling",
+                "preamp": "Forforstærker"
+            },
+            "tone_control": {
+                "bass_level": "Basniveau",
+                "mid_level": "Mellemtoneniveau",
+                "treble_level": "Diskantniveau"
+            },
+            "parameter": {
+                "frequency": "Frekvens",
+                "gain": "Forstærkning",
+                "q_factor": "Q-faktor"
+            },
+            "types": {
+                "parametric_eq": "Parametrisk EQ",
+                "tone_control": "Tonekontrol"
+            }
+        },
+        "power_control": {
+            "label": "Tænd\/sluk-kontrol",
+            "description": "Definer\/tilsidesæt tænd\/sluk-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere tænd\/sluk-kommandoerne til en anden enhed eller deaktivere det fuldstændigt."
+        },
+        "volume_control": {
+            "label": "Lydstyrkekontrol",
+            "description": "Definer\/tilsidesæt lydstyrkekontrol-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere lydstyrkekontrol-kommandoerne til en anden enhed eller deaktivere det fuldstændigt."
+        },
+        "mute_control": {
+            "label": "Mutekontrol",
+            "description": "Definer\/tilsidesæt mutekontrol-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere mutekontrol-kommandoerne til en anden enhed eller deaktivere det helt. \n \nVi tilbyder en \"falsk\" mutekontrol-mulighed, som vil simulere muting ved at indstille lydstyrken til 0 og genoprette lydstyrken, når lyden slås til."
+        }
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
@@ -534,5 +598,67 @@
     "shuffle_disable": "Deaktivér bland",
     "shuffle_enable": "Aktivér bland",
     "dont_stop_the_music_enable": "Aktiver \"Stop ikke musikken!",
-    "dont_stop_the_music_disable": "Deaktiver \"Stop ikke musikken!"
+    "dont_stop_the_music_disable": "Deaktiver \"Stop ikke musikken!",
+    "open_dsp_settings": "Åbn DSP-indstillinger",
+    "audiobook": "Lydbog",
+    "audiobooks": "Lydbøger",
+    "chapter": "Kapitel",
+    "chapters": "Kapitler",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "item_fully_played": "Dette element er blevet afspillet",
+    "item_in_progress": "Dette element er blevet delvist afspillet",
+    "duration_in_seconds": "{0} sekunder",
+    "mark_played": "Markér som afspillet",
+    "mark_unplayed": "Markér som uafspillet",
+    "searchtype_all": "Alt",
+    "global_search": "Global søgning",
+    "podcast_episode": "Episode",
+    "podcast_episodes": "Episoder",
+    "play_from_here": "Afspil herfra",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamisk normalisering af lydstyrke",
+    "loudness_fixed": "Bestemt forstærkningskorrektion",
+    "dsp_active": "Aktiv",
+    "currently_playing_players": "Spiller nu",
+    "all_players": "Alle afspillere",
+    "all_groups": "Alle grupper",
+    "no_player_playing": "Ingen afspillere spiller i øjeblikket",
+    "stop_playback": "Stop afspilning",
+    "streamdetails": {
+        "input_header": "Indgang",
+        "output_header": "Udgang",
+        "output_format_info": "Lyden konverteres til formatet '{0}', før den sendes til afspilleren.",
+        "eq_band_count": "{0} bånd",
+        "eq_band_count_singular": "1 bånd",
+        "input_gain": "Indgangsforstærkning ({0} dB)",
+        "output_gain": "Udgangsforstærkning ({0} dB)",
+        "output_limiter": "Udgangsbegrænser",
+        "output_limiter_info": "Reducerer automatisk meget høje lyde for at forhindre forvrængning og beskytte dine højttalere",
+        "dsp_unsupported": "DSP understøttes ikke",
+        "dsp_disabled_by_unsupported_group": "Denne afspillerudbyder understøtter ikke DSP med synkroniseret afspilning",
+        "file_info": {
+            "container": "Container: {0}",
+            "codec": "Kodeks: {0}",
+            "bit_rate": "Bit rate: {0} kbps",
+            "sample_rate": "Samplingsfrekvens: {0} kHz",
+            "channels": "Kanaler: {0}",
+            "bit_depth": "Bitdybde: {0}"
+        },
+        "volume_normalization": {
+            "target_level": "Målniveau: {0} LUFS",
+            "integrated_loudness": "Målt (integreret) lydstyrke: {0} LUFS",
+            "integrated_album_loudness": "Albummets lydstyrke: {0} LUFS",
+            "applied_gain_correction": "Anvendt forstærkningskorrektion: {0} dB",
+            "mode": {
+                "dynamic": "Normalisering af lydstyrken er aktiv i dynamisk tilstand.",
+                "measurement_only": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af lydens (integrerede) lydstyrke.",
+                "measurement_album": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af albummets (integrerede) lydstyrke.",
+                "fixed_gain": "Normalisering af lydstyrken er aktiv, baseret på bestemt forstærkningskorrektion."
+            }
+        }
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Vælg kilde"
 }
