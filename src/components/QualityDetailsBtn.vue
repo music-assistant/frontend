@@ -5,6 +5,7 @@
     location="top center"
     :close-on-content-click="false"
     scrim
+    :max-height="$vuetify.display.height - 150"
   >
     <template #activator="{ props }">
       <v-chip
