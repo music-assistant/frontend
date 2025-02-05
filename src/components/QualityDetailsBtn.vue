@@ -5,6 +5,7 @@
     location="top center"
     :close-on-content-click="false"
     scrim
+    :max-height="$vuetify.display.height - 150"
   >
     <template #activator="{ props }">
       <v-chip
@@ -30,7 +31,7 @@
         <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">HR</div>
       </v-chip>
     </template>
-    <v-card class="mx-auto" width="380">
+    <v-card class="mx-auto" :width="Math.min($vuetify.display.width - 25, 380)">
       <v-list style="overflow: hidden">
         <div class="d-flex ml-2 mr-2">
           <!-- Second line showing audio stream shared by multiple players -->
@@ -817,6 +818,18 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   height: 50px;
   display: flex;
   align-items: center;
+}
+
+@media (max-width: 400px) {
+  .streamdetails-item {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 370px) {
+  .streamdetails-item {
+    font-size: 0.8rem;
+  }
 }
 
 .streamdetails-icon {
