@@ -487,6 +487,9 @@ const checkDisabled = function (entry: ConfigEntry) {
   // check if the UI element should be disabled due to conditions
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependent = entries.value?.find((x) => x.key == entry.depends_on);
+    if (!isNullOrUndefined(entry.depends_on_value)) {
+      if (dependent && dependent.value != entry.depends_on_value) return true;
+    }
     if (dependent && dependent.required && isNullOrUndefined(dependent))
       return true;
     if (

@@ -431,6 +431,7 @@ export interface ConfigEntry {
   multi_value?: boolean;
   // depends_on [optional]: needs to be set before this setting shows up in frontend
   depends_on?: string;
+  depends_on_value?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
