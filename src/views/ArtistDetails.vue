@@ -13,7 +13,14 @@
       :show-album-type-filter="true"
       :show-refresh-button="false"
       :load-items="loadArtistAlbums"
-      :sort-keys="['name', 'sort_name', 'year']"
+      :sort-keys="[
+        'name',
+        'sort_name',
+        'year',
+        'name_desc',
+        'sort_name_desc',
+        'year_desc',
+      ]"
       :title="$t('albums')"
       :allow-collapse="true"
     />
@@ -30,7 +37,16 @@
       :show-refresh-button="false"
       :show-track-number="false"
       :load-items="loadArtistTracks"
-      :sort-keys="['name', 'sort_name', 'album']"
+      :sort-keys="[
+        'name',
+        'sort_name',
+        'album',
+        'duration',
+        'name_desc',
+        'sort_name_desc',
+        'duration_desc',
+        'original',
+      ]"
       :title="$t('tracks')"
       :allow-collapse="true"
     />

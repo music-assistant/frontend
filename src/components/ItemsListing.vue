@@ -1027,6 +1027,13 @@ const getFilteredItems = function (
       }),
     );
   }
+  if (params.sortBy == "sort_name_desc") {
+    result.sort((a, b) =>
+      getSortName(b, true).localeCompare(getSortName(a, true), undefined, {
+        numeric: true,
+      }),
+    );
+  }
 
   if (params.sortBy == "album") {
     result.sort((a, b) =>
@@ -1066,6 +1073,9 @@ const getFilteredItems = function (
   }
   if (params.sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
+  }
+  if (params.sortBy == "year_desc") {
+    result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
   }
   if (params.sortBy == "recent") {
     result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
