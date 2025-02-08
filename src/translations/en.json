@@ -630,6 +630,7 @@
         "input_header": "Input",
         "output_header": "Output",
         "output_format_info": "Audio is sent in the {0} format",
+        "output_format_pcm_info": "Audio is passed as PCM to the player provider. The player provider may then convert the audio to a different format before sending it to the player.",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",
