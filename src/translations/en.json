@@ -644,7 +644,8 @@
             "bit_rate": "Bit rate: {0} kbps",
             "sample_rate": "Sample rate: {0} kHz",
             "channels": "Channels: {0}",
-            "bit_depth": "Bit depth: {0}"
+            "bit_depth": "Bit depth: {0}",
+            "processing_notice": "Audio is processed internally as 32-bit float PCM"
         },
         "volume_normalization": {
             "target_level": "Target level: {0} LUFS",

@@ -256,6 +256,9 @@
                     ])
                   }}
                 </span>
+                <br />
+                <br />
+                {{ $t("streamdetails.file_info.processing_notice") }}
               </v-tooltip>
             </div>
             <!-- Volume Normalization -->
