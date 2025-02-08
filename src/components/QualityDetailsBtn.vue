@@ -256,6 +256,9 @@
                     ])
                   }}
                 </span>
+                <br />
+                <br />
+                {{ $t("streamdetails.file_info.processing_notice") }}
               </v-tooltip>
             </div>
             <!-- Volume Normalization -->
@@ -455,11 +458,24 @@
                       >mdi-information</v-icon
                     >
                   </template>
-                  {{
-                    $t("streamdetails.output_format_info", [
-                      streamDetails.dsp[player_id].output_format.content_type,
-                    ])
-                  }}
+                  <template
+                    v-if="
+                      isPcm(
+                        streamDetails.dsp[player_id].output_format.content_type,
+                      )
+                    "
+                  >
+                    {{ $t("streamdetails.output_format_pcm_info") }}
+                  </template>
+                  <template v-else>
+                    {{
+                      $t("streamdetails.output_format_info", [
+                        streamDetails.dsp[
+                          player_id
+                        ].output_format.content_type.toUpperCase(),
+                      ])
+                    }}
+                  </template>
                 </v-tooltip>
               </div>
               <!-- Player -->
