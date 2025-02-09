@@ -15,15 +15,17 @@
           @click="chapterClicked(chapter)"
         >
           <template #prepend>
-            <v-chip>
-              {{ chapter.position }}
-            </v-chip>
+            <div style="width: 50px">
+              <v-chip>
+                {{ chapter.position }}
+              </v-chip>
+            </div>
           </template>
           <template #title>
-            <div style="margin-left: 15px">{{ chapter.name }}</div>
+            <div>{{ chapter.name }}</div>
           </template>
           <template #append>
-            <span v-if="chapter.end"
+            <span v-if="chapter.end" class="text-caption"
               >{{ formatDuration(chapter.end - chapter.start) }}
             </span>
           </template>
@@ -47,7 +49,7 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
-const expanded = ref(false);
+const expanded = ref(true);
 
 const toggleExpand = function () {
   expanded.value = !expanded.value;
