@@ -102,18 +102,25 @@
       <div v-else-if="'owner' in item && item.owner">
         {{ item.owner }}
       </div>
+      <!-- audiobook author(s) -->
+      <div v-else-if="'authors' in item && item.authors">
+        {{ item.authors.join(" / ") }}
+      </div>
+      <!-- audiobook publisher -->
+      <div v-else-if="'publisher' in item && item.publisher">
+        {{ item.publisher }}
+      </div>
       <!-- description -->
-      <div v-else-if="'metadata' in item && item.metadata?.description">
-        <span v-if="getBreakpointValue('bp6')">{{
-          truncateString(item.metadata.description, 300)
-        }}</span>
-        <span v-else-if="getBreakpointValue('bp4')">{{
-          truncateString(item.metadata.description, 200)
-        }}</span>
-        <span v-else-if="getBreakpointValue('bp3')">{{
-          truncateString(item.metadata.description, 150)
-        }}</span>
-        <span v-else>{{ truncateString(item.metadata.description, 80) }}</span>
+      <div
+        v-else-if="
+          'metadata' in item &&
+          item.metadata?.description &&
+          [MediaType.RADIO, MediaType.PLAYLIST, MediaType.FOLDER].includes(
+            item.media_type,
+          )
+        "
+      >
+        {{ truncateString(item.metadata.description, 150) }}
       </div>
       <!-- media type label -->
       <div v-else-if="'media_type' in item && !item.provider_mappings">
