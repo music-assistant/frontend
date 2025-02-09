@@ -268,7 +268,7 @@
                 src="@/assets/level.png"
               />
               {{ loudness }}
-              <v-tooltip location="top" :open-on-click="true" max-width="300">
+              <v-tooltip location="top" :open-on-click="true" max-width="350">
                 <template #activator="{ props }">
                   <v-icon class="ml-2" size="small" v-bind="props"
                     >mdi-information</v-icon
@@ -302,6 +302,7 @@
                     streamDetails.target_loudness,
                   ])
                 }}
+                <br />
                 <span v-if="streamDetails.loudness != null">
                   {{
                     $t(
