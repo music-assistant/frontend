@@ -21,6 +21,7 @@
       <template #append>
         <!-- power button -->
         <Button
+          v-if="player.power_control != PLAYER_CONTROL_NONE"
           class="powerbtn"
           variant="icon"
           @click.stop="api.playerCommandPowerToggle(player.player_id)"
