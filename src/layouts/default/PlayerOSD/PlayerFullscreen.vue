@@ -390,6 +390,29 @@
                       </div>
                     </template>
                   </ListItem>
+                  <!-- Show chapters -->
+                  <div
+                    v-if="
+                      item.queue_item_id == store.curQueueItem?.queue_item_id &&
+                      item.media_item?.metadata?.chapters?.length
+                    "
+                    style="margin-left: 50px"
+                  >
+                    <v-list-item
+                      v-for="chapter in item.media_item.metadata?.chapters"
+                      :key="chapter.position"
+                      @click.stop="chapterClicked(item.media_item, chapter)"
+                    >
+                      <template #title>
+                        <div>{{ chapter.name }}</div>
+                      </template>
+                      <template #append>
+                        <span v-if="chapter.end" class="text-caption"
+                          >{{ formatDuration(chapter.end - chapter.start) }}
+                        </span>
+                      </template>
+                    </v-list-item>
+                  </div>
                 </template>
               </v-virtual-scroll>
             </v-infinite-scroll>
@@ -539,10 +562,12 @@ import {
   Artist,
   EventMessage,
   EventType,
+  MediaItemChapter,
   MediaItemType,
   MediaType,
   PlayerQueue,
   QueueItem,
+  QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -873,6 +898,18 @@ const activeQueuePanelClick = function () {
   sleep(100).then(() => {
     tempHide.value = false;
   });
+};
+
+const chapterClicked = function (
+  item: MediaItemType,
+  chapter: MediaItemChapter,
+) {
+  api.playMedia(
+    item.uri,
+    QueueOption.PLAY,
+    undefined,
+    chapter.position.toString(),
+  );
 };
 
 // watchers
