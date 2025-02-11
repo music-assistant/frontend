@@ -538,5 +538,9 @@
     "shuffle_disable": "禁用随机播放",
     "shuffle_enable": "启用随机播放",
     "dont_stop_the_music_enable": "启用“不要停止音乐！”",
-    "dont_stop_the_music_disable": "禁用“不要停止音乐！”"
+    "dont_stop_the_music_disable": "禁用“不要停止音乐！”",
+    "select_source": "Selecteer bron",
+    "streamdetails": {
+        "click_to_expand": "Klik om alle spelers te tonen"
+    }
 }

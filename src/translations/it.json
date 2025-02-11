@@ -287,7 +287,8 @@
             "advanced": "Impostazioni avanzate",
             "generic": "Impostazioni generiche",
             "announcements": "Configurazione degli annunci",
-            "airplay": "Impostazioni specifiche di Airplay"
+            "airplay": "Impostazioni specifiche di Airplay",
+            "player_controls": "Controlli generali"
         },
         "tts_pre_announce": {
             "label": "Pre-annunciare annunci TTS",
@@ -414,6 +415,41 @@
         "dynamic_members": {
             "label": "Membri dinamici del gruppo",
             "description": "Consentire ai membri di unirsi\/abbandonare il gruppo (temporaneamente) in modo dinamico, in modo che il gruppo si comporti più o meno come se i lettori fossero sincronizzati manualmente, con la differenza principale che il lettore del gruppo manterrà la coda."
+        },
+        "dsp": {
+            "configure_on": "Configurazione DSP su: {name}",
+            "disabled_message": "DSP è attualmente disabilitato. Abilitalo utilizzando l'interruttore sopra",
+            "input": "Ingresso",
+            "output": "Uscita",
+            "filter": {
+                "add": "Aggiungi filtro",
+                "type": "Tipo di filtro",
+                "new": "Nuovo {type}"
+            },
+            "move_up": "Sposta su",
+            "move_down": "Sposta giù",
+            "delete_filter": "Elimina filtro",
+            "parametric_eq": {
+                "filter_type": "Tipo di filtro",
+                "preamp": "Preamplificatore"
+            },
+            "tone_control": {
+                "bass_level": "Livello dei bassi",
+                "mid_level": "Livello medio",
+                "treble_level": "Livello degli acuti"
+            },
+            "parameter": {
+                "frequency": "Frequenza"
+            }
+        },
+        "power_control": {
+            "label": "Accensione e spegnimento"
+        },
+        "volume_control": {
+            "label": "Controllo del volume"
+        },
+        "mute_control": {
+            "label": "Controllo del silenziamento"
         }
     },
     "show_info": "Mostra info",
@@ -538,5 +574,44 @@
     "shuffle_disable": "Disabilita riproduzione casuale",
     "shuffle_enable": "Abilita riproduzione casuale",
     "dont_stop_the_music_enable": "Abilita \"Non fermare la musica!\"",
-    "dont_stop_the_music_disable": "Disabilita \"Non fermare la musica!\""
+    "dont_stop_the_music_disable": "Disabilita \"Non fermare la musica!\"",
+    "open_dsp_settings": "Apri impostazioni DSP",
+    "audiobook": "Audiolibro",
+    "audiobooks": "Audiolibri",
+    "chapter": "Capitolo",
+    "chapters": "Capitoli",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "item_fully_played": "Questo elemento è stato completamente riprodotto",
+    "item_in_progress": "Questo elemento è stato riprodotto parzialmente",
+    "duration_in_seconds": "{0} secondi",
+    "mark_played": "Contrassegna come riprodotto",
+    "mark_unplayed": "Contrassegna come non riprodotto",
+    "searchtype_all": "Tutti",
+    "global_search": "Ricerca globale",
+    "podcast_episode": "Episodio",
+    "podcast_episodes": "Episodi",
+    "play_from_here": "Riproduci da qui",
+    "dsp_active": "Attivo",
+    "currently_playing_players": "In riproduzione",
+    "all_players": "Tutti i lettori",
+    "all_groups": "Tutti i gruppi",
+    "stop_playback": "Interrompere la riproduzione",
+    "streamdetails": {
+        "input_header": "Ingresso",
+        "output_header": "Uscita",
+        "output_format_info": "L'audio viene convertito nel formato ' {0} ' prima di essere inviato al lettore.",
+        "input_gain": "Guadagno di ingresso ( {0} dB)",
+        "output_gain": "Guadagno in uscita ( {0} dB)",
+        "output_limiter": "Limitatore di uscita",
+        "output_limiter_info": "Riduce automaticamente i suoni molto forti per evitare distorsioni e proteggere gli altoparlanti",
+        "dsp_unsupported": "DSP non supportato",
+        "dsp_disabled_by_unsupported_group": "Questo provider di lettori non supporta il DSP con la riproduzione sincronizzata",
+        "file_info": {
+            "codec": "Codice: {0}",
+            "channels": "Canali: {0}"
+        },
+        "click_to_expand": "Clicca per mostrare tutti i lettori"
+    },
+    "select_source": "Seleziona la fonte"
 }
