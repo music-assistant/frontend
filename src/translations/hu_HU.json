@@ -499,7 +499,7 @@
         "paused": "szünetel",
         "playing": "lejátszás"
     },
-    "sync_now": "{0} szinkronizálása most",
+    "sync_now": "szinkronizálása most",
     "sync_running": "Egy vagy több zeneszolgáltató szinkronizálása folyamatban van.",
     "tooltip": {
         "album_artist_filter": "Váltás: album-előadó szűrő",

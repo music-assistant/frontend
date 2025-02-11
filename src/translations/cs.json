@@ -448,7 +448,7 @@
         "paused": "pozastavený",
         "playing": "přehrává"
     },
-    "sync_now": "Synchronizovat {0} nyní",
+    "sync_now": "Synchronizovat nyní",
     "sync_running": "Probíhá synchronizace jednoho nebo více poskytovatelů hudby.",
     "tooltip": {
         "album_artist_filter": "Filtrování na alba s interprety",

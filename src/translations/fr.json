@@ -513,7 +513,7 @@
         "paused": "en pause",
         "playing": "En cours de lecture"
     },
-    "sync_now": "Synchronisez {0} maintenant",
+    "sync_now": "Synchronisez maintenant",
     "sync_running": "Un ou plusieurs fournisseurs de musique sont en cours de synchronisation.",
     "tooltip": {
         "album_artist_filter": "Basculer le filtre d'album-artiste",

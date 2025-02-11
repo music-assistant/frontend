@@ -700,11 +700,20 @@ export class MusicAssistantApi {
     });
   }
 
+  public async getInProgressItems(limit = 10): Promise<ItemMapping[]> {
+    return this.sendCommand("music/in_progress_items", {
+      limit,
+    });
+  }
+
   public markItemPlayed(
     media_item: MediaItemTypeOrItemMapping,
     fully_played?: boolean,
     seconds_played?: number,
   ): Promise<void> {
+    if ("fully_played" in media_item) media_item.fully_played = fully_played;
+    if ("resume_position_ms" in media_item)
+      delete media_item.resume_position_ms;
     // Mark item as played in the playlog
     return this.sendCommand("music/mark_played", {
       media_item,
@@ -715,6 +724,9 @@ export class MusicAssistantApi {
   public markItemUnPlayed(
     media_item: MediaItemTypeOrItemMapping,
   ): Promise<void> {
+    if ("fully_played" in media_item) media_item.fully_played = false;
+    if ("resume_position_ms" in media_item)
+      delete media_item.resume_position_ms;
     // Mark item as unplayed in the playlog
     return this.sendCommand("music/mark_unplayed", {
       media_item,

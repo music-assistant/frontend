@@ -265,6 +265,7 @@ export enum EventType {
   MEDIA_ITEM_ADDED = "media_item_added",
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
+  MEDIA_ITEM_PLAYED = "media_item_played",
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
@@ -610,6 +611,8 @@ export interface Audiobook extends MediaItem {
   total_chapters: number;
   authors: string[];
   narrators: string[];
+  fully_played?: boolean;
+  resume_position_ms?: number;
 }
 
 export interface Podcast extends MediaItem {
@@ -621,8 +624,8 @@ export interface PodcastEpisode extends MediaItem {
   position: number;
   podcast: Podcast | ItemMapping;
   duration: number;
-  fully_played: boolean;
-  resume_position_ms: number;
+  fully_played?: boolean;
+  resume_position_ms?: number;
 }
 
 export type MediaItemType =

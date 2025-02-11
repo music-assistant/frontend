@@ -410,7 +410,7 @@
         "paused": "pausad",
         "playing": "spelar"
     },
-    "sync_now": "Synkronisera {0} nu",
+    "sync_now": "Synkronisera nu",
     "sync_running": "En eller flera musikleverantörer synkroniseras.",
     "tooltip": {
         "album_artist_filter": "Växla album-artist-filter",
