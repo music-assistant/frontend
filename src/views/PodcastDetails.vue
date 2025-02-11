@@ -89,7 +89,7 @@ const onMenu = function (
   const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
   const menuItems: ContextMenuItem[] = [];
   const episode = mediaItems[0] as PodcastEpisode;
-  if (episode.fully_played || episode.resume_position_ms > 0) {
+  if (episode.fully_played || episode.resume_position_ms) {
     menuItems.push({
       label: "mark_unplayed",
       action: async () => {

@@ -527,9 +527,13 @@ export const getContextMenuItems = function (
     });
   }
 
-  if (items.length === 1 && "fully_played" in items[0]) {
+  if (
+    items.length === 1 &&
+    "fully_played" in items[0] &&
+    "resume_position_ms" in items[0]
+  ) {
     // mark unplayed
-    if (items[0].fully_played || items[0].resume_position_ms > 0) {
+    if (items[0].fully_played || items[0].resume_position_ms) {
       contextMenuItems.push({
         label: "mark_unplayed",
         icon: "mdi-clock-fast",
