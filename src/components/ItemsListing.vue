@@ -180,6 +180,8 @@ import {
   BrowseFolder,
   ItemMapping,
   MediaItemTypeOrItemMapping,
+  EventMessage,
+  EventType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import ListviewItem from "./ListviewItem.vue";
@@ -945,6 +947,39 @@ onMounted(async () => {
   } else {
     loadData(true);
   }
+
+  // signal if/when items get played/updated/removed
+  const unsub = api.subscribe_multi(
+    [
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
+      EventType.MEDIA_ITEM_PLAYED,
+    ],
+    (evt: EventMessage) => {
+      if (evt.event == EventType.MEDIA_ITEM_DELETED) {
+        pagedItems.value = pagedItems.value.filter(
+          (i) => i.uri != evt.object_id,
+        );
+      } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
+        // update item
+        const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
+        if (idx >= 0) {
+          pagedItems.value[idx] = evt.data;
+        }
+      } else if (evt.event == EventType.MEDIA_ITEM_PLAYED) {
+        // update item
+        const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
+        if (idx >= 0) {
+          if ("fully_played" in pagedItems.value[idx])
+            pagedItems.value[idx].fully_played = evt.data["fully_played"];
+          if ("resume_position_ms" in pagedItems.value[idx])
+            pagedItems.value[idx].resume_position_ms =
+              evt.data["seconds_played"] * 1000;
+        }
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
 });
 
 export interface StoredState {
