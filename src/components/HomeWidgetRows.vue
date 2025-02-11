@@ -1,6 +1,6 @@
 <template>
   <div v-for="widgetRow in widgetRows" :key="widgetRow.label">
-    <HomeWidgetRow :widget-row="widgetRow" />
+    <HomeWidgetRow v-if="widgetRow.items.length" :widget-row="widgetRow" />
   </div>
 </template>
 
@@ -8,10 +8,16 @@
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import HomeWidgetRow, { WidgetRow } from "@/components/HomeWidgetRow.vue";
-import { ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { onActivated } from "vue";
+import { EventMessage, EventType } from "@/plugins/api/interfaces";
 
 const widgetRows = ref<Record<string, WidgetRow>>({
+  in_progress_items: {
+    label: "in_progress_items",
+    icon: "mdi-motion-play",
+    items: [],
+  },
   recently_played: {
     label: "recently_played",
     icon: "mdi-motion-play",
@@ -58,6 +64,9 @@ const widgetRows = ref<Record<string, WidgetRow>>({
 const loadData = async function () {
   // recently played widget row
   widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(10);
+
+  // in-progress audiobooks/episodes widget row
+  widgetRows.value.in_progress_items.items = await api.getInProgressItems(10);
 
   // library artists widget row
   // TODO: Find a way to make the images for this row eager load
@@ -121,6 +130,21 @@ await loadData();
 onActivated(() => {
   // update the listing when a cached view is reactivated
   loadData();
+});
+
+onMounted(() => {
+  // signal if/when an item gets played (or is playing)
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_PLAYED,
+    async (evt: EventMessage) => {
+      // update the recently played and in-progress widget rows
+      widgetRows.value.recently_played.items =
+        await api.getRecentlyPlayedItems(10);
+      widgetRows.value.in_progress_items.items =
+        await api.getInProgressItems(10);
+    },
+  );
+  onBeforeUnmount(unsub);
 });
 </script>
 
