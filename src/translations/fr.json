@@ -281,7 +281,7 @@
             }
         },
         "default": "par défaut",
-        "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
+        "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
         "category": {
             "audio": "Son",
             "advanced": "Paramètres avancés",
@@ -579,6 +579,7 @@
     "images": "Images",
     "image_type": "Type",
     "image_source": "Source",
+    "image_make_primary": "Définir comme principale",
     "update_metadata": "Mettre à jour les métadonnées",
     "cancel": "Annuler",
     "transfer_queue": "Transférer la file d'attente",
@@ -627,7 +628,7 @@
     "streamdetails": {
         "input_header": "Entrée",
         "output_header": "Sortie",
-        "output_format_info": "L'audio est converti au format « {0} » avant d'être envoyé au lecteur.",
+        "output_format_info": "L'audio est envoyé au format {0}",
         "eq_band_count": "{0} bandes",
         "eq_band_count_singular": "1 bande",
         "input_gain": "Gain d'entrée ({0} dB)",
@@ -642,7 +643,8 @@
             "bit_rate": "Débit binaire : {0} kbps",
             "sample_rate": "Fréquence d'échantillonnage : {0} kHz",
             "channels": "Canaux : {0}",
-            "bit_depth": "Profondeur de bits : {0}"
+            "bit_depth": "Profondeur de bits : {0}",
+            "processing_notice": "L'audio est traité en interne en PCM 32 bits flottant"
         },
         "volume_normalization": {
             "target_level": "Niveau cible : {0} LUFS",
@@ -655,7 +657,9 @@
                 "measurement_album": "La normalisation du volume est active selon une mesure enregistrée de la puissance sonore (intégrée) de l'album.",
                 "fixed_gain": "La normalisation du volume est active avec une correction de gain fixe."
             }
-        }
+        },
+        "click_to_expand": "Cliquez pour afficher tous les lecteurs",
+        "output_format_pcm_info": "L'audio est transmis en PCM au fournisseur du lecteur. Le fournisseur du lecteur peut ensuite convertir l'audio dans un format différent avant de l'envoyer au lecteur."
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Sélectionner la source"

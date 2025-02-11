@@ -75,7 +75,7 @@
     "queue_next_items": "Kolejne pozycje",
     "queue_options": "Opcje kolejki",
     "queue_previous_items": "Poprzednie utwory",
-    "queue_radio_based_on": "Kolejka jest automatycznie wypełniana utworami na podstawie {0}:",
+    "queue_radio_based_on": "Kolejka jest automatycznie wypełniana utworami na podstawie:",
     "queue_radio_enabled": "Tryb radiowy aktywny",
     "radios": "Radio",
     "read_more": "czytaj więcej",
@@ -287,7 +287,8 @@
             "advanced": "Zaawansowane ustawienia",
             "generic": "Ustawienia ogólne",
             "announcements": "Konfiguracja powiadomień",
-            "airplay": "Ustawienia specyficzne dla Airplay"
+            "airplay": "Ustawienia specyficzne dla Airplay",
+            "player_controls": "Sterowanie odtwarzaczem"
         },
         "tts_pre_announce": {
             "label": "Ogłaszaj z wyprzedzeniem powiadomienia TTS",
@@ -377,7 +378,56 @@
         "no_music_providers_detail": "Rozpocznij korzystanie z Music Assistant, dodając swoich dostawców muzyki.",
         "no_player_providers": "Nie skonfigurowano żadnych dostawców odtwarzaczy",
         "no_player_providers_detail": "Skonfiguruj dostawców odtwarzaczy, aby wybrać urządzenia, na których Music Assistant może odtwarzać Twoją muzykę.",
-        "group_type": "Typ grupy"
+        "volume_normalization_radio": {
+            "label": "Metoda normalizacji głośności stosowana w przypadku strumieni radiowych"
+        },
+        "group_type": "Typ grupy",
+        "dsp": {
+            "input": "Wejście",
+            "output": "Wyjście",
+            "enable_output_limiter": "Włącz Ogranicznik wyjścia, aby zapobiec przycinaniu",
+            "filter": {
+                "add": "Dodaj filtr",
+                "type": "Typ filtra",
+                "new": "Nowy {type}"
+            },
+            "move_up": "Przesuń w górę",
+            "move_down": "Przesuń w dół",
+            "delete_filter": "Usuń filtr",
+            "parametric_eq": {
+                "add_band": "Dodaj pasmo",
+                "delete_band": "Usuń pasmo",
+                "filter_type": "Typ filtra",
+                "band": "Pasmo {index}",
+                "enable_band": "Włącz pasmo",
+                "filter_types": {
+                    "peak": "Filtr szczytowy"
+                },
+                "preamp": "Przedwzmacniacz"
+            },
+            "tone_control": {
+                "bass_level": "Poziom tonów niskich",
+                "mid_level": "Poziom tonów średnich",
+                "treble_level": "Poziom tonów wysokich"
+            },
+            "parameter": {
+                "frequency": "Częstotliwość"
+            },
+            "types": {
+                "parametric_eq": "Korektor parametryczny",
+                "tone_control": "Kontrola tonów"
+            }
+        },
+        "power_control": {
+            "label": "Kontrola zasilania"
+        },
+        "volume_control": {
+            "label": "Kontrola głośności"
+        },
+        "mute_control": {
+            "label": "Kontrola wyciszenia",
+            "description": "Zdefiniuj\/zastąp zachowanie kontroli wyciszenia dla tego odtwarzacza.\nPozwala to na przykład przekierować polecenia sterujące wyciszeniem do innego urządzenia lub całkowicie je wyłączyć.\n\nOferujemy opcję „fałszywej” kontroli wyciszenia, która symuluje wyciszenie poprzez ustawienie głośności na 0 i przywrócenie głośności po wyłączeniu wyciszenia."
+        }
     },
     "show_info": "Pokaż informacje",
     "show_select_boxes": "Pokaż pola wyboru",
@@ -501,5 +551,60 @@
     "shuffle_disable": "Wyłącz odtwarzanie losowe",
     "shuffle_enable": "Włącz odtwarzanie losowe",
     "dont_stop_the_music_enable": "Włącz opcję „Nie zatrzymuj muzyki!”",
-    "dont_stop_the_music_disable": "Wyłącz opcję „Nie zatrzymuj muzyki!”"
+    "dont_stop_the_music_disable": "Wyłącz opcję „Nie zatrzymuj muzyki!”",
+    "audiobook": "Audiobook",
+    "audiobooks": "Audiobooki",
+    "podcast": "Podkast",
+    "podcasts": "Podkasty",
+    "duration_in_seconds": "{0} sekund",
+    "mark_played": "Oznacz jako odtworzony",
+    "mark_unplayed": "Oznacz jako nieodtworzony",
+    "play_from_here": "Odtwórz stąd",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamiczna normalizacja głośności",
+    "loudness_fixed": "Stała korekta wzmocnienia",
+    "dsp_active": "Aktywny",
+    "currently_playing_players": "Obecnie odtwarzające",
+    "all_players": "Wszystkie odtwarzacze",
+    "all_groups": "Wszystkie grupy",
+    "no_player_playing": "Obecnie nie gra żaden odtwarzacz",
+    "stop_playback": "Zatrzymaj odtwarzanie",
+    "streamdetails": {
+        "input_header": "Wejście",
+        "output_header": "Wyjście",
+        "output_format_info": "Dźwięk jest wysyłany w formacie {0}",
+        "eq_band_count": "{0} pasma",
+        "eq_band_count_singular": "1 pasmo",
+        "input_gain": "Wzmocnienie wejściowe ({0} dB)",
+        "output_gain": "Wzmocnienie wyjściowe ({0} dB)",
+        "output_limiter": "Limiter wyjścia",
+        "output_limiter_info": "Automatycznie redukuje bardzo głośne dźwięki, aby zapobiec zniekształceniom i chronić głośniki",
+        "dsp_unsupported": "DSP nie jest obsługiwane",
+        "dsp_disabled_by_unsupported_group": "Ten dostawca odtwarzacza nie obsługuje technologii DSP z odtwarzaniem synchronicznym",
+        "file_info": {
+            "container": "Kontener: {0}",
+            "codec": "Kodek: {0}",
+            "bit_rate": "Przepływność: {0} kbps",
+            "sample_rate": "Częstotliwość próbkowania: {0} kHz",
+            "channels": "Kanały: {0}",
+            "bit_depth": "Głębia bitowa: {0}",
+            "processing_notice": "Dźwięk jest przetwarzany wewnętrznie jako 32-bitowy zmiennoprzecinkowy PCM"
+        },
+        "volume_normalization": {
+            "target_level": "Poziom docelowy: {0} LUFS",
+            "integrated_loudness": "Zmierzona (zintegrowana) głośność: {0} LUFS",
+            "integrated_album_loudness": "Głośność albumu: {0} LUFS",
+            "applied_gain_correction": "Zastosowana korekcja wzmocnienia: {0} dB",
+            "mode": {
+                "dynamic": "Normalizacja głośności działa w trybie dynamicznym.",
+                "measurement_album": "Normalizacja głośności działa na podstawie zapisanego pomiaru (zintegrowanej) głośności albumu.",
+                "fixed_gain": "Normalizacja głośności działa na podstawie stałej korekcji wzmocnienia."
+            }
+        },
+        "click_to_expand": "Kliknij, aby wyświetlić wszystkie odtwarzacze",
+        "output_format_pcm_info": "Dźwięk jest przekazywany jako PCM do dostawcy odtwarzacza. Dostawca odtwarzacza może następnie przekonwertować dźwięk na inny format przed wysłaniem go do odtwarzacza."
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Wybierz źródło"
 }
