@@ -82,7 +82,9 @@
 
       <!-- play button -->
       <v-btn
-        v-if="(isHovering || store.isTouchscreen) && isAvailable"
+        v-if="
+          (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
+        "
         icon="mdi-play"
         color="primary"
         fab

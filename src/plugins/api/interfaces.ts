@@ -542,12 +542,12 @@ export interface MediaItem {
   provider: string;
   name: string;
   provider_mappings: ProviderMapping[];
-
   metadata: MediaItemMetadata;
   favorite: boolean;
   media_type: MediaType;
   sort_name?: string;
   uri: string;
+  is_playable: boolean;
   timestamp_added: number;
   timestamp_modified: number;
 }
@@ -561,6 +561,7 @@ export interface ItemMapping {
   uri: string;
   version: string;
   image?: MediaItemImage;
+  is_playable: boolean;
 }
 
 export interface Artist extends MediaItem {
@@ -645,7 +646,6 @@ export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 export interface BrowseFolder extends MediaItem {
   path?: string;
   label: string;
-  items?: Array<MediaItemType | BrowseFolder>;
 }
 
 export interface SearchResults {

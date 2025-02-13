@@ -614,6 +614,19 @@ export class MusicAssistantApi {
     });
   }
 
+  public getLibraryItem(
+    media_type: MediaType,
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MediaItemType | null> {
+    // Get single music item by id and media type.
+    return this.sendCommand("music/get_library_item", {
+      media_type,
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   public async addItemToLibrary(
     item: string | MediaItemType | ItemMapping,
     overwrite_existing = false,

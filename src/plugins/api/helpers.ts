@@ -20,25 +20,3 @@ export const itemIsAvailable = function (
   } else if ("available" in item) return item.available as boolean;
   return false;
 };
-
-export const itemIsPlayable = function (
-  item: MediaItemType | ItemMapping,
-): boolean {
-  if (
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.PLAYLIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PODCAST,
-      MediaType.PODCAST_EPISODE,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(item.media_type)
-  )
-    return true;
-  if (item.media_type == MediaType.FOLDER) {
-    return !(item as BrowseFolder).path?.endsWith("://");
-  }
-  return false;
-};

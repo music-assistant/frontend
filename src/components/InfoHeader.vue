@@ -25,7 +25,7 @@
       <Toolbar
         icon="mdi-arrow-left"
         style="position: absolute"
-        :menu-items="item ? getContextMenuItems([item], item) : []"
+        :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :show-loading="true"
         :icon-action="backButtonClick"
@@ -327,12 +327,7 @@ import ProviderIcon from "./ProviderIcon.vue";
 import { store } from "@/plugins/store";
 import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
-import {
-  ImageType,
-  Track,
-  MediaType,
-  PlayerState,
-} from "@/plugins/api/interfaces";
+import { ImageType, Track, MediaType } from "@/plugins/api/interfaces";
 import type {
   Album,
   Artist,
@@ -349,13 +344,15 @@ import {
   truncateString,
   handlePlayBtnClick,
 } from "@/helpers/utils";
-import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
+import {
+  ContextMenuItem,
+  getContextMenuItems,
+} from "@/layouts/default/ItemContextMenu.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { useI18n } from "vue-i18n";
 import MarqueeText from "./MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import MenuButton from "./MenuButton.vue";
-import { c } from "vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 
 // properties
 export interface Props {
@@ -365,22 +362,27 @@ const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
+const menuItems = ref<ContextMenuItem[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
-const { t } = useI18n();
+
 watch(
   () => compProps.item,
   async (val) => {
     if (val) {
       fanartImage.value =
-        getImageThumbForItem(compProps.item, ImageType.FANART) ||
-        getImageThumbForItem(compProps.item, ImageType.LANDSCAPE) ||
-        getImageThumbForItem(compProps.item, ImageType.THUMB) ||
+        getImageThumbForItem(val, ImageType.FANART) ||
+        getImageThumbForItem(val, ImageType.LANDSCAPE) ||
+        getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
+      menuItems.value = await getContextMenuItems([val]);
+    } else {
+      fanartImage.value = imgGradient;
+      menuItems.value = [];
     }
   },
   { immediate: true },

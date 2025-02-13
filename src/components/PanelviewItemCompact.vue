@@ -83,7 +83,9 @@
       </div>
       <!-- play button -->
       <v-btn
-        v-if="(isHovering || store.isTouchscreen) && isAvailable && isPlayable"
+        v-if="
+          (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
+        "
         icon="mdi-play"
         color="primary"
         fab
@@ -120,7 +122,6 @@ export interface Props {
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
   isAvailable?: boolean;
-  isPlayable?: boolean;
   parentItem?: MediaItemType;
 }
 const compProps = withDefaults(defineProps<Props>(), {
@@ -129,7 +130,6 @@ const compProps = withDefaults(defineProps<Props>(), {
   showCheckboxes: false,
   permanentOverlay: false,
   isAvailable: true,
-  isPlayable: true,
   parentItem: undefined,
 });
 

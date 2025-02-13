@@ -19,12 +19,7 @@
           "
         />
       </div>
-      <div
-        v-else
-        class="media-thumb listitem-media-thumb"
-        @mouseenter="showPlayBtn = true"
-        @mouseleave="showPlayBtn = false"
-      >
+      <div v-else class="media-thumb listitem-media-thumb">
         <MediaItemThumb
           size="50"
           :item="isAvailable ? item : undefined"
@@ -33,7 +28,7 @@
       </div>
       <!-- play button -->
       <v-btn
-        v-if="!showCheckboxes"
+        v-if="!showCheckboxes && item.is_playable"
         :class="{ hidden: !showPlayBtn }"
         icon="mdi-play"
         color="primary"

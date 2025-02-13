@@ -39,7 +39,6 @@
             )
           "
           :is-available="itemIsAvailable(item)"
-          :is-playable="itemIsPlayable(item)"
         />
       </swiper-slide>
     </carousel>
@@ -49,8 +48,7 @@
 <script setup lang="ts">
 import Carousel from "@/components/Carousel.vue";
 import PanelviewItemCompact from "@/components/PanelviewItemCompact.vue";
-import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
-import { itemIsAvailable, itemIsPlayable } from "@/plugins/api/helpers";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   MediaItemTypeOrItemMapping,
   MediaType,

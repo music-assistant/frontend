@@ -562,11 +562,13 @@ export const handleMediaItemClick = function (
   posY: number,
   parentItem?: MediaItemType,
 ) {
+  // open menu when item is unavailable so the user has a way to remove/refresh the item
   if (!itemIsAvailable(item)) {
-    // open menu when item is unavailable so the user has a way to remove/refresh the item
     handleMenuBtnClick(item, posX, posY);
     return;
   }
+
+  // folder items always open in browse view
   if (item.media_type == MediaType.FOLDER) {
     router.push({
       name: "browse",
@@ -574,24 +576,33 @@ export const handleMediaItemClick = function (
         path: (item as BrowseFolder).path,
       },
     });
-  } else if (
-    [MediaType.TRACK, MediaType.PODCAST_EPISODE, MediaType.RADIO].includes(
-      item.media_type,
-    ) &&
+    return;
+  }
+
+  // podcast episode has no details view so always show play menu
+  if (item.media_type == MediaType.PODCAST_EPISODE) {
+    handlePlayBtnClick(item, posX, posY, parentItem, true);
+    return;
+  }
+
+  // track or radio clicked in a sublisting (e.g. album/playlist) listview
+  // open menu to show play options
+  if (
+    [MediaType.TRACK, MediaType.RADIO].includes(item.media_type) &&
     parentItem
   ) {
-    // track clicked in a sublisting (e.g. album/playlist) listview
-    // open menu to show play options
     handlePlayBtnClick(item, posX, posY, parentItem, true);
-  } else {
-    router.push({
-      name: item.media_type,
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
+    return;
   }
+
+  // all other: go to details view
+  router.push({
+    name: item.media_type,
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
 };
 
 /* Handle menu button click */
@@ -605,7 +616,6 @@ export const handleMenuBtnClick = function (
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
     ? item
     : [item];
-  if (mediaItems[0].media_type == MediaType.FOLDER) return;
   showContextMenuForMediaItem(
     mediaItems,
     parentItem,

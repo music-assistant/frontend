@@ -93,7 +93,12 @@
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { MediaType } from "@/plugins/api/interfaces";
-import type { MediaItemType, Playlist, Track } from "@/plugins/api/interfaces";
+import type {
+  MediaItemType,
+  MediaItemTypeOrItemMapping,
+  Playlist,
+  Track,
+} from "@/plugins/api/interfaces";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { ProviderFeature } from "@/plugins/api/interfaces";
 import api from "@/plugins/api";
@@ -106,7 +111,7 @@ const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
 const createPlaylistProviders = ref<string[]>([]);
 const parentItem = ref<MediaItemType>();
-const selectedItems = ref<MediaItemType[]>([]);
+const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
 
 onMounted(() => {
   eventbus.on("playlistdialog", async (evt: PlaylistDialogEvent) => {
@@ -125,9 +130,18 @@ const fetchPlaylists = async function () {
   playlists.value = [];
   createPlaylistProviders.value = [];
   const playlistResults = await api.getLibraryPlaylists();
-  const refItem = selectedItems.value.length
-    ? selectedItems.value[0]
-    : undefined;
+  let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
+
+  if (!refItem) return;
+  if (!("provider_mappings" in refItem)) {
+    // resolve itemmapping
+    refItem = await api.getItem(
+      refItem.media_type,
+      refItem.item_id,
+      refItem.provider,
+    );
+  }
+
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;

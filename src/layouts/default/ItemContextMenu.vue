@@ -215,6 +215,7 @@ import {
   MediaItemType,
   PodcastEpisode,
   MediaItemTypeOrItemMapping,
+  BrowseFolder,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -243,10 +244,12 @@ export const showContextMenuForMediaItem = async function (
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
     ? item
     : [item];
+
+  // return early if we dont have any items
   if (mediaItems.length == 0) return;
 
-  const menuItems = getContextMenuItems(mediaItems, parentItem);
-  if (includePlayMenuItems) {
+  const menuItems = await getContextMenuItems(mediaItems, parentItem);
+  if (includePlayMenuItems && mediaItems[0].is_playable) {
     menuItems.push({
       label: "play",
       subItems: await getPlayMenuItems(mediaItems, parentItem, true),
@@ -255,7 +258,6 @@ export const showContextMenuForMediaItem = async function (
       disabled: !store.activePlayer,
     });
   }
-
   // open the contextmenu by emitting the event
   eventbus.emit("contextmenu", {
     items: menuItems,
@@ -312,7 +314,9 @@ export const getPlayMenuItems = async function (
     return playMenuItems;
   }
 
-  const firstItem = items[0];
+  const playableItems = items.filter((x) => x.is_playable);
+  if (playableItems.length == 0) return playMenuItems;
+  const firstItem = playableItems[0];
 
   const defaultEnqueueOption = (await api.getCoreConfigValue(
     "player_queues",
@@ -320,14 +324,13 @@ export const getPlayMenuItems = async function (
   )) as QueueOption;
 
   if (!store.activePlayer) return playMenuItems;
-  if (items[0].media_type == MediaType.FOLDER) return playMenuItems;
 
   // Default/configured enqueue option at the top
   playMenuItems.push({
     label: queueOptionLabelMap[defaultEnqueueOption],
     action: () => {
       api.playMedia(
-        items.map((x) => x.uri),
+        playableItems.map((x) => x.uri),
         defaultEnqueueOption,
       );
       // set flag in store that we have (at least once) shown the play menu
@@ -339,13 +342,22 @@ export const getPlayMenuItems = async function (
   });
 
   // Play from here...
-  if (items.length == 1 && parentItem && parentItem.uri != firstItem.uri) {
+  if (
+    playableItems.length == 1 &&
+    parentItem &&
+    parentItem.uri != firstItem.uri
+  ) {
     // Play from here (playlist track)
     if (parentItem.media_type == MediaType.PLAYLIST) {
       playMenuItems.push({
         label: "play_playlist_from",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
+          api.playMedia(
+            parentItem.uri,
+            undefined,
+            false,
+            playableItems[0].item_id,
+          );
           store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
@@ -358,7 +370,7 @@ export const getPlayMenuItems = async function (
       playMenuItems.push({
         label: "play_album_from",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
+          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
           store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
@@ -371,7 +383,7 @@ export const getPlayMenuItems = async function (
       playMenuItems.push({
         label: "play_from_here",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
+          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
           store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
@@ -382,7 +394,7 @@ export const getPlayMenuItems = async function (
   }
 
   // Start Radio
-  if (radioModeSupported(items[0])) {
+  if (radioModeSupported(firstItem)) {
     playMenuItems.push({
       label: "play_radio",
       action: () => {
@@ -442,7 +454,7 @@ export const getPlayMenuItems = async function (
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (
+export const getContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
 ) {
@@ -450,11 +462,13 @@ export const getContextMenuItems = function (
   if (items.length == 0) {
     return contextMenuItems;
   }
-  if (items[0].media_type == MediaType.FOLDER) return contextMenuItems;
+
+  const firstItem = items[0];
+
   // show info
   if (
     items.length === 1 &&
-    items[0] !== parentItem &&
+    firstItem !== parentItem &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -470,10 +484,10 @@ export const getContextMenuItems = function (
       labelArgs: [],
       action: () => {
         router.push({
-          name: items[0].media_type,
+          name: firstItem.media_type,
           params: {
-            itemId: items[0].item_id,
-            provider: items[0].provider,
+            itemId: firstItem.item_id,
+            provider: firstItem.provider,
           },
           query: {
             album: "album" in items[0] ? (items[0].album as Album)?.uri : "",
@@ -481,6 +495,27 @@ export const getContextMenuItems = function (
         });
       },
       icon: "mdi-information-outline",
+    });
+  }
+
+  // browse folder
+  if (
+    items.length === 1 &&
+    items[0] !== parentItem &&
+    items[0].media_type == MediaType.FOLDER
+  ) {
+    contextMenuItems.push({
+      label: "browse",
+      labelArgs: [],
+      action: () => {
+        router.push({
+          name: "browse",
+          query: {
+            path: (items[0] as BrowseFolder).path,
+          },
+        });
+      },
+      icon: "mdi-folder",
     });
   }
 
@@ -531,9 +566,9 @@ export const getContextMenuItems = function (
     });
   }
 
-  // add to library
+  let resolvedItem = firstItem;
   if (
-    items[0].provider != "library" &&
+    (firstItem.provider != "library" || !("provider_mappings" in firstItem)) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -541,8 +576,31 @@ export const getContextMenuItems = function (
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.RADIO,
-    ].includes(items[0].media_type) &&
-    itemIsAvailable(items[0])
+      MediaType.TRACK,
+    ].includes(firstItem.media_type)
+  ) {
+    // resolve itemmapping or non-library item
+    resolvedItem =
+      (await api.getLibraryItem(
+        firstItem.media_type,
+        firstItem.item_id,
+        firstItem.provider,
+      )) || firstItem;
+  }
+
+  // add to library
+  if (
+    resolvedItem.provider != "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type) &&
+    itemIsAvailable(resolvedItem)
   ) {
     contextMenuItems.push({
       label: "add_library",
@@ -555,7 +613,7 @@ export const getContextMenuItems = function (
   }
   // remove from library
   if (
-    items[0].provider == "library" &&
+    resolvedItem.provider == "library" &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -563,7 +621,8 @@ export const getContextMenuItems = function (
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.RADIO,
-    ].includes(items[0].media_type)
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
   ) {
     contextMenuItems.push({
       label: "remove_library",
@@ -572,24 +631,24 @@ export const getContextMenuItems = function (
         if (!confirm($t("confirm_library_remove"))) return;
         for (const item of items)
           api.removeItemFromLibrary(item.media_type, item.item_id);
-        if (items[0].item_id == parentItem?.item_id) router.go(-1);
-        else window.location.reload();
+        if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
       },
       icon: "mdi-bookshelf",
     });
   }
   // add to favorites
   if (
-    "favorite" in items[0] &&
-    !items[0].favorite &&
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-    ].includes(items[0].media_type)
+    !("favorite" in resolvedItem) ||
+    (!resolvedItem.favorite &&
+      [
+        MediaType.ALBUM,
+        MediaType.ARTIST,
+        MediaType.AUDIOBOOK,
+        MediaType.PLAYLIST,
+        MediaType.PODCAST,
+        MediaType.RADIO,
+        MediaType.TRACK,
+      ].includes(resolvedItem.media_type))
   ) {
     contextMenuItems.push({
       label: "favorites_add",
@@ -604,8 +663,9 @@ export const getContextMenuItems = function (
   }
   // remove from favorites
   if (
-    "favorite" in items[0] &&
-    items[0].favorite &&
+    items.length === 1 &&
+    "favorite" in resolvedItem &&
+    resolvedItem.favorite &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -613,16 +673,18 @@ export const getContextMenuItems = function (
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.RADIO,
-    ].includes(items[0].media_type)
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
   ) {
     contextMenuItems.push({
       label: "favorites_remove",
       labelArgs: [],
       action: () => {
-        for (const item of items) {
-          api.removeItemFromFavorites(item.media_type, item.item_id);
-          (item as MediaItemType).favorite = false;
-        }
+        api.removeItemFromFavorites(
+          resolvedItem.media_type,
+          resolvedItem.item_id,
+        );
+        resolvedItem.favorite = false;
       },
       icon: "mdi-heart",
     });
@@ -646,9 +708,8 @@ export const getContextMenuItems = function (
   }
   // add to playlist action (tracks only)
   if (
-    (items[0].media_type === MediaType.TRACK ||
-      items[0].media_type === MediaType.ALBUM) &&
-    "provider_mappings" in items[0]
+    items[0].media_type === MediaType.TRACK ||
+    items[0].media_type === MediaType.ALBUM
   ) {
     contextMenuItems.push({
       label: "add_playlist",
@@ -726,6 +787,16 @@ export const getContextMenuItems = function (
 };
 
 const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
+  if (
+    ![
+      MediaType.TRACK,
+      MediaType.ARTIST,
+      MediaType.ALBUM,
+      MediaType.PLAYLIST,
+    ].includes(item.media_type)
+  ) {
+    return;
+  }
   if ("provider_mappings" in item) {
     for (const provId of item.provider_mappings) {
       if (

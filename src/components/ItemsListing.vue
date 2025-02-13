@@ -95,7 +95,7 @@
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
               :show-favorite="showFavoritesOnlyFilter"
-              :show-menu="showMenu"
+              :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
               :show-checkboxes="showCheckboxes"
@@ -216,7 +216,6 @@ export interface Props {
   showTrackNumber?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
-  showMenu?: boolean;
   showFavoritesOnlyFilter?: boolean;
   showDuration?: boolean;
   parentItem?: MediaItemType;
@@ -248,7 +247,6 @@ const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
-  showMenu: true,
   showFavoritesOnlyFilter: true,
   showDuration: true,
   parentItem: undefined,
