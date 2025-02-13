@@ -129,9 +129,7 @@
           variant="list"
           icon="mdi-dots-vertical"
           style="padding-right: 0; margin-right: -5px"
-          @click.stop="
-            (evt: PointerEvent) => $emit('menu', item, evt.clientX, evt.clientY)
-          "
+          @click.stop="onMenu"
         />
       </v-card-actions>
     </v-card>
