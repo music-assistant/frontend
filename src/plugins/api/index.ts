@@ -1225,6 +1225,14 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core/get", { domain });
   }
 
+  public async getCoreConfigValue(
+    domain: string,
+    key: string,
+  ): Promise<ConfigValueType> {
+    // Return value for a single core controller config entry.
+    return this.sendCommand("config/core/get_value", { domain, key });
+  }
+
   public async getCoreConfigEntries(
     domain: string,
     action?: string,

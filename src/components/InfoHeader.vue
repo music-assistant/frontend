@@ -240,62 +240,15 @@
           >
             <!-- play button with contextmenu -->
             <MenuButton
+              id="playbutton"
               :width="220"
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
               :open-menu-on-click="!store.activePlayer"
-              @click="api.playMedia(item!)"
-            >
-              <template #menu>
-                <v-card width="320">
-                  <v-list>
-                    <v-list-item :title="item.name" link>
-                      <template #prepend>
-                        <v-avatar
-                          ><MediaItemThumb :item="item" size="80"
-                        /></v-avatar>
-                      </template>
-                      <template #title>
-                        <v-list-item
-                          variant="text"
-                          :title="$t('play_on')"
-                          :subtitle="
-                            store.activePlayer?.display_name || $t('no_player')
-                          "
-                          @click.stop="store.showPlayersMenu = true"
-                        />
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                  <v-divider />
-                  <v-list
-                    density="compact"
-                    slim
-                    tile
-                    :disabled="!store.activePlayer"
-                  >
-                    <div
-                      v-for="menuItem of getPlayMenuItems([item], item)"
-                      :key="menuItem.label"
-                    >
-                      <v-list-item
-                        :title="$t(menuItem.label, menuItem.labelArgs || [])"
-                        density="compact"
-                        @click="menuItem.action"
-                      >
-                        <template #prepend>
-                          <v-icon
-                            style="padding-left: 15px"
-                            :icon="menuItem.icon"
-                          />
-                        </template>
-                      </v-list-item>
-                    </div>
-                  </v-list>
-                </v-card>
-              </template>
-            </MenuButton>
+              @click="playButtonClick"
+              @menu="playButtonClick(true)"
+            />
 
             <!-- favorite (heart) icon -->
             <v-btn
@@ -374,7 +327,12 @@ import ProviderIcon from "./ProviderIcon.vue";
 import { store } from "@/plugins/store";
 import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
-import { ImageType, Track, MediaType } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  Track,
+  MediaType,
+  PlayerState,
+} from "@/plugins/api/interfaces";
 import type {
   Album,
   Artist,
@@ -383,18 +341,21 @@ import type {
 } from "@/plugins/api/interfaces";
 import { computed, ref, watch } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
-import MenuButton from "./MenuButton.vue";
 import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useRouter } from "vue-router";
-import { truncateString, parseBool, markdownToHtml } from "@/helpers/utils";
 import {
-  getContextMenuItems,
-  getPlayMenuItems,
-} from "@/layouts/default/ItemContextMenu.vue";
+  parseBool,
+  markdownToHtml,
+  truncateString,
+  handlePlayBtnClick,
+} from "@/helpers/utils";
+import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { useI18n } from "vue-i18n";
 import MarqueeText from "./MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import MenuButton from "./MenuButton.vue";
+import { c } from "vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 
 // properties
 export interface Props {
@@ -411,7 +372,6 @@ const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
 const { t } = useI18n();
-
 watch(
   () => compProps.item,
   async (val) => {
@@ -468,6 +428,18 @@ const backButtonClick = function () {
   });
 };
 
+const playButtonClick = function (forceMenu = false) {
+  const playButton = document.getElementById("playbutton") as HTMLElement;
+  console.log("playButton", playButton);
+  handlePlayBtnClick(
+    compProps.item!,
+    playButton.getBoundingClientRect().left,
+    playButton.getBoundingClientRect().top + 36,
+    undefined,
+    forceMenu,
+  );
+};
+
 const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
@@ -487,6 +459,12 @@ const rawDescription = computed(() => {
 const fullDescription = computed(() => {
   return markdownToHtml(rawDescription.value);
 });
+
+// const getPos(busstop) = function() {
+//          const left = this.$refs.busstop.getBoundingClientRect().left
+//          const top = this.$refs.busstop.getBoundingClientRect().top
+//          ...
+//     }
 
 const shortDescription = computed(() => {
   const maxChars = mobile.value ? 160 : 300;

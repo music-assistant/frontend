@@ -40,9 +40,6 @@
           "
           :is-available="itemIsAvailable(item)"
           :is-playable="itemIsPlayable(item)"
-          @menu="onMenu"
-          @click="onClick"
-          @play="onPlayClick"
         />
       </swiper-slide>
     </carousel>
@@ -53,16 +50,12 @@
 import Carousel from "@/components/Carousel.vue";
 import PanelviewItemCompact from "@/components/PanelviewItemCompact.vue";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
-import api from "@/plugins/api";
 import { itemIsAvailable, itemIsPlayable } from "@/plugins/api/helpers";
 import {
-  BrowseFolder,
   MediaItemTypeOrItemMapping,
   MediaType,
   PlayerQueue,
 } from "@/plugins/api/interfaces";
-import router from "@/plugins/router";
-import { store } from "@/plugins/store";
 
 export interface WidgetRow {
   label: string;
@@ -78,62 +71,6 @@ interface Props {
 }
 
 const { widgetRow } = defineProps<Props>();
-
-const onMenu = function (
-  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
-  posX: number,
-  posY: number,
-) {
-  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
-    ? item
-    : [item];
-  showContextMenuForMediaItem(mediaItems, undefined, posX, posY);
-};
-
-const onClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-) {
-  // mediaItem in the list is clicked
-  if (!itemIsAvailable(item)) {
-    onMenu(item, posX, posY);
-    return;
-  }
-  if (item.media_type == MediaType.FOLDER) {
-    router.push({
-      name: "browse",
-      query: {
-        path: (item as BrowseFolder).path,
-      },
-    });
-  } else {
-    router.push({
-      name: item.media_type,
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-  }
-};
-
-const onPlayClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-) {
-  // play button on item is clicked
-  if (!itemIsAvailable(item)) {
-    onMenu(item, posX, posY);
-    return;
-  }
-  if (!store.activePlayerId) {
-    store.showPlayersMenu = true;
-    return;
-  }
-  api.playMedia(item.uri, undefined);
-};
 </script>
 
 <style scoped>

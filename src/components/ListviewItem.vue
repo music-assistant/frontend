@@ -19,9 +19,31 @@
           "
         />
       </div>
-      <div v-else class="media-thumb listitem-media-thumb">
-        <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+      <div
+        v-else
+        class="media-thumb listitem-media-thumb"
+        @mouseenter="showPlayBtn = true"
+        @mouseleave="showPlayBtn = false"
+      >
+        <MediaItemThumb
+          size="50"
+          :item="isAvailable ? item : undefined"
+          :class="{ dimmed: showPlayBtn }"
+        />
       </div>
+      <!-- play button -->
+      <v-btn
+        v-if="!showCheckboxes"
+        :class="{ hidden: !showPlayBtn }"
+        icon="mdi-play"
+        color="primary"
+        fab
+        size="small"
+        style="position: absolute; left: 12px; bottom: 12px"
+        @click.stop="onPlayClick"
+        @mouseenter="showPlayBtn = true"
+        @mouseleave="showPlayBtn = false"
+      />
     </template>
 
     <!-- title -->
@@ -200,7 +222,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
@@ -218,6 +240,9 @@ import {
   getArtistsString,
   getBrowseFolderName,
   truncateString,
+  handlePlayBtnClick,
+  handleMediaItemClick,
+  handleMenuBtnClick,
 } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -240,10 +265,12 @@ export interface Props {
   isAvailable?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
+  parentItem?: MediaItemType;
 }
 
 // global refs
 const { t } = useI18n();
+const showPlayBtn = ref(false);
 
 const compProps = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
@@ -257,6 +284,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   showCheckboxes: false,
   isDisabled: false,
   isAvailable: true,
+  parentItem: undefined,
 });
 
 // computed properties
@@ -288,26 +316,47 @@ const HiResDetails = computed(() => {
 
 // emits
 const emit = defineEmits<{
-  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
-  (e: "click", item: MediaItemType, posX: number, posY: number): void;
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
-  emit("menu", compProps.item, posX, posY);
+  handleMenuBtnClick(compProps.item, posX, posY, compProps.parentItem);
 };
 
 const onClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit("click", compProps.item, evt.clientX, evt.clientY);
+  handleMediaItemClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
+};
+
+const onPlayClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) return;
+  handlePlayBtnClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 </script>
 
 <style scoped>
 .unavailable {
   opacity: 0.3;
+}
+
+.dimmed {
+  opacity: 0.3;
+}
+
+.hidden {
+  opacity: 0;
 }
 
 .hiresicon {

@@ -547,6 +547,8 @@
     "type_to_search": "Type here to search...",
     "volume_normalization": "Volume normalization",
     "play_now_replace": "Play Now (clear queue)",
+    "play_replace_next": "Play Next (clear queue)",
+    "all_enqueue_options": "All enqueue options",
     "currently_playing": "Currently playing",
     "favorites_add": "Add to favorites",
     "favorites_remove": "Remove from favorites",

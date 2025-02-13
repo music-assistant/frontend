@@ -103,7 +103,13 @@ import {
   type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
-import { getArtistsString, getBrowseFolderName } from "@/helpers/utils";
+import {
+  getArtistsString,
+  getBrowseFolderName,
+  handleMediaItemClick,
+  handleMenuBtnClick,
+  handlePlayBtnClick,
+} from "@/helpers/utils";
 import { store } from "@/plugins/store";
 
 // properties
@@ -115,6 +121,7 @@ export interface Props {
   permanentOverlay?: boolean;
   isAvailable?: boolean;
   isPlayable?: boolean;
+  parentItem?: MediaItemType;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
@@ -123,28 +130,11 @@ const compProps = withDefaults(defineProps<Props>(), {
   permanentOverlay: false,
   isAvailable: true,
   isPlayable: true,
+  parentItem: undefined,
 });
 
 // emits
 const emit = defineEmits<{
-  (
-    e: "menu",
-    item: MediaItemType | ItemMapping,
-    posX: number,
-    posY: number,
-  ): void;
-  (
-    e: "click",
-    item: MediaItemType | ItemMapping,
-    posX: number,
-    posY: number,
-  ): void;
-  (
-    e: "play",
-    item: MediaItemType | ItemMapping,
-    posX: number,
-    posY: number,
-  ): void;
   (e: "select", item: MediaItemType | ItemMapping, selected: boolean): void;
 }>();
 
@@ -152,7 +142,7 @@ const onMenu = function (evt: PointerEvent | TouchEvent) {
   if (compProps.showCheckboxes) return;
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
-  emit("menu", compProps.item, posX, posY);
+  handleMenuBtnClick(compProps.item, posX, posY, compProps.parentItem);
 };
 
 const onClick = function (evt: PointerEvent) {
@@ -160,12 +150,22 @@ const onClick = function (evt: PointerEvent) {
     emit("select", compProps.item, compProps.isSelected ? false : true);
     return;
   }
-  emit("click", compProps.item, evt.clientX, evt.clientY);
+  handleMediaItemClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 
 const onPlayClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit("play", compProps.item, evt.clientX, evt.clientY);
+  handlePlayBtnClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 </script>
 
