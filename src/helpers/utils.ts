@@ -582,7 +582,7 @@ export const handleMediaItemClick = function (
   ) {
     // track clicked in a sublisting (e.g. album/playlist) listview
     // open menu to show play options
-    handlePlayBtnClick(item, posX, posY);
+    handlePlayBtnClick(item, posX, posY, parentItem, true);
   } else {
     router.push({
       name: item.media_type,
