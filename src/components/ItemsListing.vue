@@ -55,10 +55,8 @@
               :show-checkboxes="showCheckboxes"
               :show-actions="['tracks', 'albums'].includes(itemtype)"
               :is-available="itemIsAvailable(item)"
+              :parent-item="parentItem"
               @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-              @play="onPlayClick"
             />
           </v-col>
         </v-row>
@@ -76,10 +74,8 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
+              :parent-item="parentItem"
               @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-              @play="onPlayClick"
             />
           </v-col>
         </v-row>
@@ -106,9 +102,8 @@
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :show-details="itemtype.includes('versions')"
+              :parent-item="parentItem"
               @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
             />
           </template>
         </v-virtual-scroll>
@@ -150,7 +145,12 @@
             variant="text"
             @click="
               (evt: PointerEvent) =>
-                onMenu(selectedItems, evt.clientX, evt.clientY)
+                handleMenuBtnClick(
+                  selectedItems,
+                  evt.clientX,
+                  evt.clientY,
+                  parentItem,
+                )
             "
           >
             {{ $t("actions") }}
@@ -177,7 +177,6 @@ import {
   type Album,
   type MediaItemType,
   type Track,
-  BrowseFolder,
   ItemMapping,
   MediaItemTypeOrItemMapping,
   EventMessage,
@@ -192,8 +191,11 @@ import { api } from "@/plugins/api";
 import Container from "@/components/mods/Container.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
-import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
+import {
+  panelViewItemResponsive,
+  scrollElement,
+  handleMenuBtnClick,
+} from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
 
 export interface LoadDataParams {
@@ -374,71 +376,6 @@ const toggleCheckboxes = function () {
 
 const onRefreshClicked = function () {
   loadData(true, true);
-};
-
-const onMenu = function (
-  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
-  posX: number,
-  posY: number,
-) {
-  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
-    ? item
-    : [item];
-  if (mediaItems[0].media_type == MediaType.FOLDER) return;
-  showContextMenuForMediaItem(mediaItems, props.parentItem, posX, posY);
-};
-
-const onClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-) {
-  // mediaItem in the list is clicked
-  if (!itemIsAvailable(item)) {
-    onMenu(item, posX, posY);
-    return;
-  }
-  if (item.media_type == MediaType.FOLDER) {
-    router.push({
-      name: "browse",
-      query: {
-        path: (item as BrowseFolder).path,
-      },
-    });
-  } else if (
-    viewMode.value == "list" &&
-    [MediaType.TRACK, MediaType.PODCAST_EPISODE].includes(item.media_type) &&
-    props.parentItem
-  ) {
-    // track clicked in a sublisting (e.g. album/playlist) listview
-    // open menu to show play options
-    onMenu(item, posX, posY);
-  } else {
-    router.push({
-      name: item.media_type,
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-  }
-};
-
-const onPlayClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-) {
-  // play button on item is clicked
-  if (!itemIsAvailable(item)) {
-    onMenu(item, posX, posY);
-    return;
-  }
-  if (!store.activePlayerId) {
-    store.showPlayersMenu = true;
-    return;
-  }
-  api.playMedia(item.uri, undefined);
 };
 
 const onClear = function () {

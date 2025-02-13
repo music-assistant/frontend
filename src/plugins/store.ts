@@ -46,6 +46,7 @@ interface Store {
   libraryAudiobooksCount?: number;
   connected?: boolean;
   isTouchscreen: boolean;
+  playMenuShown: boolean;
 }
 
 export const store: Store = reactive({
@@ -99,4 +100,5 @@ export const store: Store = reactive({
   libraryRadiosCount: undefined,
   connected: false,
   isTouchscreen: isTouchscreenDevice(),
+  playMenuShown: false,
 });

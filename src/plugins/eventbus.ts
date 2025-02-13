@@ -9,22 +9,16 @@ export type PlaylistDialogEvent = {
   parentItem?: MediaItemType;
 };
 
-export type ItemContextMenuDialogEvent = {
+export type ContextMenuDialogEvent = {
   items: ContextMenuItem[];
   posX?: number;
   posY?: number;
-};
-
-export type MediaItemContextMenuDialogEvent = {
-  items: MediaItemType[];
-  parentItem?: MediaItemType;
-  showContextMenuItems?: boolean;
-  posX?: number;
-  posY?: number;
+  showPlayMenuHeader?: boolean;
+  zIndex?: number;
 };
 
 export type Events = {
-  contextmenu: ItemContextMenuDialogEvent;
+  contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
 };
 

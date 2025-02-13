@@ -214,7 +214,6 @@ import { getPlayerName } from "@/helpers/utils";
 import Button from "@/components/mods/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { eventbus } from "@/plugins/eventbus";
-import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 // properties
 export interface Props {
@@ -250,10 +249,12 @@ const curQueueItem = computed(() => {
 });
 
 const openPlayerMenu = function (evt: Event) {
+  console.log("openPlayerMenu");
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(compProps.player, playerQueue.value),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
+    zIndex: 9999999,
   });
 };
 </script>

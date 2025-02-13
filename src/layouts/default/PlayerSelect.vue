@@ -8,8 +8,7 @@
     app
     clipped
     temporary
-    touchless
-    :width="500"
+    :width="400"
     style="z-index: 99999"
     z-index="99999"
   >
@@ -138,6 +137,7 @@ import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
+import { playerActive } from "@/helpers/utils";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
@@ -196,27 +196,6 @@ function playerClicked(player: Player, close: boolean = false) {
 onMounted(() => {
   checkDefaultPlayer();
 });
-
-const playerActive = function (
-  player: Player,
-  allowUnavailable = true,
-  allowSyncChild = false,
-  allowHidden = false,
-): boolean {
-  // perform some basic checks if we may use/show the player
-  if (!player.enabled) return false;
-  if (!allowHidden && player.hidden) return false;
-  if (!allowUnavailable && !player.available) return false;
-  if (player.synced_to && !allowSyncChild) return false;
-  if (
-    !allowSyncChild &&
-    player.type == PlayerType.PLAYER &&
-    player.active_group
-  )
-    return false;
-
-  return true;
-};
 
 const checkDefaultPlayer = function () {
   if (

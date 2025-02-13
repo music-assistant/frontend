@@ -3,7 +3,10 @@ import {
   BrowseFolder,
   ItemMapping,
   MediaItemType,
+  MediaItemTypeOrItemMapping,
+  MediaType,
   Player,
+  PlayerState,
   PlayerType,
   ProviderMapping,
 } from "@/plugins/api/interfaces";
@@ -14,6 +17,13 @@ import { marked } from "marked";
 import Color from "color";
 //@ts-ignore
 import ColorThief from "colorthief";
+import { store } from "@/plugins/store";
+import {
+  showContextMenuForMediaItem,
+  showPlayMenuForMediaItem,
+} from "@/layouts/default/ItemContextMenu.vue";
+import { itemIsAvailable } from "@/plugins/api/helpers";
+import router from "@/plugins/router";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
@@ -499,4 +509,108 @@ export const markdownToHtml = function (text: string): string {
     .replaceAll("\n", "<br />")
     .replaceAll(" \\", "<br />");
   return marked(text) as string;
+};
+
+export const playerActive = function (
+  player: Player,
+  allowUnavailable = true,
+  allowSyncChild = false,
+  allowHidden = false,
+): boolean {
+  // perform some basic checks if we may use/show the player
+  if (!player.enabled) return false;
+  if (!allowHidden && player.hidden) return false;
+  if (!allowUnavailable && !player.available) return false;
+  if (player.synced_to && !allowSyncChild) return false;
+  if (
+    !allowSyncChild &&
+    player.type == PlayerType.PLAYER &&
+    player.active_group
+  )
+    return false;
+
+  return true;
+};
+
+/* Handle play button click */
+export const handlePlayBtnClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+  parentItem?: MediaItemType,
+  forceMenu?: boolean,
+) {
+  // we show the play menu for the item once
+  if (
+    !forceMenu &&
+    store.playMenuShown &&
+    store.activePlayer?.available &&
+    [PlayerState.PLAYING, PlayerState.PAUSED].includes(
+      store.activePlayer?.state as PlayerState,
+    )
+  ) {
+    api.playMedia(item);
+    return;
+  }
+  showPlayMenuForMediaItem(item, parentItem, posX, posY);
+};
+
+/* Handle media item click */
+export const handleMediaItemClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+  parentItem?: MediaItemType,
+) {
+  if (!itemIsAvailable(item)) {
+    // open menu when item is unavailable so the user has a way to remove/refresh the item
+    handleMenuBtnClick(item, posX, posY);
+    return;
+  }
+  if (item.media_type == MediaType.FOLDER) {
+    router.push({
+      name: "browse",
+      query: {
+        path: (item as BrowseFolder).path,
+      },
+    });
+  } else if (
+    [MediaType.TRACK, MediaType.PODCAST_EPISODE, MediaType.RADIO].includes(
+      item.media_type,
+    ) &&
+    parentItem
+  ) {
+    // track clicked in a sublisting (e.g. album/playlist) listview
+    // open menu to show play options
+    handlePlayBtnClick(item, posX, posY);
+  } else {
+    router.push({
+      name: item.media_type,
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
+    });
+  }
+};
+
+/* Handle menu button click */
+export const handleMenuBtnClick = function (
+  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
+  posX: number,
+  posY: number,
+  parentItem?: MediaItemType,
+  includePlayMenuItems = true,
+) {
+  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
+    ? item
+    : [item];
+  if (mediaItems[0].media_type == MediaType.FOLDER) return;
+  showContextMenuForMediaItem(
+    mediaItems,
+    parentItem,
+    posX,
+    posY,
+    includePlayMenuItems,
+  );
 };
