@@ -669,6 +669,7 @@ export const getContextMenuItems = async function (
     items.length === 1 &&
     "favorite" in resolvedItem &&
     resolvedItem.favorite &&
+    resolvedItem.provider == "library" &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
