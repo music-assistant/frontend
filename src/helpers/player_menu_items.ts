@@ -12,6 +12,7 @@ import {
 } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
+import { $t } from "@/plugins/i18n";
 
 export const getPlayerMenuItems = (
   player: Player,
@@ -169,12 +170,21 @@ export const getPlayerMenuItems = (
   }
 
   // add 'select source' menu item
-  const selectableSources = player.source_list.filter((s) => !s.passive);
-  if (
-    player.supported_features.includes(PlayerFeature.SELECT_SOURCE) &&
-    !player.synced_to &&
-    selectableSources.length > 0
-  ) {
+  const selectableSources = player.source_list.filter(
+    (s) => !s.passive || s.id == player.active_source,
+  );
+  if (player.active_source != player.player_id) {
+    // add virtual/fake source entry to return to the MA queue as active source
+    selectableSources.push({
+      id: player.player_id,
+      name: $t("music_assistant_source"),
+      passive: false,
+      can_play_pause: true,
+      can_seek: true,
+      can_next_previous: true,
+    });
+  }
+  if (!player.synced_to && selectableSources.length > 0) {
     menuItems.push({
       label: "select_source",
       labelArgs: [],
@@ -184,6 +194,8 @@ export const getPlayerMenuItems = (
           return {
             label: s.name,
             labelArgs: [],
+            disabled: s.id == player.active_source,
+            selected: s.id == player.active_source,
             action: () => {
               api.playerCommandGroupSelectSource(player.player_id, s.id);
             },

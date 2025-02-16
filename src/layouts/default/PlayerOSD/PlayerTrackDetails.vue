@@ -14,21 +14,8 @@
         }px; `"
         @click="store.showFullscreenPlayer = true"
       >
-        <div
-          v-if="
-            store.activePlayer?.powered != false &&
-            store.curQueueItem?.streamdetails?.stream_metadata?.image_url
-          "
-        >
-          <v-img
-            class="media-thumb"
-            style="border-radius: 4px"
-            size="55"
-            :src="store.curQueueItem.streamdetails.stream_metadata.image_url"
-          />
-        </div>
         <MediaItemThumb
-          v-else-if="
+          v-if="
             store.activePlayer?.powered != false &&
             (store.curQueueItem?.media_item || store.curQueueItem?.image)
           "
@@ -180,18 +167,10 @@
           </div>
           <!-- radio live metadata -->
           <div
-            v-else-if="
-              store.curQueueItem?.streamdetails?.stream_metadata?.title
-            "
+            v-else-if="store.curQueueItem?.streamdetails?.stream_title"
             class="line-clamp-1"
           >
-            <span
-              v-if="store.curQueueItem?.streamdetails?.stream_metadata?.artist"
-              >{{
-                store.curQueueItem.streamdetails.stream_metadata.artist
-              }}
-              - </span
-            >{{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
+            {{ store.curQueueItem?.streamdetails?.stream_title }}
           </div>
           <!-- other description -->
           <div
@@ -223,7 +202,7 @@
             class="line-clamp-1"
           >
             {{
-              $t("external_source_active", [store.activePlayer?.active_source])
+              $t("external_source_active", [getSourceName(store.activePlayer)])
             }}
           </div>
           <!-- queue empty message -->
@@ -268,6 +247,7 @@ import QualityDetailsBtn, {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import MarqueeText from "@/components/MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { getSourceName } from "@/plugins/api/helpers";
 
 const marqueeSync = new MarqueeTextSync();
 

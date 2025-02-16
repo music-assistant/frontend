@@ -112,10 +112,8 @@
             {{ curQueueItem?.media_item.artists[0].name }}
           </div>
           <!-- radio live metadata -->
-          <div v-else-if="curQueueItem?.streamdetails?.stream_metadata">
-            <span v-if="curQueueItem?.streamdetails?.stream_metadata?.artist"
-              >{{ curQueueItem.streamdetails.stream_metadata.artist }} - </span
-            >{{ curQueueItem?.streamdetails?.stream_metadata.title }}
+          <div v-else-if="curQueueItem?.streamdetails?.stream_title">
+            {{ curQueueItem?.streamdetails?.stream_title }}
           </div>
           <!-- other description -->
           <div v-else-if="curQueueItem?.media_item?.metadata.description">
@@ -123,7 +121,7 @@
           </div>
           <!-- 3rd party source active -->
           <div v-else-if="!playerQueue && player.active_source">
-            {{ $t("external_source_active", [player.active_source]) }}
+            {{ $t("external_source_active", [getSourceName(player)]) }}
           </div>
           <!-- queue empty message -->
           <div v-else-if="playerQueue?.items == 0">
@@ -215,6 +213,7 @@ import Button from "@/components/mods/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getSourceName } from "@/plugins/api/helpers";
 // properties
 export interface Props {
   player: Player;
@@ -254,7 +253,6 @@ const openPlayerMenu = function (evt: Event) {
     items: getPlayerMenuItems(compProps.player, playerQueue.value),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
-    zIndex: 9999999,
   });
 };
 </script>

@@ -8,7 +8,7 @@
     app
     clipped
     temporary
-    :width="400"
+    :width="460"
     style="z-index: 99999"
     z-index="99999"
   >

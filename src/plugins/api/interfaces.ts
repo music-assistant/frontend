@@ -676,19 +676,12 @@ export interface LoudnessMeasurement {
   target_offset: number;
 }
 
-export interface LivestreamMetadata {
-  title?: string;
-  artist?: string;
-  album?: string;
-  image_url?: string;
-}
-
 export interface StreamDetails {
   provider: string;
   item_id: string;
   audio_format: AudioFormat;
   media_type: MediaType;
-  stream_metadata?: LivestreamMetadata;
+  stream_title?: string;
   duration?: number;
 
   queue_id?: string;
@@ -765,8 +758,10 @@ export interface PlayerMedia {
 export interface PlayerSource {
   id: string;
   name: string;
-  is_mass: boolean;
   passive: boolean;
+  can_play_pause: boolean;
+  can_seek: boolean;
+  can_next_previous: boolean;
 }
 
 export interface Player {

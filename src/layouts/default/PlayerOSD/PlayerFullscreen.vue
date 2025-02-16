@@ -58,14 +58,6 @@
             <v-img
               v-if="
                 store.activePlayer?.powered != false &&
-                store.curQueueItem?.streamdetails?.stream_metadata?.image_url
-              "
-              style="max-width: 100%; width: auto; border-radius: 4px"
-              :src="store.curQueueItem.streamdetails.stream_metadata.image_url"
-            />
-            <v-img
-              v-else-if="
-                store.activePlayer?.powered != false &&
                 !store.curQueueItem?.image &&
                 store.activePlayer?.current_media?.image_url
               "
@@ -159,28 +151,16 @@
             <!-- subtitle: radio station stream title -->
             <v-card-subtitle
               v-if="
-                store.curQueueItem?.streamdetails?.stream_metadata?.title &&
+                store.curQueueItem?.streamdetails?.stream_title &&
                 store.activePlayer?.powered != false
               "
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
-                radioTitleClick(
-                  store.curQueueItem?.streamdetails?.stream_metadata?.artist +
-                    ' - ' +
-                    store.curQueueItem.streamdetails.stream_metadata.title,
-                )
+                radioTitleClick(store.curQueueItem?.streamdetails?.stream_title)
               "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                <span
-                  v-if="
-                    store.curQueueItem?.streamdetails?.stream_metadata?.artist
-                  "
-                  >{{
-                    store.curQueueItem.streamdetails.stream_metadata.artist
-                  }}
-                  - </span
-                >{{ store.curQueueItem.streamdetails.stream_metadata.title }}
+                {{ store.curQueueItem.streamdetails.stream_title }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -233,25 +213,10 @@
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: other MASS player active as source -->
-            <v-card-subtitle
-              v-else-if="
-                store.activePlayer?.active_source !=
-                  store.activePlayer?.player_id &&
-                store.activePlayer?.active_source &&
-                store.activePlayer?.active_source in api.queues
-              "
-            >
-              {{
-                $t("external_source_active", [
-                  api.queues[store.activePlayer.active_source]?.display_name,
-                ])
-              }}
-            </v-card-subtitle>
-
             <!-- subtitle: other source active -->
             <v-card-subtitle
               v-else-if="
+                store.activePlayer &&
                 store.activePlayer?.active_source !=
                   store.activePlayer?.player_id &&
                 store.activePlayer?.powered != false
@@ -259,7 +224,7 @@
             >
               {{
                 $t("external_source_active", [
-                  store.activePlayer?.active_source,
+                  getSourceName(store.activePlayer),
                 ])
               }}
             </v-card-subtitle>
@@ -605,6 +570,7 @@ import { useDisplay } from "vuetify";
 import { useI18n } from "vue-i18n";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getSourceName } from "@/plugins/api/helpers";
 
 const { t } = useI18n();
 const { name } = useDisplay();

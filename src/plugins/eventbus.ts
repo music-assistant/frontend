@@ -14,7 +14,6 @@ export type ContextMenuDialogEvent = {
   posX?: number;
   posY?: number;
   showPlayMenuHeader?: boolean;
-  zIndex?: number;
 };
 
 export type Events = {

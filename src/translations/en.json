@@ -666,5 +666,6 @@
         "click_to_expand": "Click to show all players"
     },
     "volume_normalization_gain_correction": "{0} dB",
-    "select_source": "Select source"
+    "select_source": "Select source",
+    "music_assistant_source": "Music Assistant Queue"
 }

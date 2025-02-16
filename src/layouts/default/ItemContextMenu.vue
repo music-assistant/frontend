@@ -8,8 +8,8 @@
     v-model="show"
     :target="[posX, posY]"
     :scrim="!store.showPlayersMenu"
-    :style="`z-index: ${zIndex}`"
-    :z-index="zIndex"
+    style="z-index: 999999"
+    z-index="999999"
     @update:model-value="
       (v) => {
         store.dialogActive = v;
@@ -85,8 +85,8 @@
   <v-menu
     v-model="showSubmenu"
     :target="[subMenuPosX, subMenuPosY]"
-    :style="`z-index: ${zIndex}`"
-    :z-index="zIndex"
+    style="z-index: 999999"
+    z-index="999999"
   >
     <v-card min-width="260">
       <v-list density="compact" slim tile>
@@ -115,7 +115,6 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 
-const DEFAULT_ZINDEX = 999;
 const show = ref<boolean>(false);
 const items = ref<ContextMenuItem[]>([]);
 const posX = ref(0);
@@ -126,15 +125,12 @@ const showSubmenu = ref<boolean>(false);
 const subMenuItems = ref<ContextMenuItem[]>([]);
 const subMenuPosX = ref(0);
 const subMenuPosY = ref(0);
-const zIndex = ref(DEFAULT_ZINDEX);
-
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
     posX.value = evt.posX || 0;
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
-    zIndex.value = evt.zIndex || DEFAULT_ZINDEX;
     nextTick(() => {
       show.value = true;
     });
@@ -160,6 +156,11 @@ const menuItemClicked = function (
   }
   if (showSubmenu.value) {
     showSubmenu.value = false;
+    if (menuItem.close_on_click == false) {
+      return;
+    }
+  }
+  if (menuItem.close_on_click == false) {
     return;
   }
   show.value = false;
@@ -189,6 +190,7 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
       },
       icon: player.icon,
       selected: store.activePlayerId == player.player_id,
+      close_on_click: false,
     });
   }
 
@@ -230,6 +232,7 @@ export interface ContextMenuItem {
   hide?: boolean;
   selected?: boolean;
   subItems?: ContextMenuItem[];
+  close_on_click?: boolean;
 }
 
 export const showContextMenuForMediaItem = async function (
