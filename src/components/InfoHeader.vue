@@ -462,12 +462,6 @@ const fullDescription = computed(() => {
   return markdownToHtml(rawDescription.value);
 });
 
-// const getPos(busstop) = function() {
-//          const left = this.$refs.busstop.getBoundingClientRect().left
-//          const top = this.$refs.busstop.getBoundingClientRect().top
-//          ...
-//     }
-
 const shortDescription = computed(() => {
   const maxChars = mobile.value ? 160 : 300;
   if (rawDescription.value.length > maxChars) {
