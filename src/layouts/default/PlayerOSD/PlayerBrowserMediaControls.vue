@@ -54,6 +54,29 @@ watch(
 
 useMediaBrowserMetaData();
 
+const seekHandler = function (
+  evt: MediaSessionActionDetails,
+  player_id: string,
+  is_backward = false,
+) {
+  let to = null;
+  if (evt.seekTime) {
+    to = evt.seekTime;
+  } else if (evt.seekOffset) {
+    const elapsed_time = store.activePlayerQueue?.elapsed_time;
+    if (!elapsed_time) return;
+    if (is_backward) {
+      to = elapsed_time - evt.seekOffset;
+    } else {
+      to = elapsed_time + evt.seekOffset;
+    }
+  } else {
+    return;
+  }
+  to = Math.round(to);
+  api.playerCommandSeek(player_id, to);
+};
+
 // MediaSession setup
 onMounted(() => {
   navigator.mediaSession.setActionHandler("play", () => {
@@ -72,6 +95,15 @@ onMounted(() => {
   });
   navigator.mediaSession.setActionHandler("previoustrack", () => {
     apiCommandWithCurrentPlayer(api.playerCommandPrevious.bind(api));
+  });
+  navigator.mediaSession.setActionHandler("seekto", (evt) => {
+    apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
+  });
+  navigator.mediaSession.setActionHandler("seekforward", (evt) => {
+    apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
+  });
+  navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
+    apiCommandWithCurrentPlayer((id) => seekHandler(evt, id, true));
   });
 });
 </script>
