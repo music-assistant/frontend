@@ -1,4 +1,5 @@
 import { MediaType, QueueItem, Track } from "@/plugins/api/interfaces";
+import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
 import { store } from "@/plugins/store";
 import { watch } from "vue";
 
@@ -12,12 +13,26 @@ function playerMediaToMetadata(item: QueueItem) {
     artist = currentMedia.artists.map((a) => a.name).join(", ");
     album = currentMedia.album?.name;
   }
+  const artwork = [
+    {
+      src: getImageThumbForItem(item, ImageType.THUMB, 128) || "",
+      sizes: "128x128",
+    },
+    {
+      src: getImageThumbForItem(item, ImageType.THUMB, 256) || "",
+      sizes: "256x256",
+    },
+    {
+      src: getImageThumbForItem(item, ImageType.THUMB, 512) || "",
+      sizes: "512x512",
+    },
+  ];
 
   return new MediaMetadata({
     title: item.media_item!.name,
     artist,
     album,
-    artwork: [{ src: item.image?.path ?? "" }],
+    artwork: artwork,
   });
 }
 
