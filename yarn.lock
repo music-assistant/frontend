@@ -5828,10 +5828,10 @@ webpack-virtual-modules@^0.6.2:
   resolved "https://registry.yarnpkg.com/webpack-virtual-modules/-/webpack-virtual-modules-0.6.2.tgz#057faa9065c8acf48f24cb57ac0e77739ab9a7e8"
   integrity sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==
 
-websocket-ts@2.1.5:
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/websocket-ts/-/websocket-ts-2.1.5.tgz#b6b51f0afca89d6bc7ff71c9e74540f19ae0262c"
-  integrity sha512-rCNl9w6Hsir1azFm/pbjBEFzLD/gi7Th5ZgOxMifB6STUfTSovYAzryWw0TRvSZ1+Qu1Z5Plw4z42UfTNA9idA==
+websocket-ts@2.2.1:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/websocket-ts/-/websocket-ts-2.2.1.tgz#d8e3ed2b83bb1d121ee6ee6f387010147f00b50a"
+  integrity sha512-YKPDfxlK5qOheLZ2bTIiktZO1bpfGdNCPJmTEaPW7G9UXI1GKjDdeacOrsULUS000OPNxDVOyAuKLuIWPqWM0Q==
 
 whatwg-encoding@^3.1.1:
   version "3.1.1"
