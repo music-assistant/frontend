@@ -571,6 +571,7 @@ import { useI18n } from "vue-i18n";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getSourceName } from "@/plugins/api/helpers";
+import { $t } from "@/plugins/i18n";
 
 const { t } = useI18n();
 const { name } = useDisplay();
@@ -819,24 +820,82 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const onHeartBtnClick = function (evt: PointerEvent | MouseEvent) {
+const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
   // the heart icon/button was clicked
   if (!store.curQueueItem?.media_item) return;
   if (!store.curQueueItem.media_item.favorite) {
     api.toggleFavorite(store.curQueueItem.media_item);
     return;
   }
+  //resolve media item into a library item
+  let resolvedItem = store.curQueueItem!.media_item as MediaItemType;
+  if (
+    (resolvedItem.provider != "library" ||
+      !("provider_mappings" in resolvedItem)) &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
+    // resolve itemmapping or non-library item
+    resolvedItem =
+      (await api.getLibraryItem(
+        resolvedItem.media_type,
+        resolvedItem.item_id,
+        resolvedItem.provider,
+      )) || resolvedItem;
+  }
 
-  const menuItems: ContextMenuItem[] = [
-    {
+  const menuItems: ContextMenuItem[] = [];
+
+  // remove from favorites
+  if (
+    "favorite" in resolvedItem &&
+    resolvedItem.favorite &&
+    resolvedItem.provider == "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
+    menuItems.push({
       label: "favorites_remove",
       labelArgs: [],
       action: () => {
-        api.toggleFavorite(store.curQueueItem!.media_item as MediaItemType);
+        api.removeItemFromFavorites(
+          resolvedItem.media_type,
+          resolvedItem.item_id,
+        );
+        resolvedItem.favorite = false;
+        store.curQueueItem!.media_item!.favorite = false;
       },
       icon: "mdi-heart",
-    },
-    {
+    });
+  }
+
+  // add to playlist
+  if (
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
+    menuItems.push({
       label: "add_playlist",
       labelArgs: [],
       action: () => {
@@ -845,8 +904,8 @@ const onHeartBtnClick = function (evt: PointerEvent | MouseEvent) {
         });
       },
       icon: "mdi-plus-circle-outline",
-    },
-  ];
+    });
+  }
 
   // open the contextmenu by emitting the event
   eventbus.emit("contextmenu", {
