@@ -55,6 +55,7 @@ export function useMediaBrowserMetaData() {
       currentMediaUri = newMedia.media_item.uri;
       navigator.mediaSession.metadata = newMediaMetaData;
     },
+    { immediate: true },
   );
   watch(
     () => [
@@ -73,5 +74,6 @@ export function useMediaBrowserMetaData() {
         position: position,
       });
     },
+    { immediate: true },
   );
 }
