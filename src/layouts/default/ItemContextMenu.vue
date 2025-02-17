@@ -252,14 +252,12 @@ export const showContextMenuForMediaItem = async function (
   if (mediaItems.length == 0) return;
 
   const menuItems = await getContextMenuItems(mediaItems, parentItem);
-  if (includePlayMenuItems && mediaItems[0].is_playable) {
-    menuItems.push({
-      label: "play",
-      subItems: await getPlayMenuItems(mediaItems, parentItem, true),
-      icon: "mdi-play-circle-outline",
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
+  if (
+    includePlayMenuItems &&
+    mediaItems[0].is_playable &&
+    itemIsAvailable(mediaItems[0])
+  ) {
+    menuItems.push(...(await getPlayMenuItems(mediaItems, parentItem)));
   }
   // open the contextmenu by emitting the event
   eventbus.emit("contextmenu", {
@@ -310,7 +308,6 @@ export const showPlayMenuForMediaItem = async function (
 export const getPlayMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
-  flattenSubLevel = false,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
@@ -438,21 +435,13 @@ export const getPlayMenuItems = async function (
       selected: option == defaultEnqueueOption,
     });
   }
-  if (flattenSubLevel) {
-    const existingLabels = subItems.map((x) => x.label);
-    return [
-      ...playMenuItems.filter((x) => !existingLabels.includes(x.label)),
-      ...subItems,
-    ];
-  } else {
-    playMenuItems.push({
-      label: "all_enqueue_options",
-      subItems: subItems,
-      icon: "mdi-playlist-play",
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
-  }
+  playMenuItems.push({
+    label: "all_enqueue_options",
+    subItems: subItems,
+    icon: "mdi-playlist-play",
+    labelArgs: [],
+    disabled: !store.activePlayer,
+  });
 
   return playMenuItems;
 };
@@ -505,7 +494,8 @@ export const getContextMenuItems = async function (
   if (
     items.length === 1 &&
     items[0] !== parentItem &&
-    items[0].media_type == MediaType.FOLDER
+    items[0].media_type == MediaType.FOLDER &&
+    itemIsAvailable(items[0])
   ) {
     contextMenuItems.push({
       label: "browse",
@@ -641,17 +631,18 @@ export const getContextMenuItems = async function (
   }
   // add to favorites
   if (
-    !("favorite" in resolvedItem) ||
-    (!resolvedItem.favorite &&
-      [
-        MediaType.ALBUM,
-        MediaType.ARTIST,
-        MediaType.AUDIOBOOK,
-        MediaType.PLAYLIST,
-        MediaType.PODCAST,
-        MediaType.RADIO,
-        MediaType.TRACK,
-      ].includes(resolvedItem.media_type))
+    "favorite" in resolvedItem &&
+    !resolvedItem.favorite &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type) &&
+    itemIsAvailable(resolvedItem)
   ) {
     contextMenuItems.push({
       label: "favorites_add",
