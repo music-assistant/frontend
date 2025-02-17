@@ -54,6 +54,15 @@ watch(
   (stateUpdate) => updateMediaState(stateUpdate),
 );
 
+// Wait for audioRef to load
+watch(
+  () => audioRef.value,
+  () => updateMediaState(store.activePlayer?.state),
+  { once: true },
+);
+
+updateMediaState(store.activePlayer?.state);
+
 // This allows for correct seeking on repeated seek forward/backward presses
 let lastElapsedTime = undefined as undefined | number;
 
@@ -62,6 +71,7 @@ watch(
   (elapsed_time) => {
     lastElapsedTime = elapsed_time;
   },
+  { immediate: true },
 );
 
 useMediaBrowserMetaData();
