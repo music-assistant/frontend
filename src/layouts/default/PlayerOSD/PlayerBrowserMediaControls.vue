@@ -9,7 +9,9 @@
 </template>
 
 <script setup lang="ts">
-import audio from "@/assets/5_mins_of_silence.mp3";
+// Firefox does not show the notification if the playing audio file is completely silent.
+// This audio file therefore has inaudiable sine pulses at 15Hz (made as quiet as possible).
+import audio from "@/assets/almost_silent.mp3";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
 import { PlayerState } from "@/plugins/api/interfaces";
