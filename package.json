@@ -13,7 +13,7 @@
         "@intlify/unplugin-vue-i18n": "6.0.3",
         "@mdi/font": "7.4.47",
         "@mdi/js": "7.4.47",
-        "color": "4.2.3",
+        "color": "5.0.0",
         "colorthief": "2.6.0",
         "home-assistant-js-websocket": "9.4.0",
         "marked": "^15.0.7",
