@@ -45,7 +45,7 @@ export function useMediaBrowserMetaData() {
   let currentMediaUri: string | undefined;
 
   //watch the current media to update the metadata
-  watch(
+  const unwatch_metadata = watch(
     () => store.curQueueItem,
     (newMedia) => {
       if (!newMedia || !newMedia.media_item) return;
@@ -57,7 +57,7 @@ export function useMediaBrowserMetaData() {
     },
     { immediate: true },
   );
-  watch(
+  const unwatch_position = watch(
     () => [
       store.activePlayerQueue?.elapsed_time,
       store.activePlayerQueue?.current_item?.duration,
@@ -76,4 +76,8 @@ export function useMediaBrowserMetaData() {
     },
     { immediate: true },
   );
+  return () => {
+    unwatch_metadata();
+    unwatch_position();
+  };
 }
