@@ -1,5 +1,10 @@
-import { MediaType, QueueItem, Track } from "@/plugins/api/interfaces";
 import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
+import {
+  ImageType,
+  MediaType,
+  QueueItem,
+  Track,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { watch } from "vue";
 
@@ -49,6 +54,24 @@ export function useMediaBrowserMetaData() {
       const newMediaMetaData = playerMediaToMetadata(newMedia);
       currentMediaUri = newMedia.media_item.uri;
       navigator.mediaSession.metadata = newMediaMetaData;
+    },
+  );
+  watch(
+    () => [
+      store.activePlayerQueue?.elapsed_time,
+      store.activePlayerQueue?.current_item?.duration,
+    ],
+    () => {
+      const duration = store.activePlayerQueue?.current_item?.duration;
+      const position = Math.min(
+        duration || 0,
+        store.activePlayerQueue?.elapsed_time || 0,
+      );
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        playbackRate: 1.0,
+        position: position,
+      });
     },
   );
 }
