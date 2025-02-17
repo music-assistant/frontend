@@ -12,6 +12,7 @@ import { i18n } from "@/plugins/i18n";
 import router from "./plugins/router";
 import { EventType } from "./plugins/api/interfaces";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 const theme = useTheme();
 
 const setTheme = function () {
@@ -32,6 +33,11 @@ const setTheme = function () {
     // light mode is enabled in browser
     theme.global.name.value = "light";
   }
+};
+
+const interactedHandler = function () {
+  webPlayer.setInteracted();
+  window.removeEventListener("click", interactedHandler);
 };
 
 onMounted(() => {
@@ -91,5 +97,9 @@ onMounted(() => {
     store.connected = false;
   });
   api.initialize(serverAddress);
+  webPlayer.setBaseUrl(serverAddress);
+
+  //There is a safety rule in which you need to interact with the page for the audio to play
+  window.addEventListener("click", interactedHandler);
 });
 </script>
