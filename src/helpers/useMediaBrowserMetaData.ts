@@ -103,6 +103,15 @@ export function useMediaBrowserMetaData(player_id?: string) {
       playerQueue.value?.current_item?.duration,
     ],
     () => {
+      if (
+        !playerQueue.value?.active ||
+        store.activePlayerQueue?.current_item?.media_item?.media_type !==
+          MediaType.TRACK
+      ) {
+        // Clear the progress bar.
+        navigator.mediaSession.setPositionState();
+        return;
+      }
       const duration = playerQueue.value?.current_item?.duration || 1;
       const position = Math.min(duration, playerQueue.value?.elapsed_time || 0);
       navigator.mediaSession.setPositionState({
