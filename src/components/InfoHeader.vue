@@ -349,7 +349,6 @@ import {
   getContextMenuItems,
 } from "@/layouts/default/ItemContextMenu.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { useI18n } from "vue-i18n";
 import MarqueeText from "./MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import MenuButton from "./MenuButton.vue";
@@ -379,7 +378,7 @@ watch(
         getImageThumbForItem(val, ImageType.LANDSCAPE) ||
         getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
-      menuItems.value = await getContextMenuItems([val]);
+      menuItems.value = await getContextMenuItems([val], val);
     } else {
       fanartImage.value = imgGradient;
       menuItems.value = [];
