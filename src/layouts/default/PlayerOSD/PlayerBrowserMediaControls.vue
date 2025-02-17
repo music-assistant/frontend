@@ -54,6 +54,16 @@ watch(
   (stateUpdate) => updateMediaState(stateUpdate),
 );
 
+// This allows for correct seeking on repeated seek forward/backward presses
+let lastElapsedTime = undefined as undefined | number;
+
+watch(
+  () => store.activePlayerQueue?.elapsed_time,
+  (elapsed_time) => {
+    lastElapsedTime = elapsed_time;
+  },
+);
+
 useMediaBrowserMetaData();
 
 const seekHandler = function (
@@ -65,7 +75,7 @@ const seekHandler = function (
   if (evt.seekTime) {
     to = evt.seekTime;
   } else if (evt.seekOffset) {
-    const elapsed_time = store.activePlayerQueue?.elapsed_time;
+    const elapsed_time = lastElapsedTime;
     if (!elapsed_time) return;
     if (is_backward) {
       to = elapsed_time - evt.seekOffset;
@@ -76,6 +86,7 @@ const seekHandler = function (
     return;
   }
   to = Math.round(to);
+  lastElapsedTime = to;
   api.playerCommandSeek(player_id, to);
 };
 
