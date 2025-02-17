@@ -1,6 +1,8 @@
 <template>
   <router-view />
-  <PlayerBrowserMediaControls />
+  <PlayerBrowserMediaControls
+    v-if="webPlayer.mode === WebPlayerMode.CONTROLS_ONLY"
+  />
 </template>
 
 <script setup lang="ts">
@@ -98,6 +100,7 @@ onMounted(() => {
   });
   api.initialize(serverAddress);
   webPlayer.setBaseUrl(serverAddress);
+  webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
 
   //There is a safety rule in which you need to interact with the page for the audio to play
   window.addEventListener("click", interactedHandler);

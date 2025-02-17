@@ -17,7 +17,6 @@ import { store } from "@/plugins/store";
 import { onMounted, ref, watch } from "vue";
 
 const audioRef = ref<HTMLAudioElement>();
-const interactedRef = ref(false);
 
 function apiCommandWithCurrentPlayer<T extends (id: string) => any>(
   command: T,
@@ -28,7 +27,7 @@ function apiCommandWithCurrentPlayer<T extends (id: string) => any>(
 }
 
 function updateMediaState(state?: PlayerState) {
-  if (!state || !audioRef.value || !interactedRef.value) return;
+  if (!state || !audioRef.value) return;
   let mediaState: MediaSessionPlaybackState;
 
   switch (state) {
@@ -57,12 +56,6 @@ useMediaBrowserMetaData();
 
 // MediaSession setup
 onMounted(() => {
-  window.addEventListener("click", () => {
-    //There is a safety rule in which you need to interact with the page for the audio to play
-    interactedRef.value = true;
-    updateMediaState(store.activePlayer?.state);
-  });
-
   navigator.mediaSession.setActionHandler("play", () => {
     apiCommandWithCurrentPlayer(api.playerCommandPlay.bind(api));
   });
