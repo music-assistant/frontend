@@ -99,7 +99,9 @@ const seekHandler = function (
   to = Math.round(to);
   lastSeekPos = to;
   lastSeekPosTimeout();
-  api.playerCommandSeek(player_id, to);
+  if (!evt.fastSeek) {
+    api.playerCommandSeek(player_id, to);
+  }
 };
 
 // MediaSession setup
