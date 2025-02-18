@@ -80,16 +80,15 @@ useMediaBrowserMetaData();
 const seekHandler = function (
   evt: MediaSessionActionDetails,
   player_id: string,
-  is_backward = false,
 ) {
   let to = null;
-  if (evt.seekTime) {
+  if (evt.action === "seekto" && evt.seekTime) {
     to = evt.seekTime;
-  } else if (evt.seekOffset) {
+  } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
     const offset = evt.seekOffset || 10;
     const elapsed_time = lastSeekPos || store.activePlayerQueue?.elapsed_time;
     if (!elapsed_time) return;
-    if (is_backward) {
+    if (evt.action === "seekbackward") {
       to = elapsed_time - offset;
     } else {
       to = elapsed_time + offset;
@@ -132,7 +131,7 @@ onMounted(() => {
       apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
     });
     navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
-      apiCommandWithCurrentPlayer((id) => seekHandler(evt, id, true));
+      apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
     });
   }
 });
