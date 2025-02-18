@@ -122,12 +122,16 @@ onMounted(() => {
   navigator.mediaSession.setActionHandler("seekto", (evt) => {
     apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
   });
-  navigator.mediaSession.setActionHandler("seekforward", (evt) => {
-    apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
-  });
-  navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
-    apiCommandWithCurrentPlayer((id) => seekHandler(evt, id, true));
-  });
+  if (!navigator.userAgent.match(/(iPhone|iPod|iPad|Mac)/i)) {
+    // Implementing seek froward/backward hides the previous and nexttrack buttons
+    // on ios/mac, so we don't register those.
+    navigator.mediaSession.setActionHandler("seekforward", (evt) => {
+      apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
+    });
+    navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
+      apiCommandWithCurrentPlayer((id) => seekHandler(evt, id, true));
+    });
+  }
 });
 </script>
 <style lang="css">
