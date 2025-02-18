@@ -513,7 +513,7 @@
         "paused": "en pause",
         "playing": "En cours de lecture"
     },
-    "sync_now": "Synchronisez maintenant",
+    "sync_now": "Synchroniser maintenant",
     "sync_running": "Un ou plusieurs fournisseurs de musique sont en cours de synchronisation.",
     "tooltip": {
         "album_artist_filter": "Basculer le filtre d'album-artiste",
@@ -662,5 +662,9 @@
         "output_format_pcm_info": "L'audio est transmis en PCM au fournisseur du lecteur. Le fournisseur du lecteur peut ensuite convertir l'audio dans un format différent avant de l'envoyer au lecteur."
     },
     "volume_normalization_gain_correction": "{0} dB",
-    "select_source": "Sélectionner la source"
+    "select_source": "Sélectionner la source",
+    "in_progress_items": "Continuer à écouter...",
+    "play_replace_next": "Jouer ensuite (vider la file d'attente)",
+    "all_enqueue_options": "Toutes les options de mise en file d'attente",
+    "music_assistant_source": "File d'attente de Music Assistant"
 }

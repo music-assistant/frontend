@@ -453,7 +453,7 @@
         "paused": "zaustavljeno",
         "playing": "igranje"
     },
-    "sync_now": "Sinhronizirajte zdaj",
+    "sync_now": "Sinhronizirajte {0} zdaj",
     "sync_running": "Poteka sinhronizacija enega ali več ponudnikov glasbe.",
     "tooltip": {
         "album_artist_filter": "Preklopite filter album-umetnik",

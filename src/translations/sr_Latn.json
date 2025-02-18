@@ -348,7 +348,7 @@
         "paused": "pauziran",
         "playing": "reprodukuje"
     },
-    "sync_now": "Sinhronizujte sada",
+    "sync_now": "Sinhronizujte {0} sada",
     "sync_running": "Jedan ili više muzičkih provajdera se sinhronizuju.",
     "tooltip": {
         "album_artist_filter": "Uključite filter za album-izvođača",
