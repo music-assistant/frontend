@@ -479,7 +479,7 @@
         "paused": "Pausiert",
         "playing": "spielt gerade"
     },
-    "sync_now": "Synchronisiert",
+    "sync_now": "Synchronisiert {0}",
     "sync_running": "Ein oder mehrere Musikanbieter werden synchronisiert.",
     "tooltip": {
         "album_artist_filter": "Nach Album-Künstlern filtern",

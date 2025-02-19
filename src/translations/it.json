@@ -613,5 +613,6 @@
         },
         "click_to_expand": "Clicca per mostrare tutti i lettori"
     },
-    "select_source": "Seleziona la fonte"
+    "select_source": "Seleziona la fonte",
+    "in_progress_items": "Continua ad ascoltare..."
 }
