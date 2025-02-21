@@ -1299,9 +1299,13 @@ export class MusicAssistantApi {
     // try to get the name of the provider from the instance_id or domain
     if (provider_domain_or_instance_id in this.providers) {
       provider_domain_or_instance_id =
-        this.providers[provider_domain_or_instance_id].domain;
+        this.providers[provider_domain_or_instance_id].instance_id;
     }
-    // prefer the name from manifest and not the user configured name
+    // prefer the user configured name
+    if (provider_domain_or_instance_id in this.providers) {
+      return this.providers[provider_domain_or_instance_id].name;
+    }
+    // fallback to manifest name
     if (provider_domain_or_instance_id in this.providerManifests) {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }

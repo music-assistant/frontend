@@ -250,6 +250,7 @@ const getVolumePlayers = function (player: Player) {
   // always include group_childs
   for (const groupChildId of player.group_childs) {
     const volumeChild = api?.players[groupChildId];
+    if (!volumeChild) continue;
     if (volumeChild.volume_control == PLAYER_CONTROL_NONE) continue;
     if (volumeChild && volumeChild.available && !items.includes(volumeChild)) {
       items.push(volumeChild);

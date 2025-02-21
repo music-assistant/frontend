@@ -396,11 +396,14 @@ export type MessageType =
 // config entries
 
 export type ConfigValueType =
-  | string
   | number
+  | string
   | boolean
-  | string[]
   | number[]
+  | string[]
+  | boolean[]
+  | number[]
+  | string[]
   | null;
 
 export interface ConfigValueOption {

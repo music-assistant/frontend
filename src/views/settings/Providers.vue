@@ -87,17 +87,7 @@
       <ListItem
         v-for="item in providerConfigs
           .filter((x) => x.type == provType)
-          .sort((a, b) =>
-            (
-              a.name ||
-              api.getProvider(a.instance_id)?.name ||
-              api.getProviderName(a.domain)
-            ).localeCompare(
-              b.name ||
-                api.getProvider(b.instance_id)?.name ||
-                api.getProviderName(b.domain),
-            ),
-          )"
+          .sort((a, b) => getProviderName(a).localeCompare(getProviderName(b)))"
         :key="item.instance_id"
         show-menu-btn
         link
@@ -116,11 +106,7 @@
         <!-- title -->
         <template #title>
           <div class="line-clamp-1">
-            {{
-              item.name ||
-              api.getProvider(item.instance_id)?.name ||
-              api.getProviderName(item.domain)
-            }}
+            {{ getProviderName(item) }}
           </div>
         </template>
 
@@ -351,6 +337,20 @@ watch(
   },
   { immediate: true },
 );
+
+const getProviderName = function (config: ProviderConfig) {
+  const providerBaseName =
+    api.getProviderManifest(config.domain)?.name || config.domain;
+
+  const providerPostfix = (
+    api.getProvider(config.instance_id)?.name || config.name
+  )?.replace(providerBaseName, "");
+
+  if (providerPostfix) {
+    return `${providerBaseName} [${providerPostfix}]`;
+  }
+  return providerBaseName;
+};
 </script>
 
 <style scoped>

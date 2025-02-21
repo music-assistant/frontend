@@ -6,7 +6,7 @@
         <v-card-title>
           {{
             $t("settings.setup_provider", [
-              config.name || api.getProvider(config.instance_id)?.name,
+              api.providerManifests[config.domain].name,
             ])
           }}
         </v-card-title>
