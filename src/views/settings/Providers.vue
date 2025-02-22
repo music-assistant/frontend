@@ -339,15 +339,13 @@ watch(
 );
 
 const getProviderName = function (config: ProviderConfig) {
-  const providerBaseName =
-    api.getProviderManifest(config.domain)?.name || config.domain;
-
-  const providerPostfix = (
-    api.getProvider(config.instance_id)?.name || config.name
-  )?.replace(providerBaseName, "");
-
-  if (providerPostfix) {
-    return `${providerBaseName} [${providerPostfix}]`;
+  const providerBaseName = api.providerManifests[config.domain].name;
+  if (config.name) {
+    return `${providerBaseName} [${config.name}]`;
+  }
+  const providerInstance = api.getProvider(config.instance_id);
+  if (providerInstance && providerInstance.instance_name_postfix) {
+    return `${providerBaseName} [${providerInstance.instance_name_postfix}]`;
   }
   return providerBaseName;
 };

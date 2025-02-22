@@ -837,6 +837,8 @@ export interface ProviderInstance {
   type: ProviderType;
   domain: string;
   name: string;
+  default_name: string;
+  instance_name_postfix?: string;
   instance_id: string;
   lookup_key: string;
   supported_features: ProviderFeature[];
