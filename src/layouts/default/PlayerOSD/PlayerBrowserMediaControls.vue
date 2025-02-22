@@ -68,7 +68,17 @@ watch(
 // Wait for audioRef to load
 watch(
   () => audioRef.value,
-  () => updateMediaState(store.activePlayer?.state),
+  () => {
+    // Briefly start the playback to make the notification
+    // even show up when paused.
+    updateMediaState(PlayerState.PLAYING);
+    setTimeout(() => {
+      // not sure if this is needed, but lets make sure that the notification will
+      // definitly show up even if some quick state changes will occur
+      if (audioRef.value) audioRef.value.currentTime = 0;
+      updateMediaState(store.activePlayer?.state);
+    }, 100);
+  },
   { once: true },
 );
 
