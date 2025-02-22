@@ -9,8 +9,8 @@
 </template>
 
 <script setup lang="ts">
-// Firefox does not show the notification if the playing audio file is completely silent.
-// This audio file therefore has inaudiable sine pulses at 15Hz (made as quiet as possible).
+// First second of this file has an inaudible 15Hz tone (-64dB), rest is silent.
+// We only play the tone once at the start to ensure that the notification is shown.
 import audio from "@/assets/almost_silent.mp3";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
@@ -28,21 +28,32 @@ function apiCommandWithCurrentPlayer<T extends (id: string) => any>(
   return command(activePlayer?.player_id);
 }
 
+let interval = undefined as undefined | any;
+
 function updateMediaState(state?: PlayerState) {
   if (!state || !audioRef.value) return;
   let mediaState: MediaSessionPlaybackState;
+
+  if (interval) clearInterval(interval);
+  interval = undefined;
 
   switch (state) {
     case PlayerState.PLAYING:
       audioRef.value.play();
       mediaState = state;
+      interval = setInterval(() => {
+        // jump to portion with silence
+        if (audioRef.value) audioRef.value.currentTime = 2;
+      }, 55000);
       break;
     case PlayerState.PAUSED:
       audioRef.value.pause();
+      audioRef.value.currentTime = 2;
       mediaState = state;
       break;
     default:
       audioRef.value.pause();
+      audioRef.value.currentTime = 2;
       mediaState = "none";
   }
 
