@@ -78,7 +78,10 @@
 
         <!-- DSP Config Button -->
         <v-btn
-          v-if="api.players[config.player_id].type !== PlayerType.GROUP"
+          v-if="
+            api.players[config.player_id] &&
+            api.players[config.player_id].type !== PlayerType.GROUP
+          "
           @click="openDspConfig"
         >
           {{ $t("open_dsp_settings") }}
