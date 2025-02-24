@@ -473,7 +473,7 @@
         },
         "mute_control": {
             "label": "Mute-bediening",
-            "description": "Definieer\/aanpas het mute bedieningsgedrag voor deze speler.\nHiermee kun je bijvoorbeeld de mute-control omleiden naar een ander apparaat of het volledig uitschakelen.\n\nWe bieden een 'nep' mute control die het dempen simuleert door het volume op 0 te zetten en het volume te herstellen wanneer het dempen wordt opgeheven."
+            "description": "Definieer het mute bedieningsgedrag voor deze speler.\nHiermee kun je bijvoorbeeld de mute-control omleiden naar een ander apparaat of het volledig uitschakelen.\n\nWe bieden een 'nep' mute control die het dempen simuleert door het volume op 0 te zetten en het volume te herstellen wanneer het dempen wordt opgeheven."
         }
     },
     "show_info": "Bekijk informatie",
@@ -644,7 +644,8 @@
             "bit_rate": "Bitsnelheid: {0} kbps",
             "sample_rate": "Samplefrequentie: {0} kHz",
             "channels": "Kanalen: {0}",
-            "bit_depth": "Bitdiepte: {0}"
+            "bit_depth": "Bitdiepte: {0}",
+            "processing_notice": "Audio wordt intern verwerkt als 32-bits float PCM"
         },
         "volume_normalization": {
             "target_level": "Doelniveau: {0} LUFS.",
@@ -658,8 +659,13 @@
                 "fixed_gain": "Volumenormalisatie is actief op basis van vaste versterkingscorrectie."
             }
         },
-        "click_to_expand": "Klik om alle spelers te tonen"
+        "click_to_expand": "Klik om alle spelers te tonen",
+        "output_format_pcm_info": "Audio wordt als PCM doorgegeven aan de spelerprovider. De speleraanbieder kan dan de audio converteren naar een ander formaat voordat het naar de speler wordt gestuurd."
     },
     "volume_normalization_gain_correction": "{0} dB",
-    "select_source": "Bron selecteren"
+    "select_source": "Bron selecteren",
+    "in_progress_items": "Verder luisteren...",
+    "play_replace_next": "Hierna afspelen (wachtrij wissen)",
+    "all_enqueue_options": "Alle afspeelopties",
+    "music_assistant_source": "Music Assistant Queue"
 }
