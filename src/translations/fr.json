@@ -536,7 +536,8 @@
         "search_filter_active": "Les résultats de la recherche sont filtrés",
         "play_sample": "Jouer un extrait",
         "album_type": "Type d'album",
-        "loading": "Le serveur traite une demande ou synchronise de la musique."
+        "loading": "Le serveur traite une demande ou synchronise de la musique.",
+        "primary_image": "Ceci est l'image principale pour ce type d'image"
     },
     "topresult": "Meilleurs résultats",
     "track": "Piste",

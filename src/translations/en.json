@@ -547,8 +547,6 @@
     "type_to_search": "Type here to search...",
     "volume_normalization": "Volume normalization",
     "play_now_replace": "Play Now (clear queue)",
-    "play_replace_next": "Play Next (clear queue)",
-    "all_enqueue_options": "All enqueue options",
     "currently_playing": "Currently playing",
     "favorites_add": "Add to favorites",
     "favorites_remove": "Remove from favorites",
@@ -560,7 +558,6 @@
     "item_in_library": "This item is available in the library",
     "back": "Back",
     "recently_played": "Recently played",
-    "in_progress_items": "Continue listening...",
     "radiobrowser_by_popularity": "By popularity",
     "radiobrowser_by_country": "By country",
     "radiobrowser_by_tag": "By tag",
@@ -633,7 +630,6 @@
         "input_header": "Input",
         "output_header": "Output",
         "output_format_info": "Audio is sent in the {0} format",
-        "output_format_pcm_info": "Audio is passed as PCM to the player provider. The player provider may then convert the audio to a different format before sending it to the player.",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",
@@ -663,9 +659,13 @@
                 "fixed_gain": "Volume normalization is active based on fixed gain correction."
             }
         },
-        "click_to_expand": "Click to show all players"
+        "click_to_expand": "Click to show all players",
+        "output_format_pcm_info": "Audio is passed as PCM to the player provider. The player provider may then convert the audio to a different format before sending it to the player."
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Select source",
+    "in_progress_items": "Continue listening...",
+    "play_replace_next": "Play Next (clear queue)",
+    "all_enqueue_options": "All enqueue options",
     "music_assistant_source": "Music Assistant Queue"
 }
