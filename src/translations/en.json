@@ -421,7 +421,6 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
-            "enable_output_limiter": "Enable Output Limiter to prevent clipping",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
