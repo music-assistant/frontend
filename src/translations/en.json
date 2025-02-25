@@ -537,7 +537,8 @@
         "play_sample": "Play sample",
         "album_type": "Album type",
         "loading": "The server is processing a request or syncing music.",
-        "primary_image": "This is the primary image for this image type"
+        "primary_image": "This is the primary image for this image type",
+        "copy_uri": "Copy URI to clipboard"
     },
     "topresult": "Top result",
     "track": "Track",

@@ -48,12 +48,9 @@
               @click.prevent="openLinkInNewTab(providerMapping.url)"
               >{{ getProviderUri(providerMapping) }}</a
             >
-            <span
-              v-else
-              style="opacity: 0.4"
-              :title="providerMapping.item_id"
-              >{{ getProviderUri(providerMapping) }}</span
-            >
+            <span v-else style="opacity: 0.4" :title="$t('copy_uri')">{{
+              getProviderUri(providerMapping)
+            }}</span>
           </template>
           <template #append>
             <!-- hi res icon -->
@@ -85,10 +82,17 @@
               :title="$t('tooltip.play_sample')"
               @click="playBtnClick(providerMapping)"
             />
+            <!-- visit website button -->
+            <v-btn
+              v-if="providerMapping.url"
+              icon="mdi-open-in-new"
+              :title="$t('tooltip.open_provider_link')"
+              @click.prevent="openLinkInNewTab(providerMapping.url)"
+            />
             <!-- copy URI to clipboard button -->
             <v-btn
               icon="mdi-link"
-              :title="$t('tooltip.play_sample')"
+              :title="$t('tooltip.copy_uri')"
               @click="copyUriToClipboard(getProviderUri(providerMapping))"
             />
           </template>
@@ -108,7 +112,7 @@
           <template #append>
             <v-btn
               icon="mdi-link"
-              :title="$t('tooltip.play_sample')"
+              :title="$t('tooltip.copy_uri')"
               @click="
                 copyUriToClipboard(
                   `library://${itemDetails.media_type}/${itemDetails.item_id}`,

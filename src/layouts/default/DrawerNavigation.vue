@@ -1,10 +1,5 @@
 <template>
-  <v-navigation-drawer
-    v-model="showNavigationMenu"
-    app
-    :rail="enableRail"
-    :width="280"
-  >
+  <v-navigation-drawer app :rail="!showNavigationMenu" :width="280" permanent>
     <v-list-item style="height: 55px" :active="false">
       <template #prepend>
         <img class="logo_icon" size="40" src="@/assets/icon.png" />
@@ -35,22 +30,30 @@
       :width="40"
       style="position: relative; float: right; right: 10px; top: 20px"
       :ripple="false"
-      :icon="enableRail ? 'mdi-chevron-right' : 'mdi-chevron-left'"
+      :icon="showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'"
       :title="$t('tooltip.show_menu')"
-      @click="enableRail = !enableRail"
+      @click="showNavigationMenu = !showNavigationMenu"
     />
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import Button from "@/components/mods/Button.vue";
 import { store } from "@/plugins/store";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 
-const showNavigationMenu = ref(true);
-const enableRail = ref(false);
+const showNavigationMenu = ref<boolean>(
+  localStorage.getItem("show_navigation_menu") === "true",
+);
 const menuItems = getMenuItems();
+
+watch(
+  () => showNavigationMenu.value,
+  (newVal) => {
+    localStorage.setItem("show_navigation_menu", newVal.toString());
+  },
+);
 </script>
 
 <script lang="ts">
