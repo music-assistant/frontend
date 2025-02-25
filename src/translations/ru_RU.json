@@ -536,5 +536,17 @@
     "shuffle_disable": "Выключить кроссфейд",
     "shuffle_enable": "Включить кроссфейд",
     "dont_stop_the_music_enable": "Включить «Не останавливай музыку!»",
-    "dont_stop_the_music_disable": "Отключить «Не останавливай музыку!»"
+    "dont_stop_the_music_disable": "Отключить «Не останавливай музыку!»",
+    "searchtype_all": "Все",
+    "global_search": "Поиск",
+    "streamdetails": {
+        "click_to_expand": "Показать все устройства",
+        "file_info": {
+            "processing_notice": "Внутренняя обработка аудио: 32-битный float PCM"
+        }
+    },
+    "in_progress_items": "Продолжить воспроизведение...",
+    "play_replace_next": "Следующим (очистить очередь)",
+    "all_enqueue_options": "Все опции очереди",
+    "music_assistant_source": "Очередь воспроизведения Music Assistant"
 }
