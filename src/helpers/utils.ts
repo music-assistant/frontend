@@ -549,7 +549,10 @@ export const handlePlayBtnClick = function (
       store.activePlayer?.state as PlayerState,
     )
   ) {
-    api.playMedia(item);
+    store.playActionInProgress = true;
+    api.playMedia(item).then(() => {
+      store.playActionInProgress = false;
+    });
     return;
   }
   showPlayMenuForMediaItem(item, parentItem, posX, posY);

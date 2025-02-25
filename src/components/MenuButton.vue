@@ -10,6 +10,7 @@
             margin-top: -1px;
             margin-left: -1px;
           `"
+      :disabled="loading"
       @click="emit('menu')"
     >
       <v-icon
@@ -22,13 +23,18 @@
     <v-btn
       color="primary"
       flat
-      :disabled="disabled"
+      :disabled="disabled || loading"
       :style="`width: ${width - 40}px; justify-content: left;`"
       :text="text"
       @click="emit('click')"
     >
-      <template v-if="icon && text!.length < 12" #prepend>
-        <v-icon :icon="icon" size="x-large" />
+      <template v-if="(icon && text!.length < 12) || loading" #prepend>
+        <v-progress-circular
+          v-if="loading"
+          color="grey-lighten-5"
+          indeterminate
+        />
+        <v-icon v-else :icon="icon" size="x-large" />
       </template>
     </v-btn>
   </div>
@@ -41,12 +47,14 @@ export interface Props {
   text?: string;
   disabled?: boolean;
   width?: number;
+  loading?: boolean;
 }
 withDefaults(defineProps<Props>(), {
   icon: undefined,
   text: undefined,
   disabled: false,
   width: 200,
+  loading: true,
 });
 
 // emitters

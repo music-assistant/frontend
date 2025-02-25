@@ -47,6 +47,7 @@ interface Store {
   connected?: boolean;
   isTouchscreen: boolean;
   playMenuShown: boolean;
+  playActionInProgress: boolean;
 }
 
 export const store: Store = reactive({
@@ -101,4 +102,5 @@ export const store: Store = reactive({
   connected: false,
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
+  playActionInProgress: false,
 });

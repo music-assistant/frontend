@@ -245,6 +245,7 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
+              :loading="store.playActionInProgress"
               :open-menu-on-click="!store.activePlayer"
               @click="playButtonClick"
               @menu="playButtonClick(true)"
@@ -431,7 +432,6 @@ const backButtonClick = function () {
 
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
-  console.log("playButton", playButton);
   handlePlayBtnClick(
     compProps.item!,
     playButton.getBoundingClientRect().left,

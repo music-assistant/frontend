@@ -193,24 +193,11 @@ const fetchPlaylists = async function () {
   }
 };
 const addToPlaylist = async function (value: MediaItemType) {
-  /// add track(s) to playlist
-  if (selectedItems.value[0].media_type === MediaType.TRACK) {
-    api.addPlaylistTracks(
-      value.item_id,
-      selectedItems.value.map((x) => x.uri),
-    );
-  }
-  // add album track(s) to playlist
-  else if (selectedItems.value[0].media_type === MediaType.ALBUM) {
-    var albumTracks: Track[] = await api.getAlbumTracks(
-      selectedItems.value[0].item_id,
-      selectedItems.value[0].provider,
-    );
-    api.addPlaylistTracks(
-      value.item_id,
-      albumTracks.map((x) => x.uri),
-    );
-  }
+  /// add item(s) to playlist
+  api.addPlaylistTracks(
+    value.item_id,
+    selectedItems.value.map((x) => x.uri),
+  );
   close();
   store.activeAlert = {
     type: AlertType.INFO,
