@@ -168,7 +168,7 @@
                 clearable
                 :readonly="!!conf_entry.action"
                 @click:append-inner="showPasswordValues = !showPasswordValues"
-                @click:clear="conf_entry.value = '#CLEAR#'"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
 
               <!-- value with dropdown -->
@@ -190,7 +190,7 @@
                     $t('settings.invalid_input'),
                 ]"
                 variant="outlined"
-                @click:clear="conf_entry.value = null"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
               <!-- int value without range -->
               <v-text-field
@@ -213,7 +213,7 @@
                 variant="outlined"
                 :clearable="!conf_entry.required"
                 type="number"
-                @click:clear="conf_entry.value = null"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
               <!-- icon 'picker' -->
               <v-text-field
@@ -250,7 +250,7 @@
                     $t('settings.invalid_input'),
                 ]"
                 variant="outlined"
-                @click:clear="conf_entry.value = []"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
               <!-- all other: textbox with single value -->
               <v-text-field
@@ -270,7 +270,7 @@
                 ]"
                 variant="outlined"
                 :readonly="!!conf_entry.action"
-                @click:clear="conf_entry.value = null"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
             </div>
             <!-- right side of control: help icon with description-->
