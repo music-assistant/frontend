@@ -51,11 +51,15 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
-import { type Album } from "@/plugins/api/interfaces";
+import {
+  EventMessage,
+  EventType,
+  MediaItemType,
+  type Album,
+} from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
-import { ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import { getStreamingProviderMappings } from "@/helpers/utils";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 
 export interface Props {
@@ -64,9 +68,12 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Album>();
+const loading = ref(false);
 
 const loadItemDetails = async function () {
+  loading.value = true;
   itemDetails.value = await api.getAlbum(props.itemId, props.provider);
+  loading.value = false;
 };
 
 watch(
@@ -76,6 +83,38 @@ watch(
   },
   { immediate: true },
 );
+
+onMounted(() => {
+  //signal if/when item updates
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_UPDATED,
+    (evt: EventMessage) => {
+      const updatedItem = evt.data as MediaItemType;
+      // check if the updated item is the current item
+      if (itemDetails.value?.uri == updatedItem.uri) {
+        // update UI with the updated item
+        loading.value = true;
+        itemDetails.value = updatedItem as Album;
+        loading.value = false;
+      } else if ("provider_mappings" in updatedItem) {
+        for (const provMap of updatedItem.provider_mappings) {
+          if (
+            provMap.item_id == props.itemId &&
+            [provMap.provider_instance, provMap.provider_domain].includes(
+              props.provider,
+            )
+          ) {
+            loading.value = true;
+            itemDetails.value = updatedItem as Album;
+            loading.value = false;
+            break;
+          }
+        }
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
 
 const loadAlbumTracks = async function (params: LoadDataParams) {
   return await api.getAlbumTracks(
