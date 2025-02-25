@@ -667,5 +667,6 @@
     "in_progress_items": "Continue listening...",
     "play_replace_next": "Play Next (clear queue)",
     "all_enqueue_options": "All enqueue options",
-    "music_assistant_source": "Music Assistant Queue"
+    "music_assistant_source": "Music Assistant Queue",
+    "music_assistant_library": "Music Assistant Library"
 }
