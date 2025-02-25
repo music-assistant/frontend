@@ -251,6 +251,13 @@ export const showContextMenuForMediaItem = async function (
   // return early if we dont have any items
   if (mediaItems.length == 0) return;
 
+  if (
+    mediaItems[0].media_type == MediaType.FOLDER &&
+    mediaItems[0].name == ".."
+  ) {
+    return;
+  }
+
   const menuItems = await getContextMenuItems(mediaItems, parentItem);
   if (
     includePlayMenuItems &&
@@ -259,6 +266,9 @@ export const showContextMenuForMediaItem = async function (
   ) {
     menuItems.push(...(await getPlayMenuItems(mediaItems, parentItem)));
   }
+
+  if (menuItems.length == 0) return;
+
   // open the contextmenu by emitting the event
   eventbus.emit("contextmenu", {
     items: menuItems,
