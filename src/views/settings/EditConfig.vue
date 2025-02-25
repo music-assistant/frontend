@@ -521,11 +521,16 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
   if (!entry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of entry.options) {
+    let title = $t(
+      `settings.${entry.key}.options.${orgOption.value}`,
+      orgOption.title,
+    );
+    // handle weird edge case where title contains a pipe character which is not handled well by i18n
+    if (orgOption.title!.toString().includes("|")) {
+      title = orgOption.title!.toString();
+    }
     const option: ConfigValueOption = {
-      title: $t(
-        `settings.${entry.key}.options.${orgOption.value}`,
-        orgOption.title,
-      ),
+      title: title,
       value: orgOption.value,
     };
     if (option.value == entry.default_value) {
