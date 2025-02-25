@@ -36,11 +36,13 @@
         />
       </v-chip-group>
 
-      <v-progress-circular
+      <v-progress-linear
         v-if="loading"
-        color="primary"
+        color="accent"
+        height="4"
         indeterminate
-        :title="$t('tooltip.loading')"
+        rounded
+        style="margin-top: 15px"
       />
 
       <!-- compact all-media-types searchresult -->
