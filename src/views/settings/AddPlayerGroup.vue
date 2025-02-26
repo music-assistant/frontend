@@ -21,7 +21,7 @@
             clearable
             :items="groupTypes"
             item-title="name"
-            item-value="lookup_key"
+            item-value="instance_id"
             :label="$t('settings.group_type')"
             required
             :disabled="members.length > 0"
@@ -98,7 +98,7 @@ const valid = ref<boolean>(false);
 // computed properties
 const groupTypes = computed(() => {
   return [
-    { name: "Universal", lookup_key: "universal" },
+    { name: "Universal", instance_id: "universal" },
     ...Object.values(api.providers).filter((x) =>
       x.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
     ),
