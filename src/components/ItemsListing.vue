@@ -477,6 +477,13 @@ const menuItems = computed(() => {
 
   // toggle select menu item
   if (props.showSelectButton !== false) {
+    if (showCheckboxes.value) {
+      items.push({
+        label: "tooltip.select_all",
+        icon: "mdi-select-all",
+        action: selectAll,
+      });
+    }
     items.push({
       label: "tooltip.select_items",
       icon: showCheckboxes.value

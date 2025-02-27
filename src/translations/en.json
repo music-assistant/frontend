@@ -525,6 +525,7 @@
         "refresh_new_content": "New content is available, click to refresh the listing",
         "search": "Show\/hide search input",
         "select_items": "Select multiple items",
+        "select_all": "Select all items",
         "sort_options": "Sort options",
         "toggle_view_mode": "Toggle view mode list\/thumbs",
         "filter_favorites": "Only show favorites",
