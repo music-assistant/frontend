@@ -519,7 +519,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  watchEffect,
+} from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import api from "@/plugins/api";
 import {
@@ -946,20 +953,17 @@ watch(
   { immediate: true },
 );
 
-watch(
-  () => compProps.colorPalette,
-  (result) => {
-    if (!result.darkColor || !result.lightColor) {
-      coverImageColorCode.value = vuetify.theme.current.value.dark
-        ? "#000"
-        : "#fff";
-    } else {
-      coverImageColorCode.value = vuetify.theme.current.value.dark
-        ? result.darkColor
-        : result.lightColor;
-    }
-  },
-);
+watchEffect(() => {
+  if (!compProps.colorPalette.darkColor || !compProps.colorPalette.lightColor) {
+    coverImageColorCode.value = vuetify.theme.current.value.dark
+      ? "#000"
+      : "#fff";
+  } else {
+    coverImageColorCode.value = vuetify.theme.current.value.dark
+      ? compProps.colorPalette.darkColor
+      : compProps.colorPalette.lightColor;
+  }
+});
 </script>
 
 <style scoped>
