@@ -19,6 +19,7 @@
         :show-ticks="chapterTicks ? 'always' : false"
         :ticks="chapterTicks"
         tick-size="4"
+        :color="color"
         @touchstart="isThumbHidden = false"
         @touchend="isThumbHidden = true"
         @mouseenter="isThumbHidden = false"
@@ -72,10 +73,12 @@ import { ref, computed, watch } from "vue";
 // properties
 export interface Props {
   showLabels?: boolean;
+  color?: string;
 }
 
 withDefaults(defineProps<Props>(), {
   showLabels: false,
+  color: undefined,
 });
 
 // local refs
