@@ -84,7 +84,10 @@
             />
             <!-- visit website button -->
             <v-btn
-              v-if="providerMapping.url"
+              v-if="
+                providerMapping.url &&
+                !providerMapping.provider_domain.startsWith('file')
+              "
               icon="mdi-open-in-new"
               :title="$t('tooltip.open_provider_link')"
               @click.prevent="openLinkInNewTab(providerMapping.url)"
@@ -140,7 +143,6 @@ import Toolbar from "@/components/Toolbar.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed, reactive, ref } from "vue";
-import { get } from "http";
 
 export interface Props {
   itemDetails: MediaItemType;
