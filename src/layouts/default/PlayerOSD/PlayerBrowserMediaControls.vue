@@ -9,7 +9,9 @@
 </template>
 
 <script setup lang="ts">
-import audio from "@/assets/5_mins_of_silence.mp3";
+// First second of this file has an inaudible 15Hz tone (-64dB), rest is silent.
+// We only play the tone once at the start to ensure that the notification is shown.
+import audio from "@/assets/almost_silent.mp3";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
 import { PlayerState } from "@/plugins/api/interfaces";
@@ -17,7 +19,6 @@ import { store } from "@/plugins/store";
 import { onMounted, ref, watch } from "vue";
 
 const audioRef = ref<HTMLAudioElement>();
-const interactedRef = ref(false);
 
 function apiCommandWithCurrentPlayer<T extends (id: string) => any>(
   command: T,
@@ -27,21 +28,32 @@ function apiCommandWithCurrentPlayer<T extends (id: string) => any>(
   return command(activePlayer?.player_id);
 }
 
+let interval = undefined as undefined | any;
+
 function updateMediaState(state?: PlayerState) {
-  if (!state || !audioRef.value || !interactedRef.value) return;
+  if (!state || !audioRef.value) return;
   let mediaState: MediaSessionPlaybackState;
+
+  if (interval) clearInterval(interval);
+  interval = undefined;
 
   switch (state) {
     case PlayerState.PLAYING:
       audioRef.value.play();
       mediaState = state;
+      interval = setInterval(() => {
+        // jump to portion with silence
+        if (audioRef.value) audioRef.value.currentTime = 2;
+      }, 55000);
       break;
     case PlayerState.PAUSED:
       audioRef.value.pause();
+      audioRef.value.currentTime = 2;
       mediaState = state;
       break;
     default:
       audioRef.value.pause();
+      audioRef.value.currentTime = 2;
       mediaState = "none";
   }
 
@@ -53,16 +65,68 @@ watch(
   (stateUpdate) => updateMediaState(stateUpdate),
 );
 
+// Wait for audioRef to load
+watch(
+  () => audioRef.value,
+  () => {
+    // Briefly start the playback to make the notification
+    // even show up when paused.
+    updateMediaState(PlayerState.PLAYING);
+    setTimeout(() => {
+      // not sure if this is needed, but lets make sure that the notification will
+      // definitly show up even if some quick state changes will occur
+      if (audioRef.value) audioRef.value.currentTime = 0;
+      updateMediaState(store.activePlayer?.state);
+    }, 100);
+  },
+  { once: true },
+);
+
+updateMediaState(store.activePlayer?.state);
+
+// This allows for correct seeking on repeated seek forward/backward presses
+let lastSeekPos = undefined as undefined | number;
+let lastSeekPosTimeoutHandle = undefined as undefined | any;
+
+const lastSeekPosTimeout = function () {
+  clearTimeout(lastSeekPosTimeoutHandle);
+  lastSeekPosTimeoutHandle = setTimeout(() => {
+    lastSeekPos = undefined;
+    lastSeekPosTimeoutHandle = undefined;
+  }, 2000);
+};
+
 useMediaBrowserMetaData();
+
+const seekHandler = function (
+  evt: MediaSessionActionDetails,
+  player_id: string,
+) {
+  let to = null;
+  if (evt.action === "seekto" && evt.seekTime) {
+    to = evt.seekTime;
+  } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
+    const offset = evt.seekOffset || 10;
+    const elapsed_time = lastSeekPos || store.activePlayerQueue?.elapsed_time;
+    if (!elapsed_time) return;
+    if (evt.action === "seekbackward") {
+      to = elapsed_time - offset;
+    } else {
+      to = elapsed_time + offset;
+    }
+  } else {
+    return;
+  }
+  to = Math.round(to);
+  lastSeekPos = to;
+  lastSeekPosTimeout();
+  if (!evt.fastSeek) {
+    api.playerCommandSeek(player_id, to);
+  }
+};
 
 // MediaSession setup
 onMounted(() => {
-  window.addEventListener("click", () => {
-    //There is a safety rule in which you need to interact with the page for the audio to play
-    interactedRef.value = true;
-    updateMediaState(store.activePlayer?.state);
-  });
-
   navigator.mediaSession.setActionHandler("play", () => {
     apiCommandWithCurrentPlayer(api.playerCommandPlay.bind(api));
   });
@@ -80,6 +144,19 @@ onMounted(() => {
   navigator.mediaSession.setActionHandler("previoustrack", () => {
     apiCommandWithCurrentPlayer(api.playerCommandPrevious.bind(api));
   });
+  navigator.mediaSession.setActionHandler("seekto", (evt) => {
+    apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
+  });
+  if (!navigator.userAgent.match(/(iPhone|iPod|iPad|Mac)/i)) {
+    // Implementing seek froward/backward hides the previous and nexttrack buttons
+    // on ios/mac, so we don't register those.
+    navigator.mediaSession.setActionHandler("seekforward", (evt) => {
+      apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
+    });
+    navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
+      apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
+    });
+  }
 });
 </script>
 <style lang="css">
