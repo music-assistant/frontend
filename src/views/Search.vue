@@ -198,6 +198,11 @@ onMounted(() => {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
+  // Ignore keyboard events with modifier keys
+  if (e.ctrlKey || e.altKey || e.metaKey) {
+    return;
+  }
+
   if (!searchHasFocus.value && e.key == "Backspace" && store.globalSearchTerm) {
     store.globalSearchTerm = store.globalSearchTerm.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {

@@ -477,6 +477,13 @@ const menuItems = computed(() => {
 
   // toggle select menu item
   if (props.showSelectButton !== false) {
+    if (showCheckboxes.value) {
+      items.push({
+        label: "tooltip.select_all",
+        icon: "mdi-select-all",
+        action: selectAll,
+      });
+    }
     items.push({
       label: "tooltip.select_items",
       icon: showCheckboxes.value
@@ -788,8 +795,7 @@ const keyListener = function (e: KeyboardEvent) {
   if (loading.value) return;
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    selectedItems.value = pagedItems.value;
-    showCheckboxes.value = true;
+    selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
     params.value.search = params.value.search.slice(0, -1);
   } else if (!searchHasFocus.value && e.key.length == 1) {
@@ -1083,6 +1089,11 @@ const getFilteredItems = function (
     );
   }
   return result.slice(params.offset, params.offset + params.limit);
+};
+
+const selectAll = function () {
+  selectedItems.value = pagedItems.value;
+  showCheckboxes.value = true;
 };
 </script>
 
