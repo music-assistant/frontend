@@ -846,6 +846,8 @@ watch(
     // completely reset if the path changes
     pagedItems.value = [];
     allItems.value = [];
+    selectedItems.value = [];
+    showCheckboxes.value = false;
     loadData(true);
   },
 );
@@ -1092,8 +1094,8 @@ const getFilteredItems = function (
 };
 
 const selectAll = function () {
-  selectedItems.value = pagedItems.value;
-  showCheckboxes.value = true;
+  selectedItems.value = pagedItems.value.filter((i) => i.is_playable);
+  if (selectedItems.value.length) showCheckboxes.value = true;
 };
 </script>
 
