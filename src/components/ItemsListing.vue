@@ -59,7 +59,7 @@
             <PanelviewItem
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && item.is_playable"
               :show-actions="['tracks', 'albums'].includes(itemtype)"
               :is-available="itemIsAvailable(item)"
               :parent-item="parentItem"
@@ -79,7 +79,7 @@
             <PanelviewItemCompact
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && item.is_playable"
               :is-available="itemIsAvailable(item)"
               :parent-item="parentItem"
               @select="onSelect"
@@ -105,7 +105,7 @@
               :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && item.is_playable"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :show-details="itemtype.includes('versions')"
