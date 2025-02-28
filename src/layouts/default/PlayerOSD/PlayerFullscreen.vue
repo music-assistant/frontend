@@ -607,7 +607,9 @@ const nextItems = computed(() => {
 });
 const previousItems = computed(() => {
   if (store.activePlayerQueue) {
-    return queueItems.value.slice(0, store.activePlayerQueue.current_index);
+    return queueItems.value
+      .slice(0, store.activePlayerQueue.current_index)
+      .reverse();
   } else return [];
 });
 
@@ -997,7 +999,7 @@ watchEffect(() => {
     }
   }
 
-  // Keep color between text and sliders consistant.
+  // Keep color between text and sliders consistent.
   // Also, this text color has a better contrast than the automatically selected one
   document.documentElement.style.setProperty("--text-color", textColor.hex());
   sliderColor.value = textColor.hex();
