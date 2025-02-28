@@ -6,7 +6,7 @@
     transition="dialog-bottom-transition"
     z-index="9999"
   >
-    <v-card :color="darkenBrightColors(coverImageColorCode, 70, 80)">
+    <v-card :color="backgroundColor">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -403,7 +403,7 @@
       <div class="player-bottom">
         <!-- timeline / progressbar-->
         <div class="row" style="margin-left: 5%; margin-right: 5%">
-          <PlayerTimeline :show-labels="true" />
+          <PlayerTimeline :show-labels="true" :color="sliderColor" />
         </div>
 
         <!-- main media control buttons (play, next, previous etc.)-->
@@ -472,6 +472,7 @@
             :model-value="Math.round(store.activePlayer?.group_volume || 0)"
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"
+            :color="sliderColor"
             :allow-wheel="true"
             @update:model-value="
               store.activePlayer!.group_childs.length > 0
@@ -519,7 +520,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  watchEffect,
+} from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import api from "@/plugins/api";
 import {
@@ -560,7 +568,6 @@ import {
 import router from "@/plugins/router";
 import {
   ImageColorPalette,
-  darkenBrightColors,
   formatDuration,
   getPlayerName,
   sleep,
@@ -572,6 +579,7 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getSourceName } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
+import Color from "color";
 
 const { t } = useI18n();
 const { name } = useDisplay();
@@ -587,7 +595,6 @@ const hoveredMarqueeSync = new MarqueeTextSync();
 
 // Local refs
 const queueItems = ref<QueueItem[]>([]);
-const coverImageColorCode = ref<string>("");
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
 
@@ -945,21 +952,57 @@ watch(
   },
   { immediate: true },
 );
+const sliderColor = ref<string | undefined>(undefined);
+const backgroundColor = ref<string | undefined>(undefined);
 
-watch(
-  () => compProps.colorPalette,
-  (result) => {
-    if (!result.darkColor || !result.lightColor) {
-      coverImageColorCode.value = vuetify.theme.current.value.dark
-        ? "#000"
-        : "#fff";
-    } else {
-      coverImageColorCode.value = vuetify.theme.current.value.dark
-        ? result.darkColor
-        : result.lightColor;
+watchEffect(() => {
+  const LIGHT_TEXT_COLOR = Color("white");
+  const DARK_TEXT_COLOR = Color("black");
+  // Minimum WCAG contrast ration between the background and the text
+  // W3C recommends at least 4.5
+  const MIN_CONTRAST = 5;
+  const ADJUSTMENT_INCREMENT = 0.05;
+
+  // Determine the base color from palette or fallback to theme default
+  const coverImageColorCode = vuetify.theme.current.value.dark
+    ? compProps.colorPalette.darkColor || "#000"
+    : compProps.colorPalette.lightColor || "#fff";
+
+  // Start with the original cover color as background
+  let bgColor = Color(coverImageColorCode);
+
+  // Calculate contrast with white and black
+  const lightContrast = LIGHT_TEXT_COLOR.contrast(bgColor);
+  const darkContrast = DARK_TEXT_COLOR.contrast(bgColor);
+
+  // Choose the color with higher contrast as starting value
+  const isLight = lightContrast >= darkContrast;
+  let textColor = isLight ? LIGHT_TEXT_COLOR : DARK_TEXT_COLOR;
+  let contrast = Math.max(lightContrast, darkContrast);
+
+  // If the best contrast still doesn't meet requirements, adjust background
+  if (contrast < MIN_CONTRAST) {
+    // Darken light bg or lighten dark bg until contrast is good
+    let adjustment = ADJUSTMENT_INCREMENT;
+
+    while (contrast < MIN_CONTRAST && adjustment <= 0.5) {
+      if (isLight) {
+        bgColor = bgColor.darken(ADJUSTMENT_INCREMENT);
+      } else {
+        bgColor = bgColor.lighten(ADJUSTMENT_INCREMENT);
+      }
+
+      contrast = Color(textColor).contrast(bgColor);
+      adjustment += ADJUSTMENT_INCREMENT;
     }
-  },
-);
+  }
+
+  // Keep color between text and sliders consistant.
+  // Also, this text color has a better contrast than the automatically selected one
+  document.documentElement.style.setProperty("--text-color", textColor.hex());
+  sliderColor.value = textColor.hex();
+  backgroundColor.value = bgColor.hex();
+});
 </script>
 
 <style scoped>
@@ -1136,5 +1179,10 @@ watch(
 .responsive-icon-holder-btn:focus,
 .responsive-icon-holder-btn:hover {
   opacity: 1;
+}
+
+div,
+button {
+  color: var(--text-color);
 }
 </style>

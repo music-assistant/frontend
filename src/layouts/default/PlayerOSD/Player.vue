@@ -31,11 +31,6 @@
       <!-- progress bar -->
       <PlayerTimeline
         v-if="getBreakpointValue('bp6')"
-        :color="
-          $vuetify.theme.current.dark
-            ? coverImageColorPalette.lightColor || '#fff'
-            : coverImageColorPalette.darkColor || '#000'
-        "
         :is-progress-bar="false"
         :disabled="
           !store.activePlayerQueue?.active ||
