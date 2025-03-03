@@ -801,6 +801,7 @@ const restoreSettings = async function () {
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
   if (loading.value) return;
+  if (e.key === "Escape") closeSearch();
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectAll();
