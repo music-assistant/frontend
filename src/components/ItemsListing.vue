@@ -802,14 +802,17 @@ const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
   if (loading.value) return;
   if (e.key === "Escape") closeSearch();
+  // Let searchInput handle this.
+  if (searchHasFocus.value) return;
+
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
-    params.value.search = params.value.search.slice(0, -1);
+    focusSearch();
   } else if (!searchHasFocus.value && e.key.length == 1) {
-    params.value.search += e.key;
     showSearch.value = true;
+    focusSearch();
   }
 };
 
