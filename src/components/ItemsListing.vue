@@ -308,14 +308,17 @@ const closeSearch = function () {
   params.value.search = "";
   showSearch.value = false;
 };
+const focusSearch = function () {
+  nextTick(() => {
+    document.getElementById("searchInput")?.focus();
+  });
+};
 const toggleSearch = function () {
   if (showSearch.value) {
     closeSearch();
   } else {
     showSearch.value = true;
-    nextTick(() => {
-      document.getElementById("searchInput")?.focus();
-    });
+    focusSearch();
   }
 };
 
