@@ -304,9 +304,14 @@ const initialDataReceived = ref(false);
 const tempHide = ref(false);
 
 // methods
+const closeSearch = function () {
+  params.value.search = "";
+  showSearch.value = false;
+};
 const toggleSearch = function () {
-  if (showSearch.value) showSearch.value = false;
-  else {
+  if (showSearch.value) {
+    closeSearch();
+  } else {
     showSearch.value = true;
     nextTick(() => {
       document.getElementById("searchInput")?.focus();
