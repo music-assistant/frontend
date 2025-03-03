@@ -14,7 +14,7 @@
     <v-divider />
 
     <v-text-field
-      v-if="showSearch && expanded"
+      v-if="showSearchInput"
       id="searchInput"
       v-model="params.search"
       clearable
@@ -466,6 +466,10 @@ const isSearchActive = computed(() => {
     searchActive = true;
   }
   return searchActive;
+});
+
+const showSearchInput = computed(() => {
+  return showSearch.value && expanded.value;
 });
 
 const menuItems = computed(() => {
