@@ -11,6 +11,7 @@
         itemDetails.provider == 'library' && api.hasStreamingProviders.value
       "
       :show-refresh-button="false"
+      :allow-key-hooks="true"
       :load-items="loadAlbumTracks"
       :sort-keys="[
         'track_number',
