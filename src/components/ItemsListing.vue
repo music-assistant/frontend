@@ -178,6 +178,7 @@ import {
   nextTick,
   onMounted,
   watch,
+  watchEffect,
 } from "vue";
 import {
   MediaType,
@@ -470,6 +471,12 @@ const isSearchActive = computed(() => {
 
 const showSearchInput = computed(() => {
   return showSearch.value && expanded.value;
+});
+
+watchEffect(() => {
+  if (!showSearchInput.value) {
+    searchHasFocus.value = false;
+  }
 });
 
 const menuItems = computed(() => {
