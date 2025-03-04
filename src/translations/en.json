@@ -179,6 +179,10 @@
             "label": "Enable volume normalization (EBU-R128 based)",
             "description": "Enable volume normalization based on the EBU-R128 standard without affecting dynamic range"
         },
+        "output_limiter": {
+            "label": "Enable limiting to prevent clipping",
+            "description": "Activates a limiter that prevents audio distortion by making loud peaks quieter."
+        },
         "volume_normalization_target": {
             "label": "Target level for volume normalization",
             "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS\n\n**WARNING:** Setting the level too high may result in clipping!"
@@ -421,7 +425,6 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
-            "enable_output_limiter": "Enable Output Limiter to prevent clipping",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",

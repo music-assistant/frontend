@@ -58,7 +58,6 @@ export interface DSPConfig {
   filters: DSPFilter[];
   input_gain: number;
   output_gain: number;
-  output_limiter: boolean;
 }
 
 // DSPDetails used in StreamDetails
