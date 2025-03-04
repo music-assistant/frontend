@@ -106,13 +106,6 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.output_gain" type="gain" />
-            <v-card-item>
-              <v-checkbox
-                v-model="dsp.output_limiter"
-                :label="$t('settings.dsp.enable_output_limiter')"
-                hide-details
-              />
-            </v-card-item>
           </v-card>
 
           <!-- Settings of the selected DSP Filter -->
