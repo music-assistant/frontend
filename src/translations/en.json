@@ -541,6 +541,7 @@
         "primary_image": "This is the primary image for this image type",
         "copy_uri": "Copy URI to clipboard"
     },
+    "select_all_confirmation": "Select all items? This operation may take a moment to load all data.",
     "topresult": "Top result",
     "track": "Track",
     "track_number": "Disc {0} Track {1}",

@@ -1122,9 +1122,27 @@ const getFilteredItems = function (
 };
 
 const selectAll = async function () {
-  await loadAllItems();
-  selectedItems.value = pagedItems.value;
-  showCheckboxes.value = true;
+  let confirmed = true;
+  // We use the total length even when searching, since we can't know
+  // how many items will be loaded after filtering
+  const itemCount = props.total || allItems.value.length;
+  if (itemCount > 250) {
+    // This could be a large selection. Prevent accidental activation
+    // by asking the user for a confirmation
+    confirmed = await new Promise((resolve) => {
+      if (confirm(t("select_all_confirmation"))) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  }
+
+  if (confirmed) {
+    await loadAllItems();
+    selectedItems.value = pagedItems.value;
+    showCheckboxes.value = true;
+  }
 };
 </script>
 
