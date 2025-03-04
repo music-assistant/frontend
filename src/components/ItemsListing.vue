@@ -461,6 +461,12 @@ const loadNextPage = async function ({ done }: { done: any }) {
   done("ok");
 };
 
+const loadAllItems = async function () {
+  while (!allItemsReceived.value) {
+    await loadNextPage({ done: function () {} });
+  }
+};
+
 // computed properties
 const isSearchActive = computed(() => {
   var searchActive = false;
@@ -1115,7 +1121,8 @@ const getFilteredItems = function (
   return result.slice(params.offset, params.offset + params.limit);
 };
 
-const selectAll = function () {
+const selectAll = async function () {
+  await loadAllItems();
   selectedItems.value = pagedItems.value;
   showCheckboxes.value = true;
 };
