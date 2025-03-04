@@ -445,19 +445,20 @@ const redirectSearch = function () {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ({ done }: { done: any }) {
+const loadNextPage = async function ({ done }: { done: any }) {
   if (allItemsReceived.value) {
     done("empty");
     return;
   }
-  loadData(
+
+  await loadData(
     undefined,
     undefined,
     undefined,
     params.value.offset + props.limit,
-  ).then(() => {
-    done("ok");
-  });
+  );
+
+  done("ok");
 };
 
 // computed properties
