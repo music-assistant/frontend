@@ -205,7 +205,7 @@
         },
         "hide_player": {
             "label": "Masquer ce lecteur dans l'interface utilisateur",
-            "description": "Masquez ce lecteur dans l’interface utilisateur. \n\nNotez qu’il peut toujours être contrôlé et qu’il apparaîtra également dans tous les groupes de synchronisation auxquels ce lecteur appartient."
+            "description": "Masquez ce lecteur dans l’interface utilisateur.\n\nNotez qu’il peut toujours être contrôlé et qu’il apparaîtra également dans tous les groupes de synchronisation auxquels ce lecteur appartient."
         },
         "default_enqueue_select_artist": {
             "label": "Éléments à sélectionner lors de la lecture d'un artiste (de la bibliothèque).",
@@ -537,7 +537,9 @@
         "play_sample": "Jouer un extrait",
         "album_type": "Type d'album",
         "loading": "Le serveur traite une demande ou synchronise de la musique.",
-        "primary_image": "Ceci est l'image principale pour ce type d'image"
+        "primary_image": "Ceci est l'image principale pour ce type d'image",
+        "copy_uri": "Copier l'URI dans le presse-papiers",
+        "select_all": "Sélectionner tous les éléments"
     },
     "topresult": "Meilleurs résultats",
     "track": "Piste",
@@ -667,5 +669,6 @@
     "in_progress_items": "Continuer à écouter...",
     "play_replace_next": "Jouer ensuite (vider la file d'attente)",
     "all_enqueue_options": "Toutes les options de mise en file d'attente",
-    "music_assistant_source": "File d'attente de Music Assistant"
+    "music_assistant_source": "File d'attente de Music Assistant",
+    "music_assistant_library": "Bibliothèque Music Assistant"
 }

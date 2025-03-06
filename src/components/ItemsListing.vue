@@ -14,7 +14,7 @@
     <v-divider />
 
     <v-text-field
-      v-if="showSearch && expanded"
+      v-if="showSearchInput"
       id="searchInput"
       v-model="params.search"
       clearable
@@ -59,7 +59,7 @@
             <PanelviewItem
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes && item.is_playable"
+              :show-checkboxes="showCheckboxes"
               :show-actions="['tracks', 'albums'].includes(itemtype)"
               :is-available="itemIsAvailable(item)"
               :parent-item="parentItem"
@@ -79,7 +79,7 @@
             <PanelviewItemCompact
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes && item.is_playable"
+              :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
               :parent-item="parentItem"
               @select="onSelect"
@@ -105,7 +105,7 @@
               :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes && item.is_playable"
+              :show-checkboxes="showCheckboxes"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :show-details="itemtype.includes('versions')"
@@ -178,6 +178,7 @@ import {
   nextTick,
   onMounted,
   watch,
+  watchEffect,
 } from "vue";
 import {
   MediaType,
@@ -304,13 +305,21 @@ const initialDataReceived = ref(false);
 const tempHide = ref(false);
 
 // methods
+const closeSearch = function () {
+  params.value.search = "";
+  showSearch.value = false;
+};
+const focusSearch = function () {
+  nextTick(() => {
+    document.getElementById("searchInput")?.focus();
+  });
+};
 const toggleSearch = function () {
-  if (showSearch.value) showSearch.value = false;
-  else {
+  if (showSearch.value) {
+    closeSearch();
+  } else {
     showSearch.value = true;
-    nextTick(() => {
-      document.getElementById("searchInput")?.focus();
-    });
+    focusSearch();
   }
 };
 
@@ -436,19 +445,26 @@ const redirectSearch = function () {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ({ done }: { done: any }) {
+const loadNextPage = async function ({ done }: { done: any }) {
   if (allItemsReceived.value) {
     done("empty");
     return;
   }
-  loadData(
+
+  await loadData(
     undefined,
     undefined,
     undefined,
     params.value.offset + props.limit,
-  ).then(() => {
-    done("ok");
-  });
+  );
+
+  done("ok");
+};
+
+const loadAllItems = async function () {
+  while (!allItemsReceived.value) {
+    await loadNextPage({ done: function () {} });
+  }
 };
 
 // computed properties
@@ -458,6 +474,16 @@ const isSearchActive = computed(() => {
     searchActive = true;
   }
   return searchActive;
+});
+
+const showSearchInput = computed(() => {
+  return showSearch.value && expanded.value;
+});
+
+watchEffect(() => {
+  if (!showSearchInput.value) {
+    searchHasFocus.value = false;
+  }
 });
 
 const menuItems = computed(() => {
@@ -793,14 +819,18 @@ const restoreSettings = async function () {
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
   if (loading.value) return;
+  if (e.key === "Escape") closeSearch();
+  // Let searchInput handle this.
+  if (searchHasFocus.value) return;
+
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
-    params.value.search = params.value.search.slice(0, -1);
+    focusSearch();
   } else if (!searchHasFocus.value && e.key.length == 1) {
-    params.value.search += e.key;
     showSearch.value = true;
+    focusSearch();
   }
 };
 
@@ -846,8 +876,6 @@ watch(
     // completely reset if the path changes
     pagedItems.value = [];
     allItems.value = [];
-    selectedItems.value = [];
-    showCheckboxes.value = false;
     loadData(true);
   },
 );
@@ -1093,9 +1121,28 @@ const getFilteredItems = function (
   return result.slice(params.offset, params.offset + params.limit);
 };
 
-const selectAll = function () {
-  selectedItems.value = pagedItems.value.filter((i) => i.is_playable);
-  if (selectedItems.value.length) showCheckboxes.value = true;
+const selectAll = async function () {
+  let confirmed = true;
+  // We use the total length even when searching, since we can't know
+  // how many items will be loaded after filtering
+  const itemCount = props.total || allItems.value.length;
+  if (itemCount > 250) {
+    // This could be a large selection. Prevent accidental activation
+    // by asking the user for a confirmation
+    confirmed = await new Promise((resolve) => {
+      if (confirm(t("select_all_confirmation"))) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  }
+
+  if (confirmed) {
+    await loadAllItems();
+    selectedItems.value = pagedItems.value;
+    showCheckboxes.value = true;
+  }
 };
 </script>
 
