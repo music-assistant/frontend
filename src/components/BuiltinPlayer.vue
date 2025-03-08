@@ -96,7 +96,7 @@ watch(playing, () => {
     // Start fast interval when playing
     stateInterval = setInterval(() => {
       updatePlayerState();
-    }, 10000) as any;
+    }, 5000) as any;
     updatePlayerState();
   } else {
     if (stateInterval) clearInterval(stateInterval);
