@@ -53,6 +53,11 @@
           "
           @click="playerClicked(player)"
         />
+        <PlayerCard
+          v-if="!webPlayer.player_id"
+          player="web"
+          @click="localPlayerEnabled"
+        />
       </v-list>
 
       <v-expansion-panels
@@ -138,6 +143,7 @@ import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
 import { playerActive } from "@/helpers/utils";
+import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
@@ -149,6 +155,7 @@ const sortedPlayers = computed(() => {
       // hide synced players or group child's
       playerActive(x, false, false, false),
     )
+    .filter((x) => webPlayer.player_id || x.player_id != webPlayer.player_id) // shown in a separate card
     .sort((a, b) =>
       a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
     );
@@ -191,6 +198,10 @@ function playerClicked(player: Player, close: boolean = false) {
     store.activePlayerId = player.player_id;
   }
   if (close) store.showPlayersMenu = false;
+}
+
+function localPlayerEnabled() {
+  webPlayer.setMode(WebPlayerMode.BUILTIN);
 }
 
 onMounted(() => {
