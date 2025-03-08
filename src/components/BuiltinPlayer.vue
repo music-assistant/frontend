@@ -78,8 +78,8 @@ const updatePlayerState = function () {
     api.updateBuiltinPlayerState(player_id, {
       playing: false,
       paused: false,
-      muted: false,
-      volume: 0,
+      muted: audioRef.value.muted,
+      volume: Math.round(audioRef.value.volume * 100),
       position: 0,
     });
   }
