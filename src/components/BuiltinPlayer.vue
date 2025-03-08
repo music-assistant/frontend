@@ -87,24 +87,23 @@ const updatePlayerState = function () {
 
 watch(playing, () => {
   const player_id = props.playerId;
-  console.log("update");
 
   if (!player_id) {
-    console.log("invald player");
     return;
   }
   if (playing.value) {
-    updatePlayerState();
-    // Start interval when playing
+    if (stateInterval) clearInterval(stateInterval);
+    // Start fast interval when playing
     stateInterval = setInterval(() => {
       updatePlayerState();
     }, 10000) as any;
+    updatePlayerState();
   } else {
-    // Clear interval when not playing
-    if (stateInterval) {
-      clearInterval(stateInterval);
-      stateInterval = undefined;
-    }
+    if (stateInterval) clearInterval(stateInterval);
+    // Use slower interval when paused
+    stateInterval = setInterval(() => {
+      updatePlayerState();
+    }, 30000) as any;
     updatePlayerState();
   }
 });
