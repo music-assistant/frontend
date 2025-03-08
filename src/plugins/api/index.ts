@@ -49,6 +49,7 @@ import {
   PodcastEpisode,
   PlayableMediaItemType,
   MediaItemTypeOrItemMapping,
+  BuiltinPlayerState,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -1069,6 +1070,26 @@ export class MusicAssistantApi {
     source: string,
   ): Promise<void> {
     return this.playerCommand(playerId, "select_source", { source });
+  }
+
+  // BuiltinPlayer related functions/commands
+
+  public async registerBuiltinPlayer(
+    player_name: string,
+    player_id?: string,
+  ): Promise<Player> {
+    return this.sendCommand("bplayer/register", { player_name, player_id });
+  }
+
+  public async unregisterBuiltinPlayer(player_id: string): Promise<Player> {
+    return this.sendCommand("bplayer/unregister", { player_id });
+  }
+
+  public async updateBuiltinPlayerState(
+    player_id: string,
+    state: BuiltinPlayerState,
+  ): Promise<void> {
+    return this.sendCommand("bplayer/update_state", { player_id, state });
   }
 
   // Play Media related functions
