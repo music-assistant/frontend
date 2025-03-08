@@ -63,6 +63,28 @@ onBeforeUnmount(unsub);
 // Setup interval for state updates
 let stateInterval: any | undefined;
 
+const updatePlayerState = function () {
+  const player_id = props.playerId;
+  if (!audioRef.value || !player_id) return;
+  if (playing.value) {
+    api.updateBuiltinPlayerState(player_id, {
+      playing: !audioRef.value.paused,
+      paused: audioRef.value.paused && !audioRef.value.ended,
+      muted: audioRef.value.muted,
+      volume: Math.round(audioRef.value.volume * 100),
+      position: audioRef.value.currentTime,
+    });
+  } else {
+    api.updateBuiltinPlayerState(player_id, {
+      playing: false,
+      paused: false,
+      muted: false,
+      volume: 0,
+      position: 0,
+    });
+  }
+};
+
 watch(playing, () => {
   const player_id = props.playerId;
   console.log("update");
@@ -72,27 +94,10 @@ watch(playing, () => {
     return;
   }
   if (playing.value) {
-    if (audioRef.value) {
-      api.updateBuiltinPlayerState(player_id, {
-        playing: !audioRef.value.paused,
-        paused: audioRef.value.paused && !audioRef.value.ended,
-        muted: audioRef.value.muted,
-        volume: Math.round(audioRef.value.volume * 100),
-        position: audioRef.value.currentTime,
-      });
-    }
+    updatePlayerState();
     // Start interval when playing
     stateInterval = setInterval(() => {
-      console.log("update");
-      if (audioRef.value) {
-        api.updateBuiltinPlayerState(player_id, {
-          playing: !audioRef.value.paused,
-          paused: audioRef.value.paused && !audioRef.value.ended,
-          muted: audioRef.value.muted,
-          volume: Math.round(audioRef.value.volume * 100),
-          position: audioRef.value.currentTime,
-        });
-      }
+      updatePlayerState();
     }, 10000) as any;
   } else {
     // Clear interval when not playing
@@ -100,14 +105,7 @@ watch(playing, () => {
       clearInterval(stateInterval);
       stateInterval = undefined;
     }
-    console.log("update end");
-    api.updateBuiltinPlayerState(player_id, {
-      playing: false,
-      paused: false,
-      muted: false,
-      volume: 0,
-      position: 0,
-    });
+    updatePlayerState();
   }
 });
 
