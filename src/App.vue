@@ -3,6 +3,10 @@
   <PlayerBrowserMediaControls
     v-if="webPlayer.mode === WebPlayerMode.CONTROLS_ONLY"
   />
+  <BuiltinPlayer
+    v-else-if="webPlayer.mode === WebPlayerMode.BUILTIN && webPlayer.player_id"
+    :player-id="webPlayer.player_id"
+  />
 </template>
 
 <script setup lang="ts">
@@ -15,6 +19,8 @@ import router from "./plugins/router";
 import { EventType } from "./plugins/api/interfaces";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
+import BuiltinPlayer from "./components/BuiltinPlayer.vue";
+
 const theme = useTheme();
 
 const setTheme = function () {
