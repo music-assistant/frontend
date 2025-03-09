@@ -121,7 +121,7 @@
   </v-container>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, onMounted, watch, computed, nextTick } from "vue";
 import {
   ParametricEQBand,
   ParametricEQBandType,
@@ -461,7 +461,9 @@ const addBand = () => {
     type: ParametricEQBandType.PEAK,
     enabled: true,
   });
-  selectedBandIndex.value = newIndex;
+  nextTick(() => {
+    selectedBandIndex.value = newIndex;
+  });
 };
 
 // Watch for changes and redraw
