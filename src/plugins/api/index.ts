@@ -1078,18 +1078,18 @@ export class MusicAssistantApi {
     player_name: string,
     player_id?: string,
   ): Promise<Player> {
-    return this.sendCommand("bplayer/register", { player_name, player_id });
+    return this.sendCommand("builtin_player/register", { player_name, player_id });
   }
 
   public async unregisterBuiltinPlayer(player_id: string): Promise<Player> {
-    return this.sendCommand("bplayer/unregister", { player_id });
+    return this.sendCommand("builtin_player/unregister", { player_id });
   }
 
   public async updateBuiltinPlayerState(
     player_id: string,
     state: BuiltinPlayerState,
   ): Promise<void> {
-    return this.sendCommand("bplayer/update_state", { player_id, state });
+    return this.sendCommand("builtin_player/update_state", { player_id, state });
   }
 
   // Play Media related functions
