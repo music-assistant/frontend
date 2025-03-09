@@ -296,6 +296,7 @@
                   <ListItem
                     link
                     :show-menu-btn="true"
+                    :disabled="!item.available"
                     @click.stop="(e) => openQueueItemMenu(e, item)"
                     @menu.stop="(e) => openQueueItemMenu(e, item)"
                     @mouseenter="hoveredQueueIndex = index"
@@ -353,6 +354,9 @@
                           </span>
                         </MarqueeText>
                       </div>
+                    </template>
+                    <template #append>
+                      <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>
                   </ListItem>
                   <!-- Show chapters -->
@@ -574,14 +578,12 @@ import {
 } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { useDisplay } from "vuetify";
-import { useI18n } from "vue-i18n";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getSourceName } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import Color from "color";
 
-const { t } = useI18n();
 const { name } = useDisplay();
 
 interface Props {

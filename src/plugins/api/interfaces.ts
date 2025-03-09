@@ -710,6 +710,7 @@ export interface QueueItem {
   streamdetails?: StreamDetails;
   media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
+  available: boolean;
 }
 
 // player_queue
