@@ -7,6 +7,7 @@
       step: 0.1,
       label: $t('settings.dsp.tone_control.bass_level'),
       unit: 'dB',
+      is_log: false,
     }"
   />
   <DSPSlider
@@ -17,6 +18,7 @@
       step: 0.1,
       label: $t('settings.dsp.tone_control.mid_level'),
       unit: 'dB',
+      is_log: false,
     }"
   />
   <DSPSlider
@@ -27,6 +29,7 @@
       step: 0.1,
       label: $t('settings.dsp.tone_control.treble_level'),
       unit: 'dB',
+      is_log: false,
     }"
   />
 </template>
