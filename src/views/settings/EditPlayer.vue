@@ -75,24 +75,13 @@
           color="primary"
           :disabled="api.getProviderManifest(config.provider)?.builtin"
         />
-
-        <!-- DSP Config Button -->
-        <v-btn
-          v-if="
-            api.players[config.player_id] &&
-            api.players[config.player_id].type !== PlayerType.GROUP
-          "
-          @click="openDspConfig"
-        >
-          {{ $t("open_dsp_settings") }}
-        </v-btn>
       </div>
       <br />
       <v-divider />
       <edit-config
         v-if="config"
         :disabled="!config.enabled"
-        :config-entries="Object.values(config.values)"
+        :config-entries="config_entries"
         @submit="onSubmit"
       />
     </v-card-text>
@@ -100,10 +89,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import {
+  ConfigEntryType,
   ConfigValueType,
   PlayerConfig,
   PlayerType,
@@ -121,6 +111,28 @@ const props = defineProps<{
   playerId?: string;
 }>();
 
+// computed properties
+
+const config_entries = computed(() => {
+  if (!config.value) return [];
+  const entries = Object.values(config.value.values);
+  // inject a DSP config property if the player is not a group
+  if (
+    api.players[config.value.player_id] &&
+    api.players[config.value.player_id].type !== PlayerType.GROUP
+  ) {
+    entries.push({
+      key: "dsp_settings",
+      type: ConfigEntryType.DSP_SETTINGS,
+      label: "",
+      default_value: null,
+      required: false,
+      category: "audio",
+    });
+  }
+  return entries;
+});
+
 // watchers
 
 watch(
@@ -135,6 +147,7 @@ watch(
 
 // methods
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
+  delete values["dsp_settings"]; // delete the injected dsp_settings since its UI only
   values["enabled"] = config.value!.enabled;
   values["name"] = config.value!.name || null;
   api.savePlayerConfig(props.playerId!, values);
