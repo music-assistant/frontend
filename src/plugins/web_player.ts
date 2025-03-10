@@ -79,6 +79,7 @@ export const webPlayer = reactive({
     this.setMode(WebPlayerMode.CONTROLS_ONLY);
   },
   setBaseUrl(url: string) {
+    if (url.endsWith("/")) url = url.slice(0, -1);
     if (url === this.baseUrl) {
       return;
     }
