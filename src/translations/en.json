@@ -146,6 +146,8 @@
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
         "group_members": "Group members",
+        "dsp_enabled": "DSP is enabled",
+        "dsp_disabled": "DSP is disabled",
         "log_level": {
             "label": "Log level",
             "description": "Set the log verbosity for this provider.",

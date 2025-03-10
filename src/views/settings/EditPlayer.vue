@@ -111,6 +111,19 @@ const props = defineProps<{
   playerId?: string;
 }>();
 
+const dspEnabled = ref(false);
+
+const loadDSPEnabled = async () => {
+  if (props.playerId) {
+    try {
+      dspEnabled.value = (await api.getDSPConfig(props.playerId)).enabled;
+    } catch (error) {
+      console.error("Error fetching DSP config:", error);
+    }
+  }
+};
+loadDSPEnabled();
+
 // computed properties
 
 const config_entries = computed(() => {
@@ -125,7 +138,7 @@ const config_entries = computed(() => {
       key: "dsp_settings",
       type: ConfigEntryType.DSP_SETTINGS,
       label: "",
-      default_value: null,
+      default_value: dspEnabled.value,
       required: false,
       category: "audio",
     });

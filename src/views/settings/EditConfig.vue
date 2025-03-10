@@ -97,6 +97,11 @@
               <!-- DSP Config Button -->
               <div v-else-if="conf_entry.type == ConfigEntryType.DSP_SETTINGS">
                 <br />
+                {{
+                  conf_entry.value
+                    ? $t("settings.dsp_enabled")
+                    : $t("settings.dsp_disabled")
+                }}
                 <v-btn class="actionbutton" @click="openDspConfig">
                   {{ $t("open_dsp_settings") }}
                 </v-btn>
