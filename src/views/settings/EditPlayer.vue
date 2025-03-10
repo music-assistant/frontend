@@ -96,6 +96,7 @@ import {
   ConfigEntryType,
   ConfigValueType,
   PlayerConfig,
+  PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
@@ -130,15 +131,40 @@ const config_entries = computed(() => {
   if (!config.value) return [];
   const entries = Object.values(config.value.values);
   // inject a DSP config property if the player is not a group
-  if (
-    api.players[config.value.player_id] &&
-    api.players[config.value.player_id].type !== PlayerType.GROUP
-  ) {
+  const player = api.players[config.value.player_id];
+  if (player && player.type !== PlayerType.GROUP) {
     entries.push({
       key: "dsp_settings",
       type: ConfigEntryType.DSP_SETTINGS,
       label: "",
       default_value: dspEnabled.value,
+      required: false,
+      category: "audio",
+    });
+  } else if (
+    player &&
+    player.type === PlayerType.GROUP &&
+    player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
+  ) {
+    entries.push({
+      key: "dsp_note_multi_device_group",
+      type: ConfigEntryType.LABEL,
+      label: "You can configure the DSP for each player individually.",
+      default_value: null,
+      required: false,
+      category: "audio",
+    });
+  } else if (
+    player &&
+    player.type === PlayerType.GROUP &&
+    !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
+  ) {
+    entries.push({
+      key: "dsp_note_multi_device_group_not_supported",
+      type: ConfigEntryType.LABEL,
+      label:
+        "This group type does not support DSP when playing to multiple devices.",
+      default_value: null,
       required: false,
       category: "audio",
     });
