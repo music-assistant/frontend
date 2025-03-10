@@ -94,6 +94,19 @@
                 </v-btn>
               </div>
 
+              <!-- DSP Config Button -->
+              <div v-else-if="conf_entry.type == ConfigEntryType.DSP_SETTINGS">
+                <br />
+                {{
+                  conf_entry.value
+                    ? $t("settings.dsp_enabled")
+                    : $t("settings.dsp_disabled")
+                }}
+                <v-btn class="actionbutton" @click="openDspConfig">
+                  {{ $t("open_dsp_settings") }}
+                </v-btn>
+              </div>
+
               <!-- boolean value: toggle switch -->
               <v-switch
                 v-else-if="conf_entry.type == ConfigEntryType.BOOLEAN"
@@ -475,6 +488,10 @@ const openLink = function (url: string) {
   a.setAttribute("href", url);
   a.setAttribute("target", "_blank");
   a.click();
+};
+
+const openDspConfig = function () {
+  router.push(`${router.currentRoute.value.path}/dsp`);
 };
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;

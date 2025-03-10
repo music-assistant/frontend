@@ -146,6 +146,8 @@
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
         "group_members": "Group members",
+        "dsp_enabled": "DSP is enabled",
+        "dsp_disabled": "DSP is disabled",
         "log_level": {
             "label": "Log level",
             "description": "Set the log verbosity for this provider.",
@@ -323,6 +325,12 @@
         "icon": {
             "label": "Icon",
             "description": "Material design icon for this player.\n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "dsp_note_multi_device_group": {
+            "label": "You can configure the DSP for each player individually."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "This group type does not support DSP when playing to multiple devices."
         },
         "frontend": "User Interface",
         "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
