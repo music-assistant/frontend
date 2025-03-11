@@ -44,7 +44,7 @@
     "no_content": "Aucun élément trouvé.",
     "no_content_filter": "Aucun élément trouvé pour les critères de recherche\/filtre actuels.",
     "no_player": "Aucun lecteur sélectionné",
-    "off": "Désactivé",
+    "off": "Éteint",
     "on": "Activé",
     "other_versions": "Autres versions",
     "perform_action": "Effectuer l'action sur {0} élément(s)",
@@ -421,7 +421,6 @@
             "disabled_message": "Le DSP est actuellement désactivé. Activez-le en utilisant l'interrupteur ci-dessus",
             "input": "Entrée",
             "output": "Sortie",
-            "enable_output_limiter": "Activer le limiteur de sortie pour éviter l'écrêtage",
             "filter": {
                 "add": "Ajouter un filtre",
                 "type": "Type de filtre",
@@ -474,6 +473,10 @@
         "mute_control": {
             "label": "Contrôle de la sourdine",
             "description": "Définit\/remplace le comportement de la commande de sourdine pour ce lecteur. Cela permet par exemple de rediriger les commandes de sourdine vers un autre appareil, ou de les désactiver complètement.\n\nNous proposons une option de sourdine 'simulée', qui simule la mise en sourdine en réglant le volume à 0 et en restaurant le volume lors de la désactivation de la sourdine."
+        },
+        "output_limiter": {
+            "label": "Activer la limitation pour éviter l'écrêtage",
+            "description": "Active un limiteur qui évite la distorsion audio en atténuant les pics sonores élevés."
         }
     },
     "show_info": "Afficher les informations",
@@ -670,5 +673,6 @@
     "play_replace_next": "Jouer ensuite (vider la file d'attente)",
     "all_enqueue_options": "Toutes les options de mise en file d'attente",
     "music_assistant_source": "File d'attente de Music Assistant",
-    "music_assistant_library": "Bibliothèque Music Assistant"
+    "music_assistant_library": "Bibliothèque Music Assistant",
+    "select_all_confirmation": "Sélectionner tous les éléments ? Cette opération peut prendre un moment pour charger toutes les données."
 }

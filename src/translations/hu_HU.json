@@ -420,7 +420,6 @@
             "disabled_message": "A DSP jelenleg le van tiltva. Engedélyezd a fenti kapcsolóval.",
             "input": "Bemenet",
             "output": "Kimenet",
-            "enable_output_limiter": "Kimeneti limiter engedélyezése a torzítás elkerülése érdekében",
             "filter": {
                 "add": "Szűrő hozzáadása",
                 "type": "Szűrő típusa",
