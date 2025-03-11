@@ -1,25 +1,36 @@
 <template>
   <v-container class="pa-2">
     <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
-    <v-card-item class="d-flex justify-end">
-      <v-btn variant="outlined" class="mr-2" @click="openApoFileImport">
-        <v-icon start>mdi-file-import</v-icon>
-        {{ $t("settings.dsp.parametric_eq.import_apo") }}
-      </v-btn>
-
-      <v-btn variant="outlined" class="mr-2" @click="exportApoSettings">
-        <v-icon start>mdi-file-export</v-icon>
-        {{ $t("settings.dsp.parametric_eq.export_apo") }}
-      </v-btn>
-
-      <input
-        ref="fileInputRef"
-        type="file"
-        accept=".txt"
-        class="d-none"
-        @change="handleApoUpload"
+    <div class="d-flex flex-wrap">
+      <v-select
+        v-model="graphedChannel"
+        :items="channelTypesGraph"
+        :label="$t('settings.dsp.parametric_eq.graph_channel')"
+        variant="outlined"
+        density="comfortable"
+        class="pa-4"
+        hide-details
       />
-    </v-card-item>
+      <v-card-item class="d-flex justify-end">
+        <v-btn variant="outlined" class="mr-2" @click="openApoFileImport">
+          <v-icon start>mdi-file-import</v-icon>
+          {{ $t("settings.dsp.parametric_eq.import_apo") }}
+        </v-btn>
+
+        <v-btn variant="outlined" class="mr-2" @click="exportApoSettings">
+          <v-icon start>mdi-file-export</v-icon>
+          {{ $t("settings.dsp.parametric_eq.export_apo") }}
+        </v-btn>
+
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".txt"
+          class="d-none"
+          @change="handleApoUpload"
+        />
+      </v-card-item>
+    </div>
 
     <!-- Frequency Response Graph with Dark Theme Support -->
     <v-card elevation="0" color="transparent">
@@ -117,6 +128,16 @@
       />
 
       <DSPSlider v-model="selectedBand.q" type="q" />
+
+      <v-select
+        v-model="selectedBand.channel"
+        :items="channelTypes"
+        :label="$t('settings.dsp.parametric_eq.channel')"
+        variant="outlined"
+        density="comfortable"
+        class="pa-4"
+        hide-details
+      />
     </template>
   </v-container>
 </template>
@@ -125,6 +146,7 @@ import { ref, onMounted, watch, computed, nextTick } from "vue";
 import {
   ParametricEQBand,
   ParametricEQBandType,
+  AudioChannel,
   ParametricEQFilter,
 } from "@/plugins/api/interfaces";
 import DSPSlider from "./DSPSlider.vue";
@@ -154,6 +176,22 @@ const bandTypeToApo: Record<ParametricEQBandType, string> = {
   [ParametricEQBandType.HIGH_SHELF]: "HS",
   [ParametricEQBandType.NOTCH]: "NO",
 };
+
+const channelTypes = Object.entries(AudioChannel).map(([key, value]) => ({
+  title: $t(`settings.dsp.parametric_eq.channels.${key}`),
+  value,
+}));
+
+// Use alternative text for ALL
+const channelTypesGraph = channelTypes.map((channel) => {
+  if (channel.value === AudioChannel.ALL) {
+    return {
+      title: $t("settings.dsp.parametric_eq.graph_channel_all"),
+      value: AudioChannel.ALL,
+    };
+  }
+  return channel;
+});
 
 const importApoSettings = (content: string) => {
   const filters = [];
@@ -185,6 +223,7 @@ const importApoSettings = (content: string) => {
             q: parseFloat(q),
             type: apoToBandType[type] || ParametricEQBandType.PEAK,
             enabled: enabled === "ON",
+            channel: AudioChannel.ALL, // TODO: Add channel support
           });
         }
       }
@@ -318,7 +357,10 @@ const drawGraph = () => {
 
   // Draw individual filter responses
   peq.value.bands.forEach((band, index) => {
-    if (band.enabled) {
+    if (
+      (band.enabled && band.channel === graphedChannel.value) ||
+      band.channel === AudioChannel.ALL
+    ) {
       let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${isDark ? 70 : 50}%, 0.5)`;
 
       ctx.beginPath();
@@ -433,6 +475,8 @@ const biquadFilters = computed(() => {
 
 const selectedBandIndex = ref(-1);
 
+const graphedChannel = ref(AudioChannel.ALL);
+
 // Computed property for the selected band
 const selectedBand = computed(() => peq.value.bands[selectedBandIndex.value]);
 
@@ -460,6 +504,7 @@ const addBand = () => {
     gain: 0,
     type: ParametricEQBandType.PEAK,
     enabled: true,
+    channel: AudioChannel.ALL,
   });
   nextTick(() => {
     selectedBandIndex.value = newIndex;
@@ -470,6 +515,7 @@ const addBand = () => {
 watch(() => peq.value.bands, drawGraph, { deep: true });
 watch(() => peq.value.preamp, drawGraph);
 watch(() => selectedBandIndex.value, drawGraph);
+watch(() => graphedChannel.value, drawGraph);
 watch(() => theme.global.current.value.dark, drawGraph);
 
 onMounted(() => {

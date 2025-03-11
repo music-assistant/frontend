@@ -458,7 +458,15 @@
                 },
                 "import_apo": "Import APO\/REW Preset",
                 "export_apo": "Export APO Preset",
-                "preamp": "Preamp"
+                "preamp": "Preamp",
+                "graph_channel": "Graph response for selected channel",
+                "graph_channel_all": "Applied to all channels",
+                "channel": "Channel",
+                "channels": {
+                    "ALL": "All",
+                    "FL": "Front Left",
+                    "FR": "Front Right"
+                }
             },
             "tone_control": {
                 "bass_level": "Bass Level",
