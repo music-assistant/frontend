@@ -197,10 +197,41 @@ const importApoSettings = (content: string) => {
   const filters = [];
   const lines = content.split("\n");
   const bands: ParametricEQBand[] = [];
-  peq.value.preamp = 0;
+  let usesChannelField = false;
+  let importPreamp = null;
+
+  // Default to all channels
+  let currentChannel = AudioChannel.ALL;
 
   for (const line of lines) {
-    if (line.startsWith("Filter")) {
+    if (line.startsWith("Channel:")) {
+      // Parse channel selection
+      const channelMatch = line.match(/Channel:\s*(.+)/);
+      if (channelMatch && channelMatch[1]) {
+        const channelStr = channelMatch[1].trim().toUpperCase();
+        if (
+          channelStr === "ALL" ||
+          channelStr === "1 2" ||
+          channelStr === "L R"
+        ) {
+          currentChannel = AudioChannel.ALL;
+        } else if (
+          channelStr === "L" ||
+          channelStr === "1" ||
+          channelStr === "FL"
+        ) {
+          currentChannel = AudioChannel.FL;
+          usesChannelField = true;
+        } else if (
+          channelStr === "R" ||
+          channelStr === "2" ||
+          channelStr === "FR"
+        ) {
+          currentChannel = AudioChannel.FR;
+          usesChannelField = true;
+        }
+      }
+    } else if (line.startsWith("Filter")) {
       // Parses filter settings from REW or Equalizer APO text format.
       // Syntax of APO (from https://sourceforge.net/p/equalizerapo/wiki/Configuration%20reference/):
       // Filter <n>: ON <Type> Fc <Frequency> Hz Gain <Gain value> dB Q <Q value>
@@ -223,20 +254,45 @@ const importApoSettings = (content: string) => {
             q: parseFloat(q),
             type: apoToBandType[type] || ParametricEQBandType.PEAK,
             enabled: enabled === "ON",
-            channel: AudioChannel.ALL, // TODO: Add channel support
+            channel: currentChannel,
           });
         }
       }
     } else if (line.startsWith("Preamp")) {
       const match = line.match(/Preamp:\s*(-?\d+\.?\d*)\s+dB/);
       if (match) {
-        peq.value.preamp = parseFloat(match[1]);
+        importPreamp = parseFloat(match[1]);
       }
     }
   }
 
+  let existingBands: ParametricEQBand[] = [];
+  if (usesChannelField) {
+    // Preserve existing bands for channels not in the import
+    // So users with split channel presets can import them one after the other
+    // regular presets without that will still clear everything
+    existingBands = peq.value.bands.filter((band) => {
+      // Keep bands whose channel isn't in the imported content
+      return !bands.some(
+        (newBand) =>
+          newBand.channel === band.channel ||
+          newBand.channel === AudioChannel.ALL ||
+          band.channel === AudioChannel.ALL,
+      );
+    });
+  }
+
   // Update the PEQ bands
-  peq.value.bands = bands;
+  peq.value.bands = [...existingBands, ...bands];
+
+  // update preamp if specified in import
+  if (importPreamp !== null) {
+    peq.value.preamp = importPreamp;
+  } else if (!usesChannelField) {
+    // This is probably a regular single channel preset, so reset preamp to 0
+    // if it wasn't specified in the import
+    peq.value.preamp = 0;
+  }
   selectedBandIndex.value = -1;
 };
 
