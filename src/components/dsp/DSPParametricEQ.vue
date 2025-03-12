@@ -4,7 +4,7 @@
     <div class="d-flex flex-wrap">
       <v-select
         v-model="graphedChannel"
-        :items="channelTypesGraph"
+        :items="channelTypes"
         :label="$t('settings.dsp.parametric_eq.graph_channel')"
         variant="outlined"
         density="comfortable"
@@ -66,9 +66,15 @@
               // Has the exact selected band
               'opacity-100': band.enabled && graphedChannel === band.channel,
               // Not explicitly selected, but still contributes to the selected channel
-              'opacity-80': band.enabled && graphedChannel !== band.channel && band.channel === AudioChannel.ALL,
+              'opacity-80':
+                band.enabled &&
+                graphedChannel !== band.channel &&
+                band.channel === AudioChannel.ALL,
               // Does not contribute to the selected channel
-              'opacity-60': band.enabled && graphedChannel !== band.channel && band.channel !== AudioChannel.ALL,
+              'opacity-60':
+                band.enabled &&
+                graphedChannel !== band.channel &&
+                band.channel !== AudioChannel.ALL,
             }"
             filter
             variant="elevated"
@@ -190,17 +196,6 @@ const channelTypes = Object.entries(AudioChannel).map(([key, value]) => ({
   title: $t(`settings.dsp.parametric_eq.channels.${key}`),
   value,
 }));
-
-// Use alternative text for ALL
-const channelTypesGraph = channelTypes.map((channel) => {
-  if (channel.value === AudioChannel.ALL) {
-    return {
-      title: $t("settings.dsp.parametric_eq.graph_channel_all"),
-      value: AudioChannel.ALL,
-    };
-  }
-  return channel;
-});
 
 const importApoSettings = (content: string) => {
   const filters = [];
@@ -418,87 +413,167 @@ const drawGraph = () => {
 
   const width = ctx.canvas.width / 2;
   const height = ctx.canvas.height / 2;
-  const totalResponse = new Float32Array(width).fill(peq.value.preamp ?? 0);
 
-  // Draw individual filter responses
-  peq.value.bands.forEach((band, index) => {
-    if (
-      (band.enabled && band.channel === graphedChannel.value) ||
-      band.channel === AudioChannel.ALL
+  // Function to draw a single band's response curve
+  const drawBandResponse = (
+    band: ParametricEQBand,
+    index: number,
+    ctx: CanvasRenderingContext2D,
+  ) => {
+    let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${isDark ? 70 : 50}%, 0.5)`;
+
+    ctx.beginPath();
+    if (index === selectedBandIndex.value) {
+      ctx.lineWidth = 5;
+      color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${isDark ? 70 : 60}%, 1)`;
+    } else {
+      ctx.lineWidth = 2;
+    }
+    ctx.strokeStyle = color;
+
+    const frequencies = new Float32Array(width);
+    for (let x = 0; x < width; x++) {
+      frequencies[x] = xToFreq(x, viewport.value);
+    }
+
+    const magResponse = new Float32Array(width);
+    const phaseResponse = new Float32Array(width);
+    const filter = createBiquadFilter(audioContext, band);
+    filter.getFrequencyResponse(frequencies, magResponse, phaseResponse);
+
+    for (
+      let x = viewport.value.padding_lr;
+      x < width - viewport.value.padding_lr;
+      x++
     ) {
-      let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${isDark ? 70 : 50}%, 0.5)`;
+      const response = 20 * Math.log10(magResponse[x]);
+      const y = gainToY(response, viewport.value);
 
-      ctx.beginPath();
-      if (index === selectedBandIndex.value) {
-        ctx.lineWidth = 5;
-        color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${isDark ? 70 : 60}%, 1)`;
+      if (x === viewport.value.padding_lr) {
+        ctx.moveTo(x, y);
       } else {
-        ctx.lineWidth = 2;
+        ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = color;
+    }
 
-      const frequencies = new Float32Array(width);
-      for (let x = 0; x < width; x++) {
-        frequencies[x] = xToFreq(x, viewport.value);
+    ctx.stroke();
+
+    // Draw handle for the band
+    const handleX = freqToX(band.frequency, viewport.value);
+    const handleY = gainToY(band.gain, viewport.value);
+
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(handleX, handleY, 6, 0, 2 * Math.PI);
+
+    ctx.fill();
+
+    return { frequencies, magResponse };
+  };
+
+  // Function to draw the response curve for a channel
+  const drawChannelResponse = (
+    response: Float32Array,
+    ctx: CanvasRenderingContext2D,
+  ) => {
+    ctx.lineWidth = 2;
+    if (isDark) {
+      ctx.strokeStyle = "#fff";
+    } else {
+      ctx.strokeStyle = "#000";
+    }
+
+    ctx.beginPath();
+    for (
+      let x = viewport.value.padding_lr;
+      x < width - viewport.value.padding_lr;
+      x++
+    ) {
+      const y = gainToY(response[x], viewport.value);
+
+      if (x === viewport.value.padding_lr) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
       }
+    }
 
-      const magResponse = new Float32Array(width);
-      const phaseResponse = new Float32Array(width);
-      const filter = createBiquadFilter(audioContext, band);
-      filter.getFrequencyResponse(frequencies, magResponse, phaseResponse);
+    ctx.stroke();
+  };
 
-      for (
-        let x = viewport.value.padding_lr;
-        x < width - viewport.value.padding_lr;
-        x++
-      ) {
-        const response = 20 * Math.log10(magResponse[x]);
-        totalResponse[x] += response;
-        const y = gainToY(response, viewport.value);
+  // Skip drawing the multi channel version if this a simple PEQ with only ALL channel filters
+  const isMutliChannel = peq.value.bands.some(
+    (band) => band.channel !== AudioChannel.ALL,
+  );
 
-        if (x === viewport.value.padding_lr) {
-          ctx.moveTo(x, y);
+  if (graphedChannel.value === AudioChannel.ALL && isMutliChannel) {
+    // Get all channels (excluding ALL)
+    const channels = Object.values(AudioChannel).filter(
+      (ch) => ch !== AudioChannel.ALL,
+    );
+
+    // Create a response array for each channel
+    const channelResponses: Record<AudioChannel, Float32Array> = {} as Record<
+      AudioChannel,
+      Float32Array
+    >;
+    channels.forEach((channel) => {
+      channelResponses[channel] = new Float32Array(width).fill(
+        peq.value.preamp ?? 0,
+      );
+    });
+
+    // Draw individual filter responses
+    peq.value.bands.forEach((band, index) => {
+      if (band.enabled) {
+        const { frequencies, magResponse } = drawBandResponse(band, index, ctx);
+
+        // Add band response to appropriate channel(s)
+        if (band.channel === AudioChannel.ALL) {
+          // Add to all channels
+          channels.forEach((ch) => {
+            for (let x = 0; x < width; x++) {
+              channelResponses[ch][x] += 20 * Math.log10(magResponse[x]);
+            }
+          });
         } else {
-          ctx.lineTo(x, y);
+          // Add to specific channel
+          for (let x = 0; x < width; x++) {
+            channelResponses[band.channel][x] +=
+              20 * Math.log10(magResponse[x]);
+          }
         }
       }
+    });
 
-      ctx.stroke();
-
-      // Draw handle for the band
-      const handleX = freqToX(band.frequency, viewport.value);
-      const handleY = gainToY(band.gain, viewport.value);
-
-      ctx.beginPath();
-      ctx.fillStyle = color;
-      ctx.arc(handleX, handleY, 6, 0, 2 * Math.PI);
-
-      ctx.fill();
-    }
-  });
-  ctx.lineWidth = 2;
-  if (isDark) {
-    ctx.strokeStyle = "#fff";
+    // Draw a separate total response curve for each channel
+    // We don't color code these since each bands curve is already colored
+    // The user can select a channel to know what is what
+    channels.forEach((channel) => {
+      drawChannelResponse(channelResponses[channel], ctx);
+    });
   } else {
-    ctx.strokeStyle = "#000";
+    // Single channel view
+    const totalResponse = new Float32Array(width).fill(peq.value.preamp ?? 0);
+
+    // Draw individual filter responses
+    peq.value.bands.forEach((band, index) => {
+      if (
+        (band.enabled && band.channel === graphedChannel.value) ||
+        band.channel === AudioChannel.ALL
+      ) {
+        const { magResponse } = drawBandResponse(band, index, ctx);
+
+        // Add to total response
+        for (let x = 0; x < width; x++) {
+          totalResponse[x] += 20 * Math.log10(magResponse[x]);
+        }
+      }
+    });
+
+    // Draw total response curve with all bands applied
+    drawChannelResponse(totalResponse, ctx);
   }
-
-  ctx.beginPath();
-  for (
-    let x = viewport.value.padding_lr;
-    x < width - viewport.value.padding_lr;
-    x++
-  ) {
-    const y = gainToY(totalResponse[x], viewport.value);
-
-    if (x === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  }
-
-  ctx.stroke();
 };
 
 const createBiquadFilter = (

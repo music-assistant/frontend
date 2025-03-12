@@ -459,9 +459,8 @@
                 "import_apo": "Import APO\/REW Preset",
                 "export_apo": "Export APO Preset",
                 "preamp": "Preamp",
-                "graph_channel": "Graph response for selected channel",
-                "graph_channel_all": "Applied to all channels",
-                "channel": "Channel",
+                "graph_channel": "Edit channel",
+                "channel": "Applied to Channel",
                 "channels": {
                     "ALL": "All",
                     "FL": "Front Left",
