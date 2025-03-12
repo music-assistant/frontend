@@ -62,20 +62,29 @@
             :value="index"
             :class="{
               // Disabled or not show in the selected (graphed) channel
-              'opacity-50':
-                !band.enabled ||
-                (editedChannel !== AudioChannel.ALL &&
-                  band.channel !== AudioChannel.ALL &&
-                  band.channel !== editedChannel),
+              'opacity-50': !band.enabled,
             }"
             filter
             variant="elevated"
           >
-            {{ $t("settings.dsp.parametric_eq.band", { index: index + 1 }) }}
+            {{
+              band.channel === AudioChannel.ALL
+                ? $t("settings.dsp.parametric_eq.band", { index: index + 1 })
+                : $t("settings.dsp.parametric_eq.band_channel", {
+                    index: index + 1,
+                    channel: $t(`settings.dsp.channels.${band.channel}`),
+                  })
+            }}
           </v-chip>
           <v-chip variant="outlined" @click="addBand">
             <v-icon icon="mdi-plus" start />
-            {{ $t("settings.dsp.parametric_eq.add_band") }}
+            {{
+              editedChannel === AudioChannel.ALL
+                ? $t("settings.dsp.parametric_eq.add_band")
+                : $t("settings.dsp.parametric_eq.add_band_channel", {
+                    channel: $t(`settings.dsp.channels.${editedChannel}`),
+                  })
+            }}
           </v-chip>
         </v-chip-group>
       </v-card-text>
@@ -94,9 +103,7 @@
                 max: 15,
                 step: 0.1,
                 label: $t('settings.dsp.parametric_eq.per_channel_preamp', {
-                  channel: $t(
-                    `settings.dsp.channels.${editedChannel}`,
-                  ),
+                  channel: $t(`settings.dsp.channels.${editedChannel}`),
                 }),
                 unit: 'dB',
                 is_log: false,

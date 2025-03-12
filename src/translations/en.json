@@ -449,9 +449,11 @@
             },
             "parametric_eq": {
                 "add_band": "Add Band",
+                "add_band_channel": "Add Band ({channel} only)",
                 "delete_band": "Delete Band",
                 "filter_type": "Filter Type",
                 "band": "Band {index}",
+                "band_channel": "Band {index} (on {channel})",
                 "enable_band": "Enable Band",
                 "filter_types": {
                     "peak": "Peak",
@@ -464,8 +466,8 @@
                 "import_apo": "Import APO\/REW Preset",
                 "export_apo": "Export APO Preset",
                 "preamp": "Preamp",
-                "edited_channel": "Edit channel",
-                "channel": "Applied to Channel",
+                "edited_channel": "Plot the EQs response for this channel(s)",
+                "channel": "This band will be applied to",
                 "per_channel_preamp": "Additional preamp gain for {channel}"
             },
             "tone_control": {
