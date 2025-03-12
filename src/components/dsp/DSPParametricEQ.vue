@@ -60,7 +60,16 @@
             v-for="(band, index) in peq.bands"
             :key="index"
             :value="index"
-            :class="{ 'opacity-50': !band.enabled }"
+            :class="{
+              // Disabled:
+              'opacity-50': !band.enabled,
+              // Has the exact selected band
+              'opacity-100': band.enabled && graphedChannel === band.channel,
+              // Not explicitly selected, but still contributes to the selected channel
+              'opacity-80': band.enabled && graphedChannel !== band.channel && band.channel === AudioChannel.ALL,
+              // Does not contribute to the selected channel
+              'opacity-60': band.enabled && graphedChannel !== band.channel && band.channel !== AudioChannel.ALL,
+            }"
             filter
             variant="elevated"
           >
