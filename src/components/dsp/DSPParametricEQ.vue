@@ -95,7 +95,7 @@
                 step: 0.1,
                 label: $t('settings.dsp.parametric_eq.per_channel_preamp', {
                   channel: $t(
-                    `settings.dsp.parametric_eq.channels.${editedChannel}`,
+                    `settings.dsp.channels.${editedChannel}`,
                   ),
                 }),
                 unit: 'dB',
@@ -201,7 +201,7 @@ const bandTypeToApo: Record<ParametricEQBandType, string> = {
 };
 
 const channelTypes = Object.entries(AudioChannel).map(([key, value]) => ({
-  title: $t(`settings.dsp.parametric_eq.channels.${key}`),
+  title: $t(`settings.dsp.channels.${key}`),
   value,
 }));
 

@@ -442,6 +442,11 @@
             "move_up": "Move Up",
             "move_down": "Move Down",
             "delete_filter": "Delete Filter",
+            "channels": {
+                "ALL": "All",
+                "FL": "Left",
+                "FR": "Right"
+            },
             "parametric_eq": {
                 "add_band": "Add Band",
                 "delete_band": "Delete Band",
@@ -461,11 +466,6 @@
                 "preamp": "Preamp",
                 "edited_channel": "Edit channel",
                 "channel": "Applied to Channel",
-                "channels": {
-                    "ALL": "All",
-                    "FL": "Left",
-                    "FR": "Right"
-                },
                 "per_channel_preamp": "Additional preamp gain for {channel}"
             },
             "tone_control": {
