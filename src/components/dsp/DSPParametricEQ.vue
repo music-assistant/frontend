@@ -210,7 +210,7 @@ const importApoSettings = (content: string) => {
   const lines = content.split("\n");
   const bands: ParametricEQBand[] = [];
   let usesChannelField = false;
-  let importPreamp = null;
+  let importPreamp: Partial<Record<AudioChannel, number>> = {};
 
   // Default to all channels
   let currentChannel = AudioChannel.ALL;
@@ -243,6 +243,9 @@ const importApoSettings = (content: string) => {
           usesChannelField = true;
         }
       }
+      if (!importPreamp[currentChannel]) {
+        importPreamp[currentChannel] = 0; // So we know the config specified this channel
+      }
     } else if (line.startsWith("Filter")) {
       // Parses filter settings from REW or Equalizer APO text format.
       // Syntax of APO (from https://sourceforge.net/p/equalizerapo/wiki/Configuration%20reference/):
@@ -273,7 +276,7 @@ const importApoSettings = (content: string) => {
     } else if (line.startsWith("Preamp")) {
       const match = line.match(/Preamp:\s*(-?\d+\.?\d*)\s+dB/);
       if (match) {
-        importPreamp = parseFloat(match[1]);
+        importPreamp[currentChannel] = parseFloat(match[1]);
       }
     }
   }
@@ -298,12 +301,20 @@ const importApoSettings = (content: string) => {
   peq.value.bands = [...existingBands, ...bands];
 
   // update preamp if specified in import
-  if (importPreamp !== null) {
-    peq.value.preamp = importPreamp;
+  if (Object.keys(importPreamp).length > 0) {
+    if (importPreamp.ALL) {
+      peq.value.preamp = importPreamp.ALL;
+    }
+    // But keep preamp of unaffected channels the same (if no preamp or band for that channel in the import)
+    Object.entries(importPreamp).forEach(([channel, value]) => {
+      if (channel === AudioChannel.ALL) return;
+      peq.value.per_channel_preamp[channel as AudioChannel] = value;
+    });
   } else if (!usesChannelField) {
-    // This is probably a regular single channel preset, so reset preamp to 0
+    // This is probably a regular single channel preset, so reset preamps to 0
     // if it wasn't specified in the import
     peq.value.preamp = 0;
+    peq.value.per_channel_preamp = {};
   }
   selectedBandIndex.value = -1;
 };
@@ -337,12 +348,51 @@ const openApoFileImport = () => {
 };
 
 const exportApoSettings = () => {
-  let content = `Preamp: ${preamp.value.toFixed(2)} dB\n`;
+  let content = "";
 
-  peq.value.bands.forEach((band, index) => {
-    const apoType = bandTypeToApo[band.type];
-    content += `Filter ${index + 1}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
-  });
+  // Add global preamp
+  content += `Preamp: ${preamp.value.toFixed(2)} dB\n`;
+
+  const hasPerChannelSettings = peq.value.bands.some(
+    (band) => band.channel !== AudioChannel.ALL,
+  );
+
+  if (hasPerChannelSettings) {
+    // Export bands by channel
+    const channels = Object.values(AudioChannel);
+
+    for (const channel of channels) {
+      // Skip ALL channel as we handle it separately
+      if (channel === AudioChannel.ALL) continue;
+
+      // Get channel name for comment
+      const channelName =
+        channelTypes.find((c) => c.value === channel)?.title || channel;
+      content += `\n# ${channelName}\n`;
+      content += `Channel: ${channel === AudioChannel.FL ? "L" : "R"}\n`;
+
+      // Add per-channel preamp if it exists
+      if (peq.value.per_channel_preamp[channel] !== undefined) {
+        content += `Preamp: ${peq.value.per_channel_preamp[channel].toFixed(2)} dB\n`;
+      }
+
+      // Add channel-specific bands and ALL bands
+      let filterIndex = 1;
+      peq.value.bands.forEach((band) => {
+        if (band.channel === channel || band.channel === AudioChannel.ALL) {
+          const apoType = bandTypeToApo[band.type];
+          content += `Filter ${filterIndex++}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
+        }
+      });
+    }
+  } else {
+    // Simple export (only ALL channel bands)
+    peq.value.bands.forEach((band, index) => {
+      const apoType = bandTypeToApo[band.type];
+      content += `Filter ${index + 1}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
+    });
+  }
+
   const blob = new Blob([content], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
 
@@ -562,7 +612,10 @@ const drawGraph = () => {
     });
   } else {
     // Single channel view
-    const totalResponse = new Float32Array(width).fill((peq.value.preamp ?? 0) + (peq.value.per_channel_preamp[editedChannel.value] ?? 0));
+    const totalResponse = new Float32Array(width).fill(
+      (peq.value.preamp ?? 0) +
+        (peq.value.per_channel_preamp[editedChannel.value] ?? 0),
+    );
 
     // Draw individual filter responses
     peq.value.bands.forEach((band, index) => {
