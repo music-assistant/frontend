@@ -456,7 +456,7 @@ const drawGraph = () => {
         totalResponse[x] += response;
         const y = gainToY(response, viewport.value);
 
-        if (x === 0) {
+        if (x === viewport.value.padding_lr) {
           ctx.moveTo(x, y);
         } else {
           ctx.lineTo(x, y);
