@@ -61,20 +61,12 @@
             :key="index"
             :value="index"
             :class="{
-              // Disabled:
-              'opacity-50': !band.enabled,
-              // Has the exact selected band
-              'opacity-100': band.enabled && graphedChannel === band.channel,
-              // Not explicitly selected, but still contributes to the selected channel
-              'opacity-80':
-                band.enabled &&
-                graphedChannel !== band.channel &&
-                band.channel === AudioChannel.ALL,
-              // Does not contribute to the selected channel
-              'opacity-60':
-                band.enabled &&
-                graphedChannel !== band.channel &&
-                band.channel !== AudioChannel.ALL,
+              // Disabled or not show in the selected (graphed) channel
+              'opacity-50':
+                !band.enabled ||
+                (graphedChannel !== AudioChannel.ALL &&
+                  band.channel !== AudioChannel.ALL &&
+                  band.channel !== graphedChannel),
             }"
             filter
             variant="elevated"
