@@ -453,7 +453,7 @@
                 "delete_band": "Delete Band",
                 "filter_type": "Filter Type",
                 "band": "Band {index}",
-                "band_channel": "Band {index} (on {channel})",
+                "band_channel": "Band {index} ({channel} only)",
                 "enable_band": "Enable Band",
                 "filter_types": {
                     "peak": "Peak",
