@@ -95,7 +95,7 @@
     <template v-if="selectedBand">
       <v-card-item>
         <!-- Band Header -->
-        <div class="d-flex align-center">
+        <div class="d-flex align-center pl-1">
           <v-switch
             v-model="selectedBand.enabled"
             :label="$t('settings.dsp.parametric_eq.enable_band')"
