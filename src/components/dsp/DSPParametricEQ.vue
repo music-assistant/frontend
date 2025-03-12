@@ -527,7 +527,7 @@ const drawGraph = () => {
     >;
     channels.forEach((channel) => {
       channelResponses[channel] = new Float32Array(width).fill(
-        peq.value.preamp ?? 0,
+        (peq.value.preamp ?? 0) + (peq.value.per_channel_preamp[channel] ?? 0),
       );
     });
 
@@ -562,7 +562,7 @@ const drawGraph = () => {
     });
   } else {
     // Single channel view
-    const totalResponse = new Float32Array(width).fill(peq.value.preamp ?? 0);
+    const totalResponse = new Float32Array(width).fill((peq.value.preamp ?? 0) + (peq.value.per_channel_preamp[editedChannel.value] ?? 0));
 
     // Draw individual filter responses
     peq.value.bands.forEach((band, index) => {
@@ -671,6 +671,7 @@ const addBand = () => {
 // Watch for changes and redraw
 watch(() => peq.value.bands, drawGraph, { deep: true });
 watch(() => peq.value.preamp, drawGraph);
+watch(() => peq.value.per_channel_preamp, drawGraph, { deep: true });
 watch(() => selectedBandIndex.value, drawGraph);
 watch(() => editedChannel.value, drawGraph);
 watch(() => theme.global.current.value.dark, drawGraph);
