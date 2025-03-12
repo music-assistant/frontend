@@ -323,7 +323,9 @@ const importApoSettings = (content: string) => {
     peq.value.preamp = 0;
     peq.value.per_channel_preamp = {};
   }
-  selectedBandIndex.value = -1;
+  nextTick(() => {
+    selectedBandIndex.value = -1;
+  });
 };
 
 // Helper function to convert bandwidth to Q factor
@@ -709,7 +711,9 @@ const removeBand = (index: number) => {
   peq.value.bands.splice(index, 1);
   // Adjust selected index if necessary
   if (selectedBandIndex.value >= peq.value.bands.length) {
-    selectedBandIndex.value = peq.value.bands.length - 1;
+    nextTick(() => {
+      selectedBandIndex.value = peq.value.bands.length - 1;
+    });
   }
 };
 
