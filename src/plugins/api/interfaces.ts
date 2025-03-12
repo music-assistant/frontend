@@ -3,7 +3,7 @@ import { ComputedRef } from "vue";
 /// constants
 export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
 export const MASS_LOGO_ONLINE =
-  "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png";
+  "https://github.com/home-assistant/brands/raw/master/core_integrations/music_assistant/icon%402x.png";
 export const PLAYER_CONTROL_NONE = "none";
 
 /// dsp
