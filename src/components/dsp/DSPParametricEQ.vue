@@ -644,7 +644,7 @@ const addBand = () => {
     gain: 0,
     type: ParametricEQBandType.PEAK,
     enabled: true,
-    channel: AudioChannel.ALL,
+    channel: graphedChannel.value,
   });
   nextTick(() => {
     selectedBandIndex.value = newIndex;
