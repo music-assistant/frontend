@@ -421,7 +421,6 @@
             "disabled_message": "DSP is momenteel uitgeschakeld. Schakel het in met de bovenstaande schakelaar",
             "input": "Invoer",
             "output": "Uitvoer",
-            "enable_output_limiter": "Schakel Output Limiter in om clipping te voorkomen",
             "filter": {
                 "add": "Filter toevoegen",
                 "type": "Filtertype",

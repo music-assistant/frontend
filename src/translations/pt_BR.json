@@ -421,7 +421,6 @@
             "disabled_message": "O DSP está desativado no momento. Ative-o usando a chave acima",
             "input": "Entrada",
             "output": "Saída",
-            "enable_output_limiter": "Ativar o limitador de saída para evitar cortes",
             "filter": {
                 "add": "Adicionar filtro",
                 "type": "Tipo de filtro",

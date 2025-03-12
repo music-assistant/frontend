@@ -385,7 +385,6 @@
         "dsp": {
             "input": "Wejście",
             "output": "Wyjście",
-            "enable_output_limiter": "Włącz Ogranicznik wyjścia, aby zapobiec przycinaniu",
             "filter": {
                 "add": "Dodaj filtr",
                 "type": "Typ filtra",

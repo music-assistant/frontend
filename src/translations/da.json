@@ -421,7 +421,6 @@
             "disabled_message": "DSP er i øjeblikket deaktiveret. Aktivér den ved hjælp af knappen ovenfor",
             "input": "Indgang",
             "output": "Udgang",
-            "enable_output_limiter": "Aktivér udgangsbegrænsning for at forhindre 'clipping'",
             "filter": {
                 "add": "Tilføj filter",
                 "type": "Filtertype",
