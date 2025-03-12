@@ -294,7 +294,8 @@
             "generic": "Generic settings",
             "announcements": "Announcements configuration",
             "airplay": "Airplay specific settings",
-            "player_controls": "Player controls"
+            "player_controls": "Player controls",
+            "presets": "Presets"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
