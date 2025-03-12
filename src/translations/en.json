@@ -465,7 +465,8 @@
                     "ALL": "All",
                     "FL": "Left",
                     "FR": "Right"
-                }
+                },
+                "per_channel_preamp": "Additional preamp gain for {channel}"
             },
             "tone_control": {
                 "bass_level": "Bass Level",

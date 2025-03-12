@@ -86,6 +86,22 @@
         <v-row dense>
           <v-col cols="12">
             <DSPSlider v-model="preamp" type="gain" />
+            <DSPSlider
+              v-if="editedChannel !== AudioChannel.ALL"
+              v-model="channelPreamp"
+              :type="{
+                min: -15,
+                max: 15,
+                step: 0.1,
+                label: $t('settings.dsp.parametric_eq.per_channel_preamp', {
+                  channel: $t(
+                    `settings.dsp.parametric_eq.channels.${editedChannel}`,
+                  ),
+                }),
+                unit: 'dB',
+                is_log: false,
+              }"
+            />
           </v-col>
         </v-row>
       </v-card-text>
@@ -617,6 +633,15 @@ const preamp = computed({
   get: () => peq.value.preamp ?? 0,
   set: (value) => {
     peq.value.preamp = value;
+  },
+});
+
+const channelPreamp = computed({
+  get: () => peq.value.per_channel_preamp[editedChannel.value] ?? 0,
+  set: (value) => {
+    if (editedChannel.value !== AudioChannel.ALL) {
+      peq.value.per_channel_preamp[editedChannel.value] = value;
+    }
   },
 });
 
