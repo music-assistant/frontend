@@ -45,6 +45,7 @@ export interface ParametricEQBand {
 // Specific filter types
 export interface ParametricEQFilter extends DSPFilterBase {
   preamp?: number;
+  per_channel_preamp: Partial<Record<AudioChannel, number>>;
   type: DSPFilterType.PARAMETRIC_EQ;
   bands: Array<ParametricEQBand>;
 }
