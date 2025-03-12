@@ -459,7 +459,7 @@
                 "import_apo": "Import APO\/REW Preset",
                 "export_apo": "Export APO Preset",
                 "preamp": "Preamp",
-                "graph_channel": "Edit channel",
+                "edited_channel": "Edit channel",
                 "channel": "Applied to Channel",
                 "channels": {
                     "ALL": "All",

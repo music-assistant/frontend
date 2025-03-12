@@ -3,9 +3,9 @@
     <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
     <div class="d-flex flex-wrap">
       <v-select
-        v-model="graphedChannel"
+        v-model="editedChannel"
         :items="channelTypes"
-        :label="$t('settings.dsp.parametric_eq.graph_channel')"
+        :label="$t('settings.dsp.parametric_eq.edited_channel')"
         variant="outlined"
         density="comfortable"
         class="pa-4"
@@ -64,9 +64,9 @@
               // Disabled or not show in the selected (graphed) channel
               'opacity-50':
                 !band.enabled ||
-                (graphedChannel !== AudioChannel.ALL &&
+                (editedChannel !== AudioChannel.ALL &&
                   band.channel !== AudioChannel.ALL &&
-                  band.channel !== graphedChannel),
+                  band.channel !== editedChannel),
             }"
             filter
             variant="elevated"
@@ -498,7 +498,7 @@ const drawGraph = () => {
     (band) => band.channel !== AudioChannel.ALL,
   );
 
-  if (graphedChannel.value === AudioChannel.ALL && isMutliChannel) {
+  if (editedChannel.value === AudioChannel.ALL && isMutliChannel) {
     // Get all channels (excluding ALL)
     const channels = Object.values(AudioChannel).filter(
       (ch) => ch !== AudioChannel.ALL,
@@ -551,7 +551,7 @@ const drawGraph = () => {
     // Draw individual filter responses
     peq.value.bands.forEach((band, index) => {
       if (
-        (band.enabled && band.channel === graphedChannel.value) ||
+        (band.enabled && band.channel === editedChannel.value) ||
         band.channel === AudioChannel.ALL
       ) {
         const { magResponse } = drawBandResponse(band, index, ctx);
@@ -607,7 +607,7 @@ const biquadFilters = computed(() => {
 
 const selectedBandIndex = ref(-1);
 
-const graphedChannel = ref(AudioChannel.ALL);
+const editedChannel = ref(AudioChannel.ALL);
 
 // Computed property for the selected band
 const selectedBand = computed(() => peq.value.bands[selectedBandIndex.value]);
@@ -636,7 +636,7 @@ const addBand = () => {
     gain: 0,
     type: ParametricEQBandType.PEAK,
     enabled: true,
-    channel: graphedChannel.value,
+    channel: editedChannel.value,
   });
   nextTick(() => {
     selectedBandIndex.value = newIndex;
@@ -647,7 +647,7 @@ const addBand = () => {
 watch(() => peq.value.bands, drawGraph, { deep: true });
 watch(() => peq.value.preamp, drawGraph);
 watch(() => selectedBandIndex.value, drawGraph);
-watch(() => graphedChannel.value, drawGraph);
+watch(() => editedChannel.value, drawGraph);
 watch(() => theme.global.current.value.dark, drawGraph);
 
 onMounted(() => {
