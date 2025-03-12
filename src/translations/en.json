@@ -463,8 +463,8 @@
                 "channel": "Applied to Channel",
                 "channels": {
                     "ALL": "All",
-                    "FL": "Front Left",
-                    "FR": "Front Right"
+                    "FL": "Left",
+                    "FR": "Right"
                 }
             },
             "tone_control": {
