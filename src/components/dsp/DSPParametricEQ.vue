@@ -476,7 +476,7 @@ const drawGraph = () => {
     response: Float32Array,
     ctx: CanvasRenderingContext2D,
   ) => {
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     if (isDark) {
       ctx.strokeStyle = "#fff";
     } else {
