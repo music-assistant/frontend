@@ -306,7 +306,7 @@ const importApoSettings = (content: string) => {
     }
   }
 
-  let existingBands: ParametricEQBand[] = [];
+  let existingBands: ParametricEQBand[];
   if (usesChannelField) {
     // Preserve existing bands for channels not in the import
     // So users with split channel presets can import them one after the other
@@ -339,7 +339,11 @@ const importApoSettings = (content: string) => {
     bands.forEach((band) => {
       band.channel = editedChannel.value;
     });
-    usesChannelField = true; // So we don't reset all other preamps
+  } else {
+    // All channels preset, applied to all channels
+    // Clear all existing bands and preamps
+    existingBands = [];
+    peq.value.per_channel_preamp = {};
   }
 
   // Update the PEQ bands
@@ -350,16 +354,11 @@ const importApoSettings = (content: string) => {
     if (importPreamp.ALL) {
       peq.value.preamp = importPreamp.ALL;
     }
-    if (usesChannelField) {
-      // But keep preamp of unaffected channels the same (if no preamp or band for that channel in the import)
-      Object.entries(importPreamp).forEach(([channel, value]) => {
-        if (channel === AudioChannel.ALL) return;
-        peq.value.per_channel_preamp[channel as AudioChannel] = value;
-      });
-    } else {
-      // Clear all channel preamps if the import doesn't use the channel field
-      peq.value.per_channel_preamp = {};
-    }
+    // But keep preamp of unaffected channels the same (if no preamp or band for that channel in the import)
+    Object.entries(importPreamp).forEach(([channel, value]) => {
+      if (channel === AudioChannel.ALL) return;
+      peq.value.per_channel_preamp[channel as AudioChannel] = value;
+    });
   } else {
     // Clear it otherwise
     peq.value.preamp = 0;
