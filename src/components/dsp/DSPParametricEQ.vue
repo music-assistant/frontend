@@ -2,7 +2,21 @@
   <v-container class="pa-2">
     <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
     <div class="d-flex flex-wrap">
+      <v-btn
+        v-if="!showMultiChannelControls"
+        variant="outlined"
+        class="d-flex flex-wrap"
+        @click="
+          () => {
+            showMultiChannelControls = true;
+          }
+        "
+      >
+        <v-icon start>mdi-speaker-multiple</v-icon>
+        {{ $t("settings.dsp.parametric_eq.show_multichannel_controls") }}
+      </v-btn>
       <v-select
+        v-else
         v-model="editedChannel"
         :items="channelTypes"
         :label="$t('settings.dsp.parametric_eq.edited_channel')"
@@ -160,6 +174,7 @@
       <DSPSlider v-model="selectedBand.q" type="q" />
 
       <v-select
+        v-if="showMultiChannelControls"
         v-model="selectedBand.channel"
         :items="channelTypes"
         :label="$t('settings.dsp.parametric_eq.channel')"
@@ -172,7 +187,7 @@
   </v-container>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from "vue";
+import { ref, onMounted, watch, computed, nextTick, watchEffect } from "vue";
 import {
   ParametricEQBand,
   ParametricEQBandType,
@@ -680,6 +695,8 @@ const isMultiChannel = computed(() => {
   return peq.value.bands.some((band) => band.channel !== AudioChannel.ALL);
 });
 
+const showMultiChannelControls = ref(false);
+
 const selectedBandIndex = ref(-1);
 
 const editedChannel = ref(AudioChannel.ALL);
@@ -744,6 +761,11 @@ watch(
 );
 watch(() => editedChannel.value, drawGraph);
 watch(() => theme.global.current.value.dark, drawGraph);
+
+// Auto enable if the user selects a multichannel EQ
+watchEffect(() => {
+  if (isMultiChannel.value) showMultiChannelControls.value = true;
+});
 
 onMounted(() => {
   drawGraph();
