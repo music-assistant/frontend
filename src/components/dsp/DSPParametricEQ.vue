@@ -362,11 +362,7 @@ const exportApoSettings = () => {
   // Add global preamp
   content += `Preamp: ${preamp.value.toFixed(2)} dB\n`;
 
-  const hasPerChannelSettings = peq.value.bands.some(
-    (band) => band.channel !== AudioChannel.ALL,
-  );
-
-  if (hasPerChannelSettings) {
+  if (isMultiChannel.value) {
     // Export bands by channel
     const channels = Object.values(AudioChannel);
 
@@ -569,11 +565,8 @@ const drawGraph = () => {
   };
 
   // Skip drawing the multi channel version if this a simple PEQ with only ALL channel filters
-  const isMutliChannel = peq.value.bands.some(
-    (band) => band.channel !== AudioChannel.ALL,
-  );
 
-  if (editedChannel.value === AudioChannel.ALL && isMutliChannel) {
+  if (editedChannel.value === AudioChannel.ALL && isMultiChannel.value) {
     // Get all channels (excluding ALL)
     const channels = Object.values(AudioChannel).filter(
       (ch) => ch !== AudioChannel.ALL,
@@ -681,6 +674,10 @@ const audioContext = new AudioContext();
 
 const biquadFilters = computed(() => {
   return peq.value.bands.map((band) => createBiquadFilter(audioContext, band));
+});
+
+const isMultiChannel = computed(() => {
+  return peq.value.bands.some((band) => band.channel !== AudioChannel.ALL);
 });
 
 const selectedBandIndex = ref(-1);
