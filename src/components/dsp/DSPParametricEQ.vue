@@ -733,10 +733,18 @@ const addBand = () => {
 };
 
 // Watch for changes and redraw
-watch(() => peq.value.bands, drawGraph, { deep: true });
 watch(() => peq.value.preamp, drawGraph);
 watch(() => peq.value.per_channel_preamp, drawGraph, { deep: true });
-watch(() => selectedBandIndex.value, drawGraph);
+watch(
+  () => (selectedBandIndex.value, peq.value.bands),
+  () => {
+    if (selectedBandIndex.value >= peq.value.bands.length) {
+      selectedBandIndex.value = peq.value.bands.length - 1;
+    }
+    drawGraph();
+  },
+  { deep: true },
+);
 watch(() => editedChannel.value, drawGraph);
 watch(() => theme.global.current.value.dark, drawGraph);
 
