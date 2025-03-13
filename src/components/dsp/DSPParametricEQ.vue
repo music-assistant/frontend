@@ -718,7 +718,11 @@ const biquadFilters = computed(() => {
 });
 
 const isMultiChannel = computed(() => {
-  return peq.value.bands.some((band) => band.channel !== AudioChannel.ALL);
+  return (
+    peq.value.bands.some((band) => band.channel !== AudioChannel.ALL) ||
+    (Object.keys(peq.value.per_channel_preamp).length > 0 &&
+      Object.values(peq.value.per_channel_preamp).some((gain) => gain !== 0))
+  );
 });
 
 const showMultiChannelControls = ref(false);
