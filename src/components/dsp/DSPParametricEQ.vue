@@ -1,11 +1,10 @@
 <template>
   <v-container class="pa-2">
-    <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
-    <div class="d-flex flex-wrap">
+    <div class="d-flex flex-wrap justify-end align-center ga-2 pr-2">
+      <!-- Multichannel options -->
       <v-btn
         v-if="!showMultiChannelControls"
         variant="outlined"
-        class="d-flex flex-wrap"
         @click="
           () => {
             showMultiChannelControls = true;
@@ -18,32 +17,33 @@
       <v-select
         v-else
         v-model="editedChannel"
+        class="pa-2"
         :items="channelTypes"
         :label="$t('settings.dsp.parametric_eq.edited_channel')"
         variant="outlined"
         density="comfortable"
-        class="pa-4"
+        style="min-width: 250px"
         hide-details
       />
-      <v-card-item class="d-flex justify-end">
-        <v-btn variant="outlined" class="mr-2" @click="openApoFileImport">
-          <v-icon start>mdi-file-import</v-icon>
-          {{ $t("settings.dsp.parametric_eq.import_apo") }}
-        </v-btn>
 
-        <v-btn variant="outlined" class="mr-2" @click="exportApoSettings">
-          <v-icon start>mdi-file-export</v-icon>
-          {{ $t("settings.dsp.parametric_eq.export_apo") }}
-        </v-btn>
+      <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
+      <v-btn variant="outlined" @click="openApoFileImport">
+        <v-icon start>mdi-file-import</v-icon>
+        {{ $t("settings.dsp.parametric_eq.import_apo") }}
+      </v-btn>
 
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".txt"
-          class="d-none"
-          @change="handleApoUpload"
-        />
-      </v-card-item>
+      <v-btn variant="outlined" @click="exportApoSettings">
+        <v-icon start>mdi-file-export</v-icon>
+        {{ $t("settings.dsp.parametric_eq.export_apo") }}
+      </v-btn>
+
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept=".txt"
+        class="d-none"
+        @change="handleApoUpload"
+      />
     </div>
 
     <!-- Frequency Response Graph with Dark Theme Support -->
