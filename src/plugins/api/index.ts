@@ -50,6 +50,7 @@ import {
   PlayableMediaItemType,
   MediaItemTypeOrItemMapping,
   BuiltinPlayerState,
+  RecommendationFolder,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -718,6 +719,10 @@ export class MusicAssistantApi {
     return this.sendCommand("music/in_progress_items", {
       limit,
     });
+  }
+
+  public async getRecommendations(): Promise<RecommendationFolder[]> {
+    return this.sendCommand("music/recommendations");
   }
 
   public markItemPlayed(

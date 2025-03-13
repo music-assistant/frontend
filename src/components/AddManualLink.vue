@@ -95,7 +95,10 @@ watch(
 );
 
 const fetchItemDetails = () => {
-  if (!url.value || !["http", "rtsp"].some((prefix) => url.value.startsWith(prefix))) {
+  if (
+    !url.value ||
+    !["http", "rtsp"].some((prefix) => url.value.startsWith(prefix))
+  ) {
     return;
   }
   loading.value = true;

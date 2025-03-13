@@ -53,7 +53,6 @@
             label: 'tracks',
             icon: 'mdi-file-music',
             items: searchResult.tracks,
-            count: searchResult.tracks.length,
           }"
         />
         <HomeWidgetRow
@@ -62,7 +61,6 @@
             label: 'artists',
             icon: 'mdi-account-music',
             items: searchResult.artists,
-            count: searchResult.artists.length,
           }"
         />
         <HomeWidgetRow
@@ -71,7 +69,6 @@
             label: 'albums',
             icon: 'mdi-album',
             items: searchResult.albums,
-            count: searchResult.albums.length,
           }"
         />
         <HomeWidgetRow
@@ -80,7 +77,6 @@
             label: 'playlists',
             icon: 'mdi-playlist-music',
             items: searchResult.playlists,
-            count: searchResult.playlists.length,
           }"
         />
         <HomeWidgetRow
@@ -89,7 +85,6 @@
             label: 'podcasts',
             icon: 'mdi-podcast',
             items: searchResult.podcasts,
-            count: searchResult.podcasts.length,
           }"
         />
         <HomeWidgetRow
@@ -98,7 +93,6 @@
             label: 'audiobooks',
             icon: 'mdi-book-play-outline',
             items: searchResult.audiobooks,
-            count: searchResult.audiobooks.length,
           }"
         />
         <HomeWidgetRow
@@ -107,7 +101,6 @@
             label: 'radios',
             icon: 'mdi-radio',
             items: searchResult.radio,
-            count: searchResult.radio.length,
           }"
         />
       </div>
