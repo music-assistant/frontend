@@ -7,6 +7,12 @@ export const MASS_LOGO_ONLINE =
 export const PLAYER_CONTROL_NONE = "none";
 
 /// dsp
+export enum AudioChannel {
+  ALL = "ALL",
+  FL = "FL",
+  FR = "FR",
+}
+
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
@@ -33,11 +39,13 @@ export interface ParametricEQBand {
   gain: number;
   type: ParametricEQBandType;
   enabled: boolean;
+  channel: AudioChannel;
 }
 
 // Specific filter types
 export interface ParametricEQFilter extends DSPFilterBase {
   preamp?: number;
+  per_channel_preamp: Partial<Record<AudioChannel, number>>;
   type: DSPFilterType.PARAMETRIC_EQ;
   bands: Array<ParametricEQBand>;
 }
