@@ -87,7 +87,9 @@
                 : $t("settings.dsp.parametric_eq.band_channel", {
                     index: index + 1,
                     // Just uses `L` or `R` to save some space
-                    channel: band.channel.charAt(1),
+                    channel: $t(
+                      `settings.dsp.channels_compact.${band.channel}`,
+                    ),
                   })
             }}
           </v-chip>

@@ -447,6 +447,10 @@
                 "FL": "Left",
                 "FR": "Right"
             },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
+            },
             "parametric_eq": {
                 "add_band": "Add Band",
                 "add_band_channel": "Add Band ({channel} only)",
