@@ -320,6 +320,26 @@ const importApoSettings = (content: string) => {
           band.channel === AudioChannel.ALL,
       );
     });
+  } else if (editedChannel.value !== AudioChannel.ALL) {
+    // This is a regular EQ preset that applies to all channels, but the user
+    // selected the graph of a specific channel. We'll assume that they want
+    // to import it to that channel only
+    existingBands = peq.value.bands.filter(
+      // Remove bands that are made for the ALL, or the selected channel
+      (band) =>
+        band.channel !== AudioChannel.ALL &&
+        band.channel !== editedChannel.value,
+    );
+    if (importPreamp.ALL) {
+      // Move the global preamp to the selected channel only
+      importPreamp[editedChannel.value] = importPreamp.ALL;
+      importPreamp.ALL = 0; // Clear the global preamp
+    }
+    // Make all bands channel specific
+    bands.forEach((band) => {
+      band.channel = editedChannel.value;
+    });
+    usesChannelField = true; // So we don't reset all other preamps
   }
 
   // Update the PEQ bands
@@ -330,14 +350,18 @@ const importApoSettings = (content: string) => {
     if (importPreamp.ALL) {
       peq.value.preamp = importPreamp.ALL;
     }
-    // But keep preamp of unaffected channels the same (if no preamp or band for that channel in the import)
-    Object.entries(importPreamp).forEach(([channel, value]) => {
-      if (channel === AudioChannel.ALL) return;
-      peq.value.per_channel_preamp[channel as AudioChannel] = value;
-    });
-  } else if (!usesChannelField) {
-    // This is probably a regular single channel preset, so reset preamps to 0
-    // if it wasn't specified in the import
+    if (usesChannelField) {
+      // But keep preamp of unaffected channels the same (if no preamp or band for that channel in the import)
+      Object.entries(importPreamp).forEach(([channel, value]) => {
+        if (channel === AudioChannel.ALL) return;
+        peq.value.per_channel_preamp[channel as AudioChannel] = value;
+      });
+    } else {
+      // Clear all channel preamps if the import doesn't use the channel field
+      peq.value.per_channel_preamp = {};
+    }
+  } else {
+    // Clear it otherwise
     peq.value.preamp = 0;
     peq.value.per_channel_preamp = {};
   }
