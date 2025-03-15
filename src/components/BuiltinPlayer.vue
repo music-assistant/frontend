@@ -11,7 +11,7 @@ import {
   EventMessage,
   EventType,
 } from "@/plugins/api/interfaces";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer } from "@/plugins/web_player";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // properties
@@ -64,16 +64,7 @@ let stateInterval: any | undefined;
 const updatePlayerState = function () {
   const player_id = props.playerId;
   if (!audioRef.value || !player_id) return;
-  if (webPlayer.audioSource !== WebPlayerMode.BUILTIN) {
-    api.updateBuiltinPlayerState(player_id, {
-      powered: false,
-      playing: false,
-      paused: false,
-      muted: false,
-      volume: 0,
-      position: 0,
-    });
-  } else if (playing.value) {
+  if (playing.value) {
     api.updateBuiltinPlayerState(player_id, {
       powered: true,
       playing: !audioRef.value.paused,
@@ -129,7 +120,14 @@ onBeforeUnmount(() => {
   if (stateInterval) {
     clearInterval(stateInterval);
   }
-  updatePlayerState();
+  api.updateBuiltinPlayerState(props.playerId, {
+    powered: false,
+    playing: false,
+    paused: false,
+    muted: false,
+    volume: 0,
+    position: 0,
+  });
 });
 
 // MediaSession setup
