@@ -172,10 +172,7 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
   const _subItems: ContextMenuItem[] = [];
 
   const sortedPlayers = Object.values(api.players)
-    .filter((x) =>
-      // hide synced players or group child's
-      playerActive(x, false, false, false),
-    )
+    .filter((x) => playerVisible(x))
     .sort((a, b) =>
       a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
     );
@@ -221,7 +218,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import { playerActive } from "@/helpers/utils";
+import { playerVisible } from "@/helpers/utils";
 
 export interface ContextMenuItem {
   label: string;

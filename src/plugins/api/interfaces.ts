@@ -362,6 +362,15 @@ export enum VolumeNormalizationMode {
   FALLBACK_DYNAMIC = "fallback_dynamic",
 }
 
+export enum HidePlayerOption {
+  NEVER = "never",
+  WHEN_OFF = "when_off",
+  WHEN_GROUP_ACTIVE = "when_group_active",
+  WHEN_SYNCED = "when_synced",
+  WHEN_UNAVAILABLE = "when_unavailable",
+  ALWAYS = "always",
+}
+
 //// api
 
 export interface CommandMessage {
@@ -459,6 +468,7 @@ export interface ConfigEntry {
   // depends_on [optional]: needs to be set before this setting shows up in frontend
   depends_on?: string;
   depends_on_value?: ConfigValueType;
+  depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
@@ -817,7 +827,7 @@ export interface Player {
 
   group_volume: number;
   display_name: string;
-  hidden: boolean;
+  hide_player_in_ui: HidePlayerOption[];
   icon: string;
   power_control: string;
   volume_control: string;
@@ -849,8 +859,6 @@ export interface ProviderManifest {
   name: string;
   description: string;
   codeowners: string[];
-  // config_entries: list of config entries required to configure/setup this provider
-  config_entries: ConfigEntry[];
   requirements: string[];
   // documentation: link/url to documentation.
   documentation?: string;

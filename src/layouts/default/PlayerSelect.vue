@@ -142,7 +142,7 @@ import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
-import { playerActive } from "@/helpers/utils";
+import { playerVisible } from "@/helpers/utils";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 
 const showSubPlayers = ref(false);
@@ -151,10 +151,7 @@ const selectedPanel = ref<number | null>(null);
 // computed properties
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
-    .filter((x) =>
-      // hide synced players or group child's
-      playerActive(x, false, false, false),
-    )
+    .filter((x) => playerVisible(x))
     .filter((x) => webPlayer.player_id || x.player_id != webPlayer.player_id) // shown in a separate card
     .sort((a, b) =>
       a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
@@ -209,11 +206,7 @@ onMounted(() => {
 });
 
 const checkDefaultPlayer = function () {
-  if (
-    store.activePlayer &&
-    playerActive(store.activePlayer, false, false, false)
-  )
-    return;
+  if (store.activePlayer && playerVisible(store.activePlayer)) return;
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
     store.activePlayerId = newDefaultPlayer.player_id;
@@ -226,7 +219,7 @@ const selectDefaultPlayer = function () {
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&
-    playerActive(api.players[lastPlayerId], false, false, false)
+    playerVisible(api.players[lastPlayerId])
   ) {
     return api.players[lastPlayerId];
   }
