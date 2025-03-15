@@ -17,6 +17,7 @@ export enum WebPlayerMode {
 // TODO: update state on power off too
 
 let unsubSubscriptions: (() => void)[] = [];
+let powerOffUpdateInterval: any = undefined;
 const sendPoweredOffUpdate = function (player_id: string) {
   api.updateBuiltinPlayerState(player_id, {
     powered: false,
@@ -40,10 +41,13 @@ export const webPlayer = reactive({
     for (const u of unsubSubscriptions) {
       u();
     }
+    if (powerOffUpdateInterval) clearInterval(powerOffUpdateInterval);
+    powerOffUpdateInterval = undefined;
     unsubSubscriptions = [];
 
     if (this.mode === WebPlayerMode.BUILTIN) {
       if (this.player_id) {
+        sendPoweredOffUpdate(this.player_id);
         await api.unregisterBuiltinPlayer(this.player_id);
       }
     }
@@ -69,6 +73,10 @@ export const webPlayer = reactive({
       }
 
       this.player_id = player_id;
+
+      powerOffUpdateInterval = setInterval(() => {
+        sendPoweredOffUpdate(player_id);
+      }, 60000) as any;
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else {
@@ -98,10 +106,15 @@ export const webPlayer = reactive({
           (evt: EventMessage) => {
             const data = evt.data as BuiltinPlayerEvent;
             if (data.type === BuiltinPlayerEventType.POWER_ON) {
+              if (powerOffUpdateInterval) clearInterval(powerOffUpdateInterval);
+              powerOffUpdateInterval = undefined;
               this.audioSource = WebPlayerMode.BUILTIN;
             } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
               this.audioSource = WebPlayerMode.CONTROLS_ONLY;
               if (this.player_id) sendPoweredOffUpdate(this.player_id);
+              powerOffUpdateInterval = setInterval(() => {
+                if (this.player_id) sendPoweredOffUpdate(this.player_id);
+              }, 60000) as any;
             } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
               // TODO: timeout should probably completely shutdown the player until a full page reload
               this.audioSource = WebPlayerMode.CONTROLS_ONLY;
