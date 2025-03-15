@@ -1,7 +1,11 @@
 import { reactive } from "vue";
 import api from "./api";
-import { store } from "./store";
-import { EventType } from "./api/interfaces";
+import {
+  BuiltinPlayerEvent,
+  BuiltinPlayerEventType,
+  EventMessage,
+  EventType,
+} from "./api/interfaces";
 
 export enum WebPlayerMode {
   DISABLED = "disabled",
@@ -9,19 +13,18 @@ export enum WebPlayerMode {
   BUILTIN = "builtin",
 }
 
+// TODO: watch for interacted
+// TODO: update state on power off too
+
 let unsubSubscriptions: (() => void)[] = [];
 
 export const webPlayer = reactive({
   mode: WebPlayerMode.DISABLED,
-  pending_mode: WebPlayerMode.DISABLED,
+  audioSource: WebPlayerMode.DISABLED,
   baseUrl: "",
   player_id: null as string | null,
   interacted: false,
   async setMode(mode: WebPlayerMode) {
-    if (!this.interacted) {
-      this.pending_mode = mode;
-      return;
-    }
     if (this.mode === mode) return;
 
     for (const u of unsubSubscriptions) {
@@ -34,11 +37,14 @@ export const webPlayer = reactive({
         await api.unregisterBuiltinPlayer(this.player_id);
       }
     }
+    this.audioSource = WebPlayerMode.DISABLED;
     this.player_id = null;
 
     this.mode = mode;
 
     if (mode == WebPlayerMode.BUILTIN) {
+      // Start with ususal notification, switch to BUILTIN once powered on
+      this.audioSource = WebPlayerMode.CONTROLS_ONLY;
       const saved_player_id = window.localStorage.getItem(
         "builtin_webplayer_id",
       );
@@ -53,12 +59,16 @@ export const webPlayer = reactive({
       }
 
       this.player_id = player_id;
-      store.activePlayerId = player_id; // seltect the player in the UI
+    } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
+      this.audioSource = WebPlayerMode.CONTROLS_ONLY;
+    } else {
+      this.audioSource = WebPlayerMode.DISABLED;
     }
 
     if (this.player_id) {
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
+          // TODO: handle reconnect
           this.disable();
         }),
       );
@@ -71,9 +81,25 @@ export const webPlayer = reactive({
           this.player_id,
         ),
       );
-    }
 
-    this.pending_mode = WebPlayerMode.DISABLED;
+      unsubSubscriptions.push(
+        api.subscribe(
+          EventType.BUILTIN_PLAYER,
+          (evt: EventMessage) => {
+            const data = evt.data as BuiltinPlayerEvent;
+            if (data.type === BuiltinPlayerEventType.POWER_ON) {
+              this.audioSource = WebPlayerMode.BUILTIN;
+            } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
+              this.audioSource = WebPlayerMode.CONTROLS_ONLY;
+            } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
+              // TODO: timeout should probably completely shutdown the player until a full page reload
+              this.audioSource = WebPlayerMode.CONTROLS_ONLY;
+            }
+          },
+          this.player_id,
+        ),
+      );
+    }
   },
   disable() {
     this.setMode(WebPlayerMode.CONTROLS_ONLY);
@@ -91,8 +117,5 @@ export const webPlayer = reactive({
   async setInteracted() {
     if (this.interacted) return;
     this.interacted = true;
-    if (this.pending_mode !== WebPlayerMode.DISABLED) {
-      await this.setMode(this.pending_mode);
-    }
   },
 });

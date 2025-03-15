@@ -11,7 +11,7 @@ import {
   EventMessage,
   EventType,
 } from "@/plugins/api/interfaces";
-import { webPlayer } from "@/plugins/web_player";
+import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // properties
@@ -52,8 +52,6 @@ const unsub = api.subscribe(
       audioRef.value.currentTime = 0;
       audioRef.value.src = "";
       playing.value = false;
-    } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
-      webPlayer.disable();
     }
   },
   props.playerId,
@@ -66,8 +64,18 @@ let stateInterval: any | undefined;
 const updatePlayerState = function () {
   const player_id = props.playerId;
   if (!audioRef.value || !player_id) return;
-  if (playing.value) {
+  if (webPlayer.audioSource !== WebPlayerMode.BUILTIN) {
     api.updateBuiltinPlayerState(player_id, {
+      powered: false,
+      playing: false,
+      paused: false,
+      muted: false,
+      volume: 0,
+      position: 0,
+    });
+  } else if (playing.value) {
+    api.updateBuiltinPlayerState(player_id, {
+      powered: true,
       playing: !audioRef.value.paused,
       paused: audioRef.value.paused && !audioRef.value.ended,
       muted: audioRef.value.muted,
@@ -76,6 +84,7 @@ const updatePlayerState = function () {
     });
   } else {
     api.updateBuiltinPlayerState(player_id, {
+      powered: true,
       playing: false,
       paused: false,
       muted: audioRef.value.muted,
@@ -85,28 +94,33 @@ const updatePlayerState = function () {
   }
 };
 
-watch(playing, () => {
-  const player_id = props.playerId;
+watch(
+  playing,
+  () => {
+    // TODO: trigger this on BUILTIN_PLAYER commands
+    const player_id = props.playerId;
 
-  if (!player_id) {
-    return;
-  }
-  if (playing.value) {
-    if (stateInterval) clearInterval(stateInterval);
-    // Start fast interval when playing
-    stateInterval = setInterval(() => {
+    if (!player_id) {
+      return;
+    }
+    if (playing.value) {
+      if (stateInterval) clearInterval(stateInterval);
+      // Start fast interval when playing
+      stateInterval = setInterval(() => {
+        updatePlayerState();
+      }, 5000) as any;
       updatePlayerState();
-    }, 5000) as any;
-    updatePlayerState();
-  } else {
-    if (stateInterval) clearInterval(stateInterval);
-    // Use slower interval when paused
-    stateInterval = setInterval(() => {
+    } else {
+      if (stateInterval) clearInterval(stateInterval);
+      // Use slower interval when paused
+      stateInterval = setInterval(() => {
+        updatePlayerState();
+      }, 30000) as any;
       updatePlayerState();
-    }, 30000) as any;
-    updatePlayerState();
-  }
-});
+    }
+  },
+  { immediate: true },
+);
 
 useMediaBrowserMetaData(props.playerId);
 
@@ -115,6 +129,7 @@ onBeforeUnmount(() => {
   if (stateInterval) {
     clearInterval(stateInterval);
   }
+  updatePlayerState();
 });
 
 // MediaSession setup
