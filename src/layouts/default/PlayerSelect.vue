@@ -53,11 +53,6 @@
           "
           @click="playerClicked(player)"
         />
-        <PlayerCard
-          v-if="!webPlayer.player_id"
-          player="web"
-          @click="localPlayerEnabled"
-        />
       </v-list>
 
       <v-expansion-panels
@@ -143,7 +138,7 @@ import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
 import { playerVisible } from "@/helpers/utils";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer } from "@/plugins/web_player";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
@@ -195,10 +190,6 @@ function playerClicked(player: Player, close: boolean = false) {
     store.activePlayerId = player.player_id;
   }
   if (close) store.showPlayersMenu = false;
-}
-
-function localPlayerEnabled() {
-  webPlayer.setMode(WebPlayerMode.BUILTIN);
 }
 
 onMounted(() => {
