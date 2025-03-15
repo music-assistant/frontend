@@ -17,6 +17,16 @@ export enum WebPlayerMode {
 // TODO: update state on power off too
 
 let unsubSubscriptions: (() => void)[] = [];
+const sendPoweredOffUpdate = function (player_id: string) {
+  api.updateBuiltinPlayerState(player_id, {
+    powered: false,
+    playing: false,
+    paused: false,
+    muted: false,
+    volume: 0,
+    position: 0,
+  });
+};
 
 export const webPlayer = reactive({
   mode: WebPlayerMode.DISABLED,
@@ -91,6 +101,7 @@ export const webPlayer = reactive({
               this.audioSource = WebPlayerMode.BUILTIN;
             } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
               this.audioSource = WebPlayerMode.CONTROLS_ONLY;
+              if (this.player_id) sendPoweredOffUpdate(this.player_id);
             } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
               // TODO: timeout should probably completely shutdown the player until a full page reload
               this.audioSource = WebPlayerMode.CONTROLS_ONLY;

@@ -120,14 +120,6 @@ onBeforeUnmount(() => {
   if (stateInterval) {
     clearInterval(stateInterval);
   }
-  api.updateBuiltinPlayerState(props.playerId, {
-    powered: false,
-    playing: false,
-    paused: false,
-    muted: false,
-    volume: 0,
-    position: 0,
-  });
 });
 
 // MediaSession setup
