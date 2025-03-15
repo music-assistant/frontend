@@ -54,7 +54,16 @@
 
       <!-- playername -->
       <template #title>
-        <div style="margin-bottom: 3px">{{ getPlayerName(player, 27) }}</div>
+        <div style="margin-bottom: 3px">
+          {{ getPlayerName(player, 27) }}
+          <v-icon
+            v-if="webPlayer.player_id === player.player_id"
+            size="20"
+            class="pl-2"
+          >
+            mdi-monitor</v-icon
+          >
+        </div>
       </template>
 
       <!-- subtitle: media item title -->
@@ -214,6 +223,7 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getSourceName } from "@/plugins/api/helpers";
+import { webPlayer } from "@/plugins/web_player";
 // properties
 export interface Props {
   player: Player;
