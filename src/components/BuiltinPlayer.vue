@@ -57,7 +57,6 @@ const unsub = api.subscribe(
       webPlayer.audioSource = WebPlayerMode.BUILTIN;
     } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
       webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
-      updatePlayerState();
     } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
       // TODO: timeout should probably completely shutdown the player until a full page reload
       webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
@@ -106,7 +105,7 @@ const updatePlayerState = function () {
 };
 
 watch(
-  playing,
+  [() => playing, () => webPlayer.audioSource],
   () => {
     // TODO: trigger this on BUILTIN_PLAYER commands
     const player_id = props.playerId;
