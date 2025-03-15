@@ -7,9 +7,7 @@
     "
   />
   <BuiltinPlayer
-    v-else-if="
-      webPlayer.audioSource === WebPlayerMode.BUILTIN && webPlayer.player_id
-    "
+    v-if="webPlayer.mode === WebPlayerMode.BUILTIN && webPlayer.player_id"
     :player-id="webPlayer.player_id"
   />
 </template>
