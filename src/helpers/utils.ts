@@ -1,6 +1,7 @@
 import {
   Artist,
   BrowseFolder,
+  HidePlayerOption,
   ItemMapping,
   MediaItemType,
   MediaItemTypeOrItemMapping,
@@ -482,24 +483,40 @@ export const markdownToHtml = function (text: string): string {
   return marked(text) as string;
 };
 
-export const playerActive = function (
+export const playerVisible = function (
   player: Player,
-  allowUnavailable = true,
-  allowSyncChild = false,
-  allowHidden = false,
+  allowGroupChilds = false,
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
-  if (!allowHidden && player.hidden) return false;
-  if (!allowUnavailable && !player.available) return false;
-  if (player.synced_to && !allowSyncChild) return false;
+  if (player.hide_player_in_ui.includes(HidePlayerOption.ALWAYS)) {
+    return false;
+  }
   if (
-    !allowSyncChild &&
-    player.type == PlayerType.PLAYER &&
-    player.active_group
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_SYNCED) &&
+    player.synced_to &&
+    !allowGroupChilds
+  ) {
+    return false;
+  }
+  if (
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_GROUP_ACTIVE) &&
+    player.active_group &&
+    !allowGroupChilds
   )
     return false;
-
+  if (
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_OFF) &&
+    player.powered === false
+  ) {
+    return false;
+  }
+  if (
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_UNAVAILABLE) &&
+    !player.available
+  ) {
+    return false;
+  }
   return true;
 };
 

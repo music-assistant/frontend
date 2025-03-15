@@ -7,6 +7,12 @@ export const MASS_LOGO_ONLINE =
 export const PLAYER_CONTROL_NONE = "none";
 
 /// dsp
+export enum AudioChannel {
+  ALL = "ALL",
+  FL = "FL",
+  FR = "FR",
+}
+
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
@@ -33,11 +39,13 @@ export interface ParametricEQBand {
   gain: number;
   type: ParametricEQBandType;
   enabled: boolean;
+  channel: AudioChannel;
 }
 
 // Specific filter types
 export interface ParametricEQFilter extends DSPFilterBase {
   preamp?: number;
+  per_channel_preamp: Partial<Record<AudioChannel, number>>;
   type: DSPFilterType.PARAMETRIC_EQ;
   bands: Array<ParametricEQBand>;
 }
@@ -369,6 +377,15 @@ export enum VolumeNormalizationMode {
   FALLBACK_DYNAMIC = "fallback_dynamic",
 }
 
+export enum HidePlayerOption {
+  NEVER = "never",
+  WHEN_OFF = "when_off",
+  WHEN_GROUP_ACTIVE = "when_group_active",
+  WHEN_SYNCED = "when_synced",
+  WHEN_UNAVAILABLE = "when_unavailable",
+  ALWAYS = "always",
+}
+
 //// api
 
 export interface CommandMessage {
@@ -466,6 +483,7 @@ export interface ConfigEntry {
   // depends_on [optional]: needs to be set before this setting shows up in frontend
   depends_on?: string;
   depends_on_value?: ConfigValueType;
+  depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
@@ -809,7 +827,7 @@ export interface Player {
 
   group_volume: number;
   display_name: string;
-  hidden: boolean;
+  hide_player_in_ui: HidePlayerOption[];
   icon: string;
   power_control: string;
   volume_control: string;

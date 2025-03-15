@@ -1,13 +1,38 @@
 <template>
   <v-container class="pa-2">
-    <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
-    <v-card-item class="d-flex justify-end">
-      <v-btn variant="outlined" class="mr-2" @click="openApoFileImport">
+    <div class="d-flex flex-wrap justify-end align-center ga-2 pr-2">
+      <!-- Multichannel options -->
+      <v-btn
+        v-if="!showMultiChannelControls"
+        variant="outlined"
+        @click="
+          () => {
+            showMultiChannelControls = true;
+          }
+        "
+      >
+        <v-icon start>mdi-speaker-multiple</v-icon>
+        {{ $t("settings.dsp.parametric_eq.show_multichannel_controls") }}
+      </v-btn>
+      <v-select
+        v-else
+        v-model="editedChannel"
+        class="pa-2"
+        :items="channelTypes"
+        :label="$t('settings.dsp.parametric_eq.edited_channel')"
+        variant="outlined"
+        density="comfortable"
+        style="min-width: 250px"
+        hide-details
+      />
+
+      <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
+      <v-btn variant="outlined" @click="openApoFileImport">
         <v-icon start>mdi-file-import</v-icon>
         {{ $t("settings.dsp.parametric_eq.import_apo") }}
       </v-btn>
 
-      <v-btn variant="outlined" class="mr-2" @click="exportApoSettings">
+      <v-btn variant="outlined" @click="exportApoSettings">
         <v-icon start>mdi-file-export</v-icon>
         {{ $t("settings.dsp.parametric_eq.export_apo") }}
       </v-btn>
@@ -19,7 +44,7 @@
         class="d-none"
         @change="handleApoUpload"
       />
-    </v-card-item>
+    </div>
 
     <!-- Frequency Response Graph with Dark Theme Support -->
     <v-card elevation="0" color="transparent">
@@ -49,15 +74,34 @@
             v-for="(band, index) in peq.bands"
             :key="index"
             :value="index"
-            :class="{ 'opacity-50': !band.enabled }"
+            :class="{
+              // Disabled or not show in the selected (graphed) channel
+              'opacity-50': !band.enabled,
+            }"
             filter
             variant="elevated"
           >
-            {{ $t("settings.dsp.parametric_eq.band", { index: index + 1 }) }}
+            {{
+              band.channel === AudioChannel.ALL
+                ? $t("settings.dsp.parametric_eq.band", { index: index + 1 })
+                : $t("settings.dsp.parametric_eq.band_channel", {
+                    index: index + 1,
+                    // Just uses `L` or `R` to save some space
+                    channel: $t(
+                      `settings.dsp.channels_compact.${band.channel}`,
+                    ),
+                  })
+            }}
           </v-chip>
           <v-chip variant="outlined" @click="addBand">
             <v-icon icon="mdi-plus" start />
-            {{ $t("settings.dsp.parametric_eq.add_band") }}
+            {{
+              editedChannel === AudioChannel.ALL
+                ? $t("settings.dsp.parametric_eq.add_band")
+                : $t("settings.dsp.parametric_eq.add_band_channel", {
+                    channel: $t(`settings.dsp.channels.${editedChannel}`),
+                  })
+            }}
           </v-chip>
         </v-chip-group>
       </v-card-text>
@@ -68,6 +112,20 @@
         <v-row dense>
           <v-col cols="12">
             <DSPSlider v-model="preamp" type="gain" />
+            <DSPSlider
+              v-if="editedChannel !== AudioChannel.ALL"
+              v-model="channelPreamp"
+              :type="{
+                min: -15,
+                max: 15,
+                step: 0.1,
+                label: $t('settings.dsp.parametric_eq.per_channel_preamp', {
+                  channel: $t(`settings.dsp.channels.${editedChannel}`),
+                }),
+                unit: 'dB',
+                is_log: false,
+              }"
+            />
           </v-col>
         </v-row>
       </v-card-text>
@@ -77,7 +135,7 @@
     <template v-if="selectedBand">
       <v-card-item>
         <!-- Band Header -->
-        <div class="d-flex align-center">
+        <div class="d-flex align-center pl-1">
           <v-switch
             v-model="selectedBand.enabled"
             :label="$t('settings.dsp.parametric_eq.enable_band')"
@@ -117,14 +175,26 @@
       />
 
       <DSPSlider v-model="selectedBand.q" type="q" />
+
+      <v-select
+        v-if="showMultiChannelControls"
+        v-model="selectedBand.channel"
+        :items="channelTypes"
+        :label="$t('settings.dsp.parametric_eq.channel')"
+        variant="outlined"
+        density="comfortable"
+        class="pa-4"
+        hide-details
+      />
     </template>
   </v-container>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from "vue";
+import { ref, onMounted, watch, computed, nextTick, watchEffect } from "vue";
 import {
   ParametricEQBand,
   ParametricEQBandType,
+  AudioChannel,
   ParametricEQFilter,
 } from "@/plugins/api/interfaces";
 import DSPSlider from "./DSPSlider.vue";
@@ -155,14 +225,53 @@ const bandTypeToApo: Record<ParametricEQBandType, string> = {
   [ParametricEQBandType.NOTCH]: "NO",
 };
 
+const channelTypes = Object.entries(AudioChannel).map(([key, value]) => ({
+  title: $t(`settings.dsp.channels.${key}`),
+  value,
+}));
+
 const importApoSettings = (content: string) => {
   const filters = [];
   const lines = content.split("\n");
   const bands: ParametricEQBand[] = [];
-  peq.value.preamp = 0;
+  let usesChannelField = false;
+  let importPreamp: Partial<Record<AudioChannel, number>> = {};
+
+  // Default to all channels
+  let currentChannel = AudioChannel.ALL;
 
   for (const line of lines) {
-    if (line.startsWith("Filter")) {
+    if (line.startsWith("Channel:")) {
+      // Parse channel selection
+      const channelMatch = line.match(/Channel:\s*(.+)/);
+      if (channelMatch && channelMatch[1]) {
+        const channelStr = channelMatch[1].trim().toUpperCase();
+        if (
+          channelStr === "ALL" ||
+          channelStr === "1 2" ||
+          channelStr === "L R"
+        ) {
+          currentChannel = AudioChannel.ALL;
+        } else if (
+          channelStr === "L" ||
+          channelStr === "1" ||
+          channelStr === "FL"
+        ) {
+          currentChannel = AudioChannel.FL;
+          usesChannelField = true;
+        } else if (
+          channelStr === "R" ||
+          channelStr === "2" ||
+          channelStr === "FR"
+        ) {
+          currentChannel = AudioChannel.FR;
+          usesChannelField = true;
+        }
+      }
+      if (!importPreamp[currentChannel]) {
+        importPreamp[currentChannel] = 0; // So we know the config specified this channel
+      }
+    } else if (line.startsWith("Filter")) {
       // Parses filter settings from REW or Equalizer APO text format.
       // Syntax of APO (from https://sourceforge.net/p/equalizerapo/wiki/Configuration%20reference/):
       // Filter <n>: ON <Type> Fc <Frequency> Hz Gain <Gain value> dB Q <Q value>
@@ -185,20 +294,79 @@ const importApoSettings = (content: string) => {
             q: parseFloat(q),
             type: apoToBandType[type] || ParametricEQBandType.PEAK,
             enabled: enabled === "ON",
+            channel: currentChannel,
           });
         }
       }
     } else if (line.startsWith("Preamp")) {
       const match = line.match(/Preamp:\s*(-?\d+\.?\d*)\s+dB/);
       if (match) {
-        peq.value.preamp = parseFloat(match[1]);
+        importPreamp[currentChannel] = parseFloat(match[1]);
       }
     }
   }
 
+  let existingBands: ParametricEQBand[];
+  if (usesChannelField) {
+    // Preserve existing bands for channels not in the import
+    // So users with split channel presets can import them one after the other
+    // regular presets without that will still clear everything
+    existingBands = peq.value.bands.filter((band) => {
+      // Keep bands whose channel isn't in the imported content
+      return !bands.some(
+        (newBand) =>
+          newBand.channel === band.channel ||
+          newBand.channel === AudioChannel.ALL ||
+          band.channel === AudioChannel.ALL,
+      );
+    });
+  } else if (editedChannel.value !== AudioChannel.ALL) {
+    // This is a regular EQ preset that applies to all channels, but the user
+    // selected the graph of a specific channel. We'll assume that they want
+    // to import it to that channel only
+    existingBands = peq.value.bands.filter(
+      // Remove bands that are made for the ALL, or the selected channel
+      (band) =>
+        band.channel !== AudioChannel.ALL &&
+        band.channel !== editedChannel.value,
+    );
+    if (importPreamp.ALL) {
+      // Move the global preamp to the selected channel only
+      importPreamp[editedChannel.value] = importPreamp.ALL;
+      importPreamp.ALL = 0; // Clear the global preamp
+    }
+    // Make all bands channel specific
+    bands.forEach((band) => {
+      band.channel = editedChannel.value;
+    });
+  } else {
+    // All channels preset, applied to all channels
+    // Clear all existing bands and preamps
+    existingBands = [];
+    peq.value.per_channel_preamp = {};
+  }
+
   // Update the PEQ bands
-  peq.value.bands = bands;
-  selectedBandIndex.value = -1;
+  peq.value.bands = [...existingBands, ...bands];
+
+  // update preamp if specified in import
+  if (Object.keys(importPreamp).length > 0) {
+    if (importPreamp.ALL) {
+      peq.value.preamp = importPreamp.ALL;
+    }
+    // But keep preamp of unaffected channels the same (if no preamp or band for that channel in the import)
+    Object.entries(importPreamp).forEach(([channel, value]) => {
+      if (channel === AudioChannel.ALL) return;
+      peq.value.per_channel_preamp[channel as AudioChannel] = value;
+    });
+  } else {
+    // Clear it otherwise
+    peq.value.preamp = 0;
+    peq.value.per_channel_preamp = {};
+  }
+  nextTick(() => {
+    selectedBandIndex.value = -1;
+  });
 };
 
 // Helper function to convert bandwidth to Q factor
@@ -230,12 +398,47 @@ const openApoFileImport = () => {
 };
 
 const exportApoSettings = () => {
-  let content = `Preamp: ${preamp.value.toFixed(2)} dB\n`;
+  let content = "";
 
-  peq.value.bands.forEach((band, index) => {
-    const apoType = bandTypeToApo[band.type];
-    content += `Filter ${index + 1}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
-  });
+  // Add global preamp
+  content += `Preamp: ${preamp.value.toFixed(2)} dB\n`;
+
+  if (isMultiChannel.value) {
+    // Export bands by channel
+    const channels = Object.values(AudioChannel);
+
+    for (const channel of channels) {
+      // Skip ALL channel as we handle it separately
+      if (channel === AudioChannel.ALL) continue;
+
+      // Get channel name for comment
+      const channelName =
+        channelTypes.find((c) => c.value === channel)?.title || channel;
+      content += `\n# ${channelName}\n`;
+      content += `Channel: ${channel === AudioChannel.FL ? "L" : "R"}\n`;
+
+      // Add per-channel preamp if it exists
+      if (peq.value.per_channel_preamp[channel] !== undefined) {
+        content += `Preamp: ${peq.value.per_channel_preamp[channel].toFixed(2)} dB\n`;
+      }
+
+      // Add channel-specific bands and ALL bands
+      let filterIndex = 1;
+      peq.value.bands.forEach((band) => {
+        if (band.channel === channel || band.channel === AudioChannel.ALL) {
+          const apoType = bandTypeToApo[band.type];
+          content += `Filter ${filterIndex++}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
+        }
+      });
+    }
+  } else {
+    // Simple export (only ALL channel bands)
+    peq.value.bands.forEach((band, index) => {
+      const apoType = bandTypeToApo[band.type];
+      content += `Filter ${index + 1}: ${band.enabled ? "ON" : "OFF"} ${apoType} Fc ${band.frequency.toFixed(1)} Hz Gain ${band.gain.toFixed(2)} dB Q ${band.q.toFixed(3)}\n`;
+    });
+  }
+
   const blob = new Blob([content], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
 
@@ -314,84 +517,167 @@ const drawGraph = () => {
 
   const width = ctx.canvas.width / 2;
   const height = ctx.canvas.height / 2;
-  const totalResponse = new Float32Array(width).fill(peq.value.preamp ?? 0);
 
-  // Draw individual filter responses
-  peq.value.bands.forEach((band, index) => {
-    if (band.enabled) {
-      let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${isDark ? 70 : 50}%, 0.5)`;
+  // Function to draw a single band's response curve
+  const drawBandResponse = (
+    band: ParametricEQBand,
+    index: number,
+    ctx: CanvasRenderingContext2D,
+  ) => {
+    let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${isDark ? 70 : 50}%, 0.5)`;
 
-      ctx.beginPath();
-      if (index === selectedBandIndex.value) {
-        ctx.lineWidth = 5;
-        color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${isDark ? 70 : 60}%, 1)`;
+    ctx.beginPath();
+    if (index === selectedBandIndex.value) {
+      ctx.lineWidth = 5;
+      color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${isDark ? 70 : 60}%, 1)`;
+    } else {
+      ctx.lineWidth = 2;
+    }
+    ctx.strokeStyle = color;
+
+    const frequencies = new Float32Array(width);
+    for (let x = 0; x < width; x++) {
+      frequencies[x] = xToFreq(x, viewport.value);
+    }
+
+    const magResponse = new Float32Array(width);
+    const phaseResponse = new Float32Array(width);
+    const filter = createBiquadFilter(audioContext, band);
+    filter.getFrequencyResponse(frequencies, magResponse, phaseResponse);
+
+    for (
+      let x = viewport.value.padding_lr;
+      x < width - viewport.value.padding_lr;
+      x++
+    ) {
+      const response = 20 * Math.log10(magResponse[x]);
+      const y = gainToY(response, viewport.value);
+
+      if (x === viewport.value.padding_lr) {
+        ctx.moveTo(x, y);
       } else {
-        ctx.lineWidth = 2;
+        ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = color;
+    }
 
-      const frequencies = new Float32Array(width);
-      for (let x = 0; x < width; x++) {
-        frequencies[x] = xToFreq(x, viewport.value);
+    ctx.stroke();
+
+    // Draw handle for the band
+    const handleX = freqToX(band.frequency, viewport.value);
+    const handleY = gainToY(band.gain, viewport.value);
+
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(handleX, handleY, 6, 0, 2 * Math.PI);
+
+    ctx.fill();
+
+    return { frequencies, magResponse };
+  };
+
+  // Function to draw the response curve for a channel
+  const drawChannelResponse = (
+    response: Float32Array,
+    ctx: CanvasRenderingContext2D,
+  ) => {
+    ctx.lineWidth = 3;
+    if (isDark) {
+      ctx.strokeStyle = "#fff";
+    } else {
+      ctx.strokeStyle = "#000";
+    }
+
+    ctx.beginPath();
+    for (
+      let x = viewport.value.padding_lr;
+      x < width - viewport.value.padding_lr;
+      x++
+    ) {
+      const y = gainToY(response[x], viewport.value);
+
+      if (x === viewport.value.padding_lr) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
       }
+    }
 
-      const magResponse = new Float32Array(width);
-      const phaseResponse = new Float32Array(width);
-      const filter = createBiquadFilter(audioContext, band);
-      filter.getFrequencyResponse(frequencies, magResponse, phaseResponse);
+    ctx.stroke();
+  };
 
-      for (
-        let x = viewport.value.padding_lr;
-        x < width - viewport.value.padding_lr;
-        x++
-      ) {
-        const response = 20 * Math.log10(magResponse[x]);
-        totalResponse[x] += response;
-        const y = gainToY(response, viewport.value);
+  // Skip drawing the multi channel version if this a simple PEQ with only ALL channel filters
 
-        if (x === 0) {
-          ctx.moveTo(x, y);
+  if (editedChannel.value === AudioChannel.ALL && isMultiChannel.value) {
+    // Get all channels (excluding ALL)
+    const channels = Object.values(AudioChannel).filter(
+      (ch) => ch !== AudioChannel.ALL,
+    );
+
+    // Create a response array for each channel
+    const channelResponses: Record<AudioChannel, Float32Array> = {} as Record<
+      AudioChannel,
+      Float32Array
+    >;
+    channels.forEach((channel) => {
+      channelResponses[channel] = new Float32Array(width).fill(
+        (peq.value.preamp ?? 0) + (peq.value.per_channel_preamp[channel] ?? 0),
+      );
+    });
+
+    // Draw individual filter responses
+    peq.value.bands.forEach((band, index) => {
+      if (band.enabled) {
+        const { frequencies, magResponse } = drawBandResponse(band, index, ctx);
+
+        // Add band response to appropriate channel(s)
+        if (band.channel === AudioChannel.ALL) {
+          // Add to all channels
+          channels.forEach((ch) => {
+            for (let x = 0; x < width; x++) {
+              channelResponses[ch][x] += 20 * Math.log10(magResponse[x]);
+            }
+          });
         } else {
-          ctx.lineTo(x, y);
+          // Add to specific channel
+          for (let x = 0; x < width; x++) {
+            channelResponses[band.channel][x] +=
+              20 * Math.log10(magResponse[x]);
+          }
         }
       }
+    });
 
-      ctx.stroke();
-
-      // Draw handle for the band
-      const handleX = freqToX(band.frequency, viewport.value);
-      const handleY = gainToY(band.gain, viewport.value);
-
-      ctx.beginPath();
-      ctx.fillStyle = color;
-      ctx.arc(handleX, handleY, 6, 0, 2 * Math.PI);
-
-      ctx.fill();
-    }
-  });
-  ctx.lineWidth = 2;
-  if (isDark) {
-    ctx.strokeStyle = "#fff";
+    // Draw a separate total response curve for each channel
+    // We don't color code these since each bands curve is already colored
+    // The user can select a channel to know what is what
+    channels.forEach((channel) => {
+      drawChannelResponse(channelResponses[channel], ctx);
+    });
   } else {
-    ctx.strokeStyle = "#000";
+    // Single channel view
+    const totalResponse = new Float32Array(width).fill(
+      (peq.value.preamp ?? 0) +
+        (peq.value.per_channel_preamp[editedChannel.value] ?? 0),
+    );
+
+    // Draw individual filter responses
+    peq.value.bands.forEach((band, index) => {
+      if (
+        (band.enabled && band.channel === editedChannel.value) ||
+        band.channel === AudioChannel.ALL
+      ) {
+        const { magResponse } = drawBandResponse(band, index, ctx);
+
+        // Add to total response
+        for (let x = 0; x < width; x++) {
+          totalResponse[x] += 20 * Math.log10(magResponse[x]);
+        }
+      }
+    });
+
+    // Draw total response curve with all bands applied
+    drawChannelResponse(totalResponse, ctx);
   }
-
-  ctx.beginPath();
-  for (
-    let x = viewport.value.padding_lr;
-    x < width - viewport.value.padding_lr;
-    x++
-  ) {
-    const y = gainToY(totalResponse[x], viewport.value);
-
-    if (x === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  }
-
-  ctx.stroke();
 };
 
 const createBiquadFilter = (
@@ -431,7 +717,19 @@ const biquadFilters = computed(() => {
   return peq.value.bands.map((band) => createBiquadFilter(audioContext, band));
 });
 
+const isMultiChannel = computed(() => {
+  return (
+    peq.value.bands.some((band) => band.channel !== AudioChannel.ALL) ||
+    (Object.keys(peq.value.per_channel_preamp).length > 0 &&
+      Object.values(peq.value.per_channel_preamp).some((gain) => gain !== 0))
+  );
+});
+
+const showMultiChannelControls = ref(false);
+
 const selectedBandIndex = ref(-1);
+
+const editedChannel = ref(AudioChannel.ALL);
 
 // Computed property for the selected band
 const selectedBand = computed(() => peq.value.bands[selectedBandIndex.value]);
@@ -444,11 +742,22 @@ const preamp = computed({
   },
 });
 
+const channelPreamp = computed({
+  get: () => peq.value.per_channel_preamp[editedChannel.value] ?? 0,
+  set: (value) => {
+    if (editedChannel.value !== AudioChannel.ALL) {
+      peq.value.per_channel_preamp[editedChannel.value] = value;
+    }
+  },
+});
+
 const removeBand = (index: number) => {
   peq.value.bands.splice(index, 1);
   // Adjust selected index if necessary
   if (selectedBandIndex.value >= peq.value.bands.length) {
-    selectedBandIndex.value = peq.value.bands.length - 1;
+    nextTick(() => {
+      selectedBandIndex.value = peq.value.bands.length - 1;
+    });
   }
 };
 
@@ -460,6 +769,7 @@ const addBand = () => {
     gain: 0,
     type: ParametricEQBandType.PEAK,
     enabled: true,
+    channel: editedChannel.value,
   });
   nextTick(() => {
     selectedBandIndex.value = newIndex;
@@ -467,10 +777,25 @@ const addBand = () => {
 };
 
 // Watch for changes and redraw
-watch(() => peq.value.bands, drawGraph, { deep: true });
 watch(() => peq.value.preamp, drawGraph);
-watch(() => selectedBandIndex.value, drawGraph);
+watch(() => peq.value.per_channel_preamp, drawGraph, { deep: true });
+watch(
+  () => (selectedBandIndex.value, peq.value.bands),
+  () => {
+    if (selectedBandIndex.value >= peq.value.bands.length) {
+      selectedBandIndex.value = peq.value.bands.length - 1;
+    }
+    drawGraph();
+  },
+  { deep: true },
+);
+watch(() => editedChannel.value, drawGraph);
 watch(() => theme.global.current.value.dark, drawGraph);
+
+// Auto enable if the user selects a multichannel EQ
+watchEffect(() => {
+  if (isMultiChannel.value) showMultiChannelControls.value = true;
+});
 
 onMounted(() => {
   drawGraph();
