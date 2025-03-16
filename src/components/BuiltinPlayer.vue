@@ -105,7 +105,7 @@ const updatePlayerState = function () {
 };
 
 watch(
-  [() => playing, () => webPlayer.audioSource],
+  () => [playing.value, webPlayer.audioSource],
   () => {
     // TODO: trigger this on BUILTIN_PLAYER commands
     const player_id = props.playerId;
