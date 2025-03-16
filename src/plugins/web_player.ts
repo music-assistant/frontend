@@ -12,19 +12,26 @@ let unsubSubscriptions: (() => void)[] = [];
 
 export const webPlayer = reactive({
   mode: WebPlayerMode.DISABLED,
+  tabMode: WebPlayerMode.DISABLED,
   audioSource: WebPlayerMode.DISABLED,
   baseUrl: "",
   player_id: null as string | null,
   interacted: false,
   async setMode(mode: WebPlayerMode) {
     if (this.mode === mode) return;
+    this.mode = mode;
+    // TODO: assure that only one tab can be played to.
+    this.setTabMode(mode);
+  },
+  async setTabMode(mode: WebPlayerMode) {
+    if (this.tabMode === mode) return;
 
     for (const u of unsubSubscriptions) {
       u();
     }
     unsubSubscriptions = [];
 
-    if (this.mode === WebPlayerMode.BUILTIN) {
+    if (this.tabMode === WebPlayerMode.BUILTIN) {
       if (this.player_id) {
         await api.unregisterBuiltinPlayer(this.player_id);
       }
@@ -32,7 +39,7 @@ export const webPlayer = reactive({
     this.audioSource = WebPlayerMode.DISABLED;
     this.player_id = null;
 
-    this.mode = mode;
+    this.tabMode = mode;
 
     if (mode == WebPlayerMode.BUILTIN) {
       // Start with ususal notification, the BuiltinPlayer will switch the source when needed
@@ -76,17 +83,17 @@ export const webPlayer = reactive({
     }
   },
   disable() {
-    this.setMode(WebPlayerMode.CONTROLS_ONLY);
+    this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
   },
   setBaseUrl(url: string) {
     if (url.endsWith("/")) url = url.slice(0, -1);
     if (url === this.baseUrl) {
       return;
     }
-    const prevMode = this.mode;
-    this.setMode(WebPlayerMode.DISABLED);
+    const prevMode = this.tabMode;
+    this.setTabMode(WebPlayerMode.DISABLED);
     this.baseUrl = url;
-    this.setMode(prevMode);
+    this.setTabMode(prevMode);
   },
   async setInteracted() {
     if (this.interacted) return;

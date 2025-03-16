@@ -7,7 +7,7 @@
     "
   />
   <BuiltinPlayer
-    v-if="webPlayer.mode === WebPlayerMode.BUILTIN && webPlayer.player_id"
+    v-if="webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id"
     :player-id="webPlayer.player_id"
   />
 </template>
