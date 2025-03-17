@@ -173,7 +173,7 @@ export const webPlayer = reactive({
         "builtin_webplayer_id",
       );
       const player = await api.registerBuiltinPlayer(
-        "Experimental Web Player",
+        "This Device",
         saved_player_id !== null ? saved_player_id : undefined,
       );
       const player_id = player.player_id;
