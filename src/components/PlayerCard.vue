@@ -1,6 +1,5 @@
 <template>
   <v-card
-    v-if="player !== 'web'"
     flat
     class="panel-item"
     :class="{
@@ -55,7 +54,16 @@
 
       <!-- playername -->
       <template #title>
-        <div style="margin-bottom: 3px">{{ getPlayerName(player, 27) }}</div>
+        <div style="margin-bottom: 3px">
+          {{ getPlayerName(player, 27) }}
+          <v-icon
+            v-if="webPlayer.player_id === player.player_id"
+            size="20"
+            class="pl-2"
+          >
+            mdi-monitor</v-icon
+          >
+        </div>
       </template>
 
       <!-- subtitle: media item title -->
@@ -152,21 +160,9 @@
               player.state == PlayerState.PLAYING ? 'mdi-pause' : 'mdi-play'
             "
         /></Button>
-
-        <!-- power button for a local player -->
-        <Button
-          v-if="player.player_id == webPlayer.player_id"
-          variant="icon"
-          class="player-command-btn"
-          @click.stop="webPlayer.disable()"
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-power</v-icon
-          ></Button
-        >
         <!-- power button -->
         <Button
-          v-else-if="player.power_control != PLAYER_CONTROL_NONE"
+          v-if="player.power_control != PLAYER_CONTROL_NONE"
           variant="icon"
           class="player-command-btn"
           @click.stop="
@@ -204,68 +200,6 @@
       :allow-wheel="false"
     />
   </v-card>
-  <!-- pseudo player to register the web browser for playback -->
-  <v-card
-    v-else
-    flat
-    class="panel-item"
-    :class="{
-      'panel-item-off': true,
-    }"
-    :ripple="false"
-    :disabled="false"
-  >
-    <!-- now playing media -->
-    <v-list-item class="panel-item-details" flat :ripple="false">
-      <!-- prepend: media thumb -->
-      <template #prepend>
-        <div class="player-media-thumb">
-          <div class="icon-thumb">
-            <v-icon
-              size="35"
-              icon="mdi-speaker"
-              style="display: table-cell; opacity: 0.8"
-            />
-          </div>
-        </div>
-      </template>
-
-      <!-- playername -->
-      <template #title>
-        <div style="margin-bottom: 3px">Experimental Web Player</div>
-      </template>
-
-      <!-- subtitle: media item title -->
-      <template #subtitle> </template>
-
-      <!-- subtitle -->
-      <template #default>
-        <div class="v-list-item-subtitle" style="white-space: nowrap">
-          <div>
-            {{ $t("off") }}
-          </div>
-        </div>
-      </template>
-
-      <!-- power/play/pause + menu button -->
-      <template #append>
-        <!-- power button -->
-        <Button
-          variant="icon"
-          class="player-command-btn"
-          @click.stop="
-            () => {
-              webPlayer.setMode(WebPlayerMode.BUILTIN);
-            }
-          "
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-power</v-icon
-          ></Button
-        >
-      </template>
-    </v-list-item>
-  </v-card>
 </template>
 
 <script setup lang="ts">
@@ -289,12 +223,10 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getSourceName } from "@/plugins/api/helpers";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer } from "@/plugins/web_player";
 // properties
 export interface Props {
-  // If player is set to "web", this will show the option to enable
-  // plack to the current web browser
-  player: Player | "web";
+  player: Player;
   showVolumeControl?: boolean;
   showMenuButton?: boolean;
   showSubPlayers?: boolean;
@@ -304,7 +236,6 @@ const compProps = defineProps<Props>();
 
 const playerQueue = computed(() => {
   if (
-    compProps.player !== "web" &&
     compProps.player &&
     compProps.player.active_source &&
     compProps.player.active_source in api.queues
@@ -312,7 +243,6 @@ const playerQueue = computed(() => {
     return api.queues[compProps.player.active_source];
   }
   if (
-    compProps.player !== "web" &&
     compProps.player &&
     !compProps.player.active_source &&
     compProps.player.player_id in api.queues
@@ -329,7 +259,6 @@ const curQueueItem = computed(() => {
 
 const openPlayerMenu = function (evt: Event) {
   console.log("openPlayerMenu");
-  if (compProps.player == "web") return;
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(compProps.player, playerQueue.value),
     posX: (evt as PointerEvent).clientX,

@@ -11,7 +11,7 @@ import {
   EventMessage,
   EventType,
 } from "@/plugins/api/interfaces";
-import { webPlayer } from "@/plugins/web_player";
+import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // properties
@@ -52,8 +52,14 @@ const unsub = api.subscribe(
       audioRef.value.currentTime = 0;
       audioRef.value.src = "";
       playing.value = false;
+    } else if (data.type === BuiltinPlayerEventType.POWER_ON) {
+      // TODO: only switch the audio source once interacted
+      webPlayer.audioSource = WebPlayerMode.BUILTIN;
+    } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
+      webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
-      webPlayer.disable();
+      // TODO: timeout should probably completely shutdown the player until a full page reload
+      webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
     }
   },
   props.playerId,
@@ -66,55 +72,85 @@ let stateInterval: any | undefined;
 const updatePlayerState = function () {
   const player_id = props.playerId;
   if (!audioRef.value || !player_id) return;
-  if (playing.value) {
-    api.updateBuiltinPlayerState(player_id, {
-      playing: !audioRef.value.paused,
-      paused: audioRef.value.paused && !audioRef.value.ended,
-      muted: audioRef.value.muted,
-      volume: Math.round(audioRef.value.volume * 100),
-      position: audioRef.value.currentTime,
-    });
+  if (webPlayer.audioSource === WebPlayerMode.BUILTIN) {
+    if (playing.value) {
+      api.updateBuiltinPlayerState(player_id, {
+        powered: true,
+        playing: !audioRef.value.paused,
+        paused: audioRef.value.paused && !audioRef.value.ended,
+        muted: audioRef.value.muted,
+        volume: Math.round(audioRef.value.volume * 100),
+        position: audioRef.value.currentTime,
+      });
+    } else {
+      api.updateBuiltinPlayerState(player_id, {
+        powered: true,
+        playing: false,
+        paused: false,
+        muted: audioRef.value.muted,
+        volume: Math.round(audioRef.value.volume * 100),
+        position: 0,
+      });
+    }
   } else {
-    api.updateBuiltinPlayerState(player_id, {
+    api.updateBuiltinPlayerState(props.playerId, {
+      powered: false,
       playing: false,
       paused: false,
-      muted: audioRef.value.muted,
-      volume: Math.round(audioRef.value.volume * 100),
+      muted: false,
+      volume: 0,
       position: 0,
     });
   }
 };
 
-watch(playing, () => {
-  const player_id = props.playerId;
+watch(
+  () => [playing.value, webPlayer.audioSource],
+  () => {
+    // TODO: trigger this on BUILTIN_PLAYER commands
+    const player_id = props.playerId;
 
-  if (!player_id) {
-    return;
-  }
-  if (playing.value) {
+    if (!player_id) {
+      return;
+    }
+    let interval;
+    if (webPlayer.audioSource !== WebPlayerMode.BUILTIN) {
+      // Just a keep alive when powered off
+      interval = 60000;
+    } else if (playing.value) {
+      // Use faster interval when playing
+      interval = 5000;
+    } else {
+      interval = 30000;
+    }
     if (stateInterval) clearInterval(stateInterval);
-    // Start fast interval when playing
     stateInterval = setInterval(() => {
       updatePlayerState();
-    }, 5000) as any;
+    }, interval) as any;
     updatePlayerState();
-  } else {
-    if (stateInterval) clearInterval(stateInterval);
-    // Use slower interval when paused
-    stateInterval = setInterval(() => {
-      updatePlayerState();
-    }, 30000) as any;
-    updatePlayerState();
-  }
-});
+  },
+  { immediate: true },
+);
 
-useMediaBrowserMetaData(props.playerId);
+let unsubMetadata: (() => void) | undefined;
+
+watch(
+  () => webPlayer.audioSource,
+  (source) => {
+    if (unsubMetadata) unsubMetadata();
+    unsubMetadata = undefined;
+    if (source === WebPlayerMode.BUILTIN) {
+      unsubMetadata = useMediaBrowserMetaData(props.playerId);
+    }
+  },
+);
 
 // Clean up interval on component unmount
 onBeforeUnmount(() => {
   if (stateInterval) {
     clearInterval(stateInterval);
   }
+  if (unsubMetadata) unsubMetadata();
 });
 
 // MediaSession setup

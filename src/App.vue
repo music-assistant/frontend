@@ -1,10 +1,13 @@
 <template>
   <router-view />
   <PlayerBrowserMediaControls
-    v-if="webPlayer.mode === WebPlayerMode.CONTROLS_ONLY"
+    v-if="
+      webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
+      webPlayer.interacted == true
+    "
   />
   <BuiltinPlayer
-    v-else-if="webPlayer.mode === WebPlayerMode.BUILTIN && webPlayer.player_id"
+    v-if="webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id"
     :player-id="webPlayer.player_id"
   />
 </template>
@@ -100,13 +103,14 @@ onMounted(() => {
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
+    // TODO: add comment or move
+    webPlayer.setMode(WebPlayerMode.BUILTIN);
   });
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
   });
   api.initialize(serverAddress);
   webPlayer.setBaseUrl(serverAddress);
-  webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
 
   //There is a safety rule in which you need to interact with the page for the audio to play
   window.addEventListener("click", interactedHandler);
