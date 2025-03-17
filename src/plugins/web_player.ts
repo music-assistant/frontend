@@ -184,6 +184,12 @@ export const webPlayer = reactive({
 
       this.player_id = player_id;
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
+      // TODO: this is a bit hacky, will fix that soon
+      // We need this to properly test the multi tab selecting leader logic
+      const saved_player_id = window.localStorage.getItem(
+        "builtin_webplayer_id",
+      );
+      this.player_id = saved_player_id;
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else {
       this.audioSource = WebPlayerMode.DISABLED;
