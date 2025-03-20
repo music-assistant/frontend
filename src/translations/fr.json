@@ -477,6 +477,14 @@
         "output_limiter": {
             "label": "Activer la limitation pour éviter l'écrêtage",
             "description": "Active un limiteur qui évite la distorsion audio en atténuant les pics sonores élevés."
+        },
+        "dsp_enabled": "Le DSP est activé",
+        "dsp_disabled": "Le DSP est désactivé",
+        "dsp_note_multi_device_group": {
+            "label": "Vous pouvez configurer le DSP pour chaque lecteur individuellement."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Ce type de groupe ne prend pas en charge le DSP lors de la lecture sur plusieurs appareils."
         }
     },
     "show_info": "Afficher les informations",
