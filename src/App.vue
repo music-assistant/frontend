@@ -292,7 +292,7 @@ const start = () => {
     invoke("start_sqzlite", {
       ip: ip.value.toString(),
       outputDevice:
-        outputDevice.value.toString().split(" - ")?.[0] ?? "default",
+        outputDevice.value?.toString().split(" - ")?.[0]?.trim() ?? "default",
       port: slimprotoPort.value.toString(),
     });
   }
