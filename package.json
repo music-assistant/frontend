@@ -10,7 +10,7 @@
         "lint": "eslint . --fix --ignore-path .gitignore"
     },
     "dependencies": {
-        "@intlify/unplugin-vue-i18n": "6.0.3",
+        "@intlify/unplugin-vue-i18n": "6.0.5",
         "@mdi/font": "7.4.47",
         "@mdi/js": "7.4.47",
         "color": "5.0.0",
