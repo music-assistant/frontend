@@ -40,7 +40,7 @@
     "library": "Bibliotheek",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
-    "new_playlist_name": "Enter a new for the new playlist",
+    "new_playlist_name": "Voer een nieuwe naam in voor de afspeellijst",
     "no_content": "Geen items gevonden.",
     "no_content_filter": "Geen items gevonden voor de huidige zoek\/filter instellingen.",
     "no_player": "Geen speler geselecteerd",
@@ -75,7 +75,7 @@
     "queue_next_items": "Aankomende items",
     "queue_options": "Wachtrij opties",
     "queue_previous_items": "Reeds afgespeelde items",
-    "queue_radio_based_on": "De wachtrij wordt dynamisch gevuld met nummers gebaseerd op {0}:",
+    "queue_radio_based_on": "De wachtrij wordt dynamisch gevuld met nummers gebaseerd op:",
     "queue_radio_enabled": "Radio modus is ingeschakeld",
     "radios": "Radio",
     "read_more": "meer lezen",
@@ -87,7 +87,7 @@
         "add_new": "Add new",
         "add_provider": "Add a new provider",
         "advanced_settings": "Advanced settings",
-        "check_docs": "Checkout the documentation",
+        "check_docs": "Bekijk de documentatie",
         "codeowners": "Authors\/credits",
         "config_player": "Configure player: {0}",
         "configure": "Configure",
@@ -111,7 +111,7 @@
         "player_id": "Player ID",
         "player_model": "Model",
         "player_name": "Custom player name",
-        "player_not_available": "This player is currently not (yet) available",
+        "player_not_available": "Deze speler is (nog) niet beschikbaar",
         "player_provider": "Provider",
         "player_settings": "Player settings",
         "player_type_label": "Player type",
@@ -159,7 +159,7 @@
         },
         "flow_mode": {
             "label": "\"flow mode\" inschakelen",
-            "description": "Schakel de \"flow\" modus in waarbij alle tracks in de wachtrij als een continue audiostream worden verzonden. \nGebruik dit voor spelers die gapless en\/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen tracks."
+            "description": "Schakel de \"flow\" modus in waarbij alle nummers in de wachtrij als een continue audiostream worden verzonden. \nGebruik dit voor spelers die gapless en\/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen nummers."
         },
         "auto_play": {
             "label": "Automatisch afspelen (hervatten bij inschakelen)",
@@ -288,7 +288,8 @@
             "generic": "Algemene instellingen",
             "announcements": "Configuratie van aankondigingen (announce)",
             "airplay": "Airplay-specifieke instellingen",
-            "player_controls": "Spelerbedieningen"
+            "player_controls": "Spelerbedieningen",
+            "presets": "Voorkeuzes"
         },
         "tts_pre_announce": {
             "label": "Kondig TTS-aankondigingen vooraf aan",
@@ -445,7 +446,13 @@
                 },
                 "import_apo": "APO\/REW preset importeren",
                 "export_apo": "APO preset exporteren",
-                "preamp": "Preamp"
+                "preamp": "Preamp",
+                "add_band_channel": "Band toevoegen (alleen {channel})",
+                "band_channel": "Band {index} (alleen {channel})",
+                "show_multichannel_controls": "Multi-Kanaalbediening weergeven",
+                "edited_channel": "Plot de EQ-respons voor dit kanaal\/deze kanalen",
+                "channel": "Deze band wordt toegepast op",
+                "per_channel_preamp": "Extra voorversterking voor {channel}"
             },
             "tone_control": {
                 "bass_level": "Lage tonen",
@@ -460,6 +467,15 @@
             "types": {
                 "parametric_eq": "Parametrische EQ",
                 "tone_control": "Toonregeling"
+            },
+            "channels": {
+                "ALL": "Alle",
+                "FL": "Links",
+                "FR": "Rechts"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
             }
         },
         "power_control": {
@@ -473,6 +489,18 @@
         "mute_control": {
             "label": "Mute-bediening",
             "description": "Definieer het mute bedieningsgedrag voor deze speler.\nHiermee kun je bijvoorbeeld de mute-control omleiden naar een ander apparaat of het volledig uitschakelen.\n\nWe bieden een 'nep' mute control die het dempen simuleert door het volume op 0 te zetten en het volume te herstellen wanneer het dempen wordt opgeheven."
+        },
+        "output_limiter": {
+            "label": "Begrenzing activeren om clippen te voorkomen",
+            "description": "Activeert een begrenzer die geluidsvervorming voorkomt door luide pieken zachter te maken."
+        },
+        "dsp_enabled": "DSP is ingeschakeld",
+        "dsp_disabled": "DSP is uitgeschakeld",
+        "dsp_note_multi_device_group": {
+            "label": "Je kunt de DSP voor iedere speler apart instellen."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Dit type groep ondersteunt geen DSP wanneer er naar meerdere apparaten afgespeeld wordt."
         }
     },
     "show_info": "Bekijk informatie",
@@ -512,7 +540,7 @@
         "paused": "gepauzeerd",
         "playing": "afspelen"
     },
-    "sync_now": "Synchronize {0} now",
+    "sync_now": "Nu synchroniseren",
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Schakel filter in\/uit om enkel albumartiesten te tonen",
@@ -536,7 +564,9 @@
         "play_sample": "Voorbeeld afspelen",
         "album_type": "Album type",
         "loading": "De server verwerkt een verzoek of synchroniseert muziek",
-        "primary_image": "Dit is de primaire afbeelding voor dit afbeeldingstype"
+        "primary_image": "Dit is de primaire afbeelding voor dit afbeeldingstype",
+        "copy_uri": "URI naar klembord kopiëren",
+        "select_all": "Alle items selecteren"
     },
     "topresult": "Top resultaat",
     "track": "Nummer",
@@ -583,8 +613,8 @@
     "update_metadata": "Metadata bijwerken",
     "cancel": "Annuleren",
     "transfer_queue": "Wachtrij overzetten",
-    "power_on_player": "De speler inschakelen",
-    "power_off_player": "De speler uitschakelen",
+    "power_on_player": "Speler inschakelen",
+    "power_off_player": "Speler uitschakelen",
     "powered_off_players": "Uitgeschakelde spelers",
     "sync_player_with": "Synchroniseren met een andere speler",
     "open_player_settings": "Instellingen openen",
@@ -666,5 +696,7 @@
     "in_progress_items": "Verder luisteren...",
     "play_replace_next": "Hierna afspelen (wachtrij wissen)",
     "all_enqueue_options": "Alle afspeelopties",
-    "music_assistant_source": "Music Assistant Queue"
+    "music_assistant_source": "Music Assistant-wachtrij",
+    "music_assistant_library": "Music Assistant-bibliotheek",
+    "select_all_confirmation": "Alle items selecteren? Het kan even duren totdat alle data geladen is."
 }
