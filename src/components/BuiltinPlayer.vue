@@ -59,8 +59,8 @@ const unsub = api.subscribe(
     } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
       webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
-      // TODO: timeout should probably completely shutdown the player until a full page reload
-      webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
+      // Silently shut down the player in this tab
+      webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
     }
   },
   props.playerId,
@@ -73,9 +73,10 @@ let stateInterval: any | undefined;
 const updatePlayerState = function () {
   const player_id = props.playerId;
   if (!audioRef.value || !player_id) return;
+  let success;
   if (webPlayer.audioSource === WebPlayerMode.BUILTIN) {
     if (playing.value) {
-      api.updateBuiltinPlayerState(player_id, {
+      success = api.updateBuiltinPlayerState(player_id, {
         powered: true,
         playing: !audioRef.value.paused,
         paused: audioRef.value.paused && !audioRef.value.ended,
@@ -84,7 +85,7 @@ const updatePlayerState = function () {
         position: audioRef.value.currentTime,
       });
     } else {
-      api.updateBuiltinPlayerState(player_id, {
+      success = api.updateBuiltinPlayerState(player_id, {
         powered: true,
         playing: false,
         paused: false,
@@ -94,7 +95,7 @@ const updatePlayerState = function () {
       });
     }
   } else {
-    api.updateBuiltinPlayerState(props.playerId, {
+    success = api.updateBuiltinPlayerState(props.playerId, {
       powered: false,
       playing: false,
       paused: false,
@@ -102,6 +103,10 @@ const updatePlayerState = function () {
       volume: 0,
       position: 0,
     });
+  }
+  if (!success) {
+    // The player timed out!
+    webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
   }
 };
 
