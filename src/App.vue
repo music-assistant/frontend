@@ -103,8 +103,13 @@ onMounted(() => {
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
-    // TODO: add comment or move
-    webPlayer.setMode(WebPlayerMode.BUILTIN);
+    // enable the builtin player by default if the builtin player provider is available
+    // TODO: we may want to introduce a config toggle for this
+    if (api.getProvider("builtin_player")) {
+      webPlayer.setMode(WebPlayerMode.BUILTIN);
+    } else {
+      webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+    }
   });
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
