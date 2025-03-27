@@ -309,6 +309,8 @@ export enum BuiltinPlayerEventType {
   SET_VOLUME = "set_volume",
   PLAY_MEDIA = "play_media",
   TIMEOUT = "timeout",
+  POWER_OFF = "power_off",
+  POWER_ON = "power_on",
 }
 
 export enum ProviderFeature {
@@ -843,6 +845,7 @@ export interface BuiltinPlayerEvent {
 }
 
 export interface BuiltinPlayerState {
+  powered: boolean;
   playing: boolean;
   paused: boolean;
   position: number;

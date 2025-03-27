@@ -5,6 +5,17 @@ import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
 import { isTouchscreenDevice } from "@/helpers/utils";
 
+import MobileDetect from "mobile-detect";
+
+type DeviceType = "desktop" | "phone" | "tablet";
+const md = new MobileDetect(window.navigator.userAgent);
+
+const DEVICE_TYPE: DeviceType = md.tablet()
+  ? "tablet"
+  : md.phone() || md.mobile()
+    ? "phone"
+    : "desktop";
+
 export enum AlertType {
   ERROR = "error",
   WARNING = "warning",
@@ -48,6 +59,7 @@ interface Store {
   isTouchscreen: boolean;
   playMenuShown: boolean;
   playActionInProgress: boolean;
+  deviceType: DeviceType;
 }
 
 export const store: Store = reactive({
@@ -103,4 +115,5 @@ export const store: Store = reactive({
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   playActionInProgress: false,
+  deviceType: DEVICE_TYPE,
 });

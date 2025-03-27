@@ -1,10 +1,13 @@
 <template>
   <router-view />
   <PlayerBrowserMediaControls
-    v-if="webPlayer.mode === WebPlayerMode.CONTROLS_ONLY"
+    v-if="
+      webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
+      webPlayer.interacted == true
+    "
   />
   <BuiltinPlayer
-    v-else-if="webPlayer.mode === WebPlayerMode.BUILTIN && webPlayer.player_id"
+    v-if="webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id"
     :player-id="webPlayer.player_id"
   />
 </template>
@@ -61,6 +64,8 @@ onMounted(() => {
   if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
   }
+  const allowBuiltinPlayer =
+    localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
 
   // set color theme (and listen for color scheme changes from browser)
   setTheme();
@@ -100,13 +105,19 @@ onMounted(() => {
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
+    // enable the builtin player by default if the builtin player provider is available
+    if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
+      webPlayer.setMode(WebPlayerMode.BUILTIN);
+    } else {
+      webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+    }
   });
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
+    webPlayer.setMode(WebPlayerMode.DISABLED);
   });
   api.initialize(serverAddress);
   webPlayer.setBaseUrl(serverAddress);
-  webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
 
   //There is a safety rule in which you need to interact with the page for the audio to play
   window.addEventListener("click", interactedHandler);

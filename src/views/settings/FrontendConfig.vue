@@ -131,6 +131,18 @@ onMounted(() => {
       category: "advanced",
       value: localStorage.getItem("frontend.settings.hide_settings") == "true",
     },
+    {
+      key: "enable_builtin_player",
+      type: ConfigEntryType.BOOLEAN,
+      label: "enable_builtin_player",
+      default_value: true,
+      required: true,
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.enable_builtin_player") !=
+        "false",
+    },
   ];
 });
 
@@ -139,7 +151,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   for (const key in values) {
     const storageKey = `frontend.settings.${key}`;
     const value = values[key];
-    if (value) {
+    if (value != null) {
       localStorage.setItem(storageKey, value.toString());
     } else {
       localStorage.removeItem(storageKey);

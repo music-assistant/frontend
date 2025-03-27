@@ -25,6 +25,7 @@ import {
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
+import { webPlayer } from "@/plugins/web_player";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
