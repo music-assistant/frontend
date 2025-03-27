@@ -126,11 +126,18 @@ async function canTakeControl(): Promise<boolean> {
 }
 
 export const webPlayer = reactive({
+  // This is target mode shared accross all tabs
   mode: WebPlayerMode.DISABLED,
+  // This is the true mode of this tab.
+  // In case of the BUILTIN mode, exactly one tab will have this equal to mode to avoid double playback
   tabMode: WebPlayerMode.DISABLED,
+  // This dictates what component will play audio to have the notification show up on all browsers
   audioSource: WebPlayerMode.DISABLED,
+  // URL of the webserver
   baseUrl: "",
+  // id of the player that is provided by this frontend
   player_id: null as string | null,
+  // If the user interacted with the frontend, required to avoid autoplay restrictions
   interacted: false,
   async setMode(mode: WebPlayerMode) {
     if (this.mode === mode) return;
