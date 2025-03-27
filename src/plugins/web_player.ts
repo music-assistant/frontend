@@ -13,8 +13,8 @@ let unsubSubscriptions: (() => void)[] = [];
 // We use a channel to communicate with all other tabs of MA open.
 // This allows us to limit playback to only a single tab.
 // Playback can still be controlled from any tab, this just avoids double playback
-// of the music, and is independant from the player implementation used by the frontend.
-// In case the "leading" tab is closed, another open tab will take controll.
+// of the music, and is independent from the player implementation used by the frontend.
+// In case the "leading" tab is closed, another open tab will take control.
 const bc = new BroadcastChannel("web-player");
 
 const BC_MSG = {
@@ -24,7 +24,11 @@ const BC_MSG = {
   CONTROL_AVAILABLE: "CONTROL_AVAILABLE",
 };
 
-const uniqueId = crypto.randomUUID();
+// NOTE: using crypto.randomUUID() is not supported in insecure contexts (http)
+// so we're using getRandomValues instead
+const array = new Uint32Array(10);
+self.crypto.getRandomValues(array);
+const uniqueId = array.join("");
 
 bc.onmessage = (event) => {
   if (
@@ -167,7 +171,7 @@ export const webPlayer = reactive({
     this.tabMode = mode;
 
     if (mode == WebPlayerMode.BUILTIN) {
-      // Start with ususal notification, the BuiltinPlayer will switch the source when needed
+      // Start with usual notification, the BuiltinPlayer will switch the source when needed
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
       const saved_player_id = window.localStorage.getItem(
         "builtin_webplayer_id",
