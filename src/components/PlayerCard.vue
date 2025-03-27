@@ -54,15 +54,28 @@
 
       <!-- playername -->
       <template #title>
-        <div style="margin-bottom: 3px">
-          {{ getPlayerName(player, 27) }}
+        <!-- special builtin player -->
+        <div
+          v-if="webPlayer.player_id === player.player_id"
+          style="margin-bottom: 3px"
+        >
+          <!-- translate 'This Device' if no custom name given -->
+          <span v-if="player.display_name == 'This Device'">{{
+            $t("this_device")
+          }}</span>
+          <span v-else>{{ getPlayerName(player, 27) }}</span>
+          <!-- append small icon to the title -->
           <v-icon
-            v-if="webPlayer.player_id === player.player_id"
             size="20"
             class="pl-2"
-          >
-            mdi-monitor</v-icon
-          >
+            :icon="
+              store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
+            "
+          />
+        </div>
+        <!-- regular player -->
+        <div v-else style="margin-bottom: 3px">
+          {{ getPlayerName(player, 27) }}
         </div>
       </template>
 

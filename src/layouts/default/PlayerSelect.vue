@@ -34,6 +34,22 @@
       <v-divider />
 
       <v-list flat style="margin: 10px 5px 15px 5px">
+        <!-- dedicated card for builtin player -->
+        <PlayerCard
+          v-if="
+            webPlayer.tabMode === WebPlayerMode.BUILTIN &&
+            webPlayer.player_id &&
+            api.players[webPlayer.player_id]
+          "
+          :id="webPlayer.player_id"
+          :player="api.players[webPlayer.player_id]"
+          :show-volume-control="true"
+          :show-menu-button="true"
+          :show-sub-players="false"
+          :show-sync-controls="false"
+          @click="playerClicked(api.players[webPlayer.player_id])"
+        />
+        <!-- active/playing players on top -->
         <PlayerCard
           v-for="player in sortedPlayers.filter(
             (x) =>
@@ -138,7 +154,7 @@ import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
 import { playerVisible } from "@/helpers/utils";
-import { webPlayer } from "@/plugins/web_player";
+import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
@@ -147,7 +163,6 @@ const selectedPanel = ref<number | null>(null);
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
     .filter((x) => playerVisible(x))
-    .filter((x) => webPlayer.player_id || x.player_id != webPlayer.player_id) // shown in a separate card
     .sort((a, b) =>
       a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
     );

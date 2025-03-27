@@ -64,6 +64,8 @@ onMounted(() => {
   if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
   }
+  const allowBuiltinPlayer =
+    localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
 
   // set color theme (and listen for color scheme changes from browser)
   setTheme();
@@ -104,8 +106,7 @@ onMounted(() => {
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
     // enable the builtin player by default if the builtin player provider is available
-    // TODO: we may want to introduce a config toggle for this
-    if (api.getProvider("builtin_player")) {
+    if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
       webPlayer.setMode(WebPlayerMode.BUILTIN);
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);

@@ -490,8 +490,6 @@ export const playerVisible = function (
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
-  // Always show the local web player, even when its hidden from all other users
-  if (webPlayer.player_id === player.player_id) return true;
   if (player.hide_player_in_ui.includes(HidePlayerOption.ALWAYS)) {
     return false;
   }
