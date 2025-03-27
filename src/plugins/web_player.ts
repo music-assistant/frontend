@@ -213,7 +213,7 @@ export const webPlayer = reactive({
     if (this.player_id) {
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
-          // TODO: handle reconnect
+          // Reconnect is handled in App.vue
           this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
         }),
       );
