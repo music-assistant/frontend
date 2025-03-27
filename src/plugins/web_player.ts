@@ -38,8 +38,8 @@ bc.onmessage = (event) => {
     // Another tab is taking control, silently switch back to just the notification
     // (maybe this tab was suspended by the browser and didn't respond in time?)
     if (webPlayer.tabMode === WebPlayerMode.BUILTIN) {
-      // TODO: don't unregister in this case
-      webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY);
+      // Silently fall back
+      webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
     }
     const priority = event.data.substring(BC_MSG.TAKING_CONTROL.length);
     if (highestPriority !== undefined)
@@ -221,8 +221,8 @@ export const webPlayer = reactive({
         api.subscribe(
           EventType.PLAYER_REMOVED,
           () => {
-            // TODO: be silent
-            this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
+            // Silently switch back
+            this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
           },
           this.player_id,
         ),
