@@ -140,7 +140,6 @@ export const webPlayer = reactive({
   // If the user interacted with the frontend, required to avoid autoplay restrictions
   interacted: false,
   async setMode(mode: WebPlayerMode) {
-    if (this.mode === mode) return;
     this.mode = mode;
     this.setTabMode(mode);
   },
