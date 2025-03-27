@@ -161,13 +161,14 @@ onBeforeUnmount(() => {
 
 // MediaSession setup
 onMounted(() => {
-  // TODO: directly pause to avoid the delay from the network
   navigator.mediaSession.setActionHandler("play", () => {
     if (!props.playerId) return;
     api.playerCommandPlay(props.playerId);
   });
   navigator.mediaSession.setActionHandler("pause", () => {
     if (!props.playerId) return;
+    // directly pause to avoid the round trip delay from the network
+    if (audioRef.value) audioRef.value.pause();
     api.playerCommandPause(props.playerId);
   });
   navigator.mediaSession.setActionHandler("nexttrack", () => {
