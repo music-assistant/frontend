@@ -226,6 +226,7 @@ export const webPlayer = reactive({
       return;
     }
     const prevMode = this.tabMode;
+    // First disable to avoid conflicts
     this.setTabMode(WebPlayerMode.DISABLED);
     this.baseUrl = url;
     this.setTabMode(prevMode);

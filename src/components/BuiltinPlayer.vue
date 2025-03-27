@@ -16,7 +16,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // properties
 export interface Props {
-  // TODO: reload if changed
+  // This stays constant during the lifetime of this component
   playerId: string;
 }
 const props = defineProps<Props>();
@@ -54,6 +54,7 @@ const unsub = api.subscribe(
       playing.value = false;
     } else if (data.type === BuiltinPlayerEventType.POWER_ON) {
       // TODO: only switch the audio source once interacted
+      // But the user most likely started playback from the same tab
       webPlayer.audioSource = WebPlayerMode.BUILTIN;
     } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
       webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
