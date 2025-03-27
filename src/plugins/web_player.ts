@@ -39,7 +39,7 @@ bc.onmessage = (event) => {
     // (maybe this tab was suspended by the browser and didn't respond in time?)
     if (webPlayer.tabMode === WebPlayerMode.BUILTIN) {
       // TODO: don't unregister in this case
-      webPlayer.disable();
+      webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY);
     }
     const priority = event.data.substring(BC_MSG.TAKING_CONTROL.length);
     if (highestPriority !== undefined)
@@ -214,22 +214,20 @@ export const webPlayer = reactive({
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
           // TODO: handle reconnect
-          this.disable();
+          this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
         }),
       );
       unsubSubscriptions.push(
         api.subscribe(
           EventType.PLAYER_REMOVED,
           () => {
-            this.disable();
+            // TODO: be silent
+            this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
           },
           this.player_id,
         ),
       );
     }
-  },
-  disable() {
-    this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
   },
   setBaseUrl(url: string) {
     if (url.endsWith("/")) url = url.slice(0, -1);
