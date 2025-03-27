@@ -1096,7 +1096,7 @@ export class MusicAssistantApi {
   public async updateBuiltinPlayerState(
     player_id: string,
     state: BuiltinPlayerState,
-  ): Promise<void> {
+  ): Promise<boolean> {
     return this.sendCommand("builtin_player/update_state", {
       player_id,
       state,
