@@ -143,12 +143,12 @@ export const getArtistsString = function (
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
   let browseTitle = "";
-  if (browseItem?.name && browseItem?.label) {
-    browseTitle = `${browseItem.name}: ${t(browseItem?.label)}`;
+  if (browseItem?.name && browseItem?.translation_key) {
+    browseTitle = `${browseItem.name}: ${t(browseItem?.translation_key)}`;
   } else if (browseItem?.name) {
     browseTitle = browseItem.name;
-  } else if (browseItem?.label) {
-    browseTitle = t(browseItem?.label);
+  } else if (browseItem?.translation_key) {
+    browseTitle = t(browseItem?.translation_key);
   } else {
     browseTitle = browseItem.path || "";
   }

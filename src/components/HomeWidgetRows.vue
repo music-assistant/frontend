@@ -9,7 +9,9 @@
       v-if="widgetRows.length"
       :widget-row="widgetRow"
       :edit-mode="editMode"
-      @update:settings="(settings) => onUpdateSettings(widgetRow.uri, settings)"
+      @update:settings="
+        (settings) => onUpdateSettings(widgetRow.uri!, settings)
+      "
     />
   </div>
 </template>

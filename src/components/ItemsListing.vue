@@ -975,9 +975,10 @@ const getSortName = function (
   preferSortName = false,
 ) {
   if (!item) return "";
-  if ("label" in item && item.label && item.name)
-    return t(item.label, [item.name]);
-  if ("label" in item && item.label) return t(item.label);
+  if ("translation_key" in item && item.translation_key && item.name)
+    return t(item.translation_key, [item.name]);
+  if ("translation_key" in item && item.translation_key)
+    return t(item.translation_key);
   if (preferSortName && "sort_name" in item && item.sort_name)
     return item.sort_name;
   return item.name;
@@ -995,11 +996,6 @@ const getFilteredItems = function (
     const searchStr = params.search.toLowerCase();
     for (const item of items) {
       if (item.name.toLowerCase().includes(searchStr)) {
-        result.push(item);
-      } else if (
-        "artist" in item &&
-        item.artist?.name.toLowerCase().includes(searchStr)
-      ) {
         result.push(item);
       } else if (
         "album" in item &&
