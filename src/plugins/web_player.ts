@@ -228,6 +228,27 @@ export const webPlayer = reactive({
           this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
         }),
       );
+      if (this.mode === WebPlayerMode.BUILTIN) {
+        unsubSubscriptions.push(
+          api.subscribe(
+            EventType.PLAYER_UPDATED,
+            () => {
+              if (
+                this.player_id &&
+                api.players[this.player_id] &&
+                !api.players[this.player_id].available
+              ) {
+                // The player timed out, now that the browser gave us some time again, try to restart it
+                if (this.tabMode === WebPlayerMode.BUILTIN) {
+                  this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+                }
+                this.setTabMode(WebPlayerMode.BUILTIN);
+              }
+            },
+            this.player_id,
+          ),
+        );
+      }
       unsubSubscriptions.push(
         api.subscribe(
           EventType.PLAYER_REMOVED,
