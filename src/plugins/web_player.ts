@@ -115,8 +115,11 @@ let highestPriority: string | undefined;
 
 async function canTakeControl(): Promise<boolean> {
   // Generate a unique priority string with interaction as a prefix
-  // (so interacted with tabs are prioritized)
-  const priority = (webPlayer.interacted ? "1" : "0") + uniqueId;
+  // (so interacted and visible with tabs are prioritized)
+  const priority =
+    (webPlayer.interacted ? "1" : "0") +
+    (document.hidden ? "0" : "1") +
+    uniqueId;
 
   if (highestPriority !== undefined)
     highestPriority = highestPriority > priority ? highestPriority : priority;
