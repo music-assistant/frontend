@@ -53,7 +53,7 @@ bc.onmessage = (event) => {
     case BC_MSG.IS_ACTIVE:
       if (webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id) {
         // Check if we timed out
-        if (webPlayer.timedOutDueToThrotteling()) {
+        if (webPlayer.timedOutDueToThrottling()) {
           webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
         } else {
           // Respond if this tab is active
@@ -164,7 +164,6 @@ export const webPlayer = reactive({
     this.setTabMode(mode);
   },
   async setTabMode(mode: WebPlayerMode, silent: boolean = false) {
-
     for (const u of unsubSubscriptions) {
       u();
     }
@@ -285,7 +284,7 @@ export const webPlayer = reactive({
     if (this.interacted) return;
     this.interacted = true;
   },
-  timedOutDueToThrotteling() {
+  timedOutDueToThrottling() {
     return Date.now() - webPlayer.lastUpdate >= TIMEOUT_DURATION_MS;
   },
 });
