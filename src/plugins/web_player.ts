@@ -196,8 +196,6 @@ export const webPlayer = reactive({
       }
     }
 
-    this.tabMode = mode;
-
     if (mode == WebPlayerMode.BUILTIN) {
       // Start with usual notification, the BuiltinPlayer will switch the source when needed
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
@@ -229,6 +227,8 @@ export const webPlayer = reactive({
     } else {
       this.audioSource = WebPlayerMode.DISABLED;
     }
+
+    this.tabMode = mode;
 
     if (this.player_id) {
       unsubSubscriptions.push(
