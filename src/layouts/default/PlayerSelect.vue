@@ -37,7 +37,7 @@
         <!-- dedicated card for builtin player -->
         <PlayerCard
           v-if="
-            webPlayer.tabMode === WebPlayerMode.BUILTIN &&
+            webPlayer.mode === WebPlayerMode.BUILTIN &&
             webPlayer.player_id &&
             api.players[webPlayer.player_id]
           "
