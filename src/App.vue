@@ -1,5 +1,6 @@
 <template>
-  <router-view />
+  <router-view v-if="store.connected" />
+  <v-progress-linear v-else indeterminate color="primary" />
   <PlayerBrowserMediaControls
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&

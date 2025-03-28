@@ -84,6 +84,7 @@
     "remove_playlist": "Remove from playlist",
     "search": "Search",
     "this_device": "This device",
+    "homescreen_edit": "Edit homescreen",
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
@@ -703,5 +704,23 @@
     "play_replace_next": "Play Next (clear queue)",
     "all_enqueue_options": "All enqueue options",
     "music_assistant_source": "Music Assistant Queue",
-    "music_assistant_library": "Music Assistant Library"
+    "music_assistant_library": "Music Assistant Library",
+    "recommendations": {
+        "in_progress_items": "Continue listening...",
+        "recommended_new_tracks": "Recommended new tracks",
+        "recently_played": "Recently played",
+        "suggested_new_albums_for_you": "Suggested new albums for you",
+        "random_artists": "Random artists",
+        "random_albums": "Random albums",
+        "random_tracks": "Random tracks",
+        "random_playlists": "Random playlists",
+        "custom_mixes": "Custom mixes",
+        "your_listening_history": "Your listening history",
+        "popular_albums": "Popular albums",
+        "staff_picks_tracks": "Staff picks: tracks",
+        "staff_picks_albums": "Staff picks: albums",
+        "radio_stations_for_you": "Radio stations for you",
+        "producers__songwriters": "Producers & songwriters",
+        "new_releases_for_you": "New releases for you"
+    }
 }
