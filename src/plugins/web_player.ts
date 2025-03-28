@@ -143,7 +143,7 @@ export const webPlayer = reactive({
     this.mode = mode;
     this.setTabMode(mode);
   },
-  async setTabMode(mode: WebPlayerMode, timedOut: boolean = false) {
+  async setTabMode(mode: WebPlayerMode, silent: boolean = false) {
     if (this.tabMode === mode) return;
 
     for (const u of unsubSubscriptions) {
@@ -152,13 +152,12 @@ export const webPlayer = reactive({
     unsubSubscriptions = [];
 
     if (this.tabMode === WebPlayerMode.BUILTIN) {
-      if (timedOut) {
-        // We timed out! Silently fall back to controls without disturbing other tabs
-        // in case they took control over playback
-        mode = WebPlayerMode.CONTROLS_ONLY;
-      } else if (this.player_id) {
-        bc.postMessage(BC_MSG.CONTROL_AVAILABLE); // Notify other tabs
-        await api.unregisterBuiltinPlayer(this.player_id);
+      if (this.player_id) {
+        // Notify other tabs, if another tab already has control, this will change nothing
+        bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
+        if (!silent) {
+          await api.unregisterBuiltinPlayer(this.player_id);
+        }
       }
     }
     this.audioSource = WebPlayerMode.DISABLED;
