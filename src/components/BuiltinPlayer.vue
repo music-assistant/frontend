@@ -74,25 +74,14 @@ const updatePlayerState = function () {
   if (!audioRef.value || !player_id) return;
   if (webPlayer.audioSource === WebPlayerMode.BUILTIN) {
     if (playing.value) {
-      api
-        .updateBuiltinPlayerState(player_id, {
-          powered: true,
-          playing: !audioRef.value.paused,
-          paused: audioRef.value.paused && !audioRef.value.ended,
-          muted: audioRef.value.muted,
-          volume: Math.round(audioRef.value.volume * 100),
-          position: audioRef.value.currentTime,
-        })
-        .catch((e) => {
-          if (e.error_code === 10) {
-            // Player not found exception from backend
-            // this can happen for example if we missed a timeout event from the server
-            // while the browser tab was suspended
-            // temp solution is to simply re-register the player but we might want to
-            // consider a more robust solution in the future
-            api.registerBuiltinPlayer("This Player", player_id);
-          }
-        });
+      api.updateBuiltinPlayerState(player_id, {
+        powered: true,
+        playing: !audioRef.value.paused,
+        paused: audioRef.value.paused && !audioRef.value.ended,
+        muted: audioRef.value.muted,
+        volume: Math.round(audioRef.value.volume * 100),
+        position: audioRef.value.currentTime,
+      });
     } else {
       api.updateBuiltinPlayerState(player_id, {
         powered: true,
