@@ -115,7 +115,6 @@ onMounted(() => {
   });
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
-    webPlayer.setMode(WebPlayerMode.DISABLED);
   });
   api.initialize(serverAddress);
   webPlayer.setBaseUrl(serverAddress);

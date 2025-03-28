@@ -22,7 +22,10 @@ const BC_MSG = {
   IS_ACTIVE_RESPONSE: "WEBPLAYER_IS_ACTIVE",
   TAKING_CONTROL: "TAKING_CONTROL:", // Followed by the priority
   CONTROL_AVAILABLE: "CONTROL_AVAILABLE",
+  CONTROL_TAKEN: "CONTROL_TAKEN",
 };
+
+const TIMEOUT_DURATION_MS = 75_000; // Assume we timed out if after this time we did not send any updates
 
 // NOTE: using crypto.randomUUID() is not supported in insecure contexts (http)
 // so we're using getRandomValues instead
@@ -38,8 +41,8 @@ bc.onmessage = (event) => {
     // Another tab is taking control, silently switch back to just the notification
     // (maybe this tab was suspended by the browser and didn't respond in time?)
     if (webPlayer.tabMode === WebPlayerMode.BUILTIN) {
-      // TODO: don't unregister in this case
-      webPlayer.disable();
+      // Silently fall back
+      webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
     }
     const priority = event.data.substring(BC_MSG.TAKING_CONTROL.length);
     if (highestPriority !== undefined)
@@ -48,9 +51,14 @@ bc.onmessage = (event) => {
   }
   switch (event.data) {
     case BC_MSG.IS_ACTIVE:
-      // Respond if this tab is active
       if (webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id) {
-        bc.postMessage(BC_MSG.IS_ACTIVE_RESPONSE);
+        // Check if we timed out
+        if (webPlayer.timedOutDueToThrottling()) {
+          webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+        } else {
+          // Respond if this tab is active
+          bc.postMessage(BC_MSG.IS_ACTIVE_RESPONSE);
+        }
       }
       break;
     case BC_MSG.IS_ACTIVE_RESPONSE:
@@ -68,6 +76,13 @@ bc.onmessage = (event) => {
         webPlayer.tabMode !== WebPlayerMode.BUILTIN
       ) {
         webPlayer.setTabMode(WebPlayerMode.BUILTIN);
+      }
+      break;
+    case BC_MSG.CONTROL_TAKEN:
+      // Another tab took control, in case we still think we have control (if the tab was frozen by the browser),
+      // immediatly give it up
+      if (webPlayer.tabMode === WebPlayerMode.BUILTIN) {
+        webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
       }
       break;
   }
@@ -107,8 +122,11 @@ let highestPriority: string | undefined;
 
 async function canTakeControl(): Promise<boolean> {
   // Generate a unique priority string with interaction as a prefix
-  // (so interacted with tabs are prioritized)
-  const priority = (webPlayer.interacted ? "1" : "0") + uniqueId;
+  // (so interacted and visible with tabs are prioritized)
+  const priority =
+    (webPlayer.interacted ? "1" : "0") +
+    (document.hidden ? "0" : "1") +
+    uniqueId;
 
   if (highestPriority !== undefined)
     highestPriority = highestPriority > priority ? highestPriority : priority;
@@ -126,20 +144,26 @@ async function canTakeControl(): Promise<boolean> {
 }
 
 export const webPlayer = reactive({
+  // This is target mode shared accross all tabs
   mode: WebPlayerMode.DISABLED,
+  // This is the true mode of this tab.
+  // In case of the BUILTIN mode, exactly one tab will have this equal to mode to avoid double playback
   tabMode: WebPlayerMode.DISABLED,
+  // This dictates what component will play audio to have the notification show up on all browsers
   audioSource: WebPlayerMode.DISABLED,
+  // URL of the webserver
   baseUrl: "",
+  // id of the player that is provided by this frontend
   player_id: null as string | null,
+  // If the user interacted with the frontend, required to avoid autoplay restrictions
   interacted: false,
+  // Timestamp from when the last update was sent
+  lastUpdate: 0,
   async setMode(mode: WebPlayerMode) {
-    if (this.mode === mode) return;
     this.mode = mode;
     this.setTabMode(mode);
   },
-  async setTabMode(mode: WebPlayerMode) {
-    if (this.tabMode === mode) return;
-
+  async setTabMode(mode: WebPlayerMode, silent: boolean = false) {
     for (const u of unsubSubscriptions) {
       u();
     }
@@ -147,8 +171,11 @@ export const webPlayer = reactive({
 
     if (this.tabMode === WebPlayerMode.BUILTIN) {
       if (this.player_id) {
-        bc.postMessage(BC_MSG.CONTROL_AVAILABLE); // Notify other tabs
-        await api.unregisterBuiltinPlayer(this.player_id);
+        // Notify other tabs, if another tab already has control, this will change nothing
+        bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
+        if (!silent) {
+          await api.unregisterBuiltinPlayer(this.player_id);
+        }
       }
     }
     this.audioSource = WebPlayerMode.DISABLED;
@@ -168,8 +195,6 @@ export const webPlayer = reactive({
       }
     }
 
-    this.tabMode = mode;
-
     if (mode == WebPlayerMode.BUILTIN) {
       // Start with usual notification, the BuiltinPlayer will switch the source when needed
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
@@ -180,6 +205,7 @@ export const webPlayer = reactive({
         "This Device",
         saved_player_id !== null ? saved_player_id : undefined,
       );
+      this.lastUpdate = Date.now();
       const player_id = player.player_id;
 
       if (saved_player_id !== player_id) {
@@ -187,9 +213,11 @@ export const webPlayer = reactive({
       }
 
       this.player_id = player_id;
+
+      bc.postMessage(BC_MSG.CONTROL_TAKEN);
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
-      // TODO: this is a bit hacky, will fix that soon
-      // We need this to properly test the multi tab selecting leader logic
+      // This is a guaranteed to not be a first tab (since that would have the BUILTIN tabMode)
+      // Therefore, this player_id should be already set
       const saved_player_id = window.localStorage.getItem(
         "builtin_webplayer_id",
       );
@@ -199,26 +227,47 @@ export const webPlayer = reactive({
       this.audioSource = WebPlayerMode.DISABLED;
     }
 
+    this.tabMode = mode;
+
     if (this.player_id) {
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
-          // TODO: handle reconnect
-          this.disable();
+          // Reconnect is handled in App.vue
+          this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
         }),
       );
+      if (this.mode === WebPlayerMode.BUILTIN) {
+        unsubSubscriptions.push(
+          api.subscribe(
+            EventType.PLAYER_UPDATED,
+            () => {
+              if (
+                this.player_id &&
+                api.players[this.player_id] &&
+                !api.players[this.player_id].available
+              ) {
+                // The player timed out, now that the browser gave us some time again, try to restart it
+                if (this.tabMode === WebPlayerMode.BUILTIN) {
+                  this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+                }
+                this.setTabMode(WebPlayerMode.BUILTIN);
+              }
+            },
+            this.player_id,
+          ),
+        );
+      }
       unsubSubscriptions.push(
         api.subscribe(
           EventType.PLAYER_REMOVED,
           () => {
-            this.disable();
+            // Silently switch back
+            this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
           },
           this.player_id,
         ),
       );
     }
-  },
-  disable() {
-    this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
   },
   setBaseUrl(url: string) {
     if (url.endsWith("/")) url = url.slice(0, -1);
@@ -226,6 +275,7 @@ export const webPlayer = reactive({
       return;
     }
     const prevMode = this.tabMode;
+    // First disable to avoid conflicts
     this.setTabMode(WebPlayerMode.DISABLED);
     this.baseUrl = url;
     this.setTabMode(prevMode);
@@ -233,5 +283,8 @@ export const webPlayer = reactive({
   async setInteracted() {
     if (this.interacted) return;
     this.interacted = true;
+  },
+  timedOutDueToThrottling() {
+    return Date.now() - webPlayer.lastUpdate >= TIMEOUT_DURATION_MS;
   },
 });

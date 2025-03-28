@@ -16,7 +16,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // properties
 export interface Props {
-  // TODO: reload if changed
+  // This stays constant during the lifetime of this component
   playerId: string;
 }
 const props = defineProps<Props>();
@@ -54,12 +54,13 @@ const unsub = api.subscribe(
       playing.value = false;
     } else if (data.type === BuiltinPlayerEventType.POWER_ON) {
       // TODO: only switch the audio source once interacted
+      // But the user most likely started playback from the same tab
       webPlayer.audioSource = WebPlayerMode.BUILTIN;
     } else if (data.type === BuiltinPlayerEventType.POWER_OFF) {
       webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else if (data.type === BuiltinPlayerEventType.TIMEOUT) {
-      // TODO: timeout should probably completely shutdown the player until a full page reload
-      webPlayer.audioSource = WebPlayerMode.CONTROLS_ONLY;
+      // Silently shut down the player in this tab
+      webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
     }
   },
   props.playerId,
@@ -69,32 +70,27 @@ onBeforeUnmount(unsub);
 // Setup interval for state updates
 let stateInterval: any | undefined;
 
-const updatePlayerState = function () {
+const updatePlayerState = async function () {
   const player_id = props.playerId;
   if (!audioRef.value || !player_id) return;
+  if (webPlayer.timedOutDueToThrottling()) {
+    // The player timed out due to the browser freezing the timeout!
+    webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+    return;
+  }
+  let success;
   if (webPlayer.audioSource === WebPlayerMode.BUILTIN) {
     if (playing.value) {
-      api
-        .updateBuiltinPlayerState(player_id, {
-          powered: true,
-          playing: !audioRef.value.paused,
-          paused: audioRef.value.paused && !audioRef.value.ended,
-          muted: audioRef.value.muted,
-          volume: Math.round(audioRef.value.volume * 100),
-          position: audioRef.value.currentTime,
-        })
-        .catch((e) => {
-          if (e.error_code === 10) {
-            // Player not found exception from backend
-            // this can happen for example if we missed a timeout event from the server
-            // while the browser tab was suspended
-            // temp solution is to simply re-register the player but we might want to
-            // consider a more robust solution in the future
-            api.registerBuiltinPlayer("This Player", player_id);
-          }
-        });
+      success = await api.updateBuiltinPlayerState(player_id, {
+        powered: true,
+        playing: !audioRef.value.paused,
+        paused: audioRef.value.paused && !audioRef.value.ended,
+        muted: audioRef.value.muted,
+        volume: Math.round(audioRef.value.volume * 100),
+        position: audioRef.value.currentTime,
+      });
     } else {
-      api.updateBuiltinPlayerState(player_id, {
+      success = await api.updateBuiltinPlayerState(player_id, {
         powered: true,
         playing: false,
         paused: false,
@@ -104,7 +100,7 @@ const updatePlayerState = function () {
       });
     }
   } else {
-    api.updateBuiltinPlayerState(props.playerId, {
+    success = await api.updateBuiltinPlayerState(props.playerId, {
       powered: false,
       playing: false,
       paused: false,
@@ -113,11 +109,17 @@ const updatePlayerState = function () {
       position: 0,
     });
   }
+  if (!success) {
+    // The player timed out!
+    webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+  } else {
+    webPlayer.lastUpdate = Date.now();
+  }
 };
 
 watch(
   () => [playing.value, webPlayer.audioSource],
-  () => {
+  async () => {
     // TODO: trigger this on BUILTIN_PLAYER commands
     const player_id = props.playerId;
 
@@ -135,10 +137,10 @@ watch(
       interval = 30000;
     }
     if (stateInterval) clearInterval(stateInterval);
-    stateInterval = setInterval(() => {
-      updatePlayerState();
+    stateInterval = setInterval(async () => {
+      await updatePlayerState();
     }, interval) as any;
-    updatePlayerState();
+    await updatePlayerState();
   },
   { immediate: true },
 );
@@ -166,13 +168,14 @@ onBeforeUnmount(() => {
 
 // MediaSession setup
 onMounted(() => {
-  // TODO: directly pause to avoid the delay from the network
   navigator.mediaSession.setActionHandler("play", () => {
     if (!props.playerId) return;
     api.playerCommandPlay(props.playerId);
   });
   navigator.mediaSession.setActionHandler("pause", () => {
     if (!props.playerId) return;
+    // directly pause to avoid the round trip delay from the network
+    if (audioRef.value) audioRef.value.pause();
     api.playerCommandPause(props.playerId);
   });
   navigator.mediaSession.setActionHandler("nexttrack", () => {
