@@ -47,67 +47,60 @@
 
       <!-- compact all-media-types searchresult -->
       <div v-if="!store.globalSearchType">
-        <HomeWidgetRow
+        <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            label: 'tracks',
+            title: $t('tracks'),
             icon: 'mdi-file-music',
             items: searchResult.tracks,
-            count: searchResult.tracks.length,
           }"
         />
-        <HomeWidgetRow
+        <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            label: 'artists',
+            title: $t('artists'),
             icon: 'mdi-account-music',
             items: searchResult.artists,
-            count: searchResult.artists.length,
           }"
         />
-        <HomeWidgetRow
+        <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            label: 'albums',
+            title: $t('albums'),
             icon: 'mdi-album',
             items: searchResult.albums,
-            count: searchResult.albums.length,
           }"
         />
-        <HomeWidgetRow
+        <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            label: 'playlists',
+            title: $t('playlists'),
             icon: 'mdi-playlist-music',
             items: searchResult.playlists,
-            count: searchResult.playlists.length,
           }"
         />
-        <HomeWidgetRow
+        <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            label: 'podcasts',
+            title: $t('podcasts'),
             icon: 'mdi-podcast',
             items: searchResult.podcasts,
-            count: searchResult.podcasts.length,
           }"
         />
-        <HomeWidgetRow
+        <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            label: 'audiobooks',
+            title: $t('audiobooks'),
             icon: 'mdi-book-play-outline',
             items: searchResult.audiobooks,
-            count: searchResult.audiobooks.length,
           }"
         />
-        <HomeWidgetRow
+        <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            label: 'radios',
+            title: $t('radios'),
             icon: 'mdi-radio',
             items: searchResult.radio,
-            count: searchResult.radio.length,
           }"
         />
       </div>
@@ -140,7 +133,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import { ref, onBeforeUnmount, onMounted, watch } from "vue";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
-import HomeWidgetRow from "@/components/HomeWidgetRow.vue";
+import WidgetRow from "@/components/WidgetRow.vue";
 import { store } from "@/plugins/store";
 import ItemsListing from "@/components/ItemsListing.vue";
 import Container from "@/components/mods/Container.vue";

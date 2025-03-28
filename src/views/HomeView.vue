@@ -3,9 +3,10 @@
     <Toolbar
       title="Music Assistant"
       :show-loading="true"
+      :enforce-overflow-menu="true"
       :menu-items="
         hideSettings
-          ? []
+          ? [editModeMenuBtn]
           : [
               {
                 label: 'settings.settings',
@@ -14,6 +15,7 @@
                   $router.push({ path: 'settings' });
                 },
               },
+              editModeMenuBtn,
             ]
       "
     />
@@ -21,7 +23,7 @@
     <Container variant="panel">
       <Suspense>
         <div>
-          <HomeWidgetRows />
+          <HomeWidgetRows :edit-mode="editMode" />
         </div>
         <template #fallback><v-progress-circular indeterminate /> </template>
       </Suspense>
@@ -38,6 +40,16 @@ import { ref } from "vue";
 const hideSettings = ref(
   localStorage.getItem("frontend.settings.hide_settings") == "true",
 );
+
+const editMode = ref(false);
+
+const editModeMenuBtn = {
+  label: "homescreen_edit",
+  icon: "mdi-pencil",
+  action: () => {
+    editMode.value = !editMode.value;
+  },
+};
 </script>
 
 <style scoped>

@@ -139,6 +139,21 @@ export enum AlbumType {
   UNKNOWN = "unknown",
 }
 
+export enum ExternalID {
+  MB_ARTIST = "musicbrainz_artistid", // MusicBrainz Artist ID (or AlbumArtist ID)
+  MB_ALBUM = "musicbrainz_albumid", // MusicBrainz Album ID
+  MB_RELEASEGROUP = "musicbrainz_releasegroupid", // MusicBrainz ReleaseGroupID
+  MB_TRACK = "musicbrainz_trackid", // MusicBrainz Track ID
+  MB_RECORDING = "musicbrainz_recordingid", // MusicBrainz Recording ID
+  ISRC = "isrc", // used to identify unique recordings
+  BARCODE = "barcode", // EAN-13 barcode for identifying albums
+  ACOUSTID = "acoustid", //unique fingerprint (id) for a recording
+  ASIN = "asin", // amazon unique number to identify albums
+  DISCOGS = "discogs", // id for media item on discogs
+  TADB = "tadb", // the audio db id
+  UNKNOWN = "unknown",
+}
+
 // Enum with audio content/container types supported by ffmpeg.
 export enum ContentType {
   // --- Containers ---
@@ -575,65 +590,48 @@ export interface MediaItemMetadata {
   chapters?: MediaItemChapter[];
 }
 
-export interface MediaItem {
+interface _MediaItemBase {
   item_id: string;
   provider: string;
   name: string;
+  version?: string;
+  sort_name?: string;
+  uri: string;
+  external_ids?: Array<[ExternalID, string]>;
+  is_playable: boolean; // if the item is playable (can be used in play_media command)
+  translation_key?: string; // an optional translation key identifier
+  media_type: MediaType;
+}
+
+export interface MediaItem extends _MediaItemBase {
   provider_mappings: ProviderMapping[];
   metadata: MediaItemMetadata;
   favorite: boolean;
-  media_type: MediaType;
-  sort_name?: string;
-  uri: string;
-  is_playable: boolean;
+  position?: number; //required for playlist tracks, optional for all other
   timestamp_added: number;
   timestamp_modified: number;
 }
 
-export interface ItemMapping {
-  media_type: MediaType;
-  item_id: string;
-  provider: string;
-  name: string;
-  sort_name: string;
-  uri: string;
-  version: string;
+export interface ItemMapping extends _MediaItemBase {
+  available: boolean;
   image?: MediaItemImage;
-  is_playable: boolean;
 }
 
-export interface Artist extends MediaItem {
-  musicbrainz_id: string;
-}
+export interface Artist extends MediaItem {}
 
 export interface Album extends MediaItem {
-  version: string;
   year?: number;
-  artist: ItemMapping | Artist;
   artists: Array<ItemMapping | Artist>;
   album_type: AlbumType;
-  upc?: string;
-  musicbrainz_id?: string;
-}
-
-export interface TrackAlbumMapping extends ItemMapping {
-  // Model for a track that is mapped to an album.
-  disc_number?: number;
-  track_number?: number;
 }
 
 export interface Track extends MediaItem {
   duration: number;
-  version: string;
-  isrc: string;
-  musicbrainz_id?: string;
   artists: Array<ItemMapping | Artist>;
   // album track only
   album: ItemMapping | Album;
   disc_number?: number;
   track_number?: number;
-  // playlist track only
-  position?: number;
 }
 
 export interface Playlist extends MediaItem {
@@ -641,15 +639,13 @@ export interface Playlist extends MediaItem {
   is_editable: boolean;
 }
 
-export interface Radio extends MediaItem {
-  duration?: number;
-}
+export interface Radio extends MediaItem {}
 
 export interface Audiobook extends MediaItem {
   publisher: string;
-  total_chapters: number;
   authors: string[];
   narrators: string[];
+  duration: number;
   fully_played?: boolean;
   resume_position_ms?: number;
 }
@@ -667,6 +663,15 @@ export interface PodcastEpisode extends MediaItem {
   resume_position_ms?: number;
 }
 
+export interface BrowseFolder extends MediaItem {
+  path?: string;
+  image?: MediaItemImage;
+}
+export interface RecommendationFolder extends BrowseFolder {
+  icon?: string;
+  items: MediaItemTypeOrItemMapping[];
+}
+
 export type MediaItemType =
   | Artist
   | Album
@@ -680,11 +685,6 @@ export type MediaItemType =
 
 export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
-
-export interface BrowseFolder extends MediaItem {
-  path?: string;
-  label: string;
-}
 
 export interface SearchResults {
   artists: Artist[];

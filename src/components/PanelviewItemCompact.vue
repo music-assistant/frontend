@@ -5,6 +5,7 @@
       v-bind="props"
       :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
       :elevation="isHovering ? 3 : 0"
+      :disabled="disabled"
       @click="onClick"
       @click.right.prevent="onMenu"
     >
@@ -123,6 +124,7 @@ export interface Props {
   permanentOverlay?: boolean;
   isAvailable?: boolean;
   parentItem?: MediaItemType;
+  disabled?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,

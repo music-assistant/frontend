@@ -271,7 +271,6 @@ const curQueueItem = computed(() => {
 });
 
 const openPlayerMenu = function (evt: Event) {
-  console.log("openPlayerMenu");
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(compProps.player, playerQueue.value),
     posX: (evt as PointerEvent).clientX,
