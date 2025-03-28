@@ -70,10 +70,10 @@ onBeforeUnmount(unsub);
 // Setup interval for state updates
 let stateInterval: any | undefined;
 
-const updatePlayerState = function () {
+const updatePlayerState = async function () {
   const player_id = props.playerId;
   if (!audioRef.value || !player_id) return;
-  if (webPlayer.timedOutDueToThrotteling()) {
+  if (webPlayer.timedOutDueToThrottling()) {
     // The player timed out due to the browser freezing the timeout!
     webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
     return;
@@ -81,7 +81,7 @@ const updatePlayerState = function () {
   let success;
   if (webPlayer.audioSource === WebPlayerMode.BUILTIN) {
     if (playing.value) {
-      success = api.updateBuiltinPlayerState(player_id, {
+      success = await api.updateBuiltinPlayerState(player_id, {
         powered: true,
         playing: !audioRef.value.paused,
         paused: audioRef.value.paused && !audioRef.value.ended,
@@ -90,7 +90,7 @@ const updatePlayerState = function () {
         position: audioRef.value.currentTime,
       });
     } else {
-      success = api.updateBuiltinPlayerState(player_id, {
+      success = await api.updateBuiltinPlayerState(player_id, {
         powered: true,
         playing: false,
         paused: false,
@@ -100,7 +100,7 @@ const updatePlayerState = function () {
       });
     }
   } else {
-    success = api.updateBuiltinPlayerState(props.playerId, {
+    success = await api.updateBuiltinPlayerState(props.playerId, {
       powered: false,
       playing: false,
       paused: false,
@@ -119,7 +119,7 @@ const updatePlayerState = function () {
 
 watch(
   () => [playing.value, webPlayer.audioSource],
-  () => {
+  async () => {
     // TODO: trigger this on BUILTIN_PLAYER commands
     const player_id = props.playerId;
 
@@ -137,10 +137,10 @@ watch(
       interval = 30000;
     }
     if (stateInterval) clearInterval(stateInterval);
-    stateInterval = setInterval(() => {
-      updatePlayerState();
+    stateInterval = setInterval(async () => {
+      await updatePlayerState();
     }, interval) as any;
-    updatePlayerState();
+    await updatePlayerState();
   },
   { immediate: true },
 );
