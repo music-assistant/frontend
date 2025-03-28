@@ -198,8 +198,8 @@ export const webPlayer = reactive({
 
       this.player_id = player_id;
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
-      // TODO: this is a bit hacky, will fix that soon
-      // We need this to properly test the multi tab selecting leader logic
+      // This is a guaranteed to not be a first tab (since that would have the BUILTIN tabMode)
+      // Therefore, this player_id should be already set
       const saved_player_id = window.localStorage.getItem(
         "builtin_webplayer_id",
       );
