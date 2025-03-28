@@ -73,6 +73,11 @@ let stateInterval: any | undefined;
 const updatePlayerState = function () {
   const player_id = props.playerId;
   if (!audioRef.value || !player_id) return;
+  if (webPlayer.timedOutDueToThrotteling()) {
+    // The player timed out due to the browser freezing the timeout!
+    webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+    return;
+  }
   let success;
   if (webPlayer.audioSource === WebPlayerMode.BUILTIN) {
     if (playing.value) {
@@ -107,6 +112,8 @@ const updatePlayerState = function () {
   if (!success) {
     // The player timed out!
     webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+  } else {
+    webPlayer.lastUpdate = Date.now();
   }
 };
 

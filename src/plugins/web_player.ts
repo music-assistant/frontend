@@ -25,6 +25,8 @@ const BC_MSG = {
   CONTROL_TAKEN: "CONTROL_TAKEN",
 };
 
+const TIMEOUT_DURATION_MS = 75_000; // Assume we timed out if after this time we did not send any updates
+
 // NOTE: using crypto.randomUUID() is not supported in insecure contexts (http)
 // so we're using getRandomValues instead
 const array = new Uint32Array(10);
@@ -49,9 +51,14 @@ bc.onmessage = (event) => {
   }
   switch (event.data) {
     case BC_MSG.IS_ACTIVE:
-      // Respond if this tab is active
       if (webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id) {
-        bc.postMessage(BC_MSG.IS_ACTIVE_RESPONSE);
+        // Check if we timed out
+        if (webPlayer.timedOutDueToThrotteling()) {
+          webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
+        } else {
+          // Respond if this tab is active
+          bc.postMessage(BC_MSG.IS_ACTIVE_RESPONSE);
+        }
       }
       break;
     case BC_MSG.IS_ACTIVE_RESPONSE:
@@ -150,6 +157,8 @@ export const webPlayer = reactive({
   player_id: null as string | null,
   // If the user interacted with the frontend, required to avoid autoplay restrictions
   interacted: false,
+  // Timestamp from when the last update was sent
+  lastUpdate: 0,
   async setMode(mode: WebPlayerMode) {
     this.mode = mode;
     this.setTabMode(mode);
@@ -200,6 +209,7 @@ export const webPlayer = reactive({
         "This Device",
         saved_player_id !== null ? saved_player_id : undefined,
       );
+      this.lastUpdate = Date.now();
       const player_id = player.player_id;
 
       if (saved_player_id !== player_id) {
@@ -275,5 +285,8 @@ export const webPlayer = reactive({
   async setInteracted() {
     if (this.interacted) return;
     this.interacted = true;
+  },
+  timedOutDueToThrotteling() {
+    return Date.now() - webPlayer.lastUpdate >= TIMEOUT_DURATION_MS;
   },
 });
