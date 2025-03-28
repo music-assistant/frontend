@@ -163,6 +163,7 @@ const selectedPanel = ref<number | null>(null);
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
     .filter((x) => playerVisible(x))
+    .filter((x) => x.player_id !== webPlayer.player_id) // In case the user made the player visible for everyone
     .sort((a, b) =>
       a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
     );
