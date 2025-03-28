@@ -22,6 +22,7 @@ const BC_MSG = {
   IS_ACTIVE_RESPONSE: "WEBPLAYER_IS_ACTIVE",
   TAKING_CONTROL: "TAKING_CONTROL:", // Followed by the priority
   CONTROL_AVAILABLE: "CONTROL_AVAILABLE",
+  CONTROL_TAKEN: "CONTROL_TAKEN",
 };
 
 // NOTE: using crypto.randomUUID() is not supported in insecure contexts (http)
@@ -68,6 +69,13 @@ bc.onmessage = (event) => {
         webPlayer.tabMode !== WebPlayerMode.BUILTIN
       ) {
         webPlayer.setTabMode(WebPlayerMode.BUILTIN);
+      }
+      break;
+    case BC_MSG.CONTROL_TAKEN:
+      // Another tab took control, in case we still think we have control (if the tab was frozen by the browser),
+      // immediatly give it up
+      if (webPlayer.tabMode === WebPlayerMode.BUILTIN) {
+        webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
       }
       break;
   }
@@ -196,6 +204,8 @@ export const webPlayer = reactive({
       }
 
       this.player_id = player_id;
+
+      bc.postMessage(BC_MSG.CONTROL_TAKEN);
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
       // This is a guaranteed to not be a first tab (since that would have the BUILTIN tabMode)
       // Therefore, this player_id should be already set
