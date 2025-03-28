@@ -164,7 +164,6 @@ export const webPlayer = reactive({
     this.setTabMode(mode);
   },
   async setTabMode(mode: WebPlayerMode, silent: boolean = false) {
-    if (this.tabMode === mode) return;
 
     for (const u of unsubSubscriptions) {
       u();
