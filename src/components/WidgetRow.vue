@@ -8,7 +8,7 @@
       <template #prepend><v-icon :icon="widgetRow.icon" /></template>
 
       <template #title>
-        <span class="mr-3">{{ $t(widgetRow.label) }}</span>
+        <span class="mr-3">{{ widgetRow.title }}</span>
         <v-chip
           v-if="widgetRow.subtitle"
           inline
@@ -102,9 +102,9 @@ export interface WidgetRowSettings {
 }
 
 export interface WidgetRow {
-  label: string;
+  title: string;
   icon?: string;
-  uri: string;
+  uri?: string;
   items: MediaItemTypeOrItemMapping[];
   subtitle?: string;
   provider?: string;

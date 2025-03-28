@@ -46,7 +46,7 @@ const loadData = async function () {
       position: idx,
       enabled: true,
     };
-    const label = recommendation.translation_key
+    const title = recommendation.translation_key
       ? $t(
           `recommendations.${recommendation.translation_key}`,
           recommendation.name,
@@ -55,7 +55,7 @@ const loadData = async function () {
     _widgetRows.push({
       ...recommendation,
       settings,
-      label,
+      title,
     });
     widgetRows.value = _widgetRows;
   }
