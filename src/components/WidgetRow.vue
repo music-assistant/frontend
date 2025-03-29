@@ -10,7 +10,7 @@
       <template #title>
         <span class="mr-3">{{ widgetRow.title }}</span>
         <v-chip
-          v-if="widgetRow.subtitle"
+          v-if="widgetRow.subtitle && getBreakpointValue('bp6')"
           inline
           outlined
           :text="widgetRow.subtitle"
@@ -58,7 +58,7 @@
           />
         </div>
         <provider-icon
-          v-else-if="getBreakpointValue('bp2') && widgetRow.provider"
+          v-else-if="widgetRow.provider"
           :domain="widgetRow.provider"
           :size="24"
         />

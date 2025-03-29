@@ -84,7 +84,8 @@
     "remove_playlist": "Remove from playlist",
     "search": "Search",
     "this_device": "This device",
-    "homescreen_edit": "Edit homescreen",
+    "homescreen_edit_enable": "Edit Home screen",
+    "homescreen_edit_disable": "Leave Home screen edit mode",
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
