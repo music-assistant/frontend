@@ -33,7 +33,7 @@
 
       <v-divider />
 
-      <v-list flat style="margin: 10px 5px 15px 5px">
+      <v-list flat style="margin: 0px 15px 5px 15px">
         <!-- dedicated card for builtin player -->
         <PlayerCard
           v-if="
@@ -47,6 +47,7 @@
           :show-menu-button="true"
           :show-sub-players="false"
           :show-sync-controls="false"
+          :allow-power-control="true"
           @click="playerClicked(api.players[webPlayer.player_id])"
         />
         <!-- active/playing players on top -->
@@ -67,6 +68,7 @@
           :show-sync-controls="
             player.supported_features.includes(PlayerFeature.SET_MEMBERS)
           "
+          :allow-power-control="true"
           @click="playerClicked(player)"
         />
       </v-list>
@@ -100,6 +102,7 @@
                 :show-sync-controls="
                   player.supported_features.includes(PlayerFeature.SET_MEMBERS)
                 "
+                :allow-power-control="true"
                 @click="playerClicked(player)"
               />
             </v-list>
@@ -131,6 +134,7 @@
                 :show-sync-controls="
                   player.supported_features.includes(PlayerFeature.SET_MEMBERS)
                 "
+                :allow-power-control="true"
                 @click="playerClicked(player)"
               />
             </v-list>
