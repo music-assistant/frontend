@@ -83,9 +83,6 @@
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
     "search": "Search",
-    "this_device": "This device",
-    "homescreen_edit_enable": "Edit Home screen",
-    "homescreen_edit_disable": "Leave Home screen edit mode",
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
@@ -149,8 +146,6 @@
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
         "group_members": "Group members",
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "log_level": {
             "label": "Log level",
             "description": "Set the log verbosity for this provider.",
@@ -183,10 +178,6 @@
         "volume_normalization": {
             "label": "Enable volume normalization (EBU-R128 based)",
             "description": "Enable volume normalization based on the EBU-R128 standard without affecting dynamic range"
-        },
-        "output_limiter": {
-            "label": "Enable limiting to prevent clipping",
-            "description": "Activates a limiter that prevents audio distortion by making loud peaks quieter."
         },
         "volume_normalization_target": {
             "label": "Target level for volume normalization",
@@ -330,12 +321,6 @@
             "label": "Icon",
             "description": "Material design icon for this player.\n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "dsp_note_multi_device_group": {
-            "label": "You can configure the DSP for each player individually."
-        },
-        "dsp_note_multi_device_group_unsupported": {
-            "label": "This group type does not support DSP when playing to multiple devices."
-        },
         "frontend": "User Interface",
         "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
         "theme": {
@@ -389,10 +374,6 @@
         "hide_settings": {
             "label": "Hide settings button",
             "description": "Hide settings button on the home screen.\n\nNote that if you disable settings on the home screen and in the menu you may lock yourself out.\n\nIn that case you will need to manually enter the path to settings or clear the browser cookies to gain access again to settings, use at your own risk!"
-        },
-        "enable_builtin_player": {
-            "label": "Allow playback to this device/browser",
-            "description": "Enable the (experimental) built-in player for this device\/browser, which allows you to stream all Music Assistant content directly to this device."
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
@@ -449,22 +430,11 @@
             "move_up": "Move Up",
             "move_down": "Move Down",
             "delete_filter": "Delete Filter",
-            "channels": {
-                "ALL": "All",
-                "FL": "Left",
-                "FR": "Right"
-            },
-            "channels_compact": {
-                "FL": "L",
-                "FR": "R"
-            },
             "parametric_eq": {
                 "add_band": "Add Band",
-                "add_band_channel": "Add Band ({channel} only)",
                 "delete_band": "Delete Band",
                 "filter_type": "Filter Type",
                 "band": "Band {index}",
-                "band_channel": "Band {index} ({channel} only)",
                 "enable_band": "Enable Band",
                 "filter_types": {
                     "peak": "Peak",
@@ -474,10 +444,12 @@
                     "high_pass": "High Pass",
                     "notch": "Notch"
                 },
-                "show_multichannel_controls": "Show Multi-Channel controls",
                 "import_apo": "Import APO\/REW Preset",
                 "export_apo": "Export APO Preset",
                 "preamp": "Preamp",
+                "add_band_channel": "Add Band ({channel} only)",
+                "band_channel": "Band {index} ({channel} only)",
+                "show_multichannel_controls": "Show Multi-Channel controls",
                 "edited_channel": "Plot the EQs response for this channel(s)",
                 "channel": "This band will be applied to",
                 "per_channel_preamp": "Additional preamp gain for {channel}"
@@ -495,6 +467,15 @@
             "types": {
                 "parametric_eq": "Parametric EQ",
                 "tone_control": "Tone Control"
+            },
+            "channels": {
+                "ALL": "All",
+                "FL": "Left",
+                "FR": "Right"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
             }
         },
         "power_control": {
@@ -508,6 +489,22 @@
         "mute_control": {
             "label": "Mute control",
             "description": "Define\/override the mute control behavior for this player.\nIt allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
+        },
+        "output_limiter": {
+            "label": "Enable limiting to prevent clipping",
+            "description": "Activates a limiter that prevents audio distortion by making loud peaks quieter."
+        },
+        "dsp_enabled": "DSP is enabled",
+        "dsp_disabled": "DSP is disabled",
+        "dsp_note_multi_device_group": {
+            "label": "You can configure the DSP for each player individually."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "This group type does not support DSP when playing to multiple devices."
+        },
+        "enable_builtin_player": {
+            "label": "Allow playback to this device\/browser",
+            "description": "Enable the (experimental) built-in player for this device\/browser, which allows you to stream all Music Assistant content directly to this device."
         }
     },
     "show_info": "Show info",
@@ -559,7 +556,6 @@
         "refresh_new_content": "New content is available, click to refresh the listing",
         "search": "Show\/hide search input",
         "select_items": "Select multiple items",
-        "select_all": "Select all items",
         "sort_options": "Sort options",
         "toggle_view_mode": "Toggle view mode list\/thumbs",
         "filter_favorites": "Only show favorites",
@@ -573,9 +569,9 @@
         "album_type": "Album type",
         "loading": "The server is processing a request or syncing music.",
         "primary_image": "This is the primary image for this image type",
-        "copy_uri": "Copy URI to clipboard"
+        "copy_uri": "Copy URI to clipboard",
+        "select_all": "Select all items"
     },
-    "select_all_confirmation": "Select all items? This operation may take a moment to load all data.",
     "topresult": "Top result",
     "track": "Track",
     "track_number": "Disc {0} Track {1}",
@@ -706,6 +702,8 @@
     "all_enqueue_options": "All enqueue options",
     "music_assistant_source": "Music Assistant Queue",
     "music_assistant_library": "Music Assistant Library",
+    "select_all_confirmation": "Select all items? This operation may take a moment to load all data.",
+    "this_device": "This device",
     "recommendations": {
         "in_progress_items": "Continue listening...",
         "recommended_new_tracks": "Recommended new tracks",
@@ -723,5 +721,7 @@
         "radio_stations_for_you": "Radio stations for you",
         "producers__songwriters": "Producers & songwriters",
         "new_releases_for_you": "New releases for you"
-    }
+    },
+    "homescreen_edit_enable": "Edit Home screen",
+    "homescreen_edit_disable": "Leave Home screen edit mode"
 }

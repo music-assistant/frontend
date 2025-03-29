@@ -501,6 +501,10 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dit type groep ondersteunt geen DSP wanneer er naar meerdere apparaten afgespeeld wordt."
+        },
+        "enable_builtin_player": {
+            "label": "Afspelen op dit apparaat\/deze browser toestaan",
+            "description": "Schakel de (experimentele) ingebouwde speler voor dit apparaat\/browser in, waarmee je alle inhoud van Music Assistant rechtstreeks naar dit apparaat kunt streamen."
         }
     },
     "show_info": "Bekijk informatie",
@@ -698,5 +702,26 @@
     "all_enqueue_options": "Alle afspeelopties",
     "music_assistant_source": "Music Assistant-wachtrij",
     "music_assistant_library": "Music Assistant-bibliotheek",
-    "select_all_confirmation": "Alle items selecteren? Het kan even duren totdat alle data geladen is."
+    "select_all_confirmation": "Alle items selecteren? Het kan even duren totdat alle data geladen is.",
+    "this_device": "Dit apparaat",
+    "recommendations": {
+        "in_progress_items": "Verder luisteren...",
+        "recommended_new_tracks": "Aanbevolen nieuwe nummers",
+        "recently_played": "Recent gespeeld",
+        "suggested_new_albums_for_you": "Voorgestelde nieuwe albums voor jou",
+        "random_artists": "Willekeurige artiesten",
+        "random_albums": "Willekeurige albums",
+        "random_tracks": "Willekeurige nummers",
+        "random_playlists": "Willekeurige afspeellijsten",
+        "custom_mixes": "Aangepaste mixen",
+        "your_listening_history": "Jouw luistergeschiedenis",
+        "popular_albums": "Populaire albums",
+        "staff_picks_tracks": "Keuze van het personeel: tracks",
+        "staff_picks_albums": "Keuze van het personeel: albums",
+        "radio_stations_for_you": "Radiostations voor jou",
+        "producers__songwriters": "Producenten en songwriters",
+        "new_releases_for_you": "Nieuwe releases voor jou"
+    },
+    "homescreen_edit_enable": "Startscherm bewerken",
+    "homescreen_edit_disable": "Verlaat bewerkingsmodus"
 }
