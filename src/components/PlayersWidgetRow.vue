@@ -26,12 +26,39 @@
       </template>
     </v-toolbar>
 
-    <carousel>
-      <swiper-slide
-        v-for="player in sortedPlayers"
-        :key="player.player_id"
-        style="width: 350px; min-width: 350px; margin-right: 0px"
-      >
+    <swiper
+      :slides-per-view="1.1"
+      :space-between="10"
+      :free-mode="false"
+      :navigation="getBreakpointValue({ breakpoint: 'mobile' }) ? false : true"
+      :mousewheel="{
+        forceToAxis: true,
+        releaseOnEdges: true,
+      }"
+      :breakpoints="{
+        320: {
+          slidesPerView: 1.1,
+          spaceBetween: 15,
+        },
+        480: {
+          slidesPerView: 1.8,
+          spaceBetween: 15,
+        },
+        640: {
+          slidesPerView: 2.1,
+          spaceBetween: 15,
+        },
+        960: {
+          slidesPerView: 3.1,
+          spaceBetween: 15,
+        },
+        1280: {
+          slidesPerView: 4.1,
+          spaceBetween: 15,
+        },
+      }"
+    >
+      <swiper-slide v-for="player in sortedPlayers" :key="player.player_id">
         <PlayerCard
           :id="player.player_id"
           :key="player.player_id"
@@ -44,12 +71,11 @@
           @click="playerClicked(player)"
         />
       </swiper-slide>
-    </carousel>
+    </swiper>
   </div>
 </template>
 
 <script setup lang="ts">
-import Carousel from "@/components/Carousel.vue";
 import { Player } from "@/plugins/api/interfaces";
 import { computed } from "vue";
 import { PlayerState } from "@/plugins/api/interfaces";
@@ -58,6 +84,7 @@ import { api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { playerVisible } from "@/helpers/utils";
 import { WidgetRowSettings } from "./WidgetRow.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
@@ -102,8 +129,9 @@ function playerSortScore(player: Player) {
 }
 
 .widget-row {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   margin-left: 0px;
+  margin-right: 0px;
   padding-left: 0px;
 }
 

@@ -175,7 +175,9 @@
         /></Button>
         <!-- power button -->
         <Button
-          v-if="player.power_control != PLAYER_CONTROL_NONE"
+          v-if="
+            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
+          "
           variant="icon"
           class="player-command-btn"
           @click.stop="
@@ -244,6 +246,7 @@ export interface Props {
   showMenuButton?: boolean;
   showSubPlayers?: boolean;
   showSyncControls?: boolean;
+  allowPowerControl?: boolean;
 }
 const compProps = defineProps<Props>();
 
@@ -280,20 +283,24 @@ const openPlayerMenu = function (evt: Event) {
 </script>
 
 <style scoped>
-.v-card {
-  transition: opacity 0.4s ease-in-out;
-  border-radius: 6px;
-  margin: 5px;
-  margin-bottom: 10px;
-}
 .panel-item {
-  height: 100%;
   border-style: ridge;
   border-width: thin;
   border-color: #cccccc5e;
-  padding: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 5px;
+  padding-bottom: 5px;
   background-color: rgba(162, 188, 255, 0.1);
   opacity: 1;
+  transition: opacity 0.4s ease-in-out;
+  border-radius: 6px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 5px;
+  margin-bottom: 8px;
+  height: 100%;
+  width: auto;
 }
 
 .panel-item-idle {
