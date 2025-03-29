@@ -288,7 +288,8 @@
             "generic": "Paramètres génériques",
             "announcements": "Configuration des annonces",
             "airplay": "Paramètres spécifiques à Airplay",
-            "player_controls": "Contrôles du lecteur"
+            "player_controls": "Contrôles du lecteur",
+            "presets": "Préréglages"
         },
         "tts_pre_announce": {
             "label": "Pré-annoncer les annonces TTS",
@@ -460,6 +461,15 @@
             "types": {
                 "parametric_eq": "Égaliseur paramétrique",
                 "tone_control": "Contrôle de tonalité"
+            },
+            "channels": {
+                "ALL": "Tous",
+                "FL": "Gauche",
+                "FR": "Droite"
+            },
+            "channels_compact": {
+                "FL": "G",
+                "FR": "D"
             }
         },
         "power_control": {
@@ -485,6 +495,10 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "Ce type de groupe ne prend pas en charge le DSP lors de la lecture sur plusieurs appareils."
+        },
+        "enable_builtin_player": {
+            "label": "Autoriser la lecture sur cet appareil\/navigateur",
+            "description": "Activez le lecteur intégré (expérimental) pour cet appareil\/navigateur, qui vous permet de diffuser tout le contenu de Music Assistant directement sur cet appareil."
         }
     },
     "show_info": "Afficher les informations",
@@ -682,5 +696,26 @@
     "all_enqueue_options": "Toutes les options de mise en file d'attente",
     "music_assistant_source": "File d'attente de Music Assistant",
     "music_assistant_library": "Bibliothèque Music Assistant",
-    "select_all_confirmation": "Sélectionner tous les éléments ? Cette opération peut prendre un moment pour charger toutes les données."
+    "select_all_confirmation": "Sélectionner tous les éléments ? Cette opération peut prendre un moment pour charger toutes les données.",
+    "this_device": "Cet appareil",
+    "recommendations": {
+        "in_progress_items": "Continuer à écouter...",
+        "recommended_new_tracks": "Nouveaux titres recommandés",
+        "recently_played": "Écoutés récemment",
+        "suggested_new_albums_for_you": "Nouveaux albums suggérés pour vous",
+        "random_artists": "Artistes aléatoires",
+        "random_albums": "Albums aléatoires",
+        "random_tracks": "Titres aléatoires",
+        "random_playlists": "Listes de lecture aléatoires",
+        "custom_mixes": "Sélections personnalisées",
+        "your_listening_history": "Votre historique d'écoute",
+        "popular_albums": "Albums populaires",
+        "staff_picks_tracks": "Sélection de l'équipe : titres",
+        "staff_picks_albums": "Sélection de l'équipe : albums",
+        "radio_stations_for_you": "Des stations de radio pour vous",
+        "producers__songwriters": "Producteurs et auteurs-compositeurs",
+        "new_releases_for_you": "De nouvelles sorties pour vous"
+    },
+    "homescreen_edit_enable": "Modifier la page d'accueil",
+    "homescreen_edit_disable": "Quitter le mode Modifier la page d'accueil"
 }
