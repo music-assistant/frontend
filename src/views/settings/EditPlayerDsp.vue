@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from "vue";
+import { ref, computed, watch, onUnmounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -167,6 +167,7 @@ import {
   DSPFilterType,
   ParametricEQFilter,
   ToneControlFilter,
+  EventType,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
@@ -285,6 +286,14 @@ watch(
   },
   { immediate: true },
 );
+
+const unsub = api.subscribe(
+  EventType.PLAYER_DSP_CONFIG_UPDATED,
+  (evt: { data: DSPConfig }) => {
+    dsp.value = evt.data;
+  },
+);
+onBeforeUnmount(unsub);
 
 // Debounced save, to prevent too many requests, but still be responsive
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
