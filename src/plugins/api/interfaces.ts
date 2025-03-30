@@ -290,6 +290,7 @@ export enum EventType {
   MEDIA_ITEM_PLAYED = "media_item_played",
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
+  PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
   BUILTIN_PLAYER = "builtin_player",
