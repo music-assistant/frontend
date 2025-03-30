@@ -6,6 +6,7 @@
       itemtype="albumtracks"
       :parent-item="itemDetails"
       :show-provider="true"
+      :show-track-number="true"
       :show-favorites-only-filter="true"
       :show-library-only-filter="
         itemDetails.provider == 'library' && api.hasStreamingProviders.value

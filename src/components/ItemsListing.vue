@@ -60,7 +60,10 @@
               :item="item"
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
-              :show-actions="['tracks', 'albums'].includes(itemtype)"
+              :show-actions="
+                ['tracks', 'albums', 'albumtracks'].includes(itemtype)
+              "
+              :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
               :parent-item="parentItem"
               @select="onSelect"

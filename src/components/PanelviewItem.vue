@@ -111,7 +111,11 @@
             </v-icon>
           </v-item>
           <!-- disc/track number-->
-          <v-item v-if="'track_number' in item && item.track_number">
+          <v-item
+            v-if="
+              showTrackNumber && 'track_number' in item && item.track_number
+            "
+          >
             <v-icon size="small" icon="mdi-music-circle-outline" />
             <span v-if="item.disc_number">{{ item.disc_number }}/</span
             >{{ item.track_number }}
@@ -169,6 +173,7 @@ export interface Props {
   showCheckboxes?: boolean;
   showMediaType?: boolean;
   showActions?: boolean;
+  showTrackNumber?: boolean;
   isAvailable?: boolean;
   parentItem?: MediaItemType;
 }
@@ -176,6 +181,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
   showActions: false,
+  showTrackNumber: false,
   showMediaType: false,
   isAvailable: true,
   parentItem: undefined,
