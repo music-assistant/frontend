@@ -188,6 +188,7 @@ const showAddFilterDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
 const windowWidth = ref(window.innerWidth);
 const { mobile } = useDisplay();
+let updatedFromServer = false;
 
 const filterTypes = Object.values(DSPFilterType).map((value) => {
   return {
@@ -290,6 +291,7 @@ watch(
 const unsub = api.subscribe(
   EventType.PLAYER_DSP_CONFIG_UPDATED,
   (evt: { data: DSPConfig }) => {
+    updatedFromServer = true;
     dsp.value = evt.data;
   },
 );
@@ -309,6 +311,12 @@ const debouncedSave = (newVal: DSPConfig) => {
 watch(
   dsp,
   (old_val, newVal) => {
+    if (updatedFromServer) {
+      // Skip resending, since we just got the config
+      if (saveTimeout) clearTimeout(saveTimeout);
+      updatedFromServer = false;
+      return;
+    }
     if (old_val === null) return; // We haven't changed anything yet
     if (newVal) debouncedSave(newVal);
   },
