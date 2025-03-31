@@ -60,7 +60,7 @@ import { PlayerState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
-import { playerVisible, widePanelViewItemResponsive } from "@/helpers/utils";
+import { playerVisible } from "@/helpers/utils";
 import { WidgetRowSettings } from "./WidgetRow.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 
