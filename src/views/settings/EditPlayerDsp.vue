@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from "vue";
+import { ref, computed, watch, onUnmounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -167,6 +167,7 @@ import {
   DSPFilterType,
   ParametricEQFilter,
   ToneControlFilter,
+  EventType,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
@@ -187,6 +188,7 @@ const showAddFilterDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
 const windowWidth = ref(window.innerWidth);
 const { mobile } = useDisplay();
+let updatedFromServer = false;
 
 const filterTypes = Object.values(DSPFilterType).map((value) => {
   return {
@@ -286,6 +288,15 @@ watch(
   { immediate: true },
 );
 
+const unsub = api.subscribe(
+  EventType.PLAYER_DSP_CONFIG_UPDATED,
+  (evt: { data: DSPConfig }) => {
+    updatedFromServer = true;
+    dsp.value = evt.data;
+  },
+);
+onBeforeUnmount(unsub);
+
 // Debounced save, to prevent too many requests, but still be responsive
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 const debouncedSave = (newVal: DSPConfig) => {
@@ -300,6 +311,12 @@ const debouncedSave = (newVal: DSPConfig) => {
 watch(
   dsp,
   (old_val, newVal) => {
+    if (updatedFromServer) {
+      // Skip resending, since we just got the config
+      if (saveTimeout) clearTimeout(saveTimeout);
+      updatedFromServer = false;
+      return;
+    }
     if (old_val === null) return; // We haven't changed anything yet
     if (newVal) debouncedSave(newVal);
   },

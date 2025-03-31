@@ -89,12 +89,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
   ConfigValueType,
+  DSPConfig,
+  EventType,
   PlayerConfig,
   PlayerFeature,
   PlayerType,
@@ -124,6 +126,14 @@ const loadDSPEnabled = async () => {
   }
 };
 loadDSPEnabled();
+
+const unsub = api.subscribe(
+  EventType.PLAYER_DSP_CONFIG_UPDATED,
+  (evt: { data: DSPConfig }) => {
+    dspEnabled.value = evt.data.enabled;
+  },
+);
+onBeforeUnmount(unsub);
 
 // computed properties
 
