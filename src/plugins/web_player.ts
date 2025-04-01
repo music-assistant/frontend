@@ -92,6 +92,8 @@ bc.onmessage = (event) => {
 
 // Called on close
 window.addEventListener("unload", function () {
+  // Stop listening to any events, since we will soon close.
+  bc.onmessage = null;
   if (webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id) {
     bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
   }
