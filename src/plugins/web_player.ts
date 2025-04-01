@@ -25,7 +25,9 @@ const BC_MSG = {
   CONTROL_TAKEN: "CONTROL_TAKEN",
 };
 
-const TIMEOUT_DURATION_MS = 75_000; // Assume we timed out if after this time we did not send any updates
+// Assume we timed out if after this time we did not send any updates
+// This is slightly smaller than on the server (90s) to avoid false positives with isAnotherTabActive
+const TIMEOUT_DURATION_MS = 75_000;
 
 // NOTE: using crypto.randomUUID() is not supported in insecure contexts (http)
 // so we're using getRandomValues instead
@@ -90,6 +92,8 @@ bc.onmessage = (event) => {
 
 // Called on close
 window.addEventListener("unload", function () {
+  // Stop listening to any events, since we will soon close.
+  bc.onmessage = null;
   if (webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id) {
     bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
   }
@@ -168,13 +172,16 @@ export const webPlayer = reactive({
       u();
     }
     unsubSubscriptions = [];
+    // Player id of the player that should be unregistered
+    let shouldUnregister: undefined | string = undefined;
 
     if (this.tabMode === WebPlayerMode.BUILTIN) {
       if (this.player_id) {
         // Notify other tabs, if another tab already has control, this will change nothing
         bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
+        // Postpone unregiser in case we would need to immediatly re-regiser it again
         if (!silent) {
-          await api.unregisterBuiltinPlayer(this.player_id);
+          shouldUnregister = this.player_id;
         }
       }
     }
@@ -201,6 +208,7 @@ export const webPlayer = reactive({
       const saved_player_id = window.localStorage.getItem(
         "builtin_webplayer_id",
       );
+      shouldUnregister = undefined;
       const player = await api.registerBuiltinPlayer(
         "This Device",
         saved_player_id !== null ? saved_player_id : undefined,
@@ -226,6 +234,9 @@ export const webPlayer = reactive({
     } else {
       this.audioSource = WebPlayerMode.DISABLED;
     }
+    if (shouldUnregister) {
+      await api.unregisterBuiltinPlayer(shouldUnregister);
+    }
 
     this.tabMode = mode;
 
@@ -233,7 +244,7 @@ export const webPlayer = reactive({
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
           // Reconnect is handled in App.vue
-          this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
+          this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
         }),
       );
       if (this.mode === WebPlayerMode.BUILTIN) {
