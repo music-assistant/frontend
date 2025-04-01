@@ -242,7 +242,7 @@ export const webPlayer = reactive({
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
           // Reconnect is handled in App.vue
-          this.setTabMode(WebPlayerMode.CONTROLS_ONLY);
+          this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
         }),
       );
       if (this.mode === WebPlayerMode.BUILTIN) {
