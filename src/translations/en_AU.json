@@ -26,5 +26,10 @@
     },
     "favorites_add": "Add to favourites",
     "favorites_remove": "Remove from favourites",
-    "sync_player_with": "Synchronise with another player"
+    "sync_player_with": "Synchronise with another player",
+    "recommendations": {
+        "recent_favorite_tracks": "Recently favourited tracks",
+        "favorite_playlists": "Favourite playlists",
+        "favorite_radio_stations": "Favourite radio stations"
+    }
 }
