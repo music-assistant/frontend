@@ -27,7 +27,7 @@ let playing = ref<boolean>();
 
 const unsub = api.subscribe(
   EventType.BUILTIN_PLAYER,
-  (evt: EventMessage) => {
+  async (evt: EventMessage) => {
     if (!audioRef.value || !evt.data) return;
     const data = evt.data as BuiltinPlayerEvent;
     if (data.type === BuiltinPlayerEventType.PAUSE) {
@@ -38,14 +38,14 @@ const unsub = api.subscribe(
     } else if (data.type === BuiltinPlayerEventType.UNMUTE) {
       audioRef.value.muted = false;
     } else if (data.type === BuiltinPlayerEventType.PLAY) {
-      audioRef.value.play();
+      await audioRef.value.play();
       playing.value = true;
     } else if (data.type === BuiltinPlayerEventType.SET_VOLUME) {
       audioRef.value.volume = data.volume! / 100;
     } else if (data.type === BuiltinPlayerEventType.PLAY_MEDIA) {
       audioRef.value.src = "";
       audioRef.value.src = `${webPlayer.baseUrl}/${data.media_url}`;
-      if (audioRef.value.paused) audioRef.value.play();
+      await audioRef.value.play();
       playing.value = true;
     } else if (data.type === BuiltinPlayerEventType.STOP) {
       audioRef.value.pause();
