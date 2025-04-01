@@ -186,6 +186,13 @@ onMounted(() => {
     if (!props.playerId) return;
     api.playerCommandPrevious(props.playerId);
   });
+
+  if (!audioRef.value) return;
+  audioRef.value.addEventListener("error", () => {
+    // So it shows up as paused, proper recovery is something for a custom protocol
+    playing.value = false;
+    updatePlayerState();
+  });
 });
 </script>
 <style lang="css">
