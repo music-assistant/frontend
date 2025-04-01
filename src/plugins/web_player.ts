@@ -25,7 +25,9 @@ const BC_MSG = {
   CONTROL_TAKEN: "CONTROL_TAKEN",
 };
 
-const TIMEOUT_DURATION_MS = 75_000; // Assume we timed out if after this time we did not send any updates
+// Assume we timed out if after this time we did not send any updates
+// This is slightly smaller than on the server (90s) to avoid false positives with isAnotherTabActive
+const TIMEOUT_DURATION_MS = 75_000;
 
 // NOTE: using crypto.randomUUID() is not supported in insecure contexts (http)
 // so we're using getRandomValues instead
