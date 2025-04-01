@@ -170,13 +170,16 @@ export const webPlayer = reactive({
       u();
     }
     unsubSubscriptions = [];
+    // Player id of the player that should be unregistered
+    let shouldUnregister: undefined | string = undefined;
 
     if (this.tabMode === WebPlayerMode.BUILTIN) {
       if (this.player_id) {
         // Notify other tabs, if another tab already has control, this will change nothing
         bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
+        // Postpone unregiser in case we would need to immediatly re-regiser it again
         if (!silent) {
-          await api.unregisterBuiltinPlayer(this.player_id);
+          shouldUnregister = this.player_id;
         }
       }
     }
@@ -203,6 +206,7 @@ export const webPlayer = reactive({
       const saved_player_id = window.localStorage.getItem(
         "builtin_webplayer_id",
       );
+      shouldUnregister = undefined;
       const player = await api.registerBuiltinPlayer(
         "This Device",
         saved_player_id !== null ? saved_player_id : undefined,
@@ -227,6 +231,9 @@ export const webPlayer = reactive({
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else {
       this.audioSource = WebPlayerMode.DISABLED;
+    }
+    if (shouldUnregister) {
+      await api.unregisterBuiltinPlayer(shouldUnregister);
     }
 
     this.tabMode = mode;
