@@ -539,14 +539,20 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
   if (!entry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of entry.options) {
-    let title = $t(
-      `settings.${entry.key}.options.${orgOption.value}`,
-      orgOption.title,
-    );
-    // handle weird edge case where title contains a pipe character which is not handled well by i18n
-    if (orgOption.title!.toString().includes("|")) {
-      title = orgOption.title!.toString();
+    // handle weird edge case where value or title contains
+    // a special character which is not handled well by i18n
+    // for example "@" in a HA entity name
+    let cleanVal = orgOption.value?.toString() || "";
+    let cleanTitle = orgOption.title?.toString() || "";
+    for (const specialChar of ["@", "$", "|"]) {
+      if (cleanVal.includes(specialChar)) {
+        cleanVal = cleanVal.replaceAll(specialChar, "");
+      }
+      if (cleanTitle.includes(specialChar)) {
+        cleanTitle = cleanTitle.toString().replaceAll(specialChar, "");
+      }
     }
+    let title = $t(`settings.${entry.key}.options.${cleanVal}`, cleanTitle);
     const option: ConfigValueOption = {
       title: title,
       value: orgOption.value,
