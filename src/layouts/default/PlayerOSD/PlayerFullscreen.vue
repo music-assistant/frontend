@@ -278,10 +278,13 @@
                 inline
               />
             </v-tab>
+            <v-tab v-if="hasLyrics" :value="2">
+              {{ $t("lyrics") }}
+            </v-tab>
           </v-tabs>
           <div class="queue-items-scroll-box">
             <v-infinite-scroll
-              v-if="!tempHide"
+              v-if="!tempHide && activeQueuePanel !== 2"
               :onLoad="loadNextPage"
               :empty-text="''"
               height="100%"
@@ -385,6 +388,39 @@
                 </template>
               </v-virtual-scroll>
             </v-infinite-scroll>
+
+            <!-- Lyrics view -->
+            <div
+              v-if="activeQueuePanel === 2 && hasLyrics"
+              class="lyrics-container"
+            >
+              <div v-if="loadingLyrics" class="lyrics-loading">
+                <v-progress-circular indeterminate :color="sliderColor" />
+                <div>{{ $t("loading_lyrics") }}</div>
+              </div>
+              <div v-else-if="!currentLyrics.length" class="lyrics-empty">
+                {{ $t("no_lyrics_available") }}
+              </div>
+              <div
+                v-else
+                ref="lyricsContainer"
+                class="lyrics-scroll-container"
+                :class="{ 'static-lyrics': !hasTimestamps }"
+              >
+                <div
+                  v-for="(line, index) in currentLyrics"
+                  :key="index"
+                  :class="[
+                    'lyrics-line',
+                    {
+                      active: activeLyricIndex === index || !hasTimestamps,
+                    },
+                  ]"
+                >
+                  {{ line.text }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -531,6 +567,7 @@ import {
   onMounted,
   onBeforeUnmount,
   watchEffect,
+  nextTick,
 } from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import api from "@/plugins/api";
@@ -599,7 +636,11 @@ const hoveredMarqueeSync = new MarqueeTextSync();
 const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
-
+const currentLyrics = ref<Array<{ time: number; text: string }>>([]);
+const loadingLyrics = ref(false);
+const activeLyricIndex = ref(-1);
+const lyricsContainer = ref<HTMLElement | null>(null);
+const userManuallyScrolled = ref(false);
 // Computed properties
 
 const nextItems = computed(() => {
@@ -655,6 +696,34 @@ const subTitleFontSize = computed(() => {
 
 const showExpandedPlayerSelectButton = computed(() => {
   return vuetify.display.height.value > 800;
+});
+
+const hasLyrics = computed(() => {
+  const plainLyrics = store.curQueueItem?.media_item?.metadata?.lyrics;
+  const syncedLyrics = store.curQueueItem?.media_item?.metadata?.lrc_lyrics;
+  return (
+    (!!plainLyrics && plainLyrics.trim().length > 0) ||
+    (!!syncedLyrics && syncedLyrics.trim().length > 0)
+  );
+});
+
+const hasTimestamps = computed(() => {
+  // Only consider lyrics to have timestamps if they come from lrc_lyrics field
+  // or if they have at least one line with a non-zero timestamp
+  if (store.curQueueItem?.media_item?.metadata?.lrc_lyrics) {
+    return true;
+  }
+
+  // For lyrics from the regular lyrics field, they should never be considered timestamped
+  if (
+    !store.curQueueItem?.media_item?.metadata?.lrc_lyrics &&
+    store.curQueueItem?.media_item?.metadata?.lyrics
+  ) {
+    return false;
+  }
+
+  // Fallback to checking timestamps in current lyrics
+  return currentLyrics.value.some((line) => line.time > 0);
 });
 
 // methods
@@ -948,6 +1017,80 @@ const chapterClicked = function (
   );
 };
 
+// Lyrics functionality
+const parseLrcLine = (line: string) => {
+  const match = line.match(/\[(\d+):(\d+)([.:]\d+)?\](.*)/);
+  if (match) {
+    const minutes = parseInt(match[1]);
+    const seconds = parseFloat(match[2] + (match[3] || ".0"));
+    const time = minutes * 60 + seconds;
+    return { time, text: match[4].trim() || " " };
+  }
+  return { time: 0, text: line.trim() || " " };
+};
+
+const fetchLyrics = async function () {
+  if (!store.curQueueItem?.media_item) {
+    currentLyrics.value = [];
+    return;
+  }
+
+  loadingLyrics.value = true;
+  try {
+    // First check for synced LRC lyrics (preferred)
+    const syncedLyrics =
+      store.curQueueItem.media_item.metadata?.lrc_lyrics || "";
+    const plainLyrics = store.curQueueItem.media_item.metadata?.lyrics || "";
+
+    if (syncedLyrics) {
+      // Process LRC formatted lyrics - these already have timestamps
+      const lyricsLines = syncedLyrics
+        .split("\n")
+        .filter((line) => line.trim());
+
+      currentLyrics.value = lyricsLines
+        .map((line) => parseLrcLine(line))
+        .filter((line) => line.text)
+        .sort((a, b) => a.time - b.time);
+
+      console.log(
+        "Processed synced lyrics:",
+        currentLyrics.value.length,
+        "lines",
+      );
+
+      // Set to first line or -1 so the watcher will trigger
+      activeLyricIndex.value = currentLyrics.value.length > 0 ? 0 : -1;
+    } else if (plainLyrics) {
+      // For plain text lyrics without timestamps
+      const lyricsLines = plainLyrics.split("\n").filter((line) => line.trim());
+
+      currentLyrics.value = lyricsLines
+        .map((line) => ({
+          time: 0,
+          text: line.trim() || " ",
+        }))
+        .filter((line) => line.text);
+
+      console.log(
+        "Processed plain lyrics:",
+        currentLyrics.value.length,
+        "lines",
+      );
+
+      // For plain lyrics, don't highlight any line as active
+      activeLyricIndex.value = -1;
+    } else {
+      currentLyrics.value = [];
+    }
+  } catch (error) {
+    console.error("Error processing lyrics:", error);
+    currentLyrics.value = [];
+  } finally {
+    loadingLyrics.value = false;
+  }
+};
+
 // watchers
 watch(
   () => store.activePlayerId,
@@ -1007,6 +1150,63 @@ watchEffect(() => {
   sliderColor.value = textColor.hex();
   backgroundColor.value = bgColor.hex();
 });
+
+// Add this watcher to update lyrics when the track changes
+watch(
+  () => store.curQueueItem?.queue_item_id,
+  async () => {
+    await fetchLyrics();
+
+    // Switch back to queue tab if the new track has no lyrics
+    if (activeQueuePanel.value === 2 && !hasLyrics.value) {
+      activeQueuePanel.value = 0;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => store.activePlayerQueue?.elapsed_time,
+  (newPosition) => {
+    // Early return if newPosition is undefined or conditions aren't met
+    if (
+      newPosition === undefined ||
+      !currentLyrics.value.length ||
+      !hasTimestamps.value ||
+      activeQueuePanel.value !== 2 ||
+      userManuallyScrolled.value
+    ) {
+      return;
+    }
+
+    // Find the active lyric
+    let newIndex = -1;
+    for (let i = 0; i < currentLyrics.value.length; i++) {
+      if (currentLyrics.value[i].time <= newPosition) {
+        newIndex = i;
+      } else {
+        break;
+      }
+    }
+
+    if (newIndex !== activeLyricIndex.value) {
+      activeLyricIndex.value = newIndex;
+
+      // Scroll to active lyric
+      nextTick(() => {
+        const activeElement = document.querySelector(".lyrics-line.active");
+        const container = lyricsContainer.value;
+
+        if (activeElement && container) {
+          activeElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      });
+    }
+  },
+);
 </script>
 
 <style scoped>
@@ -1188,5 +1388,57 @@ watchEffect(() => {
 div,
 button {
   color: var(--text-color);
+}
+
+.lyrics-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.lyrics-loading,
+.lyrics-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  gap: 20px;
+}
+
+.lyrics-scroll-container {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  padding: 40vh 0; /* This padding is for timestamped lyrics only */
+  text-align: center;
+}
+
+.static-lyrics {
+  padding: 10px 0 !important; /* Much less padding for static lyrics */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.lyrics-line {
+  padding: 10px 4px;
+  font-size: 1.1em;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+  margin: 8px 0;
+  filter: blur(1px); /* Blur effect for inactive lyrics */
+  text-shadow: 0 0 1px var(--text-color);
+}
+
+.lyrics-line.active {
+  opacity: 1;
+  font-size: 1.4em;
+  font-weight: bold;
+  color: var(--text-color);
+  filter: blur(0); /* No blur effect for active lyric */
+  text-shadow: none;
 }
 </style>
