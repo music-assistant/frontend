@@ -340,7 +340,7 @@
         },
         "menu_items": {
             "label": "Enabled menu items",
-            "description": "Configure which items to show in the menu.\n\nNote that if you disable the settings you may lock yourself out.\n\nIn that case you will need to manually enter the path to the settings or clear the browser cookies to gain access again, use at your own risk."
+            "description": "Configure which items to show in the menu.\n\nNote that if you disable the settings you may lock yourself out.\n\nTo gain access again, you will need to manually enter the path to the settings or clear the browser cookies. Use at your own risk!"
         },
         "language": {
             "label": "Language",
@@ -373,7 +373,7 @@
         },
         "hide_settings": {
             "label": "Hide settings button",
-            "description": "Hide the settings button on the home screen.\n\nNote that if you disable the settings on the home screen and in the menu you may lock yourself out.\n\nIn that case you will need to manually enter the path to the settings or clear the browser cookies to gain access again, use at your own risk!"
+            "description": "Hide the settings button on the home screen.\n\nNote that if you disable the settings on the home screen and in the menu you may lock yourself out.\n\nTo gain access again, you will need to manually enter the path to the settings or clear the browser cookies. Use at your own risk!"
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
