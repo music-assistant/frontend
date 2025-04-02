@@ -705,8 +705,6 @@
         "suggested_new_albums_for_you": "Nouveaux albums suggérés pour vous",
         "random_artists": "Artistes aléatoires",
         "random_albums": "Albums aléatoires",
-        "random_tracks": "Titres aléatoires",
-        "random_playlists": "Listes de lecture aléatoires",
         "custom_mixes": "Sélections personnalisées",
         "your_listening_history": "Votre historique d'écoute",
         "popular_albums": "Albums populaires",
@@ -714,7 +712,10 @@
         "staff_picks_albums": "Sélection de l'équipe : albums",
         "radio_stations_for_you": "Des stations de radio pour vous",
         "producers__songwriters": "Producteurs et auteurs-compositeurs",
-        "new_releases_for_you": "De nouvelles sorties pour vous"
+        "new_releases_for_you": "De nouvelles sorties pour vous",
+        "recent_favorite_tracks": "Titres récemment ajoutées aux favoris",
+        "favorite_playlists": "Listes de lecture favorites",
+        "favorite_radio_stations": "Stations de radio favorites"
     },
     "homescreen_edit_enable": "Modifier la page d'accueil",
     "homescreen_edit_disable": "Quitter le mode Modifier la page d'accueil"
