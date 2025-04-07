@@ -15,13 +15,16 @@
         @click="store.showFullscreenPlayer = true"
       >
         <MediaItemThumb
-          v-if="store.curQueueItem?.media_item || store.curQueueItem?.image"
+          v-if="
+            store.activePlayer?.powered != false &&
+            (store.curQueueItem?.media_item || store.curQueueItem?.image)
+          "
           :item="store.curQueueItem?.media_item || store.curQueueItem"
           :fallback="imgCoverDark"
         />
         <div
           v-else-if="
-            store.activePlayer?.powered &&
+            store.activePlayer?.powered != false &&
             store.activePlayer?.current_media?.image_url
           "
         >
@@ -83,55 +86,36 @@
           {{ store.curQueueItem.name }}
         </div>
         <!-- external source current media item present -->
-        <div v-else-if="store.activePlayer?.current_media?.title">
-          {{ store.activePlayer.current_media.title }}
-        </div>
-        <!-- no player selected message -->
-        <div
-          v-else-if="!store.activePlayer"
-          @click="store.showPlayersMenu = true"
-        >
-          {{ $t("no_player") }}
-        </div>
-        <!-- queue empty message -->
         <div
           v-else-if="
-            store.activePlayerQueue && store.activePlayerQueue.items == 0
+            !store.activePlayerQueue && store.activePlayer?.current_media?.title
           "
-          class="line-clamp-1"
         >
-          {{ $t("queue_empty") }}
+          {{ store.activePlayer.current_media.title }}
+        </div>
+        <!-- fallback: display player name -->
+        <div v-else-if="store.activePlayer">
+          {{ store.activePlayer?.display_name }}
+        </div>
+        <!-- no player selected message -->
+        <div v-else @click="store.showPlayersMenu = true">
+          {{ $t("no_player") }}
         </div>
       </div>
     </template>
     <!-- append chip(s): quality -->
     <template #append>
       <!-- format -->
-      <v-chip
+      <div
         v-if="
           streamDetails?.audio_format.content_type &&
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
         "
-        :disabled="
-          !store.activePlayerQueue ||
-          !store.activePlayerQueue?.active ||
-          store.activePlayerQueue?.items == 0
-        "
-        class="player-track-content-type"
-        :style="
-          $vuetify.theme.current.dark
-            ? 'color: #000; background: #fff; margin-left: 15px;'
-            : 'color: #fff; background: #000; margin-left: 15px;'
-        "
-        label
-        :ripple="false"
-        v-bind="props"
+        class="pl-4"
       >
-        <div class="d-flex justify-center" style="width: 100%">
-          {{ streamDetails.audio_format.content_type.toUpperCase() }}
-        </div>
-      </v-chip>
+        <QualityDetailsBtn />
+      </div>
     </template>
     <!-- subtitle -->
     <template #subtitle>
@@ -145,7 +129,7 @@
       >
         <MarqueeText :sync="marqueeSync">
           <!-- player powered off -->
-          <div v-if="!store.activePlayer?.powered">
+          <div v-if="store.activePlayer?.powered == false">
             {{ $t("off") }}
           </div>
           <!-- track: artists(s) + album -->
@@ -164,13 +148,22 @@
           <!-- track fallback: (only artist, no album) -->
           <div
             v-else-if="
-              store.curQueueItem &&
-              store.curQueueItem.media_item &&
+              store.curQueueItem?.media_item &&
               'artists' in store.curQueueItem.media_item &&
               store.curQueueItem.media_item.artists.length > 0
             "
           >
             {{ store.curQueueItem.media_item.artists[0].name }}
+          </div>
+          <!-- podcast episode - podcast name as subtitle -->
+          <div
+            v-else-if="
+              store.curQueueItem?.media_item &&
+              'podcast' in store.curQueueItem.media_item &&
+              store.curQueueItem.media_item.podcast?.name
+            "
+          >
+            {{ store.curQueueItem.media_item.podcast.name }}
           </div>
           <!-- radio live metadata -->
           <div
@@ -181,32 +174,49 @@
           </div>
           <!-- other description -->
           <div
-            v-else-if="
-              store.curQueueItem &&
-              store.curQueueItem.media_item?.metadata.description
-            "
+            v-else-if="store.curQueueItem?.media_item?.metadata.description"
             class="line-clamp-1"
           >
-            {{ store.curQueueItem.media_item.metadata.description }}
+            {{
+              truncateString(
+                store.curQueueItem.media_item.metadata.description,
+                100,
+              )
+            }}
           </div>
           <!-- external source artist -->
-          <div v-else-if="store.activePlayer?.current_media?.artist">
+          <div
+            v-else-if="
+              !store.activePlayerQueue &&
+              store.activePlayer?.active_source &&
+              store.activePlayer?.current_media?.artist
+            "
+          >
             {{ store.activePlayer.current_media.artist }}
           </div>
           <!-- 3rd party source active -->
           <div
             v-else-if="
-              store.activePlayer?.active_source != store.activePlayer?.player_id
+              !store.activePlayerQueue && store.activePlayer?.active_source
             "
             class="line-clamp-1"
           >
             {{
-              $t("external_source_active", [store.activePlayer?.active_source])
+              $t("external_source_active", [getSourceName(store.activePlayer)])
             }}
+          </div>
+          <!-- queue empty message -->
+          <div
+            v-else-if="
+              store.activePlayerQueue && store.activePlayerQueue.items == 0
+            "
+            class="line-clamp-1"
+          >
+            {{ $t("queue_empty") }}
           </div>
         </MarqueeText>
         <!-- active player -->
-        <div v-if="store.activePlayer && store.activePlayer?.powered">
+        <div v-if="store.activePlayer && store.activePlayer?.powered != false">
           {{ getPlayerName(store.activePlayer) }}
         </div>
       </div>
@@ -228,12 +238,16 @@ import {
   ImageColorPalette,
   getArtistsString,
   getPlayerName,
+  truncateString,
 } from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
-import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
+import QualityDetailsBtn, {
+  imgCoverDark,
+} from "@/components/QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import MarqueeText from "@/components/MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { getSourceName } from "@/plugins/api/helpers";
 
 const marqueeSync = new MarqueeTextSync();
 
@@ -281,5 +295,11 @@ const streamDetails = computed(() => {
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.3);
   display: inline-table;
+}
+
+/* this fixes missing subtitle items on webkit*/
+.v-list-item-subtitle {
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
 }
 </style>

@@ -94,6 +94,19 @@
                 </v-btn>
               </div>
 
+              <!-- DSP Config Button -->
+              <div v-else-if="conf_entry.type == ConfigEntryType.DSP_SETTINGS">
+                <br />
+                {{
+                  conf_entry.value
+                    ? $t("settings.dsp_enabled")
+                    : $t("settings.dsp_disabled")
+                }}
+                <v-btn class="actionbutton" @click="openDspConfig">
+                  {{ $t("open_dsp_settings") }}
+                </v-btn>
+              </div>
+
               <!-- boolean value: toggle switch -->
               <v-switch
                 v-else-if="conf_entry.type == ConfigEntryType.BOOLEAN"
@@ -168,7 +181,7 @@
                 clearable
                 :readonly="!!conf_entry.action"
                 @click:append-inner="showPasswordValues = !showPasswordValues"
-                @click:clear="conf_entry.value = '#CLEAR#'"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
 
               <!-- value with dropdown -->
@@ -190,7 +203,7 @@
                     $t('settings.invalid_input'),
                 ]"
                 variant="outlined"
-                @click:clear="conf_entry.value = null"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
               <!-- int value without range -->
               <v-text-field
@@ -213,7 +226,7 @@
                 variant="outlined"
                 :clearable="!conf_entry.required"
                 type="number"
-                @click:clear="conf_entry.value = null"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
               <!-- icon 'picker' -->
               <v-text-field
@@ -250,7 +263,7 @@
                     $t('settings.invalid_input'),
                 ]"
                 variant="outlined"
-                @click:clear="conf_entry.value = []"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
               <!-- all other: textbox with single value -->
               <v-text-field
@@ -270,7 +283,7 @@
                 ]"
                 variant="outlined"
                 :readonly="!!conf_entry.action"
-                @click:clear="conf_entry.value = null"
+                @click:clear="conf_entry.value = conf_entry.default_value"
               />
             </div>
             <!-- right side of control: help icon with description-->
@@ -355,6 +368,7 @@
 </template>
 
 <script setup lang="ts">
+import { open } from "@tauri-apps/plugin-shell";
 import { ref, VNodeRef, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import {
@@ -363,11 +377,10 @@ import {
   SECURE_STRING_SUBSTITUTE,
   ConfigEntry,
   ConfigValueOption,
-} from '@/plugins/api/interfaces';
-import { open } from '@tauri-apps/plugin-shell';
-import { $t } from '@/plugins/i18n';
+} from "@/plugins/api/interfaces";
+import { markdownToHtml } from "@/helpers/utils";
+import { $t } from "@/plugins/i18n";
 const router = useRouter();
-import { marked } from "marked";
 
 export interface Props {
   configEntries: ConfigEntry[];
@@ -473,6 +486,10 @@ const action = async function (action: string) {
 const openLink = function (url: string) {
   open(url);
 };
+
+const openDspConfig = function () {
+  router.push(`${router.currentRoute.value.path}/dsp`);
+};
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
@@ -484,14 +501,18 @@ const checkDisabled = function (entry: ConfigEntry) {
   // check if the UI element should be disabled due to conditions
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependent = entries.value?.find((x) => x.key == entry.depends_on);
-    if (dependent && dependent.required && isNullOrUndefined(dependent))
-      return true;
-    if (
-      dependent &&
-      dependent.type == ConfigEntryType.BOOLEAN &&
-      !dependent.value
-    )
-      return true;
+    if (dependent) {
+      const dependentValue = dependent.value;
+      if (!isNullOrUndefined(entry.depends_on_value)) {
+        return dependentValue != entry.depends_on_value;
+      }
+      if (!isNullOrUndefined(entry.depends_on_value_not)) {
+        return dependentValue == entry.depends_on_value_not;
+      }
+      if (dependent.required && isNullOrUndefined(dependent)) return true;
+      if (dependent.type == ConfigEntryType.BOOLEAN && !dependentValue)
+        return true;
+    }
   }
   return false;
 };
@@ -515,11 +536,22 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
   if (!entry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of entry.options) {
+    // handle weird edge case where value or title contains
+    // a special character which is not handled well by i18n
+    // for example "@" in a HA entity name
+    let cleanVal = orgOption.value?.toString() || "";
+    let cleanTitle = orgOption.title?.toString() || "";
+    for (const specialChar of ["@", "$", "|"]) {
+      if (cleanVal.includes(specialChar)) {
+        cleanVal = cleanVal.replaceAll(specialChar, "");
+      }
+      if (cleanTitle.includes(specialChar)) {
+        cleanTitle = cleanTitle.toString().replaceAll(specialChar, "");
+      }
+    }
+    let title = $t(`settings.${entry.key}.options.${cleanVal}`, cleanTitle);
     const option: ConfigValueOption = {
-      title: $t(
-        `settings.${entry.key}.options.${orgOption.value}`,
-        orgOption.title,
-      ),
+      title: title,
       value: orgOption.value,
     };
     if (option.value == entry.default_value) {
@@ -528,15 +560,6 @@ const getTranslatedOptions = function (entry: ConfigEntry) {
     options.push(option);
   }
   return options;
-};
-
-const markdownToHtml = function (text: string) {
-  // text = text.replaceAll(/\\n\\n/g, "<br /><br />").replace(/\\n/g, "<br /> ");
-  text = text
-    .replaceAll(/\\n/g, "<br />")
-    .replaceAll("\n", "<br />")
-    .replaceAll(" \\", "<br />");
-  return marked(text);
 };
 
 const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {

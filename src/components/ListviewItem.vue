@@ -20,8 +20,25 @@
         />
       </div>
       <div v-else class="media-thumb listitem-media-thumb">
-        <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+        <MediaItemThumb
+          size="50"
+          :item="isAvailable ? item : undefined"
+          :class="{ dimmed: showPlayBtn }"
+        />
       </div>
+      <!-- play button -->
+      <v-btn
+        v-if="!showCheckboxes && item.is_playable"
+        :class="{ hidden: !showPlayBtn }"
+        icon="mdi-play"
+        color="primary"
+        fab
+        size="small"
+        style="position: absolute; left: 12px; bottom: 12px"
+        @click.stop="onPlayClick"
+        @mouseenter="showPlayBtn = true"
+        @mouseleave="showPlayBtn = false"
+      />
     </template>
 
     <!-- title -->
@@ -102,13 +119,25 @@
       <div v-else-if="'owner' in item && item.owner">
         {{ item.owner }}
       </div>
-      <!-- radio description -->
+      <!-- audiobook author(s) -->
+      <div v-else-if="'authors' in item && item.authors">
+        {{ item.authors.join(" / ") }}
+      </div>
+      <!-- audiobook publisher -->
+      <div v-else-if="'publisher' in item && item.publisher">
+        {{ item.publisher }}
+      </div>
+      <!-- description -->
       <div
         v-else-if="
-          item.media_type == MediaType.RADIO && item.metadata.description
+          'metadata' in item &&
+          item.metadata?.description &&
+          [MediaType.RADIO, MediaType.PLAYLIST, MediaType.FOLDER].includes(
+            item.media_type,
+          )
         "
       >
-        {{ item.metadata.description }}
+        {{ truncateString(item.metadata.description, 150) }}
       </div>
       <!-- media type label -->
       <div v-else-if="'media_type' in item && !item.provider_mappings">
@@ -141,6 +170,19 @@
         :size="24"
       />
 
+      <!-- fully played or in progress icon -->
+      <!-- only used for podcast-episodes and audiobook-chapters -->
+      <v-icon
+        v-if="'fully_played' in item && item.fully_played"
+        :title="$t('item_fully_played')"
+        >mdi-check</v-icon
+      >
+      <v-icon
+        v-else-if="'resume_position_ms' in item && item.resume_position_ms"
+        :title="$t('item_in_progress')"
+        >mdi-clock-fast</v-icon
+      >
+
       <!-- favorite (heart) icon -->
       <div
         v-if="
@@ -157,9 +199,8 @@
       <div
         v-if="
           showDuration &&
-          item.media_type == MediaType.TRACK &&
           'duration' in item &&
-          item.duration != undefined &&
+          item.duration &&
           getBreakpointValue('bp0')
         "
       >
@@ -176,7 +217,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
@@ -193,6 +234,10 @@ import {
   parseBool,
   getArtistsString,
   getBrowseFolderName,
+  truncateString,
+  handlePlayBtnClick,
+  handleMediaItemClick,
+  handleMenuBtnClick,
 } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -215,10 +260,12 @@ export interface Props {
   isAvailable?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
+  parentItem?: MediaItemType;
 }
 
 // global refs
 const { t } = useI18n();
+const showPlayBtn = ref(false);
 
 const compProps = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
@@ -232,6 +279,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   showCheckboxes: false,
   isDisabled: false,
   isAvailable: true,
+  parentItem: undefined,
 });
 
 // computed properties
@@ -263,26 +311,47 @@ const HiResDetails = computed(() => {
 
 // emits
 const emit = defineEmits<{
-  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
-  (e: "click", item: MediaItemType, posX: number, posY: number): void;
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
-  emit("menu", compProps.item, posX, posY);
+  handleMenuBtnClick(compProps.item, posX, posY, compProps.parentItem);
 };
 
 const onClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit("click", compProps.item, evt.clientX, evt.clientY);
+  handleMediaItemClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
+};
+
+const onPlayClick = function (evt: PointerEvent) {
+  if (compProps.showCheckboxes) return;
+  handlePlayBtnClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 </script>
 
 <style scoped>
 .unavailable {
   opacity: 0.3;
+}
+
+.dimmed {
+  opacity: 0.3;
+}
+
+.hidden {
+  opacity: 0;
 }
 
 .hiresicon {

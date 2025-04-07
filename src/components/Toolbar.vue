@@ -2,12 +2,12 @@
   <v-toolbar :color="color" class="header">
     <template v-if="icon" #prepend>
       <v-btn
-        v-if="iconAsButton"
         :icon="icon"
         size="large"
-        @click="emit('iconClicked')"
+        :disabled="iconAction == null"
+        style="opacity: 0.8"
+        @click="iconAction()"
       />
-      <v-icon v-else :icon="icon" size="large" />
     </template>
 
     <template v-if="title" #title>
@@ -189,7 +189,7 @@ export interface Props {
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
   showLoading?: boolean;
-  iconAsButton?: boolean;
+  iconAction?: () => void;
 }
 withDefaults(defineProps<Props>(), {
   color: "transparent",
@@ -199,7 +199,7 @@ withDefaults(defineProps<Props>(), {
   menuItems: undefined,
   enforceOverflowMenu: false,
   showLoading: undefined,
-  iconAsButton: false,
+  iconAction: undefined,
 });
 
 // emitters

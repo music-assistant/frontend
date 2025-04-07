@@ -1,16 +1,20 @@
+<!--
+ Comment marcelveldt 2025-01-04: Not sure about the purpose of these mods
+ What can we do to get rid of these mods/hacks and just use the standard Vuetify components?
+-->
 <template>
   <v-container v-bind="btnProps" variant="default" fluid>
     <!-- Dynamically inherit slots from parent -->
-    <template v-for="(value, name) in $slots as unknown" #[name]>
+    <!-- @vue-ignore -->
+    <template v-for="(value, name) in $slots" #[name]>
       <slot :name="name"></slot>
     </template>
   </v-container>
 </template>
 
 <script lang="ts">
-import { ButtonProps } from "@/plugins/api/interfaces";
 import vuetify from "@/plugins/vuetify";
-import { defineProps, computed } from "vue";
+import { computed } from "vue";
 
 export default {
   props: {

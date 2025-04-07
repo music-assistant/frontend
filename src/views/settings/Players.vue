@@ -73,6 +73,7 @@ import { api } from "@/plugins/api";
 import {
   EventType,
   PlayerConfig,
+  PlayerType,
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -80,9 +81,9 @@ import { useRouter } from "vue-router";
 import Button from "@/components/mods/Button.vue";
 import ListItem from "@/components/mods/ListItem.vue";
 import Container from "@/components/mods/Container.vue";
-import { open } from "@tauri-apps/plugin-shell";
 import { eventbus } from "@/plugins/eventbus";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -122,7 +123,7 @@ const removePlayerConfig = function (playerId: string) {
 };
 
 const editPlayer = function (playerId: string, provider: string) {
-  if (provider in api.providers) {
+  if (api.getProvider(provider)) {
     // only allow edit if provider is available
     router.push(`/settings/editplayer/${playerId}`);
   }
@@ -150,10 +151,6 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
   );
 };
 
-const openLinkInNewTab = function (url: string) {
-  open(url);
-};
-
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   const menuItems: ContextMenuItem[] = [
     {
@@ -172,6 +169,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
         editPlayerDsp(playerConfig.player_id);
       },
       icon: "mdi-equalizer",
+      hide: api.players[playerConfig.player_id]?.type === PlayerType.GROUP,
     },
     {
       label: playerConfig.enabled ? "settings.disable" : "settings.enable",

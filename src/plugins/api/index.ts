@@ -44,6 +44,13 @@ import {
   ItemMapping,
   AlbumType,
   DSPConfig,
+  Audiobook,
+  Podcast,
+  PodcastEpisode,
+  PlayableMediaItemType,
+  MediaItemTypeOrItemMapping,
+  BuiltinPlayerState,
+  RecommendationFolder,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -267,6 +274,18 @@ export class MusicAssistantApi {
     return this.sendCommand("music/radios/count", { favorite_only });
   }
 
+  public getLibraryPodcastsCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/podcasts/count", { favorite_only });
+  }
+
+  public getLibraryAudiobooksCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/audiobooks/count", { favorite_only });
+  }
+
   public getLibraryArtists(
     favorite?: boolean,
     search?: string,
@@ -473,6 +492,90 @@ export class MusicAssistantApi {
     });
   }
 
+  // Audiobook related endpoints
+  public getLibraryAudiobooks(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+  ): Promise<Audiobook[]> {
+    return this.sendCommand("music/audiobooks/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+    });
+  }
+
+  public getAudiobook(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Audiobook> {
+    return this.sendCommand("music/audiobooks/get_audiobook", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getAudiobookVersions(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Audiobook[]> {
+    return this.sendCommand("music/audiobooks/audiobook_versions", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  // Podcast related endpoints
+  public getLibraryPodcasts(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+  ): Promise<Podcast[]> {
+    return this.sendCommand("music/podcasts/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+    });
+  }
+
+  public getPodcast(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Podcast> {
+    return this.sendCommand("music/podcasts/get_podcast", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public gePodcastVersions(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Podcast[]> {
+    return this.sendCommand("music/podcasts/podcast_versions", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getPodcastEpisodes(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<PodcastEpisode[]> {
+    return this.sendCommand("music/podcasts/podcast_episodes", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
     return this.sendCommand("music/item_by_uri", {
@@ -507,6 +610,19 @@ export class MusicAssistantApi {
   ): Promise<MediaItemType> {
     // Get single music item by id and media type.
     return this.sendCommand("music/item", {
+      media_type,
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getLibraryItem(
+    media_type: MediaType,
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<MediaItemType | null> {
+    // Get single music item by id and media type.
+    return this.sendCommand("music/get_library_item", {
       media_type,
       item_id,
       provider_instance_id_or_domain,
@@ -591,11 +707,48 @@ export class MusicAssistantApi {
 
   public async getRecentlyPlayedItems(
     limit = 10,
-    media_types: MediaType[] = [MediaType.TRACK, MediaType.RADIO],
-  ): Promise<MediaItemType[]> {
+    media_types?: MediaType[],
+  ): Promise<ItemMapping[]> {
     return this.sendCommand("music/recently_played_items", {
       limit,
       media_types,
+    });
+  }
+
+  public async getInProgressItems(limit = 10): Promise<ItemMapping[]> {
+    return this.sendCommand("music/in_progress_items", {
+      limit,
+    });
+  }
+
+  public async getRecommendations(): Promise<RecommendationFolder[]> {
+    return this.sendCommand("music/recommendations");
+  }
+
+  public markItemPlayed(
+    media_item: MediaItemTypeOrItemMapping,
+    fully_played?: boolean,
+    seconds_played?: number,
+  ): Promise<void> {
+    if ("fully_played" in media_item) media_item.fully_played = fully_played;
+    if ("resume_position_ms" in media_item)
+      delete media_item.resume_position_ms;
+    // Mark item as played in the playlog
+    return this.sendCommand("music/mark_played", {
+      media_item,
+      fully_played,
+      seconds_played,
+    });
+  }
+  public markItemUnPlayed(
+    media_item: MediaItemTypeOrItemMapping,
+  ): Promise<void> {
+    if ("fully_played" in media_item) media_item.fully_played = false;
+    if ("resume_position_ms" in media_item)
+      delete media_item.resume_position_ms;
+    // Mark item as unplayed in the playlog
+    return this.sendCommand("music/mark_unplayed", {
+      media_item,
     });
   }
 
@@ -917,18 +1070,55 @@ export class MusicAssistantApi {
     });
   }
 
+  public playerCommandGroupSelectSource(
+    playerId: string,
+    source: string,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "select_source", { source });
+  }
+
+  // BuiltinPlayer related functions/commands
+
+  public async registerBuiltinPlayer(
+    player_name: string,
+    player_id?: string,
+  ): Promise<Player> {
+    return this.sendCommand("builtin_player/register", {
+      player_name,
+      player_id,
+    });
+  }
+
+  public async unregisterBuiltinPlayer(player_id: string): Promise<Player> {
+    return this.sendCommand("builtin_player/unregister", { player_id });
+  }
+
+  public async updateBuiltinPlayerState(
+    player_id: string,
+    state: BuiltinPlayerState,
+  ): Promise<boolean> {
+    return this.sendCommand("builtin_player/update_state", {
+      player_id,
+      state,
+    });
+  }
+
   // Play Media related functions
 
   public playMedia(
-    media: string | string[] | MediaItemType | MediaItemType[],
+    media:
+      | MediaItemTypeOrItemMapping
+      | MediaItemTypeOrItemMapping[]
+      | string
+      | string[],
     option?: QueueOption,
     radio_mode?: boolean,
-    start_item?: string,
+    start_item?: PlayableMediaItemType | string,
     queue_id?: string,
   ): Promise<void> {
     if (
       !queue_id &&
-      store.activePlayer &&
+      store.activePlayer?.active_source &&
       store.activePlayer?.active_source in this.queues
     ) {
       queue_id = store.activePlayer?.active_source;
@@ -1080,6 +1270,14 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core/get", { domain });
   }
 
+  public async getCoreConfigValue(
+    domain: string,
+    key: string,
+  ): Promise<ConfigValueType> {
+    // Return value for a single core controller config entry.
+    return this.sendCommand("config/core/get_value", { domain, key });
+  }
+
   public async getCoreConfigEntries(
     domain: string,
     action?: string,
@@ -1133,9 +1331,13 @@ export class MusicAssistantApi {
     // try to get the name of the provider from the instance_id or domain
     if (provider_domain_or_instance_id in this.providers) {
       provider_domain_or_instance_id =
-        this.providers[provider_domain_or_instance_id].domain;
+        this.providers[provider_domain_or_instance_id].instance_id;
     }
-    // prefer the name from manifest and not the user configured name
+    // prefer the user configured name
+    if (provider_domain_or_instance_id in this.providers) {
+      return this.providers[provider_domain_or_instance_id].name;
+    }
+    // fallback to manifest name
     if (provider_domain_or_instance_id in this.providerManifests) {
       return this.providerManifests[provider_domain_or_instance_id].name;
     }

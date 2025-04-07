@@ -3,10 +3,10 @@
     <!-- main (or group) volume/power -->
     <!-- mute btn + player name + optional sync checkbox-->
     <v-list-item
-      v-if="!hideHeadingRow"
+      v-if="showHeadingRow"
       class="volumesliderrow heading"
       :link="false"
-      :style="player.powered ? 'opacity: 1' : 'opacity: 0.6'"
+      :style="player.powered == false ? 'opacity: 0.6' : 'opacity: 1'"
     >
       <template #prepend>
         <v-icon
@@ -21,6 +21,7 @@
       <template #append>
         <!-- power button -->
         <Button
+          v-if="player.power_control != PLAYER_CONTROL_NONE"
           class="powerbtn"
           variant="icon"
           @click.stop="api.playerCommandPowerToggle(player.player_id)"
@@ -31,9 +32,14 @@
     </v-list-item>
     <!-- mute btn + volume slider + volume level text (or collapse btn)-->
     <v-list-item
+      v-if="
+        showVolumeControl &&
+        (player.volume_control != PLAYER_CONTROL_NONE ||
+          player.group_childs.length)
+      "
       class="volumesliderrow"
       :link="false"
-      :style="player.powered ? 'opacity: 0.75' : 'opacity: 0.35'"
+      :style="player.powered == false ? 'opacity: 0.35' : 'opacity: 0.75'"
     >
       <template #prepend>
         <!-- mute button -->
@@ -41,7 +47,9 @@
           icon
           style="height: 25px"
           :disabled="
-            player.type == PlayerType.GROUP || player.group_childs.length > 0
+            player.type == PlayerType.GROUP ||
+            player.group_childs.length > 0 ||
+            player.mute_control == PLAYER_CONTROL_NONE
           "
           @click.stop="api.playerCommandMuteToggle(player.player_id)"
         >
@@ -55,20 +63,19 @@
       </template>
       <template #default>
         <PlayerVolume
+          v-if="
+            player.volume_control != PLAYER_CONTROL_NONE ||
+            player.group_childs.length
+          "
           color="secondary"
           width="100%"
-          :is-powered="player.powered"
-          :disabled="
-            !player.available ||
-            !player.powered ||
-            (!player.supported_features.includes(PlayerFeature.VOLUME_SET) &&
-              !player.group_childs.length)
-          "
+          :is-powered="player.powered != false"
+          :disabled="!player.available"
           :model-value="
             Math.round(
               player.group_childs.length
                 ? player.group_volume
-                : player.volume_level,
+                : player.volume_level || 0,
             )
           "
           @click.stop
@@ -88,7 +95,7 @@
             Math.round(
               player.group_childs.length
                 ? player.group_volume
-                : player.volume_level,
+                : player.volume_level || 0,
             )
           }}
         </div>
@@ -99,15 +106,15 @@
     <div
       v-if="
         showSubPlayers &&
-        player.powered &&
-        (player.group_childs.length > 0 || showSyncControls)
+        (player.group_childs.length > 0 || showSyncControls) &&
+        getVolumePlayers(player).length > 0
       "
       @click.stop
     >
       <v-divider style="margin-top: 10px; margin-bottom: 15px" />
 
       <div
-        v-for="childPlayer in getVolumePlayers(player, !showSyncControls)"
+        v-for="childPlayer in getVolumePlayers(player)"
         :key="childPlayer.player_id"
       >
         <!-- player icon + player name + optional sync checkbox-->
@@ -115,7 +122,7 @@
           class="volumesliderrow"
           :link="false"
           :style="
-            childPlayer.powered || showSyncControls
+            childPlayer.powered != false || showSyncControls
               ? 'opacity: 0.75'
               : 'opacity: 0.4'
           "
@@ -150,18 +157,20 @@
         </v-list-item>
         <!-- mute btn + volume slider + volume level text-->
         <v-list-item
+          v-if="childPlayer.volume_control != PLAYER_CONTROL_NONE"
           class="volumesliderrow"
           :link="false"
-          :style="childPlayer.powered ? 'opacity: 0.75' : 'opacity: 0.4'"
+          :style="
+            childPlayer.powered == false ? 'opacity: 0.4' : 'opacity: 0.75'
+          "
           @click.stop
         >
           <template #prepend>
             <Button
               icon
               :disabled="
-                !childPlayer.supported_features.includes(
-                  PlayerFeature.VOLUME_MUTE,
-                )
+                !childPlayer.available ||
+                childPlayer.mute_control == PLAYER_CONTROL_NONE
               "
               style="height: 25px"
               @click="api.playerCommandMuteToggle(childPlayer.player_id)"
@@ -178,17 +187,13 @@
           </template>
           <template #default>
             <PlayerVolume
+              v-if="childPlayer.volume_control != PLAYER_CONTROL_NONE"
               color="secondary"
               width="100%"
-              :is-powered="childPlayer.powered"
-              :disabled="
-                !childPlayer.available ||
-                !childPlayer.supported_features.includes(
-                  PlayerFeature.VOLUME_SET,
-                )
-              "
+              :is-powered="childPlayer.powered != false"
+              :disabled="!childPlayer.available"
               :allow-wheel="allowWheel"
-              :model-value="Math.round(childPlayer.volume_level)"
+              :model-value="Math.round(childPlayer.volume_level || 0)"
               @update:model-value="
                 api.playerCommandVolumeSet(childPlayer.player_id, $event)
               "
@@ -196,11 +201,7 @@
           </template>
           <template #append>
             <div
-              v-if="
-                childPlayer.supported_features.includes(
-                  PlayerFeature.VOLUME_SET,
-                )
-              "
+              v-if="childPlayer.volume_control != PLAYER_CONTROL_NONE"
               class="text-caption volumecaption"
             >
               {{ childPlayer.volume_level }}
@@ -219,6 +220,7 @@ import {
   PlayerFeature,
   PlayerState,
   PlayerType,
+  PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
 import { truncateString, getPlayerName } from "@/helpers/utils";
@@ -230,7 +232,8 @@ export interface Props {
   player: Player;
   showSyncControls?: boolean;
   showSubPlayers?: boolean;
-  hideHeadingRow?: boolean;
+  showHeadingRow?: boolean;
+  showVolumeControl?: boolean;
   allowWheel?: boolean;
 }
 const compProps = defineProps<Props>();
@@ -242,15 +245,13 @@ const canExpand = computed(() => {
   return compProps.player.group_childs.length > 0;
 });
 
-const getVolumePlayers = function (player: Player, includeSelf = true) {
+const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
-  // include leader player in case of manually grouped players
-  if (includeSelf && player.type != PlayerType.GROUP) {
-    items.push(player);
-  }
   // always include group_childs
   for (const groupChildId of player.group_childs) {
     const volumeChild = api?.players[groupChildId];
+    if (!volumeChild) continue;
+    if (volumeChild.volume_control == PLAYER_CONTROL_NONE) continue;
     if (volumeChild && volumeChild.available && !items.includes(volumeChild)) {
       items.push(volumeChild);
     }
@@ -299,18 +300,6 @@ const getVolumePlayers = function (player: Player, includeSelf = true) {
   return items;
 };
 
-const playerCommandPowerOffUnsyncMany = async function (player_ids: string[]) {
-  /*
-      Handle power off (and unsync) command for all the given players.
-    */
-  for (const playerId of player_ids) {
-    if (api.players[playerId].powered && !api.players[playerId].active_group)
-      // power off will also unsync in the backend
-      await api.playerCommandPower(playerId, false);
-    else await api.playerCommandUnGroup(playerId);
-  }
-};
-
 const syncCheckBoxChange = async function (
   syncPlayerId: string,
   value: boolean | null,
@@ -356,7 +345,8 @@ const syncCheckBoxChange = async function (
   timeOutId.value = setTimeout(async () => {
     if (playersToUnSync.value.length > 0) {
       // power off will also unsync
-      playerCommandPowerOffUnsyncMany(playersToUnSync.value)
+      api
+        .playerCommandUnGroupMany(playersToUnSync.value)
         .catch(async () => {
           // restore state if command failed
           api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);

@@ -147,7 +147,6 @@ const toggleExpand = function () {
 };
 
 const makeImagePrimary = function (image: MediaItemImage) {
-  console.log("MakeImagePrimary", image);
   const images = [image];
   images.push(...compProps.modelValue.filter((x) => x != image));
   emit("update:modelValue", images);

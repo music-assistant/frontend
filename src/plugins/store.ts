@@ -1,9 +1,20 @@
 import { computed, reactive } from "vue";
-import { Player, PlayerQueue, QueueItem } from "./api/interfaces";
+import { MediaType, Player, PlayerQueue, QueueItem } from "./api/interfaces";
 
 import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
 import { isTouchscreenDevice } from "@/helpers/utils";
+
+import MobileDetect from "mobile-detect";
+
+type DeviceType = "desktop" | "phone" | "tablet";
+const md = new MobileDetect(window.navigator.userAgent);
+
+const DEVICE_TYPE: DeviceType = md.tablet()
+  ? "tablet"
+  : md.phone() || md.mobile()
+    ? "phone"
+    : "desktop";
 
 export enum AlertType {
   ERROR = "error",
@@ -24,6 +35,7 @@ interface Store {
   showPlayersMenu: boolean;
   navigationMenuStyle: string;
   showFullscreenPlayer: boolean;
+  frameless: boolean;
   showQueueItems: boolean;
   apiInitialized: boolean;
   apiBaseUrl: string;
@@ -32,6 +44,7 @@ interface Store {
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
+  globalSearchType?: MediaType;
   prevState?: StoredState;
   activeAlert?: Alert;
   prevRoute?: string;
@@ -40,8 +53,13 @@ interface Store {
   libraryTracksCount?: number;
   libraryPlaylistsCount?: number;
   libraryRadiosCount?: number;
+  libraryPodcastsCount?: number;
+  libraryAudiobooksCount?: number;
   connected?: boolean;
   isTouchscreen: boolean;
+  playMenuShown: boolean;
+  playActionInProgress: boolean;
+  deviceType: DeviceType;
 }
 
 export const store: Store = reactive({
@@ -50,6 +68,7 @@ export const store: Store = reactive({
   showPlayersMenu: false,
   navigationMenuStyle: "horizontal",
   showFullscreenPlayer: false,
+  frameless: false,
   showQueueItems: false,
   apiInitialized: false,
   apiBaseUrl: "",
@@ -61,7 +80,10 @@ export const store: Store = reactive({
     return undefined;
   }),
   activePlayerQueue: computed(() => {
-    if (store.activePlayer && store.activePlayer.active_source in api.queues) {
+    if (
+      store.activePlayer?.active_source &&
+      store.activePlayer.active_source in api.queues
+    ) {
       return api.queues[store.activePlayer.active_source];
     }
     if (
@@ -80,6 +102,7 @@ export const store: Store = reactive({
     return undefined;
   }),
   globalSearchTerm: undefined,
+  globalSearchType: undefined,
   prevState: undefined,
   activeAlert: undefined,
   prevRoute: undefined,
@@ -90,4 +113,7 @@ export const store: Store = reactive({
   libraryRadiosCount: undefined,
   connected: false,
   isTouchscreen: isTouchscreenDevice(),
+  playMenuShown: false,
+  playActionInProgress: false,
+  deviceType: DEVICE_TYPE,
 });

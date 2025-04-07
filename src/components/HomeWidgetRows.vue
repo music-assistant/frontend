@@ -1,124 +1,113 @@
 <template>
-  <div v-for="widgetRow in widgetRows" :key="widgetRow.label">
-    <HomeWidgetRow :widget-row="widgetRow" />
+  <PlayersWidgetRow
+    v-if="widgetRowSettings['players']?.enabled || editMode"
+    :settings="widgetRowSettings['players']"
+    :edit-mode="editMode"
+    @update:settings="(settings) => onUpdateSettings('players', settings)"
+  />
+  <div
+    v-for="widgetRow in widgetRows
+      .filter((x) => x.items.length && (x.settings!.enabled || editMode))
+      .sort((a, b) => a.settings!.position - b.settings!.position)"
+    :key="widgetRow.uri"
+  >
+    <HomeWidgetRow
+      v-if="widgetRows.length"
+      :widget-row="widgetRow"
+      :edit-mode="editMode"
+      @update:settings="
+        (settings) => onUpdateSettings(widgetRow.uri!, settings)
+      "
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
-import HomeWidgetRow, { WidgetRow } from "@/components/HomeWidgetRow.vue";
-import { ref } from "vue";
-import { onActivated } from "vue";
+import HomeWidgetRow, {
+  WidgetRow,
+  WidgetRowSettings,
+} from "@/components/WidgetRow.vue";
+import PlayersWidgetRow from "./PlayersWidgetRow.vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { EventMessage, EventType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 
-const widgetRows = ref<Record<string, WidgetRow>>({
-  recently_played: {
-    label: "recently_played",
-    icon: "mdi-motion-play",
-    items: [],
-  },
-  artists: {
-    label: "artists",
-    icon: "mdi-account-music",
-    path: "/artists",
-    items: [],
-  },
-  albums: {
-    label: "albums",
-    icon: "mdi-album",
-    path: "/albums",
-    items: [],
-  },
-  playlists: {
-    label: "playlists",
-    icon: "mdi-playlist-music",
-    path: "/playlists",
-    items: [],
-  },
-  tracks: {
-    label: "tracks",
-    icon: "mdi-file-music",
-    path: "/tracks",
-    items: [],
-  },
-  radios: {
-    label: "radios",
-    icon: "mdi-radio",
-    path: "/radios",
-    items: [],
-  },
-  browse: {
-    label: "browse",
-    icon: "mdi-folder",
-    path: "/browse",
-    items: [],
-  },
+const widgetRows = ref<WidgetRow[]>([]);
+const widgetRowSettings = ref<Record<string, WidgetRowSettings>>({});
+
+export interface Props {
+  editMode?: boolean;
+}
+withDefaults(defineProps<Props>(), {
+  editMode: false,
 });
 
 const loadData = async function () {
-  // recently played widget row
-  widgetRows.value.recently_played.items = await api.getRecentlyPlayedItems(10);
+  const widgetRowSettingsRaw = localStorage.getItem("widgetRowSettings");
+  widgetRowSettings.value = widgetRowSettingsRaw
+    ? JSON.parse(widgetRowSettingsRaw)
+    : {
+        // insert virtual row for players
+        players: {
+          position: 0,
+          enabled: true,
+        },
+      };
 
-  // library artists widget row
-  // TODO: Find a way to make the images for this row eager load
-  widgetRows.value.artists.items = await api.getLibraryArtists(
-    undefined,
-    undefined,
-    20,
-    undefined,
-    "random",
-  );
-  widgetRows.value.artists.count = store.libraryArtistsCount;
-
-  // library albums widget row
-  // TODO: Find a way to make the images for this row eager load
-
-  widgetRows.value.albums.items = await api.getLibraryAlbums(
-    undefined,
-    undefined,
-    20,
-    undefined,
-    "timestamp_added_desc",
-  );
-  widgetRows.value.albums.count = store.libraryAlbumsCount;
-
-  // library playlist widget row
-  widgetRows.value.playlists.items = await api.getLibraryPlaylists(
-    undefined,
-    undefined,
-    20,
-    undefined,
-    "timestamp_added_desc",
-  );
-  widgetRows.value.playlists.count = store.libraryPlaylistsCount;
-
-  // library radios widget row
-  widgetRows.value.radios.items = await api.getLibraryRadios(
-    undefined,
-    undefined,
-    20,
-    undefined,
-    "timestamp_added_desc",
-  );
-  widgetRows.value.radios.count = store.libraryRadiosCount;
-
-  // tracks widget
-  widgetRows.value.tracks.items = await api.getLibraryTracks(
-    undefined,
-    undefined,
-    20,
-    undefined,
-    "timestamp_added_desc",
-  );
-  widgetRows.value.tracks.count = store.libraryTracksCount;
+  const recommendations = await api.getRecommendations();
+  const _widgetRows: WidgetRow[] = [];
+  let idx = 0;
+  for (const recommendation of recommendations) {
+    idx++;
+    const settings = widgetRowSettings.value[recommendation.uri] || {
+      position: idx,
+      enabled: true,
+    };
+    const title = recommendation.translation_key
+      ? $t(
+          `recommendations.${recommendation.translation_key}`,
+          recommendation.name,
+        )
+      : recommendation.name;
+    _widgetRows.push({
+      ...recommendation,
+      settings,
+      title,
+    });
+    widgetRows.value = _widgetRows;
+  }
 };
 
-await loadData();
-
-onActivated(() => {
-  // update the listing when a cached view is reactivated
+onMounted(() => {
   loadData();
+  // signal if/when an item is played (to refresh recommendations)
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_PLAYED,
+    async (evt: EventMessage) => {
+      if (evt.data && !evt.data.is_playing) {
+        loadData();
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
 });
+
+const onUpdateSettings = function (uri: string, settings: WidgetRowSettings) {
+  // update the item in-place of the list
+  for (const widgetRow of widgetRows.value) {
+    if (widgetRow.uri === uri) {
+      widgetRow.settings = settings;
+      break;
+    }
+  }
+  // update persistent settings
+  widgetRowSettings.value[uri] = settings;
+  localStorage.setItem(
+    "widgetRowSettings",
+    JSON.stringify(widgetRowSettings.value),
+  );
+};
 </script>
 
 <style></style>

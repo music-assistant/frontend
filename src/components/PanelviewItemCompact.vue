@@ -5,6 +5,7 @@
       v-bind="props"
       :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
       :elevation="isHovering ? 3 : 0"
+      :disabled="disabled"
       @click="onClick"
       @click.right.prevent="onMenu"
     >
@@ -56,16 +57,36 @@
             {{ getArtistsString(item.artists, 1) }}
           </v-list-item-subtitle>
           <v-list-item-subtitle
+            v-if="'authors' in item && item.authors"
+            class="line-clamp-1"
+          >
+            {{ item.authors.join(" / ") }}
+          </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-else-if="'publisher' in item && item.publisher"
+            class="line-clamp-1"
+          >
+            {{ item.publisher }}
+          </v-list-item-subtitle>
+          <v-list-item-subtitle
             v-else-if="'owner' in item && item.owner"
             class="line-clamp-1"
           >
             {{ item.owner }}
           </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-else-if="!('provider_mappings' in item)"
+            class="line-clamp-1"
+          >
+            {{ $t(item.media_type) }}
+          </v-list-item-subtitle>
         </v-list-item>
       </div>
       <!-- play button -->
       <v-btn
-        v-if="(isHovering || store.isTouchscreen) && isAvailable"
+        v-if="
+          (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
+        "
         icon="mdi-play"
         color="primary"
         fab
@@ -81,20 +102,29 @@
 import MediaItemThumb from "./MediaItemThumb.vue";
 import {
   BrowseFolder,
+  ItemMapping,
   type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
-import { getArtistsString, getBrowseFolderName } from "@/helpers/utils";
+import {
+  getArtistsString,
+  getBrowseFolderName,
+  handleMediaItemClick,
+  handleMenuBtnClick,
+  handlePlayBtnClick,
+} from "@/helpers/utils";
 import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
-  item: MediaItemType;
+  item: MediaItemType | ItemMapping;
   size?: number;
   isSelected?: boolean;
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
   isAvailable?: boolean;
+  parentItem?: MediaItemType;
+  disabled?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
@@ -102,21 +132,19 @@ const compProps = withDefaults(defineProps<Props>(), {
   showCheckboxes: false,
   permanentOverlay: false,
   isAvailable: true,
+  parentItem: undefined,
 });
 
 // emits
 const emit = defineEmits<{
-  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
-  (e: "click", item: MediaItemType, posX: number, posY: number): void;
-  (e: "play", item: MediaItemType, posX: number, posY: number): void;
-  (e: "select", item: MediaItemType, selected: boolean): void;
+  (e: "select", item: MediaItemType | ItemMapping, selected: boolean): void;
 }>();
 
 const onMenu = function (evt: PointerEvent | TouchEvent) {
   if (compProps.showCheckboxes) return;
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
-  emit("menu", compProps.item, posX, posY);
+  handleMenuBtnClick(compProps.item, posX, posY, compProps.parentItem);
 };
 
 const onClick = function (evt: PointerEvent) {
@@ -124,12 +152,22 @@ const onClick = function (evt: PointerEvent) {
     emit("select", compProps.item, compProps.isSelected ? false : true);
     return;
   }
-  emit("click", compProps.item, evt.clientX, evt.clientY);
+  handleMediaItemClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 
 const onPlayClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit("play", compProps.item, evt.clientX, evt.clientY);
+  handlePlayBtnClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 </script>
 

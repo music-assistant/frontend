@@ -3,25 +3,14 @@
     <Toolbar
       title="Music Assistant"
       :show-loading="true"
-      :menu-items="
-        hideSettings
-          ? []
-          : [
-              {
-                label: 'settings.settings',
-                icon: 'mdi-cog-outline',
-                action: () => {
-                  $router.push({ path: 'settings' });
-                },
-              },
-            ]
-      "
+      :enforce-overflow-menu="true"
+      :menu-items="menuItems"
     />
 
     <Container variant="panel">
       <Suspense>
         <div>
-          <HomeWidgetRows />
+          <HomeWidgetRows :edit-mode="editMode" />
         </div>
         <template #fallback><v-progress-circular indeterminate /> </template>
       </Suspense>
@@ -33,16 +22,36 @@
 import Container from "@/components/mods/Container.vue";
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { ref } from "vue";
-
-export interface Props {
-  player?: string;
-}
-const props = defineProps<Props>();
+import { computed, ref } from "vue";
+import router from "@/plugins/router";
 
 const hideSettings = ref(
   localStorage.getItem("frontend.settings.hide_settings") == "true",
 );
+
+const editMode = ref(false);
+
+const menuItems = computed(() => {
+  return [
+    {
+      label: "settings.settings",
+      icon: "mdi-cog-outline",
+      action: () => {
+        router.push({ path: "settings" });
+      },
+      hide: hideSettings.value,
+    },
+    {
+      label: editMode.value
+        ? "homescreen_edit_disable"
+        : "homescreen_edit_enable",
+      icon: "mdi-pencil",
+      action: () => {
+        editMode.value = !editMode.value;
+      },
+    },
+  ];
+});
 </script>
 
 <style scoped>

@@ -39,7 +39,7 @@ import {
 import EditConfig from "./EditConfig.vue";
 import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
-import { DEFAULT_MENU_ITEMS } from "@/layouts/default/DrawerNavigation.vue";
+import { DEFAULT_MENU_ITEMS } from "@/constants";
 
 // global refs
 const router = useRouter();
@@ -111,6 +111,8 @@ onMounted(() => {
         { title: $t("albums"), value: "albums" },
         { title: $t("tracks"), value: "tracks" },
         { title: $t("playlists"), value: "playlists" },
+        { title: $t("audiobooks"), value: "audiobooks" },
+        { title: $t("podcasts"), value: "podcasts" },
         { title: $t("radios"), value: "radios" },
         { title: $t("browse"), value: "browse" },
         { title: $t("settings.settings"), value: "settings" },
@@ -129,6 +131,18 @@ onMounted(() => {
       category: "advanced",
       value: localStorage.getItem("frontend.settings.hide_settings") == "true",
     },
+    {
+      key: "enable_builtin_player",
+      type: ConfigEntryType.BOOLEAN,
+      label: "enable_builtin_player",
+      default_value: true,
+      required: true,
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.enable_builtin_player") !=
+        "false",
+    },
   ];
 });
 
@@ -137,7 +151,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   for (const key in values) {
     const storageKey = `frontend.settings.${key}`;
     const value = values[key];
-    if (value) {
+    if (value != null) {
       localStorage.setItem(storageKey, value.toString());
     } else {
       localStorage.removeItem(storageKey);

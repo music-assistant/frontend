@@ -3,9 +3,15 @@ import { ComputedRef } from "vue";
 /// constants
 export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
 export const MASS_LOGO_ONLINE =
-  "https://github.com/home-assistant/brands/raw/master/custom_integrations/mass/icon%402x.png";
+  "https://github.com/home-assistant/brands/raw/master/core_integrations/music_assistant/icon%402x.png";
+export const PLAYER_CONTROL_NONE = "none";
 
 /// dsp
+export enum AudioChannel {
+  ALL = "ALL",
+  FL = "FL",
+  FR = "FR",
+}
 
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
@@ -33,10 +39,13 @@ export interface ParametricEQBand {
   gain: number;
   type: ParametricEQBandType;
   enabled: boolean;
+  channel: AudioChannel;
 }
 
 // Specific filter types
 export interface ParametricEQFilter extends DSPFilterBase {
+  preamp?: number;
+  per_channel_preamp: Partial<Record<AudioChannel, number>>;
   type: DSPFilterType.PARAMETRIC_EQ;
   bands: Array<ParametricEQBand>;
 }
@@ -57,7 +66,27 @@ export interface DSPConfig {
   filters: DSPFilter[];
   input_gain: number;
   output_gain: number;
+}
+
+// DSPDetails used in StreamDetails
+export enum DSPState {
+  ENABLED = "enabled",
+  DISABLED = "disabled",
+  DISABLED_BY_UNSUPPORTED_GROUP = "disabled_by_unsupported_group",
+}
+
+// This describes the DSP configuration as applied,
+// even when the DSP state is disabled. For example,
+// output_limiter can remain true while the DSP is disabled.
+// All filters in the list are guaranteed to be enabled.
+// output_format is the format that will be sent to the output device (if known).
+export interface DSPDetails {
+  state: DSPState;
+  input_gain: number;
+  filters: DSPFilter[];
+  output_gain: number;
   output_limiter: boolean;
+  output_format?: AudioFormat;
 }
 
 /// enums
@@ -68,6 +97,9 @@ export enum MediaType {
   TRACK = "track",
   PLAYLIST = "playlist",
   RADIO = "radio",
+  AUDIOBOOK = "audiobook",
+  PODCAST = "podcast",
+  PODCAST_EPISODE = "podcast_episode",
   FOLDER = "folder",
   UNKNOWN = "unknown",
 }
@@ -107,27 +139,98 @@ export enum AlbumType {
   UNKNOWN = "unknown",
 }
 
+export enum ExternalID {
+  MB_ARTIST = "musicbrainz_artistid", // MusicBrainz Artist ID (or AlbumArtist ID)
+  MB_ALBUM = "musicbrainz_albumid", // MusicBrainz Album ID
+  MB_RELEASEGROUP = "musicbrainz_releasegroupid", // MusicBrainz ReleaseGroupID
+  MB_TRACK = "musicbrainz_trackid", // MusicBrainz Track ID
+  MB_RECORDING = "musicbrainz_recordingid", // MusicBrainz Recording ID
+  ISRC = "isrc", // used to identify unique recordings
+  BARCODE = "barcode", // EAN-13 barcode for identifying albums
+  ACOUSTID = "acoustid", //unique fingerprint (id) for a recording
+  ASIN = "asin", // amazon unique number to identify albums
+  DISCOGS = "discogs", // id for media item on discogs
+  TADB = "tadb", // the audio db id
+  UNKNOWN = "unknown",
+}
+
+// Enum with audio content/container types supported by ffmpeg.
 export enum ContentType {
-  OGG = "ogg",
-  FLAC = "flac",
-  MP3 = "mp3",
-  AAC = "aac",
-  MPEG = "mpeg",
-  ALAC = "alac",
-  WAV = "wav",
-  AIFF = "aiff",
-  WMA = "wma",
-  M4B = "m4b",
-  M4A = "m4a",
-  DSF = "dsf",
-  WAVPACK = "wv",
-  PCM_S16LE = "s16le", // PCM signed 16-bit little-endian
-  PCM_S24LE = "s24le", // PCM signed 24-bit little-endian
-  PCM_S32LE = "s32le", // PCM signed 32-bit little-endian
-  PCM_F32LE = "f32le", // PCM 32-bit floating-point little-endian
-  PCM_F64LE = "f64le", // PCM 64-bit floating-point little-endian
-  MPEG_DASH = "dash",
-  UNKNOWN = "?",
+  // --- Containers ---
+  OGG = "ogg", // Ogg container (Vorbis/Opus/FLAC)
+  WAV = "wav", // WAV container (usually PCM)
+  AIFF = "aiff", // AIFF container
+  MPEG = "mpeg", // MPEG-PS/MPEG-TS container
+  M4A = "m4a", // MPEG-4 Audio (AAC/ALAC)
+  MP4A = "mp4a", // MPEG-4 Audio (AAC/ALAC)
+  MP4 = "mp4", // MPEG-4 container
+  M4B = "m4b", // MPEG-4 Audiobook
+  DSF = "dsf", // DSD Stream File
+
+  // --- Can both be a container and codec ---
+  FLAC = "flac", // FLAC lossless audio
+  MP3 = "mp3", // MPEG-1 Audio Layer III
+  WMA = "wma", // Windows Media Audio
+  WMAV2 = "wmav2", // Windows Media Audio v2
+  WMAPRO = "wmapro", // Windows Media Audio Professional
+  WAVPACK = "wavpack", // WavPack lossless
+  TAK = "tak", // Tom's Lossless Audio Kompressor
+  APE = "ape", // Monkey's Audio
+  MUSEPACK = "mpc", // MusePack
+
+  // --- Codecs ---
+  AAC = "aac", // Advanced Audio Coding
+  ALAC = "alac", // Apple Lossless Audio Codec
+  OPUS = "opus", // Opus audio codec
+  VORBIS = "vorbis", // Ogg Vorbis compression
+  AC3 = "ac3", // Dolby Digital (common in DVDs)
+  EAC3 = "eac3", // Dolby Digital Plus (streaming/4K)
+  DTS = "dts", // Digital Theater System
+  TRUEHD = "truehd", // Dolby TrueHD (lossless)
+  DTSHD = "dtshd", // DTS-HD Master Audio
+  DTSX = "dtsx", // DTS:X immersive audio
+  COOK = "cook", // RealAudio Cook Codec
+  RA_144 = "ralf", // RealAudio Lossless
+  MP2 = "mp2", // MPEG-1 Audio Layer II
+  MP1 = "mp1", // MPEG-1 Audio Layer I
+  DRA = "dra", // Chinese Digital Rise Audio
+  ATRAC3 = "atrac3", // Sony MiniDisc format
+
+  // --- PCM Codecs ---
+  PCM_S16LE = "s16le", // PCM 16-bit little-endian
+  PCM_S24LE = "s24le", // PCM 24-bit little-endian
+  PCM_S32LE = "s32le", // PCM 32-bit little-endian
+  PCM_F32LE = "f32le", // PCM 32-bit float
+  PCM_F64LE = "f64le", // PCM 64-bit float
+  PCM_S16BE = "s16be", // PCM 16-bit big-endian
+  PCM_S24BE = "s24be", // PCM 24-bit big-endian
+  PCM_S32BE = "s32be", // PCM 32-bit big-endian
+  PCM_BLURAY = "pcm_bluray", // Blu-ray specific PCM
+  PCM_DVD = "pcm_dvd", // DVD specific PCM
+
+  // --- ADPCM Codecs ---
+  ADPCM_IMA = "adpcm_ima_qt", // QuickTime variant
+  ADPCM_MS = "adpcm_ms", // Microsoft variant
+  ADPCM_SWF = "adpcm_swf", // Flash audio
+
+  // --- PDM Codecs ---
+  DSD_LSBF = "dsd_lsbf", // DSD least-significant-bit first
+  DSD_MSBF = "dsd_msbf", // DSD most-significant-bit first
+  DSD_LSBF_PLANAR = "dsd_lsbf_planar", // DSD planar least-significant-bit first
+  DSD_MSBF_PLANAR = "dsd_msbf_planar", // DSD planar most-significant-bit first
+
+  // --- Voice Codecs ---
+  AMR = "amr_nb", // Adaptive Multi-Rate Narrowband, voice codec
+  AMR_WB = "amr_wb", // Adaptive Multi-Rate Wideband, voice codec
+  SPEEX = "speex", // Open-source voice codec, voice codec
+  PCM_ALAW = "alaw", // G.711 A-law, voice codec
+  PCM_MULAW = "mulaw", // G.711 µ-law, voice codec
+  G722 = "g722", // ITU-T 7 kHz audio
+  G726 = "g726", // ADPCM telephone quality
+
+  // --- Special ---
+  PCM = "pcm", // PCM generic (details determined later)
+  UNKNOWN = "?", // Unknown type
 }
 
 export enum QueueOption {
@@ -162,9 +265,12 @@ export enum PlayerFeature {
   VOLUME_MUTE = "volume_mute",
   PAUSE = "pause",
   SET_MEMBERS = "set_members",
+  MULTI_DEVICE_DSP = "multi_device_dsp",
   SEEK = "seek",
   NEXT_PREVIOUS = "next_previous",
-  ENQUEUE_NEXT = "enqueue_next",
+  PLAY_ANNOUNCEMENT = "play_announcement",
+  ENQUEUE = "enqueue",
+  SELECT_SOURCE = "select_source",
 }
 
 export enum EventType {
@@ -181,14 +287,31 @@ export enum EventType {
   MEDIA_ITEM_ADDED = "media_item_added",
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
+  MEDIA_ITEM_PLAYED = "media_item_played",
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
+  PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
+  BUILTIN_PLAYER = "builtin_player",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
   ALL = "*",
+}
+
+export enum BuiltinPlayerEventType {
+  PLAY = "play",
+  PAUSE = "pause",
+  RESUME = "resume",
+  STOP = "stop",
+  MUTE = "mute",
+  UNMUTE = "unmute",
+  SET_VOLUME = "set_volume",
+  PLAY_MEDIA = "play_media",
+  TIMEOUT = "timeout",
+  POWER_OFF = "power_off",
+  POWER_ON = "power_on",
 }
 
 export enum ProviderFeature {
@@ -243,6 +366,9 @@ export enum ConfigEntryType {
   ACTION = "action",
   ICON = "icon",
   ALERT = "alert",
+
+  // Only used in the frontend
+  DSP_SETTINGS = "dsp_settings",
 }
 
 export enum VolumeNormalizationMode {
@@ -252,6 +378,15 @@ export enum VolumeNormalizationMode {
   FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
   FIXED_GAIN = "fixed_gain",
   FALLBACK_DYNAMIC = "fallback_dynamic",
+}
+
+export enum HidePlayerOption {
+  NEVER = "never",
+  WHEN_OFF = "when_off",
+  WHEN_GROUP_ACTIVE = "when_group_active",
+  WHEN_SYNCED = "when_synced",
+  WHEN_UNAVAILABLE = "when_unavailable",
+  ALWAYS = "always",
 }
 
 //// api
@@ -311,11 +446,14 @@ export type MessageType =
 // config entries
 
 export type ConfigValueType =
-  | string
   | number
+  | string
   | boolean
-  | string[]
   | number[]
+  | string[]
+  | boolean[]
+  | number[]
+  | string[]
   | null;
 
 export interface ConfigValueOption {
@@ -347,6 +485,8 @@ export interface ConfigEntry {
   multi_value?: boolean;
   // depends_on [optional]: needs to be set before this setting shows up in frontend
   depends_on?: string;
+  depends_on_value?: ConfigValueType;
+  depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
@@ -424,6 +564,13 @@ export interface MediaItemImage {
   remotely_accessible: boolean;
 }
 
+export interface MediaItemChapter {
+  position: number;
+  name: string;
+  start: number;
+  end?: number;
+}
+
 export interface MediaItemMetadata {
   description?: string;
   review?: string;
@@ -441,66 +588,51 @@ export interface MediaItemMetadata {
   replaygain?: number;
   popularity?: number;
   cache_checksum?: string;
+  chapters?: MediaItemChapter[];
 }
 
-export interface MediaItem {
+interface _MediaItemBase {
   item_id: string;
   provider: string;
   name: string;
-  provider_mappings: ProviderMapping[];
-
-  metadata: MediaItemMetadata;
-  favorite: boolean;
-  media_type: MediaType;
+  version?: string;
   sort_name?: string;
   uri: string;
+  external_ids?: Array<[ExternalID, string]>;
+  is_playable: boolean; // if the item is playable (can be used in play_media command)
+  translation_key?: string; // an optional translation key identifier
+  media_type: MediaType;
+}
+
+export interface MediaItem extends _MediaItemBase {
+  provider_mappings: ProviderMapping[];
+  metadata: MediaItemMetadata;
+  favorite: boolean;
+  position?: number; //required for playlist tracks, optional for all other
   timestamp_added: number;
   timestamp_modified: number;
 }
 
-export interface ItemMapping {
-  media_type: MediaType;
-  item_id: string;
-  provider: string;
-  name: string;
-  sort_name: string;
-  uri: string;
-  version: string;
+export interface ItemMapping extends _MediaItemBase {
+  available: boolean;
   image?: MediaItemImage;
 }
 
-export interface Artist extends MediaItem {
-  musicbrainz_id: string;
-}
+export interface Artist extends MediaItem {}
 
 export interface Album extends MediaItem {
-  version: string;
   year?: number;
-  artist: ItemMapping | Artist;
   artists: Array<ItemMapping | Artist>;
   album_type: AlbumType;
-  upc?: string;
-  musicbrainz_id?: string;
-}
-
-export interface TrackAlbumMapping extends ItemMapping {
-  // Model for a track that is mapped to an album.
-  disc_number?: number;
-  track_number?: number;
 }
 
 export interface Track extends MediaItem {
   duration: number;
-  version: string;
-  isrc: string;
-  musicbrainz_id?: string;
   artists: Array<ItemMapping | Artist>;
   // album track only
   album: ItemMapping | Album;
   disc_number?: number;
   track_number?: number;
-  // playlist track only
-  position?: number;
 }
 
 export interface Playlist extends MediaItem {
@@ -508,8 +640,37 @@ export interface Playlist extends MediaItem {
   is_editable: boolean;
 }
 
-export interface Radio extends MediaItem {
-  duration?: number;
+export interface Radio extends MediaItem {}
+
+export interface Audiobook extends MediaItem {
+  publisher: string;
+  authors: string[];
+  narrators: string[];
+  duration: number;
+  fully_played?: boolean;
+  resume_position_ms?: number;
+}
+
+export interface Podcast extends MediaItem {
+  publisher?: string;
+  total_episodes?: number;
+}
+
+export interface PodcastEpisode extends MediaItem {
+  position: number;
+  podcast: Podcast | ItemMapping;
+  duration: number;
+  fully_played?: boolean;
+  resume_position_ms?: number;
+}
+
+export interface BrowseFolder extends MediaItem {
+  path?: string;
+  image?: MediaItemImage;
+}
+export interface RecommendationFolder extends BrowseFolder {
+  icon?: string;
+  items: MediaItemTypeOrItemMapping[];
 }
 
 export type MediaItemType =
@@ -518,13 +679,13 @@ export type MediaItemType =
   | Track
   | Radio
   | Playlist
+  | Audiobook
+  | Podcast
+  | PodcastEpisode
   | BrowseFolder;
 
-export interface BrowseFolder extends MediaItem {
-  path?: string;
-  label: string;
-  items?: Array<MediaItemType | BrowseFolder>;
-}
+export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
+export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface SearchResults {
   artists: Artist[];
@@ -532,10 +693,13 @@ export interface SearchResults {
   tracks: Track[];
   playlists: Playlist[];
   radio: Radio[];
+  podcasts: Podcast[];
+  audiobooks: Audiobook[];
 }
 
 export interface AudioFormat {
   content_type: ContentType;
+  codec_type: ContentType;
   sample_rate: number;
   bit_depth: number;
   channels: number;
@@ -566,6 +730,10 @@ export interface StreamDetails {
   prefer_album_loudness?: boolean;
   target_loudness?: number;
   volume_normalization_mode?: VolumeNormalizationMode;
+  volume_normalization_gain_correct?: number;
+  // This contains the DSPDetails of all players in the group.
+  // In case of single player playback, dict will contain only one entry.
+  dsp?: Record<string, DSPDetails>;
 }
 
 // queue_item
@@ -577,8 +745,9 @@ export interface QueueItem {
   duration: number;
   sort_index: number;
   streamdetails?: StreamDetails;
-  media_item?: Track | Radio;
+  media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
+  available: boolean;
 }
 
 // player_queue
@@ -629,8 +798,10 @@ export interface PlayerMedia {
 export interface PlayerSource {
   id: string;
   name: string;
-  is_mass: boolean;
   passive: boolean;
+  can_play_pause: boolean;
+  can_seek: boolean;
+  can_next_previous: boolean;
 }
 
 export interface Player {
@@ -639,28 +810,48 @@ export interface Player {
   type: PlayerType;
   name: string;
   available: boolean;
-  powered: boolean;
   device_info: DeviceInfo;
   supported_features: PlayerFeature[];
-  elapsed_time: number;
-  elapsed_time_last_updated: number;
-  current_media?: PlayerMedia;
-  state: PlayerState;
+  can_group_with: string[];
+  enabled: boolean;
 
-  volume_level: number;
-  volume_muted: boolean;
+  elapsed_time?: number;
+  elapsed_time_last_updated?: number;
+  current_media?: PlayerMedia;
+  state?: PlayerState;
+  powered?: boolean;
+  volume_level?: number;
+  volume_muted?: boolean;
   group_childs: string[];
-  active_source: string;
+  active_source?: string;
   source_list: PlayerSource[];
   active_group?: string;
-  synced_to: string;
-  can_group_with: string[];
+  synced_to?: string;
 
-  enabled: boolean;
   group_volume: number;
   display_name: string;
-  hidden: boolean;
+  hide_player_in_ui: HidePlayerOption[];
   icon: string;
+  power_control: string;
+  volume_control: string;
+  mute_control: string;
+}
+
+// BuiltinPlayer
+
+export interface BuiltinPlayerEvent {
+  type: BuiltinPlayerEventType;
+  volume?: number;
+  media_url?: string;
+}
+
+export interface BuiltinPlayerState {
+  powered: boolean;
+  playing: boolean;
+  paused: boolean;
+  position: number;
+  volume: number;
+  muted: boolean;
 }
 
 // provider
@@ -672,8 +863,6 @@ export interface ProviderManifest {
   name: string;
   description: string;
   codeowners: string[];
-  // config_entries: list of config entries required to configure/setup this provider
-  config_entries: ConfigEntry[];
   requirements: string[];
   // documentation: link/url to documentation.
   documentation?: string;
@@ -689,6 +878,8 @@ export interface ProviderManifest {
   icon_svg?: string;
   // icon_svg_dark: optional separate dark svg icon (full xml string)
   icon_svg_dark?: string;
+  // icon_svg_dark: optional separate monochrome svg icon (full xml string)
+  icon_svg_monochrome?: string;
   // depends on: domain of another provider that is required for this provider
   depends_on?: string;
 }
@@ -698,6 +889,8 @@ export interface ProviderInstance {
   type: ProviderType;
   domain: string;
   name: string;
+  default_name: string;
+  instance_name_postfix?: string;
   instance_id: string;
   lookup_key: string;
   supported_features: ProviderFeature[];

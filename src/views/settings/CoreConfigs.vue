@@ -35,8 +35,8 @@
         </template>
 
         <!-- subtitle -->
-        <template #subtitle>
-          <div class="line-clamp-1">
+        <template #subtitle
+          ><div class="line-clamp-1">
             {{ api.providerManifests[item.domain].description }}
           </div>
         </template>
@@ -125,8 +125,8 @@ import ListItem from "@/components/mods/ListItem.vue";
 import Container from "@/components/mods/Container.vue";
 import { useRouter } from "vue-router";
 import { eventbus } from "@/plugins/eventbus";
-import { open } from "@tauri-apps/plugin-shell";
 import { store } from "@/plugins/store";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -137,10 +137,6 @@ const coreConfigs = ref<CoreConfig[]>([]);
 // methods
 const editCoreConfig = function (domain: string) {
   router.push(`/settings/editcore/${domain}`);
-};
-
-const openLinkInNewTab = function (url: string) {
-  open(url);
 };
 
 const onMenu = function (evt: Event, item: CoreConfig) {

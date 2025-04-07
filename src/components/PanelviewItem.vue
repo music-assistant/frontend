@@ -57,6 +57,18 @@
           {{ getArtistsString(item.artists, 1) }}
         </v-list-item-subtitle>
         <v-list-item-subtitle
+          v-if="'authors' in item && item.authors"
+          class="line-clamp-1"
+        >
+          {{ item.authors.join(" / ") }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-else-if="'publisher' in item && item.publisher"
+          class="line-clamp-1"
+        >
+          {{ item.publisher }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
           v-else-if="'owner' in item && item.owner"
           class="line-clamp-1"
         >
@@ -70,7 +82,9 @@
 
       <!-- play button -->
       <v-btn
-        v-if="(isHovering || store.isTouchscreen) && isAvailable"
+        v-if="
+          (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
+        "
         icon="mdi-play"
         color="primary"
         fab
@@ -96,16 +110,20 @@
               </v-tooltip>
             </v-icon>
           </v-item>
-          <!-- disc/track number/position-->
+          <!-- disc/track number-->
           <v-item
             v-if="
-              ('track_number' in item && item.track_number) ||
-              ('position' in item && item.position)
+              showTrackNumber && 'track_number' in item && item.track_number
             "
           >
             <v-icon size="small" icon="mdi-music-circle-outline" />
             <span v-if="item.disc_number">{{ item.disc_number }}/</span
-            >{{ item.track_number || item.position }}
+            >{{ item.track_number }}
+          </v-item>
+          <!-- position-->
+          <v-item v-else-if="'position' in item && item.position">
+            <v-icon size="small" icon="mdi-music-circle-outline" />
+            {{ item.position }}
           </v-item>
           <v-item v-if="getBreakpointValue('bp3')">
             <FavouriteButton :item="item" />
@@ -117,9 +135,7 @@
           variant="list"
           icon="mdi-dots-vertical"
           style="padding-right: 0; margin-right: -5px"
-          @click.stop="
-            (evt: PointerEvent) => $emit('menu', item, evt.clientX, evt.clientY)
-          "
+          @click.stop="onMenu"
         />
       </v-card-actions>
     </v-card>
@@ -139,6 +155,9 @@ import {
 import {
   getArtistsString,
   getBrowseFolderName,
+  handleMediaItemClick,
+  handleMenuBtnClick,
+  handlePlayBtnClick,
   parseBool,
 } from "@/helpers/utils";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
@@ -154,14 +173,18 @@ export interface Props {
   showCheckboxes?: boolean;
   showMediaType?: boolean;
   showActions?: boolean;
+  showTrackNumber?: boolean;
   isAvailable?: boolean;
+  parentItem?: MediaItemType;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
   showActions: false,
+  showTrackNumber: false,
   showMediaType: false,
   isAvailable: true,
+  parentItem: undefined,
 });
 
 // computed properties
@@ -192,9 +215,6 @@ const HiResDetails = computed(() => {
 
 // emits
 const emit = defineEmits<{
-  (e: "menu", item: MediaItemType, posX: number, posY: number): void;
-  (e: "click", item: MediaItemType, posX: number, posY: number): void;
-  (e: "play", item: MediaItemType, posX: number, posY: number): void;
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
@@ -202,7 +222,7 @@ const onMenu = function (evt: PointerEvent | TouchEvent) {
   if (compProps.showCheckboxes) return;
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
-  emit("menu", compProps.item, posX, posY);
+  handleMenuBtnClick(compProps.item, posX, posY, compProps.parentItem);
 };
 
 const onClick = function (evt: PointerEvent) {
@@ -210,12 +230,22 @@ const onClick = function (evt: PointerEvent) {
     emit("select", compProps.item, compProps.isSelected ? false : true);
     return;
   }
-  emit("click", compProps.item, evt.clientX, evt.clientY);
+  handleMediaItemClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 
 const onPlayClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
-  emit("play", compProps.item, evt.clientX, evt.clientY);
+  handlePlayBtnClick(
+    compProps.item,
+    evt.clientX,
+    evt.clientY,
+    compProps.parentItem,
+  );
 };
 </script>
 

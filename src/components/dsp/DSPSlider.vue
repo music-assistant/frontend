@@ -1,15 +1,18 @@
 <template>
-  <v-card flat>
+  <v-card flat color="transparent">
     <v-card-text class="d-flex align-center gap-4">
+      <span style="min-width: 100px" class="v-label pl-2">{{
+        config.label
+      }}</span>
       <v-slider
-        v-model="model"
-        :min="config.min"
-        :max="config.max"
-        :step="config.step"
-        :label="config.label"
+        v-model="sliderModel"
+        :min="sliderMin"
+        :max="sliderMax"
+        :step="sliderStep"
         hide-details
         class="flex-grow-1 pr-4"
         density="compact"
+        color="primary"
       />
       <v-text-field
         v-model="displayValue"
@@ -38,6 +41,8 @@ type ParameterConfig = {
   step: number;
   label: string;
   unit: string;
+  // Whether the slider should behave logarithmically
+  is_log: boolean;
 };
 
 const props = defineProps<{
@@ -55,6 +60,7 @@ const config = computed((): ParameterConfig => {
       step: 0.1,
       label: $t("settings.dsp.parameter.gain"),
       unit: "dB",
+      is_log: false,
     };
   } else if (props.type === "q") {
     return {
@@ -63,6 +69,7 @@ const config = computed((): ParameterConfig => {
       step: 0.1,
       label: $t("settings.dsp.parameter.q_factor"),
       unit: "",
+      is_log: false,
     };
   } else if (props.type === "frequency") {
     return {
@@ -71,6 +78,7 @@ const config = computed((): ParameterConfig => {
       step: 1,
       label: $t("settings.dsp.parameter.frequency"),
       unit: "Hz",
+      is_log: true,
     };
   } else {
     return props.type;
@@ -90,5 +98,44 @@ const displayValue = computed({
   set: (value: string) => {
     model.value = Number(value);
   },
+});
+
+// Computed properties for the slider model
+const sliderModel = computed({
+  get: () => {
+    if (config.value.is_log) {
+      return Math.log10(model.value);
+    } else {
+      return model.value;
+    }
+  },
+  set: (value: number) => {
+    if (config.value.is_log) {
+      model.value = Math.pow(10, value);
+    } else {
+      model.value = value;
+    }
+  },
+});
+const sliderMax = computed(() => {
+  if (config.value.is_log) {
+    return Math.log10(config.value.max);
+  } else {
+    return config.value.max;
+  }
+});
+const sliderMin = computed(() => {
+  if (config.value.is_log) {
+    return Math.log10(config.value.min);
+  } else {
+    return config.value.min;
+  }
+});
+const sliderStep = computed(() => {
+  if (config.value.is_log) {
+    return Math.log10(config.value.step);
+  } else {
+    return config.value.step;
+  }
 });
 </script>

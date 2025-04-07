@@ -27,8 +27,11 @@
           >{{ api.getProviderManifest(config.provider)?.name }}
           <a
             v-if="api.getProviderManifest(config.provider)?.documentation"
-            :href="api.getProviderManifest(config.provider)?.documentation"
-            target="_blank"
+            @click="
+              openLinkInNewTab(
+                api.getProviderManifest(config.provider)?.documentation!,
+              )
+            "
           >
             [{{ $t("settings.check_docs") }}]</a
           >
@@ -72,18 +75,13 @@
           color="primary"
           :disabled="api.getProviderManifest(config.provider)?.builtin"
         />
-
-        <!-- DSP Config Button -->
-        <v-btn @click="openDspConfig">
-          {{ $t("open_dsp_settings") }}
-        </v-btn>
       </div>
       <br />
       <v-divider />
       <edit-config
         v-if="config"
         :disabled="!config.enabled"
-        :config-entries="Object.values(config.values)"
+        :config-entries="config_entries"
         @submit="onSubmit"
       />
     </v-card-text>
@@ -91,12 +89,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { ConfigValueType, PlayerConfig } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  ConfigValueType,
+  DSPConfig,
+  EventType,
+  PlayerConfig,
+  PlayerFeature,
+  PlayerType,
+} from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -106,6 +113,74 @@ const config = ref<PlayerConfig>();
 const props = defineProps<{
   playerId?: string;
 }>();
+
+const dspEnabled = ref(false);
+
+const loadDSPEnabled = async () => {
+  if (props.playerId) {
+    try {
+      dspEnabled.value = (await api.getDSPConfig(props.playerId)).enabled;
+    } catch (error) {
+      console.error("Error fetching DSP config:", error);
+    }
+  }
+};
+loadDSPEnabled();
+
+const unsub = api.subscribe(
+  EventType.PLAYER_DSP_CONFIG_UPDATED,
+  (evt: { data: DSPConfig }) => {
+    dspEnabled.value = evt.data.enabled;
+  },
+);
+onBeforeUnmount(unsub);
+
+// computed properties
+
+const config_entries = computed(() => {
+  if (!config.value) return [];
+  const entries = Object.values(config.value.values);
+  // inject a DSP config property if the player is not a group
+  const player = api.players[config.value.player_id];
+  if (player && player.type !== PlayerType.GROUP) {
+    entries.push({
+      key: "dsp_settings",
+      type: ConfigEntryType.DSP_SETTINGS,
+      label: "",
+      default_value: dspEnabled.value,
+      required: false,
+      category: "audio",
+    });
+  } else if (
+    player &&
+    player.type === PlayerType.GROUP &&
+    player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
+  ) {
+    entries.push({
+      key: "dsp_note_multi_device_group",
+      type: ConfigEntryType.LABEL,
+      label: "You can configure the DSP for each player individually.",
+      default_value: null,
+      required: false,
+      category: "audio",
+    });
+  } else if (
+    player &&
+    player.type === PlayerType.GROUP &&
+    !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
+  ) {
+    entries.push({
+      key: "dsp_note_multi_device_group_not_supported",
+      type: ConfigEntryType.LABEL,
+      label:
+        "This group type does not support DSP when playing to multiple devices.",
+      default_value: null,
+      required: false,
+      category: "audio",
+    });
+  }
+  return entries;
+});
 
 // watchers
 
@@ -121,6 +196,7 @@ watch(
 
 // methods
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
+  delete values["dsp_settings"]; // delete the injected dsp_settings since its UI only
   values["enabled"] = config.value!.enabled;
   values["name"] = config.value!.name || null;
   api.savePlayerConfig(props.playerId!, values);

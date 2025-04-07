@@ -2,7 +2,7 @@
   <section>
     <InfoHeader :item="itemDetails" />
     <ItemsListing
-      v-if="itemDetails"
+      v-if="itemDetails && !loading"
       itemtype="artistalbums"
       :parent-item="itemDetails"
       :show-provider="true"
@@ -13,13 +13,20 @@
       :show-album-type-filter="true"
       :show-refresh-button="false"
       :load-items="loadArtistAlbums"
-      :sort-keys="['name', 'sort_name', 'year']"
+      :sort-keys="[
+        'name',
+        'sort_name',
+        'year',
+        'name_desc',
+        'sort_name_desc',
+        'year_desc',
+      ]"
       :title="$t('albums')"
       :allow-collapse="true"
     />
     <br />
     <ItemsListing
-      v-if="itemDetails"
+      v-if="itemDetails && !loading"
       itemtype="artisttracks"
       :parent-item="itemDetails"
       :show-provider="true"
@@ -30,7 +37,16 @@
       :show-refresh-button="false"
       :show-track-number="false"
       :load-items="loadArtistTracks"
-      :sort-keys="['name', 'sort_name', 'album']"
+      :sort-keys="[
+        'name',
+        'sort_name',
+        'album',
+        'duration',
+        'name_desc',
+        'sort_name_desc',
+        'duration_desc',
+        'original',
+      ]"
       :title="$t('tracks')"
       :allow-collapse="true"
     />
@@ -61,7 +77,6 @@ import {
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import { api } from "@/plugins/api";
-import { getStreamingProviderMappings } from "@/helpers/utils";
 
 export interface Props {
   itemId: string;
@@ -69,9 +84,12 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Artist>();
+const loading = ref(false);
 
 const loadItemDetails = async function () {
+  loading.value = true;
   itemDetails.value = await api.getArtist(props.itemId, props.provider);
+  loading.value = false;
 };
 
 watch(
@@ -87,10 +105,27 @@ onMounted(() => {
   const unsub = api.subscribe(
     EventType.MEDIA_ITEM_UPDATED,
     (evt: EventMessage) => {
-      // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
+      // check if the updated item is the current item
       if (itemDetails.value?.uri == updatedItem.uri) {
+        // update UI with the updated item
+        loading.value = true;
         itemDetails.value = updatedItem as Artist;
+        loading.value = false;
+      } else if ("provider_mappings" in updatedItem) {
+        for (const provMap of updatedItem.provider_mappings) {
+          if (
+            provMap.item_id == props.itemId &&
+            [provMap.provider_instance, provMap.provider_domain].includes(
+              props.provider,
+            )
+          ) {
+            loading.value = true;
+            itemDetails.value = updatedItem as Artist;
+            loading.value = false;
+            break;
+          }
+        }
       }
     },
   );

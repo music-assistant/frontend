@@ -6,9 +6,10 @@
         <v-card-title>
           {{ $t("settings.add_group_player") }}
         </v-card-title>
-        <v-card-subtitle style="white-space: break-spaces">
-          {{ $t("settings.add_group_player_desc") }}
-        </v-card-subtitle>
+        <v-card-subtitle
+          style="white-space: break-spaces"
+          v-html="markdownToHtml($t('settings.add_group_player_desc'))"
+        />
         <br />
         <v-divider />
         <br />
@@ -84,6 +85,7 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";
+import { markdownToHtml } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -96,10 +98,11 @@ const valid = ref<boolean>(false);
 // computed properties
 const groupTypes = computed(() => {
   return [
-    { name: "Universal", instance_id: "universal" },
     ...Object.values(api.providers).filter((x) =>
       x.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
     ),
+    // return universal group type (as last option, so it isn't mistakenly selected)
+    { name: "Universal", instance_id: "universal" },
   ];
 });
 
