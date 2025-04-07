@@ -115,6 +115,7 @@
     >
   </div>
   <router-view v-if="!setup && !loading" />
+  <v-progress-linear v-else indeterminate color="primary" />
   <PlayerBrowserMediaControls />
 </template>
 
