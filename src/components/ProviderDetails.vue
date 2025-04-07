@@ -135,14 +135,15 @@ import {
   MediaType,
   ProviderMapping,
   type MediaItemType,
-} from '@/plugins/api/interfaces';
-import { api } from '@/plugins/api';
-import ListItem from '@/components/mods/ListItem.vue';
-import Container from '@/components/mods/Container.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { computed, reactive, ref } from 'vue';
+} from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import ListItem from "@/components/mods/ListItem.vue";
+import Container from "@/components/mods/Container.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { computed, reactive, ref } from "vue";
+
 import { open } from '@tauri-apps/plugin-shell';
 
 export interface Props {

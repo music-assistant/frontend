@@ -204,47 +204,56 @@ const routes = [
         props: true,
         children: [
           {
-            path: 'providers',
-            name: 'providersettings',
+            path: "providers",
+            name: "providersettings",
             component: () =>
               import(
-                /* webpackChunkName: "providersettings" */ '@/views/settings/Providers.vue'
+                /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
           },
           {
-            path: 'players',
-            name: 'playersettings',
+            path: "players",
+            name: "playersettings",
             component: () =>
               import(
-                /* webpackChunkName: "playersettings" */ '@/views/settings/Players.vue'
+                /* webpackChunkName: "playersettings" */ "@/views/settings/Players.vue"
               ),
             props: true,
           },
           {
-            path: 'core',
-            name: 'coresettings',
+            path: "core",
+            name: "coresettings",
             component: () =>
               import(
-                /* webpackChunkName: "coresettings" */ '@/views/settings/CoreConfigs.vue'
+                /* webpackChunkName: "coresettings" */ "@/views/settings/CoreConfigs.vue"
               ),
             props: true,
           },
           {
-            path: 'frontend',
-            name: 'frontendsettings',
+            path: "frontend",
+            name: "frontendsettings",
             component: () =>
               import(
-                /* webpackChunkName: "frontendsettings" */ '@/views/settings/FrontendConfig.vue'
+                /* webpackChunkName: "frontendsettings" */ "@/views/settings/FrontendConfig.vue"
               ),
             props: true,
           },
           {
-            path: 'client',
-            name: 'clientsettings',
+            path: "addprovider/:domain",
+            name: "addprovider",
             component: () =>
               import(
-                /* webpackChunkName: "clientsettings" */ '@/views/settings/ClientConfigs.vue'
+                /* webpackChunkName: "addprovider" */ "@/views/settings/AddProvider.vue"
+              ),
+            props: true,
+          },
+          {
+            path: "client",
+            name: "clientsettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "clientsettings" */ "@/views/settings/ClientConfigs.vue"
               ),
             props: true,
           },
