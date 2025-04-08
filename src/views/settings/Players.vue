@@ -110,9 +110,9 @@ const playersWithSyncFeature = computed(() => {
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = (await api.getPlayerConfigs()).sort((a, b) =>
-    getPlayerName(a).localeCompare(getPlayerName(b)),
-  );
+  playerConfigs.value = (await api.getPlayerConfigs())
+    .filter((x) => x.provider != "builtin_player")
+    .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };
 
 const removePlayerConfig = function (playerId: string) {
