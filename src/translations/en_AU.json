@@ -2,6 +2,13 @@
     "settings": {
         "sync": "Synchronise now",
         "sync_running": "This provider is now being synchronised",
+        "volume_normalization": {
+            "label": "Enable volume normalisation (EBU-R128 based)",
+            "description": "Enable volume normalisation based on the EBU-R128 standard without affecting dynamic range"
+        },
+        "volume_normalization_target": {
+            "label": "Target level for volume normalisation"
+        },
         "eq_bass": {
             "label": "Equaliser: bass",
             "description": "Use the built-in basic equaliser to adjust the bass (low tones) level of the audio."
@@ -14,19 +21,55 @@
             "label": "Equaliser: treble",
             "description": "Use the built-in basic equaliser to adjust the treble (high tones) level of audio."
         },
-        "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised. \n\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app."
+        "volume_normalization_radio": {
+            "label": "Volume normalisation method to use for radio streams",
+            "description": "Set the preferred volume normalisation strategy for radio streams. \nBy default Music Assistant collects a measurement of the radio station's (average perceived) loudness according to the EBU-R128 specification and then adjusts the overall gain\/volume of the stream according to that measurement so the dynamic range of the audio is not affected. When no measurement (yet) exists for a radio station, Music Assistant will fallback to a dynamic (but less accurate) loudness levelling filter.\n\nTIP: Radio streams often have varying loudness levels, especially during announcements and commercials.\nYou can choose to enforce dynamic volume normalisation to radio streams, even if a (average) loudness measurement for the radio station exists. \n \n**Options:**\n\n - Disabled - do not apply volume normalisation at all for radio streams. \n  - Force dynamic - Enforce dynamic volume levelling at all times. \n  - Measurement only (no fallback) - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, do not apply normalisation.\n  - Fallback to gain correction - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction.\n - Fixed gain correction - Always apply the fixed volume\/gain correction.\n  - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume\/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available."
+        },
+        "volume_normalization_tracks": {
+            "label": "Volume normalisation method to use for tracks",
+            "description": "Set the preferred volume normalisation strategy for tracks\/songs.\nMusic Assistant uses a measurement of the tracks's (average perceived) loudness according to the EBU-R128 specification to adjust the overall gain\/volume of the stream without affecting the dynamic range of the audio.\nThese measurements are either provided by the streaming provider or in case of local files, can be contained in the ID3 tags (ReplayGain 2.0 \/ Opus R128).\nIf the measurement is not provided, Music Assistant will automatically perform a measurement when\/after the track is (first) played. When no measurement (yet) exists for a track, Music Assistant will by default fallback to a dynamic (but less accurate) loudness levelling filter. This ensures no big spikes\/falls in the volume level between tracks, even if there is no accurate measurement yet but the dynamic leveler can sometimes compress the dynamic range a bit, although that should not be audible in most cases.\n\n\n**Options:**\n\n - Disabled - do not apply volume normalisation at all for radio streams.\n - Force dynamic - Enforce dynamic volume levelling at all times. \n - Measurement only (no fallback) - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, do not apply normalisation. \n - Fallback to gain correction - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction. \n - Fixed gain correction - Always apply the fixed volume\/gain correction. \n - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume\/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available."
+        },
+        "volume_normalization_fixed_gain_tracks": {
+            "description": "Fixed\/fallback gain correction to apply to a track audio stream (depends on the 'Volume normalisation method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalisation method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalisation method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalisation method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
+        },
+        "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised. \n\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app.",
+        "power_control": {
+            "description": "Define\/override the power control behaviour for this player.\nIt allows you for example to redirect the power on\/off commands to a different appliance, or use a fake power control if your player does not support power on\/off commands but you like to have a dedicated state for a player not in use."
+        },
+        "volume_control": {
+            "description": "Define\/override the volume control behaviour for this player.\nIt allows you for example to redirect the volume control commands to a different appliance, or disable it completely."
+        },
+        "mute_control": {
+            "description": "Define\/override the mute control behaviour for this player.\nIt allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
+        }
     },
-    "sync_now": "Synchronise {0} now",
+    "sync_now": "Synchronise now",
     "sync_running": "One or more music providers are being synchronised.",
     "tooltip": {
         "filter_library": "Toggle in-library\/favourite filter",
         "library": "Toggle in-library\/favourite",
         "filter_favorites": "Only show favourites",
-        "favorite": "Mark\/unmark as favourite"
+        "favorite": "Mark\/unmark as a favourite"
     },
+    "volume_normalization": "Volume normalisation",
     "favorites_add": "Add to favourites",
     "favorites_remove": "Remove from favourites",
     "sync_player_with": "Synchronise with another player",
+    "loudness_dynamic": "Dynamic volume normalisation",
+    "streamdetails": {
+        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronised playback",
+        "volume_normalization": {
+            "mode": {
+                "dynamic": "Volume normalisation is active in the dynamic mode.",
+                "measurement_only": "Volume normalisation is active based on a stored measurement of the (integrated) loudness of the audio.",
+                "measurement_album": "Volume normalisation is active based on a stored measurement of the (integrated) loudness of the album.",
+                "fixed_gain": "Volume normalisation is active based on fixed gain correction."
+            }
+        }
+    },
     "recommendations": {
         "recent_favorite_tracks": "Recently favourited tracks",
         "favorite_playlists": "Favourite playlists",

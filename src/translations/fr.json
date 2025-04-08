@@ -287,7 +287,7 @@
             "advanced": "Paramètres avancés",
             "generic": "Paramètres génériques",
             "announcements": "Configuration des annonces",
-            "airplay": "Paramètres spécifiques à Airplay",
+            "airplay": "Paramètres spécifiques à AirPlay",
             "player_controls": "Contrôles du lecteur",
             "presets": "Préréglages"
         },
@@ -340,7 +340,7 @@
         },
         "menu_items": {
             "label": "Éléments de menu activés",
-            "description": "Configurer les éléments à afficher dans le menu.\n\nNotez que si vous désactivez les paramètres, vous pourriez vous bloquer l'accès.\n\nDans ce cas, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques."
+            "description": "Configurez les éléments à afficher dans le menu.\n\nNotez que si vous désactivez les paramètres, vous risquez de vous bloquer l'accès.\n\nPour y accéder à nouveau, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur. Utilisez à vos risques et périls !"
         },
         "language": {
             "label": "Langue",
@@ -373,7 +373,7 @@
         },
         "hide_settings": {
             "label": "Masquer le bouton des paramètres",
-            "description": "Masquer le bouton des paramètres sur l’écran d’accueil.\n\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\n\nDans ce cas, vous devrez saisir manuellement le chemin d'accès aux paramètres ou effacer les cookies du navigateur pour accéder à nouveau aux paramètres, utilisez à vos propres risques !"
+            "description": "Masquez le bouton des paramètres sur l'écran d'accueil.\n\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\n\nPour y accéder à nouveau, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur. Utilisez à vos risques et périls !"
         },
         "no_music_providers": "Aucun fournisseur de musique configuré",
         "no_music_providers_detail": "Démarrez votre expérience Music Assistant en ajoutant vos fournisseurs de musique.",
