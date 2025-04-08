@@ -25,7 +25,7 @@ import {
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
-import { webPlayer } from "@/plugins/web_player";
+import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
@@ -488,6 +488,12 @@ export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
 ): boolean {
+  if (
+    player.provider == "builtin_player" &&
+    player.player_id == webPlayer.player_id
+  ) {
+    return true;
+  }
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
   if (player.hide_player_in_ui.includes(HidePlayerOption.ALWAYS)) {
