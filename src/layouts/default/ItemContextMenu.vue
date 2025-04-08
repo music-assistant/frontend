@@ -7,7 +7,7 @@
   <v-menu
     v-model="show"
     :target="[posX, posY]"
-    scrim
+    :scrim="!store.showPlayersMenu"
     style="z-index: 999999"
     z-index="999999"
     @update:model-value="
@@ -16,8 +16,46 @@
       }
     "
   >
-    <v-card min-width="260">
+    <v-card min-width="300">
       <v-list density="compact" slim tile>
+        <!-- play menu header -->
+        <v-list-item
+          v-if="showPlayMenuHeader"
+          link
+          append-icon="mdi-chevron-right"
+          @click.stop="playMenuHeaderClicked"
+        >
+          <template #prepend>
+            <div
+              class="icon-thumb"
+              style="
+                margin-left: -8px;
+                width: 50px;
+                height: 50px;
+                margin-right: 0px;
+              "
+            >
+              <v-icon
+                size="35"
+                :icon="
+                  store.activePlayer ? store.activePlayer.icon : 'mdi-speaker'
+                "
+                style="display: table-cell; opacity: 0.8"
+              />
+            </div>
+          </template>
+          <template #title>
+            <v-list-item
+              :title="$t('play_on')"
+              density="compact"
+              :subtitle="store.activePlayer?.display_name || $t('no_player')"
+            />
+          </template>
+        </v-list-item>
+        <v-divider
+          v-if="showPlayMenuHeader"
+          style="margin-top: 5px; margin-bottom: 5px"
+        />
         <div
           v-for="menuItem of items.filter((x) => !x.hide)"
           :key="menuItem.label"
@@ -28,23 +66,27 @@
             :title="$t(menuItem.label, menuItem.labelArgs || [])"
             :disabled="menuItem.disabled == true"
             :prepend-icon="menuItem.icon"
-            :append-icon="menuItem.selected ? 'mdi-check' : undefined"
+            border="bottom"
+            :append-icon="
+              menuItem.selected
+                ? 'mdi-check'
+                : menuItem.subItems?.length
+                  ? 'mdi-chevron-right'
+                  : undefined
+            "
+            style="padding-left: 25px"
             @click.stop="(e) => menuItemClicked(e, menuItem)"
           />
         </div>
       </v-list>
     </v-card>
   </v-menu>
+  <!-- submenu -->
   <v-menu
     v-model="showSubmenu"
     :target="[subMenuPosX, subMenuPosY]"
     style="z-index: 999999"
     z-index="999999"
-    @update:model-value="
-      (v) => {
-        store.dialogActive = v;
-      }
-    "
   >
     <v-card min-width="260">
       <v-list density="compact" slim tile>
@@ -59,7 +101,7 @@
             :disabled="subMenuItem.disabled == true"
             :prepend-icon="subMenuItem.icon"
             :append-icon="subMenuItem.selected ? 'mdi-check' : undefined"
-            @click="(e) => menuItemClicked(e, subMenuItem)"
+            @click.stop="(e) => menuItemClicked(e, subMenuItem)"
           />
         </div>
       </v-list>
@@ -71,23 +113,24 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
-import { ItemContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
+import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 
 const show = ref<boolean>(false);
 const items = ref<ContextMenuItem[]>([]);
 const posX = ref(0);
 const posY = ref(0);
+const showPlayMenuHeader = ref<boolean>(false);
 
 const showSubmenu = ref<boolean>(false);
 const subMenuItems = ref<ContextMenuItem[]>([]);
 const subMenuPosX = ref(0);
 const subMenuPosY = ref(0);
-
 onMounted(() => {
-  eventbus.on("contextmenu", async (evt: ItemContextMenuDialogEvent) => {
+  eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
     posX.value = evt.posX || 0;
     posY.value = evt.posY || 0;
+    showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
       show.value = true;
     });
@@ -111,8 +154,47 @@ const menuItemClicked = function (
   } else if (menuItem.action) {
     menuItem.action();
   }
+  if (showSubmenu.value) {
+    showSubmenu.value = false;
+    if (menuItem.close_on_click == false) {
+      return;
+    }
+  }
+  if (menuItem.close_on_click == false) {
+    return;
+  }
   show.value = false;
   store.dialogActive = false;
+};
+
+const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
+  evt.preventDefault();
+  const _subItems: ContextMenuItem[] = [];
+
+  const sortedPlayers = Object.values(api.players)
+    .filter((x) => playerVisible(x))
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
+    );
+
+  for (const player of sortedPlayers) {
+    _subItems.push({
+      label: player.display_name,
+      action: () => {
+        evt.preventDefault();
+        store.activePlayerId = player.player_id;
+        store.playMenuShown = true;
+      },
+      icon: player.icon,
+      selected: store.activePlayerId == player.player_id,
+      close_on_click: false,
+    });
+  }
+
+  subMenuItems.value = _subItems;
+  (subMenuPosX.value = (evt as PointerEvent).clientX),
+    (subMenuPosY.value = (evt as PointerEvent).clientY),
+    (showSubmenu.value = true);
 };
 </script>
 
@@ -129,11 +211,14 @@ import {
   Playlist,
   Album,
   Track,
-  ItemMapping,
   MediaItemType,
+  PodcastEpisode,
+  MediaItemTypeOrItemMapping,
+  BrowseFolder,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { itemIsAvailable } from "@/plugins/api/helpers";
+import { playerVisible } from "@/helpers/utils";
 
 export interface ContextMenuItem {
   label: string;
@@ -144,55 +229,143 @@ export interface ContextMenuItem {
   hide?: boolean;
   selected?: boolean;
   subItems?: ContextMenuItem[];
+  close_on_click?: boolean;
 }
 
 export const showContextMenuForMediaItem = async function (
-  item: MediaItemType | MediaItemType[],
+  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
   posX = 0,
   posY = 0,
-  includePlayItems = true,
+  includePlayMenuItems = false,
+  showPlayMenuHeader = false,
 ) {
   // show ContextMenu for given MediaItem(s)
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
+  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
+    ? item
+    : [item];
+
+  // return early if we dont have any items
   if (mediaItems.length == 0) return;
 
-  const menuItems: ContextMenuItem[] = [];
-
-  if (includePlayItems) {
-    menuItems.push(...getPlayMenuItems(mediaItems, parentItem));
+  if (
+    mediaItems[0].media_type == MediaType.FOLDER &&
+    mediaItems[0].name == ".."
+  ) {
+    return;
   }
 
-  // collect all contextMenuItems
-  menuItems.push(...getContextMenuItems(mediaItems, parentItem));
+  const menuItems = await getContextMenuItems(mediaItems, parentItem);
+  if (
+    includePlayMenuItems &&
+    mediaItems[0].is_playable &&
+    itemIsAvailable(mediaItems[0])
+  ) {
+    menuItems.push(...(await getPlayMenuItems(mediaItems, parentItem)));
+  }
+
+  if (menuItems.length == 0) return;
 
   // open the contextmenu by emitting the event
   eventbus.emit("contextmenu", {
     items: menuItems,
     posX: posX,
     posY: posY,
+    showPlayMenuHeader: showPlayMenuHeader,
   });
 };
 
-export const getPlayMenuItems = function (
-  items: Array<MediaItemType | ItemMapping>,
+const queueOptionIconMap = {
+  [QueueOption.NEXT]: "mdi-skip-next-circle-outline",
+  [QueueOption.ADD]: "mdi-playlist-plus",
+  [QueueOption.REPLACE]: "mdi-play-circle-outline",
+  [QueueOption.REPLACE_NEXT]: "mdi-skip-next-circle-outline",
+  [QueueOption.PLAY]: "mdi-play-circle-outline",
+};
+
+const queueOptionLabelMap = {
+  [QueueOption.NEXT]: "play_next",
+  [QueueOption.ADD]: "add_queue",
+  [QueueOption.REPLACE]: "play_replace",
+  [QueueOption.REPLACE_NEXT]: "play_replace_next",
+  [QueueOption.PLAY]: "play_now",
+};
+
+export const showPlayMenuForMediaItem = async function (
+  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
+  parentItem?: MediaItem,
+  posX = 0,
+  posY = 0,
+) {
+  // open the play menu by emitting the event
+
+  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
+    ? item
+    : [item];
+  if (mediaItems.length == 0) return;
+
+  eventbus.emit("contextmenu", {
+    items: await getPlayMenuItems(mediaItems, parentItem),
+    posX: posX,
+    posY: posY,
+    showPlayMenuHeader: true,
+  });
+};
+
+export const getPlayMenuItems = async function (
+  items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
     return playMenuItems;
   }
+
+  const playableItems = items.filter((x) => x.is_playable);
+  if (playableItems.length == 0) return playMenuItems;
+  const firstItem = playableItems[0];
+
+  const defaultEnqueueOption = (await api.getCoreConfigValue(
+    "player_queues",
+    `default_enqueue_option_${firstItem.media_type}`,
+  )) as QueueOption;
+
   if (!store.activePlayer) return playMenuItems;
-  if (items[0].media_type == MediaType.FOLDER) return playMenuItems;
+
+  // Default/configured enqueue option at the top
+  playMenuItems.push({
+    label: queueOptionLabelMap[defaultEnqueueOption],
+    action: () => {
+      api.playMedia(
+        playableItems.map((x) => x.uri),
+        defaultEnqueueOption,
+      );
+      // set flag in store that we have (at least once) shown the play menu
+      store.playMenuShown = true;
+    },
+    icon: queueOptionIconMap[defaultEnqueueOption],
+    labelArgs: [],
+    disabled: !store.activePlayer,
+  });
 
   // Play from here...
-  if (items.length == 1 && parentItem && parentItem.uri != items[0].uri) {
+  if (
+    playableItems.length == 1 &&
+    parentItem &&
+    parentItem.uri != firstItem.uri
+  ) {
     // Play from here (playlist track)
     if (parentItem.media_type == MediaType.PLAYLIST) {
       playMenuItems.push({
         label: "play_playlist_from",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
+          api.playMedia(
+            parentItem.uri,
+            undefined,
+            false,
+            playableItems[0].item_id,
+          );
+          store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
@@ -204,7 +377,21 @@ export const getPlayMenuItems = function (
       playMenuItems.push({
         label: "play_album_from",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, items[0].item_id);
+          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
+          store.playMenuShown = true;
+        },
+        icon: "mdi-play-circle-outline",
+        labelArgs: [],
+        disabled: !store.activePlayer,
+      });
+    }
+    // Play from here (podcast episode)
+    if (parentItem.media_type == MediaType.PODCAST) {
+      playMenuItems.push({
+        label: "play_from_here",
+        action: () => {
+          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
+          store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
@@ -213,73 +400,17 @@ export const getPlayMenuItems = function (
     }
   }
 
-  // replace now
-  playMenuItems.push({
-    label: "play_replace",
-    action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        QueueOption.REPLACE,
-      );
-    },
-    icon: "mdi-play-circle-outline",
-    labelArgs: [],
-    disabled: !store.activePlayer,
-  });
-
-  // Play NOW
-  playMenuItems.push({
-    label: "play_now",
-    action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        QueueOption.PLAY,
-      );
-    },
-    icon: "mdi-play-circle-outline",
-    labelArgs: [],
-    disabled: !store.activePlayer,
-  });
-
-  // Play NEXT
-  if (items.length === 1 || items[0].media_type === MediaType.TRACK) {
-    playMenuItems.push({
-      label: "play_next",
-      action: () => {
-        api.playMedia(
-          items.map((x) => x.uri),
-          QueueOption.NEXT,
-        );
-      },
-      icon: "mdi-skip-next-circle-outline",
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
-  }
-  // Add to Queue
-  playMenuItems.push({
-    label: "add_queue",
-    action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        QueueOption.ADD,
-      );
-    },
-    icon: "mdi-playlist-plus",
-    labelArgs: [],
-    disabled: !store.activePlayer,
-  });
-
   // Start Radio
-  if (radioModeSupported(items[0])) {
+  if (radioModeSupported(firstItem)) {
     playMenuItems.push({
       label: "play_radio",
       action: () => {
         api.playMedia(
           items.map((x) => x.uri),
-          undefined,
+          QueueOption.REPLACE,
           true,
         );
+        store.playMenuShown = true;
       },
       icon: "mdi-radio-tower",
       labelArgs: [],
@@ -287,22 +418,64 @@ export const getPlayMenuItems = function (
     });
   }
 
+  // add all/other options as submenu
+  const subItems: ContextMenuItem[] = [];
+  for (const option of [
+    QueueOption.PLAY,
+    QueueOption.NEXT,
+    QueueOption.ADD,
+    QueueOption.REPLACE,
+    QueueOption.REPLACE_NEXT,
+  ]) {
+    subItems.push({
+      label: queueOptionLabelMap[option],
+      action: () => {
+        api.playMedia(
+          items.map((x) => x.uri),
+          option,
+        );
+        store.playMenuShown = true;
+      },
+      icon: queueOptionIconMap[option],
+      labelArgs: [],
+      disabled: !store.activePlayer,
+      selected: option == defaultEnqueueOption,
+    });
+  }
+  playMenuItems.push({
+    label: "all_enqueue_options",
+    subItems: subItems,
+    icon: "mdi-playlist-play",
+    labelArgs: [],
+    disabled: !store.activePlayer,
+  });
+
   return playMenuItems;
 };
 
-export const getContextMenuItems = function (
-  items: Array<MediaItemType | ItemMapping>,
+export const getContextMenuItems = async function (
+  items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItem,
 ) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
     return contextMenuItems;
   }
-  if (items[0].media_type == MediaType.FOLDER) return contextMenuItems;
+
+  const firstItem = items[0];
+
   // show info
   if (
     items.length === 1 &&
-    items[0] !== parentItem &&
+    firstItem !== parentItem &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.TRACK,
+    ].includes(items[0].media_type) &&
     itemIsAvailable(items[0])
   ) {
     contextMenuItems.push({
@@ -310,10 +483,10 @@ export const getContextMenuItems = function (
       labelArgs: [],
       action: () => {
         router.push({
-          name: items[0].media_type,
+          name: firstItem.media_type,
           params: {
-            itemId: items[0].item_id,
-            provider: items[0].provider,
+            itemId: firstItem.item_id,
+            provider: firstItem.provider,
           },
           query: {
             album: "album" in items[0] ? (items[0].album as Album)?.uri : "",
@@ -321,6 +494,28 @@ export const getContextMenuItems = function (
         });
       },
       icon: "mdi-information-outline",
+    });
+  }
+
+  // browse folder
+  if (
+    items.length === 1 &&
+    items[0] !== parentItem &&
+    items[0].media_type == MediaType.FOLDER &&
+    itemIsAvailable(items[0])
+  ) {
+    contextMenuItems.push({
+      label: "browse",
+      labelArgs: [],
+      action: () => {
+        router.push({
+          name: "browse",
+          query: {
+            path: (items[0] as BrowseFolder).path,
+          },
+        });
+      },
+      icon: "mdi-folder",
     });
   }
 
@@ -371,8 +566,42 @@ export const getContextMenuItems = function (
     });
   }
 
+  let resolvedItem = firstItem;
+  if (
+    (firstItem.provider != "library" || !("provider_mappings" in firstItem)) &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(firstItem.media_type)
+  ) {
+    // resolve itemmapping or non-library item
+    resolvedItem =
+      (await api.getLibraryItem(
+        firstItem.media_type,
+        firstItem.item_id,
+        firstItem.provider,
+      )) || firstItem;
+  }
+
   // add to library
-  if (items[0].provider != "library" && itemIsAvailable(items[0])) {
+  if (
+    resolvedItem.provider != "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type) &&
+    itemIsAvailable(resolvedItem)
+  ) {
     contextMenuItems.push({
       label: "add_library",
       labelArgs: [],
@@ -383,7 +612,18 @@ export const getContextMenuItems = function (
     });
   }
   // remove from library
-  if (items[0].provider == "library") {
+  if (
+    resolvedItem.provider == "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
     contextMenuItems.push({
       label: "remove_library",
       labelArgs: [],
@@ -391,14 +631,26 @@ export const getContextMenuItems = function (
         if (!confirm($t("confirm_library_remove"))) return;
         for (const item of items)
           api.removeItemFromLibrary(item.media_type, item.item_id);
-        if (items[0].item_id == parentItem?.item_id) router.go(-1);
-        else window.location.reload();
+        if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
       },
       icon: "mdi-bookshelf",
     });
   }
   // add to favorites
-  if ("favorite" in items[0] && !items[0].favorite) {
+  if (
+    "favorite" in resolvedItem &&
+    !resolvedItem.favorite &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type) &&
+    itemIsAvailable(resolvedItem)
+  ) {
     contextMenuItems.push({
       label: "favorites_add",
       labelArgs: [],
@@ -411,15 +663,30 @@ export const getContextMenuItems = function (
     });
   }
   // remove from favorites
-  if ("favorite" in items[0] && items[0].favorite) {
+  if (
+    items.length === 1 &&
+    "favorite" in resolvedItem &&
+    resolvedItem.favorite &&
+    resolvedItem.provider == "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
     contextMenuItems.push({
       label: "favorites_remove",
       labelArgs: [],
       action: () => {
-        for (const item of items) {
-          api.removeItemFromFavorites(item.media_type, item.item_id);
-          (item as MediaItemType).favorite = false;
-        }
+        api.removeItemFromFavorites(
+          resolvedItem.media_type,
+          resolvedItem.item_id,
+        );
+        resolvedItem.favorite = false;
       },
       icon: "mdi-heart",
     });
@@ -443,9 +710,8 @@ export const getContextMenuItems = function (
   }
   // add to playlist action (tracks only)
   if (
-    (items[0].media_type === MediaType.TRACK ||
-      items[0].media_type === MediaType.ALBUM) &&
-    "provider_mappings" in items[0]
+    items[0].media_type === MediaType.TRACK ||
+    items[0].media_type === MediaType.ALBUM
   ) {
     contextMenuItems.push({
       label: "add_playlist",
@@ -459,6 +725,35 @@ export const getContextMenuItems = function (
       icon: "mdi-plus-circle-outline",
     });
   }
+
+  if (
+    items.length === 1 &&
+    "fully_played" in items[0] &&
+    "resume_position_ms" in items[0]
+  ) {
+    // mark unplayed
+    if (items[0].fully_played || items[0].resume_position_ms) {
+      contextMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await api.markItemUnPlayed(items[0]);
+          (items[0] as PodcastEpisode).fully_played = false;
+        },
+      });
+    } else {
+      // mark played
+      contextMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await api.markItemPlayed(items[0], true);
+          (items[0] as PodcastEpisode).fully_played = true;
+        },
+      });
+    }
+  }
+
   // update metadata
   if (items.length === 1 && items[0] == parentItem) {
     contextMenuItems.push({
@@ -493,7 +788,17 @@ export const getContextMenuItems = function (
   return contextMenuItems;
 };
 
-const radioModeSupported = function (item: MediaItemType | ItemMapping) {
+const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
+  if (
+    ![
+      MediaType.TRACK,
+      MediaType.ARTIST,
+      MediaType.ALBUM,
+      MediaType.PLAYLIST,
+    ].includes(item.media_type)
+  ) {
+    return;
+  }
   if ("provider_mappings" in item) {
     for (const provId of item.provider_mappings) {
       if (

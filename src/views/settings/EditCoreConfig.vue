@@ -27,8 +27,11 @@
         >
           <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
-            :href="api.providerManifests[config.domain].documentation"
-            target="_blank"
+            @click="
+              openLinkInNewTab(
+                api.providerManifests[config.domain].documentation!,
+              )
+            "
             >{{ $t("settings.check_docs") }}</a
           >
         </v-card-subtitle>
@@ -64,6 +67,7 @@ import { api } from "@/plugins/api";
 import { CoreConfig, ConfigValueType } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { nanoid } from "nanoid";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();

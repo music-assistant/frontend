@@ -5,9 +5,10 @@
     :class="{
       'panel-item-selected': player.player_id == store.activePlayerId,
       'panel-item-idle': player.state == PlayerState.IDLE,
-      'panel-item-off': !player.powered,
+      'panel-item-off': player.powered == false,
     }"
     :ripple="false"
+    :disabled="!player.available"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">
@@ -16,7 +17,7 @@
         <div class="player-media-thumb">
           <MediaItemThumb
             v-if="
-              (player.powered && curQueueItem?.media_item) ||
+              (player.powered != false && curQueueItem?.media_item) ||
               curQueueItem?.image
             "
             class="media-thumb"
@@ -26,7 +27,9 @@
           />
           <div
             v-else-if="
-              player.powered && !playerQueue && player.current_media?.image_url
+              player.powered != false &&
+              !playerQueue &&
+              player.current_media?.image_url
             "
           >
             <v-img
@@ -51,13 +54,35 @@
 
       <!-- playername -->
       <template #title>
-        <div style="margin-bottom: 3px">{{ getPlayerName(player, 27) }}</div>
+        <!-- special builtin player -->
+        <div
+          v-if="webPlayer.player_id === player.player_id"
+          style="margin-bottom: 3px"
+        >
+          <!-- translate 'This Device' if no custom name given -->
+          <span v-if="player.display_name == 'This Device'">{{
+            $t("this_device")
+          }}</span>
+          <span v-else>{{ getPlayerName(player, 27) }}</span>
+          <!-- append small icon to the title -->
+          <v-icon
+            size="20"
+            class="pl-2"
+            :icon="
+              store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
+            "
+          />
+        </div>
+        <!-- regular player -->
+        <div v-else style="margin-bottom: 3px">
+          {{ getPlayerName(player, 27) }}
+        </div>
       </template>
 
       <!-- subtitle: media item title -->
       <template #subtitle>
         <div
-          v-if="player.powered"
+          v-if="player.powered != false"
           style="font-size: 0.85rem; font-weight: 500; white-space: nowrap"
         >
           <div v-if="curQueueItem?.media_item">
@@ -73,7 +98,7 @@
           <div v-else-if="curQueueItem">
             {{ curQueueItem?.name }}
           </div>
-          <div v-else-if="player.current_media?.title">
+          <div v-else-if="!playerQueue && player.current_media?.title">
             {{ player.current_media.title }}
           </div>
         </div>
@@ -83,7 +108,7 @@
       <template #default>
         <div class="v-list-item-subtitle" style="white-space: nowrap">
           <!-- player powered off -->
-          <div v-if="!player.powered">
+          <div v-if="player.powered == false">
             {{ $t("off") }}
           </div>
           <!-- track: artists(s) + album -->
@@ -117,8 +142,8 @@
             {{ curQueueItem?.media_item.metadata.description }}
           </div>
           <!-- 3rd party source active -->
-          <div v-else-if="player.active_source != player.player_id">
-            {{ $t("external_source_active", [player.active_source]) }}
+          <div v-else-if="!playerQueue && player.active_source">
+            {{ $t("external_source_active", [getSourceName(player)]) }}
           </div>
           <!-- queue empty message -->
           <div v-else-if="playerQueue?.items == 0">
@@ -129,12 +154,33 @@
 
       <!-- power/play/pause + menu button -->
       <template #append>
-        <!-- power button -->
+        <!-- play/pause button -->
         <Button
-          v-if="!player.powered"
+          v-if="
+            player.state == PlayerState.PAUSED ||
+            player.state == PlayerState.PLAYING ||
+            playerQueue?.items
+          "
           variant="icon"
           class="player-command-btn"
-          @click="
+          @click.stop="
+            api.playerCommandPlayPause(player.player_id);
+            store.activePlayerId = player.player_id;
+          "
+          ><v-icon
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
+            :icon="
+              player.state == PlayerState.PLAYING ? 'mdi-pause' : 'mdi-play'
+            "
+        /></Button>
+        <!-- power button -->
+        <Button
+          v-if="
+            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
+          "
+          variant="icon"
+          class="player-command-btn"
+          @click.stop="
             api.playerCommandPowerToggle(player.player_id);
             store.activePlayerId = player.player_id;
           "
@@ -143,19 +189,7 @@
             >mdi-power</v-icon
           ></Button
         >
-        <!-- play/pause button -->
-        <PlayBtn
-          v-if="player.powered"
-          :player="player"
-          :player-queue="playerQueue"
-          class="player-command-btn"
-          style="height: 50px"
-          icon-style="circle-outline"
-          @click.stop="
-            if (player.state != PlayerState.PLAYING)
-              store.activePlayerId = player.player_id;
-          "
-        />
+
         <!-- menu button -->
         <Button
           v-if="showMenuButton"
@@ -172,11 +206,12 @@
       </template>
     </v-list-item>
     <VolumeControl
-      v-if="showVolumeControl && player.powered"
+      v-if="showVolumeControl"
       :player="player"
       :show-sync-controls="showSyncControls"
-      :hide-heading-row="true"
+      :show-heading-row="false"
       :show-sub-players="showSubPlayers"
+      :show-volume-control="player.powered != false"
       :allow-wheel="false"
     />
   </v-card>
@@ -189,6 +224,7 @@ import {
   Player,
   PlayerState,
   PlayerType,
+  PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
@@ -200,8 +236,9 @@ import { getPlayerName } from "@/helpers/utils";
 import Button from "@/components/mods/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { eventbus } from "@/plugins/eventbus";
-import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getSourceName } from "@/plugins/api/helpers";
+import { webPlayer } from "@/plugins/web_player";
 // properties
 export interface Props {
   player: Player;
@@ -209,11 +246,16 @@ export interface Props {
   showMenuButton?: boolean;
   showSubPlayers?: boolean;
   showSyncControls?: boolean;
+  allowPowerControl?: boolean;
 }
 const compProps = defineProps<Props>();
 
 const playerQueue = computed(() => {
-  if (compProps.player && compProps.player.active_source in api.queues) {
+  if (
+    compProps.player &&
+    compProps.player.active_source &&
+    compProps.player.active_source in api.queues
+  ) {
     return api.queues[compProps.player.active_source];
   }
   if (
@@ -241,20 +283,24 @@ const openPlayerMenu = function (evt: Event) {
 </script>
 
 <style scoped>
-.v-card {
-  transition: opacity 0.4s ease-in-out;
-  border-radius: 6px;
-  margin: 5px;
-  margin-bottom: 10px;
-}
 .panel-item {
-  height: 100%;
   border-style: ridge;
   border-width: thin;
   border-color: #cccccc5e;
-  padding: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 5px;
+  padding-bottom: 5px;
   background-color: rgba(162, 188, 255, 0.1);
   opacity: 1;
+  transition: opacity 0.4s ease-in-out;
+  border-radius: 6px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 5px;
+  margin-bottom: 8px;
+  height: 100%;
+  width: auto;
 }
 
 .panel-item-idle {

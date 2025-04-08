@@ -11,6 +11,22 @@
       icon="mdi-bookshelf"
       :title="$t('item_in_library')"
     />
+    <!-- monochrome icon-->
+    <div
+      v-else-if="
+        props.monochrome &&
+        providerDomain &&
+        api.providerManifests[providerDomain].icon_svg_monochrome
+      "
+      class="d-flex align-center justify-center align-content-center justify-content-center"
+      :style="`width: ${size}px;height: ${size}px;${$vuetify.theme.current.dark ? '' : 'filter: invert(1);'}`"
+      :title="api.providerManifests[providerDomain]!.name"
+    >
+      <div
+        class="svg-wrapper"
+        v-html="api.providerManifests[providerDomain].icon_svg_monochrome"
+      ></div>
+    </div>
     <!-- dark mode and dark svg icon-->
     <div
       v-else-if="
@@ -18,19 +34,29 @@
         providerDomain &&
         api.providerManifests[providerDomain].icon_svg_dark
       "
-      :style="`width: ${size}px;align-content: center;`"
+      class="d-flex align-center justify-center align-content-center justify-content-center"
+      :style="`width: ${size}px;height: ${size}px;`"
       :title="api.providerManifests[providerDomain]!.name"
-      v-html="api.providerManifests[providerDomain]!.icon_svg_dark"
-    ></div>
+    >
+      <div
+        class="svg-wrapper"
+        v-html="api.providerManifests[providerDomain].icon_svg_dark"
+      ></div>
+    </div>
     <!-- regular svg icon -->
     <div
       v-else-if="
         providerDomain && api.providerManifests[providerDomain].icon_svg
       "
-      :style="`width: ${size}px;height: ${size}px;align-content: center;`"
+      class="d-flex align-center justify-center align-content-center justify-content-center"
+      :style="`width: ${size}px;height: ${size}px;`"
       :title="api.providerManifests[providerDomain]!.name"
-      v-html="api.providerManifests[providerDomain]!.icon_svg"
-    ></div>
+    >
+      <div
+        class="svg-wrapper"
+        v-html="api.providerManifests[providerDomain].icon_svg"
+      ></div>
+    </div>
     <!-- material design icon -->
     <v-icon
       v-else-if="providerDomain && api.providerManifests[providerDomain].icon"
@@ -57,6 +83,7 @@ export interface Props {
   domain: string;
   size: number;
   dark?: boolean;
+  monochrome?: boolean;
 }
 const props = defineProps<Props>();
 
@@ -67,3 +94,10 @@ const providerDomain = computed(() => {
   return undefined;
 });
 </script>
+<style>
+.svg-wrapper svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+</style>

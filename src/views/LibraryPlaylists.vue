@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     itemtype="playlists"
+    path="libraryplaylists"
     :show-duration="false"
     :show-provider="true"
     :show-favorites-only-filter="true"
@@ -30,7 +31,6 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { ToolBarMenuItem } from "@/components/Toolbar.vue";
-import { sleep } from "@/helpers/utils";
 import { store } from "@/plugins/store";
 
 defineOptions({
@@ -40,7 +40,17 @@ defineOptions({
 const { t } = useI18n();
 const updateAvailable = ref(false);
 const total = ref(store.libraryPlaylistsCount);
-const extraMenuItems = ref<ToolBarMenuItem[]>([]);
+const extraMenuItems = ref<ToolBarMenuItem[]>([
+  {
+    label: "sync_now",
+    icon: "mdi-sync",
+    action: () => {
+      api.startSync([MediaType.PLAYLIST]);
+    },
+    overflowAllowed: true,
+    disabled: api.syncTasks.value.length > 0,
+  },
+]);
 
 const sortKeys = [
   "name",
@@ -58,22 +68,6 @@ const sortKeys = [
 ];
 
 const loadItems = async function (params: LoadDataParams) {
-  if (params.refresh && !updateAvailable.value) {
-    api.startSync([MediaType.PLAYLIST]);
-    // prevent race condition with a short sleep
-    await sleep(250);
-    // wait for sync to finish
-    while (api.syncTasks.value.length > 0) {
-      if (
-        api.syncTasks.value.filter((x) =>
-          x.media_types.includes(MediaType.PLAYLIST),
-        ).length == 0
-      )
-        break;
-      await sleep(500);
-    }
-    await sleep(500);
-  }
   updateAvailable.value = false;
   setTotals(params);
   return await api.getLibraryPlaylists(

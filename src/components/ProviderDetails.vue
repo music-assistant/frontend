@@ -23,7 +23,7 @@
             />
           </template>
           <template #title>
-            {{ api.providerManifests[providerMapping.provider_domain]?.name }}
+            {{ api.getProvider(providerMapping.provider_instance)?.name }}
           </template>
           <template #subtitle>
             <span
@@ -37,6 +37,7 @@
               }}
               bits |
             </span>
+
             <a
               v-if="
                 providerMapping.url &&
@@ -45,14 +46,11 @@
               style="opacity: 0.4"
               :title="$t('tooltip.open_provider_link')"
               @click.prevent="openLinkInNewTab(providerMapping.url)"
-              >{{ providerMapping.url }}</a
+              >{{ getProviderUri(providerMapping) }}</a
             >
-            <span
-              v-else
-              style="opacity: 0.4"
-              :title="providerMapping.item_id"
-              >{{ providerMapping.item_id }}</span
-            >
+            <span v-else style="opacity: 0.4" :title="$t('copy_uri')">{{
+              getProviderUri(providerMapping)
+            }}</span>
           </template>
           <template #append>
             <!-- hi res icon -->
@@ -84,6 +82,46 @@
               :title="$t('tooltip.play_sample')"
               @click="playBtnClick(providerMapping)"
             />
+            <!-- visit website button -->
+            <v-btn
+              v-if="
+                providerMapping.url &&
+                !providerMapping.provider_domain.startsWith('file')
+              "
+              icon="mdi-open-in-new"
+              :title="$t('tooltip.open_provider_link')"
+              @click.prevent="openLinkInNewTab(providerMapping.url)"
+            />
+            <!-- copy URI to clipboard button -->
+            <v-btn
+              icon="mdi-link"
+              :title="$t('tooltip.copy_uri')"
+              @click="copyUriToClipboard(getProviderUri(providerMapping))"
+            />
+          </template>
+        </ListItem>
+        <ListItem v-if="itemDetails.provider == 'library'">
+          <template #prepend>
+            <ProviderIcon domain="library" :size="30" />
+          </template>
+          <template #title>{{ $t("music_assistant_library") }}</template>
+          <template #subtitle>
+            <span
+              >library://{{ itemDetails.media_type }}/{{
+                itemDetails.item_id
+              }}</span
+            >
+          </template>
+          <template #append>
+            <v-btn
+              icon="mdi-link"
+              :title="$t('tooltip.copy_uri')"
+              @click="
+                copyUriToClipboard(
+                  `library://${itemDetails.media_type}/${itemDetails.item_id}`,
+                )
+              "
+            />
           </template>
         </ListItem>
       </v-list>
@@ -97,20 +135,21 @@ import {
   MediaType,
   ProviderMapping,
   type MediaItemType,
-} from '@/plugins/api/interfaces';
-import { api } from '@/plugins/api';
-import ListItem from '@/components/mods/ListItem.vue';
-import Container from '@/components/mods/Container.vue';
-import Toolbar from '@/components/Toolbar.vue';
-import ProviderIcon from '@/components/ProviderIcon.vue';
-import { getBreakpointValue } from '@/plugins/breakpoint';
-import { computed, reactive, ref } from 'vue';
+} from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import ListItem from "@/components/mods/ListItem.vue";
+import Container from "@/components/mods/Container.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { computed, reactive, ref } from "vue";
+
 import { open } from '@tauri-apps/plugin-shell';
 
 export interface Props {
   itemDetails: MediaItemType;
 }
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const expanded = ref(false);
 
@@ -138,6 +177,14 @@ const getPreviewUrl = function (provider: string, item_id: string) {
   return `${
     api.baseUrl
   }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
+};
+
+const getProviderUri = function (mapping: ProviderMapping) {
+  return `${api.getProvider(mapping.provider_instance)?.lookup_key}://${props.itemDetails.media_type}/${mapping.item_id}`;
+};
+
+const copyUriToClipboard = function (uri: string) {
+  navigator.clipboard.writeText(uri);
 };
 
 const toggleExpand = function () {

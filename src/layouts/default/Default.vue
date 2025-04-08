@@ -1,9 +1,10 @@
 <template>
   <v-app v-if="store.connected">
-    <MainView v-if="framelessState" />
+    <MainView v-if="store.frameless" />
     <template v-else>
-      <Footer />
       <PlayerSelect />
+      <Footer />
+
       <MainView />
     </template>
   </v-app>
@@ -28,29 +29,20 @@ import ReloadPrompt from "./ReloadPrompt.vue";
 import { store } from "@/plugins/store";
 import { toRefs, watch, ref } from "vue";
 import api from "@/plugins/api";
+import { useRoute } from "vue-router";
 
-export interface Props {
-  showFullscreenPlayer?: boolean;
-  player?: string;
-  frameless?: boolean;
-}
-
-const props = defineProps<Props>();
-
-// keep this in a ref so that we keep it while navigating. But restart it if page is fully reloaded
-const framelessState = ref(false);
-
-const { showFullscreenPlayer, player, frameless } = toRefs(props);
-
+const route = useRoute();
 watch(
-  player,
-  (newActivePlayer) => {
+  // make sure it's retriggered when players array is populated
+  [() => route.query.player, () => Object.keys(api.players).length],
+  ([newActivePlayer]) => {
     if (!newActivePlayer) return;
+    const newPlayerString = newActivePlayer.toString().toLowerCase();
     // newActivePlayer can be either player id or player name
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
-        p.player_id === newActivePlayer ||
-        p.display_name.toLowerCase() === newActivePlayer.toLowerCase()
+        p.player_id.toLowerCase() === newPlayerString ||
+        p.display_name.toLowerCase() === newPlayerString
       );
     })?.player_id;
 
@@ -61,17 +53,17 @@ watch(
   { immediate: true },
 );
 watch(
-  showFullscreenPlayer,
+  () => route.query.showFullscreenPlayer,
   (showFullscreenPlayer) => {
     store.showFullscreenPlayer = !!showFullscreenPlayer;
   },
   { immediate: true },
 );
 watch(
-  frameless,
+  () => route.query.frameless,
   (frameless) => {
     if (frameless) {
-      framelessState.value = true;
+      store.frameless = true;
     }
   },
   { immediate: true },

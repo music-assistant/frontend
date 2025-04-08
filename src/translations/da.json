@@ -160,7 +160,7 @@
         },
         "flow_mode": {
             "label": "Aktivér flow-tilstand",
-            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \\nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
+            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
         },
         "auto_play": {
             "label": "Start automatisk afspilning",
@@ -182,7 +182,7 @@
         },
         "volume_normalization_target": {
             "label": "Målniveau for volumenormalisering",
-            "description": "Juster gennemsnitlig (opfattet) lydniveau til dette målniveau, standard er -17 LUFS \\n\\n **ADVARSEL:** Hvis niveauet indstilles for højt, kan det resultere i klipning!"
+            "description": "Juster gennemsnitlig (opfattet) lydniveau til dette målniveau, standard er -17 LUFS \n\n **ADVARSEL:** Hvis niveauet indstilles for højt, kan det resultere i klipning!"
         },
         "eq_bass": {
             "label": "Equalizer: bas",
@@ -206,7 +206,7 @@
         },
         "hide_player": {
             "label": "Skjul denne afspiller i brugergrænsefladen",
-            "description": "Skjul denne afspiller i brugergrænsefladen. \\n\\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
+            "description": "Skjul denne afspiller i brugergrænsefladen. \n\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
         },
         "default_enqueue_select_artist": {
             "label": "Elementer, der skal vælges, når du afspiller en kunstner (i biblioteket).",
@@ -288,7 +288,8 @@
             "advanced": "Avancerede indstillinger",
             "generic": "Generelle indstillinger",
             "announcements": "Konfiguration af meddelelser",
-            "airplay": "Airplay-specifikke indstillinger"
+            "airplay": "Airplay-specifikke indstillinger",
+            "player_controls": "Afspillerstyring"
         },
         "tts_pre_announce": {
             "label": "Forhåndsannoncering af TTS-meddelelser",
@@ -318,7 +319,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Material design ikon for denne afspiller. \\n\\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Brugergrænseflade",
         "frontend_desc": "Konfigurationsindstillinger for Music Assistant-brugergrænsefladen. Bemærk, at disse indstillinger gemmes på enhedsniveau.",
@@ -339,7 +340,7 @@
         },
         "menu_items": {
             "label": "Aktiverede menupunkter",
-            "description": "Konfigurer hvilke elementer der skal vises i menuen.\\n\\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \\n\\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."
+            "description": "Konfigurer hvilke elementer der skal vises i menuen.\n\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."
         },
         "language": {
             "label": "Sprog",
@@ -372,7 +373,7 @@
         },
         "hide_settings": {
             "label": "Skjul knap til indstillinger",
-            "description": "Skjul indstillingsknappen på startskærmen.\\n\\n Bemærk, at hvis du deaktiverer indstillinger på startskærmen og i menuen, kan du låse dig selv ude. \\n\\nI så fald skal du manuelt indtaste stien til indstillingerne eller slette browsercookies for at få adgang til indstillingerne igen - brug dem på eget ansvar!"
+            "description": "Skjul indstillingsknappen på startskærmen.\n\n Bemærk, at hvis du deaktiverer indstillinger på startskærmen og i menuen, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller slette browsercookies for at få adgang til indstillingerne igen - brug dem på eget ansvar!"
         },
         "no_music_providers": "Ingen musikudbydere konfigureret",
         "no_music_providers_detail": "Start din Music Assistant-oplevelse ved at tilføje dine musikudbydere.",
@@ -380,7 +381,7 @@
         "no_player_providers_detail": "Konfigurer afspillerudbydere for at vælge enheder, hvor Music Assistant kan afspille din musik.",
         "volume_normalization_radio": {
             "label": "Volumen-normaliseringsmetode til brug for radiostreams",
-            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for radiostreams. \\nSom standard indsamler Music Assistant en måling af radiostationens (gennemsnitlige opfattede) loudness i henhold til EBU-R128-specifikationen og justerer derefter den samlede forstærkning\/lydstyrke af streamen i henhold til denne måling, så lydens dynamiske område ikke påvirkes. Når der (endnu) ikke findes nogen måling for en radiostation, vil Music Assistant falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter.\\n\\nTIP: Radiostreams har ofte varierende lydstyrke, især under meddelelser og reklamer.\\nDu kan vælge at gennemtvinge dynamisk lydstyrkenormalisering for radiostreams, selv om der findes en (gennemsnitlig) lydstyrkemåling for radiostationen. \\n \\n**Indstillinger:**\\n\\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme. \\n  - Gennemtving dynamisk: Gennemtving altid dynamisk lydstyrkejustering. \\n  - Kun måling (ingen justering): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes ikke normalisering.\\n  - Fald tilbage forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, benyttes på en foruddefineret forstærkningskorrektion.\\n  - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion.\\n  - Fald tilbage til dynamisk - Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\\n",
+            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for radiostreams. \nSom standard indsamler Music Assistant en måling af radiostationens (gennemsnitlige opfattede) loudness i henhold til EBU-R128-specifikationen og justerer derefter den samlede forstærkning\/lydstyrke af streamen i henhold til denne måling, så lydens dynamiske område ikke påvirkes. Når der (endnu) ikke findes nogen måling for en radiostation, vil Music Assistant falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter.\n\nTIP: Radiostreams har ofte varierende lydstyrke, især under meddelelser og reklamer.\nDu kan vælge at gennemtvinge dynamisk lydstyrkenormalisering for radiostreams, selv om der findes en (gennemsnitlig) lydstyrkemåling for radiostationen. \n \n**Indstillinger:**\n\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme. \n  - Gennemtving dynamisk: Gennemtving altid dynamisk lydstyrkejustering. \n  - Kun måling (ingen justering): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes ikke normalisering.\n  - Fald tilbage forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, benyttes på en foruddefineret forstærkningskorrektion.\n  - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion.\n  - Fald tilbage til dynamisk - Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\n",
             "options": {
                 "disabled": "Deaktiveret",
                 "dynamic": "Gennemtving dynamisk",
@@ -392,7 +393,7 @@
         },
         "volume_normalization_tracks": {
             "label": "Volumen-normaliseringsmetode til brug for spor",
-            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for spor\/sange.\\nMusic Assistant bruger en måling af sporets (gennemsnitlige opfattede) lydstyrke i henhold til EBU-R128-specifikationen til at justere den samlede forstærkning\/lydstyrke i strømmen uden at påvirke lydens dynamiske område.\\nDisse målinger leveres enten af streamingudbyderen, eller i tilfælde af lokale filer kan de være indeholdt i ID3-tags (ReplayGain 2.0 \/ Opus R128).\\nHvis målingen ikke er angivet, vil Music Assistant automatisk udføre en måling, når\/efter sporet afspilles (første gang). Når der (endnu) ikke findes nogen måling for et nummer, vil Music Assistant som standard falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter. Det sikrer, at der ikke er store stigninger\/fald i lydstyrken mellem numrene, selvom der endnu ikke er nogen nøjagtig måling, men det dynamiske udjævningsfilter kan nogle gange komprimere det dynamiske område en smule, selvom det ikke burde være hørbart i de fleste tilfælde.\\n\\n\\n**Valgmuligheder:**\\n\\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme.\\n - Gennemtving dynamisk: Gennemtving altid dynamisk volumenudjævning. \\n - Kun måling (ingen tilbagefald): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes der ikke normalisering. \\n - Fallback til forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, faldes tilbage til en foruddefineret forstærkningskorrektion. \\n - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion. \\n - Fallback til dynamisk: Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\\n",
+            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for spor\/sange.\nMusic Assistant bruger en måling af sporets (gennemsnitlige opfattede) lydstyrke i henhold til EBU-R128-specifikationen til at justere den samlede forstærkning\/lydstyrke i strømmen uden at påvirke lydens dynamiske område.\nDisse målinger leveres enten af streamingudbyderen, eller i tilfælde af lokale filer kan de være indeholdt i ID3-tags (ReplayGain 2.0 \/ Opus R128).\nHvis målingen ikke er angivet, vil Music Assistant automatisk udføre en måling, når\/efter sporet afspilles (første gang). Når der (endnu) ikke findes nogen måling for et nummer, vil Music Assistant som standard falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter. Det sikrer, at der ikke er store stigninger\/fald i lydstyrken mellem numrene, selvom der endnu ikke er nogen nøjagtig måling, men det dynamiske udjævningsfilter kan nogle gange komprimere det dynamiske område en smule, selvom det ikke burde være hørbart i de fleste tilfælde.\n\n\n**Valgmuligheder:**\n\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme.\n - Gennemtving dynamisk: Gennemtving altid dynamisk volumenudjævning. \n - Kun måling (ingen tilbagefald): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes der ikke normalisering. \n - Fallback til forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, faldes tilbage til en foruddefineret forstærkningskorrektion. \n - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion. \n - Fallback til dynamisk: Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\n",
             "options": {
                 "disabled": "Deaktiveret",
                 "dynamic": "Gennemtving dynamisk",
@@ -404,14 +405,76 @@
         },
         "volume_normalization_fixed_gain_tracks": {
             "label": "Fast\/standard gain-justering for spor",
-            "description": "Fast\/standard gain-korrektion, der skal anvendes på et spors lydstrøm (afhænger af indstillingen \"Volume normalization method\").\\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\\n\\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
+            "description": "Fast\/standard gain-korrektion, der skal anvendes på et spors lydstrøm (afhænger af indstillingen \"Volume normalization method\").\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\n\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
         },
         "volume_normalization_fixed_gain_radio": {
             "label": "Fast\/standard gain-justering for radio",
-            "description": "Fast\/standard forstærkningskorrektion, der skal anvendes på en radiostream (afhænger af indstillingen \"Volume normalization method\").\\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\\n\\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
+            "description": "Fast\/standard forstærkningskorrektion, der skal anvendes på en radiostream (afhænger af indstillingen \"Volume normalization method\").\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\n\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
         },
         "group_type": "Gruppetype",
-        "add_group_player_desc": "For afspillerudbydere, der tilbyder indbygget gruppering\/synkronisering, oprettes der automatisk en synkroniseringsgruppe, hvilket betyder, at hvis du spiller til denne afspillergruppe, synkroniseres afspillerne automatisk. \\n\\nFor afspillereudbydere, der ikke understøtter gruppering, eller hvis du vil gruppere afspillere fra forskellige udbydere, kan du bruge gruppetypen \"Universal\", som vil distribuere den samme lyd til alle afspillere (dog ikke synkroniseret). \\n\\nBemærk, at nogle udbydere understøtter gruppering, men du skal bruge den oprindelige app til at udføre grupperingen. Et eksempel er Google Cast-baserede afspillere, hvor du kun kan oprette Google Cast-grupper i Google Home-appen."
+        "add_group_player_desc": "For afspillerudbydere, der tilbyder indbygget gruppering\/synkronisering, oprettes der automatisk en synkroniseringsgruppe, hvilket betyder, at hvis du spiller til denne afspillergruppe, synkroniseres afspillerne automatisk. \n\nFor afspillereudbydere, der ikke understøtter gruppering, eller hvis du vil gruppere afspillere fra forskellige udbydere, kan du bruge gruppetypen \"Universal\", som vil distribuere den samme lyd til alle afspillere (dog ikke synkroniseret). \n\nBemærk, at nogle udbydere understøtter gruppering, men du skal bruge den oprindelige app til at udføre grupperingen. Et eksempel er Google Cast-baserede afspillere, hvor du kun kan oprette Google Cast-grupper i Google Home-appen.",
+        "dynamic_members": {
+            "label": "Dynamiske gruppemedlemmer",
+            "description": "Tillad medlemmer (midlertidigt) at tilslutte sig\/forlade gruppen dynamisk, så gruppen mere eller mindre opfører sig på samme måde som manuel synkronisering af afspillere, med den største forskel, at gruppeafspilleren holder køen."
+        },
+        "dsp": {
+            "configure_on": "Konfiguration af DSP på: {name}",
+            "disabled_message": "DSP er i øjeblikket deaktiveret. Aktivér den ved hjælp af knappen ovenfor",
+            "input": "Indgang",
+            "output": "Udgang",
+            "filter": {
+                "add": "Tilføj filter",
+                "type": "Filtertype",
+                "new": "Ny {type}"
+            },
+            "move_up": "Flyt op",
+            "move_down": "Flyt ned",
+            "delete_filter": "Slet filter",
+            "parametric_eq": {
+                "add_band": "Tilføj bånd",
+                "delete_band": "Slet bånd",
+                "filter_type": "Filtertype",
+                "band": "Bånd {index}",
+                "enable_band": "Aktiver bånd",
+                "filter_types": {
+                    "peak": "Peak",
+                    "low_shelf": "Low Shelf",
+                    "high_shelf": "High Shelf",
+                    "low_pass": "Low Pass",
+                    "high_pass": "High Pass",
+                    "notch": "Notch"
+                },
+                "import_apo": "Importer APO\/REW-forudindstilling",
+                "export_apo": "Eksporter APO-forudindstilling",
+                "preamp": "Forforstærker"
+            },
+            "tone_control": {
+                "bass_level": "Basniveau",
+                "mid_level": "Mellemtoneniveau",
+                "treble_level": "Diskantniveau"
+            },
+            "parameter": {
+                "frequency": "Frekvens",
+                "gain": "Forstærkning",
+                "q_factor": "Q-faktor"
+            },
+            "types": {
+                "parametric_eq": "Parametrisk EQ",
+                "tone_control": "Tonekontrol"
+            }
+        },
+        "power_control": {
+            "label": "Tænd\/sluk-kontrol",
+            "description": "Definer\/tilsidesæt tænd\/sluk-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere tænd\/sluk-kommandoerne til en anden enhed eller deaktivere det fuldstændigt."
+        },
+        "volume_control": {
+            "label": "Lydstyrkekontrol",
+            "description": "Definer\/tilsidesæt lydstyrkekontrol-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere lydstyrkekontrol-kommandoerne til en anden enhed eller deaktivere det fuldstændigt."
+        },
+        "mute_control": {
+            "label": "Mutekontrol",
+            "description": "Definer\/tilsidesæt mutekontrol-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere mutekontrol-kommandoerne til en anden enhed eller deaktivere det helt. \n \nVi tilbyder en \"falsk\" mutekontrol-mulighed, som vil simulere muting ved at indstille lydstyrken til 0 og genoprette lydstyrken, når lyden slås til."
+        }
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",
@@ -450,7 +513,6 @@
         "paused": "stoppet",
         "playing": "spiller"
     },
-    "stream_details": "Stream-detaljer",
     "sync_now": "Synkroniser {0} nu",
     "sync_running": "En eller flere musikudbydere er ved at blive synkroniseret.",
     "tooltip": {
@@ -536,5 +598,67 @@
     "shuffle_disable": "Deaktivér bland",
     "shuffle_enable": "Aktivér bland",
     "dont_stop_the_music_enable": "Aktiver \"Stop ikke musikken!",
-    "dont_stop_the_music_disable": "Deaktiver \"Stop ikke musikken!"
+    "dont_stop_the_music_disable": "Deaktiver \"Stop ikke musikken!",
+    "open_dsp_settings": "Åbn DSP-indstillinger",
+    "audiobook": "Lydbog",
+    "audiobooks": "Lydbøger",
+    "chapter": "Kapitel",
+    "chapters": "Kapitler",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "item_fully_played": "Dette element er blevet afspillet",
+    "item_in_progress": "Dette element er blevet delvist afspillet",
+    "duration_in_seconds": "{0} sekunder",
+    "mark_played": "Markér som afspillet",
+    "mark_unplayed": "Markér som uafspillet",
+    "searchtype_all": "Alt",
+    "global_search": "Global søgning",
+    "podcast_episode": "Episode",
+    "podcast_episodes": "Episoder",
+    "play_from_here": "Afspil herfra",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamisk normalisering af lydstyrke",
+    "loudness_fixed": "Bestemt forstærkningskorrektion",
+    "dsp_active": "Aktiv",
+    "currently_playing_players": "Spiller nu",
+    "all_players": "Alle afspillere",
+    "all_groups": "Alle grupper",
+    "no_player_playing": "Ingen afspillere spiller i øjeblikket",
+    "stop_playback": "Stop afspilning",
+    "streamdetails": {
+        "input_header": "Indgang",
+        "output_header": "Udgang",
+        "output_format_info": "Lyden konverteres til formatet '{0}', før den sendes til afspilleren.",
+        "eq_band_count": "{0} bånd",
+        "eq_band_count_singular": "1 bånd",
+        "input_gain": "Indgangsforstærkning ({0} dB)",
+        "output_gain": "Udgangsforstærkning ({0} dB)",
+        "output_limiter": "Udgangsbegrænser",
+        "output_limiter_info": "Reducerer automatisk meget høje lyde for at forhindre forvrængning og beskytte dine højttalere",
+        "dsp_unsupported": "DSP understøttes ikke",
+        "dsp_disabled_by_unsupported_group": "Denne afspillerudbyder understøtter ikke DSP med synkroniseret afspilning",
+        "file_info": {
+            "container": "Container: {0}",
+            "codec": "Kodeks: {0}",
+            "bit_rate": "Bit rate: {0} kbps",
+            "sample_rate": "Samplingsfrekvens: {0} kHz",
+            "channels": "Kanaler: {0}",
+            "bit_depth": "Bitdybde: {0}"
+        },
+        "volume_normalization": {
+            "target_level": "Målniveau: {0} LUFS",
+            "integrated_loudness": "Målt (integreret) lydstyrke: {0} LUFS",
+            "integrated_album_loudness": "Albummets lydstyrke: {0} LUFS",
+            "applied_gain_correction": "Anvendt forstærkningskorrektion: {0} dB",
+            "mode": {
+                "dynamic": "Normalisering af lydstyrken er aktiv i dynamisk tilstand.",
+                "measurement_only": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af lydens (integrerede) lydstyrke.",
+                "measurement_album": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af albummets (integrerede) lydstyrke.",
+                "fixed_gain": "Normalisering af lydstyrken er aktiv, baseret på bestemt forstærkningskorrektion."
+            }
+        }
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Vælg kilde"
 }

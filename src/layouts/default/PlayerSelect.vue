@@ -8,28 +8,55 @@
     app
     clipped
     temporary
-    touchless
-    :width="500"
+    :width="460"
     style="z-index: 99999"
     z-index="99999"
   >
     <div>
       <!-- heading with Players as title-->
-      <v-card-title class="title">
-        <b>{{ $t("players") }}</b>
-      </v-card-title>
-      <!-- close button -->
-      <Button
-        variant="icon"
-        style="float: right; top: -40px; height: 0"
-        @click="store.showPlayersMenu = false"
+      <v-card-title
+        class="title"
+        style="padding-top: 20px; padding-bottom: 20px"
       >
-        <v-icon size="30">mdi-window-close</v-icon>
-      </Button>
+        <b>{{ $t("players") }}</b>
+        <div style="float: right; margin-right: -20px">
+          <!-- settings button -->
+          <Button variant="icon" :to="{ name: 'playersettings' }">
+            <v-icon size="30">mdi-cog-outline</v-icon>
+          </Button>
+          <!-- close button -->
+          <Button variant="icon" @click="store.showPlayersMenu = false">
+            <v-icon size="30">mdi-window-close</v-icon>
+          </Button>
+        </div>
+      </v-card-title>
 
-      <v-list flat style="margin: 5px 5px">
+      <v-divider />
+
+      <v-list flat style="margin: 0px 15px 5px 15px">
+        <!-- dedicated card for builtin player -->
         <PlayerCard
-          v-for="player in sortedPlayers.filter((x) => x.powered)"
+          v-if="
+            webPlayer.mode === WebPlayerMode.BUILTIN &&
+            webPlayer.player_id &&
+            api.players[webPlayer.player_id]
+          "
+          :id="webPlayer.player_id"
+          :player="api.players[webPlayer.player_id]"
+          :show-volume-control="true"
+          :show-menu-button="true"
+          :show-sub-players="false"
+          :show-sync-controls="false"
+          :allow-power-control="true"
+          @click="playerClicked(api.players[webPlayer.player_id])"
+        />
+        <!-- active/playing players on top -->
+        <PlayerCard
+          v-for="player in sortedPlayers.filter(
+            (x) =>
+              [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state!) ||
+              (api.queues[x.player_id]?.items > 0 && x.powered != false),
+          )"
           :id="player.player_id"
           :key="player.player_id"
           :player="player"
@@ -41,26 +68,73 @@
           :show-sync-controls="
             player.supported_features.includes(PlayerFeature.SET_MEMBERS)
           "
+          :allow-power-control="true"
           @click="playerClicked(player)"
         />
       </v-list>
 
-      <v-expansion-panels variant="accordion" flat class="expansion">
-        <v-expansion-panel
-          :title="$t('powered_off_players')"
-          style="padding: 0"
-        >
+      <v-expansion-panels
+        v-model="selectedPanel"
+        variant="accordion"
+        flat
+        class="expansion"
+      >
+        <v-expansion-panel style="padding: 0">
+          <v-expansion-panel-title
+            ><h3>
+              {{ $t("all_players") }}
+            </h3></v-expansion-panel-title
+          >
           <v-expansion-panel-text style="padding: 0">
-            <v-list flat>
+            <v-list flat style="margin: -20px 3px 5px 3px">
               <PlayerCard
-                v-for="player in sortedPlayers.filter((x) => !x.powered)"
+                v-for="player in sortedPlayers.filter(
+                  (x) => x.type != PlayerType.GROUP,
+                )"
                 :id="player.player_id"
                 :key="player.player_id"
                 :player="player"
-                :show-volume-control="false"
+                :show-volume-control="true"
                 :show-menu-button="true"
-                :show-sub-players="false"
-                :show-sync-controls="false"
+                :show-sub-players="
+                  showSubPlayers && player.player_id == store.activePlayerId
+                "
+                :show-sync-controls="
+                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
+                "
+                :allow-power-control="true"
+                @click="playerClicked(player)"
+              />
+            </v-list>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+        <v-expansion-panel
+          v-if="sortedPlayers.filter((x) => x.type == PlayerType.GROUP).length"
+          style="padding: 0"
+        >
+          <v-expansion-panel-title
+            ><h3>
+              {{ $t("all_groups") }}
+            </h3></v-expansion-panel-title
+          >
+          <v-expansion-panel-text style="padding: 0">
+            <v-list flat style="margin: -20px 3px 5px 3px">
+              <PlayerCard
+                v-for="player in sortedPlayers.filter(
+                  (x) => x.type == PlayerType.GROUP,
+                )"
+                :id="player.player_id"
+                :key="player.player_id"
+                :player="player"
+                :show-volume-control="true"
+                :show-menu-button="true"
+                :show-sub-players="
+                  showSubPlayers && player.player_id == store.activePlayerId
+                "
+                :show-sync-controls="
+                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
+                "
+                :allow-power-control="true"
                 @click="playerClicked(player)"
               />
             </v-list>
@@ -73,28 +147,30 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { Player, PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
+import {
+  Player,
+  PlayerFeature,
+  PlayerType,
+  PlayerState,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import Button from "@/components/mods/Button.vue";
+import { playerVisible } from "@/helpers/utils";
+import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 
 const showSubPlayers = ref(false);
+const selectedPanel = ref<number | null>(null);
 
 // computed properties
 const sortedPlayers = computed(() => {
-  return (
-    Object.values(api.players)
-      .filter((x) =>
-        // hide synced players or group child's
-        playerActive(x, false, false, false),
-      )
-      .sort((a, b) =>
-        a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-      )
-      // sort by power state - powered players on top
-      .sort((a, b) => Number(b.powered) - Number(a.powered))
-  );
+  return Object.values(api.players)
+    .filter((x) => playerVisible(x))
+    .filter((x) => x.player_id !== webPlayer.player_id) // In case the user made the player visible for everyone
+    .sort((a, b) =>
+      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
+    );
 });
 
 //watchers
@@ -140,33 +216,8 @@ onMounted(() => {
   checkDefaultPlayer();
 });
 
-const playerActive = function (
-  player: Player,
-  allowUnavailable = true,
-  allowSyncChild = false,
-  allowHidden = false,
-): boolean {
-  // perform some basic checks if we may use/show the player
-  if (!player.enabled) return false;
-  if (!allowHidden && player.hidden) return false;
-  if (!allowUnavailable && !player.available) return false;
-  if (player.synced_to && !allowSyncChild) return false;
-  if (
-    !allowSyncChild &&
-    player.type == PlayerType.PLAYER &&
-    player.active_group
-  )
-    return false;
-
-  return true;
-};
-
 const checkDefaultPlayer = function () {
-  if (
-    store.activePlayer &&
-    playerActive(store.activePlayer, false, false, false)
-  )
-    return;
+  if (store.activePlayer && playerVisible(store.activePlayer)) return;
   const newDefaultPlayer = selectDefaultPlayer();
   if (newDefaultPlayer) {
     store.activePlayerId = newDefaultPlayer.player_id;
@@ -179,7 +230,7 @@ const selectDefaultPlayer = function () {
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&
-    playerActive(api.players[lastPlayerId], false, false, false)
+    playerVisible(api.players[lastPlayerId])
   ) {
     return api.players[lastPlayerId];
   }

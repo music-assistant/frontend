@@ -1,7 +1,12 @@
 <template>
   <section v-if="dsp">
     <v-toolbar color="transparent" class="border-b">
-      <v-switch v-model="dsp.enabled" hide-details class="pl-4" />
+      <v-switch
+        v-model="dsp.enabled"
+        hide-details
+        color="primary"
+        class="pl-4"
+      />
       <v-toolbar-title>{{
         $t("settings.dsp.configure_on", { name: playerName })
       }}</v-toolbar-title>
@@ -32,7 +37,11 @@
         <!-- Filter Settings Panel -->
         <v-col v-if="selectedStage != null" style="min-width: 0">
           <!-- Toolbar of the selected item -->
-          <v-toolbar density="compact">
+          <v-toolbar
+            density="compact"
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+            class="border-b"
+          >
             <v-btn
               v-if="mobile"
               class="hidden-xs-only"
@@ -69,6 +78,7 @@
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
               hide-details
+              color="primary"
               class="mr-4"
             />
             <v-btn
@@ -81,23 +91,29 @@
           </v-toolbar>
 
           <!-- Settings of the Input stage -->
-          <v-card v-if="selectedStage === 'input'" flat>
+          <v-card
+            v-if="selectedStage === 'input'"
+            flat
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+          >
             <DSPSlider v-model="dsp.input_gain" type="gain" />
           </v-card>
 
           <!-- Settings of the Output stage -->
-          <v-card v-else-if="selectedStage === 'output'" flat>
-            <v-card-item>
-              <DSPSlider v-model="dsp.output_gain" type="gain" />
-              <v-checkbox
-                v-model="dsp.output_limiter"
-                :label="$t('settings.dsp.enable_output_limiter')"
-              />
-            </v-card-item>
+          <v-card
+            v-else-if="selectedStage === 'output'"
+            flat
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+          >
+            <DSPSlider v-model="dsp.output_gain" type="gain" />
           </v-card>
 
           <!-- Settings of the selected DSP Filter -->
-          <v-card v-else flat>
+          <v-card
+            v-else
+            flat
+            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
+          >
             <DSPParametricEQ
               v-if="
                 dsp.filters[selectedStage].type === DSPFilterType.PARAMETRIC_EQ
@@ -139,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from "vue";
+import { ref, computed, watch, onUnmounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -151,6 +167,7 @@ import {
   DSPFilterType,
   ParametricEQFilter,
   ToneControlFilter,
+  EventType,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
@@ -171,6 +188,7 @@ const showAddFilterDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
 const windowWidth = ref(window.innerWidth);
 const { mobile } = useDisplay();
+let updatedFromServer = false;
 
 const filterTypes = Object.values(DSPFilterType).map((value) => {
   return {
@@ -198,6 +216,8 @@ const addFilter = () => {
   switch (newFilterType.value) {
     case DSPFilterType.PARAMETRIC_EQ:
       filter = {
+        preamp: 0,
+        per_channel_preamp: {},
         enabled: true,
         type: DSPFilterType.PARAMETRIC_EQ,
         bands: [],
@@ -268,6 +288,15 @@ watch(
   { immediate: true },
 );
 
+const unsub = api.subscribe(
+  EventType.PLAYER_DSP_CONFIG_UPDATED,
+  (evt: { data: DSPConfig }) => {
+    updatedFromServer = true;
+    dsp.value = evt.data;
+  },
+);
+onBeforeUnmount(unsub);
+
 // Debounced save, to prevent too many requests, but still be responsive
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 const debouncedSave = (newVal: DSPConfig) => {
@@ -282,6 +311,12 @@ const debouncedSave = (newVal: DSPConfig) => {
 watch(
   dsp,
   (old_val, newVal) => {
+    if (updatedFromServer) {
+      // Skip resending, since we just got the config
+      if (saveTimeout) clearTimeout(saveTimeout);
+      updatedFromServer = false;
+      return;
+    }
     if (old_val === null) return; // We haven't changed anything yet
     if (newVal) debouncedSave(newVal);
   },

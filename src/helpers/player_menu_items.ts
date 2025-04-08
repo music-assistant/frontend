@@ -8,25 +8,39 @@ import {
   PlayerFeature,
   PlayerType,
   RepeatMode,
+  PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
+import { $t } from "@/plugins/i18n";
 
 export const getPlayerMenuItems = (
   player: Player,
   playerQueue?: PlayerQueue,
 ): ContextMenuItem[] => {
+  const menuItems: ContextMenuItem[] = [];
   // power off/on
-  const menuItems: ContextMenuItem[] = [
-    {
+  if (player?.power_control != PLAYER_CONTROL_NONE) {
+    menuItems.push({
       label: player.powered ? "power_off_player" : "power_on_player",
       labelArgs: [],
       action: () => {
         api.playerCommandPowerToggle(player.player_id);
       },
       icon: "mdi-power",
-    },
-  ];
+    });
+  }
+  // add stop playback menu item
+  if (player?.state == "playing" || player?.state == "paused") {
+    menuItems.push({
+      label: "stop_playback",
+      labelArgs: [],
+      action: () => {
+        api.playerCommandStop(player.player_id);
+      },
+      icon: "mdi-stop",
+    });
+  }
 
   // add 'synchronize with' menu item
   const playersToSyncWith = Object.values(api.players).filter(
@@ -34,7 +48,8 @@ export const getPlayerMenuItems = (
       p.player_id != player.player_id &&
       p.available &&
       p.enabled &&
-      p.provider == player.provider &&
+      (p.can_group_with.includes(player.provider) ||
+        p.can_group_with.includes(player.player_id)) &&
       p.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
       !p.synced_to,
   );
@@ -153,6 +168,45 @@ export const getPlayerMenuItems = (
       icon: "mdi-cancel",
     });
   }
+
+  // add 'select source' menu item
+  const selectableSources = player.source_list.filter(
+    (s) => !s.passive || s.id == player.active_source,
+  );
+  if (player.active_source != player.player_id) {
+    // add virtual/fake source entry to return to the MA queue as active source
+    selectableSources.push({
+      id: player.player_id,
+      name: $t("music_assistant_source"),
+      passive: false,
+      can_play_pause: true,
+      can_seek: true,
+      can_next_previous: true,
+    });
+  }
+  if (!player.synced_to && selectableSources.length > 0) {
+    menuItems.push({
+      label: "select_source",
+      labelArgs: [],
+      icon: "mdi-import",
+      subItems: selectableSources
+        .map((s) => {
+          return {
+            label: s.name,
+            labelArgs: [],
+            disabled: s.id == player.active_source,
+            selected: s.id == player.active_source,
+            action: () => {
+              api.playerCommandGroupSelectSource(player.player_id, s.id);
+            },
+          };
+        })
+        .sort((a, b) =>
+          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
+        ),
+    });
+  }
+
   // add 'don't stop the music' menu item
   if (playerQueue && "dont_stop_the_music_enabled" in playerQueue) {
     menuItems.push({
@@ -179,16 +233,18 @@ export const getPlayerMenuItems = (
   });
 
   // add shortcut to dsp settings
-  menuItems.push({
-    label: "open_dsp_settings",
-    labelArgs: [],
-    action: () => {
-      store.showFullscreenPlayer = false;
-      store.showPlayersMenu = false;
-      router.push(`/settings/editplayer/${player.player_id}/dsp`);
-    },
-    icon: "mdi-equalizer",
-  });
+  if (player.type !== PlayerType.GROUP) {
+    menuItems.push({
+      label: "open_dsp_settings",
+      labelArgs: [],
+      action: () => {
+        store.showFullscreenPlayer = false;
+        store.showPlayersMenu = false;
+        router.push(`/settings/editplayer/${player.player_id}/dsp`);
+      },
+      icon: "mdi-equalizer",
+    });
+  }
 
   return menuItems;
 };

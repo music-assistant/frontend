@@ -25,10 +25,10 @@
       <Toolbar
         icon="mdi-arrow-left"
         style="position: absolute"
-        :menu-items="item ? getContextMenuItems([item], item) : []"
+        :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :show-loading="true"
-        @icon-clicked="backButtonClick"
+        :icon-action="backButtonClick"
       />
       <v-layout
         v-if="item"
@@ -139,6 +139,60 @@
               </MarqueeText>
             </v-card-subtitle>
 
+            <!-- audiobook author(s) -->
+            <v-card-subtitle
+              v-if="'authors' in item && item.authors.length > 0"
+              class="title accent--text d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-edit"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(author, authorindex) in item.authors"
+                  :key="author"
+                >
+                  <span style="color: accent">{{ author }}</span>
+                  <span
+                    v-if="authorindex + 1 < item.authors.length"
+                    :key="authorindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- audiobook narrator(s) -->
+            <v-card-subtitle
+              v-if="'narrators' in item && item.narrators.length > 0"
+              class="title accent--text d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-voice"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(narrator, narratorIndex) in item.narrators"
+                  :key="narrator"
+                >
+                  <span style="color: accent">{{ narrator }}</span>
+                  <span
+                    v-if="narratorIndex + 1 < item.narrators.length"
+                    :key="narratorIndex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
+
             <!-- playlist owner -->
             <v-card-subtitle
               v-if="'owner' in item && item.owner"
@@ -186,62 +240,16 @@
           >
             <!-- play button with contextmenu -->
             <MenuButton
+              id="playbutton"
               :width="220"
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
+              :loading="store.playActionInProgress"
               :open-menu-on-click="!store.activePlayer"
-              @click="api.playMedia(item!)"
-            >
-              <template #menu>
-                <v-card width="320">
-                  <v-list>
-                    <v-list-item :title="item.name" link>
-                      <template #prepend>
-                        <v-avatar
-                          ><MediaItemThumb :item="item" size="80"
-                        /></v-avatar>
-                      </template>
-                      <template #title>
-                        <v-list-item
-                          variant="text"
-                          :title="$t('play_on')"
-                          :subtitle="
-                            store.activePlayer?.display_name || $t('no_player')
-                          "
-                          @click.stop="store.showPlayersMenu = true"
-                        />
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                  <v-divider />
-                  <v-list
-                    density="compact"
-                    slim
-                    tile
-                    :disabled="!store.activePlayer"
-                  >
-                    <div
-                      v-for="menuItem of getPlayMenuItems([item], item)"
-                      :key="menuItem.label"
-                    >
-                      <v-list-item
-                        :title="$t(menuItem.label, menuItem.labelArgs || [])"
-                        density="compact"
-                        @click="menuItem.action"
-                      >
-                        <template #prepend>
-                          <v-icon
-                            style="padding-left: 15px"
-                            :icon="menuItem.icon"
-                          />
-                        </template>
-                      </v-list-item>
-                    </div>
-                  </v-list>
-                </v-card>
-              </template>
-            </MenuButton>
+              @click="playButtonClick"
+              @menu="playButtonClick(true)"
+            />
 
             <!-- favorite (heart) icon -->
             <v-btn
@@ -329,18 +337,22 @@ import type {
 } from "@/plugins/api/interfaces";
 import { computed, ref, watch } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
-import MenuButton from "./MenuButton.vue";
 import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useRouter } from "vue-router";
-import { truncateString, parseBool } from "@/helpers/utils";
 import {
+  parseBool,
+  markdownToHtml,
+  truncateString,
+  handlePlayBtnClick,
+} from "@/helpers/utils";
+import {
+  ContextMenuItem,
   getContextMenuItems,
-  getPlayMenuItems,
 } from "@/layouts/default/ItemContextMenu.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { useI18n } from "vue-i18n";
 import MarqueeText from "./MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import MenuButton from "./MenuButton.vue";
 
 // properties
 export interface Props {
@@ -350,23 +362,27 @@ const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
 const { mobile } = useDisplay();
+const menuItems = ref<ContextMenuItem[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
-const { t } = useI18n();
 
 watch(
   () => compProps.item,
   async (val) => {
     if (val) {
       fanartImage.value =
-        getImageThumbForItem(compProps.item, ImageType.FANART) ||
-        getImageThumbForItem(compProps.item, ImageType.LANDSCAPE) ||
-        getImageThumbForItem(compProps.item, ImageType.THUMB) ||
+        getImageThumbForItem(val, ImageType.FANART) ||
+        getImageThumbForItem(val, ImageType.LANDSCAPE) ||
+        getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
+      menuItems.value = await getContextMenuItems([val], val);
+    } else {
+      fanartImage.value = imgGradient;
+      menuItems.value = [];
     }
   },
   { immediate: true },
@@ -414,6 +430,17 @@ const backButtonClick = function () {
   });
 };
 
+const playButtonClick = function (forceMenu = false) {
+  const playButton = document.getElementById("playbutton") as HTMLElement;
+  handlePlayBtnClick(
+    compProps.item!,
+    playButton.getBoundingClientRect().left,
+    playButton.getBoundingClientRect().top + 36,
+    undefined,
+    forceMenu,
+  );
+};
+
 const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
@@ -431,18 +458,15 @@ const rawDescription = computed(() => {
 });
 
 const fullDescription = computed(() => {
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, "<br /><br />");
+  return markdownToHtml(rawDescription.value);
 });
+
 const shortDescription = computed(() => {
   const maxChars = mobile.value ? 160 : 300;
   if (rawDescription.value.length > maxChars) {
-    return (
-      rawDescription.value
-        .replace(/(\r\n|\n|\r)/gm, " ")
-        .substring(0, maxChars) + "..."
-    );
+    return fullDescription.value.substring(0, maxChars) + "...";
   }
-  return rawDescription.value.replace(/(\r\n|\n|\r)/gm, " ");
+  return fullDescription.value;
 });
 
 const artistLogo = computed(() => {

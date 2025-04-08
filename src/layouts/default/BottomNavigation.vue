@@ -85,7 +85,7 @@ const isLibraryOpen = ref(false);
 }
 
 .v-btn--active {
-  color: white;
+  color: rgb(var(--v-theme-accent));
 }
 
 .v-slide-group-item--active {

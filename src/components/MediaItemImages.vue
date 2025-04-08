@@ -97,6 +97,8 @@ import Toolbar from "@/components/Toolbar.vue";
 import { computed, ref } from "vue";
 import { eventbus } from "@/plugins/eventbus";
 
+import { open } from "@tauri-apps/plugin-shell";
+
 export interface Props {
   modelValue: MediaItemImage[];
 }
@@ -107,7 +109,7 @@ const expanded = ref(false);
 const emit = defineEmits(["update:modelValue"]);
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, "_blank");
+  open(url);
 };
 
 const onMenu = function (
@@ -147,7 +149,6 @@ const toggleExpand = function () {
 };
 
 const makeImagePrimary = function (image: MediaItemImage) {
-  console.log("MakeImagePrimary", image);
   const images = [image];
   images.push(...compProps.modelValue.filter((x) => x != image));
   emit("update:modelValue", images);

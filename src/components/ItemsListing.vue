@@ -14,7 +14,7 @@
     <v-divider />
 
     <v-text-field
-      v-if="showSearch && expanded"
+      v-if="showSearchInput"
       id="searchInput"
       v-model="params.search"
       clearable
@@ -33,6 +33,13 @@
       :variant="viewMode == 'list' ? 'default' : 'panel'"
       style="overflow: hidden"
     >
+      <v-progress-linear
+        v-if="loading"
+        color="accent"
+        height="4"
+        indeterminate
+        rounded
+      />
       <v-infinite-scroll
         v-if="!tempHide && !(pagedItems.length == 0 && allItemsReceived)"
         :onLoad="loadNextPage"
@@ -53,12 +60,13 @@
               :item="item"
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
-              :show-actions="['tracks', 'albums'].includes(itemtype)"
+              :show-actions="
+                ['tracks', 'albums', 'albumtracks'].includes(itemtype)
+              "
+              :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
+              :parent-item="parentItem"
               @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-              @play="onPlayClick"
             />
           </v-col>
         </v-row>
@@ -76,10 +84,8 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
+              :parent-item="parentItem"
               @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
-              @play="onPlayClick"
             />
           </v-col>
         </v-row>
@@ -99,16 +105,15 @@
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
               :show-favorite="showFavoritesOnlyFilter"
-              :show-menu="showMenu"
+              :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
               :show-checkboxes="showCheckboxes"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :show-details="itemtype.includes('versions')"
+              :parent-item="parentItem"
               @select="onSelect"
-              @menu="onMenu"
-              @click="onClick"
             />
           </template>
         </v-virtual-scroll>
@@ -116,7 +121,7 @@
 
       <!-- show alert if no item found -->
       <div v-if="!loading && pagedItems.length == 0">
-        <Alert
+        <v-alert
           v-if="
             !loading &&
             pagedItems.length == 0 &&
@@ -131,10 +136,10 @@
           >
             {{ $t("try_global_search") }}
           </v-btn>
-        </Alert>
-        <Alert v-else-if="!loading && pagedItems.length == 0">
+        </v-alert>
+        <v-alert v-else-if="!loading && pagedItems.length == 0">
           {{ $t("no_content") }}
-        </Alert>
+        </v-alert>
       </div>
 
       <!-- box shown when item(s) selected -->
@@ -150,7 +155,12 @@
             variant="text"
             @click="
               (evt: PointerEvent) =>
-                onMenu(selectedItems, evt.clientX, evt.clientY)
+                handleMenuBtnClick(
+                  selectedItems,
+                  evt.clientX,
+                  evt.clientY,
+                  parentItem,
+                )
             "
           >
             {{ $t("actions") }}
@@ -171,14 +181,17 @@ import {
   nextTick,
   onMounted,
   watch,
+  watchEffect,
 } from "vue";
 import {
   MediaType,
   type Album,
   type MediaItemType,
   type Track,
-  BrowseFolder,
   ItemMapping,
+  MediaItemTypeOrItemMapping,
+  EventMessage,
+  EventType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import ListviewItem from "./ListviewItem.vue";
@@ -186,12 +199,14 @@ import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import Alert from "@/components/mods/Alert.vue";
 import Container from "@/components/mods/Container.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
-import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
+import {
+  panelViewItemResponsive,
+  scrollElement,
+  handleMenuBtnClick,
+} from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
 
 export interface LoadDataParams {
@@ -212,7 +227,6 @@ export interface Props {
   showTrackNumber?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
-  showMenu?: boolean;
   showFavoritesOnlyFilter?: boolean;
   showDuration?: boolean;
   parentItem?: MediaItemType;
@@ -244,7 +258,6 @@ const props = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
-  showMenu: true,
   showFavoritesOnlyFilter: true,
   showDuration: true,
   parentItem: undefined,
@@ -286,7 +299,7 @@ const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
 const loading = ref(false);
-const selectedItems = ref<MediaItemType[]>([]);
+const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
 const expanded = ref(true);
@@ -295,46 +308,49 @@ const initialDataReceived = ref(false);
 const tempHide = ref(false);
 
 // methods
+const closeSearch = function () {
+  params.value.search = "";
+  showSearch.value = false;
+};
+const focusSearch = function () {
+  nextTick(() => {
+    document.getElementById("searchInput")?.focus();
+  });
+};
 const toggleSearch = function () {
-  if (showSearch.value) showSearch.value = false;
-  else {
+  if (showSearch.value) {
+    closeSearch();
+  } else {
     showSearch.value = true;
-    nextTick(() => {
-      document.getElementById("searchInput")?.focus();
-    });
+    focusSearch();
   }
 };
 
 const toggleExpand = function () {
   expanded.value = !expanded.value;
-  localStorage.setItem(
-    `expand.${props.path}.${props.itemtype}`,
-    expanded.value.toString(),
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`expand.${storKey}`, expanded.value.toString());
 };
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  localStorage.setItem(`viewMode.${props.path}.${props.itemtype}`, newMode);
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`viewMode.${storKey}`, newMode);
 };
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
   const favoritesOnlyStr = params.value.favoritesOnly ? "true" : "false";
-  localStorage.setItem(
-    `favoriteFilter.${props.path}.${props.itemtype}`,
-    favoritesOnlyStr,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`favoriteFilter.${storKey}`, favoritesOnlyStr);
   loadData(undefined, undefined, true);
 };
 
 const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
   const libraryOnlyStr = params.value.libraryOnly ? "true" : "false";
-  localStorage.setItem(
-    `libraryFilter.${props.path}.${props.itemtype}`,
-    libraryOnlyStr,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`libraryFilter.${storKey}`, libraryOnlyStr);
   loadData(true, undefined, true);
 };
 
@@ -343,18 +359,19 @@ const toggleAlbumArtistsFilter = function () {
   const albumArtistsOnlyStr = params.value.albumArtistsFilter
     ? "true"
     : "false";
-  localStorage.setItem(
-    `albumArtistsFilter.${props.path}.${props.itemtype}`,
-    albumArtistsOnlyStr,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`albumArtistsFilter.${storKey}`, albumArtistsOnlyStr);
   loadData(undefined, undefined, true);
 };
 
-const isSelected = function (item: MediaItemType) {
+const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
 };
 
-const onSelect = function (item: MediaItemType, selected: boolean) {
+const onSelect = function (
+  item: MediaItemTypeOrItemMapping,
+  selected: boolean,
+) {
   if (selected) {
     if (!selectedItems.value.includes(item)) selectedItems.value.push(item);
   } else {
@@ -378,60 +395,6 @@ const onRefreshClicked = function () {
   loadData(true, true);
 };
 
-const onMenu = function (
-  item: MediaItemType | MediaItemType[],
-  posX: number,
-  posY: number,
-) {
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  if (mediaItems[0].media_type == MediaType.FOLDER) return;
-  showContextMenuForMediaItem(mediaItems, props.parentItem, posX, posY);
-};
-
-const onClick = function (item: MediaItemType, posX: number, posY: number) {
-  // mediaItem in the list is clicked
-  if (!itemIsAvailable(item)) {
-    onMenu(item, posX, posY);
-    return;
-  }
-  if (item.media_type == MediaType.FOLDER) {
-    router.push({
-      name: "browse",
-      query: {
-        path: (item as BrowseFolder).path,
-      },
-    });
-  } else if (
-    viewMode.value == "list" &&
-    item.media_type == MediaType.TRACK &&
-    props.parentItem
-  ) {
-    // track clicked in a sublisting (e.g. album/playlist) listview
-    onPlayClick(item, posX, posY);
-  } else {
-    router.push({
-      name: item.media_type,
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-  }
-};
-
-const onPlayClick = function (item: MediaItemType, posX: number, posY: number) {
-  // play button on item is clicked
-  if (!itemIsAvailable(item)) {
-    onMenu(item, posX, posY);
-    return;
-  }
-  if (!store.activePlayerId) {
-    store.showPlayersMenu = true;
-    return;
-  }
-  api.playMedia(item.uri, undefined);
-};
-
 const onClear = function () {
   params.value.search = "";
   showSearch.value = false;
@@ -442,10 +405,8 @@ const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
-  localStorage.setItem(
-    `sortBy.${props.path}.${props.itemtype}`,
-    params.value.sortBy,
-  );
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(`sortBy.${storKey}`, params.value.sortBy);
   loadData(undefined, undefined, true);
 };
 
@@ -458,8 +419,9 @@ const changeAlbumTypeFilter = function (albumType: string) {
     params.value.albumType = params.value.albumType || [];
     params.value.albumType.push(albumType);
   }
+  const storKey = `${props.path}.${props.itemtype}`;
   localStorage.setItem(
-    `albumType.${props.path}.${props.itemtype}`,
+    `albumType.${storKey}`,
     params.value.albumType.join(","),
   );
   loadData(undefined, undefined, true);
@@ -467,23 +429,45 @@ const changeAlbumTypeFilter = function (albumType: string) {
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
+  if (props.itemtype == "artists") {
+    store.globalSearchType = MediaType.ARTIST;
+  } else if (props.itemtype == "albums") {
+    store.globalSearchType = MediaType.ALBUM;
+  } else if (props.itemtype == "tracks") {
+    store.globalSearchType = MediaType.TRACK;
+  } else if (props.itemtype == "playlists") {
+    store.globalSearchType = MediaType.PLAYLIST;
+  } else if (props.itemtype == "audiobooks") {
+    store.globalSearchType = MediaType.AUDIOBOOK;
+  } else if (props.itemtype == "podcasts") {
+    store.globalSearchType = MediaType.PODCAST;
+  } else if (props.itemtype == "radios") {
+    store.globalSearchType = MediaType.RADIO;
+  }
   router.push({ name: "search" });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = function ({ done }: { done: any }) {
+const loadNextPage = async function ({ done }: { done: any }) {
   if (allItemsReceived.value) {
     done("empty");
     return;
   }
-  loadData(
+
+  await loadData(
     undefined,
     undefined,
     undefined,
     params.value.offset + props.limit,
-  ).then(() => {
-    done("ok");
-  });
+  );
+
+  done("ok");
+};
+
+const loadAllItems = async function () {
+  while (!allItemsReceived.value) {
+    await loadNextPage({ done: function () {} });
+  }
 };
 
 // computed properties
@@ -493,6 +477,16 @@ const isSearchActive = computed(() => {
     searchActive = true;
   }
   return searchActive;
+});
+
+const showSearchInput = computed(() => {
+  return showSearch.value && expanded.value;
+});
+
+watchEffect(() => {
+  if (!showSearchInput.value) {
+    searchHasFocus.value = false;
+  }
 });
 
 const menuItems = computed(() => {
@@ -512,6 +506,13 @@ const menuItems = computed(() => {
 
   // toggle select menu item
   if (props.showSelectButton !== false) {
+    if (showCheckboxes.value) {
+      items.push({
+        label: "tooltip.select_all",
+        icon: "mdi-select-all",
+        action: selectAll,
+      });
+    }
     items.push({
       label: "tooltip.select_items",
       icon: showCheckboxes.value
@@ -821,15 +822,18 @@ const restoreSettings = async function () {
 const keyListener = function (e: KeyboardEvent) {
   if (store.dialogActive) return;
   if (loading.value) return;
+  if (e.key === "Escape") closeSearch();
+  // Let searchInput handle this.
+  if (searchHasFocus.value) return;
+
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    selectedItems.value = pagedItems.value;
-    showCheckboxes.value = true;
+    selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
-    params.value.search = params.value.search.slice(0, -1);
+    focusSearch();
   } else if (!searchHasFocus.value && e.key.length == 1) {
-    params.value.search += e.key;
     showSearch.value = true;
+    focusSearch();
   }
 };
 
@@ -924,6 +928,39 @@ onMounted(async () => {
   } else {
     loadData(true);
   }
+
+  // signal if/when items get played/updated/removed
+  const unsub = api.subscribe_multi(
+    [
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
+      EventType.MEDIA_ITEM_PLAYED,
+    ],
+    (evt: EventMessage) => {
+      if (evt.event == EventType.MEDIA_ITEM_DELETED) {
+        pagedItems.value = pagedItems.value.filter(
+          (i) => i.uri != evt.object_id,
+        );
+      } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
+        // update item
+        const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
+        if (idx >= 0) {
+          pagedItems.value[idx] = evt.data;
+        }
+      } else if (evt.event == EventType.MEDIA_ITEM_PLAYED) {
+        // update item
+        const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
+        if (idx >= 0) {
+          if ("fully_played" in pagedItems.value[idx])
+            pagedItems.value[idx].fully_played = evt.data["fully_played"];
+          if ("resume_position_ms" in pagedItems.value[idx])
+            pagedItems.value[idx].resume_position_ms =
+              evt.data["seconds_played"] * 1000;
+        }
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
 });
 
 export interface StoredState {
@@ -941,9 +978,10 @@ const getSortName = function (
   preferSortName = false,
 ) {
   if (!item) return "";
-  if ("label" in item && item.label && item.name)
-    return t(item.label, [item.name]);
-  if ("label" in item && item.label) return t(item.label);
+  if ("translation_key" in item && item.translation_key && item.name)
+    return t(item.translation_key, [item.name]);
+  if ("translation_key" in item && item.translation_key)
+    return t(item.translation_key);
   if (preferSortName && "sort_name" in item && item.sort_name)
     return item.sort_name;
   return item.name;
@@ -961,11 +999,6 @@ const getFilteredItems = function (
     const searchStr = params.search.toLowerCase();
     for (const item of items) {
       if (item.name.toLowerCase().includes(searchStr)) {
-        result.push(item);
-      } else if (
-        "artist" in item &&
-        item.artist?.name.toLowerCase().includes(searchStr)
-      ) {
         result.push(item);
       } else if (
         "album" in item &&
@@ -1002,6 +1035,13 @@ const getFilteredItems = function (
   if (params.sortBy == "name_desc") {
     result.sort((a, b) =>
       getSortName(b).localeCompare(getSortName(a), undefined, {
+        numeric: true,
+      }),
+    );
+  }
+  if (params.sortBy == "sort_name_desc") {
+    result.sort((a, b) =>
+      getSortName(b, true).localeCompare(getSortName(a, true), undefined, {
         numeric: true,
       }),
     );
@@ -1046,6 +1086,9 @@ const getFilteredItems = function (
   if (params.sortBy == "year") {
     result.sort((a, b) => ((a as Album).year || 0) - ((b as Album).year || 0));
   }
+  if (params.sortBy == "year_desc") {
+    result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
+  }
   if (params.sortBy == "recent") {
     result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
   }
@@ -1075,6 +1118,30 @@ const getFilteredItems = function (
     );
   }
   return result.slice(params.offset, params.offset + params.limit);
+};
+
+const selectAll = async function () {
+  let confirmed = true;
+  // We use the total length even when searching, since we can't know
+  // how many items will be loaded after filtering
+  const itemCount = props.total || allItems.value.length;
+  if (itemCount > 250) {
+    // This could be a large selection. Prevent accidental activation
+    // by asking the user for a confirmation
+    confirmed = await new Promise((resolve) => {
+      if (confirm(t("select_all_confirmation"))) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  }
+
+  if (confirmed) {
+    await loadAllItems();
+    selectedItems.value = pagedItems.value;
+    showCheckboxes.value = true;
+  }
 };
 </script>
 

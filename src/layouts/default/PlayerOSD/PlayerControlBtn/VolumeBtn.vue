@@ -89,7 +89,8 @@
           :player="store.activePlayer"
           :show-sub-players="true"
           :show-sync-controls="false"
-          :hide-heading-row="false"
+          :show-heading-row="true"
+          :show-volume-control="true"
           :allow-wheel="true"
           style="margin-left: 18px"
         />

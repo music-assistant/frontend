@@ -6,6 +6,7 @@
       :show-library="false"
       :show-favorites-only-filter="false"
       :show-track-number="false"
+      :show-select-button="path && path != 'root' ? true : false"
       :load-items="loadItems"
       :sort-keys="['original', 'name', 'name_desc']"
       :title="header"

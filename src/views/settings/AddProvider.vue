@@ -11,19 +11,23 @@
             $t("settings.setup_provider", [api.providerManifests[domain].name])
           }}
         </v-card-title>
-        <v-card-subtitle>
-          {{ api.providerManifests[domain].description }} </v-card-subtitle
-        ><br />
-        <v-card-subtitle v-if="api.providerManifests[domain].codeowners.length">
-          <b>{{ $t("settings.codeowners") }}: </b
-          >{{ api.providerManifests[domain].codeowners.join(" / ") }}
-        </v-card-subtitle>
-
+        <v-card-subtitle
+          v-html="markdownToHtml(api.providerManifests[domain].description)"
+        /><br />
+        <v-card-subtitle
+          v-if="api.providerManifests[domain].codeowners.length"
+          v-html="
+            markdownToHtml(
+              getAuthorsMarkdown(api.providerManifests[domain].codeowners),
+            )
+          "
+        />
         <v-card-subtitle v-if="api.providerManifests[domain].documentation">
           <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
           <a
-            :href="api.providerManifests[domain].documentation"
-            target="_blank"
+            @click="
+              openLinkInNewTab(api.providerManifests[domain].documentation!)
+            "
             >{{ $t("settings.check_docs") }}</a
           >
         </v-card-subtitle>
@@ -75,6 +79,9 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
+import { openLinkInNewTab, markdownToHtml } from "@/helpers/utils";
+import { useI18n } from "vue-i18n";
+
 import { open } from "@tauri-apps/plugin-shell";
 
 // global refs
@@ -167,6 +174,21 @@ const onAction = async function (
       loading.value = false;
       showAuthLink.value = false;
     });
+};
+
+const getAuthorsMarkdown = function (authors: string[]) {
+  const allAuthors: string[] = [];
+  const { t } = useI18n();
+  for (const author of authors) {
+    if (author.includes("@")) {
+      allAuthors.push(
+        `[${author.replace("@", "")}](https://github.com/${author.replace("@", "")})`,
+      );
+    } else {
+      allAuthors.push(author);
+    }
+  }
+  return `**${t("settings.codeowners")}**: ` + allAuthors.join(" / ");
 };
 </script>
 

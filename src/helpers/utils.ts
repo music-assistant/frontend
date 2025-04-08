@@ -1,19 +1,48 @@
 import {
   Artist,
   BrowseFolder,
+  HidePlayerOption,
   ItemMapping,
   MediaItemType,
+  MediaItemTypeOrItemMapping,
+  MediaType,
   Player,
+  PlayerState,
   PlayerType,
   ProviderMapping,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { api } from "@/plugins/api";
+import { marked } from "marked";
 
 import Color from "color";
 //@ts-ignore
 import ColorThief from "colorthief";
-const colorThief = new ColorThief();
+import { store } from "@/plugins/store";
+import {
+  showContextMenuForMediaItem,
+  showPlayMenuForMediaItem,
+} from "@/layouts/default/ItemContextMenu.vue";
+import { itemIsAvailable } from "@/plugins/api/helpers";
+import router from "@/plugins/router";
+import { webPlayer } from "@/plugins/web_player";
+
+import { open } from "@tauri-apps/plugin-shell";
+
+export const openLinkInNewTab = function (url: string) {
+  if (!url) return url;
+  // auto-translate music-assistant.io links to beta site
+  if (
+    api &&
+    api.serverInfo &&
+    api.serverInfo.value &&
+    (api.serverInfo.value.server_version == "0.0.0" ||
+      api.serverInfo.value.server_version.includes("b"))
+  ) {
+    url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
+  }
+  open(url);
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean | undefined | null) => {
@@ -116,12 +145,12 @@ export const getArtistsString = function (
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
   let browseTitle = "";
-  if (browseItem?.name && browseItem?.label) {
-    browseTitle = `${browseItem.name}: ${t(browseItem?.label)}`;
+  if (browseItem?.name && browseItem?.translation_key) {
+    browseTitle = `${browseItem.name}: ${t(browseItem?.translation_key)}`;
   } else if (browseItem?.name) {
     browseTitle = browseItem.name;
-  } else if (browseItem?.label) {
-    browseTitle = t(browseItem?.label);
+  } else if (browseItem?.translation_key) {
+    browseTitle = t(browseItem?.translation_key);
   } else {
     browseTitle = browseItem.path || "";
   }
@@ -276,35 +305,6 @@ export function findDarkColor(colors: RGBColor[]): string {
     }
   });
   return mostPleasantColor;
-}
-
-export function darkenBrightColors(
-  color: string,
-  thresholdBrightness = 100,
-  colorPartReduction = 50,
-): string {
-  const hexColor = color.replace(/^#/, "");
-  const r = parseInt(hexColor.substring(0, 2), 16);
-  const g = parseInt(hexColor.substring(2, 4), 16);
-  const b = parseInt(hexColor.substring(4, 6), 16);
-
-  const brightness = (r + g + b) / 7;
-
-  if (brightness > thresholdBrightness) {
-    const darkenedR = Math.max(0, r - colorPartReduction);
-    const darkenedG = Math.max(0, g - colorPartReduction);
-    const darkenedB = Math.max(0, b - colorPartReduction);
-
-    const darkenedColor = `#${darkenedR
-      .toString(16)
-      .padStart(2, "0")}${darkenedG.toString(16).padStart(2, "0")}${darkenedB
-      .toString(16)
-      .padStart(2, "0")}`;
-
-    return darkenedColor;
-  }
-
-  return color;
 }
 
 export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
@@ -477,3 +477,144 @@ export function isTouchscreenDevice() {
   }
   return result;
 }
+
+export const markdownToHtml = function (text: string): string {
+  text = text
+    .replaceAll(/\\n/g, "<br />")
+    .replaceAll("\n", "<br />")
+    .replaceAll(" \\", "<br />");
+  return marked(text) as string;
+};
+
+export const playerVisible = function (
+  player: Player,
+  allowGroupChilds = false,
+): boolean {
+  // perform some basic checks if we may use/show the player
+  if (!player.enabled) return false;
+  if (player.hide_player_in_ui.includes(HidePlayerOption.ALWAYS)) {
+    return false;
+  }
+  if (
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_SYNCED) &&
+    player.synced_to &&
+    !allowGroupChilds
+  ) {
+    return false;
+  }
+  if (
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_GROUP_ACTIVE) &&
+    player.active_group &&
+    !allowGroupChilds
+  )
+    return false;
+  if (
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_OFF) &&
+    player.powered === false
+  ) {
+    return false;
+  }
+  if (
+    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_UNAVAILABLE) &&
+    !player.available
+  ) {
+    return false;
+  }
+  return true;
+};
+
+/* Handle play button click */
+export const handlePlayBtnClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+  parentItem?: MediaItemType,
+  forceMenu?: boolean,
+) {
+  // we show the play menu for the item once
+  if (
+    !forceMenu &&
+    store.playMenuShown &&
+    store.activePlayer?.available &&
+    [PlayerState.PLAYING, PlayerState.PAUSED].includes(
+      store.activePlayer?.state as PlayerState,
+    )
+  ) {
+    store.playActionInProgress = true;
+    api.playMedia(item).then(() => {
+      store.playActionInProgress = false;
+    });
+    return;
+  }
+  showPlayMenuForMediaItem(item, parentItem, posX, posY);
+};
+
+/* Handle media item click */
+export const handleMediaItemClick = function (
+  item: MediaItemTypeOrItemMapping,
+  posX: number,
+  posY: number,
+  parentItem?: MediaItemType,
+) {
+  // open menu when item is unavailable so the user has a way to remove/refresh the item
+  if (!itemIsAvailable(item)) {
+    handleMenuBtnClick(item, posX, posY);
+    return;
+  }
+
+  // folder items always open in browse view
+  if (item.media_type == MediaType.FOLDER) {
+    router.push({
+      name: "browse",
+      query: {
+        path: (item as BrowseFolder).path,
+      },
+    });
+    return;
+  }
+
+  // podcast episode has no details view so always show play menu
+  if (item.media_type == MediaType.PODCAST_EPISODE) {
+    handlePlayBtnClick(item, posX, posY, parentItem, true);
+    return;
+  }
+
+  // track or radio clicked in a sublisting (e.g. album/playlist) listview
+  // open menu to show play options
+  if (
+    [MediaType.TRACK, MediaType.RADIO].includes(item.media_type) &&
+    parentItem
+  ) {
+    handlePlayBtnClick(item, posX, posY, parentItem, true);
+    return;
+  }
+
+  // all other: go to details view
+  router.push({
+    name: item.media_type,
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
+};
+
+/* Handle menu button click */
+export const handleMenuBtnClick = function (
+  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
+  posX: number,
+  posY: number,
+  parentItem?: MediaItemType,
+  includePlayMenuItems = true,
+) {
+  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
+    ? item
+    : [item];
+  showContextMenuForMediaItem(
+    mediaItems,
+    parentItem,
+    posX,
+    posY,
+    includePlayMenuItems,
+  );
+};

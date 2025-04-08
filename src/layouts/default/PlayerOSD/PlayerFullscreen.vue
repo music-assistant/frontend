@@ -6,7 +6,7 @@
     transition="dialog-bottom-transition"
     z-index="9999"
   >
-    <v-card :color="darkenBrightColors(coverImageColorCode, 70, 80)">
+    <v-card :color="backgroundColor">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -36,6 +36,8 @@
             </v-card>
           </v-menu>
 
+          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
+
           <Button icon @click.stop="openQueueMenu">
             <v-icon icon="mdi-dots-vertical" />
           </Button>
@@ -55,6 +57,7 @@
           >
             <v-img
               v-if="
+                store.activePlayer?.powered != false &&
                 !store.curQueueItem?.image &&
                 store.activePlayer?.current_media?.image_url
               "
@@ -62,13 +65,18 @@
               :src="store.activePlayer.current_media.image_url"
             />
             <MediaItemThumb
-              v-else
+              v-else-if="store.activePlayer?.powered != false"
               :item="store.curQueueItem"
               :thumbnail="false"
               style="max-width: 100%; width: auto"
               :fallback="
                 $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
               "
+            />
+            <v-img
+              v-else
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="$vuetify.theme.current.dark ? imgCoverDark : imgCoverLight"
             />
           </div>
           <div class="main-media-details-track-info">
@@ -98,7 +106,12 @@
             </v-card-title>
 
             <!-- external source current media item present -->
-            <v-card-title v-else-if="store.activePlayer?.current_media?.title">
+            <v-card-title
+              v-else-if="
+                !store.activePlayerQueue &&
+                store.activePlayer?.current_media?.title
+              "
+            >
               <div v-if="store.activePlayer?.current_media?.artist">
                 <MarqueeText :sync="playerMarqueeSync">
                   {{ store.activePlayer?.current_media?.artist }}
@@ -129,7 +142,7 @@
 
             <!-- SUBTITLE: player powered off -->
             <v-card-subtitle
-              v-if="!store.activePlayer?.powered"
+              v-if="store.activePlayer?.powered == false"
               class="text-h6 text-md-h5 text-lg-h4"
             >
               {{ $t("off") }}
@@ -138,12 +151,12 @@
             <!-- subtitle: radio station stream title -->
             <v-card-subtitle
               v-if="
-                store.curQueueItem?.media_item?.media_type == MediaType.RADIO &&
-                store.curQueueItem?.streamdetails?.stream_title
+                store.curQueueItem?.streamdetails?.stream_title &&
+                store.activePlayer?.powered != false
               "
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
-                radioTitleClick(store.curQueueItem.streamdetails.stream_title)
+                radioTitleClick(store.curQueueItem?.streamdetails?.stream_title)
               "
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -156,7 +169,8 @@
               v-if="
                 store.curQueueItem?.media_item &&
                 'album' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.album
+                store.curQueueItem.media_item.album &&
+                store.activePlayer?.powered != false
               "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="itemClick(store.curQueueItem.media_item.album as Album)"
@@ -172,7 +186,8 @@
               v-if="
                 store.curQueueItem?.media_item &&
                 'artists' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.artists.length
+                store.curQueueItem.media_item.artists.length &&
+                store.activePlayer?.powered != false
               "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="
@@ -184,16 +199,32 @@
               </MarqueeText>
             </v-card-subtitle>
 
+            <!-- subtitle: podcast name -->
+            <v-card-subtitle
+              v-if="
+                store.curQueueItem?.media_item &&
+                'podcast' in store.curQueueItem.media_item &&
+                store.curQueueItem.media_item.podcast
+              "
+              :style="`font-size: ${subTitleFontSize};`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem.media_item.podcast.name }}
+              </MarqueeText>
+            </v-card-subtitle>
+
             <!-- subtitle: other source active -->
             <v-card-subtitle
               v-else-if="
+                store.activePlayer &&
                 store.activePlayer?.active_source !=
-                store.activePlayer?.player_id
+                  store.activePlayer?.player_id &&
+                store.activePlayer?.powered != false
               "
             >
               {{
                 $t("external_source_active", [
-                  store.activePlayer?.active_source,
+                  getSourceName(store.activePlayer),
                 ])
               }}
             </v-card-subtitle>
@@ -201,7 +232,9 @@
             <!-- subtitle: queue empty -->
             <v-card-subtitle
               v-else-if="
-                store.activePlayerQueue && store.activePlayerQueue.items == 0
+                store.activePlayerQueue &&
+                store.activePlayerQueue.items == 0 &&
+                store.activePlayer?.powered != false
               "
               :style="`font-size: ${subTitleFontSize}`"
             >
@@ -209,7 +242,10 @@
             </v-card-subtitle>
 
             <!-- streamdetails/contenttype button-->
-            <div style="margin: auto; padding-top: 20px">
+            <div
+              v-if="store.activePlayer?.powered != false"
+              style="margin: auto; padding-top: 20px"
+            >
               <QualityDetailsBtn />
             </div>
           </div>
@@ -260,6 +296,7 @@
                   <ListItem
                     link
                     :show-menu-btn="true"
+                    :disabled="!item.available"
                     @click.stop="(e) => openQueueItemMenu(e, item)"
                     @menu.stop="(e) => openQueueItemMenu(e, item)"
                     @mouseenter="hoveredQueueIndex = index"
@@ -271,7 +308,7 @@
                       </div>
                     </template>
                     <template #title>
-                      <!-- only scroll the currently playing track, or when hovered with a separete sync group -->
+                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
                       <MarqueeText
                         :sync="
                           index == 0 && activeQueuePanel == 0
@@ -318,7 +355,33 @@
                         </MarqueeText>
                       </div>
                     </template>
+                    <template #append>
+                      <v-icon v-if="!item.available">mdi-alert</v-icon>
+                    </template>
                   </ListItem>
+                  <!-- Show chapters -->
+                  <div
+                    v-if="
+                      item.queue_item_id == store.curQueueItem?.queue_item_id &&
+                      item.media_item?.metadata?.chapters?.length
+                    "
+                    style="margin-left: 50px"
+                  >
+                    <v-list-item
+                      v-for="chapter in item.media_item.metadata?.chapters"
+                      :key="chapter.position"
+                      @click.stop="chapterClicked(item.media_item, chapter)"
+                    >
+                      <template #title>
+                        <div>{{ chapter.name }}</div>
+                      </template>
+                      <template #append>
+                        <span v-if="chapter.end" class="text-caption"
+                          >{{ formatDuration(chapter.end - chapter.start) }}
+                        </span>
+                      </template>
+                    </v-list-item>
+                  </div>
                 </template>
               </v-virtual-scroll>
             </v-infinite-scroll>
@@ -344,7 +407,7 @@
       <div class="player-bottom">
         <!-- timeline / progressbar-->
         <div class="row" style="margin-left: 5%; margin-right: 5%">
-          <PlayerTimeline :show-labels="true" />
+          <PlayerTimeline :show-labels="true" :color="sliderColor" />
         </div>
 
         <!-- main media control buttons (play, next, previous etc.)-->
@@ -408,11 +471,12 @@
         >
           <PlayerVolume
             width="100%"
-            :is-powered="store.activePlayer?.powered"
-            :disabled="!store.activePlayer || !store.activePlayer?.powered"
+            :is-powered="store.activePlayer?.powered != false"
+            :disabled="!store.activePlayer || !store.activePlayer?.available"
             :model-value="Math.round(store.activePlayer?.group_volume || 0)"
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"
+            :color="sliderColor"
             :allow-wheel="true"
             @update:model-value="
               store.activePlayer!.group_childs.length > 0
@@ -434,7 +498,7 @@
 
         <!-- player select button -->
         <div
-          v-if="$vuetify.display.height > 800"
+          v-if="showExpandedPlayerSelectButton"
           class="row"
           style="
             height: 70px;
@@ -460,7 +524,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  watchEffect,
+} from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import api from "@/plugins/api";
 import {
@@ -468,10 +539,12 @@ import {
   Artist,
   EventMessage,
   EventType,
+  MediaItemChapter,
   MediaItemType,
   MediaType,
   PlayerQueue,
   QueueItem,
+  QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -490,6 +563,7 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   imgCoverLight,
@@ -498,18 +572,18 @@ import {
 import router from "@/plugins/router";
 import {
   ImageColorPalette,
-  darkenBrightColors,
   formatDuration,
   getPlayerName,
   sleep,
 } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { useDisplay } from "vuetify";
-import { useI18n } from "vue-i18n";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getSourceName } from "@/plugins/api/helpers";
+import { $t } from "@/plugins/i18n";
+import Color from "color";
 
-const { t } = useI18n();
 const { name } = useDisplay();
 
 interface Props {
@@ -523,7 +597,6 @@ const hoveredMarqueeSync = new MarqueeTextSync();
 
 // Local refs
 const queueItems = ref<QueueItem[]>([]);
-const coverImageColorCode = ref<string>("");
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
 
@@ -536,7 +609,9 @@ const nextItems = computed(() => {
 });
 const previousItems = computed(() => {
   if (store.activePlayerQueue) {
-    return queueItems.value.slice(0, store.activePlayerQueue.current_index);
+    return queueItems.value
+      .slice(0, store.activePlayerQueue.current_index)
+      .reverse();
   } else return [];
 });
 
@@ -576,6 +651,10 @@ const subTitleFontSize = computed(() => {
     default:
       return "1.0em.";
   }
+});
+
+const showExpandedPlayerSelectButton = computed(() => {
+  return vuetify.display.height.value > 800;
 });
 
 // methods
@@ -752,24 +831,82 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const onHeartBtnClick = function (evt: PointerEvent | MouseEvent) {
+const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
   // the heart icon/button was clicked
   if (!store.curQueueItem?.media_item) return;
   if (!store.curQueueItem.media_item.favorite) {
     api.toggleFavorite(store.curQueueItem.media_item);
     return;
   }
+  //resolve media item into a library item
+  let resolvedItem = store.curQueueItem!.media_item as MediaItemType;
+  if (
+    (resolvedItem.provider != "library" ||
+      !("provider_mappings" in resolvedItem)) &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
+    // resolve itemmapping or non-library item
+    resolvedItem =
+      (await api.getLibraryItem(
+        resolvedItem.media_type,
+        resolvedItem.item_id,
+        resolvedItem.provider,
+      )) || resolvedItem;
+  }
 
-  const menuItems: ContextMenuItem[] = [
-    {
+  const menuItems: ContextMenuItem[] = [];
+
+  // remove from favorites
+  if (
+    "favorite" in resolvedItem &&
+    resolvedItem.favorite &&
+    resolvedItem.provider == "library" &&
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
+    menuItems.push({
       label: "favorites_remove",
       labelArgs: [],
       action: () => {
-        api.toggleFavorite(store.curQueueItem!.media_item as MediaItemType);
+        api.removeItemFromFavorites(
+          resolvedItem.media_type,
+          resolvedItem.item_id,
+        );
+        resolvedItem.favorite = false;
+        store.curQueueItem!.media_item!.favorite = false;
       },
       icon: "mdi-heart",
-    },
-    {
+    });
+  }
+
+  // add to playlist
+  if (
+    [
+      MediaType.ALBUM,
+      MediaType.ARTIST,
+      MediaType.AUDIOBOOK,
+      MediaType.PLAYLIST,
+      MediaType.PODCAST,
+      MediaType.RADIO,
+      MediaType.TRACK,
+    ].includes(resolvedItem.media_type)
+  ) {
+    menuItems.push({
       label: "add_playlist",
       labelArgs: [],
       action: () => {
@@ -778,8 +915,8 @@ const onHeartBtnClick = function (evt: PointerEvent | MouseEvent) {
         });
       },
       icon: "mdi-plus-circle-outline",
-    },
-  ];
+    });
+  }
 
   // open the contextmenu by emitting the event
   eventbus.emit("contextmenu", {
@@ -799,6 +936,18 @@ const activeQueuePanelClick = function () {
   });
 };
 
+const chapterClicked = function (
+  item: MediaItemType,
+  chapter: MediaItemChapter,
+) {
+  api.playMedia(
+    item.uri,
+    QueueOption.PLAY,
+    undefined,
+    chapter.position.toString(),
+  );
+};
+
 // watchers
 watch(
   () => store.activePlayerId,
@@ -807,21 +956,57 @@ watch(
   },
   { immediate: true },
 );
+const sliderColor = ref<string | undefined>(undefined);
+const backgroundColor = ref<string | undefined>(undefined);
 
-watch(
-  () => compProps.colorPalette,
-  (result) => {
-    if (!result.darkColor || !result.lightColor) {
-      coverImageColorCode.value = vuetify.theme.current.value.dark
-        ? "#000"
-        : "#fff";
-    } else {
-      coverImageColorCode.value = vuetify.theme.current.value.dark
-        ? result.darkColor
-        : result.lightColor;
+watchEffect(() => {
+  const LIGHT_TEXT_COLOR = Color("white");
+  const DARK_TEXT_COLOR = Color("black");
+  // Minimum WCAG contrast ration between the background and the text
+  // W3C recommends at least 4.5
+  const MIN_CONTRAST = 5;
+  const ADJUSTMENT_INCREMENT = 0.05;
+
+  // Determine the base color from palette or fallback to theme default
+  const coverImageColorCode = vuetify.theme.current.value.dark
+    ? compProps.colorPalette.darkColor || "#000"
+    : compProps.colorPalette.lightColor || "#fff";
+
+  // Start with the original cover color as background
+  let bgColor = Color(coverImageColorCode);
+
+  // Calculate contrast with white and black
+  const lightContrast = LIGHT_TEXT_COLOR.contrast(bgColor);
+  const darkContrast = DARK_TEXT_COLOR.contrast(bgColor);
+
+  // Choose the color with higher contrast as starting value
+  const isLight = lightContrast >= darkContrast;
+  let textColor = isLight ? LIGHT_TEXT_COLOR : DARK_TEXT_COLOR;
+  let contrast = Math.max(lightContrast, darkContrast);
+
+  // If the best contrast still doesn't meet requirements, adjust background
+  if (contrast < MIN_CONTRAST) {
+    // Darken light bg or lighten dark bg until contrast is good
+    let adjustment = ADJUSTMENT_INCREMENT;
+
+    while (contrast < MIN_CONTRAST && adjustment <= 0.5) {
+      if (isLight) {
+        bgColor = bgColor.darken(ADJUSTMENT_INCREMENT);
+      } else {
+        bgColor = bgColor.lighten(ADJUSTMENT_INCREMENT);
+      }
+
+      contrast = Color(textColor).contrast(bgColor);
+      adjustment += ADJUSTMENT_INCREMENT;
     }
-  },
-);
+  }
+
+  // Keep color between text and sliders consistent.
+  // Also, this text color has a better contrast than the automatically selected one
+  document.documentElement.style.setProperty("--text-color", textColor.hex());
+  sliderColor.value = textColor.hex();
+  backgroundColor.value = bgColor.hex();
+});
 </script>
 
 <style scoped>
@@ -998,5 +1183,10 @@ watch(
 .responsive-icon-holder-btn:focus,
 .responsive-icon-holder-btn:hover {
   opacity: 1;
+}
+
+div,
+button {
+  color: var(--text-color);
 }
 </style>

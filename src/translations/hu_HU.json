@@ -181,7 +181,7 @@
         },
         "volume_normalization_target": {
             "label": "A hangerő normalizálásának célzott szintje",
-            "description": "Állítsd az átlagos (észlelt) hangerőt a célzott szintre, az alapértelmezett érték -17 LUFS\\n\\n**FIGYELMEZTETÉS:** A szint túl magas beállítása vágást okozhat!"
+            "description": "Állítsd az átlagos (észlelt) hangerőt a célzott szintre, az alapértelmezett érték -17 LUFS\n\n**FIGYELMEZTETÉS:** A szint túl magas beállítása vágást okozhat!"
         },
         "eq_bass": {
             "label": "Hangszínszabályzó: mély",
@@ -205,7 +205,7 @@
         },
         "hide_player": {
             "label": "Lejátszó elrejtése a felhasználói felületen",
-            "description": "A lejátszó elrejtése a felhasználói felületen. \\n\\nA lejátszó továbbra is vezérelhető, és minden szinkronizálási csoportban is megjelenik, amelynek tagja a lejátszó."
+            "description": "A lejátszó elrejtése a felhasználói felületen. \n\nA lejátszó továbbra is vezérelhető, és minden szinkronizálási csoportban is megjelenik, amelynek tagja a lejátszó."
         },
         "default_enqueue_select_artist": {
             "label": "A (könyvtáron belüli) előadó lejátszásakor kiválasztható elemek.",
@@ -317,7 +317,7 @@
         },
         "icon": {
             "label": "Ikon",
-            "description": "Material design ikon ehhez a lejátszóhoz. \\n\\nLásd: https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design ikon ehhez a lejátszóhoz. \n\nLásd: https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Felhasználói felület",
         "frontend_desc": "A Music Assistant felhasználói felület (frontend) konfigurációs beállításai. Ezek a beállítások eszközszinten lerülnek tárolásra.",
@@ -338,7 +338,7 @@
         },
         "menu_items": {
             "label": "Engedélyezett menüelemek",
-            "description": "Állítsd be, hogy mely elemek jelenjenek meg a menüben. \\n\\nVedd figyelembe, hogy ha letiltod a beállításokat, kizárhatod magad. \\n\\nEbben az esetben manuálisan kell megadnod a beállítások elérési útját, vagy törölnöd kell a böngésző sütijeit, hogy ismét hozzáférj a beállításokhoz. Saját felelősségedre használd!"
+            "description": "Állítsd be, hogy mely elemek jelenjenek meg a menüben. \n\nVedd figyelembe, hogy ha letiltod a beállításokat, kizárhatod magad. \n\nEbben az esetben manuálisan kell megadnod a beállítások elérési útját, vagy törölnöd kell a böngésző sütijeit, hogy ismét hozzáférj a beállításokhoz. Saját felelősségedre használd!"
         },
         "language": {
             "label": "Nyelv",
@@ -371,7 +371,7 @@
         },
         "hide_settings": {
             "label": "Beállítások gomb elrejtése",
-            "description": "Beállítások gomb elrejtése a kezdőképernyőn. \\n\\nVedd figyelembe, hogy ha letiltod a beállításokat a kezdőképernyőn, kizárhatod magad. \\n\\nEbben az esetben manuálisan kell megadnod a beállítások elérési útját, vagy törölnöd kell a böngésző sütijeit, hogy ismét hozzáférj a beállításokhoz. Saját felelősségedre használd!"
+            "description": "Beállítások gomb elrejtése a kezdőképernyőn. \n\nVedd figyelembe, hogy ha letiltod a beállításokat a kezdőképernyőn, kizárhatod magad. \n\nEbben az esetben manuálisan kell megadnod a beállítások elérési útját, vagy törölnöd kell a böngésző sütijeit, hogy ismét hozzáférj a beállításokhoz. Saját felelősségedre használd!"
         },
         "no_music_providers": "Nincs zeneszolgáltató konfigurálva",
         "no_music_providers_detail": "Kezdd a Music Assistant élményed zeneszolgáltatók hozzáadásával.",
@@ -379,7 +379,7 @@
         "no_player_providers_detail": "Konfiguráld a lejátszószolgáltatókat olyan eszközök kiválasztásához, amelyeken a Music Assistant le tudja játszani a zenét.",
         "volume_normalization_radio": {
             "label": "A rádiós adatfolyamokhoz használandó hangerő normalizálási módszer",
-            "description": "Állítsd be a rádiós adatfolyamok preferált hangerő normalizálási stratégiáját. \\nAlapértelmezés szerint a Music Assistant az EBU-R128 specifikációnak megfelelően összegyűjti a rádióállomás (átlagos érzékelt) hangerejének mérését, majd ennek a mérésnek megfelelően állítja be a stream teljes erősítését\/hangerejét, hogy a hang dinamikai tartományát ne befolyásolja. Ha egy rádióállomáshoz (még) nem létezik mérés, a Music Assistant egy dinamikus (de kevésbé pontos) hangossági kiegyenlítő-szűrőhöz tér vissza.\\n\\nTIPP: A rádióadatok gyakran változó hangerősségűek, különösen a bemondások és reklámok alatt.\\nKiválaszthatod, hogy a rádióadásokra dinamikus hangerő-korrekciót alkalmazzunk, még akkor is, ha létezik (átlagos) hangossági mérés a rádióállomáshoz. \\n \\n**Lehetőségek:**\\n\\n - Letiltva - Egyáltalán nem alkalmazza a hangerő normalizálást a rádiós adatfolyamokra. \\n - Dinamikus erőltetése - A dinamikus hangerőnormálás mindenkori kikényszerítése. \\n - Csak mérés (nincs tartalék) - (Teljeskörű) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\\n - Tartalék erősítéskorrekció - (Teljeskörű) hangerő\/erősítés korrekciót alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre definiált tartalék erősítéskorrekció alkalmazása.\\n - Fix erősítéskorrekció - Mindig a fix hangerő\/erősítés korrekciót alkalmazunk.\\n - Tartalék dinamikus - A legjobb lehetőség automatikus kiválasztása: Tárolt mérésen alapuló (teljeskörű) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
+            "description": "Állítsd be a rádiós adatfolyamok preferált hangerő normalizálási stratégiáját. \nAlapértelmezés szerint a Music Assistant az EBU-R128 specifikációnak megfelelően összegyűjti a rádióállomás (átlagos érzékelt) hangerejének mérését, majd ennek a mérésnek megfelelően állítja be a stream teljes erősítését\/hangerejét, hogy a hang dinamikai tartományát ne befolyásolja. Ha egy rádióállomáshoz (még) nem létezik mérés, a Music Assistant egy dinamikus (de kevésbé pontos) hangossági kiegyenlítő-szűrőhöz tér vissza.\n\nTIPP: A rádióadatok gyakran változó hangerősségűek, különösen a bemondások és reklámok alatt.\nKiválaszthatod, hogy a rádióadásokra dinamikus hangerő-korrekciót alkalmazzunk, még akkor is, ha létezik (átlagos) hangossági mérés a rádióállomáshoz. \n \n**Lehetőségek:**\n\n - Letiltva - Egyáltalán nem alkalmazza a hangerő normalizálást a rádiós adatfolyamokra. \n - Dinamikus erőltetése - A dinamikus hangerőnormálás mindenkori kikényszerítése. \n - Csak mérés (nincs tartalék) - (Teljeskörű) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\n - Tartalék erősítéskorrekció - (Teljeskörű) hangerő\/erősítés korrekciót alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre definiált tartalék erősítéskorrekció alkalmazása.\n - Fix erősítéskorrekció - Mindig a fix hangerő\/erősítés korrekciót alkalmazunk.\n - Tartalék dinamikus - A legjobb lehetőség automatikus kiválasztása: Tárolt mérésen alapuló (teljeskörű) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
             "options": {
                 "disabled": "Letiltva",
                 "dynamic": "Dinamikus erőltetése",
@@ -391,7 +391,7 @@
         },
         "volume_normalization_tracks": {
             "label": "A zeneszámokhoz használandó hangerő normalizálási módszer",
-            "description": "Állítsd be a zeneszámok\/dalok előnyben részesített hangerő-normalizálási stratégiáját.\\nA Music Assistant a zeneszámok (átlagosan érzékelt) hangerejének mérését használja az EBU-R128 specifikáció szerint, hogy beállítsa az adatfolyam teljeskörű erősítését\/hangerejét anélkül, hogy befolyásolná a hang dinamikus tartományát.\\nEzeket a méréseket vagy a streaming szolgáltató biztosítja, vagy helyi fájlok esetén az ID3 címkék (ReplayGain 2.0 \/ Opus R128) tartalmazhatják.\\nHa a mérés nincs megadva, a Music Assistant automatikusan elvégzi a mérést a zeneszám (első) lejátszásakor\/után. Ha egy zeneszámhoz (még) nem tartozik mérés, a Music Assistant alapértelmezés szerint visszavált egy dinamikus (de kevésbé pontos) hangerőszintező szűrőre. Ez biztosítja, hogy a zeneszámok közötti hangerőben ne legyenek nagy tüskék\/esések, még akkor sem, ha még nincs pontos mérés. A dinamikus szintező néha kissé összenyomhatja a dinamikatartományt, bár ennek a legtöbb esetben nem szabad hallhatónak lennie.\\n\\n**Lehetőségek:**\\n\\n - Letiltva - Egyáltalán nem alkalmazza a hangerő normalizálást a rádiós adatfolyamokra. \\n - Dinamikus erőltetése - A dinamikus hangerőnormálás mindenkori kikényszerítése. \\n - Csak mérés (nincs tartalék) - (Teljeskörű) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\\n - Tartalék erősítéskorrekció - (Teljeskörű) hangerő\/erősítés korrekciót alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre definiált tartalék erősítéskorrekció alkalmazása.\\n - Fix erősítéskorrekció - Mindig a fix hangerő\/erősítés korrekciót alkalmazunk.\\n - Tartalék dinamikus - A legjobb lehetőség automatikus kiválasztása: Tárolt mérésen alapuló (teljeskörű) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
+            "description": "Állítsd be a zeneszámok\/dalok előnyben részesített hangerő-normalizálási stratégiáját.\nA Music Assistant a zeneszámok (átlagosan érzékelt) hangerejének mérését használja az EBU-R128 specifikáció szerint, hogy beállítsa az adatfolyam teljeskörű erősítését\/hangerejét anélkül, hogy befolyásolná a hang dinamikus tartományát.\nEzeket a méréseket vagy a streaming szolgáltató biztosítja, vagy helyi fájlok esetén az ID3 címkék (ReplayGain 2.0 \/ Opus R128) tartalmazhatják.\nHa a mérés nincs megadva, a Music Assistant automatikusan elvégzi a mérést a zeneszám (első) lejátszásakor\/után. Ha egy zeneszámhoz (még) nem tartozik mérés, a Music Assistant alapértelmezés szerint visszavált egy dinamikus (de kevésbé pontos) hangerőszintező szűrőre. Ez biztosítja, hogy a zeneszámok közötti hangerőben ne legyenek nagy tüskék\/esések, még akkor sem, ha még nincs pontos mérés. A dinamikus szintező néha kissé összenyomhatja a dinamikatartományt, bár ennek a legtöbb esetben nem szabad hallhatónak lennie.\n\n**Lehetőségek:**\n\n - Letiltva - Egyáltalán nem alkalmazza a hangerő normalizálást a rádiós adatfolyamokra. \n - Dinamikus erőltetése - A dinamikus hangerőnormálás mindenkori kikényszerítése. \n - Csak mérés (nincs tartalék) - (Teljeskörű) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\n - Tartalék erősítéskorrekció - (Teljeskörű) hangerő\/erősítés korrekciót alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre definiált tartalék erősítéskorrekció alkalmazása.\n - Fix erősítéskorrekció - Mindig a fix hangerő\/erősítés korrekciót alkalmazunk.\n - Tartalék dinamikus - A legjobb lehetőség automatikus kiválasztása: Tárolt mérésen alapuló (teljeskörű) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
             "options": {
                 "disabled": "Letiltva",
                 "dynamic": "Dinamikus erőltetése",
@@ -403,14 +403,63 @@
         },
         "volume_normalization_fixed_gain_tracks": {
             "label": "Fix\/tartalék erősítés-beállítás a zeneszámokhoz",
-            "description": "Rögzített\/tartalék erősítéskorrekció a zeneszám hangfolyamára (a \"Hangerő normalizálási módszer\" beállításától függ).\\nPozitív értékkel növelheted a hangerőt, negatív értékkel csökkentheted azt.\\n\\nEz a beállítás akkor használható, ha a hangerő normalizálási módszer a 'Fix erősítés korrekció' vagy a 'Tartalék erősítéskorrekció' beállításra van állítva."
+            "description": "Rögzített\/tartalék erősítéskorrekció a zeneszám hangfolyamára (a \"Hangerő normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheted a hangerőt, negatív értékkel csökkentheted azt.\n\nEz a beállítás akkor használható, ha a hangerő normalizálási módszer a 'Fix erősítés korrekció' vagy a 'Tartalék erősítéskorrekció' beállításra van állítva."
         },
         "volume_normalization_fixed_gain_radio": {
             "label": "Fix\/tartalék erősítés-beállítás a rádióhoz",
-            "description": "Rögzített\/tartalék erősítéskorrekció a rádiófolyamra (a \"Hangerő normalizálási módszer\" beállításától függ).\\nPozitív értékkel növelheted a hangerőt, negatív értékkel csökkentheted azt.\\n\\nEz a beállítás akkor használható, ha a hangerő normalizálási módszer a 'Fix erősítés korrekció' vagy a 'Tartalék erősítéskorrekció' beállításra van állítva."
+            "description": "Rögzített\/tartalék erősítéskorrekció a rádiófolyamra (a \"Hangerő normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheted a hangerőt, negatív értékkel csökkentheted azt.\n\nEz a beállítás akkor használható, ha a hangerő normalizálási módszer a 'Fix erősítés korrekció' vagy a 'Tartalék erősítéskorrekció' beállításra van állítva."
         },
         "group_type": "Csoport típusa",
-        "add_group_player_desc": "A natív csoportosítást\/szinkronizálást biztosító lejátszószolgáltatók\/ökoszisztémák esetében automatikusan létrejön egy szinkronizált csoport, ami azt jelenti, hogy ha a lejátszás ezen a lejátszócsoporton történik, a taglejátszók automatikusan szinkronizálódnak. \\n\\nA csoportosítást nem támogató lejátszók\/ökoszisztémák esetében, vagy abban az esetben, ha különböző ökoszisztémákból származó lejátszókat szeretnél csoportosítani, használhatod az Univerzális csoport típust, amely ugyanazt a hangot fogja szétosztani az összes taglejátszóra (de nem szinkronizálva). \\n\\nVedd figyelembe, hogy egyes szolgáltatók támogatják a csoportosítást, de a csoportosításhoz a natív alkalmazást kell használnod. Ilyenek például a Google Cast alapú lejátszók, ahol csak a Google Home alkalmazáson belül hozhatsz létre Google Cast csoportokat."
+        "add_group_player_desc": "A natív csoportosítást\/szinkronizálást biztosító lejátszószolgáltatók\/ökoszisztémák esetében automatikusan létrejön egy szinkronizált csoport, ami azt jelenti, hogy ha a lejátszás ezen a lejátszócsoporton történik, a taglejátszók automatikusan szinkronizálódnak. \n\nA csoportosítást nem támogató lejátszók\/ökoszisztémák esetében, vagy abban az esetben, ha különböző ökoszisztémákból származó lejátszókat szeretnél csoportosítani, használhatod az Univerzális csoport típust, amely ugyanazt a hangot fogja szétosztani az összes taglejátszóra (de nem szinkronizálva). \n\nVedd figyelembe, hogy egyes szolgáltatók támogatják a csoportosítást, de a csoportosításhoz a natív alkalmazást kell használnod. Ilyenek például a Google Cast alapú lejátszók, ahol csak a Google Home alkalmazáson belül hozhatsz létre Google Cast csoportokat.",
+        "dynamic_members": {
+            "label": "Dinamikus csoporttagok",
+            "description": "Lehetővé teszi a tagok számára, hogy (ideiglenesen) dinamikusan csatlakozzanak a csoporthoz vagy kilépjenek belőle, így a csoport nagyjából ugyanúgy működik, mint a lejátszók kézi szinkronizálása. A fő különbség az, hogy a csoportos lejátszó megtartja a lejátszási listát."
+        },
+        "dsp": {
+            "configure_on": "DSP konfigurálása a következőn: {name}",
+            "disabled_message": "A DSP jelenleg le van tiltva. Engedélyezd a fenti kapcsolóval.",
+            "input": "Bemenet",
+            "output": "Kimenet",
+            "filter": {
+                "add": "Szűrő hozzáadása",
+                "type": "Szűrő típusa",
+                "new": "Új {type}"
+            },
+            "move_up": "Mozgatás felfelé",
+            "move_down": "Mozgatás lefelé",
+            "delete_filter": "Szűrő törlése",
+            "parametric_eq": {
+                "add_band": "Sáv hozzáadása",
+                "delete_band": "Sáv törlése",
+                "filter_type": "Szűrő típusa",
+                "band": "Sáv {index}",
+                "enable_band": "Sáv engedélyezése",
+                "filter_types": {
+                    "peak": "Csúcspont",
+                    "low_shelf": "Mély",
+                    "high_shelf": "Magas",
+                    "low_pass": "Aluláteresztő",
+                    "high_pass": "Felüláteresztő",
+                    "notch": "Vágó"
+                },
+                "import_apo": "APO\/REW előbeállítás importálása",
+                "export_apo": "APO előbeállítás exportálása"
+            },
+            "tone_control": {
+                "bass_level": "Basszus szint",
+                "mid_level": "Közép szint",
+                "treble_level": "Magas szint"
+            },
+            "parameter": {
+                "frequency": "Frekvencia",
+                "gain": "Erősítés",
+                "q_factor": "Q tényező"
+            },
+            "types": {
+                "parametric_eq": "Parametrikus EQ",
+                "tone_control": "Hangszínszabályzó"
+            }
+        }
     },
     "show_info": "Infó megjelenítése",
     "show_select_boxes": "Kijelölőmezők megjelenítése",
@@ -449,7 +498,6 @@
         "paused": "szünetel",
         "playing": "lejátszás"
     },
-    "stream_details": "Adatfolyam részletei",
     "sync_now": "{0} szinkronizálása most",
     "sync_running": "Egy vagy több zeneszolgáltató szinkronizálása folyamatban van.",
     "tooltip": {
@@ -535,5 +583,32 @@
     "shuffle_disable": "Véletlenszerű lejátszás letiltása",
     "shuffle_enable": "Véletlenszerű lejátszás engedélyezése",
     "dont_stop_the_music_enable": "\"Ne hagyja abba a zenét!\" engedélyezése",
-    "dont_stop_the_music_disable": "\"Ne hagyja abba a zenét!\" letiltása"
+    "dont_stop_the_music_disable": "\"Ne hagyja abba a zenét!\" letiltása",
+    "open_dsp_settings": "DSP beállítások megnyitása",
+    "audiobook": "Hangoskönyv",
+    "audiobooks": "Hangoskönyvek",
+    "chapter": "Fejezet",
+    "chapters": "Fejezetek",
+    "podcast": "Podcast",
+    "podcasts": "Podcastok",
+    "item_fully_played": "A tétel már teljes egészében lejátszásra került",
+    "item_in_progress": "A tétel részben lejátszásra került",
+    "duration_in_seconds": "{0} másodperc",
+    "mark_played": "Megjelölés lejátszottként",
+    "mark_unplayed": "Megjelölés nem lejátszottként",
+    "searchtype_all": "Minden",
+    "global_search": "Globális keresés",
+    "podcast_episode": "Epizód",
+    "podcast_episodes": "Epizódok",
+    "play_from_here": "Lejátszás innen",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dinamikus hangerő normalizálás",
+    "loudness_fixed": "Fix erősítés korrekció",
+    "dsp_active": "Aktív",
+    "currently_playing_players": "Jelenleg lejátszás alatt",
+    "all_players": "Minden lejátszó",
+    "all_groups": "Minden csoport",
+    "no_player_playing": "Egyik lejátszó sem aktív",
+    "stop_playback": "Lejátszás leállítása"
 }

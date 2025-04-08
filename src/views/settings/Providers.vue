@@ -85,7 +85,9 @@
 
     <Container>
       <ListItem
-        v-for="item in providerConfigs.filter((x) => x.type == provType)"
+        v-for="item in providerConfigs
+          .filter((x) => x.type == provType)
+          .sort((a, b) => getProviderName(a).localeCompare(getProviderName(b)))"
         :key="item.instance_id"
         show-menu-btn
         link
@@ -104,11 +106,7 @@
         <!-- title -->
         <template #title>
           <div class="line-clamp-1">
-            {{
-              item.name ||
-              api.getProvider(item.instance_id)?.name ||
-              api.getProviderName(item.domain)
-            }}
+            {{ getProviderName(item) }}
           </div>
         </template>
 
@@ -175,9 +173,9 @@ import { useRouter } from "vue-router";
 import Button from "@/components/mods/Button.vue";
 import ListItem from "@/components/mods/ListItem.vue";
 import Container from "@/components/mods/Container.vue";
-import { open } from "@tauri-apps/plugin-shell";
 import { $t } from "@/plugins/i18n";
 import { eventbus } from "@/plugins/eventbus";
+import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -267,10 +265,6 @@ const reloadProvider = function (providerInstanceId: string) {
     .catch((err) => alert(err));
 };
 
-const openLinkInNewTab = function (url: string) {
-  open(url);
-};
-
 const onMenu = function (evt: Event, item: ProviderConfig) {
   const menuItems = [
     {
@@ -343,6 +337,18 @@ watch(
   },
   { immediate: true },
 );
+
+const getProviderName = function (config: ProviderConfig) {
+  const providerBaseName = api.providerManifests[config.domain].name;
+  if (config.name) {
+    return `${providerBaseName} [${config.name}]`;
+  }
+  const providerInstance = api.getProvider(config.instance_id);
+  if (providerInstance && providerInstance.instance_name_postfix) {
+    return `${providerBaseName} [${providerInstance.instance_name_postfix}]`;
+  }
+  return providerBaseName;
+};
 </script>
 
 <style scoped>

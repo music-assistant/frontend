@@ -5,7 +5,6 @@ const routes = [
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
-    props: (route: { query: Record<string, any> }) => ({ ...route.query }),
     children: [
       {
         path: "",
@@ -16,7 +15,6 @@ const routes = [
         name: "home",
         component: () =>
           import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
-        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
         path: "/search",
@@ -78,7 +76,6 @@ const routes = [
           },
         ],
       },
-
       {
         path: "/tracks",
         children: [
@@ -105,7 +102,6 @@ const routes = [
           },
         ],
       },
-
       {
         path: "/playlists",
         children: [
@@ -129,7 +125,52 @@ const routes = [
           },
         ],
       },
-
+      {
+        path: "/podcasts",
+        children: [
+          {
+            path: "",
+            name: "podcasts",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcasts" */ "@/views/LibraryPodcasts.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId",
+            name: "podcast",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcast" */ "@/views/PodcastDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
+      {
+        path: "/audiobooks",
+        children: [
+          {
+            path: "",
+            name: "audiobooks",
+            component: () =>
+              import(
+                /* webpackChunkName: "audiobooks" */ "@/views/LibraryAudiobooks.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId",
+            name: "audiobook",
+            component: () =>
+              import(
+                /* webpackChunkName: "audiobook" */ "@/views/AudiobookDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
       {
         path: "/radios",
         children: [
@@ -163,47 +204,56 @@ const routes = [
         props: true,
         children: [
           {
-            path: 'providers',
-            name: 'providersettings',
+            path: "providers",
+            name: "providersettings",
             component: () =>
               import(
-                /* webpackChunkName: "providersettings" */ '@/views/settings/Providers.vue'
+                /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
           },
           {
-            path: 'players',
-            name: 'playersettings',
+            path: "players",
+            name: "playersettings",
             component: () =>
               import(
-                /* webpackChunkName: "playersettings" */ '@/views/settings/Players.vue'
+                /* webpackChunkName: "playersettings" */ "@/views/settings/Players.vue"
               ),
             props: true,
           },
           {
-            path: 'core',
-            name: 'coresettings',
+            path: "core",
+            name: "coresettings",
             component: () =>
               import(
-                /* webpackChunkName: "coresettings" */ '@/views/settings/CoreConfigs.vue'
+                /* webpackChunkName: "coresettings" */ "@/views/settings/CoreConfigs.vue"
               ),
             props: true,
           },
           {
-            path: 'frontend',
-            name: 'frontendsettings',
+            path: "frontend",
+            name: "frontendsettings",
             component: () =>
               import(
-                /* webpackChunkName: "frontendsettings" */ '@/views/settings/FrontendConfig.vue'
+                /* webpackChunkName: "frontendsettings" */ "@/views/settings/FrontendConfig.vue"
               ),
             props: true,
           },
           {
-            path: 'client',
-            name: 'clientsettings',
+            path: "addprovider/:domain",
+            name: "addprovider",
             component: () =>
               import(
-                /* webpackChunkName: "clientsettings" */ '@/views/settings/ClientConfigs.vue'
+                /* webpackChunkName: "addprovider" */ "@/views/settings/AddProvider.vue"
+              ),
+            props: true,
+          },
+          {
+            path: "client",
+            name: "clientsettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "clientsettings" */ "@/views/settings/ClientConfigs.vue"
               ),
             props: true,
           },
