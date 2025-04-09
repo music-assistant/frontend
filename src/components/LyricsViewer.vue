@@ -117,11 +117,6 @@ const artistName = computed(() => {
     }
   }
 
-  // Try to get artist name from metadata
-  if (props.mediaItem.metadata?.performers?.length) {
-    return props.mediaItem.metadata.performers.join(", ");
-  }
-
   // If it's an artist, return its own name
   if (
     "media_type" in props.mediaItem &&
@@ -188,7 +183,7 @@ const parseLrcLine = (line: string) => {
   return { time: 0, text: line.trim() || " " };
 };
 
-const fetchLyrics = async () => {
+const fetchLyrics = () => {
   if (!props.mediaItem) {
     lyrics.value = [];
     return;
@@ -268,7 +263,6 @@ const calculateDynamicLookAhead = (currentPosition: number) => {
     const firstLyricTime = lyrics.value[0].time;
     const timeUntilFirstLyric = firstLyricTime - adjustedTime;
 
-    // This is important enough to show always
     logSync(
       `Pre-lyrics intro: ${timeUntilFirstLyric.toFixed(2)}s until first lyric`,
     );
@@ -312,20 +306,30 @@ const calculateDynamicLookAhead = (currentPosition: number) => {
 
   // Calculate look-ahead percentage based on gap size
   let lookAheadPercentage;
-  if (gapToNextLyric < 0.8) {
+  if (gapToNextLyric < 0.5) {
+    lookAheadPercentage = 0.3; // Very rapid lyrics - 30%
+    logSync(
+      `Very rapid lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 30% look-ahead`,
+    );
+  } else if (gapToNextLyric < 0.8) {
     lookAheadPercentage = 0.1;
     logSync(
-      `Very fast lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 10% look-ahead`,
+      `Fast lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 10% look-ahead`,
     );
   } else if (gapToNextLyric < 1.5) {
     lookAheadPercentage = 0.2;
     logSync(
-      `Fast lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 20% look-ahead`,
+      `Medium lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 20% look-ahead`,
     );
   } else if (gapToNextLyric < 3) {
     lookAheadPercentage = 0.3;
     logSync(
-      `Medium-paced lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 30% look-ahead`,
+      `Slower lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 30% look-ahead`,
+    );
+  } else if (gapToNextLyric > 10) {
+    lookAheadPercentage = 0.02; // Extremely slow - just 2%
+    logSync(
+      `Very slow lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 2% look-ahead`,
     );
   } else {
     lookAheadPercentage = 0.4;
@@ -334,21 +338,11 @@ const calculateDynamicLookAhead = (currentPosition: number) => {
     );
   }
 
-  // For very rapid lyrics (less than 0.5s apart)
-  if (gapToNextLyric < 0.5) {
-    lookAheadPercentage = 0.3; // 30% - show lyrics sooner for very fast sections
-  }
-  // For extremely slow songs (more than 10s gaps)
-  else if (gapToNextLyric > 10) {
-    lookAheadPercentage = 0.02; // Just 2% - don't show lyrics too early
-  }
-
   // Calculate target look-ahead
   const targetLookAhead = Math.min(1.5, gapToNextLyric * lookAheadPercentage);
   logSync(`Target look-ahead: ${targetLookAhead.toFixed(3)}s`);
 
   // Smooth transition to new look-ahead
-  // Faster adaptation for bigger differences
   const difference = Math.abs(targetLookAhead - previousLookAhead);
   const adaptationRate = Math.min(0.8, 0.3 + difference * 0.5); // More difference = faster adaptation
   const newLookAhead =
@@ -369,11 +363,98 @@ const calculateDynamicLookAhead = (currentPosition: number) => {
   lyricsLookAhead.value = newLookAhead;
 };
 
+// Function to check if synchronization should be skipped
+const shouldSkipSync = (position?: number): boolean => {
+  return (
+    position === undefined ||
+    !lyrics.value.length ||
+    !hasTimestamps.value ||
+    userManuallyScrolled.value
+  );
+};
+
+// Function to find active lyric index based on current position
+const findActiveLyricIndex = (position: number): number => {
+  // Calculate the adjusted position with look-ahead
+  const adjustedPositionMs = Math.round(
+    (position + lyricsLookAhead.value) * 1000,
+  );
+
+  // Find the active lyric using millisecond precision
+  let index = -1;
+  for (let i = 0; i < lyrics.value.length; i++) {
+    const lineTimeMs = Math.round(lyrics.value[i].time * 1000);
+    if (lineTimeMs <= adjustedPositionMs) {
+      index = i;
+    } else {
+      break;
+    }
+  }
+
+  return index;
+};
+
+// Function to handle active lyric change
+const handleActiveLyricChange = (newIndex: number, position: number) => {
+  if (newIndex < 0 || newIndex === activeLyricIndex.value) return;
+
+  // Log lyric activation
+  logSync(`Lyric activated: "${lyrics.value[newIndex].text}"`);
+
+  // Debug logging
+  logSync(`Activating lyric at ${position.toFixed(2)}s (adjusted: ${(position + lyricsLookAhead.value).toFixed(2)}s):
+    - Index: ${newIndex}
+    - Lyric time: ${lyrics.value[newIndex].time.toFixed(2)}s`);
+
+  logSync(`Transition details:
+    - Raw position: ${position.toFixed(3)}s
+    - Dynamic look-ahead: ${lyricsLookAhead.value.toFixed(3)}s
+    - Adjusted position: ${(position + lyricsLookAhead.value).toFixed(3)}s`);
+
+  // Timing analysis
+  if (newIndex > 0) {
+    logTimingAnalysis(newIndex, position);
+  }
+
+  // Store transition time for future analysis
+  previousLyricTransitionTime.value = position;
+
+  // Update state
+  activeLyricIndex.value = newIndex;
+
+  // Scroll to active lyric
+  nextTick(() => scrollToActiveLyric());
+};
+
+// Function to analyze timing
+const logTimingAnalysis = (index: number, position: number) => {
+  const actualGap = position - previousLyricTransitionTime.value;
+  const expectedGap = lyrics.value[index].time - lyrics.value[index - 1].time;
+
+  logSync(`Timing analysis:
+    - Expected gap: ${expectedGap.toFixed(3)}s
+    - Actual gap: ${actualGap.toFixed(3)}s
+    - Difference: ${(actualGap - expectedGap).toFixed(3)}s`);
+};
+
+// Function to scroll to active lyric
+const scrollToActiveLyric = () => {
+  const activeElement = document.querySelector(".lyrics-line.active");
+  const container = lyricsContainer.value;
+
+  if (activeElement && container) {
+    activeElement.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+};
+
 // Setup watchers
 watch(
   () => props.mediaItem?.item_id,
-  async () => {
-    await fetchLyrics();
+  () => {
+    fetchLyrics();
   },
   { immediate: true },
 );
@@ -381,117 +462,21 @@ watch(
 watch(
   () => props.position,
   (newPosition: number | undefined) => {
-    // Skip if no position, no lyrics, or user manually scrolled
-    if (
-      newPosition === undefined ||
-      !lyrics.value.length ||
-      !hasTimestamps.value ||
-      userManuallyScrolled.value
-    ) {
-      return;
-    }
+    // Skip synchronization if needed
+    if (shouldSkipSync(newPosition)) return;
+
+    // Safely handle the position with a default or unwrapped value
+    const position = newPosition ?? 0;
 
     // Calculate dynamic look-ahead based on upcoming lyrics
-    calculateDynamicLookAhead(newPosition);
+    calculateDynamicLookAhead(position);
 
-    // Apply the dynamic look-ahead to position
-    const adjustedPositionMs = Math.round(
-      (newPosition + lyricsLookAhead.value) * 1000,
-    );
+    // Find the active lyric index
+    const newIndex = findActiveLyricIndex(position);
 
-    // Find the active lyric using millisecond precision
-    let newIndex = -1;
-    for (let i = 0; i < lyrics.value.length; i++) {
-      const lineTimeMs = Math.round(lyrics.value[i].time * 1000);
-      if (lineTimeMs <= adjustedPositionMs) {
-        newIndex = i;
-      } else {
-        break;
-      }
-    }
-
-    // Rest of your position watcher logic
-  },
-);
-
-watch(
-  () => props.position,
-  (newPosition: number | undefined) => {
-    // Skip if no position, no lyrics, or user manually scrolled
-    if (
-      newPosition === undefined ||
-      !lyrics.value.length ||
-      !hasTimestamps.value ||
-      userManuallyScrolled.value
-    ) {
-      return;
-    }
-
-    // Calculate dynamic look-ahead based on upcoming lyrics
-    calculateDynamicLookAhead(newPosition);
-
-    // Apply the dynamic look-ahead to position
-    const adjustedPositionMs = Math.round(
-      (newPosition + lyricsLookAhead.value) * 1000,
-    );
-
-    // Find the active lyric using millisecond precision
-    let newIndex = -1;
-    for (let i = 0; i < lyrics.value.length; i++) {
-      const lineTimeMs = Math.round(lyrics.value[i].time * 1000);
-      if (lineTimeMs <= adjustedPositionMs) {
-        newIndex = i;
-      } else {
-        break;
-      }
-    }
-
-    // Log when active lyric changes - only log significant info by default
-    if (newIndex !== activeLyricIndex.value && newIndex >= 0) {
-      // Always log the lyric change but with less detail
-      logSync(`Lyric activated: "${lyrics.value[newIndex].text}"`);
-
-      // Log detailed info only in debug mode
-      logSync(`Activating lyric at ${newPosition.toFixed(2)}s (adjusted: ${(newPosition + lyricsLookAhead.value).toFixed(2)}s):
-        - Index: ${newIndex}
-        - Lyric time: ${lyrics.value[newIndex].time.toFixed(2)}s`);
-
-      // Only log transition details in debug mode
-      logSync(`Transition details:
-        - Raw position: ${newPosition.toFixed(3)}s
-        - Dynamic look-ahead: ${lyricsLookAhead.value.toFixed(3)}s
-        - Adjusted position: ${(newPosition + lyricsLookAhead.value).toFixed(3)}s`);
-
-      // Only log timing analysis in debug mode
-      if (newIndex > 0) {
-        const actualGap = newPosition - previousLyricTransitionTime.value;
-        const expectedGap =
-          lyrics.value[newIndex].time - lyrics.value[newIndex - 1].time;
-        logSync(`Timing analysis:
-          - Expected gap: ${expectedGap.toFixed(3)}s
-          - Actual gap: ${actualGap.toFixed(3)}s
-          - Difference: ${(actualGap - expectedGap).toFixed(3)}s`);
-      }
-
-      // Store transition time for analysis
-      previousLyricTransitionTime.value = newPosition;
-    }
-
-    // Update active lyric and scroll to it
+    // Handle lyric change if needed
     if (newIndex !== activeLyricIndex.value) {
-      activeLyricIndex.value = newIndex;
-
-      nextTick(() => {
-        const activeElement = document.querySelector(".lyrics-line.active");
-        const container = lyricsContainer.value;
-
-        if (activeElement && container) {
-          activeElement.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
-      });
+      handleActiveLyricChange(newIndex, position);
     }
   },
 );
