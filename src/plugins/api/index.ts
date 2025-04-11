@@ -1454,33 +1454,47 @@ export class MusicAssistantApi {
   }
 
   private handleResultMessage(msg: SuccessResultMessage | ErrorResultMessage) {
-    // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id as number);
 
+    const isAuthAborted =
+      "error_code" in msg &&
+      typeof msg.details === "string" &&
+      msg.details === "auth_aborted";
+
+    const isAuthTimeout =
+      "error_code" in msg &&
+      typeof msg.details === "string" &&
+      msg.details === "auth_timeout";
+
     if ("error_code" in msg) {
-      // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
-      console.error("[resultMessage]", msg);
-      store.activeAlert = {
-        type: AlertType.ERROR,
-        message: msg.details || msg.error_code,
-        persistent: false,
-      };
-    } else if (DEBUG) {
-      console.log("[resultMessage]", msg);
+
+      // Handle timeout during authentication flow
+      if (isAuthTimeout) {
+        console.debug("[resultMessage] Timeout during auth flow.");
+        showSnackbar($t("settings.auth_timeout"), "error"); // Show the correct error message
+      }
+      // Handle manual abortion by the user
+      else if (isAuthAborted) {
+        console.debug("[resultMessage] User aborted auth flow manually.");
+        showSnackbar($t("settings.auth_aborted"), "error"); // Show the correct message
+      }
+      else {
+        console.error("[resultMessage]", msg);
+        // Show generic error message
+        showSnackbar(msg.details || msg.error_code, "error");
+      }
     }
 
     if (!resultPromise) return;
 
     if ("partial" in msg && msg.partial) {
-      // handle partial results (for large listings that are split in multiple messages)
       if (!(msg.message_id in this.partialResult)) {
         this.partialResult[msg.message_id] = [];
       }
       this.partialResult[msg.message_id].push(...msg.result);
       return;
     } else if (msg.message_id in this.partialResult) {
-      // if we have partial results, append them to the final result
       if ("result" in msg)
         msg.result = this.partialResult[msg.message_id].concat(msg.result);
       delete this.partialResult[msg.message_id];
@@ -1491,12 +1505,26 @@ export class MusicAssistantApi {
       (x) => x != msg.message_id,
     );
 
+    // Handle error rejection or successful result
     if ("error_code" in msg) {
-      resultPromise.reject(msg.details || msg.error_code);
+      if (!isAuthTimeout && !isAuthAborted) {
+        resultPromise.reject(msg.details || msg.error_code);
+      } else {
+        resultPromise.reject("auth_aborted");
+      }
     } else {
       msg = msg as SuccessResultMessage;
       resultPromise.resolve(msg.result);
     }
+  }
+
+  public abortAllCommands(reason = "auth_aborted") {
+    // Abort all commands with the specified reason
+    for (const [cmdId, { reject }] of this.commands.entries()) {
+      reject({ details: reason });
+      this.commands.delete(cmdId);
+    }
+    this.fetchesInProgress.value = [];
   }
 
   private handleServerInfoMessage(msg: ServerInfoMessage) {
