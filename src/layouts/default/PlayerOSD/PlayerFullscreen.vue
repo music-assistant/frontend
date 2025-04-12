@@ -278,10 +278,13 @@
                 inline
               />
             </v-tab>
+            <v-tab v-if="hasLyrics" :value="2">
+              {{ $t("lyrics") }}
+            </v-tab>
           </v-tabs>
           <div class="queue-items-scroll-box">
             <v-infinite-scroll
-              v-if="!tempHide"
+              v-if="!tempHide && activeQueuePanel !== 2"
               :onLoad="loadNextPage"
               :empty-text="''"
               height="100%"
@@ -385,6 +388,16 @@
                 </template>
               </v-virtual-scroll>
             </v-infinite-scroll>
+            <!-- Lyrics view -->
+            <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
+              <LyricsViewer
+                :media-item="store.curQueueItem?.media_item"
+                :position="store.activePlayerQueue?.elapsed_time"
+                :duration="store.curQueueItem?.duration"
+                :stream-details="store.curQueueItem?.streamdetails"
+                :text-color="sliderColor"
+              />
+            </div>
           </div>
         </div>
 
@@ -553,6 +566,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import Button from "@/components/mods/Button.vue";
 import ResponsiveIcon from "@/components/mods/ResponsiveIcon.vue";
 import ListItem from "@/components/mods/ListItem.vue";
+import LyricsViewer from "@/components/LyricsViewer.vue";
 import vuetify from "@/plugins/vuetify";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
@@ -613,6 +627,14 @@ const previousItems = computed(() => {
       .slice(0, store.activePlayerQueue.current_index)
       .reverse();
   } else return [];
+});
+const hasLyrics = computed(() => {
+  const plainLyrics = store.curQueueItem?.media_item?.metadata?.lyrics;
+  const syncedLyrics = store.curQueueItem?.media_item?.metadata?.lrc_lyrics;
+  return (
+    (!!plainLyrics && plainLyrics.trim().length > 0) ||
+    (!!syncedLyrics && syncedLyrics.trim().length > 0)
+  );
 });
 
 const titleFontSize = computed(() => {
@@ -1188,5 +1210,11 @@ watchEffect(() => {
 div,
 button {
   color: var(--text-color);
+}
+
+.lyrics-wrapper {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 </style>
