@@ -2,11 +2,7 @@
   <div>
     <Toolbar
       icon="mdi-cog-outline"
-      :title="
-        getBreakpointValue('bp4')
-          ? `${$t('settings.settings')} | ${$t(`settings.${activeTab}`)}`
-          : ''
-      "
+      :title="`${$t('settings.settings')} | ${$t(`settings.${activeTab}`)}`"
       :show-loading="true"
       :menu-items="[
         {
@@ -65,7 +61,6 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import Toolbar from "@/components/Toolbar.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 
 // global refs
 const router = useRouter();
