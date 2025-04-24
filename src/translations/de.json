@@ -452,7 +452,7 @@
                 "show_multichannel_controls": "Multi-Channel-Steuerung anzeigen",
                 "edited_channel": "EQ-Antwort für diesen Kanal\/diese Kanäle aufzeichnen",
                 "channel": "Das Band wird angewendet auf",
-                "per_channel_preamp": "Zusätzliche Gain für Vorverstärker für {channel}"
+                "per_channel_preamp": "Zusätzlicher Pegel für Vorverstärker für {channel}"
             },
             "tone_control": {
                 "bass_level": "Basspegel",
@@ -494,8 +494,8 @@
             "label": "Begrenzer aktivieren, um Clipping zu verhindern",
             "description": "Aktiviert einen Begrenzer, der Audioverzerrungen verhindert, indem laute Spitzen leiser gemacht werden."
         },
-        "dsp_enabled": "DSP ist aktiviert",
-        "dsp_disabled": "DSP ist deaktiviert",
+        "dsp_enabled": "DSP ist aktiviert.",
+        "dsp_disabled": "DSP ist deaktiviert.",
         "dsp_note_multi_device_group": {
             "label": "Der DSP kann für jedes Wiedergabegerät einzeln konfiguriert werden."
         },
@@ -630,8 +630,8 @@
     },
     "shuffle_disable": "Deaktiviere Zufallswiedergabe",
     "shuffle_enable": "Aktiviere Zufallswiedergabe",
-    "dont_stop_the_music_enable": "'Dont stop the music!' einschalten",
-    "dont_stop_the_music_disable": "'Dont stop the Music!' auschalten",
+    "dont_stop_the_music_enable": "'Dont stop the music!' einschalten.",
+    "dont_stop_the_music_disable": "'Dont stop the Music!' ausschalten.",
     "open_dsp_settings": "DSP Einstellungen öffnen",
     "audiobook": "Audiobuch",
     "audiobooks": "Audiobücher",
@@ -666,15 +666,15 @@
         "eq_band_count": "{0} Bänder",
         "eq_band_count_singular": "1 Band",
         "input_gain": "Eingangsverstärkung ({0} dB)",
-        "output_gain": "Ausgabe Gain ({0} dB)",
+        "output_gain": "Ausgabepegel({0} dB)",
         "output_limiter": "Ausgangsbegrenzer",
         "output_limiter_info": "Reduziert automatisch sehr laute Töne, um Verzerrungen zu vermeiden und die Lautsprecher zu schützen",
-        "dsp_unsupported": "DSP nicht unterstützt",
-        "dsp_disabled_by_unsupported_group": "Dieser Wiedergabeanbieter unterstützt keinen DSP bei synchronisierter Wiedergabe",
+        "dsp_unsupported": "DSP nicht unterstützt.",
+        "dsp_disabled_by_unsupported_group": "Dieser Wiedergabeanbieter unterstützt keinen DSP bei synchronisierter Wiedergabe.",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
-            "bit_rate": "Bitrate: {0} kbps",
+            "bit_rate": "Bitrate: {0} Kbps",
             "sample_rate": "Abtastrate: {0} kHz",
             "channels": "Kanäle: {0}",
             "bit_depth": "Bittiefe: {0}",
