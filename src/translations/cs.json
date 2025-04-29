@@ -591,10 +591,12 @@
         "dsp_unsupported": "DSP není podporováno",
         "click_to_expand": "Kliknutím zobrazíte všechny přehrávače"
     },
+    "in_progress_items": "Pokračovat v poslechu...",
     "play_replace_next": "Přehrát další (vymazat frontu)",
     "all_enqueue_options": "Všechny možnosti fronty",
     "this_device": "Toto zařízení",
     "recommendations": {
+        "in_progress_items": "Pokračovat v poslechu...",
         "recently_played": "Nedávno přehrávané",
         "random_artists": "Náhodní umělci",
         "random_albums": "Náhodná alba",

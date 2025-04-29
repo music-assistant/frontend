@@ -718,5 +718,7 @@
         "favorite_radio_stations": "Stations de radio favorites"
     },
     "homescreen_edit_enable": "Modifier la page d'accueil",
-    "homescreen_edit_disable": "Quitter le mode Modifier la page d'accueil"
+    "homescreen_edit_disable": "Quitter le mode Modifier la page d'accueil",
+    "lyrics_will_appear_soon": "Les paroles apparaîtront lorsque la chanson commencera...",
+    "builtin_playlists": "Paramètres de liste de lecture intégrés"
 }
