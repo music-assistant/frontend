@@ -724,5 +724,7 @@
         "favorite_radio_stations": "Estações de rádio favoritas"
     },
     "homescreen_edit_enable": "Editar tela inicial",
-    "homescreen_edit_disable": "Sair do modo de edição da tela inicial"
+    "homescreen_edit_disable": "Sair do modo de edição da tela inicial",
+    "lyrics_will_appear_soon": "A letra aparecerá quando a música começar...",
+    "builtin_playlists": "Configurações da lista de reprodução integrada"
 }
