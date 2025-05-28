@@ -615,5 +615,11 @@
         "click_to_expand": "Clicca per mostrare tutti i lettori"
     },
     "select_source": "Seleziona la fonte",
-    "in_progress_items": "Continua ad ascoltare..."
+    "in_progress_items": "Continua ad ascoltare...",
+    "this_device": "Questo dispositivo",
+    "recommendations": {
+        "in_progress_items": "Continua ad ascoltare...",
+        "random_artists": "Artisti casuali",
+        "random_albums": "Album casuali"
+    }
 }

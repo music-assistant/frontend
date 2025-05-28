@@ -59,3 +59,7 @@ We use Lokalise to manage the translation files for the Music Assistant frontend
 ### Contributing
 
 If you wish to assist in translating Music Assistant into a language that it currently does not support, please see here https://music-assistant.io/help/lokalise/.
+
+---
+
+[![A project from the Open Home Foundation](https://www.openhomefoundation.org/badges/ohf-project.png)](https://www.openhomefoundation.org/)

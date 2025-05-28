@@ -134,7 +134,7 @@
         "server_id": "ID serveru",
         "server_version": "Verze serveru",
         "server_base_url": "Základní URL",
-        "server_as_addon": "Home Assistant addon",
+        "server_as_addon": "Doplněk Home Assistant",
         "artists_in_library": "Umělci v knihovně",
         "albums_in_library": "Alba v knihovně",
         "tracks_in_library": "Skladby v knihovně",
@@ -287,7 +287,8 @@
             "advanced": "Rozšířená nastavení",
             "generic": "Obecná nastavení",
             "announcements": "Nastavení oznámení",
-            "airplay": "Specifická nastavení Airplay"
+            "airplay": "Specifická nastavení Airplay",
+            "player_controls": "Ovládání přehrávače"
         },
         "tts_pre_announce": {
             "label": "Upozornění na TTS oznámení",
@@ -370,7 +371,7 @@
         },
         "hide_settings": {
             "label": "Skrýt tlačítko nastavení",
-            "description": "Skryt tlačítka nastavení na domovské obrazovce.\n\nUpozorňujeme, že pokud zakážete nastavení na domovské obrazovce a v nabídce, můžete se zablokovat.\n\nV takovém případě budete muset ručně zadat cestu k nastavení nebo vymazat soubory cookie prohlížeče, abyste znovu získali přístup k nastavení, používejte na vlastní nebezpečí!"
+            "description": "Skrýt tlačítka nastavení na domovské obrazovce.\n\nUpozorňujeme, že pokud zakážete nastavení na domovské obrazovce a v nabídce, můžete se zablokovat.\n\nV takovém případě budete muset ručně zadat cestu k nastavení nebo vymazat soubory cookie prohlížeče, abyste znovu získali přístup k nastavení, používejte na vlastní nebezpečí!"
         },
         "no_music_providers": "Žádní nakonfigurovaní poskytovatelé hudby",
         "no_music_providers_detail": "Začněte pracovat s Music Assistant přidáním svých poskytovatelů hudby.",
@@ -409,7 +410,50 @@
             "description": "Pevná\/záložní korekce zesílení, která se použije na přehrávání rádia (závisí na nastavení \"Metoda normalizace hlasitosti\").\nKladnou hodnotu použijte pro zvýšení hlasitosti, zápornou hodnotu pro snížení hlasitosti.\n\nToto nastavení se používá, když je metoda normalizace hlasitosti nastavena na \"Fixní korekce zisku\" nebo \"Korekce záložního zisku\"."
         },
         "group_type": "Typ skupiny",
-        "add_group_player_desc": "U poskytovatelů přehrávačů\/ekosystémů, které poskytují nativní seskupování\/synchronizaci, se automaticky vytvoří synchronizační skupina, což znamená, že pokud přehráváte na této skupině přehrávačů, budou členské přehrávače automaticky synchronizovány. \n\nU přehrávačů\/ekosystémů, které seskupování nepodporují, nebo v případě, že chcete seskupit přehrávače z různých ekosystémů, můžete použít typ skupiny Universal, který bude distribuovat stejný zvuk do všech členských přehrávačů (ale ne synchronizovaně). \n\nPoznámka: někteří poskytovatelé seskupování podporují, ale k provedení seskupení je třeba použít nativní aplikaci. Příkladem jsou přehrávače založené na službě Google Cast, kde lze skupiny Google Cast vytvářet pouze v aplikaci Google Home."
+        "add_group_player_desc": "U poskytovatelů přehrávačů\/ekosystémů, které poskytují nativní seskupování\/synchronizaci, se automaticky vytvoří synchronizační skupina, což znamená, že pokud přehráváte na této skupině přehrávačů, budou členské přehrávače automaticky synchronizovány. \n\nU přehrávačů\/ekosystémů, které seskupování nepodporují, nebo v případě, že chcete seskupit přehrávače z různých ekosystémů, můžete použít typ skupiny Universal, který bude distribuovat stejný zvuk do všech členských přehrávačů (ale ne synchronizovaně). \n\nPoznámka: někteří poskytovatelé seskupování podporují, ale k provedení seskupení je třeba použít nativní aplikaci. Příkladem jsou přehrávače založené na službě Google Cast, kde lze skupiny Google Cast vytvářet pouze v aplikaci Google Home.",
+        "dsp": {
+            "types": {
+                "parametric_eq": "Parametrický ekvalizér"
+            },
+            "parametric_eq": {
+                "preamp": "Předzesilovač",
+                "add_band_channel": "Přidat pásmo (pouze {channel} )",
+                "band_channel": "Pásmo {index} (pouze {channel} )",
+                "show_multichannel_controls": "Zobrazit ovládaní víc kanálů",
+                "edited_channel": "Vykreslit odezvu ekvalizéru pro tento\/tyto kanál(y)",
+                "channel": "Toto pásmo bude použito pro",
+                "per_channel_preamp": "Přídavné zesílení předzesilovače pro {channel}"
+            },
+            "channels": {
+                "ALL": "Všechny",
+                "FL": "Levý",
+                "FR": "Pravý"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "P"
+            }
+        },
+        "power_control": {
+            "label": "Ovládání napájení",
+            "description": "Definujte\/změňte chování ovládání napájení pro tento přehrávač.\nUmožňuje vám například přesměrovat příkazy pro zapnutí\/vypnutí na jiné zařízení nebo použít falešné ovládání napájení, pokud váš přehrávač nepodporuje příkazy pro zapnutí\/vypnutí, ale chcete mít vyhrazený stav pro přehrávač, který se nepoužívá."
+        },
+        "volume_control": {
+            "label": "Ovládání hlasitosti",
+            "description": "Definujte\/změňte chování ovládání hlasitosti pro tento přehrávač. \nUmožňuje například přesměrovat příkazy ovládání hlasitosti na jiné zařízení nebo je úplně deaktivovat."
+        },
+        "dsp_enabled": "DSP je zapnuto",
+        "dsp_disabled": "DSP je vypnuto",
+        "dsp_note_multi_device_group": {
+            "label": "DSP můžete nakonfigurovat pro každý přehrávač zvlášť."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Tento typ skupiny nepodporuje DSP při přehrávání na více zařízeních."
+        },
+        "enable_builtin_player": {
+            "label": "Povolit přehrávání na tomto zařízení\/prohlížeči",
+            "description": "Povolit (experimentální) vestavěný přehrávač pro toto zařízení\/prohlížeč, který vám umožní streamovat veškerý obsah Music Assistant přímo do tohoto zařízení."
+        }
     },
     "show_info": "Zobrazit informace",
     "show_select_boxes": "Zobrazit výběrová pole",
@@ -533,5 +577,33 @@
     "shuffle_disable": "Zakázat promíchání",
     "shuffle_enable": "Povolit promíchání",
     "dont_stop_the_music_enable": "Povolit \"Nevypínej hudbu!\"",
-    "dont_stop_the_music_disable": "Zakázat \"Nevypínej hudbu!\""
+    "dont_stop_the_music_disable": "Zakázat \"Nevypínej hudbu!\"",
+    "open_dsp_settings": "Otevřít nastavení DSP",
+    "audiobooks": "Audioknihy",
+    "podcasts": "Podcasty",
+    "global_search": "Globální vyhledávání",
+    "dsp_active": "Aktivní",
+    "all_players": "Všechny přehrávače",
+    "stop_playback": "Zastavit přehrávání",
+    "streamdetails": {
+        "output_limiter": "Omezovač výstupu",
+        "output_limiter_info": "Automaticky redukuje velmi hlasité zvuky, aby se zabránilo zkreslení a ochránily vaše reproduktory",
+        "dsp_unsupported": "DSP není podporováno",
+        "click_to_expand": "Kliknutím zobrazíte všechny přehrávače"
+    },
+    "in_progress_items": "Pokračovat v poslechu...",
+    "play_replace_next": "Přehrát další (vymazat frontu)",
+    "all_enqueue_options": "Všechny možnosti fronty",
+    "this_device": "Toto zařízení",
+    "recommendations": {
+        "in_progress_items": "Pokračovat v poslechu...",
+        "recently_played": "Nedávno přehrávané",
+        "random_artists": "Náhodní umělci",
+        "random_albums": "Náhodná alba",
+        "recent_favorite_tracks": "Nedávno oblíbené skladby",
+        "favorite_playlists": "Oblíbené seznamy skladeb",
+        "favorite_radio_stations": "Oblíbené rozhlasové stanice"
+    },
+    "homescreen_edit_enable": "Upravit domovskou obrazovku",
+    "homescreen_edit_disable": "Opustit režim úprav domovské obrazovky"
 }

@@ -218,9 +218,9 @@ onMounted(() => {
 
 const checkDefaultPlayer = function () {
   if (store.activePlayer && playerVisible(store.activePlayer)) return;
-  const newDefaultPlayer = selectDefaultPlayer();
-  if (newDefaultPlayer) {
-    store.activePlayerId = newDefaultPlayer.player_id;
+  const newDefaultPlayerId = selectDefaultPlayer();
+  if (newDefaultPlayerId) {
+    store.activePlayerId = newDefaultPlayerId;
   }
 };
 
@@ -230,9 +230,9 @@ const selectDefaultPlayer = function () {
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&
-    playerVisible(api.players[lastPlayerId])
+    api.players[lastPlayerId].available
   ) {
-    return api.players[lastPlayerId];
+    return lastPlayerId;
   }
 };
 </script>

@@ -288,7 +288,8 @@
             "generic": "Configurações genéricas",
             "announcements": "Configuração de anúncios",
             "airplay": "Configurações específicas do Airplay",
-            "player_controls": "Controles do reprodutor"
+            "player_controls": "Controles do reprodutor",
+            "presets": "Predefinições"
         },
         "tts_pre_announce": {
             "label": "Pré-anunciar anúncios TTS",
@@ -445,7 +446,13 @@
                 },
                 "import_apo": "Importar predefinição APO\/REW",
                 "export_apo": "Exportar predefinição APO",
-                "preamp": "Pré-amplificador"
+                "preamp": "Pré-amplificador",
+                "add_band_channel": "Adicionar banda (somente em {channel})",
+                "band_channel": "Banda {index} (somente {channel})",
+                "show_multichannel_controls": "Exibir controles multicanais",
+                "edited_channel": "Plote a resposta dos EQs para este(s) canal(is)",
+                "channel": "Essa banda será aplicada a",
+                "per_channel_preamp": "Ganho adicional do pré-amplificador para {channel}"
             },
             "tone_control": {
                 "bass_level": "Nível de graves",
@@ -460,16 +467,44 @@
             "types": {
                 "parametric_eq": "EQ paramétrico",
                 "tone_control": "Controle de tom"
+            },
+            "channels": {
+                "ALL": "Todos",
+                "FL": "Esquerdo",
+                "FR": "Direito"
+            },
+            "channels_compact": {
+                "FL": "E",
+                "FR": "D"
             }
         },
         "power_control": {
-            "label": "Controle de potência"
+            "label": "Controle de potência",
+            "description": "Define\/substitui o comportamento de controle de energia para este reprodutor.\nEle permite, por exemplo, redirecionar os comandos de ligar\/desligar para um dispositivo diferente ou usar um controle de energia falso se o seu player não suportar comandos de ligar\/desligar, mas você gosta de ter um estado dedicado para um reprodutor que não está em uso."
         },
         "volume_control": {
-            "label": "Controle de volume"
+            "label": "Controle de volume",
+            "description": "Define\/substitui o comportamento do controle de volume desse reprodutor. Permite, por exemplo, redirecionar os comandos de controle de volume para um dispositivo diferente ou desativá-lo completamente."
         },
         "mute_control": {
-            "label": "Controle de mudo"
+            "label": "Controle de mudo",
+            "description": "Define\/substitui o comportamento do controle de mudo para esse reprodutor. Isso permite, por exemplo, redirecionar os comandos de controle de mudo para um aparelho diferente ou desativá-lo completamente. Oferecemos uma opção de controle de mudo \"falso\", que simula o mudo definindo o volume como 0 e restaurando o volume ao desativar o mudo."
+        },
+        "output_limiter": {
+            "label": "Ative a limitação para evitar cortes",
+            "description": "Ativa um limitador que evita a distorção de áudio, tornando os picos altos mais silenciosos."
+        },
+        "dsp_enabled": "O DSP está ativado",
+        "dsp_disabled": "O DSP está desativado",
+        "dsp_note_multi_device_group": {
+            "label": "Você pode configurar o DSP para cada reprodutor individualmente."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Esse tipo de grupo não é compatível com DSP ao reproduzir em vários dispositivos."
+        },
+        "enable_builtin_player": {
+            "label": "Permitir a reprodução neste dispositivo\/navegador",
+            "description": "Ative o reprodutor incorporado (experimental) para esse dispositivo\/navegador, que permite transmitir todo o conteúdo do Music Assistant diretamente para esse dispositivo."
         }
     },
     "show_info": "Mostrar informação",
@@ -533,7 +568,9 @@
         "play_sample": "Reproduzir amostra",
         "album_type": "Tipo de álbum",
         "loading": "O servidor está processando uma solicitação ou sincronizando música.",
-        "primary_image": "Essa é a imagem principal para esse tipo de imagem"
+        "primary_image": "Essa é a imagem principal para esse tipo de imagem",
+        "copy_uri": "Copiar URI para a área de transferência",
+        "select_all": "Selecionar todos os itens"
     },
     "topresult": "Melhor resultado",
     "track": "Faixa",
@@ -625,29 +662,69 @@
     "streamdetails": {
         "input_header": "Entrada",
         "output_header": "Saída",
+        "output_format_info": "O áudio é enviado no formato {0}",
         "eq_band_count": "{0} bandas",
         "eq_band_count_singular": "1 banda",
         "input_gain": "Ganho de entrada ({0} dB)",
         "output_gain": "Ganho de saída ({0} dB)",
         "output_limiter": "Limitador de saída",
+        "output_limiter_info": "Reduz automaticamente sons muito altos para evitar distorção e proteger seus alto-falantes",
         "dsp_unsupported": "DSP não suportado",
+        "dsp_disabled_by_unsupported_group": "Esse provedor de player não é compatível com DSP com reprodução sincronizada",
         "file_info": {
             "container": "Contêiner: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Taxa de bits: {0} kbps",
             "sample_rate": "Taxa de amostragem: {0} kHz",
             "channels": "Canais: {0}",
-            "bit_depth": "Profundidade de bits: {0}"
+            "bit_depth": "Profundidade de bits: {0}",
+            "processing_notice": "O áudio é processado internamente como PCM flutuante de 32 bits"
         },
         "volume_normalization": {
+            "target_level": "Nível alvo: {0} LUFS",
+            "integrated_loudness": "Intensidade medida (integrada): {0} LUFS",
             "integrated_album_loudness": "Volume do álbum: {0} LUFS",
             "applied_gain_correction": "Correção de ganho aplicada: {0} dB",
             "mode": {
                 "dynamic": "A normalização de volume está ativa no modo dinâmico.",
+                "measurement_only": "A normalização do volume está ativa com base em uma medição armazenada do volume (integrado) do áudio.",
+                "measurement_album": "A normalização do volume está ativa com base em uma medição armazenada do volume (integrado) do álbum.",
                 "fixed_gain": "A normalização do volume está ativa com base na correção de ganho fixo."
             }
-        }
+        },
+        "click_to_expand": "Clique para mostrar todos os reprodutor",
+        "output_format_pcm_info": "O áudio é transmitido como PCM para o provedor do reprodutor. O provedor do reprodutor pode então converter o áudio em um formato diferente antes de enviá-lo ao player."
     },
     "volume_normalization_gain_correction": "{0} dB",
-    "select_source": "Selecione a fonte"
+    "select_source": "Selecione a fonte",
+    "in_progress_items": "Continue ouvindo...",
+    "play_replace_next": "Reproduzir a seguir (limpar fila)",
+    "all_enqueue_options": "Todas as opções de enfileiramento",
+    "music_assistant_source": "Fila de espera do Music Assistant",
+    "music_assistant_library": "Biblioteca do Music Assistant",
+    "select_all_confirmation": "Selecionar todos os itens? Essa operação pode demorar um pouco para carregar todos os dados.",
+    "this_device": "Esse dispositivo",
+    "recommendations": {
+        "in_progress_items": "Continue ouvindo...",
+        "recommended_new_tracks": "Novas faixas recomendadas",
+        "recently_played": "Reproduzido recentemente",
+        "suggested_new_albums_for_you": "Sugestões de novos álbuns para você",
+        "random_artists": "Artistas aleatórios",
+        "random_albums": "Álbuns aleatórios",
+        "custom_mixes": "Mixagens personalizadas",
+        "your_listening_history": "Seu histórico de audição",
+        "popular_albums": "Álbuns populares",
+        "staff_picks_tracks": "Escolhas da equipe: trilhas",
+        "staff_picks_albums": "Escolhas da equipe: álbuns",
+        "radio_stations_for_you": "Estações de rádio para você",
+        "producers__songwriters": "Produtores e compositores",
+        "new_releases_for_you": "Novos lançamentos para você",
+        "recent_favorite_tracks": "Faixas favoritadas recentemente",
+        "favorite_playlists": "Playlists favoritas",
+        "favorite_radio_stations": "Estações de rádio favoritas"
+    },
+    "homescreen_edit_enable": "Editar tela inicial",
+    "homescreen_edit_disable": "Sair do modo de edição da tela inicial",
+    "lyrics_will_appear_soon": "A letra aparecerá quando a música começar...",
+    "builtin_playlists": "Configurações da lista de reprodução integrada"
 }

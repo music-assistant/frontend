@@ -1,5 +1,5 @@
 <template>
-  <audio ref="audioRef" controls class="bultin-player"></audio>
+  <audio ref="audioRef" controls class="builtin-player"></audio>
 </template>
 
 <script setup lang="ts">

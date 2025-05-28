@@ -168,7 +168,7 @@
         },
         "output_channels": {
             "label": "Ausgangskanal-Modus",
-            "description": "Das Wiedergabegerät kann so konfiguriert werden, dass nur der linke oder der rechte Kanal wiedergegeben wird, um z. B. ein Stereopaar mit zwei Wiedergabegeräten zu bilden.",
+            "description": "Das Wiedergabegerät kann so konfiguriert werden, dass nur der linke oder der rechte Kanal wiedergegeben wird, um z.B. ein Stereo-Paar mit zwei Wiedergabegeräten zu bilden.",
             "options": {
                 "stereo": "Stereo (beide Kanäle)",
                 "left": "Nur linker Kanal",
@@ -209,7 +209,7 @@
             "description": "Dieses Wiedergabegerät in der Benutzeroberfläche ausblenden. \n\nBeachte, dass dieses Wiedergabegerät weiterhin gesteuert werden kann und auch in allen Synchronisierungsgruppen angezeigt wird, zu denen das Wiedergabegerät gehört."
         },
         "default_enqueue_select_artist": {
-            "label": "Auswählbare Elemente, wenn ein (bibliotheksinterner) Künstler abgespielt wird.",
+            "label": "Elemente, die bei der Wiedergabe eines Interpreten (aus der Bibliothek) ausgewählt werden sollen.",
             "description": "Wenn ein Künstler gespielt werden soll, welche Elemente sollten in die Warteschlange aufgenommen werden?",
             "options": {
                 "library_tracks": "Nur Titel in der Bibliothek",
@@ -288,7 +288,9 @@
             "advanced": "Erweiterte Einstellungen",
             "generic": "Allgemeine Einstellungen",
             "announcements": "Einstellungen für Ankündigungen",
-            "airplay": "Airplay-spezifische Einstellungen"
+            "airplay": "Spezielle AirPlay-Einstellungen",
+            "player_controls": "Wiedergabesteuerung",
+            "presets": "Voreinstellungen"
         },
         "tts_pre_announce": {
             "label": "TTS-Durchsagen vorankündigen",
@@ -331,14 +333,14 @@
             }
         },
         "menu_style": {
-            "label": "Menü Style",
+            "label": "Menüstil",
             "options": {
                 "horizontal": "Horizontal",
                 "vertical": "Vertikal"
             }
         },
         "menu_items": {
-            "label": "Aktivierte Menü Einträge",
+            "label": "Aktivierte Menüeinträge",
             "description": "Konfiguriere, welche Einträge im Menü angezeigt werden\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Knopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du die URL der Seite manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
         },
         "language": {
@@ -380,30 +382,47 @@
         "no_player_providers_detail": "Konfiguriere die Wiedergabe-Gerätanbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann.",
         "volume_normalization_radio": {
             "label": "Methode zur Normalisierung der Lautstärke für Radiostreams",
-            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\nOptionen:\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet.    - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\nOptionen:\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Ausgeschaltet",
                 "dynamic": "Erzwinge dynamisch",
-                "fixed_gain": "Feste Gainanpassung"
+                "measurement_only": "Nur Messung (kein Fallback)",
+                "fallback_fixed_gain": "Fallback auf Gainanpassung",
+                "fixed_gain": "Feste Gainanpassung",
+                "fallback_dynamic": "Fallback auf dynamisch"
             }
         },
         "volume_normalization_tracks": {
             "label": "Lautstärkenormalisierungsmethode für Titel",
-            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/Die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\nOptionen:\n- Deaktiviert – Keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.    - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet.  -Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- \"Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/Die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\nOptionen:\n- Deaktiviert – Keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- \"Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Deaktiviert",
-                "dynamic": "Erzwinge dynamic"
+                "dynamic": "Erzwinge dynamisch",
+                "measurement_only": "Nur Messung (kein Fallback)",
+                "fallback_fixed_gain": "Fallback auf Gainanpassung",
+                "fixed_gain": "Statische Gainanpassung",
+                "fallback_dynamic": "Fallback auf dynamisch"
             }
         },
         "volume_normalization_fixed_gain_tracks": {
+            "label": "Fixe\/Fallback Gainanpassung für Songs",
             "description": "Feste\/fallback Gainkorrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung 'Lautstärkenormalisierungsmethode').\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärke-Normalisierungsmethode auf \"Feste Gainkorrektur\" oder \"Fallback auf Gainkorrektur\" eingestellt ist"
         },
         "volume_normalization_fixed_gain_radio": {
+            "label": "Fixed\/fallback Gainanpassung für Radio",
             "description": "Feste\/fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'fallback auf Gainkorrektur' eingestellt ist."
         },
         "group_type": "Art der Gruppe",
-        "add_group_player_desc": "\nBei Player-Anbietern\/Ökosystemen, die eine native Gruppierung\/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, d. h., wenn Sie diese Playergruppe abspielen, werden die Player-Mitglieder automatisch synchronisiert. \n\nFür Player\/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \n\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können",
+        "add_group_player_desc": "\nBei Player-Anbietern\/Ökosystemen, die eine native Gruppierung\/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, somit werden die Player-Mitglieder automatisch synchronisiert, wenn diese Player-Gruppe abgespielt wird.\n\nFür Player\/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \n\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können.",
+        "dynamic_members": {
+            "label": "Dynamische Gruppenmitglieder",
+            "description": "Erlaube Mitgliedern (vorübergehend) der Gruppe beizutreten\/die Gruppe zu verlassen, sodass die Gruppe sich mehr oder weniger verhält wie beim manuellen Synchronisieren der Wiedergabegeräte mit dem Hauptunterschied, dass das Gruppenwiedergabegerät die Warteschlange hält"
+        },
         "dsp": {
+            "configure_on": "DSP konfigurieren auf: {name}",
+            "disabled_message": "DSP ist momentan deaktiviert. Aktivieren mit dem Schalter oben.",
+            "input": "Eingang",
+            "output": "Ausgabe",
             "filter": {
                 "add": "Filter Hinzufügen",
                 "type": "Filter Typ",
@@ -425,7 +444,16 @@
                     "low_pass": "Tiefpass",
                     "high_pass": "Hochpass",
                     "notch": "Engpass"
-                }
+                },
+                "import_apo": "APO\/REW-Voreinstellung importieren",
+                "export_apo": "APO-Voreinstellung exportieren",
+                "preamp": "Vorverstärker",
+                "add_band_channel": "Band hinzufügen (nur {channel})",
+                "band_channel": "Band {index} (nur {channel})",
+                "show_multichannel_controls": "Multi-Channel-Steuerung anzeigen",
+                "edited_channel": "EQ-Antwort für diesen Kanal\/diese Kanäle aufzeichnen",
+                "channel": "Das Band wird angewendet auf",
+                "per_channel_preamp": "Zusätzlicher Pegel für Vorverstärker für {channel}"
             },
             "tone_control": {
                 "bass_level": "Basspegel",
@@ -440,7 +468,44 @@
             "types": {
                 "parametric_eq": "Parametrischer EQ",
                 "tone_control": "Klangregelung"
+            },
+            "channels": {
+                "ALL": "Alle",
+                "FL": "Links",
+                "FR": "Rechts"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
             }
+        },
+        "power_control": {
+            "label": "Steuerung Ein-\/Ausschaltverhalten",
+            "description": "Bestimme\/Übersteuere das Verhalten der Energiesteuerung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Energiesteuerung an ein anderes Gerät oder die Verwendung einer 'Fake' Energiesteuerung falls das Wiedergabegerät die Befehle für das Ein-\/Ausschalten nicht unterstützt, man aber einen dedizierten Status für ein nicht verwendetes Wiedergabegerät haben möchte."
+        },
+        "volume_control": {
+            "label": "Lautstärkeregelung",
+            "description": "Bestimme\/Übersteuere das Verhalten der Lautstärkeregelung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Lautstärkeregelung an ein anderes Gerät oder die vollständige Abschaltung."
+        },
+        "mute_control": {
+            "label": "Stummschaltung",
+            "description": "Bestimme\/Übersteuere das Verhalten der Stummschaltung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Stummschaltung an ein anderes Gerät oder die vollständige Abschaltung.\n\nWir bieten eine 'Fake' Stummschaltung an, welche die Stummschaltung simuliert, indem die Lautstärke auf 0 gesetzt wird und die Lautstärke wiederherstellt, wenn die Stummschaltung aufgehoben wird."
+        },
+        "output_limiter": {
+            "label": "Begrenzer aktivieren, um Clipping zu verhindern",
+            "description": "Aktiviert einen Begrenzer, der Audioverzerrungen verhindert, indem laute Spitzen leiser gemacht werden."
+        },
+        "dsp_enabled": "DSP ist aktiviert.",
+        "dsp_disabled": "DSP ist deaktiviert.",
+        "dsp_note_multi_device_group": {
+            "label": "Der DSP kann für jedes Wiedergabegerät einzeln konfiguriert werden."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Dieser Gruppentyp unterstützt keinen DSP, wenn die Wiedergabe auf mehrere Geräte erfolgt."
+        },
+        "enable_builtin_player": {
+            "label": "Wiedergabe auf diesem Gerät\/Browser erlauben",
+            "description": "(Experimentelles) integriertes Wiedergabegerät für dieses Gerät\/diesen Browser aktivieren. Erlaubt das Streamen der gesamten Inhalte direkt auf dieses Gerät."
         }
     },
     "show_info": "Zeige Informationen",
@@ -480,7 +545,7 @@
         "paused": "Pausiert",
         "playing": "spielt gerade"
     },
-    "sync_now": "Synchronisiert {0}",
+    "sync_now": "Jetzt synchronisieren",
     "sync_running": "Ein oder mehrere Musikanbieter werden synchronisiert.",
     "tooltip": {
         "album_artist_filter": "Nach Album-Künstlern filtern",
@@ -504,7 +569,9 @@
         "play_sample": "Beispiel wiedergeben",
         "album_type": "Albumtyp",
         "loading": "Der Server verarbeitet eine Anfrage oder synchronisiert Musik.",
-        "primary_image": "Dieses ist das primäre Bild für diesen Bildtyp"
+        "primary_image": "Dieses ist das primäre Bild für diesen Bildtyp",
+        "copy_uri": "URI in die Zwischenablage kopieren",
+        "select_all": "Alle Einträge auswählen"
     },
     "topresult": "Top-Ergebnis",
     "track": "Track",
@@ -537,8 +604,8 @@
     "new_playlist": "Neue Playlist",
     "create_playlist_on": "Erstelle eine neue Playlist auf {0}",
     "view": {
-        "list": "Listen Ansicht",
-        "panel": "Panel Ansicht",
+        "list": "Listenansicht",
+        "panel": "Panelansicht",
         "panel_compact": "Kompakte Raster-Ansicht"
     },
     "play_replace": "Jetzt wiedergeben (Warteschlange leeren)",
@@ -554,9 +621,9 @@
     "power_on_player": "Einschalten",
     "power_off_player": "Ausschalten",
     "powered_off_players": "Ausgeschaltete Wiedergabegeräte",
-    "sync_player_with": "Synchronisiere mit einem anderem Player",
+    "sync_player_with": "Synchronisiere mit anderem Wiedergabegerät",
     "open_player_settings": "Einstellungen öffnen",
-    "select_repeat_mode": "Wähle wiederholungsmodus",
+    "select_repeat_mode": "Wähle Wiederholungsmodus",
     "repeat_mode": {
         "all": "Wiederhole die gesamte Warteschlange",
         "off": "Wiederholen ausschalten",
@@ -564,7 +631,101 @@
     },
     "shuffle_disable": "Deaktiviere Zufallswiedergabe",
     "shuffle_enable": "Aktiviere Zufallswiedergabe",
-    "dont_stop_the_music_enable": "'Dont stop the music!' einschalten",
-    "dont_stop_the_music_disable": "'Dont stop the Music!' auschalten",
-    "open_dsp_settings": "DSP Einstellungen öffnen"
+    "dont_stop_the_music_enable": "'Dont stop the music!' einschalten.",
+    "dont_stop_the_music_disable": "'Dont stop the Music!' ausschalten.",
+    "open_dsp_settings": "DSP Einstellungen öffnen",
+    "audiobook": "Audiobuch",
+    "audiobooks": "Audiobücher",
+    "chapter": "Kapitel",
+    "chapters": "Kapitel",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "item_fully_played": "Das Element wurde vollständig abgespielt",
+    "item_in_progress": "Das Element wurde teilweise abgespielt",
+    "duration_in_seconds": "{0} Sekunden",
+    "mark_played": "Als abgespielt markieren",
+    "mark_unplayed": "Als nicht abgespielt markieren",
+    "searchtype_all": "Alle",
+    "global_search": "Globale Suche",
+    "podcast_episode": "Episode",
+    "podcast_episodes": "Episoden",
+    "play_from_here": "Ab hier wiedergeben",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (Album)",
+    "loudness_dynamic": "Dynamische Lautstärkenormalisierung",
+    "loudness_fixed": "Fixe Gainanpassung",
+    "dsp_active": "Aktiv",
+    "currently_playing_players": "Aktuelle Wiedergabe",
+    "all_players": "Alle Wiedergabegeräte",
+    "all_groups": "Alle Gruppen",
+    "no_player_playing": "Keine Wiedergabegeräte momentan aktiv",
+    "stop_playback": "Wiedergabe anhalten",
+    "streamdetails": {
+        "input_header": "Eingabe",
+        "output_header": "Ausgabe",
+        "output_format_info": "Audio wird im Format {0} übertragen",
+        "eq_band_count": "{0} Bänder",
+        "eq_band_count_singular": "1 Band",
+        "input_gain": "Eingangsverstärkung ({0} dB)",
+        "output_gain": "Ausgabepegel({0} dB)",
+        "output_limiter": "Ausgangsbegrenzer",
+        "output_limiter_info": "Reduziert automatisch sehr laute Töne, um Verzerrungen zu vermeiden und die Lautsprecher zu schützen",
+        "dsp_unsupported": "DSP nicht unterstützt.",
+        "dsp_disabled_by_unsupported_group": "Dieser Wiedergabeanbieter unterstützt keinen DSP bei synchronisierter Wiedergabe.",
+        "file_info": {
+            "container": "Container: {0}",
+            "codec": "Codec: {0}",
+            "bit_rate": "Bitrate: {0} Kbps",
+            "sample_rate": "Abtastrate: {0} kHz",
+            "channels": "Kanäle: {0}",
+            "bit_depth": "Bittiefe: {0}",
+            "processing_notice": "Audio wird intern als 32 Bit Float PCM verarbeitet"
+        },
+        "volume_normalization": {
+            "target_level": "Zielpegel: {0} LUFS",
+            "integrated_loudness": "Gemessene (integrierte) Lautstärke: {0} LUFS",
+            "integrated_album_loudness": "Album-Lautstärke: {0} LUFS",
+            "applied_gain_correction": "Angewendete Gainanpassung: {0} dB",
+            "mode": {
+                "dynamic": "Lautstärkenormalisierung ist im dynamischen Modus aktiv",
+                "measurement_only": "Lautstärkenormalisierung ist basierend auf einer\n gespeicherten Messung der (integrierten) Audio-Loudness.",
+                "measurement_album": "Lautstärkenormalisierung ist auf Basis einer gespeicherten Messung der (integrierten) Loudness des Albums aktiv.",
+                "fixed_gain": "Normalisierung der Lautstärke ist basierend auf fester Verstärkungskorrektur aktiv."
+            }
+        },
+        "click_to_expand": "Zur Anzeige alle Wiedergabegeräte klicken",
+        "output_format_pcm_info": "Audio wird als PCM an den Wiedergabe-Anbieter übergeben. Der Wiedergabe-Anbieter kann das Audio in ein anderes Format konvertieren bevor es an das Wiedergabegerät übertragen wird."
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Quelle auswählen",
+    "in_progress_items": "Wiedergabe fortsetzen...",
+    "play_replace_next": "Nächstes abspielen (Warteschlange leeren)",
+    "all_enqueue_options": "Alle Warteschlangenoptionen",
+    "music_assistant_source": "Music Assistant-Warteschlange",
+    "music_assistant_library": "Music Assistant-Bibliothek",
+    "select_all_confirmation": "Alle Einträge auswählen? Dieser Vorgang kann für das Laden der Daten einen Moment dauern",
+    "this_device": "Dieses Gerät",
+    "recommendations": {
+        "in_progress_items": "Wiedergabe fortsetzen...",
+        "recommended_new_tracks": "Empfohlene Song-Neuerscheinungen für dich",
+        "recently_played": "Zuletzt gespielt",
+        "suggested_new_albums_for_you": "Empfohlene Album-Neuerscheinungen für dich",
+        "random_artists": "Zufällige Interpreten",
+        "random_albums": "Zufällige Alben",
+        "custom_mixes": "Benutzerdefinierte Mixe",
+        "your_listening_history": "Dein Wiedergabe-Verlauf",
+        "popular_albums": "Beliebte Alben",
+        "staff_picks_tracks": "Mitarbeiterempfehlungen: Lieder",
+        "staff_picks_albums": "Mitarbeiterempfehlungen: Alben",
+        "radio_stations_for_you": "Radiosender für dich",
+        "producers__songwriters": "Produzenten & Songwriter",
+        "new_releases_for_you": "Neuerscheinungen für dich",
+        "recent_favorite_tracks": "Zuletzt favorisierte Lieder",
+        "favorite_playlists": "Playlist-Favoriten",
+        "favorite_radio_stations": "Radiosender-Favoriten"
+    },
+    "homescreen_edit_enable": "Startbildschirm bearbeiten",
+    "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
+    "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt",
+    "builtin_playlists": "Integrierte Wiedergabelisten-Einstellungen"
 }

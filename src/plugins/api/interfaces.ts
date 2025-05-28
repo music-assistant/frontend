@@ -581,6 +581,7 @@ export interface MediaItemMetadata {
   style?: string;
   copyright?: string;
   lyrics?: string;
+  lrc_lyrics?: string;
   label?: string;
   links?: MediaItemLink[];
   performers?: string[];

@@ -58,7 +58,8 @@
     "player_type": {
         "group": "Grupp",
         "player": "Spelare",
-        "stereo_pair": "Stereo par"
+        "stereo_pair": "Stereo par",
+        "sync_group": "Synkronisera grupp"
     },
     "players": "Spelare",
     "playlist": "Spellista",
@@ -286,7 +287,8 @@
             "advanced": "Avancerade inställningar",
             "generic": "Allmänna inställningar",
             "announcements": "Konfiguration av meddelanden",
-            "airplay": "Airplay-specifika inställningar"
+            "airplay": "Airplay-specifika inställningar",
+            "player_controls": "Spelarens kontroller"
         },
         "tts_pre_announce": {
             "label": "Förannonsera TTS-meddelanden",
@@ -362,6 +364,8 @@
                 "ko_KR": "Koreanska",
                 "nb": "Norska",
                 "ru_RU": "Ryska",
+                "pt_BR": "Portugisiska (Brasilien)",
+                "sl_SI": "Slovenska",
                 "hu_HU": "Ungerska",
                 "it": "Italienska"
             }
@@ -373,7 +377,53 @@
         "no_music_providers": "Inga musikleverantörer har konfigurerats",
         "no_music_providers_detail": "Börja din upplevelse av Music Assistant genom att lägga till dina musikleverantörer.",
         "no_player_providers": "Inga spelarleverantörer konfigurerade",
-        "no_player_providers_detail": "Konfigurera spelarleverantörer för att välja enheter där Music Assistent kan spela upp din musik."
+        "no_player_providers_detail": "Konfigurera spelarleverantörer för att välja enheter där Music Assistent kan spela upp din musik.",
+        "volume_normalization_radio": {
+            "label": "Metod för volymnormalisering som ska användas för radioströmmar",
+            "options": {
+                "disabled": "Inaktiverad",
+                "dynamic": "Tvinga dynamisk",
+                "measurement_only": "Endast mätning (ingen reserv)",
+                "fallback_fixed_gain": "Reserv för att få korrigering"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Metod för volymnormalisering som ska användas för spår",
+            "options": {
+                "disabled": "Inaktiverad"
+            }
+        },
+        "dsp": {
+            "input": "Ingång",
+            "output": "Utgång",
+            "filter": {
+                "add": "Lägg till filter",
+                "type": "Typ av filter",
+                "new": "Ny {type}"
+            },
+            "move_up": "Flytta upp",
+            "move_down": "Flytta ner",
+            "delete_filter": "Ta bort filter",
+            "channels": {
+                "FL": "Vänster",
+                "FR": "Höger"
+            },
+            "channels_compact": {
+                "FL": "V",
+                "FR": "H"
+            }
+        },
+        "volume_control": {
+            "label": "Volymkontroll"
+        },
+        "mute_control": {
+            "label": "Ljud av-kontroll"
+        },
+        "dsp_enabled": "DSP är aktiverat",
+        "dsp_disabled": "DSP är inaktiverat",
+        "enable_builtin_player": {
+            "description": "Aktivera den (experimentella) inbyggda spelaren för den här enheten\/webbläsaren, vilket gör att du kan strömma allt innehåll från Music Assistant direkt till den här enheten."
+        }
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -402,7 +452,9 @@
         "last_played": "Senast spelade",
         "last_played_desc": "Senast spelade (fallande)",
         "play_count": "Antal spelningar",
-        "play_count_desc": "Antal uppspelningar (fallande)"
+        "play_count_desc": "Antal uppspelningar (fallande)",
+        "artist_name": "Albumartist",
+        "artist_name_desc": "Albumartist (fallande)"
     },
     "state": {
         "idle": "vilande",
@@ -433,7 +485,9 @@
         "search_filter_active": "Sökningen filtrerar för närvarande resultaten",
         "play_sample": "Spela upp exempel",
         "album_type": "Albumtyp",
-        "loading": "Servern behandlar en begäran eller synkroniserar musik."
+        "loading": "Servern behandlar en begäran eller synkroniserar musik.",
+        "copy_uri": "Kopiera URI till urklipp",
+        "select_all": "Välj alla objekt"
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -473,5 +527,38 @@
     "play_replace": "Spela nu (rensa kö)",
     "played": "Spelade",
     "background_task_added": "Åtgärden utförs av servern i bakgrunden och kan ta en viss tid att slutföra. Håll ett öga på serverloggen för att se hur det går.",
-    "update_metadata": "Uppdatera metadata"
+    "image_source": "Källa",
+    "image_make_primary": "Gör primär",
+    "update_metadata": "Uppdatera metadata",
+    "cancel": "Avbryt",
+    "transfer_queue": "Överför kö",
+    "audiobook": "Ljudbok",
+    "audiobooks": "Ljudböcker",
+    "chapter": "Kapitel",
+    "chapters": "Kapitel",
+    "searchtype_all": "Alla",
+    "dsp_active": "Aktiv",
+    "currently_playing_players": "Spelar just nu",
+    "all_players": "Alla spelare",
+    "all_groups": "Alla grupper",
+    "no_player_playing": "Inga spelare spelar för närvarande",
+    "stop_playback": "Stoppa uppspelning",
+    "select_source": "Välj källa",
+    "streamdetails": {
+        "click_to_expand": "Klicka för att visa alla spelare"
+    },
+    "in_progress_items": "Fortsätt lyssna...",
+    "music_assistant_library": "Music Assistant Bibliotek",
+    "select_all_confirmation": "Välj alla objekt? Denna operation kan ta en stund att ladda all data.",
+    "this_device": "Den här enheten",
+    "recommendations": {
+        "popular_albums": "Populära album",
+        "radio_stations_for_you": "Radiostationer för dig",
+        "producers__songwriters": "Producenter & låtskrivare",
+        "new_releases_for_you": "Nya releaser för dig",
+        "favorite_playlists": "Favoritspellistor",
+        "favorite_radio_stations": "Favoritradiostationer"
+    },
+    "homescreen_edit_enable": "Redigera startskärm",
+    "homescreen_edit_disable": "Lämna redigeringsläget för startskärmen"
 }
