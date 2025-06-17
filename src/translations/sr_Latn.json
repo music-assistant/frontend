@@ -23,15 +23,46 @@
     "artists": "Izvođači",
     "browse": "Pretraži",
     "clear_selection": "Obriši izbor",
-    "create_playlist": "Kreirajte novu listu pesama na {0}",
+    "close": "Zatvori",
+    "create_playlist": "Kreirajte novu plejlistu na {0}",
     "crossfade_disabled": "Prelaz je onemogućen",
     "crossfade_enabled": "Prelaz je omogućen",
     "dark_mode": "Tamni režim",
     "delete_db": "Izbrišite stavku iz baze podataka",
+    "details": "Detalji",
     "enter_url": "Unesite URL koji želite da ručno dodate u bazu podataka",
+    "external_source_active": "Eksterni izvor je aktivan: {0}",
+    "goto_album": "Idi na album {0}",
+    "goto_artist": "Idi na izvođača {0}",
+    "home": "Početna",
+    "items_selected": "{0} stavka(e\/i) selektovano",
+    "items_total": "{0} stavka(e\/i) ukupno",
+    "library": "Biblioteka",
     "loading": "Podaci se preuzimaju sa servera.",
-    "mass": "Muzički Pomoćnik",
+    "mass": "Music Assistant",
+    "new_playlist_name": "Unesite ime za novu plejlistu",
+    "no_content": "Nije pronađena nijedna stavka",
     "no_content_filter": "Nije pronađena nijedna stavka za trenutne uslove filtera\/pretrage.",
+    "no_player": "Plejer nije selektovan",
+    "off": "Isključeno",
+    "on": "Uključeno",
+    "other_versions": "Druge verzije",
+    "perform_action": "Izvrši radnju na {0} stavki(e)",
+    "play": "Pusti",
+    "play_album_from": "Pusti album odavde",
+    "play_next": "Pusti sledeće",
+    "play_now": "Pusti sada",
+    "play_on": "Pusti na: {0}",
+    "play_playlist_from": "Pusti plejlistu odavde",
+    "play_radio": "Pokreni radio",
+    "player_type": {
+        "group": "Grupa",
+        "player": "Plejer",
+        "stereo_pair": "Stereo par",
+        "sync_group": "Sinhronizuj grupu"
+    },
+    "players": "Plejeri",
+    "playlist": "Plejlista",
     "playlist_tracks": "Numere sa liste pesama",
     "playlists": "Plejliste",
     "provider_details": "Detalji o provajderu",
@@ -44,7 +75,7 @@
     "queue_next_items": "Sledeće numere",
     "queue_options": "Opcije čekanja",
     "queue_previous_items": "Reprodukovane numere",
-    "queue_radio_based_on": "Red za reprodukciju se dinamički popunjava numerama na osnovu {0}:",
+    "queue_radio_based_on": "Red za reprodukciju se dinamički popunjava numerama na osnovu:",
     "queue_radio_enabled": "Radio režim je omogućen",
     "radios": "Radio",
     "read_more": "opširnije",
@@ -72,7 +103,7 @@
         "musicproviders": "Provajderi muzike",
         "need_help_setup_provider": "Treba vam pomoć pri podešavanju ovog provajdera?",
         "no_providers": "Nijedan muzički provajder nije konfigurisan",
-        "no_providers_detail": "Započnite iskustvo sa Muzičkim Pomoćnikom dodavanjem provajdera muzike ispod.",
+        "no_providers_detail": "Započnite iskustvo sa Music Assistant-om dodavanjem provajdera muzike ispod.",
         "not_loaded": "Provajder (još) nije učitan",
         "password": "Lozinka",
         "player_address": "Adresa",
@@ -103,7 +134,7 @@
         "server_id": "ID servera",
         "server_version": "Verzija servera",
         "server_base_url": "Osnovni URL",
-        "server_as_addon": "Hom Asistant dodatak",
+        "server_as_addon": "Home Assistant dodatak",
         "artists_in_library": "Izvođači u biblioteci",
         "albums_in_library": "Albumi u biblioteci",
         "tracks_in_library": "Numere u biblioteci",
@@ -161,7 +192,7 @@
             "description": "Koristite ugrađeni osnovni ekvilajzer da podesite srednji nivo zvuka."
         },
         "eq_treble": {
-            "label": "Ekvilajzer: visoki tonovi",
+            "label": "Ekvilajzer: visoki",
             "description": "Koristite ugrađeni osnovni ekvilajzer da biste podesili nivo visokih tonova zvuka."
         },
         "crossfade": {
@@ -180,7 +211,7 @@
             "label": "Selektovati stavke kada puštate izvođača (iz biblioteke).",
             "description": "Ako želite da reprodukujete izvođača, koje stavke bi trebalo da budu u redu za reprodukciju?",
             "options": {
-                "library_tracks": "Samo nmere u biblioteci",
+                "library_tracks": "Samo numere u biblioteci",
                 "library_album_tracks": "Sve numere sa svih albuma u biblioteci",
                 "all_tracks": "Sve (najbolje) pesme od (svih) provajdera",
                 "all_album_tracks": "Sve numere sa svih albuma od (svih) provajdera"
@@ -188,7 +219,7 @@
         },
         "default_enqueue_select_album": {
             "label": "Selektovati stavke kada puštate album (iz biblioteke).",
-            "description": "Ako želite da reprodukujete izvođača, koje stavke bi trebalo da budu u redu za reprodukciju?",
+            "description": "Ako želite da reprodukujete album, koje stavke bi trebalo da budu u redu za reprodukciju?",
             "options": {
                 "library_tracks": "Samo nmere u biblioteci",
                 "all_tracks": "Sve numere za album kod provajdera"
@@ -256,7 +287,9 @@
             "advanced": "Napredna podešavanja",
             "generic": "Generička podešavanja",
             "announcements": "Konfiguracija objava",
-            "airplay": "\"Airplay\" specifična podešavanja"
+            "airplay": "Airplay specifična podešavanja",
+            "player_controls": "Kontrole plejera",
+            "presets": "Unapred podešena podešavanja"
         },
         "tts_pre_announce": {
             "label": "Prethodno najavite TTS objave",
@@ -268,7 +301,7 @@
             "options": {
                 "absolute": "Apsolutna jačina",
                 "relative": "Relativno povećanje jačine",
-                "percentual": "Povećanje kačine za fiksni procenat",
+                "percentual": "Povećanje jačine za fiksni procenat",
                 "none": "Ne podešavaj jačinu zvuka"
             }
         },
@@ -289,7 +322,7 @@
             "description": "Ikona dizajna materijala za ovaj plejer.\n\nPogledajte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "frontend": "Korisnički interfejs",
-        "frontend_desc": "Podešavanja konfiguracije za korisnički interfejs Muzičkog Pomoćnika (frontend). Imajte na umu da se ova podešavanja čuvaju na nivou uređaja.",
+        "frontend_desc": "Podešavanja konfiguracije za korisnički interfejs Music Assistant-a (frontend). Imajte na umu da se ova podešavanja čuvaju na nivou uređaja.",
         "theme": {
             "label": "Tema",
             "options": {
@@ -309,8 +342,169 @@
             "label": "Omogućene stavke menija",
             "description": "Konfigurišite koje stavke će se prikazati u meniju.\n\n Imajte na umu da ako onemogućite podešavanja, možete se zaključati.\n\nU tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik."
         },
+        "language": {
+            "label": "Jezik",
+            "options": {
+                "auto": "Automatski (prati konfiguraciju sistema)",
+                "cs": "Češki",
+                "da": "Danski",
+                "de": "Nemački",
+                "en": "Engleski",
+                "fr": "Francuski",
+                "nl": "Holandski",
+                "pl": "Poljski",
+                "uk_UA": "Ukrajinski",
+                "zh_CN": "Kineski (pojednostavljeni)",
+                "en_AU": "Engleski (australijski)",
+                "sr": "Srpski (ćirilica)",
+                "sr_Latn": "Srpski (latinica)",
+                "sv_SE": "Švedski",
+                "en_GB": "Engleski (Ujedinjeno Kraljevstvo)",
+                "es": "Španski",
+                "pt_PT": "Portugalski",
+                "ko_KR": "Korejski",
+                "nb": "Norveški",
+                "ru_RU": "Ruski",
+                "pt_BR": "Portugalski (Brazil)",
+                "sl_SI": "Slovenački",
+                "hu_HU": "Mađarski",
+                "it": "Italijanski"
+            }
+        },
         "hide_settings": {
+            "label": "Dugme za sakrivanje podešavanja",
             "description": "Sakrij dugme za podešavanja na početnom ekranu. \n \n Imajte na umu da ako onemogućite podešavanja na početnom ekranu i u meniju, možete se zaključati. \n \n U tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik!"
+        },
+        "no_music_providers": "Nijedan muzički provajder nije konfigurisan",
+        "no_music_providers_detail": "Započnite svoje iskustvo sa Music Assistant-om dodavanjem svojih muzičkih provajdera.",
+        "no_player_providers": "Nijedan muzički provajder nije konfigurisan",
+        "no_player_providers_detail": "Konfigurišite provajdere plejera da biste izabrali uređaje na kojima Music Assistant može da emituje vašu muziku.",
+        "volume_normalization_radio": {
+            "label": "Metod normalizacije jačine zvuka koji se koristi za radio strimove",
+            "description": "Podesite željenu strategiju normalizacije jačine zvuka za radio strimove. \n Podrazumevano, Music Assistant prikuplja merenje (prosečne percipirane) glasnoće radio stanice u skladu sa EBU-R128 specifikacijom, a zatim podešava ukupno pojačanje\/jačinu zvuka strima u skladu sa tim merenjem tako da dinamički opseg zvuka ne bude pogođen. Kada (još) ne postoji merenje za radio stanicu, Music Assistant će se vratiti na dinamički (ali manje precizan) filter za izravnavanje jačine zvuka. \n \n SAVET: Radio strimovi često imaju različite nivoe jačine zvuka, posebno tokom najava i reklama. \n Možete izabrati da primenite dinamičku normalizaciju jačine zvuka na radio strimove, čak i ako postoji (prosečno) merenje jačine zvuka za radio stanicu. \n \n **Opcije:** \n \n - Onemogućeno - uopšte se ne primenjuje normalizacija jačine zvuka na radio strimove. \n - Prisilno dinamičko - Uvek primenjujte dinamičko izravnavanje jačine zvuka. \n - Samo merenje (bez rezervnog načina) - Primeniti (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, ne primenjivati normalizaciju. \n - Vraćanje na korekciju pojačanja - Primeniti (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, vratiti se na unapred definisanu korekciju pojačanja. \n - Fiksna korekcija pojačanja - Uvek primeniti fiksnu korekciju jačine zvuka\/pojačanja. \n - Vraćanje na dinamički režim - Automatski izabrati najbolju opciju: Primeniti (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja ako ga imamo, dozvoliti vraćanje na dinamički režim ako nije dostupno merenje. \n",
+            "options": {
+                "disabled": "Onemogućeno",
+                "dynamic": "Podesi dinamično",
+                "measurement_only": "Samo merenje (bez rezervnog načina)",
+                "fallback_fixed_gain": "Vrati se na korekciju pojačanja",
+                "fixed_gain": "Korekcija fiksnog pojačanja",
+                "fallback_dynamic": "Vrati se na dinamično"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Metod normalizacije jačine zvuka koji se koristi za numere",
+            "description": "Podesite željenu strategiju normalizacije jačine zvuka za numere\/pesme. \n Music Assistant koristi merenje (prosečne percipirane) jačine zvuka numera u skladu sa EBU-R128 specifikacijom da bi podesio ukupno pojačanje\/jačinu zvuka strima bez uticaja na dinamički opseg zvuka. \n Ova merenja ili obezbeđuje provajder strimovanja ili, u slučaju lokalnih datoteka, mogu biti sadržana u ID3 oznakama (Replay Gain 2.0 \/ Opus R128). \n Ako merenje nije dato, Music Assistant će automatski izvršiti merenje kada\/nakon što se numera (prvi put) reprodukuje. Kada (još) ne postoji merenje za numeru, Music Assistant će podrazumevano koristiti dinamički (ali manje precizan) filter za izravnavanje jačine zvuka. Ovo osigurava da nema velikih skokova\/padova u nivou jačine zvuka između numera, čak i ako još nema tačnog merenja, ali dinamički izravnavač ponekad može malo kompresovati dinamički opseg, iako to ne bi trebalo da se čuje u većini slučajeva. \n \n \n **Opcije:** \n \n - Onemogućeno - uopšte ne primenjujte normalizaciju jačine zvuka za radio strimove. \n - Prisilno dinamičko - Uvek primenite dinamičko izravnavanje jačine zvuka. \n - Samo merenje (bez rezervnog) - Primenite (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, ne primenjujte normalizaciju. \n - Vraćanje na korekciju pojačanja - Primenite (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, vratite se na unapred definisanu korekciju pojačanja. \n - Fiksna korekcija pojačanja - Uvek primenite fiksnu korekciju jačine zvuka\/pojačanja. \n - Vraćanje na dinamički - Automatski izaberite najbolju opciju: Primenite (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja ako ga imamo, dozvolite vraćanje na dinamički režim ako nije dostupno merenje.\n",
+            "options": {
+                "disabled": "Onemogućeno",
+                "dynamic": "Dinamika sile",
+                "measurement_only": "Samo merenje (bez rezervnog načina)",
+                "fallback_fixed_gain": "Rezervni korak za korekciju pojačanja",
+                "fixed_gain": "Korekcija fiksnog pojačanja",
+                "fallback_dynamic": "Vrati se na dinamično"
+            }
+        },
+        "volume_normalization_fixed_gain_tracks": {
+            "label": "Fiksno\/rezervno podešavanje pojačanja za numere",
+            "description": "Korekcija fiksnog\/rezervnog pojačanja koja se primenjuje na audio strim numere (zavisi od podešavanja „Metod normalizacije jačine zvuka“). \n Koristite pozitivnu vrednost za povećanje jačine zvuka, negativnu vrednost za smanjenje jačine zvuka. \n \n Ovo podešavanje se koristi kada je metod normalizacije jačine zvuka podešen na „Korekcija fiksnog pojačanja“ ili „Rezervno za korekciju pojačanja“."
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "label": "Fiksno\/rezervno podešavanje pojačanja za radio",
+            "description": "Korekcija fiksnog\/rezervnog pojačanja koja se primenjuje na radio strim (zavisi od podešavanja „Metod normalizacije jačine zvuka“). \n Koristite pozitivnu vrednost za povećanje jačine zvuka, negativnu vrednost za smanjenje jačine zvuka. \n \n Ovo podešavanje se koristi kada je metod normalizacije jačine zvuka podešen na „Korekcija fiksnog pojačanja“ ili „Rezervni korak za korekciju pojačanja“."
+        },
+        "group_type": "Tip grupe",
+        "add_group_player_desc": "Za provajdere plejera\/ekosisteme koji pružaju izvorno grupisanje\/sinhronizaciju, automatski će se kreirati grupa za sinhronizaciju, što znači da ako reprodukujete preko  ove grupe plejera, članovi plejera će se automatski sinhronizovati. \n \nZa provajdere plejera\/ekosisteme koji ne podržavaju grupisanje, ili u slučaju da želite da grupišete plejere iz različitih ekosistema, možete koristiti tip grupe Univerzalna, koja će distribuirati isti zvuk svim  plejerima grupe (ali ne sinhronizovano). \n \n Imajte na umu da neki provajderi podržavaju grupisanje, ali morate da koristite izvornu aplikaciju da biste izvršili grupisanje. Primer su plejeri zasnovani na Google Cast-u, gde možete da kreirate Google Cast grupe samo u okviru aplikacije Google Home.",
+        "dynamic_members": {
+            "label": "Članovi dinamičke grupe",
+            "description": "Dozvolite članovima da se (privremeno) dinamički pridruže\/napuste grupu, tako da se grupa manje-više ponaša isto kao i ručna sinhronizacija plejera, s tim da je glavna razlika u tome što će plejer grupe čuvati red."
+        },
+        "dsp": {
+            "configure_on": "Konfigurisanje DSP-a na: {name}",
+            "disabled_message": "DSP je trenutno onemogućen. Omogućite ga pomoću prekidača iznad.",
+            "input": "Ulaz",
+            "output": "Izlaz",
+            "filter": {
+                "add": "Dodaj filter",
+                "type": "Tip filtera",
+                "new": "Novi {type}"
+            },
+            "move_up": "Pomeri nagore",
+            "move_down": "Pomeri nadole",
+            "delete_filter": "Obriši filter",
+            "parametric_eq": {
+                "add_band": "Dodaj opseg",
+                "delete_band": "Obriši opseg",
+                "filter_type": "Tip filtera",
+                "band": "Opseg {index}",
+                "enable_band": "Omogući opseg",
+                "filter_types": {
+                    "peak": "Vrh",
+                    "low_shelf": "Niskopropusni opseg (Low Shelf)",
+                    "high_shelf": "Visokopropusni opseg (High Shelf)",
+                    "low_pass": "Niskopropusni opseg",
+                    "high_pass": "Visokopropusni opseg",
+                    "notch": "Zasek"
+                },
+                "import_apo": "Uvezi APO\/REW unapred podešena podešavanja",
+                "export_apo": "Izvoz APO unapred podešenog podešavanja",
+                "preamp": "Pretpojačalo",
+                "add_band_channel": "Dodaj opseg (samo {channel} )",
+                "band_channel": "Opseg {index} (samo {channel})",
+                "show_multichannel_controls": "Prikaži kontrole za više kanala",
+                "edited_channel": "Nacrtajte odziv ekvilajzera za ovaj(e) kanal(e)",
+                "channel": "Ovaj opseg će biti primenjen na",
+                "per_channel_preamp": "Dodatno pojačanje pretpojačala za {channel}"
+            },
+            "tone_control": {
+                "bass_level": "Nivo basa",
+                "mid_level": "Srednji nivo",
+                "treble_level": "Nivo visokih tonova"
+            },
+            "parameter": {
+                "frequency": "Frekvencija",
+                "gain": "Pojačanje",
+                "q_factor": "Q faktor"
+            },
+            "types": {
+                "parametric_eq": "Parametarski ekvilajzer",
+                "tone_control": "Kontrola tona"
+            },
+            "channels": {
+                "ALL": "Svi",
+                "FL": "Levi",
+                "FR": "Desni"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
+            }
+        },
+        "power_control": {
+            "label": "Kontrola uključivanja",
+            "description": "Definišite\/zamenite ponašanje kontrole paljenja za ovaj plejer. \n Omogućava vam, na primer, da preusmerite komande za uključivanje\/isključivanje paljenja na drugi uređaj ili da koristite lažnu kontrolu paljenja ako vaš plejer ne podržava komande za uključivanje\/isključivanje, ali želite da imate posebno stanje za plejer koji se ne koristi."
+        },
+        "volume_control": {
+            "label": "Kontrola jačine zvuka",
+            "description": "Definišite\/zamenite ponašanje kontrole jačine zvuka za ovaj plejer. \nOmogućava vam, na primer, da preusmerite komande za kontrolu jačine zvuka na drugi uređaj ili da ga potpuno onemogućite."
+        },
+        "mute_control": {
+            "label": "Kontrola isključivanja zvuka",
+            "description": "Definišite\/zamenite ponašanje kontrole isključivanja zvuka za ovaj plejer. \n Omogućava vam, na primer, da preusmerite komande za kontrolu isključivanja zvuka na drugi uređaj ili da ga potpuno onemogućite. \n \n Nudimo opciju „lažne“ kontrole isključivanja zvuka, koja će simulirati isključivanje zvuka podešavanjem jačine zvuka na 0 i vraćanjem jačine zvuka kada se zvuk uključi."
+        },
+        "output_limiter": {
+            "label": "Omogućite ograničavanje da biste sprečili isecanje",
+            "description": "Aktivira limiter koji sprečava izobličenje zvuka tako što utišava glasne vrhove."
+        },
+        "dsp_enabled": "DSP je omogućen",
+        "dsp_disabled": "DSP je onemogućen",
+        "dsp_note_multi_device_group": {
+            "label": "Možete konfigurisati DSP za svaki plejer pojedinačno."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Ovaj tip grupe ne podržava DSP pri reprodukciji na više uređaja."
+        },
+        "enable_builtin_player": {
+            "label": "Dozvoli reprodukciju na ovom uređaju\/pregledaču",
+            "description": "Omogućite (eksperimentalni) ugrađeni plejer za ovaj uređaj\/pregledač, koji vam omogućava da strimujete sav sadržaj Music Assistant-a direktno na ovaj uređaj."
         }
     },
     "show_info": "Prikaži informacije",
@@ -340,7 +534,9 @@
         "last_played": "Poslednje reprodukovano",
         "last_played_desc": "Poslednje reprodukovano (opadajući)",
         "play_count": "Broj reprodukcija",
-        "play_count_desc": "Broj reprodukcija (opadajući)"
+        "play_count_desc": "Broj reprodukcija (opadajući)",
+        "artist_name": "Izvođač albuma",
+        "artist_name_desc": "Izvođač albuma (opadajući redosled)"
     },
     "state": {
         "idle": "neaktivan",
@@ -348,7 +544,7 @@
         "paused": "pauziran",
         "playing": "reprodukuje"
     },
-    "sync_now": "Sinhronizujte {0} sada",
+    "sync_now": "Sinhronizujte sada",
     "sync_running": "Jedan ili više muzičkih provajdera se sinhronizuju.",
     "tooltip": {
         "album_artist_filter": "Uključite filter za album-izvođača",
@@ -369,11 +565,16 @@
         "back": "Nazad",
         "show_menu": "Prikaži\/sakrij meni",
         "search_filter_active": "Pretraga trenutno filtrira rezultate",
-        "play_sample": "Pusti uzorak"
+        "play_sample": "Pusti uzorak",
+        "album_type": "Tip albuma",
+        "loading": "Server obrađuje zahtev ili sinhronizuje muziku.",
+        "primary_image": "Ovo je primarna slika za ovaj tip slike",
+        "copy_uri": "Kopiraj URL u međuspremnik",
+        "select_all": "Izaberite sve stavke"
     },
     "topresult": "Top rezultat",
     "track": "Numera",
-    "track_number": "Disk {0}, numera {1}",
+    "track_number": "Disk {0} numera {1}",
     "tracks": "Numere",
     "try_global_search": "Probajte globalnu pretragu",
     "type_to_search": "Ukucajte ovde za pretragu...",
@@ -399,12 +600,39 @@
     "enter_name": "Unesite novo (prilagođeno) ime",
     "image_url": "Unesite URL na sliku ili ikonu (opciono)",
     "invalid_input": "Unos je bio nevažeći",
-    "new_playlist": "Nova lista za reprodukciju",
-    "create_playlist_on": "Kreiraj novu listu za reprodukciju {0}",
+    "new_playlist": "Nova plejlista",
+    "create_playlist_on": "Kreiraj novu plejlistu na {0}",
     "view": {
         "list": "Prikaz liste",
-        "panel": "Panelni prikaz"
+        "panel": "Panelni prikaz",
+        "panel_compact": "Kompaktni prikaz sličica"
     },
+    "play_replace": "Pusti sada (obriši red za reprodukciju)",
+    "played": "Reprodukovano",
+    "background_task_added": "Ovu radnju obavlja server u pozadini i može potrajati neko vreme. Pratite log servera da biste pratili napredak.",
+    "images": "Slike",
+    "image_type": "Tip",
+    "image_source": "Izvor",
+    "image_make_primary": "Postavi kao primarni",
+    "update_metadata": "Ažuriraj metapodatke",
+    "cancel": "Otkaži",
+    "transfer_queue": "Prebaci red za reprodukciju",
+    "power_on_player": "Uključivanje",
+    "power_off_player": "Isključivanje",
+    "powered_off_players": "Isključeni plejeri",
+    "sync_player_with": "Sinhronizujte se sa drugim plejerom",
+    "open_player_settings": "Otvori podešavanja",
+    "select_repeat_mode": "Izaberite režim ponavljanja",
+    "repeat_mode": {
+        "all": "Ponovi ceo red za reprodukciju",
+        "off": "Isključi ponavljanje",
+        "one": "Ponovi ovu numeru"
+    },
+    "shuffle_disable": "Onemogući nasumično reprodukovanje",
+    "shuffle_enable": "Omogući nasumično reprodukovanje",
+    "dont_stop_the_music_enable": "Omogući „Ne zaustavljaj muziku!“",
+    "dont_stop_the_music_disable": "Onemogući „Ne zaustavljaj muziku!“",
+    "open_dsp_settings": "Otvori podešavanja DSP-a",
     "audiobook": "Audio knjiga",
     "audiobooks": "Audio knjige",
     "chapter": "Poglavlje",
@@ -413,9 +641,90 @@
     "podcasts": "Podkasti",
     "item_fully_played": "Ova stavka je u potpunosti reprodukovana",
     "item_in_progress": "Ova stavka je delimično reprodukovana",
-    "duration_in_seconds": "{0} sekundi",
-    "mark_played": "Označi kao izvođeno",
-    "mark_unplayed": "Označi kao neizvođeno",
+    "duration_in_seconds": "{0} sekunda(e\/i)",
+    "mark_played": "Označi kao reprodukovano",
+    "mark_unplayed": "Označi kao nereprodukovano",
     "searchtype_all": "Sve",
-    "global_search": "Globalna pretraga"
+    "global_search": "Globalna pretraga",
+    "podcast_episode": "Epizoda",
+    "podcast_episodes": "Epizode",
+    "play_from_here": "Pusti odavde",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dinamička normalizacija jačine zvuka",
+    "loudness_fixed": "Korekcija fiksnog pojačanja",
+    "dsp_active": "Aktivno",
+    "currently_playing_players": "Trenutno se reprodukuje",
+    "all_players": "Svi plejeri",
+    "all_groups": "Sve grupe",
+    "no_player_playing": "Nijedan plejer trenutno ne reprodukuje",
+    "stop_playback": "Zaustavi reprodukciju",
+    "streamdetails": {
+        "input_header": "Ulaz",
+        "output_header": "Izlaz",
+        "output_format_info": "Audio se šalje u {0} formatu",
+        "eq_band_count": "{0} opsege(a)",
+        "eq_band_count_singular": "1 opseg",
+        "input_gain": "Ulazno pojačanje ({0} dB)",
+        "output_gain": "Izlazno pojačanje ({0} dB)",
+        "output_limiter": "Ograničivač izlaza",
+        "output_limiter_info": "Automatski smanjuje veoma glasne zvukove kako bi se sprečilo izobličenje i zaštitili zvučnici",
+        "dsp_unsupported": "DSP nije podržan",
+        "dsp_disabled_by_unsupported_group": "Ovaj provajder plejera ne podržava DSP sa sinhronizovanom reprodukcijom",
+        "file_info": {
+            "container": "Kontejner: {0}",
+            "codec": "Kodek: {0}",
+            "bit_rate": "Brzina prenosa: {0} kbps",
+            "sample_rate": "Frekvencija uzorka {0} kHz",
+            "channels": "Kanali: {0}",
+            "bit_depth": "Dubina bita: {0}",
+            "processing_notice": "Audio se obrađuje interno kao 32-bitni \"float PCM\""
+        },
+        "volume_normalization": {
+            "target_level": "Ciljni nivo: {0} LUFS",
+            "integrated_loudness": "Izmerena (integrisana) jačina zvuka: {0} LUFS",
+            "integrated_album_loudness": "Glasnoća albuma: {0} LUFS",
+            "applied_gain_correction": "Primenjena korekcija pojačanja: {0} dB",
+            "mode": {
+                "dynamic": "Normalizacija jačine zvuka je aktivna u dinamičkom režimu.",
+                "measurement_only": "Normalizacija jačine zvuka je aktivna na osnovu sačuvanog merenja (integrisane) jačine zvuka.",
+                "measurement_album": "Normalizacija jačine zvuka je aktivna na osnovu sačuvanog merenja (integrisane) glasnoće albuma.",
+                "fixed_gain": "Normalizacija jačine zvuka je aktivna na osnovu korekcije fiksnog pojačanja."
+            }
+        },
+        "click_to_expand": "Kliknite da biste videli sve plejere",
+        "output_format_pcm_info": "Audio se prosleđuje kao PCM provajderu plejera. Provader plejera zatim može konvertovati zvuk u drugi format pre nego što ga pošalje plejeru."
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Izaberite izvor",
+    "in_progress_items": "Nastavite sa slušanjem...",
+    "play_replace_next": "Pusti sledeće (obriši red za reprodukciju)",
+    "all_enqueue_options": "Sve opcije stavljanja u red",
+    "music_assistant_source": "Red za reprodukciju Music Assistant-a",
+    "music_assistant_library": "Biblioteka Music Assistant-a",
+    "select_all_confirmation": "Želite da izaberete sve stavke? Učitavanje svih podataka može potrajati neko vreme.",
+    "this_device": "Ovaj uređaj",
+    "recommendations": {
+        "in_progress_items": "Nastavite sa slušanjem...",
+        "recommended_new_tracks": "Preporučene nove numere",
+        "recently_played": "Nedavno reprodukovano",
+        "suggested_new_albums_for_you": "Predloženi novi albumi za vas",
+        "random_artists": "Slučajni umetnici",
+        "random_albums": "Slučajni albumi",
+        "custom_mixes": "Prilagođeni miksevi",
+        "your_listening_history": "Vaša istorija slušanja",
+        "popular_albums": "Popularni albumi",
+        "staff_picks_tracks": "Izbor osoblja: numere",
+        "staff_picks_albums": "Izbor osoblja: albumi",
+        "radio_stations_for_you": "Radio stanice za vas",
+        "producers__songwriters": "Producenti i tekstopisci",
+        "new_releases_for_you": "Nova izdanja za vas",
+        "recent_favorite_tracks": "Nedavno dodate numere u omiljene",
+        "favorite_playlists": "Omiljene plejliste",
+        "favorite_radio_stations": "Omiljene radio stanice"
+    },
+    "homescreen_edit_enable": "Izmeni početni ekran",
+    "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
+    "lyrics_will_appear_soon": "Tekst će se pojaviti kada pesma počne...",
+    "builtin_playlists": "Ugrađena podešavanja plejliste"
 }
