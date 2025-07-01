@@ -569,7 +569,7 @@
         "album_type": "Tip albuma",
         "loading": "Server obrađuje zahtev ili sinhronizuje muziku.",
         "primary_image": "Ovo je primarna slika za ovaj tip slike",
-        "copy_uri": "Kopiraj URL u međuspremnik",
+        "copy_uri": "Kopiraj URI u međuspremnik",
         "select_all": "Izaberite sve stavke"
     },
     "topresult": "Top rezultat",
@@ -709,7 +709,7 @@
         "recommended_new_tracks": "Preporučene nove numere",
         "recently_played": "Nedavno reprodukovano",
         "suggested_new_albums_for_you": "Predloženi novi albumi za vas",
-        "random_artists": "Slučajni umetnici",
+        "random_artists": "NAsumični izvođači",
         "random_albums": "Slučajni albumi",
         "custom_mixes": "Prilagođeni miksevi",
         "your_listening_history": "Vaša istorija slušanja",
