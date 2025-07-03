@@ -96,6 +96,7 @@ import Container from "@/components/mods/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { computed, ref } from "vue";
 import { eventbus } from "@/plugins/eventbus";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 export interface Props {
   modelValue: MediaItemImage[];
@@ -107,7 +108,7 @@ const expanded = ref(false);
 const emit = defineEmits(["update:modelValue"]);
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, "_blank");
+  openUrl(url);
 };
 
 const onMenu = function (

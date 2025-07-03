@@ -379,6 +379,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { markdownToHtml } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
+import { openUrl } from "@tauri-apps/plugin-opener";
 const router = useRouter();
 
 export interface Props {
@@ -483,11 +484,7 @@ const action = async function (action: string) {
   emit("action", action, getCurrentValues());
 };
 const openLink = function (url: string) {
-  // window.open(url, "_blank");
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.click();
+  openUrl(url);
 };
 
 const openDspConfig = function () {

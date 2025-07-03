@@ -143,6 +143,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed, reactive, ref } from "vue";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 export interface Props {
   itemDetails: MediaItemType;
@@ -152,7 +153,7 @@ const props = defineProps<Props>();
 const expanded = ref(false);
 
 const openLinkInNewTab = function (url: string) {
-  window.open(url, "_blank");
+  openUrl(url);
 };
 
 const demoPlayer = reactive<{ [item_id: string]: HTMLAudioElement }>({});

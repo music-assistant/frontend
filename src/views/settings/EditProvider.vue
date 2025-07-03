@@ -108,6 +108,7 @@ import EditConfig from "./EditConfig.vue";
 import { nanoid } from "nanoid";
 import { openLinkInNewTab, markdownToHtml } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 // global refs
 const router = useRouter();
@@ -128,14 +129,7 @@ onMounted(() => {
     // ignore any events that not match our session id.
     if (evt.object_id !== sessionId) return;
     const url = evt.data as string;
-    // Some browsers (e.g. iOS) have a weird limitation that we're not allowed to do window.open,
-    // unless a user interaction has happened. So we need to do this the hard way
-    showAuthLink.value = true;
-    window.setTimeout(() => {
-      const a = document.getElementById("auth") as HTMLAnchorElement;
-      a.setAttribute("href", url);
-      a.click();
-    }, 100);
+    openUrl(url);
   });
   onBeforeUnmount(unsub);
 });

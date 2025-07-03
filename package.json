@@ -7,12 +7,14 @@
         "dev": "vite",
         "build": "vue-tsc --noEmit && vite build",
         "preview": "vite preview",
-        "lint": "eslint . --fix --ignore-path .gitignore"
+        "lint": "eslint . --fix --ignore-path .gitignore",
+        "tauri": "tauri"
     },
     "dependencies": {
         "@intlify/unplugin-vue-i18n": "6.0.8",
         "@mdi/font": "7.4.47",
         "@mdi/js": "7.4.47",
+        "@tauri-apps/plugin-opener": "~2",
         "color": "5.0.0",
         "colorthief": "2.6.0",
         "home-assistant-js-websocket": "9.5.0",

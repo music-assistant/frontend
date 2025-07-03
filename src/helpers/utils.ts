@@ -26,6 +26,7 @@ import {
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
@@ -39,7 +40,7 @@ export const openLinkInNewTab = function (url: string) {
   ) {
     url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
   }
-  window.open(url, "_blank");
+  openUrl(url);
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

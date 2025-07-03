@@ -9,6 +9,8 @@ import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import svgLoader from "vite-svg-loader";
 import path from "path";
 
+const host = process.env.TAURI_DEV_HOST;
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "./",
@@ -71,9 +73,25 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true,
+    host: host || false,
+    strictPort: true,
+    hmr: host
+      ? {
+          protocol: "ws",
+          host,
+          port: 1421,
+        }
+      : undefined,
+    watch: {
+      // tell vite to ignore watching `src-tauri`
+      ignored: ["**/src-tauri/**"],
+    },
   },
+  envPrefix: ["VITE_", "TAURI_ENV_*"],
   build: {
     outDir: "./music_assistant_frontend",
+    target:
+      process.env.TAURI_ENV_PLATFORM == "windows" ? "chrome105" : "safari13",
+    minify: !process.env.TAURI_ENV_DEBUG ? "esbuild" : false,
   },
 });
