@@ -3,11 +3,13 @@
   "productName": "Music Assistant",
   "version": "0.1.0",
   "identifier": "io.music-assistant.companion",
+  "mainBinaryName": "music-assistant-companion",
   "build": {
-    "frontendDist": "../../music_assistant_frontend",
+    "frontendDist": "../music_assistant_frontend",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "yarn build"
+    "beforeBuildCommand": "yarn build",
+    "removeUnusedCommands": true
   },
   "app": {
     "windows": [

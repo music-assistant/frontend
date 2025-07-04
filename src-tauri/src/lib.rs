@@ -1,7 +1,27 @@
+use std::{sync::Once, thread};
+
+mod discord_rpc;
+
+static DISCORD_RPC_STARTER: Once = Once::new();
+
+#[tauri::command]
+fn start_rpc(websocket: String) {
+    // To prevent it from starting multiple times even if frontend gets reloaded
+    DISCORD_RPC_STARTER.call_once(|| {
+        // Start the discord rich presence manager in a new thread
+        thread::spawn(move || {
+            println!("Starting Discord RPC with websocket: {}", websocket);
+            discord_rpc::start_rpc(websocket);
+        });
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
     let mut builder = tauri::Builder::default();
+
+	start_rpc("ws://localhost:8095/ws".to_string());
 
     #[cfg(desktop)]
     {
@@ -17,6 +37,7 @@ pub fn run() {
 
     builder
     .plugin(tauri_plugin_opener::init())
+	.invoke_handler(tauri::generate_handler![start_rpc])
   	.setup(|app| {
 		if cfg!(debug_assertions) {
 		app.handle().plugin(
