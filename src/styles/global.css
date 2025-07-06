@@ -28,6 +28,7 @@
   word-wrap: normal;
   direction: ltr;
   -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
 
@@ -35,6 +36,14 @@ input {
   user-select: initial;
   -webkit-user-select: initial;
   cursor: initial;
+}
+
+button.decorum-tb-btn,
+button#decorum-tb-minimize,
+button#decorum-tb-maximize,
+button#decorum-tb-close,
+div[data-tauri-decorum-tb] {
+  z-index: 1000;
 }
 
 html {

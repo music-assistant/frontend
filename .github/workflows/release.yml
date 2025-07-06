@@ -1,90 +1,66 @@
-name: Publish releases
+name: 'publish'
 
 on:
-  release:
-    types: [published]
-env:
-  PYTHON_VERSION: "3.10"
-  NODE_VERSION: "18.x"
-  NODE_OPTIONS: --max_old_space_size=6144
-
-# Set default workflow permissions
-# All scopes not mentioned here are set to no access
-# https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
-permissions:
-  actions: none
+  workflow_dispatch:
+  push:
+    branches:
+      - release
 
 jobs:
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.vars.outputs.tag }}
+  publish-tauri:
     permissions:
-      contents: write # Required to upload release assets
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest' # for Arm based macs (M1 and above).
+            args: '--target aarch64-apple-darwin'
+          - platform: 'macos-latest' # for Intel based macs.
+            args: '--target x86_64-apple-darwin'
+          - platform: 'ubuntu-22.04'
+            args: ''
+          - platform: 'windows-latest'
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Get tag
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up Node ${{ env.NODE_VERSION }}
+      - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+          node-version: lts/*
+          cache: 'yarn' # Set this to npm, yarn or pnpm.
 
-      - name: Install dependencies
-        run: |
-          yarn install
-          python3 -m pip install build tomli tomli-w
-
-      - name: Set Python project version from tag
-        shell: python
-        run: |-
-          import tomli
-          import tomli_w
-
-          with open("pyproject.toml", "rb") as f:
-            pyproject = tomli.load(f)
-
-          pyproject["project"]["version"] = "${{ steps.vars.outputs.tag }}"
-
-          with open("pyproject.toml", "wb") as f:
-            tomli_w.dump(pyproject, f)
-
-      - name: Build and release package
-        run: |
-          yarn build
-          rm -rf dist music_assistant_frontend.egg-info
-          python3 -m build
-
-      - name: Publish release to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.12.4
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2.3.2
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
         with:
-          files: |
-            dist/*.whl
-            dist/*.tar.gz
+          workspaces: './src-tauri -> target'
 
-  server-repo-pr:
-    name: Server repo PR
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: music-assistant/frontend-release-pr-action@main
+      - name: install frontend dependencies
+        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
+        run: yarn install # change this to npm or pnpm depending on which one you use.
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
-          new_release_version: ${{ needs.release.outputs.version }}
+          tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseName: 'App v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

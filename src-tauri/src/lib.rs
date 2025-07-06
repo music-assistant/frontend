@@ -1,4 +1,8 @@
 use std::{sync::Once, thread};
+use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri_plugin_updater::UpdaterExt;
+use tauri::Manager;
 
 mod discord_rpc;
 
@@ -19,9 +23,10 @@ fn start_rpc(websocket: String) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let mut builder = tauri::Builder::default();
+    let mut builder =
+        tauri::Builder::default().plugin(tauri_plugin_updater::Builder::new().build());
 
-	start_rpc("ws://localhost:8095/ws".to_string());
+    start_rpc("ws://localhost:8095/ws".to_string());
 
     #[cfg(desktop)]
     {
@@ -32,12 +37,22 @@ pub fn run() {
                 .get_webview_window("main")
                 .expect("no main window")
                 .set_focus();
+
+            println!("An instance was already running, focusing on it");
         }));
     }
 
     builder
     .plugin(tauri_plugin_opener::init())
 	.invoke_handler(tauri::generate_handler![start_rpc])
+    .on_window_event(|window, event| match event {
+        tauri::WindowEvent::CloseRequested { api, .. } => {
+            window.hide().unwrap();
+            api.prevent_close();
+            println!("Hiding the app instead of fully closing it");
+        }
+        _ => {}
+    })
   	.setup(|app| {
 		if cfg!(debug_assertions) {
 		app.handle().plugin(
@@ -46,6 +61,62 @@ pub fn run() {
 			.build(),
 		)?;
 		}
+
+        let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+        let update = MenuItemBuilder::with_id("update", "Check for updates").build(app)?;
+        let hide = MenuItemBuilder::with_id("hide", "Hide").build(app)?;
+        let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
+        let relaunch = MenuItemBuilder::with_id("relaunch", "Relaunch").build(app)?;
+        let seperator = PredefinedMenuItem::separator(app)?;
+        let menu = MenuBuilder::new(app)
+            .items(&[
+                &hide, &show, &seperator, &update, &relaunch, &seperator, &quit,
+            ])
+            .build()?;
+        let _tray = TrayIconBuilder::new()
+            .menu(&menu)
+            .tooltip("Music Assistant Companion")
+            .icon(app.default_window_icon().unwrap().clone())
+            .on_menu_event(move |app, event| {
+                match event.id().as_ref() {
+                "quit" => {
+                    app.exit(1);
+                }
+                "hide" => {
+                    let window = app.get_webview_window("main").unwrap();
+                    window.hide().unwrap();
+                }
+                    "show" => {
+                    let window = app.get_webview_window("main").unwrap();
+                    window.show().unwrap();
+                }
+                "relaunch" => {
+                    tauri::process::restart(&app.env());
+                }
+                "update" => {
+                    let handle = app.app_handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        let _response = handle.updater().unwrap().check().await;
+                    });
+                }
+                _ => (),
+            }})
+            .on_tray_icon_event(|tray, event| {
+                if let TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } = event
+                {
+                    let app = tray.app_handle();
+                    if let Some(window) = app.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+            })
+            .build(app)?;
+
 		Ok(())
 	})
 	.run(context)

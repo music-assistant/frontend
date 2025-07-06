@@ -54,6 +54,34 @@ onMounted(() => {
 
   config.value = [
     {
+      key: "server_address",
+      type: ConfigEntryType.STRING,
+      label: "server_address",
+      default_value: "homeassistant.local",
+      required: false,
+      category: "generic",
+      value: localStorage.getItem("frontend.settings.server_address"),
+    },
+    {
+      key: "server_port",
+      type: ConfigEntryType.STRING,
+      label: "server_port",
+      default_value: "8095",
+      required: false,
+      category: "generic",
+      value: localStorage.getItem("frontend.settings.server_port"),
+    },
+    {
+      key: "server_tls_enabled",
+      type: ConfigEntryType.BOOLEAN,
+      label: "server_tls_enabled",
+      default_value: false,
+      required: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.server_tls_enabled") == "true",
+    },
+    {
       key: "theme",
       type: ConfigEntryType.STRING,
       label: "theme",
