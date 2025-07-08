@@ -22,25 +22,54 @@ struct Song {
 // Function for running the Discord rich presence
 pub fn start_rpc(mass_ws: String) {
     // Create the Discord RPC client
-    let mut client: DiscordIpcClient = DiscordIpcClient::new(CLIENT_ID)
-        .expect("Couldn't create the Discord client! Is Discord running?");
+    let mut client: DiscordIpcClient = match DiscordIpcClient::new(CLIENT_ID) {
+        Ok(client) => client,
+        Err(e) => {
+            eprintln!(
+                "Couldn't create the Discord client: {}. Is Discord running?",
+                e
+            );
+            return;
+        }
+    };
 
     // Connect to the Discord Rich Presence socket
-    client
-        .connect()
-        .expect("Failure while connecting to Discord RPC socket. Is Discord running?");
+    if let Err(e) = client.connect() {
+        eprintln!(
+            "Failure while connecting to Discord RPC socket: {}. Is Discord running?",
+            e
+        );
+        return;
+    }
 
     // Connect to MASS socket
-    let (mut socket, _response) = connect(Url::parse(&mass_ws).unwrap().as_str())
-        .expect("Can't connect to the Music Assistant server.. Make sure the server is running and the webserver is exposed from the settings");
+    let (mut socket, _response) = match connect(Url::parse(&mass_ws).unwrap().as_str()) {
+        Ok(connection) => connection,
+        Err(e) => {
+            eprintln!("Can't connect to the Music Assistant server: {}. Make sure the server is running and the webserver is exposed from the settings", e);
+            return;
+        }
+    };
 
     // Continuously update the status
     loop {
         // Read the WebSocket message
-        let msg = socket.read().expect("Error reading message from Music Assistant server. Make sure you are on the latest version of Music Assistant server and companion app");
+        let msg = match socket.read() {
+            Ok(msg) => msg,
+            Err(e) => {
+                eprintln!("Error reading message from Music Assistant server: {}. Make sure you are on the latest version of Music Assistant server and companion app", e);
+                continue;
+            }
+        };
 
         // Parse the response to text
-        let msg_text = msg.to_text().expect("Couldn't convert response to text. Make sure you are on the latest version of Music Assistant server and companion app");
+        let msg_text = match msg.to_text() {
+            Ok(text) => text,
+            Err(e) => {
+                eprintln!("Couldn't convert response to text: {}. Make sure you are on the latest version of Music Assistant server and companion app", e);
+                continue;
+            }
+        };
 
         // Parse to JSON. If it fails, skip this iteration
         let msg_json: serde_json::Value = match serde_json::from_str(msg_text) {
@@ -60,7 +89,9 @@ pub fn start_rpc(mass_ws: String) {
 
         // Stop Discord RPC if not playing
         if msg_json["data"]["state"].as_str().unwrap_or("") != "playing" {
-            client.clear_activity().expect("Couldn't clear activity. Please open an issue on the Music Assistant companion repository if the Discord activity is acting weird");
+            if let Err(e) = client.clear_activity() {
+                eprintln!("Couldn't clear activity: {}. Please open an issue on the Music Assistant companion repository if the Discord activity is acting weird", e);
+            }
             continue;
         }
 
@@ -71,7 +102,9 @@ pub fn start_rpc(mass_ws: String) {
 
         // If no track is playing, clear Discord activity
         if current_item.is_null() {
-            client.clear_activity().expect("Couldn't clear activity. Please open an issue on the Music Assistant companion repository if the Discord activity is acting weird");
+            if let Err(e) = client.clear_activity() {
+                eprintln!("Couldn't clear activity: {}. Please open an issue on the Music Assistant companion repository if the Discord activity is acting weird", e);
+            }
             continue;
         }
 
@@ -82,6 +115,15 @@ pub fn start_rpc(mass_ws: String) {
             .round() as i64)
             * 1000;
         let duration = media_item["duration"].as_i64().unwrap_or(0) * 1000;
+
+        // Get current time for timestamps
+        let current_time = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(duration) => duration.as_millis() as i64,
+            Err(e) => {
+                eprintln!("Time error: {}", e);
+                continue;
+            }
+        };
 
         // Create the current song struct
         let current_song = Song {
@@ -106,15 +148,8 @@ pub fn start_rpc(mass_ws: String) {
                 .as_str()
                 .unwrap_or("")
                 .to_string(),
-            started: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("Time error")
-                .as_millis() as i64,
-            end: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("Time error")
-                .as_millis() as i64
-                + (duration - already_played),
+            started: current_time,
+            end: current_time + (duration - already_played),
         };
 
         // The assets of the activity
@@ -154,8 +189,8 @@ pub fn start_rpc(mass_ws: String) {
             .timestamps(timestamps);
 
         // Set the activity
-        client
-            .set_activity(payload)
-            .expect("Failure updating status. Please open an issue on the Music Assistant companion repository if the Discord activity is acting weird");
+        if let Err(e) = client.set_activity(payload) {
+            eprintln!("Failure updating status: {}. Please open an issue on the Music Assistant companion repository if the Discord activity is acting weird", e);
+        }
     }
 }

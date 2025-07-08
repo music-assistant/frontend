@@ -1,64 +1,110 @@
-# Music Assistant frontend (Vue PWA)
+<p align="center">
+  <p align="center">
+   <img width="150" height="150" src="app-icon.png" alt="Logo">
+  </p>
+	<h1 align="center"><b>Music Assistant Companion</b></h1>
+	 <p align="center" style="margin-bottom:0px !important;">
+	<a href="https://github.com/music-assistant/music-assistant-desktop/releases/latest">
+	  <img src="https://img.shields.io/github/release/music-assistant/music-assistant-desktop?display_name=tag&include_prereleases&label=Latest%20version" alt="latest version">
+	</a>
+	<a href="https://discord.gg/kaVm8hGpne">
+	  <img src="https://img.shields.io/discord/753947050995089438?label=Discord&logo=discord&color=5865F2" alt="discord">
+	</a>
+	<a href="https://github.com/sponsors/music-assistant">
+	  <img src="https://img.shields.io/github/sponsors/music-assistant?label=Sponsors" alt="sponsor">
+	</a>
+	<a href="https://github.com/music-assistant/music-assistant-desktop/blob/main/LICENSE">
+    	<img src="https://img.shields.io/static/v1?label=Licence&message=Apache-2.0&color=000" />
+  	</a>
+	<img src="https://img.shields.io/static/v1?label=Bundled%20Size&message=9.45MB&color=0974B4" />
+  	<img src="https://img.shields.io/static/v1?label=Stage&message=Alpha&color=2BB4AB" />
+	 </p>
+	<p align="center">
+		The desktop companion app for Music Assistant!
+    <br />
+    <a href="https://music-assistant.io/"><strong>Music Assistant »</strong></a>
+    <br />
+    <br />
+    <b>Download for </b>
+    macOS (<a href="https://github.com/music-assistant/music-assistant-desktop/releases/download/v0.0.70/Music.Assistant.Companion_0.0.45_aarch64.dmg">Apple Silicon</a> |
+    <a href="https://github.com/music-assistant/music-assistant-desktop/releases/download/v0.0.70/Music.Assistant.Companion_0.0.45_x64.dmg">Intel</a>) ·
+		<a href="https://github.com/music-assistant/music-assistant-desktop/releases/download/v0.0.70/Music.Assistant.Companion_0.0.45_x64_en-US.msi">Windows</a> ·
+    Linux (<a href="https://github.com/music-assistant/music-assistant-desktop/releases/download/v0.0.70/music-assistant-companion_0.0.45_amd64.deb">Debian</a> | <a href="https://github.com/music-assistant/music-assistant-desktop/releases/download/v0.0.70/music-assistant-companion_0.0.45_amd64.AppImage">Other</a>)
+    <br />
+  </p>
+</p>
 
-The Music Assistant frontend/panel is developed in Vue, development instructions below.
+## Setup
 
-## Recommended IDE Setup
+When starting the app for the first time you are asked about some information about the Music Assistant Server.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-typescript-vue-plugin).
+![image](https://github.com/music-assistant/desktop-companion/assets/74015378/cb97aa3e-12d8-4992-bfc6-0b58cedb81da)
 
-## Type Support for `.vue` Imports in TS
+> [!IMPORTANT]
+> The app requires that the webserver is exposed. You can set that in the settings:
+> ![How to fix](https://raw.githubusercontent.com/music-assistant/desktop-companion/main/cant_connect_error.gif)
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+<!-- ## Features -->
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+<!-- ### [Squeezelite](https://en.wikipedia.org/wiki/Squeezelite)
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+Squeezelite comes embedded in the application. This allows playback of music to your computer. The player name will be the same as your computer name. You can change the name in Music Assistant settings. You can also toggle if you wish to enable squeezelite at all.
 
-## Customize configuration
+To allow playback to the companion app you have to enable the slimproto provider in the Music Assistant settings. -->
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+<!-- ### [Discord Rich Presence](https://discord.com/developers/docs/rich-presence/how-to#so-what-is-it)
 
-## Project Setup
+Like the Spotify app, the Music Assistant app can do Discord Rich Presence.
 
-```sh
-nvm use node
-yarn install
+Example of Discord Rich Presence:
+
+![Example of Discord Rich Presence](https://github.com/music-assistant/companion/assets/74015378/8de18bac-b963-4aba-bb61-5730b41759a9) -->
+
+## Installation
+
+### Windows
+
+You can download the .msi installer from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
+
+### MacOS
+
+You can download the .dmg from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
+
+Or you can download it using homebrew: `brew install music-assistant/tap/companion`
+
+<!-- ### Arch Linux
+
+This app is on the arch aur with the name `music-assistant-desktop` or `music-assistant-desktop-bin` for just the binary
+
+You can install it with yay: `yay music-assistant-desktop-bin` -->
+
+### Debian (And debian based distrobutions)
+
+You can download the .deb from the [releases](https://github.com/music-assistant/companion/releases/latest/).
+
+### All the other linux distros
+
+You can download the AppImage from the [releases](https://github.com/music-assistant/companion/releases/latest/).
+
+### From source
+
+If you wish to build the app yourself you should first follow [the offical tauri prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites)
+
+First, clone the repository and install the node dependencies. You can do this by running the following commands:
+
+```bash
+$ git clone https://github.com/music-assistant/desktop-companion
+$ cd desktop-companion
+$ yarn install
 ```
 
-### Compile and Hot-Reload for Development
+And then build the app
 
-```sh
-yarn dev
-```
+`$ yarn tauri build`
 
-This will launch an auto-reload development environment (usually at http://localhost:3000)
-Open the url in the browser and a popup will ask the location of the MA server.
-You can either connect to a locally launched dev server or an existing running server on port 8095.
+# Contributing
 
-### Type-Check, Compile and Minify for Production
-
-```sh
-yarn build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-yarn lint
-```
-
-# Translation Management
-
-We use Lokalise to manage the translation files for the Music Assistant frontend
-
-[<img src="https://github.com/lokalise/i18n-ally/raw/screenshots/lokalise-logo.png?raw=true" alt="Lokalise logo" width="275px">](https://lokalise.com)
-
-### Contributing
-
-If you wish to assist in translating Music Assistant into a language that it currently does not support, please see here https://music-assistant.io/help/lokalise/.
+Check the CONTRIBUTING.md file
 
 ---
 

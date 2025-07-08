@@ -24,9 +24,9 @@ fn start_rpc(websocket: String) {
 pub fn run() {
     let context = tauri::generate_context!();
     let mut builder =
-        tauri::Builder::default().plugin(tauri_plugin_updater::Builder::new().build());
+        tauri::Builder::default();
 
-    start_rpc("ws://localhost:8095/ws".to_string());
+    // start_rpc("ws://localhost:8095/ws".to_string());
 
     #[cfg(desktop)]
     {
@@ -36,7 +36,9 @@ pub fn run() {
             let _ = app
                 .get_webview_window("main")
                 .expect("no main window")
+                .show().expect("failed to show window").
                 .set_focus();
+
 
             println!("An instance was already running, focusing on it");
         }));
@@ -44,6 +46,7 @@ pub fn run() {
 
     builder
     .plugin(tauri_plugin_opener::init())
+    .plugin(tauri_plugin_updater::Builder::new().build())
 	.invoke_handler(tauri::generate_handler![start_rpc])
     .on_window_event(|window, event| match event {
         tauri::WindowEvent::CloseRequested { api, .. } => {
