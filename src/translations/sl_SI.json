@@ -414,6 +414,12 @@
         "dynamic_members": {
             "label": "Dinamični člani skupine",
             "description": "Omogočite članom, da se (začasno) dinamično pridružijo\/zapustijo skupino, tako da se skupina bolj ali manj obnaša enako kot ročna sinhronizacija predvajalnikov skupaj, z glavno razliko, da bo skupinski predvajalnik držal čakalno vrsto."
+        },
+        "dsp": {
+            "output": "Izhod",
+            "channels": {
+                "FR": "Desno"
+            }
         }
     },
     "show_info": "Prikaži informacije",
@@ -538,5 +544,10 @@
     "shuffle_disable": "Onemogoči naključno predvajanje",
     "shuffle_enable": "Omogoči naključno predvajanje",
     "dont_stop_the_music_enable": "Omogoči »Ne ustavljaj glasbe!«",
-    "dont_stop_the_music_disable": "Onemogoči »Ne ustavljaj glasbe!«"
+    "dont_stop_the_music_disable": "Onemogoči »Ne ustavljaj glasbe!«",
+    "searchtype_all": "Vse",
+    "recommendations": {
+        "random_artists": "Naključni umetniki",
+        "random_albums": "Naključni albumi"
+    }
 }
