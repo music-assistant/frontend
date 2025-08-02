@@ -10,16 +10,18 @@
       />
     </template>
 
-    <template v-if="title" #title>
-      <button @click="emit('titleClicked')">
-        {{ title }}
-        <v-badge
-          v-if="count && getBreakpointValue('bp4')"
-          color="grey"
-          :content="count"
-          inline
-        />
-      </button>
+    <template #title>
+      <slot name="title">
+        <button v-if="title" @click="emit('titleClicked')">
+          {{ title }}
+          <v-badge
+            v-if="count && getBreakpointValue('bp4')"
+            color="grey"
+            :content="count"
+            inline
+          />
+        </button>
+      </slot>
     </template>
 
     <template v-if="menuItems?.length" #append>
@@ -177,8 +179,8 @@
 
 <script setup lang="ts">
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
-import { getBreakpointValue } from "../plugins/breakpoint";
 import { api } from "@/plugins/api";
+import { getBreakpointValue } from "../plugins/breakpoint";
 
 // properties
 export interface Props {

@@ -9,7 +9,11 @@
       color="transparent"
       :menu-items="menuItems"
       @title-clicked="toggleExpand"
-    />
+    >
+      <template #title>
+        <slot name="title">{{ title }}</slot>
+      </template>
+    </Toolbar>
 
     <v-divider />
 
@@ -174,40 +178,40 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
+import Container from "@/components/mods/Container.vue";
+import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import {
-  computed,
-  ref,
-  onBeforeUnmount,
-  nextTick,
-  onMounted,
-  watch,
-  watchEffect,
-} from "vue";
+  handleMenuBtnClick,
+  panelViewItemResponsive,
+  scrollElement,
+} from "@/helpers/utils";
+import { api } from "@/plugins/api";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
+  EventMessage,
+  EventType,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
   MediaType,
   type Album,
   type MediaItemType,
   type Track,
-  ItemMapping,
-  MediaItemTypeOrItemMapping,
-  EventMessage,
-  EventType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
-import { useRouter } from "vue-router";
-import { api } from "@/plugins/api";
-import Container from "@/components/mods/Container.vue";
-import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import {
-  panelViewItemResponsive,
-  scrollElement,
-  handleMenuBtnClick,
-} from "@/helpers/utils";
-import { useI18n } from "vue-i18n";
 
 export interface LoadDataParams {
   offset: number;
@@ -252,6 +256,7 @@ export interface Props {
   path?: string;
   icon?: string;
   restoreState?: boolean;
+  onTitleClick?: () => void;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -279,6 +284,8 @@ const props = withDefaults(defineProps<Props>(), {
   path: undefined,
   icon: undefined,
   restoreState: false,
+  onTitleClick: undefined,
+  customTitleRenderer: undefined,
 });
 
 // global refs
@@ -327,6 +334,13 @@ const toggleSearch = function () {
 };
 
 const toggleExpand = function () {
+  // If a custom title click handler is provided, use it
+  if (props.onTitleClick) {
+    props.onTitleClick();
+    return;
+  }
+
+  // Otherwise, use the default expand/collapse behavior
   expanded.value = !expanded.value;
   const storKey = `${props.path}.${props.itemtype}`;
   localStorage.setItem(`expand.${storKey}`, expanded.value.toString());
