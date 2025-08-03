@@ -142,7 +142,7 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
-import { useTheme } from "vuetify/lib/framework.mjs";
+import { useTheme } from "vuetify";
 import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
 interface Props {
