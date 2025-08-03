@@ -152,7 +152,10 @@ onMounted(() => {
       options: [10, 15, 30, 60],
       multi_value: false,
       category: "audiobooks_podcasts",
-      value: parseInt(localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30"),
+      value: parseInt(
+        localStorage.getItem("frontend.settings.audiobook_skip_seconds") ||
+          "30",
+      ),
     },
   ];
 });

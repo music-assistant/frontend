@@ -658,14 +658,18 @@ const hasLyrics = computed(() => {
 // Check if current media is audiobook or podcast
 const isAudiobookOrPodcast = computed(() => {
   const mediaType = store.curQueueItem?.media_item?.media_type;
-  return mediaType === MediaType.AUDIOBOOK || 
-         mediaType === MediaType.PODCAST ||
-         mediaType === MediaType.PODCAST_EPISODE;
+  return (
+    mediaType === MediaType.AUDIOBOOK ||
+    mediaType === MediaType.PODCAST ||
+    mediaType === MediaType.PODCAST_EPISODE
+  );
 });
 
 // Get configured skip amount from settings
 const skipAmount = computed(() => {
-  return parseInt(localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30");
+  return parseInt(
+    localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30",
+  );
 });
 
 const titleFontSize = computed(() => {

@@ -108,12 +108,17 @@ const seekHandler = function (
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
     // Use configurable skip amount for audiobooks/podcasts, fallback to 10 seconds for music
     const mediaType = store.curQueueItem?.media_item?.media_type;
-    const isAudiobookOrPodcast = mediaType === MediaType.AUDIOBOOK || 
-                                 mediaType === MediaType.PODCAST ||
-                                 mediaType === MediaType.PODCAST_EPISODE;
-    const defaultSkipAmount = isAudiobookOrPodcast ? 
-      parseInt(localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30") : 10;
-    
+    const isAudiobookOrPodcast =
+      mediaType === MediaType.AUDIOBOOK ||
+      mediaType === MediaType.PODCAST ||
+      mediaType === MediaType.PODCAST_EPISODE;
+    const defaultSkipAmount = isAudiobookOrPodcast
+      ? parseInt(
+          localStorage.getItem("frontend.settings.audiobook_skip_seconds") ||
+            "30",
+        )
+      : 10;
+
     const offset = evt.seekOffset || defaultSkipAmount;
     const elapsed_time = lastSeekPos || store.activePlayerQueue?.elapsed_time;
     if (!elapsed_time) return;

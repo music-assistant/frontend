@@ -24,10 +24,7 @@
       />
     </div>
     <!-- skip back button for audiobooks/podcasts -->
-    <div
-      v-if="isAudiobookOrPodcast"
-      class="player-controls-elements"
-    >
+    <div v-if="isAudiobookOrPodcast" class="player-controls-elements">
       <SkipBackBtn
         :player-queue="store.activePlayerQueue"
         :cur-queue-item="store.curQueueItem"
@@ -46,10 +43,7 @@
       />
     </div>
     <!-- skip forward button for audiobooks/podcasts -->
-    <div
-      v-if="isAudiobookOrPodcast"
-      class="player-controls-elements"
-    >
+    <div v-if="isAudiobookOrPodcast" class="player-controls-elements">
       <SkipForwardBtn
         :player-queue="store.activePlayerQueue"
         :cur-queue-item="store.curQueueItem"
@@ -138,14 +132,18 @@ withDefaults(defineProps<Props>(), {
 // Check if current media is audiobook or podcast
 const isAudiobookOrPodcast = computed(() => {
   const mediaType = store.curQueueItem?.media_item?.media_type;
-  return mediaType === MediaType.AUDIOBOOK || 
-         mediaType === MediaType.PODCAST ||
-         mediaType === MediaType.PODCAST_EPISODE;
+  return (
+    mediaType === MediaType.AUDIOBOOK ||
+    mediaType === MediaType.PODCAST ||
+    mediaType === MediaType.PODCAST_EPISODE
+  );
 });
 
 // Get configured skip amount from settings
 const skipAmount = computed(() => {
-  return parseInt(localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30");
+  return parseInt(
+    localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30",
+  );
 });
 </script>
 
