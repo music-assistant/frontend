@@ -72,7 +72,7 @@ const breadcrumbSegments = computed((): BreadcrumbSegment[] => {
   segments.push({
     text: t("browse"),
     path: null,
-    clickable: props.path && props.path !== "root",
+    clickable: (props.path && props.path !== "root") || false,
   });
 
   if (props.path && props.path !== "root") {
@@ -83,7 +83,7 @@ const breadcrumbSegments = computed((): BreadcrumbSegment[] => {
       segments.push({
         text: provider,
         path: provider,
-        clickable: pathPart && pathPart.length > 0,
+        clickable: (pathPart && pathPart.length > 0) || false,
       });
 
       if (pathPart && pathPart.length > 0) {
