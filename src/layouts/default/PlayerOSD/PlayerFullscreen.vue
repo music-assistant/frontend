@@ -300,8 +300,8 @@
                     link
                     :show-menu-btn="true"
                     :disabled="!item.available"
-                    @click.stop="(e) => openQueueItemMenu(e, item)"
-                    @menu.stop="(e) => openQueueItemMenu(e, item)"
+                    @click.stop="(e: MouseEvent) => openQueueItemMenu(e, item)"
+                    @menu.stop="(e: MouseEvent) => openQueueItemMenu(e, item)"
                     @mouseenter="hoveredQueueIndex = index"
                     @mouseleave="hoveredQueueIndex = -1"
                   >
