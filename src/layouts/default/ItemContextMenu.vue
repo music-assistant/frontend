@@ -147,9 +147,9 @@ const menuItemClicked = function (
   if (menuItem.subItems) {
     evt.preventDefault();
     subMenuItems.value = menuItem.subItems;
-    (subMenuPosX.value = (evt as PointerEvent).clientX),
+    ((subMenuPosX.value = (evt as PointerEvent).clientX),
       (subMenuPosY.value = (evt as PointerEvent).clientY),
-      (showSubmenu.value = true);
+      (showSubmenu.value = true));
     return;
   } else if (menuItem.action) {
     menuItem.action();
@@ -192,9 +192,9 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
   }
 
   subMenuItems.value = _subItems;
-  (subMenuPosX.value = (evt as PointerEvent).clientX),
+  ((subMenuPosX.value = (evt as PointerEvent).clientX),
     (subMenuPosY.value = (evt as PointerEvent).clientY),
-    (showSubmenu.value = true);
+    (showSubmenu.value = true));
 };
 </script>
 
