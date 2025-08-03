@@ -6,7 +6,7 @@ on:
 
 
 env:
-  NODE_VERSION: "18.x" # set this to the node version to use
+  NODE_VERSION: "20.x" # set this to the node version to use
 
 jobs:
   lint:
