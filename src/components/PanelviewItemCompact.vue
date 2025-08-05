@@ -45,8 +45,8 @@
             <span v-if="item.media_type == MediaType.FOLDER">
               <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
             </span>
-            <span v-else>{{ item.name }}</span>
-            <span v-if="'version' in item && item.version">
+            <span :class="{'is-playing': isPlaying}" v-else>{{ item.name }}</span>
+            <span :class="{'is-playing': isPlaying}" v-if="'version' in item && item.version">
               - {{ item.version }}</span
             >
           </v-list-item-title>
@@ -82,6 +82,8 @@
           </v-list-item-subtitle>
         </v-list-item>
       </div>
+      <!-- Now Playing Badge -->
+      <NowPlayingBadge icon-style="position: absolute; right: 5px; bottom: 5px" :show-badge="false" v-if="isPlaying"></NowPlayingBadge>
       <!-- play button -->
       <v-btn
         v-if="
@@ -114,6 +116,7 @@ import {
   handlePlayBtnClick,
 } from "@/helpers/utils";
 import { store } from "@/plugins/store";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 
 // properties
 export interface Props {
@@ -123,6 +126,7 @@ export interface Props {
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
   isAvailable?: boolean;
+  isPlaying?: boolean;
   parentItem?: MediaItemType;
   disabled?: boolean;
 }

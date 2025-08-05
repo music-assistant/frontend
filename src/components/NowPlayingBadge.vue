@@ -1,17 +1,45 @@
 <template>
   <!-- Now playing badge -->
-  <span class="now-playing-badge"
-    aria-label="Now playing">
+  <span
+    :style="badgeStyle"
+    class="now-playing-badge"
+    aria-label="Now playing"
+    v-if="showBadge">
     Now playing
   </span>
   <!-- Now playing icon -->
-  <div class="now-playing-icon">
+  <div
+    :style="iconStyle"
+    class="now-playing-icon"
+    v-if="showIcon">
     <div class="bar"></div>
     <div class="bar"></div>
     <div class="bar"></div>
     <div class="bar"></div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { CSSProperties } from 'vue';
+
+// properties
+export interface Props {
+  showBadge?: boolean;
+  showIcon?: boolean;
+  badgeStyle?: string | CSSProperties | Array<string | CSSProperties>;
+  iconStyle?: string | CSSProperties | Array<string | CSSProperties>;
+}
+
+const props = withDefaults(
+  defineProps<Props>(),
+  {
+    showBadge: true,
+    showIcon: true,
+    badgeStyle: '',
+    iconStyle: ''
+  }
+)
+</script>
 
 <style>
 .now-playing-badge {

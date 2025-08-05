@@ -45,8 +45,8 @@
           <span v-if="item.media_type == MediaType.FOLDER">
             <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
           </span>
-          <span v-else>{{ item.name }}</span>
-          <span v-if="'version' in item && item.version">
+          <span :class="{'is-playing': isPlaying}" v-else>{{ item.name }}</span>
+          <span :class="{'is-playing': isPlaying}" v-if="'version' in item && item.version">
             - {{ item.version }}</span
           >
         </v-list-item-title>
@@ -81,6 +81,7 @@
       </v-list-item>
 
       <!-- play button -->
+      <NowPlayingBadge icon-style="position: absolute; right: 5px; bottom: 5px" :show-badge="false" v-if="isPlaying && !showActions"></NowPlayingBadge>
       <v-btn
         v-if="
           (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
@@ -129,6 +130,9 @@
             <FavouriteButton :item="item" />
           </v-item>
         </v-item-group>
+        
+        <!-- Now Playing Badge -->
+        <NowPlayingBadge :show-badge="false" v-if="isPlaying"></NowPlayingBadge>
         <v-spacer />
         <MAButton
           v-if="isHovering || $vuetify.display.mobile"
@@ -164,6 +168,7 @@ import { iconHiRes } from "./QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import { store } from "@/plugins/store";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 
 // properties
 export interface Props {
@@ -175,6 +180,7 @@ export interface Props {
   showActions?: boolean;
   showTrackNumber?: boolean;
   isAvailable?: boolean;
+  isPlaying?: boolean;
   parentItem?: MediaItemType;
 }
 const compProps = withDefaults(defineProps<Props>(), {
