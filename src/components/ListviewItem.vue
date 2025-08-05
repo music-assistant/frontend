@@ -46,7 +46,7 @@
       <span v-if="item.media_type == MediaType.FOLDER">
         <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
       </span>
-      <span v-else>
+      <span :class="{'is-playing': isPlaying}" v-else>
         {{ item.name }}
         <span v-if="'version' in item && item.version"
           >({{ item.version }})</span
@@ -147,6 +147,8 @@
 
     <!-- actions -->
     <template #append>
+      <!-- Now Playing Badge -->
+      <NowPlayingBadge v-if="isPlaying"></NowPlayingBadge>
       <!-- hi res icon -->
       <v-img
         v-if="HiResDetails"
@@ -243,6 +245,7 @@ import { useI18n } from "vue-i18n";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import ListItem from "@/components/mods/ListItem.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 
 // properties
 export interface Props {
@@ -258,6 +261,7 @@ export interface Props {
   isSelected: boolean;
   isDisabled?: boolean;
   isAvailable?: boolean;
+  isPlaying?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
   parentItem?: MediaItemType;

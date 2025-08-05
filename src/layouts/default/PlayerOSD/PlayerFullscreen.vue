@@ -300,7 +300,6 @@
                     link
                     :show-menu-btn="true"
                     :disabled="!item.available"
-                    :class="{ 'is-playing': item.queue_item_id === store.curQueueItem?.queue_item_id }"
                     @click.stop="(e: MouseEvent) => openQueueItemMenu(e, item)"
                     @menu.stop="(e: MouseEvent) => openQueueItemMenu(e, item)"
                     @mouseenter="hoveredQueueIndex = index"
@@ -327,7 +326,12 @@
                             )
                           "
                         >
-                          {{ item.name }}
+                          <span :class="{
+                            'is-playing': item.queue_item_id === store.curQueueItem?.queue_item_id,
+                          }"
+                          >
+                            {{ item.name }}
+                          </span>
                         </MarqueeText>
                       </div>
                     </template>
@@ -362,30 +366,7 @@
                       </div>
                     </template>
                     <template #append>
-                      <!-- Now playing badge -->
-                        <span
-                          v-if="
-                            item.queue_item_id ===
-                            store.curQueueItem?.queue_item_id
-                          "
-                          class="now-playing-badge"
-                          aria-label="Now playing"
-                        >
-                          Now playing
-                        </span>
-                        <!-- Now playing icon -->
-                        <div
-                          v-if="
-                            item.queue_item_id ===
-                            store.curQueueItem?.queue_item_id
-                          "
-                          class="now-playing-icon"
-                        >
-                          <div class="bar"></div>
-                          <div class="bar"></div>
-                          <div class="bar"></div>
-                          <div class="bar"></div>
-                        </div>
+                      <NowPlayingBadge v-if="item.queue_item_id === store.curQueueItem?.queue_item_id"></NowPlayingBadge>
                       <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>
                   </ListItem>
@@ -573,6 +554,7 @@ import {
   watchEffect,
 } from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import api from "@/plugins/api";
 import {
   Album,
@@ -1249,41 +1231,5 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.now-playing-badge {
-  background: rgb(var(--v-theme-primary));
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.is-playing {
-  font-weight: 600;
-}
-
-.now-playing-icon {
-  display: flex;
-  gap: 2px;
-  margin-left: 6px;
-  align-items: flex-end;
-  height: 16px;
-}
-.now-playing-icon .bar {
-  width: 3px;
-  background: rgb(var(--v-theme-primary));
-  animation: eq 1s infinite ease-in-out;
-}
-.now-playing-icon .bar:nth-child(1) { animation-delay: 0s; }
-.now-playing-icon .bar:nth-child(2) { animation-delay: 0.2s; }
-.now-playing-icon .bar:nth-child(3) { animation-delay: 0.4s; }
-.now-playing-icon .bar:nth-child(4) { animation-delay: 0.6s; }
-
-@keyframes eq {
-  0%,100% { height: 4px; }
-  50% { height: 16px; }
 }
 </style>

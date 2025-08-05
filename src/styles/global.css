@@ -204,3 +204,8 @@ h6 {
 html {
   overflow-y: hidden !important;
 }
+
+.is-playing {
+  color: rgb(var(--v-theme-primary));
+  font-weight: 800;
+}

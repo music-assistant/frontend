@@ -115,6 +115,7 @@
               :show-checkboxes="showCheckboxes"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
+              :is-playing="item.item_id === store.curQueueItem?.media_item?.item_id"
               :show-details="itemtype.includes('versions')"
               :parent-item="parentItem"
               @select="onSelect"
