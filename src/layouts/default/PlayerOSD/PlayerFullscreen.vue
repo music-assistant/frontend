@@ -329,23 +329,6 @@
                         >
                           {{ item.name }}
                         </MarqueeText>
-                        <!-- Now playing badge -->
-                        <span
-                          v-if="item.queue_item_id === store.curQueueItem?.queue_item_id"
-                          class="now-playing-badge"
-                          aria-label="Now playing"
-                        >
-                          Now playing
-                        </span>
-                        <!-- Now playing icon -->
-                        <div
-                          v-if="item.queue_item_id === store.curQueueItem?.queue_item_id"
-                          class="now-playing-icon">
-                          <div class="bar"></div>
-                          <div class="bar"></div>
-                          <div class="bar"></div>
-                          <div class="bar"></div>
-                        </div>
                       </div>
                     </template>
                     <template #subtitle>
@@ -379,6 +362,30 @@
                       </div>
                     </template>
                     <template #append>
+                      <!-- Now playing badge -->
+                        <span
+                          v-if="
+                            item.queue_item_id ===
+                            store.curQueueItem?.queue_item_id
+                          "
+                          class="now-playing-badge"
+                          aria-label="Now playing"
+                        >
+                          Now playing
+                        </span>
+                        <!-- Now playing icon -->
+                        <div
+                          v-if="
+                            item.queue_item_id ===
+                            store.curQueueItem?.queue_item_id
+                          "
+                          class="now-playing-icon"
+                        >
+                          <div class="bar"></div>
+                          <div class="bar"></div>
+                          <div class="bar"></div>
+                          <div class="bar"></div>
+                        </div>
                       <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>
                   </ListItem>
