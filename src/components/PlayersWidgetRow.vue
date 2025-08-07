@@ -27,7 +27,7 @@
     </v-toolbar>
 
     <swiper
-      :slides-per-view="$vuetify.display.width / 340"
+      :slides-per-view="'auto'"
       :space-between="15"
       :free-mode="false"
       :navigation="getBreakpointValue({ breakpoint: 'mobile' }) ? false : true"
@@ -139,5 +139,9 @@ function playerSortScore(player: Player) {
 
 .v-slide-group__next.v-slide-group__next--disabled {
   visibility: hidden;
+}
+
+:deep(.swiper-slide) {
+  width: auto;
 }
 </style>
