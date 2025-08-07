@@ -61,7 +61,7 @@ function updateMediaState(state?: PlaybackState) {
 }
 
 watch(
-  () => store.activePlayer?.state,
+  () => store.activePlayer?.playback_state,
   (stateUpdate) => updateMediaState(stateUpdate),
 );
 
@@ -76,13 +76,13 @@ watch(
       // not sure if this is needed, but lets make sure that the notification will
       // definitly show up even if some quick state changes will occur
       if (audioRef.value) audioRef.value.currentTime = 0;
-      updateMediaState(store.activePlayer?.state);
+      updateMediaState(store.activePlayer?.playback_state);
     }, 100);
   },
   { once: true },
 );
 
-updateMediaState(store.activePlayer?.state);
+updateMediaState(store.activePlayer?.playback_state);
 
 // This allows for correct seeking on repeated seek forward/backward presses
 let lastSeekPos = undefined as undefined | number;

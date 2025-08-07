@@ -31,7 +31,10 @@ export const getPlayerMenuItems = (
     });
   }
   // add stop playback menu item
-  if (player?.state == "playing" || player?.state == "paused") {
+  if (
+    player?.playback_state == "playing" ||
+    player?.playback_state == "paused"
+  ) {
     menuItems.push({
       label: "stop_playback",
       labelArgs: [],

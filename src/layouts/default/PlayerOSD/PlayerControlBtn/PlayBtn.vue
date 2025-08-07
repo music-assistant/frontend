@@ -45,7 +45,7 @@ const playerCanPlay = computed(() => {
   return true;
 });
 const baseIcon = computed(() => {
-  if (compProps.player?.state == PlaybackState.PLAYING) {
+  if (compProps.player?.playback_state == PlaybackState.PLAYING) {
     return "mdi-pause";
   }
   return "mdi-play";
