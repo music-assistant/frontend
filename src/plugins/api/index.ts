@@ -1056,14 +1056,14 @@ export class MusicAssistantApi {
   }
 
   public async createPlayerGroup(
-    group_type: string,
+    provider: string,
     name: string,
     members: string[],
     dynamic = false,
   ): Promise<Player> {
     // Create a new Sync playergroup
-    return this.sendCommand("player_group/create", {
-      group_type,
+    return this.sendCommand("players/create_group_player", {
+      provider,
       name,
       members,
       dynamic,
