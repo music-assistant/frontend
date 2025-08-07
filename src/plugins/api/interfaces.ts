@@ -809,7 +809,6 @@ export interface PlayerSource {
 export interface Player {
   player_id: string;
   provider: string;
-  provider_id: string;
   type: PlayerType;
   name: string;
   available: boolean;
