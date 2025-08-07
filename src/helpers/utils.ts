@@ -161,11 +161,11 @@ export const getPlayerName = function (player: Player, truncate = 26) {
     (x) => api.players[x]?.available && x != player.player_id,
   );
   if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
-    return `${truncateString(player.display_name, truncate - 3)} +${
+    return `${truncateString(player.name, truncate - 3)} +${
       availableChildPlayers.length
     }`;
   }
-  return truncateString(player.display_name, truncate);
+  return truncateString(player.name, truncate);
 };
 
 export const getStreamingProviderMappings = function (

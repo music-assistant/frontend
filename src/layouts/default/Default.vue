@@ -42,7 +42,7 @@ watch(
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
         p.player_id.toLowerCase() === newPlayerString ||
-        p.display_name.toLowerCase() === newPlayerString
+        p.name.toLowerCase() === newPlayerString
       );
     })?.player_id;
 

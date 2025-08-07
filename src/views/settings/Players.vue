@@ -145,7 +145,7 @@ const toggleEnabled = function (config: PlayerConfig) {
 const getPlayerName = function (playerConfig: PlayerConfig) {
   return (
     playerConfig.name ||
-    api.players[playerConfig.player_id]?.display_name ||
+    api.players[playerConfig.player_id]?.name ||
     playerConfig.default_name ||
     playerConfig.player_id
   );

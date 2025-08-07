@@ -136,7 +136,7 @@
             />
           </template>
           <template #default>
-            <h6>{{ truncateString(childPlayer.display_name, 27) }}</h6>
+            <h6>{{ truncateString(childPlayer.name, 27) }}</h6>
           </template>
           <template #append>
             <v-checkbox
@@ -294,9 +294,7 @@ const getVolumePlayers = function (player: Player) {
       }
     }
   }
-  items.sort((a, b) =>
-    a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
-  );
+  items.sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
   return items;
 };
 

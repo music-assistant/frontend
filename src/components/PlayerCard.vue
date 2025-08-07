@@ -60,7 +60,7 @@
           style="margin-bottom: 3px"
         >
           <!-- translate 'This Device' if no custom name given -->
-          <span v-if="player.display_name == 'This Device'">{{
+          <span v-if="player.name == 'This Device'">{{
             $t("this_device")
           }}</span>
           <span v-else>{{ getPlayerName(player, 27) }}</span>
