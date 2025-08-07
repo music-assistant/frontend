@@ -88,10 +88,10 @@ function playerClicked(player: Player) {
 }
 
 function playerSortScore(player: Player) {
-  if (player.state == PlaybackState.PLAYING) {
+  if (player.playback_state == PlaybackState.PLAYING) {
     return 0;
   }
-  if (player.state == PlaybackState.PAUSED) {
+  if (player.playback_state == PlaybackState.PAUSED) {
     return 1;
   }
   if (player.current_media && player.powered) return 3;

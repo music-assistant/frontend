@@ -4,7 +4,7 @@
     class="panel-item"
     :class="{
       'panel-item-selected': player.player_id == store.activePlayerId,
-      'panel-item-idle': player.state == PlaybackState.IDLE,
+      'panel-item-idle': player.playback_state == PlaybackState.IDLE,
       'panel-item-off': player.powered == false,
     }"
     :ripple="false"
@@ -157,8 +157,8 @@
         <!-- play/pause button -->
         <Button
           v-if="
-            player.state == PlaybackState.PAUSED ||
-            player.state == PlaybackState.PLAYING ||
+            player.playback_state == PlaybackState.PAUSED ||
+            player.playback_state == PlaybackState.PLAYING ||
             playerQueue?.items
           "
           variant="icon"
@@ -170,7 +170,9 @@
           ><v-icon
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
             :icon="
-              player.state == PlaybackState.PLAYING ? 'mdi-pause' : 'mdi-play'
+              player.playback_state == PlaybackState.PLAYING
+                ? 'mdi-pause'
+                : 'mdi-play'
             "
         /></Button>
         <!-- power button -->

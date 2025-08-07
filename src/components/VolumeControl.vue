@@ -282,7 +282,7 @@ const getVolumePlayers = function (player: Player) {
       // skip if player is already playing other content
       if (
         syncPlayer.active_source &&
-        syncPlayer.state == PlaybackState.PLAYING &&
+        syncPlayer.playback_state == PlaybackState.PLAYING &&
         ![player.player_id, syncPlayer.player_id].includes(
           syncPlayer.active_source,
         )

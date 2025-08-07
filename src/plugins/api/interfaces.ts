@@ -821,7 +821,7 @@ export interface Player {
   elapsed_time?: number;
   elapsed_time_last_updated?: number;
   current_media?: PlayerMedia;
-  state?: PlaybackState;
+  playback_state?: PlaybackState;
   powered?: boolean;
   volume_level?: number;
   volume_muted?: boolean;

@@ -541,7 +541,7 @@ export const handlePlayBtnClick = function (
     store.playMenuShown &&
     store.activePlayer?.available &&
     [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
-      store.activePlayer?.state as PlaybackState,
+      store.activePlayer?.playback_state as PlaybackState,
     )
   ) {
     store.playActionInProgress = true;

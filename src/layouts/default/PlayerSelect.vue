@@ -55,7 +55,7 @@
           v-for="player in sortedPlayers.filter(
             (x) =>
               [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
-                x.state!,
+                x.playback_state!,
               ) ||
               (api.queues[x.player_id]?.items > 0 && x.powered != false),
           )"
