@@ -42,7 +42,7 @@
             <v-icon
               size="35"
               :icon="
-                player.type == PlayerType.PLAYER && player.group_childs.length
+                player.type == PlayerType.PLAYER && player.group_members.length
                   ? 'mdi-speaker-multiple'
                   : player.icon
               "

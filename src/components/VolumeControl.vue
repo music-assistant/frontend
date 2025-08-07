@@ -35,7 +35,7 @@
       v-if="
         showVolumeControl &&
         (player.volume_control != PLAYER_CONTROL_NONE ||
-          player.group_childs.length)
+          player.group_members.length)
       "
       class="volumesliderrow"
       :link="false"
@@ -48,7 +48,7 @@
           style="height: 25px"
           :disabled="
             player.type == PlayerType.GROUP ||
-            player.group_childs.length > 0 ||
+            player.group_members.length > 0 ||
             player.mute_control == PLAYER_CONTROL_NONE
           "
           @click.stop="api.playerCommandMuteToggle(player.player_id)"
@@ -65,7 +65,7 @@
         <PlayerVolume
           v-if="
             player.volume_control != PLAYER_CONTROL_NONE ||
-            player.group_childs.length
+            player.group_members.length
           "
           color="secondary"
           width="100%"
@@ -73,14 +73,14 @@
           :disabled="!player.available"
           :model-value="
             Math.round(
-              player.group_childs.length
+              player.group_members.length
                 ? player.group_volume
                 : player.volume_level || 0,
             )
           "
           @click.stop
           @update:model-value="
-            player.group_childs.length > 0
+            player.group_members.length > 0
               ? api.playerCommandGroupVolume(player.player_id, $event)
               : api.playerCommandVolumeSet(player.player_id, $event)
           "
@@ -93,7 +93,7 @@
         <div v-else class="text-caption volumecaption">
           {{
             Math.round(
-              player.group_childs.length
+              player.group_members.length
                 ? player.group_volume
                 : player.volume_level || 0,
             )
@@ -106,7 +106,7 @@
     <div
       v-if="
         showSubPlayers &&
-        (player.group_childs.length > 0 || showSyncControls) &&
+        (player.group_members.length > 0 || showSyncControls) &&
         getVolumePlayers(player).length > 0
       "
       @click.stop
@@ -144,7 +144,7 @@
               :ripple="false"
               :disabled="childPlayer.player_id == player.player_id"
               :model-value="
-                player.group_childs.includes(childPlayer.player_id) ||
+                player.group_members.includes(childPlayer.player_id) ||
                 childPlayer.player_id == player.player_id
               "
               size="22"
@@ -242,13 +242,13 @@ const playersToUnSync = ref<string[]>([]);
 const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
 
 const canExpand = computed(() => {
-  return compProps.player.group_childs.length > 0;
+  return compProps.player.group_members.length > 0;
 });
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
   // always include group_childs
-  for (const groupChildId of player.group_childs) {
+  for (const groupChildId of player.group_members) {
     const volumeChild = api?.players[groupChildId];
     if (!volumeChild) continue;
     if (volumeChild.volume_control == PLAYER_CONTROL_NONE) continue;
@@ -316,7 +316,7 @@ const syncCheckBoxChange = async function (
       playersToSync.value.push(syncPlayerId);
     }
     // optimistically update player state
-    api.players[parentPlayerId].group_childs.push(syncPlayerId);
+    api.players[parentPlayerId].group_members.push(syncPlayerId);
   } else {
     // remove player from syncgroup
     if (playersToSync.value.includes(syncPlayerId)) {
@@ -329,9 +329,9 @@ const syncCheckBoxChange = async function (
       playersToUnSync.value.push(syncPlayerId);
     }
     // optimistically update player state
-    api.players[parentPlayerId].group_childs = api.players[
+    api.players[parentPlayerId].group_members = api.players[
       parentPlayerId
-    ].group_childs.filter((x) => x != syncPlayerId);
+    ].group_members.filter((x) => x != syncPlayerId);
   }
 
   // clear existing debounce timer

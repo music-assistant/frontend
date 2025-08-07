@@ -40,7 +40,7 @@
             size="35"
             :icon="
               store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_childs.length
+              store.activePlayer?.group_members.length
                 ? 'mdi-speaker-multiple'
                 : store.activePlayer?.icon || 'mdi-speaker'
             "

@@ -60,7 +60,7 @@ export const getPlayerMenuItems = (
     player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
     !player.synced_to &&
     player.type == PlayerType.PLAYER &&
-    player.group_childs.length == 0 &&
+    player.group_members.length == 0 &&
     playersToSyncWith.length > 0
   ) {
     menuItems.push({

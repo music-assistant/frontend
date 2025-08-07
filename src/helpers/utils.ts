@@ -157,7 +157,7 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
 
 export const getPlayerName = function (player: Player, truncate = 26) {
   if (!player) return "";
-  const availableChildPlayers = player.group_childs.filter(
+  const availableChildPlayers = player.group_members.filter(
     (x) => api.players[x]?.available && x != player.player_id,
   );
   if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
