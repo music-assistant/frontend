@@ -70,7 +70,7 @@ export const getPlayerMenuItems = (
       subItems: playersToSyncWith
         .map((p) => {
           return {
-            label: p.display_name,
+            label: p.name,
             labelArgs: [],
             action: () => {
               api.playerCommandGroup(player.player_id, p.player_id);
@@ -147,7 +147,7 @@ export const getPlayerMenuItems = (
         )
         .map((p) => {
           return {
-            label: p.display_name,
+            label: p.name,
             labelArgs: [],
             action: () => {
               api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);

@@ -85,7 +85,7 @@
               v-if="store.activePlayer?.powered == false"
               :style="`font-size: ${titleFontSize};`"
             >
-              {{ store.activePlayer?.display_name }}
+              {{ store.activePlayer?.name }}
             </v-card-title>
             <!-- queue item media item + optional version-->
             <v-card-title
@@ -134,7 +134,7 @@
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer?.display_name || $t("no_player") }}
+                {{ store.activePlayer?.name || $t("no_player") }}
               </MarqueeText>
             </v-card-title>
 

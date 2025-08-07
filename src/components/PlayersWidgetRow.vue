@@ -67,9 +67,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
     .filter((x) => playerVisible(x))
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-    )
+    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1))
     .sort((a, b) => {
       return playerSortScore(a) - playerSortScore(b);
     });

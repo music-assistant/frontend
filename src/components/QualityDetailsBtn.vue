@@ -499,7 +499,7 @@
                       class="streamdetails-icon"
                       :monochrome="true"
                     />
-                    {{ api.players[player].display_name }}
+                    {{ api.players[player].name }}
                   </template>
                   <template v-else>
                     <!-- This should not happen -->
@@ -523,10 +523,10 @@
                     :monochrome="true"
                   />
                   <template v-if="players.length == 1">
-                    {{ api.players[player_id].display_name }}
+                    {{ api.players[player_id].name }}
                   </template>
                   <template v-else>
-                    {{ api.players[player_id].display_name }} +
+                    {{ api.players[player_id].name }} +
                     {{ players.length - 1 }}
                     <v-tooltip location="top" max-width="300">
                       <template #activator="{ props }">

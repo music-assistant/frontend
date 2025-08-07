@@ -832,7 +832,6 @@ export interface Player {
   synced_to?: string;
 
   group_volume: number;
-  display_name: string;
   hide_player_in_ui: HidePlayerOption[];
   icon: string;
   power_control: string;
