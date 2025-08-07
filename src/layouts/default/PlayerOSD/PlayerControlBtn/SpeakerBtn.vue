@@ -10,7 +10,7 @@
       :color="color ? color : ''"
       :size="24"
       :icon="
-        store.activePlayer?.group_childs.length
+        store.activePlayer?.group_members.length
           ? 'mdi-speaker-multiple'
           : 'mdi-speaker'
       "

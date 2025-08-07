@@ -55,7 +55,7 @@
             isVisible:
               !mobile &&
               (store.activePlayer?.volume_control != PLAYER_CONTROL_NONE ||
-                store.activePlayer?.group_childs.length > 0),
+                store.activePlayer?.group_members.length > 0),
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
@@ -88,7 +88,7 @@
     v-if="
       mobile &&
       (store.activePlayer?.volume_control != PLAYER_CONTROL_NONE ||
-        store.activePlayer?.group_childs.length > 0)
+        store.activePlayer?.group_members.length > 0)
     "
     class="volume-slider"
   >
@@ -101,17 +101,17 @@
       prepend-icon="mdi-volume-minus"
       append-icon="mdi-volume-plus"
       @update:model-value="
-        store.activePlayer!.group_childs.length > 0
+        store.activePlayer!.group_members.length > 0
           ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
           : api.playerCommandVolumeSet(store.activePlayerId!, $event)
       "
       @click:prepend="
-        store.activePlayer!.group_childs.length > 0
+        store.activePlayer!.group_members.length > 0
           ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
           : api.playerCommandVolumeDown(store.activePlayerId!)
       "
       @click:append="
-        store.activePlayer!.group_childs.length > 0
+        store.activePlayer!.group_members.length > 0
           ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
           : api.playerCommandVolumeUp(store.activePlayerId!)
       "

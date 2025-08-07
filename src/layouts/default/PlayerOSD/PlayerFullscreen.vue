@@ -508,17 +508,17 @@
             :color="sliderColor"
             :allow-wheel="true"
             @update:model-value="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
                 : api.playerCommandVolumeSet(store.activePlayerId!, $event)
             "
             @click:prepend="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
                 : api.playerCommandVolumeDown(store.activePlayerId!)
             "
             @click:append="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
                 : api.playerCommandVolumeUp(store.activePlayerId!)
             "
