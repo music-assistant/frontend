@@ -218,7 +218,7 @@
 import {
   Player,
   PlayerFeature,
-  PlayerState,
+  PlaybackState,
   PlayerType,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
@@ -282,7 +282,7 @@ const getVolumePlayers = function (player: Player) {
       // skip if player is already playing other content
       if (
         syncPlayer.active_source &&
-        syncPlayer.state == PlayerState.PLAYING &&
+        syncPlayer.state == PlaybackState.PLAYING &&
         ![player.player_id, syncPlayer.player_id].includes(
           syncPlayer.active_source,
         )
