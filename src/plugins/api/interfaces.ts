@@ -247,11 +247,14 @@ export enum RepeatMode {
   ALL = "all", // repeat entire queue
 }
 
-export enum PlayerState {
+export enum PlaybackState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
 }
+
+// alias for backwards compatibility
+type PlayerState = PlaybackState;
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
@@ -342,6 +345,7 @@ export enum ProviderFeature {
   // player provider specific features
   SYNC_PLAYERS = "sync_players",
   REMOVE_PLAYER = "remove_player",
+  CREATE_GROUP_PLAYER = "create_group_player",
   // metadata provider specific features
   ARTIST_METADATA = "artist_metadata",
   ALBUM_METADATA = "album_metadata",
@@ -808,6 +812,7 @@ export interface PlayerSource {
 export interface Player {
   player_id: string;
   provider: string;
+  provider_id: string;
   type: PlayerType;
   name: string;
   available: boolean;
