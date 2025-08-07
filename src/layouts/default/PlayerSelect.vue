@@ -54,7 +54,9 @@
         <PlayerCard
           v-for="player in sortedPlayers.filter(
             (x) =>
-              [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state!) ||
+              [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
+                x.state!,
+              ) ||
               (api.queues[x.player_id]?.items > 0 && x.powered != false),
           )"
           :id="player.player_id"
@@ -151,7 +153,7 @@ import {
   Player,
   PlayerFeature,
   PlayerType,
-  PlayerState,
+  PlaybackState,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ConnectionState, api } from "@/plugins/api";

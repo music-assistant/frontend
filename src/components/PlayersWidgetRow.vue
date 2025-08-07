@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { Player } from "@/plugins/api/interfaces";
 import { computed } from "vue";
-import { PlayerState } from "@/plugins/api/interfaces";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
@@ -88,10 +88,10 @@ function playerClicked(player: Player) {
 }
 
 function playerSortScore(player: Player) {
-  if (player.state == PlayerState.PLAYING) {
+  if (player.state == PlaybackState.PLAYING) {
     return 0;
   }
-  if (player.state == PlayerState.PAUSED) {
+  if (player.state == PlaybackState.PAUSED) {
     return 1;
   }
   if (player.current_media && player.powered) return 3;

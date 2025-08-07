@@ -253,9 +253,6 @@ export enum PlaybackState {
   PLAYING = "playing",
 }
 
-// alias for backwards compatibility
-type PlayerState = PlaybackState;
-
 export enum PlayerType {
   PLAYER = "player", // A regular player.
   GROUP = "group", // A (dedicated) group player or playergroup.
@@ -770,7 +767,7 @@ export interface PlayerQueue {
   index_in_buffer?: number;
   elapsed_time: number;
   elapsed_time_last_updated: number;
-  state: PlayerState;
+  state: PlaybackState;
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
@@ -824,7 +821,7 @@ export interface Player {
   elapsed_time?: number;
   elapsed_time_last_updated?: number;
   current_media?: PlayerMedia;
-  state?: PlayerState;
+  state?: PlaybackState;
   powered?: boolean;
   volume_level?: number;
   volume_muted?: boolean;

@@ -7,7 +7,7 @@ import {
   MediaItemTypeOrItemMapping,
   MediaType,
   Player,
-  PlayerState,
+  PlaybackState,
   PlayerType,
   ProviderMapping,
 } from "@/plugins/api/interfaces";
@@ -540,8 +540,8 @@ export const handlePlayBtnClick = function (
     !forceMenu &&
     store.playMenuShown &&
     store.activePlayer?.available &&
-    [PlayerState.PLAYING, PlayerState.PAUSED].includes(
-      store.activePlayer?.state as PlayerState,
+    [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
+      store.activePlayer?.state as PlaybackState,
     )
   ) {
     store.playActionInProgress = true;
