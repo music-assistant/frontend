@@ -247,7 +247,7 @@ export enum RepeatMode {
   ALL = "all", // repeat entire queue
 }
 
-export enum PlayerState {
+export enum PlaybackState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
@@ -342,6 +342,7 @@ export enum ProviderFeature {
   // player provider specific features
   SYNC_PLAYERS = "sync_players",
   REMOVE_PLAYER = "remove_player",
+  CREATE_GROUP_PLAYER = "create_group_player",
   // metadata provider specific features
   ARTIST_METADATA = "artist_metadata",
   ALBUM_METADATA = "album_metadata",
@@ -766,7 +767,7 @@ export interface PlayerQueue {
   index_in_buffer?: number;
   elapsed_time: number;
   elapsed_time_last_updated: number;
-  state: PlayerState;
+  state: PlaybackState;
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
@@ -819,18 +820,17 @@ export interface Player {
   elapsed_time?: number;
   elapsed_time_last_updated?: number;
   current_media?: PlayerMedia;
-  state?: PlayerState;
+  playback_state?: PlaybackState;
   powered?: boolean;
   volume_level?: number;
   volume_muted?: boolean;
-  group_childs: string[];
+  group_members: string[];
   active_source?: string;
   source_list: PlayerSource[];
   active_group?: string;
   synced_to?: string;
 
   group_volume: number;
-  display_name: string;
   hide_player_in_ui: HidePlayerOption[];
   icon: string;
   power_control: string;

@@ -85,7 +85,7 @@
               v-if="store.activePlayer?.powered == false"
               :style="`font-size: ${titleFontSize};`"
             >
-              {{ store.activePlayer?.display_name }}
+              {{ store.activePlayer?.name }}
             </v-card-title>
             <!-- queue item media item + optional version-->
             <v-card-title
@@ -134,7 +134,7 @@
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer?.display_name || $t("no_player") }}
+                {{ store.activePlayer?.name || $t("no_player") }}
               </MarqueeText>
             </v-card-title>
 
@@ -492,17 +492,17 @@
             :color="sliderColor"
             :allow-wheel="true"
             @update:model-value="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
                 : api.playerCommandVolumeSet(store.activePlayerId!, $event)
             "
             @click:prepend="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
                 : api.playerCommandVolumeDown(store.activePlayerId!)
             "
             @click:append="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
                 : api.playerCommandVolumeUp(store.activePlayerId!)
             "

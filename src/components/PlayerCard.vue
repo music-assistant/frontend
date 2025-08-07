@@ -4,7 +4,7 @@
     class="panel-item"
     :class="{
       'panel-item-selected': player.player_id == store.activePlayerId,
-      'panel-item-idle': player.state == PlayerState.IDLE,
+      'panel-item-idle': player.playback_state == PlaybackState.IDLE,
       'panel-item-off': player.powered == false,
     }"
     :ripple="false"
@@ -42,7 +42,7 @@
             <v-icon
               size="35"
               :icon="
-                player.type == PlayerType.PLAYER && player.group_childs.length
+                player.type == PlayerType.PLAYER && player.group_members.length
                   ? 'mdi-speaker-multiple'
                   : player.icon
               "
@@ -60,7 +60,7 @@
           style="margin-bottom: 3px"
         >
           <!-- translate 'This Device' if no custom name given -->
-          <span v-if="player.display_name == 'This Device'">{{
+          <span v-if="player.name == 'This Device'">{{
             $t("this_device")
           }}</span>
           <span v-else>{{ getPlayerName(player, 27) }}</span>
@@ -157,8 +157,8 @@
         <!-- play/pause button -->
         <Button
           v-if="
-            player.state == PlayerState.PAUSED ||
-            player.state == PlayerState.PLAYING ||
+            player.playback_state == PlaybackState.PAUSED ||
+            player.playback_state == PlaybackState.PLAYING ||
             playerQueue?.items
           "
           variant="icon"
@@ -170,7 +170,9 @@
           ><v-icon
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
             :icon="
-              player.state == PlayerState.PLAYING ? 'mdi-pause' : 'mdi-play'
+              player.playback_state == PlaybackState.PLAYING
+                ? 'mdi-pause'
+                : 'mdi-play'
             "
         /></Button>
         <!-- power button -->
@@ -222,7 +224,7 @@ import api from "@/plugins/api";
 import {
   MediaType,
   Player,
-  PlayerState,
+  PlaybackState,
   PlayerType,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";

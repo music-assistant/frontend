@@ -98,11 +98,10 @@ const valid = ref<boolean>(false);
 // computed properties
 const groupTypes = computed(() => {
   return [
+    // TODO: move universl group type to the back, so it isn't selected automatically
     ...Object.values(api.providers).filter((x) =>
-      x.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
+      x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
     ),
-    // return universal group type (as last option, so it isn't mistakenly selected)
-    { name: "Universal", instance_id: "universal" },
   ];
 });
 

@@ -40,7 +40,7 @@
             size="35"
             :icon="
               store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_childs.length
+              store.activePlayer?.group_members.length
                 ? 'mdi-speaker-multiple'
                 : store.activePlayer?.icon || 'mdi-speaker'
             "
@@ -63,7 +63,7 @@
           v-if="store.activePlayer?.powered == false"
           @click="store.showPlayersMenu = true"
         >
-          {{ store.activePlayer?.display_name }}
+          {{ store.activePlayer?.name }}
         </div>
         <!-- queue item media item + optional version-->
         <div
@@ -95,7 +95,7 @@
         </div>
         <!-- fallback: display player name -->
         <div v-else-if="store.activePlayer">
-          {{ store.activePlayer?.display_name }}
+          {{ store.activePlayer?.name }}
         </div>
         <!-- no player selected message -->
         <div v-else @click="store.showPlayersMenu = true">
