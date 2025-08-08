@@ -389,21 +389,23 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   const current = store.curQueueItem?.media_item as Track | undefined;
   if (!current) return false;
   switch (itemtype) {
-    case 'tracks': {
+    case "tracks": {
       return item.item_id === current.item_id;
     }
-    case 'albums': {
+    case "albums": {
       return item.item_id === current.album.item_id;
     }
-    case 'artists': {
-      return Array.isArray(current.artists) &&
-        current.artists.some(artist => artist.item_id === item.item_id);
+    case "artists": {
+      return (
+        Array.isArray(current.artists) &&
+        current.artists.some((artist) => artist.item_id === item.item_id)
+      );
     }
     default: {
       return false;
     }
   }
-}
+};
 
 const onSelect = function (
   item: MediaItemTypeOrItemMapping,

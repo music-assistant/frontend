@@ -45,8 +45,13 @@
           <span v-if="item.media_type == MediaType.FOLDER">
             <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
           </span>
-          <span :class="{'is-playing': isPlaying}" v-else>{{ item.name }}</span>
-          <span :class="{'is-playing': isPlaying}" v-if="'version' in item && item.version">
+          <span v-else :class="{ 'is-playing': isPlaying }">{{
+            item.name
+          }}</span>
+          <span
+            v-if="'version' in item && item.version"
+            :class="{ 'is-playing': isPlaying }"
+          >
             - {{ item.version }}</span
           >
         </v-list-item-title>
@@ -81,7 +86,11 @@
       </v-list-item>
 
       <!-- play button -->
-      <NowPlayingBadge icon-style="position: absolute; right: 5px; bottom: 5px" :show-badge="false" v-if="isPlaying && !showActions"></NowPlayingBadge>
+      <NowPlayingBadge
+        v-if="isPlaying && !showActions"
+        icon-style="position: absolute; right: 5px; bottom: 5px"
+        :show-badge="false"
+      />
       <v-btn
         v-if="
           (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
@@ -130,9 +139,9 @@
             <FavouriteButton :item="item" />
           </v-item>
         </v-item-group>
-        
+
         <!-- Now Playing Badge -->
-        <NowPlayingBadge :show-badge="false" v-if="isPlaying"></NowPlayingBadge>
+        <NowPlayingBadge v-if="isPlaying" :show-badge="false" />
         <v-spacer />
         <MAButton
           v-if="isHovering || $vuetify.display.mobile"

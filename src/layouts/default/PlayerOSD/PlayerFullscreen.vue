@@ -326,9 +326,12 @@
                             )
                           "
                         >
-                          <span :class="{
-                            'is-playing': item.queue_item_id === store.curQueueItem?.queue_item_id,
-                          }"
+                          <span
+                            :class="{
+                              'is-playing':
+                                item.queue_item_id ===
+                                store.curQueueItem?.queue_item_id,
+                            }"
                           >
                             {{ item.name }}
                           </span>
@@ -366,7 +369,12 @@
                       </div>
                     </template>
                     <template #append>
-                      <NowPlayingBadge v-if="item.queue_item_id === store.curQueueItem?.queue_item_id"></NowPlayingBadge>
+                      <NowPlayingBadge
+                        v-if="
+                          item.queue_item_id ===
+                          store.curQueueItem?.queue_item_id
+                        "
+                      />
                       <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>
                   </ListItem>

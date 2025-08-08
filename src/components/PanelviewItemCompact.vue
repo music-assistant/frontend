@@ -45,8 +45,13 @@
             <span v-if="item.media_type == MediaType.FOLDER">
               <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
             </span>
-            <span :class="{'is-playing': isPlaying}" v-else>{{ item.name }}</span>
-            <span :class="{'is-playing': isPlaying}" v-if="'version' in item && item.version">
+            <span v-else :class="{ 'is-playing': isPlaying }">{{
+              item.name
+            }}</span>
+            <span
+              v-if="'version' in item && item.version"
+              :class="{ 'is-playing': isPlaying }"
+            >
               - {{ item.version }}</span
             >
           </v-list-item-title>
@@ -83,7 +88,11 @@
         </v-list-item>
       </div>
       <!-- Now Playing Badge -->
-      <NowPlayingBadge icon-style="position: absolute; right: 5px; bottom: 5px" :show-badge="false" v-if="isPlaying"></NowPlayingBadge>
+      <NowPlayingBadge
+        v-if="isPlaying"
+        icon-style="position: absolute; right: 5px; bottom: 5px"
+        :show-badge="false"
+      />
       <!-- play button -->
       <v-btn
         v-if="
