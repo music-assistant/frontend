@@ -311,22 +311,32 @@
                       </div>
                     </template>
                     <template #title>
-                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
-                      <MarqueeText
-                        :sync="
-                          index == 0 && activeQueuePanel == 0
-                            ? playerMarqueeSync
-                            : hoveredMarqueeSync
-                        "
-                        :disabled="
-                          !(
-                            (index == 0 && activeQueuePanel == 0) ||
-                            hoveredQueueIndex == index
-                          )
-                        "
-                      >
-                        {{ item.name }}
-                      </MarqueeText>
+                      <div class="title-row">
+                        <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
+                        <MarqueeText
+                          :sync="
+                            index == 0 && activeQueuePanel == 0
+                              ? playerMarqueeSync
+                              : hoveredMarqueeSync
+                          "
+                          :disabled="
+                            !(
+                              (index == 0 && activeQueuePanel == 0) ||
+                              hoveredQueueIndex == index
+                            )
+                          "
+                        >
+                          <span
+                            :class="{
+                              'is-playing':
+                                item.queue_item_id ===
+                                store.curQueueItem?.queue_item_id,
+                            }"
+                          >
+                            {{ item.name }}
+                          </span>
+                        </MarqueeText>
+                      </div>
                     </template>
                     <template #subtitle>
                       <div class="d-flex">
@@ -359,6 +369,12 @@
                       </div>
                     </template>
                     <template #append>
+                      <NowPlayingBadge
+                        v-if="
+                          item.queue_item_id ===
+                          store.curQueueItem?.queue_item_id
+                        "
+                      />
                       <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>
                   </ListItem>
@@ -546,6 +562,7 @@ import {
   watchEffect,
 } from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import api from "@/plugins/api";
 import {
   Album,
@@ -1216,5 +1233,11 @@ button {
   height: 100%;
   width: 100%;
   overflow: hidden;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>
