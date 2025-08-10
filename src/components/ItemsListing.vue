@@ -69,6 +69,7 @@
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -88,6 +89,7 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -115,6 +117,7 @@
               :show-checkboxes="showCheckboxes"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
               :show-details="itemtype.includes('versions')"
               :parent-item="parentItem"
               @select="onSelect"
@@ -380,6 +383,28 @@ const toggleAlbumArtistsFilter = function () {
 
 const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
+};
+
+const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
+  const current = store.curQueueItem?.media_item as Track | undefined;
+  if (!current) return false;
+  switch (itemtype) {
+    case "tracks": {
+      return item.item_id === current.item_id;
+    }
+    case "albums": {
+      return item.item_id === current.album.item_id;
+    }
+    case "artists": {
+      return (
+        Array.isArray(current.artists) &&
+        current.artists.some((artist) => artist.item_id === item.item_id)
+      );
+    }
+    default: {
+      return false;
+    }
+  }
 };
 
 const onSelect = function (
