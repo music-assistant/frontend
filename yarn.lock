@@ -2245,10 +2245,10 @@
   resolved "https://registry.yarnpkg.com/@vue/tsconfig/-/tsconfig-0.7.0.tgz#67044c847b7a137b8cbfd6b23104c36dbaf80d1d"
   integrity sha512-ku2uNz5MaZ9IerPPUyOHzyjhXoX2kVJaVf7hL315DC17vS6IiZRmmCPfggNbU16QTvM80+uYYy3eYJB59WCtvg==
 
-"@vuetify/loader-shared@^2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@vuetify/loader-shared/-/loader-shared-2.1.0.tgz#29410dce04a78fa9cd40c4d9bc417b8d61ce5103"
-  integrity sha512-dNE6Ceym9ijFsmJKB7YGW0cxs7xbYV8+1LjU6jd4P14xOt/ji4Igtgzt0rJFbxu+ZhAzqz853lhB0z8V9Dy9cQ==
+"@vuetify/loader-shared@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@vuetify/loader-shared/-/loader-shared-2.1.1.tgz#bc3bbf845f910f1b2e0317be9293f42dfc94006d"
+  integrity sha512-jSZTzTYaoiv8iwonFCVZQ0YYX/M+Uyl4ng+C4egMJT0Hcmh9gIxJL89qfZICDeo3g0IhqrvipW2FFKKRDMtVcA==
   dependencies:
     upath "^2.0.1"
 
@@ -5757,12 +5757,12 @@ vite-plugin-pwa@1.0.2:
     workbox-build "^7.3.0"
     workbox-window "^7.3.0"
 
-vite-plugin-vuetify@2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/vite-plugin-vuetify/-/vite-plugin-vuetify-2.1.1.tgz#31c958f0c64c436a3165462b81196a7c2ae3a2ff"
-  integrity sha512-Pb7bKhQH8qPMzURmEGq2aIqCJkruFNsyf1NcrrtnjsOIkqJPMcBbiP0oJoO8/uAmyB5W/1JTbbUEsyXdMM0QHQ==
+vite-plugin-vuetify@2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/vite-plugin-vuetify/-/vite-plugin-vuetify-2.1.2.tgz#8e28dcb5b20f4635d350010547654cf2b4dad373"
+  integrity sha512-I/wd6QS+DO6lHmuGoi1UTyvvBTQ2KDzQZ9oowJQEJ6OcjWfJnscYXx2ptm6S7fJSASuZT8jGRBL3LV4oS3LpaA==
   dependencies:
-    "@vuetify/loader-shared" "^2.1.0"
+    "@vuetify/loader-shared" "^2.1.1"
     debug "^4.3.3"
     upath "^2.0.1"
 
