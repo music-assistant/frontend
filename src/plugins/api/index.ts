@@ -44,6 +44,7 @@ import {
   ItemMapping,
   AlbumType,
   DSPConfig,
+  DSPConfigPreset,
   Audiobook,
   Podcast,
   PodcastEpisode,
@@ -1255,6 +1256,25 @@ export class MusicAssistantApi {
     return this.sendCommand("config/players/dsp/save", {
       player_id,
       config,
+    });
+  }
+
+  public async getDSPPresets(): Promise<DSPConfigPreset[]> {
+    // Return all known DSP presets
+    return this.sendCommand("config/dsp_presets/get");
+  }
+
+  public async saveDSPPreset(
+    preset: DSPConfigPreset,
+  ): Promise<DSPConfigPreset> {
+    // Save a DSP preset.
+    return this.sendCommand("config/dsp_presets/save", { preset });
+  }
+
+  public async removeDSPPreset(presetId: string): Promise<void> {
+    // Remove a DSP preset.
+    return this.sendCommand("config/dsp_presets/remove", {
+      preset_id: presetId,
     });
   }
 

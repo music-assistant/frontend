@@ -478,6 +478,14 @@
             "channels_compact": {
                 "FL": "L",
                 "FR": "R"
+            },
+            "presets": {
+                "load": "Load DSP Preset",
+                "empty_warning": "No DSP presets available",
+                "save": "Save DSP Preset",
+                "name": "Preset Name",
+                "name_placeholder": "My new preset",
+                "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
         },
         "power_control": {

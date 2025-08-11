@@ -68,6 +68,13 @@ export interface DSPConfig {
   output_gain: number;
 }
 
+// DSPConfigPreset represents a preset configuration for DSP
+export interface DSPConfigPreset {
+  preset_id?: string;
+  name: string;
+  config: DSPConfig;
+}
+
 // DSPDetails used in StreamDetails
 export enum DSPState {
   ENABLED = "enabled",
@@ -291,6 +298,7 @@ export enum EventType {
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
+  DSP_PRESETS_UPDATED = "dsp_presets_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
   BUILTIN_PLAYER = "builtin_player",

@@ -1,6 +1,6 @@
 <template>
   <section v-if="dsp">
-    <v-toolbar color="transparent" class="border-b">
+    <v-toolbar color="transparent" class="border-b pr-4">
       <v-switch
         v-model="dsp.enabled"
         hide-details
@@ -10,6 +10,45 @@
       <v-toolbar-title>{{
         $t("settings.dsp.configure_on", { name: playerName })
       }}</v-toolbar-title>
+      <v-menu offset-y transition="slide-y-transition">
+        <template #activator="{ props: menuProps }">
+          <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
+            <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
+            <span class="d-none d-md-inline">
+              {{ $t("settings.dsp.presets.load") }}
+            </span>
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-item v-if="dspPresets.length === 0">
+            <v-list-item-title>
+              {{ $t("settings.dsp.presets.empty_warning") }}
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item
+            v-for="preset in dspPresets"
+            v-else
+            :key="preset.preset_id"
+            @click="loadPreset(preset)"
+          >
+            <v-list-item-title>{{ preset.name }}</v-list-item-title>
+            <template #append>
+              <v-btn
+                icon="mdi-delete"
+                variant="text"
+                density="compact"
+                @click.stop="removePreset(preset.preset_id)"
+              />
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+      <v-btn :class="getButtonClass()" @click="showSavePresetDialog = true">
+        <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-content-save </v-icon>
+        <span class="d-none d-md-inline">
+          {{ $t("settings.dsp.presets.save") }}
+        </span>
+      </v-btn>
     </v-toolbar>
 
     <v-container class="pa-4">
@@ -131,6 +170,34 @@
       </v-row>
     </v-container>
 
+    <!-- Save DSP Preset Dialog -->
+    <v-dialog v-model="showSavePresetDialog" max-width="300">
+      <v-card>
+        <v-card-title>{{ $t("settings.dsp.presets.save") }}</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="newPresetName"
+            :label="$t('settings.dsp.presets.name')"
+            :placeholder="$t('settings.dsp.presets.name_placeholder')"
+            variant="outlined"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="showSavePresetDialog = false">
+            {{ $t("cancel") }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            :disabled="!newPresetName.trim()"
+            @click="savePreset"
+          >
+            {{ $t("settings.dsp.presets.save") }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Add Filter Dialog -->
     <v-dialog v-model="showAddFilterDialog" max-width="300">
       <v-card>
@@ -155,13 +222,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  onUnmounted,
+  onBeforeUnmount,
+  onMounted,
+} from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { useDisplay } from "vuetify";
+import { useDisplay, useTheme } from "vuetify";
 import { api } from "@/plugins/api";
 import {
   DSPConfig,
+  DSPConfigPreset,
   ParametricEQBandType,
   DSPFilter,
   DSPFilterType,
@@ -177,15 +252,19 @@ import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 
 const { t } = useI18n();
 const router = useRouter();
+const theme = useTheme();
 
 const props = defineProps<{
   playerId?: string;
 }>();
 
 const dsp = ref<DSPConfig>();
+const dspPresets = ref<DSPConfigPreset[]>([]);
 const selectedStage = ref<number | null | "input" | "output">(null);
 const showAddFilterDialog = ref(false);
+const showSavePresetDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
+const newPresetName = ref("");
 const windowWidth = ref(window.innerWidth);
 const { mobile } = useDisplay();
 let updatedFromServer = false;
@@ -198,6 +277,12 @@ const filterTypes = Object.values(DSPFilterType).map((value) => {
 });
 
 // Methods
+const getButtonClass = (): string => {
+  return theme.global.current.value.dark
+    ? "bg-grey-darken-3"
+    : "bg-grey-lighten-3";
+};
+
 const selectStage = (index: number | "input" | "output") => {
   selectedStage.value = index;
 };
@@ -263,6 +348,38 @@ const removeFilter = (index: number) => {
   dsp.value?.filters.splice(index, 1);
 };
 
+const loadPreset = async (preset: DSPConfigPreset) => {
+  if (!preset || !preset.config) return;
+
+  selectedStage.value = "input";
+  // Deep copy the preset config to avoid reference issues
+  dsp.value = preset.config;
+};
+
+const savePreset = async () => {
+  if (!dsp.value || !newPresetName.value.trim()) return;
+
+  const preset: DSPConfigPreset = {
+    name: newPresetName.value.trim(),
+    config: dsp.value,
+  };
+
+  try {
+    await api.saveDSPPreset(preset);
+    newPresetName.value = "";
+    showSavePresetDialog.value = false;
+  } catch (error) {
+    console.error("Failed to save DSP preset:", error);
+  }
+};
+
+const removePreset = async (presetId: string | undefined) => {
+  if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
+
+  await api.removeDSPPreset(presetId);
+  dspPresets.value = dspPresets.value.filter((p) => p.preset_id !== presetId);
+};
+
 // Watchers
 
 watch(
@@ -288,14 +405,29 @@ watch(
   { immediate: true },
 );
 
-const unsub = api.subscribe(
+const unsubPlayerDSP = api.subscribe(
   EventType.PLAYER_DSP_CONFIG_UPDATED,
   (evt: { data: DSPConfig }) => {
     updatedFromServer = true;
     dsp.value = evt.data;
   },
 );
-onBeforeUnmount(unsub);
+
+const unsubDSPPresets = api.subscribe(
+  EventType.DSP_PRESETS_UPDATED,
+  (evt: { data: DSPConfigPreset[] }) => {
+    dspPresets.value = evt.data;
+  },
+);
+
+onMounted(async () => {
+  dspPresets.value = await api.getDSPPresets();
+});
+
+onBeforeUnmount(() => {
+  unsubPlayerDSP();
+  unsubDSPPresets();
+});
 
 // Debounced save, to prevent too many requests, but still be responsive
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -310,14 +442,14 @@ const debouncedSave = (newVal: DSPConfig) => {
 
 watch(
   dsp,
-  (old_val, newVal) => {
+  (newVal, oldVal) => {
     if (updatedFromServer) {
       // Skip resending, since we just got the config
       if (saveTimeout) clearTimeout(saveTimeout);
       updatedFromServer = false;
       return;
     }
-    if (old_val === null) return; // We haven't changed anything yet
+    if (oldVal === null) return; // We haven't changed anything yet
     if (newVal) debouncedSave(newVal);
   },
   { deep: true },
