@@ -143,15 +143,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import MediaItemThumb from "./MediaItemThumb.vue";
-import MAButton from "./mods/Button.vue";
-import {
-  BrowseFolder,
-  ContentType,
-  type MediaItemType,
-  MediaType,
-} from "@/plugins/api/interfaces";
+import MAButton from "@/components/Button.vue";
+import FavouriteButton from "@/components/FavoriteButton.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
@@ -160,10 +153,17 @@ import {
   handlePlayBtnClick,
   parseBool,
 } from "@/helpers/utils";
-import { iconHiRes } from "./QualityDetailsBtn.vue";
+import {
+  BrowseFolder,
+  ContentType,
+  type MediaItemType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import FavouriteButton from "@/components/FavoriteButton.vue";
 import { store } from "@/plugins/store";
+import { computed } from "vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 // properties
 export interface Props {
@@ -218,7 +218,7 @@ const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
-const onMenu = function (evt: PointerEvent | TouchEvent) {
+const onMenu = function (evt: PointerEvent | TouchEvent | MouseEvent) {
   if (compProps.showCheckboxes) return;
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;

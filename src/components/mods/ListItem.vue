@@ -33,8 +33,8 @@
 </template>
 
 <script lang="ts">
+import MAButton from "@/components/Button.vue";
 import { computed } from "vue";
-import MAButton from "./Button.vue";
 
 export default {
   components: { MAButton },
