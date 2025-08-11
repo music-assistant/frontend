@@ -10,7 +10,6 @@
       <v-toolbar-title>{{
         $t("settings.dsp.configure_on", { name: playerName })
       }}</v-toolbar-title>
-      <v-spacer />
       <v-menu offset-y transition="slide-y-transition">
         <template v-slot:activator="{ props }">
           <v-btn
@@ -19,7 +18,9 @@
             :class="getButtonClass()"
             prepend-icon="mdi-tray-arrow-down"
           >
-            {{ $t("settings.dsp.presets.load") }}
+            <span class="d-none d-md-inline">
+              {{ $t("settings.dsp.presets.load") }}
+            </span>
           </v-btn>
         </template>
         <v-list>
@@ -29,8 +30,8 @@
             </v-list-item-title>
           </v-list-item>
           <v-list-item
-            v-else
             v-for="preset in dspPresets"
+            v-else
             :key="preset.preset_id"
             @click="loadPreset(preset)"
           >
@@ -51,7 +52,9 @@
         prepend-icon="mdi-content-save"
         @click="showSavePresetDialog = true"
       >
-        {{ $t("settings.dsp.presets.save") }}
+        <span class="d-none d-md-inline">
+          {{ $t("settings.dsp.presets.save") }}
+        </span>
       </v-btn>
     </v-toolbar>
 
@@ -193,8 +196,8 @@
           </v-btn>
           <v-btn
             color="primary"
-            @click="savePreset"
             :disabled="!newPresetName.trim()"
+            @click="savePreset"
           >
             {{ $t("settings.dsp.presets.save") }}
           </v-btn>
