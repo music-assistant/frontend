@@ -467,11 +467,27 @@
             class="media-controls-item"
             max-height="45px"
           />
+          <SkipBackBtn
+            v-if="isAudiobookOrPodcast"
+            :player-queue="store.activePlayerQueue"
+            :cur-queue-item="store.curQueueItem"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
+          />
           <PlayBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="100px"
+          />
+          <SkipForwardBtn
+            v-if="isAudiobookOrPodcast"
+            :player-queue="store.activePlayerQueue"
+            :cur-queue-item="store.curQueueItem"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
           />
           <NextBtn
             :player="store.activePlayer"
@@ -588,6 +604,8 @@ import vuetify from "@/plugins/vuetify";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
+import SkipForwardBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipForwardBtn.vue";
+import SkipBackBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBackBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
@@ -651,6 +669,23 @@ const hasLyrics = computed(() => {
   return (
     (!!plainLyrics && plainLyrics.trim().length > 0) ||
     (!!syncedLyrics && syncedLyrics.trim().length > 0)
+  );
+});
+
+// Check if current media is audiobook or podcast
+const isAudiobookOrPodcast = computed(() => {
+  const mediaType = store.curQueueItem?.media_item?.media_type;
+  return (
+    mediaType === MediaType.AUDIOBOOK ||
+    mediaType === MediaType.PODCAST ||
+    mediaType === MediaType.PODCAST_EPISODE
+  );
+});
+
+// Get configured skip amount from settings
+const skipAmount = computed(() => {
+  return parseInt(
+    localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30",
   );
 });
 
