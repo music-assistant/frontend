@@ -38,10 +38,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import Button from "@/components/mods/Button.vue";
-import { store } from "@/plugins/store";
+import Button from "@/components/Button.vue";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
+import { store } from "@/plugins/store";
+import { ref, watch } from "vue";
 
 const showNavigationMenu = ref<boolean>(
   localStorage.getItem("show_navigation_menu") === "true",
