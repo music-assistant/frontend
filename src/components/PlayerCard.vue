@@ -15,16 +15,15 @@
       <!-- prepend: media thumb -->
       <template #prepend>
         <div class="player-media-thumb">
+          <!-- queue item (mediaitem) image -->
           <MediaItemThumb
-            v-if="
-              (player.powered != false && curQueueItem?.media_item) ||
-              curQueueItem?.image
-            "
+            v-if="player.powered != false && curQueueItem"
             class="media-thumb"
             size="55"
-            :item="curQueueItem?.media_item || curQueueItem"
+            :item="curQueueItem"
             :fallback="imgCoverDark"
           />
+          <!-- player (external source) media image (if no queue item)-->
           <div
             v-else-if="
               player.powered != false &&
@@ -38,6 +37,7 @@
               :src="player.current_media.image_url"
             />
           </div>
+          <!-- fallback: display player icon -->
           <div v-else class="icon-thumb">
             <v-icon
               size="35"
@@ -133,10 +133,27 @@
           >
             {{ curQueueItem?.media_item.artists[0].name }}
           </div>
-          <!-- radio live metadata -->
-          <div v-else-if="curQueueItem?.streamdetails?.stream_title">
-            {{ curQueueItem?.streamdetails?.stream_title }}
+          <!-- live (stream) metadata (artist + title) -->
+          <div
+            v-else-if="
+              curQueueItem?.streamdetails?.stream_metadata &&
+              curQueueItem?.streamdetails?.stream_metadata.title &&
+              curQueueItem?.streamdetails?.stream_metadata.artist
+            "
+          >
+            {{ curQueueItem?.streamdetails?.stream_metadata.artist }} -
+            {{ curQueueItem?.streamdetails?.stream_metadata.title }}
           </div>
+          <!-- live (stream) metadata (only title) -->
+          <div
+            v-else-if="
+              curQueueItem?.streamdetails?.stream_metadata &&
+              curQueueItem?.streamdetails?.stream_metadata.title
+            "
+          >
+            {{ curQueueItem?.streamdetails?.stream_metadata.title }}
+          </div>
+
           <!-- other description -->
           <div v-else-if="curQueueItem?.media_item?.metadata.description">
             {{ curQueueItem?.media_item.metadata.description }}

@@ -717,12 +717,23 @@ export interface LoudnessMeasurement {
   target_offset: number;
 }
 
+export interface StreamMetadata {
+  // mandatory fields
+  title: string;
+  // optional fields
+  artist?: string;
+  album?: string;
+  image_url?: string;
+  duration?: number;
+  uri?: string;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
   audio_format: AudioFormat;
   media_type: MediaType;
-  stream_title?: string;
+  stream_metadata?: StreamMetadata;
   duration?: number;
 
   queue_id?: string;

@@ -55,17 +55,9 @@
             v-if="$vuetify.display.height > 600"
             class="main-media-details-image"
           >
-            <v-img
-              v-if="
-                store.activePlayer?.powered != false &&
-                !store.curQueueItem?.image &&
-                store.activePlayer?.current_media?.image_url
-              "
-              style="max-width: 100%; width: auto; border-radius: 4px"
-              :src="store.activePlayer.current_media.image_url"
-            />
+            <!-- queue item (mediaitem) image -->
             <MediaItemThumb
-              v-else-if="store.activePlayer?.powered != false"
+              v-if="store.activePlayer?.powered != false && store.curQueueItem"
               :item="store.curQueueItem"
               :thumbnail="false"
               style="max-width: 100%; width: auto"
@@ -73,6 +65,17 @@
                 $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
               "
             />
+            <!-- player current media image (if no queue item)-->
+            <v-img
+              v-else-if="
+                store.activePlayer?.powered != false &&
+                !store.curQueueItem?.image &&
+                store.activePlayer?.current_media?.image_url
+              "
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.activePlayer.current_media.image_url"
+            />
+
             <v-img
               v-else
               style="max-width: 100%; width: auto; border-radius: 4px"
