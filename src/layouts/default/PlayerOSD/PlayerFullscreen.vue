@@ -65,7 +65,7 @@
                 $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
               "
             />
-            <!-- player current media image (if no queue item)-->
+            <!-- player (external source) media image (if no queue item)-->
             <v-img
               v-else-if="
                 store.activePlayer?.powered != false &&

@@ -342,6 +342,7 @@ export enum ProviderFeature {
   // player provider specific features
   SYNC_PLAYERS = "sync_players",
   REMOVE_PLAYER = "remove_player",
+  REMOVE_GROUP_PLAYER = "remove_group_player",
   CREATE_GROUP_PLAYER = "create_group_player",
   // metadata provider specific features
   ARTIST_METADATA = "artist_metadata",

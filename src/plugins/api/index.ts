@@ -1033,6 +1033,10 @@ export class MusicAssistantApi {
     });
   }
 
+  public removePlayer(playerId: string): Promise<void> {
+    return this.sendCommand("players/remove", { player_id: playerId });
+  }
+
   // PlayerGroup related functions/commands
 
   public playerCommandGroupVolume(playerId: string, newVolume: number) {

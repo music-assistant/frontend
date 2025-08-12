@@ -413,8 +413,9 @@
             "label": "Fixed\/fallback gain adjustment for radio",
             "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
-        "group_type": "Group type",
-        "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized. \n\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app.",
+        "add_group_player_desc": "For a group player created for the {0} provider, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized.",
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+
         "dynamic_members": {
             "label": "Dynamic group members",
             "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
