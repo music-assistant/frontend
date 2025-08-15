@@ -269,6 +269,8 @@ const windowWidth = ref(window.innerWidth);
 const { mobile } = useDisplay();
 let updatedFromServer = false;
 
+let unsubPlayerDSP: (() => void) | undefined = undefined;
+
 const filterTypes = Object.values(DSPFilterType).map((value) => {
   return {
     value: value,
@@ -398,19 +400,22 @@ const playerName = computed(() =>
 watch(
   () => props.playerId,
   async (val) => {
+    if (unsubPlayerDSP) unsubPlayerDSP();
+    // Don't overwrite the config for the newly selected player
+    updatedFromServer = true;
     if (val) {
       dsp.value = await api.getDSPConfig(val);
     }
+    unsubPlayerDSP = api.subscribe(
+      EventType.PLAYER_DSP_CONFIG_UPDATED,
+      (evt: { data: DSPConfig }) => {
+        updatedFromServer = true;
+        dsp.value = evt.data;
+      },
+      props.playerId,
+    );
   },
   { immediate: true },
-);
-
-const unsubPlayerDSP = api.subscribe(
-  EventType.PLAYER_DSP_CONFIG_UPDATED,
-  (evt: { data: DSPConfig }) => {
-    updatedFromServer = true;
-    dsp.value = evt.data;
-  },
 );
 
 const unsubDSPPresets = api.subscribe(
@@ -425,7 +430,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  unsubPlayerDSP();
+  if (unsubPlayerDSP) unsubPlayerDSP();
   unsubDSPPresets();
 });
 
