@@ -288,7 +288,6 @@ const props = withDefaults(defineProps<Props>(), {
   icon: undefined,
   restoreState: false,
   onTitleClick: undefined,
-  customTitleRenderer: undefined,
 });
 
 // global refs
