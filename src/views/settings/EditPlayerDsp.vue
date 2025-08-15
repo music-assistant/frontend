@@ -411,6 +411,7 @@ const unsubPlayerDSP = api.subscribe(
     updatedFromServer = true;
     dsp.value = evt.data;
   },
+  props.playerId,
 );
 
 const unsubDSPPresets = api.subscribe(
