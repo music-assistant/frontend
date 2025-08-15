@@ -401,6 +401,8 @@ watch(
   () => props.playerId,
   async (val) => {
     if (unsubPlayerDSP) unsubPlayerDSP();
+    // Don't overwrite the config for the newly selected player
+    updatedFromServer = true;
     if (val) {
       dsp.value = await api.getDSPConfig(val);
     }
