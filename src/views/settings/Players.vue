@@ -8,10 +8,33 @@
     >
       <template #title> {{ $t("settings.players") }} </template>
       <template #append>
-        <!-- ADD group player button -->
-        <v-btn color="accent" variant="outlined" @click="addPlayerGroup">
-          {{ $t("settings.add_group_player") }}
-        </v-btn>
+        <!-- ADD group player button/menu -->
+        <v-menu v-if="providersWithGroupSupport.length > 0" scrim>
+          <template #activator="{ props }">
+            <v-btn v-bind="props" color="accent" variant="outlined">
+              {{ $t("settings.add_group_player") }}
+            </v-btn>
+          </template>
+
+          <v-card density="compact">
+            <v-list-item
+              v-for="provider in providersWithGroupSupport"
+              :key="provider.domain"
+              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
+              :title="provider.name"
+              @click="addPlayerGroup(provider)"
+            >
+              <template #prepend>
+                <provider-icon
+                  :domain="provider.domain"
+                  :size="26"
+                  class="media-thumb"
+                  style="margin-left: 10px"
+                />
+              </template>
+            </v-list-item>
+          </v-card>
+        </v-menu>
       </template>
     </v-toolbar>
     <Container>
@@ -75,6 +98,7 @@ import {
   PlayerConfig,
   PlayerType,
   ProviderFeature,
+  ProviderInstance,
 } from "@/plugins/api/interfaces";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { useRouter } from "vue-router";
@@ -97,15 +121,20 @@ const unsub = api.subscribe_multi([EventType.PLAYER_CONFIG_UPDATED], () => {
 onBeforeUnmount(unsub);
 
 // computed properties
-const playersWithSyncFeature = computed(() => {
-  // players that can be synced with other players
-  return Object.values(api.players).filter(
-    (x) =>
-      x.available &&
-      api
-        .getProvider(x.provider)
-        ?.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
-  );
+const providersWithGroupSupport = computed(() => {
+  // providers available with create_group support
+  return Object.values(api.providers)
+    .filter(
+      (x) =>
+        x.available &&
+        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
+    )
+    .sort((a, b) =>
+      (a.name || api.providerManifests[a.domain].name).toUpperCase() >
+      (b.name || api.providerManifests[b.domain].name).toUpperCase()
+        ? 1
+        : -1,
+    );
 });
 
 // methods
@@ -115,11 +144,12 @@ const loadItems = async function () {
     .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };
 
-const removePlayerConfig = function (playerId: string) {
-  api.removePlayerConfig(playerId);
-  playerConfigs.value = playerConfigs.value.filter(
-    (x) => x.player_id != playerId,
-  );
+const removePlayer = function (playerId: string) {
+  api.removePlayer(playerId).then(() => {
+    playerConfigs.value = playerConfigs.value.filter(
+      (x) => x.player_id != playerId,
+    );
+  });
 };
 
 const editPlayer = function (playerId: string, provider: string) {
@@ -133,8 +163,21 @@ const editPlayerDsp = function (playerId: string) {
   router.push(`/settings/editplayer/${playerId}/dsp`);
 };
 
-const addPlayerGroup = function (provider: string) {
-  router.push("/settings/addgroup");
+const addPlayerGroup = function (provider: ProviderInstance) {
+  router.push(`/settings/addgroup/${provider.lookup_key}`);
+};
+
+const playerCanBeDeleted = function (playerId: string) {
+  const player = api.players[playerId];
+  if (!player) return true;
+  if (player.type === PlayerType.GROUP) {
+    return api
+      .getProvider(player.provider)
+      ?.supported_features.includes(ProviderFeature.REMOVE_GROUP_PLAYER);
+  }
+  return api
+    .getProvider(player.provider)
+    ?.supported_features.includes(ProviderFeature.REMOVE_PLAYER);
 };
 
 const toggleEnabled = function (config: PlayerConfig) {
@@ -145,7 +188,7 @@ const toggleEnabled = function (config: PlayerConfig) {
 const getPlayerName = function (playerConfig: PlayerConfig) {
   return (
     playerConfig.name ||
-    api.players[playerConfig.player_id]?.display_name ||
+    api.players[playerConfig.player_id]?.name ||
     playerConfig.default_name ||
     playerConfig.player_id
   );
@@ -195,15 +238,10 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       label: "settings.delete",
       labelArgs: [],
       action: () => {
-        removePlayerConfig(playerConfig.player_id);
+        removePlayer(playerConfig.player_id);
       },
       icon: "mdi-delete",
-      hide: !(
-        !api.players[playerConfig.player_id]?.available ||
-        api
-          .getProvider(playerConfig.provider)
-          ?.supported_features.includes(ProviderFeature.REMOVE_PLAYER)
-      ),
+      hide: !playerCanBeDeleted(playerConfig.player_id),
     },
   ];
   eventbus.emit("contextmenu", {

@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { Player } from "@/plugins/api/interfaces";
 import { computed } from "vue";
-import { PlayerState } from "@/plugins/api/interfaces";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
@@ -67,9 +67,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
     .filter((x) => playerVisible(x))
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-    )
+    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1))
     .sort((a, b) => {
       return playerSortScore(a) - playerSortScore(b);
     });
@@ -88,10 +86,10 @@ function playerClicked(player: Player) {
 }
 
 function playerSortScore(player: Player) {
-  if (player.state == PlayerState.PLAYING) {
+  if (player.playback_state == PlaybackState.PLAYING) {
     return 0;
   }
-  if (player.state == PlayerState.PAUSED) {
+  if (player.playback_state == PlaybackState.PAUSED) {
     return 1;
   }
   if (player.current_media && player.powered) return 3;

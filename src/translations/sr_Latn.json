@@ -412,8 +412,6 @@
             "label": "Fiksno\/rezervno podešavanje pojačanja za radio",
             "description": "Korekcija fiksnog\/rezervnog pojačanja koja se primenjuje na radio strim (zavisi od podešavanja „Metod normalizacije jačine zvuka“). \n Koristite pozitivnu vrednost za povećanje jačine zvuka, negativnu vrednost za smanjenje jačine zvuka. \n \n Ovo podešavanje se koristi kada je metod normalizacije jačine zvuka podešen na „Korekcija fiksnog pojačanja“ ili „Rezervni korak za korekciju pojačanja“."
         },
-        "group_type": "Tip grupe",
-        "add_group_player_desc": "Za provajdere plejera\/ekosisteme koji pružaju izvorno grupisanje\/sinhronizaciju, automatski će se kreirati grupa za sinhronizaciju, što znači da ako reprodukujete preko  ove grupe plejera, članovi plejera će se automatski sinhronizovati. \n \nZa provajdere plejera\/ekosisteme koji ne podržavaju grupisanje, ili u slučaju da želite da grupišete plejere iz različitih ekosistema, možete koristiti tip grupe Univerzalna, koja će distribuirati isti zvuk svim  plejerima grupe (ali ne sinhronizovano). \n \n Imajte na umu da neki provajderi podržavaju grupisanje, ali morate da koristite izvornu aplikaciju da biste izvršili grupisanje. Primer su plejeri zasnovani na Google Cast-u, gde možete da kreirate Google Cast grupe samo u okviru aplikacije Google Home.",
         "dynamic_members": {
             "label": "Članovi dinamičke grupe",
             "description": "Dozvolite članovima da se (privremeno) dinamički pridruže\/napuste grupu, tako da se grupa manje-više ponaša isto kao i ručna sinhronizacija plejera, s tim da je glavna razlika u tome što će plejer grupe čuvati red."

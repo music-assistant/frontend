@@ -17,13 +17,13 @@
             :width="volumeSize"
             :is-powered="true"
             :model-value="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? Math.round(store.activePlayer?.group_volume || 0)
                 : Math.round(store.activePlayer?.volume_level || 0)
             "
             :allow-wheel="true"
             @update:model-value="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolume(
                     store.activePlayer?.player_id || '',
                     $event,
@@ -49,7 +49,7 @@
                 />
                 <div class="text-caption">
                   {{
-                    store.activePlayer!.group_childs.length > 0
+                    store.activePlayer!.group_members.length > 0
                       ? Math.round(store.activePlayer?.group_volume || 0)
                       : Math.round(store.activePlayer?.volume_level || 0)
                   }}
@@ -66,7 +66,7 @@
               :style="{ color: props.color ? color : '' }"
             >
               {{
-                store.activePlayer!.group_childs.length > 0
+                store.activePlayer!.group_members.length > 0
                   ? Math.round(store.activePlayer?.group_volume || 0)
                   : Math.round(store.activePlayer?.volume_level || 0)
               }}

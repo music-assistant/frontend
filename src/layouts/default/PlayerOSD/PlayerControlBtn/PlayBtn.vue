@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { PlayerState, Player, PlayerQueue } from "@/plugins/api/interfaces";
+import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
 import ResponsiveIcon, {
   ResponsiveIconProps,
 } from "@/components/mods/ResponsiveIcon.vue";
@@ -45,7 +45,7 @@ const playerCanPlay = computed(() => {
   return true;
 });
 const baseIcon = computed(() => {
-  if (compProps.player?.state == PlayerState.PLAYING) {
+  if (compProps.player?.playback_state == PlaybackState.PLAYING) {
     return "mdi-pause";
   }
   return "mdi-play";

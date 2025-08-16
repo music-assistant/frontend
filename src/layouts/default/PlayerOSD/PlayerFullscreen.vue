@@ -55,17 +55,9 @@
             v-if="$vuetify.display.height > 600"
             class="main-media-details-image"
           >
-            <v-img
-              v-if="
-                store.activePlayer?.powered != false &&
-                !store.curQueueItem?.image &&
-                store.activePlayer?.current_media?.image_url
-              "
-              style="max-width: 100%; width: auto; border-radius: 4px"
-              :src="store.activePlayer.current_media.image_url"
-            />
+            <!-- queue item (mediaitem) image -->
             <MediaItemThumb
-              v-else-if="store.activePlayer?.powered != false"
+              v-if="store.activePlayer?.powered != false && store.curQueueItem"
               :item="store.curQueueItem"
               :thumbnail="false"
               style="max-width: 100%; width: auto"
@@ -73,6 +65,17 @@
                 $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
               "
             />
+            <!-- player (external source) media image (if no queue item)-->
+            <v-img
+              v-else-if="
+                store.activePlayer?.powered != false &&
+                !store.curQueueItem?.image &&
+                store.activePlayer?.current_media?.image_url
+              "
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.activePlayer.current_media.image_url"
+            />
+
             <v-img
               v-else
               style="max-width: 100%; width: auto; border-radius: 4px"
@@ -85,7 +88,7 @@
               v-if="store.activePlayer?.powered == false"
               :style="`font-size: ${titleFontSize};`"
             >
-              {{ store.activePlayer?.display_name }}
+              {{ store.activePlayer?.name }}
             </v-card-title>
             <!-- queue item media item + optional version-->
             <v-card-title
@@ -134,7 +137,7 @@
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer?.display_name || $t("no_player") }}
+                {{ store.activePlayer?.name || $t("no_player") }}
               </MarqueeText>
             </v-card-title>
 
@@ -148,19 +151,42 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: radio station stream title -->
+            <!-- live (stream) metadata (artist + title) -->
             <v-card-subtitle
               v-if="
-                store.curQueueItem?.streamdetails?.stream_title &&
-                store.activePlayer?.powered != false
+                store.curQueueItem?.streamdetails?.stream_metadata &&
+                store.curQueueItem?.streamdetails?.stream_metadata.title &&
+                store.curQueueItem?.streamdetails?.stream_metadata.artist
               "
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
-                radioTitleClick(store.curQueueItem?.streamdetails?.stream_title)
+                radioTitleClick(
+                  `${store.curQueueItem?.streamdetails?.stream_metadata.artist} - ${store.curQueueItem?.streamdetails?.stream_metadata.title}`,
+                )
               "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.streamdetails.stream_title }}
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.artist }}
+                -
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- live (stream) metadata (only title) -->
+            <v-card-subtitle
+              v-if="
+                store.curQueueItem?.streamdetails?.stream_metadata &&
+                store.curQueueItem?.streamdetails?.stream_metadata.title
+              "
+              class="text-h6 text-md-h5 text-lg-h4"
+              @click="
+                radioTitleClick(
+                  store.curQueueItem?.streamdetails?.stream_metadata.title,
+                )
+              "
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -508,17 +534,17 @@
             :color="sliderColor"
             :allow-wheel="true"
             @update:model-value="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
                 : api.playerCommandVolumeSet(store.activePlayerId!, $event)
             "
             @click:prepend="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
                 : api.playerCommandVolumeDown(store.activePlayerId!)
             "
             @click:append="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
                 : api.playerCommandVolumeUp(store.activePlayerId!)
             "

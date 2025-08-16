@@ -106,6 +106,24 @@ export const getMediaItemImage = function (
   // get imageurl for mediaItem
   if (!mediaItem) return undefined;
 
+  // handle QueueItem
+  if ("media_item" in mediaItem && mediaItem.media_item) {
+    // prefer image_url provided in queueItem's streamdetails
+    if (
+      "streamdetails" in mediaItem.media_item &&
+      mediaItem.streamdetails?.stream_metadata?.image_url
+    )
+      return {
+        type: ImageType.THUMB,
+        path: mediaItem.streamdetails.stream_metadata.image_url,
+        provider: "builtin",
+        remotely_accessible: true,
+      };
+    // fallback to media_item's image
+    const mediaItemImage = getMediaItemImage(mediaItem.media_item);
+    if (mediaItemImage) return mediaItemImage;
+  }
+
   // handle image in queueitem or itemmapping
   if (
     "image" in mediaItem &&
@@ -114,8 +132,6 @@ export const getMediaItemImage = function (
     imageProviderIsAvailable(mediaItem.image.provider)
   )
     return mediaItem.image;
-  if ("media_item" in mediaItem && mediaItem.media_item)
-    return getMediaItemImage(mediaItem.media_item);
 
   // always prefer album image for tracks
   if ("album" in mediaItem && mediaItem.album) {

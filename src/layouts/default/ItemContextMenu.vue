@@ -48,7 +48,7 @@
             <v-list-item
               :title="$t('play_on')"
               density="compact"
-              :subtitle="store.activePlayer?.display_name || $t('no_player')"
+              :subtitle="store.activePlayer?.name || $t('no_player')"
             />
           </template>
         </v-list-item>
@@ -173,13 +173,11 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 
   const sortedPlayers = Object.values(api.players)
     .filter((x) => playerVisible(x))
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-    );
+    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
 
   for (const player of sortedPlayers) {
     _subItems.push({
-      label: player.display_name,
+      label: player.name,
       action: () => {
         evt.preventDefault();
         store.activePlayerId = player.player_id;

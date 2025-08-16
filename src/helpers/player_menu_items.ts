@@ -31,7 +31,10 @@ export const getPlayerMenuItems = (
     });
   }
   // add stop playback menu item
-  if (player?.state == "playing" || player?.state == "paused") {
+  if (
+    player?.playback_state == "playing" ||
+    player?.playback_state == "paused"
+  ) {
     menuItems.push({
       label: "stop_playback",
       labelArgs: [],
@@ -57,7 +60,7 @@ export const getPlayerMenuItems = (
     player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
     !player.synced_to &&
     player.type == PlayerType.PLAYER &&
-    player.group_childs.length == 0 &&
+    player.group_members.length == 0 &&
     playersToSyncWith.length > 0
   ) {
     menuItems.push({
@@ -67,7 +70,7 @@ export const getPlayerMenuItems = (
       subItems: playersToSyncWith
         .map((p) => {
           return {
-            label: p.display_name,
+            label: p.name,
             labelArgs: [],
             action: () => {
               api.playerCommandGroup(player.player_id, p.player_id);
@@ -144,7 +147,7 @@ export const getPlayerMenuItems = (
         )
         .map((p) => {
           return {
-            label: p.display_name,
+            label: p.name,
             labelArgs: [],
             action: () => {
               api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);

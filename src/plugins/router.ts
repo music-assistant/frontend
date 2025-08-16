@@ -285,7 +285,7 @@ const routes = [
             props: true,
           },
           {
-            path: "addgroup",
+            path: "addgroup/:provider",
             name: "addgroup",
             component: () =>
               import(
