@@ -965,6 +965,27 @@ export class MusicAssistantApi {
     );
   }
 
+  public playerCommandSetMembers(
+    target_player: string,
+    player_ids_to_add?: string[],
+    player_ids_to_remove?: string[],
+  ): Promise<void> {
+    /*
+      Join/unjoin given player(s) to/from target player.
+
+      Will add the given player(s) to the target player (sync leader or group player).
+
+      - target_player: player_id of the syncgroup leader or group player.
+      - player_ids_to_add: List of player_id's to add to the target player.
+      - player_ids_to_remove: List of player_id's to remove from the target player.
+    */
+    return this.playerCommand(target_player, "set_members", {
+      target_player,
+      player_ids_to_add,
+      player_ids_to_remove,
+    });
+  }
+
   public playerCommandGroup(
     playerId: string,
     target_player: string,
@@ -995,28 +1016,6 @@ export class MusicAssistantApi {
           - player_id: player_id of the player to handle the command.
     */
     return this.playerCommand(playerId, "ungroup");
-  }
-
-  public playerCommandGroupMany(
-    target_player: string,
-    child_player_ids: string[],
-  ): Promise<void> {
-    /*
-      Join given player(s) to target player.
-    */
-    return this.sendCommand("players/cmd/group_many", {
-      target_player,
-      child_player_ids,
-    });
-  }
-
-  public playerCommandUnGroupMany(player_ids: string[]): Promise<void> {
-    /*
-      Handle UNGROUP command for all the given players.
-    */
-    return this.sendCommand("players/cmd/ungroup_many", {
-      player_ids,
-    });
   }
 
   public playerCommand(

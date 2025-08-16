@@ -340,30 +340,26 @@ const syncCheckBoxChange = async function (
   // execute (un)sync with a debounce timer to account for someone
   // changing multiple checkboxes in quick succession
 
+  if (playersToSync.value.length == 0 && playersToUnSync.value.length == 0) {
+    // no changes to be made, so return
+    return;
+  }
+
   timeOutId.value = setTimeout(async () => {
-    if (playersToUnSync.value.length > 0) {
-      // power off will also unsync
-      api
-        .playerCommandUnGroupMany(playersToUnSync.value)
-        .catch(async () => {
-          // restore state if command failed
-          api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
-        })
-        .finally(() => {
-          playersToUnSync.value = [];
-        });
-    }
-    if (playersToSync.value.length > 0) {
-      api
-        .playerCommandGroupMany(parentPlayerId, playersToSync.value)
-        .catch(async () => {
-          // restore state if command failed
-          api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
-        })
-        .finally(() => {
-          playersToSync.value = [];
-        });
-    }
+    api
+      .playerCommandSetMembers(
+        parentPlayerId,
+        playersToSync.value.length ? playersToSync.value : undefined,
+        playersToUnSync.value.length ? playersToUnSync.value : undefined,
+      )
+      .catch(async () => {
+        // restore state if command failed
+        api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
+      })
+      .finally(() => {
+        playersToSync.value = [];
+        playersToUnSync.value = [];
+      });
   }, 1000);
 };
 </script>
