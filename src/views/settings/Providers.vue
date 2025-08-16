@@ -165,6 +165,7 @@ import { api } from "@/plugins/api";
 import {
   EventType,
   ProviderConfig,
+  ProviderFeature,
   ProviderManifest,
   ProviderType,
 } from "@/plugins/api/interfaces";
@@ -266,6 +267,8 @@ const reloadProvider = function (providerInstanceId: string) {
 };
 
 const onMenu = function (evt: Event, item: ProviderConfig) {
+  const providerManifest = api.providerManifests[item.domain];
+  const providerInstance = api.getProvider(item.instance_id);
   const menuItems = [
     {
       label: "settings.configure",
@@ -282,16 +285,16 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         toggleEnabled(item);
       },
       icon: "mdi-cancel",
-      disabled: !api.providerManifests[item.domain].allow_disable,
+      disabled: !providerManifest.allow_disable,
     },
     {
       label: "settings.documentation",
       labelArgs: [],
       action: () => {
-        openLinkInNewTab(api.providerManifests[item.domain].documentation!);
+        openLinkInNewTab(providerManifest.documentation!);
       },
       icon: "mdi-bookshelf",
-      disabled: !api.providerManifests[item.domain].documentation,
+      disabled: !providerManifest.documentation,
     },
     {
       label: "settings.sync",
@@ -300,9 +303,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         api.startSync(undefined, [item.instance_id]);
       },
       icon: "mdi-sync",
-      hide:
-        !api.providers[item.instance_id]?.available ||
-        item.type != ProviderType.MUSIC,
+      hide: !providerInstance?.available || item.type != ProviderType.MUSIC,
     },
     {
       label: "settings.delete",
@@ -311,7 +312,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         removeProvider(item.instance_id);
       },
       icon: "mdi-delete",
-      hide: api.providerManifests[item.domain].builtin,
+      hide: providerManifest.builtin,
     },
     {
       label: "settings.reload",
@@ -322,6 +323,21 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       icon: "mdi-refresh",
     },
   ];
+  if (
+    providerInstance?.available &&
+    providerInstance.supported_features.includes(
+      ProviderFeature.CREATE_GROUP_PLAYER,
+    )
+  ) {
+    menuItems.push({
+      label: "settings.add_group_player",
+      labelArgs: [],
+      action: () => {
+        router.push(`/settings/addgroup/${providerInstance.lookup_key}`);
+      },
+      icon: "mdi-speaker-multiple",
+    });
+  }
   eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
