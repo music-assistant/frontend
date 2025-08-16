@@ -36,6 +36,16 @@
             required
             :rules="[(v) => v.length || $t('settings.invalid_input')]"
           />
+          <!-- dropdown with group members -->
+          <v-select
+            v-model="members"
+            clearable
+            multiple
+            :items="syncPlayers"
+            item-title="display_name"
+            item-value="player_id"
+            :label="$t('settings.group_members')"
+          />
           <!-- dynamic mode -->
           <v-switch
             v-model="dynamic"
@@ -53,17 +63,6 @@
           >
             {{ $t("settings.dynamic_members.description") }}
           </v-card-subtitle>
-
-          <!-- dropdown with group members -->
-          <v-select
-            v-model="members"
-            clearable
-            multiple
-            :items="syncPlayers"
-            item-title="display_name"
-            item-value="player_id"
-            :label="$t('settings.group_members')"
-          />
           <br />
           <v-btn
             block
@@ -93,7 +92,7 @@ import { markdownToHtml } from "@/helpers/utils";
 const router = useRouter();
 const name = ref<string>("");
 const members = ref<string[]>([]);
-const dynamic = ref<boolean>(false);
+const dynamic = ref<boolean>(true);
 const valid = ref<boolean>(false);
 
 // props
