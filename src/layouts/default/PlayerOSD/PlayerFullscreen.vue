@@ -151,19 +151,42 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: radio station stream title -->
+            <!-- live (stream) metadata (artist + title) -->
             <v-card-subtitle
               v-if="
-                store.curQueueItem?.streamdetails?.stream_title &&
-                store.activePlayer?.powered != false
+                store.curQueueItem?.streamdetails?.stream_metadata &&
+                store.curQueueItem?.streamdetails?.stream_metadata.title &&
+                store.curQueueItem?.streamdetails?.stream_metadata.artist
               "
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
-                radioTitleClick(store.curQueueItem?.streamdetails?.stream_title)
+                radioTitleClick(
+                  `${store.curQueueItem?.streamdetails?.stream_metadata.artist} - ${store.curQueueItem?.streamdetails?.stream_metadata.title}`,
+                )
               "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.streamdetails.stream_title }}
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.artist }}
+                -
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- live (stream) metadata (only title) -->
+            <v-card-subtitle
+              v-if="
+                store.curQueueItem?.streamdetails?.stream_metadata &&
+                store.curQueueItem?.streamdetails?.stream_metadata.title
+              "
+              class="text-h6 text-md-h5 text-lg-h4"
+              @click="
+                radioTitleClick(
+                  store.curQueueItem?.streamdetails?.stream_metadata.title,
+                )
+              "
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
               </MarqueeText>
             </v-card-subtitle>
 
