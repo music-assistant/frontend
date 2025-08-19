@@ -381,7 +381,6 @@
         "volume_normalization_radio": {
             "label": "Metoda normalizacji głośności stosowana w przypadku strumieni radiowych"
         },
-        "group_type": "Typ grupy",
         "dsp": {
             "input": "Wejście",
             "output": "Wyjście",
