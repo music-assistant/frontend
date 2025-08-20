@@ -143,6 +143,20 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.enable_builtin_player") !=
         "false",
     },
+    {
+      key: "audiobook_skip_seconds",
+      type: ConfigEntryType.INTEGER,
+      label: "audiobook_skip_seconds",
+      default_value: 30,
+      required: false,
+      options: [10, 15, 30, 60],
+      multi_value: false,
+      category: "audiobooks_podcasts",
+      value: parseInt(
+        localStorage.getItem("frontend.settings.audiobook_skip_seconds") ||
+          "30",
+      ),
+    },
   ];
 });
 
