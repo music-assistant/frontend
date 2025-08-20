@@ -131,6 +131,31 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.force_mobile_layout") !=
         "false",
     },
+    {
+      key: "audiobook_chapter_time",
+      type: ConfigEntryType.BOOLEAN,
+      label: "chapter_time",
+      default_value: false,
+      required: false,
+      multi_value: false,
+      category: "audiobooks_podcasts",
+      value:
+        localStorage.getItem("frontend.settings.audiobook_chapter_time") ==
+        "true",
+    },
+    {
+      key: "audiobook_chapter_time",
+      type: ConfigEntryType.BOOLEAN,
+      label: "chapter_time",
+      default_value: false,
+      required: false,
+      multi_value: false,
+      category: "audiobooks_podcasts",
+      value:
+        localStorage.getItem("frontend.settings.audiobook_chapter_time") ==
+        "true",
+>>>>>>> fad9aaa (Implement chapter time over full audiobook duration)
+    },
   ];
 });
 

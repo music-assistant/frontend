@@ -536,6 +536,10 @@
                 "unmaintained": "Unmaintained",
                 "deprecated": "Deprecated"
             }
+        },
+        "audiobook_chapter_time": {
+            "label": "Audiobook Chapter Progress",
+            "description": "Show the progress of the current chapter instead of the full duration when playing audiobooks."
         }
     },
     "show_info": "Show info",
