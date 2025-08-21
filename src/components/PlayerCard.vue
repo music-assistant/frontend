@@ -237,27 +237,27 @@
 </template>
 
 <script setup lang="ts">
+import Button from "@/components/Button.vue";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
+import VolumeControl from "@/components/VolumeControl.vue";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { getArtistsString, getPlayerName } from "@/helpers/utils";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   MediaType,
-  Player,
   PlaybackState,
-  PlayerType,
+  Player,
   PLAYER_CONTROL_NONE,
+  PlayerType,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
-import { getArtistsString } from "@/helpers/utils";
-import { computed } from "vue";
-import { getPlayerName } from "@/helpers/utils";
-import Button from "@/components/mods/Button.vue";
-import VolumeControl from "@/components/VolumeControl.vue";
 import { eventbus } from "@/plugins/eventbus";
-import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { getSourceName } from "@/plugins/api/helpers";
+import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
+import { computed } from "vue";
+
 // properties
 export interface Props {
   player: Player;

@@ -91,7 +91,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, watch, computed } from "vue";
+import Button from "@/components/Button.vue";
+import Container from "@/components/mods/Container.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { openLinkInNewTab } from "@/helpers/utils";
+import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -100,14 +105,9 @@ import {
   ProviderFeature,
   ProviderInstance,
 } from "@/plugins/api/interfaces";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { useRouter } from "vue-router";
-import Button from "@/components/mods/Button.vue";
-import ListItem from "@/components/mods/ListItem.vue";
-import Container from "@/components/mods/Container.vue";
 import { eventbus } from "@/plugins/eventbus";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();

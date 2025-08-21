@@ -215,17 +215,17 @@
 </template>
 
 <script setup lang="ts">
+import Button from "@/components/Button.vue";
+import { getPlayerName, truncateString } from "@/helpers/utils";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import { api } from "@/plugins/api";
 import {
   Player,
+  PLAYER_CONTROL_NONE,
   PlayerFeature,
   PlaybackState,
   PlayerType,
-  PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { api } from "@/plugins/api";
-import { truncateString, getPlayerName } from "@/helpers/utils";
-import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import Button from "@/components/mods/Button.vue";
 import { computed, ref } from "vue";
 
 export interface Props {
