@@ -23,6 +23,41 @@
         :to="menuItem.path"
       />
     </v-list>
+
+    <!-- Add divider if there are shortcuts -->
+    <v-divider v-if="shortcuts.length > 0" class="my-2" />
+
+    <!-- shortcuts section -->
+    <v-list v-if="shortcuts.length > 0" lines="one" density="compact" nav>
+    <v-list-subheader v-if="showNavigationMenu" class="font-weight-bold">{{ $t('shortcuts') }}</v-list-subheader>
+      <template v-for="type in mediaTypes" :key="type">
+        <template v-if="getShortcutsByType(type).length > 0">
+          <v-list-subheader v-if="showNavigationMenu" class="text-caption">
+            {{ $t(type.toLowerCase()) }}
+          </v-list-subheader>
+          <v-list-item
+            v-for="shortcut in getShortcutsByType(type)"
+            :key="shortcut.id"
+            nav
+            density="compact"
+            :height="15"
+            :title="showNavigationMenu ? shortcut.name : ''"
+            @click="handleShortcutClick(shortcut)"
+          >
+            <template #prepend>
+              <div class="shortcut-thumb">
+                <MediaItemThumb
+                  :item="shortcut"
+                  :size="24"
+                  :rounded="true"
+                  :thumbnail="true"
+                />
+              </div>
+            </template>
+          </v-list-item>
+        </template>
+      </template>
+    </v-list>
     <!-- button at bottom to collapse/expand the navigation drawer-->
     <Button
       nav
@@ -41,12 +76,49 @@
 import { ref, watch } from "vue";
 import Button from "@/components/mods/Button.vue";
 import { store } from "@/plugins/store";
+import { shortcuts, type Shortcut } from "@/helpers/shortcuts";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
+import { MediaType } from "@/plugins/api/interfaces";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import api from "@/plugins/api";
+import router from "@/plugins/router";
 
 const showNavigationMenu = ref<boolean>(
   localStorage.getItem("show_navigation_menu") === "true",
 );
 const menuItems = getMenuItems();
+
+// Define media types for grouping
+const mediaTypes = [
+  MediaType.TRACK,
+  MediaType.ALBUM,
+  MediaType.ARTIST,
+  MediaType.PLAYLIST,
+  MediaType.RADIO,
+  MediaType.PODCAST,
+  MediaType.AUDIOBOOK
+];
+
+// Group shortcuts by media type
+const getShortcutsByType = (type: MediaType) => {
+  return shortcuts.filter(shortcut => shortcut.itemType === type);
+};
+
+const handleShortcutClick = async (shortcut: Shortcut) => {
+  if (shortcut.itemType === MediaType.TRACK) {
+    // Play the track directly
+    await api.playMedia([shortcut.uri]);
+  } else {
+    // Navigate to item details
+    router.push({
+      name: shortcut.itemType,
+      params: {
+        itemId: shortcut.itemId,
+        provider: shortcut.provider
+      }
+    });
+  }
+};
 
 watch(
   () => showNavigationMenu.value,
@@ -188,6 +260,10 @@ export const getMenuItems = function () {
 }
 
 .v-list-item :deep(.v-list-item__prepend) {
-  width: 55px;
+  width: 40px;
+}
+
+.shortcut-thumb {
+  margin-left: 0;
 }
 </style>

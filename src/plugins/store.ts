@@ -117,3 +117,6 @@ export const store: Store = reactive({
   playActionInProgress: false,
   deviceType: DEVICE_TYPE,
 });
+
+// Export shortcuts from helper for backwards compatibility
+export { shortcuts, addShortcut, removeShortcut, hydrateShortcutsImages, type Shortcut } from "@/helpers/shortcuts";

@@ -519,6 +519,9 @@
         }
     },
     "show_info": "Show info",
+    "shortcuts": "Shortcuts",
+    "add_shortcut": "Add to shortcuts",
+    "remove_shortcut": "Remove from shortcuts",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
     "sort": {

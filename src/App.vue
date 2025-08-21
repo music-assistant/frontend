@@ -18,6 +18,7 @@ import { api } from "@/plugins/api";
 import { onMounted } from "vue";
 import { useTheme } from "vuetify";
 import { store } from "@/plugins/store";
+import { hydrateShortcutsImages } from "@/helpers/shortcuts";
 import { i18n } from "@/plugins/i18n";
 import router from "./plugins/router";
 import { EventType } from "./plugins/api/interfaces";
@@ -106,6 +107,8 @@ onMounted(() => {
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
+    // hydrate missing images for existing shortcuts when we connect
+    await hydrateShortcutsImages();
     // enable the builtin player by default if the builtin player provider is available
     if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
       webPlayer.setMode(WebPlayerMode.BUILTIN);
