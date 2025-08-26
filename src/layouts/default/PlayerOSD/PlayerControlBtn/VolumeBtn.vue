@@ -100,12 +100,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import api from "@/plugins/api";
-import { store } from "@/plugins/store";
+import Button from "@/components/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
+import api from "@/plugins/api";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import Button from "@/components/mods/Button.vue";
+import { store } from "@/plugins/store";
+import { ref } from "vue";
 import PlayerVolume from "../PlayerVolume.vue";
 
 // properties
