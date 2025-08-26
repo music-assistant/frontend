@@ -5866,10 +5866,10 @@ vue@^2.6.10:
     "@vue/compiler-sfc" "2.7.16"
     csstype "^3.1.0"
 
-vuetify@3.9.4:
-  version "3.9.4"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.9.4.tgz#25c2234c761cba65ac44f49836668c2ba6dc931c"
-  integrity sha512-OUdXVoThHUydJHyFsUHGxKxZ333hXKquRNn2ycqouO08ehi3005QE9tLPkwcBii4sAYZg7mADMRp7JbcNiNrTQ==
+vuetify@3.9.5:
+  version "3.9.5"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.9.5.tgz#7f5c79d3789051606f99f2e330ea3a2339ad7bb7"
+  integrity sha512-rJBSo1FeKcJJaqTfVHbOdpFXCmgeEIGzrh6HBEMGjSflan6voPIMSiK2dTCUU4t9JeghwvJtoAE5eBuqYIkFVA==
 
 w3c-xmlserializer@^5.0.0:
   version "5.0.0"
