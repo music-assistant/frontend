@@ -493,11 +493,27 @@
             class="media-controls-item"
             max-height="45px"
           />
+          <SkipBackBtn
+            v-if="isAudiobookOrPodcast"
+            :player-queue="store.activePlayerQueue"
+            :cur-queue-item="store.curQueueItem"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
+          />
           <PlayBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="100px"
+          />
+          <SkipForwardBtn
+            v-if="isAudiobookOrPodcast"
+            :player-queue="store.activePlayerQueue"
+            :cur-queue-item="store.curQueueItem"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
           />
           <NextBtn
             :player="store.activePlayer"
@@ -620,6 +636,28 @@ import {
   Track,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import Button from "@/components/mods/Button.vue";
+import ResponsiveIcon from "@/components/mods/ResponsiveIcon.vue";
+import ListItem from "@/components/mods/ListItem.vue";
+import LyricsViewer from "@/components/LyricsViewer.vue";
+import vuetify from "@/plugins/vuetify";
+import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
+import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
+import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
+import SkipForwardBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipForwardBtn.vue";
+import SkipBackBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBackBtn.vue";
+import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import MarqueeText from "@/components/MarqueeText.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import {
+  imgCoverLight,
+  imgCoverDark,
+} from "@/components/QualityDetailsBtn.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -676,6 +714,23 @@ const hasLyrics = computed(() => {
   return (
     (!!plainLyrics && plainLyrics.trim().length > 0) ||
     (!!syncedLyrics && syncedLyrics.trim().length > 0)
+  );
+});
+
+// Check if current media is audiobook or podcast
+const isAudiobookOrPodcast = computed(() => {
+  const mediaType = store.curQueueItem?.media_item?.media_type;
+  return (
+    mediaType === MediaType.AUDIOBOOK ||
+    mediaType === MediaType.PODCAST ||
+    mediaType === MediaType.PODCAST_EPISODE
+  );
+});
+
+// Get configured skip amount from settings
+const skipAmount = computed(() => {
+  return parseInt(
+    localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30",
   );
 });
 
