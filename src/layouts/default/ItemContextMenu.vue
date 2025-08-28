@@ -448,6 +448,73 @@ export const getPlayMenuItems = async function (
     disabled: !store.activePlayer,
   });
 
+  // Multi-select mark as played/unplayed for podcast episodes
+  if (
+    items.length > 1 && 
+    items.every(item => 
+      item.media_type === MediaType.PODCAST_EPISODE &&
+      "fully_played" in item && 
+      "resume_position_ms" in item
+    )
+  ) {
+    const podcastEpisodes = items as PodcastEpisode[];
+    const allPlayed = podcastEpisodes.every(item => item.fully_played || item.resume_position_ms);
+    const allUnplayed = podcastEpisodes.every(item => !item.fully_played && !item.resume_position_ms);
+    
+    // If all items are played, show "mark unplayed" option
+    if (allPlayed) {
+      playMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          for (const item of podcastEpisodes) {
+            await api.markItemUnPlayed(item);
+            item.fully_played = false;
+            item.resume_position_ms = 0;
+          }
+        },
+      });
+    }
+    // If all items are unplayed, show "mark played" option  
+    else if (allUnplayed) {
+      playMenuItems.push({
+        label: "mark_played", 
+        icon: "mdi-clock-fast",
+        action: async () => {
+          for (const item of podcastEpisodes) {
+            await api.markItemPlayed(item, true);
+            item.fully_played = true;
+          }
+        },
+      });
+    }
+    // If mixed state, show both options
+    else {
+      playMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast", 
+        action: async () => {
+          for (const item of podcastEpisodes) {
+            await api.markItemPlayed(item, true);
+            item.fully_played = true;
+          }
+        },
+      });
+      
+      playMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          for (const item of podcastEpisodes) {
+            await api.markItemUnPlayed(item);
+            item.fully_played = false;
+            item.resume_position_ms = 0;
+          }
+        },
+      });
+    }
+  }
+
   return playMenuItems;
 };
 
