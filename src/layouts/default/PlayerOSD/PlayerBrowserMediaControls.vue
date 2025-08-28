@@ -14,7 +14,7 @@
 import audio from "@/assets/almost_silent.mp3";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
-import { PlayerState } from "@/plugins/api/interfaces";
+import { MediaType, PlayerState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onMounted, ref, watch } from "vue";
 
