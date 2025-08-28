@@ -54,7 +54,9 @@
         <PlayerCard
           v-for="player in sortedPlayers.filter(
             (x) =>
-              [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state!) ||
+              [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
+                x.playback_state!,
+              ) ||
               (api.queues[x.player_id]?.items > 0 && x.powered != false),
           )"
           :id="player.player_id"
@@ -146,19 +148,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import Button from "@/components/Button.vue";
+import PlayerCard from "@/components/PlayerCard.vue";
+import { playerVisible } from "@/helpers/utils";
+import { api, ConnectionState } from "@/plugins/api";
 import {
+  PlaybackState,
   Player,
   PlayerFeature,
   PlayerType,
-  PlayerState,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { ConnectionState, api } from "@/plugins/api";
-import PlayerCard from "@/components/PlayerCard.vue";
-import Button from "@/components/mods/Button.vue";
-import { playerVisible } from "@/helpers/utils";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
@@ -168,9 +170,7 @@ const sortedPlayers = computed(() => {
   return Object.values(api.players)
     .filter((x) => playerVisible(x))
     .filter((x) => x.player_id !== webPlayer.player_id) // In case the user made the player visible for everyone
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-    );
+    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
 });
 
 //watchers

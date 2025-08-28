@@ -10,7 +10,7 @@
       :color="color ? color : ''"
       :size="24"
       :icon="
-        store.activePlayer?.group_childs.length
+        store.activePlayer?.group_members.length
           ? 'mdi-speaker-multiple'
           : 'mdi-speaker'
       "
@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
+import Button from "@/components/Button.vue";
 import { store } from "@/plugins/store";
-import Button from "@/components/mods/Button.vue";
 
 // properties
 export interface Props {

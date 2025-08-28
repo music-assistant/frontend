@@ -7,7 +7,7 @@ import {
   MediaItemTypeOrItemMapping,
   MediaType,
   Player,
-  PlayerState,
+  PlaybackState,
   PlayerType,
   ProviderMapping,
 } from "@/plugins/api/interfaces";
@@ -157,15 +157,15 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
 
 export const getPlayerName = function (player: Player, truncate = 26) {
   if (!player) return "";
-  const availableChildPlayers = player.group_childs.filter(
+  const availableChildPlayers = player.group_members.filter(
     (x) => api.players[x]?.available && x != player.player_id,
   );
   if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
-    return `${truncateString(player.display_name, truncate - 3)} +${
+    return `${truncateString(player.name, truncate - 3)} +${
       availableChildPlayers.length
     }`;
   }
-  return truncateString(player.display_name, truncate);
+  return truncateString(player.name, truncate);
 };
 
 export const getStreamingProviderMappings = function (
@@ -540,8 +540,8 @@ export const handlePlayBtnClick = function (
     !forceMenu &&
     store.playMenuShown &&
     store.activePlayer?.available &&
-    [PlayerState.PLAYING, PlayerState.PAUSED].includes(
-      store.activePlayer?.state as PlayerState,
+    [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
+      store.activePlayer?.playback_state as PlaybackState,
     )
   ) {
     store.playActionInProgress = true;

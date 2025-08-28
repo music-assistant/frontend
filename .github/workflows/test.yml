@@ -4,16 +4,15 @@ on:
   pull_request:
   workflow_dispatch:
 
-
 env:
-  NODE_VERSION: "18.x" # set this to the node version to use
+  NODE_VERSION: "22.x" # set this to the node version to use
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:

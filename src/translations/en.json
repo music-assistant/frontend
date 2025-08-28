@@ -348,29 +348,30 @@
             "label": "Language",
             "options": {
                 "auto": "Auto (follow system configuration)",
+                "zh_CN": "Chinese (Simplified)",
                 "cs": "Czech",
                 "da": "Danish",
-                "de": "German",
-                "en": "English",
-                "fr": "French",
                 "nl": "Dutch",
-                "pl": "Polish",
-                "uk_UA": "Ukrainian",
-                "zh_CN": "Chinese (Simplified)",
+                "en": "English",
                 "en_AU": "English (Australian)",
-                "sr": "Serbian",
-                "sr_Latn": "Serbian (Latin)",
-                "sv_SE": "Swedish",
                 "en_GB": "English (United Kingdom)",
-                "es": "Spanish",
-                "pt_PT": "Portuguese",
+                "fr": "French",
+                "de": "German",
+                "el_GR": "Greek",
+                "hu_HU": "Hungarian",
+                "it": "Italian",
                 "ko_KR": "Korean",
                 "nb": "Norwegian",
-                "ru_RU": "Russian",
+                "pl": "Polish",
                 "pt_BR": "Portuguese (Brazil)",
+                "pt_PT": "Portuguese",
+                "ru_RU": "Russian",
+                "sr": "Serbian",
+                "sr_Latn": "Serbian (Latin)",
                 "sl_SI": "Slovenian",
-                "hu_HU": "Hungarian",
-                "it": "Italian"
+                "es": "Spanish",
+                "sv_SE": "Swedish",
+                "uk_UA": "Ukrainian"
             }
         },
         "hide_settings": {
@@ -413,8 +414,9 @@
             "label": "Fixed\/fallback gain adjustment for radio",
             "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
-        "group_type": "Group type",
-        "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized. \n\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app.",
+        "add_group_player_desc": "For a group player created for the {0} provider, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized.",
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+
         "dynamic_members": {
             "label": "Dynamic group members",
             "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
@@ -478,6 +480,14 @@
             "channels_compact": {
                 "FL": "L",
                 "FR": "R"
+            },
+            "presets": {
+                "load": "Load DSP Preset",
+                "empty_warning": "No DSP presets available",
+                "save": "Save DSP Preset",
+                "name": "Preset Name",
+                "name_placeholder": "My new preset",
+                "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
         },
         "power_control": {

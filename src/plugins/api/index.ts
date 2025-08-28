@@ -44,6 +44,7 @@ import {
   ItemMapping,
   AlbumType,
   DSPConfig,
+  DSPConfigPreset,
   Audiobook,
   Podcast,
   PodcastEpisode,
@@ -965,6 +966,27 @@ export class MusicAssistantApi {
     );
   }
 
+  public playerCommandSetMembers(
+    target_player: string,
+    player_ids_to_add?: string[],
+    player_ids_to_remove?: string[],
+  ): Promise<void> {
+    /*
+      Join/unjoin given player(s) to/from target player.
+
+      Will add the given player(s) to the target player (sync leader or group player).
+
+      - target_player: player_id of the syncgroup leader or group player.
+      - player_ids_to_add: List of player_id's to add to the target player.
+      - player_ids_to_remove: List of player_id's to remove from the target player.
+    */
+    return this.playerCommand(target_player, "set_members", {
+      target_player,
+      player_ids_to_add,
+      player_ids_to_remove,
+    });
+  }
+
   public playerCommandGroup(
     playerId: string,
     target_player: string,
@@ -997,28 +1019,6 @@ export class MusicAssistantApi {
     return this.playerCommand(playerId, "ungroup");
   }
 
-  public playerCommandGroupMany(
-    target_player: string,
-    child_player_ids: string[],
-  ): Promise<void> {
-    /*
-      Join given player(s) to target player.
-    */
-    return this.sendCommand("players/cmd/group_many", {
-      target_player,
-      child_player_ids,
-    });
-  }
-
-  public playerCommandUnGroupMany(player_ids: string[]): Promise<void> {
-    /*
-      Handle UNGROUP command for all the given players.
-    */
-    return this.sendCommand("players/cmd/ungroup_many", {
-      player_ids,
-    });
-  }
-
   public playerCommand(
     player_id: string,
     command: string,
@@ -1031,6 +1031,10 @@ export class MusicAssistantApi {
       player_id,
       ...args,
     });
+  }
+
+  public removePlayer(playerId: string): Promise<void> {
+    return this.sendCommand("players/remove", { player_id: playerId });
   }
 
   // PlayerGroup related functions/commands
@@ -1056,14 +1060,14 @@ export class MusicAssistantApi {
   }
 
   public async createPlayerGroup(
-    group_type: string,
+    provider: string,
     name: string,
     members: string[],
     dynamic = false,
   ): Promise<Player> {
     // Create a new Sync playergroup
-    return this.sendCommand("player_group/create", {
-      group_type,
+    return this.sendCommand("players/create_group_player", {
+      provider,
       name,
       members,
       dynamic,
@@ -1255,6 +1259,25 @@ export class MusicAssistantApi {
     return this.sendCommand("config/players/dsp/save", {
       player_id,
       config,
+    });
+  }
+
+  public async getDSPPresets(): Promise<DSPConfigPreset[]> {
+    // Return all known DSP presets
+    return this.sendCommand("config/dsp_presets/get");
+  }
+
+  public async saveDSPPreset(
+    preset: DSPConfigPreset,
+  ): Promise<DSPConfigPreset> {
+    // Save a DSP preset.
+    return this.sendCommand("config/dsp_presets/save", { preset });
+  }
+
+  public async removeDSPPreset(presetId: string): Promise<void> {
+    // Remove a DSP preset.
+    return this.sendCommand("config/dsp_presets/remove", {
+      preset_id: presetId,
     });
   }
 

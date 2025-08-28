@@ -14,14 +14,13 @@
         }px; `"
         @click="store.showFullscreenPlayer = true"
       >
+        <!-- queue item (mediaitem) image -->
         <MediaItemThumb
-          v-if="
-            store.activePlayer?.powered != false &&
-            (store.curQueueItem?.media_item || store.curQueueItem?.image)
-          "
-          :item="store.curQueueItem?.media_item || store.curQueueItem"
+          v-if="store.activePlayer?.powered != false && store.curQueueItem"
+          :item="store.curQueueItem"
           :fallback="imgCoverDark"
         />
+        <!-- player (external source) media image (if no queue item)-->
         <div
           v-else-if="
             store.activePlayer?.powered != false &&
@@ -35,12 +34,13 @@
             :src="store.activePlayer.current_media.image_url"
           />
         </div>
+        <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
           <v-icon
             size="35"
             :icon="
               store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_childs.length
+              store.activePlayer?.group_members.length
                 ? 'mdi-speaker-multiple'
                 : store.activePlayer?.icon || 'mdi-speaker'
             "
@@ -63,7 +63,7 @@
           v-if="store.activePlayer?.powered == false"
           @click="store.showPlayersMenu = true"
         >
-          {{ store.activePlayer?.display_name }}
+          {{ store.activePlayer?.name }}
         </div>
         <!-- queue item media item + optional version-->
         <div
@@ -95,7 +95,7 @@
         </div>
         <!-- fallback: display player name -->
         <div v-else-if="store.activePlayer">
-          {{ store.activePlayer?.display_name }}
+          {{ store.activePlayer?.name }}
         </div>
         <!-- no player selected message -->
         <div v-else @click="store.showPlayersMenu = true">
@@ -165,12 +165,25 @@
           >
             {{ store.curQueueItem.media_item.podcast.name }}
           </div>
-          <!-- radio live metadata -->
+          <!-- live (stream) metadata (artist + title) -->
           <div
-            v-else-if="store.curQueueItem?.streamdetails?.stream_title"
-            class="line-clamp-1"
+            v-else-if="
+              store.curQueueItem?.streamdetails?.stream_metadata &&
+              store.curQueueItem?.streamdetails?.stream_metadata.title &&
+              store.curQueueItem?.streamdetails?.stream_metadata.artist
+            "
           >
-            {{ store.curQueueItem?.streamdetails?.stream_title }}
+            {{ store.curQueueItem?.streamdetails?.stream_metadata.artist }} -
+            {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
+          </div>
+          <!-- live (stream) metadata (only title) -->
+          <div
+            v-else-if="
+              store.curQueueItem?.streamdetails?.stream_metadata &&
+              store.curQueueItem?.streamdetails?.stream_metadata.title
+            "
+          >
+            {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
           </div>
           <!-- other description -->
           <div
