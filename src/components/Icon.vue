@@ -37,7 +37,7 @@ const { iconProps, containerStyle, containerClasses, iconClasses } =
   useIcon(props);
 
 const iconContainer = ref<HTMLElement>();
-const iconElement = ref<InstanceType<typeof VIcon>>();
+const iconElement = ref<VIcon>();
 
 const adjustIconSize = async () => {
   if (
