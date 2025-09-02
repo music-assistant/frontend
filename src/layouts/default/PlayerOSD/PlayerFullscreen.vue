@@ -467,7 +467,7 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <ResponsiveIcon
+          <Icon
             v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
             :icon="
@@ -476,7 +476,7 @@
                 : 'mdi-heart-outline'
             "
             :title="$t('tooltip.favorite')"
-            :type="'btn'"
+            variant="button"
             class="media-controls-item"
             max-height="30px"
             @click="onHeartBtnClick"
@@ -580,11 +580,11 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
+import Icon from "@/components/Icon.vue";
+import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ListItem from "@/components/mods/ListItem.vue";
-import ResponsiveIcon from "@/components/mods/ResponsiveIcon.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn, {
   imgCoverDark,

@@ -62,37 +62,37 @@
 </template>
 
 <script setup lang="ts">
-import { ResponsiveIconProps } from "@/components/mods/ResponsiveIcon.vue";
+import { IconProps } from "@/components/Icon.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
-import ShuffleBtn from "./PlayerControlBtn/ShuffleBtn.vue";
+import { store } from "@/plugins/store";
+import NextBtn from "./PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "./PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "./PlayerControlBtn/PreviousBtn.vue";
-import NextBtn from "./PlayerControlBtn/NextBtn.vue";
-import { store } from "@/plugins/store";
+import ShuffleBtn from "./PlayerControlBtn/ShuffleBtn.vue";
 
 // properties
 export interface Props {
   visibleComponents?: {
     repeat?: {
       isVisible?: boolean;
-      icon?: ResponsiveIconProps;
+      icon?: IconProps;
     };
     shuffle?: {
       isVisible?: boolean;
-      icon?: ResponsiveIconProps;
+      icon?: IconProps;
     };
     play?: {
       isVisible?: boolean;
       withCircle?: boolean;
-      icon?: ResponsiveIconProps;
+      icon?: IconProps;
     };
     previous?: {
       isVisible?: boolean;
-      icon?: ResponsiveIconProps;
+      icon?: IconProps;
     };
     next?: {
       isVisible?: boolean;
-      icon?: ResponsiveIconProps;
+      icon?: IconProps;
     };
   };
 }
