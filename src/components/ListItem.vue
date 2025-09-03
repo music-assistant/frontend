@@ -12,9 +12,9 @@
     </template>
     <template v-if="$slots.append || showMenuBtn" #append>
       <slot name="append"></slot>
-      <MAButton
+      <Button
         v-if="showMenuBtn"
-        variant="list"
+        variant="icon"
         icon="mdi-dots-vertical"
         aria-label="Show context menu"
         @click.stop="(v: any) => $emit('menu', v)"
@@ -28,7 +28,7 @@ export type { ListItemEmits, ListItemProps } from "@/composables/useListItem";
 </script>
 
 <script setup lang="ts">
-import MAButton from "@/components/Button.vue";
+import Button from "@/components/Button.vue";
 import {
   defaultListItemProps,
   useListItem,
@@ -64,18 +64,6 @@ const { listItemProps, listItemClasses } = useListItem(props);
 .list-item-main :deep(.v-list-item__prepend > div) {
   display: flex !important;
   align-items: center !important;
-}
-
-.list-item-main :deep(.v-list-item__append .v-icon) {
-  margin-inline-start: 5px !important;
-}
-
-.list-item-main :deep(.v-list-item__prepend button) {
-  margin-inline-end: 5px !important;
-}
-
-.list-item-main :deep(.v-list-item__append button) {
-  margin-inline-start: 5px !important;
 }
 
 .list-item-main :deep(.v-list-item__content > div) {

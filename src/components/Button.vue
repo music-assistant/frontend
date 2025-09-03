@@ -58,9 +58,13 @@ const { buttonProps, buttonClasses } = useButton(props);
   min-width: 40px;
 }
 
-.button--list {
-  justify-content: flex-start;
-  text-transform: none;
+.button--icon :deep(.v-ripple__container) {
+  border-radius: 50% !important;
+  transform: scale(0.7) !important;
+}
+
+.button--icon :deep(.v-ripple__animation) {
+  border-radius: 50% !important;
 }
 
 .button--nav {

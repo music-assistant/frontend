@@ -67,37 +67,39 @@
               style="margin-right: 15px"
             />
             <!-- play sample button -->
-            <v-btn
-              v-if="
-                getBreakpointValue('bp1') &&
-                itemDetails.media_type == MediaType.TRACK
-              "
-              :icon="
-                demoPlayer[
-                  `${providerMapping.provider_instance}.${providerMapping.item_id}`
-                ]
-                  ? 'mdi-pause'
-                  : 'mdi-play-circle'
-              "
-              :title="$t('tooltip.play_sample')"
-              @click="playBtnClick(providerMapping)"
-            />
-            <!-- visit website button -->
-            <v-btn
-              v-if="
-                providerMapping.url &&
-                !providerMapping.provider_domain.startsWith('file')
-              "
-              icon="mdi-open-in-new"
-              :title="$t('tooltip.open_provider_link')"
-              @click.prevent="openLinkInNewTab(providerMapping.url)"
-            />
-            <!-- copy URI to clipboard button -->
-            <v-btn
-              icon="mdi-link"
-              :title="$t('tooltip.copy_uri')"
-              @click="copyUriToClipboard(getProviderUri(providerMapping))"
-            />
+            <div class="d-flex align-center ga-2">
+              <v-btn
+                v-if="
+                  getBreakpointValue('bp1') &&
+                  itemDetails.media_type == MediaType.TRACK
+                "
+                :icon="
+                  demoPlayer[
+                    `${providerMapping.provider_instance}.${providerMapping.item_id}`
+                  ]
+                    ? 'mdi-pause'
+                    : 'mdi-play-circle'
+                "
+                :title="$t('tooltip.play_sample')"
+                @click="playBtnClick(providerMapping)"
+              />
+              <!-- visit website button -->
+              <v-btn
+                v-if="
+                  providerMapping.url &&
+                  !providerMapping.provider_domain.startsWith('file')
+                "
+                icon="mdi-open-in-new"
+                :title="$t('tooltip.open_provider_link')"
+                @click.prevent="openLinkInNewTab(providerMapping.url)"
+              />
+              <!-- copy URI to clipboard button -->
+              <v-btn
+                icon="mdi-link"
+                :title="$t('tooltip.copy_uri')"
+                @click="copyUriToClipboard(getProviderUri(providerMapping))"
+              />
+            </div>
           </template>
         </ListItem>
         <ListItem v-if="itemDetails.provider == 'library'">

@@ -100,6 +100,10 @@ onBeforeUnmount(() => {
   transition: opacity 0.2s ease;
 }
 
+.icon-container--button .v-icon {
+  cursor: pointer !important;
+}
+
 .icon-container--button:hover,
 .icon-container--button:focus {
   opacity: 1;
@@ -122,11 +126,26 @@ onBeforeUnmount(() => {
 
 .icon {
   line-height: 1;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .icon-container--button {
   min-height: 44px;
   min-width: 44px;
   border-radius: 4px;
+}
+
+/* When icon has size constraints, make container fill available space */
+.icon-container {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.media-controls-item .icon {
+  font-size: 1em !important;
 }
 </style>

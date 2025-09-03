@@ -57,7 +57,13 @@ export const useIcon = (props: IconProps) => {
 
     const baseProps = {
       ...vuetifyProps,
-      size: props.size || (staticWidth || staticHeight ? undefined : "24px"),
+      size:
+        props.size ||
+        (staticWidth ? staticWidth : undefined) ||
+        (staticHeight ? staticHeight : undefined) ||
+        (props.maxHeight ? props.maxHeight : undefined) ||
+        (props.maxWidth ? props.maxWidth : undefined) ||
+        "24px",
     };
 
     return match(variant)
@@ -84,8 +90,13 @@ export const useIcon = (props: IconProps) => {
   const containerStyle = computed(() => {
     const styles: Record<string, string> = {};
 
-    if (props.width) styles.width = props.staticWidth || props.width;
-    if (props.height) styles.height = props.staticHeight || props.height;
+    // Prioritize static dimensions when provided
+    if (props.staticWidth) styles.width = props.staticWidth;
+    else if (props.width) styles.width = props.width;
+
+    if (props.staticHeight) styles.height = props.staticHeight;
+    else if (props.height) styles.height = props.height;
+
     if (props.maxWidth) styles.maxWidth = props.maxWidth;
     if (props.maxHeight) styles.maxHeight = props.maxHeight;
     if (props.minWidth) styles.minWidth = props.minWidth;

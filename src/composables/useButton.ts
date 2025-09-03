@@ -81,13 +81,13 @@ export const useButton = (props: ButtonProps) => {
       .with("icon", () => ({
         ...baseProps,
         icon: true,
-        variant: "text" as const,
+        variant: "plain" as const,
         ripple: props.ripple !== false,
         class: props.class ? `btn-icon ${props.class}` : "btn-icon",
       }))
       .with("list", () => ({
         ...baseProps,
-        variant: "text" as const,
+        variant: "plain" as const,
         density: "comfortable" as const,
         ripple: props.ripple !== false,
         class: props.class ? `btn-list ${props.class}` : "btn-list",

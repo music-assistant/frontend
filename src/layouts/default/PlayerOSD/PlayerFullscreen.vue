@@ -497,7 +497,7 @@
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="100px"
+            max-height="70px"
           />
           <NextBtn
             :player="store.activePlayer"
