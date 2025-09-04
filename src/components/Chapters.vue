@@ -36,13 +36,13 @@
 </template>
 
 <script setup lang="ts">
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import { formatDuration } from "@/helpers/utils";
-import { MediaItemChapter, type MediaItemType } from "@/plugins/api/interfaces";
-import { api } from "@/plugins/api";
-import Container from "@/components/mods/Container.vue";
+import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { computed, reactive, ref } from "vue";
+import { formatDuration } from "@/helpers/utils";
+import { api } from "@/plugins/api";
+import { itemIsAvailable } from "@/plugins/api/helpers";
+import { MediaItemChapter, type MediaItemType } from "@/plugins/api/interfaces";
+import { computed, ref } from "vue";
 
 export interface Props {
   itemDetails: MediaItemType;

@@ -123,28 +123,27 @@
 import { computed, ref, watch } from "vue";
 //@ts-ignore
 
+import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
+import {
+  imgCoverDark,
+  imgCoverLight,
+} from "@/components/QualityDetailsBtn.vue";
+import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import {
   ImageType,
   MediaType,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
-import PlayerTimeline from "./PlayerTimeline.vue";
+import vuetify from "@/plugins/vuetify";
+import { useDisplay, useTheme } from "vuetify";
 import PlayerControls from "./PlayerControls.vue";
+import PlayerExtendedControls from "./PlayerExtendedControls.vue";
+import PlayerTimeline from "./PlayerTimeline.vue";
 import PlayerTrackDetails from "./PlayerTrackDetails.vue";
 import PlayerVolume from "./PlayerVolume.vue";
-import PlayerExtendedControls from "./PlayerExtendedControls.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
-import vuetify from "@/plugins/vuetify";
-import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
-import {
-  imgCoverDark,
-  imgCoverLight,
-} from "@/components/QualityDetailsBtn.vue";
-import { useTheme } from "vuetify";
-import { useDisplay } from "vuetify";
-import { api } from "@/plugins/api";
 interface Props {
   useFloatingPlayer: boolean;
 }

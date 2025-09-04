@@ -1,21 +1,19 @@
 <template>
   <!-- play/pause button: disabled if no content -->
-  <ResponsiveIcon
+  <Icon
     v-if="isVisible && player"
     v-bind="icon"
     :disabled="!queueCanPlay && !playerCanPlay"
     :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
-    :type="'btn'"
+    variant="button"
     @click="api.playerCommandPlayPause(player.player_id)"
   />
 </template>
 
 <script setup lang="ts">
+import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
-import ResponsiveIcon, {
-  ResponsiveIconProps,
-} from "@/components/mods/ResponsiveIcon.vue";
 import { computed } from "vue";
 
 // properties
@@ -24,7 +22,7 @@ export interface Props {
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
   withCircle?: boolean;
-  icon?: ResponsiveIconProps;
+  icon?: IconProps;
   iconStyle?: string;
 }
 const compProps = withDefaults(defineProps<Props>(), {

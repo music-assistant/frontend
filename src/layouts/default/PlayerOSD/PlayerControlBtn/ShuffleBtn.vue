@@ -1,6 +1,6 @@
 <template>
   <!-- shuffle button -->
-  <ResponsiveIcon
+  <Icon
     v-if="isVisible && playerQueue"
     v-bind="icon"
     :disabled="!playerQueue.active || playerQueue.items == 0"
@@ -16,7 +16,7 @@
         [true, 'mdi-shuffle'],
       ])
     "
-    :type="'btn'"
+    variant="button"
     @click="
       api.queueCommandShuffle(
         playerQueue.queue_id,
@@ -27,18 +27,16 @@
 </template>
 
 <script setup lang="ts">
-import api from "@/plugins/api";
-import ResponsiveIcon, {
-  ResponsiveIconProps,
-} from "@/components/mods/ResponsiveIcon.vue";
+import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
+import api from "@/plugins/api";
 import { PlayerQueue } from "@/plugins/api/interfaces";
 
 // properties
 export interface Props {
   playerQueue: PlayerQueue | undefined;
   isVisible?: boolean;
-  icon?: ResponsiveIconProps;
+  icon?: IconProps;
 }
 withDefaults(defineProps<Props>(), {
   isVisible: true,

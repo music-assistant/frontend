@@ -1,9 +1,7 @@
 import { match } from "ts-pattern";
 import { computed } from "vue";
 import type { RouteLocationRaw } from "vue-router";
-
-const mergeClasses = (...classes: (string | false | undefined | null)[]) =>
-  classes.filter(Boolean).join(" ");
+import { mergeClasses } from "./utils";
 
 export interface ButtonProps {
   /**
@@ -83,13 +81,13 @@ export const useButton = (props: ButtonProps) => {
       .with("icon", () => ({
         ...baseProps,
         icon: true,
-        variant: "text" as const,
+        variant: "plain" as const,
         ripple: props.ripple !== false,
         class: props.class ? `btn-icon ${props.class}` : "btn-icon",
       }))
       .with("list", () => ({
         ...baseProps,
-        variant: "text" as const,
+        variant: "plain" as const,
         density: "comfortable" as const,
         ripple: props.ripple !== false,
         class: props.class ? `btn-list ${props.class}` : "btn-list",

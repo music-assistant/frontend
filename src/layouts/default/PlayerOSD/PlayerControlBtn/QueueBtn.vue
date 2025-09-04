@@ -1,5 +1,5 @@
 <template>
-  <ResponsiveIcon
+  <Icon
     v-if="isVisible"
     v-bind="icon"
     :disabled="
@@ -14,22 +14,20 @@
         [store.showFullscreenPlayer && store.showQueueItems, 'primary', ''],
       ])
     "
-    :type="'btn'"
+    variant="button"
     @click="onClick"
   />
 </template>
 
 <script setup lang="ts">
-import { store } from "@/plugins/store";
-import ResponsiveIcon, {
-  ResponsiveIconProps,
-} from "@/components/mods/ResponsiveIcon.vue";
+import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
   isVisible?: boolean;
-  icon?: ResponsiveIconProps;
+  icon?: IconProps;
 }
 
 withDefaults(defineProps<Props>(), {

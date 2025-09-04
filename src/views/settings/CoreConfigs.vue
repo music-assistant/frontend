@@ -117,16 +117,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import Container from "@/components/Container.vue";
+import ListItem from "@/components/ListItem.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { CoreConfig } from "@/plugins/api/interfaces";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import ListItem from "@/components/mods/ListItem.vue";
-import Container from "@/components/mods/Container.vue";
-import { useRouter } from "vue-router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();

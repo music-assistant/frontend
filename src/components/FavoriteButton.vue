@@ -13,7 +13,7 @@ const props = defineProps<Props>();
 <template>
   <Button
     v-bind="props"
-    variant="list"
+    variant="icon"
     :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
     :title="$t('tooltip.favorite')"
     @click="api.toggleFavorite(item)"
