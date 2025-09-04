@@ -448,71 +448,71 @@ export const getPlayMenuItems = async function (
     disabled: !store.activePlayer,
   });
 
-// Multi-select mark as played/unplayed (for podcast episodes)
-if (
-  items.length > 1 && 
-  items.every(item => 
-    item.media_type === MediaType.PODCAST_EPISODE &&
-    "fully_played" in item && 
-    "resume_position_ms" in item
-  )
-) {
-  const allPlayed = items.every(item => item.fully_played || item.resume_position_ms);
-  const allUnplayed = items.every(item => !item.fully_played && !item.resume_position_ms);
-  
-  // If all items are played, show "mark unplayed" option
-  if (allPlayed) {
-    contextMenuItems.push({
-      label: "mark_unplayed",
-      icon: "mdi-clock-fast",
-      action: async () => {
-        for (const item of items) {
-          await api.markItemUnPlayed(item);
-          (item as PodcastEpisode).fully_played = false;
-          (item as PodcastEpisode).resume_position_ms = 0;
-        }
-      },
-    });
-  }
-  // If all items are unplayed, show "mark played" option  
-  else if (allUnplayed) {
-    contextMenuItems.push({
-      label: "mark_played", 
-      icon: "mdi-clock-fast",
-      action: async () => {
-        for (const item of items) {
-          await api.markItemPlayed(item, true);
-          (item as PodcastEpisode).fully_played = true;
-        }
-      },
-    });
-  }
-  // If mixed state (some fully played, some partial, some unplayed), show both options
-  else {
-    contextMenuItems.push({
-      label: "mark_played",
-      icon: "mdi-clock-fast", 
-      action: async () => {
-        await Promise.all(podcastEpisodes.map(async (item) => {
-          await api.markItemPlayed(item, true);
-          item.fully_played = true;
-        }));
-      },
-    });
+  // Multi-select mark as played/unplayed (for podcast episodes)
+  if (
+    items.length > 1 && 
+    items.every(item => 
+      item.media_type === MediaType.PODCAST_EPISODE &&
+      "fully_played" in item && 
+      "resume_position_ms" in item
+    )
+  ) {
+    const allPlayed = items.every(item => item.fully_played || item.resume_position_ms);
+    const allUnplayed = items.every(item => !item.fully_played && !item.resume_position_ms);
     
-    contextMenuItems.push({
-      label: "mark_unplayed",
-      icon: "mdi-clock-fast",
-      action: async () => {
-        await Promise.all(podcastEpisodes.map(async (item) => {
-          await api.markItemUnPlayed(item);
-          item.fully_played = false;
-          item.resume_position_ms = 0;
-        }));
-      },
-    });
+    // If all items are played, show "mark unplayed" option
+    if (allPlayed) {
+      contextMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          for (const item of items) {
+            await api.markItemUnPlayed(item);
+            (item as PodcastEpisode).fully_played = false;
+            (item as PodcastEpisode).resume_position_ms = 0;
+          }
+        },
+      });
+    }
+    // If all items are unplayed, show "mark played" option  
+    else if (allUnplayed) {
+      contextMenuItems.push({
+        label: "mark_played", 
+        icon: "mdi-clock-fast",
+        action: async () => {
+          for (const item of items) {
+            await api.markItemPlayed(item, true);
+            (item as PodcastEpisode).fully_played = true;
+          }
+        },
+      });
+    }
+    // If mixed state (some fully played, some partial, some unplayed), show both options
+    else {
+      contextMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast", 
+        action: async () => {
+          await Promise.all(podcastEpisodes.map(async (item) => {
+            await api.markItemPlayed(item, true);
+            item.fully_played = true;
+          }));
+        },
+      });
+      
+      contextMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(podcastEpisodes.map(async (item) => {
+            await api.markItemUnPlayed(item);
+            item.fully_played = false;
+            item.resume_position_ms = 0;
+          }));
+        },
+      });
+    }
   }
-
   return playMenuItems;
 };
 
