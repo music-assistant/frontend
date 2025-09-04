@@ -88,14 +88,14 @@
 </template>
 
 <script setup lang="ts">
+import Container from "@/components/Container.vue";
 import { getImageURL } from "@/components/MediaItemThumb.vue";
-import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
+import Toolbar from "@/components/Toolbar.vue";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import Container from "@/components/mods/Container.vue";
-import Toolbar from "@/components/Toolbar.vue";
-import { computed, ref } from "vue";
+import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { computed, ref } from "vue";
 
 export interface Props {
   modelValue: MediaItemImage[];

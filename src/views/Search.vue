@@ -131,14 +131,14 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { ref, onBeforeUnmount, onMounted, watch } from "vue";
-import { MediaType, SearchResults } from "@/plugins/api/interfaces";
-import WidgetRow from "@/components/WidgetRow.vue";
-import { store } from "@/plugins/store";
+import Container from "@/components/Container.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
-import Container from "@/components/mods/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import WidgetRow from "@/components/WidgetRow.vue";
 import { api } from "@/plugins/api";
+import { MediaType, SearchResults } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // local refs
 const searchHasFocus = ref(false);

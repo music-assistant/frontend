@@ -92,8 +92,8 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import Container from "@/components/mods/Container.vue";
-import ListItem from "@/components/mods/ListItem.vue";
+import Container from "@/components/Container.vue";
+import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
