@@ -458,15 +458,15 @@ export const getPlayMenuItems = async function (
     )
   ) {
     const podcastEpisodes = items as PodcastEpisode[];
-    
+
     // Helper functions for clearer state detection
-    const hasProgress = (item: PodcastEpisode) => item.resume_position_ms > 0;
+    const hasProgress = (item: PodcastEpisode) => (item.resume_position_ms || 0) > 0;
     const isFullyPlayed = (item: PodcastEpisode) => item.fully_played;
     const isUnplayed = (item: PodcastEpisode) => !item.fully_played && !hasProgress(item);
-    
+
     const allFullyPlayed = podcastEpisodes.every(isFullyPlayed);
     const allUnplayed = podcastEpisodes.every(isUnplayed);
-  
+
     // If all items are fully played, show "mark unplayed" option
     if (allFullyPlayed) {
       playMenuItems.push({
@@ -506,7 +506,7 @@ export const getPlayMenuItems = async function (
           }));
         },
       });
-      
+
       playMenuItems.push({
         label: "mark_unplayed",
         icon: "mdi-clock-fast",
