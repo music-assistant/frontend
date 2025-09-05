@@ -7,7 +7,10 @@
         "dev": "vite",
         "build": "vue-tsc --noEmit && vite build",
         "preview": "vite preview",
-        "lint": "eslint . --fix --ignore-path .gitignore"
+        "lint": "eslint . --fix --ignore-path .gitignore",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run"
     },
     "dependencies": {
         "@intlify/unplugin-vue-i18n": "6.0.8",
@@ -35,14 +38,16 @@
         "@typescript-eslint/eslint-plugin": "7.0.0",
         "@typescript-eslint/parser": "6.21.0",
         "@vitejs/plugin-vue": "6.0.1",
+        "@vitest/ui": "3.2.4",
         "@vue/eslint-config-typescript": "13.0.0",
+        "@vue/test-utils": "^2.4.6",
         "@vue/tsconfig": "0.8.1",
         "eslint": "8.57.1",
         "eslint-config-prettier": "10.1.8",
         "eslint-plugin-prettier": "5.5.4",
         "eslint-plugin-vue": "9.33.0",
         "https-localhost": "4.7.1",
-        "jsdom": "26.1.0",
+        "jsdom": "^26.1.0",
         "material-design-icons-iconfont": "6.7.0",
         "nanoid": "5.1.5",
         "prettier": "3.6.2",
@@ -55,6 +60,7 @@
         "vite-plugin-vuetify": "2.1.2",
         "vite-plugin-webfont-dl": "3.11.1",
         "vite-svg-loader": "^5.1.0",
+        "vitest": "^3.2.4",
         "vue-tsc": "3.0.6"
     },
     "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
