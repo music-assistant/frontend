@@ -5,19 +5,18 @@
  */
 
 // https://next.vuetifyjs.com/features/sass-variables/`
-@use 'vuetify/settings' with (
-    // vue listitem title overrides
-    $list-item-title-font-size: 0.875rem,
-    $list-item-title-line-height: 1.25rem,
-    $list-item-title-font-weight: 500,
+@use "vuetify/settings" with (
+  // vue listitem title overrides
+  $list-item-title-font-size: 1rem,
+  $list-item-title-line-height: 1.5rem,
+  $list-item-title-font-weight: 500,
 
-    // vue listitem subtitle overrides
-    $list-item-subtitle-font-size:0.75rem,
-    $list-item-subtitle-line-height: 1rem,
-    $list-item-subtitle-font-weight: 400,
+  // vue listitem subtitle overrides
+  $list-item-subtitle-font-size: 0.875rem,
+  $list-item-subtitle-line-height: 1.25rem,
+  $list-item-subtitle-font-weight: 400,
 
-    $navigation-drawer-scrim-opacity: .85,
-    $overlay-scrim-background: #000000b4,
-    $overlay-opacity: .8,
-
+  $navigation-drawer-scrim-opacity: 0.85,
+  $overlay-scrim-background: #000000b4,
+  $overlay-opacity: 0.8
 );

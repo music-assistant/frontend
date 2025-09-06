@@ -1,76 +1,19 @@
-<template>
-  <v-navigation-drawer app :rail="!showNavigationMenu" :width="280" permanent>
-    <v-list-item style="height: 55px" :active="false">
-      <template #prepend>
-        <img class="logo_icon" size="40" src="@/assets/icon.png" />
-      </template>
-      <template #title>
-        <div class="logo_text">Music Assistant</div>
-      </template>
-    </v-list-item>
-    <v-divider />
-
-    <!-- menu items -->
-    <v-list lines="one" density="compact" nav>
-      <v-list-item
-        v-for="menuItem of menuItems.filter((item) => !item.hidden)"
-        :key="menuItem.path"
-        nav
-        density="compact"
-        :height="15"
-        :title="$t(menuItem.label)"
-        :prepend-icon="menuItem.icon"
-        :to="menuItem.path"
-      />
-    </v-list>
-    <!-- button at bottom to collapse/expand the navigation drawer-->
-    <Button
-      nav
-      :height="15"
-      :width="40"
-      style="position: relative; float: right; right: 10px; top: 20px"
-      :ripple="false"
-      :icon="showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'"
-      :title="$t('tooltip.show_menu')"
-      @click="showNavigationMenu = !showNavigationMenu"
-    />
-  </v-navigation-drawer>
-</template>
-
-<script setup lang="ts">
-import Button from "@/components/Button.vue";
-import { DEFAULT_MENU_ITEMS } from "@/constants";
-import { store } from "@/plugins/store";
-import { ref, watch } from "vue";
-
-const showNavigationMenu = ref<boolean>(
-  localStorage.getItem("show_navigation_menu") === "true",
-);
-const menuItems = getMenuItems();
-
-watch(
-  () => showNavigationMenu.value,
-  (newVal) => {
-    localStorage.setItem("show_navigation_menu", newVal.toString());
-  },
-);
-</script>
-
-<script lang="ts">
+import { DEFAULT_MENU_ITEMS } from "@/constants"
+import { store } from "@/plugins/store"
 export interface MenuItem {
-  label: string;
-  icon: string;
-  path: string;
-  isLibraryNode: boolean;
-  hidden?: boolean;
+  label: string
+  icon: string
+  path: string
+  isLibraryNode: boolean
+  hidden?: boolean
 }
 
 export const getMenuItems = function () {
-  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
+  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items")
   const enabledItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
-    : DEFAULT_MENU_ITEMS;
-  const items: MenuItem[] = [];
+    : DEFAULT_MENU_ITEMS
+  const items: MenuItem[] = []
   // we loop through the enabled items list so we can respect the order
   for (const enabledMenuItemStr of enabledItems) {
     if (enabledMenuItemStr === "home") {
@@ -79,7 +22,7 @@ export const getMenuItems = function () {
         icon: "mdi-home-outline",
         path: "/home",
         isLibraryNode: false,
-      });
+      })
     }
     if (enabledMenuItemStr === "search") {
       items.push({
@@ -87,7 +30,7 @@ export const getMenuItems = function () {
         icon: "mdi-magnify",
         path: "/search",
         isLibraryNode: false,
-      });
+      })
     }
     if (enabledMenuItemStr === "artists") {
       items.push({
@@ -96,16 +39,16 @@ export const getMenuItems = function () {
         path: "/artists",
         isLibraryNode: true,
         hidden: store.libraryArtistsCount === 0,
-      });
+      })
     }
     if (enabledMenuItemStr === "albums") {
       items.push({
         label: "albums",
-        icon: "mdi-album",
+        icon: "md:album",
         path: "/albums",
         isLibraryNode: true,
         hidden: store.libraryAlbumsCount === 0,
-      });
+      })
     }
     if (enabledMenuItemStr === "tracks") {
       items.push({
@@ -114,16 +57,16 @@ export const getMenuItems = function () {
         path: "/tracks",
         isLibraryNode: true,
         hidden: store.libraryTracksCount === 0,
-      });
+      })
     }
     if (enabledMenuItemStr === "playlists") {
       items.push({
         label: "playlists",
-        icon: "mdi-playlist-play",
+        icon: "md:playlist_play",
         path: "/playlists",
         isLibraryNode: true,
         hidden: store.libraryPlaylistsCount === 0,
-      });
+      })
     }
     if (enabledMenuItemStr === "podcasts") {
       items.push({
@@ -132,7 +75,7 @@ export const getMenuItems = function () {
         path: "/podcasts",
         isLibraryNode: true,
         hidden: store.libraryPodcastsCount === 0,
-      });
+      })
     }
     if (enabledMenuItemStr === "audiobooks") {
       items.push({
@@ -141,7 +84,7 @@ export const getMenuItems = function () {
         path: "/audiobooks",
         isLibraryNode: true,
         hidden: store.libraryAudiobooksCount === 0,
-      });
+      })
     }
     if (enabledMenuItemStr === "radios") {
       items.push({
@@ -150,7 +93,7 @@ export const getMenuItems = function () {
         path: "/radios",
         isLibraryNode: true,
         hidden: store.libraryRadiosCount === 0,
-      });
+      })
     }
     if (enabledMenuItemStr === "browse") {
       items.push({
@@ -158,7 +101,7 @@ export const getMenuItems = function () {
         icon: "mdi-folder-outline",
         path: "/browse",
         isLibraryNode: true,
-      });
+      })
     }
     if (enabledMenuItemStr === "settings") {
       items.push({
@@ -166,28 +109,8 @@ export const getMenuItems = function () {
         icon: "mdi-cog-outline",
         path: "/settings",
         isLibraryNode: true,
-      });
+      })
     }
   }
-  return items;
-};
-</script>
-
-<style scoped>
-.logo_text {
-  margin-left: 0px;
-  font-family: "JetBrains Mono Medium";
-  font-size: larger;
-  font-weight: 500;
+  return items
 }
-
-.logo_icon {
-  margin-left: -8px;
-  border-radius: 4px;
-  width: 38px;
-}
-
-.v-list-item :deep(.v-list-item__prepend) {
-  width: 55px;
-}
-</style>

@@ -33,7 +33,6 @@ interface Store {
   activePlayerId?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
-  navigationMenuStyle: string;
   showFullscreenPlayer: boolean;
   frameless: boolean;
   showQueueItems: boolean;
@@ -66,7 +65,6 @@ export const store: Store = reactive({
   activePlayerId: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
-  navigationMenuStyle: "horizontal",
   showFullscreenPlayer: false,
   frameless: false,
   showQueueItems: false,

@@ -1,5 +1,5 @@
 <template>
-  <div style="width: auto">
+  <div style="width: auto; height: 24px">
     <div v-if="store.activePlayerQueue" style="width: 100%">
       <v-slider
         v-model="curTimeValue"
@@ -14,7 +14,7 @@
         :min="0"
         :max="store.curQueueItem?.duration"
         hide-details
-        :track-size="2"
+        :track-size="4"
         :thumb-size="isThumbHidden ? 0 : 10"
         :show-ticks="chapterTicks ? 'always' : false"
         :ticks="chapterTicks"

@@ -331,13 +331,6 @@
                 "dark": "Tamna"
             }
         },
-        "menu_style": {
-            "label": "Stil menija",
-            "options": {
-                "horizontal": "Horizontalno",
-                "vertical": "Vertikalno"
-            }
-        },
         "menu_items": {
             "label": "Omogućene stavke menija",
             "description": "Konfigurišite koje stavke će se prikazati u meniju.\n\n Imajte na umu da ako onemogućite podešavanja, možete se zaključati.\n\nU tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik."
