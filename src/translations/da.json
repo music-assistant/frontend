@@ -330,13 +330,6 @@
                 "dark": "Mørk"
             }
         },
-        "menu_style": {
-            "label": "Menu-stil",
-            "options": {
-                "horizontal": "Vandret",
-                "vertical": "Lodret"
-            }
-        },
         "menu_items": {
             "label": "Aktiverede menupunkter",
             "description": "Konfigurer hvilke elementer der skal vises i menuen.\n\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."

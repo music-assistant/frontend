@@ -1,8 +1,6 @@
 <template>
   <div :class="`widget-row ${settings && !settings.enabled ? 'disabled' : ''}`">
     <v-toolbar class="header" color="transparent">
-      <template #prepend><v-icon icon="mdi-speaker" /></template>
-
       <template #title>
         <span class="mr-3">{{ $t("players") }}</span>
       </template>
@@ -30,7 +28,7 @@
       :slides-per-view="'auto'"
       :space-between="15"
       :free-mode="false"
-      :navigation="getBreakpointValue({ breakpoint: 'mobile' }) ? false : true"
+      :navigation="false"
       :mousewheel="{
         forceToAxis: true,
         releaseOnEdges: true,
@@ -45,7 +43,7 @@
           :show-menu-button="false"
           :show-sub-players="false"
           :show-sync-controls="false"
-          style="width: 305px; height: 70px"
+          style="width: 305px"
           @click="playerClicked(player)"
         />
       </swiper-slide>
@@ -99,9 +97,10 @@ function playerSortScore(player: Player) {
 </script>
 
 <style scoped>
-.header.v-toolbar {
-  height: 55px;
-  font-family: "JetBrains Mono Medium";
+.header.v-toolbar :deep(.v-toolbar-title) {
+  margin-inline-start: 0px;
+  font-size: x-large;
+  font-weight: bold;
 }
 
 .widget-row {

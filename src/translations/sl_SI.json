@@ -329,13 +329,6 @@
                 "dark": "Temno"
             }
         },
-        "menu_style": {
-            "label": "Slog menija",
-            "options": {
-                "horizontal": "Vodoravno",
-                "vertical": "Navpično"
-            }
-        },
         "menu_items": {
             "label": "Omogočeni elementi menija",
             "description": "Konfigurirajte elemente, ki bodo prikazani v meniju.\n\nUpoštevajte, da se v primeru izklopa nastavitev lahko zaklenete.\n\nV tem primeru boste morali ročno vnesti pot do nastavitev ali počistiti piškotke brskalnika, da boste znova omogočili dostop do nastavitev. Uporabite na lastno odgovornost."

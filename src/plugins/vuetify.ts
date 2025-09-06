@@ -41,20 +41,25 @@ export default createVuetify(
       },
     },
     theme: {
-      defaultTheme: "light",
+      defaultTheme: "dark",
       themes: {
         light: {
           dark: false,
           colors: {
+            background: "#f5f5f5",
+            overlay: "#e7e7e7ff",
+            panel: "#ffffff",
             primary: "#03a9f4",
-            accent: "#4caf50",
           },
         },
         dark: {
           dark: true,
           colors: {
+            background: "#181818",
+            overlay: "#181818",
+            panel: "#232323",
+            black: "#000",
             primary: "#03a9f4",
-            accent: "#ff9800",
           },
         },
       },

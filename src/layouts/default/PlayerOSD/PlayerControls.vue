@@ -29,7 +29,7 @@
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
-        :icon-style="visibleComponents.play.withCircle ? 'circle' : ''"
+        icon-style="circle"
         :icon="visibleComponents.play.icon"
       />
     </div>
@@ -83,7 +83,6 @@ export interface Props {
     };
     play?: {
       isVisible?: boolean;
-      withCircle?: boolean;
       icon?: ResponsiveIconProps;
     };
     previous?: {

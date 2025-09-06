@@ -330,13 +330,6 @@
                 "dark": "Tmavý"
             }
         },
-        "menu_style": {
-            "label": "Styl nabídky",
-            "options": {
-                "horizontal": "Horizontální",
-                "vertical": "Vertikální"
-            }
-        },
         "menu_items": {
             "label": "Povolené položky nabídky",
             "description": "Konfigurace položek, které se mají zobrazit v nabídce.\n\nUpozorňujeme, že pokud nastavení zakážete, můžete se zablokovat.\n\nV takovém případě budete muset ručně zadat cestu k nastavení nebo vymazat soubory cookie prohlížeče, abyste znovu získali přístup k nastavení, používejte na vlastní nebezpečí."
