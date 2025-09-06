@@ -28,8 +28,6 @@ export default {
     },
   },
   setup(props, ctx) {
-    const btnDefault = {};
-
     const containerDefault = computed(() => ({ class: "container-default" }));
 
     const containerPanel = computed(() => ({
@@ -57,7 +55,7 @@ export default {
 
 <style scoped>
 .container-default {
-  padding: 10px;
+  padding: 20px;
 }
 
 .container-panels-light {

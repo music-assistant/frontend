@@ -331,13 +331,6 @@
                 "dark": "Donker"
             }
         },
-        "menu_style": {
-            "label": "Menu-stijl",
-            "options": {
-                "horizontal": "Horizontaal",
-                "vertical": "Verticaal"
-            }
-        },
         "menu_items": {
             "label": "Ingeschakelde menu-items",
             "description": "Configureer welke items in het menu moeten worden weergegeven.\n\n Merk op dat je jezelf kunt uitsluiten als je instellingen uitschakelt. \n\nIn dat geval moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen om weer toegang te krijgen tot de instellingen, gebruik op eigen risico."

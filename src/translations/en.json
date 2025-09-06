@@ -332,13 +332,6 @@
                 "dark": "Dark"
             }
         },
-        "menu_style": {
-            "label": "Menu style",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Vertical"
-            }
-        },
         "menu_items": {
             "label": "Enabled menu items",
             "description": "Configure which items to show in the menu.\n\nNote that if you disable the settings you may lock yourself out.\n\nTo gain access again, you will need to manually enter the path to the settings or clear the browser cookies. Use at your own risk!"

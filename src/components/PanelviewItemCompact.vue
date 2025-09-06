@@ -4,7 +4,7 @@
       v-hold="onMenu"
       v-bind="props"
       :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
-      :elevation="isHovering ? 3 : 0"
+      elevation="0"
       :disabled="disabled"
       @click="onClick"
       @click.right.prevent="onMenu"
@@ -28,65 +28,6 @@
         />
       </v-overlay>
       <MediaItemThumb :item="isAvailable ? item : undefined" />
-      <div
-        :class="
-          $vuetify.theme.current.dark ? 'paneldetails-dark' : 'paneldetails'
-        "
-        :model-value="isHovering || $vuetify.display.mobile || permanentOverlay"
-      >
-        <v-list-item
-          variant="text"
-          slim
-          tile
-          density="compact"
-          class="panel-item-details"
-        >
-          <v-list-item-title>
-            <span v-if="item.media_type == MediaType.FOLDER">
-              <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
-            </span>
-            <span v-else :class="{ 'is-playing': isPlaying }">{{
-              item.name
-            }}</span>
-            <span
-              v-if="'version' in item && item.version"
-              :class="{ 'is-playing': isPlaying }"
-            >
-              - {{ item.version }}</span
-            >
-          </v-list-item-title>
-          <v-list-item-subtitle
-            v-if="'artists' in item && item.artists"
-            class="line-clamp-1"
-          >
-            {{ getArtistsString(item.artists, 1) }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-if="'authors' in item && item.authors"
-            class="line-clamp-1"
-          >
-            {{ item.authors.join(" / ") }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-else-if="'publisher' in item && item.publisher"
-            class="line-clamp-1"
-          >
-            {{ item.publisher }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-else-if="'owner' in item && item.owner"
-            class="line-clamp-1"
-          >
-            {{ item.owner }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-else-if="!('provider_mappings' in item)"
-            class="line-clamp-1"
-          >
-            {{ $t(item.media_type) }}
-          </v-list-item-subtitle>
-        </v-list-item>
-      </div>
       <!-- Now Playing Badge -->
       <NowPlayingBadge
         v-if="isPlaying"
@@ -99,12 +40,70 @@
           (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
         "
         icon="mdi-play"
-        color="primary"
+        color="white"
         fab
         size="small"
-        style="position: absolute; right: 10px; bottom: 35px; opacity: 0.8"
+        style="
+          position: absolute;
+          left: 50%;
+          top: 40%;
+          transform: translate(-50%, -50%);
+          opacity: 0.8;
+        "
         @click.stop="onPlayClick"
       />
+      <v-list-item
+        variant="text"
+        slim
+        tile
+        density="compact"
+        class="panel-item-details"
+      >
+        <v-list-item-title>
+          <span v-if="item.media_type == MediaType.FOLDER">
+            <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
+          </span>
+          <span v-else :class="{ 'is-playing': isPlaying }">{{
+            item.name
+          }}</span>
+          <span
+            v-if="'version' in item && item.version"
+            :class="{ 'is-playing': isPlaying }"
+          >
+            - {{ item.version }}</span
+          >
+        </v-list-item-title>
+        <v-list-item-subtitle
+          v-if="'artists' in item && item.artists"
+          class="line-clamp-1"
+        >
+          {{ getArtistsString(item.artists, 1) }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-if="'authors' in item && item.authors"
+          class="line-clamp-1"
+        >
+          {{ item.authors.join(" / ") }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-else-if="'publisher' in item && item.publisher"
+          class="line-clamp-1"
+        >
+          {{ item.publisher }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-else-if="'owner' in item && item.owner"
+          class="line-clamp-1"
+        >
+          {{ item.owner }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-else-if="!('provider_mappings' in item)"
+          class="line-clamp-1"
+        >
+          {{ $t(item.media_type) }}
+        </v-list-item-subtitle>
+      </v-list-item>
     </v-card>
   </v-hover>
 </template>
@@ -186,13 +185,10 @@ const onPlayClick = function (evt: PointerEvent) {
 
 <style scoped>
 .v-card {
+  background-color: rgb(var(--v-theme-panel));
   transition: opacity 0.4s ease-in-out;
-  padding: 0px;
-  margin-bottom: 10px;
-}
-
-.v-card:not(.on-hover) {
-  opacity: 0.75;
+  border-radius: 3px;
+  padding: 10px;
 }
 
 .v-card.unavailable {
@@ -200,9 +196,8 @@ const onPlayClick = function (evt: PointerEvent) {
 }
 
 .panel-item-details {
-  padding: 5px !important;
-  height: 50px;
-  bottom: 5px;
+  padding: 0px !important;
+  margin-top: 10px;
 }
 
 .hiresicon {
@@ -214,6 +209,10 @@ const onPlayClick = function (evt: PointerEvent) {
   margin-left: 10px;
   margin-right: 10px;
   filter: invert(100%);
+}
+
+.v-list-item-subtitle {
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 </style>
 
