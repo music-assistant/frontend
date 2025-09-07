@@ -1,21 +1,19 @@
 <template>
   <!-- prev button -->
-  <ResponsiveIcon
+  <Icon
     v-if="isVisible && player"
     v-bind="icon"
     :disabled="!queueHasPrevious && !playerHasPrevious"
     icon="mdi-skip-previous-outline"
-    :type="'btn'"
+    variant="button"
     @click="api.playerCommandPrevious(player.player_id)"
   />
 </template>
 
 <script setup lang="ts">
+import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
-import ResponsiveIcon, {
-  ResponsiveIconProps,
-} from "@/components/mods/ResponsiveIcon.vue";
 import { computed } from "vue";
 
 // properties
@@ -23,7 +21,7 @@ export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
-  icon?: ResponsiveIconProps;
+  icon?: IconProps;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,

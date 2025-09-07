@@ -151,19 +151,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import Button from "@/components/Button.vue";
+import PlayerCard from "@/components/PlayerCard.vue";
+import { playerVisible } from "@/helpers/utils";
+import { api, ConnectionState } from "@/plugins/api";
 import {
+  PlaybackState,
   Player,
   PlayerFeature,
   PlayerType,
-  PlaybackState,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { ConnectionState, api } from "@/plugins/api";
-import PlayerCard from "@/components/PlayerCard.vue";
-import Button from "@/components/mods/Button.vue";
-import { playerVisible } from "@/helpers/utils";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);

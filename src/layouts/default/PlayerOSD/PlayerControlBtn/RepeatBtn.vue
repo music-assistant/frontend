@@ -1,6 +1,6 @@
 <template>
   <!-- repeat button -->
-  <ResponsiveIcon
+  <Icon
     v-if="isVisible && playerQueue"
     v-bind="icon"
     :disabled="!playerQueue.active || playerQueue.items == 0"
@@ -19,7 +19,7 @@
         [true, 'mdi-repeat-off'],
       ])
     "
-    :type="'btn'"
+    variant="button"
     @click="
       api.queueCommandRepeat(
         playerQueue.queue_id || '',
@@ -34,18 +34,16 @@
 </template>
 
 <script setup lang="ts">
+import Icon, { IconProps } from "@/components/Icon.vue";
+import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
-import ResponsiveIcon, {
-  ResponsiveIconProps,
-} from "@/components/mods/ResponsiveIcon.vue";
-import { getValueFromSources } from "@/helpers/utils";
 
 // properties
 export interface Props {
   playerQueue: PlayerQueue | undefined;
   isVisible?: boolean;
-  icon?: ResponsiveIconProps;
+  icon?: IconProps;
 }
 withDefaults(defineProps<Props>(), {
   isVisible: true,

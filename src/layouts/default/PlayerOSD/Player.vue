@@ -121,27 +121,28 @@
 import { computed, ref, watch } from "vue";
 //@ts-ignore
 
+import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
+import {
+  imgCoverDark,
+  imgCoverLight,
+} from "@/components/QualityDetailsBtn.vue";
+import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import {
   ImageType,
   MediaType,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
-import PlayerTimeline from "./PlayerTimeline.vue";
+import vuetify from "@/plugins/vuetify";
+import { useDisplay, useTheme } from "vuetify";
 import PlayerControls from "./PlayerControls.vue";
+import PlayerExtendedControls from "./PlayerExtendedControls.vue";
+import PlayerTimeline from "./PlayerTimeline.vue";
 import PlayerTrackDetails from "./PlayerTrackDetails.vue";
 import PlayerVolume from "./PlayerVolume.vue";
-import PlayerExtendedControls from "./PlayerExtendedControls.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
-import vuetify from "@/plugins/vuetify";
-import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
-import {
-  imgCoverDark,
-  imgCoverLight,
-} from "@/components/QualityDetailsBtn.vue";
-import { useDisplay } from "vuetify";
-import { api } from "@/plugins/api";
+
 interface Props {
   useFloatingPlayer: boolean;
 }
@@ -211,13 +212,13 @@ watch(
   align-items: center;
   width: 100%;
   padding: 10px 15px;
-  border-radius: 10px;
   background-color: rgb(var(--v-theme-overlay));
   .mediacontrols-bottom-center {
     width: 40%;
   }
 
   &[data-mobile="true"] {
+    border-radius: 10px;
     .mediacontrols-bottom-center {
       display: none;
     }
@@ -228,7 +229,6 @@ watch(
 }
 
 .mediacontrols-bg {
-  border-radius: 10px;
   height: 100%;
   position: absolute;
   width: 320px;

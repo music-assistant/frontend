@@ -160,7 +160,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch } from "vue";
+import Button from "@/components/Button.vue";
+import Container from "@/components/Container.vue";
+import ListItem from "@/components/ListItem.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -169,14 +173,10 @@ import {
   ProviderManifest,
   ProviderType,
 } from "@/plugins/api/interfaces";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { useRouter } from "vue-router";
-import Button from "@/components/mods/Button.vue";
-import ListItem from "@/components/mods/ListItem.vue";
-import Container from "@/components/mods/Container.vue";
-import { $t } from "@/plugins/i18n";
 import { eventbus } from "@/plugins/eventbus";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { $t } from "@/plugins/i18n";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();

@@ -326,8 +326,8 @@
                     link
                     :show-menu-btn="true"
                     :disabled="!item.available"
-                    @click.stop="(e: MouseEvent) => openQueueItemMenu(e, item)"
-                    @menu.stop="(e: MouseEvent) => openQueueItemMenu(e, item)"
+                    @click.stop="(e: Event) => openQueueItemMenu(e, item)"
+                    @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
                     @mouseenter="hoveredQueueIndex = index"
                     @mouseleave="hoveredQueueIndex = -1"
                   >
@@ -467,7 +467,7 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <ResponsiveIcon
+          <Icon
             v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
             :icon="
@@ -476,7 +476,7 @@
                 : 'mdi-heart-outline'
             "
             :title="$t('tooltip.favorite')"
-            :type="'btn'"
+            variant="button"
             class="media-controls-item"
             max-height="30px"
             @click="onHeartBtnClick"
@@ -497,7 +497,7 @@
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="100px"
+            max-height="70px"
           />
           <NextBtn
             :player="store.activePlayer"
@@ -579,17 +579,33 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  watch,
-  onMounted,
-  onBeforeUnmount,
-  watchEffect,
-} from "vue";
+import Button from "@/components/Button.vue";
+import Icon from "@/components/Icon.vue";
+import ListItem from "@/components/ListItem.vue";
+import LyricsViewer from "@/components/LyricsViewer.vue";
+import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import QualityDetailsBtn, {
+  imgCoverDark,
+  imgCoverLight,
+} from "@/components/QualityDetailsBtn.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import {
+  ImageColorPalette,
+  formatDuration,
+  getPlayerName,
+  sleep,
+} from "@/helpers/utils";
+import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
+import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
+import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   Album,
   Artist,
@@ -603,43 +619,26 @@ import {
   QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import PlayerTimeline from "./PlayerTimeline.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import Button from "@/components/mods/Button.vue";
-import ResponsiveIcon from "@/components/mods/ResponsiveIcon.vue";
-import ListItem from "@/components/mods/ListItem.vue";
-import LyricsViewer from "@/components/LyricsViewer.vue";
-import vuetify from "@/plugins/vuetify";
-import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
-import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
-import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
-import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
-import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
-import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
-import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
-import MarqueeText from "@/components/MarqueeText.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
-import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
-import {
-  imgCoverLight,
-  imgCoverDark,
-} from "@/components/QualityDetailsBtn.vue";
-import router from "@/plugins/router";
-import {
-  ImageColorPalette,
-  formatDuration,
-  getPlayerName,
-  sleep,
-} from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
+import router from "@/plugins/router";
+import { store } from "@/plugins/store";
+import vuetify from "@/plugins/vuetify";
+import Color from "color";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import { useDisplay } from "vuetify";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
-import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { getSourceName } from "@/plugins/api/helpers";
-import { $t } from "@/plugins/i18n";
-import Color from "color";
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
+import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name } = useDisplay();
 
