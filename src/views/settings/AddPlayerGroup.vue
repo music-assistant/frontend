@@ -108,7 +108,10 @@ const providerDetails = computed(() => {
 
 const syncPlayers = computed(() => {
   return Object.values(api.players).filter(
-    (x) => x.available && x.provider == providerDetails.value?.lookup_key,
+    (x) =>
+      x.available &&
+      (x.provider == providerDetails.value?.lookup_key ||
+        props.provider === "universal_group"),
   );
 });
 
