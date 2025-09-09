@@ -328,13 +328,6 @@
                 "dark": "Escuro"
             }
         },
-        "menu_style": {
-            "label": "Estilo de menu",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Vertical"
-            }
-        },
         "menu_items": {
             "label": "Itens do menu activados",
             "description": "Configura os itens a serem exibidos no menu.\n\nDe notar que se desativares as configurações, poderás ficar sem acesso ao mesmo.\n\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"

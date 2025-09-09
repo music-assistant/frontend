@@ -3,9 +3,8 @@
     <MainView v-if="store.frameless" />
     <template v-else>
       <PlayerSelect />
-      <Footer />
-
       <MainView />
+      <Footer />
     </template>
   </v-app>
   <v-overlay
