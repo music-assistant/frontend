@@ -110,10 +110,10 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 const show = ref<boolean>(false);
 const items = ref<ContextMenuItem[]>([]);
@@ -201,22 +201,22 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 
 import router from "@/plugins/router";
 
+import { playerVisible } from "@/helpers/utils";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  ProviderFeature,
+  Album,
+  BrowseFolder,
   MediaItem,
-  QueueOption,
+  MediaItemType,
+  MediaItemTypeOrItemMapping,
   MediaType,
   Playlist,
-  Album,
-  Track,
-  MediaItemType,
   PodcastEpisode,
-  MediaItemTypeOrItemMapping,
-  BrowseFolder,
+  ProviderFeature,
+  QueueOption,
+  Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import { playerVisible } from "@/helpers/utils";
 
 export interface ContextMenuItem {
   label: string;
@@ -259,7 +259,8 @@ export const showContextMenuForMediaItem = async function (
     mediaItems[0].is_playable &&
     itemIsAvailable(mediaItems[0])
   ) {
-    menuItems.push(...(await getPlayMenuItems(mediaItems, parentItem)));
+    const playMenuItems = await getPlayMenuItems(mediaItems, parentItem);
+    menuItems.push(...playMenuItems);
   }
 
   if (menuItems.length == 0) return;
@@ -789,10 +790,11 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action (tracks only)
+  // add to playlist action (tracks, albums, and folders)
   if (
     items[0].media_type === MediaType.TRACK ||
-    items[0].media_type === MediaType.ALBUM
+    items[0].media_type === MediaType.ALBUM ||
+    items[0].media_type === MediaType.FOLDER
   ) {
     contextMenuItems.push({
       label: "add_playlist",
