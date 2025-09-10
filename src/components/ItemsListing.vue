@@ -181,7 +181,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import Container from "@/components/Container.vue";
+import Container from "@/components/mods/Container.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import {
   handleMenuBtnClick,
@@ -201,6 +201,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { eventbus } from "@/plugins/eventbus";
 import {
   computed,
   nextTick,
@@ -967,6 +968,12 @@ onMounted(async () => {
     loadData(true);
   }
 
+  // Listen for selection clearing events
+  (eventbus as any).on("clearSelection", () => {
+    selectedItems.value = [];
+    showCheckboxes.value = false;
+  })
+
   // signal if/when items get played/updated/removed
   const unsub = api.subscribe_multi(
     [
@@ -998,7 +1005,10 @@ onMounted(async () => {
       }
     },
   );
-  onBeforeUnmount(unsub);
+  onBeforeUnmount(() => {
+    (eventbus as any).off("clearSelection");
+    unsub();
+  });
 });
 
 export interface StoredState {
