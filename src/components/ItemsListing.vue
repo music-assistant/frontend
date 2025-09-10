@@ -181,7 +181,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
-import Container from "@/components/mods/Container.vue";
+import Container from "@/components/Container.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import {
   handleMenuBtnClick,
