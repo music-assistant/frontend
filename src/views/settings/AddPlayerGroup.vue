@@ -87,6 +87,7 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { markdownToHtml } from "@/helpers/utils";
+import { PlayerType } from "@/plugins/api/interfaces";
 
 // global refs
 const router = useRouter();
@@ -110,6 +111,7 @@ const syncPlayers = computed(() => {
   return Object.values(api.players).filter(
     (x) =>
       x.available &&
+      x.type != PlayerType.GROUP &&
       (x.provider == providerDetails.value?.lookup_key ||
         props.provider === "universal_group"),
   );
