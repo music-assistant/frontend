@@ -1318,10 +1318,10 @@
   resolved "https://registry.yarnpkg.com/@img/sharp-win32-x64/-/sharp-win32-x64-0.33.5.tgz#56f00962ff0c4e0eb93d34a047d29fa995e3e342"
   integrity sha512-MpY/o8/8kj+EcnxwvrP4aTJSWw/aZ7JIGR4aBeZkZw5B7/Jn+tY9/VNwtcoGmdT7GfggGIU4kygOMSbYnOrAbg==
 
-"@intlify/bundle-utils@11.0.0":
-  version "11.0.0"
-  resolved "https://registry.yarnpkg.com/@intlify/bundle-utils/-/bundle-utils-11.0.0.tgz#a8674610ad8209ff3129d2161bfb7a681c8bdda4"
-  integrity sha512-7dEsbDXf/96btSWTrx5DxlbnsQmzFNm1eJ1hDRs9zu8bdDyUNE2/z1kmGdGcZKVlJWyJXKWjgVbHl1ylJWP3ow==
+"@intlify/bundle-utils@11.0.1":
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/@intlify/bundle-utils/-/bundle-utils-11.0.1.tgz#7abdc2e7b9f18d3cddcfac5e3077ee005ca56028"
+  integrity sha512-5l10G5wE2cQRsZMS9y0oSFMOLW5IG/SgbkIUltqnwF1EMRrRbUAHFiPabXdGTHeexCsMTcxj/1w9i0rzjJU9IQ==
   dependencies:
     "@intlify/message-compiler" "^11.1.10"
     "@intlify/shared" "^11.1.10"
@@ -1375,13 +1375,13 @@
   resolved "https://registry.yarnpkg.com/@intlify/shared/-/shared-11.1.12.tgz#ab41083e017d622cf63c7dc88a0ee0bc27f4127a"
   integrity sha512-Om86EjuQtA69hdNj3GQec9ZC0L0vPSAnXzB3gP/gyJ7+mA7t06d9aOAiqMZ+xEOsumGP4eEBlfl8zF2LOTzf2A==
 
-"@intlify/unplugin-vue-i18n@11.0.0":
-  version "11.0.0"
-  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-11.0.0.tgz#b5a654c55b3347367fe2bcb1b06b587414712892"
-  integrity sha512-GfEvcqAV5DG6pVQkd9YpnRVedpsxCh7u/zTpNVSw9BlueHxmrxPvKBZm2DNA+8jWda+O9Usqauyq8ZBRSp0ETQ==
+"@intlify/unplugin-vue-i18n@11.0.1":
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-11.0.1.tgz#d16a00635b5bb5ae9e90b1ef54bb68c328bb9fab"
+  integrity sha512-nH5NJdNjy/lO6Ne8LDtZzv4SbpVsMhPE+LbvBDmMeIeJDiino8sOJN2QB3MXzTliYTnqe3aB9Fw5+LJ/XVaXCg==
   dependencies:
     "@eslint-community/eslint-utils" "^4.4.0"
-    "@intlify/bundle-utils" "11.0.0"
+    "@intlify/bundle-utils" "11.0.1"
     "@intlify/shared" "^11.1.10"
     "@intlify/vue-i18n-extensions" "^8.0.0"
     "@rollup/pluginutils" "^5.1.0"
