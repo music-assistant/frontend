@@ -330,13 +330,6 @@
                 "dark": "Mörk"
             }
         },
-        "menu_style": {
-            "label": "Meny stil",
-            "options": {
-                "horizontal": "Horisontell",
-                "vertical": "Vertikal"
-            }
-        },
         "menu_items": {
             "label": "Aktiverade menyalternativ",
             "description": "Konfigurera vilka objekt som ska visas i menyn. \n\nObservera att om du inaktiverar inställningar kan du låsa dig själv. \n\nI så fall måste du manuellt ange sökvägen till inställningarna eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk."

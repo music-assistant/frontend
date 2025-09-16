@@ -11,6 +11,7 @@
     :width="460"
     style="z-index: 99999"
     z-index="99999"
+    color="background"
   >
     <div>
       <!-- heading with Players as title-->
@@ -33,9 +34,10 @@
 
       <v-divider />
 
-      <v-list flat style="margin: 0px 15px 5px 15px">
+      <v-list flat style="margin: 0px 10px; padding: 0">
         <!-- dedicated card for builtin player -->
         <PlayerCard
+          style="margin: 10px 0px"
           v-if="
             webPlayer.mode === WebPlayerMode.BUILTIN &&
             webPlayer.player_id &&
@@ -52,6 +54,7 @@
         />
         <!-- active/playing players on top -->
         <PlayerCard
+          style="margin: 10px 0px"
           v-for="player in sortedPlayers.filter(
             (x) =>
               [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(

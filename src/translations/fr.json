@@ -331,13 +331,6 @@
                 "dark": "Sombre"
             }
         },
-        "menu_style": {
-            "label": "Style du menu",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Verticale"
-            }
-        },
         "menu_items": {
             "label": "Éléments de menu activés",
             "description": "Configurez les éléments à afficher dans le menu.\n\nNotez que si vous désactivez les paramètres, vous risquez de vous bloquer l'accès.\n\nPour y accéder à nouveau, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur. Utilisez à vos risques et périls !"

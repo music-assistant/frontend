@@ -330,13 +330,6 @@
                 "dark": "Scuro"
             }
         },
-        "menu_style": {
-            "label": "Stile menù",
-            "options": {
-                "horizontal": "Orizzontale",
-                "vertical": "Verticale"
-            }
-        },
         "menu_items": {
             "label": "Elementi attivi del menu",
             "description": "Configura quali elementi mostrare nel menu.\n\nNota che se disabiliti le impostazioni potresti bloccarti.\n\nIn tal caso dovrai inserire manualmente il percorso alle impostazioni o cancellare i cookie del browser per accedere nuovamente alle impostazioni, utilizzalo a tuo rischio e pericolo."

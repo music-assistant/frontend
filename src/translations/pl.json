@@ -330,13 +330,6 @@
                 "dark": "Ciemny"
             }
         },
-        "menu_style": {
-            "label": "Styl menu",
-            "options": {
-                "horizontal": "Poziomy",
-                "vertical": "Pionowy"
-            }
-        },
         "menu_items": {
             "label": "Włączone elementy menu",
             "description": "Skonfiguruj, które elementy mają być wyświetlane w menu.\n\n Pamiętaj, że jeśli wyłączysz ustawienia, możesz się zablokować.\n\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko."
