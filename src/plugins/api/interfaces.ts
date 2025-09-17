@@ -143,6 +143,8 @@ export enum AlbumType {
   SINGLE = "single",
   COMPILATION = "compilation",
   EP = "ep",
+  LIVE = "live",
+  SOUNDTRACK = "soundtrack",
   UNKNOWN = "unknown",
 }
 
