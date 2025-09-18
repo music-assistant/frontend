@@ -6,7 +6,9 @@
       :show-library="false"
       :show-favorites-only-filter="false"
       :show-track-number="false"
-      :show-select-button="path && path != 'root' ? true : false"
+      :show-select-button="
+        path && path != 'root' && !hasOnlyFolders ? true : false
+      "
       :load-items="loadItems"
       :sort-keys="['original', 'name', 'name_desc']"
       :path="path"
@@ -46,9 +48,13 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import {
+  MediaItemTypeOrItemMapping,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import api from "@/plugins/api";
 import router from "@/plugins/router";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 export interface Props {
@@ -63,6 +69,7 @@ interface BreadcrumbSegment {
 
 const props = defineProps<Props>();
 const { t } = useI18n();
+const hasOnlyFolders = ref(false);
 
 const title = computed(() => "");
 
@@ -123,7 +130,11 @@ const breadcrumbSegments = computed((): BreadcrumbSegment[] => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  return await api.browse(props.path);
+  const items: Array<MediaItemTypeOrItemMapping> = await api.browse(props.path);
+  hasOnlyFolders.value = items.every(
+    (item) => item.media_type === MediaType.FOLDER,
+  );
+  return items;
 };
 
 const navigateToSegment = (path: string | null) => {
