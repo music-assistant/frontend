@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import {
-  MediaItemTypeOrItemMapping,
+  MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
 import api from "@/plugins/api";
@@ -130,7 +130,7 @@ const breadcrumbSegments = computed((): BreadcrumbSegment[] => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  const items: Array<MediaItemTypeOrItemMapping> = await api.browse(props.path);
+  const items: Array<MediaItemType> = await api.browse(props.path);
   hasOnlyFolders.value = items.every(
     (item) => item.media_type === MediaType.FOLDER,
   );
