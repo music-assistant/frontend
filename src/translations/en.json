@@ -292,7 +292,8 @@
             "announcements": "Announcements configuration",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
-            "presets": "Presets"
+            "presets": "Presets",
+            "sync_options": "Sync/import options"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
