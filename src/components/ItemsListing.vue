@@ -200,8 +200,8 @@ import {
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import {
   computed,
   nextTick,
@@ -969,10 +969,10 @@ onMounted(async () => {
   }
 
   // Listen for selection clearing events
-  (eventbus as any).on("clearSelection", () => {
+  eventbus.on("clearSelection", () => {
     selectedItems.value = [];
     showCheckboxes.value = false;
-  })
+  });
 
   // signal if/when items get played/updated/removed
   const unsub = api.subscribe_multi(
@@ -1006,7 +1006,7 @@ onMounted(async () => {
     },
   );
   onBeforeUnmount(() => {
-    (eventbus as any).off("clearSelection");
+    eventbus.off("clearSelection");
     unsub();
   });
 });

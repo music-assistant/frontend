@@ -110,10 +110,10 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 const show = ref<boolean>(false);
 const items = ref<ContextMenuItem[]>([]);
@@ -201,22 +201,22 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 
 import router from "@/plugins/router";
 
+import { playerVisible } from "@/helpers/utils";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  ProviderFeature,
+  Album,
+  BrowseFolder,
   MediaItem,
-  QueueOption,
+  MediaItemType,
+  MediaItemTypeOrItemMapping,
   MediaType,
   Playlist,
-  Album,
-  Track,
-  MediaItemType,
   PodcastEpisode,
-  MediaItemTypeOrItemMapping,
-  BrowseFolder,
+  ProviderFeature,
+  QueueOption,
+  Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import { playerVisible } from "@/helpers/utils";
 
 export interface ContextMenuItem {
   label: string;
@@ -689,7 +689,7 @@ export const getContextMenuItems = async function (
       action: () => {
         for (const item of items) api.addItemToLibrary(item);
         // Clear the multi-select after action
-        (eventbus as any).emit("clearSelection");
+        eventbus.emit("clearSelection");
       },
       icon: "mdi-bookshelf",
     });
@@ -716,82 +716,94 @@ export const getContextMenuItems = async function (
           api.removeItemFromLibrary(item.media_type, item.item_id);
         if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
         // Clear the multi-select after action
-        (eventbus as any).emit("clearSelection");
+        eventbus.emit("clearSelection");
       },
       icon: "mdi-bookshelf",
     });
   }
 
   // Favorites handling - supports mixed states like played/unplayed
-  if (items.length > 0 && items.every(item => "favorite" in item)) {
-  const favoritableItems = items.filter(item =>
-    [MediaType.ALBUM, MediaType.ARTIST, MediaType.AUDIOBOOK, MediaType.PLAYLIST, MediaType.PODCAST, MediaType.RADIO, MediaType.TRACK].includes(item.media_type) &&
-    itemIsAvailable(item)
-  );
+  if (items.length > 0 && items.every((item) => "favorite" in item)) {
+    const favoritableItems = items.filter(
+      (item) =>
+        [
+          MediaType.ALBUM,
+          MediaType.ARTIST,
+          MediaType.AUDIOBOOK,
+          MediaType.PLAYLIST,
+          MediaType.PODCAST,
+          MediaType.RADIO,
+          MediaType.TRACK,
+        ].includes(item.media_type) && itemIsAvailable(item),
+    );
 
-  if (favoritableItems.length > 0) {
-    const allFavorited = favoritableItems.every(item => item.favorite);
-    const allNotFavorited = favoritableItems.every(item => !item.favorite);
+    if (favoritableItems.length > 0) {
+      const allFavorited = favoritableItems.every((item) => item.favorite);
+      const allNotFavorited = favoritableItems.every((item) => !item.favorite);
 
-    // If all items are favorited, show "remove from favorites"
-    if (allFavorited) {
-      contextMenuItems.push({
-        label: "favorites_remove",
-        labelArgs: [],
-        action: () => {
-          for (const item of favoritableItems) {
-            api.removeItemFromFavorites(item.media_type, item.item_id);
-          }
-          // Clear the multi-select after action
-          (eventbus as any).emit("clearSelection");
-        },
-        icon: "mdi-heart",
-      });
-    }
-    // If all items are not favorited, show "add to favorites"
-    else if (allNotFavorited) {
-      contextMenuItems.push({
-        label: "favorites_add",
-        labelArgs: [],
-        action: () => {
-          for (const item of favoritableItems) {
-            api.addItemToFavorites(item);
-          }
-          // Clear the multi-select after action
-          (eventbus as any).emit("clearSelection");
-        },
-        icon: "mdi-heart-outline",
-      });
-    }
-    // If mixed state, show both options
-    else {
-      contextMenuItems.push({
-        label: "favorites_add",
-        labelArgs: [],
-        action: () => {
-          for (const item of favoritableItems.filter(item => !item.favorite)) {
-            api.addItemToFavorites(item);
-          }
-          // Clear the multi-select after action
-          (eventbus as any).emit("clearSelection");
-        },
-        icon: "mdi-heart-outline",
-      });
+      // If all items are favorited, show "remove from favorites"
+      if (allFavorited) {
+        contextMenuItems.push({
+          label: "favorites_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart",
+        });
+      }
+      // If all items are not favorited, show "add to favorites"
+      else if (allNotFavorited) {
+        contextMenuItems.push({
+          label: "favorites_add",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.addItemToFavorites(item);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart-outline",
+        });
+      }
+      // If mixed state, show both options
+      else {
+        contextMenuItems.push({
+          label: "favorites_add",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(
+              (item) => !item.favorite,
+            )) {
+              api.addItemToFavorites(item);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart-outline",
+        });
 
-      contextMenuItems.push({
-        label: "favorites_remove",
-        labelArgs: [],
-        action: () => {
-          for (const item of favoritableItems.filter(item => item.favorite)) {
-            api.removeItemFromFavorites(item.media_type, item.item_id);
-          }
-          // Clear the multi-select after action
-          (eventbus as any).emit("clearSelection");
-        },
-        icon: "mdi-heart",
-      });
+        contextMenuItems.push({
+          label: "favorites_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(
+              (item) => item.favorite,
+            )) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart",
+        });
+      }
     }
-  }
   }
 
   // remove from playlist (playlist tracks only)
