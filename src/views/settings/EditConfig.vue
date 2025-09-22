@@ -3,11 +3,13 @@
     <!-- config rows for all config entries -->
     <v-expansion-panels v-model="activePanel" variant="accordion" multiple flat>
       <!--
-          we split up the config settings in basic and advanced settings,
-          using expansion panels to divide them, where only the advanced one can be expanded/collapsed.
+          we split up the config settings in multiple sections,
+          using expansion panels to divide them.
         -->
       <v-expansion-panel
-        v-for="panel of panels"
+        v-for="panel of Array.from(panels).filter(
+          (p) => entriesForCategory(p).length > 0,
+        )"
         :key="panel"
         :value="panel"
         flat
@@ -22,9 +24,7 @@
         <br />
         <v-expansion-panel-text>
           <div
-            v-for="conf_entry of entries.filter(
-              (x) => x.category == panel && !x.hidden,
-            )"
+            v-for="conf_entry of entriesForCategory(panel)"
             :key="conf_entry.key"
             class="configrow"
           >
@@ -77,7 +77,7 @@
                 <br />
                 <v-btn
                   class="actionbutton"
-                  :disabled="checkDisabled(conf_entry)"
+                  :disabled="conf_entry.read_only"
                   @click="
                     action(conf_entry.action || conf_entry.key);
                     conf_entry.value = conf_entry.action
@@ -115,7 +115,7 @@
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
                 color="primary"
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
               />
 
               <!-- int/float value in range: slider control -->
@@ -128,7 +128,7 @@
                   conf_entry.range.length == 2
                 "
                 v-model="conf_entry.value as number"
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
                 :label="
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
@@ -162,7 +162,7 @@
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
                 :required="conf_entry.required"
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
                 :rules="[
                   (v) =>
                     !(!v && conf_entry.required) ||
@@ -192,7 +192,7 @@
                 :clearable="true"
                 :multiple="conf_entry.multi_value"
                 :items="getTranslatedOptions(conf_entry)"
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
                 :label="
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
@@ -213,7 +213,7 @@
                 "
                 v-model="conf_entry.value"
                 :placeholder="conf_entry.default_value?.toString()"
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
                 :label="
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
@@ -234,7 +234,7 @@
                 v-model="conf_entry.value"
                 :placeholder="conf_entry.default_value?.toString()"
                 clearable
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
                 :label="
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
@@ -252,7 +252,7 @@
                 multiple
                 chips
                 :clearable="true"
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
                 :label="
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
@@ -271,7 +271,7 @@
                 v-model="conf_entry.value"
                 :placeholder="conf_entry.default_value?.toString()"
                 clearable
-                :disabled="checkDisabled(conf_entry)"
+                :disabled="conf_entry.read_only"
                 :label="
                   $t(`settings.${conf_entry.key}.label`, conf_entry.label)
                 "
@@ -405,12 +405,14 @@ const props = defineProps<Props>();
 
 // computed props
 const panels = computed(() => {
-  const allCategories = entries.value!.map((x) => x.category);
-  if (allCategories.filter((x) => x == "generic").length) {
-    return new Set(["generic", ...allCategories]);
-  } else {
-    return new Set(allCategories);
-  }
+  // determine all unique categories from the config entries
+  const allCategories = new Set(
+    entries
+      .value!.map((x) => x.category)
+      .filter((x) => !["generic", "advanced"].includes(x)),
+  );
+  // ensure generic is always first and advanced always last
+  return ["generic", ...allCategories, "advanced"];
 });
 const requiredValuesPresent = computed(() => {
   if (entries.value) {
@@ -431,23 +433,6 @@ const requiredValuesPresent = computed(() => {
     return true;
   }
   return false;
-});
-
-const currentValues = computed(() => {
-  const values: Record<string, ConfigValueType> = {};
-  for (const entry of props.configEntries!) {
-    // filter out undefined values
-    if (entry.value == undefined) continue;
-    // filter out obfuscated strings
-    if (
-      entry.type == ConfigEntryType.SECURE_STRING &&
-      entry.value == SECURE_STRING_SUBSTITUTE
-    ) {
-      continue;
-    }
-    values[entry.key] = entry.value;
-  }
-  return values;
 });
 
 // watchers
@@ -490,34 +475,35 @@ const openLink = function (url: string) {
   a.click();
 };
 
+const entriesForCategory = function (category: string) {
+  return entries.value!.filter((x) => x.category == category && isVisible(x));
+};
+
 const openDspConfig = function () {
   router.push(`${router.currentRoute.value.path}/dsp`);
 };
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
-const hasValidInput = function (entry: ConfigEntry) {
-  if (entry.required && isNullOrUndefined(entry.value)) return false;
-  return true;
-};
-const checkDisabled = function (entry: ConfigEntry) {
-  // check if the UI element should be disabled due to conditions
+const isVisible = function (entry: ConfigEntry) {
+  if (entry.hidden) return false;
+  // check if the UI element should be hidden due to 'depends_on' conditions
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependent = entries.value?.find((x) => x.key == entry.depends_on);
     if (dependent) {
       const dependentValue = dependent.value;
       if (!isNullOrUndefined(entry.depends_on_value)) {
-        return dependentValue != entry.depends_on_value;
+        return dependentValue == entry.depends_on_value;
       }
       if (!isNullOrUndefined(entry.depends_on_value_not)) {
-        return dependentValue == entry.depends_on_value_not;
+        return dependentValue != entry.depends_on_value_not;
       }
       if (dependent.required && isNullOrUndefined(dependent)) return true;
       if (dependent.type == ConfigEntryType.BOOLEAN && !dependentValue)
-        return true;
+        return false;
     }
   }
-  return false;
+  return true;
 };
 const getCurrentValues = function () {
   const values: Record<string, ConfigValueType> = {};
