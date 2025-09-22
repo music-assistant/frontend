@@ -48,10 +48,7 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import {
-  MediaItemType,
-  MediaType,
-} from "@/plugins/api/interfaces";
+import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
 import api from "@/plugins/api";
 import router from "@/plugins/router";
 import { computed, ref } from "vue";

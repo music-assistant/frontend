@@ -7,9 +7,7 @@
           using expansion panels to divide them.
         -->
       <v-expansion-panel
-        v-for="panel of Array.from(panels).filter(
-          (p) => entriesForCategory(p).length > 0,
-        )"
+        v-for="panel of panels.filter((p) => entriesForCategory(p).length > 0)"
         :key="panel"
         :value="panel"
         flat
