@@ -502,7 +502,7 @@ export interface ConfigEntry {
   // hidden: hide from UI
   hidden?: boolean;
   // read_only: prevent user from changing this setting (make it disabled)
-  read_only: boolean;
+  read_only?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
   category: string;
   // action: (configentry)action that is needed to get the value for this entry
