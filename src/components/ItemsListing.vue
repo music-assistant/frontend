@@ -598,17 +598,23 @@ const menuItems = computed(() => {
       label: "tooltip.album_type",
       icon: "mdi-album",
       disabled: loading.value,
-      subItems: ["album", "single", "ep", "compilation", "unknown"].map(
-        (key) => {
-          return {
-            label: `album_type.${key}`,
-            selected: params.value.albumType?.includes(key),
-            action: () => {
-              changeAlbumTypeFilter(key);
-            },
-          };
-        },
-      ),
+      subItems: [
+        "album",
+        "single",
+        "ep",
+        "compilation",
+        "live",
+        "soundtrack",
+        "unknown",
+      ].map((key) => {
+        return {
+          label: `album_type.${key}`,
+          selected: params.value.albumType?.includes(key),
+          action: () => {
+            changeAlbumTypeFilter(key);
+          },
+        };
+      }),
     });
   }
 

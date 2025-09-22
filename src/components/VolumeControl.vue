@@ -272,6 +272,9 @@ const getVolumePlayers = function (player: Player) {
       // skip unavailable players
       if (!syncPlayer.available) continue;
 
+      // skip for group players
+      if (syncPlayer.type == PlayerType.GROUP) continue;
+
       // skip if player has (another) group active
       if (
         syncPlayer.active_group &&

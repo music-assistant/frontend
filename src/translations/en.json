@@ -13,7 +13,9 @@
         "single": "Single",
         "unknown": "Unknown album type",
         "audiobook": "Audiobook",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Live",
+        "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
     "appears_on": "Appears on",
@@ -290,7 +292,8 @@
             "announcements": "Announcements configuration",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
-            "presets": "Presets"
+            "presets": "Presets",
+            "sync_options": "Sync/import options"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -595,9 +598,11 @@
     "item_in_library": "This item is available in the library",
     "back": "Back",
     "recently_played": "Recently played",
-    "radiobrowser_by_popularity": "By popularity",
+    "radiobrowser_by_votes": "By votes",
+    "radiobrowser_by_clicks": "By clicks",
     "radiobrowser_by_country": "By country",
     "radiobrowser_by_tag": "By tag",
+    "radiobrowser_by_language": "By language",
     "load_more_items": "Load more items...",
     "radio": "Radio",
     "muted": "muted",
