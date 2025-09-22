@@ -143,6 +143,8 @@ export enum AlbumType {
   SINGLE = "single",
   COMPILATION = "compilation",
   EP = "ep",
+  LIVE = "live",
+  SOUNDTRACK = "soundtrack",
   UNKNOWN = "unknown",
 }
 
@@ -499,6 +501,8 @@ export interface ConfigEntry {
   depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
+  // read_only: prevent user from changing this setting (make it disabled)
+  read_only?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
   category: string;
   // action: (configentry)action that is needed to get the value for this entry
