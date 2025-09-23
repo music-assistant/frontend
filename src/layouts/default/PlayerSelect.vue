@@ -37,13 +37,13 @@
       <v-list flat style="margin: 0px 10px; padding: 0">
         <!-- dedicated card for builtin player -->
         <PlayerCard
-          style="margin: 10px 0px"
           v-if="
             webPlayer.mode === WebPlayerMode.BUILTIN &&
             webPlayer.player_id &&
             api.players[webPlayer.player_id]
           "
           :id="webPlayer.player_id"
+          style="margin: 10px 0px"
           :player="api.players[webPlayer.player_id]"
           :show-volume-control="true"
           :show-menu-button="true"
@@ -54,7 +54,6 @@
         />
         <!-- active/playing players on top -->
         <PlayerCard
-          style="margin: 10px 0px"
           v-for="player in sortedPlayers.filter(
             (x) =>
               [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
@@ -64,6 +63,7 @@
           )"
           :id="player.player_id"
           :key="player.player_id"
+          style="margin: 10px 0px"
           :player="player"
           :show-volume-control="true"
           :show-menu-button="true"

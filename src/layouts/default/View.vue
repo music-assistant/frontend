@@ -1,8 +1,8 @@
 <template>
   <v-main id="cont" class="main-layout">
     <Navigation
-      class="nav-section"
       v-if="!getBreakpointValue({ breakpoint: 'tablet' })"
+      class="nav-section"
     />
     <div class="content-section">
       <router-view v-slot="{ Component }">
@@ -27,10 +27,10 @@
 
 <script lang="ts" setup>
 import Navigation from "@/components/navigation/Navigation.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { store } from "@/plugins/store";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
-import { store } from "@/plugins/store";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 </script>
 
 <style scoped>
@@ -41,7 +41,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 }
 
 .nav-section {
-  flex: 0 0 320px;
+  flex: 0 0 290px;
 }
 .content-section {
   flex: 1;

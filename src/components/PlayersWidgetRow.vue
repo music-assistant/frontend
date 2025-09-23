@@ -52,15 +52,13 @@
 </template>
 
 <script setup lang="ts">
-import { Player } from "@/plugins/api/interfaces";
-import { computed } from "vue";
-import { PlaybackState } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import { api } from "@/plugins/api";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { playerVisible } from "@/helpers/utils";
+import { api } from "@/plugins/api";
+import { PlaybackState, Player } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { computed } from "vue";
 import { WidgetRowSettings } from "./WidgetRow.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
