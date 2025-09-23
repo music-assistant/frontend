@@ -329,13 +329,6 @@
                 "dark": "Sötét"
             }
         },
-        "menu_style": {
-            "label": "Menü stílusa",
-            "options": {
-                "horizontal": "Vízszintes",
-                "vertical": "Függőleges"
-            }
-        },
         "menu_items": {
             "label": "Engedélyezett menüelemek",
             "description": "Állítsd be, hogy mely elemek jelenjenek meg a menüben. \n\nVedd figyelembe, hogy ha letiltod a beállításokat, kizárhatod magad. \n\nEbben az esetben manuálisan kell megadnod a beállítások elérési útját, vagy törölnöd kell a böngésző sütijeit, hogy ismét hozzáférj a beállításokhoz. Saját felelősségedre használd!"

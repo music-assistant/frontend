@@ -56,10 +56,6 @@ onMounted(() => {
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
 
-  // set navigation menu style
-  store.navigationMenuStyle =
-    localStorage.getItem("frontend.settings.menu_style") || "horizontal";
-
   // cache some settings in the store
   const langPref = localStorage.getItem("frontend.settings.language") || "auto";
   if (langPref !== "auto") {

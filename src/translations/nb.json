@@ -329,13 +329,6 @@
                 "dark": "Mørk"
             }
         },
-        "menu_style": {
-            "label": "Menystil",
-            "options": {
-                "horizontal": "Vannrett",
-                "vertical": "Loddrett"
-            }
-        },
         "menu_items": {
             "label": "Aktiverte menyelementer",
             "description": "Konfigurer hvilke elementer som skal vises i menyen. \n\n Merk at hvis du deaktiverer innstillinger, kan du låse deg ute. \n\n I så fall må du angi banen til innstillinger manuelt eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen, bruk på egen risiko."

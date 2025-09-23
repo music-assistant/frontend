@@ -11,6 +11,7 @@
     :width="460"
     style="z-index: 99999"
     z-index="99999"
+    color="background"
   >
     <div>
       <!-- heading with Players as title-->
@@ -33,7 +34,7 @@
 
       <v-divider />
 
-      <v-list flat style="margin: 0px 15px 5px 15px">
+      <v-list flat style="margin: 0px 10px; padding: 0">
         <!-- dedicated card for builtin player -->
         <PlayerCard
           v-if="
@@ -42,6 +43,7 @@
             api.players[webPlayer.player_id]
           "
           :id="webPlayer.player_id"
+          style="margin: 10px 0px"
           :player="api.players[webPlayer.player_id]"
           :show-volume-control="true"
           :show-menu-button="true"
@@ -61,6 +63,7 @@
           )"
           :id="player.player_id"
           :key="player.player_id"
+          style="margin: 10px 0px"
           :player="player"
           :show-volume-control="true"
           :show-menu-button="true"
