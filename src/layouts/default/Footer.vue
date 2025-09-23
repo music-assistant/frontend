@@ -12,8 +12,8 @@
     `"
   ></div>
   <BottomNavigation
-    :height="bottomNavHeight"
     v-if="getBreakpointValue({ breakpoint: 'tablet' })"
+    :height="bottomNavHeight"
   />
   <v-footer
     app

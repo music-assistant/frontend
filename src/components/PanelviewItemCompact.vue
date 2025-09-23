@@ -48,8 +48,7 @@
             icon="mdi-play"
             color="white"
             fab
-            size="small"
-            style="opacity: 0.4"
+            style="opacity: 0.6; font-size: 20px"
             @click.stop="onPlayClick"
           />
         </div>
