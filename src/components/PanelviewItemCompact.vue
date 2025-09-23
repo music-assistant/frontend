@@ -27,31 +27,33 @@
           :model-value="isSelected"
         />
       </v-overlay>
-      <MediaItemThumb :item="isAvailable ? item : undefined" />
-      <!-- Now Playing Badge -->
-      <NowPlayingBadge
-        v-if="isPlaying"
-        icon-style="position: absolute; right: 5px; bottom: 5px"
-        :show-badge="false"
-      />
-      <!-- play button -->
-      <v-btn
-        v-if="
-          (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
-        "
-        icon="mdi-play"
-        color="white"
-        fab
-        size="small"
-        style="
-          position: absolute;
-          left: 50%;
-          top: 40%;
-          transform: translate(-50%, -50%);
-          opacity: 0.8;
-        "
-        @click.stop="onPlayClick"
-      />
+      <div class="thumb-container">
+        <MediaItemThumb :item="isAvailable ? item : undefined" />
+        <!-- Now Playing Badge -->
+        <NowPlayingBadge
+          v-if="isPlaying"
+          icon-style="position: absolute; right: 5px; bottom: 5px"
+          :show-badge="false"
+        />
+        <!-- play button -->
+        <div
+          v-if="
+            (isHovering || store.isTouchscreen) &&
+            isAvailable &&
+            item.is_playable
+          "
+          class="play-button-overlay"
+        >
+          <v-btn
+            icon="mdi-play"
+            color="white"
+            fab
+            size="small"
+            style="opacity: 0.4"
+            @click.stop="onPlayClick"
+          />
+        </div>
+      </div>
       <v-list-item
         variant="text"
         slim
@@ -109,13 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import MediaItemThumb from "./MediaItemThumb.vue";
-import {
-  BrowseFolder,
-  ItemMapping,
-  type MediaItemType,
-  MediaType,
-} from "@/plugins/api/interfaces";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
@@ -123,8 +119,14 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/utils";
+import {
+  BrowseFolder,
+  ItemMapping,
+  type MediaItemType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
 
 // properties
 export interface Props {
@@ -184,6 +186,28 @@ const onPlayClick = function (evt: PointerEvent) {
 </script>
 
 <style scoped>
+.thumb-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-button-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  .v-btn {
+    pointer-events: all;
+  }
+}
 .v-card {
   background-color: rgb(var(--v-theme-panel));
   transition: opacity 0.4s ease-in-out;
