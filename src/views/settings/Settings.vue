@@ -2,7 +2,6 @@
   <div>
     <Toolbar
       icon="mdi-cog-outline"
-      :title="$t('settings.settings')"
       :show-loading="true"
       :menu-items="[
         {
@@ -38,11 +37,12 @@
           active: activeTab == 'frontend',
         },
       ]"
-    />
+    >
+      <template #title>
+        <v-breadcrumbs :items="breadcrumbItems" class="pa-0" /> </template
+    ></Toolbar>
 
     <v-divider />
-    <!-- some spacing -->
-    <div style="height: 15px"></div>
     <router-view v-slot="{ Component }" app>
       <component :is="Component" />
     </router-view>
@@ -50,12 +50,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRouter } from "vue-router";
 import Toolbar from "@/components/Toolbar.vue";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();
+const { t } = useI18n();
 
 // computed properties
 const activeTab = computed(() => {
@@ -69,5 +71,28 @@ const activeTab = computed(() => {
     return "frontend";
   }
   return "providers";
+});
+
+const breadcrumbItems = computed(() => {
+  const items = [
+    {
+      title: t("settings.settings"),
+      disabled: false,
+      href: "#",
+      to: { name: "providersettings" },
+    },
+  ];
+
+  const currentTab = activeTab.value;
+  if (currentTab) {
+    items.push({
+      title: t(`settings.${currentTab}`),
+      disabled: true,
+      href: "#",
+      to: { name: "providersettings" },
+    });
+  }
+
+  return items;
 });
 </script>
