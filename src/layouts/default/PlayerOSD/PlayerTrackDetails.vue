@@ -8,9 +8,9 @@
       <div
         class="media-thumb player-media-thumb"
         :style="`cursor: pointer;height: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
+          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
         }px; width: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
+          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
         }px; `"
         @click="store.showFullscreenPlayer = true"
       >
@@ -30,21 +30,20 @@
           <v-img
             class="media-thumb"
             style="border-radius: 4px"
-            size="55"
+            size="60"
             :src="store.activePlayer.current_media.image_url"
           />
         </div>
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
           <v-icon
-            size="35"
+            size="24"
             :icon="
               store.activePlayer?.type == PlayerType.PLAYER &&
               store.activePlayer?.group_members.length
                 ? 'mdi-speaker-multiple'
                 : store.activePlayer?.icon || 'mdi-speaker'
             "
-            style="display: table-cell; opacity: 0.8"
           />
         </div>
       </div>
@@ -284,7 +283,7 @@ const streamDetails = computed(() => {
 });
 </script>
 
-<style>
+<style scoped>
 .player-media-thumb {
   margin-right: 10px;
 }
@@ -302,12 +301,13 @@ const streamDetails = computed(() => {
 }
 
 .icon-thumb {
-  width: 55px;
-  height: 55px;
-  margin-top: 5px;
-  border-radius: 4px;
+  width: 60px;
+  height: 60px;
+  border-radius: 3px;
   background-color: rgba(0, 0, 0, 0.3);
-  display: inline-table;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* this fixes missing subtitle items on webkit*/

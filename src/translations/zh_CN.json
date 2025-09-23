@@ -331,13 +331,6 @@
                 "dark": "暗黑模式"
             }
         },
-        "menu_style": {
-            "label": "菜单样式",
-            "options": {
-                "horizontal": "底部栏模式",
-                "vertical": "侧边栏模式"
-            }
-        },
         "menu_items": {
             "label": "启用的菜单项",
             "description": "配置要在菜单中显示的项目。\n请注意,如果您禁用了设置,那么您将不能进入设置界面。\n在这种情况下,您需要手动输入设置路径或清除浏览器cookie才能再次访问设置."

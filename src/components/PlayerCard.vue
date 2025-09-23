@@ -19,7 +19,7 @@
           <MediaItemThumb
             v-if="player.powered != false && curQueueItem"
             class="media-thumb"
-            size="55"
+            size="60"
             :item="curQueueItem"
             :fallback="imgCoverDark"
           />
@@ -33,14 +33,14 @@
           >
             <v-img
               class="media-thumb"
-              size="55"
+              size="60"
               :src="player.current_media.image_url"
             />
           </div>
           <!-- fallback: display player icon -->
           <div v-else class="icon-thumb">
             <v-icon
-              size="35"
+              size="24"
               :icon="
                 player.type == PlayerType.PLAYER && player.group_members.length
                   ? 'mdi-speaker-multiple'
@@ -67,14 +67,14 @@
           <!-- append small icon to the title -->
           <v-icon
             size="20"
-            class="pl-2"
+            class="ml-2"
             :icon="
               store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
             "
           />
         </div>
         <!-- regular player -->
-        <div v-else style="margin-bottom: 3px">
+        <div v-else>
           {{ getPlayerName(player, 27) }}
         </div>
       </template>
@@ -106,7 +106,10 @@
 
       <!-- subtitle -->
       <template #default>
-        <div class="v-list-item-subtitle" style="white-space: nowrap">
+        <div
+          class="v-list-item-subtitle"
+          style="font-size: 0.85rem; white-space: nowrap"
+        >
           <!-- player powered off -->
           <div v-if="player.powered == false">
             {{ $t("off") }}
@@ -238,11 +241,7 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import { imgCoverDark } from "@/components/QualityDetailsBtn.vue";
-import VolumeControl from "@/components/VolumeControl.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { getArtistsString, getPlayerName } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
@@ -250,13 +249,29 @@ import {
   PlaybackState,
   Player,
   PLAYER_CONTROL_NONE,
+  ImageType,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import MediaItemThumb, {
+  getImageThumbForItem,
+} from "@/components/MediaItemThumb.vue";
+import {
+  imgCoverDark,
+  imgCoverLight,
+} from "@/components/QualityDetailsBtn.vue";
+import {
+  getArtistsString,
+  getPlayerName,
+  getColorPalette,
+  ImageColorPalette,
+} from "@/helpers/utils";
+import { computed, ref, watch } from "vue";
+import VolumeControl from "@/components/VolumeControl.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { computed } from "vue";
+import vuetify from "@/plugins/vuetify";
 
 // properties
 export interface Props {
@@ -267,6 +282,7 @@ export interface Props {
   showSyncControls?: boolean;
   allowPowerControl?: boolean;
 }
+
 const compProps = defineProps<Props>();
 
 const playerQueue = computed(() => {
@@ -299,47 +315,84 @@ const openPlayerMenu = function (evt: Event) {
     posY: (evt as PointerEvent).clientY,
   });
 };
+
+// local refs
+const coverImageColorPalette = ref<ImageColorPalette>({
+  "0": "",
+  "1": "",
+  "2": "",
+  "3": "",
+  "4": "",
+  "5": "",
+  lightColor: "",
+  darkColor: "",
+});
+
+// utility feature to extract the dominant colors from the cover image
+// we use this color palette to colorize the playerbar/OSD
+const img = new Image();
+img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
+img.crossOrigin = "Anonymous";
+img.addEventListener("load", function () {
+  coverImageColorPalette.value = getColorPalette(img);
+});
+
+const backgroundColor = computed(() => {
+  if (vuetify.theme.current.value.dark) {
+    if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
+      return coverImageColorPalette.value.darkColor;
+    return "#CCCCCC26";
+  }
+  if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
+    return coverImageColorPalette.value.lightColor;
+  return "#CCCCCC26";
+});
+
+watch(
+  curQueueItem,
+  (newQueueItem) => {
+    if (newQueueItem?.media_item) {
+      img.src =
+        getImageThumbForItem(newQueueItem.media_item, ImageType.THUMB) || "";
+    } else if (newQueueItem) {
+      img.src = getImageThumbForItem(newQueueItem, ImageType.THUMB) || "";
+    } else {
+      img.src = "";
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
 .panel-item {
-  border-style: ridge;
-  border-width: thin;
-  border-color: #cccccc5e;
-  padding-left: 8px;
-  padding-right: 8px;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  background-color: rgba(162, 188, 255, 0.1);
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: rgb(var(--v-theme-overlay));
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
-  border-radius: 6px;
-  margin-left: 0px;
-  margin-right: 0px;
-  margin-top: 5px;
-  margin-bottom: 8px;
-  height: 100%;
-  width: auto;
+  border-radius: 4px;
+  height: 84px;
+  box-sizing: border-box;
 }
 
 .panel-item-idle {
-  opacity: 0.8;
+  background: color-mix(in srgb, v-bind("backgroundColor"), transparent 20%);
 }
 
 .panel-item-off {
-  opacity: 0.6;
+  background: color-mix(in srgb, v-bind("backgroundColor"), transparent 20%);
 }
 
 .panel-item-selected {
-  border-color: #2f2f2f5e;
-  background-color: rgba(162, 188, 255, 0.4);
+  background: v-bind("backgroundColor");
 }
 
 .panel-item-details {
-  align-items: center;
-  margin-left: 0px !important;
-  padding-left: 0px !important;
-  padding-right: 0px !important;
+  width: 100%;
+  margin: 0px !important;
+  padding: 0px !important;
 }
 
 .volumesliderrow {
@@ -364,21 +417,25 @@ const openPlayerMenu = function (evt: Event) {
   padding: 0;
 }
 
+.player-media-thumb {
+  margin-right: 10px;
+}
+
 .media-thumb {
-  width: 55px;
-  height: 55px;
-  margin-top: 5px;
+  width: 60px;
+  height: 60px;
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.3);
 }
 
 .icon-thumb {
-  width: 55px;
-  height: 55px;
-  margin-top: 5px;
+  width: 60px;
+  height: 60px;
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.3);
-  display: inline-table;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-command-btn {

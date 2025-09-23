@@ -3,7 +3,7 @@
     <v-toolbar color="transparent">
       <template #title>{{ $t("settings.frontend") }} </template>
     </v-toolbar>
-    <v-card-text style="margin-left: -5px; margin-right: -5px">
+    <v-card-text>
       <v-card-subtitle> {{ $t("settings.frontend_desc") }} </v-card-subtitle>
       <br />
       <br />
@@ -83,20 +83,6 @@ onMounted(() => {
       multi_value: false,
       category: "generic",
       value: localStorage.getItem("frontend.settings.language"),
-    },
-    {
-      key: "menu_style",
-      type: ConfigEntryType.STRING,
-      label: "menu_style",
-      default_value: "horizontal",
-      required: false,
-      options: [
-        { title: "horizontal", value: "horizontal" },
-        { title: "vertical", value: "vertical" },
-      ],
-      multi_value: false,
-      category: "generic",
-      value: localStorage.getItem("frontend.settings.menu_style"),
     },
     {
       key: "menu_items",

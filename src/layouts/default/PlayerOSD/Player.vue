@@ -19,10 +19,9 @@
           play: {
             isVisible: true,
             icon: {
-              staticWidth: '50px',
-              staticHeight: '50px',
+              staticWidth: '48px',
+              staticHeight: '48px',
             },
-            withCircle: useFloatingPlayer,
           },
           previous: { isVisible: getBreakpointValue('bp3') },
           next: { isVisible: getBreakpointValue('bp3') },
@@ -70,7 +69,6 @@
                 breakpoint: 'bp3',
                 condition: 'lt',
               }),
-              withCircle: false,
               icon: {
                 staticWidth: '40px',
                 staticHeight: '40px',
@@ -144,13 +142,12 @@ import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import PlayerTrackDetails from "./PlayerTrackDetails.vue";
 import PlayerVolume from "./PlayerVolume.vue";
+
 interface Props {
   useFloatingPlayer: boolean;
 }
 defineProps<Props>();
 
-// global refs
-const theme = useTheme();
 // Custom breakpoint for compatibility with `getBreakpointValue`. Can replace once we switch to using built-in Vuetify breakpoints
 const { mobile } = useDisplay({ mobileBreakpoint: 576 });
 
@@ -178,12 +175,12 @@ img.addEventListener("load", function () {
 const backgroundColor = computed(() => {
   if (vuetify.theme.current.value.dark) {
     if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
-      return coverImageColorPalette.value.darkColor + "26";
-    return "CCCCCC26";
+      return coverImageColorPalette.value.darkColor;
+    return "#CCCCCC26";
   }
   if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
-    return coverImageColorPalette.value.lightColor + "26";
-  return "CCCCCC26";
+    return coverImageColorPalette.value.lightColor;
+  return "#CCCCCC26";
 });
 
 // watchers
@@ -214,14 +211,14 @@ watch(
   display: flex;
   align-items: center;
   width: 100%;
-  padding-inline: 10px;
-  padding-block: 10px;
-
+  padding: 10px 15px;
+  background-color: rgb(var(--v-theme-overlay));
   .mediacontrols-bottom-center {
     width: 40%;
   }
 
   &[data-mobile="true"] {
+    border-radius: 10px;
     .mediacontrols-bottom-center {
       display: none;
     }
@@ -232,15 +229,21 @@ watch(
 }
 
 .mediacontrols-bg {
-  position: absolute;
-  width: 100%;
   height: 100%;
+  position: absolute;
+  width: 320px;
   left: 0px;
   top: 0px;
-  background-color: v-bind("backgroundColor");
+  background: linear-gradient(
+    to right,
+    v-bind("backgroundColor") 0%,
+    transparent
+  );
 
   &[data-floating="true"] {
     border-radius: 10px;
+    width: 100%;
+    background: v-bind("backgroundColor");
   }
 }
 
@@ -250,7 +253,7 @@ watch(
 
 .mediacontrols-left {
   margin-inline-end: auto;
-  width: 30%;
+  width: 20%;
   > div {
     padding: 0px !important;
   }

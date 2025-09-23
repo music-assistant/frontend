@@ -1,62 +1,6 @@
-<template>
-  <v-navigation-drawer app :rail="!showNavigationMenu" :width="280" permanent>
-    <v-list-item style="height: 55px" :active="false">
-      <template #prepend>
-        <img class="logo_icon" size="40" src="@/assets/icon.png" />
-      </template>
-      <template #title>
-        <div class="logo_text">Music Assistant</div>
-      </template>
-    </v-list-item>
-    <v-divider />
-
-    <!-- menu items -->
-    <v-list lines="one" density="compact" nav>
-      <v-list-item
-        v-for="menuItem of menuItems.filter((item) => !item.hidden)"
-        :key="menuItem.path"
-        nav
-        density="compact"
-        :height="15"
-        :title="$t(menuItem.label)"
-        :prepend-icon="menuItem.icon"
-        :to="menuItem.path"
-      />
-    </v-list>
-    <!-- button at bottom to collapse/expand the navigation drawer-->
-    <Button
-      nav
-      :height="15"
-      :width="40"
-      style="position: relative; float: right; right: 10px; top: 20px"
-      :ripple="false"
-      :icon="showNavigationMenu ? 'mdi-chevron-left' : 'mdi-chevron-right'"
-      :title="$t('tooltip.show_menu')"
-      @click="showNavigationMenu = !showNavigationMenu"
-    />
-  </v-navigation-drawer>
-</template>
-
-<script setup lang="ts">
-import Button from "@/components/Button.vue";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { store } from "@/plugins/store";
-import { ref, watch } from "vue";
 
-const showNavigationMenu = ref<boolean>(
-  localStorage.getItem("show_navigation_menu") === "true",
-);
-const menuItems = getMenuItems();
-
-watch(
-  () => showNavigationMenu.value,
-  (newVal) => {
-    localStorage.setItem("show_navigation_menu", newVal.toString());
-  },
-);
-</script>
-
-<script lang="ts">
 export interface MenuItem {
   label: string;
   icon: string;
@@ -101,7 +45,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "albums") {
       items.push({
         label: "albums",
-        icon: "mdi-album",
+        icon: "md:album",
         path: "/albums",
         isLibraryNode: true,
         hidden: store.libraryAlbumsCount === 0,
@@ -119,7 +63,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "playlists") {
       items.push({
         label: "playlists",
-        icon: "mdi-playlist-play",
+        icon: "md:playlist_play",
         path: "/playlists",
         isLibraryNode: true,
         hidden: store.libraryPlaylistsCount === 0,
@@ -171,23 +115,3 @@ export const getMenuItems = function () {
   }
   return items;
 };
-</script>
-
-<style scoped>
-.logo_text {
-  margin-left: 0px;
-  font-family: "JetBrains Mono Medium";
-  font-size: larger;
-  font-weight: 500;
-}
-
-.logo_icon {
-  margin-left: -8px;
-  border-radius: 4px;
-  width: 38px;
-}
-
-.v-list-item :deep(.v-list-item__prepend) {
-  width: 55px;
-}
-</style>
