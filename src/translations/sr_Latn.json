@@ -727,5 +727,8 @@
     "homescreen_edit_enable": "Izmeni početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
     "lyrics_will_appear_soon": "Tekst će se pojaviti kada pesma počne...",
-    "builtin_playlists": "Ugrađena podešavanja plejliste"
+    "builtin_playlists": "Ugrađena podešavanja plejliste",
+    "radiobrowser_by_votes": "Po glasovima",
+    "radiobrowser_by_clicks": "Po kliku",
+    "radiobrowser_by_language": "Po jeziku"
 }
