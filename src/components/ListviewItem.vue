@@ -31,10 +31,15 @@
         v-if="!showCheckboxes && item.is_playable"
         :class="{ hidden: !showPlayBtn }"
         icon="mdi-play"
-        color="primary"
-        fab
+        variant="text"
         size="small"
-        style="position: absolute; left: 12px; bottom: 12px"
+        style="
+          position: absolute;
+          left: 14px;
+          bottom: 12px;
+          color: white;
+          font-size: 18px;
+        "
         @click.stop="onPlayClick"
         @mouseenter="showPlayBtn = true"
         @mouseleave="showPlayBtn = false"
