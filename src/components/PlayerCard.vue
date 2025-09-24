@@ -343,17 +343,6 @@ img.addEventListener("load", function () {
   coverImageColorPalette.value = getColorPalette(img);
 });
 
-const backgroundColor = computed(() => {
-  if (vuetify.theme.current.value.dark) {
-    if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
-      return coverImageColorPalette.value.darkColor;
-    return "#CCCCCC26";
-  }
-  if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
-    return coverImageColorPalette.value.lightColor;
-  return "#CCCCCC26";
-});
-
 watch(
   curQueueItem,
   (newQueueItem) => {
@@ -371,31 +360,6 @@ watch(
 </script>
 
 <style scoped>
-.panel-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background-color: rgb(var(--v-theme-overlay));
-  opacity: 1;
-  transition: opacity 0.4s ease-in-out;
-  border-radius: 4px;
-  height: 84px;
-  box-sizing: border-box;
-}
-
-.panel-item-idle {
-  background: color-mix(in srgb, v-bind("backgroundColor"), transparent 20%);
-}
-
-.panel-item-off {
-  background: color-mix(in srgb, v-bind("backgroundColor"), transparent 20%);
-}
-
-.panel-item-selected {
-  background: rgba(162, 188, 255, 0.4) !important;
-  border: 1px solid rgba(162, 188, 255, 0.6);
-}
-
 .panel-item-details {
   width: 100%;
   margin: 0px !important;
@@ -443,6 +407,52 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.media-thumb {
+  width: 55px;
+  height: 55px;
+  margin-top: 5px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+.icon-thumb {
+  width: 55px;
+  height: 55px;
+  margin-top: 5px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: inline-table;
+}
+
+.panel-item {
+  border-style: ridge;
+  border-width: thin;
+  border-color: #cccccc5e;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: rgba(162, 188, 255, 0.1);
+  opacity: 1;
+  transition: opacity 0.4s ease-in-out;
+  border-radius: 6px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 5px;
+  margin-bottom: 8px;
+  height: 100%;
+  width: auto;
+}
+.panel-item-idle {
+  opacity: 0.8;
+}
+.panel-item-off {
+  opacity: 0.6;
+}
+.panel-item-selected {
+  border-color: #2f2f2f5e;
+  background-color: rgba(162, 188, 255, 0.4);
 }
 
 .player-command-btn {
