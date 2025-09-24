@@ -50,5 +50,6 @@ const menuItems = computed(() => {
 
 .editButton {
   float: right;
+  margin-bottom: 10px;
 }
 </style>

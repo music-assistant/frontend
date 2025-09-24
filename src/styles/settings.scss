@@ -7,8 +7,8 @@
 // https://next.vuetifyjs.com/features/sass-variables/`
 @use "vuetify/settings" with (
   // vue listitem title overrides
-  $list-item-title-font-size: 1rem,
-  $list-item-title-line-height: 1.5rem,
+  $list-item-title-font-size: 0.875rem,
+  $list-item-title-line-height: 1.25rem,
   $list-item-title-font-weight: 500,
 
   // vue listitem subtitle overrides

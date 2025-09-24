@@ -1,6 +1,9 @@
 <template>
   <v-toolbar :color="color" class="header">
-    <template v-if="icon" #prepend>
+    <template
+      v-if="getBreakpointValue({ breakpoint: 'tablet' }) && icon"
+      #prepend
+    >
       <v-btn
         :icon="icon"
         size="large"
@@ -12,7 +15,15 @@
 
     <template #title>
       <slot name="title">
-        <button v-if="title" @click="emit('titleClicked')">
+        <div v-if="!getBreakpointValue('bp3')" class="mobile-brand">
+          <img
+            src="@/assets/icon.svg"
+            alt="Music Assistant"
+            class="mobile-brand-logo"
+          />
+          <span class="mobile-brand-text">Music Assistant</span>
+        </div>
+        <button v-else-if="title" @click="emit('titleClicked')">
           {{ title }}
           <v-badge
             v-if="count && getBreakpointValue('bp4')"
@@ -251,5 +262,25 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 
 .header.v-toolbar-default > .v-toolbar__content > .v-toolbar__append {
   margin-inline-end: 10px;
+}
+
+/* Mobile branding on the left */
+@media (max-width: 575px) {
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .mobile-brand-logo {
+    height: 30px;
+    width: 30px;
+  }
+
+  .mobile-brand-text {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
 }
 </style>
