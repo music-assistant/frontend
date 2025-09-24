@@ -239,19 +239,3 @@ const onPlayClick = function (evt: PointerEvent) {
   font-size: small !important;
 }
 </style>
-
-<style lang="scss" scoped>
-.paneldetails {
-  background-color: rgba(255, 255, 255, 0.75);
-  position: absolute;
-  width: 100%;
-  height: 50px;
-  bottom: 0px;
-  border-radius: 0;
-}
-
-.paneldetails-dark {
-  @extend .paneldetails;
-  background-color: rgba(0, 0, 0, 0.75);
-}
-</style>
