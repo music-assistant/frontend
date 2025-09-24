@@ -1,7 +1,9 @@
 <template>
   <v-toolbar :color="color" class="header">
     <template
-      v-if="getBreakpointValue({ breakpoint: 'tablet' }) && icon"
+      v-if="
+        (!getBreakpointValue({ breakpoint: 'tablet' }) || iconAction) && icon
+      "
       #prepend
     >
       <v-btn
@@ -15,7 +17,7 @@
 
     <template #title>
       <slot name="title">
-        <div v-if="!getBreakpointValue('bp3')" class="mobile-brand">
+        <div v-if="!getBreakpointValue('bp3') && home" class="mobile-brand">
           <img
             src="@/assets/icon.svg"
             alt="Music Assistant"
@@ -202,6 +204,7 @@ export interface Props {
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
   showLoading?: boolean;
+  home?: boolean;
   iconAction?: () => void;
 }
 withDefaults(defineProps<Props>(), {
