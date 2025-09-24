@@ -9,6 +9,7 @@
     }"
     :ripple="false"
     :disabled="!player.available"
+    @click="$emit('click', player)"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">
@@ -241,17 +242,6 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
-import {
-  MediaType,
-  PlaybackState,
-  Player,
-  PLAYER_CONTROL_NONE,
-  ImageType,
-  PlayerType,
-} from "@/plugins/api/interfaces";
 import MediaItemThumb, {
   getImageThumbForItem,
 } from "@/components/MediaItemThumb.vue";
@@ -259,19 +249,30 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
+import VolumeControl from "@/components/VolumeControl.vue";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getArtistsString,
-  getPlayerName,
   getColorPalette,
+  getPlayerName,
   ImageColorPalette,
 } from "@/helpers/utils";
-import { computed, ref, watch } from "vue";
-import VolumeControl from "@/components/VolumeControl.vue";
+import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
+import {
+  ImageType,
+  MediaType,
+  PlaybackState,
+  Player,
+  PLAYER_CONTROL_NONE,
+  PlayerType,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
 import vuetify from "@/plugins/vuetify";
+import { webPlayer } from "@/plugins/web_player";
+import { computed, ref, watch } from "vue";
 
 // properties
 export interface Props {
@@ -284,6 +285,11 @@ export interface Props {
 }
 
 const compProps = defineProps<Props>();
+
+// emits
+defineEmits<{
+  (e: "click", player: Player): void;
+}>();
 
 const playerQueue = computed(() => {
   if (
@@ -386,7 +392,8 @@ watch(
 }
 
 .panel-item-selected {
-  background: v-bind("backgroundColor");
+  background: rgba(162, 188, 255, 0.4) !important;
+  border: 1px solid rgba(162, 188, 255, 0.6);
 }
 
 .panel-item-details {
