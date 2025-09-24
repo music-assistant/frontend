@@ -235,7 +235,8 @@ const onPlayClick = function (evt: PointerEvent) {
 }
 
 .v-list-item-subtitle {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgb(var(--v-theme-on-panel), 0.6) !important;
+  font-size: small !important;
 }
 </style>
 
