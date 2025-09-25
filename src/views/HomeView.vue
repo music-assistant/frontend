@@ -4,6 +4,7 @@
       :show-loading="true"
       :enforce-overflow-menu="true"
       :menu-items="menuItems"
+      :home="true"
       color="background"
       class="editButton"
     />
