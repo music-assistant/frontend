@@ -849,6 +849,7 @@ export interface Player {
   volume_level?: number;
   volume_muted?: boolean;
   group_members: string[];
+  static_group_members: string[];
   active_source?: string;
   source_list: PlayerSource[];
   active_group?: string;
