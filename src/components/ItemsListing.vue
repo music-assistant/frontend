@@ -196,6 +196,8 @@ import {
   ItemMapping,
   MediaItemTypeOrItemMapping,
   MediaType,
+  PodcastEpisode,
+  Radio,
   type Album,
   type MediaItemType,
   type Track,
@@ -386,20 +388,36 @@ const isSelected = function (item: MediaItemTypeOrItemMapping) {
 };
 
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
-  const current = store.curQueueItem?.media_item as Track | undefined;
+  const current = store.curQueueItem?.media_item as
+    | Track
+    | Radio
+    | PodcastEpisode
+    | undefined;
   if (!current) return false;
   switch (itemtype) {
     case "tracks": {
       return item.item_id === current.item_id;
     }
     case "albums": {
+      if (!("album" in current)) return false;
       return item.item_id === current.album.item_id;
     }
     case "artists": {
+      if (!("artists" in current)) return false;
       return (
         Array.isArray(current.artists) &&
         current.artists.some((artist) => artist.item_id === item.item_id)
       );
+    }
+    case "radios": {
+      return item.item_id === current.item_id;
+    }
+    case "podcasts": {
+      if (!("podcast" in current)) return false;
+      return item.item_id === current.podcast.item_id;
+    }
+    case "podcastepisodes": {
+      return item.item_id === current.item_id;
     }
     default: {
       return false;
