@@ -56,7 +56,7 @@
     "nanoid": "5.1.5",
     "prettier": "3.6.2",
     "replace-in-file": "8.3.0",
-    "sass": "1.93.0",
+    "sass": "1.93.2",
     "typescript": "5.9.2",
     "unplugin": "^2.3.10",
     "vite": "^7.1.6",
