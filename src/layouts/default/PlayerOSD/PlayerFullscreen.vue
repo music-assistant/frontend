@@ -520,7 +520,10 @@
 
         <!-- volume control -->
         <div
-          v-if="store.activePlayer"
+          v-if="
+            store.activePlayer &&
+            store.activePlayer.volume_control != PLAYER_CONTROL_NONE
+          "
           class="row"
           style="margin-left: 5%; margin-right: 5%"
         >
@@ -618,6 +621,7 @@ import {
   QueueItem,
   QueueOption,
   Track,
+  PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
