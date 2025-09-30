@@ -367,7 +367,7 @@ const syncCheckBoxChange = async function (
         playersToSync.value = [];
         playersToUnSync.value = [];
       });
-  }, 1000);
+  }, 500);
 };
 </script>
 
