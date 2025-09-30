@@ -13,7 +13,9 @@
         "single": "Сингл",
         "unknown": "Непозната врста албума",
         "audiobook": "Аудио књига",
-        "podcast": "Подкаст"
+        "podcast": "Подкаст",
+        "live": "Уживо",
+        "soundtrack": "Саундтрек"
     },
     "albums": "Албуми",
     "appears_on": "Појављује се на",
@@ -289,7 +291,9 @@
             "announcements": "Конфигурација објава",
             "airplay": "\"Airplay\" специфична подешавања",
             "player_controls": "Контроле плејера",
-            "presets": "Унапред подешена подешавања"
+            "presets": "Унапред подешена подешавања",
+            "sync_options": "Опције синхронизације\/увоза",
+            "builtin_playlists": "Уграђена подешавања листе песама"
         },
         "tts_pre_announce": {
             "label": "Претходно најавите \"TTS\" објаве",
@@ -727,7 +731,6 @@
     "homescreen_edit_enable": "Измени почетни екран",
     "homescreen_edit_disable": "Напустите режим уређивања почетног екрана",
     "lyrics_will_appear_soon": "Текст ће се појавити када песма почне...",
-    "builtin_playlists": "Уграђена подешавања плејлисте",
     "radiobrowser_by_votes": "По гласовима",
     "radiobrowser_by_clicks": "По клику",
     "radiobrowser_by_language": "По језику"
