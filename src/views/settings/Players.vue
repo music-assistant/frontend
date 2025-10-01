@@ -9,7 +9,7 @@
       <template #title> {{ $t("settings.players") }} </template>
       <template #append>
         <!-- ADD group player button/menu -->
-        <v-menu v-if="providersWithGroupSupport.length > 0" scrim>
+        <v-menu v-if="providersWithCreateGroupSupport.length > 0" scrim>
           <template #activator="{ props }">
             <v-btn v-bind="props" color="accent" variant="outlined">
               {{ $t("settings.add_group_player") }}
@@ -18,7 +18,7 @@
 
           <v-card density="compact">
             <v-list-item
-              v-for="provider in providersWithGroupSupport"
+              v-for="provider in providersWithCreateGroupSupport"
               :key="provider.domain"
               style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
               :title="provider.name"
@@ -121,13 +121,14 @@ const unsub = api.subscribe_multi([EventType.PLAYER_CONFIG_UPDATED], () => {
 onBeforeUnmount(unsub);
 
 // computed properties
-const providersWithGroupSupport = computed(() => {
+const providersWithCreateGroupSupport = computed(() => {
   // providers available with create_group support
   return Object.values(api.providers)
     .filter(
       (x) =>
         x.available &&
-        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
+        (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
+          x.supported_features.includes(ProviderFeature.SYNC_PLAYERS)),
     )
     .sort((a, b) =>
       (a.name || api.providerManifests[a.domain].name).toUpperCase() >

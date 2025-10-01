@@ -9,6 +9,7 @@
     }"
     :ripple="false"
     :disabled="!player.available"
+    @click="$emit('click', player)"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">
@@ -241,17 +242,6 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
-import {
-  MediaType,
-  PlaybackState,
-  Player,
-  PLAYER_CONTROL_NONE,
-  ImageType,
-  PlayerType,
-} from "@/plugins/api/interfaces";
 import MediaItemThumb, {
   getImageThumbForItem,
 } from "@/components/MediaItemThumb.vue";
@@ -259,19 +249,30 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
+import VolumeControl from "@/components/VolumeControl.vue";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getArtistsString,
-  getPlayerName,
   getColorPalette,
+  getPlayerName,
   ImageColorPalette,
 } from "@/helpers/utils";
-import { computed, ref, watch } from "vue";
-import VolumeControl from "@/components/VolumeControl.vue";
+import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
+import {
+  ImageType,
+  MediaType,
+  PlaybackState,
+  Player,
+  PLAYER_CONTROL_NONE,
+  PlayerType,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
 import vuetify from "@/plugins/vuetify";
+import { webPlayer } from "@/plugins/web_player";
+import { computed, ref, watch } from "vue";
 
 // properties
 export interface Props {
@@ -284,6 +285,11 @@ export interface Props {
 }
 
 const compProps = defineProps<Props>();
+
+// emits
+defineEmits<{
+  (e: "click", player: Player): void;
+}>();
 
 const playerQueue = computed(() => {
   if (
@@ -337,17 +343,6 @@ img.addEventListener("load", function () {
   coverImageColorPalette.value = getColorPalette(img);
 });
 
-const backgroundColor = computed(() => {
-  if (vuetify.theme.current.value.dark) {
-    if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
-      return coverImageColorPalette.value.darkColor;
-    return "#CCCCCC26";
-  }
-  if (coverImageColorPalette.value && coverImageColorPalette.value.lightColor)
-    return coverImageColorPalette.value.lightColor;
-  return "#CCCCCC26";
-});
-
 watch(
   curQueueItem,
   (newQueueItem) => {
@@ -365,34 +360,18 @@ watch(
 </script>
 
 <style scoped>
-.panel-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background-color: rgb(var(--v-theme-overlay));
-  opacity: 1;
-  transition: opacity 0.4s ease-in-out;
-  border-radius: 4px;
-  height: 84px;
-  box-sizing: border-box;
-}
-
-.panel-item-idle {
-  background: color-mix(in srgb, v-bind("backgroundColor"), transparent 20%);
-}
-
-.panel-item-off {
-  background: color-mix(in srgb, v-bind("backgroundColor"), transparent 20%);
-}
-
-.panel-item-selected {
-  background: v-bind("backgroundColor");
-}
-
 .panel-item-details {
   width: 100%;
   margin: 0px !important;
   padding: 0px !important;
+  min-height: 72px;
+}
+
+.panel-item-details :deep(.v-list-item__content) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 60px;
 }
 
 .volumesliderrow {
@@ -436,6 +415,51 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.media-thumb {
+  width: 55px;
+  height: 55px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+.icon-thumb {
+  width: 55px;
+  height: 55px;
+  margin-top: 5px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: inline-table;
+}
+
+.panel-item {
+  border-style: ridge;
+  border-width: thin;
+  border-color: #cccccc5e;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: rgba(162, 188, 255, 0.1);
+  opacity: 1;
+  transition: opacity 0.4s ease-in-out;
+  border-radius: 6px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 5px;
+  margin-bottom: 8px;
+  height: 100%;
+  width: auto;
+}
+.panel-item-idle {
+  opacity: 0.8;
+}
+.panel-item-off {
+  opacity: 0.6;
+}
+.panel-item-selected {
+  border-color: #2f2f2f5e;
+  background-color: rgba(162, 188, 255, 0.4);
 }
 
 .player-command-btn {

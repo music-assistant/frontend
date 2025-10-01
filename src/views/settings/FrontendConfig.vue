@@ -108,16 +108,6 @@ onMounted(() => {
       value: enabledMenuItems,
     },
     {
-      key: "hide_settings",
-      type: ConfigEntryType.BOOLEAN,
-      label: "hide_settings",
-      default_value: false,
-      required: false,
-      multi_value: false,
-      category: "advanced",
-      value: localStorage.getItem("frontend.settings.hide_settings") == "true",
-    },
-    {
       key: "enable_builtin_player",
       type: ConfigEntryType.BOOLEAN,
       label: "enable_builtin_player",

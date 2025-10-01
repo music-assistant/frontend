@@ -142,7 +142,11 @@
             <v-checkbox
               v-if="showSyncControls"
               :ripple="false"
-              :disabled="childPlayer.player_id == player.player_id"
+              :disabled="
+                childPlayer.player_id == player.player_id ||
+                (player.static_group_members.includes(childPlayer.player_id) &&
+                  player.group_members.includes(childPlayer.player_id))
+              "
               :model-value="
                 player.group_members.includes(childPlayer.player_id) ||
                 childPlayer.player_id == player.player_id
@@ -363,7 +367,7 @@ const syncCheckBoxChange = async function (
         playersToSync.value = [];
         playersToUnSync.value = [];
       });
-  }, 1000);
+  }, 500);
 };
 </script>
 

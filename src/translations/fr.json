@@ -13,7 +13,9 @@
         "single": "Single",
         "unknown": "Type d'album inconnu",
         "audiobook": "Livre audio",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "En direct",
+        "soundtrack": "Bande originale"
     },
     "albums": "Albums",
     "appears_on": "Apparaît dans",
@@ -289,7 +291,9 @@
             "announcements": "Configuration des annonces",
             "airplay": "Paramètres spécifiques à AirPlay",
             "player_controls": "Contrôles du lecteur",
-            "presets": "Préréglages"
+            "presets": "Préréglages",
+            "sync_options": "Options de synchronisation\/importation",
+            "builtin_playlists": "Paramètres de liste de lecture intégrés"
         },
         "tts_pre_announce": {
             "label": "Pré-annoncer les annonces TTS",
@@ -711,5 +715,7 @@
     "homescreen_edit_enable": "Modifier la page d'accueil",
     "homescreen_edit_disable": "Quitter le mode Modifier la page d'accueil",
     "lyrics_will_appear_soon": "Les paroles apparaîtront lorsque la chanson commencera...",
-    "builtin_playlists": "Paramètres de liste de lecture intégrés"
+    "radiobrowser_by_votes": "Par votes",
+    "radiobrowser_by_clicks": "Par clics",
+    "radiobrowser_by_language": "Par langue"
 }

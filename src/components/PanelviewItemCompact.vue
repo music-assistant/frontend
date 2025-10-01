@@ -235,22 +235,7 @@ const onPlayClick = function (evt: PointerEvent) {
 }
 
 .v-list-item-subtitle {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-</style>
-
-<style lang="scss" scoped>
-.paneldetails {
-  background-color: rgba(255, 255, 255, 0.75);
-  position: absolute;
-  width: 100%;
-  height: 50px;
-  bottom: 0px;
-  border-radius: 0;
-}
-
-.paneldetails-dark {
-  @extend .paneldetails;
-  background-color: rgba(0, 0, 0, 0.75);
+  color: rgb(var(--v-theme-on-panel), 0.6) !important;
+  font-size: small !important;
 }
 </style>

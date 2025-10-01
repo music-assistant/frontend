@@ -34,7 +34,7 @@
             variant="outlined"
             clearable
             required
-            :rules="[(v) => v.length || $t('settings.invalid_input')]"
+            :rules="[(v) => v.length > 0 || $t('settings.invalid_input')]"
           />
           <!-- dropdown with group members -->
           <v-select

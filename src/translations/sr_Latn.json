@@ -13,7 +13,9 @@
         "single": "Singl",
         "unknown": "Nepoznata vrsta albuma",
         "audiobook": "Audio knjiga",
-        "podcast": "Podkast"
+        "podcast": "Podkast",
+        "live": "Uživo",
+        "soundtrack": "Saundtrek"
     },
     "albums": "Albumi",
     "appears_on": "Pojavljuje se na",
@@ -289,7 +291,9 @@
             "announcements": "Konfiguracija objava",
             "airplay": "Airplay specifična podešavanja",
             "player_controls": "Kontrole plejera",
-            "presets": "Unapred podešena podešavanja"
+            "presets": "Unapred podešena podešavanja",
+            "sync_options": "Opcije sinhronizacije\/uvoza",
+            "builtin_playlists": "Ugrađena podešavanja liste pesama"
         },
         "tts_pre_announce": {
             "label": "Prethodno najavite TTS objave",
@@ -710,7 +714,7 @@
         "recommended_new_tracks": "Preporučene nove numere",
         "recently_played": "Nedavno reprodukovano",
         "suggested_new_albums_for_you": "Predloženi novi albumi za vas",
-        "random_artists": "NAsumični izvođači",
+        "random_artists": "Nasumični izvođači",
         "random_albums": "Slučajni albumi",
         "custom_mixes": "Prilagođeni miksevi",
         "your_listening_history": "Vaša istorija slušanja",
@@ -727,7 +731,6 @@
     "homescreen_edit_enable": "Izmeni početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
     "lyrics_will_appear_soon": "Tekst će se pojaviti kada pesma počne...",
-    "builtin_playlists": "Ugrađena podešavanja plejliste",
     "radiobrowser_by_votes": "Po glasovima",
     "radiobrowser_by_clicks": "Po kliku",
     "radiobrowser_by_language": "Po jeziku"
