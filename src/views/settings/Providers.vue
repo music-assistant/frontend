@@ -1,42 +1,9 @@
 <template>
   <div class="d-flex align-center justify-space-between pa-5 w-100">
-    <div class="d-flex align-center ga-3" style="flex: 1">
-      <v-text-field
-        v-model="searchQuery"
-        prepend-inner-icon="mdi-magnify"
-        label="Search providers..."
-        variant="outlined"
-        density="compact"
-        clearable
-        hide-details
-        style="max-width: 400px; min-width: 300px"
-      />
-      <v-btn height="40" elevation="0">
-        Type
-        <v-icon end>mdi-chevron-down</v-icon>
-
-        <v-menu activator="parent" :close-on-content-click="false">
-          <v-list>
-            <v-list-item
-              v-for="(providerType, index) in providerTypes"
-              :key="index"
-              :value="index"
-              @click="toggleProviderType(providerType.value)"
-            >
-              <template #append>
-                <v-checkbox-btn
-                  :model-value="
-                    selectedProviderTypes.includes(providerType.value)
-                  "
-                  @click.stop="toggleProviderType(providerType.value)"
-                />
-              </template>
-              <v-list-item-title>{{ providerType.title }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-btn>
-    </div>
+    <ProviderFilters
+      @update:search="searchQuery = $event"
+      @update:types="selectedProviderTypes = $event"
+    />
     <v-btn
       color="primary"
       variant="outlined"
@@ -116,6 +83,12 @@
             >
               <v-icon icon="mdi-timer-sand" />
             </v-btn>
+
+            <!-- provider type icon -->
+            <v-btn variant="text" size="small" icon :title="item.type">
+              <v-icon :icon="getProviderTypeIcon(item.type)" />
+            </v-btn>
+
             <v-btn
               icon="mdi-dots-vertical"
               size="small"
@@ -146,6 +119,7 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -153,51 +127,20 @@ import {
   EventType,
   ProviderConfig,
   ProviderFeature,
-  ProviderManifest,
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { onBeforeUnmount, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();
-const route = useRoute();
 
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviderTypes = ref<string[]>([]);
-let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
-let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
-
-const providerTypes = ref([
-  { title: "Music", value: ProviderType.MUSIC },
-  { title: "Player", value: ProviderType.PLAYER },
-  { title: "Metadata", value: ProviderType.METADATA },
-  { title: "Plugin", value: ProviderType.PLUGIN },
-]);
-
-// computed properties
-const availableProviders = computed(() => {
-  // providers available for setup
-  // filter out hidden providers
-  // filter out providers that are already setup (and multi instance not allowed)
-  return Object.values(api.providerManifests)
-    .filter(
-      (x) =>
-        // provider is either multi instance or does not exist at all
-        x.multi_instance ||
-        !providerConfigs.value.find((y) => y.domain == x.domain),
-    )
-    .sort((a, b) =>
-      (a.name || api.providerManifests[a.domain].name).toUpperCase() >
-      (b.name || api.providerManifests[b.domain].name).toUpperCase()
-        ? 1
-        : -1,
-    );
-});
 
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
@@ -205,7 +148,6 @@ const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
 });
 onBeforeUnmount(unsub);
 
-// methods
 const loadItems = async function () {
   providerConfigs.value = await api.getProviderConfigs();
 };
@@ -219,27 +161,6 @@ const removeProvider = function (providerInstanceId: string) {
 
 const editProvider = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
-};
-
-const addProvider = function (provider: ProviderManifest) {
-  if (provider.depends_on) {
-    if (!api.getProvider(provider.depends_on)) {
-      // this provider depends on another provider that is not yet setup
-      const depProvName = api.getProviderName(provider.depends_on);
-      if (
-        confirm(
-          $t("settings.provider_depends_on_confirm", [
-            provider.name,
-            depProvName,
-          ]),
-        )
-      ) {
-        router.push(`/settings/addprovider/${provider.depends_on}`);
-      }
-      return;
-    }
-  }
-  router.push(`/settings/addprovider/${provider.domain}`);
 };
 
 const toggleEnabled = function (config: ProviderConfig) {
@@ -349,42 +270,6 @@ watch(
   { immediate: true },
 );
 
-// Watch search query and update URL with debounce
-watch(searchQuery, (newQuery) => {
-  if (searchDebounceTimeout) {
-    clearTimeout(searchDebounceTimeout);
-  }
-  searchDebounceTimeout = setTimeout(() => {
-    const query = { ...route.query };
-    if (newQuery) {
-      query.search = newQuery;
-    } else {
-      delete query.search;
-    }
-    router.replace({ query });
-  }, 750);
-});
-
-// Watch selected provider types and update URL with debounce
-watch(
-  selectedProviderTypes,
-  (newTypes) => {
-    if (typesDebounceTimeout) {
-      clearTimeout(typesDebounceTimeout);
-    }
-    typesDebounceTimeout = setTimeout(() => {
-      const query = { ...route.query };
-      if (newTypes.length > 0) {
-        query.types = newTypes.join(",");
-      } else {
-        delete query.types;
-      }
-      router.replace({ query });
-    }, 750);
-  },
-  { deep: true },
-);
-
 const getProviderName = function (config: ProviderConfig) {
   const providerBaseName = api.providerManifests[config.domain].name;
   if (config.name) {
@@ -399,6 +284,16 @@ const getProviderName = function (config: ProviderConfig) {
 
 const isTextTruncated = function (text: string) {
   return text && text.length > 150;
+};
+
+const getProviderTypeIcon = function (type: ProviderType) {
+  const iconMap = {
+    [ProviderType.MUSIC]: "mdi-music",
+    [ProviderType.PLAYER]: "mdi-speaker",
+    [ProviderType.METADATA]: "mdi-file-code",
+    [ProviderType.PLUGIN]: "mdi-puzzle",
+  };
+  return iconMap[type] || "mdi-help-circle";
 };
 
 const getAllFilteredProviders = function () {
@@ -422,28 +317,6 @@ const getAllFilteredProviders = function () {
     getProviderName(a).localeCompare(getProviderName(b)),
   );
 };
-
-const toggleProviderType = function (type: string) {
-  const index = selectedProviderTypes.value.indexOf(type);
-  if (index > -1) {
-    selectedProviderTypes.value.splice(index, 1);
-  } else {
-    selectedProviderTypes.value.push(type);
-  }
-};
-
-const initializeFromUrl = function () {
-  if (route.query.search) {
-    searchQuery.value = route.query.search as string;
-  }
-
-  if (route.query.types) {
-    const types = route.query.types as string;
-    selectedProviderTypes.value = types.split(",");
-  }
-};
-
-initializeFromUrl();
 </script>
 
 <style scoped>
@@ -459,20 +332,5 @@ initializeFromUrl();
 }
 .provider-description.truncated-text {
   margin-bottom: 16px !important;
-}
-
-/* Fix checkbox layout in menu */
-:deep(.v-list-item .v-checkbox-btn) {
-  display: flex;
-  align-items: center;
-}
-
-:deep(.v-list-item .v-checkbox-btn .v-input__control) {
-  display: flex;
-  align-items: center;
-}
-
-:deep(.v-list-item .v-checkbox-btn .v-selection-control) {
-  min-height: auto;
 }
 </style>
