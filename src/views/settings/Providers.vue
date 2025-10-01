@@ -1,5 +1,5 @@
 <template>
-  <div class="providers-header pa-5 w-100">
+  <div class="providers-header w-100">
     <ProviderFilters
       show-stage-filter
       @update:search="searchQuery = $event"
@@ -13,8 +13,16 @@
       class="add-provider-btn"
       @click="router.push('/settings/addprovider')"
     >
-      Add provider
+      {{ $t("settings.add_provider") }}
     </v-btn>
+  </div>
+  <div class="pl-5 font-weight-medium">
+    {{
+      $t("settings.providers_total", [
+        getAllFilteredProviders().length,
+        getAllFilteredProviders().length > 1 ? "s" : "",
+      ])
+    }}
   </div>
   <Container variant="comfortable" class="mt-4">
     <v-row>
@@ -88,19 +96,33 @@
               <v-icon icon="mdi-timer-sand" />
             </v-btn>
 
-            <!-- provider type icon -->
-            <v-btn variant="text" size="small" icon :title="item.type">
+            <v-btn
+              variant="text"
+              size="small"
+              icon
+              :title="
+                $t(
+                  String(item.type).charAt(0).toUpperCase() +
+                    String(item.type).slice(1),
+                )
+              "
+            >
               <v-icon :icon="getProviderTypeIcon(item.type)" />
             </v-btn>
 
-            <!-- provider stage chip -->
             <v-chip
               size="x-small"
               variant="flat"
               class="mr-1 text-uppercase"
               :color="getStageColor(api.providerManifests[item.domain]?.stage)"
             >
-              {{ api.providerManifests[item.domain]?.stage }}
+              {{
+                $t(
+                  String(
+                    api.providerManifests[item.domain]?.stage || "",
+                  ).toLowerCase(),
+                )
+              }}
             </v-chip>
 
             <v-btn
@@ -360,6 +382,7 @@ const getAllFilteredProviders = function () {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  padding: 20px 20px 6px 20px;
 }
 
 .add-provider-btn {

@@ -1,16 +1,19 @@
 <template>
-  <div class="pa-5">
+  <div class="filters">
     <ProviderFilters
       @update:search="searchQuery = $event"
       @update:types="selectedProviderTypes = $event"
     />
   </div>
 
-  <v-toolbar color="transparent" density="compact">
-    <template #title>
-      {{ filteredProviders.length }} providers available
-    </template>
-  </v-toolbar>
+  <div class="pl-5 font-weight-medium">
+    {{
+      $t("settings.providers_total", [
+        filteredProviders.length,
+        filteredProviders.length > 1 ? "s" : "",
+      ])
+    }}
+  </div>
 
   <Container variant="comfortable" class="mt-4">
     <v-row>
@@ -37,7 +40,6 @@
           </template>
 
           <template #append>
-            <!-- provider type icon -->
             <v-btn variant="text" size="small" icon :title="provider.type">
               <v-icon :icon="getProviderTypeIcon(provider.type)" />
             </v-btn>
@@ -156,6 +158,7 @@ const getProviderTypeIcon = function (type: ProviderType) {
     [ProviderType.METADATA]: "mdi-file-code",
     [ProviderType.PLUGIN]: "mdi-puzzle",
   };
+
   return iconMap[type] || "mdi-help-circle";
 };
 
@@ -170,6 +173,10 @@ watch(
 </script>
 
 <style scoped>
+.filters {
+  padding: 20px 20px 6px 20px;
+}
+
 .provider-description {
   display: -webkit-box;
   -webkit-line-clamp: 3;

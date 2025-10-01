@@ -3,7 +3,7 @@
     <v-text-field
       v-model="searchQuery"
       prepend-inner-icon="mdi-magnify"
-      label="Search providers..."
+      :label="$t('search')"
       variant="outlined"
       density="compact"
       clearable
@@ -12,7 +12,7 @@
     />
     <div class="d-flex ga-2 filter-buttons">
       <v-btn height="40" elevation="0">
-        Type
+        {{ $t("sort.provider") }}
         <v-icon end>mdi-chevron-down</v-icon>
         <v-menu activator="parent" :close-on-content-click="false">
           <v-list>
@@ -36,7 +36,7 @@
         </v-menu>
       </v-btn>
       <v-btn v-if="showStageFilter" height="40" elevation="0">
-        Stage
+        {{ $t("settings.stage.label") }}
         <v-icon end>mdi-chevron-down</v-icon>
         <v-menu activator="parent" :close-on-content-click="false">
           <v-list>
@@ -63,7 +63,8 @@
 
 <script setup lang="ts">
 import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
-import { ref, watch } from "vue";
+import { $t } from "@/plugins/i18n";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 // Props
@@ -81,20 +82,29 @@ let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let stagesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const providerTypes = ref([
-  { title: "Music", value: ProviderType.MUSIC },
-  { title: "Player", value: ProviderType.PLAYER },
-  { title: "Metadata", value: ProviderType.METADATA },
-  { title: "Plugin", value: ProviderType.PLUGIN },
+const providerTypes = computed(() => [
+  { title: $t("settings.musicprovider"), value: ProviderType.MUSIC },
+  { title: $t("settings.playerprovider"), value: ProviderType.PLAYER },
+  { title: $t("settings.metadataprovider"), value: ProviderType.METADATA },
+  { title: $t("settings.pluginproviders"), value: ProviderType.PLUGIN },
 ]);
 
-const providerStages = ref([
-  { title: "Stable", value: ProviderStage.STABLE },
-  { title: "Beta", value: ProviderStage.BETA },
-  { title: "Alpha", value: ProviderStage.ALPHA },
-  { title: "Experimental", value: ProviderStage.EXPERIMENTAL },
-  { title: "Unmaintained", value: ProviderStage.UNMAINTAINED },
-  { title: "Deprecated", value: ProviderStage.DEPRECATED },
+const providerStages = computed(() => [
+  { title: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
+  { title: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
+  { title: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
+  {
+    title: $t("settings.stage.options.experimental"),
+    value: ProviderStage.EXPERIMENTAL,
+  },
+  {
+    title: $t("settings.stage.options.unmaintained"),
+    value: ProviderStage.UNMAINTAINED,
+  },
+  {
+    title: $t("settings.stage.options.deprecated"),
+    value: ProviderStage.DEPRECATED,
+  },
 ]);
 
 // Emits
