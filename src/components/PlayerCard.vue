@@ -364,6 +364,14 @@ watch(
   width: 100%;
   margin: 0px !important;
   padding: 0px !important;
+  min-height: 72px;
+}
+
+.panel-item-details :deep(.v-list-item__content) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 60px;
 }
 
 .volumesliderrow {
@@ -412,7 +420,6 @@ watch(
 .media-thumb {
   width: 55px;
   height: 55px;
-  margin-top: 5px;
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.3);
 }
