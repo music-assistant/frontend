@@ -1,5 +1,3 @@
-import { ComputedRef } from "vue";
-
 /// constants
 export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
 export const MASS_LOGO_ONLINE =
@@ -897,6 +895,7 @@ export interface ProviderManifest {
   builtin: boolean;
   // allow_disable: whether this provider can be disabled (used with builtin)
   allow_disable: boolean;
+  stage: ProviderStage;
   // icon: material design icon
   icon?: string;
   // icon_svg: svg icon (full xml string)
@@ -907,6 +906,15 @@ export interface ProviderManifest {
   icon_svg_monochrome?: string;
   // depends on: domain of another provider that is required for this provider
   depends_on?: string;
+}
+
+export enum ProviderStage {
+  ALPHA = "alpha",
+  BETA = "beta",
+  STABLE = "stable",
+  EXPERIMENTAL = "experimental",
+  UNMAINTAINED = "unmaintained",
+  DEPRECATED = "deprecated",
 }
 
 export interface ProviderInstance {

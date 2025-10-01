@@ -1,178 +1,147 @@
 <template>
-  <v-tabs v-model="tab" align-tabs="center">
-    <v-tab :value="ProviderType.MUSIC">Music</v-tab>
-    <v-tab :value="ProviderType.PLAYER">Player</v-tab>
-    <v-tab :value="ProviderType.METADATA">Metadata</v-tab>
-    <v-tab :value="ProviderType.PLUGIN">Plugin</v-tab>
-  </v-tabs>
+  <div class="d-flex align-center justify-space-between pa-5 w-100">
+    <div class="d-flex align-center ga-3" style="flex: 1">
+      <v-text-field
+        v-model="searchQuery"
+        prepend-inner-icon="mdi-magnify"
+        label="Search providers..."
+        variant="outlined"
+        density="compact"
+        clearable
+        hide-details
+        style="max-width: 400px; min-width: 300px"
+      />
+      <v-btn height="40" elevation="0">
+        Type
+        <v-icon end>mdi-chevron-down</v-icon>
 
-  <v-window v-model="tab">
-    <v-window-item
-      v-for="provType in ProviderType"
-      :key="provType"
-      :value="provType"
+        <v-menu activator="parent" :close-on-content-click="false">
+          <v-list>
+            <v-list-item
+              v-for="(providerType, index) in providerTypes"
+              :key="index"
+              :value="index"
+              @click="toggleProviderType(providerType.value)"
+            >
+              <template #append>
+                <v-checkbox-btn
+                  :model-value="
+                    selectedProviderTypes.includes(providerType.value)
+                  "
+                  @click.stop="toggleProviderType(providerType.value)"
+                />
+              </template>
+              <v-list-item-title>{{ providerType.title }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-btn>
+    </div>
+    <v-btn
+      color="primary"
+      variant="outlined"
+      height="40"
+      @click="router.push('/settings/addprovider')"
     >
-      <div style="margin-bottom: 10px">
-        <v-toolbar color="transparent" density="compact" class="titlebar">
-          <template #title>
-            {{ $t(`settings.${provType}providers`) }}
+      Add provider
+    </v-btn>
+  </div>
+  <Container variant="comfortable" class="mt-4">
+    <v-row>
+      <v-col
+        v-for="item in getAllFilteredProviders()"
+        :key="item.instance_id"
+        cols="12"
+        sm="4"
+        class="d-flex"
+      >
+        <v-card
+          class="flex-fill rounded-lg"
+          min-height="200px"
+          @click="editProvider(item.instance_id)"
+        >
+          <template #prepend>
+            <provider-icon
+              :domain="item.domain"
+              :size="50"
+              class="listitem-media-thumb"
+              style="margin-top: 5px; margin-bottom: 5px"
+            />
           </template>
+
           <template #append>
             <v-btn
-              v-if="availableProviders.filter((x) => x.type == provType).length"
-              color="primary"
-              variant="outlined"
-              @click="router.push(`/settings/addprovider?type=${provType}`)"
+              v-if="
+                api.syncTasks.value.filter(
+                  (x) => x.provider_instance == item.instance_id,
+                ).length > 0
+              "
+              variant="text"
+              size="small"
+              icon
+              :title="$t('settings.sync_running')"
             >
-              {{ $t("settings.add_new_provider_button", [provType]) }}
+              <v-icon color="grey"> mdi-sync </v-icon>
             </v-btn>
-          </template>
-        </v-toolbar>
 
-        <!-- show alert if no music provider configured-->
-        <v-alert
-          v-if="
-            provType == ProviderType.MUSIC &&
-            providerConfigs.filter(
-              (x) =>
-                x.type == ProviderType.MUSIC &&
-                x.domain in api.providerManifests &&
-                x.domain !== 'builtin',
-            ).length == 0
-          "
-          border="top"
-          border-color="warning"
-          style="margin: 20px"
-          icon="mdi-alert-box-outline"
-        >
-          <b>{{ $t("settings.no_music_providers_detail") }}</b>
-          <br />
-          {{ $t("settings.no_music_providers_detail") }}
-        </v-alert>
-
-        <!-- show alert if no player provider configured-->
-        <v-alert
-          v-if="
-            provType == ProviderType.PLAYER &&
-            providerConfigs.filter(
-              (x) =>
-                x.type == ProviderType.PLAYER &&
-                x.domain in api.providerManifests,
-            ).length == 0
-          "
-          border="top"
-          border-color="warning"
-          style="margin: 20px"
-          icon="mdi-alert-box-outline"
-        >
-          <b>{{ $t("settings.no_player_providers_detail") }}</b>
-          <br />
-          {{ $t("settings.no_player_providers_detail") }}
-        </v-alert>
-
-        <Container variant="comfortable" class="mt-4">
-          <v-row>
-            <v-col
-              v-for="item in providerConfigs
-                .filter((x) => x.type == provType)
-                .sort((a, b) =>
-                  getProviderName(a).localeCompare(getProviderName(b)),
-                )"
-              :key="item.instance_id"
-              cols="12"
-              sm="4"
-              class="d-flex"
+            <!-- provider disabled -->
+            <v-btn
+              v-if="!item.enabled"
+              variant="text"
+              size="small"
+              icon
+              :title="$t('settings.provider_disabled')"
             >
-              <v-card
-                class="flex-fill rounded-lg"
-                min-height="200px"
-                @click="editProvider(item.instance_id)"
-              >
-                <template #prepend>
-                  <provider-icon
-                    :domain="item.domain"
-                    :size="50"
-                    class="listitem-media-thumb"
-                    style="margin-top: 5px; margin-bottom: 5px"
-                  />
-                </template>
+              <v-icon color="grey"> mdi-cancel </v-icon>
+            </v-btn>
 
-                <template #append>
-                  <v-btn
-                    v-if="
-                      api.syncTasks.value.filter(
-                        (x) => x.provider_instance == item.instance_id,
-                      ).length > 0
-                    "
-                    variant="text"
-                    size="small"
-                    icon
-                    :title="$t('settings.sync_running')"
-                  >
-                    <v-icon color="grey"> mdi-sync </v-icon>
-                  </v-btn>
+            <!-- provider has errors -->
+            <v-btn
+              v-else-if="item.last_error"
+              variant="text"
+              size="small"
+              icon
+              :title="item.last_error"
+            >
+              <v-icon color="red"> mdi-alert-circle </v-icon>
+            </v-btn>
 
-                  <!-- provider disabled -->
-                  <v-btn
-                    v-if="!item.enabled"
-                    variant="text"
-                    size="small"
-                    icon
-                    :title="$t('settings.provider_disabled')"
-                  >
-                    <v-icon color="grey"> mdi-cancel </v-icon>
-                  </v-btn>
+            <!-- loading (provider not yet available) -->
+            <v-btn
+              v-else-if="!api.providers[item.instance_id]?.available"
+              variant="text"
+              size="small"
+              icon
+              :title="$t('settings.not_loaded')"
+            >
+              <v-icon icon="mdi-timer-sand" />
+            </v-btn>
+            <v-btn
+              icon="mdi-dots-vertical"
+              size="small"
+              variant="text"
+              @click.stop="onMenu($event, item)"
+            />
+          </template>
 
-                  <!-- provider has errors -->
-                  <v-btn
-                    v-else-if="item.last_error"
-                    variant="text"
-                    size="small"
-                    icon
-                    :title="item.last_error"
-                  >
-                    <v-icon color="red"> mdi-alert-circle </v-icon>
-                  </v-btn>
+          <v-card-title>
+            {{ getProviderName(item) }}
+          </v-card-title>
 
-                  <!-- loading (provider not yet available) -->
-                  <v-btn
-                    v-else-if="!api.providers[item.instance_id]?.available"
-                    variant="text"
-                    size="small"
-                    icon
-                    :title="$t('settings.not_loaded')"
-                  >
-                    <v-icon icon="mdi-timer-sand" />
-                  </v-btn>
-                  <v-btn
-                    icon="mdi-dots-vertical"
-                    size="small"
-                    variant="text"
-                    @click.stop="onMenu($event, item)"
-                  />
-                </template>
-
-                <v-card-title>
-                  {{ getProviderName(item) }}
-                </v-card-title>
-
-                <v-card-text
-                  class="provider-description"
-                  :class="{
-                    'truncated-text': isTextTruncated(
-                      api.providerManifests[item.domain].description,
-                    ),
-                  }"
-                >
-                  {{ api.providerManifests[item.domain].description }}
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-        </Container>
-      </div>
-    </v-window-item>
-  </v-window>
+          <v-card-text
+            class="provider-description"
+            :class="{
+              'truncated-text': isTextTruncated(
+                api.providerManifests[item.domain].description,
+              ),
+            }"
+          >
+            {{ api.providerManifests[item.domain].description }}
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </Container>
 </template>
 
 <script setup lang="ts">
@@ -189,17 +158,26 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();
 const route = useRoute();
 
-const tab = ref(ProviderType.MUSIC);
-
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
+const searchQuery = ref<string>("");
+const selectedProviderTypes = ref<string[]>([]);
+let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const providerTypes = ref([
+  { title: "Music", value: ProviderType.MUSIC },
+  { title: "Player", value: ProviderType.PLAYER },
+  { title: "Metadata", value: ProviderType.METADATA },
+  { title: "Plugin", value: ProviderType.PLUGIN },
+]);
 
 // computed properties
 const availableProviders = computed(() => {
@@ -219,20 +197,6 @@ const availableProviders = computed(() => {
         ? 1
         : -1,
     );
-});
-
-// Initialize tab from URL parameter
-onMounted(() => {
-  const tabParam = route.query.tab;
-  if (
-    tabParam &&
-    Object.values(ProviderType).includes(tabParam as ProviderType)
-  ) {
-    tab.value = tabParam as ProviderType;
-  } else {
-    // Default to MUSIC tab if no valid tab in URL
-    tab.value = ProviderType.MUSIC;
-  }
 });
 
 // listen for item updates to refresh items when that happens
@@ -385,14 +349,41 @@ watch(
   { immediate: true },
 );
 
-// Watch tab changes and update URL
-watch(tab, (newTab) => {
-  if (newTab) {
-    router.replace({
-      query: { ...route.query, tab: newTab },
-    });
+// Watch search query and update URL with debounce
+watch(searchQuery, (newQuery) => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout);
   }
+  searchDebounceTimeout = setTimeout(() => {
+    const query = { ...route.query };
+    if (newQuery) {
+      query.search = newQuery;
+    } else {
+      delete query.search;
+    }
+    router.replace({ query });
+  }, 750);
 });
+
+// Watch selected provider types and update URL with debounce
+watch(
+  selectedProviderTypes,
+  (newTypes) => {
+    if (typesDebounceTimeout) {
+      clearTimeout(typesDebounceTimeout);
+    }
+    typesDebounceTimeout = setTimeout(() => {
+      const query = { ...route.query };
+      if (newTypes.length > 0) {
+        query.types = newTypes.join(",");
+      } else {
+        delete query.types;
+      }
+      router.replace({ query });
+    }, 750);
+  },
+  { deep: true },
+);
 
 const getProviderName = function (config: ProviderConfig) {
   const providerBaseName = api.providerManifests[config.domain].name;
@@ -409,20 +400,57 @@ const getProviderName = function (config: ProviderConfig) {
 const isTextTruncated = function (text: string) {
   return text && text.length > 150;
 };
+
+const getAllFilteredProviders = function () {
+  let filtered = [...providerConfigs.value];
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter((item) => {
+      const providerName = getProviderName(item).toLowerCase();
+      return providerName.includes(query);
+    });
+  }
+
+  if (selectedProviderTypes.value.length > 0) {
+    filtered = filtered.filter((item) =>
+      selectedProviderTypes.value.includes(item.type),
+    );
+  }
+
+  return filtered.sort((a, b) =>
+    getProviderName(a).localeCompare(getProviderName(b)),
+  );
+};
+
+const toggleProviderType = function (type: string) {
+  const index = selectedProviderTypes.value.indexOf(type);
+  if (index > -1) {
+    selectedProviderTypes.value.splice(index, 1);
+  } else {
+    selectedProviderTypes.value.push(type);
+  }
+};
+
+const initializeFromUrl = function () {
+  if (route.query.search) {
+    searchQuery.value = route.query.search as string;
+  }
+
+  if (route.query.types) {
+    const types = route.query.types as string;
+    selectedProviderTypes.value = types.split(",");
+  }
+};
+
+initializeFromUrl();
 </script>
 
 <style scoped>
-.titlebar {
-  padding: 25px 17px 0 0;
-}
-.titlebar.v-toolbar {
-  height: 55px;
-  font-family: "JetBrains Mono Medium";
-}
-
 .provider-description {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -431,5 +459,20 @@ const isTextTruncated = function (text: string) {
 }
 .provider-description.truncated-text {
   margin-bottom: 16px !important;
+}
+
+/* Fix checkbox layout in menu */
+:deep(.v-list-item .v-checkbox-btn) {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.v-list-item .v-checkbox-btn .v-input__control) {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.v-list-item .v-checkbox-btn .v-selection-control) {
+  min-height: auto;
 }
 </style>
