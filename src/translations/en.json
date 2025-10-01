@@ -96,6 +96,7 @@
         "delete": "Delete",
         "disable": "Disable",
         "documentation": "Documentation",
+        "edit_provider": "Edit provider: {0}",
         "enable": "Enable",
         "enable_player": "Enable this player",
         "enable_provider": "Enable this provider entry",
