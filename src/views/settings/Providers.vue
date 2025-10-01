@@ -1,8 +1,10 @@
 <template>
   <div class="d-flex align-center justify-space-between pa-5 w-100">
     <ProviderFilters
+      show-stage-filter
       @update:search="searchQuery = $event"
       @update:types="selectedProviderTypes = $event"
+      @update:stages="selectedProviderStages = $event"
     />
     <v-btn
       color="primary"
@@ -89,6 +91,16 @@
               <v-icon :icon="getProviderTypeIcon(item.type)" />
             </v-btn>
 
+            <!-- provider stage chip -->
+            <v-chip
+              size="x-small"
+              variant="flat"
+              class="mr-1 text-uppercase"
+              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
+            >
+              {{ api.providerManifests[item.domain]?.stage }}
+            </v-chip>
+
             <v-btn
               icon="mdi-dots-vertical"
               size="small"
@@ -131,6 +143,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
+import { match } from "ts-pattern";
 import { onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -141,6 +154,7 @@ const router = useRouter();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviderTypes = ref<string[]>([]);
+const selectedProviderStages = ref<string[]>([]);
 
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
@@ -286,6 +300,17 @@ const isTextTruncated = function (text: string) {
   return text && text.length > 150;
 };
 
+const getStageColor = function (stage?: string) {
+  return match(stage)
+    .with("stable", () => "green")
+    .with("beta", () => "blue")
+    .with("alpha", () => "purple")
+    .with("experimental", () => "orange")
+    .with("unmaintained", () => "grey")
+    .with("deprecated", () => "red")
+    .otherwise(() => "green");
+};
+
 const getProviderTypeIcon = function (type: ProviderType) {
   const iconMap = {
     [ProviderType.MUSIC]: "mdi-music",
@@ -311,6 +336,13 @@ const getAllFilteredProviders = function () {
     filtered = filtered.filter((item) =>
       selectedProviderTypes.value.includes(item.type),
     );
+  }
+
+  if (selectedProviderStages.value.length > 0) {
+    filtered = filtered.filter((item) => {
+      const manifest = api.providerManifests[item.domain];
+      return manifest && selectedProviderStages.value.includes(manifest.stage);
+    });
   }
 
   return filtered.sort((a, b) =>

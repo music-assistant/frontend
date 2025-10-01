@@ -34,21 +34,50 @@
         </v-list>
       </v-menu>
     </v-btn>
+    <v-btn v-if="showStageFilter" height="40" elevation="0">
+      Stage
+      <v-icon end>mdi-chevron-down</v-icon>
+      <v-menu activator="parent" :close-on-content-click="false">
+        <v-list>
+          <v-list-item
+            v-for="(stage, index) in providerStages"
+            :key="index"
+            :value="index"
+            @click="toggleProviderStage(stage.value)"
+          >
+            <template #append>
+              <v-checkbox-btn
+                :model-value="selectedProviderStages.includes(stage.value)"
+                @click.stop="toggleProviderStage(stage.value)"
+              />
+            </template>
+            <v-list-item-title>{{ stage.title }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
 import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+
+// Props
+const { showStageFilter = false } = defineProps<{
+  showStageFilter?: boolean;
+}>();
 
 const router = useRouter();
 const route = useRoute();
 
 const searchQuery = ref<string>("");
 const selectedProviderTypes = ref<string[]>([]);
+const selectedProviderStages = ref<string[]>([]);
 let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+let stagesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const providerTypes = ref([
   { title: "Music", value: ProviderType.MUSIC },
@@ -57,10 +86,20 @@ const providerTypes = ref([
   { title: "Plugin", value: ProviderType.PLUGIN },
 ]);
 
+const providerStages = ref([
+  { title: "Stable", value: ProviderStage.STABLE },
+  { title: "Beta", value: ProviderStage.BETA },
+  { title: "Alpha", value: ProviderStage.ALPHA },
+  { title: "Experimental", value: ProviderStage.EXPERIMENTAL },
+  { title: "Unmaintained", value: ProviderStage.UNMAINTAINED },
+  { title: "Deprecated", value: ProviderStage.DEPRECATED },
+]);
+
 // Emits
 const emit = defineEmits<{
   (e: "update:search", value: string): void;
   (e: "update:types", value: string[]): void;
+  (e: "update:stages", value: string[]): void;
 }>();
 
 const toggleProviderType = function (type: string) {
@@ -72,6 +111,15 @@ const toggleProviderType = function (type: string) {
   }
 };
 
+const toggleProviderStage = function (stage: string) {
+  const index = selectedProviderStages.value.indexOf(stage);
+  if (index > -1) {
+    selectedProviderStages.value.splice(index, 1);
+  } else {
+    selectedProviderStages.value.push(stage);
+  }
+};
+
 const initializeFromUrl = function () {
   if (route.query.search) {
     searchQuery.value = route.query.search as string;
@@ -80,6 +128,11 @@ const initializeFromUrl = function () {
   if (route.query.types) {
     const types = route.query.types as string;
     selectedProviderTypes.value = types.split(",");
+  }
+
+  if (route.query.stages) {
+    const stages = route.query.stages as string;
+    selectedProviderStages.value = stages.split(",");
   }
 };
 
@@ -116,6 +169,28 @@ watch(
         query.types = newTypes.join(",");
       } else {
         delete query.types;
+      }
+      router.replace({ query });
+    }, 750);
+  },
+  { deep: true },
+);
+
+// Watch selected provider stages and update URL with debounce
+watch(
+  selectedProviderStages,
+  (newStages) => {
+    emit("update:stages", newStages);
+
+    if (stagesDebounceTimeout) {
+      clearTimeout(stagesDebounceTimeout);
+    }
+    stagesDebounceTimeout = setTimeout(() => {
+      const query = { ...route.query };
+      if (newStages.length > 0) {
+        query.stages = newStages.join(",");
+      } else {
+        delete query.stages;
       }
       router.replace({ query });
     }, 750);

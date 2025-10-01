@@ -1,19 +1,14 @@
 <template>
-  <div class="input-search">
-    <v-text-field
-      v-model="searchQuery"
-      prepend-inner-icon="mdi-magnify"
-      label="Search providers..."
-      variant="outlined"
-      density="comfortable"
-      clearable
-      hide-details
+  <div class="pa-5">
+    <ProviderFilters
+      @update:search="searchQuery = $event"
+      @update:types="selectedProviderTypes = $event"
     />
   </div>
+
   <v-toolbar color="transparent" density="compact">
     <template #title>
-      {{ filteredProviders.length }}
-      {{ $t(`settings.${providerType?.toLowerCase()}providers`) }} available
+      {{ filteredProviders.length }} providers available
     </template>
   </v-toolbar>
 
@@ -40,6 +35,13 @@
             />
           </template>
 
+          <template #append>
+            <!-- provider type icon -->
+            <v-btn variant="text" size="small" icon :title="provider.type">
+              <v-icon :icon="getProviderTypeIcon(provider.type)" />
+            </v-btn>
+          </template>
+
           <v-card-title>
             {{ provider.name }}
           </v-card-title>
@@ -60,6 +62,7 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { api } from "@/plugins/api";
 import {
@@ -68,24 +71,29 @@ import {
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();
-const route = useRoute();
 
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
-const providerType = ref<ProviderType | null>(null);
 const searchQuery = ref("");
+const selectedProviderTypes = ref<string[]>([]);
 
 // computed properties
 const availableProviders = computed(() => {
-  if (!providerType.value) return [];
+  let providers = Object.values(api.providerManifests);
 
-  return Object.values(api.providerManifests)
-    .filter((x) => x.type === providerType.value)
+  // Filter by selected types if specified
+  if (selectedProviderTypes.value.length > 0) {
+    providers = providers.filter((x) =>
+      selectedProviderTypes.value.includes(x.type),
+    );
+  }
+
+  return providers
     .filter(
       (x) =>
         // provider is either multi instance or does not exist at all
@@ -140,18 +148,14 @@ const isTextTruncated = function (text: string) {
   return text && text.length > 150;
 };
 
-onMounted(() => {
-  initializeFromRoute();
-});
-
-const initializeFromRoute = () => {
-  const typeParam = route.query.type as string;
-  if (
-    typeParam &&
-    Object.values(ProviderType).includes(typeParam as ProviderType)
-  ) {
-    providerType.value = typeParam as ProviderType;
-  }
+const getProviderTypeIcon = function (type: ProviderType) {
+  const iconMap = {
+    [ProviderType.MUSIC]: "mdi-music",
+    [ProviderType.PLAYER]: "mdi-speaker",
+    [ProviderType.METADATA]: "mdi-file-code",
+    [ProviderType.PLUGIN]: "mdi-puzzle",
+  };
+  return iconMap[type] || "mdi-help-circle";
 };
 
 // watchers
@@ -162,28 +166,13 @@ watch(
   },
   { immediate: true },
 );
-
-watch(
-  () => route.query.type,
-  () => {
-    initializeFromRoute();
-  },
-  { immediate: true },
-);
 </script>
 
 <style scoped>
-.input-search {
-  padding: 20px;
-}
-.titlebar.v-toolbar {
-  height: 55px;
-  font-family: "JetBrains Mono Medium";
-}
-
 .provider-description {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
