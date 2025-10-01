@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex align-center justify-space-between pa-5 w-100">
+  <div class="providers-header pa-5 w-100">
     <ProviderFilters
       show-stage-filter
       @update:search="searchQuery = $event"
@@ -10,6 +10,7 @@
       color="primary"
       variant="outlined"
       height="40"
+      class="add-provider-btn"
       @click="router.push('/settings/addprovider')"
     >
       Add provider
@@ -21,7 +22,8 @@
         v-for="item in getAllFilteredProviders()"
         :key="item.instance_id"
         cols="12"
-        sm="4"
+        md="6"
+        lg="4"
         class="d-flex"
       >
         <v-card
@@ -352,6 +354,32 @@ const getAllFilteredProviders = function () {
 </script>
 
 <style scoped>
+.providers-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.add-provider-btn {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Mobile responsive */
+@media (max-width: 960px) {
+  .providers-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-provider-btn {
+    width: 100%;
+    align-self: stretch;
+  }
+}
+
 .provider-description {
   display: -webkit-box;
   -webkit-line-clamp: 3;

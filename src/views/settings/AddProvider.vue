@@ -18,7 +18,8 @@
         v-for="provider in filteredProviders"
         :key="provider.domain"
         cols="12"
-        sm="4"
+        md="6"
+        lg="4"
         class="d-flex"
       >
         <v-card

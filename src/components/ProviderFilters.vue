@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex align-center ga-3" style="flex: 1">
+  <div class="filters-container">
     <v-text-field
       v-model="searchQuery"
       prepend-inner-icon="mdi-magnify"
@@ -8,54 +8,56 @@
       density="compact"
       clearable
       hide-details
-      style="max-width: 400px; min-width: 300px"
+      class="search-field"
     />
-    <v-btn height="40" elevation="0">
-      Type
-      <v-icon end>mdi-chevron-down</v-icon>
-      <v-menu activator="parent" :close-on-content-click="false">
-        <v-list>
-          <v-list-item
-            v-for="(providerType, index) in providerTypes"
-            :key="index"
-            :value="index"
-            @click="toggleProviderType(providerType.value)"
-          >
-            <template #append>
-              <v-checkbox-btn
-                :model-value="
-                  selectedProviderTypes.includes(providerType.value)
-                "
-                @click.stop="toggleProviderType(providerType.value)"
-              />
-            </template>
-            <v-list-item-title>{{ providerType.title }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-    </v-btn>
-    <v-btn v-if="showStageFilter" height="40" elevation="0">
-      Stage
-      <v-icon end>mdi-chevron-down</v-icon>
-      <v-menu activator="parent" :close-on-content-click="false">
-        <v-list>
-          <v-list-item
-            v-for="(stage, index) in providerStages"
-            :key="index"
-            :value="index"
-            @click="toggleProviderStage(stage.value)"
-          >
-            <template #append>
-              <v-checkbox-btn
-                :model-value="selectedProviderStages.includes(stage.value)"
-                @click.stop="toggleProviderStage(stage.value)"
-              />
-            </template>
-            <v-list-item-title>{{ stage.title }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-    </v-btn>
+    <div class="d-flex ga-2 filter-buttons">
+      <v-btn height="40" elevation="0">
+        Type
+        <v-icon end>mdi-chevron-down</v-icon>
+        <v-menu activator="parent" :close-on-content-click="false">
+          <v-list>
+            <v-list-item
+              v-for="(providerType, index) in providerTypes"
+              :key="index"
+              :value="index"
+              @click="toggleProviderType(providerType.value)"
+            >
+              <template #append>
+                <v-checkbox-btn
+                  :model-value="
+                    selectedProviderTypes.includes(providerType.value)
+                  "
+                  @click.stop="toggleProviderType(providerType.value)"
+                />
+              </template>
+              <v-list-item-title>{{ providerType.title }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-btn>
+      <v-btn v-if="showStageFilter" height="40" elevation="0">
+        Stage
+        <v-icon end>mdi-chevron-down</v-icon>
+        <v-menu activator="parent" :close-on-content-click="false">
+          <v-list>
+            <v-list-item
+              v-for="(stage, index) in providerStages"
+              :key="index"
+              :value="index"
+              @click="toggleProviderStage(stage.value)"
+            >
+              <template #append>
+                <v-checkbox-btn
+                  :model-value="selectedProviderStages.includes(stage.value)"
+                  @click.stop="toggleProviderStage(stage.value)"
+                />
+              </template>
+              <v-list-item-title>{{ stage.title }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-btn>
+    </div>
   </div>
 </template>
 
@@ -202,6 +204,53 @@ initializeFromUrl();
 </script>
 
 <style scoped>
+.filters-container {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.search-field {
+  flex: 1 1 auto;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.filter-buttons .v-btn {
+  min-width: 100px;
+}
+
+/* Mobile responsive */
+@media (max-width: 960px) {
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-field {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .filter-buttons {
+    width: 100%;
+  }
+
+  .filter-buttons .v-btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+}
+
 :deep(.v-list-item .v-checkbox-btn) {
   display: flex;
   align-items: center;
