@@ -86,7 +86,7 @@ const providerTypes = computed(() => [
   { title: $t("settings.musicprovider"), value: ProviderType.MUSIC },
   { title: $t("settings.playerprovider"), value: ProviderType.PLAYER },
   { title: $t("settings.metadataprovider"), value: ProviderType.METADATA },
-  { title: $t("settings.pluginproviders"), value: ProviderType.PLUGIN },
+  { title: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
 ]);
 
 const providerStages = computed(() => [

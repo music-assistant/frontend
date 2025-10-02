@@ -100,12 +100,7 @@
               variant="text"
               size="small"
               icon
-              :title="
-                $t(
-                  String(item.type).charAt(0).toUpperCase() +
-                    String(item.type).slice(1),
-                )
-              "
+              :title="getProviderTypeTitle(item.type)"
             >
               <v-icon :icon="getProviderTypeIcon(item.type)" />
             </v-btn>
@@ -113,7 +108,7 @@
             <v-chip
               size="x-small"
               variant="flat"
-              class="mr-1 text-uppercase"
+              class="mx-1 text-uppercase"
               :color="getStageColor(api.providerManifests[item.domain]?.stage)"
             >
               {{
@@ -333,6 +328,15 @@ const getStageColor = function (stage?: string) {
     .with("unmaintained", () => "grey")
     .with("deprecated", () => "red")
     .otherwise(() => "green");
+};
+
+const getProviderTypeTitle = function (type: ProviderType) {
+  return match(type)
+    .with(ProviderType.MUSIC, () => $t("settings.music"))
+    .with(ProviderType.PLAYER, () => $t("settings.player"))
+    .with(ProviderType.METADATA, () => $t("settings.metadata"))
+    .with(ProviderType.PLUGIN, () => $t("settings.plugin"))
+    .otherwise(() => $t("settings.player"));
 };
 
 const getProviderTypeIcon = function (type: ProviderType) {

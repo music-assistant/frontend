@@ -40,12 +40,26 @@
           </template>
 
           <template #append>
-            <v-btn variant="text" size="small" icon :title="provider.type">
+            <v-btn
+              variant="text"
+              size="small"
+              icon
+              :title="getProviderTypeTitle(provider.type)"
+            >
               <v-icon :icon="getProviderTypeIcon(provider.type)" />
             </v-btn>
+
+            <v-chip
+              size="x-small"
+              variant="flat"
+              class="mx-1 text-uppercase"
+              :color="getStageColor(provider.stage)"
+            >
+              {{ $t(String(provider.stage || "").toLowerCase()) }}
+            </v-chip>
           </template>
 
-          <v-card-title>
+          <v-card-title class="text-truncate">
             {{ provider.name }}
           </v-card-title>
 
@@ -74,6 +88,7 @@ import {
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { match } from "ts-pattern";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -88,6 +103,9 @@ const selectedProviderTypes = ref<string[]>([]);
 // computed properties
 const availableProviders = computed(() => {
   let providers = Object.values(api.providerManifests);
+
+  // Filter out builtin/core modules
+  providers = providers.filter((x) => !x.builtin);
 
   // Filter by selected types if specified
   if (selectedProviderTypes.value.length > 0) {
@@ -160,6 +178,26 @@ const getProviderTypeIcon = function (type: ProviderType) {
   };
 
   return iconMap[type] || "mdi-help-circle";
+};
+
+const getProviderTypeTitle = function (type: ProviderType) {
+  return match(type)
+    .with(ProviderType.MUSIC, () => $t("settings.music"))
+    .with(ProviderType.PLAYER, () => $t("settings.player"))
+    .with(ProviderType.METADATA, () => $t("settings.metadata"))
+    .with(ProviderType.PLUGIN, () => $t("settings.plugin"))
+    .otherwise(() => $t("settings.player"));
+};
+
+const getStageColor = function (stage?: string) {
+  return match(stage)
+    .with("stable", () => "green")
+    .with("beta", () => "blue")
+    .with("alpha", () => "purple")
+    .with("experimental", () => "orange")
+    .with("unmaintained", () => "grey")
+    .with("deprecated", () => "red")
+    .otherwise(() => "green");
 };
 
 // watchers
