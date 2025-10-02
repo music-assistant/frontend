@@ -362,10 +362,6 @@
                 "it": "Italiano"
             }
         },
-        "hide_settings": {
-            "label": "Ocultar botón de configuración",
-            "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\nTenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
-        },
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
         "no_player_providers": "No hay Proveedores de Música configurados",

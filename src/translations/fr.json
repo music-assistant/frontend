@@ -368,10 +368,6 @@
                 "it": "Italien"
             }
         },
-        "hide_settings": {
-            "label": "Masquer le bouton des paramètres",
-            "description": "Masquez le bouton des paramètres sur l'écran d'accueil.\n\nNotez que si vous désactivez les paramètres sur l'écran d'accueil et dans le menu, vous risquez de vous bloquer l'accès.\n\nPour y accéder à nouveau, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur. Utilisez à vos risques et périls !"
-        },
         "no_music_providers": "Aucun fournisseur de musique configuré",
         "no_music_providers_detail": "Démarrez votre expérience Music Assistant en ajoutant vos fournisseurs de musique.",
         "no_player_providers": "Aucun fournisseur de lecteur n'est configuré",

@@ -363,10 +363,6 @@
                 "it": "Italiano"
             }
         },
-        "hide_settings": {
-            "label": "Nascondi il pulsante delle impostazioni",
-            "description": "Nascondi il pulsante delle impostazioni nella schermata iniziale.\n\nNota che se disabiliti le impostazioni nella schermata iniziale e nel menu potresti bloccarti.\n\nIn tal caso dovrai inserire manualmente il percorso alle impostazioni o cancellare i cookie del browser per accedere nuovamente alle impostazioni, usalo a tuo rischio e pericolo!"
-        },
         "no_music_providers": "Nessuna Sorgente di Musica configurata",
         "no_music_providers_detail": "Inizia la tua esperienza con Music Assistant aggiungendo i tuoi provider musicali.",
         "no_player_providers": "Nessun provider dei lettori configurato",
