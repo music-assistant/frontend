@@ -529,6 +529,10 @@
         "enable_builtin_player": {
             "label": "Allow playback to this device\/browser",
             "description": "Enable the (experimental) built-in player for this device\/browser, which allows you to stream all Music Assistant content directly to this device."
+        },
+        "audiobook_chapter_time": {
+            "label": "Audiobook Chapter Progress",
+            "description": "Show the progress of the current chapter instead of the full duration when playing audiobooks."
         }
     },
     "show_info": "Show info",
