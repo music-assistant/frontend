@@ -259,7 +259,8 @@ export const showContextMenuForMediaItem = async function (
     mediaItems[0].is_playable &&
     itemIsAvailable(mediaItems[0])
   ) {
-    menuItems.push(...(await getPlayMenuItems(mediaItems, parentItem)));
+    const playMenuItems = await getPlayMenuItems(mediaItems, parentItem);
+    menuItems.push(...playMenuItems);
   }
 
   if (menuItems.length == 0) return;
@@ -823,10 +824,11 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action (tracks only)
+  // add to playlist action (tracks, albums, and folders)
   if (
     items[0].media_type === MediaType.TRACK ||
-    items[0].media_type === MediaType.ALBUM
+    items[0].media_type === MediaType.ALBUM ||
+    items[0].media_type === MediaType.FOLDER
   ) {
     contextMenuItems.push({
       label: "add_playlist",
