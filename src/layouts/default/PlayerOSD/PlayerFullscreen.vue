@@ -400,6 +400,7 @@
                           item.queue_item_id ===
                           store.curQueueItem?.queue_item_id
                         "
+                        :show-badge="getBreakpointValue('bp4')"
                       />
                       <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>

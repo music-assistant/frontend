@@ -153,7 +153,10 @@
     <!-- actions -->
     <template #append>
       <!-- Now Playing Badge -->
-      <NowPlayingBadge v-if="isPlaying" />
+      <NowPlayingBadge
+        v-if="isPlaying"
+        :show-badge="getBreakpointValue('bp7')"
+      />
       <!-- hi res icon -->
       <v-img
         v-if="HiResDetails"
