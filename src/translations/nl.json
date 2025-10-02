@@ -364,10 +364,6 @@
                 "it": "Italian"
             }
         },
-        "hide_settings": {
-            "label": "Verberg knop naar instellingen",
-            "description": "Verberg de instellingenknop op het startscherm.\n\n Let op: als je de instellingen op het startscherm en in het menu uitschakelt, kun je jezelf buitensluiten. \n\nIn dat geval moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen om weer toegang te krijgen tot de instellingen, gebruik op eigen risico!"
-        },
         "no_music_providers": "Geen muziekaanbieders geconfigureerd",
         "no_music_providers_detail": "Begin je Music Assistant-ervaring door je muziekproviders toe te voegen.",
         "no_player_providers": "Geen player providers geconfigureerd",
