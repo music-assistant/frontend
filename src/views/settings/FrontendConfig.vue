@@ -119,6 +119,18 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.enable_builtin_player") !=
         "false",
     },
+    {
+      key: "force_mobile_layout",
+      type: ConfigEntryType.BOOLEAN,
+      label: "force_mobile_layout",
+      default_value: false,
+      required: false,
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.force_mobile_layout") !=
+        "false",
+    },
   ];
 });
 

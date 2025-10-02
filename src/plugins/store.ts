@@ -3,9 +3,10 @@ import { MediaType, Player, PlayerQueue, QueueItem } from "./api/interfaces";
 
 import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
-import { isTouchscreenDevice } from "@/helpers/utils";
+import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
 
 import MobileDetect from "mobile-detect";
+import { getBreakpointValue } from "./breakpoint";
 
 type DeviceType = "desktop" | "phone" | "tablet";
 const md = new MobileDetect(window.navigator.userAgent);
@@ -59,6 +60,8 @@ interface Store {
   playMenuShown: boolean;
   playActionInProgress: boolean;
   deviceType: DeviceType;
+  forceMobileLayout?: boolean;
+  mobileLayout: boolean;
 }
 
 export const store: Store = reactive({
@@ -114,4 +117,9 @@ export const store: Store = reactive({
   playMenuShown: false,
   playActionInProgress: false,
   deviceType: DEVICE_TYPE,
+  mobileLayout: computed(() => {
+    return (
+      getBreakpointValue({ breakpoint: "tablet" }) || store.forceMobileLayout
+    );
+  }),
 });
