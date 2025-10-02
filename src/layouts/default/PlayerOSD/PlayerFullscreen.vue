@@ -398,7 +398,9 @@
                       <NowPlayingBadge
                         v-if="
                           item.queue_item_id ===
-                          store.curQueueItem?.queue_item_id
+                            store.curQueueItem?.queue_item_id &&
+                          store.activePlayer?.playback_state !=
+                            PlaybackState.IDLE
                         "
                         :show-badge="getBreakpointValue('bp4')"
                       />
@@ -623,6 +625,7 @@ import {
   QueueOption,
   Track,
   PLAYER_CONTROL_NONE,
+  PlaybackState,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";

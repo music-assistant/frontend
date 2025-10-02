@@ -196,6 +196,7 @@ import {
   ItemMapping,
   MediaItemTypeOrItemMapping,
   MediaType,
+  PlaybackState,
   PodcastEpisode,
   Radio,
   type Album,
@@ -388,6 +389,7 @@ const isSelected = function (item: MediaItemTypeOrItemMapping) {
 };
 
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
+  if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
   const current = store.curQueueItem?.media_item as
     | Track
     | Radio

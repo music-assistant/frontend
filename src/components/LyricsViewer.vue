@@ -150,7 +150,7 @@ const hasTimestamps = computed(() => {
   const plainLyrics = props.mediaItem?.metadata?.lyrics;
 
   // Check lrc_lyrics field
-  if (syncedLyrics && syncedLyrics.includes('[')) {
+  if (syncedLyrics && syncedLyrics.includes("[")) {
     return true;
   }
 
@@ -229,7 +229,9 @@ const fetchLyrics = () => {
       logSync(`Loaded ${lyrics.value.length} synchronized lyrics lines`, false);
     } else if (lyricsToProcess) {
       // For plain text lyrics without timestamps
-      const lyricsLines = lyricsToProcess.split("\n").filter((line) => line.trim());
+      const lyricsLines = lyricsToProcess
+        .split("\n")
+        .filter((line) => line.trim());
 
       lyrics.value = lyricsLines
         .map((line) => ({
