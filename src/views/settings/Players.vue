@@ -95,6 +95,7 @@ import Button from "@/components/Button.vue";
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { SYNCGROUP_PREFIX } from "@/constants";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
@@ -172,9 +173,12 @@ const playerCanBeDeleted = function (playerId: string) {
   const player = api.players[playerId];
   if (!player) return true;
   if (player.type === PlayerType.GROUP) {
-    return api
-      .getProvider(player.provider)
-      ?.supported_features.includes(ProviderFeature.REMOVE_GROUP_PLAYER);
+    return (
+      player.player_id.startsWith(SYNCGROUP_PREFIX) ||
+      api
+        .getProvider(player.provider)
+        ?.supported_features.includes(ProviderFeature.REMOVE_GROUP_PLAYER)
+    );
   }
   return api
     .getProvider(player.provider)
