@@ -17,7 +17,7 @@
 
     <template #title>
       <slot name="title">
-        <div v-if="!getBreakpointValue('bp3') && home" class="mobile-brand">
+        <div v-if="store.mobileLayout && home" class="mobile-brand">
           <img
             src="@/assets/icon.svg"
             alt="Music Assistant"
@@ -194,6 +194,7 @@
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { getBreakpointValue } from "../plugins/breakpoint";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {
@@ -268,22 +269,18 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 }
 
 /* Mobile branding on the left */
-@media (max-width: 575px) {
-  .mobile-brand {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .mobile-brand-logo {
-    height: 30px;
-    width: 30px;
-  }
-
-  .mobile-brand-text {
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-top: 4px;
-  }
+.mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.mobile-brand-logo {
+  height: 30px;
+  width: 30px;
+}
+.mobile-brand-text {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
 }
 </style>

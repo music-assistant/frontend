@@ -1,7 +1,7 @@
 <template>
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
-    v-if="getBreakpointValue({ breakpoint: 'tablet' })"
+    v-if="store.mobileLayout"
     :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
     :style="`
       position: fixed;
@@ -11,22 +11,17 @@
       z-index: 999;
     `"
   ></div>
-  <BottomNavigation
-    v-if="getBreakpointValue({ breakpoint: 'tablet' })"
-    :height="bottomNavHeight"
-  />
+  <BottomNavigation v-if="store.mobileLayout" :height="bottomNavHeight" />
   <v-footer
     app
     color="default"
     :class="`py-0 px-0 ${
-      getBreakpointValue({ breakpoint: 'tablet' })
+      store.mobileLayout
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
   >
-    <Player
-      :use-floating-player="getBreakpointValue({ breakpoint: 'tablet' })"
-    />
+    <Player :use-floating-player="store.mobileLayout" />
   </v-footer>
 </template>
 
@@ -36,6 +31,7 @@ import Player from "./PlayerOSD/Player.vue";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
+import { parseBool } from "@/helpers/utils";
 
 const bottomNavHeight = computed(() => {
   if (store.isInStandaloneMode) {

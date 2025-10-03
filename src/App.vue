@@ -64,6 +64,10 @@ onMounted(() => {
   const allowBuiltinPlayer =
     localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
 
+  const forceMobileLayout =
+    localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
+  store.forceMobileLayout = forceMobileLayout;
+
   // set color theme (and listen for color scheme changes from browser)
   setTheme();
   window

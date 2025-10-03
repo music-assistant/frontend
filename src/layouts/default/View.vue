@@ -1,9 +1,6 @@
 <template>
   <v-main id="cont" class="main-layout">
-    <Navigation
-      v-if="!getBreakpointValue({ breakpoint: 'tablet' })"
-      class="nav-section"
-    />
+    <Navigation v-if="!store.mobileLayout" class="nav-section" />
     <div class="content-section">
       <router-view v-slot="{ Component }">
         <component :is="Component" />
