@@ -119,7 +119,8 @@ export const store: Store = reactive({
   deviceType: DEVICE_TYPE,
   mobileLayout: computed(() => {
     return (
-      getBreakpointValue({ breakpoint: "tablet" }) || store.forceMobileLayout
+      getBreakpointValue({ breakpoint: "tablet" }) ||
+      parseBool(store.forceMobileLayout)
     );
   }),
 });
