@@ -27,12 +27,6 @@
         </div>
         <button v-else-if="title" @click="emit('titleClicked')">
           {{ title }}
-          <v-badge
-            v-if="count && getBreakpointValue('bp4')"
-            color="grey"
-            :content="count"
-            inline
-          />
         </button>
       </slot>
     </template>
@@ -201,7 +195,6 @@ export interface Props {
   color?: string;
   icon?: string;
   title?: string;
-  count?: number;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
   showLoading?: boolean;
