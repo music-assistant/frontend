@@ -1,55 +1,57 @@
 <template>
   <div>
-    <Toolbar
-      icon="mdi-cog-outline"
-      :show-loading="true"
-      :menu-items="[
-        {
-          label: 'settings.providers',
-          icon: 'mdi-apps',
-          action: () => {
-            $router.push({ name: 'providersettings' });
-          },
-          active: activeTab == 'providers',
-        },
-        {
-          label: 'settings.players',
-          icon: 'mdi-speaker-multiple',
-          action: () => {
-            $router.push({ name: 'playersettings' });
-          },
-          active: activeTab == 'players',
-        },
-        {
-          label: 'settings.core',
-          icon: 'mdi-engine',
-          action: () => {
-            $router.push({ name: 'coresettings' });
-          },
-          active: activeTab == 'core',
-        },
-        {
-          label: 'settings.frontend',
-          icon: 'mdi-palette-advanced',
-          action: () => {
-            $router.push({ name: 'frontendsettings' });
-          },
-          active: activeTab == 'frontend',
-        },
-      ]"
-    >
+    <Toolbar icon="mdi-cog-outline" :show-loading="true">
       <template #title>
         <v-breadcrumbs :items="breadcrumbItems" class="pa-0" /> </template
     ></Toolbar>
 
     <v-divider />
-    <router-view v-slot="{ Component }" app>
+
+    <Container
+      v-if="isOverview"
+      variant="comfortable"
+      class="settings-overview"
+    >
+      <v-card class="settings-main-card">
+        <v-list class="settings-list">
+          <v-list-item
+            v-for="section in settingsSections"
+            :key="section.name"
+            :ripple="true"
+            class="settings-list-item"
+            @click="router.push(section.route)"
+          >
+            <template #prepend>
+              <v-avatar :color="section.color" size="48">
+                <v-icon :icon="section.icon" size="24" color="white" />
+              </v-avatar>
+            </template>
+
+            <v-list-item-title class="text-h6">
+              {{ t(section.label) }}
+            </v-list-item-title>
+
+            <v-list-item-subtitle>
+              {{ t(section.description) }}
+            </v-list-item-subtitle>
+
+            <template #append>
+              <v-icon icon="mdi-chevron-right" />
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-card>
+    </Container>
+
+    <!-- Settings Subsections -->
+    <router-view v-else v-slot="{ Component }" app>
       <component :is="Component" />
     </router-view>
   </div>
 </template>
 
 <script setup lang="ts">
+import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { match } from "ts-pattern";
 import { computed } from "vue";
@@ -60,7 +62,46 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const { t } = useI18n();
 
+const settingsSections = [
+  {
+    name: "providers",
+    label: "settings.providers",
+    description: "settings.providers_description",
+    icon: "mdi-monitor-dashboard",
+    color: "blue",
+    route: { name: "providersettings" },
+  },
+  {
+    name: "players",
+    label: "settings.players",
+    description: "settings.players_description",
+    icon: "mdi-speaker-multiple",
+    color: "green",
+    route: { name: "playersettings" },
+  },
+  {
+    name: "core",
+    label: "settings.core",
+    description: "settings.core_description",
+    icon: "mdi-server",
+    color: "purple",
+    route: { name: "coresettings" },
+  },
+  {
+    name: "frontend",
+    label: "settings.frontend",
+    description: "settings.frontend_description",
+    icon: "mdi-palette",
+    color: "orange",
+    route: { name: "frontendsettings" },
+  },
+];
+
 // computed properties
+const isOverview = computed(() => {
+  return router.currentRoute.value.name === "settings";
+});
+
 const activeTab = computed(() => {
   if (router.currentRoute.value.name?.toString().includes("player")) {
     return "players";
@@ -88,35 +129,37 @@ const breadcrumbItems = computed(() => {
       title: t("settings.settings"),
       disabled: false,
       href: "#",
-      to: { name: "providersettings" },
+      to: { name: "settings" },
     },
   ];
 
-  const currentTab = activeTab.value;
-  if (currentTab === "players") {
-    items.push({
-      title: t("settings.players"),
-      disabled: name === "playersettings",
-      to: { name: "playersettings" },
-    });
-  } else if (currentTab === "core") {
-    items.push({
-      title: t("settings.core"),
-      disabled: name === "coresettings",
-      to: { name: "coresettings" },
-    });
-  } else if (currentTab === "frontend") {
-    items.push({
-      title: t("settings.frontend"),
-      disabled: name === "frontendsettings",
-      to: { name: "frontendsettings" },
-    });
-  } else {
-    items.push({
-      title: t("settings.providers"),
-      disabled: name === "providersettings",
-      to: { name: "providersettings" },
-    });
+  if (!isOverview.value) {
+    const currentTab = activeTab.value;
+    if (currentTab === "players") {
+      items.push({
+        title: t("settings.players"),
+        disabled: name === "playersettings",
+        to: { name: "playersettings" },
+      });
+    } else if (currentTab === "core") {
+      items.push({
+        title: t("settings.core"),
+        disabled: name === "coresettings",
+        to: { name: "coresettings" },
+      });
+    } else if (currentTab === "frontend") {
+      items.push({
+        title: t("settings.frontend"),
+        disabled: name === "frontendsettings",
+        to: { name: "frontendsettings" },
+      });
+    } else if (currentTab === "providers") {
+      items.push({
+        title: t("settings.providers"),
+        disabled: name === "providersettings",
+        to: { name: "providersettings" },
+      });
+    }
   }
 
   match(name)
@@ -151,3 +194,42 @@ const breadcrumbItems = computed(() => {
   return items;
 });
 </script>
+
+<style scoped>
+.settings-overview {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-main-card {
+  overflow: hidden;
+}
+
+.settings-list {
+  padding: 0;
+}
+
+.settings-list-item {
+  cursor: pointer;
+  padding: 20px 24px;
+  min-height: 80px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.settings-list-item:last-child {
+  border-bottom: none;
+}
+
+.settings-list-item:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
+}
+
+.settings-list-item :deep(.v-list-item__prepend) {
+  margin-right: 16px;
+}
+
+.v-avatar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+</style>

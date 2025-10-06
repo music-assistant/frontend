@@ -302,10 +302,6 @@ const routes = [
               ),
             props: true,
           },
-          {
-            path: "",
-            redirect: "/settings/providers", // default child path
-          },
         ],
       },
     ],
