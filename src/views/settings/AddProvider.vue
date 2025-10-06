@@ -105,7 +105,9 @@ const availableProviders = computed(() => {
   let providers = Object.values(api.providerManifests);
 
   // Filter out builtin/core modules
-  providers = providers.filter((x) => !x.builtin);
+  providers = providers.filter(
+    (x) => !x.builtin && x.type !== ("core" as ProviderType),
+  );
 
   // Filter by selected types if specified
   if (selectedProviderTypes.value.length > 0) {
@@ -121,12 +123,19 @@ const availableProviders = computed(() => {
         x.multi_instance ||
         !providerConfigs.value.find((y) => y.domain == x.domain),
     )
-    .sort((a, b) =>
-      (a.name || api.providerManifests[a.domain].name).toUpperCase() >
-      (b.name || api.providerManifests[b.domain].name).toUpperCase()
-        ? 1
-        : -1,
-    );
+    .sort((a, b) => {
+      const typeOrder =
+        getProviderTypeOrder(a.type) - getProviderTypeOrder(b.type);
+      if (typeOrder !== 0) return typeOrder;
+
+      const nameA = (
+        a.name || api.providerManifests[a.domain].name
+      ).toUpperCase();
+      const nameB = (
+        b.name || api.providerManifests[b.domain].name
+      ).toUpperCase();
+      return nameA > nameB ? 1 : -1;
+    });
 });
 
 const filteredProviders = computed(() => {
@@ -198,6 +207,17 @@ const getStageColor = function (stage?: string) {
     .with("unmaintained", () => "grey")
     .with("deprecated", () => "red")
     .otherwise(() => "green");
+};
+
+const getProviderTypeOrder = function (type: ProviderType) {
+  // Define sort order: player -> music -> metadata -> plugin
+  const order = {
+    [ProviderType.PLAYER]: 1,
+    [ProviderType.MUSIC]: 2,
+    [ProviderType.METADATA]: 3,
+    [ProviderType.PLUGIN]: 4,
+  };
+  return order[type] || 999;
 };
 
 // watchers

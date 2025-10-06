@@ -24,7 +24,6 @@
 
 <script lang="ts" setup>
 import Navigation from "@/components/navigation/Navigation.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
@@ -38,7 +37,9 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 }
 
 .nav-section {
-  flex: 0 0 290px;
+  flex: 0 0 auto;
+  width: 290px;
+  transition: width 0.3s ease;
 }
 .content-section {
   flex: 1;
