@@ -59,7 +59,7 @@
     "sass": "1.93.2",
     "typescript": "5.9.2",
     "unplugin": "^2.3.10",
-    "vite": "^7.1.7",
+    "vite": "^7.1.9",
     "vite-plugin-pwa": "1.0.3",
     "vite-plugin-vuetify": "2.1.2",
     "vite-plugin-webfont-dl": "3.11.1",
