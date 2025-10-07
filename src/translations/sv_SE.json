@@ -363,10 +363,6 @@
                 "it": "Italienska"
             }
         },
-        "hide_settings": {
-            "label": "Dölj knapp till inställningar",
-            "description": "Dölj inställningar-knappen på startskärmen.\n\nObservera att om du inaktiverar inställningar på startskärmen och i menyn kan du låsa dig själv ute. \n\nI så fall måste du manuellt ange sökvägen till inställningar eller rensa webbläsarens cookies för att få tillgång till inställningarna igen, använd på egen risk!"
-        },
         "no_music_providers": "Inga musikleverantörer har konfigurerats",
         "no_music_providers_detail": "Börja din upplevelse av Music Assistant genom att lägga till dina musikleverantörer.",
         "no_player_providers": "Inga spelarleverantörer konfigurerade",

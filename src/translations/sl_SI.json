@@ -362,10 +362,6 @@
                 "it": "Italijanski"
             }
         },
-        "hide_settings": {
-            "label": "Skrij gumb za nastavitve",
-            "description": "Skrij gumb za nastavitve na začetnem zaslonu.\n\nUpoštevajte, se lahko zaklenete, če onemogočite nastavitve na začetnem zaslonu in v meniju.\n\nV tem primeru boste morali ročno vnesti pot do nastavitev ali počistiti piškotke brskalnika, da boste znova dobili dostop do nastavitev. Uporabljajte na lastno odgovornost!"
-        },
         "no_music_providers": "Noben ponudnik glasbe ni konfiguriran",
         "no_music_providers_detail": "Začnite izkušnjo Music Assistant z dodajanjem ponudnikov glasbe.",
         "no_player_providers": "Noben ponudnik predvajalnika ni konfiguriran",

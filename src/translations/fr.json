@@ -365,7 +365,8 @@
                 "pt_BR": "Portugais (Brésil)",
                 "sl_SI": "Slovène",
                 "hu_HU": "Hongrois",
-                "it": "Italien"
+                "it": "Italien",
+                "el_GR": "Grec"
             }
         },
         "no_music_providers": "Aucun fournisseur de musique configuré",
@@ -438,7 +439,13 @@
                 },
                 "import_apo": "Importer un préréglage APO\/REW",
                 "export_apo": "Exporter le préréglage APO",
-                "preamp": "Préamplification"
+                "preamp": "Préamplification",
+                "add_band_channel": "Ajouter une bande ({channel} uniquement)",
+                "band_channel": "Bande {index} ({channel} uniquement)",
+                "show_multichannel_controls": "Afficher les commandes multicanaux",
+                "edited_channel": "Tracez la réponse des égaliseurs pour ce(s) canal(aux)",
+                "channel": "Cette bande sera appliquée à",
+                "per_channel_preamp": "Gain supplémentaire du préampli pour {channel}"
             },
             "tone_control": {
                 "bass_level": "Niveau des graves",
@@ -462,6 +469,13 @@
             "channels_compact": {
                 "FL": "G",
                 "FR": "D"
+            },
+            "presets": {
+                "load": "Charger un préréglage DSP",
+                "empty_warning": "Aucun préréglage DSP disponible",
+                "save": "Enregistrer le préréglage DSP",
+                "name": "Nom du préréglage",
+                "name_placeholder": "Mon nouveau préréglage"
             }
         },
         "power_control": {
@@ -491,6 +505,31 @@
         "enable_builtin_player": {
             "label": "Autoriser la lecture sur cet appareil\/navigateur",
             "description": "Activez le lecteur intégré (expérimental) pour cet appareil\/navigateur, qui vous permet de diffuser tout le contenu de Music Assistant directement sur cet appareil."
+        },
+        "edit_provider": "Modifier le fournisseur : {0}",
+        "metadata": "Métadonnées",
+        "metadataprovider": "Fournisseur de métadonnées",
+        "music": "Musique",
+        "musicprovider": "Fournisseur de musique",
+        "player": "Lecteur",
+        "playerprovider": "Fournisseur de lecteur",
+        "plugin": "Plugin",
+        "pluginprovider": "Fournisseur de plugins",
+        "providers_total": "{0} fournisseur{1} au total",
+        "stage": {
+            "label": "Status",
+            "options": {
+                "stable": "Stable",
+                "beta": "Bêta",
+                "alpha": "Alpha",
+                "experimental": "Expérimental",
+                "unmaintained": "Non maintenu",
+                "deprecated": "Obsolète"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Forcer la mise en page mobile",
+            "description": "Forcer la mise en page mobile (avec le menu de navigation en bas), même sur les écrans plus grands."
         }
     },
     "show_info": "Afficher les informations",

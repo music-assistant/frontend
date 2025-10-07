@@ -364,10 +364,6 @@
                 "it": "意大利语"
             }
         },
-        "hide_settings": {
-            "label": "隐藏设置按钮",
-            "description": "隐藏主屏幕上的设置按钮。\n请注意，如果您禁用主屏幕和菜单中的设置按钮，您可能会无法进入设置界面,在这种情况下,您需要手动输入设置路径或清除浏览器cookie才能再次访问设置."
-        },
         "no_music_providers": "未配置音乐提供者",
         "no_music_providers_detail": "添加音乐提供者，开始您的音乐助手体验!",
         "no_player_providers": "未配置播放器提供者",

@@ -362,10 +362,6 @@
                 "it": "Olasz"
             }
         },
-        "hide_settings": {
-            "label": "Beállítások gomb elrejtése",
-            "description": "Beállítások gomb elrejtése a kezdőképernyőn. \n\nVedd figyelembe, hogy ha letiltod a beállításokat a kezdőképernyőn, kizárhatod magad. \n\nEbben az esetben manuálisan kell megadnod a beállítások elérési útját, vagy törölnöd kell a böngésző sütijeit, hogy ismét hozzáférj a beállításokhoz. Saját felelősségedre használd!"
-        },
         "no_music_providers": "Nincs zeneszolgáltató konfigurálva",
         "no_music_providers_detail": "Kezdd a Music Assistant élményed zeneszolgáltatók hozzáadásával.",
         "no_player_providers": "Nincs konfigurálva lejátszószolgáltató",
