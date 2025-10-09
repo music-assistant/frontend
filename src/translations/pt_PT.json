@@ -359,10 +359,6 @@
                 "sl_SI": "Esloveno"
             }
         },
-        "hide_settings": {
-            "label": "Esconder botão de configurações",
-            "description": "Esconde o botão de configurações na página inicial.\n\nDe notar que se desativares as configurações na página inicial e no menu, poderás ficar sem acesso ao mesmo.\n\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
-        },
         "no_music_providers": "Nenhum provedor de música configurado",
         "no_music_providers_detail": "Começa a tua experiência com o Music Assistant a adicionar os teus provedores de música.",
         "no_player_providers": "Nenhum provedor de reprodução configurado",

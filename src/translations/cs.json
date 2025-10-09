@@ -362,10 +362,6 @@
                 "hu_HU": "Maďarština"
             }
         },
-        "hide_settings": {
-            "label": "Skrýt tlačítko nastavení",
-            "description": "Skrýt tlačítka nastavení na domovské obrazovce.\n\nUpozorňujeme, že pokud zakážete nastavení na domovské obrazovce a v nabídce, můžete se zablokovat.\n\nV takovém případě budete muset ručně zadat cestu k nastavení nebo vymazat soubory cookie prohlížeče, abyste znovu získali přístup k nastavení, používejte na vlastní nebezpečí!"
-        },
         "no_music_providers": "Žádní nakonfigurovaní poskytovatelé hudby",
         "no_music_providers_detail": "Začněte pracovat s Music Assistant přidáním svých poskytovatelů hudby.",
         "no_player_providers": "Nejsou nakonfigurováni žádní poskytovatelé přehrávačů",

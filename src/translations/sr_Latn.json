@@ -369,10 +369,6 @@
                 "el_GR": "Grčki"
             }
         },
-        "hide_settings": {
-            "label": "Dugme za sakrivanje podešavanja",
-            "description": "Sakrij dugme za podešavanja na početnom ekranu. \n \n Imajte na umu da ako onemogućite podešavanja na početnom ekranu i u meniju, možete se zaključati. \n \n U tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik!"
-        },
         "no_music_providers": "Nijedan muzički provajder nije konfigurisan",
         "no_music_providers_detail": "Započnite svoje iskustvo sa Music Assistant-om dodavanjem svojih muzičkih provajdera.",
         "no_player_providers": "Nijedan muzički provajder nije konfigurisan",

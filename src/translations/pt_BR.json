@@ -13,7 +13,9 @@
         "single": "Single",
         "unknown": "Tipo de álbum desconhecido",
         "audiobook": "Audiolivro",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Ao vivo",
+        "soundtrack": "Trilha sonora"
     },
     "albums": "Álbuns",
     "appears_on": "Incluído em",
@@ -289,7 +291,9 @@
             "announcements": "Configuração de anúncios",
             "airplay": "Configurações específicas do Airplay",
             "player_controls": "Controles do reprodutor",
-            "presets": "Predefinições"
+            "presets": "Predefinições",
+            "sync_options": "Opções de sincronização\/importação",
+            "builtin_playlists": "Configurações da lista de reprodução integrada"
         },
         "tts_pre_announce": {
             "label": "Pré-anunciar anúncios TTS",
@@ -364,10 +368,6 @@
                 "it": "Italiano",
                 "el_GR": "Grego"
             }
-        },
-        "hide_settings": {
-            "label": "Ocultar botão de configuração",
-            "description": "Ocultar botão de configurações na tela inicial.\n\nNote que se você desabilitar botão de configurações na tela inicial e no menu, você irá se bloquear.\n\nCaso isso ocorra, para obter acesso novamente você terá que manualmente inserir o caminho para as configurações ou apagar os cookies do seu navegador. Use por sua conta e risco!"
         },
         "no_music_providers": "Nenhum provedor de música configurado",
         "no_music_providers_detail": "Comece sua experiência com o Music Assistant adicionando seus provedores de música.",
@@ -507,7 +507,32 @@
             "label": "Permitir a reprodução neste dispositivo\/navegador",
             "description": "Ative o reprodutor incorporado (experimental) para esse dispositivo\/navegador, que permite transmitir todo o conteúdo do Music Assistant diretamente para esse dispositivo."
         },
-        "add_group_player_desc_universal": "Ao criar um Grupo Universal de Reprodutores, você pode agrupar reprodutores de diferentes provedores\/ecossistemas. \n Isso distribuirá o mesmo áudio para todos os reprodutores membros (mas não em sincronia)."
+        "add_group_player_desc_universal": "Ao criar um Grupo Universal de Reprodutores, você pode agrupar reprodutores de diferentes provedores\/ecossistemas. \n Isso distribuirá o mesmo áudio para todos os reprodutores membros (mas não em sincronia).",
+        "edit_provider": "Editar provedor: {0}",
+        "metadata": "Metadados",
+        "metadataprovider": "Provedor de metadados",
+        "music": "Música",
+        "musicprovider": "Provedor de música",
+        "player": "Reprodutor",
+        "playerprovider": "Provedor do reprodutor",
+        "plugin": "Plug-in",
+        "pluginprovider": "Provedor de plug-in",
+        "providers_total": "{0} provedor total{1}",
+        "stage": {
+            "label": "Estágio",
+            "options": {
+                "stable": "Estável",
+                "beta": "Beta",
+                "alpha": "Alfa",
+                "experimental": "Experimental",
+                "unmaintained": "Não mantido",
+                "deprecated": "Obsoleto"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Forçar layout móvel",
+            "description": "Forçar o layout móvel (com o menu de navegação na parte inferior), mesmo em telas maiores."
+        }
     },
     "show_info": "Mostrar informação",
     "show_select_boxes": "Mostrar caixas de seleção",
@@ -726,5 +751,8 @@
     },
     "homescreen_edit_enable": "Editar tela inicial",
     "homescreen_edit_disable": "Sair do modo de edição da tela inicial",
-    "lyrics_will_appear_soon": "A letra aparecerá quando a música começar..."
+    "lyrics_will_appear_soon": "A letra aparecerá quando a música começar...",
+    "radiobrowser_by_votes": "Por votos",
+    "radiobrowser_by_clicks": "Por cliques",
+    "radiobrowser_by_language": "Por idioma"
 }
