@@ -4,6 +4,7 @@
     v-bind="playerVolumeProps"
     :model-value="displayValue"
     @wheel.prevent="onWheel"
+    @click.stop
     @start="onDragStart"
     @update:model-value="onUpdateModelValue"
     @end="onDragEnd"
@@ -35,6 +36,7 @@ export default {
     const sliderRef = ref(null);
     const startValue = ref(0);
     const updateCount = ref(0);
+    const lastEnd = ref(0);
     const displayValue = ref<number>(
       typeof ctx.attrs["model-value"] === "number"
         ? (ctx.attrs["model-value"] as number)
@@ -77,7 +79,6 @@ export default {
     };
 
     const onDragStart = (value: number) => {
-      console.log("onDragStart", value);
       startValue.value = value;
       updateCount.value = 0;
       displayValue.value = value;
@@ -92,9 +93,16 @@ export default {
     };
 
     const onDragEnd = (endValue: number) => {
+      // Cooldown to avoid duplicate emits only for moible click (otherwise it fires 2 be calls)
+      const now = Date.now();
+      if (now - lastEnd.value < 250) {
+        return;
+      }
+      lastEnd.value = now;
+
       const step = playerVolumeProps.value.step;
 
-      // If we had many updates, it was a drag - emit the final value
+      // If we had many updates, that means it was a drag so we emit only the final value
       if (updateCount.value > 3) {
         displayValue.value = endValue;
         ctx.emit("update:model-value", endValue);
