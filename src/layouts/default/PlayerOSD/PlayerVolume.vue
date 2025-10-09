@@ -1,12 +1,11 @@
 <template>
   <v-slider
+    ref="sliderRef"
     v-bind="playerVolumeProps"
-    @touchstart="isThumbHidden = false"
-    @touchend="isThumbHidden = true"
-    @mouseenter="isThumbHidden = false"
-    @mouseleave="isThumbHidden = true"
     @wheel.prevent="onWheel"
-    @end="(value) => $emit('update:model-value', value)"
+    @start="onDragStart"
+    @update:model-value="onDrag"
+    @end="onDragEnd"
   >
     <!-- Dynamically inherit slots from parent -->
     <!-- @vue-ignore -->
@@ -31,13 +30,17 @@ export default {
   },
   emits: ["update:model-value"],
   setup(props, ctx) {
-    const isThumbHidden = ref(true);
+    const sliderRef = ref(null);
+    const isDragging = ref(false);
+    const startValue = ref(0);
+    const lastEmitTime = ref(0);
+    const clickCooldown = 250; // milliseconds
 
     const playerVolumeDefaults = computed(() => ({
       class: "player-volume",
       hideDetails: true,
       trackSize: 2,
-      thumbSize: isThumbHidden.value ? 0 : 10,
+      thumbSize: 12, // Always visible thumb
       step: 2,
       elevation: 0,
       style: `width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`,
@@ -58,7 +61,57 @@ export default {
       ctx.emit("update:model-value", volumeValue + volumeDelta);
     };
 
-    return { isThumbHidden, playerVolumeProps, onWheel };
+    const onDragStart = () => {
+      startValue.value = ctx.attrs["model-value"] as number;
+      isDragging.value = true;
+    };
+
+    const onDrag = (_newValue: number) => {
+      // Don't emit during drag, let the slider update visually
+      // We'll decide what to emit in onDragEnd based on the total change
+    };
+
+    const onDragEnd = (endValue: number) => {
+      const step = playerVolumeProps.value.step;
+      const diff = Math.abs(endValue - startValue.value);
+      const now = Date.now();
+
+      // If it's a small change, treat as drag and allow it
+      if (diff <= step * 2) {
+        ctx.emit("update:model-value", endValue);
+        isDragging.value = false;
+        return;
+      }
+
+      // Large change = click on track, convert to step increment
+      // Check cooldown to prevent double-clicks
+      if (now - lastEmitTime.value < clickCooldown) {
+        ctx.emit("update:model-value", startValue.value);
+        isDragging.value = false;
+        return;
+      }
+
+      // Determine direction and apply step change
+      const volumeDelta = endValue > startValue.value ? step : -step;
+      const steppedValue = Math.max(
+        0,
+        Math.min(100, startValue.value + volumeDelta),
+      );
+
+      ctx.emit("update:model-value", steppedValue);
+      lastEmitTime.value = now;
+      isDragging.value = false;
+    };
+
+    return {
+      playerVolumeProps,
+      onWheel,
+      sliderRef,
+      onDragStart,
+      onDrag,
+      onDragEnd,
+      isDragging,
+    };
   },
 };
 </script>
