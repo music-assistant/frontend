@@ -161,7 +161,10 @@
         </v-list-item>
         <!-- mute btn + volume slider + volume level text-->
         <v-list-item
-          v-if="childPlayer.volume_control != PLAYER_CONTROL_NONE"
+          v-if="
+            childPlayer.volume_control != PLAYER_CONTROL_NONE &&
+            player.group_members.includes(childPlayer.player_id)
+          "
           class="volumesliderrow"
           :link="false"
           :style="
@@ -224,10 +227,10 @@ import { getPlayerName, truncateString } from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
 import {
+  PlaybackState,
   Player,
   PLAYER_CONTROL_NONE,
   PlayerFeature,
-  PlaybackState,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
@@ -301,7 +304,13 @@ const getVolumePlayers = function (player: Player) {
       }
     }
   }
-  items.sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
+  // Sort: selected (in group) first, then by name
+  items.sort((a, b) => {
+    const aSelected = player.group_members.includes(a.player_id);
+    const bSelected = player.group_members.includes(b.player_id);
+    if (aSelected !== bSelected) return aSelected ? -1 : 1;
+    return a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1;
+  });
   return items;
 };
 
