@@ -1,5 +1,5 @@
 import { computed, reactive } from "vue";
-import { MediaType, Player, PlayerQueue, QueueItem } from "./api/interfaces";
+import { MediaType, Player, PlayerQueue, QueueItem, MediaItemChapter } from "./api/interfaces";
 
 import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
@@ -43,6 +43,7 @@ interface Store {
   activePlayer?: Player;
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
+  curChapter?: MediaItemChapter;
   globalSearchTerm?: string;
   globalSearchType?: MediaType;
   prevState?: StoredState;
@@ -100,6 +101,19 @@ export const store: Store = reactive({
   curQueueItem: computed(() => {
     if (store.activePlayerQueue && store.activePlayerQueue.active)
       return store.activePlayerQueue.current_item;
+    return undefined;
+  }),
+  curChapter: computed(() => {
+    if (store.curQueueItem?.media_item?.metadata?.chapters) {
+      return store.curQueueItem.media_item.metadata.chapters.find((chapter) => {
+        if (!store.activePlayerQueue?.elapsed_time) return undefined;
+        if (!chapter.end) return undefined;
+        return (
+          chapter.start < store.activePlayerQueue?.elapsed_time &&
+          chapter.end > store.activePlayerQueue?.elapsed_time
+        );
+      });
+    }
     return undefined;
   }),
   globalSearchTerm: undefined,

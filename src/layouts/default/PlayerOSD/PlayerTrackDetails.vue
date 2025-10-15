@@ -164,6 +164,16 @@
           >
             {{ store.curQueueItem.media_item.podcast.name }}
           </div>
+          <!-- audiobook - current chapter as subtitle -->
+          <div
+            v-else-if="
+              store.curQueueItem?.media_item &&
+              store.curQueueItem.media_item?.media_type == MediaType.AUDIOBOOK &&
+              store.curChapter
+            "
+          >
+            {{ store.curChapter.name }}
+          </div>
           <!-- live (stream) metadata (artist + title) -->
           <div
             v-else-if="

@@ -151,6 +151,14 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
+            <!-- SUBTITLE: player powered off -->
+            <v-card-subtitle
+              v-if="store.curChapter"
+              class="text-h6 text-md-h5 text-lg-h4"
+            >
+              {{ store.curChapter.name }}
+            </v-card-subtitle>
+
             <!-- live (stream) metadata (artist + title) -->
             <v-card-subtitle
               v-if="
