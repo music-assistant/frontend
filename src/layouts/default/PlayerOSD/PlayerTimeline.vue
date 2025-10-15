@@ -93,27 +93,13 @@ const chapterTime = computed(() =>
 );
 
 // computed properties
-const curChapter = computed(() => {
-  if (store.curQueueItem?.media_item?.metadata?.chapters) {
-    return store.curQueueItem.media_item.metadata.chapters.find((chapter) => {
-      if (!store.activePlayerQueue?.elapsed_time) return null;
-      if (!chapter.end) return null;
-      return (
-        chapter.start < store.activePlayerQueue?.elapsed_time &&
-        chapter.end > store.activePlayerQueue?.elapsed_time
-      );
-    });
-  }
-  return null;
-});
-
 const playerCurQueueItemDuration = computed(() => {
   if (
     chapterTime.value &&
     store.curQueueItem?.media_item?.media_type == MediaType.AUDIOBOOK
   ) {
-    if (!curChapter.value?.end) return 0;
-    return curChapter.value?.end - curChapter.value?.start;
+    if (!store.curChapter?.end) return 0;
+    return store.curChapter?.end - store.curChapter?.start;
   }
   return store.curQueueItem?.duration;
 });
@@ -130,8 +116,8 @@ const curQueueItemTime = computed(() => {
       chapterTime.value &&
       store.curQueueItem?.media_item?.media_type == MediaType.AUDIOBOOK
     ) {
-      if (!curChapter.value?.start) return 0;
-      return store.activePlayerQueue?.elapsed_time - curChapter.value?.start;
+      if (!store.curChapter?.start) return 0;
+      return store.activePlayerQueue?.elapsed_time - store.curChapter?.start;
     }
     return store.activePlayerQueue.elapsed_time;
   }
@@ -183,7 +169,7 @@ const stopDragging = () => {
   isDragging.value = false;
   if (!isDragging.value && store.activePlayer) {
     var seekTime = tempTime.value;
-    if (curChapter.value?.start && chapterTime.value) seekTime = curChapter.value?.start + seekTime;
+    if (store.curChapter?.start && chapterTime.value) seekTime = store.curChapter?.start + seekTime;
     api.playerCommandSeek(store.activePlayer.player_id, Math.round(seekTime));
   }
 };
