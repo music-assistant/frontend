@@ -12,7 +12,7 @@
         "
         style="width: 100%"
         :min="0"
-        :max="store.curQueueItem?.duration"
+        :max="playerCurQueueItemDuration"
         hide-details
         :track-size="4"
         :thumb-size="isThumbHidden ? 0 : 10"
@@ -88,36 +88,63 @@ const isDragging = ref(false);
 const curTimeValue = ref(0);
 const tempTime = ref(0);
 
+const chapterTime = computed(() =>
+  localStorage.getItem("frontend.settings.audiobook_chapter_time") == "true"
+);
+
 // computed properties
-const playerCurTimeStr = computed(() => {
-  if (!store.curQueueItem) return "0:00";
-  if (showRemainingTime.value) {
-    return `-${formatDuration(
-      store.curQueueItem.duration - curQueueItemTime.value,
-    )}`;
-  } else {
-    return `${formatDuration(curQueueItemTime.value)}`;
+const playerCurQueueItemDuration = computed(() => {
+  if (
+    chapterTime.value &&
+    store.curQueueItem?.media_item?.media_type == MediaType.AUDIOBOOK
+  ) {
+    if (!store.curChapter?.end) return 0;
+    return store.curChapter?.end - store.curChapter?.start;
   }
+  return store.curQueueItem?.duration;
 });
-const playerTotalTimeStr = computed(() => {
-  if (!store.curQueueItem) return "";
-  if (!store.curQueueItem.duration) return "";
-  if (store.curQueueItem.media_item?.media_type == MediaType.RADIO) return "";
-  const totalSecs = store.curQueueItem.duration;
-  return formatDuration(totalSecs);
-});
+
 const curQueueItemTime = computed(() => {
   if (isDragging.value) {
     // eslint-disable-next-line vue/no-side-effects-in-computed-properties
     tempTime.value = curTimeValue.value;
     return curTimeValue.value;
   }
-  if (store.activePlayerQueue) return store.activePlayerQueue.elapsed_time;
+
+  if (store.activePlayerQueue) {
+    if (
+      chapterTime.value &&
+      store.curQueueItem?.media_item?.media_type == MediaType.AUDIOBOOK
+    ) {
+      if (!store.curChapter?.start) return 0;
+      return store.activePlayerQueue?.elapsed_time - store.curChapter?.start;
+    }
+    return store.activePlayerQueue.elapsed_time;
+  }
   return 0;
+});
+
+const playerCurTimeStr = computed(() => {
+  if (!playerCurQueueItemDuration.value || !curQueueItemTime.value) return "0:00";
+  if (showRemainingTime.value) {
+    return `-${formatDuration(
+      playerCurQueueItemDuration.value - curQueueItemTime.value,
+    )}`;
+  } else {
+    return `${formatDuration(curQueueItemTime.value)}`;
+  }
+});
+
+const playerTotalTimeStr = computed(() => {
+  if (!playerCurQueueItemDuration.value || !store.curQueueItem) return "";
+  if (store.curQueueItem.media_item?.media_type == MediaType.RADIO) return "";
+  const totalSecs = playerCurQueueItemDuration.value;
+  return formatDuration(totalSecs);
 });
 
 const chapterTicks = computed(() => {
   const ticks: Record<number, string> = {};
+  if (chapterTime.value) return [];
   if (store.curQueueItem?.media_item?.metadata?.chapters) {
     store.curQueueItem.media_item.metadata.chapters.forEach((chapter) => {
       ticks[chapter.start] = chapter.name;
@@ -141,10 +168,9 @@ const startDragging = function () {
 const stopDragging = () => {
   isDragging.value = false;
   if (!isDragging.value && store.activePlayer) {
-    api.playerCommandSeek(
-      store.activePlayer.player_id,
-      Math.round(tempTime.value),
-    );
+    var seekTime = tempTime.value;
+    if (store.curChapter?.start && chapterTime.value) seekTime = store.curChapter?.start + seekTime;
+    api.playerCommandSeek(store.activePlayer.player_id, Math.round(seekTime));
   }
 };
 
