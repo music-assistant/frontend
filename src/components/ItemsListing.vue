@@ -62,6 +62,7 @@
           >
             <PanelviewItem
               :item="item"
+              :show-provider="showProvider"
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :show-actions="
@@ -86,6 +87,7 @@
           >
             <PanelviewItemCompact
               :item="item"
+              :show-provider="showProvider"
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
@@ -268,7 +270,7 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
   showTrackNumber: true,
-  showProvider: Object.keys(api.providers).length > 1,
+  showProvider: false,
   showAlbum: true,
   showFavoritesOnlyFilter: true,
   showDuration: true,

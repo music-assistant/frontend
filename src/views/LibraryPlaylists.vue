@@ -3,7 +3,7 @@
     itemtype="playlists"
     path="libraryplaylists"
     :show-duration="false"
-    :show-provider="true"
+    :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
@@ -20,18 +20,18 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import api from "@/plugins/api";
 import {
-  ProviderFeature,
   EventMessage,
   EventType,
   MediaType,
+  ProviderFeature,
 } from "@/plugins/api/interfaces";
-import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 defineOptions({
   name: "Playlists",

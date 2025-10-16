@@ -270,7 +270,6 @@
               style="margin-top: 6px"
             />
           </div>
-
           <!-- Description/metadata -->
           <v-card-subtitle
             v-if="shortDescription"
@@ -324,35 +323,34 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from "./ProviderIcon.vue";
-import { store } from "@/plugins/store";
-import { useDisplay } from "vuetify";
+import Toolbar from "@/components/Toolbar.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import {
+  handlePlayBtnClick,
+  markdownToHtml,
+  parseBool,
+  truncateString,
+} from "@/helpers/utils";
+import {
+  ContextMenuItem,
+  getContextMenuItems,
+} from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { ImageType, Track, MediaType } from "@/plugins/api/interfaces";
 import type {
   Album,
   Artist,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
+import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
-import MediaItemThumb from "./MediaItemThumb.vue";
-import { getImageThumbForItem } from "./MediaItemThumb.vue";
 import { useRouter } from "vue-router";
-import {
-  parseBool,
-  markdownToHtml,
-  truncateString,
-  handlePlayBtnClick,
-} from "@/helpers/utils";
-import {
-  ContextMenuItem,
-  getContextMenuItems,
-} from "@/layouts/default/ItemContextMenu.vue";
-import Toolbar from "@/components/Toolbar.vue";
+import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
-import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import MediaItemThumb, { getImageThumbForItem } from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
+import ProviderIcon from "./ProviderIcon.vue";
 
 // properties
 export interface Props {

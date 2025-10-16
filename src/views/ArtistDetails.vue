@@ -65,18 +65,18 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import MediaItemImages from "@/components/MediaItemImages.vue";
+import ProviderDetails from "@/components/ProviderDetails.vue";
+import { api } from "@/plugins/api";
 import {
   EventMessage,
   EventType,
   MediaItemType,
   type Artist,
 } from "@/plugins/api/interfaces";
-import ProviderDetails from "@/components/ProviderDetails.vue";
-import MediaItemImages from "@/components/MediaItemImages.vue";
-import { api } from "@/plugins/api";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 export interface Props {
   itemId: string;
