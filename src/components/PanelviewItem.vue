@@ -34,9 +34,8 @@
           :item="isAvailable ? item : undefined"
           style="height: auto"
         />
-        <div style="position: absolute; left: 6px; top: 6px; z-index: 2">
+        <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
           <ProviderIcon
-            v-if="showProvider && 'provider_mappings' in item"
             :domain="
               item.media_type == MediaType.PLAYLIST
                 ? item.provider_mappings[0].provider_domain
