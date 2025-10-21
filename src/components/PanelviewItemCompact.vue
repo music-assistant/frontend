@@ -31,7 +31,7 @@
         <MediaItemThumb :item="isAvailable ? item : undefined" />
         <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
           <ProviderIcon
-            v-if="showProvider && 'provider_mappings' in item"
+            v-if="showProviderOnCover && 'provider_mappings' in item"
             :domain="
               item.media_type == MediaType.PLAYLIST
                 ? item.provider_mappings[0].provider_domain
@@ -146,7 +146,7 @@ export interface Props {
   isSelected?: boolean;
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
-  showProvider?: boolean;
+  showProviderOnCover?: boolean;
   isAvailable?: boolean;
   isPlaying?: boolean;
   parentItem?: MediaItemType;
@@ -157,7 +157,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   isSelected: false,
   showCheckboxes: false,
   permanentOverlay: false,
-  showProvider: false,
+  showProviderOnCover: false,
   isAvailable: true,
   parentItem: undefined,
 });

@@ -54,7 +54,7 @@
             icon: 'mdi-file-music',
             items: searchResult.tracks,
           }"
-          :show-provider="true"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -63,7 +63,7 @@
             icon: 'mdi-account-music',
             items: searchResult.artists,
           }"
-          :show-provider="true"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -72,7 +72,7 @@
             icon: 'mdi-album',
             items: searchResult.albums,
           }"
-          :show-provider="true"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -81,7 +81,7 @@
             icon: 'mdi-playlist-music',
             items: searchResult.playlists,
           }"
-          :show-provider="true"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -90,7 +90,7 @@
             icon: 'mdi-podcast',
             items: searchResult.podcasts,
           }"
-          :show-provider="true"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -99,7 +99,7 @@
             icon: 'mdi-book-play-outline',
             items: searchResult.audiobooks,
           }"
-          :show-provider="true"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -108,7 +108,7 @@
             icon: 'mdi-radio',
             items: searchResult.radio,
           }"
-          :show-provider="true"
+          :show-provider-on-cover="true"
         />
       </div>
       <!-- tracks-only searchresult -->

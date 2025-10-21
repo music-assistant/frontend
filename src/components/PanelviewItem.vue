@@ -29,22 +29,10 @@
         />
       </v-overlay>
 
-      <div style="position: relative">
-        <MediaItemThumb
-          :item="isAvailable ? item : undefined"
-          style="height: auto"
-        />
-        <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
-          <ProviderIcon
-            :domain="
-              item.media_type == MediaType.PLAYLIST
-                ? item.provider_mappings[0].provider_domain
-                : item.provider
-            "
-            :size="22"
-          />
-        </div>
-      </div>
+      <MediaItemThumb
+        :item="isAvailable ? item : undefined"
+        style="height: auto"
+      />
 
       <v-list-item
         variant="text"
@@ -189,7 +177,6 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
-import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 // properties
@@ -198,7 +185,6 @@ export interface Props {
   size?: number;
   isSelected: boolean;
   showCheckboxes?: boolean;
-  showProvider?: boolean;
   showMediaType?: boolean;
   showActions?: boolean;
   showTrackNumber?: boolean;
@@ -209,7 +195,6 @@ export interface Props {
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
   showCheckboxes: false,
-  showProvider: false,
   showActions: false,
   showTrackNumber: false,
   showMediaType: false,

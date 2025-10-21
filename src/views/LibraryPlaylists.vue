@@ -3,7 +3,7 @@
     itemtype="playlists"
     path="libraryplaylists"
     :show-duration="false"
-    :show-provider="false"
+    :show-provider="true"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"

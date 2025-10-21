@@ -68,7 +68,7 @@
         <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
           <PanelviewItemCompact
             :item="item"
-            :show-provider="showProvider"
+            :show-provider-on-cover="showProviderOnCover"
             :permanent-overlay="
               ![MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO].includes(
                 item.media_type,
@@ -116,12 +116,12 @@ export interface WidgetRow {
 interface Props {
   widgetRow: WidgetRow;
   editMode?: boolean;
-  showProvider?: boolean;
+  showProviderOnCover?: boolean;
 }
 
 const emit = defineEmits(["update:settings"]);
 
-const { widgetRow } = defineProps<Props>();
+const { widgetRow, showProviderOnCover } = defineProps<Props>();
 </script>
 
 <style scoped>

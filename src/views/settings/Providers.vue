@@ -349,17 +349,6 @@ const getProviderTypeIcon = function (type: ProviderType) {
   return iconMap[type] || "mdi-help-circle";
 };
 
-const getProviderTypeOrder = function (type: ProviderType) {
-  // Define sort order: player -> music -> metadata -> plugin
-  const order = {
-    [ProviderType.PLAYER]: 1,
-    [ProviderType.MUSIC]: 2,
-    [ProviderType.METADATA]: 3,
-    [ProviderType.PLUGIN]: 4,
-  };
-  return order[type] || 999;
-};
-
 const getAllFilteredProviders = function () {
   let filtered = [...providerConfigs.value];
 
@@ -384,13 +373,9 @@ const getAllFilteredProviders = function () {
     });
   }
 
-  return filtered.sort((a, b) => {
-    const typeOrder =
-      getProviderTypeOrder(a.type) - getProviderTypeOrder(b.type);
-    if (typeOrder !== 0) return typeOrder;
-
-    return getProviderName(a).localeCompare(getProviderName(b));
-  });
+  return filtered.sort((a, b) =>
+    getProviderName(a).localeCompare(getProviderName(b)),
+  );
 };
 </script>
 
