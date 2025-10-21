@@ -84,7 +84,91 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - uses: music-assistant/frontend-release-pr-action@main
+      - name: Wait for PyPI availability
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+          echo "Waiting for music-assistant-frontend==$VERSION to be available on PyPI..."
+          
+          # Wait up to 5 minutes (30 attempts * 10 seconds)
+          MAX_ATTEMPTS=30
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Checking PyPI..."
+            
+            # Check if the package version is available on PyPI
+            if pip index versions music-assistant-frontend 2>/dev/null | grep -q "$VERSION"; then
+              echo "✅ Package music-assistant-frontend==$VERSION is now available on PyPI!"
+              exit 0
+            fi
+            
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "Package not yet available, waiting 10 seconds..."
+              sleep 10
+            fi
+            
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          
+          echo "⚠️ Warning: Package not found on PyPI after 5 minutes, proceeding anyway..."
+          exit 0
+
+      - name: Checkout server repository
+        uses: actions/checkout@v4
         with:
-          github_token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
-          new_release_version: ${{ needs.release.outputs.version }}
+          repository: music-assistant/server
+          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+
+      - name: Get release notes
+        id: release_notes
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+
+          # Get the release notes from the frontend release
+          RELEASE_NOTES=$(gh release view "$VERSION" --repo music-assistant/frontend --json body --jq '.body')
+
+          # Save to file and environment for use in PR
+          echo "$RELEASE_NOTES" > release_notes.txt
+
+          # Set multiline output
+          {
+            echo 'notes<<EOF'
+            echo "$RELEASE_NOTES"
+            echo EOF
+          } >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+
+      - name: Update frontend version
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+
+          # Update pyproject.toml
+          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$VERSION\",/" pyproject.toml
+
+          # Update requirements_all.txt
+          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$VERSION/" requirements_all.txt
+
+          # Remove backup files
+          rm -f pyproject.toml.bak requirements_all.txt.bak
+
+      - name: Create Pull Request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          commit-message: "⬆️ Update music-assistant-frontend to ${{ needs.release.outputs.version }}"
+          branch: "auto-update-frontend-${{ needs.release.outputs.version }}"
+          delete-branch: true
+          title: "⬆️ Update music-assistant-frontend to ${{ needs.release.outputs.version }}"
+          body: |
+            Update music-assistant-frontend to version ${{ needs.release.outputs.version }}
+
+            ## Frontend Release Notes
+
+            ${{ steps.release_notes.outputs.notes }}
+
+            ---
+
+            Related frontend release: https://github.com/music-assistant/frontend/releases/tag/${{ needs.release.outputs.version }}
+          labels: dependencies
