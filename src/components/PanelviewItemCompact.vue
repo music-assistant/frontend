@@ -29,6 +29,17 @@
       </v-overlay>
       <div class="thumb-container">
         <MediaItemThumb :item="isAvailable ? item : undefined" />
+        <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
+          <ProviderIcon
+            v-if="showProviderOnCover && 'provider_mappings' in item"
+            :domain="
+              item.media_type == MediaType.PLAYLIST
+                ? item.provider_mappings[0].provider_domain
+                : item.provider
+            "
+            :size="20"
+          />
+        </div>
         <!-- Now Playing Badge -->
         <NowPlayingBadge
           v-if="isPlaying"
@@ -126,6 +137,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import MediaItemThumb from "./MediaItemThumb.vue";
+import ProviderIcon from "./ProviderIcon.vue";
 
 // properties
 export interface Props {
@@ -134,6 +146,7 @@ export interface Props {
   isSelected?: boolean;
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
+  showProviderOnCover?: boolean;
   isAvailable?: boolean;
   isPlaying?: boolean;
   parentItem?: MediaItemType;
@@ -144,6 +157,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   isSelected: false,
   showCheckboxes: false,
   permanentOverlay: false,
+  showProviderOnCover: false,
   isAvailable: true,
   parentItem: undefined,
 });

@@ -88,6 +88,7 @@
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
+        "provider_type": "Type",
         "advanced_settings": "Advanced settings",
         "check_docs": "Check out the documentation",
         "codeowners": "Authors\/credits",

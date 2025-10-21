@@ -68,6 +68,7 @@
         <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
           <PanelviewItemCompact
             :item="item"
+            :show-provider-on-cover="showProviderOnCover"
             :permanent-overlay="
               ![MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO].includes(
                 item.media_type,
@@ -94,8 +95,8 @@ import {
   MediaItemTypeOrItemMapping,
   MediaType,
 } from "@/plugins/api/interfaces";
-import ProviderIcon from "./ProviderIcon.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import ProviderIcon from "./ProviderIcon.vue";
 
 export interface WidgetRowSettings {
   position: number;
@@ -115,11 +116,12 @@ export interface WidgetRow {
 interface Props {
   widgetRow: WidgetRow;
   editMode?: boolean;
+  showProviderOnCover?: boolean;
 }
 
 const emit = defineEmits(["update:settings"]);
 
-const { widgetRow } = defineProps<Props>();
+const { widgetRow, showProviderOnCover } = defineProps<Props>();
 </script>
 
 <style scoped>
