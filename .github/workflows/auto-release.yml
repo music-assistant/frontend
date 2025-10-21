@@ -12,6 +12,9 @@ permissions:
 jobs:
   check-and-release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.next_version.outputs.version }}
+      should_release: ${{ steps.check_commits.outputs.has_commits }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -76,28 +79,21 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
-      - name: Get release drafter output
-        id: release_drafter
-        if: steps.check_commits.outputs.has_commits == 'true'
-        uses: release-drafter/release-drafter@v6.1.0
-        with:
-          config-name: release-drafter.yml
-          version: ${{ steps.next_version.outputs.version }}
-          publish: true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: Create GitHub release
-        if: steps.check_commits.outputs.has_commits == 'true'
-        uses: softprops/action-gh-release@v2.3.4
-        with:
-          tag_name: ${{ steps.next_version.outputs.version }}
-          name: ${{ steps.release_drafter.outputs.name }}
-          body: ${{ steps.release_drafter.outputs.body }}
-          draft: false
-          prerelease: false
-
-      - name: No commits to release
-        if: steps.check_commits.outputs.has_commits == 'false'
+      - name: Log release decision
         run: |
-          echo "No new commits since last release. Skipping release creation."
+          if [ "${{ steps.check_commits.outputs.has_commits }}" == "true" ]; then
+            echo "✅ Will create release ${{ steps.next_version.outputs.version }}"
+          else
+            echo "⏭️ Skipping release - not enough commits"
+          fi
+
+  trigger-release:
+    name: Trigger Release Workflow
+    needs: check-and-release
+    if: needs.check-and-release.outputs.should_release == 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.check-and-release.outputs.version }}
+    secrets:
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      PRIVILEGED_GITHUB_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}

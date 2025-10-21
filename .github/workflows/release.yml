@@ -1,34 +1,63 @@
-name: Publish releases
+name: Publish Release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g., 2.16.7)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: "Version number (e.g., 2.16.7)"
+        required: true
+        type: string
+    secrets:
+      PYPI_TOKEN:
+        required: true
+      PRIVILEGED_GITHUB_TOKEN:
+        required: true
+
 env:
   PYTHON_VERSION: "3.12"
   NODE_VERSION: "22.x"
   NODE_OPTIONS: --max_old_space_size=6144
 
 # Set default workflow permissions
-# All scopes not mentioned here are set to no access
-# https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
 permissions:
-  actions: none
+  contents: write
 
 jobs:
-  release:
-    name: Release
+  create-release:
+    name: Create Release
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.vars.outputs.tag }}
-    permissions:
-      contents: write # Required to upload release assets
+      version: ${{ inputs.version }}
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v5
 
-      - name: Get tag
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Generate release notes with Release Drafter
+        id: release_drafter
+        uses: release-drafter/release-drafter@v6.1.0
+        with:
+          config-name: release-drafter.yml
+          version: ${{ inputs.version }}
+          publish: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-publish:
+    name: Build and Publish
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.version }}
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
@@ -46,7 +75,7 @@ jobs:
           yarn install
           python3 -m pip install build tomli tomli-w
 
-      - name: Set Python project version from tag
+      - name: Set Python project version
         shell: python
         run: |-
           import tomli
@@ -55,12 +84,12 @@ jobs:
           with open("pyproject.toml", "rb") as f:
             pyproject = tomli.load(f)
 
-          pyproject["project"]["version"] = "${{ steps.vars.outputs.tag }}"
+          pyproject["project"]["version"] = "${{ inputs.version }}"
 
           with open("pyproject.toml", "wb") as f:
             tomli_w.dump(pyproject, f)
 
-      - name: Build and release package
+      - name: Build package
         run: |
           yarn build
           rm -rf dist music_assistant_frontend.egg-info
@@ -73,43 +102,42 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2.4.1
-        with:
-          files: |
-            dist/*.whl
-            dist/*.tar.gz
+        run: |
+          gh release upload "${{ inputs.version }}" dist/*.whl dist/*.tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   server-repo-pr:
     name: Server repo PR
-    needs: release
+    needs: build-and-publish
     runs-on: ubuntu-latest
     steps:
       - name: Wait for PyPI availability
         run: |
-          VERSION="${{ needs.release.outputs.version }}"
+          VERSION="${{ inputs.version }}"
           echo "Waiting for music-assistant-frontend==$VERSION to be available on PyPI..."
-          
+
           # Wait up to 5 minutes (30 attempts * 10 seconds)
           MAX_ATTEMPTS=30
           ATTEMPT=1
-          
+
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
             echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Checking PyPI..."
-            
+
             # Check if the package version is available on PyPI
             if pip index versions music-assistant-frontend 2>/dev/null | grep -q "$VERSION"; then
               echo "✅ Package music-assistant-frontend==$VERSION is now available on PyPI!"
               exit 0
             fi
-            
+
             if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
               echo "Package not yet available, waiting 10 seconds..."
               sleep 10
             fi
-            
+
             ATTEMPT=$((ATTEMPT + 1))
           done
-          
+
           echo "⚠️ Warning: Package not found on PyPI after 5 minutes, proceeding anyway..."
           exit 0
 
@@ -122,7 +150,7 @@ jobs:
       - name: Get release notes
         id: release_notes
         run: |
-          VERSION="${{ needs.release.outputs.version }}"
+          VERSION="${{ inputs.version }}"
 
           # Get the release notes from the frontend release
           RELEASE_NOTES=$(gh release view "$VERSION" --repo music-assistant/frontend --json body --jq '.body')
@@ -141,7 +169,7 @@ jobs:
 
       - name: Update frontend version
         run: |
-          VERSION="${{ needs.release.outputs.version }}"
+          VERSION="${{ inputs.version }}"
 
           # Update pyproject.toml
           sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$VERSION\",/" pyproject.toml
@@ -157,12 +185,12 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
-          commit-message: "⬆️ Update music-assistant-frontend to ${{ needs.release.outputs.version }}"
-          branch: "auto-update-frontend-${{ needs.release.outputs.version }}"
+          commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
+          branch: "auto-update-frontend-${{ inputs.version }}"
           delete-branch: true
-          title: "⬆️ Update music-assistant-frontend to ${{ needs.release.outputs.version }}"
+          title: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
           body: |
-            Update music-assistant-frontend to version ${{ needs.release.outputs.version }}
+            Update music-assistant-frontend to version ${{ inputs.version }}
 
             ## Frontend Release Notes
 
@@ -170,5 +198,5 @@ jobs:
 
             ---
 
-            Related frontend release: https://github.com/music-assistant/frontend/releases/tag/${{ needs.release.outputs.version }}
+            Related frontend release: https://github.com/music-assistant/frontend/releases/tag/${{ inputs.version }}
           labels: dependencies
