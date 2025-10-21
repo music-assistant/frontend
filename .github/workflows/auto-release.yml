@@ -21,8 +21,8 @@ jobs:
       - name: Check for new commits
         id: check_commits
         run: |
-          # Get the latest release (including prereleases)
-          LATEST_RELEASE=$(gh release list --limit 1 --json createdAt,tagName --jq '.[0]' 2>/dev/null || echo "")
+          # Get the latest PUBLISHED release (exclude drafts)
+          LATEST_RELEASE=$(gh release list --exclude-drafts --limit 1 --json createdAt,tagName --jq '.[0]' 2>/dev/null || echo "")
 
           if [ -z "$LATEST_RELEASE" ]; then
             echo "No previous releases found"
@@ -83,7 +83,7 @@ jobs:
         with:
           config-name: release-drafter.yml
           version: ${{ steps.next_version.outputs.version }}
-          publish: false
+          publish: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -94,6 +94,7 @@ jobs:
           tag_name: ${{ steps.next_version.outputs.version }}
           name: ${{ steps.release_drafter.outputs.name }}
           body: ${{ steps.release_drafter.outputs.body }}
+          draft: false
           prerelease: false
 
       - name: No commits to release
