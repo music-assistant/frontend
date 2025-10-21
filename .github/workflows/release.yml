@@ -144,14 +144,7 @@ jobs:
           echo "⚠️ Warning: Package not found on PyPI after 5 minutes, proceeding anyway..."
           exit 0
 
-      - name: Checkout frontend repository for git history
-        uses: actions/checkout@v4
-        with:
-          repository: music-assistant/frontend
-          fetch-depth: 0
-          path: frontend-repo
-
-      - name: Get release notes and contributors
+      - name: Get release notes
         id: release_notes
         run: |
           VERSION="${{ inputs.version }}"
@@ -162,61 +155,13 @@ jobs:
           RELEASE_NOTES=$(echo "$RELEASE_DATA" | jq -r '.body')
 
           # Fix relative links in release notes to point to frontend repo
-          # Convert #123 to https://github.com/music-assistant/frontend/pull/123
-          RELEASE_NOTES=$(echo "$RELEASE_NOTES" | sed -E 's/#([0-9]+)/https:\/\/github.com\/music-assistant\/frontend\/pull\/\1/g')
-
-          # Get contributors for this release
-          cd frontend-repo
-
-          # Get previous release tag
-          PREVIOUS_TAG=$(gh release list --repo music-assistant/frontend --exclude-drafts --limit 2 --json tagName --jq '.[1].tagName' 2>/dev/null || echo "")
-
-          if [ -z "$PREVIOUS_TAG" ]; then
-            # First release or can't find previous, get last 20 commits
-            RAW_CONTRIBUTORS=$(git log -20 --format='%an|%ae' 2>/dev/null | sort -u || echo "")
-          else
-            # Get contributors between releases
-            RAW_CONTRIBUTORS=$(git log --format='%an|%ae' ${PREVIOUS_TAG}..${VERSION} 2>/dev/null | sort -u || echo "")
-          fi
-
-          cd ..
-
-          # Format contributors with GitHub avatars
-          CONTRIBUTORS_MD=""
-          while IFS='|' read -r name email; do
-            if [ -n "$name" ]; then
-              # Extract GitHub username from email
-              if echo "$email" | grep -q "users.noreply.github.com"; then
-                # Format: 123456+username@users.noreply.github.com or username@users.noreply.github.com
-                GITHUB_USER=$(echo "$email" | sed 's/@users.noreply.github.com//' | sed 's/^[0-9]*+//')
-              elif echo "$email" | grep -q "@github.com"; then
-                # Format: username@github.com
-                GITHUB_USER=$(echo "$email" | sed 's/@github.com//')
-              else
-                # Fallback: try lowercase name without spaces
-                GITHUB_USER=$(echo "$name" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | tr -d ',' | tr -d '.')
-              fi
-
-              # Create markdown with avatar
-              if [ -n "$GITHUB_USER" ]; then
-                CONTRIBUTORS_MD="${CONTRIBUTORS_MD}<img src=\"https://github.com/${GITHUB_USER}.png?size=40\" width=\"40\" height=\"40\" alt=\"${name}\" /> [@${GITHUB_USER}](https://github.com/${GITHUB_USER})  "
-              else
-                CONTRIBUTORS_MD="${CONTRIBUTORS_MD}**${name}**  "
-              fi
-              CONTRIBUTORS_MD="${CONTRIBUTORS_MD}"$'\n'
-            fi
-          done <<< "$RAW_CONTRIBUTORS"
+          # Convert frontend#123 or #123 to [#123](https://github.com/music-assistant/frontend/pull/123)
+          RELEASE_NOTES=$(echo "$RELEASE_NOTES" | sed -E 's/(^|[^[])(frontend)?#([0-9]+)/\1[#\3](https:\/\/github.com\/music-assistant\/frontend\/pull\/\3)/g')
 
           # Set multiline output
           {
             echo 'notes<<EOF'
             echo "$RELEASE_NOTES"
-            echo EOF
-          } >> $GITHUB_OUTPUT
-
-          {
-            echo 'contributors<<EOF'
-            echo "$CONTRIBUTORS_MD"
             echo EOF
           } >> $GITHUB_OUTPUT
         env:
@@ -255,12 +200,6 @@ jobs:
             Update music-assistant-frontend to version [${{ inputs.version }}](https://github.com/music-assistant/frontend/releases/tag/${{ inputs.version }})
 
             ${{ steps.release_notes.outputs.notes }}
-
-            ---
-
-            ## Contributors
-
-            ${{ steps.release_notes.outputs.contributors }}
 
           labels: |
             dependencies
