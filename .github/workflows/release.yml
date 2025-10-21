@@ -41,12 +41,22 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v5
 
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ inputs.version }}" -m "Release ${{ inputs.version }}"
+          git push origin "${{ inputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Generate release notes with Release Drafter
         id: release_drafter
         uses: release-drafter/release-drafter@v6.1.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
+          tag: ${{ inputs.version }}
           publish: true
           prerelease: false
         env:
