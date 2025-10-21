@@ -141,22 +141,42 @@ jobs:
           echo "⚠️ Warning: Package not found on PyPI after 5 minutes, proceeding anyway..."
           exit 0
 
-      - name: Checkout server repository
+      - name: Checkout frontend repository for git history
         uses: actions/checkout@v4
         with:
-          repository: music-assistant/server
-          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          repository: music-assistant/frontend
+          fetch-depth: 0
+          path: frontend-repo
 
-      - name: Get release notes
+      - name: Get release notes and contributors
         id: release_notes
         run: |
           VERSION="${{ inputs.version }}"
 
           # Get the release notes from the frontend release
-          RELEASE_NOTES=$(gh release view "$VERSION" --repo music-assistant/frontend --json body --jq '.body')
+          RELEASE_DATA=$(gh release view "$VERSION" --repo music-assistant/frontend --json body)
 
-          # Save to file and environment for use in PR
-          echo "$RELEASE_NOTES" > release_notes.txt
+          RELEASE_NOTES=$(echo "$RELEASE_DATA" | jq -r '.body')
+
+          # Fix relative links in release notes to point to frontend repo
+          # Convert #123 to https://github.com/music-assistant/frontend/pull/123
+          RELEASE_NOTES=$(echo "$RELEASE_NOTES" | sed -E 's/#([0-9]+)/https:\/\/github.com\/music-assistant\/frontend\/pull\/\1/g')
+
+          # Get contributors for this release
+          cd frontend-repo
+
+          # Get previous release tag
+          PREVIOUS_TAG=$(gh release list --repo music-assistant/frontend --exclude-drafts --limit 2 --json tagName --jq '.[1].tagName' 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            # First release or can't find previous, get last 20 commits
+            CONTRIBUTORS=$(git log -20 --format='%an' 2>/dev/null | sort -u | paste -sd ", " - || echo "")
+          else
+            # Get contributors between releases
+            CONTRIBUTORS=$(git log --format='%an' ${PREVIOUS_TAG}..${VERSION} 2>/dev/null | sort -u | paste -sd ", " - || echo "")
+          fi
+
+          cd ..
 
           # Set multiline output
           {
@@ -164,8 +184,17 @@ jobs:
             echo "$RELEASE_NOTES"
             echo EOF
           } >> $GITHUB_OUTPUT
+
+          echo "contributors=$CONTRIBUTORS" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+
+      - name: Checkout server repository
+        uses: actions/checkout@v4
+        with:
+          repository: music-assistant/server
+          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          path: .
 
       - name: Update frontend version
         run: |
@@ -185,18 +214,17 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
-          commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
+          commit-message: "⬆️ Update music-assistant-frontend to [${{ inputs.version }}"
           branch: "auto-update-frontend-${{ inputs.version }}"
           delete-branch: true
-          title: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
+          title: "⬆️ Update music-assistant-frontend to [${{ inputs.version }}](https://github.com/music-assistant/frontend/releases/tag/${{ inputs.version }})"
           body: |
             Update music-assistant-frontend to version ${{ inputs.version }}
 
-            ## Frontend Release Notes
-
             ${{ steps.release_notes.outputs.notes }}
 
-            ---
+            ## Contributors
 
-            Related frontend release: https://github.com/music-assistant/frontend/releases/tag/${{ inputs.version }}
+            ${{ steps.release_notes.outputs.contributors }}
+
           labels: dependencies
