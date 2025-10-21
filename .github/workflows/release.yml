@@ -1,10 +1,13 @@
 name: Publish Release
 
+# Creates a GitHub release, builds and publishes to PyPI, and creates a PR in the server repo
+# Can be triggered manually with a version number or called by the auto-release workflow
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version number (e.g., 2.16.7)"
+        description: "Version number (e.g., 2.16.7) - Creates release, publishes to PyPI, and updates server repo"
         required: true
         type: string
   workflow_call:

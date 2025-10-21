@@ -1,10 +1,13 @@
 name: Auto Release
 
+# Automatically creates a release every night at 01:00 UTC if there are 2+ commits since the last release
+# Calculates the next version number (patch increment) and triggers the publish release workflow
+
 on:
   schedule:
     # Run at 01:00 UTC every day
     - cron: "0 1 * * *"
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch: # Allow manual trigger for testing
 
 permissions:
   contents: write
