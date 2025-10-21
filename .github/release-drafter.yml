@@ -1,4 +1,12 @@
 change-template: "- $TITLE (by @$AUTHOR in #$NUMBER)"
+
+# Exclude bots from contributors list
+exclude-contributors:
+  - dependabot
+  - dependabot[bot]
+  - github-actions
+  - github-actions[bot]
+
 categories:
   - title: "⚠ Breaking Changes"
     labels:
