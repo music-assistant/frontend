@@ -12,7 +12,7 @@
     />
     <div class="d-flex ga-2 filter-buttons">
       <v-btn height="40" elevation="0">
-        {{ $t("image_type") }}
+        {{ $t("settings.provider_type") }}
         <v-icon end>mdi-chevron-down</v-icon>
         <v-menu activator="parent" :close-on-content-click="false">
           <v-list>
