@@ -173,13 +173,39 @@ jobs:
 
           if [ -z "$PREVIOUS_TAG" ]; then
             # First release or can't find previous, get last 20 commits
-            CONTRIBUTORS=$(git log -20 --format='%an' 2>/dev/null | sort -u | paste -sd ", " - || echo "")
+            RAW_CONTRIBUTORS=$(git log -20 --format='%an|%ae' 2>/dev/null | sort -u || echo "")
           else
             # Get contributors between releases
-            CONTRIBUTORS=$(git log --format='%an' ${PREVIOUS_TAG}..${VERSION} 2>/dev/null | sort -u | paste -sd ", " - || echo "")
+            RAW_CONTRIBUTORS=$(git log --format='%an|%ae' ${PREVIOUS_TAG}..${VERSION} 2>/dev/null | sort -u || echo "")
           fi
 
           cd ..
+
+          # Format contributors with GitHub avatars
+          CONTRIBUTORS_MD=""
+          while IFS='|' read -r name email; do
+            if [ -n "$name" ]; then
+              # Extract GitHub username from email
+              if echo "$email" | grep -q "users.noreply.github.com"; then
+                # Format: 123456+username@users.noreply.github.com or username@users.noreply.github.com
+                GITHUB_USER=$(echo "$email" | sed 's/@users.noreply.github.com//' | sed 's/^[0-9]*+//')
+              elif echo "$email" | grep -q "@github.com"; then
+                # Format: username@github.com
+                GITHUB_USER=$(echo "$email" | sed 's/@github.com//')
+              else
+                # Fallback: try lowercase name without spaces
+                GITHUB_USER=$(echo "$name" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | tr -d ',' | tr -d '.')
+              fi
+
+              # Create markdown with avatar
+              if [ -n "$GITHUB_USER" ]; then
+                CONTRIBUTORS_MD="${CONTRIBUTORS_MD}<img src=\"https://github.com/${GITHUB_USER}.png?size=40\" width=\"40\" height=\"40\" alt=\"${name}\" /> [@${GITHUB_USER}](https://github.com/${GITHUB_USER})  "
+              else
+                CONTRIBUTORS_MD="${CONTRIBUTORS_MD}**${name}**  "
+              fi
+              CONTRIBUTORS_MD="${CONTRIBUTORS_MD}"$'\n'
+            fi
+          done <<< "$RAW_CONTRIBUTORS"
 
           # Set multiline output
           {
@@ -188,7 +214,11 @@ jobs:
             echo EOF
           } >> $GITHUB_OUTPUT
 
-          echo "contributors=$CONTRIBUTORS" >> $GITHUB_OUTPUT
+          {
+            echo 'contributors<<EOF'
+            echo "$CONTRIBUTORS_MD"
+            echo EOF
+          } >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
@@ -217,17 +247,20 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
-          commit-message: "⬆️ Update music-assistant-frontend to [${{ inputs.version }}"
+          commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
           branch: "auto-update-frontend-${{ inputs.version }}"
           delete-branch: true
-          title: "⬆️ Update music-assistant-frontend to [${{ inputs.version }}](https://github.com/music-assistant/frontend/releases/tag/${{ inputs.version }})"
+          title: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
           body: |
-            Update music-assistant-frontend to version ${{ inputs.version }}
+            Update music-assistant-frontend to version [${{ inputs.version }}](https://github.com/music-assistant/frontend/releases/tag/${{ inputs.version }})
 
             ${{ steps.release_notes.outputs.notes }}
+
+            ---
 
             ## Contributors
 
             ${{ steps.release_notes.outputs.contributors }}
 
-          labels: dependencies
+          labels: |
+            dependencies
