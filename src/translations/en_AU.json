@@ -44,7 +44,8 @@
         },
         "mute_control": {
             "description": "Define\/override the mute control behaviour for this player.\nIt allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
-        }
+        },
+        "frontend_description": "Customise the user interface theme and appearance"
     },
     "sync_now": "Synchronise now",
     "sync_running": "One or more music providers are being synchronised.",

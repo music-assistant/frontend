@@ -13,7 +13,9 @@
         "single": "Single",
         "unknown": "Unknown album type",
         "audiobook": "Audiobook",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Live",
+        "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
     "appears_on": "Appears on",
@@ -125,8 +127,8 @@
         "save": "Save",
         "settings": "Settings",
         "setup_provider": "Setup provider: {0}",
-        "sync": "Synchronize now",
-        "sync_running": "This provider is now being synchronized",
+        "sync": "Synchronise now",
+        "sync_running": "This provider is now being synchronised",
         "username": "Username",
         "core": "Core",
         "core_modules": "Core modules",
@@ -289,7 +291,9 @@
             "announcements": "Announcements configuration",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
-            "presets": "Presets"
+            "presets": "Presets",
+            "sync_options": "Sync\/import options",
+            "builtin_playlists": "Builtin Playlist Settings"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -361,7 +365,8 @@
                 "pt_BR": "Portuguese (Brazil)",
                 "sl_SI": "Slovenian",
                 "hu_HU": "Hungarian",
-                "it": "Italian"
+                "it": "Italian",
+                "el_GR": "Greek"
             }
         },
         "no_music_providers": "No Music Providers configured",
@@ -464,6 +469,14 @@
             "channels_compact": {
                 "FL": "L",
                 "FR": "R"
+            },
+            "presets": {
+                "load": "Load DSP Preset",
+                "empty_warning": "No DSP presets available",
+                "save": "Save DSP Preset",
+                "name": "Preset Name",
+                "name_placeholder": "My new preset",
+                "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
         },
         "power_control": {
@@ -493,7 +506,37 @@
         "enable_builtin_player": {
             "label": "Allow playback to this device\/browser",
             "description": "Enable the (experimental) built-in player for this device\/browser, which allows you to stream all Music Assistant content directly to this device."
-        }
+        },
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+        "edit_provider": "Edit provider: {0}",
+        "metadata": "Metadata",
+        "metadataprovider": "Metadata provider",
+        "music": "Music",
+        "musicprovider": "Music provider",
+        "player": "Player",
+        "playerprovider": "Player provider",
+        "plugin": "Plugin",
+        "pluginprovider": "Plugin provider",
+        "providers_total": "{0} total provider{1}",
+        "stage": {
+            "label": "Stage",
+            "options": {
+                "stable": "Stable",
+                "beta": "Beta",
+                "alpha": "Alpha",
+                "experimental": "Experimental",
+                "unmaintained": "Unmaintained",
+                "deprecated": "Deprecated"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Force mobile layout",
+            "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
+        },
+        "providers_description": "Manage your music sources, streaming services, and integrations",
+        "players_description": "Configure and manage your audio output devices",
+        "core_description": "Configure Music Assistant server settings and preferences",
+        "frontend_description": "Customise the user interface theme and appearance"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
@@ -533,7 +576,7 @@
         "playing": "playing"
     },
     "sync_now": "Synchronise now",
-    "sync_running": "One or more music providers are being synchronized.",
+    "sync_running": "One or more music providers are being synchronised.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
         "explicit": "Explicit",
@@ -712,5 +755,8 @@
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
-    "lyrics_will_appear_soon": "Lyrics will appear when the song begins..."
+    "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
+    "radiobrowser_by_votes": "By votes",
+    "radiobrowser_by_clicks": "By clicks",
+    "radiobrowser_by_language": "By language"
 }
