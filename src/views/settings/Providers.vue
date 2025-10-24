@@ -1,17 +1,15 @@
 <template>
   <div class="providers-header w-100">
     <ProviderFilters
-      show-stage-filter
       @update:search="searchQuery = $event"
       @update:types="selectedProviderTypes = $event"
-      @update:stages="selectedProviderStages = $event"
     />
     <v-btn
       color="primary"
       variant="outlined"
       height="40"
       class="add-provider-btn"
-      @click="router.push('/settings/addprovider')"
+      @click="showAddProviderDialog = true"
     >
       {{ $t("settings.add_provider") }}
     </v-btn>
@@ -146,6 +144,7 @@
       </v-col>
     </v-row>
   </Container>
+  <AddProviderDialog v-model:show="showAddProviderDialog" />
 </template>
 
 <script setup lang="ts">
@@ -165,6 +164,7 @@ import { $t } from "@/plugins/i18n";
 import { match } from "ts-pattern";
 import { onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
 const router = useRouter();
@@ -173,7 +173,7 @@ const router = useRouter();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviderTypes = ref<string[]>([]);
-const selectedProviderStages = ref<string[]>([]);
+const showAddProviderDialog = ref<boolean>(false);
 
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
@@ -364,13 +364,6 @@ const getAllFilteredProviders = function () {
     filtered = filtered.filter((item) =>
       selectedProviderTypes.value.includes(item.type),
     );
-  }
-
-  if (selectedProviderStages.value.length > 0) {
-    filtered = filtered.filter((item) => {
-      const manifest = api.providerManifests[item.domain];
-      return manifest && selectedProviderStages.value.includes(manifest.stage);
-    });
   }
 
   return filtered.sort((a, b) =>

@@ -240,15 +240,6 @@ const routes = [
             props: true,
           },
           {
-            path: "addprovider",
-            name: "addprovider",
-            component: () =>
-              import(
-                /* webpackChunkName: "addprovider" */ "@/views/settings/AddProvider.vue"
-              ),
-            props: true,
-          },
-          {
             path: "addprovider/:domain",
             name: "addproviderdetails",
             component: () =>
