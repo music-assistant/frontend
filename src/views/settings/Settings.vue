@@ -163,9 +163,6 @@ const breadcrumbItems = computed(() => {
   }
 
   match(name)
-    .with("addprovider", () => {
-      items.push({ title: t("settings.add_provider"), disabled: true });
-    })
     .with("addproviderdetails", () => {
       items.push({
         title: t("settings.setup_provider", [route.params.domain || ""]),
