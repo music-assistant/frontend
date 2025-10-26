@@ -3,7 +3,7 @@
   <Icon
     v-if="isVisible && player"
     v-bind="icon"
-    :disabled="!queueHasNext && !playerHasNext"
+    :disabled="!canNext"
     icon="mdi-skip-next-outline"
     variant="button"
     @click="api.playerCommandNext(player.player_id)"
@@ -14,7 +14,8 @@
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
-import { computed } from "vue";
+import { useActiveSource } from "@/composables/activeSource";
+import { computed, toRef } from "vue";
 
 // properties
 export interface Props {
@@ -29,12 +30,15 @@ const compProps = withDefaults(defineProps<Props>(), {
   icon: undefined,
 });
 
+const { activeSource } = useActiveSource(toRef(compProps, "player"));
+
 const queueHasNext = computed(() => {
   if (!compProps.playerQueue?.active) return false;
   return (
     (compProps.playerQueue.current_index || 0) < compProps.playerQueue.items - 1
   );
 });
+
 const playerHasNext = computed(() => {
   if (!compProps.player) return false;
   if (compProps.playerQueue?.active) return false;
@@ -42,5 +46,14 @@ const playerHasNext = computed(() => {
   return compProps.player.supported_features.includes(
     PlayerFeature.NEXT_PREVIOUS,
   );
+});
+
+const canNext = computed(() => {
+  // Check if active source can next/previous
+  if (activeSource.value) {
+    return activeSource.value.can_next_previous;
+  }
+  // Fall back to queue or player capabilities
+  return queueHasNext.value || playerHasNext.value;
 });
 </script>

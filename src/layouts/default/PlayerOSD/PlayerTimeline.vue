@@ -1,15 +1,9 @@
 <template>
   <div style="width: auto; height: 24px">
-    <div v-if="store.activePlayerQueue" style="width: 100%">
+    <div v-if="store.activePlayer" style="width: 100%">
       <v-slider
         v-model="curTimeValue"
-        :disabled="
-          !store.curQueueItem ||
-          !store.curQueueItem.media_item ||
-          !store.curQueueItem.duration ||
-          store.curQueueItem.media_item.media_type == MediaType.RADIO ||
-          store.activePlayer?.powered == false
-        "
+        :disabled="!canSeek"
         style="width: 100%"
         :min="0"
         :max="store.curQueueItem?.duration"
@@ -67,8 +61,9 @@
 import api from "@/plugins/api";
 import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, toRef } from "vue";
 
 // properties
 export interface Props {
@@ -81,6 +76,8 @@ withDefaults(defineProps<Props>(), {
   color: undefined,
 });
 
+const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
+
 // local refs
 const showRemainingTime = ref(false);
 const isThumbHidden = ref(true);
@@ -89,6 +86,24 @@ const curTimeValue = ref(0);
 const tempTime = ref(0);
 
 // computed properties
+const canSeek = computed(() => {
+  // Check if active source allows seeking
+  // commented out to fix issue first with actually retrieving the elapsed time of the source
+  // if (activeSource.value) {
+  //   return activeSource.value.can_seek;
+  // }
+
+  if (store.curQueueItem?.media_item?.media_type == MediaType.RADIO)
+    return false;
+  if (store.activePlayer?.powered == false) return false;
+  if (!store.curQueueItem) return false;
+  if (!store.curQueueItem.media_item) return false;
+  if (!store.curQueueItem.duration) return false;
+
+  // Default to true if no active source (queue control)
+  return true;
+});
+
 const playerCurTimeStr = computed(() => {
   if (!store.curQueueItem) return "0:00";
   if (showRemainingTime.value) {
@@ -99,6 +114,7 @@ const playerCurTimeStr = computed(() => {
     return `${formatDuration(curQueueItemTime.value)}`;
   }
 });
+
 const playerTotalTimeStr = computed(() => {
   if (!store.curQueueItem) return "";
   if (!store.curQueueItem.duration) return "";
@@ -106,6 +122,7 @@ const playerTotalTimeStr = computed(() => {
   const totalSecs = store.curQueueItem.duration;
   return formatDuration(totalSecs);
 });
+
 const curQueueItemTime = computed(() => {
   if (isDragging.value) {
     // eslint-disable-next-line vue/no-side-effects-in-computed-properties
