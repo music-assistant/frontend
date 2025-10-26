@@ -176,17 +176,6 @@ export const getPlayerMenuItems = (
   const selectableSources = player.source_list.filter(
     (s) => !s.passive || s.id == player.active_source,
   );
-  if (player.active_source != player.player_id) {
-    // add virtual/fake source entry to return to the MA queue as active source
-    selectableSources.push({
-      id: player.player_id,
-      name: $t("music_assistant_source"),
-      passive: false,
-      can_play_pause: true,
-      can_seek: true,
-      can_next_previous: true,
-    });
-  }
   if (!player.synced_to && selectableSources.length > 0) {
     menuItems.push({
       label: "select_source",
