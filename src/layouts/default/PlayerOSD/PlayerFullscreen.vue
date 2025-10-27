@@ -638,6 +638,7 @@ import {
   computed,
   onBeforeUnmount,
   onMounted,
+  onUnmounted,
   ref,
   watch,
   watchEffect,

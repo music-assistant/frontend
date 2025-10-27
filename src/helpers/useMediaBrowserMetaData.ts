@@ -113,7 +113,12 @@ export function useMediaBrowserMetaData(player_id?: string) {
         return;
       }
       const duration = playerQueue.value?.current_item?.duration || 1;
-      const position = Math.min(duration, playerQueue.value?.elapsed_time || 0);
+      const position = Math.min(
+        duration,
+        playerQueue.value?.elapsed_time != null
+          ? playerQueue.value?.elapsed_time
+          : 0,
+      );
       navigator.mediaSession.setPositionState({
         duration: duration,
         playbackRate: 1.0,

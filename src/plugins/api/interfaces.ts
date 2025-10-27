@@ -788,6 +788,18 @@ export interface PlayerQueue {
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
+  /**
+   * UTC timestamp (seconds since epoch) when `elapsed_time` was last updated.
+   *
+   * Semantics/units:
+   * - `elapsed_time` is expressed in seconds (number, can be fractional).
+   * - `elapsed_time_last_updated` is a UTC timestamp in seconds since epoch.
+   *   Convert to milliseconds (multiply by 1000) when comparing to Date.now().
+   *
+   * Use this timestamp to compute the current progress while playback is
+   * ongoing by adding (now - elapsed_time_last_updated*1000)/1000 to
+   * `elapsed_time`.
+   */
   elapsed_time_last_updated: number;
   state: PlaybackState;
   current_item?: QueueItem;
@@ -815,6 +827,9 @@ export interface PlayerMedia {
   album?: string; // optional
   image_url?: string; // optional
   duration?: number; // optional
+  source_id?: string; // optional
+  elapsed_time?: number; // optional
+  elapsed_time_last_updated?: number; // optional
   queue_id?: string; // only present for requests from queue controller
   queue_item_id?: string; // only present for requests from queue controller
 }
