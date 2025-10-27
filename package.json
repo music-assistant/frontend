@@ -24,19 +24,19 @@
     "marked": "^16.4.1",
     "mitt": "3.0.1",
     "mobile-detect": "1.4.5",
-    "swiper": "^12.0.2",
-    "ts-pattern": "^5.8.0",
+    "swiper": "^12.0.3",
+    "ts-pattern": "^5.9.0",
     "vue": "3.5.22",
     "vue-audio-better": "3.0.1",
     "vue-i18n": "11.1.12",
     "vue-router": "4.6.3",
-    "vuetify": "3.10.5",
+    "vuetify": "3.10.7",
     "websocket-ts": "2.2.1"
   },
   "devDependencies": {
     "@fontsource/roboto": "5.2.8",
     "@types/color": "4.2.0",
-    "@types/node": "24.8.1",
+    "@types/node": "24.9.1",
     "@typescript-eslint/eslint-plugin": "7.0.0",
     "@typescript-eslint/parser": "6.21.0",
     "@vitejs/plugin-vue": "6.0.1",
@@ -59,13 +59,13 @@
     "sass": "1.93.2",
     "typescript": "5.9.3",
     "unplugin": "^2.3.10",
-    "vite": "^7.1.11",
+    "vite": "^7.1.12",
     "vite-plugin-pwa": "1.1.0",
     "vite-plugin-vuetify": "2.1.2",
     "vite-plugin-webfont-dl": "3.11.1",
     "vite-svg-loader": "^5.1.0",
     "vitest": "^3.2.4",
-    "vue-tsc": "3.1.1"
+    "vue-tsc": "3.1.2"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
