@@ -1470,9 +1470,7 @@ export class MusicAssistantApi {
       this.providers = providers;
     }
     // signal + log all events
-    if (msg.event !== EventType.QUEUE_TIME_UPDATED) {
-      if (DEBUG) console.log("[event]", msg);
-    }
+    if (DEBUG) console.log("[event]", msg);
     this.signalEvent(msg);
   }
 

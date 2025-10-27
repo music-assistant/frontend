@@ -231,6 +231,16 @@
         <div v-if="store.activePlayer && store.activePlayer?.powered != false">
           {{ getPlayerName(store.activePlayer) }}
         </div>
+        <!-- current progress (right aligned small text) -->
+        <div
+          v-if="store.curQueueItem?.duration && currentElapsed != null"
+          style="text-align: right"
+        >
+          <small>
+            {{ formatDuration(Math.floor(currentElapsed || 0)) }} /
+            {{ formatDuration(store.curQueueItem.duration) }}
+          </small>
+        </div>
       </div>
     </template>
   </v-list-item>
@@ -241,7 +251,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onUnmounted } from "vue";
+import computeElapsedTime from "@/helpers/elapsed";
 
 import { MediaType, PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -251,6 +262,7 @@ import {
   getArtistsString,
   getPlayerName,
   truncateString,
+  formatDuration,
 } from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 import QualityDetailsBtn, {
@@ -280,6 +292,76 @@ const props = withDefaults(defineProps<Props>(), {
 // computed properties
 const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
+});
+
+// ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
+const nowTick = ref(0);
+let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+const startTick = (interval = 500) => {
+  if (!tickTimer)
+    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
+};
+
+const stopTick = () => {
+  if (tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+};
+
+onUnmounted(() => {
+  stopTick();
+});
+
+const currentElapsed = computed(() => {
+  // include nowTick so this computed re-evaluates periodically while mounted
+  void nowTick.value;
+
+  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
+  const isPlaying = store.activePlayer?.playback_state === "playing";
+  const usingQueue = !!(
+    store.activePlayerQueue && store.activePlayerQueue.active
+  );
+  const hasCurrentMedia =
+    store.activePlayer?.current_media?.elapsed_time != null;
+
+  if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
+  else stopTick();
+
+  const queue = store.activePlayerQueue;
+  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
+    return computeElapsedTime(
+      queue.elapsed_time,
+      queue.elapsed_time_last_updated,
+      store.activePlayer?.playback_state,
+    );
+  }
+
+  // If there's an external source active on the player prefer the current_media timing
+  if (
+    store.activePlayer?.current_media?.elapsed_time != null &&
+    store.activePlayer?.current_media?.elapsed_time_last_updated != null
+  ) {
+    return computeElapsedTime(
+      store.activePlayer.current_media.elapsed_time,
+      store.activePlayer.current_media.elapsed_time_last_updated,
+      store.activePlayer?.playback_state,
+    );
+  }
+
+  // Fall back to player-level elapsed_time (legacy / provider-level value)
+  if (
+    store.activePlayer?.elapsed_time != null &&
+    store.activePlayer?.elapsed_time_last_updated != null
+  ) {
+    return computeElapsedTime(
+      store.activePlayer.elapsed_time,
+      store.activePlayer.elapsed_time_last_updated,
+      store.activePlayer?.playback_state,
+    );
+  }
+  return undefined;
 });
 </script>
 

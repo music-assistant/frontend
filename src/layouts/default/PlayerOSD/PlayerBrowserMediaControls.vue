@@ -107,8 +107,9 @@ const seekHandler = function (
     to = evt.seekTime;
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
     const offset = evt.seekOffset || 10;
-    const elapsed_time = lastSeekPos || store.activePlayerQueue?.elapsed_time;
-    if (!elapsed_time) return;
+    const elapsed_time =
+      lastSeekPos != null ? lastSeekPos : store.activePlayerQueue?.elapsed_time;
+    if (elapsed_time == null) return;
     if (evt.action === "seekbackward") {
       to = elapsed_time - offset;
     } else {
