@@ -18,6 +18,7 @@
 </template>
 
 <script lang="ts">
+import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 
 export default {
@@ -47,7 +48,7 @@ export default {
       class: "player-volume",
       hideDetails: true,
       trackSize: 2,
-      thumbSize: 12,
+      thumbSize: 20,
       step: 2,
       elevation: 0,
       style: `width: ${props.width}; height:${props.height}; display: inline-grid; ${props.style}`,
@@ -82,6 +83,10 @@ export default {
       startValue.value = value;
       updateCount.value = 0;
       displayValue.value = value;
+
+      if (store.isTouchscreen && "vibrate" in navigator && navigator.vibrate) {
+        navigator.vibrate(10);
+      }
     };
 
     const onUpdateModelValue = (newValue: number) => {
