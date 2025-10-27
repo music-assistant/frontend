@@ -70,7 +70,7 @@
           color="secondary"
           width="100%"
           :is-powered="player.powered != false"
-          :disabled="!player.available"
+          :disabled="!player.available || player.volume_muted"
           :model-value="
             Math.round(
               player.group_members.length
@@ -198,7 +198,7 @@
               color="secondary"
               width="100%"
               :is-powered="childPlayer.powered != false"
-              :disabled="!childPlayer.available"
+              :disabled="!childPlayer.available || childPlayer.volume_muted"
               :allow-wheel="allowWheel"
               :model-value="Math.round(childPlayer.volume_level || 0)"
               @update:model-value="
@@ -385,8 +385,15 @@ const syncCheckBoxChange = async function (
   margin-top: 0px;
   padding-top: 0px;
   padding-bottom: 0px;
-  height: 30px;
-  min-height: 30px;
+  height: 40px;
+  min-height: 40px;
+}
+
+.volumesliderrow :deep(.v-list-item__content) {
+  height: 40px;
+  min-height: 40px;
+  overflow: visible !important;
+  align-content: center;
 }
 
 .heading {
