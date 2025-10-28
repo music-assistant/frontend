@@ -231,16 +231,6 @@
         <div v-if="store.activePlayer && store.activePlayer?.powered != false">
           {{ getPlayerName(store.activePlayer) }}
         </div>
-        <!-- current progress (right aligned small text) -->
-        <div
-          v-if="store.curQueueItem?.duration && currentElapsed != null"
-          style="text-align: right"
-        >
-          <small>
-            {{ formatDuration(Math.floor(currentElapsed || 0)) }} /
-            {{ formatDuration(store.curQueueItem.duration) }}
-          </small>
-        </div>
       </div>
     </template>
   </v-list-item>
