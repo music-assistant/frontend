@@ -530,7 +530,12 @@
         "force_mobile_layout": {
             "label": "Forcer la mise en page mobile",
             "description": "Forcer la mise en page mobile (avec le menu de navigation en bas), même sur les écrans plus grands."
-        }
+        },
+        "providers_description": "Gérez vos sources musicales, vos services de streaming et vos intégrations",
+        "players_description": "Configurez et gérez vos appareils de sortie audio",
+        "core_description": "Configurer les paramètres et les préférences du serveur Music Assistant",
+        "frontend_description": "Personnaliser le thème et l'apparence de l'interface utilisateur",
+        "provider_type": "Type"
     },
     "show_info": "Afficher les informations",
     "show_select_boxes": "Afficher les cases de sélection",
