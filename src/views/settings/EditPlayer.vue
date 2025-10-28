@@ -83,6 +83,7 @@
         :disabled="!config.enabled"
         :config-entries="config_entries"
         @submit="onSubmit"
+        @action="onAction"
       />
     </v-card-text>
   </section>
@@ -104,10 +105,13 @@ import {
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 import { openLinkInNewTab } from "@/helpers/utils";
+import { nanoid } from "nanoid";
 
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
+const sessionId = nanoid(11);
+const loading = ref(false);
 
 // props
 const props = defineProps<{
@@ -201,6 +205,37 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["name"] = config.value!.name || null;
   api.savePlayerConfig(props.playerId!, values);
   router.push({ name: "playersettings" });
+};
+
+const onAction = async function (
+  action: string,
+  values: Record<string, ConfigValueType>,
+) {
+  loading.value = true;
+  // append existing ConfigEntry values to allow
+  // values be passed between flow steps
+  for (const entry of Object.values(config.value!.values)) {
+    if (entry.value !== undefined && values[entry.key] == undefined) {
+      values[entry.key] = entry.value;
+    }
+  }
+  // ensure the session id is passed along (for auth actions)
+  values["session_id"] = sessionId;
+  api
+    .getPlayerConfigEntries(config.value!.player_id, action, values)
+    .then((entries) => {
+      config.value!.values = {};
+      for (const entry of entries) {
+        config.value!.values[entry.key] = entry;
+      }
+    })
+    .catch((err) => {
+      // TODO: make this a bit more fancy someday
+      alert(err);
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 
 const openDspConfig = function () {

@@ -1218,6 +1218,22 @@ export class MusicAssistantApi {
     return this.sendCommand("config/players/get", { player_id });
   }
 
+  public async getPlayerConfigEntries(
+    player_id: string,
+    action?: string,
+    values?: Record<string, ConfigValueType>,
+  ): Promise<ConfigEntry[]> {
+    // Return Config entries to setup/configure a player.
+    // player_id: (mandatory) id of the player.
+    // action: [optional] action key called from config entries UI.
+    // values: the (intermediate) raw values for config entries sent with the action.
+    return this.sendCommand("config/players/get_entries", {
+      player_id,
+      action,
+      values,
+    });
+  }
+
   public async getPlayerConfigValue(
     player_id: string,
     key: string,
