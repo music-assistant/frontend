@@ -5,6 +5,7 @@
         src="@/assets/icon.svg"
         alt="Music Assistant"
         class="sidebar-header-logo"
+        @click="toggleCollapsed"
       />
       <div v-if="!collapsed" class="sidebar-header-title">Music Assistant</div>
     </div>
