@@ -1591,7 +1591,7 @@ export class MusicAssistantApi {
 
     const msg: CommandMessage = {
       command: command,
-      message_id: msgId,
+      message_id: msgId.toString(),
       args,
     };
 
