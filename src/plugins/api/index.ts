@@ -64,7 +64,6 @@ export enum ConnectionState {
 
 export class MusicAssistantApi {
   private ws?: Websocket;
-  private commandId: number;
   private _throttleId?: any;
   public baseUrl?: string;
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
@@ -76,14 +75,14 @@ export class MusicAssistantApi {
     {},
   );
   public syncTasks = ref<SyncTask[]>([]);
-  public fetchesInProgress = ref<number[]>([]);
+  public fetchesInProgress = ref<string[]>([]);
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
   private eventCallbacks: Array<[EventType, string, CallableFunction]>;
   private partialResult: { [msg_id: string]: Array<any> };
   private commands: Map<
-    number,
+    string,
     {
       resolve: (result?: any) => void;
       reject: (err: any) => void;
@@ -91,7 +90,6 @@ export class MusicAssistantApi {
   >;
 
   constructor() {
-    this.commandId = 0;
     this.eventCallbacks = [];
     this.commands = new Map();
     this.partialResult = {};
@@ -1492,7 +1490,7 @@ export class MusicAssistantApi {
 
   private handleResultMessage(msg: SuccessResultMessage | ErrorResultMessage) {
     // Handle result of a command
-    const resultPromise = this.commands.get(msg.message_id as number);
+    const resultPromise = this.commands.get(msg.message_id);
 
     if ("error_code" in msg) {
       // always handle error (as we may be missing a resolve promise for this command)
@@ -1523,7 +1521,7 @@ export class MusicAssistantApi {
       delete this.partialResult[msg.message_id];
     }
 
-    this.commands.delete(msg.message_id as number);
+    this.commands.delete(msg.message_id);
     this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
       (x) => x != msg.message_id,
     );
@@ -1579,7 +1577,7 @@ export class MusicAssistantApi {
   private _sendCommand(
     command: string,
     args?: Record<string, any>,
-    msgId?: number,
+    msgId?: string,
   ): void {
     if (this.state.value !== ConnectionState.CONNECTED) {
       throw new Error("Connection lost");
@@ -1629,8 +1627,22 @@ export class MusicAssistantApi {
       await this.sendCommand<SyncTask[]>("music/synctasks");
   }
 
-  private _genCmdId() {
-    return ++this.commandId;
+  private _genCmdId(): string {
+    // Generate a cryptographically secure UUID
+    // Use crypto.randomUUID when available (secure contexts only)
+    // Otherwise fall back to a UUID v4 implementation using crypto.getRandomValues
+    if (crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    // Fallback UUID v4 generator using crypto.getRandomValues (works in all contexts)
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => {
+      const num = parseInt(c, 10);
+      return (
+        num ^
+        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (num / 4)))
+      ).toString(16);
+    });
   }
 }
 

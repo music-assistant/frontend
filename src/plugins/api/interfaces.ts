@@ -404,7 +404,7 @@ export enum HidePlayerOption {
 export interface CommandMessage {
   // Model for a Message holding a command from server to client or client to server.
 
-  message_id?: string | number;
+  message_id?: string;
   command: string;
   args?: Record<string, any>;
 }
@@ -412,7 +412,7 @@ export interface CommandMessage {
 export interface ResultMessageBase {
   // Base class for a result/response of a Command Message.
 
-  message_id: string | number;
+  message_id: string;
 }
 
 export interface SuccessResultMessage extends ResultMessageBase {
