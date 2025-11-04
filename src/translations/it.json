@@ -438,7 +438,30 @@
         },
         "mute_control": {
             "label": "Controllo del silenziamento"
-        }
+        },
+        "plugin": "Plugin",
+        "pluginprovider": "Plugin provider",
+        "providers_total": "{0} fornitori totali {1}",
+        "stage": {
+            "label": "Stage",
+            "options": {
+                "stable": "Stabile",
+                "beta": "Beta",
+                "alpha": "Alpha",
+                "experimental": "Sperimentale",
+                "unmaintained": "Non mantenuto",
+                "deprecated": "Obsoleto"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Forza il layout mobile",
+            "description": "Forzare il layout mobile (con il menu di navigazione in basso), anche su schermi più grandi."
+        },
+        "providers_description": "Gestisci le tue fonti musicali, i servizi di streaming e le integrazioni",
+        "players_description": "Configura e gestisci i tuoi dispositivi di output audio",
+        "core_description": "Configurare le impostazioni e le preferenze del server Music Assistant",
+        "frontend_description": "Personalizza il tema e l'aspetto dell'interfaccia utente",
+        "provider_type": "Tipo"
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
