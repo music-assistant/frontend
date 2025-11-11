@@ -507,7 +507,37 @@
             "label": "Dozvoli reprodukciju na ovom uređaju\/pregledaču",
             "description": "Omogućite (eksperimentalni) ugrađeni plejer za ovaj uređaj\/pregledač, koji vam omogućava da strimujete sav sadržaj Music Assistant-a direktno na ovaj uređaj."
         },
-        "add_group_player_desc_universal": "Kreiranjem Univerzalne grupe plejera, možete grupisati plejere iz različitih provajdera\/ekosistema. \n Ovo će distribuirati isti zvuk svim plejerima članovima (ali ne sinhronizovano)."
+        "add_group_player_desc_universal": "Kreiranjem Univerzalne grupe plejera, možete grupisati plejere iz različitih provajdera\/ekosistema. \n Ovo će distribuirati isti zvuk svim plejerima članovima (ali ne sinhronizovano).",
+        "edit_provider": "Uredi provajdera: {0}",
+        "metadata": "Metapodaci",
+        "metadataprovider": "Provajder metapodataka",
+        "music": "Muzika",
+        "musicprovider": "Provajder muzike",
+        "player": "Plejer",
+        "playerprovider": "Provajder plejera",
+        "plugin": "Dodatak",
+        "pluginprovider": "Provajder dodatka",
+        "providers_total": "{0} ukupno provajdera {1}",
+        "stage": {
+            "label": "Faza",
+            "options": {
+                "stable": "Stabilno",
+                "beta": "Beta",
+                "alpha": "Alfa",
+                "experimental": "Eksperimentalno",
+                "unmaintained": "Neodržavano",
+                "deprecated": "Zastarelo"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Nametni mobilni raspored",
+            "description": "Nametni mobilni raspored (sa navigacijom menija na dnu), čak i na većim ekranima."
+        },
+        "providers_description": "Upravljaj svojim muzičkim izvorima, striming servisima i integracijama",
+        "players_description": "Konfiguriši i upravljaj svojim audio izlaznim uređajima",
+        "core_description": "Podesi postavke i preferencije servera Music Assistant",
+        "frontend_description": "Prilagodi temu i izgled korisničkog interfejsa",
+        "provider_type": "Tip"
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",
