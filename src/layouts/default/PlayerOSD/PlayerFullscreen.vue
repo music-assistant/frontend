@@ -523,18 +523,28 @@
 
         <!-- volume control -->
         <div
-          v-if="
-            store.activePlayer &&
-            store.activePlayer.volume_control != PLAYER_CONTROL_NONE
-          "
+          v-if="store.activePlayer"
           class="row"
           style="margin-left: 5%; margin-right: 5%"
         >
           <PlayerVolume
             width="100%"
             :is-powered="store.activePlayer?.powered != false"
-            :disabled="!store.activePlayer || !store.activePlayer?.available"
-            :model-value="Math.round(store.activePlayer?.group_volume || 0)"
+            :disabled="
+              !store.activePlayer ||
+              !store.activePlayer?.available ||
+              store.activePlayer.powered == false ||
+              !store.activePlayer.supported_features.includes(
+                PlayerFeature.VOLUME_SET,
+              )
+            "
+            :model-value="
+              Math.round(
+                store.activePlayer.group_members.length > 0
+                  ? store.activePlayer.group_volume
+                  : store.activePlayer.volume_level || 0,
+              )
+            "
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"
             :color="sliderColor"
@@ -620,12 +630,12 @@ import {
   MediaItemChapter,
   MediaItemType,
   MediaType,
+  PlaybackState,
+  PlayerFeature,
   PlayerQueue,
   QueueItem,
   QueueOption,
   Track,
-  PLAYER_CONTROL_NONE,
-  PlaybackState,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
@@ -638,7 +648,6 @@ import {
   computed,
   onBeforeUnmount,
   onMounted,
-  onUnmounted,
   ref,
   watch,
   watchEffect,

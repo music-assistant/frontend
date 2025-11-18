@@ -98,7 +98,7 @@ export default {
     };
 
     const onDragEnd = (endValue: number) => {
-      // Cooldown to avoid duplicate emits only for moible click (otherwise it fires 2 be calls)
+      // Cooldown to avoid duplicate emits only for mobile click (otherwise it fires 2 be calls)
       const now = Date.now();
       if (now - lastEnd.value < 250) {
         return;
@@ -112,13 +112,18 @@ export default {
         displayValue.value = endValue;
         ctx.emit("update:model-value", endValue);
       } else {
-        const volumeDelta = endValue > startValue.value ? step : -step;
-        const newVolume = Math.max(
-          0,
-          Math.min(100, startValue.value + volumeDelta),
-        );
-        displayValue.value = newVolume;
-        ctx.emit("update:model-value", newVolume);
+        if (!store.mobileLayout) {
+          displayValue.value = endValue;
+          ctx.emit("update:model-value", endValue);
+        } else {
+          const volumeDelta = endValue > startValue.value ? step : -step;
+          const newVolume = Math.max(
+            0,
+            Math.min(100, startValue.value + volumeDelta),
+          );
+          displayValue.value = newVolume;
+          ctx.emit("update:model-value", newVolume);
+        }
       }
 
       updateCount.value = 0;

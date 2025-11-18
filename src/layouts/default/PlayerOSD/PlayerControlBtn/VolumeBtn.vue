@@ -15,7 +15,14 @@
           <PlayerVolume
             :style="'margin-right: 0px; margin-left: 0px;'"
             :width="volumeSize"
-            :is-powered="true"
+            :is-powered="store.activePlayer?.powered != false"
+            :disabled="
+              !store.activePlayer?.available ||
+              store.activePlayer?.powered == false ||
+              !store.activePlayer?.supported_features.includes(
+                PlayerFeature.VOLUME_SET,
+              )
+            "
             :model-value="
               store.activePlayer!.group_members.length > 0
                 ? Math.round(store.activePlayer?.group_volume || 0)
@@ -45,7 +52,7 @@
                 <v-icon
                   :color="props.color ? color : ''"
                   :size="24"
-                  icon="mdi-volume-high"
+                  :icon="volumeIcon"
                 />
                 <div class="text-caption">
                   {{
@@ -60,7 +67,7 @@
         </div>
         <div v-else>
           <Button v-bind="{ ...menu }" size="48" variant="icon">
-            <v-icon :color="props.color ? color : ''" icon="mdi-volume-high" />
+            <v-icon :color="props.color ? color : ''" :icon="volumeIcon" />
             <div
               class="text-caption"
               :style="{ color: props.color ? color : '' }"
@@ -103,9 +110,10 @@
 import Button from "@/components/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import api from "@/plugins/api";
+import { PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import PlayerVolume from "../PlayerVolume.vue";
 
 // properties
@@ -126,6 +134,25 @@ const props = withDefaults(defineProps<Props>(), {
 
 //refs
 const showVolume = ref(false);
+
+// computed
+const volumeIcon = computed(() => {
+  if (!store.activePlayer) return "mdi-volume-high";
+  if (store.activePlayer.volume_muted) {
+    return "mdi-volume-mute";
+  }
+  const volume =
+    store.activePlayer.group_members.length > 0
+      ? store.activePlayer.group_volume
+      : store.activePlayer.volume_level || 0;
+  if (volume === 0) {
+    return "mdi-volume-low";
+  } else if (volume < 50) {
+    return "mdi-volume-medium";
+  } else {
+    return "mdi-volume-high";
+  }
+});
 </script>
 
 <style scoped>
