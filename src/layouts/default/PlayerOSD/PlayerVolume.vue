@@ -5,6 +5,8 @@
     :model-value="displayValue"
     @wheel.prevent="onWheel"
     @click.stop
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
     @start="onDragStart"
     @update:model-value="onUpdateModelValue"
     @end="onDragEnd"
@@ -44,6 +46,11 @@ export default {
         : 0,
     );
 
+    const touchStartX = ref(0);
+    const touchStartY = ref(0);
+    const isScrolling = ref(false);
+    const isDragging = ref(false);
+
     const playerVolumeDefaults = computed(() => ({
       class: "player-volume",
       hideDetails: true,
@@ -80,6 +87,11 @@ export default {
     };
 
     const onDragStart = (value: number) => {
+      if (isScrolling.value) {
+        return;
+      }
+
+      isDragging.value = true;
       startValue.value = value;
       updateCount.value = 0;
       displayValue.value = value;
@@ -90,6 +102,10 @@ export default {
     };
 
     const onUpdateModelValue = (newValue: number) => {
+      if (isScrolling.value) {
+        return;
+      }
+
       updateCount.value++;
 
       if (updateCount.value > 2) {
@@ -98,6 +114,13 @@ export default {
     };
 
     const onDragEnd = (endValue: number) => {
+      if (isScrolling.value) {
+        isScrolling.value = false;
+        isDragging.value = false;
+        updateCount.value = 0;
+        return;
+      }
+
       // Cooldown to avoid duplicate emits only for mobile click (otherwise it fires 2 be calls)
       const now = Date.now();
       if (now - lastEnd.value < 250) {
@@ -126,7 +149,30 @@ export default {
         }
       }
 
+      isDragging.value = false;
       updateCount.value = 0;
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (!store.mobileLayout) return;
+
+      touchStartX.value = event.touches[0].clientX;
+      touchStartY.value = event.touches[0].clientY;
+      isScrolling.value = false;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!store.mobileLayout || isDragging.value) return;
+
+      const touchX = event.touches[0].clientX;
+      const touchY = event.touches[0].clientY;
+
+      const deltaX = Math.abs(touchX - touchStartX.value);
+      const deltaY = Math.abs(touchY - touchStartY.value);
+
+      if (deltaY > 10 && deltaY > deltaX * 1.5) {
+        isScrolling.value = true;
+      }
     };
 
     watch(
@@ -146,6 +192,8 @@ export default {
       onUpdateModelValue,
       onDragEnd,
       displayValue,
+      onTouchStart,
+      onTouchMove,
     };
   },
 };
