@@ -7,15 +7,27 @@
       webPlayer.interacted == true
     "
   />
+  <ResonatePlayer
+    v-if="
+      webPlayer.tabMode === WebPlayerMode.BUILTIN &&
+      webPlayer.player_id &&
+      useResonatePlayer
+    "
+    :player-id="webPlayer.player_id"
+  />
   <BuiltinPlayer
-    v-if="webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id"
+    v-if="
+      webPlayer.tabMode === WebPlayerMode.BUILTIN &&
+      webPlayer.player_id &&
+      !useResonatePlayer
+    "
     :player-id="webPlayer.player_id"
   />
 </template>
 
 <script setup lang="ts">
 import { api } from "@/plugins/api";
-import { onMounted } from "vue";
+import { onMounted, computed } from "vue";
 import { useTheme } from "vuetify";
 import { store } from "@/plugins/store";
 import { i18n } from "@/plugins/i18n";
@@ -24,6 +36,14 @@ import { EventType } from "./plugins/api/interfaces";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import BuiltinPlayer from "./components/BuiltinPlayer.vue";
+import ResonatePlayer from "./components/ResonatePlayer.vue";
+
+// Determine which player to use based on provider availability
+const useResonatePlayer = computed(() => {
+  // Use Resonate player if the resonate provider is available
+  const resonateProvider = api.getProvider("resonate");
+  return resonateProvider?.available === true;
+});
 
 const theme = useTheme();
 
