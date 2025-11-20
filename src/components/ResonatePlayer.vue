@@ -57,6 +57,7 @@ interface ClientState {
   type: MessageType.CLIENT_STATE;
   payload: {
     player?: {
+      state: "synchronized" | "error";
       volume: number;
       muted: boolean;
     };
@@ -177,6 +178,7 @@ async function sendStateUpdate() {
     type: MessageType.CLIENT_STATE,
     payload: {
       player: {
+        state: "synchronized",
         volume: volume.value,
         muted: muted.value,
       },
