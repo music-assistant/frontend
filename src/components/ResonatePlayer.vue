@@ -183,11 +183,7 @@ function sendTimeSync() {
 
 // Send state update
 async function sendStateUpdate() {
-  if (webPlayer.timedOutDueToThrottling()) {
-    webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
-    return;
-  }
-
+  // Send state to Resonate server via WebSocket
   const message: ClientState = {
     type: MessageType.CLIENT_STATE,
     payload: {
@@ -199,34 +195,6 @@ async function sendStateUpdate() {
     },
   };
   sendMessage(message);
-
-  // Also update the Music Assistant player state
-  let success;
-  if (webPlayer.audioSource === WebPlayerMode.BUILTIN) {
-    success = await api.updateBuiltinPlayerState(props.playerId, {
-      powered: true,
-      playing: isPlaying.value,
-      paused: !isPlaying.value,
-      muted: muted.value,
-      volume: volume.value,
-      position: 0,
-    });
-  } else {
-    success = await api.updateBuiltinPlayerState(props.playerId, {
-      powered: false,
-      playing: false,
-      paused: false,
-      muted: false,
-      volume: 0,
-      position: 0,
-    });
-  }
-
-  if (!success) {
-    webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
-  } else {
-    webPlayer.lastUpdate = Date.now();
-  }
 }
 
 // Decode audio data based on codec
@@ -591,20 +559,22 @@ let unsubMetadata: (() => void) | undefined;
 onMounted(() => {
   console.log("Resonate: Component mounted, connecting...");
 
-  // Set audio source to BUILTIN since this component handles audio
+  // Set audio source to indicate this tab is handling audio
+  // (for coordination with other tabs via web_player.ts)
   webPlayer.audioSource = WebPlayerMode.BUILTIN;
 
-  // Setup metadata listener
+  // Setup metadata listener for MediaSession
   unsubMetadata = useMediaBrowserMetaData(props.playerId);
 
   // Connect to Resonate server
   connect();
 
-  // Start state update interval
+  // Start state update interval (sends client/state to Resonate server)
   stateInterval = setInterval(sendStateUpdate, STATE_UPDATE_INTERVAL);
   sendStateUpdate();
 
-  // MediaSession setup for controls
+  // MediaSession setup for browser controls
+  // These forward to Music Assistant player commands (not Resonate-specific)
   navigator.mediaSession.setActionHandler("play", () => {
     if (!props.playerId) return;
     api.playerCommandPlay(props.playerId);
