@@ -1,5 +1,6 @@
 <template>
-  <audio ref="audioRef" controls class="builtin-player"></audio>
+  <audio ref="audioRef" controls class="builtin-player" preload="metadata"></audio>
+  <audio ref="nextAudioRef" class="builtin-player" preload="auto"></audio>
 </template>
 
 <script setup lang="ts">
@@ -22,8 +23,81 @@ export interface Props {
 const props = defineProps<Props>();
 
 const audioRef = ref<HTMLAudioElement>();
+const nextAudioRef = ref<HTMLAudioElement>();
 
 let playing = ref<boolean>();
+let nextTrackPreloaded = ref<boolean>(false);
+let preloadedNextItemId = ref<string | undefined>(undefined);
+let currentItemId = ref<string | undefined>(undefined);
+
+/**
+ * Get the stream server URL (different from main API server).
+ * The stream server runs on port 8097 by default.
+ */
+const getStreamServerUrl = function(): string {
+  const baseUrl = new URL(webPlayer.baseUrl);
+  baseUrl.port = '8097';
+  return baseUrl.toString().replace(/\/$/, '');
+};
+
+/**
+ * Preload the next track in the background for instant playback.
+ * Uses a hidden audio element to download and parse the next track
+ * while the current track is playing.
+ */
+const preloadNextTrack = async function(queueId: string) {
+  if (!nextAudioRef.value) return;
+
+  const queue = api.queues[queueId];
+  if (!queue || !queue.next_item) {
+    nextTrackPreloaded.value = false;
+    preloadedNextItemId.value = undefined;
+    return;
+  }
+
+  // Check if we've already preloaded this track
+  if (preloadedNextItemId.value === queue.next_item.queue_item_id) {
+    return;
+  }
+
+  // Use the /preload endpoint on the stream server
+  const streamServerUrl = getStreamServerUrl();
+  const streamUrl = `${streamServerUrl}/preload/${queueId}/${queue.next_item.queue_item_id}.mp3`;
+
+  nextAudioRef.value.src = streamUrl;
+  nextAudioRef.value.load();
+  preloadedNextItemId.value = queue.next_item.queue_item_id;
+  nextTrackPreloaded.value = true;
+};
+
+/**
+ * Swap to the preloaded track for instant playback.
+ * Swaps the audio element references so the preloaded track becomes active.
+ */
+const swapToPreloadedTrack = async function() {
+  if (!audioRef.value || !nextAudioRef.value || !nextTrackPreloaded.value) {
+    return false;
+  }
+
+  // Stop current audio
+  audioRef.value.pause();
+
+  // Swap the audio element references
+  const temp = audioRef.value;
+  audioRef.value = nextAudioRef.value;
+  nextAudioRef.value = temp;
+
+  // Clear the old (now next) audio element
+  nextAudioRef.value.src = "";
+  nextTrackPreloaded.value = false;
+  preloadedNextItemId.value = undefined;
+
+  // Play the preloaded track
+  await audioRef.value.play();
+  playing.value = true;
+
+  return true;
+};
 
 const unsub = api.subscribe(
   EventType.BUILTIN_PLAYER,
@@ -43,10 +117,27 @@ const unsub = api.subscribe(
     } else if (data.type === BuiltinPlayerEventType.SET_VOLUME) {
       audioRef.value.volume = data.volume! / 100;
     } else if (data.type === BuiltinPlayerEventType.PLAY_MEDIA) {
-      audioRef.value.src = "";
-      audioRef.value.src = `${webPlayer.baseUrl}/${data.media_url}`;
-      await audioRef.value.play();
-      playing.value = true;
+      // Check if we're playing the preloaded next track
+      const queue = api.queues[props.playerId];
+      const newItemId = queue?.current_item?.queue_item_id;
+      const isPlayingPreloadedTrack = nextTrackPreloaded.value &&
+                                      preloadedNextItemId.value === newItemId &&
+                                      newItemId !== currentItemId.value;
+
+      if (isPlayingPreloadedTrack) {
+        // Use the preloaded track for instant playback
+        currentItemId.value = newItemId;
+        await swapToPreloadedTrack();
+        // Start preloading the new next track
+        preloadNextTrack(props.playerId);
+      } else {
+        // Normal playback flow - load and play the track
+        currentItemId.value = newItemId;
+        audioRef.value.src = "";
+        audioRef.value.src = `${webPlayer.baseUrl}/${data.media_url}`;
+        await audioRef.value.play();
+        playing.value = true;
+      }
     } else if (data.type === BuiltinPlayerEventType.STOP) {
       audioRef.value.pause();
       audioRef.value.currentTime = 0;
@@ -158,6 +249,20 @@ watch(
   },
 );
 
+// Watch for queue updates to preload the next track
+// When the next_item changes, start preloading it in the background
+watch(
+  () => {
+    const queue = api.queues[props.playerId];
+    return queue?.next_item?.queue_item_id;
+  },
+  () => {
+    if (webPlayer.audioSource === WebPlayerMode.BUILTIN && playing.value) {
+      preloadNextTrack(props.playerId);
+    }
+  },
+);
+
 // Clean up interval on component unmount
 onBeforeUnmount(() => {
   if (stateInterval) {
@@ -188,10 +293,24 @@ onMounted(() => {
   });
 
   if (!audioRef.value) return;
+
+  audioRef.value.addEventListener("playing", () => {
+    // Start preloading the next track once current track is playing
+    preloadNextTrack(props.playerId);
+  });
+
   audioRef.value.addEventListener("error", () => {
-    // So it shows up as paused, proper recovery is something for a custom protocol
     playing.value = false;
   });
+
+  // Setup event listeners for the preload audio element
+  if (nextAudioRef.value) {
+    nextAudioRef.value.addEventListener("error", () => {
+      // Clear preload state if loading fails
+      nextTrackPreloaded.value = false;
+      preloadedNextItemId.value = undefined;
+    });
+  }
 });
 </script>
 <style lang="css">
