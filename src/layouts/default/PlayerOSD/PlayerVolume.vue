@@ -53,6 +53,7 @@ export default {
     const pendingFinalValue = ref<number | null>(null);
     const blockBackendUpdatesUntil = ref(0);
     const debounceTimeout = ref<NodeJS.Timeout | null>(null);
+    const valueBeforeTouch = ref<number>(0);
 
     watch(localValue, (val) => {
       ctx.emit("update:local-value", val);
@@ -182,24 +183,24 @@ export default {
     };
 
     const onTouchStart = (event: TouchEvent) => {
-      if (!store.mobileLayout) return;
-
       touchStartX.value = event.touches[0].clientX;
       touchStartY.value = event.touches[0].clientY;
       isScrolling.value = false;
+      valueBeforeTouch.value = localValue.value;
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      if (!store.mobileLayout) return;
-
       const touchX = event.touches[0].clientX;
       const touchY = event.touches[0].clientY;
 
       const deltaX = Math.abs(touchX - touchStartX.value);
       const deltaY = Math.abs(touchY - touchStartY.value);
 
-      if (deltaY > 10 && deltaY > deltaX * 1.5) {
-        isScrolling.value = true;
+      if (deltaY > 5 && deltaY > deltaX * 2) {
+        if (!isScrolling.value) {
+          isScrolling.value = true;
+          localValue.value = valueBeforeTouch.value;
+        }
       }
     };
 
