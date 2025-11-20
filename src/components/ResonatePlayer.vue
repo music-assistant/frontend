@@ -36,12 +36,24 @@ enum MessageType {
 interface ClientHello {
   type: MessageType.CLIENT_HELLO;
   payload: {
-    roles: string[];
-    player?: {
-      codecs: string[];
-      sample_rates: number[];
-      channels: number[];
-      bit_depths: number[];
+    client_id: string;
+    name: string;
+    version: number;
+    supported_roles: string[];
+    device_info?: {
+      product_name?: string;
+      manufacturer?: string;
+      software_version?: string;
+    };
+    player_support?: {
+      support_formats: Array<{
+        codec: string;
+        channels: number;
+        sample_rate: number;
+        bit_depth: number;
+      }>;
+      buffer_capacity: number;
+      supported_commands: string[];
     };
   };
 }
@@ -49,7 +61,7 @@ interface ClientHello {
 interface ClientTime {
   type: MessageType.CLIENT_TIME;
   payload: {
-    client_time_us: number;
+    client_transmitted: number;
   };
 }
 
@@ -157,11 +169,11 @@ function updateVolume() {
 
 // Send time synchronization message
 function sendTimeSync() {
-  const clientTimeUs = performance.now() * 1000;
+  const clientTimeUs = Math.floor(performance.now() * 1000);
   const message: ClientTime = {
     type: MessageType.CLIENT_TIME,
     payload: {
-      client_time_us: clientTimeUs,
+      client_transmitted: clientTimeUs,
     },
   };
   sendMessage(message);
@@ -287,11 +299,10 @@ async function handleBinaryMessage(data: ArrayBuffer) {
 
   // Type 0 is audio chunk
   if (roleType === 0 && messageSlot === 0) {
-    // Next 8 bytes are server timestamp in microseconds (little-endian uint64)
+    // Next 8 bytes are server timestamp in microseconds (big-endian int64)
     const timestampView = new DataView(data, 1, 8);
-    const low = timestampView.getUint32(0, true);
-    const high = timestampView.getUint32(4, true);
-    const serverTimeUs = low + high * 0x100000000;
+    // Read as big-endian int64 and convert to number
+    const serverTimeUs = Number(timestampView.getBigInt64(0, false));
 
     // Rest is audio data
     const audioData = data.slice(9);
@@ -338,10 +349,21 @@ function handleMessage(event: MessageEvent) {
         break;
 
       case MessageType.SERVER_TIME:
-        // Update clock offset
-        const serverTimeUs = message.payload.server_time_us;
-        const clientTimeUs = performance.now() * 1000;
-        clockOffset = serverTimeUs - clientTimeUs;
+        // Update clock offset using server timestamps
+        // Calculate round-trip time and offset
+        const now = Math.floor(performance.now() * 1000);
+        const clientTransmitted = message.payload.client_transmitted;
+        const serverReceived = message.payload.server_received;
+        const serverTransmitted = message.payload.server_transmitted;
+
+        // Round trip time
+        const rtt = now - clientTransmitted;
+        // Estimated one-way delay
+        const oneWayDelay = rtt / 2;
+        // Clock offset (server time - client time)
+        clockOffset = serverReceived - clientTransmitted - oneWayDelay;
+
+        console.log("Resonate: Clock sync - offset:", (clockOffset / 1000).toFixed(2), "ms, RTT:", (rtt / 1000).toFixed(2), "ms");
         break;
 
       case MessageType.STREAM_START:
@@ -462,12 +484,31 @@ async function connect() {
       const hello: ClientHello = {
         type: MessageType.CLIENT_HELLO,
         payload: {
-          roles: ["player"],
-          player: {
-            codecs: ["opus", "flac", "pcm"],
-            sample_rates: [44100, 48000, 88200, 96000, 176400, 192000],
-            channels: [1, 2],
-            bit_depths: [16, 24, 32],
+          client_id: props.playerId,
+          name: "Music Assistant Web Player",
+          version: 1,
+          supported_roles: ["player"],
+          device_info: {
+            product_name: "Web Browser",
+            manufacturer: navigator.vendor || "Unknown",
+            software_version: navigator.userAgent,
+          },
+          player_support: {
+            support_formats: [
+              // Opus preferred (best quality/compression ratio)
+              { codec: "opus", sample_rate: 48000, channels: 2, bit_depth: 16 },
+              { codec: "opus", sample_rate: 44100, channels: 2, bit_depth: 16 },
+              // FLAC fallback (lossless)
+              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 16 },
+              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 16 },
+              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 24 },
+              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 24 },
+              // PCM fallback (uncompressed)
+              { codec: "pcm", sample_rate: 48000, channels: 2, bit_depth: 16 },
+              { codec: "pcm", sample_rate: 44100, channels: 2, bit_depth: 16 },
+            ],
+            buffer_capacity: 1024 * 1024 * 5, // 5MB buffer
+            supported_commands: ["volume", "mute"],
           },
         },
       };
