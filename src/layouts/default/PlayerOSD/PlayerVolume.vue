@@ -50,6 +50,8 @@ export default {
     const touchStartY = ref(0);
     const isScrolling = ref(false);
     const isDragging = ref(false);
+    const lastEmitTime = ref(0);
+    const lastEmittedValue = ref<number | null>(null);
 
     const playerVolumeDefaults = computed(() => ({
       class: "player-volume",
@@ -95,6 +97,8 @@ export default {
       startValue.value = value;
       updateCount.value = 0;
       displayValue.value = value;
+      lastEmitTime.value = 0;
+      lastEmittedValue.value = null;
 
       if (store.isTouchscreen && "vibrate" in navigator && navigator.vibrate) {
         navigator.vibrate(10);
@@ -110,6 +114,16 @@ export default {
 
       if (updateCount.value > 2) {
         displayValue.value = newValue;
+
+        const now = Date.now();
+        const timeSinceLastEmit = now - lastEmitTime.value;
+        const hasValueChanged = lastEmittedValue.value !== newValue;
+
+        if (timeSinceLastEmit > 150 && hasValueChanged) {
+          ctx.emit("update:model-value", newValue);
+          lastEmitTime.value = now;
+          lastEmittedValue.value = newValue;
+        }
       }
     };
 
@@ -130,10 +144,11 @@ export default {
 
       const step = playerVolumeProps.value.step;
 
-      // If we had many updates, that means it was a drag so we emit only the final value
       if (updateCount.value > 3) {
         displayValue.value = endValue;
-        ctx.emit("update:model-value", endValue);
+        if (lastEmittedValue.value !== endValue) {
+          ctx.emit("update:model-value", endValue);
+        }
       } else {
         if (!store.mobileLayout) {
           displayValue.value = endValue;
