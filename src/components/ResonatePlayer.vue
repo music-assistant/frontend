@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
+import { ResonateTimeFilter } from "@/helpers/ResonateTimeFilter";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
@@ -108,7 +109,7 @@ interface ServerCommand {
 // Resonate State
 let ws: WebSocket | null = null;
 let audioContext: AudioContext | null = null;
-let clockOffset = 0; // Server time offset in microseconds
+let timeFilter = new ResonateTimeFilter(); // Kalman filter for clock synchronization
 let nextPlaybackTime = 0;
 let isPlaying = ref(false);
 let volume = ref(100);
@@ -125,17 +126,18 @@ let timeSyncInterval: any = null;
 let stateInterval: any = null;
 const STATE_UPDATE_INTERVAL = 5000; // 5 seconds
 
-// Helper function to get current server time in microseconds
-function getServerTimeUs(): number {
-  return performance.now() * 1000 + clockOffset;
-}
-
 // Helper function to convert server time to AudioContext time
 function serverTimeToAudioTime(serverTimeUs: number): number {
   if (!audioContext) return 0;
-  const currentServerTimeUs = getServerTimeUs();
-  const deltaUs = serverTimeUs - currentServerTimeUs;
+
+  // Convert server timestamp to client time using Kalman filter
+  const clientTimeUs = timeFilter.computeClientTime(serverTimeUs);
+
+  // Convert client time (microseconds) to AudioContext time (seconds)
+  const nowUs = Math.floor(performance.now() * 1000);
+  const deltaUs = clientTimeUs - nowUs;
   const deltaSec = deltaUs / 1_000_000;
+
   return audioContext.currentTime + deltaSec;
 }
 
@@ -349,21 +351,32 @@ function handleMessage(event: MessageEvent) {
         break;
 
       case MessageType.SERVER_TIME:
-        // Update clock offset using server timestamps
-        // Calculate round-trip time and offset
-        const now = Math.floor(performance.now() * 1000);
-        const clientTransmitted = message.payload.client_transmitted;
-        const serverReceived = message.payload.server_received;
-        const serverTransmitted = message.payload.server_transmitted;
+        // Update Kalman filter with NTP-style measurement
+        // Per spec: client_transmitted (T1), server_received (T2), server_transmitted (T3)
+        const T4 = Math.floor(performance.now() * 1000); // client received time
+        const T1 = message.payload.client_transmitted;
+        const T2 = message.payload.server_received;
+        const T3 = message.payload.server_transmitted;
 
-        // Round trip time
-        const rtt = now - clientTransmitted;
-        // Estimated one-way delay
-        const oneWayDelay = rtt / 2;
-        // Clock offset (server time - client time)
-        clockOffset = serverReceived - clientTransmitted - oneWayDelay;
+        // NTP offset calculation: measurement = ((T2 - T1) + (T3 - T4)) / 2
+        const measurement = ((T2 - T1) + (T3 - T4)) / 2;
 
-        console.log("Resonate: Clock sync - offset:", (clockOffset / 1000).toFixed(2), "ms, RTT:", (rtt / 1000).toFixed(2), "ms");
+        // Max error (half of round-trip time): max_error = ((T4 - T1) - (T3 - T2)) / 2
+        const max_error = ((T4 - T1) - (T3 - T2)) / 2;
+
+        // Update Kalman filter
+        timeFilter.update(measurement, max_error, T4);
+
+        console.log(
+          "Resonate: Clock sync - offset:",
+          (timeFilter.offset / 1000).toFixed(2),
+          "ms, drift:",
+          (timeFilter.drift * 1000000).toFixed(3),
+          "ppm, error:",
+          (timeFilter.error / 1000).toFixed(2),
+          "ms, synced:",
+          timeFilter.is_synchronized,
+        );
         break;
 
       case MessageType.STREAM_START:
@@ -556,6 +569,9 @@ function disconnect() {
     audioContext.close();
     audioContext = null;
   }
+
+  // Reset Kalman filter
+  timeFilter.reset();
 
   gainNode = null;
   currentStreamFormat = null;
