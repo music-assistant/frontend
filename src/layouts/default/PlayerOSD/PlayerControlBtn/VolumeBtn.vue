@@ -40,6 +40,7 @@
                     $event,
                   )
             "
+            @update:local-value="displayVolume = $event"
           >
             <template #prepend>
               <!-- select player -->
@@ -55,11 +56,7 @@
                   :icon="volumeIcon"
                 />
                 <div class="text-caption">
-                  {{
-                    store.activePlayer!.group_members.length > 0
-                      ? Math.round(store.activePlayer?.group_volume || 0)
-                      : Math.round(store.activePlayer?.volume_level || 0)
-                  }}
+                  {{ Math.round(displayVolume) }}
                 </div>
               </Button>
             </template>
@@ -72,11 +69,7 @@
               class="text-caption"
               :style="{ color: props.color ? color : '' }"
             >
-              {{
-                store.activePlayer!.group_members.length > 0
-                  ? Math.round(store.activePlayer?.group_volume || 0)
-                  : Math.round(store.activePlayer?.volume_level || 0)
-              }}
+              {{ Math.round(displayVolume) }}
             </div>
           </Button>
         </div>
@@ -113,7 +106,7 @@ import api from "@/plugins/api";
 import { PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import PlayerVolume from "../PlayerVolume.vue";
 
 // properties
@@ -134,6 +127,29 @@ const props = withDefaults(defineProps<Props>(), {
 
 //refs
 const showVolume = ref(false);
+const displayVolume = ref(0);
+
+if (store.activePlayer) {
+  displayVolume.value = Math.round(
+    store.activePlayer.group_members.length > 0
+      ? store.activePlayer.group_volume
+      : store.activePlayer.volume_level || 0,
+  );
+}
+
+watch(
+  () => store.activePlayer,
+  (player) => {
+    if (player) {
+      displayVolume.value = Math.round(
+        player.group_members.length > 0
+          ? player.group_volume
+          : player.volume_level || 0,
+      );
+    }
+  },
+  { immediate: true, deep: true },
+);
 
 // computed
 const volumeIcon = computed(() => {
@@ -141,10 +157,7 @@ const volumeIcon = computed(() => {
   if (store.activePlayer.volume_muted) {
     return "mdi-volume-mute";
   }
-  const volume =
-    store.activePlayer.group_members.length > 0
-      ? store.activePlayer.group_volume
-      : store.activePlayer.volume_level || 0;
+  const volume = displayVolume.value;
   if (volume === 0) {
     return "mdi-volume-low";
   } else if (volume < 50) {

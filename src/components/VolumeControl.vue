@@ -49,7 +49,7 @@
           "
           @click.stop="api.playerCommandMuteToggle(player.player_id)"
         >
-          <v-icon :size="25" :icon="getVolumeIcon(player)" />
+          <v-icon :size="25" :icon="getVolumeIcon(player, mainDisplayVolume)" />
         </Button>
       </template>
       <template #default>
@@ -76,6 +76,7 @@
               ? api.playerCommandGroupVolume(player.player_id, $event)
               : api.playerCommandVolumeSet(player.player_id, $event)
           "
+          @update:local-value="mainDisplayVolume = $event"
         />
       </template>
       <template #append>
@@ -83,13 +84,7 @@
           mdi-chevron-down
         </v-icon>
         <div v-else class="text-caption volumecaption">
-          {{
-            Math.round(
-              player.group_members.length
-                ? player.group_volume
-                : player.volume_level || 0,
-            )
-          }}
+          {{ Math.round(mainDisplayVolume) }}
         </div>
       </template>
     </v-list-item>
@@ -180,7 +175,15 @@
               "
               @click="api.playerCommandMuteToggle(childPlayer.player_id)"
             >
-              <v-icon :size="25" :icon="getVolumeIcon(childPlayer)" />
+              <v-icon
+                :size="25"
+                :icon="
+                  getVolumeIcon(
+                    childPlayer,
+                    childDisplayVolumes[childPlayer.player_id],
+                  )
+                "
+              />
             </Button>
           </template>
           <template #default>
@@ -201,11 +204,20 @@
               @update:model-value="
                 api.playerCommandVolumeSet(childPlayer.player_id, $event)
               "
+              @update:local-value="
+                childDisplayVolumes[childPlayer.player_id] = $event
+              "
             />
           </template>
           <template #append>
             <div class="text-caption volumecaption">
-              {{ Math.round(childPlayer.volume_level || 0) }}
+              {{
+                Math.round(
+                  childDisplayVolumes[childPlayer.player_id] ??
+                    childPlayer.volume_level ??
+                    0,
+                )
+              }}
             </div>
           </template>
         </v-list-item>
@@ -227,7 +239,7 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 export interface Props {
   player: Player;
@@ -241,18 +253,45 @@ const compProps = defineProps<Props>();
 const playersToSync = ref<string[]>([]);
 const playersToUnSync = ref<string[]>([]);
 const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
+const mainDisplayVolume = ref(0);
+const childDisplayVolumes = ref<Record<string, number>>({});
+
+watch(
+  () => compProps.player,
+  (player) => {
+    mainDisplayVolume.value = Math.round(
+      player.group_members.length
+        ? player.group_volume
+        : player.volume_level || 0,
+    );
+
+    for (const childId of player.group_members) {
+      if (api?.players[childId] && !(childId in childDisplayVolumes.value)) {
+        childDisplayVolumes.value[childId] = Math.round(
+          api.players[childId].volume_level || 0,
+        );
+      }
+    }
+  },
+  { immediate: true, deep: true },
+);
 
 const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
 
-const getVolumeIcon = function (player: Player) {
+const getVolumeIcon = function (player: Player, displayVolume?: number) {
   if (player.volume_muted) {
     return "mdi-volume-mute";
   }
-  const volume = player.group_members.length
-    ? player.group_volume
-    : player.volume_level || 0;
+
+  const volume =
+    displayVolume !== undefined
+      ? displayVolume
+      : player.group_members.length
+        ? player.group_volume
+        : player.volume_level || 0;
+
   if (volume === 0) {
     return "mdi-volume-low";
   } else if (volume < 50) {

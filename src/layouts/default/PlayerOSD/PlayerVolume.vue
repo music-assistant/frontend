@@ -2,7 +2,7 @@
   <v-slider
     ref="sliderRef"
     v-bind="playerVolumeProps"
-    :model-value="displayValue"
+    :model-value="localValue"
     @wheel.prevent="onWheel"
     @click.stop
     @touchstart="onTouchStart"
@@ -14,7 +14,7 @@
     <!-- Dynamically inherit slots from parent -->
     <!-- @vue-ignore -->
     <template v-for="(value, name) in $slots as unknown" #[name]>
-      <slot :name="name"></slot>
+      <slot :name="name" :local-value="localValue"></slot>
     </template>
   </v-slider>
 </template>
@@ -34,13 +34,14 @@ export default {
     style: String,
     allowWheel: Boolean,
   },
-  emits: ["update:model-value"],
+  emits: ["update:model-value", "update:local-value"],
   setup(props, ctx) {
     const sliderRef = ref(null);
     const startValue = ref(0);
     const updateCount = ref(0);
     const lastEnd = ref(0);
-    const displayValue = ref<number>(
+
+    const localValue = ref<number>(
       typeof ctx.attrs["model-value"] === "number"
         ? (ctx.attrs["model-value"] as number)
         : 0,
@@ -49,9 +50,12 @@ export default {
     const touchStartX = ref(0);
     const touchStartY = ref(0);
     const isScrolling = ref(false);
-    const isDragging = ref(false);
-    const lastEmitTime = ref(0);
-    const lastEmittedValue = ref<number | null>(null);
+    const pendingFinalValue = ref<number | null>(null);
+    const blockBackendUpdatesUntil = ref(0);
+
+    watch(localValue, (val) => {
+      ctx.emit("update:local-value", val);
+    });
 
     const playerVolumeDefaults = computed(() => ({
       class: "player-volume",
@@ -79,13 +83,16 @@ export default {
       if (!props.allowWheel) return;
       const step = playerVolumeProps.value.step;
 
-      const volumeValue =
-        (ctx.attrs["model-value"] as number) ?? displayValue.value;
       const volumeDelta = deltaY < 0 ? step : -step;
+      const newValue = Math.max(
+        0,
+        Math.min(100, localValue.value + volumeDelta),
+      );
 
-      const newValue = Math.max(0, Math.min(100, volumeValue + volumeDelta));
-      displayValue.value = newValue;
+      blockBackendUpdatesUntil.value = Date.now() + 2000;
+      localValue.value = newValue;
       ctx.emit("update:model-value", newValue);
+      pendingFinalValue.value = newValue;
     };
 
     const onDragStart = (value: number) => {
@@ -93,12 +100,11 @@ export default {
         return;
       }
 
-      isDragging.value = true;
+      blockBackendUpdatesUntil.value = Date.now() + 10000;
       startValue.value = value;
       updateCount.value = 0;
-      displayValue.value = value;
-      lastEmitTime.value = 0;
-      lastEmittedValue.value = null;
+      localValue.value = value;
+      pendingFinalValue.value = null;
 
       if (store.isTouchscreen && "vibrate" in navigator && navigator.vibrate) {
         navigator.vibrate(10);
@@ -112,32 +118,20 @@ export default {
 
       updateCount.value++;
 
-      if (updateCount.value > 2) {
-        displayValue.value = newValue;
-
-        const now = Date.now();
-        const timeSinceLastEmit = now - lastEmitTime.value;
-        const hasValueChanged = lastEmittedValue.value !== newValue;
-
-        if (timeSinceLastEmit > 150 && hasValueChanged) {
-          ctx.emit("update:model-value", newValue);
-          lastEmitTime.value = now;
-          lastEmittedValue.value = newValue;
-        }
-      }
+      localValue.value = newValue;
     };
 
     const onDragEnd = (endValue: number) => {
       if (isScrolling.value) {
         isScrolling.value = false;
-        isDragging.value = false;
         updateCount.value = 0;
+        blockBackendUpdatesUntil.value = 0;
         return;
       }
 
-      // Cooldown to avoid duplicate emits only for mobile click (otherwise it fires 2 be calls)
       const now = Date.now();
       if (now - lastEnd.value < 250) {
+        blockBackendUpdatesUntil.value = 0;
         return;
       }
       lastEnd.value = now;
@@ -145,27 +139,29 @@ export default {
       const step = playerVolumeProps.value.step;
 
       if (updateCount.value > 3) {
-        displayValue.value = endValue;
-        if (lastEmittedValue.value !== endValue) {
-          ctx.emit("update:model-value", endValue);
-        }
+        localValue.value = endValue;
+        ctx.emit("update:model-value", endValue);
+        pendingFinalValue.value = endValue;
       } else {
         if (!store.mobileLayout) {
-          displayValue.value = endValue;
+          localValue.value = endValue;
           ctx.emit("update:model-value", endValue);
+          pendingFinalValue.value = endValue;
         } else {
           const volumeDelta = endValue > startValue.value ? step : -step;
           const newVolume = Math.max(
             0,
             Math.min(100, startValue.value + volumeDelta),
           );
-          displayValue.value = newVolume;
+          localValue.value = newVolume;
           ctx.emit("update:model-value", newVolume);
+          pendingFinalValue.value = newVolume;
         }
       }
 
-      isDragging.value = false;
       updateCount.value = 0;
+
+      blockBackendUpdatesUntil.value = Date.now() + 1000;
     };
 
     const onTouchStart = (event: TouchEvent) => {
@@ -177,7 +173,7 @@ export default {
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      if (!store.mobileLayout || isDragging.value) return;
+      if (!store.mobileLayout) return;
 
       const touchX = event.touches[0].clientX;
       const touchY = event.touches[0].clientY;
@@ -193,8 +189,20 @@ export default {
     watch(
       () => ctx.attrs["model-value"] as number,
       (val) => {
-        if (typeof val === "number" && updateCount.value === 0) {
-          displayValue.value = val;
+        const now = Date.now();
+        const isBlocked = now < blockBackendUpdatesUntil.value;
+
+        if (typeof val === "number") {
+          if (
+            pendingFinalValue.value !== null &&
+            val === pendingFinalValue.value
+          ) {
+            localValue.value = val;
+            pendingFinalValue.value = null;
+            blockBackendUpdatesUntil.value = 0;
+          } else if (!isBlocked) {
+            localValue.value = val;
+          }
         }
       },
     );
@@ -206,7 +214,7 @@ export default {
       onDragStart,
       onUpdateModelValue,
       onDragEnd,
-      displayValue,
+      localValue,
       onTouchStart,
       onTouchMove,
     };
