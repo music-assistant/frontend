@@ -52,6 +52,7 @@ export default {
     const isScrolling = ref(false);
     const pendingFinalValue = ref<number | null>(null);
     const blockBackendUpdatesUntil = ref(0);
+    const debounceTimeout = ref<NodeJS.Timeout | null>(null);
 
     watch(localValue, (val) => {
       ctx.emit("update:local-value", val);
@@ -119,9 +120,25 @@ export default {
       updateCount.value++;
 
       localValue.value = newValue;
+
+      if (updateCount.value > 2) {
+        if (debounceTimeout.value) {
+          clearTimeout(debounceTimeout.value);
+        }
+
+        debounceTimeout.value = setTimeout(() => {
+          ctx.emit("update:model-value", newValue);
+          debounceTimeout.value = null;
+        }, 50);
+      }
     };
 
     const onDragEnd = (endValue: number) => {
+      if (debounceTimeout.value) {
+        clearTimeout(debounceTimeout.value);
+        debounceTimeout.value = null;
+      }
+
       if (isScrolling.value) {
         isScrolling.value = false;
         updateCount.value = 0;
