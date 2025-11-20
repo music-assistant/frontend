@@ -520,22 +520,6 @@ function disconnect() {
   isPlaying.value = false;
 }
 
-// Watch for audio source changes
-watch(
-  () => webPlayer.audioSource,
-  (source) => {
-    if (source === WebPlayerMode.BUILTIN) {
-      connect();
-      // Start state update interval
-      stateInterval = setInterval(sendStateUpdate, STATE_UPDATE_INTERVAL);
-      sendStateUpdate();
-    } else {
-      disconnect();
-    }
-  },
-  { immediate: true },
-);
-
 // Watch for volume changes
 watch([volume, muted], () => {
   updateVolume();
@@ -544,19 +528,24 @@ watch([volume, muted], () => {
 // MediaSession setup for metadata
 let unsubMetadata: (() => void) | undefined;
 
-watch(
-  () => webPlayer.audioSource,
-  (source) => {
-    if (unsubMetadata) unsubMetadata();
-    unsubMetadata = undefined;
-    if (source === WebPlayerMode.BUILTIN) {
-      unsubMetadata = useMediaBrowserMetaData(props.playerId);
-    }
-  },
-);
-
-// MediaSession setup for controls
+// Setup on mount
 onMounted(() => {
+  console.log("Resonate: Component mounted, connecting...");
+
+  // Set audio source to BUILTIN since this component handles audio
+  webPlayer.audioSource = WebPlayerMode.BUILTIN;
+
+  // Setup metadata listener
+  unsubMetadata = useMediaBrowserMetaData(props.playerId);
+
+  // Connect to Resonate server
+  connect();
+
+  // Start state update interval
+  stateInterval = setInterval(sendStateUpdate, STATE_UPDATE_INTERVAL);
+  sendStateUpdate();
+
+  // MediaSession setup for controls
   navigator.mediaSession.setActionHandler("play", () => {
     if (!props.playerId) return;
     api.playerCommandPlay(props.playerId);
