@@ -49,7 +49,6 @@ const useResonatePlayer = computed(() => {
     }`,
   );
   return resonateProvider?.available === true;
-  
 });
 
 const theme = useTheme();
@@ -135,7 +134,10 @@ onMounted(() => {
     store.connected = true;
     // enable the builtin player by default if a player provider is available
     // prefer resonate over builtin_player
-    if (allowBuiltinPlayer && (api.getProvider("resonate") || api.getProvider("builtin_player"))) {
+    if (
+      allowBuiltinPlayer &&
+      (api.getProvider("resonate") || api.getProvider("builtin_player"))
+    ) {
       webPlayer.setMode(WebPlayerMode.BUILTIN);
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
