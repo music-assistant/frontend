@@ -47,7 +47,7 @@ interface ClientHello {
       software_version?: string;
     };
     player_support?: {
-      support_formats: Array<{
+      supported_formats: Array<{
         codec: string;
         channels: number;
         sample_rate: number;
@@ -80,29 +80,37 @@ interface ClientState {
 interface StreamStart {
   type: MessageType.STREAM_START;
   payload: {
-    codec: string;
-    sample_rate: number;
-    channels: number;
-    bit_depth?: number;
+    player: {
+      codec: string;
+      sample_rate: number;
+      channels: number;
+      bit_depth?: number;
+      codec_header?: string;
+    };
   };
 }
 
 interface StreamUpdate {
   type: MessageType.STREAM_UPDATE;
   payload: {
-    codec: string;
-    sample_rate: number;
-    channels: number;
-    bit_depth?: number;
+    player?: {
+      codec?: string;
+      sample_rate?: number;
+      channels?: number;
+      bit_depth?: number;
+      codec_header?: string;
+    };
   };
 }
 
 interface ServerCommand {
   type: MessageType.SERVER_COMMAND;
   payload: {
-    command: string;
-    volume?: number;
-    muted?: boolean;
+    player: {
+      command: "volume" | "mute";
+      volume?: number;
+      mute?: boolean;
+    };
   };
 }
 
@@ -114,7 +122,8 @@ let nextPlaybackTime = 0;
 let isPlaying = ref(false);
 let volume = ref(100);
 let muted = ref(false);
-let currentStreamFormat: StreamStart["payload"] | null = null;
+let playerState = ref<"synchronized" | "error">("synchronized"); // Track synchronization state
+let currentStreamFormat: StreamStart["payload"]["player"] | null = null;
 let audioBufferQueue: Array<{ buffer: AudioBuffer; serverTime: number }> = [];
 let gainNode: GainNode | null = null;
 
@@ -188,7 +197,7 @@ async function sendStateUpdate() {
     type: MessageType.CLIENT_STATE,
     payload: {
       player: {
-        state: "synchronized",
+        state: playerState.value,
         volume: volume.value,
         muted: muted.value,
       },
@@ -200,14 +209,35 @@ async function sendStateUpdate() {
 // Decode audio data based on codec
 async function decodeAudioData(
   audioData: ArrayBuffer,
-  format: StreamStart["payload"],
+  format: {
+    codec: string;
+    sample_rate: number;
+    channels: number;
+    bit_depth?: number;
+    codec_header?: string;
+  },
 ): Promise<AudioBuffer | null> {
   if (!audioContext) return null;
 
   try {
     if (format.codec === "opus" || format.codec === "flac") {
       // Opus and FLAC can be decoded by the browser's native decoder
-      return await audioContext.decodeAudioData(audioData);
+      // If codec_header is provided, prepend it to the audio data
+      let dataToEncode = audioData;
+      if (format.codec_header) {
+        // Decode Base64 codec header
+        const headerBytes = Uint8Array.from(atob(format.codec_header), (c) =>
+          c.charCodeAt(0),
+        );
+        // Concatenate header + audio data
+        const combined = new Uint8Array(
+          headerBytes.length + audioData.byteLength,
+        );
+        combined.set(headerBytes, 0);
+        combined.set(new Uint8Array(audioData), headerBytes.length);
+        dataToEncode = combined.buffer;
+      }
+      return await audioContext.decodeAudioData(dataToEncode);
     } else if (format.codec === "pcm") {
       // PCM data needs manual decoding
       const bytesPerSample = (format.bit_depth || 16) / 8;
@@ -264,12 +294,13 @@ async function handleBinaryMessage(data: ArrayBuffer) {
   if (!currentStreamFormat || !audioContext || !gainNode) return;
 
   // First byte contains role type and message slot
+  // Spec: bits 7-2 identify role type (6 bits), bits 1-0 identify message slot (2 bits)
   const firstByte = new Uint8Array(data)[0];
-  const roleType = (firstByte >> 4) & 0x0f;
-  const messageSlot = firstByte & 0x0f;
+  const roleType = (firstByte >> 2) & 0x3f; // Extract bits 7-2
+  const messageSlot = firstByte & 0x03; // Extract bits 1-0
 
-  // Type 0 is audio chunk
-  if (roleType === 0 && messageSlot === 0) {
+  // Type 0 is audio chunk (Player role, slot 0)
+  if (firstByte === 0) {
     // Next 8 bytes are server timestamp in microseconds (big-endian int64)
     const timestampView = new DataView(data, 1, 8);
     // Read as big-endian int64 and convert to number
@@ -290,7 +321,18 @@ async function handleBinaryMessage(data: ArrayBuffer) {
           currentTime,
           delta: playbackTime - currentTime,
         });
+        // Set error state if we're dropping chunks
+        if (playerState.value === "synchronized") {
+          playerState.value = "error";
+          sendStateUpdate();
+        }
         return;
+      }
+
+      // Successfully playing chunk - recover to synchronized state if needed
+      if (playerState.value === "error") {
+        playerState.value = "synchronized";
+        sendStateUpdate();
       }
 
       // Schedule playback
@@ -314,9 +356,13 @@ function handleMessage(event: MessageEvent) {
     switch (message.type) {
       case MessageType.SERVER_HELLO:
         console.log("Resonate: Connected to server");
+        // Per spec: Send initial client/state immediately after server/hello
+        sendStateUpdate();
         // Start time synchronization
         sendTimeSync();
         timeSyncInterval = setInterval(sendTimeSync, TIME_SYNC_INTERVAL);
+        // Start periodic state updates
+        stateInterval = setInterval(sendStateUpdate, STATE_UPDATE_INTERVAL);
         break;
 
       case MessageType.SERVER_TIME: {
@@ -348,14 +394,20 @@ function handleMessage(event: MessageEvent) {
       }
 
       case MessageType.STREAM_START:
-        currentStreamFormat = message.payload;
+        currentStreamFormat = message.payload.player;
         console.log("Resonate: Stream started", currentStreamFormat);
         initAudioContext();
         isPlaying.value = true;
         break;
 
       case MessageType.STREAM_UPDATE:
-        currentStreamFormat = message.payload;
+        // Merge delta updates into existing format
+        if (message.payload.player && currentStreamFormat) {
+          currentStreamFormat = {
+            ...currentStreamFormat,
+            ...message.payload.player,
+          };
+        }
         console.log("Resonate: Stream format updated", currentStreamFormat);
         break;
 
@@ -364,6 +416,10 @@ function handleMessage(event: MessageEvent) {
         isPlaying.value = false;
         currentStreamFormat = null;
         audioBufferQueue = [];
+        // Immediately stop all scheduled audio playback
+        if (audioContext && audioContext.state === "running") {
+          audioContext.suspend();
+        }
         break;
 
       case MessageType.SERVER_COMMAND:
@@ -389,50 +445,28 @@ function handleMessage(event: MessageEvent) {
 
 // Handle server commands
 function handleServerCommand(message: ServerCommand) {
-  const { command, volume: newVolume, muted: newMuted } = message.payload;
+  const playerCommand = message.payload.player;
+  if (!playerCommand) return;
 
-  switch (command) {
-    case "play":
-      if (audioContext && audioContext.state === "suspended") {
-        audioContext.resume();
-      }
-      isPlaying.value = true;
-      break;
-
-    case "pause":
-      if (audioContext) {
-        audioContext.suspend();
-      }
-      isPlaying.value = false;
-      break;
-
-    case "stop":
-      if (audioContext) {
-        audioContext.suspend();
-      }
-      isPlaying.value = false;
-      currentStreamFormat = null;
-      audioBufferQueue = [];
-      break;
-
-    case "set_volume":
-      if (newVolume !== undefined) {
-        volume.value = newVolume;
+  switch (playerCommand.command) {
+    case "volume":
+      // Set volume command
+      if (playerCommand.volume !== undefined) {
+        volume.value = playerCommand.volume;
         updateVolume();
       }
       break;
 
     case "mute":
-      muted.value = true;
-      updateVolume();
-      break;
-
-    case "unmute":
-      muted.value = false;
-      updateVolume();
+      // Mute/unmute command - uses boolean mute field
+      if (playerCommand.mute !== undefined) {
+        muted.value = playerCommand.mute;
+        updateVolume();
+      }
       break;
   }
 
+  // Send state update to confirm the change
   sendStateUpdate();
 }
 
@@ -475,7 +509,7 @@ async function connect() {
             software_version: navigator.userAgent,
           },
           player_support: {
-            support_formats: [
+            supported_formats: [
               // Opus preferred (best quality/compression ratio)
               { codec: "opus", sample_rate: 48000, channels: 2, bit_depth: 16 },
               { codec: "opus", sample_rate: 44100, channels: 2, bit_depth: 16 },
@@ -568,10 +602,6 @@ onMounted(() => {
 
   // Connect to Resonate server
   connect();
-
-  // Start state update interval (sends client/state to Resonate server)
-  stateInterval = setInterval(sendStateUpdate, STATE_UPDATE_INTERVAL);
-  sendStateUpdate();
 
   // MediaSession setup for browser controls
   // These forward to Music Assistant player commands (not Resonate-specific)
