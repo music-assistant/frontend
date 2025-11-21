@@ -209,18 +209,36 @@ export const webPlayer = reactive({
         "builtin_webplayer_id",
       );
       shouldUnregister = undefined;
-      const player = await api.registerBuiltinPlayer(
-        "This Device",
-        saved_player_id !== null ? saved_player_id : undefined,
-      );
-      this.lastUpdate = Date.now();
-      const player_id = player.player_id;
 
-      if (saved_player_id !== player_id) {
-        window.localStorage.setItem("builtin_webplayer_id", player_id);
+      // Check if Resonate provider is available
+      const resonateProvider = api.getProvider("resonate");
+      if (resonateProvider?.available) {
+        // Use Resonate player - don't register builtin_player
+        // ResonatePlayer component will register via WebSocket
+        // Use saved player_id or generate a new one if none exists
+        let player_id = saved_player_id;
+        if (!player_id) {
+          // Generate a new player ID (same format as builtin player)
+          player_id = `ma_${Math.random().toString(36).substring(2, 12)}`;
+          window.localStorage.setItem("builtin_webplayer_id", player_id);
+        }
+        this.player_id = player_id;
+        this.lastUpdate = Date.now();
+      } else {
+        // Use builtin player
+        const player = await api.registerBuiltinPlayer(
+          "This Device",
+          saved_player_id !== null ? saved_player_id : undefined,
+        );
+        this.lastUpdate = Date.now();
+        const player_id = player.player_id;
+
+        if (saved_player_id !== player_id) {
+          window.localStorage.setItem("builtin_webplayer_id", player_id);
+        }
+
+        this.player_id = player_id;
       }
-
-      this.player_id = player_id;
 
       bc.postMessage(BC_MSG.CONTROL_TAKEN);
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
