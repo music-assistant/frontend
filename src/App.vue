@@ -40,9 +40,16 @@ import ResonatePlayer from "./components/ResonatePlayer.vue";
 
 // Determine which player to use based on provider availability
 const useResonatePlayer = computed(() => {
+  console.log("Checking for resonate provider...");
   // Use Resonate player if the resonate provider is available
   const resonateProvider = api.getProvider("resonate");
+  console.log(
+    `Resonate provider available: ${
+      resonateProvider?.available === true ? "yes" : "no"
+    }`,
+  );
   return resonateProvider?.available === true;
+  
 });
 
 const theme = useTheme();
@@ -126,8 +133,9 @@ onMounted(() => {
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
-    // enable the builtin player by default if the builtin player provider is available
-    if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
+    // enable the builtin player by default if a player provider is available
+    // prefer resonate over builtin_player
+    if (allowBuiltinPlayer && (api.getProvider("resonate") || api.getProvider("builtin_player"))) {
       webPlayer.setMode(WebPlayerMode.BUILTIN);
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);

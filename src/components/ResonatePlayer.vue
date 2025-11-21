@@ -118,14 +118,21 @@ interface ServerCommand {
 let ws: WebSocket | null = null;
 let audioContext: AudioContext | null = null;
 let timeFilter = new ResonateTimeFilter(); // Kalman filter for clock synchronization
+let audioContextStartTime = 0; // performance.now() when AudioContext was created
+let streamStartServerTime = 0; // Server timestamp of the first chunk (stream anchor)
+let streamStartAudioTime = 0; // AudioContext time when first chunk should play
 let nextPlaybackTime = 0;
+let lastScheduledEndTime = 0;
 let isPlaying = ref(false);
 let volume = ref(100);
 let muted = ref(false);
 let playerState = ref<"synchronized" | "error">("synchronized"); // Track synchronization state
 let currentStreamFormat: StreamStart["payload"]["player"] | null = null;
 let audioBufferQueue: Array<{ buffer: AudioBuffer; serverTime: number }> = [];
+let scheduledSources: AudioBufferSourceNode[] = [];
+let lastScheduledServerTime = 0; // Track the last chunk we scheduled to ensure ordering
 let gainNode: GainNode | null = null;
+let queueProcessTimeout: any = null; // Debounce timer for queue processing
 
 // Clock synchronization
 const TIME_SYNC_INTERVAL = 5000; // 5 seconds
@@ -134,21 +141,6 @@ let timeSyncInterval: any = null;
 // State update interval
 let stateInterval: any = null;
 const STATE_UPDATE_INTERVAL = 5000; // 5 seconds
-
-// Helper function to convert server time to AudioContext time
-function serverTimeToAudioTime(serverTimeUs: number): number {
-  if (!audioContext) return 0;
-
-  // Convert server timestamp to client time using Kalman filter
-  const clientTimeUs = timeFilter.computeClientTime(serverTimeUs);
-
-  // Convert client time (microseconds) to AudioContext time (seconds)
-  const nowUs = Math.floor(performance.now() * 1000);
-  const deltaUs = clientTimeUs - nowUs;
-  const deltaSec = deltaUs / 1_000_000;
-
-  return audioContext.currentTime + deltaSec;
-}
 
 // Send JSON message to server
 function sendMessage(message: any) {
@@ -160,7 +152,12 @@ function sendMessage(message: any) {
 // Initialize audio context
 function initAudioContext() {
   if (!audioContext) {
-    audioContext = new AudioContext();
+    // Create AudioContext with explicit sample rate matching the stream
+    // This avoids resampling artifacts
+    const streamSampleRate = currentStreamFormat?.sample_rate || 48000;
+    audioContext = new AudioContext({ sampleRate: streamSampleRate });
+    audioContextStartTime = performance.now();
+    console.log(`AudioContext: sampleRate=${audioContext.sampleRate}Hz (requested ${streamSampleRate}Hz), state=${audioContext.state}`);
     gainNode = audioContext.createGain();
     gainNode.connect(audioContext.destination);
     updateVolume();
@@ -291,7 +288,18 @@ async function decodeAudioData(
 
 // Handle binary audio message
 async function handleBinaryMessage(data: ArrayBuffer) {
-  if (!currentStreamFormat || !audioContext || !gainNode) return;
+  if (!currentStreamFormat) {
+    console.warn("Resonate: Received audio chunk but no stream format set");
+    return;
+  }
+  if (!audioContext) {
+    console.warn("Resonate: Received audio chunk but no audio context");
+    return;
+  }
+  if (!gainNode) {
+    console.warn("Resonate: Received audio chunk but no gain node");
+    return;
+  }
 
   // First byte contains role type and message slot
   // Spec: bits 7-2 identify role type (6 bits), bits 1-0 identify message slot (2 bits)
@@ -311,39 +319,118 @@ async function handleBinaryMessage(data: ArrayBuffer) {
     const audioBuffer = await decodeAudioData(audioData, currentStreamFormat);
 
     if (audioBuffer) {
-      const playbackTime = serverTimeToAudioTime(serverTimeUs);
-      const currentTime = audioContext.currentTime;
+      // Add to queue for ordered playback
+      audioBufferQueue.push({ buffer: audioBuffer, serverTime: serverTimeUs });
 
-      // Drop chunks that are too late (with small tolerance)
-      if (playbackTime < currentTime - 0.1) {
-        console.warn("Dropping late audio chunk", {
-          playbackTime,
-          currentTime,
-          delta: playbackTime - currentTime,
-        });
-        // Set error state if we're dropping chunks
-        if (playerState.value === "synchronized") {
-          playerState.value = "error";
-          sendStateUpdate();
-        }
-        return;
+      // Debounce queue processing to allow multiple chunks to arrive
+      // This handles out-of-order arrivals from async FLAC decoding
+      if (queueProcessTimeout) {
+        clearTimeout(queueProcessTimeout);
       }
-
-      // Successfully playing chunk - recover to synchronized state if needed
-      if (playerState.value === "error") {
-        playerState.value = "synchronized";
-        sendStateUpdate();
-      }
-
-      // Schedule playback
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(gainNode);
-
-      // If the playback time is in the past (but within tolerance), play immediately
-      const scheduleTime = Math.max(playbackTime, currentTime);
-      source.start(scheduleTime);
+      queueProcessTimeout = setTimeout(() => {
+        processAudioQueue();
+        queueProcessTimeout = null;
+      }, 50); // 50ms debounce - collect a larger batch before scheduling
+    } else {
+      console.error("Resonate: Failed to decode audio buffer");
     }
+  }
+}
+
+// Process the audio queue and schedule chunks in order
+function processAudioQueue() {
+  if (!audioContext || !gainNode) return;
+
+  // Sort queue by server timestamp to ensure proper ordering
+  audioBufferQueue.sort((a, b) => a.serverTime - b.serverTime);
+
+  // Capture currentTime ONCE at the start of scheduling
+  const currentTime = audioContext.currentTime;
+
+  // If this is the first batch and we haven't established the anchor yet,
+  // use the EARLIEST chunk's timestamp as the anchor (not the first one we process)
+  if (streamStartServerTime === 0 && audioBufferQueue.length > 0) {
+    const earliestChunk = audioBufferQueue[0];
+    streamStartServerTime = earliestChunk.serverTime;
+    streamStartAudioTime = currentTime + 0.2;
+    console.log(`Stream anchor: serverTime=${streamStartServerTime}, audioTime=${streamStartAudioTime.toFixed(3)}, current=${currentTime.toFixed(3)}`);
+  }
+
+  // Log the queue before processing (first 5 batches only)
+  if (scheduledSources.length < 50) {
+    console.log(`Queue batch (${audioBufferQueue.length} chunks):`, audioBufferQueue.map(c => c.serverTime).join(', '));
+  }
+
+  // Process only NEW chunks that haven't been scheduled yet
+  while (audioBufferQueue.length > 0) {
+    const chunk = audioBufferQueue[0]; // Peek at first chunk
+
+    // Skip chunks we've already scheduled
+    if (lastScheduledServerTime > 0 && chunk.serverTime <= lastScheduledServerTime) {
+      audioBufferQueue.shift(); // Remove from queue
+      console.warn(`Skipping already scheduled chunk: ${chunk.serverTime} (last=${lastScheduledServerTime})`);
+      continue;
+    }
+
+    // Check for gaps - detect missing chunks (more than 2x the expected gap)
+    if (lastScheduledServerTime > 0) {
+      const actualGap = chunk.serverTime - lastScheduledServerTime;
+      // Typical gaps are 25ms for PCM, 96ms for FLAC
+      // Only warn if gap is suspiciously large (more than 150ms = likely missing chunks)
+      if (actualGap > 150000) { // More than 150ms gap
+        console.warn(`Large gap detected: ${actualGap}μs (${(actualGap/1000).toFixed(1)}ms)`);
+      }
+    }
+
+    // Remove from queue
+    audioBufferQueue.shift();
+
+    // Calculate time offset from first chunk (in microseconds)
+    const offsetUs = chunk.serverTime - streamStartServerTime;
+    const offsetSec = offsetUs / 1_000_000;
+    const playbackTime = streamStartAudioTime + offsetSec;
+
+    // Drop chunks that are too late (more than 100ms in the past)
+    if (playbackTime < currentTime - 0.1) {
+      console.warn("DROP: late chunk");
+      continue;
+    }
+
+    // Schedule playback
+    const scheduleTime = Math.max(playbackTime, currentTime);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = chunk.buffer;
+    source.connect(gainNode);
+
+    // Calculate expected end time
+    const bufferDuration = source.buffer?.duration || 0;
+    const expectedEndTime = scheduleTime + bufferDuration;
+
+    // Check for gaps or overlaps with previous chunk
+    if (lastScheduledEndTime > 0) {
+      const gap = scheduleTime - lastScheduledEndTime;
+      if (Math.abs(gap) > 0.001) { // More than 1ms gap/overlap
+        console.warn(`Timing issue: gap=${(gap * 1000).toFixed(2)}ms between chunks (${gap > 0 ? 'gap' : 'overlap'})`);
+      }
+    }
+
+    source.start(scheduleTime);
+
+    // Track last scheduled chunk
+    lastScheduledServerTime = chunk.serverTime;
+    lastScheduledEndTime = expectedEndTime;
+
+    // Log first 10 chunks with buffer duration
+    if (scheduledSources.length < 10) {
+      console.log(`Chunk ${scheduledSources.length}: serverTime=${chunk.serverTime}, offset=${offsetSec.toFixed(3)}s, schedule=${scheduleTime.toFixed(3)}, duration=${bufferDuration.toFixed(3)}s, buffer=${(scheduleTime - currentTime).toFixed(3)}s`);
+    }
+
+    scheduledSources.push(source);
+    source.onended = () => {
+      const idx = scheduledSources.indexOf(source);
+      if (idx > -1) scheduledSources.splice(idx, 1);
+    };
   }
 }
 
@@ -397,6 +484,19 @@ function handleMessage(event: MessageEvent) {
         currentStreamFormat = message.payload.player;
         console.log("Resonate: Stream started", currentStreamFormat);
         initAudioContext();
+        // Resume AudioContext if suspended (required for browser autoplay policies)
+        if (audioContext && audioContext.state === "suspended") {
+          audioContext.resume().then(() => {
+            console.log("Resonate: AudioContext resumed");
+          });
+        }
+        // Reset scheduling state for new stream
+        streamStartServerTime = 0; // Reset stream anchor
+        streamStartAudioTime = 0;
+        lastScheduledEndTime = 0;
+        lastScheduledServerTime = 0;
+        scheduledSources = [];
+        audioBufferQueue = [];
         isPlaying.value = true;
         break;
 
@@ -416,10 +516,8 @@ function handleMessage(event: MessageEvent) {
         isPlaying.value = false;
         currentStreamFormat = null;
         audioBufferQueue = [];
-        // Immediately stop all scheduled audio playback
-        if (audioContext && audioContext.state === "running") {
-          audioContext.suspend();
-        }
+        // Note: We keep the AudioContext running so it's ready for the next stream
+        // The browser will suspend it automatically after inactivity
         break;
 
       case MessageType.SERVER_COMMAND:
@@ -494,6 +592,7 @@ async function connect() {
 
     ws.onopen = () => {
       console.log("Resonate: WebSocket connected");
+      console.log("Resonate: Using player_id:", props.playerId);
 
       // Send client hello with player identification
       const hello: ClientHello = {
@@ -510,15 +609,7 @@ async function connect() {
           },
           player_support: {
             supported_formats: [
-              // Opus preferred (best quality/compression ratio)
-              { codec: "opus", sample_rate: 48000, channels: 2, bit_depth: 16 },
-              { codec: "opus", sample_rate: 44100, channels: 2, bit_depth: 16 },
-              // FLAC fallback (lossless)
-              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 16 },
-              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 16 },
-              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 24 },
-              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 24 },
-              // PCM fallback (uncompressed)
+              // PCM only (uncompressed, no chunk boundary artifacts)
               { codec: "pcm", sample_rate: 48000, channels: 2, bit_depth: 16 },
               { codec: "pcm", sample_rate: 44100, channels: 2, bit_depth: 16 },
             ],
