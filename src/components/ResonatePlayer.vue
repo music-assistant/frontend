@@ -212,7 +212,8 @@ async function decodeAudioData(
       // PCM data needs manual decoding
       const bytesPerSample = (format.bit_depth || 16) / 8;
       const dataView = new DataView(audioData);
-      const numSamples = audioData.byteLength / (bytesPerSample * format.channels);
+      const numSamples =
+        audioData.byteLength / (bytesPerSample * format.channels);
 
       const audioBuffer = audioContext.createBuffer(
         format.channels,
@@ -318,7 +319,7 @@ function handleMessage(event: MessageEvent) {
         timeSyncInterval = setInterval(sendTimeSync, TIME_SYNC_INTERVAL);
         break;
 
-      case MessageType.SERVER_TIME:
+      case MessageType.SERVER_TIME: {
         // Update Kalman filter with NTP-style measurement
         // Per spec: client_transmitted (T1), server_received (T2), server_transmitted (T3)
         const T4 = Math.floor(performance.now() * 1000); // client received time
@@ -327,10 +328,10 @@ function handleMessage(event: MessageEvent) {
         const T3 = message.payload.server_transmitted;
 
         // NTP offset calculation: measurement = ((T2 - T1) + (T3 - T4)) / 2
-        const measurement = ((T2 - T1) + (T3 - T4)) / 2;
+        const measurement = (T2 - T1 + (T3 - T4)) / 2;
 
         // Max error (half of round-trip time): max_error = ((T4 - T1) - (T3 - T2)) / 2
-        const max_error = ((T4 - T1) - (T3 - T2)) / 2;
+        const max_error = (T4 - T1 - (T3 - T2)) / 2;
 
         // Update Kalman filter
         timeFilter.update(measurement, max_error, T4);
@@ -338,14 +339,13 @@ function handleMessage(event: MessageEvent) {
         console.log(
           "Resonate: Clock sync - offset:",
           (timeFilter.offset / 1000).toFixed(2),
-          "ms, drift:",
-          (timeFilter.drift * 1000000).toFixed(3),
-          "ppm, error:",
+          "ms, error:",
           (timeFilter.error / 1000).toFixed(2),
           "ms, synced:",
           timeFilter.is_synchronized,
         );
         break;
+      }
 
       case MessageType.STREAM_START:
         currentStreamFormat = message.payload;

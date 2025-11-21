@@ -18,7 +18,7 @@
 // When residual > CUTOFF * max_error, the filter applies forgetting to recover from outliers.
 const ADAPTIVE_FORGETTING_CUTOFF = 0.75;
 
-interface TimeElement {
+export interface TimeElement {
   last_update: number;
   offset: number;
   drift: number;
@@ -43,7 +43,15 @@ export class ResonateTimeFilter {
   constructor(process_std_dev: number = 0.01, forget_factor: number = 1.001) {
     this._process_variance = process_std_dev * process_std_dev;
     this._forget_variance_factor = forget_factor * forget_factor;
-    this._current_time_element = {
+    this._current_time_element = this._createDefaultTimeElement();
+  }
+
+  /**
+   * Create a default TimeElement with zero values.
+   * Single source of truth for default initialization.
+   */
+  private _createDefaultTimeElement(): TimeElement {
+    return {
       last_update: 0,
       offset: 0.0,
       drift: 0.0,
@@ -122,17 +130,16 @@ export class ResonateTimeFilter {
 
     // Process noise only applied to offset (modeling clock jitter/wander)
     const drift_process_variance = 0.0; // Drift assumed stable
-    const new_drift_covariance =
-      this._drift_covariance + drift_process_variance;
+    let new_drift_covariance = this._drift_covariance + drift_process_variance;
 
     const offset_drift_process_variance = 0.0;
-    const new_offset_drift_covariance =
+    let new_offset_drift_covariance =
       this._offset_drift_covariance +
       this._drift_covariance * dt +
       offset_drift_process_variance;
 
     const offset_process_variance = dt * this._process_variance;
-    const new_offset_covariance =
+    let new_offset_covariance =
       this._offset_covariance +
       2 * this._offset_drift_covariance * dt +
       this._drift_covariance * dt_squared +
@@ -142,33 +149,24 @@ export class ResonateTimeFilter {
     const residual = measurement - offset; // Innovation: y_k = z_k - H * x_k|k-1
     const max_residual_cutoff = max_error * ADAPTIVE_FORGETTING_CUTOFF;
 
-    let apply_forgetting = false;
     if (this._count < 100) {
       // Build sufficient history before enabling adaptive forgetting
       this._count += 1;
     } else if (residual > max_residual_cutoff) {
       // Large prediction error detected - likely network disruption or clock adjustment
       // Apply forgetting factor to increase Kalman gain and accelerate convergence
-      apply_forgetting = true;
-    }
-
-    let final_drift_covariance = new_drift_covariance;
-    let final_offset_drift_covariance = new_offset_drift_covariance;
-    let final_offset_covariance = new_offset_covariance;
-
-    if (apply_forgetting) {
-      final_drift_covariance *= this._forget_variance_factor;
-      final_offset_drift_covariance *= this._forget_variance_factor;
-      final_offset_covariance *= this._forget_variance_factor;
+      new_drift_covariance *= this._forget_variance_factor;
+      new_offset_drift_covariance *= this._forget_variance_factor;
+      new_offset_covariance *= this._forget_variance_factor;
     }
 
     /// Kalman Update Step ///
     // Innovation covariance: S = H * P * H^T + R, where H = [1, 0]
-    const uncertainty = 1.0 / (final_offset_covariance + measurement_variance);
+    const uncertainty = 1.0 / (new_offset_covariance + measurement_variance);
 
     // Kalman gain: K = P * H^T * S^(-1)
-    const offset_gain = final_offset_covariance * uncertainty;
-    const drift_gain = final_offset_drift_covariance * uncertainty;
+    const offset_gain = new_offset_covariance * uncertainty;
+    const drift_gain = new_offset_drift_covariance * uncertainty;
 
     // State update: x_k|k = x_k|k-1 + K * y_k
     this._offset = offset + offset_gain * residual;
@@ -177,11 +175,11 @@ export class ResonateTimeFilter {
     // Covariance update: P_k|k = (I - K*H) * P_k|k-1
     // Using simplified form to ensure numerical stability
     this._drift_covariance =
-      final_drift_covariance - drift_gain * final_offset_drift_covariance;
+      new_drift_covariance - drift_gain * new_offset_drift_covariance;
     this._offset_drift_covariance =
-      final_offset_drift_covariance - drift_gain * final_offset_covariance;
+      new_offset_drift_covariance - drift_gain * new_offset_covariance;
     this._offset_covariance =
-      final_offset_covariance - offset_gain * final_offset_covariance;
+      new_offset_covariance - offset_gain * new_offset_covariance;
 
     this._current_time_element = {
       last_update: this._last_update,
@@ -248,11 +246,7 @@ export class ResonateTimeFilter {
     this._offset_drift_covariance = 0.0;
     this._drift_covariance = 0.0;
 
-    this._current_time_element = {
-      last_update: 0,
-      offset: 0.0,
-      drift: 0.0,
-    };
+    this._current_time_element = this._createDefaultTimeElement();
   }
 
   /**
@@ -291,12 +285,5 @@ export class ResonateTimeFilter {
    */
   get offset(): number {
     return this._offset;
-  }
-
-  /**
-   * Get the current filtered drift estimate (dimensionless rate).
-   */
-  get drift(): number {
-    return this._drift;
   }
 }
