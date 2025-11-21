@@ -118,10 +118,8 @@ interface ServerCommand {
 let ws: WebSocket | null = null;
 let audioContext: AudioContext | null = null;
 let timeFilter = new ResonateTimeFilter(); // Kalman filter for clock synchronization
-let audioContextStartTime = 0; // performance.now() when AudioContext was created
 let streamStartServerTime = 0; // Server timestamp of the first chunk (stream anchor)
 let streamStartAudioTime = 0; // AudioContext time when first chunk should play
-let nextPlaybackTime = 0;
 let lastScheduledEndTime = 0;
 let isPlaying = ref(false);
 let volume = ref(100);
@@ -156,8 +154,6 @@ function initAudioContext() {
     // This avoids resampling artifacts
     const streamSampleRate = currentStreamFormat?.sample_rate || 48000;
     audioContext = new AudioContext({ sampleRate: streamSampleRate });
-    audioContextStartTime = performance.now();
-    console.log(`AudioContext: sampleRate=${audioContext.sampleRate}Hz (requested ${streamSampleRate}Hz), state=${audioContext.state}`);
     gainNode = audioContext.createGain();
     gainNode.connect(audioContext.destination);
     updateVolume();
@@ -353,12 +349,6 @@ function processAudioQueue() {
     const earliestChunk = audioBufferQueue[0];
     streamStartServerTime = earliestChunk.serverTime;
     streamStartAudioTime = currentTime + 0.2;
-    console.log(`Stream anchor: serverTime=${streamStartServerTime}, audioTime=${streamStartAudioTime.toFixed(3)}, current=${currentTime.toFixed(3)}`);
-  }
-
-  // Log the queue before processing (first 5 batches only)
-  if (scheduledSources.length < 50) {
-    console.log(`Queue batch (${audioBufferQueue.length} chunks):`, audioBufferQueue.map(c => c.serverTime).join(', '));
   }
 
   // Process only NEW chunks that haven't been scheduled yet
@@ -366,19 +356,21 @@ function processAudioQueue() {
     const chunk = audioBufferQueue[0]; // Peek at first chunk
 
     // Skip chunks we've already scheduled
-    if (lastScheduledServerTime > 0 && chunk.serverTime <= lastScheduledServerTime) {
-      audioBufferQueue.shift(); // Remove from queue
-      console.warn(`Skipping already scheduled chunk: ${chunk.serverTime} (last=${lastScheduledServerTime})`);
+    if (
+      lastScheduledServerTime > 0 &&
+      chunk.serverTime <= lastScheduledServerTime
+    ) {
+      audioBufferQueue.shift();
       continue;
     }
 
-    // Check for gaps - detect missing chunks (more than 2x the expected gap)
+    // Check for suspiciously large gaps (likely missing chunks)
     if (lastScheduledServerTime > 0) {
       const actualGap = chunk.serverTime - lastScheduledServerTime;
-      // Typical gaps are 25ms for PCM, 96ms for FLAC
-      // Only warn if gap is suspiciously large (more than 150ms = likely missing chunks)
-      if (actualGap > 150000) { // More than 150ms gap
-        console.warn(`Large gap detected: ${actualGap}μs (${(actualGap/1000).toFixed(1)}ms)`);
+      if (actualGap > 150000) {
+        console.warn(
+          `Large gap detected: ${(actualGap / 1000).toFixed(1)}ms`,
+        );
       }
     }
 
@@ -403,28 +395,15 @@ function processAudioQueue() {
     source.buffer = chunk.buffer;
     source.connect(gainNode);
 
-    // Calculate expected end time
+    // Calculate expected end time for seamless playback
     const bufferDuration = source.buffer?.duration || 0;
     const expectedEndTime = scheduleTime + bufferDuration;
-
-    // Check for gaps or overlaps with previous chunk
-    if (lastScheduledEndTime > 0) {
-      const gap = scheduleTime - lastScheduledEndTime;
-      if (Math.abs(gap) > 0.001) { // More than 1ms gap/overlap
-        console.warn(`Timing issue: gap=${(gap * 1000).toFixed(2)}ms between chunks (${gap > 0 ? 'gap' : 'overlap'})`);
-      }
-    }
 
     source.start(scheduleTime);
 
     // Track last scheduled chunk
     lastScheduledServerTime = chunk.serverTime;
     lastScheduledEndTime = expectedEndTime;
-
-    // Log first 10 chunks with buffer duration
-    if (scheduledSources.length < 10) {
-      console.log(`Chunk ${scheduledSources.length}: serverTime=${chunk.serverTime}, offset=${offsetSec.toFixed(3)}s, schedule=${scheduleTime.toFixed(3)}, duration=${bufferDuration.toFixed(3)}s, buffer=${(scheduleTime - currentTime).toFixed(3)}s`);
-    }
 
     scheduledSources.push(source);
     source.onended = () => {
@@ -609,7 +588,15 @@ async function connect() {
           },
           player_support: {
             supported_formats: [
-              // PCM only (uncompressed, no chunk boundary artifacts)
+              // Opus preferred (best quality/compression ratio)
+              { codec: "opus", sample_rate: 48000, channels: 2, bit_depth: 16 },
+              { codec: "opus", sample_rate: 44100, channels: 2, bit_depth: 16 },
+              // FLAC fallback (lossless)
+              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 16 },
+              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 16 },
+              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 24 },
+              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 24 },
+              // PCM fallback (uncompressed)
               { codec: "pcm", sample_rate: 48000, channels: 2, bit_depth: 16 },
               { codec: "pcm", sample_rate: 44100, channels: 2, bit_depth: 16 },
             ],
