@@ -120,7 +120,6 @@ let audioContext: AudioContext | null = null;
 let timeFilter = new ResonateTimeFilter(); // Kalman filter for clock synchronization
 let streamStartServerTime = 0; // Server timestamp of the first chunk (stream anchor)
 let streamStartAudioTime = 0; // AudioContext time when first chunk should play
-let lastScheduledEndTime = 0;
 let isPlaying = ref(false);
 let volume = ref(100);
 let muted = ref(false);
@@ -128,7 +127,6 @@ let playerState = ref<"synchronized" | "error">("synchronized"); // Track synchr
 let currentStreamFormat: StreamStart["payload"]["player"] | null = null;
 let audioBufferQueue: Array<{ buffer: AudioBuffer; serverTime: number }> = [];
 let scheduledSources: AudioBufferSourceNode[] = [];
-let lastScheduledServerTime = 0; // Track the last chunk we scheduled to ensure ordering
 let gainNode: GainNode | null = null;
 let queueProcessTimeout: any = null; // Debounce timer for queue processing
 
@@ -351,59 +349,22 @@ function processAudioQueue() {
     streamStartAudioTime = currentTime + 0.2;
   }
 
-  // Process only NEW chunks that haven't been scheduled yet
+  // Schedule all chunks in the queue
   while (audioBufferQueue.length > 0) {
-    const chunk = audioBufferQueue[0]; // Peek at first chunk
-
-    // Skip chunks we've already scheduled
-    if (
-      lastScheduledServerTime > 0 &&
-      chunk.serverTime <= lastScheduledServerTime
-    ) {
-      audioBufferQueue.shift();
-      continue;
-    }
-
-    // Check for suspiciously large gaps (likely missing chunks)
-    if (lastScheduledServerTime > 0) {
-      const actualGap = chunk.serverTime - lastScheduledServerTime;
-      if (actualGap > 150000) {
-        console.warn(
-          `Large gap detected: ${(actualGap / 1000).toFixed(1)}ms`,
-        );
-      }
-    }
-
-    // Remove from queue
-    audioBufferQueue.shift();
+    const chunk = audioBufferQueue.shift()!;
 
     // Calculate time offset from first chunk (in microseconds)
     const offsetUs = chunk.serverTime - streamStartServerTime;
     const offsetSec = offsetUs / 1_000_000;
     const playbackTime = streamStartAudioTime + offsetSec;
 
-    // Drop chunks that are too late (more than 100ms in the past)
-    if (playbackTime < currentTime - 0.1) {
-      console.warn("DROP: late chunk");
-      continue;
-    }
-
-    // Schedule playback
+    // Schedule playback (ensure we don't schedule in the past)
     const scheduleTime = Math.max(playbackTime, currentTime);
 
     const source = audioContext.createBufferSource();
     source.buffer = chunk.buffer;
     source.connect(gainNode);
-
-    // Calculate expected end time for seamless playback
-    const bufferDuration = source.buffer?.duration || 0;
-    const expectedEndTime = scheduleTime + bufferDuration;
-
     source.start(scheduleTime);
-
-    // Track last scheduled chunk
-    lastScheduledServerTime = chunk.serverTime;
-    lastScheduledEndTime = expectedEndTime;
 
     scheduledSources.push(source);
     source.onended = () => {
@@ -470,10 +431,8 @@ function handleMessage(event: MessageEvent) {
           });
         }
         // Reset scheduling state for new stream
-        streamStartServerTime = 0; // Reset stream anchor
+        streamStartServerTime = 0;
         streamStartAudioTime = 0;
-        lastScheduledEndTime = 0;
-        lastScheduledServerTime = 0;
         scheduledSources = [];
         audioBufferQueue = [];
         isPlaying.value = true;
