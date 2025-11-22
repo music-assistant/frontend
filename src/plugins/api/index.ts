@@ -1717,10 +1717,13 @@ export class MusicAssistantApi {
     // Create a new long-lived token for current user or specific user (admin only)
     const args: { name: string; user_id?: string } = { name };
     if (userId) args.user_id = userId;
-    const result = await this.sendCommand<{ token: string }>(
-      "auth/tokens",
+    const result = await this.sendCommand<{ success: boolean; token: string }>(
+      "auth/token/create",
       args,
     );
+    if (!result.success) {
+      throw new Error("Failed to create token");
+    }
     return result.token;
   }
 
