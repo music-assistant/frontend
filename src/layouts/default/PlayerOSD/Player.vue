@@ -51,10 +51,7 @@
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
           :volume="{
-            isVisible:
-              !mobile &&
-              (store.activePlayer?.volume_control != PLAYER_CONTROL_NONE ||
-                store.activePlayer?.group_members.length > 0),
+            isVisible: !mobile && store.activePlayer != undefined,
             color: $vuetify.theme.current.dark ? '#fff' : '#000',
           }"
         />
@@ -82,20 +79,26 @@
       </div>
     </div>
   </div>
-  <div
-    v-if="
-      mobile &&
-      (store.activePlayer?.volume_control != PLAYER_CONTROL_NONE ||
-        store.activePlayer?.group_members.length > 0)
-    "
-    class="volume-slider"
-  >
+  <div v-if="mobile && store.activePlayer" class="volume-slider">
     <PlayerVolume
       width="100%"
       color="secondary"
       :is-powered="store.activePlayer?.powered != false"
-      :disabled="!store.activePlayer || !store.activePlayer?.available"
-      :model-value="Math.round(store.activePlayer?.group_volume || 0)"
+      :disabled="
+        !store.activePlayer ||
+        !store.activePlayer?.available ||
+        store.activePlayer.powered == false ||
+        !store.activePlayer.supported_features.includes(
+          PlayerFeature.VOLUME_SET,
+        )
+      "
+      :model-value="
+        Math.round(
+          store.activePlayer.group_members.length > 0
+            ? store.activePlayer.group_volume
+            : store.activePlayer.volume_level || 0,
+        )
+      "
       prepend-icon="mdi-volume-minus"
       append-icon="mdi-volume-plus"
       @update:model-value="
@@ -128,15 +131,11 @@ import {
 } from "@/components/QualityDetailsBtn.vue";
 import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import {
-  ImageType,
-  MediaType,
-  PLAYER_CONTROL_NONE,
-} from "@/plugins/api/interfaces";
+import { ImageType, MediaType, PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { useDisplay, useTheme } from "vuetify";
+import { useDisplay } from "vuetify";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
