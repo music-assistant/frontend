@@ -451,9 +451,29 @@ function handleMessage(event: MessageEvent) {
 
       case MessageType.STREAM_END:
         console.log("Resonate: Stream ended");
-        isPlaying.value = false;
-        currentStreamFormat = null;
+        // Per spec: Stop playback and clear buffers
+        // Stop all scheduled audio sources
+        scheduledSources.forEach((source) => {
+          try {
+            source.stop();
+          } catch (e) {
+            // Ignore errors if source already stopped
+          }
+        });
+        scheduledSources = [];
+        // Clear pending queue processing
+        if (queueProcessTimeout) {
+          clearTimeout(queueProcessTimeout);
+          queueProcessTimeout = null;
+        }
+        // Clear buffers and reset state
         audioBufferQueue = [];
+        streamStartServerTime = 0;
+        streamStartAudioTime = 0;
+        currentStreamFormat = null;
+        isPlaying.value = false;
+        // Send state update to server
+        sendStateUpdate();
         // Note: We keep the AudioContext running so it's ready for the next stream
         // The browser will suspend it automatically after inactivity
         break;
