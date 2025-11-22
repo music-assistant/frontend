@@ -52,7 +52,7 @@ const interactedHandler = function () {
   window.removeEventListener("click", interactedHandler);
 };
 
-onMounted(() => {
+onMounted(async () => {
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
 
@@ -73,8 +73,8 @@ onMounted(() => {
   window
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", setTheme);
-  // Initialize API Connection
-  // TODO: retrieve serveraddress through discovery and/or user settings ?
+
+  // Initialize server address
   let serverAddress = "";
   if (process.env.NODE_ENV === "development") {
     serverAddress = localStorage.getItem("mass_debug_address") || "";
@@ -91,21 +91,77 @@ onMounted(() => {
     serverAddress = loc.origin + loc.pathname;
   }
 
-  // connect/initialize api
+  // Set base URL for auth manager
+  const { authManager } = await import("@/plugins/auth");
+  authManager.setBaseUrl(serverAddress);
+
+  // Check if we're returning from login with a token in the URL query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenParam = urlParams.get("token");
+  let tokenFromLogin = false;
+
+  if (tokenParam) {
+    console.info("Token received from login, storing and cleaning URL");
+    // Store the token - validation will happen via WebSocket auth command
+    authManager.setToken(tokenParam);
+    tokenFromLogin = true;
+
+    // Clean up the URL by removing the token parameter
+    urlParams.delete("token");
+    const cleanUrl =
+      window.location.pathname +
+      (urlParams.toString() ? "?" + urlParams.toString() : "") +
+      window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+  }
+
+  // Get auth token to pass to WebSocket (if available)
+  const authToken = authManager.getToken();
+
   store.connected = false;
+
+  // Subscribe to CONNECTED event to handle server info and auth requirements
   api.subscribe(EventType.CONNECTED, async () => {
-    // redirect the user to the settings page if this is a fresh install
-    // TO be replaced with some nice onboarding wizard!
-    if (api.serverInfo.value?.onboard_done === false) {
-      console.info("Onboarding not done, redirecting to settings");
-      router.push("/settings");
+    // Server info is now available from WebSocket
+    const serverInfo = api.serverInfo.value;
+    if (!serverInfo) {
+      console.error("No server info received from WebSocket");
+      return;
     }
+
+    store.serverInfo = serverInfo;
+
+    // Check if onboarding is needed
+    if (!serverInfo.onboard_done) {
+      console.info("Onboarding not done, redirecting to server setup");
+      // Redirect to server's setup page with return URL
+      const returnUrl = encodeURIComponent(window.location.href);
+      window.location.href = `${serverAddress}/setup?return_url=${returnUrl}`;
+      return;
+    }
+
+    // Check if authentication is required
+    if (serverInfo.requires_auth !== false) {
+      // Auth is required and was validated via WebSocket auth command
+      store.isAuthenticated = true;
+      // Store current user from authManager
+      const currentUser = authManager.getCurrentUser();
+      if (currentUser) {
+        store.currentUser = currentUser;
+      }
+    } else {
+      // Auth not required (ingress mode)
+      store.isAuthenticated = true;
+    }
+
+    // Fetch library counts
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
     store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
     store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
+
     // enable the builtin player by default if the builtin player provider is available
     if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
       webPlayer.setMode(WebPlayerMode.BUILTIN);
@@ -113,10 +169,16 @@ onMounted(() => {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
     }
   });
+
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
   });
-  api.initialize(serverAddress);
+
+  // Check if we have token when auth might be required
+  // We don't know yet if auth is required until we connect, but if we have no token
+  // and this is the first load (no token param), we should redirect to login
+  // However, we'll let the WebSocket try first - it will fail and redirect if needed
+  api.initialize(serverAddress, authToken, tokenFromLogin);
   webPlayer.setBaseUrl(serverAddress);
 
   //There is a safety rule in which you need to interact with the page for the audio to play

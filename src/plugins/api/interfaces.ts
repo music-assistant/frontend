@@ -444,6 +444,7 @@ export interface ServerInfoMessage {
   base_url: string;
   homeassistant_addon: boolean;
   onboard_done: boolean;
+  requires_auth?: boolean;
 }
 
 export type MessageType =
@@ -976,4 +977,76 @@ export interface ButtonProps {
   size?: number;
   icon?: string;
   iconOptions?: IconProps; //Experimental
+}
+
+// Authentication interfaces
+
+export enum UserRole {
+  ADMIN = "admin",
+  USER = "user",
+}
+
+export enum AuthProviderType {
+  BUILTIN = "builtin",
+  OAUTH_HOMEASSISTANT = "oauth_homeassistant",
+}
+
+export interface User {
+  user_id: string;
+  username: string;
+  role: UserRole;
+  enabled: boolean;
+  created_at: string;
+  display_name?: string;
+  avatar_url?: string;
+}
+
+export interface AuthToken {
+  token_id: string;
+  name: string;
+  created_at: string;
+  last_used_at?: string;
+  expires_at?: string;
+}
+
+export interface AuthProvider {
+  provider_id: string;
+  provider_type: AuthProviderType;
+  requires_redirect: boolean;
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  provider_id: string;
+  credentials: LoginCredentials;
+  device_name?: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  token?: string;
+  user?: User;
+  error?: string;
+}
+
+export interface SetupRequest {
+  username: string;
+  password: string;
+  display_name?: string;
+  device_name?: string;
+}
+
+export interface ServerInfo {
+  server_id: string;
+  server_version: string;
+  schema_version: number;
+  min_supported_schema_version: number;
+  base_url: string;
+  homeassistant_addon: boolean;
+  onboard_done: boolean;
+  requires_auth?: boolean;
 }

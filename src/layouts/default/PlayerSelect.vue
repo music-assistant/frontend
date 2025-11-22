@@ -21,8 +21,12 @@
       >
         <b>{{ $t("players") }}</b>
         <div style="float: right; margin-right: -20px">
-          <!-- settings button -->
-          <Button variant="icon" :to="{ name: 'playersettings' }">
+          <!-- settings button (admin only) -->
+          <Button
+            v-if="authManager.isAdmin()"
+            variant="icon"
+            :to="{ name: 'playersettings' }"
+          >
             <v-icon size="30">mdi-cog-outline</v-icon>
           </Button>
           <!-- close button -->
@@ -163,6 +167,7 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
