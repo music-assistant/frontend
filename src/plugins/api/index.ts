@@ -82,7 +82,11 @@ function getDeviceName(): string {
     os = "Linux";
   } else if (ua.includes("Android")) {
     os = "Android";
-  } else if (ua.includes("iOS") || ua.includes("iPhone") || ua.includes("iPad")) {
+  } else if (
+    ua.includes("iOS") ||
+    ua.includes("iPhone") ||
+    ua.includes("iPad")
+  ) {
     os = "iOS";
   }
 
@@ -248,7 +252,8 @@ export class MusicAssistantApi {
 
             // Redirect to server login page
             const returnUrl = encodeURIComponent(window.location.href);
-            window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}`;
+            const deviceName = encodeURIComponent(getDeviceName());
+            window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
             return;
           }
           // Auth successful
