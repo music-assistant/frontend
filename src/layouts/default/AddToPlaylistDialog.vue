@@ -92,20 +92,19 @@
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { MediaType } from "@/plugins/api/interfaces";
+import Toolbar from "@/components/Toolbar.vue";
+import api from "@/plugins/api";
 import type {
+  BrowseFolder,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   Playlist,
-  Track,
 } from "@/plugins/api/interfaces";
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import { ProviderFeature } from "@/plugins/api/interfaces";
-import api from "@/plugins/api";
-import { AlertType, store } from "@/plugins/store";
+import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
-import Toolbar from "@/components/Toolbar.vue";
 import { $t } from "@/plugins/i18n";
+import { AlertType, store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
@@ -192,18 +191,94 @@ const fetchPlaylists = async function () {
     }
   }
 };
+
+const expandFolderToTracks = async function (
+  folder: BrowseFolder,
+  visitedPaths: Set<string> = new Set(),
+  depth: number = 0,
+): Promise<string[]> {
+  const trackUris: string[] = [];
+
+  if (depth > 10) {
+    console.warn("Maximum folder depth reached, stopping recursion");
+    return trackUris;
+  }
+
+  if (!folder.path || visitedPaths.has(folder.path)) {
+    console.warn("Skipping folder to prevent infinite recursion:", folder.path);
+    return trackUris;
+  }
+
+  visitedPaths.add(folder.path);
+
+  try {
+    const folderContents = await api.browse(folder.path);
+
+    for (const item of folderContents) {
+      if (item.media_type === MediaType.TRACK) {
+        trackUris.push(item.uri);
+      } else if (item.media_type === MediaType.FOLDER) {
+        if (item.name === "..") {
+          continue;
+        }
+        // Recursively get tracks from subfolders with depth limit
+        const subfolderTracks = await expandFolderToTracks(
+          item as BrowseFolder,
+          visitedPaths,
+          depth + 1,
+        );
+        trackUris.push(...subfolderTracks);
+      }
+    }
+  } catch (error) {
+    console.error("Error expanding folder:", folder.path, error);
+  }
+
+  return trackUris;
+};
+
 const addToPlaylist = async function (value: MediaItemType) {
-  /// add item(s) to playlist
-  api.addPlaylistTracks(
-    value.item_id,
-    selectedItems.value.map((x) => x.uri),
-  );
-  close();
-  store.activeAlert = {
-    type: AlertType.INFO,
-    message: $t("background_task_added"),
-    persistent: false,
-  };
+  let urisToAdd: string[] = [];
+
+  try {
+    for (const item of selectedItems.value) {
+      if (item.media_type === MediaType.FOLDER) {
+        const folderTracks = await expandFolderToTracks(item as BrowseFolder);
+
+        urisToAdd.push(...folderTracks);
+      } else {
+        urisToAdd.push(item.uri);
+      }
+    }
+
+    if (urisToAdd.length === 0) {
+      store.activeAlert = {
+        type: AlertType.ERROR,
+        message: "No tracks found in the selected folder(s)",
+        persistent: false,
+      };
+      close();
+      return;
+    }
+
+    await api.addPlaylistTracks(value.item_id, urisToAdd);
+
+    close();
+
+    store.activeAlert = {
+      type: AlertType.INFO,
+      message: $t("background_task_added"),
+      persistent: false,
+    };
+  } catch (error) {
+    console.error("Error adding folder to playlist:", error);
+    store.activeAlert = {
+      type: AlertType.ERROR,
+      message: "Failed to add folder to playlist",
+      persistent: false,
+    };
+    close();
+  }
 };
 const newPlaylist = async function (provId: string) {
   const name = prompt($t("new_playlist_name"));
