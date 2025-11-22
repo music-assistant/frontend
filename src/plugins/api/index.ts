@@ -54,6 +54,41 @@ import {
 
 const DEBUG = process.env.NODE_ENV === "development";
 
+/**
+ * Generate a friendly device name from the user agent.
+ */
+function getDeviceName(): string {
+  const ua = navigator.userAgent;
+  let browser = "Browser";
+  let os = "Unknown OS";
+
+  // Detect browser
+  if (ua.includes("Firefox/")) {
+    browser = "Firefox";
+  } else if (ua.includes("Edg/")) {
+    browser = "Edge";
+  } else if (ua.includes("Chrome/")) {
+    browser = "Chrome";
+  } else if (ua.includes("Safari/") && !ua.includes("Chrome/")) {
+    browser = "Safari";
+  }
+
+  // Detect OS
+  if (ua.includes("Windows")) {
+    os = "Windows";
+  } else if (ua.includes("Mac OS X")) {
+    os = "macOS";
+  } else if (ua.includes("Linux")) {
+    os = "Linux";
+  } else if (ua.includes("Android")) {
+    os = "Android";
+  } else if (ua.includes("iOS") || ua.includes("iPhone") || ua.includes("iPad")) {
+    os = "iOS";
+  }
+
+  return `Music Assistant Web (${browser} on ${os})`;
+}
+
 export enum ConnectionState {
   DISCONNECTED = 0,
   CONNECTING = 1,
@@ -155,10 +190,11 @@ export class MusicAssistantApi {
             console.error("Authentication required but no token provided");
             this.ws?.close();
             const returnUrl = encodeURIComponent(window.location.href);
+            const deviceName = encodeURIComponent(getDeviceName());
             if (!serverInfo.onboard_done) {
-              window.location.href = `${this.baseUrl}/setup?return_url=${returnUrl}`;
+              window.location.href = `${this.baseUrl}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
             } else {
-              window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}`;
+              window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
             }
             return;
           }
@@ -205,7 +241,8 @@ export class MusicAssistantApi {
                 "Authentication failed. The login token is invalid. Please try logging in again.",
               );
               // Clear the token from URL and redirect to login
-              window.location.href = `${this.baseUrl}/login`;
+              const deviceName = encodeURIComponent(getDeviceName());
+              window.location.href = `${this.baseUrl}/login?device_name=${deviceName}`;
               return;
             }
 
