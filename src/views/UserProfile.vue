@@ -3,7 +3,9 @@
     <Container variant="comfortable">
       <!-- User Info Card -->
       <v-card class="mb-4">
-        <v-card-title class="pb-6">{{ $t("auth.account_settings") }}</v-card-title>
+        <v-card-title class="pb-6">{{
+          $t("auth.account_settings")
+        }}</v-card-title>
         <v-card-text>
           <v-alert v-if="profileError" type="error" class="mb-4">
             {{ profileError }}
@@ -72,7 +74,9 @@
 
       <!-- Change Password Card -->
       <v-card class="mb-4">
-        <v-card-title class="pb-6">{{ $t("auth.change_password") }}</v-card-title>
+        <v-card-title class="pb-6">{{
+          $t("auth.change_password")
+        }}</v-card-title>
         <v-card-text>
           <v-alert v-if="passwordError" type="error" class="mb-4">
             {{ passwordError }}
@@ -171,12 +175,7 @@
             <div class="mb-2">{{ $t("auth.token_created") }}</div>
             <div class="mb-2 font-weight-bold">{{ newTokenValue }}</div>
             <div class="text-caption">{{ $t("auth.token_warning") }}</div>
-            <v-btn
-              size="small"
-              color="white"
-              class="mt-2"
-              @click="copyToken"
-            >
+            <v-btn size="small" color="white" class="mt-2" @click="copyToken">
               {{ $t("auth.copy_token") }}
             </v-btn>
           </v-alert>
@@ -307,10 +306,8 @@ const tokenToRevoke = ref<AuthToken | null>(null);
 
 const rules = {
   required: (v: string) => !!v || t("auth.field_required"),
-  usernameLength: (v: string) =>
-    v.length >= 3 || t("auth.username_min_length"),
-  passwordLength: (v: string) =>
-    v.length >= 8 || t("auth.password_min_length"),
+  usernameLength: (v: string) => v.length >= 3 || t("auth.username_min_length"),
+  passwordLength: (v: string) => v.length >= 8 || t("auth.password_min_length"),
   passwordMatch: (v: string) =>
     v === newPassword.value || t("auth.passwords_must_match"),
 };

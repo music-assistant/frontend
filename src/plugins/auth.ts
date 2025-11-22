@@ -116,9 +116,7 @@ export class AuthManager {
   async getAuthProviders(): Promise<AuthProvider[]> {
     const response = await fetch(`${this.baseUrl}/auth/providers`);
     if (!response.ok) {
-      throw new Error(
-        `Failed to fetch auth providers: ${response.statusText}`,
-      );
+      throw new Error(`Failed to fetch auth providers: ${response.statusText}`);
     }
     const data = await response.json();
     return data.providers || [];
@@ -152,7 +150,11 @@ export class AuthManager {
       os = "Linux";
     } else if (ua.includes("Android")) {
       os = "Android";
-    } else if (ua.includes("iOS") || ua.includes("iPhone") || ua.includes("iPad")) {
+    } else if (
+      ua.includes("iOS") ||
+      ua.includes("iPhone") ||
+      ua.includes("iPad")
+    ) {
       os = "iOS";
     }
 
@@ -228,7 +230,9 @@ export class AuthManager {
   logout(): void {
     this.clearAuth();
     // Redirect to server login page
-    const returnUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+    const returnUrl = encodeURIComponent(
+      window.location.origin + window.location.pathname,
+    );
     window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}`;
   }
 
@@ -459,17 +463,14 @@ export class AuthManager {
   async updateUserRole(userId: string, role: UserRole): Promise<boolean> {
     if (!this.token) return false;
 
-    const response = await fetch(
-      `${this.baseUrl}/auth/users/${userId}/role`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.token}`,
-        },
-        body: JSON.stringify({ role }),
+    const response = await fetch(`${this.baseUrl}/auth/users/${userId}/role`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.token}`,
       },
-    );
+      body: JSON.stringify({ role }),
+    });
 
     if (response.status === 401) {
       this.clearAuth();

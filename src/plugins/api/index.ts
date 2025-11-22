@@ -1755,7 +1755,10 @@ export class MusicAssistantApi {
     return result.user;
   }
 
-  public async updateUserRole(userId: string, role: UserRole): Promise<boolean> {
+  public async updateUserRole(
+    userId: string,
+    role: UserRole,
+  ): Promise<boolean> {
     // Update user role using unified update command
     try {
       await this.updateUser(userId, { role });

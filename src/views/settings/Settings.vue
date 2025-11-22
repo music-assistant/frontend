@@ -122,7 +122,7 @@ const allSettingsSections = [
 
 const settingsSections = computed(() => {
   const isAdmin = authManager.isAdmin();
-  return allSettingsSections.filter(section => !section.adminOnly || isAdmin);
+  return allSettingsSections.filter((section) => !section.adminOnly || isAdmin);
 });
 
 // computed properties
