@@ -52,6 +52,39 @@ const interactedHandler = function () {
   window.removeEventListener("click", interactedHandler);
 };
 
+const getDeviceName = function (): string {
+  // Generate a friendly device name from the user agent
+  const ua = navigator.userAgent;
+  let browser = "Browser";
+  let os = "Unknown OS";
+
+  // Detect browser
+  if (ua.includes("Firefox/")) {
+    browser = "Firefox";
+  } else if (ua.includes("Edg/")) {
+    browser = "Edge";
+  } else if (ua.includes("Chrome/")) {
+    browser = "Chrome";
+  } else if (ua.includes("Safari/") && !ua.includes("Chrome/")) {
+    browser = "Safari";
+  }
+
+  // Detect OS
+  if (ua.includes("Windows")) {
+    os = "Windows";
+  } else if (ua.includes("Mac OS X")) {
+    os = "macOS";
+  } else if (ua.includes("Linux")) {
+    os = "Linux";
+  } else if (ua.includes("Android")) {
+    os = "Android";
+  } else if (ua.includes("iOS") || ua.includes("iPhone") || ua.includes("iPad")) {
+    os = "iOS";
+  }
+
+  return `Music Assistant Web (${browser} on ${os})`;
+};
+
 onMounted(async () => {
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
@@ -134,9 +167,10 @@ onMounted(async () => {
     // Check if onboarding is needed
     if (!serverInfo.onboard_done) {
       console.info("Onboarding not done, redirecting to server setup");
-      // Redirect to server's setup page with return URL
+      // Redirect to server's setup page with return URL and device name
       const returnUrl = encodeURIComponent(window.location.href);
-      window.location.href = `${serverAddress}/setup?return_url=${returnUrl}`;
+      const deviceName = encodeURIComponent(getDeviceName());
+      window.location.href = `${serverAddress}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
       return;
     }
 
