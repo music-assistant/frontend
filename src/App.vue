@@ -183,8 +183,21 @@ onMounted(async () => {
 
     // User was authenticated via WebSocket auth command
     store.isAuthenticated = true;
-    // Store current user from authManager
-    const currentUser = authManager.getCurrentUser();
+    // Store current user from authManager (or localStorage if authManager hasn't updated yet)
+    let currentUser = authManager.getCurrentUser();
+    if (!currentUser) {
+      // Race condition: authManager might not be updated yet, check localStorage
+      const storedUser = localStorage.getItem("ma_current_user");
+      if (storedUser) {
+        try {
+          currentUser = JSON.parse(storedUser);
+          // Also update authManager to keep it in sync
+          authManager.setCurrentUser(currentUser);
+        } catch (e) {
+          console.error("Failed to parse stored user", e);
+        }
+      }
+    }
     if (currentUser) {
       store.currentUser = currentUser;
     }
