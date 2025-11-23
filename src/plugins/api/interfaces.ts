@@ -999,6 +999,7 @@ export interface User {
   created_at: string;
   display_name?: string;
   avatar_url?: string;
+  preferences: Record<string, any>;
 }
 
 export interface AuthToken {

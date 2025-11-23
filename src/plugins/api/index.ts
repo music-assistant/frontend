@@ -200,7 +200,7 @@ export class MusicAssistantApi {
               token: authToken,
             },
           };
-          console.log("Sending auth command", authMessageId);
+          console.debug("Sending auth command", authMessageId);
           i.send(JSON.stringify(authCmd));
           return;
         }
