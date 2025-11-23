@@ -33,11 +33,12 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             use tauri::Manager;
 
-            let _ = app
+            let window = app
                 .get_webview_window("main")
                 .expect("no main window")
-                .show().expect("failed to show window").
-                .set_focus();
+                .clone();
+            window.show().unwrap();
+            window.set_focus().unwrap();
 
 
             println!("An instance was already running, focusing on it");
