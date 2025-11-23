@@ -236,15 +236,12 @@ export class AuthManager {
    * Logout current user
    */
   async logout(): Promise<void> {
-    // Revoke current token on server
+    // Revoke current token on server via WebSocket API
     if (this.token) {
       try {
-        await fetch(`${this.baseUrl}/auth/logout`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-          },
-        });
+        // Import api dynamically to avoid circular dependency
+        const { api } = await import("@/plugins/api");
+        await api.logout();
       } catch (error) {
         console.error("Failed to revoke token during logout:", error);
         // Continue with logout even if revocation fails

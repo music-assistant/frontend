@@ -1749,6 +1749,12 @@ export class MusicAssistantApi {
     return result.success;
   }
 
+  public async logout(): Promise<boolean> {
+    // Logout current user by revoking the current token
+    const result = await this.sendCommand<{ success: boolean }>("auth/logout");
+    return result.success;
+  }
+
   // User management functions/commands (admin only)
 
   public async getAllUsers(): Promise<User[]> {
