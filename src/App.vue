@@ -174,7 +174,10 @@ onMounted(async () => {
       // Redirect to server's setup page with return URL and device name
       const returnUrl = encodeURIComponent(window.location.href);
       const deviceName = encodeURIComponent(getDeviceName());
-      window.location.href = `${serverAddress}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
+      const baseUrl = serverAddress.endsWith("/")
+        ? serverAddress.slice(0, -1)
+        : serverAddress;
+      window.location.href = `${baseUrl}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
       return;
     }
 
