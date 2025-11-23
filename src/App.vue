@@ -197,6 +197,8 @@ onMounted(async () => {
       const currentUser = await api.getCurrentUserInfo();
       if (currentUser) {
         store.currentUser = currentUser;
+        // Also set in authManager so isAdmin() and other checks work
+        authManager.setCurrentUser(currentUser);
       }
     }
 

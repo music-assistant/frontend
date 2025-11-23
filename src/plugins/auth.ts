@@ -80,6 +80,14 @@ export class AuthManager {
   }
 
   /**
+   * Set current user (for ingress mode where user info comes from backend)
+   */
+  setCurrentUser(user: User): void {
+    this.currentUser = user;
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  }
+
+  /**
    * Store authentication token and user
    */
   private storeAuth(token: string, user: User): void {
