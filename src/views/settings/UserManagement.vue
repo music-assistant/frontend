@@ -257,7 +257,8 @@
                 <v-list-item-subtitle>
                   {{ $t("created") }}: {{ formatDate(token.created_at) }}
                   <span v-if="token.last_used_at">
-                    • {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
+                    • {{ $t("last_used") }}:
+                    {{ formatDate(token.last_used_at) }}
                   </span>
                 </v-list-item-subtitle>
                 <template #append>
@@ -308,7 +309,8 @@
                 <v-list-item-subtitle>
                   {{ $t("created") }}: {{ formatDate(token.created_at) }}
                   <span v-if="token.last_used_at">
-                    • {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
+                    • {{ $t("last_used") }}:
+                    {{ formatDate(token.last_used_at) }}
                   </span>
                 </v-list-item-subtitle>
                 <template #append>

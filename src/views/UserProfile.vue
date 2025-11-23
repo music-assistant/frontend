@@ -170,10 +170,7 @@
         </v-card-title>
         <v-card-text>
           <v-list v-if="longLivedTokens.length > 0">
-            <v-list-item
-              v-for="token in longLivedTokens"
-              :key="token.token_id"
-            >
+            <v-list-item v-for="token in longLivedTokens" :key="token.token_id">
               <template #prepend>
                 <v-icon icon="mdi-key-variant" />
               </template>
