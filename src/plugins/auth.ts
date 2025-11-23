@@ -235,13 +235,33 @@ export class AuthManager {
   /**
    * Logout current user
    */
-  logout(): void {
+  async logout(): Promise<void> {
+    // Revoke current token on server
+    if (this.token) {
+      try {
+        await fetch(`${this.baseUrl}/auth/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to revoke token during logout:", error);
+        // Continue with logout even if revocation fails
+      }
+    }
+
     this.clearAuth();
+
     // Redirect to server login page
     const returnUrl = encodeURIComponent(
       window.location.origin + window.location.pathname,
     );
-    window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}`;
+    // Handle trailing slash to prevent double slashes
+    const baseUrl = this.baseUrl.endsWith("/")
+      ? this.baseUrl.slice(0, -1)
+      : this.baseUrl;
+    window.location.href = `${baseUrl}/login?return_url=${returnUrl}`;
   }
 
   /**
