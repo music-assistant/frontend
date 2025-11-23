@@ -124,10 +124,41 @@
         </v-card-text>
       </v-card>
 
-      <!-- Access Tokens Card -->
+      <!-- Active Sessions Card -->
+      <v-card class="mb-4">
+        <v-card-title>{{ $t("auth.active_sessions") }}</v-card-title>
+        <v-card-text>
+          <v-list v-if="sessionTokens.length > 0">
+            <v-list-item v-for="token in sessionTokens" :key="token.token_id">
+              <template #prepend>
+                <v-icon icon="mdi-devices" />
+              </template>
+              <v-list-item-title>{{ token.name }}</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ $t("created") }}: {{ formatDate(token.created_at) }}
+                <span v-if="token.last_used_at">
+                  • {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
+                </span>
+              </v-list-item-subtitle>
+              <template #append>
+                <v-btn
+                  icon="mdi-delete"
+                  variant="text"
+                  @click="confirmRevokeToken(token)"
+                />
+              </template>
+            </v-list-item>
+          </v-list>
+          <div v-else class="text-center pa-4 text-medium-emphasis">
+            {{ $t("no_content") }}
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <!-- Long-Lived Access Tokens Card -->
       <v-card>
         <v-card-title class="d-flex align-center">
-          <span>{{ $t("auth.tokens") }}</span>
+          <span>{{ $t("auth.long_lived_tokens") }}</span>
           <v-spacer />
           <v-btn
             color="primary"
@@ -138,8 +169,11 @@
           </v-btn>
         </v-card-title>
         <v-card-text>
-          <v-list v-if="tokens.length > 0">
-            <v-list-item v-for="token in tokens" :key="token.token_id">
+          <v-list v-if="longLivedTokens.length > 0">
+            <v-list-item
+              v-for="token in longLivedTokens"
+              :key="token.token_id"
+            >
               <template #prepend>
                 <v-icon icon="mdi-key-variant" />
               </template>
@@ -272,6 +306,14 @@ const { t } = useI18n();
 
 const user = computed(() => store.currentUser);
 const tokens = ref<AuthToken[]>([]);
+
+// Separate tokens by type
+const sessionTokens = computed(() =>
+  tokens.value.filter((token) => !token.is_long_lived),
+);
+const longLivedTokens = computed(() =>
+  tokens.value.filter((token) => token.is_long_lived),
+);
 
 // Edit profile
 const editedUsername = ref("");

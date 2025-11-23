@@ -1007,6 +1007,7 @@ export interface AuthToken {
   created_at: string;
   last_used_at?: string;
   expires_at?: string;
+  is_long_lived: boolean;
 }
 
 export interface AuthProvider {

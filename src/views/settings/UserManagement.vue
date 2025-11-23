@@ -231,49 +231,104 @@
     </v-dialog>
 
     <!-- Manage Tokens Dialog -->
-    <v-dialog v-model="showTokensDialog" max-width="800">
+    <v-dialog v-model="showTokensDialog" max-width="900" scrollable>
       <v-card>
-        <v-card-title class="d-flex align-center">
-          <span
-            >{{ $t("auth.tokens") }} -
-            {{ userToModify?.display_name || userToModify?.username }}</span
-          >
-          <v-spacer />
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-plus"
-            size="small"
-            @click="showCreateTokenDialog = true"
-          >
-            {{ $t("auth.create_token") }}
-          </v-btn>
+        <v-card-title>
+          {{ $t("auth.tokens") }} -
+          {{ userToModify?.display_name || userToModify?.username }}
         </v-card-title>
-        <v-card-text>
-          <v-list v-if="userTokens.length > 0">
-            <v-list-item v-for="token in userTokens" :key="token.token_id">
-              <template #prepend>
-                <v-icon icon="mdi-key-variant" />
-              </template>
-              <v-list-item-title>{{ token.name }}</v-list-item-title>
-              <v-list-item-subtitle>
-                {{ $t("created") }}: {{ formatDate(token.created_at) }}
-                <span v-if="token.last_used_at">
-                  • {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
-                </span>
-              </v-list-item-subtitle>
-              <template #append>
-                <v-btn
-                  icon="mdi-delete"
-                  variant="text"
-                  @click="confirmRevokeToken(token)"
-                />
-              </template>
-            </v-list-item>
-          </v-list>
-          <div v-else class="text-center pa-4 text-medium-emphasis">
-            {{ $t("no_content") }}
+        <v-divider />
+        <v-card-text class="pa-0">
+          <!-- Active Sessions Section -->
+          <div class="pa-4">
+            <div class="text-h6 mb-2">{{ $t("auth.active_sessions") }}</div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              {{ $t("auth.active_sessions_description") }}
+            </div>
+            <v-list v-if="userSessionTokens.length > 0">
+              <v-list-item
+                v-for="token in userSessionTokens"
+                :key="token.token_id"
+              >
+                <template #prepend>
+                  <v-icon icon="mdi-devices" />
+                </template>
+                <v-list-item-title>{{ token.name }}</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ $t("created") }}: {{ formatDate(token.created_at) }}
+                  <span v-if="token.last_used_at">
+                    • {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
+                  </span>
+                </v-list-item-subtitle>
+                <template #append>
+                  <v-btn
+                    icon="mdi-delete"
+                    variant="text"
+                    @click="confirmRevokeToken(token)"
+                  />
+                </template>
+              </v-list-item>
+            </v-list>
+            <div
+              v-else
+              class="text-center pa-4 text-medium-emphasis bg-surface-variant rounded"
+            >
+              {{ $t("auth.no_active_sessions") }}
+            </div>
+          </div>
+
+          <v-divider />
+
+          <!-- Long-Lived Access Tokens Section -->
+          <div class="pa-4">
+            <div class="d-flex align-center mb-2">
+              <div class="text-h6">{{ $t("auth.long_lived_tokens") }}</div>
+              <v-spacer />
+              <v-btn
+                color="primary"
+                prepend-icon="mdi-plus"
+                size="small"
+                @click="showCreateTokenDialog = true"
+              >
+                {{ $t("auth.create_token") }}
+              </v-btn>
+            </div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              {{ $t("auth.long_lived_tokens_description") }}
+            </div>
+            <v-list v-if="userLongLivedTokens.length > 0">
+              <v-list-item
+                v-for="token in userLongLivedTokens"
+                :key="token.token_id"
+              >
+                <template #prepend>
+                  <v-icon icon="mdi-key-variant" />
+                </template>
+                <v-list-item-title>{{ token.name }}</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ $t("created") }}: {{ formatDate(token.created_at) }}
+                  <span v-if="token.last_used_at">
+                    • {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
+                  </span>
+                </v-list-item-subtitle>
+                <template #append>
+                  <v-btn
+                    icon="mdi-delete"
+                    variant="text"
+                    @click="confirmRevokeToken(token)"
+                  />
+                </template>
+              </v-list-item>
+            </v-list>
+            <div
+              v-else
+              class="text-center pa-4 text-medium-emphasis bg-surface-variant rounded"
+            >
+              {{ $t("auth.no_long_lived_tokens") }}
+            </div>
           </div>
         </v-card-text>
+        <v-divider />
         <v-card-actions>
           <v-spacer />
           <v-btn @click="closeTokensDialog">{{ $t("close") }}</v-btn>
@@ -376,6 +431,14 @@ const newTokenName = ref("");
 const newTokenValue = ref("");
 const creatingToken = ref(false);
 const tokenToRevoke = ref<AuthToken | null>(null);
+
+// Separate tokens by type
+const userSessionTokens = computed(() =>
+  userTokens.value.filter((token) => !token.is_long_lived),
+);
+const userLongLivedTokens = computed(() =>
+  userTokens.value.filter((token) => token.is_long_lived),
+);
 
 const newUser = ref({
   username: "",
