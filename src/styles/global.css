@@ -206,3 +206,20 @@ html {
   color: rgb(var(--v-theme-primary));
   font-weight: 800;
 }
+
+/* iOS Safari 15 compatibility tweaks */
+.scroll-container,
+.v-list,
+.v-navigation-drawer__content,
+.v-main__wrap {
+  -webkit-overflow-scrolling: touch;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.blur-background {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}

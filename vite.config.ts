@@ -75,5 +75,6 @@ export default defineConfig({
   },
   build: {
     outDir: "./music_assistant_frontend",
+    target: ["safari15", "es2018"],
   },
 });

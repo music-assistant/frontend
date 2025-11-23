@@ -4,6 +4,10 @@
  * Bootstraps Vuetify and other plugins then mounts the App`
  */
 
+// Polyfills for older browsers (Safari 15 / iOS 15 support)
+import "core-js/stable";
+import "regenerator-runtime/runtime";
+
 // Global styles
 import "@/styles/global.css";
 
