@@ -192,7 +192,9 @@ onMounted(async () => {
         try {
           currentUser = JSON.parse(storedUser);
           // Also update authManager to keep it in sync
-          authManager.setCurrentUser(currentUser);
+          if (currentUser) {
+            authManager.setCurrentUser(currentUser);
+          }
         } catch (e) {
           console.error("Failed to parse stored user", e);
         }
