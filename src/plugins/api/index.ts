@@ -1706,6 +1706,17 @@ export class MusicAssistantApi {
     return result.success;
   }
 
+  public async getCurrentUserInfo(): Promise<User | null> {
+    // Get current authenticated user information
+    try {
+      const result = await this.sendCommand<User>("auth/me");
+      return result;
+    } catch (error) {
+      console.error("Failed to get current user info:", error);
+      return null;
+    }
+  }
+
   public async getUserTokens(userId?: string): Promise<AuthToken[]> {
     // Get all tokens for current user or specific user (admin only)
     const args = userId ? { user_id: userId } : undefined;

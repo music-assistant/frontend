@@ -193,6 +193,11 @@ onMounted(async () => {
     } else {
       // Auth not required (ingress mode)
       store.isAuthenticated = true;
+      // Fetch current user info from backend (automatically created via ingress headers)
+      const currentUser = await api.getCurrentUserInfo();
+      if (currentUser) {
+        store.currentUser = currentUser;
+      }
     }
 
     // Fetch library counts
