@@ -336,19 +336,6 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach(async (to, from, next) => {
-  // Check if we have server info
-  if (!store.serverInfo) {
-    // We'll handle this in App.vue initialization
-    next();
-    return;
-  }
-
-  // If server doesn't require auth (ingress mode), allow access
-  if (store.serverInfo.requires_auth === false) {
-    next();
-    return;
-  }
-
   // Check if user is authenticated
   if (!store.isAuthenticated || !authManager.getToken()) {
     // Not authenticated - App.vue will handle redirect to server login

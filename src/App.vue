@@ -181,25 +181,12 @@ onMounted(async () => {
       return;
     }
 
-    // Check if authentication is required
-    if (serverInfo.requires_auth !== false) {
-      // Auth is required and was validated via WebSocket auth command
-      store.isAuthenticated = true;
-      // Store current user from authManager
-      const currentUser = authManager.getCurrentUser();
-      if (currentUser) {
-        store.currentUser = currentUser;
-      }
-    } else {
-      // Auth not required (ingress mode)
-      store.isAuthenticated = true;
-      // Fetch current user info from backend (automatically created via ingress headers)
-      const currentUser = await api.getCurrentUserInfo();
-      if (currentUser) {
-        store.currentUser = currentUser;
-        // Also set in authManager so isAdmin() and other checks work
-        authManager.setCurrentUser(currentUser);
-      }
+    // User was authenticated via WebSocket auth command
+    store.isAuthenticated = true;
+    // Store current user from authManager
+    const currentUser = authManager.getCurrentUser();
+    if (currentUser) {
+      store.currentUser = currentUser;
     }
 
     // Fetch library counts
