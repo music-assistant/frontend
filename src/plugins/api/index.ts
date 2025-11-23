@@ -174,23 +174,9 @@ export class MusicAssistantApi {
           const serverInfo = msg as ServerInfoMessage;
           console.info("ServerInfo received", serverInfo);
 
-          // Check if server doesn't require auth (ingress mode)
-          if (serverInfo.requires_auth === false) {
-            console.info(
-              "Server does not require authentication (ingress mode)",
-            );
-            isAuthenticated = true;
-            // Store ServerInfo and signal CONNECTED
-            this.handleServerInfoMessage(serverInfo);
-            return;
-          }
-
-          // Server requires auth
-          console.info("Server requires authentication");
-
           // Check if we have a token
           if (!authToken) {
-            // No token - close connection and redirect/throw error
+            // No token - close connection and redirect to login
             console.error("Authentication required but no token provided");
             this.ws?.close();
             const returnUrl = encodeURIComponent(window.location.href);
