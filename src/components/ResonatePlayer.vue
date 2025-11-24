@@ -1,7 +1,5 @@
 <template>
-  <div ref="playerRef" class="resonate-player">
-    <audio ref="audioRef" class="hidden-audio"></audio>
-  </div>
+  <audio ref="audioRef" controls class="hidden-audio"></audio>
 </template>
 
 <script setup lang="ts">
@@ -11,6 +9,7 @@ import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import almostSilentMp3 from "@/assets/almost_silent.mp3";
 
 // Properties
 export interface Props {
@@ -18,8 +17,10 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
-const playerRef = ref<HTMLDivElement>();
 const audioRef = ref<HTMLAudioElement>();
+
+// Detect Android for MediaSession workaround
+const isAndroid = /android/i.test(navigator.userAgent);
 
 // Resonate Protocol Types
 enum MessageType {
@@ -158,17 +159,43 @@ function initAudioContext() {
     audioContext = new AudioContext({ sampleRate: streamSampleRate });
     gainNode = audioContext.createGain();
 
-    // Create MediaStreamDestination to bridge Web Audio API to HTML5 audio element
-    // This enables iOS background playback while preserving Web Audio API functionality
-    streamDestination = audioContext.createMediaStreamDestination();
-    gainNode.connect(streamDestination);
+    if (isAndroid) {
+      // Android MediaSession workaround: Play almost-silent audio file
+      // Android browsers don't support MediaSession with MediaStream from Web Audio API
+      // Solution: Loop almost-silent audio to keep MediaSession active
+      // Real audio plays through Web Audio API → audioContext.destination
+      gainNode.connect(audioContext.destination);
 
-    // Connect to HTML5 audio element for iOS background playback support
-    if (audioRef.value) {
-      audioRef.value.srcObject = streamDestination.stream;
-      audioRef.value.play().catch((e) => {
-        console.warn("Resonate: Audio autoplay blocked:", e);
-      });
+      // Connect to HTML5 audio element for Android MediaSession support
+      if (audioRef.value) {
+        // Use almost-silent audio file to trick Android into showing MediaSession
+        audioRef.value.src = almostSilentMp3;
+        audioRef.value.loop = true;
+        // CRITICAL: Do NOT mute - Android requires audible audio for MediaSession
+        audioRef.value.muted = false;
+        // Set volume to 100% (the file itself is almost silent)
+        audioRef.value.volume = 1.0;
+        // Start playing to activate MediaSession
+        audioRef.value.play().catch((e) => {
+          console.warn("Resonate: Audio autoplay blocked:", e);
+        });
+      }
+    } else {
+      // iOS/Desktop: Use MediaStream approach for background playback
+      // Create MediaStreamDestination to bridge Web Audio API to HTML5 audio element
+      streamDestination = audioContext.createMediaStreamDestination();
+      gainNode.connect(streamDestination);
+      // Do NOT connect to audioContext.destination to avoid echo
+
+      // Connect to HTML5 audio element for iOS background playback
+      if (audioRef.value) {
+        audioRef.value.srcObject = streamDestination.stream;
+        audioRef.value.volume = 1.0;
+        // Start playing to activate MediaSession
+        audioRef.value.play().catch((e) => {
+          console.warn("Resonate: Audio autoplay blocked:", e);
+        });
+      }
     }
 
     updateVolume();
@@ -453,6 +480,14 @@ function handleMessage(event: MessageEvent) {
         scheduledSources = [];
         audioBufferQueue = [];
         isPlaying.value = true;
+        // Ensure audio element is playing for MediaSession
+        if (audioRef.value && audioRef.value.paused) {
+          audioRef.value.play().catch((e) => {
+            console.warn("Resonate: Failed to start audio element:", e);
+          });
+        }
+        // Explicitly set playbackState for Android
+        navigator.mediaSession.playbackState = "playing";
         break;
 
       case MessageType.STREAM_UPDATE:
@@ -489,6 +524,13 @@ function handleMessage(event: MessageEvent) {
         streamStartAudioTime = 0;
         currentStreamFormat = null;
         isPlaying.value = false;
+        // On non-Android, pause audio element to stop MediaSession
+        // On Android, keep the silent loop playing to maintain MediaSession notification
+        if (!isAndroid && audioRef.value && !audioRef.value.paused) {
+          audioRef.value.pause();
+        }
+        // Explicitly set playbackState
+        navigator.mediaSession.playbackState = "paused";
         // Send state update to server
         sendStateUpdate();
         // Note: We keep the AudioContext running so it's ready for the next stream
@@ -696,6 +738,16 @@ function disconnect() {
   currentStreamFormat = null;
   audioBufferQueue = [];
   isPlaying.value = false;
+
+  // Stop and clear the audio element
+  // On Android, keep silent loop running to maintain MediaSession
+  if (audioRef.value && !isAndroid) {
+    audioRef.value.pause();
+    audioRef.value.srcObject = null;
+  }
+
+  // Reset MediaSession playbackState (but keep Android loop playing)
+  navigator.mediaSession.playbackState = "none";
 }
 
 // Watch for volume changes
@@ -741,6 +793,46 @@ onMounted(() => {
     if (!props.playerId) return;
     api.playerCommandPrevious(props.playerId);
   });
+
+  // Audio element event listeners for Android MediaSession
+  if (audioRef.value) {
+    // Ensure audio element doesn't pause unexpectedly
+    audioRef.value.addEventListener("pause", () => {
+      console.log("Resonate: Audio element paused");
+      if (isAndroid) {
+        // On Android, ALWAYS keep the silent loop playing to maintain MediaSession
+        console.log("Resonate: Restarting silent loop (Android workaround)");
+        if (audioRef.value) {
+          audioRef.value.play().catch((e) => {
+            console.warn("Resonate: Failed to restart silent loop:", e);
+          });
+        }
+      } else {
+        // On iOS/Desktop with MediaStream, restart only if playing
+        if (isPlaying.value && audioRef.value) {
+          console.log("Resonate: Restarting audio element playback");
+          audioRef.value.play().catch((e) => {
+            console.warn("Resonate: Failed to restart audio:", e);
+          });
+        } else {
+          // Update playbackState when legitimately paused
+          navigator.mediaSession.playbackState = "paused";
+        }
+      }
+    });
+
+    audioRef.value.addEventListener("playing", () => {
+      console.log("Resonate: Audio element playing");
+      // Explicitly set playbackState when audio starts playing
+      if (isPlaying.value) {
+        navigator.mediaSession.playbackState = "playing";
+      }
+    });
+
+    audioRef.value.addEventListener("ended", () => {
+      console.log("Resonate: Audio element ended");
+    });
+  }
 });
 
 // Cleanup on unmount
@@ -751,12 +843,8 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="css">
-.resonate-player {
+.hidden-audio {
   width: 0;
   height: 0;
-}
-
-.hidden-audio {
-  display: none;
 }
 </style>
