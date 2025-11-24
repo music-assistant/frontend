@@ -1,5 +1,7 @@
 <template>
-  <div ref="playerRef" class="resonate-player"></div>
+  <div ref="playerRef" class="resonate-player">
+    <audio ref="audioRef" class="hidden-audio"></audio>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -17,6 +19,7 @@ export interface Props {
 const props = defineProps<Props>();
 
 const playerRef = ref<HTMLDivElement>();
+const audioRef = ref<HTMLAudioElement>();
 
 // Resonate Protocol Types
 enum MessageType {
@@ -128,6 +131,7 @@ let currentStreamFormat: StreamStart["payload"]["player"] | null = null;
 let audioBufferQueue: Array<{ buffer: AudioBuffer; serverTime: number }> = [];
 let scheduledSources: AudioBufferSourceNode[] = [];
 let gainNode: GainNode | null = null;
+let streamDestination: MediaStreamAudioDestinationNode | null = null;
 let queueProcessTimeout: any = null; // Debounce timer for queue processing
 
 // Clock synchronization
@@ -153,7 +157,20 @@ function initAudioContext() {
     const streamSampleRate = currentStreamFormat?.sample_rate || 48000;
     audioContext = new AudioContext({ sampleRate: streamSampleRate });
     gainNode = audioContext.createGain();
-    gainNode.connect(audioContext.destination);
+
+    // Create MediaStreamDestination to bridge Web Audio API to HTML5 audio element
+    // This enables iOS background playback while preserving Web Audio API functionality
+    streamDestination = audioContext.createMediaStreamDestination();
+    gainNode.connect(streamDestination);
+
+    // Connect to HTML5 audio element for iOS background playback support
+    if (audioRef.value) {
+      audioRef.value.srcObject = streamDestination.stream;
+      audioRef.value.play().catch((e) => {
+        console.warn("Resonate: Audio autoplay blocked:", e);
+      });
+    }
+
     updateVolume();
   }
 }
@@ -675,6 +692,7 @@ function disconnect() {
   timeFilter.reset();
 
   gainNode = null;
+  streamDestination = null;
   currentStreamFormat = null;
   audioBufferQueue = [];
   isPlaying.value = false;
@@ -736,5 +754,9 @@ onBeforeUnmount(() => {
 .resonate-player {
   width: 0;
   height: 0;
+}
+
+.hidden-audio {
+  display: none;
 }
 </style>
