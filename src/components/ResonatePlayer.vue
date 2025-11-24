@@ -566,19 +566,61 @@ async function connect() {
             software_version: navigator.userAgent,
           },
           player_support: {
-            supported_formats: [
-              // Opus preferred (best quality/compression ratio)
-              { codec: "opus", sample_rate: 48000, channels: 2, bit_depth: 16 },
-              { codec: "opus", sample_rate: 44100, channels: 2, bit_depth: 16 },
-              // FLAC fallback (lossless)
-              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 16 },
-              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 16 },
-              { codec: "flac", sample_rate: 48000, channels: 2, bit_depth: 24 },
-              { codec: "flac", sample_rate: 44100, channels: 2, bit_depth: 24 },
-              // PCM fallback (uncompressed)
-              { codec: "pcm", sample_rate: 48000, channels: 2, bit_depth: 16 },
-              { codec: "pcm", sample_rate: 44100, channels: 2, bit_depth: 16 },
-            ],
+            supported_formats: (() => {
+              // Safari has limited codec support, only use PCM for Safari
+              // TODO: add flac support for Safari
+              const isSafari = /^((?!chrome|android).)*safari/i.test(
+                navigator.userAgent,
+              );
+
+              if (isSafari) {
+                return [
+                  {
+                    codec: "pcm",
+                    sample_rate: 48000,
+                    channels: 2,
+                    bit_depth: 16,
+                  },
+                  {
+                    codec: "pcm",
+                    sample_rate: 44100,
+                    channels: 2,
+                    bit_depth: 16,
+                  },
+                ];
+              }
+
+              // Other browsers support FLAC and PCM
+              // TODO: Opus needs special handling, at least on Safari and Firefox
+              return [
+                // FLAC prefered
+                {
+                  codec: "flac",
+                  sample_rate: 48000,
+                  channels: 2,
+                  bit_depth: 16,
+                },
+                {
+                  codec: "flac",
+                  sample_rate: 44100,
+                  channels: 2,
+                  bit_depth: 16,
+                },
+                // PCM fallback (uncompressed)
+                {
+                  codec: "pcm",
+                  sample_rate: 48000,
+                  channels: 2,
+                  bit_depth: 16,
+                },
+                {
+                  codec: "pcm",
+                  sample_rate: 44100,
+                  channels: 2,
+                  bit_depth: 16,
+                },
+              ];
+            })(),
             buffer_capacity: 1024 * 1024 * 5, // 5MB buffer
             supported_commands: ["volume", "mute"],
           },
