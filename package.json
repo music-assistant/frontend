@@ -34,7 +34,7 @@
     "websocket-ts": "2.2.1"
   },
   "devDependencies": {
-    "@fontsource/roboto": "5.2.8",
+    "@fontsource/roboto": "5.2.9",
     "@types/color": "4.2.0",
     "@types/node": "24.10.0",
     "@typescript-eslint/eslint-plugin": "7.0.0",
