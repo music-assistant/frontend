@@ -130,7 +130,10 @@ export class ProtocolHandler {
   // Handle stream start
   private handleStreamStart(message: StreamStart): void {
     this.stateManager.currentStreamFormat = message.payload.player;
-    console.log("Resonate: Stream started", this.stateManager.currentStreamFormat);
+    console.log(
+      "Resonate: Stream started",
+      this.stateManager.currentStreamFormat,
+    );
 
     this.audioProcessor.initAudioContext();
     // Resume AudioContext if suspended (required for browser autoplay policies)

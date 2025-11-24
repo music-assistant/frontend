@@ -129,7 +129,8 @@ export class AudioProcessor {
 
     const bytesPerSample = (format.bit_depth || 16) / 8;
     const dataView = new DataView(audioData);
-    const numSamples = audioData.byteLength / (bytesPerSample * format.channels);
+    const numSamples =
+      audioData.byteLength / (bytesPerSample * format.channels);
 
     const audioBuffer = this.audioContext.createBuffer(
       format.channels,
@@ -202,7 +203,10 @@ export class AudioProcessor {
 
       if (audioBuffer) {
         // Add to queue for ordered playback
-        this.audioBufferQueue.push({ buffer: audioBuffer, serverTime: serverTimeUs });
+        this.audioBufferQueue.push({
+          buffer: audioBuffer,
+          serverTime: serverTimeUs,
+        });
 
         // Debounce queue processing to allow multiple chunks to arrive
         // This handles out-of-order arrivals from async FLAC decoding
