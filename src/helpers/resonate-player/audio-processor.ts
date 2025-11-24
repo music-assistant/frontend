@@ -186,6 +186,9 @@ export class AudioProcessor {
       return;
     }
 
+    // Capture stream generation before async decode
+    const generation = this.stateManager.streamGeneration;
+
     // First byte contains role type and message slot
     // Spec: bits 7-2 identify role type (6 bits), bits 1-0 identify message slot (2 bits)
     const firstByte = new Uint8Array(data)[0];
@@ -202,10 +205,19 @@ export class AudioProcessor {
       const audioBuffer = await this.decodeAudioData(audioData, format);
 
       if (audioBuffer) {
+        // Check if stream generation changed during async decode
+        if (generation !== this.stateManager.streamGeneration) {
+          console.log(
+            "Resonate: Discarding audio chunk from old stream (generation mismatch)",
+          );
+          return;
+        }
+
         // Add to queue for ordered playback
         this.audioBufferQueue.push({
           buffer: audioBuffer,
           serverTime: serverTimeUs,
+          generation: generation,
         });
 
         // Debounce queue processing to allow multiple chunks to arrive
@@ -226,6 +238,18 @@ export class AudioProcessor {
   // Process the audio queue and schedule chunks in order
   processAudioQueue(): void {
     if (!this.audioContext || !this.gainNode) return;
+
+    // Filter out any chunks from old streams (safety check)
+    const currentGeneration = this.stateManager.streamGeneration;
+    this.audioBufferQueue = this.audioBufferQueue.filter((chunk) => {
+      if (chunk.generation !== currentGeneration) {
+        console.log(
+          "Resonate: Filtering out audio chunk from old stream during queue processing",
+        );
+        return false;
+      }
+      return true;
+    });
 
     // Sort queue by server timestamp to ensure proper ordering
     this.audioBufferQueue.sort((a, b) => a.serverTime - b.serverTime);

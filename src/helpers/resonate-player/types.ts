@@ -162,4 +162,5 @@ export interface ResonatePlayerConfig {
 export interface AudioBufferQueueItem {
   buffer: AudioBuffer;
   serverTime: number;
+  generation: number;
 }

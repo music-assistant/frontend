@@ -8,6 +8,7 @@ export class StateManager {
   private _currentStreamFormat: StreamFormat | null = null;
   private _streamStartServerTime: number = 0;
   private _streamStartAudioTime: number = 0;
+  private _streamGeneration: number = 0;
 
   // Interval references for cleanup
   private timeSyncInterval: number | null = null;
@@ -101,6 +102,12 @@ export class StateManager {
   resetStreamAnchors(): void {
     this._streamStartServerTime = 0;
     this._streamStartAudioTime = 0;
+    this._streamGeneration++;
+  }
+
+  // Get current stream generation
+  get streamGeneration(): number {
+    return this._streamGeneration;
   }
 
   // Interval management
