@@ -67,7 +67,7 @@ onMounted(() => {
     i18n.global.locale.value = langPref;
   }
   const webPlayerModePref =
-    localStorage.getItem("frontend.settings.web_player_mode") || "resonate";
+    localStorage.getItem("frontend.settings.web_player_mode") || "builtin";
 
   const forceMobileLayout =
     localStorage.getItem("frontend.settings.force_mobile_layout") == "true";

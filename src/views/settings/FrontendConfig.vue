@@ -111,7 +111,7 @@ onMounted(() => {
       key: "web_player_mode",
       type: ConfigEntryType.STRING,
       label: "web_player_mode",
-      default_value: "resonate",
+      default_value: "builtin",
       required: false,
       options: [
         {
@@ -130,7 +130,7 @@ onMounted(() => {
       multi_value: false,
       category: "generic",
       value:
-        localStorage.getItem("frontend.settings.web_player_mode") || "resonate",
+        localStorage.getItem("frontend.settings.web_player_mode") || "builtin",
     },
     {
       key: "force_mobile_layout",
