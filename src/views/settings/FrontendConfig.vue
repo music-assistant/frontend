@@ -108,16 +108,29 @@ onMounted(() => {
       value: enabledMenuItems,
     },
     {
-      key: "enable_builtin_player",
-      type: ConfigEntryType.BOOLEAN,
-      label: "enable_builtin_player",
-      default_value: true,
-      required: true,
+      key: "web_player_mode",
+      type: ConfigEntryType.STRING,
+      label: "web_player_mode",
+      default_value: "resonate",
+      required: false,
+      options: [
+        {
+          title: $t("settings.web_player_mode.options.resonate"),
+          value: "resonate",
+        },
+        {
+          title: $t("settings.web_player_mode.options.builtin"),
+          value: "builtin",
+        },
+        {
+          title: $t("settings.web_player_mode.options.disabled"),
+          value: "disabled",
+        },
+      ],
       multi_value: false,
       category: "generic",
       value:
-        localStorage.getItem("frontend.settings.enable_builtin_player") !=
-        "false",
+        localStorage.getItem("frontend.settings.web_player_mode") || "resonate",
     },
     {
       key: "force_mobile_layout",

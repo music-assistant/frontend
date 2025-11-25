@@ -51,7 +51,7 @@ onMounted(() => {
 
   // Set audio source to indicate this tab is handling audio
   // (for coordination with other tabs via web_player.ts)
-  webPlayer.audioSource = WebPlayerMode.BUILTIN;
+  webPlayer.audioSource = WebPlayerMode.RESONATE;
 
   // Setup metadata listener for MediaSession
   unsubMetadata = useMediaBrowserMetaData(props.playerId);
