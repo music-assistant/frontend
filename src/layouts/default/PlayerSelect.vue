@@ -35,10 +35,10 @@
       <v-divider />
 
       <v-list flat style="margin: 0px 10px; padding: 0">
-        <!-- dedicated card for builtin player -->
+        <!-- dedicated card for the local web player -->
         <PlayerCard
           v-if="
-            webPlayer.mode === WebPlayerMode.BUILTIN &&
+            isPlaybackMode(webPlayer.mode) &&
             webPlayer.player_id &&
             api.players[webPlayer.player_id]
           "
@@ -164,7 +164,7 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer, isPlaybackMode } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);

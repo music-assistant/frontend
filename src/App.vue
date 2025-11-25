@@ -7,6 +7,10 @@
       webPlayer.interacted == true
     "
   />
+  <ResonatePlayer
+    v-if="webPlayer.tabMode === WebPlayerMode.RESONATE && webPlayer.player_id"
+    :player-id="webPlayer.player_id"
+  />
   <BuiltinPlayer
     v-if="webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id"
     :player-id="webPlayer.player_id"
@@ -24,6 +28,7 @@ import { EventType } from "./plugins/api/interfaces";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import BuiltinPlayer from "./components/BuiltinPlayer.vue";
+import ResonatePlayer from "./components/ResonatePlayer.vue";
 
 const theme = useTheme();
 
@@ -61,8 +66,8 @@ onMounted(() => {
   if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
   }
-  const allowBuiltinPlayer =
-    localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
+  const webPlayerModePref =
+    localStorage.getItem("frontend.settings.web_player_mode") || "builtin";
 
   const forceMobileLayout =
     localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
@@ -106,8 +111,16 @@ onMounted(() => {
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
-    // enable the builtin player by default if the builtin player provider is available
-    if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
+    if (
+      webPlayerModePref === "resonate" &&
+      api.getProvider("resonate")?.available
+    ) {
+      webPlayer.setMode(WebPlayerMode.RESONATE);
+    } else if (
+      webPlayerModePref !== "disabled" &&
+      api.getProvider("builtin_player")
+    ) {
+      // Fallback to builtin if resonate requested but unavailable, or if builtin explicitly selected
       webPlayer.setMode(WebPlayerMode.BUILTIN);
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
