@@ -197,7 +197,7 @@
                 :required="conf_entry.required"
                 :rules="[
                   (v) =>
-                    !(!v && conf_entry.required) ||
+                    !((v === null || v === undefined) && conf_entry.required) ||
                     $t('settings.invalid_input'),
                 ]"
                 variant="outlined"
