@@ -99,6 +99,31 @@ export const getAvatarImage = function (
     }&bold=true&background=a0a0a0&color=cccccc`;
 };
 
+// Check if an image path is valid (not an audio/video file)
+export const isValidImagePath = function (path: string): boolean {
+  if (!path) return false;
+  const lowerPath = path.toLowerCase();
+  // Reject paths that look like audio/video files
+  const audioVideoExtensions = [
+    ".mp3",
+    ".m4a",
+    ".flac",
+    ".wav",
+    ".ogg",
+    ".opus",
+    ".aac",
+    ".wma",
+    ".mp4",
+    ".mkv",
+    ".avi",
+    ".webm",
+  ];
+  for (const ext of audioVideoExtensions) {
+    if (lowerPath.endsWith(ext)) return false;
+  }
+  return true;
+};
+
 export const getMediaItemImage = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
@@ -129,6 +154,7 @@ export const getMediaItemImage = function (
     "image" in mediaItem &&
     mediaItem.image &&
     mediaItem.image.type == type &&
+    isValidImagePath(mediaItem.image.path) &&
     imageProviderIsAvailable(mediaItem.image.provider)
   )
     return mediaItem.image;
@@ -142,7 +168,11 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (img.type == type && imageProviderIsAvailable(img.provider))
+      if (
+        img.type == type &&
+        isValidImagePath(img.path) &&
+        imageProviderIsAvailable(img.provider)
+      )
         return img;
     }
   }
@@ -200,8 +230,15 @@ export const getImageThumbForItem = function (
 };
 
 const imageProviderIsAvailable = function (provider: string) {
+  // Always allow image loading - the imageproxy will handle inaccessible images
+  // Previously this blocked images from providers like audiobookshelf if the
+  // provider wasn't marked as "available", but the imageproxy can still fetch them
   if (provider === "http" || provider === "builtin") return true;
-  return api.getProvider(provider)?.available === true;
+  // Check if provider exists at all (even if not currently "available")
+  const providerInstance = api.getProvider(provider);
+  if (providerInstance) return true;
+  // For unknown providers, still allow - let imageproxy attempt the fetch
+  return true;
 };
 </script>
 

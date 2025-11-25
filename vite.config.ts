@@ -32,6 +32,56 @@ export default defineConfig({
         "robots.txt",
         "apple-touch-icon.png",
       ],
+      workbox: {
+        // Cache album art and images from imageproxy
+        runtimeCaching: [
+          {
+            // Cache imageproxy responses (album art, thumbnails)
+            urlPattern: /\/imageproxy\?/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "album-art-cache",
+              expiration: {
+                maxEntries: 1000, // Cache up to 1000 images
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Cache external images (Apple Music, etc.)
+            urlPattern: /^https:\/\/is\d+-ssl\.mzstatic\.com\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "apple-music-images",
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Cache avatar images (fallback placeholders)
+            urlPattern: /^https:\/\/ui-avatars\.com\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "avatar-cache",
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+      },
       manifest: {
         name: "Music Assistant",
         short_name: "Music Assistant",
@@ -75,6 +125,17 @@ export default defineConfig({
   },
   build: {
     outDir: "./music_assistant_frontend",
-    target: ["safari15", "es2018"],
+    target: ["safari15", "es2020"],
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["vue", "vue-router"],
+          vuetify: ["vuetify"],
+          api: ["websocket-ts"],
+          utils: ["color", "colorthief"],
+        },
+      },
+    },
   },
 });

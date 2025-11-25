@@ -24,6 +24,7 @@ import { EventType } from "./plugins/api/interfaces";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import BuiltinPlayer from "./components/BuiltinPlayer.vue";
+import { startImagePreload } from "./plugins/imagePreloader";
 
 const theme = useTheme();
 
@@ -112,6 +113,8 @@ onMounted(() => {
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
     }
+    // Start preloading album art in the background
+    startImagePreload();
   });
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
