@@ -212,15 +212,14 @@ export const webPlayer = reactive({
       // Resonate player is handled separately through the ResonatePlayer component
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
       const saved_player_id = window.localStorage.getItem(
-        "builtin_webplayer_id",
+        "resonate_webplayer_id",
       );
 
       // Use saved player_id or generate a new one if none exists
       let player_id = saved_player_id;
       if (!player_id) {
-        // Generate a new player ID (same format as builtin player)
         player_id = `ma_${Math.random().toString(36).substring(2, 12)}`;
-        window.localStorage.setItem("builtin_webplayer_id", player_id);
+        window.localStorage.setItem("resonate_webplayer_id", player_id);
       }
       this.player_id = player_id;
       this.lastUpdate = Date.now();
@@ -250,10 +249,12 @@ export const webPlayer = reactive({
       bc.postMessage(BC_MSG.CONTROL_TAKEN);
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
       // This is guaranteed to not be a first tab (since that would have a playback tabMode)
-      // Therefore, this player_id should be already set
-      const saved_player_id = window.localStorage.getItem(
-        "builtin_webplayer_id",
-      );
+      // Therefore, this player_id should be already set - read based on target mode
+      const storageKey =
+        this.mode === WebPlayerMode.RESONATE
+          ? "resonate_webplayer_id"
+          : "builtin_webplayer_id";
+      const saved_player_id = window.localStorage.getItem(storageKey);
       this.player_id = saved_player_id;
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else {
