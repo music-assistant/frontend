@@ -7,6 +7,16 @@
       </p>
     </div>
 
+    <v-alert
+      v-if="store.isIngressSession"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+    >
+      {{ $t("auth.ingress_password_note") }}
+    </v-alert>
+
     <v-form ref="passwordForm" @submit.prevent="handleChangePassword">
       <v-text-field
         v-model="oldPassword"
@@ -53,6 +63,7 @@
 
 <script setup lang="ts">
 import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import { computed, nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";

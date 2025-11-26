@@ -859,6 +859,7 @@
         "avatar_url": "Avatar URL",
         "avatar_url_hint": "Enter URL to avatar image",
         "change_avatar": "Change avatar",
-        "profile_updated": "Profile updated successfully"
+        "profile_updated": "Profile updated successfully",
+        "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in."
     }
 }
