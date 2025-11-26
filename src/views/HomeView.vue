@@ -69,7 +69,11 @@
                 <v-icon icon="mdi-pencil" />
               </template>
             </v-list-item>
-            <v-list-item :title="$t('auth.logout')" @click="handleLogout">
+            <v-list-item
+              v-if="!store.isIngressSession"
+              :title="$t('auth.logout')"
+              @click="handleLogout"
+            >
               <template #prepend>
                 <v-icon icon="mdi-logout" />
               </template>

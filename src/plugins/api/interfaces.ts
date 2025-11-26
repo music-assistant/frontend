@@ -444,7 +444,6 @@ export interface ServerInfoMessage {
   base_url: string;
   homeassistant_addon: boolean;
   onboard_done: boolean;
-  requires_auth?: boolean;
 }
 
 export type MessageType =

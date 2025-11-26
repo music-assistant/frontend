@@ -72,6 +72,7 @@ interface Store {
   currentUser?: User;
   serverInfo?: ServerInfo;
   isAuthenticated: boolean;
+  isIngressSession: boolean;
 }
 
 export const store: Store = reactive({
@@ -136,4 +137,5 @@ export const store: Store = reactive({
   currentUser: undefined,
   serverInfo: undefined,
   isAuthenticated: false,
+  isIngressSession: window.location.pathname.includes("/ingress"),
 });
