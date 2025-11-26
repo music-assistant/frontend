@@ -3,58 +3,95 @@ import { AlertType, store } from "../store";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { WebsocketBuilder, Websocket, LinearBackoff } from "websocket-ts";
 import { computed, reactive, ref } from "vue";
-import {
-  createConnection,
-  ERR_HASS_HOST_REQUIRED,
-  getAuth,
-} from "home-assistant-js-websocket";
+import { LinearBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
 
 import {
-  type Artist,
   type Album,
-  type Track,
-  type Radio,
-  type Playlist,
+  type Artist,
+  type AuthToken,
+  type CommandMessage,
+  type ErrorResultMessage,
+  type EventMessage,
+  type MassEvent,
+  type MediaItemType,
   type Player,
   type PlayerQueue,
-  type MediaItemType,
-  MediaType,
-  type QueueItem,
-  QueueOption,
+  type Playlist,
   type ProviderInstance,
-  type MassEvent,
-  EventType,
-  type EventMessage,
+  type QueueItem,
+  type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
-  type ErrorResultMessage,
-  type CommandMessage,
   type SyncTask,
-  RepeatMode,
-  SearchResults,
-  ProviderManifest,
-  ProviderType,
-  ProviderConfig,
-  ConfigValueType,
-  ConfigEntry,
-  PlayerConfig,
-  CoreConfig,
-  ItemMapping,
+  type Track,
+  type User,
   AlbumType,
+  Audiobook,
+  BuiltinPlayerState,
+  ConfigEntry,
+  ConfigValueType,
+  CoreConfig,
   DSPConfig,
   DSPConfigPreset,
-  Audiobook,
+  EventType,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
+  MediaType,
+  PlayableMediaItemType,
+  PlayerConfig,
   Podcast,
   PodcastEpisode,
-  PlayableMediaItemType,
-  MediaItemTypeOrItemMapping,
-  BuiltinPlayerState,
+  ProviderConfig,
+  ProviderManifest,
+  ProviderType,
+  QueueOption,
   RecommendationFolder,
+  RepeatMode,
+  SearchResults,
+  UserRole,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
+
+/**
+ * Generate a friendly device name from the user agent.
+ */
+function getDeviceName(): string {
+  const ua = navigator.userAgent;
+  let browser = "Browser";
+  let os = "Unknown OS";
+
+  // Detect browser
+  if (ua.includes("Firefox/")) {
+    browser = "Firefox";
+  } else if (ua.includes("Edg/")) {
+    browser = "Edge";
+  } else if (ua.includes("Chrome/")) {
+    browser = "Chrome";
+  } else if (ua.includes("Safari/") && !ua.includes("Chrome/")) {
+    browser = "Safari";
+  }
+
+  // Detect OS
+  if (ua.includes("Windows")) {
+    os = "Windows";
+  } else if (ua.includes("Mac OS X")) {
+    os = "macOS";
+  } else if (ua.includes("Linux")) {
+    os = "Linux";
+  } else if (ua.includes("Android")) {
+    os = "Android";
+  } else if (
+    ua.includes("iOS") ||
+    ua.includes("iPhone") ||
+    ua.includes("iPad")
+  ) {
+    os = "iOS";
+  }
+
+  return `Music Assistant Web (${browser} on ${os})`;
+}
 
 export enum ConnectionState {
   DISCONNECTED = 0,
@@ -95,17 +132,31 @@ export class MusicAssistantApi {
     this.partialResult = {};
   }
 
-  public async initialize(baseUrl: string) {
+  public async initialize(
+    baseUrl: string,
+    authToken?: string | null,
+    tokenFromLogin?: boolean,
+  ) {
     if (this.ws) throw new Error("already initialized");
     if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
     this.baseUrl = baseUrl;
     const wsUrl = baseUrl.replace("http", "ws") + "/ws";
     console.log(`Connecting to Music Assistant API ${wsUrl}`);
     this.state.value = ConnectionState.CONNECTING;
+
+    let isAuthenticated = false;
+    let authMessageId: string | null = null;
+    let pendingServerInfo: ServerInfoMessage | null = null;
+
     // connect to the websocket api
     this.ws = new WebsocketBuilder(wsUrl)
       .onOpen((i, ev) => {
         console.log("connection opened");
+        // Reset authentication state on reconnection
+        isAuthenticated = false;
+        authMessageId = null;
+        pendingServerInfo = null;
+        // Wait for ServerInfo message before doing anything
       })
       .onClose((i, ev) => {
         console.log("connection closed");
@@ -121,10 +172,115 @@ export class MusicAssistantApi {
       .onMessage((i, ev) => {
         // Message retrieved on the websocket
         const msg = JSON.parse(ev.data);
+
+        // Handle ServerInfo message FIRST (always sent first by server)
+        if ("server_version" in msg && !pendingServerInfo && !isAuthenticated) {
+          const serverInfo = msg as ServerInfoMessage;
+          console.info("ServerInfo received", serverInfo);
+
+          // Check if we have a token
+          if (!authToken) {
+            // No token - close connection and redirect to login
+            console.error("Authentication required but no token provided");
+            this.ws?.close();
+            const returnUrl = encodeURIComponent(window.location.href);
+            const deviceName = encodeURIComponent(getDeviceName());
+            if (!serverInfo.onboard_done) {
+              window.location.href = `${this.baseUrl}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
+            } else {
+              window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
+            }
+            return;
+          }
+
+          // We have a token - send auth command
+          // Store serverInfo locally (not in this.serverInfo) until auth succeeds
+          pendingServerInfo = serverInfo;
+          authMessageId = this._genCmdId();
+          const authCmd = {
+            command: "auth",
+            message_id: authMessageId,
+            args: {
+              token: authToken,
+            },
+          };
+          console.debug("Sending auth command", authMessageId);
+          i.send(JSON.stringify(authCmd));
+          return;
+        }
+
+        // Check if this is the auth response (match by message_id)
+        if (
+          authMessageId &&
+          !isAuthenticated &&
+          "message_id" in msg &&
+          msg.message_id === authMessageId
+        ) {
+          if ("error" in msg || "error_code" in msg) {
+            console.error("WebSocket authentication failed", msg);
+            // Close connection and redirect to server login
+            this.ws?.close();
+            // Clear auth token from localStorage
+            localStorage.removeItem("ma_access_token");
+            localStorage.removeItem("ma_current_user");
+
+            // Check if we just came from login (to prevent redirect loop)
+            if (tokenFromLogin) {
+              // We just got a token from login but it failed validation
+              // Don't redirect again, show error instead
+              console.error(
+                "Token from login page failed validation - possible invalid credentials or server issue",
+              );
+              alert(
+                "Authentication failed. The login token is invalid. Please try logging in again.",
+              );
+              // Clear the token from URL and redirect to login
+              const deviceName = encodeURIComponent(getDeviceName());
+              window.location.href = `${this.baseUrl}/login?device_name=${deviceName}`;
+              return;
+            }
+
+            // Redirect to server login page
+            const returnUrl = encodeURIComponent(window.location.href);
+            const deviceName = encodeURIComponent(getDeviceName());
+            window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
+            return;
+          }
+          // Auth successful
+          console.log("WebSocket authenticated successfully", msg);
+          isAuthenticated = true;
+
+          // Extract user from auth response and store it
+          if ("result" in msg && msg.result && typeof msg.result === "object") {
+            const authResult = msg.result as { user?: any };
+            if (authResult.user) {
+              // Store user in localStorage (authManager will load it on next access)
+              localStorage.setItem(
+                "ma_current_user",
+                JSON.stringify(authResult.user),
+              );
+              console.log("User info stored:", authResult.user);
+
+              // Import and update authManager asynchronously
+              import("@/plugins/auth").then(({ authManager }) => {
+                (authManager as any).currentUser = authResult.user;
+              });
+            }
+          }
+
+          // Now that we're authenticated, process the ServerInfo and signal CONNECTED
+          if (pendingServerInfo) {
+            console.info(
+              "Processing ServerInfo after successful authentication",
+            );
+            this.handleServerInfoMessage(pendingServerInfo);
+            pendingServerInfo = null;
+          }
+          return;
+        }
+
         if ("event" in msg) {
           this.handleEventMessage(msg as EventMessage);
-        } else if ("server_version" in msg) {
-          this.handleServerInfoMessage(msg as ServerInfoMessage);
         } else if ("message_id" in msg) {
           this.handleResultMessage(msg);
         } else {
@@ -954,7 +1110,6 @@ export class MusicAssistantApi {
     return this.playerCommand(playerId, "volume_mute", {
       muted,
     });
-    this.players[playerId].volume_muted = muted;
   }
 
   public playerCommandMuteToggle(playerId: string): Promise<void> {
@@ -1411,44 +1566,6 @@ export class MusicAssistantApi {
     return undefined;
   }
 
-  private async connectHass() {
-    // TODO
-    // Connect to Music Assistant by using the Home Assistant API
-    let auth;
-    const authOptions = {
-      async loadTokens() {
-        try {
-          return JSON.parse(localStorage.hassTokens);
-        } catch (err) {
-          return undefined;
-        }
-      },
-      saveTokens: (tokens: any) => {
-        localStorage.hassTokens = JSON.stringify(tokens);
-      },
-      hassUrl: "",
-    };
-    try {
-      auth = await getAuth(authOptions);
-    } catch (err) {
-      if (err === ERR_HASS_HOST_REQUIRED) {
-        authOptions.hassUrl =
-          prompt(
-            "Please enter the URL to Home Assistant",
-            "http://homeassistant.local:8123",
-          ) || "";
-        if (!authOptions.hassUrl) return;
-        auth = await getAuth(authOptions);
-      } else {
-        alert(`Unknown error: ${err}`);
-        return;
-      }
-    }
-    const connection = await createConnection({ auth });
-    connection.addEventListener("ready", () => window.history.back());
-    return connection;
-  }
-
   private handleEventMessage(msg: EventMessage) {
     // Handle incoming MA event message
     if (msg.event == EventType.QUEUE_ADDED) {
@@ -1558,6 +1675,375 @@ export class MusicAssistantApi {
           listener[2](evt);
         }
       }
+    }
+  }
+
+  // Auth related functions/commands
+
+  public async changePassword(
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    // Change password for current user using unified update command
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | boolean | null | undefined
+      >("auth/user/update", {
+        password: newPassword,
+        old_password: oldPassword,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      if (
+        typeof result === "object" &&
+        (("success" in result && result.success === true) || "user" in result)
+      ) {
+        return true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return false;
+    }
+  }
+
+  public async getCurrentUserInfo(): Promise<User | null> {
+    // Get current authenticated user information
+    try {
+      const result = await this.sendCommand<User>("auth/me");
+      return result;
+    } catch (error) {
+      console.error("Failed to get current user info:", error);
+      return null;
+    }
+  }
+
+  public async getUserTokens(userId?: string): Promise<AuthToken[]> {
+    // Get all tokens for current user or specific user (admin only)
+    const args = userId ? { user_id: userId } : undefined;
+    const tokens = await this.sendCommand<AuthToken[]>("auth/tokens", args);
+    return tokens || [];
+  }
+
+  public async createToken(name: string, userId?: string): Promise<string> {
+    // Create a new long-lived token for current user or specific user (admin only)
+    const args: { name: string; user_id?: string } = { name };
+    if (userId) args.user_id = userId;
+    const result = await this.sendCommand<
+      { success?: boolean; token: string } | string
+    >("auth/token/create", args);
+
+    if (typeof result === "string") {
+      return result;
+    }
+
+    if (result.success === false) {
+      throw new Error("Failed to create token");
+    }
+
+    if (!result.token) {
+      throw new Error("Failed to create token");
+    }
+
+    return result.token;
+  }
+
+  public async revokeToken(tokenId: string): Promise<boolean> {
+    // Revoke a token
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/token/revoke", {
+        token_id: tokenId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === true
+      ) {
+        return true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error revoking token:", error);
+      return false;
+    }
+  }
+
+  public async logout(): Promise<boolean> {
+    // Logout current user by revoking the current token
+    const result = await this.sendCommand<{ success: boolean }>("auth/logout");
+    return result.success;
+  }
+
+  // User management functions/commands (admin only)
+
+  public async getAllUsers(): Promise<User[]> {
+    // Get all users (admin only)
+    const users = await this.sendCommand<User[]>("auth/users");
+    return users;
+  }
+
+  public async createUser(
+    username: string,
+    password: string,
+    role: UserRole,
+    displayName?: string,
+  ): Promise<User> {
+    // Create a new user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | User | null | undefined
+      >("auth/user/create", {
+        username,
+        password,
+        role,
+        display_name: displayName,
+      });
+
+      if (result == null) {
+        throw new Error("Failed to create user");
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error("Failed to create user");
+      }
+
+      if (typeof result === "object" && "user" in result && result.user) {
+        return result.user;
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      throw new Error("Failed to create user");
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  }
+
+  public async updateUser(
+    userId: string,
+    updates: {
+      username?: string;
+      displayName?: string;
+      avatarUrl?: string;
+      role?: UserRole;
+      password?: string;
+      oldPassword?: string;
+    },
+  ): Promise<User> {
+    // Update user using unified update command
+    try {
+      const args: Record<string, any> = { user_id: userId };
+
+      if (updates.username) args.username = updates.username;
+      if (updates.displayName) args.display_name = updates.displayName;
+      if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
+      if (updates.role) args.role = updates.role;
+      if (updates.password) args.password = updates.password;
+      if (updates.oldPassword) args.old_password = updates.oldPassword;
+
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | User | null | undefined
+      >("auth/user/update", args);
+
+      if (result == null) {
+        throw new Error("Failed to update user");
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error("Failed to update user");
+      }
+
+      if (typeof result === "object" && "user" in result && result.user) {
+        return result.user;
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      throw new Error("Failed to update user");
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
+  }
+
+  public async updateUserRole(
+    userId: string,
+    role: UserRole,
+  ): Promise<boolean> {
+    // Update user role using unified update command
+    try {
+      await this.updateUser(userId, { role });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  public async enableUser(userId: string): Promise<boolean> {
+    // Enable user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/enable", {
+        user_id: userId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error enabling user:", error);
+      return false;
+    }
+  }
+
+  public async deleteUser(userId: string): Promise<boolean> {
+    // Delete user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/delete", {
+        user_id: userId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+
+  public async disableUser(userId: string): Promise<boolean> {
+    // Disable user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/disable", {
+        user_id: userId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error disabling user:", error);
+      return false;
     }
   }
 

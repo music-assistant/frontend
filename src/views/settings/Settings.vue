@@ -53,6 +53,7 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { authManager } from "@/plugins/auth";
 import { match } from "ts-pattern";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -62,7 +63,16 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const { t } = useI18n();
 
-const settingsSections = [
+const allSettingsSections = [
+  {
+    name: "profile",
+    label: "auth.profile",
+    description: "settings.profile_description",
+    icon: "mdi-account-cog",
+    color: "indigo",
+    route: { name: "profile" },
+    adminOnly: false,
+  },
   {
     name: "providers",
     label: "settings.providers",
@@ -70,6 +80,7 @@ const settingsSections = [
     icon: "mdi-monitor-dashboard",
     color: "blue",
     route: { name: "providersettings" },
+    adminOnly: true,
   },
   {
     name: "players",
@@ -78,6 +89,7 @@ const settingsSections = [
     icon: "mdi-speaker-multiple",
     color: "green",
     route: { name: "playersettings" },
+    adminOnly: true,
   },
   {
     name: "core",
@@ -86,6 +98,7 @@ const settingsSections = [
     icon: "mdi-server",
     color: "purple",
     route: { name: "coresettings" },
+    adminOnly: true,
   },
   {
     name: "frontend",
@@ -94,8 +107,23 @@ const settingsSections = [
     icon: "mdi-palette",
     color: "orange",
     route: { name: "frontendsettings" },
+    adminOnly: false,
+  },
+  {
+    name: "users",
+    label: "auth.user_management",
+    description: "settings.users_description",
+    icon: "mdi-account-multiple",
+    color: "teal",
+    route: { name: "usersettings" },
+    adminOnly: true,
   },
 ];
+
+const settingsSections = computed(() => {
+  const isAdmin = authManager.isAdmin();
+  return allSettingsSections.filter((section) => !section.adminOnly || isAdmin);
+});
 
 // computed properties
 const isOverview = computed(() => {
@@ -103,14 +131,21 @@ const isOverview = computed(() => {
 });
 
 const activeTab = computed(() => {
-  if (router.currentRoute.value.name?.toString().includes("player")) {
+  const name = router.currentRoute.value.name?.toString() || "";
+  if (name === "profile") {
+    return "profile";
+  }
+  if (name.includes("player")) {
     return "players";
   }
-  if (router.currentRoute.value.name?.toString().includes("core")) {
+  if (name.includes("core")) {
     return "core";
   }
-  if (router.currentRoute.value.name?.toString().includes("frontend")) {
+  if (name.includes("frontend")) {
     return "frontend";
+  }
+  if (name.includes("user")) {
+    return "users";
   }
   return "providers";
 });
@@ -135,7 +170,13 @@ const breadcrumbItems = computed(() => {
 
   if (!isOverview.value) {
     const currentTab = activeTab.value;
-    if (currentTab === "players") {
+    if (currentTab === "profile") {
+      items.push({
+        title: t("auth.profile"),
+        disabled: name === "profile",
+        to: { name: "profile" },
+      });
+    } else if (currentTab === "players") {
       items.push({
         title: t("settings.players"),
         disabled: name === "playersettings",
@@ -152,6 +193,12 @@ const breadcrumbItems = computed(() => {
         title: t("settings.frontend"),
         disabled: name === "frontendsettings",
         to: { name: "frontendsettings" },
+      });
+    } else if (currentTab === "users") {
+      items.push({
+        title: t("settings.users"),
+        disabled: name === "usersettings",
+        to: { name: "usersettings" },
       });
     } else if (currentTab === "providers") {
       items.push({

@@ -25,6 +25,7 @@
         <v-list-item-title v-if="!collapsed" v-text="$t(menuItem.label)" />
       </v-list-item>
     </v-list>
+
     <div :class="!collapsed ? 'ml-auto' : 'd-flex justify-center'">
       <v-btn
         :icon="collapsed ? 'mdi-dock-left' : 'mdi-dock-right'"

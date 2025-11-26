@@ -10,6 +10,7 @@ import {
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
@@ -212,30 +213,32 @@ export const getPlayerMenuItems = (
       icon: "mdi-all-inclusive",
     });
   }
-  // add player settings
-  menuItems.push({
-    label: "open_player_settings",
-    labelArgs: [],
-    action: () => {
-      store.showFullscreenPlayer = false;
-      store.showPlayersMenu = false;
-      router.push(`/settings/editplayer/${player.player_id}`);
-    },
-    icon: "mdi-cog-outline",
-  });
-
-  // add shortcut to dsp settings
-  if (player.type !== PlayerType.GROUP) {
+  // add player settings (admin only)
+  if (authManager.isAdmin()) {
     menuItems.push({
-      label: "open_dsp_settings",
+      label: "open_player_settings",
       labelArgs: [],
       action: () => {
         store.showFullscreenPlayer = false;
         store.showPlayersMenu = false;
-        router.push(`/settings/editplayer/${player.player_id}/dsp`);
+        router.push(`/settings/editplayer/${player.player_id}`);
       },
-      icon: "mdi-equalizer",
+      icon: "mdi-cog-outline",
     });
+
+    // add shortcut to dsp settings
+    if (player.type !== PlayerType.GROUP) {
+      menuItems.push({
+        label: "open_dsp_settings",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(`/settings/editplayer/${player.player_id}/dsp`);
+        },
+        icon: "mdi-equalizer",
+      });
+    }
   }
 
   return menuItems;

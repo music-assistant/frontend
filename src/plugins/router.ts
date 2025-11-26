@@ -1,7 +1,9 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import { store } from "./store";
+import { authManager } from "./auth";
 
 const routes = [
+  // All routes go through default layout - authentication is handled by server redirect
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
@@ -204,6 +206,15 @@ const routes = [
         props: true,
         children: [
           {
+            path: "profile",
+            name: "profile",
+            component: () =>
+              import(
+                /* webpackChunkName: "profile" */ "@/views/UserProfile.vue"
+              ),
+            props: true,
+          },
+          {
             path: "providers",
             name: "providersettings",
             component: () =>
@@ -211,6 +222,7 @@ const routes = [
                 /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "players",
@@ -220,6 +232,7 @@ const routes = [
                 /* webpackChunkName: "playersettings" */ "@/views/settings/Players.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "core",
@@ -229,6 +242,7 @@ const routes = [
                 /* webpackChunkName: "coresettings" */ "@/views/settings/CoreConfigs.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "frontend",
@@ -240,6 +254,16 @@ const routes = [
             props: true,
           },
           {
+            path: "users",
+            name: "usersettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "usersettings" */ "@/views/settings/UserManagement.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
             path: "addprovider/:domain",
             name: "addproviderdetails",
             component: () =>
@@ -247,6 +271,7 @@ const routes = [
                 /* webpackChunkName: "addproviderdetails" */ "@/views/settings/AddProviderDetails.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "editprovider/:instanceId",
@@ -256,6 +281,7 @@ const routes = [
                 /* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "editplayer/:playerId",
@@ -265,6 +291,7 @@ const routes = [
                 /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "editplayer/:playerId/dsp",
@@ -274,6 +301,7 @@ const routes = [
                 /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "editcore/:domain",
@@ -283,6 +311,7 @@ const routes = [
                 /* webpackChunkName: "editcore" */ "@/views/settings/EditCoreConfig.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
           {
             path: "addgroup/:provider",
@@ -292,6 +321,7 @@ const routes = [
                 /* webpackChunkName: "addgroup" */ "@/views/settings/AddPlayerGroup.vue"
               ),
             props: true,
+            meta: { requiresAdmin: true },
           },
         ],
       },
@@ -304,10 +334,53 @@ const router = createRouter({
   routes,
 });
 
+// Navigation guard for authentication
+router.beforeEach(async (to, from, next) => {
+  // Check if user is authenticated
+  if (!store.isAuthenticated || !authManager.getToken()) {
+    // Not authenticated - App.vue will handle redirect to server login
+    next();
+    return;
+  }
+
+  // Check admin-only routes
+  if (to.meta.requiresAdmin && !authManager.isAdmin()) {
+    // User is not admin, redirect to home
+    console.warn("Admin access required for", to.path);
+    next({ name: "home" });
+    return;
+  }
+
+  // All checks passed
+  next();
+});
+
 router.afterEach((to, from) => {
   if (!from?.path) return;
   console.debug("navigating from ", from.path, " to ", to.path);
   store.prevRoute = from.path;
+
+  // Clean up onboard parameter from URL if present
+  if (store.isOnboarding && to.path === "/settings/providers") {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("onboard")) {
+      urlParams.delete("onboard");
+      const cleanUrl =
+        window.location.pathname +
+        (urlParams.toString() ? "?" + urlParams.toString() : "") +
+        window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }
+
+  // Reset onboarding flag when navigating away from the providers page
+  if (
+    store.isOnboarding &&
+    from.path === "/settings/providers" &&
+    to.path !== "/settings/providers"
+  ) {
+    store.isOnboarding = false;
+  }
 });
 
 export default router;

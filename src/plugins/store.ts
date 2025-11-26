@@ -1,5 +1,12 @@
 import { computed, reactive } from "vue";
-import { MediaType, Player, PlayerQueue, QueueItem } from "./api/interfaces";
+import {
+  MediaType,
+  Player,
+  PlayerQueue,
+  QueueItem,
+  User,
+  ServerInfo,
+} from "./api/interfaces";
 
 import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
@@ -62,6 +69,11 @@ interface Store {
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
+  currentUser?: User;
+  serverInfo?: ServerInfo;
+  isAuthenticated: boolean;
+  isIngressSession: boolean;
+  isOnboarding: boolean;
 }
 
 export const store: Store = reactive({
@@ -123,4 +135,9 @@ export const store: Store = reactive({
       parseBool(store.forceMobileLayout)
     );
   }),
+  currentUser: undefined,
+  serverInfo: undefined,
+  isAuthenticated: false,
+  isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
+  isOnboarding: false,
 });
