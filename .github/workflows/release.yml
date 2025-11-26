@@ -127,32 +127,9 @@ jobs:
     steps:
       - name: Wait for PyPI availability
         run: |
-          VERSION="${{ inputs.version }}"
-          echo "Waiting for music-assistant-frontend==$VERSION to be available on PyPI..."
-
-          # Wait up to 5 minutes (30 attempts * 10 seconds)
-          MAX_ATTEMPTS=30
-          ATTEMPT=1
-
-          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Checking PyPI..."
-
-            # Check if the package version is available on PyPI
-            if pip index versions music-assistant-frontend 2>/dev/null | grep -q "$VERSION"; then
-              echo "✅ Package music-assistant-frontend==$VERSION is now available on PyPI!"
-              exit 0
-            fi
-
-            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
-              echo "Package not yet available, waiting 10 seconds..."
-              sleep 10
-            fi
-
-            ATTEMPT=$((ATTEMPT + 1))
-          done
-
-          echo "⚠️ Warning: Package not found on PyPI after 5 minutes, proceeding anyway..."
-          exit 0
+          echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend ${{ inputs.version }}..."
+          sleep 300
+          echo "Done waiting, proceeding with server repo update"
 
       - name: Get release notes
         id: release_notes
