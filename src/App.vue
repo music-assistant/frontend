@@ -1,4 +1,5 @@
 <template>
+  <VSonner position="bottom-right" />
   <router-view v-if="store.connected" />
   <v-progress-linear v-else indeterminate color="primary" />
   <PlayerBrowserMediaControls
@@ -15,15 +16,16 @@
 
 <script setup lang="ts">
 import { api } from "@/plugins/api";
+import { i18n } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { onMounted } from "vue";
 import { useTheme } from "vuetify";
-import { store } from "@/plugins/store";
-import { i18n } from "@/plugins/i18n";
-import router from "./plugins/router";
-import { EventType } from "./plugins/api/interfaces";
-import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
-import { webPlayer, WebPlayerMode } from "./plugins/web_player";
+import { VSonner } from "vuetify-sonner";
+import "vuetify-sonner/style.css";
 import BuiltinPlayer from "./components/BuiltinPlayer.vue";
+import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import { EventType } from "./plugins/api/interfaces";
+import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 
 const theme = useTheme();
 

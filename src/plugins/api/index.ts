@@ -3,52 +3,52 @@ import { AlertType, store } from "../store";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { WebsocketBuilder, Websocket, LinearBackoff } from "websocket-ts";
 import { computed, reactive, ref } from "vue";
+import { LinearBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
 
 import {
-  type Artist,
   type Album,
-  type Track,
-  type Radio,
-  type Playlist,
+  type Artist,
+  type AuthToken,
+  type CommandMessage,
+  type ErrorResultMessage,
+  type EventMessage,
+  type MassEvent,
+  type MediaItemType,
   type Player,
   type PlayerQueue,
-  type MediaItemType,
-  MediaType,
-  type QueueItem,
-  QueueOption,
+  type Playlist,
   type ProviderInstance,
-  type MassEvent,
-  EventType,
-  type EventMessage,
+  type QueueItem,
+  type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
-  type ErrorResultMessage,
-  type CommandMessage,
   type SyncTask,
-  RepeatMode,
-  SearchResults,
-  ProviderManifest,
-  ProviderType,
-  ProviderConfig,
-  ConfigValueType,
-  ConfigEntry,
-  PlayerConfig,
-  CoreConfig,
-  ItemMapping,
+  type Track,
+  type User,
   AlbumType,
+  Audiobook,
+  BuiltinPlayerState,
+  ConfigEntry,
+  ConfigValueType,
+  CoreConfig,
   DSPConfig,
   DSPConfigPreset,
-  Audiobook,
+  EventType,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
+  MediaType,
+  PlayableMediaItemType,
+  PlayerConfig,
   Podcast,
   PodcastEpisode,
-  PlayableMediaItemType,
-  MediaItemTypeOrItemMapping,
-  BuiltinPlayerState,
+  ProviderConfig,
+  ProviderManifest,
+  ProviderType,
+  QueueOption,
   RecommendationFolder,
-  type AuthToken,
-  type User,
+  RepeatMode,
+  SearchResults,
   UserRole,
 } from "./interfaces";
 
@@ -1106,7 +1106,6 @@ export class MusicAssistantApi {
     return this.playerCommand(playerId, "volume_mute", {
       muted,
     });
-    this.players[playerId].volume_muted = muted;
   }
 
   public playerCommandMuteToggle(playerId: string): Promise<void> {
@@ -1682,14 +1681,45 @@ export class MusicAssistantApi {
     newPassword: string,
   ): Promise<boolean> {
     // Change password for current user using unified update command
-    const result = await this.sendCommand<{ success: boolean; user: User }>(
-      "auth/user/update",
-      {
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | boolean | null | undefined
+      >("auth/user/update", {
         password: newPassword,
         old_password: oldPassword,
-      },
-    );
-    return result.success;
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      if (
+        typeof result === "object" &&
+        (("success" in result && result.success === true) || "user" in result)
+      ) {
+        return true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return false;
+    }
   }
 
   public async getCurrentUserInfo(): Promise<User | null> {
@@ -1714,25 +1744,66 @@ export class MusicAssistantApi {
     // Create a new long-lived token for current user or specific user (admin only)
     const args: { name: string; user_id?: string } = { name };
     if (userId) args.user_id = userId;
-    const result = await this.sendCommand<{ success: boolean; token: string }>(
-      "auth/token/create",
-      args,
-    );
-    if (!result.success) {
+    const result = await this.sendCommand<
+      { success?: boolean; token: string } | string
+    >("auth/token/create", args);
+
+    if (typeof result === "string") {
+      return result;
+    }
+
+    if (result.success === false) {
       throw new Error("Failed to create token");
     }
+
+    if (!result.token) {
+      throw new Error("Failed to create token");
+    }
+
     return result.token;
   }
 
   public async revokeToken(tokenId: string): Promise<boolean> {
     // Revoke a token
-    const result = await this.sendCommand<{ success: boolean }>(
-      "auth/token/revoke",
-      {
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/token/revoke", {
         token_id: tokenId,
-      },
-    );
-    return result.success;
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === true
+      ) {
+        return true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error revoking token:", error);
+      return false;
+    }
   }
 
   public async logout(): Promise<boolean> {
@@ -1756,19 +1827,45 @@ export class MusicAssistantApi {
     displayName?: string,
   ): Promise<User> {
     // Create a new user (admin only)
-    const result = await this.sendCommand<{ success: boolean; user: User }>(
-      "auth/user/create",
-      {
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | User | null | undefined
+      >("auth/user/create", {
         username,
         password,
         role,
         display_name: displayName,
-      },
-    );
-    if (!result.success) {
+      });
+
+      if (result == null) {
+        throw new Error("Failed to create user");
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error("Failed to create user");
+      }
+
+      if (typeof result === "object" && "user" in result && result.user) {
+        return result.user;
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
       throw new Error("Failed to create user");
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
     }
-    return result.user;
   }
 
   public async updateUser(
@@ -1783,24 +1880,49 @@ export class MusicAssistantApi {
     },
   ): Promise<User> {
     // Update user using unified update command
-    const args: Record<string, any> = { user_id: userId };
+    try {
+      const args: Record<string, any> = { user_id: userId };
 
-    if (updates.username) args.username = updates.username;
-    if (updates.displayName) args.display_name = updates.displayName;
-    if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
-    if (updates.role) args.role = updates.role;
-    if (updates.password) args.password = updates.password;
-    if (updates.oldPassword) args.old_password = updates.oldPassword;
+      if (updates.username) args.username = updates.username;
+      if (updates.displayName) args.display_name = updates.displayName;
+      if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
+      if (updates.role) args.role = updates.role;
+      if (updates.password) args.password = updates.password;
+      if (updates.oldPassword) args.old_password = updates.oldPassword;
 
-    const result = await this.sendCommand<{ success: boolean; user: User }>(
-      "auth/user/update",
-      args,
-    );
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | User | null | undefined
+      >("auth/user/update", args);
 
-    if (!result.success) {
+      if (result == null) {
+        throw new Error("Failed to update user");
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error("Failed to update user");
+      }
+
+      if (typeof result === "object" && "user" in result && result.user) {
+        return result.user;
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
       throw new Error("Failed to update user");
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
     }
-    return result.user;
   }
 
   public async updateUserRole(
@@ -1818,35 +1940,107 @@ export class MusicAssistantApi {
 
   public async enableUser(userId: string): Promise<boolean> {
     // Enable user (admin only)
-    const result = await this.sendCommand<{ success: boolean }>(
-      "auth/user/enable",
-      {
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/enable", {
         user_id: userId,
-      },
-    );
-    return result.success;
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error enabling user:", error);
+      return false;
+    }
   }
 
   public async deleteUser(userId: string): Promise<boolean> {
     // Delete user (admin only)
-    const result = await this.sendCommand<{ success: boolean }>(
-      "auth/user/delete",
-      {
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/delete", {
         user_id: userId,
-      },
-    );
-    return result.success;
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
   }
 
   public async disableUser(userId: string): Promise<boolean> {
     // Disable user (admin only)
-    const result = await this.sendCommand<{ success: boolean }>(
-      "auth/user/disable",
-      {
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/disable", {
         user_id: userId,
-      },
-    );
-    return result.success;
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error disabling user:", error);
+      return false;
+    }
   }
 
   public sendCommand<Result>(

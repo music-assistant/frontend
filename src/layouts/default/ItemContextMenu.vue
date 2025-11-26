@@ -60,12 +60,14 @@
           v-for="menuItem of items.filter((x) => !x.hide)"
           :key="menuItem.label"
           class="menurow"
+          :class="{ 'menu-item-error': menuItem.color === 'error' }"
         >
           <v-list-item
             variant="text"
             :title="$t(menuItem.label, menuItem.labelArgs || [])"
             :disabled="menuItem.disabled == true"
             :prepend-icon="menuItem.icon"
+            :color="menuItem.color"
             border="bottom"
             :append-icon="
               menuItem.selected
@@ -94,12 +96,14 @@
           v-for="subMenuItem of subMenuItems.filter((x) => !x.hide)"
           :key="subMenuItem.label"
           class="menurow"
+          :class="{ 'menu-item-error': subMenuItem.color === 'error' }"
         >
           <v-list-item
             variant="text"
             :title="$t(subMenuItem.label, subMenuItem.labelArgs || [])"
             :disabled="subMenuItem.disabled == true"
             :prepend-icon="subMenuItem.icon"
+            :color="subMenuItem.color"
             :append-icon="subMenuItem.selected ? 'mdi-check' : undefined"
             @click.stop="(e) => menuItemClicked(e, subMenuItem)"
           />
@@ -228,6 +232,7 @@ export interface ContextMenuItem {
   selected?: boolean;
   subItems?: ContextMenuItem[];
   close_on_click?: boolean;
+  color?: string;
 }
 
 export const showContextMenuForMediaItem = async function (
@@ -962,5 +967,10 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
 
 .menurow :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
+}
+
+.menu-item-error :deep(.v-list-item-title),
+.menu-item-error :deep(.v-icon) {
+  color: rgb(var(--v-theme-error)) !important;
 }
 </style>

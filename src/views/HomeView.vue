@@ -11,8 +11,9 @@
               v-bind="props"
             >
               <v-avatar
-                size="32"
+                size="40"
                 :color="store.currentUser?.avatar_url ? undefined : 'primary'"
+                class="user-avatar"
               >
                 <v-img
                   v-if="store.currentUser?.avatar_url"
@@ -23,7 +24,6 @@
             </v-btn>
           </template>
           <v-list density="compact" slim tile>
-            <!-- User display name header -->
             <v-list-item
               :title="
                 store.currentUser?.display_name || store.currentUser?.username
@@ -36,6 +36,7 @@
                 <v-avatar
                   size="40"
                   :color="store.currentUser?.avatar_url ? undefined : 'primary'"
+                  class="user-avatar"
                 >
                   <v-img
                     v-if="store.currentUser?.avatar_url"
@@ -95,8 +96,8 @@ import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { useRouter } from "vue-router";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 const editMode = ref(false);
@@ -117,8 +118,12 @@ const handleLogout = () => {
   margin-bottom: 10px;
 }
 
-/* Align user header avatar with other menu item icons */
 .user-header-item :deep(.v-list-item__prepend) {
-  margin-inline-end: 16px;
+  margin-inline-end: 8px;
+  margin-left: -8px;
+}
+
+.user-avatar {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>
