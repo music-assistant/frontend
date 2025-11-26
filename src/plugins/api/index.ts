@@ -1642,17 +1642,13 @@ export class MusicAssistantApi {
 
   // Auth related functions/commands
 
-  public async changePassword(
-    oldPassword: string,
-    newPassword: string,
-  ): Promise<boolean> {
+  public async changePassword(newPassword: string): Promise<boolean> {
     // Change password for current user using unified update command
     try {
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | boolean | null | undefined
       >("auth/user/update", {
         password: newPassword,
-        old_password: oldPassword,
       });
 
       if (typeof result === "boolean") {

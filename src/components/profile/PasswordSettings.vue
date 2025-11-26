@@ -19,16 +19,6 @@
 
     <v-form ref="passwordForm" @submit.prevent="handleChangePassword">
       <v-text-field
-        v-model="oldPassword"
-        :label="$t('auth.old_password')"
-        type="password"
-        variant="outlined"
-        density="comfortable"
-        class="mb-2"
-        :rules="[rules.required]"
-      />
-
-      <v-text-field
         v-model="newPassword"
         :label="$t('auth.new_password')"
         type="password"
@@ -70,7 +60,6 @@ import { toast } from "vuetify-sonner";
 
 const { t } = useI18n();
 
-const oldPassword = ref("");
 const newPassword = ref("");
 const confirmNewPassword = ref("");
 const changing = ref(false);
@@ -85,7 +74,6 @@ const rules = {
 
 const canChangePassword = computed(() => {
   return (
-    oldPassword.value &&
     newPassword.value.length >= 8 &&
     newPassword.value === confirmNewPassword.value
   );
@@ -95,15 +83,11 @@ const handleChangePassword = async () => {
   changing.value = true;
 
   try {
-    const result = await api.changePassword(
-      oldPassword.value,
-      newPassword.value,
-    );
+    const result = await api.changePassword(newPassword.value);
 
     if (result) {
       toast.success(t("auth.password_changed"));
 
-      oldPassword.value = "";
       newPassword.value = "";
       confirmNewPassword.value = "";
 
