@@ -44,8 +44,8 @@ jobs:
             COMMITS_SINCE=$(git log --since="$RELEASE_DATE" --oneline | wc -l)
             echo "Commits since last release: $COMMITS_SINCE"
 
-            # Require at least 2 commits for auto-release
-            if [ "$COMMITS_SINCE" -ge 2 ]; then
+            # Require at least 1 commit for auto-release
+            if [ "$COMMITS_SINCE" -ge 1 ]; then
               echo "has_commits=true" >> $GITHUB_OUTPUT
             else
               echo "has_commits=false" >> $GITHUB_OUTPUT
