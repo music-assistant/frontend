@@ -18,7 +18,7 @@
 import { api } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { onMounted } from "vue";
+import { onMounted, nextTick } from "vue";
 import { useTheme } from "vuetify";
 import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
@@ -142,20 +142,20 @@ onMounted(async () => {
   const onboardParam = urlParams.get("onboard");
   let tokenFromLogin = false;
 
+  // Check if this is from initial setup (onboarding)
+  if (onboardParam === "true") {
+    store.isOnboarding = true;
+  }
+
   if (codeParam) {
     console.debug("Code received from login, storing and cleaning URL");
     // Store the code as token - validation will happen via WebSocket auth command
     authManager.setToken(codeParam);
     tokenFromLogin = true;
 
-    // Check if this is from initial setup (onboarding)
-    if (onboardParam === "true") {
-      store.isOnboarding = true;
-    }
-
-    // Clean up the URL by removing the code and onboard parameters
+    // Clean up the URL by removing only the code parameter
+    // Keep onboard parameter so it persists through navigation
     urlParams.delete("code");
-    urlParams.delete("onboard");
     const cleanUrl =
       window.location.pathname +
       (urlParams.toString() ? "?" + urlParams.toString() : "") +
@@ -223,9 +223,15 @@ onMounted(async () => {
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
 
-    // Redirect to providers settings if onboarding
+    // Redirect to providers settings if onboarding (after setting connected)
+    console.debug(
+      "Checking onboarding redirect, store.isOnboarding:",
+      store.isOnboarding,
+    );
     if (store.isOnboarding) {
-      router.push("/settings/providers");
+      console.debug("Redirecting to providers page for onboarding");
+      await nextTick();
+      router.replace("/settings/providers");
     }
 
     // enable the builtin player by default if the builtin player provider is available

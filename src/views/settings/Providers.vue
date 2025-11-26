@@ -1,20 +1,4 @@
 <template>
-  <div class="providers-header w-100">
-    <ProviderFilters
-      @update:search="searchQuery = $event"
-      @update:types="selectedProviderTypes = $event"
-    />
-    <v-btn
-      color="primary"
-      variant="outlined"
-      height="40"
-      class="add-provider-btn"
-      @click="showAddProviderDialog = true"
-    >
-      {{ $t("settings.add_provider") }}
-    </v-btn>
-  </div>
-
   <!-- Onboarding welcome message -->
   <v-alert
     v-if="store.isOnboarding"
@@ -45,6 +29,21 @@
       </ul>
     </div>
   </v-alert>
+  <div class="providers-header w-100">
+    <ProviderFilters
+      @update:search="searchQuery = $event"
+      @update:types="selectedProviderTypes = $event"
+    />
+    <v-btn
+      color="primary"
+      variant="outlined"
+      height="40"
+      class="add-provider-btn"
+      @click="showAddProviderDialog = true"
+    >
+      {{ $t("settings.add_provider") }}
+    </v-btn>
+  </div>
 
   <div class="pl-5 font-weight-medium">
     {{
@@ -207,6 +206,9 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviderTypes = ref<string[]>([]);
 const showAddProviderDialog = ref<boolean>(false);
+
+// Debug: log onboarding state
+console.debug("Providers page loaded, isOnboarding:", store.isOnboarding);
 
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {

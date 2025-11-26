@@ -360,8 +360,25 @@ router.afterEach((to, from) => {
   console.debug("navigating from ", from.path, " to ", to.path);
   store.prevRoute = from.path;
 
-  // Reset onboarding flag when navigating away from settings
-  if (store.isOnboarding && !to.path.startsWith("/settings")) {
+  // Clean up onboard parameter from URL if present
+  if (store.isOnboarding && to.path === "/settings/providers") {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("onboard")) {
+      urlParams.delete("onboard");
+      const cleanUrl =
+        window.location.pathname +
+        (urlParams.toString() ? "?" + urlParams.toString() : "") +
+        window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }
+
+  // Reset onboarding flag when navigating away from the providers page
+  if (
+    store.isOnboarding &&
+    from.path === "/settings/providers" &&
+    to.path !== "/settings/providers"
+  ) {
     store.isOnboarding = false;
   }
 });
