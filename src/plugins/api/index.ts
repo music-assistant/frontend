@@ -5,7 +5,7 @@ import { AlertType, store } from "../store";
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { computed, reactive, ref } from "vue";
 import { LinearBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
-
+import { getDeviceName } from "./helpers";
 import {
   type Album,
   type Artist,
@@ -28,6 +28,7 @@ import {
   type User,
   AlbumType,
   Audiobook,
+  AuthProvider,
   BuiltinPlayerState,
   ConfigEntry,
   ConfigValueType,
@@ -53,45 +54,6 @@ import {
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
-
-/**
- * Generate a friendly device name from the user agent.
- */
-function getDeviceName(): string {
-  const ua = navigator.userAgent;
-  let browser = "Browser";
-  let os = "Unknown OS";
-
-  // Detect browser
-  if (ua.includes("Firefox/")) {
-    browser = "Firefox";
-  } else if (ua.includes("Edg/")) {
-    browser = "Edge";
-  } else if (ua.includes("Chrome/")) {
-    browser = "Chrome";
-  } else if (ua.includes("Safari/") && !ua.includes("Chrome/")) {
-    browser = "Safari";
-  }
-
-  // Detect OS
-  if (ua.includes("Windows")) {
-    os = "Windows";
-  } else if (ua.includes("Mac OS X")) {
-    os = "macOS";
-  } else if (ua.includes("Linux")) {
-    os = "Linux";
-  } else if (ua.includes("Android")) {
-    os = "Android";
-  } else if (
-    ua.includes("iOS") ||
-    ua.includes("iPhone") ||
-    ua.includes("iPad")
-  ) {
-    os = "iOS";
-  }
-
-  return `Music Assistant Web (${browser} on ${os})`;
-}
 
 export enum ConnectionState {
   DISCONNECTED = 0,
@@ -1810,6 +1772,11 @@ export class MusicAssistantApi {
     }
   }
 
+  public async getAuthProviders(): Promise<AuthProvider[]> {
+    // Get list of available authentication providers
+    return await this.sendCommand<AuthProvider[]>("auth/providers");
+  }
+
   public async logout(): Promise<boolean> {
     // Logout current user by revoking the current token
     const result = await this.sendCommand<{ success: boolean }>("auth/logout");
@@ -1880,7 +1847,6 @@ export class MusicAssistantApi {
       avatarUrl?: string;
       role?: UserRole;
       password?: string;
-      oldPassword?: string;
     },
   ): Promise<User> {
     // Update user using unified update command
@@ -1892,7 +1858,6 @@ export class MusicAssistantApi {
       if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
       if (updates.role) args.role = updates.role;
       if (updates.password) args.password = updates.password;
-      if (updates.oldPassword) args.old_password = updates.oldPassword;
 
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
