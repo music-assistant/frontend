@@ -137,5 +137,5 @@ export const store: Store = reactive({
   currentUser: undefined,
   serverInfo: undefined,
   isAuthenticated: false,
-  isIngressSession: window.location.pathname.includes("/ingress"),
+  isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
 });
