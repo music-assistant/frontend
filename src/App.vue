@@ -132,19 +132,19 @@ onMounted(async () => {
   const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
 
-  // Check if we're returning from login with a token in the URL query parameters
+  // Check if we're returning from login with a code in the URL query parameters
   const urlParams = new URLSearchParams(window.location.search);
-  const tokenParam = urlParams.get("token");
+  const codeParam = urlParams.get("code");
   let tokenFromLogin = false;
 
-  if (tokenParam) {
-    console.info("Token received from login, storing and cleaning URL");
-    // Store the token - validation will happen via WebSocket auth command
-    authManager.setToken(tokenParam);
+  if (codeParam) {
+    console.info("Code received from login, storing and cleaning URL");
+    // Store the code as token - validation will happen via WebSocket auth command
+    authManager.setToken(codeParam);
     tokenFromLogin = true;
 
-    // Clean up the URL by removing the token parameter
-    urlParams.delete("token");
+    // Clean up the URL by removing the code parameter
+    urlParams.delete("code");
     const cleanUrl =
       window.location.pathname +
       (urlParams.toString() ? "?" + urlParams.toString() : "") +
