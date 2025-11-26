@@ -14,6 +14,38 @@
       {{ $t("settings.add_provider") }}
     </v-btn>
   </div>
+
+  <!-- Onboarding welcome message -->
+  <v-alert
+    v-if="store.isOnboarding"
+    type="info"
+    variant="tonal"
+    closable
+    class="mx-5 mt-4"
+    @click:close="dismissOnboarding"
+  >
+    <v-alert-title class="text-h6 mb-2">
+      {{ $t("settings.onboarding_title") }}
+    </v-alert-title>
+    <div class="text-body-1">
+      <p class="mb-2">{{ $t("settings.onboarding_message") }}</p>
+      <ul class="onboarding-list ml-4">
+        <li>
+          <v-icon icon="mdi-speaker" size="small" class="mr-2" />
+          {{ $t("settings.onboarding_players") }}
+        </li>
+        <li>
+          <v-icon icon="mdi-music" size="small" class="mr-2" />
+          {{ $t("settings.onboarding_music") }}
+        </li>
+        <li>
+          <v-icon icon="mdi-puzzle" size="small" class="mr-2" />
+          {{ $t("settings.onboarding_plugins") }}
+        </li>
+      </ul>
+    </div>
+  </v-alert>
+
   <div class="pl-5 font-weight-medium">
     {{
       $t("settings.providers_total", [
@@ -161,6 +193,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { match } from "ts-pattern";
 import { onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -183,6 +216,10 @@ onBeforeUnmount(unsub);
 
 const loadItems = async function () {
   providerConfigs.value = await api.getProviderConfigs();
+};
+
+const dismissOnboarding = function () {
+  store.isOnboarding = false;
 };
 
 const removeProvider = function (providerInstanceId: string) {
@@ -412,5 +449,16 @@ const getAllFilteredProviders = function () {
 }
 .provider-description.truncated-text {
   margin-bottom: 16px !important;
+}
+
+.onboarding-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.onboarding-list li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
 }
 </style>

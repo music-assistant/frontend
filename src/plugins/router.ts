@@ -359,6 +359,11 @@ router.afterEach((to, from) => {
   if (!from?.path) return;
   console.debug("navigating from ", from.path, " to ", to.path);
   store.prevRoute = from.path;
+
+  // Reset onboarding flag when navigating away from settings
+  if (store.isOnboarding && !to.path.startsWith("/settings")) {
+    store.isOnboarding = false;
+  }
 });
 
 export default router;

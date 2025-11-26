@@ -73,6 +73,7 @@ interface Store {
   serverInfo?: ServerInfo;
   isAuthenticated: boolean;
   isIngressSession: boolean;
+  isOnboarding: boolean;
 }
 
 export const store: Store = reactive({
@@ -138,4 +139,5 @@ export const store: Store = reactive({
   serverInfo: undefined,
   isAuthenticated: false,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
+  isOnboarding: false,
 });

@@ -26,8 +26,10 @@ import BuiltinPlayer from "./components/BuiltinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { EventType } from "./plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
+import { useRouter } from "vue-router";
 
 const theme = useTheme();
+const router = useRouter();
 
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
@@ -134,19 +136,26 @@ onMounted(async () => {
   const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
 
-  // Check if we're returning from login with a code in the URL query parameters
+  // Check if we're returning from login (or setup) with a code in the URL query parameters
   const urlParams = new URLSearchParams(window.location.search);
   const codeParam = urlParams.get("code");
+  const onboardParam = urlParams.get("onboard");
   let tokenFromLogin = false;
 
   if (codeParam) {
-    console.info("Code received from login, storing and cleaning URL");
+    console.debug("Code received from login, storing and cleaning URL");
     // Store the code as token - validation will happen via WebSocket auth command
     authManager.setToken(codeParam);
     tokenFromLogin = true;
 
-    // Clean up the URL by removing the code parameter
+    // Check if this is from initial setup (onboarding)
+    if (onboardParam === "true") {
+      store.isOnboarding = true;
+    }
+
+    // Clean up the URL by removing the code and onboard parameters
     urlParams.delete("code");
+    urlParams.delete("onboard");
     const cleanUrl =
       window.location.pathname +
       (urlParams.toString() ? "?" + urlParams.toString() : "") +
@@ -213,6 +222,11 @@ onMounted(async () => {
     store.libraryRadiosCount = await api.getLibraryRadiosCount();
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
+
+    // Redirect to providers settings if onboarding
+    if (store.isOnboarding) {
+      router.push("/settings/providers");
+    }
 
     // enable the builtin player by default if the builtin player provider is available
     if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
