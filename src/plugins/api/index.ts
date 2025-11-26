@@ -152,6 +152,10 @@ export class MusicAssistantApi {
     this.ws = new WebsocketBuilder(wsUrl)
       .onOpen((i, ev) => {
         console.log("connection opened");
+        // Reset authentication state on reconnection
+        isAuthenticated = false;
+        authMessageId = null;
+        pendingServerInfo = null;
         // Wait for ServerInfo message before doing anything
       })
       .onClose((i, ev) => {
