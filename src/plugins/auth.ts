@@ -236,19 +236,25 @@ export class AuthManager {
    * Logout current user
    */
   async logout(): Promise<void> {
-    // Revoke current token on server via WebSocket API
+    // Send logout command to server first (best effort)
     if (this.token) {
       try {
         // Import api dynamically to avoid circular dependency
         const { api } = await import("@/plugins/api");
-        await api.logout();
+        // Send logout command but don't wait for response to avoid race condition
+        api.logout().catch(() => {
+          // Ignore errors - we're logging out anyway
+        });
       } catch (error) {
-        console.error("Failed to revoke token during logout:", error);
-        // Continue with logout even if revocation fails
+        // Ignore errors - we're logging out anyway
       }
     }
 
+    // Clear auth immediately to prevent any auth error messages
     this.clearAuth();
+
+    // Small delay to allow logout command to be sent
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Redirect to server login page
     const returnUrl = encodeURIComponent(
