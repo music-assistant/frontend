@@ -19,7 +19,7 @@
           </p>
           <div v-if="sessionTokens.length === 0" class="empty-state">
             <v-avatar color="blue-grey-darken-2" size="64" class="mb-3">
-              <v-icon icon="mdi-devices-off" size="32" />
+              <v-icon icon="mdi-devices" size="32" />
             </v-avatar>
             <p class="text-medium-emphasis">
               {{ $t("auth.no_active_sessions") }}

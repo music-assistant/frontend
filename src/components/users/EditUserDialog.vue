@@ -22,7 +22,7 @@
           :label="$t('auth.display_name')"
           variant="outlined"
           density="comfortable"
-          class="mb-2"
+          class="mb-6"
           :hint="$t('optional')"
           persistent-hint
         />
@@ -31,7 +31,7 @@
           :label="$t('auth.avatar_url')"
           variant="outlined"
           density="comfortable"
-          class="mb-2"
+          class="mb-6"
           :hint="$t('auth.avatar_url_hint')"
           persistent-hint
         />
