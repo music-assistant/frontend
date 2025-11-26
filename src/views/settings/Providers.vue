@@ -207,9 +207,6 @@ const searchQuery = ref<string>("");
 const selectedProviderTypes = ref<string[]>([]);
 const showAddProviderDialog = ref<boolean>(false);
 
-// Debug: log onboarding state
-console.debug("Providers page loaded, isOnboarding:", store.isOnboarding);
-
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
   loadItems();
