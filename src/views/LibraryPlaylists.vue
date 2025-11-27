@@ -26,7 +26,6 @@ import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
-  MediaType,
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -40,17 +39,7 @@ defineOptions({
 const { t } = useI18n();
 const updateAvailable = ref(false);
 const total = ref(store.libraryPlaylistsCount);
-const extraMenuItems = ref<ToolBarMenuItem[]>([
-  {
-    label: "sync_now",
-    icon: "mdi-sync",
-    action: () => {
-      api.startSync([MediaType.PLAYLIST]);
-    },
-    overflowAllowed: true,
-    disabled: api.syncTasks.value.length > 0,
-  },
-]);
+const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 
 const sortKeys = [
   "name",

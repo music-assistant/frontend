@@ -14,27 +14,15 @@
     :restore-state="true"
     :total="total"
     :show-album-type-filter="true"
-    :extra-menu-items="[
-      {
-        label: 'sync_now',
-        icon: 'mdi-sync',
-        action: () => {
-          api.startSync([MediaType.ALBUM]);
-        },
-        overflowAllowed: true,
-        disabled: api.syncTasks.value.length > 0,
-      },
-    ]"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
-import { MediaType, EventMessage, EventType } from "@/plugins/api/interfaces";
-import { sleep } from "@/helpers/utils";
+import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
   name: "Albums",

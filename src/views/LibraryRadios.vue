@@ -13,15 +13,6 @@
     :allow-key-hooks="true"
     :extra-menu-items="[
       {
-        label: 'sync_now',
-        icon: 'mdi-sync',
-        action: () => {
-          api.startSync([MediaType.RADIO]);
-        },
-        overflowAllowed: true,
-        disabled: api.syncTasks.value.length > 0,
-      },
-      {
         label: 'add_url_item',
         labelArgs: [],
         action: () => {
@@ -38,13 +29,12 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import AddManualLink from "@/components/AddManualLink.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
-import AddManualLink from "@/components/AddManualLink.vue";
-import { sleep } from "@/helpers/utils";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
   name: "Radios",
