@@ -2,6 +2,34 @@
 
 WebRTC signaling server for Music Assistant remote connections. This server enables secure peer-to-peer connections between the hosted PWA and local Music Assistant instances without requiring port forwarding.
 
+## Quick Start
+
+### Option 1: Render.com (Recommended for Testing)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+1. Fork this repository
+2. Connect to Render.com
+3. Create a new Web Service pointing to your fork
+4. Set root directory to `/` and start command to `npm start`
+5. Your signaling server will be at `wss://your-app.onrender.com/ws`
+
+### Option 2: Local Development
+
+```bash
+npm install
+npm start
+# Server runs at ws://localhost:8787/ws
+```
+
+### Option 3: Cloudflare Workers (Production)
+
+```bash
+npm install
+npx wrangler login
+npm run deploy
+```
+
 ## Architecture
 
 ```
