@@ -1,5 +1,8 @@
 <template>
-  <v-main id="cont" class="main-layout">
+  <v-main
+    id="cont"
+    :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
+  >
     <Navigation v-if="!store.mobileLayout" class="nav-section" />
     <div class="content-section">
       <router-view v-slot="{ Component }">
@@ -34,6 +37,10 @@ import ItemContextMenu from "./ItemContextMenu.vue";
   display: flex;
   height: 100vh;
   overflow-y: auto;
+}
+
+.main-layout--mobile {
+  padding-bottom: 230px;
 }
 
 .nav-section {
