@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ma-signaling-server
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
