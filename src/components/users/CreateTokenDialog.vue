@@ -5,35 +5,64 @@
     @update:model-value="emit('update:modelValue', $event)"
   >
     <v-card>
-      <v-card-title class="text-h6 pa-6 pb-4">
-        {{ $t("auth.create_token") }}
+      <v-card-title
+        class="text-h6 pa-6"
+        :class="{ 'pb-0': createdToken, 'pb-4': !createdToken }"
+      >
+        {{ createdToken ? tokenName : $t("auth.create_token") }}
       </v-card-title>
       <v-card-text class="px-6 pb-2">
-        <v-text-field
-          v-model="tokenName"
-          :label="$t('auth.token_name')"
-          variant="outlined"
-          density="comfortable"
-          :hint="$t('auth.token_name_hint')"
-          persistent-hint
-          autofocus
-        />
+        <template v-if="!createdToken">
+          <v-text-field
+            v-model="tokenName"
+            :label="$t('auth.token_name')"
+            variant="outlined"
+            density="comfortable"
+            :hint="$t('auth.token_name_hint')"
+            persistent-hint
+            autofocus
+          />
+        </template>
+
+        <template v-else>
+          <p class="text-body-2 mb-2 text-grey-darken-1">
+            {{ $t("auth.copy_new_token_hint") }}
+          </p>
+          <v-text-field
+            v-model="createdToken"
+            readonly
+            variant="outlined"
+            density="comfortable"
+            class="mb-2"
+            :append-inner-icon="'mdi-content-copy'"
+            @click:append-inner="copyToken"
+          />
+        </template>
       </v-card-text>
-      <v-card-actions class="pa-6 pt-4">
-        <v-spacer />
-        <v-btn variant="text" @click="handleClose">
-          {{ $t("cancel") }}
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          :loading="loading"
-          :disabled="!tokenName"
-          @click="handleCreate"
-        >
-          {{ $t("create") }}
-        </v-btn>
-      </v-card-actions>
+      <template v-if="!createdToken">
+        <v-card-actions class="pa-6 pt-4">
+          <v-spacer />
+          <v-btn variant="text" @click="handleClose">
+            {{ $t("cancel") }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="loading"
+            :disabled="!tokenName"
+            @click="handleCreate"
+          >
+            {{ $t("create") }}
+          </v-btn>
+        </v-card-actions>
+      </template>
+      <template v-else>
+        <v-card-actions class="px-6 pb-6 pt-0">
+          <v-btn color="primary" variant="tonal" @click="handleClose">
+            {{ $t("close") }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
   </v-dialog>
 </template>
@@ -58,23 +87,25 @@ const emit = defineEmits<{
 
 const loading = ref(false);
 const tokenName = ref("");
+const createdToken = ref("");
 
 const handleClose = () => {
   tokenName.value = "";
-  emit("update:modelValue", false);
+  createdToken.value = "";
+  requestAnimationFrame(() => {
+    emit("update:modelValue", false);
+  });
 };
 
 const handleCreate = async () => {
-  if (!props.userId) return;
-
   loading.value = true;
 
   try {
     const token = await api.createToken(tokenName.value, props.userId);
     if (token) {
       toast.success(t("auth.token_created"));
+      createdToken.value = token;
       emit("created");
-      handleClose();
     } else {
       toast.error(t("auth.token_create_failed"));
     }
@@ -90,7 +121,19 @@ watch(
   (newVal) => {
     if (!newVal) {
       tokenName.value = "";
+      createdToken.value = "";
     }
   },
 );
+
+const copyToken = async () => {
+  if (!createdToken.value) return;
+  try {
+    await navigator.clipboard.writeText(createdToken.value);
+    toast.success(t("auth.token_copied"));
+  } catch (err) {
+    console.error("Failed to copy token", err);
+    toast.error(t("auth.token_copy_failed"));
+  }
+};
 </script>

@@ -60,50 +60,19 @@
         </template>
       </ListItem>
     </div>
-    <v-dialog v-model="showCreateDialog" max-width="500">
-      <v-card>
-        <v-card-title class="text-h6 pa-6 pb-4">
-          {{ $t("auth.create_token") }}
-        </v-card-title>
-        <v-card-text class="px-6 pb-2">
-          <v-text-field
-            v-model="tokenName"
-            :label="$t('auth.token_name')"
-            variant="outlined"
-            density="comfortable"
-            :hint="$t('auth.token_name_hint')"
-            persistent-hint
-            autofocus
-            class="mb-2"
-          />
-        </v-card-text>
-        <v-card-actions class="pa-6 pt-4">
-          <v-spacer />
-          <v-btn variant="text" @click="closeCreateDialog">
-            {{ $t("cancel") }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            :loading="creating"
-            :disabled="!tokenName"
-            @click="handleCreateToken"
-          >
-            {{ $t("create") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <CreateTokenDialog
+      v-model="showCreateDialog"
+      @created="handleTokenCreated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import ListItem from "@/components/ListItem.vue";
-import { api } from "@/plugins/api";
+import CreateTokenDialog from "@/components/users/CreateTokenDialog.vue";
 import type { AuthToken } from "@/plugins/api/interfaces";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { toast } from "vuetify-sonner";
 
 const { t } = useI18n();
 
@@ -117,36 +86,13 @@ const emit = defineEmits<{
 }>();
 
 const showCreateDialog = ref(false);
-const tokenName = ref("");
-const creating = ref(false);
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString();
 };
 
-const handleCreateToken = async () => {
-  creating.value = true;
-
-  try {
-    const token = await api.createToken(tokenName.value);
-    if (token) {
-      toast.success(t("auth.token_created"));
-      emit("created");
-      closeCreateDialog();
-    } else {
-      toast.error(t("auth.token_create_failed"));
-    }
-  } catch (error: any) {
-    console.error("Failed to create token:", error);
-    toast.error(error.message || t("auth.token_create_failed"));
-  } finally {
-    creating.value = false;
-  }
-};
-
-const closeCreateDialog = () => {
-  showCreateDialog.value = false;
-  tokenName.value = "";
+const handleTokenCreated = () => {
+  emit("created");
 };
 </script>
 
