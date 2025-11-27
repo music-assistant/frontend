@@ -42,9 +42,18 @@ const REMOTE_CONNECTIONS_STORAGE_KEY = 'ma_remote_connections';
 const REMOTE_MODE_STORAGE_KEY = 'ma_remote_mode';
 const CURRENT_REMOTE_ID_STORAGE_KEY = 'ma_current_remote_id';
 
-// Default configuration
+// Detect if we're in development/local testing mode
+const isLocalDev = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1'
+);
+
+// Default configuration - use local signaling server for testing
 const DEFAULT_CONFIG: RemoteConnectionConfig = {
-  signalingServerUrl: 'wss://signaling.music-assistant.io/ws',
+  // Use local signaling server in dev, production URL otherwise
+  signalingServerUrl: isLocalDev
+    ? 'ws://localhost:8787/ws'
+    : (import.meta.env.VITE_SIGNALING_URL || 'wss://signaling.music-assistant.io/ws'),
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },

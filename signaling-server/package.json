@@ -4,9 +4,14 @@
   "description": "WebRTC Signaling Server for Music Assistant Remote Connections",
   "main": "src/index.ts",
   "scripts": {
+    "start": "node standalone.js",
+    "dev:standalone": "node standalone.js",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
