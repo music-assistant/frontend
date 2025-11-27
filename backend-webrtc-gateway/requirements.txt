@@ -1,4 +1,0 @@
-# Music Assistant WebRTC Gateway Dependencies
-
-aiortc>=1.6.0
-aiohttp>=3.9.0
