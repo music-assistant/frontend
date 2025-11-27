@@ -866,5 +866,32 @@
         "change_avatar": "Change avatar",
         "profile_updated": "Profile updated successfully",
         "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in."
+    },
+    "remote": {
+        "connect_title": "Connect to your server",
+        "subtitle": "Connect to your home server from anywhere",
+        "subtitle_login": "Sign in to access your music",
+        "remote_id": "Remote ID",
+        "remote_id_placeholder": "e.g., MA-X7K9-P2M4",
+        "remote_id_hint": "Find your Remote ID in your Music Assistant server settings under \"Remote Access\".",
+        "recent_connections": "Recent Connections",
+        "connect": "Connect",
+        "connect_locally": "Connect to local server instead",
+        "login_title": "Sign in to your server",
+        "username": "Username",
+        "password": "Password",
+        "remember_me": "Remember me on this device",
+        "sign_in": "Sign In",
+        "back": "Back",
+        "connecting": "Connecting...",
+        "status_connecting_signaling": "Connecting to signaling server...",
+        "status_finding_server": "Finding your server...",
+        "status_establishing": "Establishing secure connection...",
+        "cancel": "Cancel",
+        "connection_failed": "Connection Failed",
+        "retry": "Try Again",
+        "error_unknown": "Unknown error occurred",
+        "error_login_failed": "Login failed. Please check your credentials.",
+        "error_server_not_found": "Server not found. Make sure your Music Assistant server is running and has Remote Access enabled."
     }
 }

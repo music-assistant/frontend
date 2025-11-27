@@ -6,6 +6,8 @@ import { AlertType, store } from "../store";
 import { computed, reactive, ref } from "vue";
 import { LinearBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
 import { getDeviceName } from "./helpers";
+import type { ITransport } from "../remote/transport";
+import { TransportState } from "../remote/transport";
 import {
   type Album,
   type Artist,
@@ -63,8 +65,10 @@ export enum ConnectionState {
 
 export class MusicAssistantApi {
   private ws?: Websocket;
+  private transport?: ITransport;
   private _throttleId?: any;
   public baseUrl?: string;
+  public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
@@ -256,6 +260,177 @@ export class MusicAssistantApi {
       })
       .withBackoff(new LinearBackoff(0, 1000, 12000))
       .build();
+  }
+
+  /**
+   * Initialize the API with a custom transport (for remote WebRTC connections)
+   * This method is used when connecting via WebRTC DataChannel
+   */
+  public async initializeWithTransport(
+    transport: ITransport,
+    baseUrl?: string,
+  ): Promise<void> {
+    if (this.ws || this.transport) throw new Error("already initialized");
+
+    this.transport = transport;
+    this.baseUrl = baseUrl || "";
+    this.isRemoteConnection.value = true;
+    this.state.value = ConnectionState.CONNECTING;
+
+    console.log("[API] Initializing with custom transport");
+
+    // Set up transport message handler
+    transport.on("message", (data: string) => {
+      try {
+        const msg = JSON.parse(data);
+        this.handleTransportMessage(msg);
+      } catch (error) {
+        console.error("[API] Failed to parse message:", error);
+      }
+    });
+
+    transport.on("close", () => {
+      console.log("[API] Transport closed");
+      this.state.value = ConnectionState.DISCONNECTED;
+      this.signalEvent({
+        event: EventType.DISCONNECTED,
+        object_id: "",
+      });
+    });
+
+    transport.on("error", (error: Error) => {
+      console.error("[API] Transport error:", error);
+    });
+
+    // Wait for initial ServerInfo message
+    await this.waitForServerInfo();
+  }
+
+  /**
+   * Authenticate with username and password (for remote connections)
+   * Returns the auth token on success
+   */
+  public async loginWithCredentials(
+    username: string,
+    password: string,
+    deviceName?: string,
+  ): Promise<{ token: string; user: User }> {
+    console.log("[API] Logging in with credentials");
+
+    const result = await this.sendCommand<{ token: string; user: User }>(
+      "auth/login",
+      {
+        username,
+        password,
+        device_name: deviceName || getDeviceName(),
+      },
+    );
+
+    if (result.token) {
+      // Store the token
+      localStorage.setItem("ma_access_token", result.token);
+      if (result.user) {
+        localStorage.setItem("ma_current_user", JSON.stringify(result.user));
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Authenticate with an existing token (for remote connections)
+   */
+  public async authenticateWithToken(token: string): Promise<{ user: User }> {
+    console.log("[API] Authenticating with token");
+
+    const result = await this.sendCommand<{ user: User }>("auth", {
+      token,
+    });
+
+    if (result.user) {
+      localStorage.setItem("ma_current_user", JSON.stringify(result.user));
+      // Import and update authManager
+      import("@/plugins/auth").then(({ authManager }) => {
+        (authManager as any).currentUser = result.user;
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Disconnect from the server
+   */
+  public disconnect(): void {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = undefined;
+    }
+    if (this.transport) {
+      this.transport.disconnect();
+      this.transport = undefined;
+    }
+    this.state.value = ConnectionState.DISCONNECTED;
+    this.isRemoteConnection.value = false;
+
+    // Clear reactive state
+    Object.keys(this.players).forEach((key) => delete this.players[key]);
+    Object.keys(this.queues).forEach((key) => delete this.queues[key]);
+    Object.keys(this.providers).forEach((key) => delete this.providers[key]);
+    Object.keys(this.providerManifests).forEach(
+      (key) => delete this.providerManifests[key],
+    );
+    this.syncTasks.value = [];
+    this.serverInfo.value = undefined;
+  }
+
+  /**
+   * Wait for ServerInfo message (used with transport-based connections)
+   */
+  private waitForServerInfo(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Timeout waiting for ServerInfo"));
+      }, 30000);
+
+      const checkServerInfo = () => {
+        if (this.serverInfo.value) {
+          clearTimeout(timeout);
+          resolve();
+        }
+      };
+
+      // Check if already have server info
+      checkServerInfo();
+
+      // Listen for server info via event
+      const unsubscribe = this.subscribe(EventType.CONNECTED, () => {
+        clearTimeout(timeout);
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Handle messages from the transport (for remote connections)
+   */
+  private handleTransportMessage(msg: any): void {
+    // Handle ServerInfo message
+    if ("server_version" in msg && !this.serverInfo.value) {
+      console.info("[API] ServerInfo received via transport", msg);
+      this.handleServerInfoMessage(msg as ServerInfoMessage);
+      return;
+    }
+
+    // Handle regular messages
+    if ("event" in msg) {
+      this.handleEventMessage(msg as EventMessage);
+    } else if ("message_id" in msg) {
+      this.handleResultMessage(msg);
+    } else {
+      console.error("[API] received unknown message", msg);
+    }
   }
 
   public subscribe(
@@ -2044,7 +2219,16 @@ export class MusicAssistantApi {
       console.log("[sendCommand]", msg);
     }
 
-    this.ws!.send(JSON.stringify(msg));
+    const msgStr = JSON.stringify(msg);
+
+    // Send via transport if available (remote connection), otherwise use WebSocket
+    if (this.transport) {
+      this.transport.send(msgStr);
+    } else if (this.ws) {
+      this.ws.send(msgStr);
+    } else {
+      throw new Error("No connection available");
+    }
   }
 
   private async _fetchState() {

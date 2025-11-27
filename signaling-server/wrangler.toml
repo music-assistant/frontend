@@ -1,0 +1,21 @@
+name = "ma-signaling-server"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Durable Objects for maintaining WebSocket connections
+[[durable_objects.bindings]]
+name = "SIGNALING_ROOM"
+class_name = "SignalingRoom"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["SignalingRoom"]
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
