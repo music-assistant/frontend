@@ -15,26 +15,15 @@
     icon="mdi-book-play-outline"
     :restore-state="true"
     :total="total"
-    :extra-menu-items="[
-      {
-        label: 'sync_now',
-        icon: 'mdi-sync',
-        action: () => {
-          api.startSync([MediaType.AUDIOBOOK]);
-        },
-        overflowAllowed: true,
-        disabled: api.syncTasks.value.length > 0,
-      },
-    ]"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
   name: "Audiobooks",
