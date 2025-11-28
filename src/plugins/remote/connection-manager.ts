@@ -10,6 +10,7 @@ import { ref, reactive } from "vue";
 import { ITransport } from "./transport";
 import { WebSocketTransport } from "./websocket-transport";
 import { WebRTCTransport, IceServerConfig } from "./webrtc-transport";
+import { httpProxyBridge } from "./http-proxy";
 
 export enum ConnectionMode {
   LOCAL = "local",
@@ -82,6 +83,8 @@ class RemoteConnectionManager {
   constructor() {
     this.loadStoredConnections();
     this.loadRemoteMode();
+    // Initialize HTTP proxy bridge
+    httpProxyBridge.initialize();
   }
 
   /**
@@ -133,6 +136,10 @@ class RemoteConnectionManager {
       await this.transport.connect();
 
       this.state.value = RemoteConnectionState.CONNECTED;
+
+      // Clear HTTP proxy bridge (not needed for local connections)
+      httpProxyBridge.setTransport(null);
+
       return this.transport;
     } catch (err) {
       this.state.value = RemoteConnectionState.FAILED;
@@ -155,21 +162,25 @@ class RemoteConnectionManager {
     localStorage.setItem(CURRENT_REMOTE_ID_STORAGE_KEY, remoteId);
 
     try {
-      this.transport = new WebRTCTransport({
+      const transport = new WebRTCTransport({
         signalingServerUrl: this.config.signalingServerUrl,
         remoteId: remoteId,
         iceServers: this.config.iceServers,
       });
 
+      this.transport = transport;
       this.setupTransportHandlers();
-      await this.transport.connect();
+      await transport.connect();
 
       this.state.value = RemoteConnectionState.CONNECTED;
+
+      // Set up HTTP proxy bridge for remote connections
+      httpProxyBridge.setTransport(transport);
 
       // Store successful connection
       this.storeConnection(remoteId);
 
-      return this.transport;
+      return transport;
     } catch (err) {
       this.state.value = RemoteConnectionState.FAILED;
       this.error.value =
@@ -190,6 +201,9 @@ class RemoteConnectionManager {
     this.state.value = RemoteConnectionState.DISCONNECTED;
     this.currentRemoteId.value = null;
     this.serverName.value = null;
+
+    // Clear HTTP proxy bridge
+    httpProxyBridge.setTransport(null);
   }
 
   /**

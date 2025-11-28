@@ -105,6 +105,7 @@ export class MusicAssistantApi {
     if (this.transport) throw new Error("already initialized");
 
     let transport: ITransport;
+    let isRemote = false;
 
     // If string, create WebSocketTransport
     if (typeof transportOrAddress === "string") {
@@ -142,11 +143,14 @@ export class MusicAssistantApi {
       await transport.connect();
       baseUrl = httpBaseUrl;
     } else {
+      // Transport instance provided (WebRTC)
       transport = transportOrAddress;
+      isRemote = true;
     }
 
     this.transport = transport;
     this.baseUrl = baseUrl || "";
+    this.isRemoteConnection.value = isRemote;
     this.state.value = ConnectionState.CONNECTING;
 
     // Set up transport message handler

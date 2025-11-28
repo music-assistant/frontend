@@ -36,6 +36,10 @@ export class WebRTCTransport extends BaseTransport {
   private dataChannel: RTCDataChannel | null = null;
   private iceCandidateBuffer: RTCIceCandidateInit[] = [];
   private remoteDescriptionSet = false;
+  private httpProxyCallbacks = new Map<
+    string,
+    { resolve: (value: any) => void; reject: (error: Error) => void }
+  >();
 
   constructor(options: WebRTCTransportOptions) {
     super();
@@ -173,6 +177,17 @@ export class WebRTCTransport extends BaseTransport {
     };
 
     this.dataChannel.onmessage = (event) => {
+      // Check if this is an HTTP proxy response
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "http-proxy-response") {
+          this.handleHttpProxyResponse(data);
+          return;
+        }
+      } catch {
+        // Not JSON or not HTTP proxy response, treat as normal message
+      }
+
       this.emit("message", event.data);
     };
   }
@@ -263,6 +278,95 @@ export class WebRTCTransport extends BaseTransport {
     });
   }
 
+  /**
+   * Send HTTP proxy request over WebRTC data channel
+   *
+   * :param method: HTTP method (GET, POST, etc.)
+   * :param path: Request path including query string
+   * :param headers: Request headers
+   */
+  async sendHttpProxyRequest(
+    method: string,
+    path: string,
+    headers: Record<string, string> = {},
+  ): Promise<{ status: number; headers: Record<string, string>; body: Uint8Array }> {
+    if (!this.dataChannel || this.dataChannel.readyState !== "open") {
+      throw new Error("DataChannel is not open");
+    }
+
+    // Generate unique request ID
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+    // Create promise for response
+    const responsePromise = new Promise<{
+      status: number;
+      headers: Record<string, string>;
+      body: Uint8Array;
+    }>((resolve, reject) => {
+      // Store callbacks
+      this.httpProxyCallbacks.set(requestId, { resolve, reject });
+
+      // Set timeout
+      setTimeout(() => {
+        if (this.httpProxyCallbacks.has(requestId)) {
+          this.httpProxyCallbacks.delete(requestId);
+          reject(new Error("HTTP proxy request timeout"));
+        }
+      }, 30000);
+    });
+
+    // Send request
+    const request = {
+      type: "http-proxy-request",
+      id: requestId,
+      method,
+      path,
+      headers,
+    };
+
+    this.dataChannel.send(JSON.stringify(request));
+
+    return responsePromise;
+  }
+
+  /**
+   * Handle HTTP proxy response from server
+   */
+  private handleHttpProxyResponse(data: any): void {
+    const { id, status, headers, body } = data;
+
+    const callbacks = this.httpProxyCallbacks.get(id);
+    if (callbacks) {
+      this.httpProxyCallbacks.delete(id);
+
+      try {
+        // Convert hex string to Uint8Array
+        const bodyBytes = this.hexToBytes(body);
+
+        callbacks.resolve({
+          status,
+          headers,
+          body: bodyBytes,
+        });
+      } catch (error) {
+        callbacks.reject(
+          error instanceof Error ? error : new Error("Failed to parse response"),
+        );
+      }
+    }
+  }
+
+  /**
+   * Convert hex string to Uint8Array
+   */
+  private hexToBytes(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+    }
+    return bytes;
+  }
+
   private cleanup(): void {
     if (this.dataChannel) {
       this.dataChannel.close();
@@ -277,5 +381,11 @@ export class WebRTCTransport extends BaseTransport {
     this.signaling.disconnect();
     this.remoteDescriptionSet = false;
     this.iceCandidateBuffer = [];
+
+    // Clear pending HTTP proxy requests
+    for (const [id, callbacks] of this.httpProxyCallbacks.entries()) {
+      callbacks.reject(new Error("Transport closed"));
+    }
+    this.httpProxyCallbacks.clear();
   }
 }
