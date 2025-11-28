@@ -484,13 +484,46 @@ const autoConnect = async () => {
     }
   }
 
-  // 3. Try stored remote ID
+  // 3. Try stored remote ID + token (auto-connect remote)
   const storedRemoteId = localStorage.getItem(STORAGE_KEY_REMOTE_ID) || remoteConnectionManager.getStoredRemoteId();
-  if (storedRemoteId) {
-    console.log('[Login] Found stored remote ID:', storedRemoteId);
+  if (storedRemoteId && storedToken) {
+    console.log('[Login] Found stored remote ID and token, trying auto-connect');
+    connectionStatusMessage.value = t('login.connecting_remote', 'Connecting to remote server...');
     remoteId.value = storedRemoteId;
     connectionMode.value = 'remote';
-    // Don't auto-connect remote, just pre-fill the field
+
+    try {
+      const cleanRemoteId = storedRemoteId.trim().toUpperCase();
+      const transport = await remoteConnectionManager.connectRemote(cleanRemoteId);
+
+      // Connection established, emit connected event
+      emit('connected', transport);
+
+      // Wait for API to be ready
+      if (await waitForApiConnection()) {
+        // Try to authenticate with stored token
+        if (await tryStoredTokenAuth()) {
+          console.log('[Login] Remote auto-login successful!');
+          return; // Success - App.vue will take over
+        }
+      }
+
+      // Token auth failed, show login form
+      console.log('[Login] Remote token auth failed, showing login form');
+      connectedServerName.value = `Remote: ${cleanRemoteId}`;
+      isRemoteConnection.value = true;
+      await fetchAuthProviders();
+      step.value = 'login';
+      return;
+    } catch (error) {
+      console.log('[Login] Remote auto-connect failed:', error);
+      // Fall through to try other options
+    }
+  } else if (storedRemoteId) {
+    // Just pre-fill the remote ID field
+    console.log('[Login] Found stored remote ID (no token):', storedRemoteId);
+    remoteId.value = storedRemoteId;
+    connectionMode.value = 'remote';
   }
 
   // 4. Try connecting to current host (for when frontend is hosted on MA server)
