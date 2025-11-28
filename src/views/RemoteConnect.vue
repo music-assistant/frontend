@@ -122,6 +122,31 @@
                 </v-card-subtitle>
 
                 <v-card-text>
+                  <!-- Home Assistant OAuth Button -->
+                  <v-btn
+                    v-if="hasHomeAssistantAuth"
+                    color="primary"
+                    variant="outlined"
+                    size="large"
+                    block
+                    class="mb-4"
+                    :loading="isAuthenticating"
+                    @click="loginWithHomeAssistant"
+                  >
+                    <v-icon start>mdi-home-assistant</v-icon>
+                    {{ $t('remote.login_with_ha', 'Sign in with Home Assistant') }}
+                  </v-btn>
+
+                  <!-- Divider if HA auth is available -->
+                  <div v-if="hasHomeAssistantAuth" class="d-flex align-center my-4">
+                    <v-divider />
+                    <span class="mx-3 text-caption text-medium-emphasis">
+                      {{ $t('remote.or', 'or') }}
+                    </span>
+                    <v-divider />
+                  </div>
+
+                  <!-- Username/Password Form -->
                   <v-form @submit.prevent="login" ref="loginForm">
                     <v-text-field
                       v-model="username"
@@ -169,6 +194,32 @@
 
                   <v-btn variant="text" class="mt-3" @click="goBack" :disabled="isAuthenticating">
                     {{ $t('remote.back', 'Back') }}
+                  </v-btn>
+                </v-card-actions>
+              </template>
+
+              <!-- Step: OAuth Waiting -->
+              <template v-else-if="step === 'oauth-waiting'">
+                <v-card-text class="text-center py-8">
+                  <v-icon color="primary" size="64" class="mb-4">mdi-home-assistant</v-icon>
+                  <p class="text-h6">{{ $t('remote.oauth_waiting_title', 'Complete Sign-in') }}</p>
+                  <p class="text-body-2 text-medium-emphasis mt-2 mb-4">
+                    {{
+                      $t(
+                        'remote.oauth_waiting_message',
+                        'A browser window has opened. Please sign in with Home Assistant, then return here.'
+                      )
+                    }}
+                  </p>
+                  <v-progress-circular indeterminate color="primary" size="32" />
+                  <p class="text-caption text-medium-emphasis mt-4">
+                    {{ $t('remote.oauth_waiting_hint', 'Waiting for authentication...') }}
+                  </p>
+                </v-card-text>
+
+                <v-card-actions>
+                  <v-btn variant="text" block @click="cancelOAuth">
+                    {{ $t('remote.cancel', 'Cancel') }}
                   </v-btn>
                 </v-card-actions>
               </template>
@@ -226,13 +277,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   remoteConnectionManager,
   RemoteConnectionState,
   type StoredRemoteConnection,
 } from '@/plugins/remote';
+import { api } from '@/plugins/api';
 
 const { t } = useI18n();
 
@@ -254,7 +306,7 @@ const props = withDefaults(
 );
 
 // UI State
-type Step = 'remote-id' | 'login' | 'connecting' | 'error';
+type Step = 'remote-id' | 'login' | 'connecting' | 'oauth-waiting' | 'error';
 const step = ref<Step>('remote-id');
 
 // Connection state
@@ -272,6 +324,16 @@ const rememberCredentials = ref(true);
 const isAuthenticating = ref(false);
 const loginError = ref<string | null>(null);
 
+// Auth providers state
+const authProviders = ref<Array<{ id: string; name: string; type: string }>>([]);
+const hasHomeAssistantAuth = computed(() =>
+  authProviders.value.some(p => p.id === 'hass' || p.type === 'hass')
+);
+
+// OAuth state
+const oauthSessionId = ref<string | null>(null);
+const oauthPollingInterval = ref<number | null>(null);
+
 // Stored connections
 const storedConnections = computed(() => remoteConnectionManager.storedConnections);
 
@@ -279,6 +341,9 @@ const storedConnections = computed(() => remoteConnectionManager.storedConnectio
 const getSubtitle = computed(() => {
   if (step.value === 'login') {
     return t('remote.subtitle_login', 'Sign in to access your music');
+  }
+  if (step.value === 'oauth-waiting') {
+    return t('remote.subtitle_oauth', 'Complete sign-in in your browser');
   }
   return t('remote.subtitle', 'Connect to your home server from anywhere');
 });
@@ -310,9 +375,14 @@ const connectToRemote = async () => {
       'Establishing secure connection...'
     );
 
-    // Connection established, now need to authenticate
-    step.value = 'login';
+    // Connection established, emit connected event
     emit('connected', transport);
+
+    // Fetch available auth providers
+    await fetchAuthProviders();
+
+    // Now show login screen
+    step.value = 'login';
   } catch (error) {
     console.error('[RemoteConnect] Connection failed:', error);
     connectionError.value =
@@ -320,6 +390,20 @@ const connectToRemote = async () => {
     step.value = 'error';
   } finally {
     isConnecting.value = false;
+  }
+};
+
+const fetchAuthProviders = async () => {
+  try {
+    const providers = await api.sendCommand<Array<{ id: string; name: string; type: string }>>(
+      'auth/providers'
+    );
+    authProviders.value = providers || [];
+    console.log('[RemoteConnect] Auth providers:', authProviders.value);
+  } catch (error) {
+    console.error('[RemoteConnect] Failed to fetch auth providers:', error);
+    // Default to just showing username/password
+    authProviders.value = [];
   }
 };
 
@@ -353,6 +437,97 @@ const login = async () => {
   }
 };
 
+const loginWithHomeAssistant = async () => {
+  isAuthenticating.value = true;
+  loginError.value = null;
+
+  try {
+    // Get the authorization URL for Home Assistant OAuth
+    const response = await api.sendCommand<{ authorization_url: string; session_id: string }>(
+      'auth/authorization_url',
+      {
+        provider_id: 'hass',
+        for_remote_client: true,
+      }
+    );
+
+    if (!response?.authorization_url || !response?.session_id) {
+      throw new Error('Invalid response from server');
+    }
+
+    oauthSessionId.value = response.session_id;
+
+    // Open the authorization URL in a new window
+    window.open(response.authorization_url, '_blank');
+
+    // Switch to OAuth waiting step
+    step.value = 'oauth-waiting';
+
+    // Start polling for OAuth completion
+    startOAuthPolling();
+  } catch (error) {
+    console.error('[RemoteConnect] Failed to start Home Assistant OAuth:', error);
+    loginError.value =
+      error instanceof Error
+        ? error.message
+        : t('remote.error_oauth_failed', 'Failed to start Home Assistant authentication.');
+    isAuthenticating.value = false;
+  }
+};
+
+const startOAuthPolling = () => {
+  // Poll every 2 seconds
+  oauthPollingInterval.value = window.setInterval(async () => {
+    if (!oauthSessionId.value) {
+      stopOAuthPolling();
+      return;
+    }
+
+    try {
+      const status = await api.sendCommand<{
+        status: 'pending' | 'completed' | 'error';
+        access_token?: string;
+        message?: string;
+      }>('auth/oauth_status', {
+        session_id: oauthSessionId.value,
+      });
+
+      if (status.status === 'completed' && status.access_token) {
+        stopOAuthPolling();
+
+        // Authenticate with the received token
+        const result = await api.authenticateWithToken(status.access_token);
+
+        // Emit authenticated event with the token
+        emit('authenticated', { token: status.access_token, user: result.user });
+      } else if (status.status === 'error') {
+        stopOAuthPolling();
+        loginError.value = status.message || t('remote.error_oauth_failed', 'Authentication failed.');
+        step.value = 'login';
+        isAuthenticating.value = false;
+      }
+      // If pending, keep polling
+    } catch (error) {
+      console.error('[RemoteConnect] OAuth polling error:', error);
+      // Don't stop polling on transient errors, just log them
+    }
+  }, 2000);
+};
+
+const stopOAuthPolling = () => {
+  if (oauthPollingInterval.value) {
+    clearInterval(oauthPollingInterval.value);
+    oauthPollingInterval.value = null;
+  }
+  oauthSessionId.value = null;
+};
+
+const cancelOAuth = () => {
+  stopOAuthPolling();
+  isAuthenticating.value = false;
+  step.value = 'login';
+};
+
 const selectStoredConnection = (conn: StoredRemoteConnection) => {
   remoteId.value = conn.remoteId;
   connectToRemote();
@@ -363,14 +538,17 @@ const removeStoredConnection = (id: string) => {
 };
 
 const goBack = () => {
+  stopOAuthPolling();
   remoteConnectionManager.disconnect();
   step.value = 'remote-id';
   loginError.value = null;
   username.value = '';
   password.value = '';
+  authProviders.value = [];
 };
 
 const cancelConnection = () => {
+  stopOAuthPolling();
   remoteConnectionManager.disconnect();
   isConnecting.value = false;
   step.value = 'remote-id';
@@ -391,6 +569,11 @@ onMounted(() => {
   if (storedId) {
     remoteId.value = storedId;
   }
+});
+
+// Cleanup on unmount
+onUnmounted(() => {
+  stopOAuthPolling();
 });
 </script>
 

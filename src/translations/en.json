@@ -892,6 +892,13 @@
         "retry": "Try Again",
         "error_unknown": "Unknown error occurred",
         "error_login_failed": "Login failed. Please check your credentials.",
-        "error_server_not_found": "Server not found. Make sure your Music Assistant server is running and has Remote Access enabled."
+        "error_server_not_found": "Server not found. Make sure your Music Assistant server is running and has Remote Access enabled.",
+        "login_with_ha": "Sign in with Home Assistant",
+        "or": "or",
+        "subtitle_oauth": "Complete sign-in in your browser",
+        "oauth_waiting_title": "Complete Sign-in",
+        "oauth_waiting_message": "A browser window has opened. Please sign in with Home Assistant, then return here.",
+        "oauth_waiting_hint": "Waiting for authentication...",
+        "error_oauth_failed": "Failed to authenticate with Home Assistant."
     }
 }
