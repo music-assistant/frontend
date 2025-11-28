@@ -1,9 +1,9 @@
 <template>
   <VSonner position="bottom-right" />
 
-  <!-- Login screen (when in remote mode and not authenticated) -->
-  <RemoteConnect
-    v-if="showRemoteConnect"
+  <!-- Login screen (when not authenticated) -->
+  <Login
+    v-if="showLogin"
     @connected="handleRemoteConnected"
     @authenticated="handleRemoteAuthenticated"
     @local-connect="handleLocalConnect"
@@ -37,7 +37,7 @@ import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
 import BuiltinPlayer from "./components/BuiltinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
-import RemoteConnect from "./views/RemoteConnect.vue";
+import Login from "./views/Login.vue";
 import { EventType } from "./plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import { useRouter } from "vue-router";
@@ -56,8 +56,8 @@ const isRemoteMode = ref(false);
 const remoteConnected = ref(false);
 const remoteAuthenticated = ref(false);
 
-// Show remote connect screen when in remote mode and not authenticated
-const showRemoteConnect = computed(() => {
+// Show login screen when not authenticated
+const showLogin = computed(() => {
   return isRemoteMode.value && !remoteAuthenticated.value;
 });
 
