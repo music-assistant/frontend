@@ -21,11 +21,9 @@ class HttpProxyBridge {
       try {
         this.serviceWorkerRegistration =
           await navigator.serviceWorker.register("/sw.js");
-        console.log("[HttpProxyBridge] Service worker registered");
 
         // Wait for service worker to be ready
         await navigator.serviceWorker.ready;
-        console.log("[HttpProxyBridge] Service worker ready");
 
         // Listen for messages from service worker
         navigator.serviceWorker.addEventListener("message", (event) => {
@@ -44,10 +42,6 @@ class HttpProxyBridge {
    * Set the WebRTC transport to use for proxying
    */
   setTransport(transport: WebRTCTransport | null): void {
-    console.log(
-      "[HttpProxyBridge] setTransport called, transport:",
-      transport !== null ? "WebRTC" : "null",
-    );
     this.transport = transport;
     this.notifyRemoteMode(transport !== null);
   }
@@ -56,22 +50,12 @@ class HttpProxyBridge {
    * Notify service worker of remote mode state
    */
   private notifyRemoteMode(isRemote: boolean): void {
-    console.log(
-      "[HttpProxyBridge] Notifying service worker - isRemote:",
-      isRemote,
-      "controller:",
-      !!navigator.serviceWorker?.controller,
-    );
-
     const sendMessage = () => {
       if (navigator.serviceWorker?.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: "set-remote-mode",
           data: { isRemote },
         });
-        console.log(
-          "[HttpProxyBridge] Remote mode message sent to service worker",
-        );
         return true;
       }
       return false;
@@ -83,12 +67,7 @@ class HttpProxyBridge {
     }
 
     // If no controller yet, wait for controllerchange event
-    console.warn(
-      "[HttpProxyBridge] No service worker controller available yet, waiting...",
-    );
-
     const onControllerChange = () => {
-      console.log("[HttpProxyBridge] Service worker controller changed");
       if (sendMessage()) {
         navigator.serviceWorker?.removeEventListener(
           "controllerchange",
@@ -104,11 +83,6 @@ class HttpProxyBridge {
 
     // Also retry after a short delay in case controllerchange doesn't fire
     setTimeout(() => {
-      if (!navigator.serviceWorker?.controller) {
-        console.warn(
-          "[HttpProxyBridge] Still no controller after 1s, retrying...",
-        );
-      }
       sendMessage();
     }, 1000);
   }

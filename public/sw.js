@@ -11,16 +11,12 @@ import { precacheAndRoute } from "workbox-precaching";
 // Precache assets injected by workbox
 precacheAndRoute(self.__WB_MANIFEST);
 
-const CACHE_NAME = "ma-http-proxy-v1";
-const HTTP_PROXY_CHANNEL = "ma-http-proxy";
-
 // Store for pending HTTP requests
 const pendingRequests = new Map();
 
 // Listen for messages from the main thread
 self.addEventListener("message", (event) => {
   const { type, data } = event.data;
-  console.log("[ServiceWorker] Received message:", type, data);
 
   if (type === "http-proxy-response") {
     // Handle HTTP proxy response
@@ -48,7 +44,6 @@ self.addEventListener("message", (event) => {
   } else if (type === "set-remote-mode") {
     // Update remote mode state
     self.isRemoteMode = data.isRemote;
-    console.log("[ServiceWorker] Remote mode set to:", self.isRemoteMode);
   }
 });
 
@@ -56,21 +51,20 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Only intercept image proxy requests when in remote mode
-  if (self.isRemoteMode && url.pathname.startsWith("/imageproxy")) {
-    console.log(
-      "[ServiceWorker] Intercepting imageproxy request:",
-      url.pathname,
-    );
-    event.respondWith(handleImageProxyRequest(event.request));
+  // Paths to proxy over WebRTC when in remote mode
+  const proxyPaths = ["/imageproxy", "/builtin_player/flow/"];
+
+  // Check if this request should be proxied
+  const shouldProxy = proxyPaths.some((path) => url.pathname.startsWith(path));
+
+  if (self.isRemoteMode && shouldProxy) {
+    // Proxy over WebRTC when in remote mode
+    event.respondWith(handleHttpProxyRequest(event.request));
     return;
   }
 
-  // For imageproxy requests when NOT in remote mode, let them through normally
-  if (url.pathname.startsWith("/imageproxy")) {
-    console.log(
-      "[ServiceWorker] Passing through imageproxy request (not in remote mode)",
-    );
+  if (shouldProxy) {
+    // Let these requests through normally when NOT in remote mode
     event.respondWith(fetch(event.request));
     return;
   }
@@ -80,10 +74,34 @@ self.addEventListener("fetch", (event) => {
 });
 
 /**
- * Handle image proxy request over WebRTC
+ * Handle HTTP proxy request over WebRTC
  */
-async function handleImageProxyRequest(request) {
+async function handleHttpProxyRequest(request) {
   const url = new URL(request.url);
+  const cacheKey = request.url;
+
+  // Try to get from cache first
+  const cache = await caches.open("ma-imageproxy-v1");
+  const cachedResponse = await cache.match(cacheKey);
+
+  if (cachedResponse) {
+    // Check if we should revalidate
+    const cacheControl = cachedResponse.headers.get("cache-control");
+    const maxAge = cacheControl?.match(/max-age=(\d+)/)?.[1];
+
+    if (maxAge) {
+      const dateHeader = cachedResponse.headers.get("date");
+      if (dateHeader) {
+        const cacheDate = new Date(dateHeader);
+        const age = (Date.now() - cacheDate.getTime()) / 1000;
+
+        if (age < parseInt(maxAge)) {
+          // Cache is still fresh, return it
+          return cachedResponse;
+        }
+      }
+    }
+  }
 
   // Generate unique request ID
   const requestId = generateRequestId();
@@ -102,7 +120,7 @@ async function handleImageProxyRequest(request) {
     }, 30000);
   });
 
-  // Extract headers (only send essential ones)
+  // Extract headers (including cache validation headers)
   const headers = {};
   const essentialHeaders = [
     "accept",
@@ -111,9 +129,22 @@ async function handleImageProxyRequest(request) {
     "if-none-match",
     "if-modified-since",
   ];
+
+  // Add ETag from cached response for revalidation
+  if (cachedResponse) {
+    const etag = cachedResponse.headers.get("etag");
+    if (etag) {
+      headers["if-none-match"] = etag;
+    }
+    const lastModified = cachedResponse.headers.get("last-modified");
+    if (lastModified) {
+      headers["if-modified-since"] = lastModified;
+    }
+  }
+
   for (const header of essentialHeaders) {
     const value = request.headers.get(header);
-    if (value) {
+    if (value && !headers[header]) {
       headers[header] = value;
     }
   }
@@ -138,9 +169,27 @@ async function handleImageProxyRequest(request) {
   }
 
   try {
-    return await responsePromise;
+    const response = await responsePromise;
+
+    // If 304 Not Modified, return cached response
+    if (response.status === 304 && cachedResponse) {
+      return cachedResponse;
+    }
+
+    // Cache successful responses (200-299)
+    if (response.status >= 200 && response.status < 300) {
+      // Clone the response before caching (can only read body once)
+      const responseToCache = response.clone();
+      cache.put(cacheKey, responseToCache);
+    }
+
+    return response;
   } catch (error) {
     console.error("[ServiceWorker] HTTP proxy error:", error);
+    // Return cached response on error if available
+    if (cachedResponse) {
+      return cachedResponse;
+    }
     return new Response(error.message, { status: 500 });
   }
 }
@@ -168,8 +217,5 @@ self.isRemoteMode = false;
 
 // Claim clients immediately when service worker activates
 self.addEventListener("activate", (event) => {
-  console.log("[ServiceWorker] Activating and claiming clients");
   event.waitUntil(self.clients.claim());
 });
-
-console.log("[ServiceWorker] Loaded");
