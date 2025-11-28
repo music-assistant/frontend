@@ -1671,11 +1671,6 @@ export class MusicAssistantApi {
     }
     this.serverInfo.value = msg;
     this.state.value = ConnectionState.CONNECTED;
-    // For remote connections, don't fetch state until authenticated
-    // For local connections, fetch state immediately
-    if (!this.isRemoteConnection.value) {
-      this._fetchState();
-    }
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
