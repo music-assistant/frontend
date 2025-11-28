@@ -190,3 +190,8 @@ jobs:
 
           labels: |
             dependencies
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: create-release
+    uses: ./.github/workflows/deploy-pages.yml
