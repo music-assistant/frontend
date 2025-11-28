@@ -132,31 +132,30 @@ const getDeviceName = function (): string {
 const detectRemoteMode = (): boolean => {
   const hostname = window.location.hostname;
 
-  // Known remote hosting domains
-  const remoteHostnames = [
-    "app.music-assistant.io",
-    "music-assistant.github.io",
-    "localhost", // For testing
-  ];
-
-  // Check if URL has remote=true parameter
+  // Check if URL has remote parameter (accepts "true", "1", or just present)
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("remote") === "true") {
+  const remoteParam = urlParams.get("remote");
+  if (remoteParam === "true" || remoteParam === "1") {
+    console.log("[App] Remote mode enabled via URL parameter");
     return true;
   }
 
   // Check if stored mode is remote
   const storedMode = localStorage.getItem("ma_remote_mode");
   if (storedMode === ConnectionMode.REMOTE) {
+    console.log("[App] Remote mode enabled via stored preference");
     return true;
   }
 
+  // Known remote hosting domains (only check if not explicitly set via URL)
+  const remoteHostnames = [
+    "app.music-assistant.io",
+    "music-assistant.github.io",
+  ];
+
   // Check if hostname matches known remote domains
   if (remoteHostnames.some((h) => hostname.includes(h))) {
-    // But not if we're on localhost in development mode and connecting locally
-    if (hostname === "localhost" && process.env.NODE_ENV === "development") {
-      return false; // Default to local in development
-    }
+    console.log("[App] Remote mode enabled via hostname match");
     return true;
   }
 
