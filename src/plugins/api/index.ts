@@ -94,46 +94,48 @@ export class MusicAssistantApi {
   }
 
   /**
-   * Initialize with a server address (creates WebSocketTransport internally)
-   * This is the simple method for local connections
+   * Initialize the API with either a server address or a transport
+   * @param transportOrAddress - Either an ITransport instance or a server address string
+   * @param baseUrl - Optional HTTP base URL (required for WebRTC, derived automatically for server address)
    */
-  public async initialize(serverAddress: string): Promise<void> {
-    if (serverAddress.endsWith("/")) serverAddress = serverAddress.slice(0, -1);
-
-    // Normalize the server address
-    let httpBaseUrl: string;
-    let wsUrl: string;
-
-    if (serverAddress.startsWith("ws://") || serverAddress.startsWith("wss://")) {
-      wsUrl = serverAddress;
-      httpBaseUrl = serverAddress.replace("wss://", "https://").replace("ws://", "http://");
-      if (httpBaseUrl.endsWith("/ws")) {
-        httpBaseUrl = httpBaseUrl.slice(0, -3);
-      }
-    } else {
-      httpBaseUrl = serverAddress;
-      wsUrl = serverAddress.replace("https://", "wss://").replace("http://", "ws://");
-    }
-
-    if (!wsUrl.endsWith("/ws")) {
-      wsUrl += "/ws";
-    }
-
-    // Create WebSocket transport and initialize
-    const transport = new WebSocketTransport({ url: wsUrl });
-    await transport.connect();
-    await this.initializeWithTransport(transport, httpBaseUrl);
-  }
-
-  /**
-   * Initialize the API with a transport (WebSocket or WebRTC)
-   * This is the universal method that works with any transport
-   */
-  public async initializeWithTransport(
-    transport: ITransport,
+  public async initialize(
+    transportOrAddress: ITransport | string,
     baseUrl?: string,
   ): Promise<void> {
     if (this.transport) throw new Error("already initialized");
+
+    let transport: ITransport;
+
+    // If string, create WebSocketTransport
+    if (typeof transportOrAddress === "string") {
+      let serverAddress = transportOrAddress;
+      if (serverAddress.endsWith("/")) serverAddress = serverAddress.slice(0, -1);
+
+      // Normalize the server address
+      let httpBaseUrl: string;
+      let wsUrl: string;
+
+      if (serverAddress.startsWith("ws://") || serverAddress.startsWith("wss://")) {
+        wsUrl = serverAddress;
+        httpBaseUrl = serverAddress.replace("wss://", "https://").replace("ws://", "http://");
+        if (httpBaseUrl.endsWith("/ws")) {
+          httpBaseUrl = httpBaseUrl.slice(0, -3);
+        }
+      } else {
+        httpBaseUrl = serverAddress;
+        wsUrl = serverAddress.replace("https://", "wss://").replace("http://", "ws://");
+      }
+
+      if (!wsUrl.endsWith("/ws")) {
+        wsUrl += "/ws";
+      }
+
+      transport = new WebSocketTransport({ url: wsUrl });
+      await transport.connect();
+      baseUrl = httpBaseUrl;
+    } else {
+      transport = transportOrAddress;
+    }
 
     this.transport = transport;
     this.baseUrl = baseUrl || "";

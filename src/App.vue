@@ -122,7 +122,7 @@ const handleRemoteConnected = async (transport: ITransport) => {
 
   try {
     // Initialize the API with the WebRTC transport
-    await api.initializeWithTransport(transport);
+    await api.initialize(transport);
   } catch (error) {
     console.error("[App] Failed to initialize API with transport:", error);
   }
