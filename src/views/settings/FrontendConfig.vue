@@ -40,6 +40,7 @@ import EditConfig from "./EditConfig.vue";
 import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
+import { api } from "@/plugins/api";
 
 // global refs
 const router = useRouter();
@@ -52,7 +53,7 @@ onMounted(() => {
     ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
 
-  config.value = [
+  const configEntries: ConfigEntry[] = [
     {
       key: "theme",
       type: ConfigEntryType.STRING,
@@ -108,18 +109,6 @@ onMounted(() => {
       value: enabledMenuItems,
     },
     {
-      key: "enable_builtin_player",
-      type: ConfigEntryType.BOOLEAN,
-      label: "enable_builtin_player",
-      default_value: true,
-      required: true,
-      multi_value: false,
-      category: "generic",
-      value:
-        localStorage.getItem("frontend.settings.enable_builtin_player") !=
-        "false",
-    },
-    {
       key: "force_mobile_layout",
       type: ConfigEntryType.BOOLEAN,
       label: "force_mobile_layout",
@@ -132,6 +121,25 @@ onMounted(() => {
         "false",
     },
   ];
+
+  // Only show builtin player setting for local connections
+  // (builtin player uses HTTP which is not compatible with WebRTC)
+  if (!api.isRemoteConnection.value) {
+    configEntries.splice(3, 0, {
+      key: "enable_builtin_player",
+      type: ConfigEntryType.BOOLEAN,
+      label: "enable_builtin_player",
+      default_value: true,
+      required: true,
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.enable_builtin_player") !=
+        "false",
+    });
+  }
+
+  config.value = configEntries;
 });
 
 // methods

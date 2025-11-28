@@ -3,7 +3,7 @@
  * Handles token storage, and authentication state
  */
 
-import type { User, ServerInfo } from "./api/interfaces";
+import type { User } from "./api/interfaces";
 
 const TOKEN_STORAGE_KEY = "ma_access_token";
 const USER_STORAGE_KEY = "ma_current_user";

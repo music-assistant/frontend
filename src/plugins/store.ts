@@ -4,7 +4,7 @@ import {
   Player,
   PlayerQueue,
   QueueItem,
-  ServerInfo,
+  ServerInfoMessage,
   User,
 } from "./api/interfaces";
 
@@ -56,7 +56,7 @@ interface Store {
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
   currentUser?: User;
-  serverInfo?: ServerInfo;
+  serverInfo?: ServerInfoMessage;
   isAuthenticated: boolean;
   isIngressSession: boolean;
   isOnboarding: boolean;

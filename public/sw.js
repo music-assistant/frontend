@@ -53,7 +53,7 @@ self.addEventListener("fetch", (event) => {
 
   // Paths to proxy over WebRTC when in remote mode (e.g. imageproxy)
   // this way we can still use browser caching for these resources
-  const proxyPaths = ["/imageproxy"];
+  const proxyPaths = ["/imageproxy", "/preview"];
 
   // Check if this request should be proxied
   const shouldProxy = proxyPaths.some((path) => url.pathname.startsWith(path));

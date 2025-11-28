@@ -210,6 +210,8 @@ const handleLocalConnect = async (serverAddress: string) => {
  * Initialize the app after connection is established
  */
 const initializeApp = async () => {
+  // Builtin player is disabled for remote connections as it uses HTTP which is not
+  // compatible with WebRTC transport. This will be replaced by the Resonate protocol.
   const allowBuiltinPlayer =
     localStorage.getItem("frontend.settings.enable_builtin_player") !=
       "false" && !api.isRemoteConnection.value;

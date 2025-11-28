@@ -1040,14 +1040,3 @@ export interface SetupRequest {
   display_name?: string;
   device_name?: string;
 }
-
-export interface ServerInfo {
-  server_id: string;
-  server_version: string;
-  schema_version: number;
-  min_supported_schema_version: number;
-  base_url: string;
-  homeassistant_addon: boolean;
-  onboard_done: boolean;
-  requires_auth?: boolean;
-}
