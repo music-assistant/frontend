@@ -4,12 +4,15 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Run on pushes to main branch
-  push:
-    branches: [main]
+  # Run on release publication
+  release:
+    types: [published]
 
   # Allow manual trigger
   workflow_dispatch:
+
+  # Allow being called from other workflows
+  workflow_call:
 
 # Set permissions for GitHub Pages deployment
 permissions:
@@ -22,17 +25,24 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: "22.x"
+  NODE_OPTIONS: --max_old_space_size=6144
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Use the tag if triggered by release, otherwise default branch
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
 
       - name: Install dependencies
@@ -43,10 +53,8 @@ jobs:
         env:
           # Enable remote mode for the hosted version
           VITE_REMOTE_MODE: 'true'
-          # Signaling server URL (update with your deployed URL)
+          # Signaling server URL
           VITE_SIGNALING_URL: 'wss://signaling.music-assistant.io/ws'
-          # Base path for GitHub Pages (update if using custom domain)
-          # VITE_BASE_PATH: '/frontend/'
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -54,7 +62,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './music_assistant_frontend'
 
   deploy:
     environment:
