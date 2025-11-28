@@ -769,15 +769,44 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* CSS Variables matching Music Assistant server styling */
 .login-background {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  --fg: #000000;
+  --background: #f5f5f5;
+  --panel: #ffffff;
+  --primary: #03a9f4;
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-tertiary: rgba(0, 0, 0, 0.4);
+  --border: rgba(0, 0, 0, 0.1);
+  --input-bg: rgba(0, 0, 0, 0.03);
+  --input-focus-bg: rgba(3, 169, 244, 0.05);
+  --error-text: #d32f2f;
+  --success: #4caf50;
+
+  background: var(--background);
   min-height: 100vh;
+  color: var(--fg);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .login-background {
+    --fg: #ffffff;
+    --background: #181818;
+    --panel: #232323;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
+    --border: rgba(255, 255, 255, 0.08);
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --input-focus-bg: rgba(3, 169, 244, 0.08);
+    --error-text: #ff6b6b;
+    --success: #66bb6a;
+  }
 }
 
 .login-card {
-  background: rgba(30, 30, 46, 0.95) !important;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel) !important;
+  border: 1px solid var(--border);
 }
 
 .login-logo {
@@ -786,23 +815,55 @@ onUnmounted(() => {
 }
 
 .oauth-btn {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--border) !important;
 }
 
 .oauth-btn:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary) !important;
+  background: var(--input-focus-bg) !important;
 }
 
 :deep(.v-field) {
-  border-radius: 12px !important;
+  border-radius: 10px !important;
 }
 
 :deep(.v-field--variant-outlined .v-field__outline__start) {
-  border-radius: 12px 0 0 12px !important;
+  border-radius: 10px 0 0 10px !important;
 }
 
 :deep(.v-field--variant-outlined .v-field__outline__end) {
-  border-radius: 0 12px 12px 0 !important;
+  border-radius: 0 10px 10px 0 !important;
+}
+
+:deep(.v-card) {
+  color: var(--fg) !important;
+}
+
+:deep(.v-card-title),
+:deep(.v-card-text),
+:deep(.text-h4),
+:deep(.text-h6),
+:deep(.text-body-2) {
+  color: var(--fg) !important;
+}
+
+:deep(.text-medium-emphasis) {
+  color: var(--text-secondary) !important;
+}
+
+:deep(.v-tab) {
+  color: var(--text-secondary) !important;
+}
+
+:deep(.v-tab--selected) {
+  color: var(--primary) !important;
+}
+
+:deep(.v-field__input) {
+  color: var(--fg) !important;
+}
+
+:deep(.v-label) {
+  color: var(--text-secondary) !important;
 }
 </style>
