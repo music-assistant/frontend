@@ -12,7 +12,6 @@
                 max-height="80"
                 class="mx-auto mb-4"
               />
-              <h1 class="text-h4 font-weight-bold">Music Assistant</h1>
               <p class="text-subtitle-1 text-medium-emphasis mt-2">
                 {{ getSubtitle }}
               </p>

@@ -230,8 +230,16 @@ const switchToLocalMode = () => {
   remoteConnectionManager.setMode(ConnectionMode.LOCAL);
   remoteConnectionManager.clearStoredRemoteId();
 
+  // Remove remote parameter from URL before reloading
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.delete("remote");
+  const cleanUrl =
+    window.location.pathname +
+    (urlParams.toString() ? "?" + urlParams.toString() : "") +
+    window.location.hash;
+
   // Reload to start fresh in local mode
-  window.location.reload();
+  window.location.href = cleanUrl;
 };
 
 /**
