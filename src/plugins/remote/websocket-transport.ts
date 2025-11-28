@@ -48,7 +48,6 @@ export class WebSocketTransport extends BaseTransport {
         this.ws = new WebSocket(this.options.url);
 
         this.ws.onopen = () => {
-          console.log('[WebSocketTransport] Connection opened');
           this.reconnectAttempts = 0;
           this.setState(TransportState.CONNECTED);
           this.emit('open');
@@ -56,7 +55,6 @@ export class WebSocketTransport extends BaseTransport {
         };
 
         this.ws.onclose = (event) => {
-          console.log('[WebSocketTransport] Connection closed', event.code, event.reason);
           this.setState(TransportState.DISCONNECTED);
           this.emit('close', event.reason);
 
@@ -65,8 +63,7 @@ export class WebSocketTransport extends BaseTransport {
           }
         };
 
-        this.ws.onerror = (event) => {
-          console.error('[WebSocketTransport] Error:', event);
+        this.ws.onerror = () => {
           const error = new Error('WebSocket error');
           this.emit('error', error);
 
@@ -107,7 +104,6 @@ export class WebSocketTransport extends BaseTransport {
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.options.maxReconnectAttempts) {
-      console.log('[WebSocketTransport] Max reconnect attempts reached');
       this.setState(TransportState.FAILED);
       return;
     }
@@ -120,12 +116,10 @@ export class WebSocketTransport extends BaseTransport {
       this.options.maxReconnectDelay
     );
 
-    console.log(`[WebSocketTransport] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1})`);
-
     this.reconnectTimer = setTimeout(() => {
       this.reconnectAttempts++;
-      this.connect().catch((error) => {
-        console.error('[WebSocketTransport] Reconnect failed:', error);
+      this.connect().catch(() => {
+        // Reconnect failed, will try again via scheduleReconnect
       });
     }, delay);
   }

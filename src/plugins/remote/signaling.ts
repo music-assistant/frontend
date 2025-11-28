@@ -16,7 +16,7 @@ export interface SignalingMessage {
   type: 'offer' | 'answer' | 'ice-candidate' | 'error' | 'connected' | 'peer-disconnected';
   remoteId?: string;
   sessionId?: string;
-  data?: any;
+  data?: RTCSessionDescriptionInit | RTCIceCandidateInit;
   error?: string;
 }
 
@@ -78,13 +78,11 @@ export class SignalingClient {
         this.ws = new WebSocket(this.config.serverUrl);
 
         this.ws.onopen = () => {
-          console.log('[Signaling] Connected to signaling server');
           this.setState(SignalingState.CONNECTED);
           resolve();
         };
 
         this.ws.onclose = () => {
-          console.log('[Signaling] Disconnected from signaling server');
           this.setState(SignalingState.DISCONNECTED);
 
           if (!this.intentionalClose && this.config.reconnect) {
@@ -92,8 +90,7 @@ export class SignalingClient {
           }
         };
 
-        this.ws.onerror = (error) => {
-          console.error('[Signaling] WebSocket error:', error);
+        this.ws.onerror = () => {
           this.setState(SignalingState.ERROR);
           reject(new Error('Signaling connection failed'));
         };
@@ -235,8 +232,6 @@ export class SignalingClient {
   }
 
   private handleMessage(message: SignalingMessage): void {
-    console.log('[Signaling] Received message:', message.type);
-
     switch (message.type) {
       case 'connected':
         this.currentSessionId = message.sessionId || null;
@@ -244,15 +239,15 @@ export class SignalingClient {
         break;
 
       case 'offer':
-        this.emit('offer', message.data, message.sessionId || '');
+        this.emit('offer', message.data as RTCSessionDescriptionInit, message.sessionId || '');
         break;
 
       case 'answer':
-        this.emit('answer', message.data);
+        this.emit('answer', message.data as RTCSessionDescriptionInit);
         break;
 
       case 'ice-candidate':
-        this.emit('ice-candidate', message.data);
+        this.emit('ice-candidate', message.data as RTCIceCandidateInit);
         break;
 
       case 'peer-disconnected':
@@ -262,9 +257,6 @@ export class SignalingClient {
       case 'error':
         this.emit('error', message.error || 'Unknown error');
         break;
-
-      default:
-        console.warn('[Signaling] Unknown message type:', (message as any).type);
     }
   }
 
@@ -285,7 +277,6 @@ export class SignalingClient {
 
   private scheduleReconnect(): void {
     this.clearReconnectTimer();
-    console.log(`[Signaling] Reconnecting in ${this.config.reconnectDelay}ms`);
 
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch((error) => {

@@ -6,8 +6,8 @@
  * for the application to connect to remote instances.
  */
 
-import { ref, computed, reactive } from 'vue';
-import { ITransport, TransportState } from './transport';
+import { ref, reactive } from 'vue';
+import { ITransport } from './transport';
 import { WebSocketTransport } from './websocket-transport';
 import { WebRTCTransport, IceServerConfig } from './webrtc-transport';
 
@@ -120,7 +120,6 @@ class RemoteConnectionManager {
    * Connect to a local Music Assistant instance via WebSocket
    */
   async connectLocal(serverUrl: string): Promise<ITransport> {
-    console.log('[RemoteConnectionManager] Connecting to local server:', serverUrl);
     this.setMode(ConnectionMode.LOCAL);
     this.state.value = RemoteConnectionState.CONNECTING;
     this.error.value = null;
@@ -145,7 +144,6 @@ class RemoteConnectionManager {
    * Connect to a remote Music Assistant instance via WebRTC
    */
   async connectRemote(remoteId: string): Promise<ITransport> {
-    console.log('[RemoteConnectionManager] Connecting to remote instance:', remoteId);
     this.setMode(ConnectionMode.REMOTE);
     this.currentRemoteId.value = remoteId;
     this.state.value = RemoteConnectionState.CONNECTING;
@@ -247,13 +245,11 @@ class RemoteConnectionManager {
   private setupTransportHandlers(): void {
     if (!this.transport) return;
 
-    this.transport.on('close', (reason) => {
-      console.log('[RemoteConnectionManager] Transport closed:', reason);
+    this.transport.on('close', () => {
       this.state.value = RemoteConnectionState.DISCONNECTED;
     });
 
     this.transport.on('error', (error) => {
-      console.error('[RemoteConnectionManager] Transport error:', error);
       this.error.value = error.message;
     });
   }
@@ -289,8 +285,8 @@ class RemoteConnectionManager {
         const connections = JSON.parse(stored) as StoredRemoteConnection[];
         this.storedConnections.splice(0, this.storedConnections.length, ...connections);
       }
-    } catch (error) {
-      console.error('[RemoteConnectionManager] Failed to load stored connections:', error);
+    } catch {
+      // Ignore parse errors
     }
   }
 
@@ -300,8 +296,8 @@ class RemoteConnectionManager {
         REMOTE_CONNECTIONS_STORAGE_KEY,
         JSON.stringify(this.storedConnections)
       );
-    } catch (error) {
-      console.error('[RemoteConnectionManager] Failed to save stored connections:', error);
+    } catch {
+      // Ignore storage errors
     }
   }
 

@@ -24,11 +24,8 @@ export interface WebRTCTransportOptions {
 }
 
 // Default ICE servers (public STUN servers)
-// Note: Fewer servers = faster gathering. Using only the most reliable ones.
 const DEFAULT_ICE_SERVERS: IceServerConfig[] = [
-  // Google's public STUN server (most reliable)
   { urls: 'stun:stun.l.google.com:19302' },
-  // Cloudflare's public STUN server (good fallback)
   { urls: 'stun:stun.cloudflare.com:3478' },
 ];
 
@@ -57,44 +54,28 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   async connect(): Promise<void> {
-    const startTime = performance.now();
-    const logTiming = (step: string) => {
-      console.log(`[WebRTCTransport] ${step} (+${Math.round(performance.now() - startTime)}ms)`);
-    };
-
-    logTiming('Starting connection to: ' + this.options.remoteId);
     this.setState(TransportState.CONNECTING);
 
     try {
       // Create peer connection early (can pre-gather ICE candidates)
       this.createPeerConnection();
-      logTiming('Peer connection created');
 
       // Connect to signaling server
       await this.signaling.connect();
-      logTiming('Signaling server connected');
 
       // Request connection to the remote MA instance
       await this.signaling.requestConnection(this.options.remoteId);
-      logTiming('Remote peer accepted connection');
 
       // Create data channel (we're the initiator)
       this.createDataChannel();
 
       // Create and send offer (triggers ICE gathering)
       const offer = await this.peerConnection!.createOffer();
-      logTiming('Offer created');
-
       await this.peerConnection!.setLocalDescription(offer);
-      logTiming('Local description set (ICE gathering started)');
-
       this.signaling.sendOffer(offer);
-      logTiming('Offer sent to remote peer');
 
       // Wait for connection to be established
       await this.waitForConnection();
-
-      logTiming('Connection established - total time');
     } catch (error) {
       console.error('[WebRTCTransport] Connection failed:', error);
       this.setState(TransportState.FAILED);
@@ -104,7 +85,6 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   disconnect(): void {
-    console.log('[WebRTCTransport] Disconnecting');
     this.cleanup();
     this.setState(TransportState.DISCONNECTED);
     this.emit('close', 'Disconnected by user');
@@ -119,19 +99,14 @@ export class WebRTCTransport extends BaseTransport {
 
   private setupSignalingHandlers(): void {
     this.signaling.on('answer', (answer) => {
-      console.log('[WebRTCTransport] Received answer from remote peer');
       this.handleAnswer(answer);
     });
 
     this.signaling.on('ice-candidate', (candidate) => {
-      const candidateStr = (candidate as RTCIceCandidateInit).candidate;
-      const candidateType = candidateStr?.split(' ')[7] || 'unknown';
-      console.log('[WebRTCTransport] Received remote ICE candidate:', candidateType);
       this.handleIceCandidate(candidate);
     });
 
     this.signaling.on('peer-disconnected', () => {
-      console.log('[WebRTCTransport] Peer disconnected');
       this.handlePeerDisconnected();
     });
 
@@ -142,31 +117,19 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   private createPeerConnection(): void {
-    console.log('[WebRTCTransport] Creating peer connection with ICE servers:', this.options.iceServers);
-
     this.peerConnection = new RTCPeerConnection({
       iceServers: this.options.iceServers,
-      // Pre-gather ICE candidates for faster connection establishment
       iceCandidatePoolSize: 4,
     });
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('[WebRTCTransport] Sending ICE candidate:', event.candidate.type || 'unknown');
         this.signaling.sendIceCandidate(event.candidate.toJSON());
-      } else {
-        console.log('[WebRTCTransport] ICE gathering complete');
       }
-    };
-
-    this.peerConnection.onicegatheringstatechange = () => {
-      console.log('[WebRTCTransport] ICE gathering state:', this.peerConnection?.iceGatheringState);
     };
 
     this.peerConnection.oniceconnectionstatechange = () => {
       const state = this.peerConnection?.iceConnectionState;
-      console.log('[WebRTCTransport] ICE connection state:', state);
-
       if (state === 'failed' || state === 'disconnected') {
         this.handleConnectionFailure();
       }
@@ -174,8 +137,6 @@ export class WebRTCTransport extends BaseTransport {
 
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
-      console.log('[WebRTCTransport] Connection state:', state);
-
       if (state === 'failed') {
         this.handleConnectionFailure();
       }
@@ -183,8 +144,6 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   private createDataChannel(): void {
-    console.log('[WebRTCTransport] Creating data channel:', this.options.dataChannelLabel);
-
     this.dataChannel = this.peerConnection!.createDataChannel(this.options.dataChannelLabel, {
       ordered: true,
     });
@@ -196,13 +155,11 @@ export class WebRTCTransport extends BaseTransport {
     if (!this.dataChannel) return;
 
     this.dataChannel.onopen = () => {
-      console.log('[WebRTCTransport] Data channel opened');
       this.setState(TransportState.CONNECTED);
       this.emit('open');
     };
 
     this.dataChannel.onclose = () => {
-      console.log('[WebRTCTransport] Data channel closed');
       this.setState(TransportState.DISCONNECTED);
       this.emit('close', 'Data channel closed');
     };
@@ -250,14 +207,12 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   private handlePeerDisconnected(): void {
-    console.log('[WebRTCTransport] Peer disconnected');
     this.setState(TransportState.DISCONNECTED);
     this.emit('close', 'Peer disconnected');
     this.cleanup();
   }
 
   private handleConnectionFailure(): void {
-    console.log('[WebRTCTransport] Connection failed');
     this.setState(TransportState.FAILED);
     this.emit('error', new Error('WebRTC connection failed'));
     this.cleanup();
