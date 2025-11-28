@@ -6,11 +6,11 @@
           <v-col cols="12" sm="8" md="6" lg="4">
             <!-- Logo and Title -->
             <div class="text-center mb-8">
-              <v-img
-                src="logo.svg"
+              <img
+                src="@/assets/logo.svg"
                 alt="Music Assistant"
-                max-height="80"
-                class="mx-auto mb-4"
+                style="max-height: 80px"
+                class="mx-auto mb-4 d-block"
               />
               <p class="text-subtitle-1 text-medium-emphasis mt-2">
                 {{ getSubtitle }}
