@@ -6,6 +6,11 @@
  * when connected remotely, enabling browser caching and avoiding Base64 overhead.
  */
 
+import { precacheAndRoute } from "workbox-precaching";
+
+// Precache assets injected by workbox
+precacheAndRoute(self.__WB_MANIFEST);
+
 const CACHE_NAME = "ma-http-proxy-v1";
 const HTTP_PROXY_CHANNEL = "ma-http-proxy";
 
