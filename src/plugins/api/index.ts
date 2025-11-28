@@ -1,12 +1,11 @@
 import { store } from "../store";
 /* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { computed, reactive, ref } from "vue";
 import { toast } from "vuetify-sonner";
-import { LinearBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
 import { getDeviceName } from "./helpers";
+import type { ITransport } from "../remote/transport";
+import { WebSocketTransport } from "../remote/websocket-transport";
 import {
   type Album,
   type Artist,
@@ -63,9 +62,10 @@ export enum ConnectionState {
 }
 
 export class MusicAssistantApi {
-  private ws?: Websocket;
+  private transport?: ITransport;
   private _throttleId?: any;
-  public baseUrl?: string;
+  public baseUrl?: string; // HTTP base URL for image proxy etc.
+  public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
@@ -95,168 +95,222 @@ export class MusicAssistantApi {
     this.partialResult = {};
   }
 
+  /**
+   * Initialize the API with either a server address or a transport
+   * @param transportOrAddress - Either an ITransport instance or a server address string
+   * @param baseUrl - Optional HTTP base URL (required for WebRTC, derived automatically for server address)
+   */
   public async initialize(
-    baseUrl: string,
-    authToken?: string | null,
-    tokenFromLogin?: boolean,
-  ) {
-    if (this.ws) throw new Error("already initialized");
-    if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
-    this.baseUrl = baseUrl;
-    const wsUrl = baseUrl.replace("http", "ws") + "/ws";
-    console.log(`Connecting to Music Assistant API ${wsUrl}`);
+    transportOrAddress: ITransport | string,
+    baseUrl?: string,
+  ): Promise<void> {
+    if (this.transport) throw new Error("already initialized");
+
+    let transport: ITransport;
+    let isRemote = false;
+
+    // If string, create WebSocketTransport
+    if (typeof transportOrAddress === "string") {
+      let serverAddress = transportOrAddress;
+      if (serverAddress.endsWith("/"))
+        serverAddress = serverAddress.slice(0, -1);
+
+      // Normalize the server address
+      let httpBaseUrl: string;
+      let wsUrl: string;
+
+      if (
+        serverAddress.startsWith("ws://") ||
+        serverAddress.startsWith("wss://")
+      ) {
+        wsUrl = serverAddress;
+        httpBaseUrl = serverAddress
+          .replace("wss://", "https://")
+          .replace("ws://", "http://");
+        if (httpBaseUrl.endsWith("/ws")) {
+          httpBaseUrl = httpBaseUrl.slice(0, -3);
+        }
+      } else {
+        httpBaseUrl = serverAddress;
+        wsUrl = serverAddress
+          .replace("https://", "wss://")
+          .replace("http://", "ws://");
+      }
+
+      if (!wsUrl.endsWith("/ws")) {
+        wsUrl += "/ws";
+      }
+
+      transport = new WebSocketTransport({ url: wsUrl });
+      await transport.connect();
+      baseUrl = httpBaseUrl;
+    } else {
+      // Transport instance provided (WebRTC)
+      transport = transportOrAddress;
+      isRemote = true;
+    }
+
+    this.transport = transport;
+    this.baseUrl = baseUrl || "";
+    this.isRemoteConnection.value = isRemote;
     this.state.value = ConnectionState.CONNECTING;
 
-    let isAuthenticated = false;
-    let authMessageId: string | null = null;
-    let pendingServerInfo: ServerInfoMessage | null = null;
+    // Set up transport message handler
+    transport.on("message", (data: string) => {
+      try {
+        const msg = JSON.parse(data);
+        this.handleMessage(msg);
+      } catch (error) {
+        console.error("[API] Failed to parse message:", error);
+      }
+    });
 
-    // connect to the websocket api
-    this.ws = new WebsocketBuilder(wsUrl)
-      .onOpen((i, ev) => {
-        console.log("connection opened");
-        // Reset authentication state on reconnection
-        isAuthenticated = false;
-        authMessageId = null;
-        pendingServerInfo = null;
-        // Wait for ServerInfo message before doing anything
-      })
-      .onClose((i, ev) => {
-        console.log("connection closed");
-        this.state.value = ConnectionState.DISCONNECTED;
-        this.signalEvent({
-          event: EventType.DISCONNECTED,
-          object_id: "",
-        });
-      })
-      .onError((i, ev) => {
-        console.log("error on connection");
-      })
-      .onMessage((i, ev) => {
-        // Message retrieved on the websocket
-        const msg = JSON.parse(ev.data);
+    transport.on("close", () => {
+      this.state.value = ConnectionState.DISCONNECTED;
+      this.signalEvent({
+        event: EventType.DISCONNECTED,
+        object_id: "",
+      });
+    });
 
-        // Handle ServerInfo message FIRST (always sent first by server)
-        if ("server_version" in msg && !pendingServerInfo && !isAuthenticated) {
-          const serverInfo = msg as ServerInfoMessage;
-          console.info("ServerInfo received", serverInfo);
+    transport.on("error", (error: Error) => {
+      console.error("[API] Transport error:", error);
+    });
 
-          // Check if we have a token
-          if (!authToken) {
-            // No token - close connection and redirect to login
-            console.error("Authentication required but no token provided");
-            this.ws?.close();
-            const returnUrl = encodeURIComponent(window.location.href);
-            const deviceName = encodeURIComponent(getDeviceName());
-            if (!serverInfo.onboard_done) {
-              window.location.href = `${this.baseUrl}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
-            } else {
-              window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
-            }
-            return;
-          }
+    // Wait for initial ServerInfo message
+    await this.waitForServerInfo();
+  }
 
-          // We have a token - send auth command
-          // Store serverInfo locally (not in this.serverInfo) until auth succeeds
-          pendingServerInfo = serverInfo;
-          authMessageId = this._genCmdId();
-          const authCmd = {
-            command: "auth",
-            message_id: authMessageId,
-            args: {
-              token: authToken,
-            },
-          };
-          console.debug("Sending auth command", authMessageId);
-          i.send(JSON.stringify(authCmd));
-          return;
-        }
+  /**
+   * Handle incoming message from the transport
+   */
+  private handleMessage(msg: any): void {
+    // Handle ServerInfo message (always sent first by server)
+    if ("server_version" in msg && !this.serverInfo.value) {
+      this.handleServerInfoMessage(msg as ServerInfoMessage);
+      return;
+    }
 
-        // Check if this is the auth response (match by message_id)
-        if (
-          authMessageId &&
-          !isAuthenticated &&
-          "message_id" in msg &&
-          msg.message_id === authMessageId
-        ) {
-          if ("error" in msg || "error_code" in msg) {
-            console.error("WebSocket authentication failed", msg);
-            // Close connection and redirect to server login
-            this.ws?.close();
-            // Clear auth token from localStorage
-            localStorage.removeItem("ma_access_token");
-            localStorage.removeItem("ma_current_user");
+    // Handle event messages
+    if ("event" in msg) {
+      this.handleEventMessage(msg as EventMessage);
+      return;
+    }
 
-            // Check if we just came from login (to prevent redirect loop)
-            if (tokenFromLogin) {
-              // We just got a token from login but it failed validation
-              // Don't redirect again, show error instead
-              console.error(
-                "Token from login page failed validation - possible invalid credentials or server issue",
-              );
-              alert(
-                "Authentication failed. The login token is invalid. Please try logging in again.",
-              );
-              // Clear the token from URL and redirect to login
-              const deviceName = encodeURIComponent(getDeviceName());
-              window.location.href = `${this.baseUrl}/login?device_name=${deviceName}`;
-              return;
-            }
+    // Handle result messages
+    if ("message_id" in msg) {
+      this.handleResultMessage(msg);
+      return;
+    }
 
-            // Redirect to server login page
-            const returnUrl = encodeURIComponent(window.location.href);
-            const deviceName = encodeURIComponent(getDeviceName());
-            window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
-            return;
-          }
-          // Auth successful
-          console.log("WebSocket authenticated successfully", msg);
-          isAuthenticated = true;
+    console.error("[API] received unknown message", msg);
+  }
 
-          // Extract user from auth response and store it
-          if ("result" in msg && msg.result && typeof msg.result === "object") {
-            const authResult = msg.result as { user?: any };
-            if (authResult.user) {
-              // Store user in localStorage (authManager will load it on next access)
-              localStorage.setItem(
-                "ma_current_user",
-                JSON.stringify(authResult.user),
-              );
-              console.log("User info stored:", authResult.user);
+  /**
+   * Wait for ServerInfo message with timeout
+   */
+  private waitForServerInfo(timeoutMs: number = 30000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Timeout waiting for ServerInfo"));
+      }, timeoutMs);
 
-              // Import and update authManager asynchronously
-              import("@/plugins/auth").then(({ authManager }) => {
-                (authManager as any).currentUser = authResult.user;
-              });
-            }
-          }
+      // Check if already have server info
+      if (this.serverInfo.value) {
+        clearTimeout(timeout);
+        resolve();
+        return;
+      }
 
-          // Now that we're authenticated, process the ServerInfo and signal CONNECTED
-          if (pendingServerInfo) {
-            console.info(
-              "Processing ServerInfo after successful authentication",
-            );
-            this.handleServerInfoMessage(pendingServerInfo);
-            pendingServerInfo = null;
-          }
-          return;
-        }
+      // Listen for server info via event
+      const unsubscribe = this.subscribe(EventType.CONNECTED, () => {
+        clearTimeout(timeout);
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
 
-        if ("event" in msg) {
-          this.handleEventMessage(msg as EventMessage);
-        } else if ("message_id" in msg) {
-          this.handleResultMessage(msg);
-        } else {
-          // unknown message receoved
-          console.error("received unknown message", msg);
-        }
-      })
-      .onRetry((i, ev) => {
-        console.log("retry");
-        this.state.value = ConnectionState.CONNECTING;
-      })
-      .withBackoff(new LinearBackoff(0, 1000, 12000))
-      .build();
+  /**
+   * Authenticate with username and password
+   * Returns the auth token on success
+   */
+  public async loginWithCredentials(
+    username: string,
+    password: string,
+    deviceName?: string,
+  ): Promise<{ token: string; user: User }> {
+    const result = await this.sendCommand<{
+      access_token?: string;
+      token?: string;
+      user: User;
+    }>("auth/login", {
+      username,
+      password,
+      device_name: deviceName || getDeviceName(),
+    });
+
+    // Server may return 'access_token' or 'token'
+    const token = result.access_token || result.token;
+
+    if (token) {
+      // Store the token
+      localStorage.setItem("ma_access_token", token);
+      if (result.user) {
+        localStorage.setItem("ma_current_user", JSON.stringify(result.user));
+      }
+
+      // Now authenticate the WebSocket session with the token
+      await this.sendCommand("auth", { token });
+
+      // Now that we're authenticated, fetch the full state
+      this._fetchState();
+    }
+
+    return { token: token || "", user: result.user };
+  }
+
+  /**
+   * Authenticate with an existing token
+   */
+  public async authenticateWithToken(token: string): Promise<{ user: User }> {
+    const result = await this.sendCommand<{ user: User }>("auth", {
+      token,
+    });
+
+    if (result.user) {
+      localStorage.setItem("ma_current_user", JSON.stringify(result.user));
+      // Import and update authManager
+      import("@/plugins/auth").then(({ authManager }) => {
+        (authManager as any).currentUser = result.user;
+      });
+      // Now that we're authenticated, fetch the full state
+      this._fetchState();
+    }
+
+    return result;
+  }
+
+  /**
+   * Disconnect from the server
+   */
+  public disconnect(): void {
+    if (this.transport) {
+      this.transport.disconnect();
+      this.transport = undefined;
+    }
+    this.state.value = ConnectionState.DISCONNECTED;
+    this.isRemoteConnection.value = false;
+
+    // Clear reactive state
+    Object.keys(this.players).forEach((key) => delete this.players[key]);
+    Object.keys(this.queues).forEach((key) => delete this.queues[key]);
+    Object.keys(this.providers).forEach((key) => delete this.providers[key]);
+    Object.keys(this.providerManifests).forEach(
+      (key) => delete this.providerManifests[key],
+    );
+    this.syncTasks.value = [];
+    this.serverInfo.value = undefined;
   }
 
   public subscribe(
@@ -1617,8 +1671,6 @@ export class MusicAssistantApi {
     }
     this.serverInfo.value = msg;
     this.state.value = ConnectionState.CONNECTED;
-    // trigger fetch of full state once we are connected to the server
-    this._fetchState();
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
@@ -2041,7 +2093,13 @@ export class MusicAssistantApi {
       console.log("[sendCommand]", msg);
     }
 
-    this.ws!.send(JSON.stringify(msg));
+    const msgStr = JSON.stringify(msg);
+
+    if (!this.transport) {
+      throw new Error("No connection available");
+    }
+
+    this.transport.send(msgStr);
   }
 
   private async _fetchState() {

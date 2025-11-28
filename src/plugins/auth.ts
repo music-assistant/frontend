@@ -122,15 +122,8 @@ export class AuthManager {
     // Small delay to allow logout command to be sent
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Redirect to server login page
-    const returnUrl = encodeURIComponent(
-      window.location.origin + window.location.pathname,
-    );
-    // Handle trailing slash to prevent double slashes
-    const baseUrl = this.baseUrl.endsWith("/")
-      ? this.baseUrl.slice(0, -1)
-      : this.baseUrl;
-    window.location.href = `${baseUrl}/login?return_url=${returnUrl}`;
+    // Reload page to show Vue login screen
+    window.location.reload();
   }
 }
 // Export singleton instance

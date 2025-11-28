@@ -1,0 +1,76 @@
+# Deploy to GitHub Pages
+# This workflow builds and deploys the Music Assistant PWA for remote access
+
+name: Deploy to GitHub Pages
+
+on:
+  # Run on release publication
+  release:
+    types: [published]
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Allow being called from other workflows
+  workflow_call:
+
+# Set permissions for GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only run one deployment at a time
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22.x"
+  NODE_OPTIONS: --max_old_space_size=6144
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use the tag if triggered by release, otherwise default branch
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build for remote mode
+        run: yarn build
+        env:
+          # Enable remote mode for the hosted version
+          VITE_REMOTE_MODE: 'true'
+          # Signaling server URL
+          VITE_SIGNALING_URL: 'wss://signaling.music-assistant.io/ws'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './music_assistant_frontend'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

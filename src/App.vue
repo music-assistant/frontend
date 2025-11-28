@@ -1,7 +1,20 @@
 <template>
   <VSonner position="bottom-right" />
-  <router-view v-if="store.connected" />
-  <v-progress-linear v-else indeterminate color="primary" />
+
+  <!-- Login screen (when not authenticated) -->
+  <Login
+    v-if="showLogin"
+    @connected="handleRemoteConnected"
+    @authenticated="handleRemoteAuthenticated"
+    @local-connect="handleLocalConnect"
+  />
+
+  <!-- Main app (when connected) -->
+  <template v-else>
+    <router-view v-if="store.connected" />
+    <v-progress-linear v-else indeterminate color="primary" />
+  </template>
+
   <PlayerBrowserMediaControls
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
@@ -18,18 +31,26 @@
 import { api } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { onMounted, nextTick } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useTheme } from "vuetify";
 import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
 import BuiltinPlayer from "./components/BuiltinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import Login from "./views/Login.vue";
 import { EventType } from "./plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
-import { useRouter } from "vue-router";
+import { remoteConnectionManager } from "./plugins/remote";
+import type { ITransport } from "./plugins/remote/transport";
 
 const theme = useTheme();
-const router = useRouter();
+
+// Connection state
+const isConnected = ref(false);
+const isAuthenticated = ref(false);
+
+// Show login screen when not authenticated
+const showLogin = computed(() => !isAuthenticated.value);
 
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
@@ -93,127 +114,109 @@ const getDeviceName = function (): string {
   return `Music Assistant Web (${browser} on ${os})`;
 };
 
-onMounted(async () => {
-  // @ts-ignore
-  store.isInStandaloneMode = window.navigator.standalone || false;
+/**
+ * Handle WebRTC transport connected (but not yet authenticated)
+ */
+const handleRemoteConnected = async (transport: ITransport) => {
+  isConnected.value = true;
 
-  // cache some settings in the store
-  const langPref = localStorage.getItem("frontend.settings.language") || "auto";
-  if (langPref !== "auto") {
-    i18n.global.locale.value = langPref;
+  try {
+    // Initialize the API with the WebRTC transport
+    await api.initialize(transport);
+  } catch (error) {
+    console.error("[App] Failed to initialize API with transport:", error);
   }
-  const allowBuiltinPlayer =
-    localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
+};
 
-  const forceMobileLayout =
-    localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
-  store.forceMobileLayout = forceMobileLayout;
+/**
+ * Handle authentication (username/password or token)
+ */
+const handleRemoteAuthenticated = async (credentials: {
+  username?: string;
+  password?: string;
+  token?: string;
+  user?: any;
+}) => {
+  try {
+    const { authManager } = await import("@/plugins/auth");
+    let user = credentials.user;
 
-  // set color theme (and listen for color scheme changes from browser)
-  setTheme();
-  window
-    .matchMedia("(prefers-color-scheme: dark)")
-    .addEventListener("change", setTheme);
-
-  // Initialize server address
-  let serverAddress = "";
-  if (process.env.NODE_ENV === "development") {
-    serverAddress = localStorage.getItem("mass_debug_address") || "";
-    if (!serverAddress) {
-      serverAddress =
-        prompt(
-          "Enter location of the Music Assistant server",
-          window.location.origin.replace("3000", "8095"),
-        ) || "";
-      localStorage.setItem("mass_debug_address", serverAddress);
+    if (credentials.token && credentials.user) {
+      // Already authenticated with token (auto-login flow)
+      authManager.setToken(credentials.token);
+      authManager.setCurrentUser(credentials.user);
+    } else if (credentials.username && credentials.password) {
+      // Login with credentials
+      const result = await api.loginWithCredentials(
+        credentials.username,
+        credentials.password,
+        getDeviceName(),
+      );
+      authManager.setToken(result.token);
+      user = result.user;
+      if (user) {
+        authManager.setCurrentUser(user);
+      }
+    } else {
+      throw new Error("Invalid authentication credentials");
     }
-  } else {
-    const loc = window.location;
-    serverAddress = loc.origin + loc.pathname;
-  }
 
+    if (user) {
+      store.currentUser = user;
+    }
+
+    // Mark as authenticated
+    isAuthenticated.value = true;
+    store.isAuthenticated = true;
+
+    // Update remote connection manager
+    remoteConnectionManager.setAuthenticated(
+      api.serverInfo.value?.server_id || undefined,
+    );
+
+    // Continue with normal app initialization
+    await initializeApp();
+  } catch (error) {
+    console.error("[App] Authentication failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Handle local connection from login screen
+ * Just establishes the WebSocket connection - authentication handled by handleRemoteAuthenticated
+ */
+const handleLocalConnect = async (serverAddress: string) => {
   // Set base URL for auth manager
   const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
 
-  // Check if we're returning from login (or setup) with a code in the URL query parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const codeParam = urlParams.get("code");
-  const onboardParam = urlParams.get("onboard");
-  let tokenFromLogin = false;
+  // Pass the HTTP base URL to api.initialize - it will build the WebSocket URL
+  await api.initialize(serverAddress);
+  isConnected.value = true;
+};
 
-  // Check if this is from initial setup (onboarding)
-  if (onboardParam === "true") {
-    store.isOnboarding = true;
-  }
+/**
+ * Initialize the app after connection is established
+ */
+const initializeApp = async () => {
+  const allowBuiltinPlayer =
+    localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
 
-  if (codeParam) {
-    console.debug("Code received from login, storing and cleaning URL");
-    // Store the code as token - validation will happen via WebSocket auth command
-    authManager.setToken(codeParam);
-    tokenFromLogin = true;
-
-    // Clean up the URL by removing only the code parameter
-    // Keep onboard parameter so it persists through navigation
-    urlParams.delete("code");
-    const cleanUrl =
-      window.location.pathname +
-      (urlParams.toString() ? "?" + urlParams.toString() : "") +
-      window.location.hash;
-    window.history.replaceState({}, "", cleanUrl);
-  }
-
-  // Get auth token to pass to WebSocket (if available)
-  const authToken = authManager.getToken();
-
-  store.connected = false;
-
-  // Subscribe to CONNECTED event to handle server info and auth requirements
-  api.subscribe(EventType.CONNECTED, async () => {
-    // Server info is now available from WebSocket
+  // Helper function to complete initialization
+  const completeInitialization = async () => {
     const serverInfo = api.serverInfo.value;
     if (!serverInfo) {
-      console.error("No server info received from WebSocket");
+      console.error("No server info received");
       return;
     }
 
     store.serverInfo = serverInfo;
 
-    // Check if onboarding is needed
-    if (!serverInfo.onboard_done) {
-      console.info("Onboarding not done, redirecting to server setup");
-      // Redirect to server's setup page with return URL and device name
-      const returnUrl = encodeURIComponent(window.location.href);
-      const deviceName = encodeURIComponent(getDeviceName());
-      const baseUrl = serverAddress.endsWith("/")
-        ? serverAddress.slice(0, -1)
-        : serverAddress;
-      window.location.href = `${baseUrl}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
-      return;
-    }
+    // For remote connections, onboarding is not applicable
+    // (server should already be set up)
 
-    // User was authenticated via WebSocket auth command
     store.isAuthenticated = true;
-    // Store current user from authManager (or localStorage if authManager hasn't updated yet)
-    let currentUser = authManager.getCurrentUser();
-    if (!currentUser) {
-      // Race condition: authManager might not be updated yet, check localStorage
-      const storedUser = localStorage.getItem("ma_current_user");
-      if (storedUser) {
-        try {
-          currentUser = JSON.parse(storedUser);
-          // Also update authManager to keep it in sync
-          if (currentUser) {
-            authManager.setCurrentUser(currentUser);
-          }
-        } catch (e) {
-          console.error("Failed to parse stored user", e);
-        }
-      }
-    }
-    if (currentUser) {
-      store.currentUser = currentUser;
-    }
 
     // Fetch library counts
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
@@ -223,37 +226,52 @@ onMounted(async () => {
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.connected = true;
 
-    // Redirect to providers settings if onboarding (after setting connected)
-    console.debug(
-      "Checking onboarding redirect, store.isOnboarding:",
-      store.isOnboarding,
-    );
-    if (store.isOnboarding) {
-      console.debug("Redirecting to providers page for onboarding");
-      await nextTick();
-      router.replace("/settings/providers");
-    }
-
-    // enable the builtin player by default if the builtin player provider is available
+    // Enable builtin player if available
     if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
       webPlayer.setMode(WebPlayerMode.BUILTIN);
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
     }
-  });
+  };
+
+  // Subscribe to CONNECTED event for future reconnections
+  api.subscribe(EventType.CONNECTED, completeInitialization);
 
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
   });
 
-  // Check if we have token when auth might be required
-  // We don't know yet if auth is required until we connect, but if we have no token
-  // and this is the first load (no token param), we should redirect to login
-  // However, we'll let the WebSocket try first - it will fail and redirect if needed
-  api.initialize(serverAddress, authToken, tokenFromLogin);
-  webPlayer.setBaseUrl(serverAddress);
+  // For remote connections, server info is already available (CONNECTED already fired)
+  // So we need to run initialization immediately
+  if (api.serverInfo.value) {
+    await completeInitialization();
+  }
+};
 
-  //There is a safety rule in which you need to interact with the page for the audio to play
+onMounted(async () => {
+  // @ts-ignore
+  store.isInStandaloneMode = window.navigator.standalone || false;
+
+  // Cache language settings
+  const langPref = localStorage.getItem("frontend.settings.language") || "auto";
+  if (langPref !== "auto") {
+    i18n.global.locale.value = langPref;
+  }
+
+  const forceMobileLayout =
+    localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
+  store.forceMobileLayout = forceMobileLayout;
+
+  // Set color theme
+  setTheme();
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", setTheme);
+
+  // Login screen shows by default (isAuthenticated = false)
+  // Login.vue has smart auto-connect that handles local and remote connections
+
+  // Handle audio interaction requirement
   window.addEventListener("click", interactedHandler);
 });
 </script>
