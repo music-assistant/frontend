@@ -24,15 +24,16 @@ export interface WebRTCTransportOptions {
 }
 
 // Default ICE servers (public STUN servers)
+// Note: Fewer servers = faster gathering. Using only the most reliable ones.
 const DEFAULT_ICE_SERVERS: IceServerConfig[] = [
-  // Google's public STUN servers
+  // Google's public STUN server (most reliable)
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  // Cloudflare's public STUN server
+  // Cloudflare's public STUN server (good fallback)
   { urls: 'stun:stun.cloudflare.com:3478' },
-  // Home Assistant's STUN server (if available)
-  { urls: 'stun:stun.home-assistant.io:3478' },
 ];
+
+// ICE gathering timeout in ms - don't wait forever for all candidates
+const ICE_GATHERING_TIMEOUT = 3000;
 
 export class WebRTCTransport extends BaseTransport {
   private options: Required<WebRTCTransportOptions>;
@@ -41,6 +42,7 @@ export class WebRTCTransport extends BaseTransport {
   private dataChannel: RTCDataChannel | null = null;
   private iceCandidateBuffer: RTCIceCandidateInit[] = [];
   private remoteDescriptionSet = false;
+  private iceGatheringComplete = false;
 
   constructor(options: WebRTCTransportOptions) {
     super();
@@ -138,8 +140,20 @@ export class WebRTCTransport extends BaseTransport {
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('[WebRTCTransport] Sending ICE candidate');
+        console.log('[WebRTCTransport] Sending ICE candidate:', event.candidate.type || 'unknown');
         this.signaling.sendIceCandidate(event.candidate.toJSON());
+      } else {
+        // null candidate means gathering is complete
+        console.log('[WebRTCTransport] ICE gathering complete (null candidate)');
+        this.iceGatheringComplete = true;
+      }
+    };
+
+    this.peerConnection.onicegatheringstatechange = () => {
+      const state = this.peerConnection?.iceGatheringState;
+      console.log('[WebRTCTransport] ICE gathering state:', state);
+      if (state === 'complete') {
+        this.iceGatheringComplete = true;
       }
     };
 
@@ -287,5 +301,6 @@ export class WebRTCTransport extends BaseTransport {
     this.signaling.disconnect();
     this.remoteDescriptionSet = false;
     this.iceCandidateBuffer = [];
+    this.iceGatheringComplete = false;
   }
 }
