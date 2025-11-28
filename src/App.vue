@@ -4,6 +4,7 @@
   <!-- Login screen (when not authenticated) -->
   <Login
     v-if="showLogin"
+    ref="loginComponent"
     @connected="handleRemoteConnected"
     @authenticated="handleRemoteAuthenticated"
     @local-connect="handleLocalConnect"
@@ -48,6 +49,7 @@ const theme = useTheme();
 // Connection state
 const isConnected = ref(false);
 const isAuthenticated = ref(false);
+const loginComponent = ref<InstanceType<typeof Login> | null>(null);
 
 // Show login screen when not authenticated
 const showLogin = computed(() => !isAuthenticated.value);
@@ -165,10 +167,6 @@ const handleRemoteAuthenticated = async (credentials: {
       store.currentUser = user;
     }
 
-    // Mark as authenticated
-    isAuthenticated.value = true;
-    store.isAuthenticated = true;
-
     // Update remote connection manager
     remoteConnectionManager.setAuthenticated(
       api.serverInfo.value?.server_id || undefined,
@@ -176,9 +174,21 @@ const handleRemoteAuthenticated = async (credentials: {
 
     // Continue with normal app initialization
     await initializeApp();
+
+    // Mark as authenticated only after successful initialization
+    isAuthenticated.value = true;
+    store.isAuthenticated = true;
   } catch (error) {
     console.error("[App] Authentication failed:", error);
-    throw error;
+
+    // Make sure we're not marked as authenticated
+    isAuthenticated.value = false;
+    store.isAuthenticated = false;
+
+    // Notify Login component about the authentication failure
+    if (loginComponent.value) {
+      (loginComponent.value as any).handleAuthenticationError(error);
+    }
   }
 };
 
@@ -217,6 +227,11 @@ const initializeApp = async () => {
     // (server should already be set up)
 
     store.isAuthenticated = true;
+
+    // Set webPlayer baseUrl from api.baseUrl (needed for both local and remote connections)
+    if (api.baseUrl) {
+      webPlayer.setBaseUrl(api.baseUrl);
+    }
 
     // Fetch library counts
     store.libraryArtistsCount = await api.getLibraryArtistsCount();

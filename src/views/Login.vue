@@ -313,6 +313,25 @@
                 </v-btn>
               </template>
             </v-card>
+
+            <!-- Footer -->
+            <div class="text-center mt-6">
+              <a
+                href="https://www.openhomefoundation.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ohf-footer-link"
+              >
+                <p class="text-caption text-medium-emphasis d-flex align-center justify-center">
+                  <img
+                    src="@/assets/open-home-foundation-icon.svg"
+                    alt="Open Home Foundation"
+                    class="ohf-icon"
+                  />
+                  <span class="ml-1">Music Assistant is a product from the Open Home Foundation</span>
+                </p>
+              </a>
+            </div>
           </v-col>
         </v-row>
       </v-container>
@@ -985,23 +1004,64 @@ const login = async () => {
   isAuthenticating.value = true;
   loginError.value = null;
 
-  try {
-    emit("authenticated", {
-      username: username.value.trim(),
-      password: password.value,
-    });
-  } catch (error) {
-    console.error("[Login] Login failed:", error);
-    loginError.value =
-      error instanceof Error
-        ? error.message
-        : t(
-            "login.error_login_failed",
-            "Login failed. Please check your credentials.",
-          );
-    isAuthenticating.value = false;
-  }
+  emit("authenticated", {
+    username: username.value.trim(),
+    password: password.value,
+  });
 };
+
+/**
+ * Handle authentication error from App.vue
+ * This is called when the actual authentication fails in App.vue
+ */
+const handleAuthenticationError = (error: any) => {
+  console.error("[Login] Authentication failed:", error);
+
+  // Extract error message from different error types
+  let errorMessage: string;
+  if (error instanceof Error) {
+    errorMessage = error.message;
+  } else if (typeof error === "string") {
+    errorMessage = error;
+  } else if (error && typeof error.message === "string") {
+    errorMessage = error.message;
+  } else if (error && typeof error.details === "string") {
+    errorMessage = error.details;
+  } else {
+    errorMessage = t(
+      "login.error_login_failed",
+      "Login failed. Please check your credentials.",
+    );
+  }
+
+  // Transform technical error messages into user-friendly ones
+  if (
+    errorMessage.includes("Invalid credentials") ||
+    errorMessage.includes("Invalid username") ||
+    errorMessage.includes("Invalid password") ||
+    errorMessage.includes("Authentication failed") ||
+    errorMessage.toLowerCase().includes("unauthorized")
+  ) {
+    errorMessage = t(
+      "login.error_invalid_credentials",
+      "Invalid username or password. Please try again.",
+    );
+  } else if (errorMessage.includes("Authentication required")) {
+    // This happens when subsequent API calls fail due to auth issues
+    errorMessage = t(
+      "login.error_invalid_credentials",
+      "Invalid username or password. Please try again.",
+    );
+  }
+
+  loginError.value = errorMessage;
+  isAuthenticating.value = false;
+};
+
+// Expose the method so App.vue can call it
+defineExpose({
+  handleAuthenticationError,
+});
 
 const loginWithHomeAssistant = async () => {
   isAuthenticating.value = true;
@@ -1223,5 +1283,21 @@ onUnmounted(() => {
 
 :deep(.v-label) {
   color: var(--text-secondary) !important;
+}
+
+.ohf-footer-link {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+
+.ohf-footer-link:hover {
+  opacity: 0.7;
+}
+
+.ohf-icon {
+  height: 16px;
+  width: auto;
+  flex-shrink: 0;
 }
 </style>

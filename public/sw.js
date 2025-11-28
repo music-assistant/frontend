@@ -81,26 +81,13 @@ async function handleHttpProxyRequest(request) {
   const cacheKey = request.url;
 
   // Try to get from cache first
-  const cache = await caches.open("ma-imageproxy-v1");
+  const cache = await caches.open("ma-http-proxy-v1");
   const cachedResponse = await cache.match(cacheKey);
 
   if (cachedResponse) {
-    // Check if we should revalidate
-    const cacheControl = cachedResponse.headers.get("cache-control");
-    const maxAge = cacheControl?.match(/max-age=(\d+)/)?.[1];
-
-    if (maxAge) {
-      const dateHeader = cachedResponse.headers.get("date");
-      if (dateHeader) {
-        const cacheDate = new Date(dateHeader);
-        const age = (Date.now() - cacheDate.getTime()) / 1000;
-
-        if (age < parseInt(maxAge)) {
-          // Cache is still fresh, return it
-          return cachedResponse;
-        }
-      }
-    }
+    // Return cached response immediately (cache-first strategy)
+    // We'll still revalidate in the background for next time
+    return cachedResponse;
   }
 
   // Generate unique request ID
@@ -120,31 +107,16 @@ async function handleHttpProxyRequest(request) {
     }, 30000);
   });
 
-  // Extract headers (including cache validation headers)
+  // Extract headers
   const headers = {};
   const essentialHeaders = [
     "accept",
     "accept-encoding",
-    "cache-control",
-    "if-none-match",
-    "if-modified-since",
   ];
-
-  // Add ETag from cached response for revalidation
-  if (cachedResponse) {
-    const etag = cachedResponse.headers.get("etag");
-    if (etag) {
-      headers["if-none-match"] = etag;
-    }
-    const lastModified = cachedResponse.headers.get("last-modified");
-    if (lastModified) {
-      headers["if-modified-since"] = lastModified;
-    }
-  }
 
   for (const header of essentialHeaders) {
     const value = request.headers.get(header);
-    if (value && !headers[header]) {
+    if (value) {
       headers[header] = value;
     }
   }

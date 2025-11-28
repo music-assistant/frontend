@@ -243,12 +243,19 @@ export class MusicAssistantApi {
     const result = await this.sendCommand<{
       access_token?: string;
       token?: string;
-      user: User;
+      user?: User;
+      success?: boolean;
+      error?: string;
     }>("auth/login", {
       username,
       password,
       device_name: deviceName || getDeviceName(),
     });
+
+    // Check if login failed
+    if (result.success === false || result.error) {
+      throw new Error(result.error || "Invalid credentials");
+    }
 
     // Server may return 'access_token' or 'token'
     const token = result.access_token || result.token;
@@ -267,7 +274,7 @@ export class MusicAssistantApi {
       this._fetchState();
     }
 
-    return { token: token || "", user: result.user };
+    return { token: token || "", user: result.user! };
   }
 
   /**
@@ -1630,7 +1637,20 @@ export class MusicAssistantApi {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
       console.error("[resultMessage]", msg);
-      toast.error(msg.details || msg.error_code);
+
+      // Don't show toast for authentication errors - they're handled by the login UI
+      const errorMsg = msg.details || msg.error_code || "";
+      const isAuthError =
+        errorMsg.includes("Invalid credentials") ||
+        errorMsg.includes("Invalid username") ||
+        errorMsg.includes("Invalid password") ||
+        errorMsg.includes("Authentication failed") ||
+        errorMsg.includes("Authentication required") ||
+        errorMsg.toLowerCase().includes("unauthorized");
+
+      if (!isAuthError) {
+        toast.error(msg.details || msg.error_code);
+      }
     } else if (DEBUG) {
       console.log("[resultMessage]", msg);
     }
