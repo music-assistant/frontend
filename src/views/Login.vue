@@ -262,6 +262,7 @@ const { t } = useI18n();
 // Storage keys
 const STORAGE_KEY_SERVER_ADDRESS = 'mass_server_address';
 const STORAGE_KEY_REMOTE_ID = 'mass_remote_id';
+const STORAGE_KEY_TOKEN = 'ma_access_token';
 
 // Props and emits
 const emit = defineEmits<{
@@ -381,29 +382,97 @@ const tryConnect = async (wsUrl: string, timeoutMs: number = 5000): Promise<bool
 };
 
 /**
+ * Try to authenticate with stored token after connection
+ */
+const tryStoredTokenAuth = async (): Promise<boolean> => {
+  const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+  if (!storedToken) {
+    console.log('[Login] No stored token found');
+    return false;
+  }
+
+  try {
+    console.log('[Login] Trying to authenticate with stored token');
+    connectionStatusMessage.value = t('login.authenticating', 'Authenticating...');
+
+    // Authenticate the WebSocket session with the token
+    const result = await api.authenticateWithToken(storedToken);
+    console.log('[Login] Token authentication successful');
+
+    // Emit authenticated event - App.vue will handle the rest
+    emit('authenticated', { token: storedToken, user: result.user });
+    return true;
+  } catch (error) {
+    console.log('[Login] Stored token authentication failed:', error);
+    // Clear invalid token
+    localStorage.removeItem(STORAGE_KEY_TOKEN);
+    return false;
+  }
+};
+
+/**
  * Smart auto-connect logic
  */
 const autoConnect = async () => {
   step.value = 'auto-connect';
   connectionStatusMessage.value = t('login.checking_stored', 'Checking for saved connection...');
 
-  // 1. Try stored server address first
+  // 1. Try stored server address + token first
   const storedAddress = localStorage.getItem(STORAGE_KEY_SERVER_ADDRESS);
-  if (storedAddress) {
-    console.log('[Login] Found stored server address:', storedAddress);
+  const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+
+  if (storedAddress && storedToken) {
+    console.log('[Login] Found stored server address and token');
     connectionStatusMessage.value = t('login.connecting_to_saved', 'Connecting to saved server...');
 
     const wsUrl = buildWebSocketUrl(storedAddress);
     if (await tryConnect(wsUrl)) {
-      console.log('[Login] Stored server connection successful');
+      console.log('[Login] Stored server reachable, establishing connection');
       serverAddress.value = storedAddress;
-      await performLocalConnect(storedAddress);
+
+      // Establish connection
+      emit('local-connect', storedAddress);
+      localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, storedAddress);
+
+      // Wait for WebSocket connection
+      if (await waitForApiConnection()) {
+        // Try to authenticate with stored token
+        if (await tryStoredTokenAuth()) {
+          console.log('[Login] Auto-login successful!');
+          return; // Success - App.vue will take over
+        }
+      }
+
+      // Token auth failed, show login form for this server
+      console.log('[Login] Token auth failed, showing login form');
+      try {
+        const url = new URL(storedAddress);
+        connectedServerName.value = url.hostname;
+      } catch {
+        connectedServerName.value = storedAddress;
+      }
+      await fetchAuthProviders();
+      step.value = 'login';
       return;
     }
     console.log('[Login] Stored server connection failed');
   }
 
-  // 2. Try stored remote ID
+  // 2. Try stored server address without token (show login form)
+  if (storedAddress) {
+    console.log('[Login] Found stored server address (no token)');
+    connectionStatusMessage.value = t('login.connecting_to_saved', 'Connecting to saved server...');
+
+    const wsUrl = buildWebSocketUrl(storedAddress);
+    if (await tryConnect(wsUrl)) {
+      console.log('[Login] Stored server reachable');
+      serverAddress.value = storedAddress;
+      await performLocalConnect(storedAddress);
+      return;
+    }
+  }
+
+  // 3. Try stored remote ID
   const storedRemoteId = localStorage.getItem(STORAGE_KEY_REMOTE_ID) || remoteConnectionManager.getStoredRemoteId();
   if (storedRemoteId) {
     console.log('[Login] Found stored remote ID:', storedRemoteId);
@@ -412,7 +481,7 @@ const autoConnect = async () => {
     // Don't auto-connect remote, just pre-fill the field
   }
 
-  // 3. Try connecting to current host (for when frontend is hosted on MA server)
+  // 4. Try connecting to current host (for when frontend is hosted on MA server)
   connectionStatusMessage.value = t('login.checking_local', 'Checking local server...');
   const localWsUrl = getWebSocketUrlFromLocation();
   console.log('[Login] Trying local WebSocket:', localWsUrl);
@@ -425,7 +494,7 @@ const autoConnect = async () => {
     return;
   }
 
-  // 4. No auto-connect possible, show selection screen
+  // 5. No auto-connect possible, show selection screen
   console.log('[Login] Auto-connect failed, showing selection screen');
   step.value = 'select-mode';
 };

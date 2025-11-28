@@ -177,30 +177,45 @@ const handleRemoteConnected = async (transport: ITransport) => {
 };
 
 /**
- * Handle remote authentication (username/password)
+ * Handle authentication (username/password or token)
  */
 const handleRemoteAuthenticated = async (credentials: {
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
+  token?: string;
+  user?: any;
 }) => {
-  console.log("[App] Authenticating with credentials");
+  console.log("[App] Handling authentication");
 
   try {
-    // Login with credentials
-    const result = await api.loginWithCredentials(
-      credentials.username,
-      credentials.password,
-      getDeviceName()
-    );
-
-    console.log("[App] Login successful:", result);
-
-    // Update auth manager
     const { authManager } = await import("@/plugins/auth");
-    authManager.setToken(result.token);
-    if (result.user) {
-      authManager.setCurrentUser(result.user);
-      store.currentUser = result.user;
+    let user = credentials.user;
+
+    if (credentials.token && credentials.user) {
+      // Already authenticated with token (auto-login flow)
+      console.log("[App] Using pre-authenticated token");
+      authManager.setToken(credentials.token);
+      authManager.setCurrentUser(credentials.user);
+    } else if (credentials.username && credentials.password) {
+      // Login with credentials
+      console.log("[App] Logging in with credentials");
+      const result = await api.loginWithCredentials(
+        credentials.username,
+        credentials.password,
+        getDeviceName()
+      );
+      console.log("[App] Login successful:", result);
+      authManager.setToken(result.token);
+      user = result.user;
+      if (user) {
+        authManager.setCurrentUser(user);
+      }
+    } else {
+      throw new Error("Invalid authentication credentials");
+    }
+
+    if (user) {
+      store.currentUser = user;
     }
 
     // Mark as authenticated

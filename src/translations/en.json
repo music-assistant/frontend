@@ -896,6 +896,7 @@
         "connecting_to_signaling": "Connecting to signaling server...",
         "checking_stored": "Checking for saved connection...",
         "connecting_to_saved": "Connecting to saved server...",
+        "authenticating": "Authenticating...",
         "checking_local": "Checking local server...",
         "finding_server": "Finding your server...",
         "establishing_secure": "Establishing secure connection...",
