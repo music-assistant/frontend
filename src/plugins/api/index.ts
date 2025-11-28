@@ -1,13 +1,9 @@
 import { AlertType, store } from "../store";
-/* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { computed, reactive, ref } from "vue";
-import { LinearBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
 import { getDeviceName } from "./helpers";
 import type { ITransport } from "../remote/transport";
-import { TransportState } from "../remote/transport";
+import { WebSocketTransport } from "../remote/websocket-transport";
 import {
   type Album,
   type Artist,
@@ -64,11 +60,9 @@ export enum ConnectionState {
 }
 
 export class MusicAssistantApi {
-  private ws?: Websocket;
   private transport?: ITransport;
   private _throttleId?: any;
   public baseUrl?: string;  // HTTP base URL for image proxy etc.
-  public wsUrl?: string;    // WebSocket URL
   public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
   public serverInfo = ref<ServerInfoMessage>();
@@ -99,139 +93,63 @@ export class MusicAssistantApi {
     this.partialResult = {};
   }
 
-  public async initialize(serverAddress: string) {
-    if (this.ws) throw new Error("already initialized");
+  /**
+   * Initialize with a server address (creates WebSocketTransport internally)
+   * This is the simple method for local connections
+   */
+  public async initialize(serverAddress: string): Promise<void> {
     if (serverAddress.endsWith("/")) serverAddress = serverAddress.slice(0, -1);
 
-    // Normalize the server address - ensure we have HTTP base URL
+    // Normalize the server address
     let httpBaseUrl: string;
     let wsUrl: string;
 
     if (serverAddress.startsWith("ws://") || serverAddress.startsWith("wss://")) {
-      // If given a WebSocket URL, derive the HTTP URL from it
       wsUrl = serverAddress;
       httpBaseUrl = serverAddress.replace("wss://", "https://").replace("ws://", "http://");
-      // Remove /ws suffix from HTTP URL
       if (httpBaseUrl.endsWith("/ws")) {
         httpBaseUrl = httpBaseUrl.slice(0, -3);
       }
     } else {
-      // Given HTTP URL, derive WebSocket URL
       httpBaseUrl = serverAddress;
       wsUrl = serverAddress.replace("https://", "wss://").replace("http://", "ws://");
     }
 
-    // Ensure WebSocket URL ends with /ws
     if (!wsUrl.endsWith("/ws")) {
       wsUrl += "/ws";
     }
 
-    this.baseUrl = httpBaseUrl;  // HTTP URL for image proxy etc.
-    this.wsUrl = wsUrl;
-
-    console.log(`Connecting to Music Assistant API ${wsUrl}`);
-    this.state.value = ConnectionState.CONNECTING;
-
-    // connect to the websocket api
-    this.ws = new WebsocketBuilder(wsUrl)
-      .onOpen((i, ev) => {
-        console.log("connection opened");
-        // Wait for ServerInfo message
-      })
-      .onClose((i, ev) => {
-        console.log("connection closed");
-        this.state.value = ConnectionState.DISCONNECTED;
-        this.signalEvent({
-          event: EventType.DISCONNECTED,
-          object_id: "",
-        });
-      })
-      .onError((i, ev) => {
-        console.log("error on connection");
-      })
-      .onMessage((i, ev) => {
-        // Message retrieved on the websocket
-        const msg = JSON.parse(ev.data);
-
-        // Handle ServerInfo message (always sent first by server)
-        if ("server_version" in msg && !this.serverInfo.value) {
-          const serverInfo = msg as ServerInfoMessage;
-          console.info("ServerInfo received", serverInfo);
-          this.serverInfo.value = serverInfo;
-          this.state.value = ConnectionState.CONNECTED;
-          this.signalEvent({
-            event: EventType.CONNECTED,
-            object_id: "",
-            data: serverInfo,
-          });
-          return;
-        }
-
-        // Handle all other messages
-        this._handleMessage(msg);
-      })
-      .build();
-
-    // Wait for initial ServerInfo message
-    await this.waitForServerInfo();
+    // Create WebSocket transport and initialize
+    const transport = new WebSocketTransport({ url: wsUrl });
+    await transport.connect();
+    await this.initializeWithTransport(transport, httpBaseUrl);
   }
 
   /**
-   * Wait for server info to be received
-   */
-  private async waitForServerInfo(timeoutMs: number = 10000): Promise<void> {
-    const startTime = Date.now();
-    while (Date.now() - startTime < timeoutMs) {
-      if (this.serverInfo.value) {
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    throw new Error("Timeout waiting for server info");
-  }
-
-  /**
-   * Handle incoming message (for both WebSocket and Transport)
-   */
-  private _handleMessage(msg: any) {
-    if ("event" in msg) {
-      this.handleEventMessage(msg as EventMessage);
-    } else if ("message_id" in msg) {
-      this.handleResultMessage(msg);
-    } else {
-      console.error("received unknown message", msg);
-    }
-  }
-
-  /**
-   * Initialize the API with a custom transport (for remote WebRTC connections)
-   * This method is used when connecting via WebRTC DataChannel
+   * Initialize the API with a transport (WebSocket or WebRTC)
+   * This is the universal method that works with any transport
    */
   public async initializeWithTransport(
     transport: ITransport,
     baseUrl?: string,
   ): Promise<void> {
-    if (this.ws || this.transport) throw new Error("already initialized");
+    if (this.transport) throw new Error("already initialized");
 
     this.transport = transport;
     this.baseUrl = baseUrl || "";
-    this.isRemoteConnection.value = true;
     this.state.value = ConnectionState.CONNECTING;
-
-    console.log("[API] Initializing with custom transport");
 
     // Set up transport message handler
     transport.on("message", (data: string) => {
       try {
         const msg = JSON.parse(data);
-        this.handleTransportMessage(msg);
+        this.handleMessage(msg);
       } catch (error) {
         console.error("[API] Failed to parse message:", error);
       }
     });
 
     transport.on("close", () => {
-      console.log("[API] Transport closed");
       this.state.value = ConnectionState.DISCONNECTED;
       this.signalEvent({
         event: EventType.DISCONNECTED,
@@ -248,7 +166,57 @@ export class MusicAssistantApi {
   }
 
   /**
-   * Authenticate with username and password (for remote connections)
+   * Handle incoming message from the transport
+   */
+  private handleMessage(msg: any): void {
+    // Handle ServerInfo message (always sent first by server)
+    if ("server_version" in msg && !this.serverInfo.value) {
+      this.handleServerInfoMessage(msg as ServerInfoMessage);
+      return;
+    }
+
+    // Handle event messages
+    if ("event" in msg) {
+      this.handleEventMessage(msg as EventMessage);
+      return;
+    }
+
+    // Handle result messages
+    if ("message_id" in msg) {
+      this.handleResultMessage(msg);
+      return;
+    }
+
+    console.error("[API] received unknown message", msg);
+  }
+
+  /**
+   * Wait for ServerInfo message with timeout
+   */
+  private waitForServerInfo(timeoutMs: number = 30000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Timeout waiting for ServerInfo"));
+      }, timeoutMs);
+
+      // Check if already have server info
+      if (this.serverInfo.value) {
+        clearTimeout(timeout);
+        resolve();
+        return;
+      }
+
+      // Listen for server info via event
+      const unsubscribe = this.subscribe(EventType.CONNECTED, () => {
+        clearTimeout(timeout);
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Authenticate with username and password
    * Returns the auth token on success
    */
   public async loginWithCredentials(
@@ -256,8 +224,6 @@ export class MusicAssistantApi {
     password: string,
     deviceName?: string,
   ): Promise<{ token: string; user: User }> {
-    console.log("[API] Logging in with credentials");
-
     const result = await this.sendCommand<{ access_token?: string; token?: string; user: User }>(
       "auth/login",
       {
@@ -278,7 +244,6 @@ export class MusicAssistantApi {
       }
 
       // Now authenticate the WebSocket session with the token
-      console.log("[API] Authenticating WebSocket session with token");
       await this.sendCommand("auth", { token });
 
       // Now that we're authenticated, fetch the full state
@@ -289,11 +254,9 @@ export class MusicAssistantApi {
   }
 
   /**
-   * Authenticate with an existing token (for remote connections)
+   * Authenticate with an existing token
    */
   public async authenticateWithToken(token: string): Promise<{ user: User }> {
-    console.log("[API] Authenticating with token");
-
     const result = await this.sendCommand<{ user: User }>("auth", {
       token,
     });
@@ -315,10 +278,6 @@ export class MusicAssistantApi {
    * Disconnect from the server
    */
   public disconnect(): void {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = undefined;
-    }
     if (this.transport) {
       this.transport.disconnect();
       this.transport = undefined;
@@ -335,55 +294,6 @@ export class MusicAssistantApi {
     );
     this.syncTasks.value = [];
     this.serverInfo.value = undefined;
-  }
-
-  /**
-   * Wait for ServerInfo message (used with transport-based connections)
-   */
-  private waitForServerInfo(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Timeout waiting for ServerInfo"));
-      }, 30000);
-
-      const checkServerInfo = () => {
-        if (this.serverInfo.value) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      };
-
-      // Check if already have server info
-      checkServerInfo();
-
-      // Listen for server info via event
-      const unsubscribe = this.subscribe(EventType.CONNECTED, () => {
-        clearTimeout(timeout);
-        unsubscribe();
-        resolve();
-      });
-    });
-  }
-
-  /**
-   * Handle messages from the transport (for remote connections)
-   */
-  private handleTransportMessage(msg: any): void {
-    // Handle ServerInfo message
-    if ("server_version" in msg && !this.serverInfo.value) {
-      console.info("[API] ServerInfo received via transport", msg);
-      this.handleServerInfoMessage(msg as ServerInfoMessage);
-      return;
-    }
-
-    // Handle regular messages
-    if ("event" in msg) {
-      this.handleEventMessage(msg as EventMessage);
-    } else if ("message_id" in msg) {
-      this.handleResultMessage(msg);
-    } else {
-      console.error("[API] received unknown message", msg);
-    }
   }
 
   public subscribe(
@@ -2177,14 +2087,11 @@ export class MusicAssistantApi {
 
     const msgStr = JSON.stringify(msg);
 
-    // Send via transport if available (remote connection), otherwise use WebSocket
-    if (this.transport) {
-      this.transport.send(msgStr);
-    } else if (this.ws) {
-      this.ws.send(msgStr);
-    } else {
+    if (!this.transport) {
       throw new Error("No connection available");
     }
+
+    this.transport.send(msgStr);
   }
 
   private async _fetchState() {
