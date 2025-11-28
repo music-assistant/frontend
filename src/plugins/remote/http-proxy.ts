@@ -62,19 +62,55 @@ class HttpProxyBridge {
       "controller:",
       !!navigator.serviceWorker?.controller,
     );
-    if (navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: "set-remote-mode",
-        data: { isRemote },
-      });
-      console.log(
-        "[HttpProxyBridge] Remote mode message sent to service worker",
-      );
-    } else {
-      console.warn(
-        "[HttpProxyBridge] No service worker controller available yet",
-      );
+
+    const sendMessage = () => {
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "set-remote-mode",
+          data: { isRemote },
+        });
+        console.log(
+          "[HttpProxyBridge] Remote mode message sent to service worker",
+        );
+        return true;
+      }
+      return false;
+    };
+
+    // Try to send immediately
+    if (sendMessage()) {
+      return;
     }
+
+    // If no controller yet, wait for controllerchange event
+    console.warn(
+      "[HttpProxyBridge] No service worker controller available yet, waiting...",
+    );
+
+    const onControllerChange = () => {
+      console.log("[HttpProxyBridge] Service worker controller changed");
+      if (sendMessage()) {
+        navigator.serviceWorker?.removeEventListener(
+          "controllerchange",
+          onControllerChange,
+        );
+      }
+    };
+
+    navigator.serviceWorker?.addEventListener(
+      "controllerchange",
+      onControllerChange,
+    );
+
+    // Also retry after a short delay in case controllerchange doesn't fire
+    setTimeout(() => {
+      if (!navigator.serviceWorker?.controller) {
+        console.warn(
+          "[HttpProxyBridge] Still no controller after 1s, retrying...",
+        );
+      }
+      sendMessage();
+    }, 1000);
   }
 
   /**

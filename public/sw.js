@@ -166,4 +166,10 @@ function generateRequestId() {
 // Initialize state
 self.isRemoteMode = false;
 
+// Claim clients immediately when service worker activates
+self.addEventListener("activate", (event) => {
+  console.log("[ServiceWorker] Activating and claiming clients");
+  event.waitUntil(self.clients.claim());
+});
+
 console.log("[ServiceWorker] Loaded");
