@@ -326,7 +326,11 @@ const getWebSocketUrlFromLocation = (): string => {
   const loc = window.location;
   const protocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
   // Remove any trailing slash and hash
-  const basePath = loc.pathname.replace(/\/$/, '').split('#')[0];
+  let basePath = loc.pathname.replace(/\/$/, '').split('#')[0];
+  // Don't add /ws if already present
+  if (basePath.endsWith('/ws')) {
+    return `${protocol}//${loc.host}${basePath}`;
+  }
   return `${protocol}//${loc.host}${basePath}/ws`;
 };
 
@@ -337,7 +341,11 @@ const buildWebSocketUrl = (address: string): string => {
   try {
     const url = new URL(address);
     const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    const basePath = url.pathname.replace(/\/$/, '');
+    let basePath = url.pathname.replace(/\/$/, '');
+    // Don't add /ws if already present
+    if (basePath.endsWith('/ws')) {
+      return `${protocol}//${url.host}${basePath}`;
+    }
     return `${protocol}//${url.host}${basePath}/ws`;
   } catch {
     // If it's not a valid URL, try to build one
@@ -347,6 +355,10 @@ const buildWebSocketUrl = (address: string): string => {
     }
     const protocol = cleanAddress.startsWith('https://') ? 'wss:' : 'ws:';
     const host = cleanAddress.replace(/^https?:\/\//, '');
+    // Check if host already has /ws
+    if (host.endsWith('/ws')) {
+      return `${protocol}//${host}`;
+    }
     return `${protocol}//${host}/ws`;
   }
 };

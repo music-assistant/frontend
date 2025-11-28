@@ -252,12 +252,18 @@ const handleLocalConnect = async (serverAddress: string) => {
     const url = new URL(serverAddress);
     const protocol = url.protocol === "https:" ? "wss:" : "ws:";
     const basePath = url.pathname.replace(/\/$/, "");
-    wsUrl = `${protocol}//${url.host}${basePath}/ws`;
+    // Don't add /ws if already present
+    wsUrl = basePath.endsWith("/ws")
+      ? `${protocol}//${url.host}${basePath}`
+      : `${protocol}//${url.host}${basePath}/ws`;
   } catch {
     const cleanAddress = serverAddress.replace(/\/$/, "");
     const protocol = cleanAddress.startsWith("https://") ? "wss:" : "ws:";
     const host = cleanAddress.replace(/^https?:\/\//, "");
-    wsUrl = `${protocol}//${host}/ws`;
+    // Don't add /ws if already present
+    wsUrl = host.endsWith("/ws")
+      ? `${protocol}//${host}`
+      : `${protocol}//${host}/ws`;
   }
 
   console.log("[App] Initializing WebSocket connection to:", wsUrl);
