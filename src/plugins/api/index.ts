@@ -62,7 +62,7 @@ export enum ConnectionState {
 export class MusicAssistantApi {
   private transport?: ITransport;
   private _throttleId?: any;
-  public baseUrl?: string;  // HTTP base URL for image proxy etc.
+  public baseUrl?: string; // HTTP base URL for image proxy etc.
   public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
   public serverInfo = ref<ServerInfoMessage>();
@@ -109,21 +109,29 @@ export class MusicAssistantApi {
     // If string, create WebSocketTransport
     if (typeof transportOrAddress === "string") {
       let serverAddress = transportOrAddress;
-      if (serverAddress.endsWith("/")) serverAddress = serverAddress.slice(0, -1);
+      if (serverAddress.endsWith("/"))
+        serverAddress = serverAddress.slice(0, -1);
 
       // Normalize the server address
       let httpBaseUrl: string;
       let wsUrl: string;
 
-      if (serverAddress.startsWith("ws://") || serverAddress.startsWith("wss://")) {
+      if (
+        serverAddress.startsWith("ws://") ||
+        serverAddress.startsWith("wss://")
+      ) {
         wsUrl = serverAddress;
-        httpBaseUrl = serverAddress.replace("wss://", "https://").replace("ws://", "http://");
+        httpBaseUrl = serverAddress
+          .replace("wss://", "https://")
+          .replace("ws://", "http://");
         if (httpBaseUrl.endsWith("/ws")) {
           httpBaseUrl = httpBaseUrl.slice(0, -3);
         }
       } else {
         httpBaseUrl = serverAddress;
-        wsUrl = serverAddress.replace("https://", "wss://").replace("http://", "ws://");
+        wsUrl = serverAddress
+          .replace("https://", "wss://")
+          .replace("http://", "ws://");
       }
 
       if (!wsUrl.endsWith("/ws")) {
@@ -226,14 +234,15 @@ export class MusicAssistantApi {
     password: string,
     deviceName?: string,
   ): Promise<{ token: string; user: User }> {
-    const result = await this.sendCommand<{ access_token?: string; token?: string; user: User }>(
-      "auth/login",
-      {
-        username,
-        password,
-        device_name: deviceName || getDeviceName(),
-      },
-    );
+    const result = await this.sendCommand<{
+      access_token?: string;
+      token?: string;
+      user: User;
+    }>("auth/login", {
+      username,
+      password,
+      device_name: deviceName || getDeviceName(),
+    });
 
     // Server may return 'access_token' or 'token'
     const token = result.access_token || result.token;

@@ -5,8 +5,8 @@
  * Used for remote connections to Music Assistant instances via NAT traversal.
  */
 
-import { BaseTransport, TransportState } from './transport';
-import { SignalingClient } from './signaling';
+import { BaseTransport, TransportState } from "./transport";
+import { SignalingClient } from "./signaling";
 
 // ICE server configuration
 // Using public STUN servers and optionally TURN servers
@@ -25,8 +25,8 @@ export interface WebRTCTransportOptions {
 
 // Default ICE servers (public STUN servers)
 const DEFAULT_ICE_SERVERS: IceServerConfig[] = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun.cloudflare.com:3478" },
 ];
 
 export class WebRTCTransport extends BaseTransport {
@@ -43,7 +43,7 @@ export class WebRTCTransport extends BaseTransport {
       signalingServerUrl: options.signalingServerUrl,
       remoteId: options.remoteId,
       iceServers: options.iceServers || DEFAULT_ICE_SERVERS,
-      dataChannelLabel: options.dataChannelLabel || 'ma-api',
+      dataChannelLabel: options.dataChannelLabel || "ma-api",
     };
 
     this.signaling = new SignalingClient({
@@ -77,7 +77,7 @@ export class WebRTCTransport extends BaseTransport {
       // Wait for connection to be established
       await this.waitForConnection();
     } catch (error) {
-      console.error('[WebRTCTransport] Connection failed:', error);
+      console.error("[WebRTCTransport] Connection failed:", error);
       this.setState(TransportState.FAILED);
       this.cleanup();
       throw error;
@@ -87,32 +87,32 @@ export class WebRTCTransport extends BaseTransport {
   disconnect(): void {
     this.cleanup();
     this.setState(TransportState.DISCONNECTED);
-    this.emit('close', 'Disconnected by user');
+    this.emit("close", "Disconnected by user");
   }
 
   send(data: string): void {
-    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
-      throw new Error('DataChannel is not open');
+    if (!this.dataChannel || this.dataChannel.readyState !== "open") {
+      throw new Error("DataChannel is not open");
     }
     this.dataChannel.send(data);
   }
 
   private setupSignalingHandlers(): void {
-    this.signaling.on('answer', (answer) => {
+    this.signaling.on("answer", (answer) => {
       this.handleAnswer(answer);
     });
 
-    this.signaling.on('ice-candidate', (candidate) => {
+    this.signaling.on("ice-candidate", (candidate) => {
       this.handleIceCandidate(candidate);
     });
 
-    this.signaling.on('peer-disconnected', () => {
+    this.signaling.on("peer-disconnected", () => {
       this.handlePeerDisconnected();
     });
 
-    this.signaling.on('error', (error) => {
-      console.error('[WebRTCTransport] Signaling error:', error);
-      this.emit('error', new Error(error));
+    this.signaling.on("error", (error) => {
+      console.error("[WebRTCTransport] Signaling error:", error);
+      this.emit("error", new Error(error));
     });
   }
 
@@ -130,23 +130,26 @@ export class WebRTCTransport extends BaseTransport {
 
     this.peerConnection.oniceconnectionstatechange = () => {
       const state = this.peerConnection?.iceConnectionState;
-      if (state === 'failed' || state === 'disconnected') {
+      if (state === "failed" || state === "disconnected") {
         this.handleConnectionFailure();
       }
     };
 
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
-      if (state === 'failed') {
+      if (state === "failed") {
         this.handleConnectionFailure();
       }
     };
   }
 
   private createDataChannel(): void {
-    this.dataChannel = this.peerConnection!.createDataChannel(this.options.dataChannelLabel, {
-      ordered: true,
-    });
+    this.dataChannel = this.peerConnection!.createDataChannel(
+      this.options.dataChannelLabel,
+      {
+        ordered: true,
+      },
+    );
 
     this.setupDataChannelHandlers();
   }
@@ -156,21 +159,21 @@ export class WebRTCTransport extends BaseTransport {
 
     this.dataChannel.onopen = () => {
       this.setState(TransportState.CONNECTED);
-      this.emit('open');
+      this.emit("open");
     };
 
     this.dataChannel.onclose = () => {
       this.setState(TransportState.DISCONNECTED);
-      this.emit('close', 'Data channel closed');
+      this.emit("close", "Data channel closed");
     };
 
     this.dataChannel.onerror = () => {
-      console.error('[WebRTCTransport] Data channel error');
-      this.emit('error', new Error('Data channel error'));
+      console.error("[WebRTCTransport] Data channel error");
+      this.emit("error", new Error("Data channel error"));
     };
 
     this.dataChannel.onmessage = (event) => {
-      this.emit('message', event.data);
+      this.emit("message", event.data);
     };
   }
 
@@ -178,27 +181,38 @@ export class WebRTCTransport extends BaseTransport {
     if (!this.peerConnection) return;
 
     try {
-      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+      await this.peerConnection.setRemoteDescription(
+        new RTCSessionDescription(answer),
+      );
       this.remoteDescriptionSet = true;
 
       // Process buffered ICE candidates
       for (const candidate of this.iceCandidateBuffer) {
-        await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        await this.peerConnection.addIceCandidate(
+          new RTCIceCandidate(candidate),
+        );
       }
       this.iceCandidateBuffer = [];
     } catch (error) {
-      console.error('[WebRTCTransport] Error setting remote description:', error);
+      console.error(
+        "[WebRTCTransport] Error setting remote description:",
+        error,
+      );
     }
   }
 
-  private async handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
+  private async handleIceCandidate(
+    candidate: RTCIceCandidateInit,
+  ): Promise<void> {
     if (!this.peerConnection) return;
 
     if (this.remoteDescriptionSet) {
       try {
-        await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        await this.peerConnection.addIceCandidate(
+          new RTCIceCandidate(candidate),
+        );
       } catch (error) {
-        console.error('[WebRTCTransport] Error adding ICE candidate:', error);
+        console.error("[WebRTCTransport] Error adding ICE candidate:", error);
       }
     } else {
       // Buffer the candidate until remote description is set
@@ -208,24 +222,24 @@ export class WebRTCTransport extends BaseTransport {
 
   private handlePeerDisconnected(): void {
     this.setState(TransportState.DISCONNECTED);
-    this.emit('close', 'Peer disconnected');
+    this.emit("close", "Peer disconnected");
     this.cleanup();
   }
 
   private handleConnectionFailure(): void {
     this.setState(TransportState.FAILED);
-    this.emit('error', new Error('WebRTC connection failed'));
+    this.emit("error", new Error("WebRTC connection failed"));
     this.cleanup();
   }
 
   private waitForConnection(): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Connection timeout'));
+        reject(new Error("Connection timeout"));
       }, 30000);
 
       const checkConnection = () => {
-        if (this.dataChannel?.readyState === 'open') {
+        if (this.dataChannel?.readyState === "open") {
           clearTimeout(timeout);
           resolve();
         }
@@ -235,12 +249,13 @@ export class WebRTCTransport extends BaseTransport {
       checkConnection();
 
       // Listen for open event
-      const originalOnOpen = this.dataChannel?.onopen;
-      if (this.dataChannel) {
-        this.dataChannel.onopen = (event) => {
+      const dataChannel = this.dataChannel;
+      if (dataChannel) {
+        const originalOnOpen = dataChannel.onopen;
+        dataChannel.onopen = (event) => {
           clearTimeout(timeout);
           if (originalOnOpen) {
-            originalOnOpen.call(this.dataChannel, event);
+            originalOnOpen.call(dataChannel, event);
           }
           resolve();
         };

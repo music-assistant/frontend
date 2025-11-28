@@ -6,11 +6,11 @@
  * port forwarding or VPN setup.
  */
 
-export * from './transport';
-export * from './websocket-transport';
-export * from './webrtc-transport';
-export * from './signaling';
-export * from './connection-manager';
+export * from "./transport";
+export * from "./websocket-transport";
+export * from "./webrtc-transport";
+export * from "./signaling";
+export * from "./connection-manager";
 
 // Re-export the singleton manager as default
-export { remoteConnectionManager as default } from './connection-manager';
+export { remoteConnectionManager as default } from "./connection-manager";

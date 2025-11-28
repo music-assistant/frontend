@@ -6,23 +6,23 @@
  * for the application to connect to remote instances.
  */
 
-import { ref, reactive } from 'vue';
-import { ITransport } from './transport';
-import { WebSocketTransport } from './websocket-transport';
-import { WebRTCTransport, IceServerConfig } from './webrtc-transport';
+import { ref, reactive } from "vue";
+import { ITransport } from "./transport";
+import { WebSocketTransport } from "./websocket-transport";
+import { WebRTCTransport, IceServerConfig } from "./webrtc-transport";
 
 export enum ConnectionMode {
-  LOCAL = 'local',
-  REMOTE = 'remote',
+  LOCAL = "local",
+  REMOTE = "remote",
 }
 
 export enum RemoteConnectionState {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  AUTHENTICATING = 'authenticating',
-  AUTHENTICATED = 'authenticated',
-  FAILED = 'failed',
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  AUTHENTICATING = "authenticating",
+  AUTHENTICATED = "authenticated",
+  FAILED = "failed",
 }
 
 export interface RemoteConnectionConfig {
@@ -38,26 +38,27 @@ export interface StoredRemoteConnection {
   lastConnected?: number;
 }
 
-const REMOTE_CONNECTIONS_STORAGE_KEY = 'ma_remote_connections';
-const REMOTE_MODE_STORAGE_KEY = 'ma_remote_mode';
-const CURRENT_REMOTE_ID_STORAGE_KEY = 'ma_current_remote_id';
+const REMOTE_CONNECTIONS_STORAGE_KEY = "ma_remote_connections";
+const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
+const CURRENT_REMOTE_ID_STORAGE_KEY = "ma_current_remote_id";
 
 // Detect if we're in development/local testing mode
-const isLocalDev = typeof window !== 'undefined' && (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1'
-);
+const isLocalDev =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
 
 // Default configuration - use local signaling server for testing
 const DEFAULT_CONFIG: RemoteConnectionConfig = {
   // Use local signaling server in dev, production URL otherwise
   signalingServerUrl: isLocalDev
-    ? 'ws://localhost:8787/ws'
-    : (import.meta.env.VITE_SIGNALING_URL || 'wss://ma-signaling-server.onrender.com/ws'),
+    ? "ws://localhost:8787/ws"
+    : import.meta.env.VITE_SIGNALING_URL ||
+      "wss://ma-signaling-server.onrender.com/ws",
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun.cloudflare.com:3478' },
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
   ],
 };
 
@@ -125,7 +126,7 @@ class RemoteConnectionManager {
     this.error.value = null;
 
     try {
-      const wsUrl = serverUrl.replace('http', 'ws') + '/ws';
+      const wsUrl = serverUrl.replace("http", "ws") + "/ws";
       this.transport = new WebSocketTransport({ url: wsUrl });
 
       this.setupTransportHandlers();
@@ -135,7 +136,8 @@ class RemoteConnectionManager {
       return this.transport;
     } catch (err) {
       this.state.value = RemoteConnectionState.FAILED;
-      this.error.value = err instanceof Error ? err.message : 'Connection failed';
+      this.error.value =
+        err instanceof Error ? err.message : "Connection failed";
       throw err;
     }
   }
@@ -170,7 +172,8 @@ class RemoteConnectionManager {
       return this.transport;
     } catch (err) {
       this.state.value = RemoteConnectionState.FAILED;
-      this.error.value = err instanceof Error ? err.message : 'Connection failed';
+      this.error.value =
+        err instanceof Error ? err.message : "Connection failed";
       localStorage.removeItem(CURRENT_REMOTE_ID_STORAGE_KEY);
       throw err;
     }
@@ -235,7 +238,9 @@ class RemoteConnectionManager {
    * Remove a stored connection
    */
   removeStoredConnection(remoteId: string): void {
-    const index = this.storedConnections.findIndex((c) => c.remoteId === remoteId);
+    const index = this.storedConnections.findIndex(
+      (c) => c.remoteId === remoteId,
+    );
     if (index !== -1) {
       this.storedConnections.splice(index, 1);
       this.saveStoredConnections();
@@ -245,17 +250,19 @@ class RemoteConnectionManager {
   private setupTransportHandlers(): void {
     if (!this.transport) return;
 
-    this.transport.on('close', () => {
+    this.transport.on("close", () => {
       this.state.value = RemoteConnectionState.DISCONNECTED;
     });
 
-    this.transport.on('error', (error) => {
+    this.transport.on("error", (error) => {
       this.error.value = error.message;
     });
   }
 
   private storeConnection(remoteId: string): void {
-    const existing = this.storedConnections.find((c) => c.remoteId === remoteId);
+    const existing = this.storedConnections.find(
+      (c) => c.remoteId === remoteId,
+    );
     if (existing) {
       existing.lastConnected = Date.now();
     } else {
@@ -269,9 +276,11 @@ class RemoteConnectionManager {
 
   private updateStoredConnection(
     remoteId: string,
-    updates: Partial<StoredRemoteConnection>
+    updates: Partial<StoredRemoteConnection>,
   ): void {
-    const connection = this.storedConnections.find((c) => c.remoteId === remoteId);
+    const connection = this.storedConnections.find(
+      (c) => c.remoteId === remoteId,
+    );
     if (connection) {
       Object.assign(connection, updates);
       this.saveStoredConnections();
@@ -283,7 +292,11 @@ class RemoteConnectionManager {
       const stored = localStorage.getItem(REMOTE_CONNECTIONS_STORAGE_KEY);
       if (stored) {
         const connections = JSON.parse(stored) as StoredRemoteConnection[];
-        this.storedConnections.splice(0, this.storedConnections.length, ...connections);
+        this.storedConnections.splice(
+          0,
+          this.storedConnections.length,
+          ...connections,
+        );
       }
     } catch {
       // Ignore parse errors
@@ -294,7 +307,7 @@ class RemoteConnectionManager {
     try {
       localStorage.setItem(
         REMOTE_CONNECTIONS_STORAGE_KEY,
-        JSON.stringify(this.storedConnections)
+        JSON.stringify(this.storedConnections),
       );
     } catch {
       // Ignore storage errors

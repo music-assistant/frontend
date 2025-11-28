@@ -6,14 +6,20 @@
  */
 
 export enum SignalingState {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  ERROR = 'error',
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  ERROR = "error",
 }
 
 export interface SignalingMessage {
-  type: 'offer' | 'answer' | 'ice-candidate' | 'error' | 'connected' | 'peer-disconnected';
+  type:
+    | "offer"
+    | "answer"
+    | "ice-candidate"
+    | "error"
+    | "connected"
+    | "peer-disconnected";
   remoteId?: string;
   sessionId?: string;
   data?: RTCSessionDescriptionInit | RTCIceCandidateInit;
@@ -29,9 +35,9 @@ export interface SignalingConfig {
 type SignalingEventHandler = {
   offer: (offer: RTCSessionDescriptionInit, sessionId: string) => void;
   answer: (answer: RTCSessionDescriptionInit) => void;
-  'ice-candidate': (candidate: RTCIceCandidateInit) => void;
+  "ice-candidate": (candidate: RTCIceCandidateInit) => void;
   connected: (remoteId: string) => void;
-  'peer-disconnected': () => void;
+  "peer-disconnected": () => void;
   error: (error: string) => void;
   stateChange: (state: SignalingState) => void;
 };
@@ -40,7 +46,11 @@ export class SignalingClient {
   private ws: WebSocket | null = null;
   private config: Required<SignalingConfig>;
   private _state: SignalingState = SignalingState.DISCONNECTED;
-  private eventHandlers: Map<keyof SignalingEventHandler, Set<Function>> = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private eventHandlers: Map<
+    keyof SignalingEventHandler,
+    Set<(...args: any[]) => void>
+  > = new Map();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalClose = false;
   private currentRemoteId: string | null = null;
@@ -92,7 +102,7 @@ export class SignalingClient {
 
         this.ws.onerror = () => {
           this.setState(SignalingState.ERROR);
-          reject(new Error('Signaling connection failed'));
+          reject(new Error("Signaling connection failed"));
         };
 
         this.ws.onmessage = (event) => {
@@ -100,7 +110,7 @@ export class SignalingClient {
             const message: SignalingMessage = JSON.parse(event.data);
             this.handleMessage(message);
           } catch (error) {
-            console.error('[Signaling] Failed to parse message:', error);
+            console.error("[Signaling] Failed to parse message:", error);
           }
         };
       } catch (error) {
@@ -138,28 +148,28 @@ export class SignalingClient {
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Connection request timeout'));
+        reject(new Error("Connection request timeout"));
       }, 30000);
 
       const handleConnected = (id: string) => {
         clearTimeout(timeout);
-        this.off('connected', handleConnected);
-        this.off('error', handleError);
+        this.off("connected", handleConnected);
+        this.off("error", handleError);
         resolve(id);
       };
 
       const handleError = (error: string) => {
         clearTimeout(timeout);
-        this.off('connected', handleConnected);
-        this.off('error', handleError);
+        this.off("connected", handleConnected);
+        this.off("error", handleError);
         reject(new Error(error));
       };
 
-      this.on('connected', handleConnected);
-      this.on('error', handleError);
+      this.on("connected", handleConnected);
+      this.on("error", handleError);
 
       this.send({
-        type: 'connect-request',
+        type: "connect-request",
         remoteId: remoteId,
       });
     });
@@ -170,7 +180,7 @@ export class SignalingClient {
    */
   sendOffer(offer: RTCSessionDescriptionInit): void {
     this.send({
-      type: 'offer',
+      type: "offer",
       remoteId: this.currentRemoteId,
       sessionId: this.currentSessionId,
       data: offer,
@@ -182,7 +192,7 @@ export class SignalingClient {
    */
   sendAnswer(answer: RTCSessionDescriptionInit): void {
     this.send({
-      type: 'answer',
+      type: "answer",
       remoteId: this.currentRemoteId,
       sessionId: this.currentSessionId,
       data: answer,
@@ -194,21 +204,27 @@ export class SignalingClient {
    */
   sendIceCandidate(candidate: RTCIceCandidateInit): void {
     this.send({
-      type: 'ice-candidate',
+      type: "ice-candidate",
       remoteId: this.currentRemoteId,
       sessionId: this.currentSessionId,
       data: candidate,
     });
   }
 
-  on<K extends keyof SignalingEventHandler>(event: K, handler: SignalingEventHandler[K]): void {
+  on<K extends keyof SignalingEventHandler>(
+    event: K,
+    handler: SignalingEventHandler[K],
+  ): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }
     this.eventHandlers.get(event)!.add(handler);
   }
 
-  off<K extends keyof SignalingEventHandler>(event: K, handler: SignalingEventHandler[K]): void {
+  off<K extends keyof SignalingEventHandler>(
+    event: K,
+    handler: SignalingEventHandler[K],
+  ): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
       handlers.delete(handler);
@@ -223,9 +239,12 @@ export class SignalingClient {
     if (handlers) {
       handlers.forEach((handler) => {
         try {
-          (handler as Function)(...args);
+          handler(...args);
         } catch (error) {
-          console.error(`[Signaling] Error in event handler for '${event}':`, error);
+          console.error(
+            `[Signaling] Error in event handler for '${event}':`,
+            error,
+          );
         }
       });
     }
@@ -233,29 +252,33 @@ export class SignalingClient {
 
   private handleMessage(message: SignalingMessage): void {
     switch (message.type) {
-      case 'connected':
+      case "connected":
         this.currentSessionId = message.sessionId || null;
-        this.emit('connected', message.remoteId || '');
+        this.emit("connected", message.remoteId || "");
         break;
 
-      case 'offer':
-        this.emit('offer', message.data as RTCSessionDescriptionInit, message.sessionId || '');
+      case "offer":
+        this.emit(
+          "offer",
+          message.data as RTCSessionDescriptionInit,
+          message.sessionId || "",
+        );
         break;
 
-      case 'answer':
-        this.emit('answer', message.data as RTCSessionDescriptionInit);
+      case "answer":
+        this.emit("answer", message.data as RTCSessionDescriptionInit);
         break;
 
-      case 'ice-candidate':
-        this.emit('ice-candidate', message.data as RTCIceCandidateInit);
+      case "ice-candidate":
+        this.emit("ice-candidate", message.data as RTCIceCandidateInit);
         break;
 
-      case 'peer-disconnected':
-        this.emit('peer-disconnected');
+      case "peer-disconnected":
+        this.emit("peer-disconnected");
         break;
 
-      case 'error':
-        this.emit('error', message.error || 'Unknown error');
+      case "error":
+        this.emit("error", message.error || "Unknown error");
         break;
     }
   }
@@ -264,14 +287,14 @@ export class SignalingClient {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {
-      console.error('[Signaling] Cannot send message - not connected');
+      console.error("[Signaling] Cannot send message - not connected");
     }
   }
 
   private setState(newState: SignalingState): void {
     if (this._state !== newState) {
       this._state = newState;
-      this.emit('stateChange', newState);
+      this.emit("stateChange", newState);
     }
   }
 
@@ -280,7 +303,7 @@ export class SignalingClient {
 
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch((error) => {
-        console.error('[Signaling] Reconnect failed:', error);
+        console.error("[Signaling] Reconnect failed:", error);
       });
     }, this.config.reconnectDelay);
   }

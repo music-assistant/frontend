@@ -5,7 +5,7 @@
  * Used for local connections to the Music Assistant server.
  */
 
-import { BaseTransport, TransportState } from './transport';
+import { BaseTransport, TransportState } from "./transport";
 
 export interface WebSocketTransportOptions {
   url: string;
@@ -50,13 +50,13 @@ export class WebSocketTransport extends BaseTransport {
         this.ws.onopen = () => {
           this.reconnectAttempts = 0;
           this.setState(TransportState.CONNECTED);
-          this.emit('open');
+          this.emit("open");
           resolve();
         };
 
         this.ws.onclose = (event) => {
           this.setState(TransportState.DISCONNECTED);
-          this.emit('close', event.reason);
+          this.emit("close", event.reason);
 
           if (!this.intentionalClose && this.options.reconnect) {
             this.scheduleReconnect();
@@ -64,8 +64,8 @@ export class WebSocketTransport extends BaseTransport {
         };
 
         this.ws.onerror = () => {
-          const error = new Error('WebSocket error');
-          this.emit('error', error);
+          const error = new Error("WebSocket error");
+          this.emit("error", error);
 
           // Only reject if we're still in connecting state
           if (this._state === TransportState.CONNECTING) {
@@ -75,7 +75,7 @@ export class WebSocketTransport extends BaseTransport {
         };
 
         this.ws.onmessage = (event) => {
-          this.emit('message', event.data);
+          this.emit("message", event.data);
         };
       } catch (error) {
         this.setState(TransportState.FAILED);
@@ -97,7 +97,7 @@ export class WebSocketTransport extends BaseTransport {
 
   send(data: string): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new Error('WebSocket is not connected');
+      throw new Error("WebSocket is not connected");
     }
     this.ws.send(data);
   }
@@ -112,8 +112,9 @@ export class WebSocketTransport extends BaseTransport {
     this.setState(TransportState.RECONNECTING);
 
     const delay = Math.min(
-      this.options.reconnectDelay * Math.pow(this.options.reconnectDelayGrowth, this.reconnectAttempts),
-      this.options.maxReconnectDelay
+      this.options.reconnectDelay *
+        Math.pow(this.options.reconnectDelayGrowth, this.reconnectAttempts),
+      this.options.maxReconnectDelay,
     );
 
     this.reconnectTimer = setTimeout(() => {

@@ -6,11 +6,11 @@
  */
 
 export enum TransportState {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  RECONNECTING = 'reconnecting',
-  FAILED = 'failed',
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  RECONNECTING = "reconnecting",
+  FAILED = "failed",
 }
 
 export interface TransportEventMap {
@@ -21,7 +21,8 @@ export interface TransportEventMap {
   stateChange: (state: TransportState) => void;
 }
 
-export type TransportEventHandler<K extends keyof TransportEventMap> = TransportEventMap[K];
+export type TransportEventHandler<K extends keyof TransportEventMap> =
+  TransportEventMap[K];
 
 /**
  * Abstract transport interface that both WebSocket and WebRTC transports implement
@@ -34,8 +35,14 @@ export interface ITransport {
   disconnect(): void;
   send(data: string): void;
 
-  on<K extends keyof TransportEventMap>(event: K, handler: TransportEventHandler<K>): void;
-  off<K extends keyof TransportEventMap>(event: K, handler: TransportEventHandler<K>): void;
+  on<K extends keyof TransportEventMap>(
+    event: K,
+    handler: TransportEventHandler<K>,
+  ): void;
+  off<K extends keyof TransportEventMap>(
+    event: K,
+    handler: TransportEventHandler<K>,
+  ): void;
 }
 
 /**
@@ -43,7 +50,11 @@ export interface ITransport {
  */
 export abstract class BaseTransport implements ITransport {
   protected _state: TransportState = TransportState.DISCONNECTED;
-  protected eventHandlers: Map<keyof TransportEventMap, Set<Function>> = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected eventHandlers: Map<
+    keyof TransportEventMap,
+    Set<(...args: any[]) => void>
+  > = new Map();
 
   get state(): TransportState {
     return this._state;
@@ -57,14 +68,20 @@ export abstract class BaseTransport implements ITransport {
   abstract disconnect(): void;
   abstract send(data: string): void;
 
-  on<K extends keyof TransportEventMap>(event: K, handler: TransportEventHandler<K>): void {
+  on<K extends keyof TransportEventMap>(
+    event: K,
+    handler: TransportEventHandler<K>,
+  ): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }
     this.eventHandlers.get(event)!.add(handler);
   }
 
-  off<K extends keyof TransportEventMap>(event: K, handler: TransportEventHandler<K>): void {
+  off<K extends keyof TransportEventMap>(
+    event: K,
+    handler: TransportEventHandler<K>,
+  ): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
       handlers.delete(handler);
@@ -79,9 +96,12 @@ export abstract class BaseTransport implements ITransport {
     if (handlers) {
       handlers.forEach((handler) => {
         try {
-          (handler as Function)(...args);
+          handler(...args);
         } catch (error) {
-          console.error(`Error in transport event handler for '${event}':`, error);
+          console.error(
+            `Error in transport event handler for '${event}':`,
+            error,
+          );
         }
       });
     }
@@ -90,7 +110,7 @@ export abstract class BaseTransport implements ITransport {
   protected setState(newState: TransportState): void {
     if (this._state !== newState) {
       this._state = newState;
-      this.emit('stateChange', newState);
+      this.emit("stateChange", newState);
     }
   }
 }

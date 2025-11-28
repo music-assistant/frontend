@@ -150,7 +150,7 @@ const handleRemoteAuthenticated = async (credentials: {
       const result = await api.loginWithCredentials(
         credentials.username,
         credentials.password,
-        getDeviceName()
+        getDeviceName(),
       );
       authManager.setToken(result.token);
       user = result.user;
@@ -171,7 +171,7 @@ const handleRemoteAuthenticated = async (credentials: {
 
     // Update remote connection manager
     remoteConnectionManager.setAuthenticated(
-      api.serverInfo.value?.server_id || undefined
+      api.serverInfo.value?.server_id || undefined,
     );
 
     // Continue with normal app initialization
