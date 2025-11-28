@@ -211,7 +211,8 @@ const handleLocalConnect = async (serverAddress: string) => {
  */
 const initializeApp = async () => {
   const allowBuiltinPlayer =
-    localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
+    localStorage.getItem("frontend.settings.enable_builtin_player") !=
+      "false" && !api.isRemoteConnection.value;
 
   // Helper function to complete initialization
   const completeInitialization = async () => {

@@ -51,8 +51,9 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Paths to proxy over WebRTC when in remote mode
-  const proxyPaths = ["/imageproxy", "/builtin_player/flow/"];
+  // Paths to proxy over WebRTC when in remote mode (e.g. imageproxy)
+  // this way we can still use browser caching for these resources
+  const proxyPaths = ["/imageproxy"];
 
   // Check if this request should be proxied
   const shouldProxy = proxyPaths.some((path) => url.pathname.startsWith(path));
