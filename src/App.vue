@@ -222,14 +222,32 @@ const handleRemoteAuthenticated = async (credentials: {
 
 /**
  * Handle local connection from login screen
+ * Just establishes the WebSocket connection - authentication handled by handleRemoteAuthenticated
  */
 const handleLocalConnect = async (serverAddress: string) => {
   console.log("[App] Connecting to local server:", serverAddress);
-  isRemoteMode.value = false;
-  remoteConnectionManager.setMode(ConnectionMode.LOCAL);
 
-  // Initialize local connection
-  await initializeLocalConnection(serverAddress);
+  // Set base URL for auth manager
+  const { authManager } = await import("@/plugins/auth");
+  authManager.setBaseUrl(serverAddress);
+
+  // Build WebSocket URL
+  let wsUrl: string;
+  try {
+    const url = new URL(serverAddress);
+    const protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    const basePath = url.pathname.replace(/\/$/, "");
+    wsUrl = `${protocol}//${url.host}${basePath}/ws`;
+  } catch {
+    const cleanAddress = serverAddress.replace(/\/$/, "");
+    const protocol = cleanAddress.startsWith("https://") ? "wss:" : "ws:";
+    const host = cleanAddress.replace(/^https?:\/\//, "");
+    wsUrl = `${protocol}//${host}/ws`;
+  }
+
+  console.log("[App] Initializing WebSocket connection to:", wsUrl);
+  await api.initialize(wsUrl);
+  console.log("[App] WebSocket connected, waiting for authentication");
 };
 
 /**

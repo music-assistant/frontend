@@ -431,6 +431,20 @@ const autoConnect = async () => {
 };
 
 /**
+ * Wait for API to be connected
+ */
+const waitForApiConnection = async (timeoutMs: number = 10000): Promise<boolean> => {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    if (api.serverInfo.value) {
+      return true;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  return false;
+};
+
+/**
  * Perform local connection
  */
 const performLocalConnect = async (address: string) => {
@@ -447,10 +461,13 @@ const performLocalConnect = async (address: string) => {
     // Store the server address for next time
     localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
 
-    // Wait a bit for the connection to establish
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for the WebSocket connection to establish
+    const connected = await waitForApiConnection();
+    if (!connected) {
+      throw new Error('Connection timeout - server not responding');
+    }
 
-    // Fetch auth providers
+    // Try to fetch auth providers (may fail if server requires auth first)
     await fetchAuthProviders();
 
     // Extract server name from address for display
@@ -521,11 +538,22 @@ const connectToRemote = async () => {
 
 const fetchAuthProviders = async () => {
   try {
+    // First, check if server info has auth provider hints
+    const serverInfo = api.serverInfo.value;
+    if (serverInfo && (serverInfo as any).auth_providers) {
+      authProviders.value = (serverInfo as any).auth_providers;
+      console.log('[Login] Auth providers from serverInfo:', authProviders.value);
+      return;
+    }
+
+    // Try to fetch auth providers (may require auth on some servers)
     const providers = await api.sendCommand<Array<{ id: string; name: string; type: string }>>('auth/providers');
     authProviders.value = providers || [];
     console.log('[Login] Auth providers:', authProviders.value);
   } catch (error) {
-    console.error('[Login] Failed to fetch auth providers:', error);
+    // Auth providers fetch failed - this is expected if server requires auth first
+    // Just show username/password form without OAuth options
+    console.log('[Login] Auth providers not available (may require auth first)');
     authProviders.value = [];
   }
 };
