@@ -53,7 +53,7 @@ const DEFAULT_CONFIG: RemoteConnectionConfig = {
   // Use local signaling server in dev, production URL otherwise
   signalingServerUrl: isLocalDev
     ? 'ws://localhost:8787/ws'
-    : (import.meta.env.VITE_SIGNALING_URL || 'wss://signaling.music-assistant.io/ws'),
+    : (import.meta.env.VITE_SIGNALING_URL || 'wss://ma-signaling-server.onrender.com/ws'),
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
