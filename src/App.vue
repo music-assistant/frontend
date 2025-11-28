@@ -31,7 +31,7 @@
 import { api } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { onMounted, nextTick, ref, computed } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useTheme } from "vuetify";
 import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
@@ -40,26 +40,17 @@ import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowse
 import Login from "./views/Login.vue";
 import { EventType } from "./plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
-import { useRouter } from "vue-router";
-import {
-  remoteConnectionManager,
-  ConnectionMode,
-  RemoteConnectionState,
-} from "./plugins/remote";
+import { remoteConnectionManager } from "./plugins/remote";
 import type { ITransport } from "./plugins/remote/transport";
 
 const theme = useTheme();
-const router = useRouter();
 
-// Remote connection state
-const isRemoteMode = ref(false);
-const remoteConnected = ref(false);
-const remoteAuthenticated = ref(false);
+// Connection state
+const isConnected = ref(false);
+const isAuthenticated = ref(false);
 
 // Show login screen when not authenticated
-const showLogin = computed(() => {
-  return isRemoteMode.value && !remoteAuthenticated.value;
-});
+const showLogin = computed(() => !isAuthenticated.value);
 
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
@@ -127,13 +118,11 @@ const getDeviceName = function (): string {
  * Handle WebRTC transport connected (but not yet authenticated)
  */
 const handleRemoteConnected = async (transport: ITransport) => {
-  console.log("[App] Remote transport connected, initializing API");
-  remoteConnected.value = true;
+  isConnected.value = true;
 
   try {
     // Initialize the API with the WebRTC transport
     await api.initializeWithTransport(transport);
-    console.log("[App] API initialized with transport");
   } catch (error) {
     console.error("[App] Failed to initialize API with transport:", error);
   }
@@ -148,26 +137,21 @@ const handleRemoteAuthenticated = async (credentials: {
   token?: string;
   user?: any;
 }) => {
-  console.log("[App] Handling authentication");
-
   try {
     const { authManager } = await import("@/plugins/auth");
     let user = credentials.user;
 
     if (credentials.token && credentials.user) {
       // Already authenticated with token (auto-login flow)
-      console.log("[App] Using pre-authenticated token");
       authManager.setToken(credentials.token);
       authManager.setCurrentUser(credentials.user);
     } else if (credentials.username && credentials.password) {
       // Login with credentials
-      console.log("[App] Logging in with credentials");
       const result = await api.loginWithCredentials(
         credentials.username,
         credentials.password,
         getDeviceName()
       );
-      console.log("[App] Login successful:", result);
       authManager.setToken(result.token);
       user = result.user;
       if (user) {
@@ -182,7 +166,7 @@ const handleRemoteAuthenticated = async (credentials: {
     }
 
     // Mark as authenticated
-    remoteAuthenticated.value = true;
+    isAuthenticated.value = true;
     store.isAuthenticated = true;
 
     // Update remote connection manager
@@ -203,15 +187,13 @@ const handleRemoteAuthenticated = async (credentials: {
  * Just establishes the WebSocket connection - authentication handled by handleRemoteAuthenticated
  */
 const handleLocalConnect = async (serverAddress: string) => {
-  console.log("[App] Connecting to local server:", serverAddress);
-
   // Set base URL for auth manager
   const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
 
   // Pass the HTTP base URL to api.initialize - it will build the WebSocket URL
   await api.initialize(serverAddress);
-  console.log("[App] WebSocket connected, waiting for authentication");
+  isConnected.value = true;
 };
 
 /**
@@ -286,13 +268,8 @@ onMounted(async () => {
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", setTheme);
 
-  // Always show Login screen - it handles both local and remote connections
-  // Login.vue has smart auto-connect that will:
-  // 1. Try stored server address + token (auto-login)
-  // 2. Try current host if frontend is hosted on MA server
-  // 3. Show connection options if nothing else works
-  isRemoteMode.value = true;
-  console.log("[App] Showing login screen");
+  // Login screen shows by default (isAuthenticated = false)
+  // Login.vue has smart auto-connect that handles local and remote connections
 
   // Handle audio interaction requirement
   window.addEventListener("click", interactedHandler);
