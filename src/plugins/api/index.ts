@@ -106,7 +106,11 @@ export class MusicAssistantApi {
     if (this.ws) throw new Error("already initialized");
     if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
     this.baseUrl = baseUrl;
-    const wsUrl = baseUrl.replace("http", "ws") + "/ws";
+    // Build WebSocket URL - don't add /ws if already present
+    let wsUrl = baseUrl.replace("http", "ws");
+    if (!wsUrl.endsWith("/ws")) {
+      wsUrl += "/ws";
+    }
     console.log(`Connecting to Music Assistant API ${wsUrl}`);
     this.state.value = ConnectionState.CONNECTING;
 
