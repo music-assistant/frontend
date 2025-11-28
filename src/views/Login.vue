@@ -35,24 +35,23 @@
 
               <!-- Connection Mode Selector -->
               <template v-if="step === 'select-mode'">
-                <v-tabs
-                  v-model="connectionMode"
-                  class="mb-6"
-                  grow
-                  color="primary"
-                >
-                  <v-tab value="local">
-                    <v-icon start>mdi-server</v-icon>
-                    {{ $t("login.local_server", "Local Server") }}
-                  </v-tab>
-                  <v-tab value="remote">
-                    <v-icon start>mdi-cloud</v-icon>
-                    {{ $t("login.remote_server", "Remote") }}
-                  </v-tab>
-                </v-tabs>
+                <!-- Remote-only mode -->
+                <div v-if="isRemoteOnlyMode" class="mb-4 text-center">
+                  <v-icon color="primary" size="48" class="mb-2"
+                    >mdi-cloud</v-icon
+                  >
+                  <p class="text-body-2 text-medium-emphasis mb-4">
+                    {{
+                      $t(
+                        "login.remote_only_info",
+                        "Connect to your Music Assistant server remotely",
+                      )
+                    }}
+                  </p>
+                </div>
 
-                <!-- Local Server Input -->
-                <div v-if="connectionMode === 'local'" class="mb-4">
+                <!-- Local Server Input (only for development with vite dev server) -->
+                <div v-if="showServerAddressInput" class="mb-4">
                   <label class="text-body-2 font-weight-medium mb-2 d-block">
                     {{ $t("login.server_address", "Server Address") }}
                   </label>
@@ -72,10 +71,18 @@
                     bg-color="surface-light"
                     @keyup.enter="connectToLocal"
                   />
+                  <p class="text-caption text-medium-emphasis mt-2">
+                    {{
+                      $t(
+                        "login.server_address_hint",
+                        "Enter the full URL of your Music Assistant server",
+                      )
+                    }}
+                  </p>
                 </div>
 
-                <!-- Remote ID Input -->
-                <div v-if="connectionMode === 'remote'" class="mb-4">
+                <!-- Remote ID Input (for remote-only mode) -->
+                <div v-if="isRemoteOnlyMode" class="mb-4">
                   <label class="text-body-2 font-weight-medium mb-2 d-block">
                     {{ $t("login.remote_id", "Remote ID") }}
                   </label>
@@ -111,13 +118,11 @@
                   class="mb-4 text-none"
                   :loading="isConnecting"
                   :disabled="
-                    (connectionMode === 'remote' && !remoteId.trim()) ||
-                    (connectionMode === 'local' && !serverAddress.trim())
+                    (isRemoteOnlyMode && !remoteId.trim()) ||
+                    (showServerAddressInput && !serverAddress.trim())
                   "
                   @click="
-                    connectionMode === 'remote'
-                      ? connectToRemote()
-                      : connectToLocal()
+                    isRemoteOnlyMode ? connectToRemote() : connectToLocal()
                   "
                 >
                   {{ $t("login.connect", "Connect") }}
@@ -344,6 +349,81 @@ const emit = defineEmits<{
   (e: "local-connect", serverAddress: string): void;
 }>();
 
+// Detect hosting context
+const isRemoteOnlyMode = computed(() => {
+  // Check if running on app.music-assistant.io
+  if (window.location.hostname === "app.music-assistant.io") {
+    return true;
+  }
+  // Check for remote=1 query parameter (for testing/development)
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get("remote") === "1";
+});
+
+const isHostedWithAPI = ref(false);
+
+const showServerAddressInput = computed(() => {
+  // Only show server address input when:
+  // 1. NOT in remote-only mode (app.music-assistant.io)
+  // 2. NOT hosted with the API (development mode with vite dev server)
+  return !isRemoteOnlyMode.value && !isHostedWithAPI.value;
+});
+
+/**
+ * Check if the frontend is hosted on the same server as the API
+ * by attempting to fetch the /info endpoint
+ */
+const checkIfHostedWithAPI = async (): Promise<boolean> => {
+  if (isRemoteOnlyMode.value) {
+    return false;
+  }
+
+  // Development mode: if running with common Vite dev server ports,
+  // we're likely running the Vite dev server, not hosted with API
+  const commonPorts = ["8094", "8095"];
+  if (commonPorts.includes(window.location.port)) {
+    // fast lane: assume hosted with API
+    return true;
+  }
+
+  try {
+    const baseUrl =
+      window.location.origin + window.location.pathname.replace(/\/$/, "");
+    console.debug("[Login] Checking if hosted with API at:", baseUrl + "/info");
+    const response = await fetch(`${baseUrl}/info`, {
+      method: "GET",
+      signal: AbortSignal.timeout(2000), // 2 second timeout
+    });
+
+    if (!response.ok) {
+      console.debug(
+        "[Login] /info endpoint returned status:",
+        response.status,
+        "- not hosted with API",
+      );
+      return false;
+    }
+
+    // Verify it's actually a Music Assistant server by checking the response
+    const data = await response.json();
+    // MA server info endpoint should have certain fields
+    const isMusicAssistant =
+      data &&
+      (data.server_id ||
+        data.server_version ||
+        data.min_supported_server_version);
+
+    console.debug(
+      "[Login] /info endpoint check:",
+      isMusicAssistant ? "Music Assistant server detected" : "not MA server",
+    );
+    return isMusicAssistant;
+  } catch (error) {
+    console.debug("[Login] /info endpoint check failed:", error);
+    return false;
+  }
+};
+
 // UI State
 type Step =
   | "auto-connect"
@@ -353,7 +433,6 @@ type Step =
   | "oauth-waiting"
   | "error";
 const step = ref<Step>("auto-connect");
-const connectionMode = ref<"local" | "remote">("local");
 
 // Connection state
 const serverAddress = ref("");
@@ -519,7 +598,113 @@ const autoConnect = async () => {
     "Checking for saved connection...",
   );
 
-  // 1. Try stored server address + token first
+  // Check if we're hosted with the API
+  isHostedWithAPI.value = await checkIfHostedWithAPI();
+  console.log("[Login] Hosted with API:", isHostedWithAPI.value);
+
+  // If in remote-only mode, skip all local connection attempts
+  if (isRemoteOnlyMode.value) {
+    console.log("[Login] Remote-only mode, checking for stored remote ID");
+    const storedRemoteId =
+      localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
+      remoteConnectionManager.getStoredRemoteId();
+    const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+
+    if (storedRemoteId && storedToken) {
+      console.log(
+        "[Login] Found stored remote ID and token, trying auto-connect",
+      );
+      connectionStatusMessage.value = t(
+        "login.connecting_remote",
+        "Connecting to remote server...",
+      );
+      remoteId.value = storedRemoteId;
+
+      try {
+        const cleanRemoteId = storedRemoteId.trim().toUpperCase();
+        const transport =
+          await remoteConnectionManager.connectRemote(cleanRemoteId);
+
+        // Connection established, emit connected event
+        emit("connected", transport);
+
+        // Wait for API to be ready
+        if (await waitForApiConnection()) {
+          // Try to authenticate with stored token
+          if (await tryStoredTokenAuth()) {
+            console.log("[Login] Remote auto-login successful!");
+            return; // Success - App.vue will take over
+          }
+        }
+
+        // Token auth failed, show login form
+        console.log("[Login] Remote token auth failed, showing login form");
+        connectedServerName.value = `Remote: ${cleanRemoteId}`;
+        isRemoteConnection.value = true;
+        await fetchAuthProviders();
+        step.value = "login";
+        return;
+      } catch (error) {
+        console.log("[Login] Remote auto-connect failed:", error);
+      }
+    } else if (storedRemoteId) {
+      // Just pre-fill the remote ID field
+      console.log("[Login] Found stored remote ID (no token):", storedRemoteId);
+      remoteId.value = storedRemoteId;
+    }
+
+    // Show selection screen (only remote option)
+    console.log("[Login] Remote-only mode, showing selection screen");
+    step.value = "select-mode";
+    return;
+  }
+
+  // 1. If hosted with API, try connecting to current host first
+  if (isHostedWithAPI.value) {
+    console.log("[Login] Hosted with API, trying local connection");
+    connectionStatusMessage.value = t(
+      "login.checking_local",
+      "Checking local server...",
+    );
+
+    const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+    const localWsUrl = getWebSocketUrlFromLocation();
+    console.log("[Login] Trying local WebSocket:", localWsUrl);
+
+    if (await tryConnect(localWsUrl, 3000)) {
+      console.log("[Login] Local server found!");
+      const address =
+        window.location.origin + window.location.pathname.replace(/\/$/, "");
+      serverAddress.value = address;
+
+      // Establish connection
+      emit("local-connect", address);
+      localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+
+      // Wait for WebSocket connection
+      if (await waitForApiConnection()) {
+        // Try to authenticate with stored token if available
+        if (storedToken && (await tryStoredTokenAuth())) {
+          console.log("[Login] Auto-login successful!");
+          return; // Success - App.vue will take over
+        }
+      }
+
+      // Show login form for this server
+      console.log("[Login] Showing login form for local server");
+      try {
+        const url = new URL(address);
+        connectedServerName.value = url.hostname;
+      } catch {
+        connectedServerName.value = address;
+      }
+      await fetchAuthProviders();
+      step.value = "login";
+      return;
+    }
+  }
+
+  // 2. Try stored server address + token (for development mode)
   const storedAddress = localStorage.getItem(STORAGE_KEY_SERVER_ADDRESS);
   const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
 
@@ -563,7 +748,7 @@ const autoConnect = async () => {
     console.log("[Login] Stored server connection failed");
   }
 
-  // 2. Try stored server address without token (show login form)
+  // 3. Try stored server address without token (show login form)
   if (storedAddress) {
     console.log("[Login] Found stored server address (no token)");
     connectionStatusMessage.value = t(
@@ -580,7 +765,7 @@ const autoConnect = async () => {
     }
   }
 
-  // 3. Try stored remote ID + token (auto-connect remote)
+  // 4. Try stored remote ID + token (auto-connect remote)
   const storedRemoteId =
     localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
     remoteConnectionManager.getStoredRemoteId();
@@ -593,7 +778,6 @@ const autoConnect = async () => {
       "Connecting to remote server...",
     );
     remoteId.value = storedRemoteId;
-    connectionMode.value = "remote";
 
     try {
       const cleanRemoteId = storedRemoteId.trim().toUpperCase();
@@ -621,30 +805,12 @@ const autoConnect = async () => {
       return;
     } catch (error) {
       console.log("[Login] Remote auto-connect failed:", error);
-      // Fall through to try other options
+      // Fall through to show selection screen
     }
   } else if (storedRemoteId) {
     // Just pre-fill the remote ID field
     console.log("[Login] Found stored remote ID (no token):", storedRemoteId);
     remoteId.value = storedRemoteId;
-    connectionMode.value = "remote";
-  }
-
-  // 4. Try connecting to current host (for when frontend is hosted on MA server)
-  connectionStatusMessage.value = t(
-    "login.checking_local",
-    "Checking local server...",
-  );
-  const localWsUrl = getWebSocketUrlFromLocation();
-  console.log("[Login] Trying local WebSocket:", localWsUrl);
-
-  if (await tryConnect(localWsUrl, 3000)) {
-    console.log("[Login] Local server found!");
-    const address =
-      window.location.origin + window.location.pathname.replace(/\/$/, "");
-    serverAddress.value = address;
-    await performLocalConnect(address);
-    return;
   }
 
   // 5. No auto-connect possible, show selection screen
@@ -722,6 +888,15 @@ const performLocalConnect = async (address: string) => {
  * Connect to local server (from UI)
  */
 const connectToLocal = async () => {
+  // If hosted with API, connect to current host
+  if (isHostedWithAPI.value) {
+    const address =
+      window.location.origin + window.location.pathname.replace(/\/$/, "");
+    await performLocalConnect(address);
+    return;
+  }
+
+  // Otherwise use the server address input
   if (!serverAddress.value.trim()) return;
   await performLocalConnect(serverAddress.value.trim());
 };
