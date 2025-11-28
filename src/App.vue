@@ -267,7 +267,9 @@ const handleLocalConnect = async (serverAddress: string) => {
   }
 
   console.log("[App] Initializing WebSocket connection to:", wsUrl);
-  await api.initialize(wsUrl);
+  // Pass skipRedirects=true to prevent redirect to server login page
+  // Login.vue will handle authentication
+  await api.initialize(wsUrl, null, false, true);
   console.log("[App] WebSocket connected, waiting for authentication");
 };
 

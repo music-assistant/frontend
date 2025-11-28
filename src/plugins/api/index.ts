@@ -102,6 +102,7 @@ export class MusicAssistantApi {
     baseUrl: string,
     authToken?: string | null,
     tokenFromLogin?: boolean,
+    skipRedirects?: boolean,
   ) {
     if (this.ws) throw new Error("already initialized");
     if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
@@ -150,7 +151,20 @@ export class MusicAssistantApi {
 
           // Check if we have a token
           if (!authToken) {
-            // No token - close connection and redirect to login
+            // No token provided
+            if (skipRedirects) {
+              // Don't redirect - just store serverInfo and let caller handle auth
+              console.log("No token provided, skipRedirects=true, storing serverInfo");
+              this.serverInfo.value = serverInfo;
+              this.state.value = ConnectionState.CONNECTED;
+              this.signalEvent({
+                event: EventType.CONNECTED,
+                object_id: "",
+                data: serverInfo,
+              });
+              return;
+            }
+            // Old behavior: redirect to login
             console.error("Authentication required but no token provided");
             this.ws?.close();
             const returnUrl = encodeURIComponent(window.location.href);
@@ -188,11 +202,19 @@ export class MusicAssistantApi {
         ) {
           if ("error" in msg || "error_code" in msg) {
             console.error("WebSocket authentication failed", msg);
-            // Close connection and redirect to server login
-            this.ws?.close();
             // Clear auth token from localStorage
             localStorage.removeItem("ma_access_token");
             localStorage.removeItem("ma_current_user");
+
+            // If skipRedirects is enabled, don't redirect - let caller handle it
+            if (skipRedirects) {
+              console.log("Auth failed, skipRedirects=true, not redirecting");
+              // Keep connection open, caller will handle re-authentication
+              return;
+            }
+
+            // Close connection and redirect to server login
+            this.ws?.close();
 
             // Check if we just came from login (to prevent redirect loop)
             if (tokenFromLogin) {
