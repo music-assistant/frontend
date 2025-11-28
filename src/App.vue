@@ -249,8 +249,8 @@ const initializeApp = async () => {
   const allowBuiltinPlayer =
     localStorage.getItem("frontend.settings.enable_builtin_player") != "false";
 
-  // Subscribe to CONNECTED event to handle server info
-  api.subscribe(EventType.CONNECTED, async () => {
+  // Helper function to complete initialization
+  const completeInitialization = async () => {
     const serverInfo = api.serverInfo.value;
     if (!serverInfo) {
       console.error("No server info received");
@@ -278,11 +278,20 @@ const initializeApp = async () => {
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
     }
-  });
+  };
+
+  // Subscribe to CONNECTED event for future reconnections
+  api.subscribe(EventType.CONNECTED, completeInitialization);
 
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
   });
+
+  // For remote connections, server info is already available (CONNECTED already fired)
+  // So we need to run initialization immediately
+  if (api.serverInfo.value) {
+    await completeInitialization();
+  }
 };
 
 /**
