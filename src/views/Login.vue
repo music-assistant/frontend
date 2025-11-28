@@ -18,80 +18,98 @@
                 </p>
               </div>
 
-              <!-- Connection Mode Selector (only if not auto-detected local) -->
-              <v-tabs
-                v-if="showConnectionTabs && step === 'select-mode'"
-                v-model="connectionMode"
-                class="mb-6"
-                grow
-                color="primary"
-              >
-                <v-tab value="local">
-                  <v-icon start>mdi-server</v-icon>
-                  {{ $t('login.local_server', 'Local Server') }}
-                </v-tab>
-                <v-tab value="remote">
-                  <v-icon start>mdi-cloud</v-icon>
-                  {{ $t('login.remote_server', 'Remote') }}
-                </v-tab>
-              </v-tabs>
+              <!-- Auto-connecting State -->
+              <template v-if="step === 'auto-connect'">
+                <div class="text-center py-6">
+                  <v-progress-circular indeterminate color="primary" size="64" class="mb-4" />
+                  <p class="text-body-2 text-medium-emphasis">
+                    {{ connectionStatusMessage }}
+                  </p>
+                </div>
+              </template>
 
-              <!-- Local Server Input (when not auto-detected) -->
-              <div v-if="connectionMode === 'local' && step === 'select-mode' && !isLocalServer" class="mb-4">
-                <label class="text-body-2 font-weight-medium mb-2 d-block">
-                  {{ $t('login.server_address', 'Server Address') }}
-                </label>
-                <v-text-field
-                  v-model="serverAddress"
-                  :placeholder="$t('login.server_address_placeholder', 'http://192.168.1.100:8095')"
-                  variant="outlined"
-                  density="comfortable"
-                  hide-details="auto"
-                  :error-messages="connectionError"
-                  :disabled="isConnecting"
-                  bg-color="surface-light"
-                  @keyup.enter="connectToLocal"
-                />
-              </div>
+              <!-- Connection Mode Selector -->
+              <template v-if="step === 'select-mode'">
+                <v-tabs
+                  v-model="connectionMode"
+                  class="mb-6"
+                  grow
+                  color="primary"
+                >
+                  <v-tab value="local">
+                    <v-icon start>mdi-server</v-icon>
+                    {{ $t('login.local_server', 'Local Server') }}
+                  </v-tab>
+                  <v-tab value="remote">
+                    <v-icon start>mdi-cloud</v-icon>
+                    {{ $t('login.remote_server', 'Remote') }}
+                  </v-tab>
+                </v-tabs>
 
-              <!-- Remote ID Input -->
-              <div v-if="connectionMode === 'remote' && step === 'select-mode'" class="mb-4">
-                <label class="text-body-2 font-weight-medium mb-2 d-block">
-                  {{ $t('login.remote_id', 'Remote ID') }}
-                </label>
-                <v-text-field
-                  v-model="remoteId"
-                  :placeholder="$t('login.remote_id_placeholder', 'e.g., MA-X7K9-P2M4')"
-                  variant="outlined"
-                  density="comfortable"
-                  hide-details="auto"
-                  :error-messages="connectionError"
-                  :disabled="isConnecting"
-                  bg-color="surface-light"
-                  @keyup.enter="connectToRemote"
-                />
-                <p class="text-caption text-medium-emphasis mt-2">
-                  {{ $t('login.remote_id_hint', 'Find this in your server settings under "Remote Access"') }}
-                </p>
-              </div>
+                <!-- Local Server Input -->
+                <div v-if="connectionMode === 'local'" class="mb-4">
+                  <label class="text-body-2 font-weight-medium mb-2 d-block">
+                    {{ $t('login.server_address', 'Server Address') }}
+                  </label>
+                  <v-text-field
+                    v-model="serverAddress"
+                    :placeholder="$t('login.server_address_placeholder', 'http://192.168.1.100:8095')"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                    :error-messages="connectionError"
+                    :disabled="isConnecting"
+                    bg-color="surface-light"
+                    @keyup.enter="connectToLocal"
+                  />
+                </div>
 
-              <!-- Connect Button for mode selection -->
-              <v-btn
-                v-if="step === 'select-mode'"
-                color="primary"
-                size="x-large"
-                block
-                rounded="lg"
-                class="mb-4 text-none"
-                :loading="isConnecting"
-                :disabled="(connectionMode === 'remote' && !remoteId.trim()) || (connectionMode === 'local' && !isLocalServer && !serverAddress.trim())"
-                @click="connectionMode === 'remote' ? connectToRemote() : connectToLocal()"
-              >
-                {{ $t('login.connect', 'Connect') }}
-              </v-btn>
+                <!-- Remote ID Input -->
+                <div v-if="connectionMode === 'remote'" class="mb-4">
+                  <label class="text-body-2 font-weight-medium mb-2 d-block">
+                    {{ $t('login.remote_id', 'Remote ID') }}
+                  </label>
+                  <v-text-field
+                    v-model="remoteId"
+                    :placeholder="$t('login.remote_id_placeholder', 'e.g., MA-X7K9-P2M4')"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                    :error-messages="connectionError"
+                    :disabled="isConnecting"
+                    bg-color="surface-light"
+                    @keyup.enter="connectToRemote"
+                  />
+                  <p class="text-caption text-medium-emphasis mt-2">
+                    {{ $t('login.remote_id_hint', 'Find this in your server settings under "Remote Access"') }}
+                  </p>
+                </div>
+
+                <!-- Connect Button -->
+                <v-btn
+                  color="primary"
+                  size="x-large"
+                  block
+                  rounded="lg"
+                  class="mb-4 text-none"
+                  :loading="isConnecting"
+                  :disabled="(connectionMode === 'remote' && !remoteId.trim()) || (connectionMode === 'local' && !serverAddress.trim())"
+                  @click="connectionMode === 'remote' ? connectToRemote() : connectToLocal()"
+                >
+                  {{ $t('login.connect', 'Connect') }}
+                </v-btn>
+              </template>
 
               <!-- Login Form (after connection) -->
               <template v-if="step === 'login'">
+                <!-- Connected server info -->
+                <div v-if="connectedServerName" class="text-center mb-4">
+                  <v-chip color="success" variant="tonal" size="small">
+                    <v-icon start size="small">mdi-check-circle</v-icon>
+                    {{ connectedServerName }}
+                  </v-chip>
+                </div>
+
                 <!-- Username Field -->
                 <div class="mb-4">
                   <label class="text-body-2 font-weight-medium mb-2 d-block">
@@ -168,16 +186,15 @@
                   {{ $t('login.sign_in_with_ha', 'Sign in with Home Assistant') }}
                 </v-btn>
 
-                <!-- Back button if remote -->
+                <!-- Back button -->
                 <v-btn
-                  v-if="isRemoteConnection"
                   variant="text"
                   class="mt-4"
                   block
                   @click="goBack"
                   :disabled="isAuthenticating"
                 >
-                  {{ $t('login.back', 'Back') }}
+                  {{ $t('login.different_server', 'Use different server') }}
                 </v-btn>
               </template>
 
@@ -237,13 +254,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  remoteConnectionManager,
-  type StoredRemoteConnection,
-} from '@/plugins/remote';
+import { remoteConnectionManager } from '@/plugins/remote';
 import { api } from '@/plugins/api';
 
 const { t } = useI18n();
+
+// Storage keys
+const STORAGE_KEY_SERVER_ADDRESS = 'mass_server_address';
+const STORAGE_KEY_REMOTE_ID = 'mass_remote_id';
 
 // Props and emits
 const emit = defineEmits<{
@@ -252,18 +270,10 @@ const emit = defineEmits<{
   (e: 'local-connect', serverAddress: string): void;
 }>();
 
-// Detect if we're hosted on the server itself
-const isLocalServer = computed(() => {
-  const hostname = window.location.hostname;
-  // If accessing via IP or localhost on standard MA port, we're local
-  return !['app.music-assistant.io', 'music-assistant.github.io'].some(h => hostname.includes(h));
-});
-
 // UI State
-type Step = 'select-mode' | 'login' | 'connecting' | 'oauth-waiting' | 'error';
-const step = ref<Step>('select-mode');
-const connectionMode = ref<'local' | 'remote'>(isLocalServer.value ? 'local' : 'remote');
-const showConnectionTabs = computed(() => !isLocalServer.value);
+type Step = 'auto-connect' | 'select-mode' | 'login' | 'connecting' | 'oauth-waiting' | 'error';
+const step = ref<Step>('auto-connect');
+const connectionMode = ref<'local' | 'remote'>('local');
 
 // Connection state
 const serverAddress = ref('');
@@ -272,6 +282,7 @@ const isConnecting = ref(false);
 const connectionError = ref<string | null>(null);
 const connectionStatusMessage = ref('');
 const isRemoteConnection = ref(false);
+const connectedServerName = ref<string | null>(null);
 
 // Login state
 const username = ref('');
@@ -292,6 +303,9 @@ const oauthPollingInterval = ref<number | null>(null);
 
 // Computed
 const getSubtitle = computed(() => {
+  if (step.value === 'auto-connect') {
+    return t('login.auto_connecting', 'Looking for your server...');
+  }
   if (step.value === 'login') {
     return t('login.sign_in_to_continue', 'Sign in to continue');
   }
@@ -304,10 +318,122 @@ const getSubtitle = computed(() => {
   return t('login.subtitle', 'Connect to your music server');
 });
 
-// Methods
-const connectToLocal = async () => {
-  if (!isLocalServer.value && !serverAddress.value.trim()) return;
+/**
+ * Build WebSocket URL from current page URL
+ */
+const getWebSocketUrlFromLocation = (): string => {
+  const loc = window.location;
+  const protocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
+  // Remove any trailing slash and hash
+  const basePath = loc.pathname.replace(/\/$/, '').split('#')[0];
+  return `${protocol}//${loc.host}${basePath}/ws`;
+};
 
+/**
+ * Build WebSocket URL from a server address
+ */
+const buildWebSocketUrl = (address: string): string => {
+  try {
+    const url = new URL(address);
+    const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    const basePath = url.pathname.replace(/\/$/, '');
+    return `${protocol}//${url.host}${basePath}/ws`;
+  } catch {
+    // If it's not a valid URL, try to build one
+    const cleanAddress = address.replace(/\/$/, '');
+    if (cleanAddress.startsWith('ws://') || cleanAddress.startsWith('wss://')) {
+      return cleanAddress.endsWith('/ws') ? cleanAddress : `${cleanAddress}/ws`;
+    }
+    const protocol = cleanAddress.startsWith('https://') ? 'wss:' : 'ws:';
+    const host = cleanAddress.replace(/^https?:\/\//, '');
+    return `${protocol}//${host}/ws`;
+  }
+};
+
+/**
+ * Try to connect to a WebSocket URL with timeout
+ */
+const tryConnect = async (wsUrl: string, timeoutMs: number = 5000): Promise<boolean> => {
+  console.log(`[Login] Trying to connect to: ${wsUrl}`);
+
+  return new Promise((resolve) => {
+    const ws = new WebSocket(wsUrl);
+    const timeout = setTimeout(() => {
+      ws.close();
+      resolve(false);
+    }, timeoutMs);
+
+    ws.onopen = () => {
+      clearTimeout(timeout);
+      ws.close();
+      resolve(true);
+    };
+
+    ws.onerror = () => {
+      clearTimeout(timeout);
+      resolve(false);
+    };
+
+    ws.onclose = () => {
+      clearTimeout(timeout);
+    };
+  });
+};
+
+/**
+ * Smart auto-connect logic
+ */
+const autoConnect = async () => {
+  step.value = 'auto-connect';
+  connectionStatusMessage.value = t('login.checking_stored', 'Checking for saved connection...');
+
+  // 1. Try stored server address first
+  const storedAddress = localStorage.getItem(STORAGE_KEY_SERVER_ADDRESS);
+  if (storedAddress) {
+    console.log('[Login] Found stored server address:', storedAddress);
+    connectionStatusMessage.value = t('login.connecting_to_saved', 'Connecting to saved server...');
+
+    const wsUrl = buildWebSocketUrl(storedAddress);
+    if (await tryConnect(wsUrl)) {
+      console.log('[Login] Stored server connection successful');
+      serverAddress.value = storedAddress;
+      await performLocalConnect(storedAddress);
+      return;
+    }
+    console.log('[Login] Stored server connection failed');
+  }
+
+  // 2. Try stored remote ID
+  const storedRemoteId = localStorage.getItem(STORAGE_KEY_REMOTE_ID) || remoteConnectionManager.getStoredRemoteId();
+  if (storedRemoteId) {
+    console.log('[Login] Found stored remote ID:', storedRemoteId);
+    remoteId.value = storedRemoteId;
+    connectionMode.value = 'remote';
+    // Don't auto-connect remote, just pre-fill the field
+  }
+
+  // 3. Try connecting to current host (for when frontend is hosted on MA server)
+  connectionStatusMessage.value = t('login.checking_local', 'Checking local server...');
+  const localWsUrl = getWebSocketUrlFromLocation();
+  console.log('[Login] Trying local WebSocket:', localWsUrl);
+
+  if (await tryConnect(localWsUrl, 3000)) {
+    console.log('[Login] Local server found!');
+    const address = window.location.origin + window.location.pathname.replace(/\/$/, '');
+    serverAddress.value = address;
+    await performLocalConnect(address);
+    return;
+  }
+
+  // 4. No auto-connect possible, show selection screen
+  console.log('[Login] Auto-connect failed, showing selection screen');
+  step.value = 'select-mode';
+};
+
+/**
+ * Perform local connection
+ */
+const performLocalConnect = async (address: string) => {
   isConnecting.value = true;
   connectionError.value = null;
   isRemoteConnection.value = false;
@@ -315,15 +441,25 @@ const connectToLocal = async () => {
   connectionStatusMessage.value = t('login.connecting_to_server', 'Connecting to server...');
 
   try {
-    const address = isLocalServer.value
-      ? window.location.origin
-      : serverAddress.value.trim();
-
-    // For local connections, emit event to let App.vue handle it
+    // Emit event to let App.vue handle the actual connection
     emit('local-connect', address);
+
+    // Store the server address for next time
+    localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+
+    // Wait a bit for the connection to establish
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Fetch auth providers
     await fetchAuthProviders();
+
+    // Extract server name from address for display
+    try {
+      const url = new URL(address);
+      connectedServerName.value = url.hostname;
+    } catch {
+      connectedServerName.value = address;
+    }
 
     step.value = 'login';
   } catch (error) {
@@ -335,6 +471,17 @@ const connectToLocal = async () => {
   }
 };
 
+/**
+ * Connect to local server (from UI)
+ */
+const connectToLocal = async () => {
+  if (!serverAddress.value.trim()) return;
+  await performLocalConnect(serverAddress.value.trim());
+};
+
+/**
+ * Connect to remote server
+ */
 const connectToRemote = async () => {
   if (!remoteId.value.trim()) return;
 
@@ -345,11 +492,15 @@ const connectToRemote = async () => {
   connectionStatusMessage.value = t('login.connecting_to_signaling', 'Connecting to signaling server...');
 
   try {
+    const cleanRemoteId = remoteId.value.trim().toUpperCase();
     connectionStatusMessage.value = t('login.finding_server', 'Finding your server...');
 
-    const transport = await remoteConnectionManager.connectRemote(remoteId.value.trim().toUpperCase());
+    const transport = await remoteConnectionManager.connectRemote(cleanRemoteId);
 
     connectionStatusMessage.value = t('login.establishing_secure', 'Establishing secure connection...');
+
+    // Store the remote ID for next time
+    localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
 
     // Connection established, emit connected event
     emit('connected', transport);
@@ -357,6 +508,7 @@ const connectToRemote = async () => {
     // Fetch available auth providers
     await fetchAuthProviders();
 
+    connectedServerName.value = `Remote: ${cleanRemoteId}`;
     step.value = 'login';
   } catch (error) {
     console.error('[Login] Remote connection failed:', error);
@@ -482,6 +634,7 @@ const goBack = () => {
   username.value = '';
   password.value = '';
   authProviders.value = [];
+  connectedServerName.value = null;
 };
 
 const cancelConnection = () => {
@@ -496,18 +649,9 @@ const retry = () => {
   step.value = 'select-mode';
 };
 
-// Auto-connect if local server
-onMounted(async () => {
-  if (isLocalServer.value) {
-    // Auto-connect to local server
-    await connectToLocal();
-  } else {
-    // Check for stored remote ID
-    const storedId = remoteConnectionManager.getStoredRemoteId();
-    if (storedId) {
-      remoteId.value = storedId;
-    }
-  }
+// Start auto-connect on mount
+onMounted(() => {
+  autoConnect();
 });
 
 onUnmounted(() => {
