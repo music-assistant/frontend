@@ -8,6 +8,12 @@ on:
   release:
     types: [published]
 
+  # Run after release workflow completes
+  workflow_run:
+    workflows: ["Publish Release"]
+    types:
+      - completed
+
   # Allow manual trigger
   workflow_dispatch:
 
