@@ -1,6 +1,8 @@
-import { AlertType, store } from "../store";
+import { store } from "../store";
+/* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, reactive, ref } from "vue";
+import { toast } from "vuetify-sonner";
 import { getDeviceName } from "./helpers";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
@@ -1628,11 +1630,7 @@ export class MusicAssistantApi {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
       console.error("[resultMessage]", msg);
-      store.activeAlert = {
-        type: AlertType.ERROR,
-        message: msg.details || msg.error_code,
-        persistent: false,
-      };
+      toast.error(msg.details || msg.error_code);
     } else if (DEBUG) {
       console.log("[resultMessage]", msg);
     }

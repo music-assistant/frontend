@@ -4,13 +4,13 @@ import {
   Player,
   PlayerQueue,
   QueueItem,
-  User,
   ServerInfo,
+  User,
 } from "./api/interfaces";
 
-import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
 import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
+import api from "./api";
 
 import MobileDetect from "mobile-detect";
 import { getBreakpointValue } from "./breakpoint";
@@ -23,19 +23,6 @@ const DEVICE_TYPE: DeviceType = md.tablet()
   : md.phone() || md.mobile()
     ? "phone"
     : "desktop";
-
-export enum AlertType {
-  ERROR = "error",
-  WARNING = "warning",
-  INFO = "info",
-  SUCCESS = "success",
-}
-
-interface Alert {
-  type: AlertType;
-  message: string;
-  persistent: boolean;
-}
 
 interface Store {
   activePlayerId?: string;
@@ -53,7 +40,6 @@ interface Store {
   globalSearchTerm?: string;
   globalSearchType?: MediaType;
   prevState?: StoredState;
-  activeAlert?: Alert;
   prevRoute?: string;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
@@ -117,7 +103,6 @@ export const store: Store = reactive({
   globalSearchTerm: undefined,
   globalSearchType: undefined,
   prevState: undefined,
-  activeAlert: undefined,
   prevRoute: undefined,
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,
