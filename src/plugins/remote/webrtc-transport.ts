@@ -61,32 +61,44 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   async connect(): Promise<void> {
-    console.log('[WebRTCTransport] Starting connection to:', this.options.remoteId);
+    const startTime = performance.now();
+    const logTiming = (step: string) => {
+      console.log(`[WebRTCTransport] ${step} (+${Math.round(performance.now() - startTime)}ms)`);
+    };
+
+    logTiming('Starting connection to: ' + this.options.remoteId);
     this.setState(TransportState.CONNECTING);
 
     try {
+      // Create peer connection early (can pre-gather ICE candidates)
+      this.createPeerConnection();
+      logTiming('Peer connection created');
+
       // Connect to signaling server
       await this.signaling.connect();
+      logTiming('Signaling server connected');
 
       // Request connection to the remote MA instance
-      console.log('[WebRTCTransport] Requesting connection via signaling server');
       await this.signaling.requestConnection(this.options.remoteId);
-
-      // Create peer connection
-      this.createPeerConnection();
+      logTiming('Remote peer accepted connection');
 
       // Create data channel (we're the initiator)
       this.createDataChannel();
 
-      // Create and send offer
+      // Create and send offer (triggers ICE gathering)
       const offer = await this.peerConnection!.createOffer();
+      logTiming('Offer created');
+
       await this.peerConnection!.setLocalDescription(offer);
+      logTiming('Local description set (ICE gathering started)');
+
       this.signaling.sendOffer(offer);
+      logTiming('Offer sent to remote peer');
 
       // Wait for connection to be established
       await this.waitForConnection();
 
-      console.log('[WebRTCTransport] Connection established');
+      logTiming('Connection established - total time');
     } catch (error) {
       console.error('[WebRTCTransport] Connection failed:', error);
       this.setState(TransportState.FAILED);
@@ -111,12 +123,12 @@ export class WebRTCTransport extends BaseTransport {
 
   private setupSignalingHandlers(): void {
     this.signaling.on('answer', (answer) => {
-      console.log('[WebRTCTransport] Received answer');
+      console.log('[WebRTCTransport] Received answer from remote peer');
       this.handleAnswer(answer);
     });
 
     this.signaling.on('ice-candidate', (candidate) => {
-      console.log('[WebRTCTransport] Received ICE candidate');
+      console.log('[WebRTCTransport] Received remote ICE candidate:', (candidate as any).candidate?.split(' ')[7] || 'unknown');
       this.handleIceCandidate(candidate);
     });
 
@@ -136,6 +148,8 @@ export class WebRTCTransport extends BaseTransport {
 
     this.peerConnection = new RTCPeerConnection({
       iceServers: this.options.iceServers,
+      // Pre-gather ICE candidates for faster connection establishment
+      iceCandidatePoolSize: 4,
     });
 
     this.peerConnection.onicecandidate = (event) => {
