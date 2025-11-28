@@ -361,12 +361,23 @@ export class MusicAssistantApi {
     return removeCallback;
   }
 
+  /**
+   * Get Track listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of tracks
+   */
   public getLibraryTracks(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -374,6 +385,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -465,6 +477,17 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/count", { favorite_only });
   }
 
+  /**
+   * Get Artists listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param album_artists_only - Only return artists that have albums
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of artists
+   */
   public getLibraryArtists(
     favorite?: boolean,
     search?: string,
@@ -472,6 +495,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     album_artists_only?: boolean,
+    provider?: string | string[],
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -480,6 +504,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       album_artists_only,
+      provider,
     });
   }
 
@@ -517,6 +542,17 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Get Albums listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param album_types - Filter by album types
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of albums
+   */
   public getLibraryAlbums(
     favorite?: boolean,
     search?: string,
@@ -524,6 +560,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -532,6 +569,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       album_types,
+      provider,
     });
   }
 
@@ -567,12 +605,23 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Get Playlists listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of playlists
+   */
   public getLibraryPlaylists(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -580,6 +629,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -635,12 +685,23 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Get Radio stations listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of radio stations
+   */
   public getLibraryRadios(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -648,6 +709,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -672,12 +734,23 @@ export class MusicAssistantApi {
   }
 
   // Audiobook related endpoints
+  /**
+   * Get Audiobooks listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of audiobooks
+   */
   public getLibraryAudiobooks(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -685,6 +758,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -709,12 +783,23 @@ export class MusicAssistantApi {
   }
 
   // Podcast related endpoints
+  /**
+   * Get Podcasts listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of podcasts
+   */
   public getLibraryPodcasts(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -722,6 +807,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -1861,6 +1947,8 @@ export class MusicAssistantApi {
     password: string,
     role: UserRole,
     displayName?: string,
+    playerFilter?: string[],
+    providerFilter?: string[],
   ): Promise<User> {
     // Create a new user (admin only)
     try {
@@ -1871,6 +1959,8 @@ export class MusicAssistantApi {
         password,
         role,
         display_name: displayName,
+        player_filter: playerFilter,
+        provider_filter: providerFilter,
       });
 
       if (result == null) {
@@ -1912,6 +2002,9 @@ export class MusicAssistantApi {
       avatarUrl?: string;
       role?: UserRole;
       password?: string;
+      preferences?: Record<string, any>;
+      provider_filter?: string[];
+      player_filter?: string[];
     },
   ): Promise<User> {
     // Update user using unified update command
@@ -1923,6 +2016,12 @@ export class MusicAssistantApi {
       if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
       if (updates.role) args.role = updates.role;
       if (updates.password) args.password = updates.password;
+      if (updates.preferences != undefined)
+        args.preferences = updates.preferences;
+      if (updates.provider_filter != undefined)
+        args.provider_filter = updates.provider_filter;
+      if (updates.player_filter != undefined)
+        args.player_filter = updates.player_filter;
 
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
