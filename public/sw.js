@@ -109,10 +109,7 @@ async function handleHttpProxyRequest(request) {
 
   // Extract headers
   const headers = {};
-  const essentialHeaders = [
-    "accept",
-    "accept-encoding",
-  ];
+  const essentialHeaders = ["accept", "accept-encoding"];
 
   for (const header of essentialHeaders) {
     const value = request.headers.get(header);

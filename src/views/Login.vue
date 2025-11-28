@@ -322,13 +322,18 @@
                 rel="noopener noreferrer"
                 class="ohf-footer-link"
               >
-                <p class="text-caption text-medium-emphasis d-flex align-center justify-center">
+                <p
+                  class="text-caption text-medium-emphasis d-flex align-center justify-center"
+                >
                   <img
                     src="@/assets/open-home-foundation-icon.svg"
                     alt="Open Home Foundation"
                     class="ohf-icon"
                   />
-                  <span class="ml-1">Music Assistant is a product from the Open Home Foundation</span>
+                  <span class="ml-1"
+                    >Music Assistant is a product from the Open Home
+                    Foundation</span
+                  >
                 </p>
               </a>
             </div>
