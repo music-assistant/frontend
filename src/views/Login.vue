@@ -921,23 +921,28 @@ const cancelOAuth = () => {
 const goBack = () => {
   stopOAuthPolling();
   remoteConnectionManager.disconnect();
+  api.disconnect();
   step.value = "select-mode";
   loginError.value = null;
   username.value = "";
   password.value = "";
   authProviders.value = [];
   connectedServerName.value = null;
+  isRemoteConnection.value = false;
 };
 
 const cancelConnection = () => {
   stopOAuthPolling();
   remoteConnectionManager.disconnect();
+  api.disconnect();
   isConnecting.value = false;
   step.value = "select-mode";
 };
 
 const retry = () => {
   connectionError.value = null;
+  remoteConnectionManager.disconnect();
+  api.disconnect();
   step.value = "select-mode";
 };
 
