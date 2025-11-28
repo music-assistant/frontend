@@ -7,7 +7,7 @@
             <!-- Logo and Title -->
             <div class="text-center mb-8">
               <v-img
-                src="/logo.svg"
+                src="logo.svg"
                 alt="Music Assistant"
                 max-height="80"
                 class="mx-auto mb-4"
