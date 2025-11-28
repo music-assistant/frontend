@@ -317,7 +317,7 @@ export class MusicAssistantApi {
   ): Promise<{ token: string; user: User }> {
     console.log("[API] Logging in with credentials");
 
-    const result = await this.sendCommand<{ token: string; user: User }>(
+    const result = await this.sendCommand<{ access_token?: string; token?: string; user: User }>(
       "auth/login",
       {
         username,
@@ -326,17 +326,25 @@ export class MusicAssistantApi {
       },
     );
 
-    if (result.token) {
+    // Server may return 'access_token' or 'token'
+    const token = result.access_token || result.token;
+
+    if (token) {
       // Store the token
-      localStorage.setItem("ma_access_token", result.token);
+      localStorage.setItem("ma_access_token", token);
       if (result.user) {
         localStorage.setItem("ma_current_user", JSON.stringify(result.user));
       }
+
+      // Now authenticate the WebSocket session with the token
+      console.log("[API] Authenticating WebSocket session with token");
+      await this.sendCommand("auth", { token });
+
       // Now that we're authenticated, fetch the full state
       this._fetchState();
     }
 
-    return result;
+    return { token: token || "", user: result.user };
   }
 
   /**
