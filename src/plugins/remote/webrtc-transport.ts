@@ -6,7 +6,7 @@
  */
 
 import { BaseTransport, TransportState } from './transport';
-import { SignalingClient, SignalingState } from './signaling';
+import { SignalingClient } from './signaling';
 
 // ICE server configuration
 // Using public STUN servers and optionally TURN servers
@@ -32,9 +32,6 @@ const DEFAULT_ICE_SERVERS: IceServerConfig[] = [
   { urls: 'stun:stun.cloudflare.com:3478' },
 ];
 
-// ICE gathering timeout in ms - don't wait forever for all candidates
-const ICE_GATHERING_TIMEOUT = 3000;
-
 export class WebRTCTransport extends BaseTransport {
   private options: Required<WebRTCTransportOptions>;
   private signaling: SignalingClient;
@@ -42,7 +39,6 @@ export class WebRTCTransport extends BaseTransport {
   private dataChannel: RTCDataChannel | null = null;
   private iceCandidateBuffer: RTCIceCandidateInit[] = [];
   private remoteDescriptionSet = false;
-  private iceGatheringComplete = false;
 
   constructor(options: WebRTCTransportOptions) {
     super();
@@ -128,7 +124,9 @@ export class WebRTCTransport extends BaseTransport {
     });
 
     this.signaling.on('ice-candidate', (candidate) => {
-      console.log('[WebRTCTransport] Received remote ICE candidate:', (candidate as any).candidate?.split(' ')[7] || 'unknown');
+      const candidateStr = (candidate as RTCIceCandidateInit).candidate;
+      const candidateType = candidateStr?.split(' ')[7] || 'unknown';
+      console.log('[WebRTCTransport] Received remote ICE candidate:', candidateType);
       this.handleIceCandidate(candidate);
     });
 
@@ -157,18 +155,12 @@ export class WebRTCTransport extends BaseTransport {
         console.log('[WebRTCTransport] Sending ICE candidate:', event.candidate.type || 'unknown');
         this.signaling.sendIceCandidate(event.candidate.toJSON());
       } else {
-        // null candidate means gathering is complete
-        console.log('[WebRTCTransport] ICE gathering complete (null candidate)');
-        this.iceGatheringComplete = true;
+        console.log('[WebRTCTransport] ICE gathering complete');
       }
     };
 
     this.peerConnection.onicegatheringstatechange = () => {
-      const state = this.peerConnection?.iceGatheringState;
-      console.log('[WebRTCTransport] ICE gathering state:', state);
-      if (state === 'complete') {
-        this.iceGatheringComplete = true;
-      }
+      console.log('[WebRTCTransport] ICE gathering state:', this.peerConnection?.iceGatheringState);
     };
 
     this.peerConnection.oniceconnectionstatechange = () => {
@@ -215,8 +207,8 @@ export class WebRTCTransport extends BaseTransport {
       this.emit('close', 'Data channel closed');
     };
 
-    this.dataChannel.onerror = (event) => {
-      console.error('[WebRTCTransport] Data channel error:', event);
+    this.dataChannel.onerror = () => {
+      console.error('[WebRTCTransport] Data channel error');
       this.emit('error', new Error('Data channel error'));
     };
 
@@ -315,6 +307,5 @@ export class WebRTCTransport extends BaseTransport {
     this.signaling.disconnect();
     this.remoteDescriptionSet = false;
     this.iceCandidateBuffer = [];
-    this.iceGatheringComplete = false;
   }
 }
