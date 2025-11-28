@@ -20,6 +20,7 @@ const pendingRequests = new Map();
 // Listen for messages from the main thread
 self.addEventListener("message", (event) => {
   const { type, data } = event.data;
+  console.log("[ServiceWorker] Received message:", type, data);
 
   if (type === "http-proxy-response") {
     // Handle HTTP proxy response
@@ -47,6 +48,7 @@ self.addEventListener("message", (event) => {
   } else if (type === "set-remote-mode") {
     // Update remote mode state
     self.isRemoteMode = data.isRemote;
+    console.log("[ServiceWorker] Remote mode set to:", self.isRemoteMode);
   }
 });
 
@@ -56,12 +58,20 @@ self.addEventListener("fetch", (event) => {
 
   // Only intercept image proxy requests when in remote mode
   if (self.isRemoteMode && url.pathname.startsWith("/imageproxy")) {
+    console.log("[ServiceWorker] Intercepting imageproxy request:", url.pathname);
     event.respondWith(handleImageProxyRequest(event.request));
     return;
   }
 
-  // For all other requests, use default behavior
-  event.respondWith(fetch(event.request));
+  // For imageproxy requests when NOT in remote mode, let them through normally
+  if (url.pathname.startsWith("/imageproxy")) {
+    console.log("[ServiceWorker] Passing through imageproxy request (not in remote mode)");
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // For all other requests, don't intercept (let Workbox handle it)
+  // Don't call event.respondWith() to let other handlers process the request
 });
 
 /**
@@ -136,7 +146,7 @@ async function handleImageProxyRequest(request) {
 function hexToBytes(hex) {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
   }
   return bytes;
 }
@@ -145,7 +155,7 @@ function hexToBytes(hex) {
  * Generate unique request ID
  */
 function generateRequestId() {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
 // Initialize state

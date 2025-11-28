@@ -23,6 +23,10 @@ class HttpProxyBridge {
           await navigator.serviceWorker.register("/sw.js");
         console.log("[HttpProxyBridge] Service worker registered");
 
+        // Wait for service worker to be ready
+        await navigator.serviceWorker.ready;
+        console.log("[HttpProxyBridge] Service worker ready");
+
         // Listen for messages from service worker
         navigator.serviceWorker.addEventListener("message", (event) => {
           this.handleServiceWorkerMessage(event);
@@ -40,6 +44,7 @@ class HttpProxyBridge {
    * Set the WebRTC transport to use for proxying
    */
   setTransport(transport: WebRTCTransport | null): void {
+    console.log("[HttpProxyBridge] setTransport called, transport:", transport !== null ? "WebRTC" : "null");
     this.transport = transport;
     this.notifyRemoteMode(transport !== null);
   }
@@ -48,11 +53,15 @@ class HttpProxyBridge {
    * Notify service worker of remote mode state
    */
   private notifyRemoteMode(isRemote: boolean): void {
+    console.log("[HttpProxyBridge] Notifying service worker - isRemote:", isRemote, "controller:", !!navigator.serviceWorker?.controller);
     if (navigator.serviceWorker?.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: "set-remote-mode",
         data: { isRemote },
       });
+      console.log("[HttpProxyBridge] Remote mode message sent to service worker");
+    } else {
+      console.warn("[HttpProxyBridge] No service worker controller available yet");
     }
   }
 
