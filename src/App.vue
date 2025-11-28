@@ -246,28 +246,8 @@ const handleLocalConnect = async (serverAddress: string) => {
   const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
 
-  // Build WebSocket URL
-  let wsUrl: string;
-  try {
-    const url = new URL(serverAddress);
-    const protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    const basePath = url.pathname.replace(/\/$/, "");
-    // Don't add /ws if already present
-    wsUrl = basePath.endsWith("/ws")
-      ? `${protocol}//${url.host}${basePath}`
-      : `${protocol}//${url.host}${basePath}/ws`;
-  } catch {
-    const cleanAddress = serverAddress.replace(/\/$/, "");
-    const protocol = cleanAddress.startsWith("https://") ? "wss:" : "ws:";
-    const host = cleanAddress.replace(/^https?:\/\//, "");
-    // Don't add /ws if already present
-    wsUrl = host.endsWith("/ws")
-      ? `${protocol}//${host}`
-      : `${protocol}//${host}/ws`;
-  }
-
-  console.log("[App] Initializing WebSocket connection to:", wsUrl);
-  await api.initialize(wsUrl);
+  // Pass the HTTP base URL to api.initialize - it will build the WebSocket URL
+  await api.initialize(serverAddress);
   console.log("[App] WebSocket connected, waiting for authentication");
 };
 

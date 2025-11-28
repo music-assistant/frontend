@@ -67,7 +67,8 @@ export class MusicAssistantApi {
   private ws?: Websocket;
   private transport?: ITransport;
   private _throttleId?: any;
-  public baseUrl?: string;
+  public baseUrl?: string;  // HTTP base URL for image proxy etc.
+  public wsUrl?: string;    // WebSocket URL
   public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
   public serverInfo = ref<ServerInfoMessage>();
@@ -98,15 +99,36 @@ export class MusicAssistantApi {
     this.partialResult = {};
   }
 
-  public async initialize(baseUrl: string) {
+  public async initialize(serverAddress: string) {
     if (this.ws) throw new Error("already initialized");
-    if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
-    this.baseUrl = baseUrl;
-    // Build WebSocket URL - don't add /ws if already present
-    let wsUrl = baseUrl.replace("http", "ws");
+    if (serverAddress.endsWith("/")) serverAddress = serverAddress.slice(0, -1);
+
+    // Normalize the server address - ensure we have HTTP base URL
+    let httpBaseUrl: string;
+    let wsUrl: string;
+
+    if (serverAddress.startsWith("ws://") || serverAddress.startsWith("wss://")) {
+      // If given a WebSocket URL, derive the HTTP URL from it
+      wsUrl = serverAddress;
+      httpBaseUrl = serverAddress.replace("wss://", "https://").replace("ws://", "http://");
+      // Remove /ws suffix from HTTP URL
+      if (httpBaseUrl.endsWith("/ws")) {
+        httpBaseUrl = httpBaseUrl.slice(0, -3);
+      }
+    } else {
+      // Given HTTP URL, derive WebSocket URL
+      httpBaseUrl = serverAddress;
+      wsUrl = serverAddress.replace("https://", "wss://").replace("http://", "ws://");
+    }
+
+    // Ensure WebSocket URL ends with /ws
     if (!wsUrl.endsWith("/ws")) {
       wsUrl += "/ws";
     }
+
+    this.baseUrl = httpBaseUrl;  // HTTP URL for image proxy etc.
+    this.wsUrl = wsUrl;
+
     console.log(`Connecting to Music Assistant API ${wsUrl}`);
     this.state.value = ConnectionState.CONNECTING;
 
