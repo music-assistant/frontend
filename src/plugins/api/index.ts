@@ -98,12 +98,7 @@ export class MusicAssistantApi {
     this.partialResult = {};
   }
 
-  public async initialize(
-    baseUrl: string,
-    authToken?: string | null,
-    tokenFromLogin?: boolean,
-    skipRedirects?: boolean,
-  ) {
+  public async initialize(baseUrl: string) {
     if (this.ws) throw new Error("already initialized");
     if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
     this.baseUrl = baseUrl;
@@ -115,19 +110,11 @@ export class MusicAssistantApi {
     console.log(`Connecting to Music Assistant API ${wsUrl}`);
     this.state.value = ConnectionState.CONNECTING;
 
-    let isAuthenticated = false;
-    let authMessageId: string | null = null;
-    let pendingServerInfo: ServerInfoMessage | null = null;
-
     // connect to the websocket api
     this.ws = new WebsocketBuilder(wsUrl)
       .onOpen((i, ev) => {
         console.log("connection opened");
-        // Reset authentication state on reconnection
-        isAuthenticated = false;
-        authMessageId = null;
-        pendingServerInfo = null;
-        // Wait for ServerInfo message before doing anything
+        // Wait for ServerInfo message
       })
       .onClose((i, ev) => {
         console.log("connection closed");
@@ -144,148 +131,54 @@ export class MusicAssistantApi {
         // Message retrieved on the websocket
         const msg = JSON.parse(ev.data);
 
-        // Handle ServerInfo message FIRST (always sent first by server)
-        if ("server_version" in msg && !pendingServerInfo && !isAuthenticated) {
+        // Handle ServerInfo message (always sent first by server)
+        if ("server_version" in msg && !this.serverInfo.value) {
           const serverInfo = msg as ServerInfoMessage;
           console.info("ServerInfo received", serverInfo);
-
-          // Check if we have a token
-          if (!authToken) {
-            // No token provided
-            if (skipRedirects) {
-              // Don't redirect - just store serverInfo and let caller handle auth
-              console.log("No token provided, skipRedirects=true, storing serverInfo");
-              this.serverInfo.value = serverInfo;
-              this.state.value = ConnectionState.CONNECTED;
-              this.signalEvent({
-                event: EventType.CONNECTED,
-                object_id: "",
-                data: serverInfo,
-              });
-              return;
-            }
-            // Old behavior: redirect to login
-            console.error("Authentication required but no token provided");
-            this.ws?.close();
-            const returnUrl = encodeURIComponent(window.location.href);
-            const deviceName = encodeURIComponent(getDeviceName());
-            if (!serverInfo.onboard_done) {
-              window.location.href = `${this.baseUrl}/setup?return_url=${returnUrl}&device_name=${deviceName}`;
-            } else {
-              window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
-            }
-            return;
-          }
-
-          // We have a token - send auth command
-          // Store serverInfo locally (not in this.serverInfo) until auth succeeds
-          pendingServerInfo = serverInfo;
-          authMessageId = this._genCmdId();
-          const authCmd = {
-            command: "auth",
-            message_id: authMessageId,
-            args: {
-              token: authToken,
-            },
-          };
-          console.debug("Sending auth command", authMessageId);
-          i.send(JSON.stringify(authCmd));
+          this.serverInfo.value = serverInfo;
+          this.state.value = ConnectionState.CONNECTED;
+          this.signalEvent({
+            event: EventType.CONNECTED,
+            object_id: "",
+            data: serverInfo,
+          });
           return;
         }
 
-        // Check if this is the auth response (match by message_id)
-        if (
-          authMessageId &&
-          !isAuthenticated &&
-          "message_id" in msg &&
-          msg.message_id === authMessageId
-        ) {
-          if ("error" in msg || "error_code" in msg) {
-            console.error("WebSocket authentication failed", msg);
-            // Clear auth token from localStorage
-            localStorage.removeItem("ma_access_token");
-            localStorage.removeItem("ma_current_user");
-
-            // If skipRedirects is enabled, don't redirect - let caller handle it
-            if (skipRedirects) {
-              console.log("Auth failed, skipRedirects=true, not redirecting");
-              // Keep connection open, caller will handle re-authentication
-              return;
-            }
-
-            // Close connection and redirect to server login
-            this.ws?.close();
-
-            // Check if we just came from login (to prevent redirect loop)
-            if (tokenFromLogin) {
-              // We just got a token from login but it failed validation
-              // Don't redirect again, show error instead
-              console.error(
-                "Token from login page failed validation - possible invalid credentials or server issue",
-              );
-              alert(
-                "Authentication failed. The login token is invalid. Please try logging in again.",
-              );
-              // Clear the token from URL and redirect to login
-              const deviceName = encodeURIComponent(getDeviceName());
-              window.location.href = `${this.baseUrl}/login?device_name=${deviceName}`;
-              return;
-            }
-
-            // Redirect to server login page
-            const returnUrl = encodeURIComponent(window.location.href);
-            const deviceName = encodeURIComponent(getDeviceName());
-            window.location.href = `${this.baseUrl}/login?return_url=${returnUrl}&device_name=${deviceName}`;
-            return;
-          }
-          // Auth successful
-          console.log("WebSocket authenticated successfully", msg);
-          isAuthenticated = true;
-
-          // Extract user from auth response and store it
-          if ("result" in msg && msg.result && typeof msg.result === "object") {
-            const authResult = msg.result as { user?: any };
-            if (authResult.user) {
-              // Store user in localStorage (authManager will load it on next access)
-              localStorage.setItem(
-                "ma_current_user",
-                JSON.stringify(authResult.user),
-              );
-              console.log("User info stored:", authResult.user);
-
-              // Import and update authManager asynchronously
-              import("@/plugins/auth").then(({ authManager }) => {
-                (authManager as any).currentUser = authResult.user;
-              });
-            }
-          }
-
-          // Now that we're authenticated, process the ServerInfo and signal CONNECTED
-          if (pendingServerInfo) {
-            console.info(
-              "Processing ServerInfo after successful authentication",
-            );
-            this.handleServerInfoMessage(pendingServerInfo);
-            pendingServerInfo = null;
-          }
-          return;
-        }
-
-        if ("event" in msg) {
-          this.handleEventMessage(msg as EventMessage);
-        } else if ("message_id" in msg) {
-          this.handleResultMessage(msg);
-        } else {
-          // unknown message receoved
-          console.error("received unknown message", msg);
-        }
+        // Handle all other messages
+        this._handleMessage(msg);
       })
-      .onRetry((i, ev) => {
-        console.log("retry");
-        this.state.value = ConnectionState.CONNECTING;
-      })
-      .withBackoff(new LinearBackoff(0, 1000, 12000))
       .build();
+
+    // Wait for initial ServerInfo message
+    await this.waitForServerInfo();
+  }
+
+  /**
+   * Wait for server info to be received
+   */
+  private async waitForServerInfo(timeoutMs: number = 10000): Promise<void> {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeoutMs) {
+      if (this.serverInfo.value) {
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error("Timeout waiting for server info");
+  }
+
+  /**
+   * Handle incoming message (for both WebSocket and Transport)
+   */
+  private _handleMessage(msg: any) {
+    if ("event" in msg) {
+      this.handleEventMessage(msg as EventMessage);
+    } else if ("message_id" in msg) {
+      this.handleResultMessage(msg);
+    } else {
+      console.error("received unknown message", msg);
+    }
   }
 
   /**
