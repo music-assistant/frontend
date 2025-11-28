@@ -332,6 +332,8 @@ export class MusicAssistantApi {
       if (result.user) {
         localStorage.setItem("ma_current_user", JSON.stringify(result.user));
       }
+      // Now that we're authenticated, fetch the full state
+      this._fetchState();
     }
 
     return result;
@@ -353,6 +355,8 @@ export class MusicAssistantApi {
       import("@/plugins/auth").then(({ authManager }) => {
         (authManager as any).currentUser = result.user;
       });
+      // Now that we're authenticated, fetch the full state
+      this._fetchState();
     }
 
     return result;
@@ -1795,8 +1799,11 @@ export class MusicAssistantApi {
     }
     this.serverInfo.value = msg;
     this.state.value = ConnectionState.CONNECTED;
-    // trigger fetch of full state once we are connected to the server
-    this._fetchState();
+    // For remote connections, don't fetch state until authenticated
+    // For local connections, fetch state immediately
+    if (!this.isRemoteConnection.value) {
+      this._fetchState();
+    }
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
