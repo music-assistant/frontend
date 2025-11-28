@@ -58,14 +58,19 @@ self.addEventListener("fetch", (event) => {
 
   // Only intercept image proxy requests when in remote mode
   if (self.isRemoteMode && url.pathname.startsWith("/imageproxy")) {
-    console.log("[ServiceWorker] Intercepting imageproxy request:", url.pathname);
+    console.log(
+      "[ServiceWorker] Intercepting imageproxy request:",
+      url.pathname,
+    );
     event.respondWith(handleImageProxyRequest(event.request));
     return;
   }
 
   // For imageproxy requests when NOT in remote mode, let them through normally
   if (url.pathname.startsWith("/imageproxy")) {
-    console.log("[ServiceWorker] Passing through imageproxy request (not in remote mode)");
+    console.log(
+      "[ServiceWorker] Passing through imageproxy request (not in remote mode)",
+    );
     event.respondWith(fetch(event.request));
     return;
   }
