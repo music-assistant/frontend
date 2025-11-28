@@ -48,7 +48,7 @@ class HttpProxyBridge {
    * Notify service worker of remote mode state
    */
   private notifyRemoteMode(isRemote: boolean): void {
-    if (navigator.serviceWorker.controller) {
+    if (navigator.serviceWorker?.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: "set-remote-mode",
         data: { isRemote },
@@ -92,7 +92,7 @@ class HttpProxyBridge {
       );
 
       // Send response back to service worker
-      if (navigator.serviceWorker.controller) {
+      if (navigator.serviceWorker?.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: "http-proxy-response",
           data: {
@@ -107,7 +107,7 @@ class HttpProxyBridge {
       console.error("[HttpProxyBridge] HTTP proxy request failed:", error);
 
       // Send error response
-      if (navigator.serviceWorker.controller) {
+      if (navigator.serviceWorker?.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: "http-proxy-response",
           data: {
