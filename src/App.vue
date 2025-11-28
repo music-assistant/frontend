@@ -1,13 +1,12 @@
 <template>
   <VSonner position="bottom-right" />
 
-  <!-- Remote connection screen (when in remote mode and not connected) -->
+  <!-- Login screen (when in remote mode and not authenticated) -->
   <RemoteConnect
     v-if="showRemoteConnect"
-    :can-connect-locally="canConnectLocally"
     @connected="handleRemoteConnected"
     @authenticated="handleRemoteAuthenticated"
-    @switch-to-local="switchToLocalMode"
+    @local-connect="handleLocalConnect"
   />
 
   <!-- Main app (when connected) -->
@@ -56,7 +55,6 @@ const router = useRouter();
 const isRemoteMode = ref(false);
 const remoteConnected = ref(false);
 const remoteAuthenticated = ref(false);
-const canConnectLocally = ref(false);
 
 // Show remote connect screen when in remote mode and not authenticated
 const showRemoteConnect = computed(() => {
@@ -223,23 +221,15 @@ const handleRemoteAuthenticated = async (credentials: {
 };
 
 /**
- * Switch from remote mode to local mode
+ * Handle local connection from login screen
  */
-const switchToLocalMode = () => {
+const handleLocalConnect = async (serverAddress: string) => {
+  console.log("[App] Connecting to local server:", serverAddress);
   isRemoteMode.value = false;
   remoteConnectionManager.setMode(ConnectionMode.LOCAL);
-  remoteConnectionManager.clearStoredRemoteId();
 
-  // Remove remote parameter from URL before reloading
-  const urlParams = new URLSearchParams(window.location.search);
-  urlParams.delete("remote");
-  const cleanUrl =
-    window.location.pathname +
-    (urlParams.toString() ? "?" + urlParams.toString() : "") +
-    window.location.hash;
-
-  // Reload to start fresh in local mode
-  window.location.href = cleanUrl;
+  // Initialize local connection
+  await initializeLocalConnection(serverAddress);
 };
 
 /**
@@ -426,37 +416,18 @@ onMounted(async () => {
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", setTheme);
 
-  // Detect if we're in remote mode
-  isRemoteMode.value = detectRemoteMode();
+  // Detect if we're in remote mode (or development mode, where we also use the login screen)
+  isRemoteMode.value = detectRemoteMode() || process.env.NODE_ENV === "development";
 
   if (isRemoteMode.value) {
-    console.log("[App] Running in remote mode");
-
-    // Check if we can also connect locally (for hybrid setups)
-    canConnectLocally.value = process.env.NODE_ENV === "development";
-
-    // In remote mode, the RemoteConnect component will handle the connection
-    // The app will wait for handleRemoteConnected and handleRemoteAuthenticated
+    console.log("[App] Showing login screen");
+    // The RemoteConnect component will handle both local and remote connections
   } else {
-    console.log("[App] Running in local mode");
-
-    // Initialize server address for local connection
-    let serverAddress = "";
-    if (process.env.NODE_ENV === "development") {
-      serverAddress = localStorage.getItem("mass_debug_address") || "";
-      if (!serverAddress) {
-        serverAddress =
-          prompt(
-            "Enter location of the Music Assistant server",
-            window.location.origin.replace("3000", "8095")
-          ) || "";
-        localStorage.setItem("mass_debug_address", serverAddress);
-      }
-    } else {
-      const loc = window.location;
-      serverAddress = loc.origin + loc.pathname;
-    }
-
+    console.log("[App] Running in local mode (hosted on server)");
+    // When hosted on the server, skip the login screen and connect directly
+    // The server handles authentication via its own login page
+    const loc = window.location;
+    const serverAddress = loc.origin + loc.pathname;
     await initializeLocalConnection(serverAddress);
   }
 

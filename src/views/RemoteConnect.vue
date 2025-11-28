@@ -1,274 +1,232 @@
 <template>
   <v-app>
-    <v-main class="d-flex align-center justify-center" style="min-height: 100vh">
+    <v-main class="login-background">
       <v-container class="fill-height" fluid>
         <v-row align="center" justify="center">
-          <v-col cols="12" sm="8" md="6" lg="4">
-            <!-- Logo and Title -->
-            <div class="text-center mb-8">
-              <img
-                src="@/assets/logo.svg"
-                alt="Music Assistant"
-                style="max-height: 80px"
-                class="mx-auto mb-4 d-block"
-              />
-              <p class="text-subtitle-1 text-medium-emphasis mt-2">
-                {{ getSubtitle }}
-              </p>
-            </div>
+          <v-col cols="12" sm="10" md="6" lg="5" xl="4">
+            <v-card class="login-card pa-8" elevation="12" rounded="xl">
+              <!-- Logo -->
+              <div class="text-center mb-6">
+                <img
+                  src="@/assets/icon.svg"
+                  alt="Music Assistant"
+                  class="login-logo mb-4"
+                />
+                <h1 class="text-h4 font-weight-bold">Music Assistant</h1>
+                <p class="text-body-2 text-medium-emphasis mt-2">
+                  {{ getSubtitle }}
+                </p>
+              </div>
 
-            <!-- Connection Card -->
-            <v-card elevation="8" class="pa-6">
-              <!-- Step 1: Enter Remote ID -->
-              <template v-if="step === 'remote-id'">
-                <v-card-title class="text-h6 text-center pb-4">
-                  {{ $t('remote.connect_title', 'Connect to your server') }}
-                </v-card-title>
+              <!-- Connection Mode Selector (only if not auto-detected local) -->
+              <v-tabs
+                v-if="showConnectionTabs && step === 'select-mode'"
+                v-model="connectionMode"
+                class="mb-6"
+                grow
+                color="primary"
+              >
+                <v-tab value="local">
+                  <v-icon start>mdi-server</v-icon>
+                  {{ $t('login.local_server', 'Local Server') }}
+                </v-tab>
+                <v-tab value="remote">
+                  <v-icon start>mdi-cloud</v-icon>
+                  {{ $t('login.remote_server', 'Remote') }}
+                </v-tab>
+              </v-tabs>
 
-                <v-card-text>
+              <!-- Local Server Input (when not auto-detected) -->
+              <div v-if="connectionMode === 'local' && step === 'select-mode' && !isLocalServer" class="mb-4">
+                <label class="text-body-2 font-weight-medium mb-2 d-block">
+                  {{ $t('login.server_address', 'Server Address') }}
+                </label>
+                <v-text-field
+                  v-model="serverAddress"
+                  :placeholder="$t('login.server_address_placeholder', 'http://192.168.1.100:8095')"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
+                  :error-messages="connectionError"
+                  :disabled="isConnecting"
+                  bg-color="surface-light"
+                  @keyup.enter="connectToLocal"
+                />
+              </div>
+
+              <!-- Remote ID Input -->
+              <div v-if="connectionMode === 'remote' && step === 'select-mode'" class="mb-4">
+                <label class="text-body-2 font-weight-medium mb-2 d-block">
+                  {{ $t('login.remote_id', 'Remote ID') }}
+                </label>
+                <v-text-field
+                  v-model="remoteId"
+                  :placeholder="$t('login.remote_id_placeholder', 'e.g., MA-X7K9-P2M4')"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
+                  :error-messages="connectionError"
+                  :disabled="isConnecting"
+                  bg-color="surface-light"
+                  @keyup.enter="connectToRemote"
+                />
+                <p class="text-caption text-medium-emphasis mt-2">
+                  {{ $t('login.remote_id_hint', 'Find this in your server settings under "Remote Access"') }}
+                </p>
+              </div>
+
+              <!-- Connect Button for mode selection -->
+              <v-btn
+                v-if="step === 'select-mode'"
+                color="primary"
+                size="x-large"
+                block
+                rounded="lg"
+                class="mb-4 text-none"
+                :loading="isConnecting"
+                :disabled="(connectionMode === 'remote' && !remoteId.trim()) || (connectionMode === 'local' && !isLocalServer && !serverAddress.trim())"
+                @click="connectionMode === 'remote' ? connectToRemote() : connectToLocal()"
+              >
+                {{ $t('login.connect', 'Connect') }}
+              </v-btn>
+
+              <!-- Login Form (after connection) -->
+              <template v-if="step === 'login'">
+                <!-- Username Field -->
+                <div class="mb-4">
+                  <label class="text-body-2 font-weight-medium mb-2 d-block">
+                    {{ $t('login.username', 'Username') }}
+                  </label>
                   <v-text-field
-                    v-model="remoteId"
-                    :label="$t('remote.remote_id', 'Remote ID')"
-                    :placeholder="$t('remote.remote_id_placeholder', 'e.g., MA-X7K9-P2M4')"
+                    v-model="username"
+                    :placeholder="$t('login.username_placeholder', 'Enter your username')"
                     variant="outlined"
-                    prepend-inner-icon="mdi-lan-connect"
-                    :error-messages="connectionError"
-                    :disabled="isConnecting"
-                    @keyup.enter="connectToRemote"
+                    density="comfortable"
+                    hide-details="auto"
+                    :disabled="isAuthenticating"
+                    bg-color="surface-light"
                     autofocus
                   />
+                </div>
 
-                  <p class="text-caption text-medium-emphasis mt-2">
-                    {{
-                      $t(
-                        'remote.remote_id_hint',
-                        'Find your Remote ID in your Music Assistant server settings under "Remote Access".'
-                      )
-                    }}
-                  </p>
-
-                  <!-- Stored Connections -->
-                  <template v-if="storedConnections.length > 0">
-                    <v-divider class="my-4" />
-                    <p class="text-subtitle-2 mb-2">
-                      {{ $t('remote.recent_connections', 'Recent Connections') }}
-                    </p>
-                    <v-list density="compact" class="bg-transparent">
-                      <v-list-item
-                        v-for="conn in storedConnections"
-                        :key="conn.remoteId"
-                        @click="selectStoredConnection(conn)"
-                        :disabled="isConnecting"
-                        class="rounded mb-1"
-                      >
-                        <template v-slot:prepend>
-                          <v-icon>mdi-server</v-icon>
-                        </template>
-                        <v-list-item-title>
-                          {{ conn.serverName || conn.remoteId }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle v-if="conn.serverName">
-                          {{ conn.remoteId }}
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                          <v-btn
-                            icon
-                            variant="text"
-                            size="small"
-                            @click.stop="removeStoredConnection(conn.remoteId)"
-                          >
-                            <v-icon size="small">mdi-close</v-icon>
-                          </v-btn>
-                        </template>
-                      </v-list-item>
-                    </v-list>
-                  </template>
-                </v-card-text>
-
-                <v-card-actions class="flex-column">
-                  <v-btn
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isConnecting"
-                    :disabled="!remoteId.trim()"
-                    @click="connectToRemote"
-                  >
-                    {{ $t('remote.connect', 'Connect') }}
-                  </v-btn>
-
-                  <v-btn
-                    v-if="canConnectLocally"
-                    variant="text"
-                    class="mt-3"
-                    @click="switchToLocal"
-                  >
-                    {{ $t('remote.connect_locally', 'Connect to local server instead') }}
-                  </v-btn>
-                </v-card-actions>
-              </template>
-
-              <!-- Step 2: Login -->
-              <template v-else-if="step === 'login'">
-                <v-card-title class="text-h6 text-center pb-4">
-                  {{ $t('remote.login_title', 'Sign in to your server') }}
-                </v-card-title>
-
-                <v-card-subtitle class="text-center pb-4">
-                  <v-chip size="small" color="primary" variant="tonal">
-                    <v-icon start size="small">mdi-lan-connect</v-icon>
-                    {{ currentRemoteId }}
-                  </v-chip>
-                </v-card-subtitle>
-
-                <v-card-text>
-                  <!-- Home Assistant OAuth Button -->
-                  <v-btn
-                    v-if="hasHomeAssistantAuth"
-                    color="primary"
+                <!-- Password Field -->
+                <div class="mb-6">
+                  <label class="text-body-2 font-weight-medium mb-2 d-block">
+                    {{ $t('login.password', 'Password') }}
+                  </label>
+                  <v-text-field
+                    v-model="password"
+                    :placeholder="$t('login.password_placeholder', 'Enter your password')"
+                    :type="showPassword ? 'text' : 'password'"
                     variant="outlined"
-                    size="large"
-                    block
-                    class="mb-4"
-                    :loading="isAuthenticating"
-                    @click="loginWithHomeAssistant"
-                  >
-                    <v-icon start>mdi-home-assistant</v-icon>
-                    {{ $t('remote.login_with_ha', 'Sign in with Home Assistant') }}
-                  </v-btn>
+                    density="comfortable"
+                    hide-details="auto"
+                    :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                    @click:append-inner="showPassword = !showPassword"
+                    :error-messages="loginError"
+                    :disabled="isAuthenticating"
+                    bg-color="surface-light"
+                    @keyup.enter="login"
+                  />
+                </div>
 
-                  <!-- Divider if HA auth is available -->
-                  <div v-if="hasHomeAssistantAuth" class="d-flex align-center my-4">
-                    <v-divider />
-                    <span class="mx-3 text-caption text-medium-emphasis">
-                      {{ $t('remote.or', 'or') }}
-                    </span>
-                    <v-divider />
-                  </div>
+                <!-- Sign In Button -->
+                <v-btn
+                  color="primary"
+                  size="x-large"
+                  block
+                  rounded="lg"
+                  class="mb-6 text-none"
+                  :loading="isAuthenticating"
+                  :disabled="!username.trim() || !password.trim()"
+                  @click="login"
+                >
+                  {{ $t('login.sign_in', 'Sign In') }}
+                </v-btn>
 
-                  <!-- Username/Password Form -->
-                  <v-form @submit.prevent="login" ref="loginForm">
-                    <v-text-field
-                      v-model="username"
-                      :label="$t('remote.username', 'Username')"
-                      variant="outlined"
-                      prepend-inner-icon="mdi-account"
-                      :error-messages="loginError && !password ? loginError : ''"
-                      :disabled="isAuthenticating"
-                      autofocus
-                    />
+                <!-- OAuth Divider -->
+                <div v-if="hasHomeAssistantAuth" class="d-flex align-center my-6">
+                  <v-divider class="flex-grow-1" />
+                  <span class="mx-4 text-body-2 text-medium-emphasis">
+                    {{ $t('login.or_continue_with', 'Or continue with') }}
+                  </span>
+                  <v-divider class="flex-grow-1" />
+                </div>
 
-                    <v-text-field
-                      v-model="password"
-                      :label="$t('remote.password', 'Password')"
-                      :type="showPassword ? 'text' : 'password'"
-                      variant="outlined"
-                      prepend-inner-icon="mdi-lock"
-                      :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-                      @click:append-inner="showPassword = !showPassword"
-                      :error-messages="loginError"
-                      :disabled="isAuthenticating"
-                      @keyup.enter="login"
-                    />
+                <!-- Home Assistant OAuth Button -->
+                <v-btn
+                  v-if="hasHomeAssistantAuth"
+                  variant="outlined"
+                  size="x-large"
+                  block
+                  rounded="lg"
+                  class="text-none oauth-btn"
+                  :loading="isAuthenticating"
+                  @click="loginWithHomeAssistant"
+                >
+                  <v-icon start>mdi-home-assistant</v-icon>
+                  {{ $t('login.sign_in_with_ha', 'Sign in with Home Assistant') }}
+                </v-btn>
 
-                    <v-checkbox
-                      v-model="rememberCredentials"
-                      :label="$t('remote.remember_me', 'Remember me on this device')"
-                      density="compact"
-                      hide-details
-                    />
-                  </v-form>
-                </v-card-text>
-
-                <v-card-actions class="flex-column">
-                  <v-btn
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isAuthenticating"
-                    :disabled="!username.trim() || !password.trim()"
-                    @click="login"
-                  >
-                    {{ $t('remote.sign_in', 'Sign In') }}
-                  </v-btn>
-
-                  <v-btn variant="text" class="mt-3" @click="goBack" :disabled="isAuthenticating">
-                    {{ $t('remote.back', 'Back') }}
-                  </v-btn>
-                </v-card-actions>
+                <!-- Back button if remote -->
+                <v-btn
+                  v-if="isRemoteConnection"
+                  variant="text"
+                  class="mt-4"
+                  block
+                  @click="goBack"
+                  :disabled="isAuthenticating"
+                >
+                  {{ $t('login.back', 'Back') }}
+                </v-btn>
               </template>
 
-              <!-- Step: OAuth Waiting -->
-              <template v-else-if="step === 'oauth-waiting'">
-                <v-card-text class="text-center py-8">
+              <!-- OAuth Waiting -->
+              <template v-if="step === 'oauth-waiting'">
+                <div class="text-center py-6">
                   <v-icon color="primary" size="64" class="mb-4">mdi-home-assistant</v-icon>
-                  <p class="text-h6">{{ $t('remote.oauth_waiting_title', 'Complete Sign-in') }}</p>
-                  <p class="text-body-2 text-medium-emphasis mt-2 mb-4">
-                    {{
-                      $t(
-                        'remote.oauth_waiting_message',
-                        'A browser window has opened. Please sign in with Home Assistant, then return here.'
-                      )
-                    }}
+                  <p class="text-h6 mb-2">{{ $t('login.complete_sign_in', 'Complete Sign-in') }}</p>
+                  <p class="text-body-2 text-medium-emphasis mb-6">
+                    {{ $t('login.oauth_waiting_message', 'A browser window has opened. Please sign in with Home Assistant, then return here.') }}
                   </p>
-                  <v-progress-circular indeterminate color="primary" size="32" />
-                  <p class="text-caption text-medium-emphasis mt-4">
-                    {{ $t('remote.oauth_waiting_hint', 'Waiting for authentication...') }}
+                  <v-progress-circular indeterminate color="primary" size="40" class="mb-4" />
+                  <p class="text-caption text-medium-emphasis">
+                    {{ $t('login.waiting_for_auth', 'Waiting for authentication...') }}
                   </p>
-                </v-card-text>
-
-                <v-card-actions>
-                  <v-btn variant="text" block @click="cancelOAuth">
-                    {{ $t('remote.cancel', 'Cancel') }}
-                  </v-btn>
-                </v-card-actions>
+                </div>
+                <v-btn variant="text" block @click="cancelOAuth">
+                  {{ $t('login.cancel', 'Cancel') }}
+                </v-btn>
               </template>
 
-              <!-- Step 3: Connecting -->
-              <template v-else-if="step === 'connecting'">
-                <v-card-text class="text-center py-8">
+              <!-- Connecting State -->
+              <template v-if="step === 'connecting'">
+                <div class="text-center py-6">
                   <v-progress-circular indeterminate color="primary" size="64" class="mb-4" />
-                  <p class="text-h6">{{ $t('remote.connecting', 'Connecting...') }}</p>
-                  <p class="text-body-2 text-medium-emphasis mt-2">
+                  <p class="text-h6 mb-2">{{ $t('login.connecting', 'Connecting...') }}</p>
+                  <p class="text-body-2 text-medium-emphasis">
                     {{ connectionStatusMessage }}
                   </p>
-                </v-card-text>
-
-                <v-card-actions>
-                  <v-btn variant="text" block @click="cancelConnection">
-                    {{ $t('remote.cancel', 'Cancel') }}
-                  </v-btn>
-                </v-card-actions>
+                </div>
+                <v-btn variant="text" block @click="cancelConnection">
+                  {{ $t('login.cancel', 'Cancel') }}
+                </v-btn>
               </template>
 
               <!-- Error State -->
-              <template v-else-if="step === 'error'">
-                <v-card-text class="text-center py-8">
+              <template v-if="step === 'error'">
+                <div class="text-center py-6">
                   <v-icon color="error" size="64" class="mb-4">mdi-alert-circle</v-icon>
-                  <p class="text-h6">{{ $t('remote.connection_failed', 'Connection Failed') }}</p>
-                  <p class="text-body-2 text-medium-emphasis mt-2">
+                  <p class="text-h6 mb-2">{{ $t('login.connection_failed', 'Connection Failed') }}</p>
+                  <p class="text-body-2 text-medium-emphasis">
                     {{ connectionError }}
                   </p>
-                </v-card-text>
-
-                <v-card-actions>
-                  <v-btn color="primary" block @click="retry">
-                    {{ $t('remote.retry', 'Try Again') }}
-                  </v-btn>
-                </v-card-actions>
+                </div>
+                <v-btn color="primary" block rounded="lg" @click="retry">
+                  {{ $t('login.try_again', 'Try Again') }}
+                </v-btn>
               </template>
             </v-card>
-
-            <!-- Footer -->
-            <div class="text-center mt-6 text-caption text-medium-emphasis">
-              <a
-                href="https://music-assistant.io"
-                target="_blank"
-                class="text-decoration-none text-inherit"
-              >
-                music-assistant.io
-              </a>
-            </div>
           </v-col>
         </v-row>
       </v-container>
@@ -281,7 +239,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   remoteConnectionManager,
-  RemoteConnectionState,
   type StoredRemoteConnection,
 } from '@/plugins/remote';
 import { api } from '@/plugins/api';
@@ -291,36 +248,35 @@ const { t } = useI18n();
 // Props and emits
 const emit = defineEmits<{
   (e: 'connected', transport: any): void;
-  (e: 'authenticated', user: any): void;
-  (e: 'switch-to-local'): void;
+  (e: 'authenticated', credentials: { username?: string; password?: string; token?: string; user?: any }): void;
+  (e: 'local-connect', serverAddress: string): void;
 }>();
 
-// Define props with defaults
-const props = withDefaults(
-  defineProps<{
-    canConnectLocally?: boolean;
-  }>(),
-  {
-    canConnectLocally: false,
-  }
-);
+// Detect if we're hosted on the server itself
+const isLocalServer = computed(() => {
+  const hostname = window.location.hostname;
+  // If accessing via IP or localhost on standard MA port, we're local
+  return !['app.music-assistant.io', 'music-assistant.github.io'].some(h => hostname.includes(h));
+});
 
 // UI State
-type Step = 'remote-id' | 'login' | 'connecting' | 'oauth-waiting' | 'error';
-const step = ref<Step>('remote-id');
+type Step = 'select-mode' | 'login' | 'connecting' | 'oauth-waiting' | 'error';
+const step = ref<Step>('select-mode');
+const connectionMode = ref<'local' | 'remote'>(isLocalServer.value ? 'local' : 'remote');
+const showConnectionTabs = computed(() => !isLocalServer.value);
 
 // Connection state
+const serverAddress = ref('');
 const remoteId = ref('');
-const currentRemoteId = ref<string | null>(null);
 const isConnecting = ref(false);
 const connectionError = ref<string | null>(null);
 const connectionStatusMessage = ref('');
+const isRemoteConnection = ref(false);
 
 // Login state
 const username = ref('');
 const password = ref('');
 const showPassword = ref(false);
-const rememberCredentials = ref(true);
 const isAuthenticating = ref(false);
 const loginError = ref<string | null>(null);
 
@@ -334,46 +290,66 @@ const hasHomeAssistantAuth = computed(() =>
 const oauthSessionId = ref<string | null>(null);
 const oauthPollingInterval = ref<number | null>(null);
 
-// Stored connections
-const storedConnections = computed(() => remoteConnectionManager.storedConnections);
-
 // Computed
 const getSubtitle = computed(() => {
   if (step.value === 'login') {
-    return t('remote.subtitle_login', 'Sign in to access your music');
+    return t('login.sign_in_to_continue', 'Sign in to continue');
   }
   if (step.value === 'oauth-waiting') {
-    return t('remote.subtitle_oauth', 'Complete sign-in in your browser');
+    return t('login.complete_in_browser', 'Complete sign-in in your browser');
   }
-  return t('remote.subtitle', 'Connect to your home server from anywhere');
+  if (step.value === 'connecting') {
+    return t('login.establishing_connection', 'Establishing connection...');
+  }
+  return t('login.subtitle', 'Connect to your music server');
 });
 
 // Methods
+const connectToLocal = async () => {
+  if (!isLocalServer.value && !serverAddress.value.trim()) return;
+
+  isConnecting.value = true;
+  connectionError.value = null;
+  isRemoteConnection.value = false;
+  step.value = 'connecting';
+  connectionStatusMessage.value = t('login.connecting_to_server', 'Connecting to server...');
+
+  try {
+    const address = isLocalServer.value
+      ? window.location.origin
+      : serverAddress.value.trim();
+
+    // For local connections, emit event to let App.vue handle it
+    emit('local-connect', address);
+
+    // Fetch auth providers
+    await fetchAuthProviders();
+
+    step.value = 'login';
+  } catch (error) {
+    console.error('[Login] Local connection failed:', error);
+    connectionError.value = error instanceof Error ? error.message : t('login.error_unknown', 'Unknown error occurred');
+    step.value = 'error';
+  } finally {
+    isConnecting.value = false;
+  }
+};
+
 const connectToRemote = async () => {
   if (!remoteId.value.trim()) return;
 
   isConnecting.value = true;
   connectionError.value = null;
-  currentRemoteId.value = remoteId.value.trim().toUpperCase();
+  isRemoteConnection.value = true;
   step.value = 'connecting';
-  connectionStatusMessage.value = t(
-    'remote.status_connecting_signaling',
-    'Connecting to signaling server...'
-  );
+  connectionStatusMessage.value = t('login.connecting_to_signaling', 'Connecting to signaling server...');
 
   try {
-    // Update status as we progress
-    connectionStatusMessage.value = t(
-      'remote.status_finding_server',
-      'Finding your server...'
-    );
+    connectionStatusMessage.value = t('login.finding_server', 'Finding your server...');
 
-    const transport = await remoteConnectionManager.connectRemote(currentRemoteId.value);
+    const transport = await remoteConnectionManager.connectRemote(remoteId.value.trim().toUpperCase());
 
-    connectionStatusMessage.value = t(
-      'remote.status_establishing',
-      'Establishing secure connection...'
-    );
+    connectionStatusMessage.value = t('login.establishing_secure', 'Establishing secure connection...');
 
     // Connection established, emit connected event
     emit('connected', transport);
@@ -381,12 +357,10 @@ const connectToRemote = async () => {
     // Fetch available auth providers
     await fetchAuthProviders();
 
-    // Now show login screen
     step.value = 'login';
   } catch (error) {
-    console.error('[RemoteConnect] Connection failed:', error);
-    connectionError.value =
-      error instanceof Error ? error.message : t('remote.error_unknown', 'Unknown error occurred');
+    console.error('[Login] Remote connection failed:', error);
+    connectionError.value = error instanceof Error ? error.message : t('login.error_unknown', 'Unknown error occurred');
     step.value = 'error';
   } finally {
     isConnecting.value = false;
@@ -395,14 +369,11 @@ const connectToRemote = async () => {
 
 const fetchAuthProviders = async () => {
   try {
-    const providers = await api.sendCommand<Array<{ id: string; name: string; type: string }>>(
-      'auth/providers'
-    );
+    const providers = await api.sendCommand<Array<{ id: string; name: string; type: string }>>('auth/providers');
     authProviders.value = providers || [];
-    console.log('[RemoteConnect] Auth providers:', authProviders.value);
+    console.log('[Login] Auth providers:', authProviders.value);
   } catch (error) {
-    console.error('[RemoteConnect] Failed to fetch auth providers:', error);
-    // Default to just showing username/password
+    console.error('[Login] Failed to fetch auth providers:', error);
     authProviders.value = [];
   }
 };
@@ -414,25 +385,15 @@ const login = async () => {
   loginError.value = null;
 
   try {
-    // Send login command over the WebRTC connection
-    // The actual authentication is handled by the API
-    const credentials = {
+    emit('authenticated', {
       username: username.value.trim(),
       password: password.value,
-    };
-
-    // Store credentials if requested
-    if (rememberCredentials.value && currentRemoteId.value) {
-      // We'll store the auth token after successful login, not the password
-    }
-
-    emit('authenticated', credentials);
+    });
   } catch (error) {
-    console.error('[RemoteConnect] Login failed:', error);
-    loginError.value =
-      error instanceof Error
-        ? error.message
-        : t('remote.error_login_failed', 'Login failed. Please check your credentials.');
+    console.error('[Login] Login failed:', error);
+    loginError.value = error instanceof Error
+      ? error.message
+      : t('login.error_login_failed', 'Login failed. Please check your credentials.');
     isAuthenticating.value = false;
   }
 };
@@ -442,7 +403,6 @@ const loginWithHomeAssistant = async () => {
   loginError.value = null;
 
   try {
-    // Get the authorization URL for Home Assistant OAuth
     const response = await api.sendCommand<{ authorization_url: string; session_id: string }>(
       'auth/authorization_url',
       {
@@ -456,27 +416,19 @@ const loginWithHomeAssistant = async () => {
     }
 
     oauthSessionId.value = response.session_id;
-
-    // Open the authorization URL in a new window
     window.open(response.authorization_url, '_blank');
-
-    // Switch to OAuth waiting step
     step.value = 'oauth-waiting';
-
-    // Start polling for OAuth completion
     startOAuthPolling();
   } catch (error) {
-    console.error('[RemoteConnect] Failed to start Home Assistant OAuth:', error);
-    loginError.value =
-      error instanceof Error
-        ? error.message
-        : t('remote.error_oauth_failed', 'Failed to start Home Assistant authentication.');
+    console.error('[Login] Failed to start Home Assistant OAuth:', error);
+    loginError.value = error instanceof Error
+      ? error.message
+      : t('login.error_oauth_failed', 'Failed to start Home Assistant authentication.');
     isAuthenticating.value = false;
   }
 };
 
 const startOAuthPolling = () => {
-  // Poll every 2 seconds
   oauthPollingInterval.value = window.setInterval(async () => {
     if (!oauthSessionId.value) {
       stopOAuthPolling();
@@ -494,22 +446,16 @@ const startOAuthPolling = () => {
 
       if (status.status === 'completed' && status.access_token) {
         stopOAuthPolling();
-
-        // Authenticate with the received token
         const result = await api.authenticateWithToken(status.access_token);
-
-        // Emit authenticated event with the token
         emit('authenticated', { token: status.access_token, user: result.user });
       } else if (status.status === 'error') {
         stopOAuthPolling();
-        loginError.value = status.message || t('remote.error_oauth_failed', 'Authentication failed.');
+        loginError.value = status.message || t('login.error_oauth_failed', 'Authentication failed.');
         step.value = 'login';
         isAuthenticating.value = false;
       }
-      // If pending, keep polling
     } catch (error) {
-      console.error('[RemoteConnect] OAuth polling error:', error);
-      // Don't stop polling on transient errors, just log them
+      console.error('[Login] OAuth polling error:', error);
     }
   }, 2000);
 };
@@ -528,19 +474,10 @@ const cancelOAuth = () => {
   step.value = 'login';
 };
 
-const selectStoredConnection = (conn: StoredRemoteConnection) => {
-  remoteId.value = conn.remoteId;
-  connectToRemote();
-};
-
-const removeStoredConnection = (id: string) => {
-  remoteConnectionManager.removeStoredConnection(id);
-};
-
 const goBack = () => {
   stopOAuthPolling();
   remoteConnectionManager.disconnect();
-  step.value = 'remote-id';
+  step.value = 'select-mode';
   loginError.value = null;
   username.value = '';
   password.value = '';
@@ -551,35 +488,68 @@ const cancelConnection = () => {
   stopOAuthPolling();
   remoteConnectionManager.disconnect();
   isConnecting.value = false;
-  step.value = 'remote-id';
+  step.value = 'select-mode';
 };
 
 const retry = () => {
   connectionError.value = null;
-  step.value = 'remote-id';
+  step.value = 'select-mode';
 };
 
-const switchToLocal = () => {
-  emit('switch-to-local');
-};
-
-// Check for stored remote ID on mount
-onMounted(() => {
-  const storedId = remoteConnectionManager.getStoredRemoteId();
-  if (storedId) {
-    remoteId.value = storedId;
+// Auto-connect if local server
+onMounted(async () => {
+  if (isLocalServer.value) {
+    // Auto-connect to local server
+    await connectToLocal();
+  } else {
+    // Check for stored remote ID
+    const storedId = remoteConnectionManager.getStoredRemoteId();
+    if (storedId) {
+      remoteId.value = storedId;
+    }
   }
 });
 
-// Cleanup on unmount
 onUnmounted(() => {
   stopOAuthPolling();
 });
 </script>
 
 <style scoped>
-.v-card {
-  background: rgba(var(--v-theme-surface), 0.95);
-  backdrop-filter: blur(10px);
+.login-background {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  min-height: 100vh;
+}
+
+.login-card {
+  background: rgba(30, 30, 46, 0.95) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-logo {
+  width: 80px;
+  height: 80px;
+}
+
+.oauth-btn {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.oauth-btn:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+:deep(.v-field) {
+  border-radius: 12px !important;
+}
+
+:deep(.v-field--variant-outlined .v-field__outline__start) {
+  border-radius: 12px 0 0 12px !important;
+}
+
+:deep(.v-field--variant-outlined .v-field__outline__end) {
+  border-radius: 0 12px 12px 0 !important;
 }
 </style>
