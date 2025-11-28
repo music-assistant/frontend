@@ -289,7 +289,11 @@ export class WebRTCTransport extends BaseTransport {
     method: string,
     path: string,
     headers: Record<string, string> = {},
-  ): Promise<{ status: number; headers: Record<string, string>; body: Uint8Array }> {
+  ): Promise<{
+    status: number;
+    headers: Record<string, string>;
+    body: Uint8Array;
+  }> {
     if (!this.dataChannel || this.dataChannel.readyState !== "open") {
       throw new Error("DataChannel is not open");
     }
@@ -350,7 +354,9 @@ export class WebRTCTransport extends BaseTransport {
         });
       } catch (error) {
         callbacks.reject(
-          error instanceof Error ? error : new Error("Failed to parse response"),
+          error instanceof Error
+            ? error
+            : new Error("Failed to parse response"),
         );
       }
     }

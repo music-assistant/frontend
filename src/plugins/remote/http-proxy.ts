@@ -28,7 +28,10 @@ class HttpProxyBridge {
           this.handleServiceWorkerMessage(event);
         });
       } catch (error) {
-        console.error("[HttpProxyBridge] Service worker registration failed:", error);
+        console.error(
+          "[HttpProxyBridge] Service worker registration failed:",
+          error,
+        );
       }
     }
   }
@@ -74,7 +77,9 @@ class HttpProxyBridge {
     headers: Record<string, string>;
   }): Promise<void> {
     if (!this.transport) {
-      console.error("[HttpProxyBridge] No transport available for HTTP proxy request");
+      console.error(
+        "[HttpProxyBridge] No transport available for HTTP proxy request",
+      );
       return;
     }
 
