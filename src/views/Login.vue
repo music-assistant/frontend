@@ -197,18 +197,6 @@
                   {{ $t("login.sign_in", "Sign In") }}
                 </v-btn>
 
-                <!-- OAuth Divider -->
-                <div
-                  v-if="hasHomeAssistantAuth"
-                  class="d-flex align-center my-6"
-                >
-                  <v-divider class="flex-grow-1" />
-                  <span class="mx-4 text-body-2 text-medium-emphasis">
-                    {{ $t("login.or_continue_with", "Or continue with") }}
-                  </span>
-                  <v-divider class="flex-grow-1" />
-                </div>
-
                 <!-- Home Assistant OAuth Button -->
                 <v-btn
                   v-if="hasHomeAssistantAuth"
@@ -216,11 +204,17 @@
                   size="x-large"
                   block
                   rounded="lg"
-                  class="text-none oauth-btn"
+                  class="text-none oauth-btn mt-4"
                   :loading="isAuthenticating"
                   @click="loginWithHomeAssistant"
                 >
-                  <v-icon start>mdi-home-assistant</v-icon>
+                  <img
+                    src="@/assets/home-assistant-logo.svg"
+                    alt="Home Assistant"
+                    width="24"
+                    height="24"
+                    style="margin-right: 8px"
+                  />
                   {{
                     $t("login.sign_in_with_ha", "Sign in with Home Assistant")
                   }}
@@ -241,9 +235,14 @@
               <!-- OAuth Waiting -->
               <template v-if="step === 'oauth-waiting'">
                 <div class="text-center py-6">
-                  <v-icon color="primary" size="64" class="mb-4"
-                    >mdi-home-assistant</v-icon
-                  >
+                  <img
+                    src="@/assets/home-assistant-logo.svg"
+                    alt="Home Assistant"
+                    width="64"
+                    height="64"
+                    class="mb-4"
+                    style="margin: 0 auto; display: block"
+                  />
                   <p class="text-h6 mb-2">
                     {{ $t("login.complete_sign_in", "Complete Sign-in") }}
                   </p>
@@ -326,6 +325,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { remoteConnectionManager } from "@/plugins/remote";
 import { api } from "@/plugins/api";
+import type { AuthProvider } from "@/plugins/api/interfaces";
 
 const { t } = useI18n();
 
@@ -451,11 +451,9 @@ const isAuthenticating = ref(false);
 const loginError = ref<string | null>(null);
 
 // Auth providers state
-const authProviders = ref<Array<{ id: string; name: string; type: string }>>(
-  [],
-);
+const authProviders = ref<AuthProvider[]>([]);
 const hasHomeAssistantAuth = computed(() =>
-  authProviders.value.some((p) => p.id === "hass" || p.type === "hass"),
+  authProviders.value.some((p) => p.provider_id === "homeassistant"),
 );
 
 // OAuth state
@@ -968,10 +966,7 @@ const fetchAuthProviders = async () => {
     }
 
     // Try to fetch auth providers (may require auth on some servers)
-    const providers =
-      await api.sendCommand<Array<{ id: string; name: string; type: string }>>(
-        "auth/providers",
-      );
+    const providers = await api.sendCommand<AuthProvider[]>("auth/providers");
     authProviders.value = providers || [];
     console.log("[Login] Auth providers:", authProviders.value);
   } catch (error) {
@@ -1017,7 +1012,7 @@ const loginWithHomeAssistant = async () => {
       authorization_url: string;
       session_id: string;
     }>("auth/authorization_url", {
-      provider_id: "hass",
+      provider_id: "homeassistant",
       for_remote_client: true,
     });
 
