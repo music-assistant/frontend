@@ -64,6 +64,70 @@
           density="comfortable"
           :rules="[rules.passwordMatch]"
         />
+
+        <!-- Player Filter -->
+        <v-select
+          v-model="localUser.playerFilter"
+          :label="$t('auth.player_filter')"
+          :items="playerOptions"
+          variant="outlined"
+          density="comfortable"
+          multiple
+          chips
+          closable-chips
+          class="mb-2"
+          :hint="$t('auth.player_filter_hint')"
+          persistent-hint
+        >
+          <template #selection="{ item, index }">
+            <v-chip
+              v-if="index < 2"
+              size="small"
+              closable
+              @click:close="removePlayer(item.value)"
+            >
+              {{ item.title }}
+            </v-chip>
+            <span
+              v-if="index === 2"
+              class="text-grey text-caption align-self-center"
+            >
+              (+{{ localUser.playerFilter.length - 2 }} {{ $t("actions") }})
+            </span>
+          </template>
+        </v-select>
+
+        <!-- Provider Filter -->
+        <v-select
+          v-model="localUser.providerFilter"
+          :label="$t('auth.provider_filter')"
+          :items="providerOptions"
+          variant="outlined"
+          density="comfortable"
+          multiple
+          chips
+          closable-chips
+          class="mb-2"
+          :hint="$t('auth.provider_filter_hint')"
+          persistent-hint
+        >
+          <template #selection="{ item, index }">
+            <v-chip
+              v-if="index < 2"
+              size="small"
+              closable
+              @click:close="removeProvider(item.value)"
+            >
+              {{ item.title }}
+            </v-chip>
+            <span
+              v-if="index === 2"
+              class="text-grey text-caption align-self-center"
+            >
+              (+{{ localUser.providerFilter.length - 2 }} {{ $t("actions") }})
+            </span>
+          </template>
+        </v-select>
       </v-card-text>
       <v-card-actions class="pa-6 pt-4">
         <v-spacer />
@@ -86,7 +150,7 @@
 <script setup lang="ts">
 import { api } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
-import { UserRole } from "@/plugins/api/interfaces";
+import { UserRole, ProviderType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -113,12 +177,45 @@ const localUser = ref({
   role: "user" as UserRole,
   password: "",
   confirmPassword: "",
+  playerFilter: [] as string[],
+  providerFilter: [] as string[],
 });
 
 const roleOptions = [
   { title: t("auth.admin_role"), value: "admin" },
   { title: t("auth.user_role"), value: "user" },
 ];
+
+const playerOptions = computed(() => {
+  return Object.values(api.players)
+    .map((player) => ({
+      title: player.display_name || player.name,
+      value: player.player_id,
+    }))
+    .sort((a, b) => a.title.localeCompare(b.title));
+});
+
+const providerOptions = computed(() => {
+  return Object.values(api.providers)
+    .filter((provider) => provider.type === ProviderType.MUSIC)
+    .map((provider) => ({
+      title: provider.name,
+      value: provider.instance_id,
+    }))
+    .sort((a, b) => a.title.localeCompare(b.title));
+});
+
+const removePlayer = (playerId: string) => {
+  localUser.value.playerFilter = localUser.value.playerFilter.filter(
+    (id) => id !== playerId,
+  );
+};
+
+const removeProvider = (instanceId: string) => {
+  localUser.value.providerFilter = localUser.value.providerFilter.filter(
+    (id) => id !== instanceId,
+  );
+};
 
 const rules = {
   required: (v: string) => !!v || t("auth.field_required"),
@@ -142,6 +239,8 @@ const resetForm = () => {
       role: props.user.role,
       password: "",
       confirmPassword: "",
+      playerFilter: props.user.player_filter || [],
+      providerFilter: props.user.provider_filter || [],
     };
   } else {
     localUser.value = {
@@ -151,6 +250,8 @@ const resetForm = () => {
       role: UserRole.USER,
       password: "",
       confirmPassword: "",
+      playerFilter: [],
+      providerFilter: [],
     };
   }
 };
@@ -180,6 +281,8 @@ const handleUpdate = async () => {
       avatarUrl?: string;
       role?: UserRole;
       password?: string;
+      player_filter?: string[];
+      provider_filter?: string[];
     } = {};
 
     if (localUser.value.username !== props.user.username) {
@@ -196,6 +299,24 @@ const handleUpdate = async () => {
     }
     if (localUser.value.password) {
       updates.password = localUser.value.password;
+    }
+
+    // Check if player_filter changed
+    const currentPlayerFilter = props.user.player_filter || [];
+    if (
+      JSON.stringify([...localUser.value.playerFilter].sort()) !==
+      JSON.stringify([...currentPlayerFilter].sort())
+    ) {
+      updates.player_filter = localUser.value.playerFilter;
+    }
+
+    // Check if provider_filter changed
+    const currentProviderFilter = props.user.provider_filter || [];
+    if (
+      JSON.stringify([...localUser.value.providerFilter].sort()) !==
+      JSON.stringify([...currentProviderFilter].sort())
+    ) {
+      updates.provider_filter = localUser.value.providerFilter;
     }
 
     await api.updateUser(props.user.user_id, updates);
