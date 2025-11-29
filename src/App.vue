@@ -257,6 +257,9 @@ const initializeApp = async () => {
 
   api.subscribe(EventType.DISCONNECTED, () => {
     store.connected = false;
+    // Reset authentication state to force re-authentication
+    isAuthenticated.value = false;
+    store.isAuthenticated = false;
   });
 
   // For remote connections, server info is already available (CONNECTED already fired)
