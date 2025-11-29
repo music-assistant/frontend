@@ -69,10 +69,10 @@ export function useUserPreferences() {
     itemtype: string,
   ): ItemsListingPreferences {
     const storKey = `${path}.${itemtype}`;
-    return getPreference<ItemsListingPreferences>(
-      `itemsListing.${storKey}`,
-      {},
-    ) || {};
+    return (
+      getPreference<ItemsListingPreferences>(`itemsListing.${storKey}`, {}) ||
+      {}
+    );
   }
 
   /**
