@@ -221,6 +221,7 @@ import { useRouter } from "vue-router";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 
 export interface LoadDataParams {
   offset: number;
@@ -302,6 +303,8 @@ const props = withDefaults(defineProps<Props>(), {
 // global refs
 const router = useRouter();
 const { t } = useI18n();
+const { getItemsListingPreferences, setItemsListingPreference } =
+  useUserPreferences();
 
 // local refs
 const params = ref<LoadDataParams>({
@@ -353,39 +356,54 @@ const toggleExpand = function () {
 
   // Otherwise, use the default expand/collapse behavior
   expanded.value = !expanded.value;
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`expand.${storKey}`, expanded.value.toString());
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "expand",
+    expanded.value,
+  );
 };
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`viewMode.${storKey}`, newMode);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "viewMode",
+    newMode,
+  );
 };
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
-  const favoritesOnlyStr = params.value.favoritesOnly ? "true" : "false";
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`favoriteFilter.${storKey}`, favoritesOnlyStr);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "favoriteFilter",
+    params.value.favoritesOnly,
+  );
   loadData(undefined, undefined, true);
 };
 
 const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
-  const libraryOnlyStr = params.value.libraryOnly ? "true" : "false";
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`libraryFilter.${storKey}`, libraryOnlyStr);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "libraryFilter",
+    params.value.libraryOnly,
+  );
   loadData(true, undefined, true);
 };
 
 const toggleAlbumArtistsFilter = function () {
   params.value.albumArtistsFilter = !params.value.albumArtistsFilter;
-  const albumArtistsOnlyStr = params.value.albumArtistsFilter
-    ? "true"
-    : "false";
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`albumArtistsFilter.${storKey}`, albumArtistsOnlyStr);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "albumArtistsFilter",
+    params.value.albumArtistsFilter,
+  );
   loadData(undefined, undefined, true);
 };
 
@@ -469,8 +487,12 @@ const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`sortBy.${storKey}`, params.value.sortBy);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "sortBy",
+    params.value.sortBy,
+  );
   loadData(undefined, undefined, true);
 };
 
@@ -483,10 +505,11 @@ const changeAlbumTypeFilter = function (albumType: string) {
     params.value.albumType = params.value.albumType || [];
     params.value.albumType.push(albumType);
   }
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(
-    `albumType.${storKey}`,
-    params.value.albumType.join(","),
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "albumType",
+    params.value.albumType,
   );
   loadData(undefined, undefined, true);
 };
@@ -504,15 +527,12 @@ const changeProviderFilter = function (providerId: string) {
   if (params.value.provider.length === 0) {
     params.value.provider = undefined;
   }
-  const storKey = `${props.path}.${props.itemtype}`;
-  if (params.value.provider) {
-    localStorage.setItem(
-      `providerFilter.${storKey}`,
-      params.value.provider.join(","),
-    );
-  } else {
-    localStorage.removeItem(`providerFilter.${storKey}`);
-  }
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "providerFilter",
+    params.value.provider,
+  );
   loadData(undefined, undefined, true);
 };
 
@@ -680,6 +700,7 @@ const menuItems = computed(() => {
       label: "tooltip.album_type",
       icon: "mdi-album",
       disabled: loading.value,
+      active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
       subItems: [
         "album",
@@ -882,11 +903,14 @@ const loadData = async function (
 
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
-  const storKey = `${props.path}.${props.itemtype}`;
+  const prefs = getItemsListingPreferences(
+    props.path || props.itemtype,
+    props.itemtype,
+  );
+
   // get stored/default viewMode for this itemtype
-  const savedViewMode = localStorage.getItem(`viewMode.${storKey}`);
-  if (savedViewMode && savedViewMode !== "null") {
-    viewMode.value = savedViewMode;
+  if (prefs.viewMode) {
+    viewMode.value = prefs.viewMode;
   } else if (props.itemtype == "artists") {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
@@ -894,84 +918,50 @@ const restoreSettings = async function () {
   } else {
     viewMode.value = "list";
   }
+
   // get stored/default sortBy for this itemtype
-  const savedSortBy = localStorage.getItem(`sortBy.${storKey}`);
-  if (
-    savedSortBy &&
-    savedSortBy !== "null" &&
-    props.sortKeys.includes(savedSortBy)
-  ) {
-    params.value.sortBy = savedSortBy;
+  if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
+    params.value.sortBy = prefs.sortBy;
   } else {
     params.value.sortBy = props.sortKeys[0];
   }
 
   // get stored/default favoriteOnlyFilter for this itemtype
-  if (props.showFavoritesOnlyFilter !== false) {
-    const savedInFavoriteOnlyStr = localStorage.getItem(
-      `favoriteFilter.${storKey}`,
-    );
-    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == "true") {
-      params.value.favoritesOnly = true;
-    }
+  if (props.showFavoritesOnlyFilter !== false && prefs.favoriteFilter) {
+    params.value.favoritesOnly = prefs.favoriteFilter;
   }
 
   // get stored/default libraryOnlyFilter for this itemtype
-  if (props.showLibraryOnlyFilter !== false) {
-    const savedLibraryOnlyStr = localStorage.getItem(
-      `libraryFilter.${storKey}`,
-    );
-    if (savedLibraryOnlyStr && savedLibraryOnlyStr == "true") {
-      params.value.libraryOnly = true;
-    }
+  if (props.showLibraryOnlyFilter !== false && prefs.libraryFilter) {
+    params.value.libraryOnly = prefs.libraryFilter;
   }
 
   // get stored/default albumArtistsOnlyFilter for this itemtype
-  if (props.showAlbumArtistsOnlyFilter !== false) {
-    const albumArtistsOnlyStr = localStorage.getItem(
-      `albumArtistsFilter.${storKey}`,
-    );
-    if (albumArtistsOnlyStr) {
-      params.value.albumArtistsFilter = albumArtistsOnlyStr == "true";
-    }
+  if (
+    props.showAlbumArtistsOnlyFilter !== false &&
+    prefs.albumArtistsFilter !== undefined
+  ) {
+    params.value.albumArtistsFilter = prefs.albumArtistsFilter;
   }
 
   // get stored/default expand property for this itemtype
-  if (props.allowCollapse !== false) {
-    const expandStr = localStorage.getItem(`expand.${storKey}`);
-    if (expandStr) {
-      expanded.value = expandStr == "true";
-    }
+  if (props.allowCollapse !== false && prefs.expand !== undefined) {
+    expanded.value = prefs.expand;
   }
 
   // get stored/default albumType filter for this itemtype
-  if (props.showAlbumTypeFilter === true) {
-    const savedAlbumTypeFilterStr = localStorage.getItem(
-      `albumType.${storKey}`,
-    );
-    if (savedAlbumTypeFilterStr) {
-      params.value.albumType = savedAlbumTypeFilterStr.split(",");
-    }
+  if (props.showAlbumTypeFilter === true && prefs.albumType) {
+    params.value.albumType = prefs.albumType;
   }
 
   // get stored/default provider filter for this itemtype
-  if (props.showProviderFilter === true) {
-    const savedProviderFilterStr = localStorage.getItem(
-      `providerFilter.${storKey}`,
-    );
-    if (savedProviderFilterStr) {
-      params.value.provider = savedProviderFilterStr.split(",");
-    }
+  if (props.showProviderFilter === true && prefs.providerFilter) {
+    params.value.provider = prefs.providerFilter;
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
-  if (props.restoreState) {
-    let savedSearchKey = `search.${storKey}`;
-    if (props.parentItem) savedSearchKey += props.parentItem.item_id;
-    const savedSearch = localStorage.getItem(savedSearchKey);
-    if (savedSearch && savedSearch !== "null") {
-      params.value.search = savedSearch;
-    }
+  if (props.restoreState && prefs.search) {
+    params.value.search = prefs.search;
   }
 };
 
@@ -1024,9 +1014,14 @@ watch(
   (newVal) => {
     if (newVal) showSearch.value = true;
     loadData(undefined, undefined, true);
-    let storKey = `search.${props.path}.${props.itemtype}`;
-    if (props.parentItem) storKey += props.parentItem.item_id;
-    localStorage.setItem(storKey, params.value.search);
+    if (props.restoreState) {
+      setItemsListingPreference(
+        props.path || props.itemtype,
+        props.itemtype,
+        "search",
+        params.value.search,
+      );
+    }
   },
 );
 watch(

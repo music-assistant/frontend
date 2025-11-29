@@ -32,9 +32,11 @@ import PlayersWidgetRow from "./PlayersWidgetRow.vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { useUserPreferences } from "@/composables/userPreferences";
 
 const widgetRows = ref<WidgetRow[]>([]);
 const widgetRowSettings = ref<Record<string, WidgetRowSettings>>({});
+const { getPreference, setPreference } = useUserPreferences();
 
 export interface Props {
   editMode?: boolean;
@@ -44,16 +46,23 @@ withDefaults(defineProps<Props>(), {
 });
 
 const loadData = async function () {
-  const widgetRowSettingsRaw = localStorage.getItem("widgetRowSettings");
-  widgetRowSettings.value = widgetRowSettingsRaw
-    ? JSON.parse(widgetRowSettingsRaw)
-    : {
-        // insert virtual row for players
-        players: {
-          position: 0,
-          enabled: true,
-        },
-      };
+  const savedSettings = getPreference<Record<string, WidgetRowSettings>>(
+    "widgetRowSettings",
+    {
+      // insert virtual row for players
+      players: {
+        position: 0,
+        enabled: true,
+      },
+    },
+  );
+  widgetRowSettings.value = savedSettings || {
+    // insert virtual row for players
+    players: {
+      position: 0,
+      enabled: true,
+    },
+  };
 
   const recommendations = await api.getRecommendations();
   const _widgetRows: WidgetRow[] = [];
@@ -103,10 +112,7 @@ const onUpdateSettings = function (uri: string, settings: WidgetRowSettings) {
   }
   // update persistent settings
   widgetRowSettings.value[uri] = settings;
-  localStorage.setItem(
-    "widgetRowSettings",
-    JSON.stringify(widgetRowSettings.value),
-  );
+  setPreference("widgetRowSettings", widgetRowSettings.value);
 };
 </script>
 

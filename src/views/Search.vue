@@ -146,12 +146,14 @@ import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 
 // local refs
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
 const throttleId = ref();
+const { getPreference, setPreference } = useUserPreferences();
 
 // watchers
 watch(
@@ -176,7 +178,7 @@ const loadSearchResults = async function (
   filter?: MediaType,
 ) {
   loading.value = true;
-  localStorage.setItem("globalsearch", searchTerm || "");
+  setPreference("globalSearch", searchTerm || "");
   const limit = store.globalSearchType ? 50 : 8;
   const mediaTypes = filter ? [filter] : undefined;
   if (searchTerm) {
@@ -189,7 +191,7 @@ const loadSearchResults = async function (
 
 onMounted(() => {
   if (!store.globalSearchTerm) {
-    const savedSearch = localStorage.getItem("globalsearch");
+    const savedSearch = getPreference<string>("globalSearch");
     if (savedSearch && savedSearch !== "null") {
       store.globalSearchTerm = savedSearch;
     }
