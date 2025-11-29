@@ -189,7 +189,7 @@ const roleOptions = [
 const playerOptions = computed(() => {
   return Object.values(api.players)
     .map((player) => ({
-      title: player.display_name || player.name,
+      title: player.name,
       value: player.player_id,
     }))
     .sort((a, b) => a.title.localeCompare(b.title));
