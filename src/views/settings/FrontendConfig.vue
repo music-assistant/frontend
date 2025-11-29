@@ -117,8 +117,8 @@ onMounted(() => {
       multi_value: false,
       category: "generic",
       value:
-        localStorage.getItem("frontend.settings.force_mobile_layout") !=
-        "false",
+        localStorage.getItem("frontend.settings.force_mobile_layout") ===
+        "true",
     },
   ];
 
