@@ -30,6 +30,8 @@ env:
 # Set default workflow permissions
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   create-release:
