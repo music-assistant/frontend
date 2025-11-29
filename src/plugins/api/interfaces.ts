@@ -999,6 +999,8 @@ export interface User {
   display_name?: string;
   avatar_url?: string;
   preferences: Record<string, any>;
+  provider_filter: string[];
+  player_filter: string[];
 }
 
 export interface AuthToken {

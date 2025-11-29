@@ -608,6 +608,7 @@
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
+        "filter_provider": "Filter by music provider",
         "loading": "The server is processing a request or syncing music.",
         "primary_image": "This is the primary image for this image type",
         "copy_uri": "Copy URI to clipboard",
@@ -866,7 +867,15 @@
         "avatar_url_hint": "Enter URL to avatar image",
         "change_avatar": "Change avatar",
         "profile_updated": "Profile updated successfully",
-        "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in."
+        "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in.",
+        "player_filter": "Player filter",
+        "player_filter_hint": "Restrict this user to access only the selected players. Leave empty for full access to all players.",
+        "provider_filter": "Music provider filter",
+        "provider_filter_hint": "Restrict this user to access only the selected music providers. Leave empty for full access to all music providers.",
+        "no_players_selected": "All players (no restrictions)",
+        "no_providers_selected": "All providers (no restrictions)",
+        "select_players": "Select players",
+        "select_providers": "Select providers"
     },
     "login": {
         "subtitle": "Connect to your music server",

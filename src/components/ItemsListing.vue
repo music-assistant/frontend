@@ -198,6 +198,7 @@ import {
   MediaType,
   PlaybackState,
   PodcastEpisode,
+  ProviderType,
   Radio,
   type Album,
   type MediaItemType,
@@ -230,6 +231,7 @@ export interface LoadDataParams {
   libraryOnly?: boolean;
   refresh?: boolean;
   albumType?: string[];
+  provider?: string[];
 }
 // properties
 export interface Props {
@@ -246,6 +248,7 @@ export interface Props {
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
+  showProviderFilter?: boolean;
   updateAvailable?: boolean;
   title?: string;
   hideOnEmpty?: boolean;
@@ -278,6 +281,7 @@ const props = withDefaults(defineProps<Props>(), {
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
+  showProviderFilter: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -486,6 +490,23 @@ const changeAlbumTypeFilter = function (albumType: string) {
   loadData(undefined, undefined, true);
 };
 
+const changeProviderFilter = function (providerId: string) {
+  if (params.value.provider?.includes(providerId))
+    params.value.provider = params.value.provider?.filter(
+      (id) => id !== providerId,
+    );
+  else {
+    params.value.provider = params.value.provider || [];
+    params.value.provider.push(providerId);
+  }
+  const storKey = `${props.path}.${props.itemtype}`;
+  localStorage.setItem(
+    `providerFilter.${storKey}`,
+    params.value.provider.join(","),
+  );
+  loadData(undefined, undefined, true);
+};
+
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
   if (props.itemtype == "artists") {
@@ -540,6 +561,16 @@ const isSearchActive = computed(() => {
 
 const showSearchInput = computed(() => {
   return showSearch.value && expanded.value;
+});
+
+const musicProviders = computed(() => {
+  return Object.values(api.providers)
+    .filter((provider) => provider.type === ProviderType.MUSIC)
+    .map((provider) => ({
+      label: provider.name,
+      value: provider.instance_id,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
 watchEffect(() => {
@@ -633,6 +664,25 @@ const menuItems = computed(() => {
           selected: params.value.albumType?.includes(key),
           action: () => {
             changeAlbumTypeFilter(key);
+          },
+        };
+      }),
+    });
+  }
+
+  // provider filter
+  if (props.showProviderFilter && musicProviders.value.length > 1) {
+    items.push({
+      label: "tooltip.filter_provider",
+      icon: "mdi-package-variant",
+      disabled: loading.value,
+      active: params.value.provider && params.value.provider.length > 0,
+      subItems: musicProviders.value.map((provider) => {
+        return {
+          label: provider.label,
+          selected: params.value.provider?.includes(provider.value),
+          action: () => {
+            changeProviderFilter(provider.value);
           },
         };
       }),
@@ -869,6 +919,16 @@ const restoreSettings = async function () {
     );
     if (savedAlbumTypeFilterStr) {
       params.value.albumType = savedAlbumTypeFilterStr.split(",");
+    }
+  }
+
+  // get stored/default provider filter for this itemtype
+  if (props.showProviderFilter === true) {
+    const savedProviderFilterStr = localStorage.getItem(
+      `providerFilter.${storKey}`,
+    );
+    if (savedProviderFilterStr) {
+      params.value.provider = savedProviderFilterStr.split(",");
     }
   }
 
