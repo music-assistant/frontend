@@ -333,6 +333,8 @@ export enum ProviderFeature {
   LIBRARY_TRACKS = "library_tracks",
   LIBRARY_PLAYLISTS = "library_playlists",
   LIBRARY_RADIOS = "library_radios",
+  LIBRARY_PODCASTS = "library_podcasts",
+  LIBRARY_AUDIOBOOKS = "library_audiobooks",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
   ARTIST_TOPTRACKS = "artist_toptracks",
@@ -342,6 +344,8 @@ export enum ProviderFeature {
   LIBRARY_TRACKS_EDIT = "library_tracks_edit",
   LIBRARY_PLAYLISTS_EDIT = "library_playlists_edit",
   LIBRARY_RADIOS_EDIT = "library_radios_edit",
+  LIBRARY_PODCASTS_EDIT = "library_podcasts_edit",
+  LIBRARY_AUDIOBOOKS_EDIT = "library_audiobooks_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features

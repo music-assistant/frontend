@@ -198,6 +198,7 @@ import {
   MediaType,
   PlaybackState,
   PodcastEpisode,
+  ProviderFeature,
   ProviderType,
   Radio,
   type Album,
@@ -499,11 +500,19 @@ const changeProviderFilter = function (providerId: string) {
     params.value.provider = params.value.provider || [];
     params.value.provider.push(providerId);
   }
+  // If the array is empty, set to undefined (show all)
+  if (params.value.provider.length === 0) {
+    params.value.provider = undefined;
+  }
   const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(
-    `providerFilter.${storKey}`,
-    params.value.provider.join(","),
-  );
+  if (params.value.provider) {
+    localStorage.setItem(
+      `providerFilter.${storKey}`,
+      params.value.provider.join(","),
+    );
+  } else {
+    localStorage.removeItem(`providerFilter.${storKey}`);
+  }
   loadData(undefined, undefined, true);
 };
 
@@ -564,8 +573,29 @@ const showSearchInput = computed(() => {
 });
 
 const musicProviders = computed(() => {
+  // Map itemtype to required ProviderFeature
+  const featureMap: Record<string, ProviderFeature> = {
+    artists: ProviderFeature.LIBRARY_ARTISTS,
+    albums: ProviderFeature.LIBRARY_ALBUMS,
+    tracks: ProviderFeature.LIBRARY_TRACKS,
+    playlists: ProviderFeature.LIBRARY_PLAYLISTS,
+    radios: ProviderFeature.LIBRARY_RADIOS,
+    podcasts: ProviderFeature.LIBRARY_PODCASTS,
+    audiobooks: ProviderFeature.LIBRARY_AUDIOBOOKS,
+  };
+
+  const requiredFeature = featureMap[props.itemtype];
+
   return Object.values(api.providers)
-    .filter((provider) => provider.type === ProviderType.MUSIC)
+    .filter((provider) => {
+      if (provider.type !== ProviderType.MUSIC) return false;
+      // If we have a required feature for this itemtype, filter by it
+      if (requiredFeature) {
+        return provider.supported_features.includes(requiredFeature);
+      }
+      // Otherwise, include all music providers
+      return true;
+    })
     .map((provider) => ({
       label: provider.name,
       value: provider.instance_id,
@@ -650,6 +680,7 @@ const menuItems = computed(() => {
       label: "tooltip.album_type",
       icon: "mdi-album",
       disabled: loading.value,
+      closeOnContentClick: false,
       subItems: [
         "album",
         "single",
@@ -677,6 +708,7 @@ const menuItems = computed(() => {
       icon: "mdi-package-variant",
       disabled: loading.value,
       active: params.value.provider && params.value.provider.length > 0,
+      closeOnContentClick: false,
       subItems: musicProviders.value.map((provider) => {
         return {
           label: provider.label,

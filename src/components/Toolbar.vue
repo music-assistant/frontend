@@ -57,6 +57,7 @@
           density="compact"
           slim
           tile
+          :close-on-content-click="menuItem.closeOnContentClick !== false"
         >
           <template #activator="{ props }">
             <v-btn
@@ -227,6 +228,7 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   active?: boolean;
   subItems?: ContextMenuItem[];
   overflowAllowed?: boolean;
+  closeOnContentClick?: boolean;
 }
 </script>
 
