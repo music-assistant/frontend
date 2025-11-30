@@ -93,8 +93,8 @@ const allSettingsSections = [
   },
   {
     name: "core",
-    label: "settings.core",
-    description: "settings.core_description",
+    label: "settings.system",
+    description: "settings.system_description",
     icon: "mdi-server",
     color: "purple",
     route: { name: "coresettings" },
