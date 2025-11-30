@@ -152,6 +152,8 @@ const handleRemoteAuthenticated = async (credentials: {
         "[App] Ingress authentication - user auto-authenticated by server",
       );
       authManager.setCurrentUser(credentials.user);
+      // Fetch the full state (providers, manifests, etc.) for ingress mode
+      await api.fetchState();
     } else if (credentials.token && credentials.user) {
       // Already authenticated with token (auto-login flow)
       authManager.setToken(credentials.token);

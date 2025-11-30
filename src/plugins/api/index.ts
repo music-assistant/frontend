@@ -271,7 +271,7 @@ export class MusicAssistantApi {
       await this.sendCommand("auth", { token });
 
       // Now that we're authenticated, fetch the full state
-      this._fetchState();
+      this.fetchState();
     }
 
     return { token: token || "", user: result.user! };
@@ -292,7 +292,7 @@ export class MusicAssistantApi {
         (authManager as any).currentUser = result.user;
       });
       // Now that we're authenticated, fetch the full state
-      this._fetchState();
+      this.fetchState();
     }
 
     return result;
@@ -2221,7 +2221,7 @@ export class MusicAssistantApi {
     this.transport.send(msgStr);
   }
 
-  private async _fetchState() {
+  public async fetchState() {
     // fetch full initial state
     for (const player of await this.getPlayers()) {
       // ignore unavailable players in the initial state
