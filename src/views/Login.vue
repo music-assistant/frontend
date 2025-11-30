@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-main class="login-background">
+    <v-main v-show="showLoginUI" class="login-background">
       <v-container class="fill-height login-container" fluid>
         <v-row align="center" justify="center">
           <v-col cols="12" sm="10" md="6" lg="5" xl="4">
@@ -312,6 +312,29 @@
                   {{ $t("login.try_again", "Try Again") }}
                 </v-btn>
               </template>
+
+              <!-- Reconnecting State -->
+              <template v-if="step === 'reconnecting'">
+                <div class="text-center py-6">
+                  <v-progress-circular
+                    indeterminate
+                    color="warning"
+                    size="64"
+                    class="mb-4"
+                  />
+                  <p class="text-h6 mb-2">
+                    {{ $t("login.reconnecting", "Connection Lost") }}
+                  </p>
+                  <p class="text-body-2 text-medium-emphasis">
+                    {{
+                      $t(
+                        "login.reconnecting_message",
+                        "Attempting to reconnect to the server...",
+                      )
+                    }}
+                  </p>
+                </div>
+              </template>
             </v-card>
 
             <!-- Footer -->
@@ -345,10 +368,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { remoteConnectionManager } from "@/plugins/remote";
-import { api } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import type { AuthProvider } from "@/plugins/api/interfaces";
 
 const { t } = useI18n();
@@ -449,8 +473,10 @@ type Step =
   | "login"
   | "connecting"
   | "oauth-waiting"
+  | "reconnecting"
   | "error";
 const step = ref<Step>("auto-connect");
+const showLoginUI = ref(false);
 
 // Connection state
 const serverAddress = ref("");
@@ -1188,6 +1214,10 @@ const startOAuthPolling = () => {
 
       if (status.status === "completed" && status.access_token) {
         stopOAuthPolling();
+
+        // Store the token in localStorage before emitting
+        localStorage.setItem(STORAGE_KEY_TOKEN, status.access_token);
+
         const result = await api.authenticateWithToken(status.access_token);
         emit("authenticated", {
           token: status.access_token,
@@ -1249,9 +1279,46 @@ const retry = () => {
   step.value = "select-mode";
 };
 
-// Start auto-connect on mount
+// Watch for connection state changes from App.vue
+watch(
+  () => api.state.value,
+  (connectionState) => {
+    if (connectionState === ConnectionState.RECONNECTING) {
+      step.value = "reconnecting";
+    } else if (connectionState === ConnectionState.AUTHENTICATING) {
+      // Show connecting state during authentication
+      step.value = "connecting";
+    } else if (connectionState === ConnectionState.AUTH_REQUIRED) {
+      // Auth is required - show select-mode to let user login
+      step.value = "select-mode";
+    } else if (
+      connectionState === ConnectionState.FAILED ||
+      connectionState === ConnectionState.DISCONNECTED
+    ) {
+      // Connection failed or disconnected
+      if (
+        step.value === "reconnecting" &&
+        api.state.value !== ConnectionState.AUTHENTICATED
+      ) {
+        // Show select-mode if we were reconnecting and auth failed
+        step.value = "select-mode";
+      }
+    }
+  },
+);
+
+// Start auto-connect on mount (unless already reconnecting)
 onMounted(() => {
-  autoConnect();
+  // Delay showing login UI to prevent flash during auto-authentication
+  setTimeout(() => {
+    showLoginUI.value = true;
+  }, 300);
+
+  if (api.state.value !== ConnectionState.RECONNECTING) {
+    autoConnect();
+  } else {
+    step.value = "reconnecting";
+  }
 });
 
 onUnmounted(() => {
@@ -1277,6 +1344,17 @@ onUnmounted(() => {
   background: var(--background);
   min-height: 100vh;
   color: var(--fg);
+  opacity: 0;
+  animation: fadeIn 0.3s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .login-container {

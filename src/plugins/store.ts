@@ -48,7 +48,6 @@ interface Store {
   libraryRadiosCount?: number;
   libraryPodcastsCount?: number;
   libraryAudiobooksCount?: number;
-  connected?: boolean;
   isTouchscreen: boolean;
   playMenuShown: boolean;
   playActionInProgress: boolean;
@@ -57,7 +56,6 @@ interface Store {
   mobileLayout: boolean;
   currentUser?: User;
   serverInfo?: ServerInfoMessage;
-  isAuthenticated: boolean;
   isIngressSession: boolean;
   isOnboarding: boolean;
 }
@@ -109,7 +107,6 @@ export const store: Store = reactive({
   libraryTracksCount: undefined,
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
-  connected: false,
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   playActionInProgress: false,
@@ -122,7 +119,6 @@ export const store: Store = reactive({
   }),
   currentUser: undefined,
   serverInfo: undefined,
-  isAuthenticated: false,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
   isOnboarding: false,
 });

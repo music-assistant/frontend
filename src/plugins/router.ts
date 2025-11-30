@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import { store } from "./store";
 import { authManager } from "./auth";
+import { api, ConnectionState } from "./api";
 
 const routes = [
   // All routes go through default layout - authentication is handled by server redirect
@@ -337,7 +338,7 @@ const router = createRouter({
 // Navigation guard for authentication
 router.beforeEach(async (to, from, next) => {
   // Check if user is authenticated
-  if (!store.isAuthenticated || !authManager.getToken()) {
+  if (api.state.value !== ConnectionState.AUTHENTICATED || !authManager.getToken()) {
     // Not authenticated - App.vue will handle redirect to server login
     next();
     return;

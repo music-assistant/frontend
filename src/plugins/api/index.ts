@@ -56,9 +56,14 @@ import {
 const DEBUG = process.env.NODE_ENV === "development";
 
 export enum ConnectionState {
-  DISCONNECTED = 0,
-  CONNECTING = 1,
-  CONNECTED = 2,
+  DISCONNECTED = "disconnected",     // Not connected
+  CONNECTING = "connecting",          // Establishing connection
+  CONNECTED = "connected",            // Transport connected, ServerInfo received
+  AUTH_REQUIRED = "auth_required",    // Connected but needs authentication (no stored token or auto-auth failed)
+  AUTHENTICATING = "authenticating",  // Authentication in progress
+  AUTHENTICATED = "authenticated",    // Fully authenticated and ready
+  RECONNECTING = "reconnecting",      // Lost connection, attempting to reconnect
+  FAILED = "failed",                  // Connection failed permanently
 }
 
 export class MusicAssistantApi {
@@ -67,6 +72,7 @@ export class MusicAssistantApi {
   public baseUrl?: string; // HTTP base URL for image proxy etc.
   public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
+  public transportState = ref<string>("disconnected");
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
@@ -166,15 +172,54 @@ export class MusicAssistantApi {
     });
 
     transport.on("close", () => {
-      this.state.value = ConnectionState.DISCONNECTED;
-      this.signalEvent({
-        event: EventType.DISCONNECTED,
-        object_id: "",
-      });
+      // Don't immediately emit DISCONNECTED - wait for stateChange
+      // to see if we're reconnecting or truly disconnected
     });
 
     transport.on("error", (error: Error) => {
       console.error("[API] Transport error:", error);
+    });
+
+    // Listen for transport state changes (reconnecting, failed, etc.)
+    transport.on("stateChange", (state) => {
+      console.log("[API] Transport state changed to:", state);
+      this.transportState.value = state;
+
+      // Handle specific state transitions
+      if (state === "reconnecting") {
+        // Transport is attempting to reconnect
+        this.state.value = ConnectionState.RECONNECTING;
+        this.signalEvent({
+          event: EventType.DISCONNECTED,
+          object_id: "",
+        });
+      } else if (state === "failed") {
+        // Failed could be transient (during reconnect) or permanent
+        // Wait to see if it transitions to reconnecting or stays failed
+        setTimeout(() => {
+          if (this.transportState.value === "failed") {
+            // Still failed after brief wait - this is permanent failure
+            this.state.value = ConnectionState.FAILED;
+            this.signalEvent({
+              event: EventType.DISCONNECTED,
+              object_id: "",
+            });
+          }
+          // Otherwise it transitioned to reconnecting - ignore this transient failure
+        }, 50);
+      } else if (state === "disconnected") {
+        // Check if this is an intentional disconnect (not followed by reconnecting)
+        // Use nextTick to allow reconnecting state to be set first
+        setTimeout(() => {
+          if (this.transportState.value === "disconnected") {
+            this.state.value = ConnectionState.DISCONNECTED;
+            this.signalEvent({
+              event: EventType.DISCONNECTED,
+              object_id: "",
+            });
+          }
+        }, 0);
+      }
     });
 
     // Wait for initial ServerInfo message
@@ -185,8 +230,8 @@ export class MusicAssistantApi {
    * Handle incoming message from the transport
    */
   private handleMessage(msg: any): void {
-    // Handle ServerInfo message (always sent first by server)
-    if ("server_version" in msg && !this.serverInfo.value) {
+    // Handle ServerInfo message (sent on connection and reconnection)
+    if ("server_version" in msg && "server_id" in msg && !("event" in msg)) {
       this.handleServerInfoMessage(msg as ServerInfoMessage);
       return;
     }
@@ -240,6 +285,9 @@ export class MusicAssistantApi {
     password: string,
     deviceName?: string,
   ): Promise<{ token: string; user: User }> {
+    // Mark as authenticating
+    this.state.value = ConnectionState.AUTHENTICATING;
+
     const result = await this.sendCommand<{
       access_token?: string;
       token?: string;
@@ -254,6 +302,8 @@ export class MusicAssistantApi {
 
     // Check if login failed
     if (result.success === false || result.error) {
+      // Login failed - require authentication again
+      this.state.value = ConnectionState.AUTH_REQUIRED;
       throw new Error(result.error || "Invalid credentials");
     }
 
@@ -261,14 +311,11 @@ export class MusicAssistantApi {
     const token = result.access_token || result.token;
 
     if (token) {
-      // Store the token
-      localStorage.setItem("ma_access_token", token);
-      if (result.user) {
-        localStorage.setItem("ma_current_user", JSON.stringify(result.user));
-      }
-
       // Now authenticate the WebSocket session with the token
       await this.sendCommand("auth", { token });
+
+      // Mark as authenticated
+      this.state.value = ConnectionState.AUTHENTICATED;
 
       // Now that we're authenticated, fetch the full state
       this.fetchState();
@@ -280,22 +327,41 @@ export class MusicAssistantApi {
   /**
    * Authenticate with an existing token
    */
-  public async authenticateWithToken(token: string): Promise<{ user: User }> {
-    const result = await this.sendCommand<{ user: User }>("auth", {
-      token,
-    });
+  public async authenticateWithToken(
+    token: string,
+    deviceName?: string,
+  ): Promise<{ user: User }> {
+    // Mark as authenticating
+    this.state.value = ConnectionState.AUTHENTICATING;
 
-    if (result.user) {
-      localStorage.setItem("ma_current_user", JSON.stringify(result.user));
-      // Import and update authManager
-      import("@/plugins/auth").then(({ authManager }) => {
-        (authManager as any).currentUser = result.user;
+    try {
+      const result = await this.sendCommand<{ user: User }>("auth", {
+        token,
+        device_name: deviceName || getDeviceName(),
       });
-      // Now that we're authenticated, fetch the full state
-      this.fetchState();
-    }
 
-    return result;
+      if (result.user) {
+        // Mark as authenticated
+        this.state.value = ConnectionState.AUTHENTICATED;
+        // Now that we're authenticated, fetch the full state
+        this.fetchState();
+      }
+
+      return result;
+    } catch (error) {
+      // Token is invalid - require user authentication
+      this.state.value = ConnectionState.AUTH_REQUIRED;
+      throw error;
+    }
+  }
+
+  /**
+   * Set state to AUTH_REQUIRED when no token is available for auto-authentication
+   */
+  public requireAuthentication(): void {
+    if (this.state.value === ConnectionState.CONNECTED) {
+      this.state.value = ConnectionState.AUTH_REQUIRED;
+    }
   }
 
   /**
@@ -1776,6 +1842,7 @@ export class MusicAssistantApi {
       console.log("[serverInfo]", msg);
     }
     this.serverInfo.value = msg;
+    // ServerInfo means transport is connected and server is ready, but not yet authenticated
     this.state.value = ConnectionState.CONNECTED;
     this.signalEvent({
       event: EventType.CONNECTED,
@@ -2194,7 +2261,13 @@ export class MusicAssistantApi {
     args?: Record<string, any>,
     msgId?: string,
   ): void {
-    if (this.state.value !== ConnectionState.CONNECTED) {
+    // Allow commands when CONNECTED, AUTH_REQUIRED, AUTHENTICATING, or AUTHENTICATED
+    if (
+      this.state.value !== ConnectionState.CONNECTED &&
+      this.state.value !== ConnectionState.AUTH_REQUIRED &&
+      this.state.value !== ConnectionState.AUTHENTICATING &&
+      this.state.value !== ConnectionState.AUTHENTICATED
+    ) {
       throw new Error("Connection lost");
     }
 
