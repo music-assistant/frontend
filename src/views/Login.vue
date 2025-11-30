@@ -14,7 +14,7 @@
                 />
                 <h1 class="login-title font-weight-bold">Music Assistant</h1>
                 <p class="login-subtitle text-medium-emphasis">
-                  {{ getSubtitle }}
+                  Your Music, Your Way
                 </p>
               </div>
 
@@ -1052,6 +1052,11 @@ const connectToRemote = async () => {
 
     // Connection established, emit connected event
     emit("connected", transport);
+
+    // Wait for API to be ready
+    if (!(await waitForApiConnection())) {
+      throw new Error("Failed to establish API connection");
+    }
 
     // Fetch available auth providers
     await fetchAuthProviders();
