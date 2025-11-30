@@ -62,7 +62,7 @@ export const getMenuItems = function () {
     }
     if (enabledMenuItemStr === "genres") {
       items.push({
-        label: "genres",
+        label: "genres.genres",
         icon: "mdi-tag-multiple",
         path: "/genres",
         isLibraryNode: true,

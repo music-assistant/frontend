@@ -234,6 +234,7 @@ import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { $t } from "@/plugins/i18n";
 
 export interface LoadDataParams {
   offset: number;
@@ -650,7 +651,7 @@ const breadcrumbItems = computed(() => {
   if (route.query.genre_id && route.query.genre_name) {
     return [
       {
-        title: t("genres"),
+        title: $t("genres.genres"),
         disabled: false,
         to: { name: "genres" },
       },

@@ -32,7 +32,11 @@
             MediaType.RADIO,
           ]"
           :key="item"
-          :text="$t(item ? item + 's' : 'searchtype_all')"
+          :text="
+            item === MediaType.GENRE
+              ? $t('genres.genres')
+              : $t(item ? item + 's' : 'searchtype_all')
+          "
           :value="item"
         />
       </v-chip-group>
@@ -87,7 +91,7 @@
         <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
-            title: $t('genres'),
+            title: $t('genres.genres'),
             icon: 'mdi-tag-multiple',
             items: searchResult.genres,
           }"
@@ -134,7 +138,11 @@
               return filteredItems(store.globalSearchType!);
             }
           "
-          :title="$t(`${store.globalSearchType}s`)"
+          :title="
+            store.globalSearchType === MediaType.GENRE
+              ? $t('genres.genres')
+              : $t(`${store.globalSearchType}s`)
+          "
           :allow-key-hooks="false"
           :show-search-button="false"
           :infinite-scroll="true"
