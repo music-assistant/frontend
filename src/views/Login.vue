@@ -1,19 +1,19 @@
 <template>
   <v-app>
     <v-main class="login-background">
-      <v-container class="fill-height" fluid>
+      <v-container class="fill-height login-container" fluid>
         <v-row align="center" justify="center">
           <v-col cols="12" sm="10" md="6" lg="5" xl="4">
-            <v-card class="login-card pa-8" elevation="12" rounded="xl">
+            <v-card class="login-card" elevation="12" rounded="xl">
               <!-- Logo -->
-              <div class="text-center mb-6">
+              <div class="text-center login-header">
                 <img
                   src="@/assets/icon.svg"
                   alt="Music Assistant"
-                  class="login-logo mb-4"
+                  class="login-logo"
                 />
-                <h1 class="text-h4 font-weight-bold">Music Assistant</h1>
-                <p class="text-body-2 text-medium-emphasis mt-2">
+                <h1 class="login-title font-weight-bold">Music Assistant</h1>
+                <p class="login-subtitle text-medium-emphasis">
                   {{ getSubtitle }}
                 </p>
               </div>
@@ -315,7 +315,7 @@
             </v-card>
 
             <!-- Footer -->
-            <div class="text-center mt-6">
+            <div class="text-center login-footer">
               <a
                 href="https://www.openhomefoundation.org/"
                 target="_blank"
@@ -330,7 +330,7 @@
                     alt="Open Home Foundation"
                     class="ohf-icon"
                   />
-                  <span class="ml-1"
+                  <span class="ohf-text"
                     >Music Assistant is a product from the Open Home
                     Foundation</span
                   >
@@ -1279,6 +1279,16 @@ onUnmounted(() => {
   color: var(--fg);
 }
 
+.login-container {
+  padding: 12px;
+}
+
+@media (max-width: 500px) {
+  .login-container {
+    padding: 8px;
+  }
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .login-background {
@@ -1298,11 +1308,61 @@ onUnmounted(() => {
 .login-card {
   background: var(--panel) !important;
   border: 1px solid var(--border);
+  padding: 2rem;
+}
+
+/* Mobile responsive padding */
+@media (max-width: 500px) {
+  .login-card {
+    padding: 1.25rem;
+  }
+}
+
+.login-header {
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 500px) {
+  .login-header {
+    margin-bottom: 1rem;
+  }
 }
 
 .login-logo {
   width: 80px;
   height: 80px;
+  margin-bottom: 1rem;
+}
+
+/* Smaller logo on mobile */
+@media (max-width: 500px) {
+  .login-logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.login-title {
+  font-size: 1.5rem;
+}
+
+@media (max-width: 500px) {
+  .login-title {
+    font-size: 1.25rem;
+  }
+}
+
+.login-subtitle {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 500px) {
+  .login-subtitle {
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+  }
 }
 
 .oauth-btn {
@@ -1358,6 +1418,30 @@ onUnmounted(() => {
   color: var(--text-secondary) !important;
 }
 
+/* Responsive button sizing */
+@media (max-width: 500px) {
+  :deep(.v-btn.v-btn--size-x-large) {
+    font-size: 0.9375rem;
+    min-height: 48px;
+    padding: 0 20px;
+  }
+}
+
+.login-footer {
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 500px) {
+  .login-footer {
+    margin-top: 1rem;
+  }
+
+  .login-footer .text-caption {
+    font-size: 0.6875rem;
+    flex-wrap: wrap;
+  }
+}
+
 .ohf-footer-link {
   text-decoration: none;
   color: inherit;
@@ -1372,5 +1456,21 @@ onUnmounted(() => {
   height: 16px;
   width: auto;
   flex-shrink: 0;
+}
+
+@media (max-width: 500px) {
+  .ohf-icon {
+    height: 14px;
+  }
+}
+
+.ohf-text {
+  margin-left: 4px;
+}
+
+@media (max-width: 500px) {
+  .ohf-text {
+    margin-left: 3px;
+  }
 }
 </style>
