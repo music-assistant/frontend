@@ -418,18 +418,12 @@ const checkIfHostedWithAPI = async (): Promise<boolean> => {
   try {
     const baseUrl =
       window.location.origin + window.location.pathname.replace(/\/$/, "");
-    console.debug("[Login] Checking if hosted with API at:", baseUrl + "/info");
     const response = await fetch(`${baseUrl}/info`, {
       method: "GET",
       signal: AbortSignal.timeout(2000), // 2 second timeout
     });
 
     if (!response.ok) {
-      console.debug(
-        "[Login] /info endpoint returned status:",
-        response.status,
-        "- not hosted with API",
-      );
       return false;
     }
 
@@ -442,13 +436,8 @@ const checkIfHostedWithAPI = async (): Promise<boolean> => {
         data.server_version ||
         data.min_supported_server_version);
 
-    console.debug(
-      "[Login] /info endpoint check:",
-      isMusicAssistant ? "Music Assistant server detected" : "not MA server",
-    );
     return isMusicAssistant;
   } catch (error) {
-    console.debug("[Login] /info endpoint check failed:", error);
     return false;
   }
 };
@@ -557,7 +546,7 @@ const tryConnect = async (
   wsUrl: string,
   timeoutMs: number = 5000,
 ): Promise<boolean> => {
-  console.log(`[Login] Trying to connect to: ${wsUrl}`);
+  console.debug(`[Login] Trying to connect to: ${wsUrl}`);
 
   return new Promise((resolve) => {
     const ws = new WebSocket(wsUrl);
@@ -589,12 +578,11 @@ const tryConnect = async (
 const tryStoredTokenAuth = async (): Promise<boolean> => {
   const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
   if (!storedToken) {
-    console.log("[Login] No stored token found");
     return false;
   }
 
   try {
-    console.log("[Login] Trying to authenticate with stored token");
+    console.debug("[Login] Trying to authenticate with stored token");
     connectionStatusMessage.value = t(
       "login.authenticating",
       "Authenticating...",
@@ -602,13 +590,13 @@ const tryStoredTokenAuth = async (): Promise<boolean> => {
 
     // Authenticate the WebSocket session with the token
     const result = await api.authenticateWithToken(storedToken);
-    console.log("[Login] Token authentication successful");
+    console.debug("[Login] Token authentication successful");
 
     // Emit authenticated event - App.vue will handle the rest
     emit("authenticated", { token: storedToken, user: result.user });
     return true;
   } catch (error) {
-    console.log("[Login] Stored token authentication failed:", error);
+    console.debug("[Login] Stored token authentication failed:", error);
     // Clear invalid token
     localStorage.removeItem(STORAGE_KEY_TOKEN);
     return false;
@@ -620,7 +608,7 @@ const tryStoredTokenAuth = async (): Promise<boolean> => {
  */
 const tryIngressAuth = async (): Promise<boolean> => {
   try {
-    console.log("[Login] Trying ingress auto-authentication");
+    console.debug("[Login] Trying ingress auto-authentication");
     connectionStatusMessage.value = t(
       "login.authenticating",
       "Authenticating...",
@@ -629,17 +617,17 @@ const tryIngressAuth = async (): Promise<boolean> => {
     // In ingress mode, simply call auth/me to get the auto-authenticated user
     const user = await api.getCurrentUserInfo();
     if (!user) {
-      console.log("[Login] Ingress authentication failed - no user returned");
+      console.debug("[Login] Ingress authentication failed - no user returned");
       return false;
     }
 
-    console.log("[Login] Ingress authentication successful");
+    console.debug("[Login] Ingress authentication successful");
 
     // Emit authenticated event with user info (no token needed for ingress)
     emit("authenticated", { user });
     return true;
   } catch (error) {
-    console.log("[Login] Ingress authentication failed:", error);
+    console.debug("[Login] Ingress authentication failed:", error);
     return false;
   }
 };
@@ -656,11 +644,11 @@ const autoConnect = async () => {
 
   // Check if we're hosted with the API
   isHostedWithAPI.value = await checkIfHostedWithAPI();
-  console.log("[Login] Hosted with API:", isHostedWithAPI.value);
+  console.debug("[Login] Hosted with API:", isHostedWithAPI.value);
 
   // Special handling for Home Assistant Ingress mode
   if (isIngressMode.value) {
-    console.log("[Login] Home Assistant Ingress mode detected");
+    console.info("[Login] Home Assistant Ingress mode detected");
     connectionStatusMessage.value = t(
       "login.connecting_ingress",
       "Connecting via Home Assistant...",
@@ -678,7 +666,7 @@ const autoConnect = async () => {
       if (await waitForApiConnection()) {
         // Try ingress auto-authentication
         if (await tryIngressAuth()) {
-          console.log("[Login] Ingress auto-login successful!");
+          console.info("[Login] Ingress auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
@@ -704,14 +692,14 @@ const autoConnect = async () => {
 
   // If in remote-only mode, skip all local connection attempts
   if (isRemoteOnlyMode.value) {
-    console.log("[Login] Remote-only mode, checking for stored remote ID");
+    console.debug("[Login] Remote-only mode, checking for stored remote ID");
     const storedRemoteId =
       localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
       remoteConnectionManager.getStoredRemoteId();
     const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
 
     if (storedRemoteId && storedToken) {
-      console.log(
+      console.debug(
         "[Login] Found stored remote ID and token, trying auto-connect",
       );
       connectionStatusMessage.value = t(
@@ -732,36 +720,39 @@ const autoConnect = async () => {
         if (await waitForApiConnection()) {
           // Try to authenticate with stored token
           if (await tryStoredTokenAuth()) {
-            console.log("[Login] Remote auto-login successful!");
+            console.info("[Login] Remote auto-login successful!");
             return; // Success - App.vue will take over
           }
         }
 
         // Token auth failed, show login form
-        console.log("[Login] Remote token auth failed, showing login form");
+        console.debug("[Login] Remote token auth failed, showing login form");
         connectedServerName.value = `Remote: ${cleanRemoteId}`;
         isRemoteConnection.value = true;
         await fetchAuthProviders();
         step.value = "login";
         return;
       } catch (error) {
-        console.log("[Login] Remote auto-connect failed:", error);
+        console.debug("[Login] Remote auto-connect failed:", error);
       }
     } else if (storedRemoteId) {
       // Just pre-fill the remote ID field
-      console.log("[Login] Found stored remote ID (no token):", storedRemoteId);
+      console.debug(
+        "[Login] Found stored remote ID (no token):",
+        storedRemoteId,
+      );
       remoteId.value = storedRemoteId;
     }
 
     // Show selection screen (only remote option)
-    console.log("[Login] Remote-only mode, showing selection screen");
+    console.debug("[Login] Remote-only mode, showing selection screen");
     step.value = "select-mode";
     return;
   }
 
   // 1. If hosted with API, try connecting to current host first
   if (isHostedWithAPI.value) {
-    console.log("[Login] Hosted with API, trying local connection");
+    console.debug("[Login] Hosted with API, trying local connection");
     connectionStatusMessage.value = t(
       "login.checking_local",
       "Checking local server...",
@@ -769,10 +760,9 @@ const autoConnect = async () => {
 
     const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
     const localWsUrl = getWebSocketUrlFromLocation();
-    console.log("[Login] Trying local WebSocket:", localWsUrl);
 
     if (await tryConnect(localWsUrl, 3000)) {
-      console.log("[Login] Local server found!");
+      console.debug("[Login] Local server found!");
       const address =
         window.location.origin + window.location.pathname.replace(/\/$/, "");
       serverAddress.value = address;
@@ -785,13 +775,13 @@ const autoConnect = async () => {
       if (await waitForApiConnection()) {
         // Try to authenticate with stored token if available
         if (storedToken && (await tryStoredTokenAuth())) {
-          console.log("[Login] Auto-login successful!");
+          console.info("[Login] Auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
 
       // Show login form for this server
-      console.log("[Login] Showing login form for local server");
+      console.debug("[Login] Showing login form for local server");
       try {
         const url = new URL(address);
         connectedServerName.value = url.hostname;
@@ -809,7 +799,7 @@ const autoConnect = async () => {
   const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
 
   if (storedAddress && storedToken) {
-    console.log("[Login] Found stored server address and token");
+    console.debug("[Login] Found stored server address and token");
     connectionStatusMessage.value = t(
       "login.connecting_to_saved",
       "Connecting to saved server...",
@@ -817,7 +807,7 @@ const autoConnect = async () => {
 
     const wsUrl = buildWebSocketUrl(storedAddress);
     if (await tryConnect(wsUrl)) {
-      console.log("[Login] Stored server reachable, establishing connection");
+      console.debug("[Login] Stored server reachable, establishing connection");
       serverAddress.value = storedAddress;
 
       // Establish connection
@@ -828,13 +818,13 @@ const autoConnect = async () => {
       if (await waitForApiConnection()) {
         // Try to authenticate with stored token
         if (await tryStoredTokenAuth()) {
-          console.log("[Login] Auto-login successful!");
+          console.info("[Login] Auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
 
       // Token auth failed, show login form for this server
-      console.log("[Login] Token auth failed, showing login form");
+      console.debug("[Login] Token auth failed, showing login form");
       try {
         const url = new URL(storedAddress);
         connectedServerName.value = url.hostname;
@@ -845,12 +835,12 @@ const autoConnect = async () => {
       step.value = "login";
       return;
     }
-    console.log("[Login] Stored server connection failed");
+    console.debug("[Login] Stored server connection failed");
   }
 
   // 3. Try stored server address without token (show login form)
   if (storedAddress) {
-    console.log("[Login] Found stored server address (no token)");
+    console.debug("[Login] Found stored server address (no token)");
     connectionStatusMessage.value = t(
       "login.connecting_to_saved",
       "Connecting to saved server...",
@@ -858,7 +848,7 @@ const autoConnect = async () => {
 
     const wsUrl = buildWebSocketUrl(storedAddress);
     if (await tryConnect(wsUrl)) {
-      console.log("[Login] Stored server reachable");
+      console.debug("[Login] Stored server reachable");
       serverAddress.value = storedAddress;
       await performLocalConnect(storedAddress);
       return;
@@ -870,7 +860,7 @@ const autoConnect = async () => {
     localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
     remoteConnectionManager.getStoredRemoteId();
   if (storedRemoteId && storedToken) {
-    console.log(
+    console.debug(
       "[Login] Found stored remote ID and token, trying auto-connect",
     );
     connectionStatusMessage.value = t(
@@ -891,30 +881,30 @@ const autoConnect = async () => {
       if (await waitForApiConnection()) {
         // Try to authenticate with stored token
         if (await tryStoredTokenAuth()) {
-          console.log("[Login] Remote auto-login successful!");
+          console.info("[Login] Remote auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
 
       // Token auth failed, show login form
-      console.log("[Login] Remote token auth failed, showing login form");
+      console.debug("[Login] Remote token auth failed, showing login form");
       connectedServerName.value = `Remote: ${cleanRemoteId}`;
       isRemoteConnection.value = true;
       await fetchAuthProviders();
       step.value = "login";
       return;
     } catch (error) {
-      console.log("[Login] Remote auto-connect failed:", error);
+      console.debug("[Login] Remote auto-connect failed:", error);
       // Fall through to show selection screen
     }
   } else if (storedRemoteId) {
     // Just pre-fill the remote ID field
-    console.log("[Login] Found stored remote ID (no token):", storedRemoteId);
+    console.debug("[Login] Found stored remote ID (no token):", storedRemoteId);
     remoteId.value = storedRemoteId;
   }
 
   // 5. No auto-connect possible, show selection screen
-  console.log("[Login] Auto-connect failed, showing selection screen");
+  console.debug("[Login] Auto-connect failed, showing selection screen");
   step.value = "select-mode";
 };
 
@@ -1060,7 +1050,7 @@ const fetchAuthProviders = async () => {
     const serverInfo = api.serverInfo.value;
     if (serverInfo && (serverInfo as any).auth_providers) {
       authProviders.value = (serverInfo as any).auth_providers;
-      console.log(
+      console.debug(
         "[Login] Auth providers from serverInfo:",
         authProviders.value,
       );
@@ -1070,11 +1060,11 @@ const fetchAuthProviders = async () => {
     // Try to fetch auth providers (may require auth on some servers)
     const providers = await api.sendCommand<AuthProvider[]>("auth/providers");
     authProviders.value = providers || [];
-    console.log("[Login] Auth providers:", authProviders.value);
+    console.debug("[Login] Auth providers:", authProviders.value);
   } catch (error) {
     // Auth providers fetch failed - this is expected if server requires auth first
     // Just show username/password form without OAuth options
-    console.log(
+    console.debug(
       "[Login] Auth providers not available (may require auth first)",
     );
     authProviders.value = [];
