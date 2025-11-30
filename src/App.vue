@@ -255,14 +255,6 @@ const initializeApp = async () => {
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
     }
-
-    // Handle onboarding flow if onboard=true query parameter is present
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("onboard") === "true") {
-      store.isOnboarding = true;
-      // Navigate to providers settings page
-      router.push("/settings/providers");
-    }
   };
 
   // Subscribe to CONNECTED event for future reconnections
@@ -279,6 +271,15 @@ const initializeApp = async () => {
   // So we need to run initialization immediately
   if (api.serverInfo.value) {
     await completeInitialization();
+  }
+
+  // Handle onboarding flow if onboard=true query parameter is present
+  // This is done AFTER initialization to avoid race conditions
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("onboard") === "true") {
+    store.isOnboarding = true;
+    // Navigate to providers settings page
+    router.push("/settings/providers");
   }
 };
 
