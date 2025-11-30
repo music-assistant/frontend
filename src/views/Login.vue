@@ -384,6 +384,11 @@ const isRemoteOnlyMode = computed(() => {
   return urlParams.get("remote") === "1";
 });
 
+// Detect if running in Home Assistant Ingress mode
+const isIngressMode = computed(() => {
+  return window.location.pathname.includes("/hassio_ingress/");
+});
+
 const isHostedWithAPI = ref(false);
 
 const showServerAddressInput = computed(() => {
@@ -611,6 +616,35 @@ const tryStoredTokenAuth = async (): Promise<boolean> => {
 };
 
 /**
+ * Try to authenticate in ingress mode (no credentials needed)
+ */
+const tryIngressAuth = async (): Promise<boolean> => {
+  try {
+    console.log("[Login] Trying ingress auto-authentication");
+    connectionStatusMessage.value = t(
+      "login.authenticating",
+      "Authenticating...",
+    );
+
+    // In ingress mode, simply call auth/me to get the auto-authenticated user
+    const user = await api.getCurrentUserInfo();
+    if (!user) {
+      console.log("[Login] Ingress authentication failed - no user returned");
+      return false;
+    }
+
+    console.log("[Login] Ingress authentication successful");
+
+    // Emit authenticated event with user info (no token needed for ingress)
+    emit("authenticated", { user });
+    return true;
+  } catch (error) {
+    console.log("[Login] Ingress authentication failed:", error);
+    return false;
+  }
+};
+
+/**
  * Smart auto-connect logic
  */
 const autoConnect = async () => {
@@ -623,6 +657,50 @@ const autoConnect = async () => {
   // Check if we're hosted with the API
   isHostedWithAPI.value = await checkIfHostedWithAPI();
   console.log("[Login] Hosted with API:", isHostedWithAPI.value);
+
+  // Special handling for Home Assistant Ingress mode
+  if (isIngressMode.value) {
+    console.log("[Login] Home Assistant Ingress mode detected");
+    connectionStatusMessage.value = t(
+      "login.connecting_ingress",
+      "Connecting via Home Assistant...",
+    );
+
+    // In ingress mode, connect to the local server (current URL)
+    const address =
+      window.location.origin + window.location.pathname.replace(/\/$/, "");
+
+    try {
+      // Establish connection
+      emit("local-connect", address);
+
+      // Wait for WebSocket connection
+      if (await waitForApiConnection()) {
+        // Try ingress auto-authentication
+        if (await tryIngressAuth()) {
+          console.log("[Login] Ingress auto-login successful!");
+          return; // Success - App.vue will take over
+        }
+      }
+
+      // Ingress auth failed - this shouldn't happen in proper ingress setup
+      console.error("[Login] Ingress authentication failed");
+      connectionError.value = t(
+        "login.error_ingress_failed",
+        "Failed to authenticate via Home Assistant Ingress",
+      );
+      step.value = "error";
+      return;
+    } catch (error) {
+      console.error("[Login] Ingress connection failed:", error);
+      connectionError.value =
+        error instanceof Error
+          ? error.message
+          : t("login.error_unknown", "Unknown error occurred");
+      step.value = "error";
+      return;
+    }
+  }
 
   // If in remote-only mode, skip all local connection attempts
   if (isRemoteOnlyMode.value) {

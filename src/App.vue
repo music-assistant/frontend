@@ -131,7 +131,7 @@ const handleRemoteConnected = async (transport: ITransport) => {
 };
 
 /**
- * Handle authentication (username/password or token)
+ * Handle authentication (username/password, token, or ingress)
  */
 const handleRemoteAuthenticated = async (credentials: {
   username?: string;
@@ -143,7 +143,12 @@ const handleRemoteAuthenticated = async (credentials: {
     const { authManager } = await import("@/plugins/auth");
     let user = credentials.user;
 
-    if (credentials.token && credentials.user) {
+    if (credentials.user && !credentials.token && !credentials.username) {
+      // Ingress mode: user is already authenticated by the server
+      // No token or credentials needed
+      console.log("[App] Ingress authentication - user auto-authenticated by server");
+      authManager.setCurrentUser(credentials.user);
+    } else if (credentials.token && credentials.user) {
       // Already authenticated with token (auto-login flow)
       authManager.setToken(credentials.token);
       authManager.setCurrentUser(credentials.user);
