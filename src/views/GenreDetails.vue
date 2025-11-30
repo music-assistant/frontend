@@ -197,7 +197,7 @@ const aliasToolbarMenuItems = computed(() => {
 const breadcrumbItems = computed(() => {
   return [
     {
-      title: t("genres"),
+      title: t("genres.genres"),
       disabled: false,
       to: { name: "genres" },
     },

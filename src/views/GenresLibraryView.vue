@@ -6,7 +6,7 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :update-available="updateAvailable"
-    :title="$t('genres')"
+    :title="$t('genres.genres')"
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="sortKeys"
