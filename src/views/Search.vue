@@ -26,6 +26,7 @@
             MediaType.ARTIST,
             MediaType.ALBUM,
             MediaType.PLAYLIST,
+            MediaType.GENRE,
             MediaType.PODCAST,
             MediaType.AUDIOBOOK,
             MediaType.RADIO,
@@ -80,6 +81,15 @@
             title: $t('playlists'),
             icon: 'mdi-playlist-music',
             items: searchResult.playlists,
+          }"
+          :show-provider-on-cover="true"
+        />
+        <WidgetRow
+          v-if="searchResult && !loading"
+          :widget-row="{
+            title: $t('genres'),
+            icon: 'mdi-tag-multiple',
+            items: searchResult.genres,
           }"
           :show-provider-on-cover="true"
         />
@@ -223,6 +233,7 @@ const filteredItems = function (mediaType: MediaType) {
   if (mediaType == MediaType.ARTIST) return searchResult.value.artists;
   if (mediaType == MediaType.ALBUM) return searchResult.value.albums;
   if (mediaType == MediaType.PLAYLIST) return searchResult.value.playlists;
+  if (mediaType == MediaType.GENRE) return searchResult.value.genres;
   if (mediaType == MediaType.PODCAST) return searchResult.value.podcasts;
   if (mediaType == MediaType.AUDIOBOOK) return searchResult.value.audiobooks;
   if (mediaType == MediaType.RADIO) return searchResult.value.radio;

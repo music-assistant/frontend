@@ -549,6 +549,44 @@ export const getContextMenuItems = async function (
 
   const firstItem = items[0];
 
+  // Edit Genre
+  if (items.length === 1 && items[0].media_type === MediaType.GENRE) {
+    contextMenuItems.push({
+      label: "edit",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("editGenre", items[0]);
+      },
+      icon: "mdi-pencil",
+    });
+    contextMenuItems.push({
+      label: "settings.delete",
+      labelArgs: [],
+      action: async () => {
+        if (!confirm($t("are_you_sure"))) return;
+        await api.deleteGenre(parseInt(items[0].item_id));
+        if (items[0].item_id == parentItem?.item_id) router.go(-1);
+        eventbus.emit("clearSelection");
+      },
+      icon: "mdi-delete",
+    });
+  }
+
+  // Merge Genres
+  if (
+    items.length > 1 &&
+    items.every((item) => item.media_type === MediaType.GENRE)
+  ) {
+    contextMenuItems.push({
+      label: "genres.link_genres",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("mergeGenres", items);
+      },
+      icon: "mdi-merge",
+    });
+  }
+
   // show info
   if (
     items.length === 1 &&

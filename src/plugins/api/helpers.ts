@@ -7,6 +7,7 @@ export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
+  if (item.media_type == MediaType.GENRE) return true;
   if ("provider_mappings" in item) {
     for (const x of item.provider_mappings) {
       if (x.available && api.providers[x.provider_instance]?.available)

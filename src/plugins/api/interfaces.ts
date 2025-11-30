@@ -105,6 +105,7 @@ export enum MediaType {
   AUDIOBOOK = "audiobook",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  GENRE = "genre",
   FOLDER = "folder",
   UNKNOWN = "unknown",
 }
@@ -667,6 +668,12 @@ export interface PodcastEpisode extends MediaItem {
   resume_position_ms?: number;
 }
 
+export interface Genre extends MediaItem {
+  aliases?: string[];
+  track_ids?: string[];
+  album_ids?: string[];
+}
+
 export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
@@ -685,6 +692,7 @@ export type MediaItemType =
   | Audiobook
   | Podcast
   | PodcastEpisode
+  | Genre
   | BrowseFolder;
 
 export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
@@ -698,6 +706,7 @@ export interface SearchResults {
   radio: Radio[];
   podcasts: Podcast[];
   audiobooks: Audiobook[];
+  genres: Genre[];
 }
 
 export interface AudioFormat {

@@ -1,20 +1,19 @@
 <template>
   <ItemsListing
-    itemtype="artists"
-    path="libraryartists"
+    itemtype="genres"
+    path="librarygenres"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
-    :title="title"
+    :title="$t('genres')"
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="sortKeys"
-    icon="mdi-account-outline"
+    icon="mdi-tag-multiple"
     :restore-state="true"
     :total="total"
-    :show-provider-filter="true"
+    :extra-menu-items="extraMenuItems"
   />
 </template>
 
@@ -22,26 +21,18 @@
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
 
 defineOptions({
-  name: "Artists",
+  name: "Genres",
 });
 
-const route = useRoute();
 const { t } = useI18n();
-const genreId = route.query.genre_id as string | undefined;
-const genreName = route.query.genre_name as string | undefined;
-
 const updateAvailable = ref(false);
-const total = ref(store.libraryArtistsCount);
-
-const title = computed(() => {
-  return t("artists");
-});
+const total = ref(store.libraryGenresCount);
 
 const sortKeys = [
   "name",
@@ -50,56 +41,36 @@ const sortKeys = [
   "sort_name_desc",
   "timestamp_added",
   "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
 ];
+
+const extraMenuItems = computed(() => [
+  {
+    label: "settings.add_new",
+    icon: "mdi-plus",
+    action: () => {
+      eventbus.emit("editGenre", undefined);
+    },
+  },
+]);
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
-
-  if (genreId) {
-    return await api.getGenreArtists(
-      genreId,
-      "library",
-      params.libraryOnly,
-      params.limit,
-      params.offset,
-    );
-  }
-
-  return await api.getLibraryArtists(
+  return await api.getLibraryGenres(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
     params.offset,
     params.sortBy,
-    params.albumArtistsFilter,
-    params.provider && params.provider.length > 0 ? params.provider : undefined,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (genreId) {
-    total.value = undefined;
+  if (!params.favoritesOnly) {
+    total.value = store.libraryGenresCount;
     return;
   }
-  if (!params.favoritesOnly && !params.albumArtistsFilter && !params.provider) {
-    total.value = store.libraryArtistsCount;
-    return;
-  }
-  // When provider filter is active, we can't get accurate count from the count endpoint
-  // The total will be determined by the actual results returned
-  if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
-    return;
-  }
-  total.value = await api.getLibraryArtistsCount(
-    params.favoritesOnly || false,
-    params.albumArtistsFilter || false,
-  );
+  total.value = await api.getLibraryGenresCount(params.favoritesOnly || false);
 };
 
 onMounted(() => {
@@ -108,7 +79,7 @@ onMounted(() => {
     EventType.MEDIA_ITEM_ADDED,
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
-      if (evt.object_id?.startsWith("library://artist")) {
+      if (evt.object_id?.startsWith("library://genre")) {
         updateAvailable.value = true;
       }
     },

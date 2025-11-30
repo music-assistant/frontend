@@ -198,6 +198,29 @@ const routes = [
         ],
       },
       {
+        path: "/genres",
+        children: [
+          {
+            path: "",
+            name: "genres",
+            component: () =>
+              import(
+                /* webpackChunkName: "genres" */ "@/views/GenresLibraryView.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":id",
+            name: "genre",
+            component: () =>
+              import(
+                /* webpackChunkName: "genre" */ "@/views/GenreDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -274,6 +297,7 @@ const routes = [
             props: true,
             meta: { requiresAdmin: true },
           },
+
           {
             path: "about",
             name: "aboutsettings",

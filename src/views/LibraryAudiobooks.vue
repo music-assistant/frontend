@@ -9,7 +9,7 @@
     :show-library="true"
     :sort-keys="sortKeys"
     :update-available="updateAvailable"
-    :title="$t('audiobooks')"
+    :title="title"
     :allow-key-hooks="true"
     :show-search-button="true"
     icon="mdi-book-play-outline"
@@ -24,14 +24,25 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
 defineOptions({
   name: "Audiobooks",
 });
 
+const route = useRoute();
+const { t } = useI18n();
+const genreId = route.query.genre_id as string | undefined;
+const genreName = route.query.genre_name as string | undefined;
+
 const updateAvailable = ref(false);
 const total = ref(store.libraryAudiobooksCount);
+
+const title = computed(() => {
+  return t("audiobooks");
+});
 
 const sortKeys = [
   "name",
@@ -51,6 +62,17 @@ const sortKeys = [
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
+
+  if (genreId) {
+    return await api.getGenreAudiobooks(
+      genreId,
+      "library",
+      params.libraryOnly,
+      params.limit,
+      params.offset,
+    );
+  }
+
   return await api.getLibraryAudiobooks(
     params.favoritesOnly || undefined,
     params.search,
@@ -62,6 +84,10 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 const setTotals = async function (params: LoadDataParams) {
+  if (genreId) {
+    total.value = undefined;
+    return;
+  }
   if (!params.favoritesOnly && !params.provider) {
     total.value = store.libraryAudiobooksCount;
     return;

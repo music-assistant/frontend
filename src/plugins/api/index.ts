@@ -26,6 +26,7 @@ import {
   type SyncTask,
   type Track,
   type User,
+  type Genre,
   AlbumType,
   Audiobook,
   AuthProvider,
@@ -535,6 +536,12 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/count", { favorite_only });
   }
 
+  public getLibraryGenresCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/genres/count", { favorite_only });
+  }
+
   /**
    * Get Artists listing from the server.
    * @param favorite - Filter by favorite status
@@ -896,6 +903,170 @@ export class MusicAssistantApi {
     return this.sendCommand("music/podcasts/podcast_episodes", {
       item_id,
       provider_instance_id_or_domain,
+    });
+  }
+
+  // Genre related endpoints
+  public getLibraryGenres(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+  ): Promise<Genre[]> {
+    return this.sendCommand("music/genres/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+    });
+  }
+
+  public getGenre(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/get_genre", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getGenreTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    in_library_only = false,
+    limit = 50,
+    offset = 0,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/genres/genre_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+      in_library_only,
+      limit,
+      offset,
+    });
+  }
+
+  public getGenreAlbums(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    in_library_only = false,
+    limit = 50,
+    offset = 0,
+  ): Promise<Album[]> {
+    return this.sendCommand("music/genres/genre_albums", {
+      item_id,
+      provider_instance_id_or_domain,
+      in_library_only,
+      limit,
+      offset,
+    });
+  }
+
+  public getGenreArtists(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    in_library_only = false,
+    limit = 50,
+    offset = 0,
+  ): Promise<Artist[]> {
+    return this.sendCommand("music/genres/genre_artists", {
+      item_id,
+      provider_instance_id_or_domain,
+      in_library_only,
+      limit,
+      offset,
+    });
+  }
+
+  public getGenrePlaylists(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    in_library_only = false,
+    limit = 50,
+    offset = 0,
+  ): Promise<Playlist[]> {
+    return this.sendCommand("music/genres/genre_playlists", {
+      item_id,
+      provider_instance_id_or_domain,
+      in_library_only,
+      limit,
+      offset,
+    });
+  }
+
+  public getGenrePodcasts(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    in_library_only = false,
+    limit = 50,
+    offset = 0,
+  ): Promise<Podcast[]> {
+    return this.sendCommand("music/genres/genre_podcasts", {
+      item_id,
+      provider_instance_id_or_domain,
+      in_library_only,
+      limit,
+      offset,
+    });
+  }
+
+  public getGenreAudiobooks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    in_library_only = false,
+    limit = 50,
+    offset = 0,
+  ): Promise<Audiobook[]> {
+    return this.sendCommand("music/genres/genre_audiobooks", {
+      item_id,
+      provider_instance_id_or_domain,
+      in_library_only,
+      limit,
+      offset,
+    });
+  }
+
+  public splitGenre(genre_id: number, alias: string): Promise<void> {
+    return this.sendCommand("music/genres/split", {
+      genre_id,
+      alias,
+    });
+  }
+
+  public createGenre(name: string): Promise<Genre> {
+    return this.sendCommand("music/genres/create", { name });
+  }
+
+  public addGenreAlias(genre_id: number, alias: string): Promise<void> {
+    return this.sendCommand("music/genres/add_alias", {
+      genre_id,
+      alias,
+    });
+  }
+
+  public removeGenreAlias(alias: string): Promise<void> {
+    return this.sendCommand("music/genres/remove_alias", {
+      alias,
+    });
+  }
+
+  public deleteGenre(genre_id: number, restore_aliases = true): Promise<void> {
+    return this.sendCommand("music/genres/remove", {
+      item_id: genre_id,
+      restore_aliases,
+    });
+  }
+
+  public mergeGenres(
+    source_genre_ids: number[],
+    target_genre_id: number,
+  ): Promise<void> {
+    return this.sendCommand("music/genres/merge", {
+      source_genre_ids,
+      target_genre_id,
     });
   }
 

@@ -29,7 +29,11 @@
         :enforce-overflow-menu="true"
         :show-loading="true"
         :icon-action="backButtonClick"
-      />
+      >
+        <template #title>
+          <slot name="title"></slot>
+        </template>
+      </Toolbar>
       <v-layout
         v-if="item"
         style="
@@ -300,6 +304,29 @@
               outlined
             >
               {{ tag }}
+            </v-chip>
+          </div>
+
+          <!-- aliases (for genres) -->
+          <div
+            v-if="
+              item &&
+              'aliases' in item &&
+              item.aliases &&
+              item.aliases.length > 0
+            "
+            class="justify-center"
+            style="margin-left: 15px; padding-bottom: 20px"
+          >
+            <v-chip
+              v-for="alias of item.aliases"
+              :key="alias"
+              color="blue-grey lighten-1"
+              style="margin-right: 5px; margin-bottom: 5px"
+              small
+              outlined
+            >
+              {{ alias }}
             </v-chip>
           </div>
         </div>

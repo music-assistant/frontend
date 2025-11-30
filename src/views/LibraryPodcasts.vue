@@ -9,7 +9,7 @@
     :show-library="true"
     :sort-keys="sortKeys"
     :update-available="updateAvailable"
-    :title="$t('podcasts')"
+    :title="title"
     :allow-key-hooks="true"
     :show-search-button="true"
     icon="mdi-podcast"
@@ -24,14 +24,25 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
 defineOptions({
   name: "Podcasts",
 });
 
+const route = useRoute();
+const { t } = useI18n();
+const genreId = route.query.genre_id as string | undefined;
+const genreName = route.query.genre_name as string | undefined;
+
 const updateAvailable = ref(false);
 const total = ref(store.libraryPodcastsCount);
+
+const title = computed(() => {
+  return t("podcasts");
+});
 
 const sortKeys = [
   "name",
@@ -51,6 +62,17 @@ const sortKeys = [
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
+
+  if (genreId) {
+    return await api.getGenrePodcasts(
+      genreId,
+      "library",
+      params.libraryOnly,
+      params.limit,
+      params.offset,
+    );
+  }
+
   return await api.getLibraryPodcasts(
     params.favoritesOnly || undefined,
     params.search,
@@ -62,6 +84,10 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 const setTotals = async function (params: LoadDataParams) {
+  if (genreId) {
+    total.value = undefined;
+    return;
+  }
   if (!params.favoritesOnly && !params.provider) {
     total.value = store.libraryPodcastsCount;
     return;
