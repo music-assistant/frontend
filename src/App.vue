@@ -43,8 +43,10 @@ import { EventType } from "./plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import { remoteConnectionManager } from "./plugins/remote";
 import type { ITransport } from "./plugins/remote/transport";
+import { useRouter } from "vue-router";
 
 const theme = useTheme();
+const router = useRouter();
 
 // Connection state
 const isConnected = ref(false);
@@ -232,13 +234,9 @@ const initializeApp = async () => {
     }
 
     store.serverInfo = serverInfo;
-
-    // For remote connections, onboarding is not applicable
-    // (server should already be set up)
-
     store.isAuthenticated = true;
 
-    // Set webPlayer baseUrl from api.baseUrl (needed for both local and remote connections)
+    // Set webPlayer baseUrl from api.baseUrl
     if (api.baseUrl) {
       webPlayer.setBaseUrl(api.baseUrl);
     }
@@ -256,6 +254,14 @@ const initializeApp = async () => {
       webPlayer.setMode(WebPlayerMode.BUILTIN);
     } else {
       webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+    }
+
+    // Handle onboarding flow if onboard=true query parameter is present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("onboard") === "true") {
+      store.isOnboarding = true;
+      // Navigate to providers settings page
+      router.push("/settings/providers");
     }
   };
 
