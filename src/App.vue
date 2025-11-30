@@ -47,7 +47,9 @@ const router = useRouter();
 
 const isConnected = ref(false);
 const loginComponent = ref<InstanceType<typeof Login> | null>(null);
-const showLogin = computed(() => api.state.value !== ConnectionState.AUTHENTICATED);
+const showLogin = computed(
+  () => api.state.value !== ConnectionState.AUTHENTICATED,
+);
 
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
@@ -224,7 +226,10 @@ onMounted(async () => {
     },
   );
 
-  if (api.serverInfo.value && api.state.value === ConnectionState.AUTHENTICATED) {
+  if (
+    api.serverInfo.value &&
+    api.state.value === ConnectionState.AUTHENTICATED
+  ) {
     await completeInitialization();
   }
 });

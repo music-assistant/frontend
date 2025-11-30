@@ -338,7 +338,10 @@ const router = createRouter({
 // Navigation guard for authentication
 router.beforeEach(async (to, from, next) => {
   // Check if user is authenticated
-  if (api.state.value !== ConnectionState.AUTHENTICATED || !authManager.getToken()) {
+  if (
+    api.state.value !== ConnectionState.AUTHENTICATED ||
+    !authManager.getToken()
+  ) {
     // Not authenticated - App.vue will handle redirect to server login
     next();
     return;

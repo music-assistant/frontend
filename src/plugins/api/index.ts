@@ -56,14 +56,14 @@ import {
 const DEBUG = process.env.NODE_ENV === "development";
 
 export enum ConnectionState {
-  DISCONNECTED = "disconnected",     // Not connected
-  CONNECTING = "connecting",          // Establishing connection
-  CONNECTED = "connected",            // Transport connected, ServerInfo received
-  AUTH_REQUIRED = "auth_required",    // Connected but needs authentication (no stored token or auto-auth failed)
-  AUTHENTICATING = "authenticating",  // Authentication in progress
-  AUTHENTICATED = "authenticated",    // Fully authenticated and ready
-  RECONNECTING = "reconnecting",      // Lost connection, attempting to reconnect
-  FAILED = "failed",                  // Connection failed permanently
+  DISCONNECTED = "disconnected", // Not connected
+  CONNECTING = "connecting", // Establishing connection
+  CONNECTED = "connected", // Transport connected, ServerInfo received
+  AUTH_REQUIRED = "auth_required", // Connected but needs authentication (no stored token or auto-auth failed)
+  AUTHENTICATING = "authenticating", // Authentication in progress
+  AUTHENTICATED = "authenticated", // Fully authenticated and ready
+  RECONNECTING = "reconnecting", // Lost connection, attempting to reconnect
+  FAILED = "failed", // Connection failed permanently
 }
 
 export class MusicAssistantApi {
