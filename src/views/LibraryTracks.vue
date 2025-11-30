@@ -9,7 +9,7 @@
     :sort-keys="sortKeys"
     :show-album="true"
     :update-available="updateAvailable"
-    :title="$t('tracks')"
+    :title="title"
     :show-search-button="true"
     :allow-key-hooks="true"
     :extra-menu-items="[
@@ -36,15 +36,26 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
 defineOptions({
   name: "Tracks",
 });
 
+const route = useRoute();
+const { t } = useI18n();
+const genreId = route.query.genre_id as string | undefined;
+const genreName = route.query.genre_name as string | undefined;
+
 const updateAvailable = ref<boolean>(false);
 const total = ref(store.libraryTracksCount);
 const showAddEditDialog = ref(false);
+
+const title = computed(() => {
+  return t("tracks");
+});
 
 const sortKeys = [
   "name",
@@ -79,6 +90,17 @@ const loadItems = async function (params: LoadDataParams) {
   params.favoritesOnly = params.favoritesOnly || undefined;
   updateAvailable.value = false;
   setTotals(params);
+
+  if (genreId) {
+    return await api.getGenreTracks(
+      genreId,
+      "library",
+      params.libraryOnly,
+      params.limit,
+      params.offset,
+    );
+  }
+
   return await api.getLibraryTracks(
     params.favoritesOnly,
     params.search,
@@ -90,6 +112,10 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 const setTotals = async function (params: LoadDataParams) {
+  if (genreId) {
+    total.value = undefined;
+    return;
+  }
   if (!params.favoritesOnly && !params.provider) {
     total.value = store.libraryTracksCount;
     return;

@@ -60,6 +60,15 @@ export const getMenuItems = function () {
         hidden: store.libraryTracksCount === 0,
       });
     }
+    if (enabledMenuItemStr === "genres") {
+      items.push({
+        label: "genres",
+        icon: "mdi-tag-multiple",
+        path: "/genres",
+        isLibraryNode: true,
+        hidden: store.libraryGenresCount === 0,
+      });
+    }
     if (enabledMenuItemStr === "playlists") {
       items.push({
         label: "playlists",
