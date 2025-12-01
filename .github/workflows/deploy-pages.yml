@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Use the tag if triggered by release, otherwise default branch
           ref: ${{ github.event.release.tag_name || github.ref }}
