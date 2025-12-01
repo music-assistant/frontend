@@ -1,14 +1,6 @@
 <template>
   <section>
-    <v-toolbar color="transparent">
-      <template #title>{{ $t("settings.frontend") }} </template>
-    </v-toolbar>
     <v-card-text>
-      <v-card-subtitle> {{ $t("settings.frontend_desc") }} </v-card-subtitle>
-      <br />
-      <br />
-
-      <v-divider />
       <edit-config
         v-if="config"
         :config-entries="config"

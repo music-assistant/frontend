@@ -236,11 +236,11 @@ const routes = [
             meta: { requiresAdmin: true },
           },
           {
-            path: "core",
-            name: "coresettings",
+            path: "system",
+            name: "systemsettings",
             component: () =>
               import(
-                /* webpackChunkName: "coresettings" */ "@/views/settings/CoreConfigs.vue"
+                /* webpackChunkName: "systemsettings" */ "@/views/settings/SystemConfig.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },
@@ -260,6 +260,25 @@ const routes = [
             component: () =>
               import(
                 /* webpackChunkName: "usersettings" */ "@/views/settings/UserManagement.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
+            path: "about",
+            name: "aboutsettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "aboutsettings" */ "@/views/settings/About.vue"
+              ),
+            props: true,
+          },
+          {
+            path: "serverlogs",
+            name: "serverlogs",
+            component: () =>
+              import(
+                /* webpackChunkName: "serverlogs" */ "@/views/settings/ServerLogs.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },

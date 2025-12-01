@@ -49,6 +49,8 @@
     "no_player": "No player selected",
     "off": "Off",
     "on": "On",
+    "yes": "Yes",
+    "no": "No",
     "other_versions": "Other versions",
     "perform_action": "Perform action on {0} item(s)",
     "play": "Play",
@@ -98,6 +100,7 @@
         "delete": "Delete",
         "disable": "Disable",
         "documentation": "Documentation",
+        "view_documentation": "View documentation",
         "enable": "Enable",
         "enable_player": "Enable this player",
         "enable_provider": "Enable this provider entry",
@@ -131,12 +134,14 @@
         "onboarding_music": "Add music providers to connect your music sources and streaming services",
         "onboarding_plugins": "Add plugins to extend capabilities even further",
         "profile_description": "Manage your personal account settings and preferences",
-        "providers_description": "Manage your music sources, streaming services, and integrations",
+        "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",
         "system_description": "Configure Music Assistant server settings and core modules",
         "frontend_description": "Customize the user interface theme and appearance",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
+        "about": "About",
+        "about_description": "Version information, credits and more",
         "reload": "Reload",
         "save": "Save",
         "settings": "Settings",
@@ -151,6 +156,10 @@
         "server_version": "Server version",
         "server_base_url": "Base URL",
         "server_as_addon": "Home Assistant add-on",
+        "system_logging": "Server Logging",
+        "system_logging_description": "View and download server logs for troubleshooting",
+        "auto_refresh_log": "Auto-refresh",
+        "log_truncated": "Showing last {0} lines. Download the full log file for complete history.",
         "artists_in_library": "Artists in library",
         "albums_in_library": "Albums in library",
         "tracks_in_library": "Tracks in library",
@@ -158,6 +167,16 @@
         "radio_in_library": "Radio in library",
         "server_logging": "Server logging",
         "download_log": "Download logfile",
+        "version_info": "Version Information",
+        "library_stats": "Library Statistics",
+        "links": "Links",
+        "changelog": "Changelog",
+        "feature_requests": "Feature Requests",
+        "bug_reports": "Bug Reports",
+        "discussion_forums": "Discussion Forums",
+        "license": "License",
+        "open_home_foundation": "Open Home Foundation",
+        "proud_part_of": "Proud part of",
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
@@ -339,8 +358,6 @@
             "label": "Icon",
             "description": "Material design icon for this player.\n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "User Interface",
-        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
         "theme": {
             "label": "Theme",
             "options": {
@@ -545,6 +562,40 @@
                 "experimental": "Experimental",
                 "unmaintained": "Unmaintained",
                 "deprecated": "Deprecated"
+            }
+        },
+        "core_module": {
+            "cache": {
+                "name": "Cache",
+                "description": "Manages caching of metadata and images"
+            },
+            "metadata": {
+                "name": "Metadata",
+                "description": "Handles metadata retrieval and matching"
+            },
+            "music": {
+                "name": "Music",
+                "description": "Core music library management"
+            },
+            "players": {
+                "name": "Players",
+                "description": "Core player management and control"
+            },
+            "player_queues": {
+                "name": "Player Queues",
+                "description": "Manages playback queues for all players"
+            },
+            "remote_access": {
+                "name": "Remote Access",
+                "description": "Enables remote access to your Music Assistant server"
+            },
+            "streams": {
+                "name": "Streams",
+                "description": "Audio streaming and processing engine"
+            },
+            "webserver": {
+                "name": "Webserver",
+                "description": "Manage the webserver and API"
             }
         }
     },
