@@ -4061,11 +4061,6 @@ hasown@^2.0.0, hasown@^2.0.1, hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-home-assistant-js-websocket@9.5.0:
-  version "9.5.0"
-  resolved "https://registry.yarnpkg.com/home-assistant-js-websocket/-/home-assistant-js-websocket-9.5.0.tgz#ae4f6c449d08955f5b66c85ba28ed30002d5a583"
-  integrity sha512-gCBX0ulIPW3o5EhYxyNKgztBwNIs7u4hypZ+rcWir65wjLKL3b5uDx1jzU7RceyuANxvVKwBVLNujBeFohjnUw==
-
 hookified@^1.5.0, hookified@^1.5.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/hookified/-/hookified-1.5.1.tgz#2a473492d9c392b703e8b56fb458832387ec8081"
