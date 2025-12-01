@@ -97,7 +97,9 @@ const handleRemoteAuthenticated = async (credentials: {
     let user = credentials.user;
 
     if (credentials.user && !credentials.token && !credentials.username) {
+      // Ingress mode: user is already authenticated by the server
       authManager.setCurrentUser(credentials.user);
+      api.state.value = ConnectionState.AUTHENTICATED;
       await api.fetchState();
     } else if (credentials.token && credentials.user) {
       authManager.setToken(credentials.token);
