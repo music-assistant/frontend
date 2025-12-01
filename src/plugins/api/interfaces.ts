@@ -670,8 +670,6 @@ export interface PodcastEpisode extends MediaItem {
 
 export interface Genre extends MediaItem {
   aliases?: string[];
-  track_ids?: string[];
-  album_ids?: string[];
 }
 
 export interface BrowseFolder extends MediaItem {
