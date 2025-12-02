@@ -155,7 +155,7 @@ const activeTab = computed(() => {
   if (name === "profile") {
     return "profile";
   }
-  if (name.includes("player")) {
+  if (name.includes("player") || name === "addgroup") {
     return "players";
   }
   if (
@@ -260,6 +260,9 @@ const breadcrumbItems = computed(() => {
     })
     .with("editplayer", () => {
       items.push({ title: t("settings.player_settings"), disabled: true });
+    })
+    .with("editplayerdsp", () => {
+      items.push({ title: "DSP", disabled: true });
     })
     .with("editcore", () => {
       const domain = route.params.domain as string;

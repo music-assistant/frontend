@@ -1,470 +1,168 @@
 <template>
   <v-card
-    flat
-    class="panel-item"
-    :class="{
-      'panel-item-selected': player.player_id == store.activePlayerId,
-      'panel-item-idle': player.playback_state == PlaybackState.IDLE,
-      'panel-item-off': player.powered == false,
-    }"
-    :ripple="false"
-    :disabled="!player.available"
-    @click="$emit('click', player)"
+    class="flex-fill rounded-lg player-card"
+    min-height="200px"
+    @click="handleClick"
   >
-    <!-- now playing media -->
-    <v-list-item class="panel-item-details" flat :ripple="false">
-      <!-- prepend: media thumb -->
-      <template #prepend>
-        <div class="player-media-thumb">
-          <!-- queue item (mediaitem) image -->
-          <MediaItemThumb
-            v-if="player.powered != false && curQueueItem"
-            class="media-thumb"
-            size="60"
-            :item="curQueueItem"
-            :fallback="imgCoverDark"
-          />
-          <!-- player (external source) media image (if no queue item)-->
-          <div
-            v-else-if="
-              player.powered != false &&
-              !playerQueue &&
-              player.current_media?.image_url
-            "
-          >
-            <v-img
-              class="media-thumb"
-              size="60"
-              :src="player.current_media.image_url"
-            />
-          </div>
-          <!-- fallback: display player icon -->
-          <div v-else class="icon-thumb">
-            <v-icon
-              size="24"
-              :icon="
-                player.type == PlayerType.PLAYER && player.group_members.length
-                  ? 'mdi-speaker-multiple'
-                  : player.icon
-              "
-              style="display: table-cell; opacity: 0.8"
-            />
-          </div>
-        </div>
-      </template>
+    <template #prepend>
+      <provider-icon
+        :domain="providerDomain"
+        :size="50"
+        class="listitem-media-thumb"
+        style="margin-top: 5px; margin-bottom: 5px"
+      />
+    </template>
 
-      <!-- playername -->
-      <template #title>
-        <!-- special builtin player -->
-        <div
-          v-if="webPlayer.player_id === player.player_id"
-          style="margin-bottom: 3px"
-        >
-          <!-- translate 'This Device' if no custom name given -->
-          <span v-if="player.name == 'This Device'">{{
-            $t("this_device")
-          }}</span>
-          <span v-else>{{ getPlayerName(player, 27) }}</span>
-          <!-- append small icon to the title -->
-          <v-icon
-            size="20"
-            class="ml-2"
-            :icon="
-              store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
-            "
-          />
-        </div>
-        <!-- regular player -->
-        <div v-else>
-          {{ getPlayerName(player, 27) }}
-        </div>
-      </template>
+    <template #append>
+      <v-btn
+        v-if="!playerConfig.enabled"
+        variant="text"
+        size="small"
+        icon
+        :title="$t('settings.player_disabled')"
+        @click.stop
+      >
+        <v-icon color="grey">mdi-cancel</v-icon>
+      </v-btn>
+      <v-btn
+        v-else-if="!isAvailable"
+        variant="text"
+        size="small"
+        icon
+        :title="$t('settings.player_not_available')"
+        @click.stop
+      >
+        <v-icon icon="mdi-timer-sand" />
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        icon
+        :title="playerTypeTitle"
+        @click.stop
+      >
+        <v-icon :icon="playerTypeIcon" />
+      </v-btn>
 
-      <!-- subtitle: media item title -->
-      <template #subtitle>
-        <div
-          v-if="player.powered != false"
-          style="font-size: 0.85rem; font-weight: 500; white-space: nowrap"
-        >
-          <div v-if="curQueueItem?.media_item">
-            {{ curQueueItem?.media_item.name }}
-            <span
-              v-if="
-                'version' in curQueueItem?.media_item &&
-                curQueueItem?.media_item.version
-              "
-              >({{ curQueueItem?.media_item.version }})</span
-            >
-          </div>
-          <div v-else-if="curQueueItem">
-            {{ curQueueItem?.name }}
-          </div>
-          <div v-else-if="!playerQueue && player.current_media?.title">
-            {{ player.current_media.title }}
-          </div>
-        </div>
-      </template>
+      <v-btn
+        icon="mdi-dots-vertical"
+        size="small"
+        variant="text"
+        @click.stop="handleMenu"
+      />
+    </template>
 
-      <!-- subtitle -->
-      <template #default>
-        <div
-          class="v-list-item-subtitle"
-          style="font-size: 0.85rem; white-space: nowrap"
-        >
-          <!-- player powered off -->
-          <div v-if="player.powered == false">
-            {{ $t("off") }}
-          </div>
-          <!-- track: artists(s) + album -->
-          <div
-            v-else-if="
-              curQueueItem?.media_item &&
-              curQueueItem?.media_item?.media_type == MediaType.TRACK &&
-              'album' in curQueueItem?.media_item &&
-              curQueueItem?.media_item.album
-            "
-          >
-            {{ getArtistsString(curQueueItem?.media_item.artists) }} •
-            {{ curQueueItem?.media_item.album.name }}
-          </div>
-          <!-- track fallback: (only artist, no album) -->
-          <div
-            v-else-if="
-              curQueueItem?.media_item &&
-              'artists' in curQueueItem?.media_item &&
-              curQueueItem?.media_item.artists.length > 0
-            "
-          >
-            {{ curQueueItem?.media_item.artists[0].name }}
-          </div>
-          <!-- live (stream) metadata (artist + title) -->
-          <div
-            v-else-if="
-              curQueueItem?.streamdetails?.stream_metadata &&
-              curQueueItem?.streamdetails?.stream_metadata.title &&
-              curQueueItem?.streamdetails?.stream_metadata.artist
-            "
-          >
-            {{ curQueueItem?.streamdetails?.stream_metadata.artist }} -
-            {{ curQueueItem?.streamdetails?.stream_metadata.title }}
-          </div>
-          <!-- live (stream) metadata (only title) -->
-          <div
-            v-else-if="
-              curQueueItem?.streamdetails?.stream_metadata &&
-              curQueueItem?.streamdetails?.stream_metadata.title
-            "
-          >
-            {{ curQueueItem?.streamdetails?.stream_metadata.title }}
-          </div>
+    <v-card-title>
+      {{ playerName }}
+    </v-card-title>
 
-          <!-- other description -->
-          <div v-else-if="curQueueItem?.media_item?.metadata.description">
-            {{ curQueueItem?.media_item.metadata.description }}
-          </div>
-          <!-- 3rd party source active -->
-          <div v-else-if="!playerQueue && player.active_source">
-            {{ $t("external_source_active", [getSourceName(player)]) }}
-          </div>
-          <!-- queue empty message -->
-          <div v-else-if="playerQueue?.items == 0">
-            {{ $t("queue_empty") }}
-          </div>
-        </div>
-      </template>
-
-      <!-- power/play/pause + menu button -->
-      <template #append>
-        <!-- play/pause button -->
-        <Button
-          v-if="
-            player.playback_state == PlaybackState.PAUSED ||
-            player.playback_state == PlaybackState.PLAYING ||
-            playerQueue?.items
-          "
-          variant="icon"
-          class="player-command-btn"
-          @click.stop="
-            api.playerCommandPlayPause(player.player_id);
-            store.activePlayerId = player.player_id;
-          "
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            :icon="
-              player.playback_state == PlaybackState.PLAYING
-                ? 'mdi-pause'
-                : 'mdi-play'
-            "
-        /></Button>
-        <!-- power button -->
-        <Button
-          v-if="
-            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
-          "
-          variant="icon"
-          class="player-command-btn"
-          @click.stop="
-            api.playerCommandPowerToggle(player.player_id);
-            store.activePlayerId = player.player_id;
-          "
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-power</v-icon
-          ></Button
-        >
-
-        <!-- menu button -->
-        <Button
-          v-if="showMenuButton"
-          variant="icon"
-          class="player-command-btn"
-          style="margin-right: -5px"
-          @click.stop="openPlayerMenu"
-        >
-          <v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-dots-vertical</v-icon
-          >
-        </Button>
-      </template>
-    </v-list-item>
-    <VolumeControl
-      v-if="showVolumeControl"
-      :player="player"
-      :show-sync-controls="showSyncControls"
-      :show-heading-row="false"
-      :show-sub-players="showSubPlayers"
-      :show-volume-control="player.powered != false"
-      :allow-wheel="false"
-    />
+    <v-card-text class="player-description">
+      <div class="provider-name">
+        {{ providerName }}
+      </div>
+      <div v-if="playerTypeLabel" class="player-type-label">
+        {{ playerTypeLabel }}
+      </div>
+    </v-card-text>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
-import MediaItemThumb, {
-  getImageThumbForItem,
-} from "@/components/MediaItemThumb.vue";
-import {
-  imgCoverDark,
-  imgCoverLight,
-} from "@/components/QualityDetailsBtn.vue";
-import VolumeControl from "@/components/VolumeControl.vue";
-import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import {
-  getArtistsString,
-  getColorPalette,
-  getPlayerName,
-  ImageColorPalette,
-} from "@/helpers/utils";
-import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
-import {
-  ImageType,
-  MediaType,
-  PlaybackState,
-  Player,
-  PLAYER_CONTROL_NONE,
-  PlayerType,
-} from "@/plugins/api/interfaces";
-import { getBreakpointValue } from "@/plugins/breakpoint";
-import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
-import vuetify from "@/plugins/vuetify";
-import { webPlayer } from "@/plugins/web_player";
-import { computed, ref, watch } from "vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { api } from "@/plugins/api";
+import { PlayerConfig, PlayerType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { computed } from "vue";
 
-// properties
-export interface Props {
-  player: Player;
-  showVolumeControl?: boolean;
-  showMenuButton?: boolean;
-  showSubPlayers?: boolean;
-  showSyncControls?: boolean;
-  allowPowerControl?: boolean;
-}
-
-const compProps = defineProps<Props>();
-
-// emits
-defineEmits<{
-  (e: "click", player: Player): void;
+const props = defineProps<{
+  playerConfig: PlayerConfig;
 }>();
 
-const playerQueue = computed(() => {
-  if (
-    compProps.player &&
-    compProps.player.active_source &&
-    compProps.player.active_source in api.queues
-  ) {
-    return api.queues[compProps.player.active_source];
-  }
-  if (
-    compProps.player &&
-    !compProps.player.active_source &&
-    compProps.player.player_id in api.queues
-  ) {
-    return api.queues[compProps.player.player_id];
-  }
-  return undefined;
-});
-const curQueueItem = computed(() => {
-  if (playerQueue.value && playerQueue.value.active)
-    return playerQueue.value.current_item;
-  return undefined;
+const emit = defineEmits<{
+  (e: "click", playerConfig: PlayerConfig): void;
+  (e: "menu", event: Event, playerConfig: PlayerConfig): void;
+}>();
+
+const player = computed(() => api.players[props.playerConfig.player_id]);
+const isAvailable = computed(() => player.value?.available ?? false);
+const providerDomain = computed(
+  () =>
+    api.getProviderManifest(props.playerConfig.provider)?.domain ||
+    props.playerConfig.provider,
+);
+const providerName = computed(
+  () =>
+    api.getProviderManifest(props.playerConfig.provider)?.name ||
+    props.playerConfig.provider,
+);
+
+const playerName = computed(() => {
+  return (
+    props.playerConfig.name ||
+    player.value?.name ||
+    props.playerConfig.default_name ||
+    props.playerConfig.player_id
+  );
 });
 
-const openPlayerMenu = function (evt: Event) {
-  eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(compProps.player, playerQueue.value),
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
-  });
+const playerType = computed(() => player.value?.type ?? PlayerType.PLAYER);
+
+const playerTypeTitle = computed(() => {
+  return $t(`player_type.${playerType.value}`);
+});
+
+const playerTypeIcon = computed(() => {
+  const iconMap = {
+    [PlayerType.PLAYER]: "mdi-speaker",
+    [PlayerType.GROUP]: "mdi-speaker-multiple",
+    [PlayerType.STEREO_PAIR]: "mdi-speaker-wireless",
+  };
+  return iconMap[playerType.value] || "mdi-speaker";
+});
+
+const playerTypeLabel = computed(() => {
+  if (playerType.value === PlayerType.PLAYER) {
+    return null;
+  }
+  return $t(`player_type.${playerType.value}`);
+});
+
+const handleClick = () => {
+  emit("click", props.playerConfig);
 };
 
-// local refs
-const coverImageColorPalette = ref<ImageColorPalette>({
-  "0": "",
-  "1": "",
-  "2": "",
-  "3": "",
-  "4": "",
-  "5": "",
-  lightColor: "",
-  darkColor: "",
-});
-
-// utility feature to extract the dominant colors from the cover image
-// we use this color palette to colorize the playerbar/OSD
-const img = new Image();
-img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
-img.crossOrigin = "Anonymous";
-img.addEventListener("load", function () {
-  coverImageColorPalette.value = getColorPalette(img);
-});
-
-watch(
-  curQueueItem,
-  (newQueueItem) => {
-    if (newQueueItem?.media_item) {
-      img.src =
-        getImageThumbForItem(newQueueItem.media_item, ImageType.THUMB) || "";
-    } else if (newQueueItem) {
-      img.src = getImageThumbForItem(newQueueItem, ImageType.THUMB) || "";
-    } else {
-      img.src = "";
-    }
-  },
-  { immediate: true },
-);
+const handleMenu = (event: Event) => {
+  emit("menu", event, props.playerConfig);
+};
 </script>
 
 <style scoped>
-.panel-item-details {
-  width: 100%;
-  margin: 0px !important;
-  padding: 0px !important;
-  min-height: 72px;
+.player-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.panel-item-details :deep(.v-list-item__content) {
+.player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.player-description {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-height: 60px;
+  gap: 4px;
 }
 
-.volumesliderrow {
-  margin-top: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-  height: 24px;
-  min-height: 24px;
+.provider-name {
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  font-weight: 500;
 }
 
-.volumecaption {
-  width: 25px;
-  text-align: right;
-  margin-right: 0px;
-}
-
-.volumesliderrow :deep(.v-list-item__prepend) {
-  width: 40px;
-  margin-left: -25px;
-}
-.volumesliderrow :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.player-media-thumb {
-  margin-right: 10px;
-}
-
-.media-thumb {
-  width: 60px;
-  height: 60px;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.icon-thumb {
-  width: 60px;
-  height: 60px;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.media-thumb {
-  width: 55px;
-  height: 55px;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
-}
-.icon-thumb {
-  width: 55px;
-  height: 55px;
-  margin-top: 5px;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: inline-table;
-}
-
-.panel-item {
-  border-style: ridge;
-  border-width: thin;
-  border-color: #cccccc5e;
-  padding-left: 8px;
-  padding-right: 8px;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  background-color: rgba(162, 188, 255, 0.1);
-  opacity: 1;
-  transition: opacity 0.4s ease-in-out;
-  border-radius: 6px;
-  margin-left: 0px;
-  margin-right: 0px;
-  margin-top: 5px;
-  margin-bottom: 8px;
-  height: 100%;
-  width: auto;
-}
-.panel-item-idle {
-  opacity: 0.8;
-}
-.panel-item-off {
-  opacity: 0.6;
-}
-.panel-item-selected {
-  border-color: #2f2f2f5e;
-  background-color: rgba(162, 188, 255, 0.4);
-}
-
-.player-command-btn {
-  width: 35px;
-  min-width: 35px;
-  margin-left: 5px;
+.player-type-label {
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 </style>

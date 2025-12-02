@@ -553,6 +553,7 @@
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
         "providers_total": "{0} total provider{1}",
+        "players_total": "{0} total player{1}",
         "stage": {
             "label": "Stage",
             "options": {
