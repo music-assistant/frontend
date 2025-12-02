@@ -37,7 +37,7 @@
           lg="4"
           class="d-flex"
         >
-          <PlayerCard
+          <SettingsPlayerCard
             :player-config="item"
             @click="(config) => editPlayer(config.player_id, config.provider)"
             @menu="(evt, config) => onMenu(evt, config)"
@@ -58,8 +58,8 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
-import PlayerCard from "@/components/PlayerCard.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
+import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { SYNCGROUP_PREFIX } from "@/constants";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
