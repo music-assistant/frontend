@@ -53,7 +53,7 @@
     </Container>
 
     <!-- Settings Subsections -->
-    <router-view v-else v-slot="{ Component }" app>
+    <router-view v-else v-slot="{ Component }">
       <component :is="Component" />
     </router-view>
   </div>
@@ -109,6 +109,15 @@ const allSettingsSections = [
     icon: "mdi-server",
     color: "purple",
     route: { name: "systemsettings" },
+    adminOnly: true,
+  },
+  {
+    name: "remote_access",
+    label: "settings.remote_access",
+    description: "settings.remote_access_description",
+    icon: "mdi-cloud-lock",
+    color: "deep-purple",
+    route: { name: "remoteaccesssettings" },
     adminOnly: true,
   },
   {
@@ -168,6 +177,9 @@ const activeTab = computed(() => {
   if (name.includes("frontend")) {
     return "frontend";
   }
+  if (name.includes("remoteaccess")) {
+    return "remote_access";
+  }
   if (name.includes("user")) {
     return "users";
   }
@@ -214,6 +226,12 @@ const breadcrumbItems = computed(() => {
         title: t("settings.system"),
         disabled: name === "systemsettings",
         to: { name: "systemsettings" },
+      });
+    } else if (currentTab === "remote_access") {
+      items.push({
+        title: t("settings.remote_access"),
+        disabled: name === "remoteaccesssettings",
+        to: { name: "remoteaccesssettings" },
       });
     } else if (currentTab === "frontend") {
       items.push({

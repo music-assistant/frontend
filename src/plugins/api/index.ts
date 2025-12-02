@@ -48,6 +48,7 @@ import {
   ProviderType,
   QueueOption,
   RecommendationFolder,
+  RemoteAccessInfo,
   RepeatMode,
   SearchResults,
   UserRole,
@@ -2241,6 +2242,22 @@ export class MusicAssistantApi {
       console.error("Error disabling user:", error);
       return false;
     }
+  }
+
+  // Remote Access methods
+
+  public async getRemoteAccessInfo(): Promise<RemoteAccessInfo> {
+    // Get remote access information
+    return this.sendCommand<RemoteAccessInfo>("remote_access/info");
+  }
+
+  public async configureRemoteAccess(
+    enabled: boolean,
+  ): Promise<RemoteAccessInfo> {
+    // Configure remote access (admin only)
+    return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
+      enabled,
+    });
   }
 
   public sendCommand<Result>(

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <!-- Arrow markers (must be defined first) -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#4CAF50"/>
+    </marker>
+  </defs>
+
+  <style>
+    text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+  </style>
+
+  <!-- Remote Client -->
+  <g>
+    <rect x="50" y="70" width="160" height="100" rx="12" fill="#4CAF50" opacity="0.12" stroke="#4CAF50" stroke-width="2.5"/>
+    <text x="130" y="108" text-anchor="middle" font-size="15" font-weight="600" fill="currentColor">Remote Client</text>
+    <text x="130" y="135" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75">app.music-assistant.io</text>
+  </g>
+
+  <!-- Signaling Server -->
+  <g>
+    <rect x="320" y="50" width="160" height="140" rx="12" fill="#2196F3" opacity="0.12" stroke="#2196F3" stroke-width="2.5"/>
+    <text x="400" y="88" text-anchor="middle" font-size="15" font-weight="600" fill="currentColor">Signaling Server</text>
+    <text x="400" y="118" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">HA Cloud</text>
+    <text x="400" y="140" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">STUN/TURN</text>
+    <text x="400" y="162" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">WebRTC</text>
+  </g>
+
+  <!-- Music Assistant Server -->
+  <g>
+    <rect x="590" y="70" width="160" height="100" rx="12" fill="#9C27B0" opacity="0.12" stroke="#9C27B0" stroke-width="2.5"/>
+    <text x="670" y="108" text-anchor="middle" font-size="15" font-weight="600" fill="currentColor">Music Assistant</text>
+    <text x="670" y="128" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75">Server</text>
+    <text x="670" y="150" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">Remote ID: xxxx...</text>
+  </g>
+
+  <!-- Step 1: Remote Client to Signaling Server -->
+  <g>
+    <line x1="210" y1="120" x2="315" y2="120" stroke="currentColor" stroke-width="2.5" opacity="0.7" marker-end="url(#arrowhead)"/>
+    <rect x="232" y="90" width="96" height="20" fill="white" opacity="0.9" rx="4"/>
+    <text x="280" y="104" text-anchor="middle" font-size="11" font-weight="500" fill="currentColor">1. Connect with ID</text>
+  </g>
+
+  <!-- Step 2: Signaling Server to Music Assistant -->
+  <g>
+    <line x1="485" y1="120" x2="585" y2="120" stroke="currentColor" stroke-width="2.5" opacity="0.7" marker-end="url(#arrowhead)"/>
+    <rect x="502" y="90" width="66" height="20" fill="white" opacity="0.9" rx="4"/>
+    <text x="535" y="104" text-anchor="middle" font-size="11" font-weight="500" fill="currentColor">2. Negotiate</text>
+  </g>
+
+  <!-- Step 3: Direct P2P Connection (curved path) -->
+  <g>
+    <path d="M 130,175 Q 400,310 670,175" fill="none" stroke="#4CAF50" stroke-width="4" stroke-dasharray="12,6" marker-end="url(#arrowhead-green)"/>
+    <rect x="310" y="270" width="180" height="50" fill="white" opacity="0.95" rx="6"/>
+    <text x="400" y="289" text-anchor="middle" font-size="13" font-weight="600" fill="#4CAF50">3. Direct P2P Connection</text>
+    <text x="400" y="307" text-anchor="middle" font-size="11" fill="#4CAF50">(End-to-End Encrypted)</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(180, 385)">
+    <line x1="0" y1="0" x2="50" y2="0" stroke="currentColor" stroke-width="2.5" opacity="0.7"/>
+    <text x="58" y="5" font-size="11" font-weight="500" fill="currentColor">Signaling (setup only)</text>
+
+    <line x1="250" y1="0" x2="300" y2="0" stroke="#4CAF50" stroke-width="4" stroke-dasharray="12,6"/>
+    <text x="308" y="5" font-size="11" font-weight="500" fill="currentColor">Direct encrypted connection</text>
+  </g>
+</svg>

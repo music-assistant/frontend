@@ -145,12 +145,16 @@ import {
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed, reactive, ref } from "vue";
+import { copyToClipboard } from "@/helpers/utils";
+import { toast } from "vuetify-sonner";
+import { useI18n } from "vue-i18n";
 
 export interface Props {
   itemDetails: MediaItemType;
 }
 const props = defineProps<Props>();
 
+const { t } = useI18n();
 const expanded = ref(false);
 
 const openLinkInNewTab = function (url: string) {
@@ -183,8 +187,13 @@ const getProviderUri = function (mapping: ProviderMapping) {
   return `${api.getProvider(mapping.provider_instance)?.lookup_key}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
-const copyUriToClipboard = function (uri: string) {
-  navigator.clipboard.writeText(uri);
+const copyUriToClipboard = async function (uri: string) {
+  const success = await copyToClipboard(uri);
+  if (success) {
+    toast.success(t("uri_copied"));
+  } else {
+    toast.error(t("uri_copy_failed"));
+  }
 };
 
 const toggleExpand = function () {

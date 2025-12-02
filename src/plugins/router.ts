@@ -246,6 +246,16 @@ const routes = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "remote-access",
+            name: "remoteaccesssettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "remoteaccesssettings" */ "@/views/settings/RemoteAccessSettings.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
             path: "frontend",
             name: "frontendsettings",
             component: () =>
