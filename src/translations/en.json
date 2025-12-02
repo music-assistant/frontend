@@ -124,6 +124,9 @@
         "player_type_label": "Player type",
         "playerproviders": "Player providers",
         "players": "Players",
+        "players_count": "{0} player{1}",
+        "one_player": "1 player",
+        "view_players": "View players",
         "pluginproviders": "Plugin providers",
         "provider_disabled": "This provider entry is disabled",
         "provider_name": "Custom name for this provider entry",
@@ -594,6 +597,7 @@
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
         "providers_total": "{0} total provider{1}",
+        "players_total": "{0} total player{1}",
         "stage": {
             "label": "Stage",
             "options": {
