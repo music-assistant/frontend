@@ -130,7 +130,6 @@
         "sync": "Synchronisez maintenant",
         "sync_running": "Ce fournisseur est en cours de synchronisation",
         "username": "Nom d'utilisateur",
-        "core": "Noyau",
         "core_modules": "Modules de base",
         "server_info": "Informations sur le serveur",
         "server_id": "Identifiant du serveur",
@@ -325,8 +324,6 @@
             "label": "Icône",
             "description": "Icône Material design pour ce lecteur.\n\nVoir https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Interface utilisateur",
-        "frontend_desc": "Paramètres de configuration pour l'interface utilisateur de Music Assistant (frontend). Notez que ces paramètres sont stockés au niveau de l’appareil.",
         "theme": {
             "label": "Thème",
             "options": {
@@ -533,7 +530,6 @@
         },
         "providers_description": "Gérez vos sources musicales, vos services de streaming et vos intégrations",
         "players_description": "Configurez et gérez vos appareils de sortie audio",
-        "core_description": "Configurer les paramètres et les préférences du serveur Music Assistant",
         "frontend_description": "Personnaliser le thème et l'apparence de l'interface utilisateur",
         "provider_type": "Type"
     },

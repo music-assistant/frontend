@@ -128,7 +128,6 @@
         "sync": "Synkronisera nu",
         "sync_running": "Denna leverantör synkroniseras nu",
         "username": "Användarnamn",
-        "core": "Kärna",
         "core_modules": "Kärnmoduler",
         "server_info": "Serverinformation",
         "server_id": "Server-ID",
@@ -320,8 +319,6 @@
             "label": "Ikon",
             "description": "Material design ikon för den här spelaren. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Användargränssnitt",
-        "frontend_desc": "Konfigurationsinställningar för användargränssnittet för Music Assistant (frontend). Observera att dessa inställningar lagras på enhetsnivå.",
         "theme": {
             "label": "Tema",
             "options": {

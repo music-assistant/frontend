@@ -1,72 +1,78 @@
-import { AlertType, store } from "../store";
+import { store } from "../store";
 /* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { WebsocketBuilder, Websocket, LinearBackoff } from "websocket-ts";
 import { computed, reactive, ref } from "vue";
+import { toast } from "vuetify-sonner";
+import { getDeviceName } from "./helpers";
+import type { ITransport } from "../remote/transport";
+import { WebSocketTransport } from "../remote/websocket-transport";
 import {
-  createConnection,
-  ERR_HASS_HOST_REQUIRED,
-  getAuth,
-} from "home-assistant-js-websocket";
-
-import {
-  type Artist,
   type Album,
-  type Track,
-  type Radio,
-  type Playlist,
+  type Artist,
+  type AuthToken,
+  type CommandMessage,
+  type ErrorResultMessage,
+  type EventMessage,
+  type MassEvent,
+  type MediaItemType,
   type Player,
   type PlayerQueue,
-  type MediaItemType,
-  MediaType,
-  type QueueItem,
-  QueueOption,
+  type Playlist,
   type ProviderInstance,
-  type MassEvent,
-  EventType,
-  type EventMessage,
+  type QueueItem,
+  type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
-  type ErrorResultMessage,
-  type CommandMessage,
   type SyncTask,
-  RepeatMode,
-  SearchResults,
-  ProviderManifest,
-  ProviderType,
-  ProviderConfig,
-  ConfigValueType,
-  ConfigEntry,
-  PlayerConfig,
-  CoreConfig,
-  ItemMapping,
+  type Track,
+  type User,
   AlbumType,
+  Audiobook,
+  AuthProvider,
+  BuiltinPlayerState,
+  ConfigEntry,
+  ConfigValueType,
+  CoreConfig,
   DSPConfig,
   DSPConfigPreset,
-  Audiobook,
+  EventType,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
+  MediaType,
+  PlayableMediaItemType,
+  PlayerConfig,
   Podcast,
   PodcastEpisode,
-  PlayableMediaItemType,
-  MediaItemTypeOrItemMapping,
-  BuiltinPlayerState,
+  ProviderConfig,
+  ProviderManifest,
+  ProviderType,
+  QueueOption,
   RecommendationFolder,
+  RepeatMode,
+  SearchResults,
+  UserRole,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
 
 export enum ConnectionState {
-  DISCONNECTED = 0,
-  CONNECTING = 1,
-  CONNECTED = 2,
+  DISCONNECTED = "disconnected", // Not connected
+  CONNECTING = "connecting", // Establishing connection
+  CONNECTED = "connected", // Transport connected, ServerInfo received
+  AUTH_REQUIRED = "auth_required", // Connected but needs authentication (no stored token or auto-auth failed)
+  AUTHENTICATING = "authenticating", // Authentication in progress
+  AUTHENTICATED = "authenticated", // Fully authenticated and ready
+  RECONNECTING = "reconnecting", // Lost connection, attempting to reconnect
+  FAILED = "failed", // Connection failed permanently
 }
 
 export class MusicAssistantApi {
-  private ws?: Websocket;
+  private transport?: ITransport;
   private _throttleId?: any;
-  public baseUrl?: string;
+  public baseUrl?: string; // HTTP base URL for image proxy etc.
+  public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
+  public transportState = ref<string>("disconnected");
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
@@ -95,49 +101,289 @@ export class MusicAssistantApi {
     this.partialResult = {};
   }
 
-  public async initialize(baseUrl: string) {
-    if (this.ws) throw new Error("already initialized");
-    if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
-    this.baseUrl = baseUrl;
-    const wsUrl = baseUrl.replace("http", "ws") + "/ws";
-    console.log(`Connecting to Music Assistant API ${wsUrl}`);
+  /**
+   * Initialize the API with either a server address or a transport
+   * @param transportOrAddress - Either an ITransport instance or a server address string
+   * @param baseUrl - Optional HTTP base URL (required for WebRTC, derived automatically for server address)
+   */
+  public async initialize(
+    transportOrAddress: ITransport | string,
+    baseUrl?: string,
+  ): Promise<void> {
+    if (this.transport) throw new Error("already initialized");
+
+    let transport: ITransport;
+    let isRemote = false;
+
+    // If string, create WebSocketTransport
+    if (typeof transportOrAddress === "string") {
+      let serverAddress = transportOrAddress;
+      if (serverAddress.endsWith("/"))
+        serverAddress = serverAddress.slice(0, -1);
+
+      // Normalize the server address
+      let httpBaseUrl: string;
+      let wsUrl: string;
+
+      if (
+        serverAddress.startsWith("ws://") ||
+        serverAddress.startsWith("wss://")
+      ) {
+        wsUrl = serverAddress;
+        httpBaseUrl = serverAddress
+          .replace("wss://", "https://")
+          .replace("ws://", "http://");
+        if (httpBaseUrl.endsWith("/ws")) {
+          httpBaseUrl = httpBaseUrl.slice(0, -3);
+        }
+      } else {
+        httpBaseUrl = serverAddress;
+        wsUrl = serverAddress
+          .replace("https://", "wss://")
+          .replace("http://", "ws://");
+      }
+
+      if (!wsUrl.endsWith("/ws")) {
+        wsUrl += "/ws";
+      }
+
+      transport = new WebSocketTransport({ url: wsUrl });
+      await transport.connect();
+      baseUrl = httpBaseUrl;
+    } else {
+      // Transport instance provided (WebRTC)
+      transport = transportOrAddress;
+      isRemote = true;
+    }
+
+    this.transport = transport;
+    this.baseUrl = baseUrl || "";
+    this.isRemoteConnection.value = isRemote;
     this.state.value = ConnectionState.CONNECTING;
-    // connect to the websocket api
-    this.ws = new WebsocketBuilder(wsUrl)
-      .onOpen((i, ev) => {
-        console.log("connection opened");
-      })
-      .onClose((i, ev) => {
-        console.log("connection closed");
-        this.state.value = ConnectionState.DISCONNECTED;
+
+    // Set up transport message handler
+    transport.on("message", (data: string) => {
+      try {
+        const msg = JSON.parse(data);
+        this.handleMessage(msg);
+      } catch (error) {
+        console.error("[API] Failed to parse message:", error);
+      }
+    });
+
+    transport.on("close", () => {
+      // Don't immediately emit DISCONNECTED - wait for stateChange
+      // to see if we're reconnecting or truly disconnected
+    });
+
+    transport.on("error", (error: Error) => {
+      console.error("[API] Transport error:", error);
+    });
+
+    // Listen for transport state changes (reconnecting, failed, etc.)
+    transport.on("stateChange", (state) => {
+      console.log("[API] Transport state changed to:", state);
+      this.transportState.value = state;
+
+      // Handle specific state transitions
+      if (state === "reconnecting") {
+        // Transport is attempting to reconnect
+        this.state.value = ConnectionState.RECONNECTING;
         this.signalEvent({
           event: EventType.DISCONNECTED,
           object_id: "",
         });
-      })
-      .onError((i, ev) => {
-        console.log("error on connection");
-      })
-      .onMessage((i, ev) => {
-        // Message retrieved on the websocket
-        const msg = JSON.parse(ev.data);
-        if ("event" in msg) {
-          this.handleEventMessage(msg as EventMessage);
-        } else if ("server_version" in msg) {
-          this.handleServerInfoMessage(msg as ServerInfoMessage);
-        } else if ("message_id" in msg) {
-          this.handleResultMessage(msg);
-        } else {
-          // unknown message receoved
-          console.error("received unknown message", msg);
-        }
-      })
-      .onRetry((i, ev) => {
-        console.log("retry");
-        this.state.value = ConnectionState.CONNECTING;
-      })
-      .withBackoff(new LinearBackoff(0, 1000, 12000))
-      .build();
+      } else if (state === "failed") {
+        // Failed could be transient (during reconnect) or permanent
+        // Wait to see if it transitions to reconnecting or stays failed
+        setTimeout(() => {
+          if (this.transportState.value === "failed") {
+            // Still failed after brief wait - this is permanent failure
+            this.state.value = ConnectionState.FAILED;
+            this.signalEvent({
+              event: EventType.DISCONNECTED,
+              object_id: "",
+            });
+          }
+          // Otherwise it transitioned to reconnecting - ignore this transient failure
+        }, 50);
+      } else if (state === "disconnected") {
+        // Check if this is an intentional disconnect (not followed by reconnecting)
+        // Use nextTick to allow reconnecting state to be set first
+        setTimeout(() => {
+          if (this.transportState.value === "disconnected") {
+            this.state.value = ConnectionState.DISCONNECTED;
+            this.signalEvent({
+              event: EventType.DISCONNECTED,
+              object_id: "",
+            });
+          }
+        }, 0);
+      }
+    });
+
+    // Wait for initial ServerInfo message
+    await this.waitForServerInfo();
+  }
+
+  /**
+   * Handle incoming message from the transport
+   */
+  private handleMessage(msg: any): void {
+    // Handle ServerInfo message (sent on connection and reconnection)
+    if ("server_version" in msg && "server_id" in msg && !("event" in msg)) {
+      this.handleServerInfoMessage(msg as ServerInfoMessage);
+      return;
+    }
+
+    // Handle event messages
+    if ("event" in msg) {
+      this.handleEventMessage(msg as EventMessage);
+      return;
+    }
+
+    // Handle result messages
+    if ("message_id" in msg) {
+      this.handleResultMessage(msg);
+      return;
+    }
+
+    console.error("[API] received unknown message", msg);
+  }
+
+  /**
+   * Wait for ServerInfo message with timeout
+   */
+  private waitForServerInfo(timeoutMs: number = 30000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Timeout waiting for ServerInfo"));
+      }, timeoutMs);
+
+      // Check if already have server info
+      if (this.serverInfo.value) {
+        clearTimeout(timeout);
+        resolve();
+        return;
+      }
+
+      // Listen for server info via event
+      const unsubscribe = this.subscribe(EventType.CONNECTED, () => {
+        clearTimeout(timeout);
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Authenticate with username and password
+   * Returns the auth token on success
+   */
+  public async loginWithCredentials(
+    username: string,
+    password: string,
+    deviceName?: string,
+  ): Promise<{ token: string; user: User }> {
+    // Mark as authenticating
+    this.state.value = ConnectionState.AUTHENTICATING;
+
+    const result = await this.sendCommand<{
+      access_token?: string;
+      token?: string;
+      user?: User;
+      success?: boolean;
+      error?: string;
+    }>("auth/login", {
+      username,
+      password,
+      device_name: deviceName || getDeviceName(),
+    });
+
+    // Check if login failed
+    if (result.success === false || result.error) {
+      // Login failed - require authentication again
+      this.state.value = ConnectionState.AUTH_REQUIRED;
+      throw new Error(result.error || "Invalid credentials");
+    }
+
+    // Server may return 'access_token' or 'token'
+    const token = result.access_token || result.token;
+
+    if (token) {
+      // Now authenticate the WebSocket session with the token
+      await this.sendCommand("auth", { token });
+
+      // Mark as authenticated
+      this.state.value = ConnectionState.AUTHENTICATED;
+
+      // Now that we're authenticated, fetch the full state
+      this.fetchState();
+    }
+
+    return { token: token || "", user: result.user! };
+  }
+
+  /**
+   * Authenticate with an existing token
+   */
+  public async authenticateWithToken(
+    token: string,
+    deviceName?: string,
+  ): Promise<{ user: User }> {
+    // Mark as authenticating
+    this.state.value = ConnectionState.AUTHENTICATING;
+
+    try {
+      const result = await this.sendCommand<{ user: User }>("auth", {
+        token,
+        device_name: deviceName || getDeviceName(),
+      });
+
+      if (result.user) {
+        // Mark as authenticated
+        this.state.value = ConnectionState.AUTHENTICATED;
+        // Now that we're authenticated, fetch the full state
+        this.fetchState();
+      }
+
+      return result;
+    } catch (error) {
+      // Token is invalid - require user authentication
+      this.state.value = ConnectionState.AUTH_REQUIRED;
+      throw error;
+    }
+  }
+
+  /**
+   * Set state to AUTH_REQUIRED when no token is available for auto-authentication
+   */
+  public requireAuthentication(): void {
+    if (this.state.value === ConnectionState.CONNECTED) {
+      this.state.value = ConnectionState.AUTH_REQUIRED;
+    }
+  }
+
+  /**
+   * Disconnect from the server
+   */
+  public disconnect(): void {
+    if (this.transport) {
+      this.transport.disconnect();
+      this.transport = undefined;
+    }
+    this.state.value = ConnectionState.DISCONNECTED;
+    this.isRemoteConnection.value = false;
+
+    // Clear reactive state
+    Object.keys(this.players).forEach((key) => delete this.players[key]);
+    Object.keys(this.queues).forEach((key) => delete this.queues[key]);
+    Object.keys(this.providers).forEach((key) => delete this.providers[key]);
+    Object.keys(this.providerManifests).forEach(
+      (key) => delete this.providerManifests[key],
+    );
+    this.syncTasks.value = [];
+    this.serverInfo.value = undefined;
   }
 
   public subscribe(
@@ -181,12 +427,23 @@ export class MusicAssistantApi {
     return removeCallback;
   }
 
+  /**
+   * Get Track listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of tracks
+   */
   public getLibraryTracks(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -194,6 +451,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -285,6 +543,17 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/count", { favorite_only });
   }
 
+  /**
+   * Get Artists listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param album_artists_only - Only return artists that have albums
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of artists
+   */
   public getLibraryArtists(
     favorite?: boolean,
     search?: string,
@@ -292,6 +561,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     album_artists_only?: boolean,
+    provider?: string | string[],
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -300,6 +570,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       album_artists_only,
+      provider,
     });
   }
 
@@ -337,6 +608,17 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Get Albums listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param album_types - Filter by album types
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of albums
+   */
   public getLibraryAlbums(
     favorite?: boolean,
     search?: string,
@@ -344,6 +626,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -352,6 +635,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       album_types,
+      provider,
     });
   }
 
@@ -387,12 +671,23 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Get Playlists listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of playlists
+   */
   public getLibraryPlaylists(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -400,6 +695,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -455,12 +751,23 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Get Radio stations listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of radio stations
+   */
   public getLibraryRadios(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -468,6 +775,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -492,12 +800,23 @@ export class MusicAssistantApi {
   }
 
   // Audiobook related endpoints
+  /**
+   * Get Audiobooks listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of audiobooks
+   */
   public getLibraryAudiobooks(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -505,6 +824,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -529,12 +849,23 @@ export class MusicAssistantApi {
   }
 
   // Podcast related endpoints
+  /**
+   * Get Podcasts listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of podcasts
+   */
   public getLibraryPodcasts(
     favorite?: boolean,
     search?: string,
     limit?: number,
     offset?: number,
     order_by?: string,
+    provider?: string | string[],
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -542,6 +873,7 @@ export class MusicAssistantApi {
       limit,
       offset,
       order_by,
+      provider,
     });
   }
 
@@ -954,7 +1286,6 @@ export class MusicAssistantApi {
     return this.playerCommand(playerId, "volume_mute", {
       muted,
     });
-    this.players[playerId].volume_muted = muted;
   }
 
   public playerCommandMuteToggle(playerId: string): Promise<void> {
@@ -1411,44 +1742,6 @@ export class MusicAssistantApi {
     return undefined;
   }
 
-  private async connectHass() {
-    // TODO
-    // Connect to Music Assistant by using the Home Assistant API
-    let auth;
-    const authOptions = {
-      async loadTokens() {
-        try {
-          return JSON.parse(localStorage.hassTokens);
-        } catch (err) {
-          return undefined;
-        }
-      },
-      saveTokens: (tokens: any) => {
-        localStorage.hassTokens = JSON.stringify(tokens);
-      },
-      hassUrl: "",
-    };
-    try {
-      auth = await getAuth(authOptions);
-    } catch (err) {
-      if (err === ERR_HASS_HOST_REQUIRED) {
-        authOptions.hassUrl =
-          prompt(
-            "Please enter the URL to Home Assistant",
-            "http://homeassistant.local:8123",
-          ) || "";
-        if (!authOptions.hassUrl) return;
-        auth = await getAuth(authOptions);
-      } else {
-        alert(`Unknown error: ${err}`);
-        return;
-      }
-    }
-    const connection = await createConnection({ auth });
-    connection.addEventListener("ready", () => window.history.back());
-    return connection;
-  }
-
   private handleEventMessage(msg: EventMessage) {
     // Handle incoming MA event message
     if (msg.event == EventType.QUEUE_ADDED) {
@@ -1496,11 +1789,20 @@ export class MusicAssistantApi {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
       console.error("[resultMessage]", msg);
-      store.activeAlert = {
-        type: AlertType.ERROR,
-        message: msg.details || msg.error_code,
-        persistent: false,
-      };
+
+      // Don't show toast for authentication errors - they're handled by the login UI
+      const errorMsg = msg.details || msg.error_code || "";
+      const isAuthError =
+        errorMsg.includes("Invalid credentials") ||
+        errorMsg.includes("Invalid username") ||
+        errorMsg.includes("Invalid password") ||
+        errorMsg.includes("Authentication failed") ||
+        errorMsg.includes("Authentication required") ||
+        errorMsg.toLowerCase().includes("unauthorized");
+
+      if (!isAuthError) {
+        toast.error(msg.details || msg.error_code);
+      }
     } else if (DEBUG) {
       console.log("[resultMessage]", msg);
     }
@@ -1540,9 +1842,8 @@ export class MusicAssistantApi {
       console.log("[serverInfo]", msg);
     }
     this.serverInfo.value = msg;
+    // ServerInfo means transport is connected and server is ready, but not yet authenticated
     this.state.value = ConnectionState.CONNECTED;
-    // trigger fetch of full state once we are connected to the server
-    this._fetchState();
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
@@ -1558,6 +1859,387 @@ export class MusicAssistantApi {
           listener[2](evt);
         }
       }
+    }
+  }
+
+  // Auth related functions/commands
+
+  public async changePassword(newPassword: string): Promise<boolean> {
+    // Change password for current user using unified update command
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | boolean | null | undefined
+      >("auth/user/update", {
+        password: newPassword,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      if (
+        typeof result === "object" &&
+        (("success" in result && result.success === true) || "user" in result)
+      ) {
+        return true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return false;
+    }
+  }
+
+  public async getCurrentUserInfo(): Promise<User | null> {
+    // Get current authenticated user information
+    try {
+      const result = await this.sendCommand<User>("auth/me");
+      return result;
+    } catch (error) {
+      console.error("Failed to get current user info:", error);
+      return null;
+    }
+  }
+
+  public async getUserTokens(userId?: string): Promise<AuthToken[]> {
+    // Get all tokens for current user or specific user (admin only)
+    const args = userId ? { user_id: userId } : undefined;
+    const tokens = await this.sendCommand<AuthToken[]>("auth/tokens", args);
+    return tokens || [];
+  }
+
+  public async createToken(name: string, userId?: string): Promise<string> {
+    // Create a new long-lived token for current user or specific user (admin only)
+    const args: { name: string; user_id?: string } = { name };
+    if (userId) args.user_id = userId;
+    const result = await this.sendCommand<
+      { success?: boolean; token: string } | string
+    >("auth/token/create", args);
+
+    if (typeof result === "string") {
+      return result;
+    }
+
+    if (result.success === false) {
+      throw new Error("Failed to create token");
+    }
+
+    if (!result.token) {
+      throw new Error("Failed to create token");
+    }
+
+    return result.token;
+  }
+
+  public async revokeToken(tokenId: string): Promise<boolean> {
+    // Revoke a token
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/token/revoke", {
+        token_id: tokenId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === true
+      ) {
+        return true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error revoking token:", error);
+      return false;
+    }
+  }
+
+  public async getAuthProviders(): Promise<AuthProvider[]> {
+    // Get list of available authentication providers
+    return await this.sendCommand<AuthProvider[]>("auth/providers");
+  }
+
+  public async logout(): Promise<boolean> {
+    // Logout current user by revoking the current token
+    const result = await this.sendCommand<{ success: boolean }>("auth/logout");
+    return result.success;
+  }
+
+  // User management functions/commands (admin only)
+
+  public async getAllUsers(): Promise<User[]> {
+    // Get all users (admin only)
+    const users = await this.sendCommand<User[]>("auth/users");
+    return users;
+  }
+
+  public async createUser(
+    username: string,
+    password: string,
+    role: UserRole,
+    displayName?: string,
+    playerFilter?: string[],
+    providerFilter?: string[],
+  ): Promise<User> {
+    // Create a new user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | User | null | undefined
+      >("auth/user/create", {
+        username,
+        password,
+        role,
+        display_name: displayName,
+        player_filter: playerFilter,
+        provider_filter: providerFilter,
+      });
+
+      if (result == null) {
+        throw new Error("Failed to create user");
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error("Failed to create user");
+      }
+
+      if (typeof result === "object" && "user" in result && result.user) {
+        return result.user;
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      throw new Error("Failed to create user");
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  }
+
+  public async updateUser(
+    userId: string,
+    updates: {
+      username?: string;
+      displayName?: string;
+      avatarUrl?: string;
+      role?: UserRole;
+      password?: string;
+      preferences?: Record<string, any>;
+      provider_filter?: string[];
+      player_filter?: string[];
+    },
+  ): Promise<User> {
+    // Update user using unified update command
+    try {
+      const args: Record<string, any> = { user_id: userId };
+
+      if (updates.username) args.username = updates.username;
+      if (updates.displayName) args.display_name = updates.displayName;
+      if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
+      if (updates.role) args.role = updates.role;
+      if (updates.password) args.password = updates.password;
+      if (updates.preferences != undefined)
+        args.preferences = updates.preferences;
+      if (updates.provider_filter != undefined)
+        args.provider_filter = updates.provider_filter;
+      if (updates.player_filter != undefined)
+        args.player_filter = updates.player_filter;
+
+      const result = await this.sendCommand<
+        { success?: boolean; user?: User } | User | null | undefined
+      >("auth/user/update", args);
+
+      if (result == null) {
+        throw new Error("Failed to update user");
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error("Failed to update user");
+      }
+
+      if (typeof result === "object" && "user" in result && result.user) {
+        return result.user;
+      }
+
+      if (typeof result === "object" && "user_id" in result) {
+        return result as User;
+      }
+
+      throw new Error("Failed to update user");
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
+  }
+
+  public async updateUserRole(
+    userId: string,
+    role: UserRole,
+  ): Promise<boolean> {
+    // Update user role using unified update command
+    try {
+      await this.updateUser(userId, { role });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  public async enableUser(userId: string): Promise<boolean> {
+    // Enable user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/enable", {
+        user_id: userId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error enabling user:", error);
+      return false;
+    }
+  }
+
+  public async deleteUser(userId: string): Promise<boolean> {
+    // Delete user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/delete", {
+        user_id: userId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+
+  public async disableUser(userId: string): Promise<boolean> {
+    // Disable user (admin only)
+    try {
+      const result = await this.sendCommand<
+        { success?: boolean } | boolean | null | undefined
+      >("auth/user/disable", {
+        user_id: userId,
+      });
+
+      if (typeof result === "boolean") {
+        return result;
+      }
+
+      if (
+        result == null ||
+        (typeof result === "object" && Object.keys(result).length === 0)
+      ) {
+        return true;
+      }
+
+      if (
+        typeof result === "object" &&
+        "success" in result &&
+        result.success === false
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error disabling user:", error);
+      return false;
     }
   }
 
@@ -1579,7 +2261,13 @@ export class MusicAssistantApi {
     args?: Record<string, any>,
     msgId?: string,
   ): void {
-    if (this.state.value !== ConnectionState.CONNECTED) {
+    // Allow commands when CONNECTED, AUTH_REQUIRED, AUTHENTICATING, or AUTHENTICATED
+    if (
+      this.state.value !== ConnectionState.CONNECTED &&
+      this.state.value !== ConnectionState.AUTH_REQUIRED &&
+      this.state.value !== ConnectionState.AUTHENTICATING &&
+      this.state.value !== ConnectionState.AUTHENTICATED
+    ) {
       throw new Error("Connection lost");
     }
 
@@ -1597,10 +2285,16 @@ export class MusicAssistantApi {
       console.log("[sendCommand]", msg);
     }
 
-    this.ws!.send(JSON.stringify(msg));
+    const msgStr = JSON.stringify(msg);
+
+    if (!this.transport) {
+      throw new Error("No connection available");
+    }
+
+    this.transport.send(msgStr);
   }
 
-  private async _fetchState() {
+  public async fetchState() {
     // fetch full initial state
     for (const player of await this.getPlayers()) {
       // ignore unavailable players in the initial state

@@ -1,14 +1,6 @@
 <template>
   <section>
-    <v-toolbar color="transparent">
-      <template #title>{{ $t("settings.frontend") }} </template>
-    </v-toolbar>
     <v-card-text>
-      <v-card-subtitle> {{ $t("settings.frontend_desc") }} </v-card-subtitle>
-      <br />
-      <br />
-
-      <v-divider />
       <edit-config
         v-if="config"
         :config-entries="config"
@@ -40,6 +32,7 @@ import EditConfig from "./EditConfig.vue";
 import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
+import { api } from "@/plugins/api";
 
 // global refs
 const router = useRouter();
@@ -52,7 +45,7 @@ onMounted(() => {
     ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
 
-  config.value = [
+  const configEntries: ConfigEntry[] = [
     {
       key: "theme",
       type: ConfigEntryType.STRING,
@@ -108,6 +101,22 @@ onMounted(() => {
       value: enabledMenuItems,
     },
     {
+      key: "force_mobile_layout",
+      type: ConfigEntryType.BOOLEAN,
+      label: "force_mobile_layout",
+      default_value: false,
+      required: false,
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.force_mobile_layout") ===
+        "true",
+    },
+  ];
+
+  // Only show web player mode setting for local connections
+  if (!api.isRemoteConnection.value) {
+    configEntries.splice(3, 0, {
       key: "web_player_mode",
       type: ConfigEntryType.STRING,
       label: "web_player_mode",
@@ -131,20 +140,10 @@ onMounted(() => {
       category: "generic",
       value:
         localStorage.getItem("frontend.settings.web_player_mode") || "builtin",
-    },
-    {
-      key: "force_mobile_layout",
-      type: ConfigEntryType.BOOLEAN,
-      label: "force_mobile_layout",
-      default_value: false,
-      required: false,
-      multi_value: false,
-      category: "generic",
-      value:
-        localStorage.getItem("frontend.settings.force_mobile_layout") !=
-        "false",
-    },
-  ];
+    });
+  }
+
+  config.value = configEntries;
 });
 
 // methods

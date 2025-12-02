@@ -92,20 +92,19 @@
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { MediaType } from "@/plugins/api/interfaces";
+import Toolbar from "@/components/Toolbar.vue";
+import api from "@/plugins/api";
 import type {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   Playlist,
-  Track,
 } from "@/plugins/api/interfaces";
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import { ProviderFeature } from "@/plugins/api/interfaces";
-import api from "@/plugins/api";
-import { AlertType, store } from "@/plugins/store";
+import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
-import Toolbar from "@/components/Toolbar.vue";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { toast } from "vuetify-sonner";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
@@ -199,11 +198,7 @@ const addToPlaylist = async function (value: MediaItemType) {
     selectedItems.value.map((x) => x.uri),
   );
   close();
-  store.activeAlert = {
-    type: AlertType.INFO,
-    message: $t("background_task_added"),
-    persistent: false,
-  };
+  toast.info($t("background_task_added"));
 };
 const newPlaylist = async function (provId: string) {
   const name = prompt($t("new_playlist_name"));

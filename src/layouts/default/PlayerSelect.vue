@@ -21,8 +21,12 @@
       >
         <b>{{ $t("players") }}</b>
         <div style="float: right; margin-right: -20px">
-          <!-- settings button -->
-          <Button variant="icon" :to="{ name: 'playersettings' }">
+          <!-- settings button (admin only) -->
+          <Button
+            v-if="authManager.isAdmin()"
+            variant="icon"
+            :to="{ name: 'playersettings' }"
+          >
             <v-icon size="30">mdi-cog-outline</v-icon>
           </Button>
           <!-- close button -->
@@ -163,12 +167,15 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { webPlayer, isPlaybackMode } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
+const { getPreference, setPreference } = useUserPreferences();
 
 // computed properties
 const sortedPlayers = computed(() => {
@@ -184,7 +191,7 @@ watch(
   (newVal) => {
     if (newVal) {
       // remember last selected playerId
-      localStorage.setItem("mass.LastPlayerId", newVal);
+      setPreference("activePlayerId", newVal);
     }
   },
 );
@@ -231,7 +238,7 @@ const checkDefaultPlayer = function () {
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
+  const lastPlayerId = getPreference<string>("activePlayerId");
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&

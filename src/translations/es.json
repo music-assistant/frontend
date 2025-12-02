@@ -128,7 +128,6 @@
         "sync": "Sincronizar ahora",
         "sync_running": "Este proveedor está siendo sincronizado ahora",
         "username": "Usuario",
-        "core": "Núcleo",
         "core_modules": "Módulos del núcleo",
         "server_info": "Información del servidor",
         "server_id": "ID del servidor",
@@ -319,8 +318,6 @@
             "label": "Icono",
             "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Interfaz de Usuario",
-        "frontend_desc": "Ajustes de configuración de la interfaz de usuario (frontend) de Music Assistant. Tenga en cuenta que estos ajustes se almacenan a nivel de dispositivo.",
         "theme": {
             "label": "Tema",
             "options": {

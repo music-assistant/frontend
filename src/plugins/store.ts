@@ -1,9 +1,16 @@
 import { computed, reactive } from "vue";
-import { MediaType, Player, PlayerQueue, QueueItem } from "./api/interfaces";
+import {
+  MediaType,
+  Player,
+  PlayerQueue,
+  QueueItem,
+  ServerInfoMessage,
+  User,
+} from "./api/interfaces";
 
-import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
 import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
+import api from "./api";
 
 import MobileDetect from "mobile-detect";
 import { getBreakpointValue } from "./breakpoint";
@@ -16,19 +23,6 @@ const DEVICE_TYPE: DeviceType = md.tablet()
   : md.phone() || md.mobile()
     ? "phone"
     : "desktop";
-
-export enum AlertType {
-  ERROR = "error",
-  WARNING = "warning",
-  INFO = "info",
-  SUCCESS = "success",
-}
-
-interface Alert {
-  type: AlertType;
-  message: string;
-  persistent: boolean;
-}
 
 interface Store {
   activePlayerId?: string;
@@ -46,7 +40,6 @@ interface Store {
   globalSearchTerm?: string;
   globalSearchType?: MediaType;
   prevState?: StoredState;
-  activeAlert?: Alert;
   prevRoute?: string;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
@@ -55,13 +48,16 @@ interface Store {
   libraryRadiosCount?: number;
   libraryPodcastsCount?: number;
   libraryAudiobooksCount?: number;
-  connected?: boolean;
   isTouchscreen: boolean;
   playMenuShown: boolean;
   playActionInProgress: boolean;
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
+  currentUser?: User;
+  serverInfo?: ServerInfoMessage;
+  isIngressSession: boolean;
+  isOnboarding: boolean;
 }
 
 export const store: Store = reactive({
@@ -105,14 +101,12 @@ export const store: Store = reactive({
   globalSearchTerm: undefined,
   globalSearchType: undefined,
   prevState: undefined,
-  activeAlert: undefined,
   prevRoute: undefined,
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,
   libraryTracksCount: undefined,
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
-  connected: false,
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   playActionInProgress: false,
@@ -123,4 +117,8 @@ export const store: Store = reactive({
       parseBool(store.forceMobileLayout)
     );
   }),
+  currentUser: undefined,
+  serverInfo: undefined,
+  isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
+  isOnboarding: false,
 });

@@ -128,7 +128,6 @@
         "sync": "Sinhronizirajte zdaj",
         "sync_running": "Ta ponudnik se zdaj sinhronizira",
         "username": "Uporabniško ime",
-        "core": "Jedro",
         "core_modules": "Jedrni moduli",
         "server_info": "Informacije o strežniku",
         "server_id": "ID strežnika",
@@ -319,8 +318,6 @@
             "label": "Ikona",
             "description": "Ikona oblikovanja materiala za ta predvajalnik.\n\nGlej https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Uporabniški vmesnik",
-        "frontend_desc": "Konfiguracijske nastavitve uporabniškega vmesnika Music Assistant. Upoštevajte, da so te nastavitve shranjene na ravni naprave.",
         "theme": {
             "label": "Tema",
             "options": {

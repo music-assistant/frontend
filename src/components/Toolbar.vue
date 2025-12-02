@@ -31,7 +31,10 @@
       </slot>
     </template>
 
-    <template v-if="menuItems?.length" #append>
+    <template v-if="$slots.append" #append>
+      <slot name="append"></slot>
+    </template>
+    <template v-else-if="menuItems?.length" #append>
       <v-progress-circular
         v-if="
           showLoading &&
@@ -54,6 +57,7 @@
           density="compact"
           slim
           tile
+          :close-on-content-click="menuItem.closeOnContentClick !== false"
         >
           <template #activator="{ props }">
             <v-btn
@@ -224,6 +228,7 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   active?: boolean;
   subItems?: ContextMenuItem[];
   overflowAllowed?: boolean;
+  closeOnContentClick?: boolean;
 }
 </script>
 

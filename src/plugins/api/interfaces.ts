@@ -333,6 +333,8 @@ export enum ProviderFeature {
   LIBRARY_TRACKS = "library_tracks",
   LIBRARY_PLAYLISTS = "library_playlists",
   LIBRARY_RADIOS = "library_radios",
+  LIBRARY_PODCASTS = "library_podcasts",
+  LIBRARY_AUDIOBOOKS = "library_audiobooks",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
   ARTIST_TOPTRACKS = "artist_toptracks",
@@ -342,6 +344,8 @@ export enum ProviderFeature {
   LIBRARY_TRACKS_EDIT = "library_tracks_edit",
   LIBRARY_PLAYLISTS_EDIT = "library_playlists_edit",
   LIBRARY_RADIOS_EDIT = "library_radios_edit",
+  LIBRARY_PODCASTS_EDIT = "library_podcasts_edit",
+  LIBRARY_AUDIOBOOKS_EDIT = "library_audiobooks_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features
@@ -976,4 +980,69 @@ export interface ButtonProps {
   size?: number;
   icon?: string;
   iconOptions?: IconProps; //Experimental
+}
+
+// Authentication interfaces
+
+export enum UserRole {
+  ADMIN = "admin",
+  USER = "user",
+}
+
+export enum AuthProviderType {
+  BUILTIN = "builtin",
+  OAUTH_HOMEASSISTANT = "oauth_homeassistant",
+}
+
+export interface User {
+  user_id: string;
+  username: string;
+  role: UserRole;
+  enabled: boolean;
+  created_at: string;
+  display_name?: string;
+  avatar_url?: string;
+  preferences: Record<string, any>;
+  provider_filter: string[];
+  player_filter: string[];
+}
+
+export interface AuthToken {
+  token_id: string;
+  name: string;
+  created_at: string;
+  last_used_at?: string;
+  expires_at?: string;
+  is_long_lived: boolean;
+}
+
+export interface AuthProvider {
+  provider_id: string;
+  provider_type: AuthProviderType;
+  requires_redirect: boolean;
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  provider_id: string;
+  credentials: LoginCredentials;
+  device_name?: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  token?: string;
+  user?: User;
+  error?: string;
+}
+
+export interface SetupRequest {
+  username: string;
+  password: string;
+  display_name?: string;
+  device_name?: string;
 }

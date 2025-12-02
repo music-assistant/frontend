@@ -128,7 +128,6 @@
         "sync": "立即同步",
         "sync_running": "现在同步该提供者",
         "username": "用户名",
-        "core": "核心",
         "core_modules": "核心模块",
         "server_info": "服务器信息",
         "server_id": "服务器 ID",
@@ -321,8 +320,6 @@
             "label": "Icon图标",
             "description": "此播放器的MDI图标,参见https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "用户界面",
-        "frontend_desc": "音乐助手用户界面（前端）的配置设置。请注意，这些设置存储在设备里面。",
         "theme": {
             "label": "主题",
             "options": {
