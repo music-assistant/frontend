@@ -128,7 +128,8 @@ onMounted(() => {
     ];
 
     // Only show resonate option if the provider is available
-    if (api.getProvider("resonate")?.available) {
+    const resonateAvailable = api.getProvider("resonate")?.available;
+    if (resonateAvailable) {
       webPlayerOptions.unshift({
         title: $t("settings.web_player_mode.options.resonate"),
         value: "resonate",
@@ -147,6 +148,23 @@ onMounted(() => {
       value:
         localStorage.getItem("frontend.settings.web_player_mode") || "builtin",
     });
+
+    // Show resonate sync delay option when resonate is available
+    if (resonateAvailable) {
+      configEntries.splice(4, 0, {
+        key: "resonate_sync_delay",
+        type: ConfigEntryType.INTEGER,
+        label: "resonate_sync_delay",
+        default_value: 0,
+        required: false,
+        multi_value: false,
+        category: "generic",
+        value: parseInt(
+          localStorage.getItem("frontend.settings.resonate_sync_delay") || "0",
+          10,
+        ),
+      });
+    }
   }
 
   config.value = configEntries;

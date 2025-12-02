@@ -59,6 +59,11 @@ onMounted(() => {
 
   // Create and initialize player
   if (audioRef.value) {
+    const syncDelay = parseInt(
+      localStorage.getItem("frontend.settings.resonate_sync_delay") || "0",
+      10,
+    );
+
     player = new ResonatePlayer({
       playerId: props.playerId,
       baseUrl: webPlayer.baseUrl,
@@ -68,6 +73,7 @@ onMounted(() => {
       isAndroid,
       silentAudioSrc: almostSilentMp3,
       clientName: "Music Assistant Web Player",
+      syncDelay,
       onStateChange: (state) => {
         // Update reactive state when player state changes
         isPlaying.value = state.isPlaying;
