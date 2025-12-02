@@ -141,6 +141,10 @@ const handleRemoteAuthenticated = async (credentials: {
 };
 
 const handleLocalConnect = async (serverAddress: string) => {
+  if (api.state.value !== ConnectionState.DISCONNECTED) {
+    console.debug("[App] API already initialized, skipping");
+    return;
+  }
   const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
   await api.initialize(serverAddress);
@@ -217,8 +221,12 @@ onMounted(async () => {
 
   watch(
     () => api.state.value,
-    async (newState) => {
-      if (newState === ConnectionState.CONNECTED) {
+    async (newState, oldState) => {
+      // Re-authenticate on reconnection (not initial connection - Login.vue handles that)
+      if (
+        newState === ConnectionState.CONNECTED &&
+        oldState === ConnectionState.RECONNECTING
+      ) {
         const { authManager } = await import("@/plugins/auth");
         const storedToken = authManager.getToken();
 
@@ -230,7 +238,11 @@ onMounted(async () => {
               store.currentUser = result.user;
             }
           } catch (error) {
-            console.error("[App] Auto-authentication failed:", error);
+            console.error(
+              "[App] Re-authentication after reconnect failed:",
+              error,
+            );
+            api.requireAuthentication();
           }
         } else {
           api.requireAuthentication();
