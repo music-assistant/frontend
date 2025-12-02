@@ -128,7 +128,6 @@
         "sync": "Jetzt Änderungen synchronisieren",
         "sync_running": "Dieser Anbieter wird jetzt synchronisiert",
         "username": "Benutzername",
-        "core": "Grundsystem",
         "core_modules": "Kernmodule",
         "server_info": "Server-Informationen",
         "server_id": "Server-ID",
@@ -321,8 +320,6 @@
             "label": "Icon",
             "description": "Material Design Icon für dieses Wiedergabegerät. \n\nSiehe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Benutzeroberfläche",
-        "frontend_desc": "Konfigurationen für die Music Assistant Benutzeroberfläche. Diese Einstellungen werden nur auf dem nutzenden Gerät gespeichert.",
         "theme": {
             "label": "Theme",
             "options": {

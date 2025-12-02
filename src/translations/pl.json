@@ -128,7 +128,6 @@
         "sync": "Synchronizuj teraz",
         "sync_running": "Ten dostawca jest teraz synchronizowany",
         "username": "Nazwa użytkownika",
-        "core": "Główne",
         "core_modules": "Główne moduły",
         "server_info": "Informacje o serwerze",
         "server_id": "Identyfikator serwera",
@@ -320,8 +319,6 @@
             "label": "Ikona",
             "description": "Ikona MDI (Material design icon) dla tego odtwarzacza.\n\nZobacz https:\/\/pictogrammmers.com\/library\/mdi\/."
         },
-        "frontend": "Interfejs użytkownika",
-        "frontend_desc": "Ustawienia konfiguracyjne interfejsu użytkownika (frontend) Music Assistant. Należy pamiętać, że te ustawienia są przechowywane na poziomie urządzenia.",
         "theme": {
             "label": "Motyw",
             "options": {

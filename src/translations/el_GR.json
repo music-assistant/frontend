@@ -130,7 +130,6 @@
         "sync": "Συγχρονισμός τώρα",
         "sync_running": "Αυτός ο πάροχος συγχρονίζεται τώρα",
         "username": "Ονομα χρήστη",
-        "core": "Πυρήνας",
         "core_modules": "Στοιχεία πυρήνα",
         "server_info": "Πληροφορίες server",
         "server_id": "Server ID",
@@ -325,8 +324,6 @@
             "label": "Εικονίδιο",
             "description": "Εικονίδια Material design για αυτή τη συσκευή αναπαραγωγής.\n\nΑνατρέξτε στο https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Διεπαφή χρήστη",
-        "frontend_desc": "Ρυθμίσεις παραμέτρων για τη διεπαφή χρήστη Music Assistant (frontend). Σημειώστε ότι αυτές οι ρυθμίσεις αποθηκεύονται σε επίπεδο συσκευής.",
         "theme": {
             "label": "Θέμα",
             "options": {
@@ -535,7 +532,6 @@
         },
         "providers_description": "Διαχειριστείτε τις πηγές μουσικής, τις υπηρεσίες streaming και τις ενσωματώσεις σας",
         "players_description": "Διαμορφώστε και διαχειριστείτε τις συσκευές εξόδου ήχου σας",
-        "core_description": "Διαμόρφωση των ρυθμίσεων και προτιμήσεων του Music Assistant server",
         "frontend_description": "Προσαρμογή του θέματος και της εμφάνισης της διεπαφής χρήστη",
         "provider_type": "Τύπος"
     },

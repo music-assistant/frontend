@@ -128,7 +128,6 @@
         "sync": "Synchronizovat nyní",
         "sync_running": "Tento poskytovatel se nyní synchronizuje",
         "username": "Uživatelské jméno",
-        "core": "Jádro",
         "core_modules": "Moduly jádra",
         "server_info": "Informace o serveru",
         "server_id": "ID serveru",
@@ -320,8 +319,6 @@
             "label": "Ikona",
             "description": "Ikona Material Design pro tento přehrávač.\n\nViz https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Uživatelské rozhraní",
-        "frontend_desc": "Konfigurační nastavení uživatelského rozhraní (frontend) aplikace Music Assistant. Tato nastavení jsou uložena na úrovni zařízení.",
         "theme": {
             "label": "Téma",
             "options": {

@@ -130,7 +130,6 @@
         "sync": "Synchronise now",
         "sync_running": "This provider is now being synchronised",
         "username": "Username",
-        "core": "Core",
         "core_modules": "Core modules",
         "server_info": "Server information",
         "server_id": "Server ID",
@@ -325,8 +324,6 @@
             "label": "Icon",
             "description": "Material design icon for this player. \n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "User Interface",
-        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
         "theme": {
             "label": "Theme",
             "options": {
@@ -535,7 +532,6 @@
         },
         "providers_description": "Manage your music sources, streaming services, and integrations",
         "players_description": "Configure and manage your audio output devices",
-        "core_description": "Configure Music Assistant server settings and preferences",
         "frontend_description": "Customise the user interface theme and appearance"
     },
     "show_info": "Show info",

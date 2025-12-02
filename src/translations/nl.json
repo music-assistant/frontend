@@ -128,7 +128,6 @@
         "sync": "Synchronize now",
         "sync_running": "This provider is now being synchronized",
         "username": "Username",
-        "core": "Core",
         "core_modules": "Core modules",
         "server_info": "Serverinformatie",
         "server_id": "Server-ID",
@@ -321,8 +320,6 @@
             "label": "Pictogram",
             "description": "Material design-pictogram voor deze speler. \n\nZie https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Gebruikersinterface",
-        "frontend_desc": "Configuratie-instellingen voor de gebruikersinterface van de muziekassistent (frontend). Houd er rekening mee dat deze instellingen op apparaatniveau worden opgeslagen.",
         "theme": {
             "label": "Thema",
             "options": {
