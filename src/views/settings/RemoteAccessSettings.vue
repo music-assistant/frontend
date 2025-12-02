@@ -264,6 +264,7 @@ import type { RemoteAccessInfo } from "@/plugins/api/interfaces";
 import { toast } from "vuetify-sonner";
 import { useI18n } from "vue-i18n";
 import remoteAccessDiagram from "@/assets/remote-access-diagram.svg";
+import { copyToClipboard } from "@/helpers/utils";
 
 const { t } = useI18n();
 
@@ -327,11 +328,10 @@ const toggleRemoteAccess = async (enabled: boolean | null) => {
 const copyRemoteId = async () => {
   if (!remoteAccessInfo.value?.remote_id) return;
 
-  try {
-    await navigator.clipboard.writeText(remoteAccessInfo.value.remote_id);
+  const success = await copyToClipboard(remoteAccessInfo.value.remote_id);
+  if (success) {
     showCopySnackbar.value = true;
-  } catch (error) {
-    console.error("Error copying remote ID:", error);
+  } else {
     toast.error(t("settings.remote_access_error_copy"));
   }
 };

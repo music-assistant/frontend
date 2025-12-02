@@ -749,6 +749,8 @@
     "image_make_primary": "Make primary",
     "update_metadata": "Update metadata",
     "cancel": "Cancel",
+    "uri_copied": "URI copied to clipboard",
+    "uri_copy_failed": "Failed to copy URI to clipboard",
     "transfer_queue": "Transfer queue",
     "power_on_player": "Power on",
     "power_off_player": "Power off",

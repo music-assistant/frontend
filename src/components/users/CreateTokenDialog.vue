@@ -72,6 +72,7 @@ import { api } from "@/plugins/api";
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
+import { copyToClipboard } from "@/helpers/utils";
 
 const { t } = useI18n();
 
@@ -128,11 +129,11 @@ watch(
 
 const copyToken = async () => {
   if (!createdToken.value) return;
-  try {
-    await navigator.clipboard.writeText(createdToken.value);
+
+  const success = await copyToClipboard(createdToken.value);
+  if (success) {
     toast.success(t("auth.token_copied"));
-  } catch (err) {
-    console.error("Failed to copy token", err);
+  } else {
     toast.error(t("auth.token_copy_failed"));
   }
 };

@@ -484,6 +484,58 @@ export const markdownToHtml = function (text: string): string {
   return marked(text) as string;
 };
 
+/**
+ * Copy text to clipboard with proper error handling.
+ *
+ * Handles scenarios where navigator.clipboard is unavailable (non-HTTPS contexts,
+ * unsupported browsers, or permission issues) by falling back to a temporary
+ * textarea element.
+ *
+ * :param text: The text to copy to the clipboard.
+ * :return: Promise that resolves to true if successful, false otherwise.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
+
+  // Try modern Clipboard API first (requires HTTPS or localhost)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.error(
+        "Clipboard API failed, falling back to legacy method:",
+        error,
+      );
+    }
+  }
+
+  // Fallback for older browsers or non-secure contexts
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (successful) {
+      return true;
+    } else {
+      console.error("Legacy copy method failed");
+      return false;
+    }
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+    return false;
+  }
+}
+
 export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
