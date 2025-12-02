@@ -135,6 +135,7 @@
             </v-btn>
 
             <v-chip
+              v-if="api.providerManifests[item.domain]"
               size="x-small"
               variant="flat"
               class="mx-1 text-uppercase"
@@ -162,6 +163,7 @@
           </v-card-title>
 
           <v-card-text
+            v-if="api.providerManifests[item.domain]"
             class="provider-description"
             :class="{
               'truncated-text': isTextTruncated(
@@ -214,6 +216,14 @@ const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
 onBeforeUnmount(unsub);
 
 const loadItems = async function () {
+  // Only load provider configs if provider manifests are available
+  // to avoid race conditions during initial connection
+  if (Object.keys(api.providerManifests).length === 0) {
+    console.debug(
+      "Waiting for provider manifests to load before loading provider configs",
+    );
+    return;
+  }
   providerConfigs.value = await api.getProviderConfigs();
 };
 
@@ -253,6 +263,11 @@ const reloadProvider = function (providerInstanceId: string) {
 
 const onMenu = function (evt: Event, item: ProviderConfig) {
   const providerManifest = api.providerManifests[item.domain];
+  // Guard against race condition where providerManifests aren't loaded yet
+  if (!providerManifest) {
+    console.warn("Provider manifest not yet loaded for:", item.domain);
+    return;
+  }
   const providerInstance = api.getProvider(item.instance_id);
   const menuItems = [
     {
@@ -339,8 +354,23 @@ watch(
   { immediate: true },
 );
 
+// Watch for provider manifests to become available
+watch(
+  () => Object.keys(api.providerManifests).length,
+  (manifestCount) => {
+    if (manifestCount > 0) {
+      loadItems();
+    }
+  },
+);
+
 const getProviderName = function (config: ProviderConfig) {
-  const providerBaseName = api.providerManifests[config.domain].name;
+  const manifest = api.providerManifests[config.domain];
+  // Guard against race condition where providerManifests aren't loaded yet
+  if (!manifest) {
+    return config.name || config.domain;
+  }
+  const providerBaseName = manifest.name;
   if (config.name) {
     return `${providerBaseName} [${config.name}]`;
   }

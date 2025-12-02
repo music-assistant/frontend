@@ -1046,3 +1046,14 @@ export interface SetupRequest {
   display_name?: string;
   device_name?: string;
 }
+
+// Remote Access interfaces
+
+export interface RemoteAccessInfo {
+  enabled: boolean;
+  running: boolean;
+  connected: boolean;
+  remote_id: string;
+  using_ha_cloud: boolean;
+  signaling_url: string;
+}
