@@ -5,7 +5,6 @@
         @update:search="searchQuery = $event"
         @update:providers="selectedProviders = $event"
         @update:types="selectedPlayerTypes = $event"
-        @update:statuses="selectedStatuses = $event"
       />
       <v-btn
         v-if="providersWithCreateGroupSupport.length > 0"
@@ -83,7 +82,6 @@ const playerConfigs = ref<PlayerConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviders = ref<string[]>([]);
 const selectedPlayerTypes = ref<string[]>([]);
-const selectedStatuses = ref<string[]>([]);
 const showAddPlayerGroupDialog = ref<boolean>(false);
 
 // listen for item updates to refresh items when that happens
@@ -250,24 +248,6 @@ const getAllFilteredPlayers = function () {
       const player = api.players[item.player_id];
       const playerType = player?.type ?? PlayerType.PLAYER;
       return selectedPlayerTypes.value.includes(playerType);
-    });
-  }
-
-  if (selectedStatuses.value.length > 0) {
-    filtered = filtered.filter((item) => {
-      if (selectedStatuses.value.includes("enabled") && item.enabled) {
-        return true;
-      }
-      if (selectedStatuses.value.includes("disabled") && !item.enabled) {
-        return true;
-      }
-      if (
-        selectedStatuses.value.includes("not_available") &&
-        !api.players[item.player_id]?.available
-      ) {
-        return true;
-      }
-      return false;
     });
   }
 

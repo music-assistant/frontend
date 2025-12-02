@@ -63,28 +63,6 @@
           </v-list>
         </v-menu>
       </v-btn>
-      <v-btn height="40" elevation="0" variant="outlined" density="compact">
-        Status
-        <v-icon end>mdi-chevron-down</v-icon>
-        <v-menu activator="parent" :close-on-content-click="false">
-          <v-list>
-            <v-list-item
-              v-for="(status, index) in statusOptions"
-              :key="index"
-              :value="index"
-              @click="toggleStatus(status.value)"
-            >
-              <template #append>
-                <v-checkbox-btn
-                  :model-value="selectedStatuses.includes(status.value)"
-                  @click.stop="toggleStatus(status.value)"
-                />
-              </template>
-              <v-list-item-title>{{ status.title }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-btn>
     </div>
   </div>
 </template>
@@ -103,12 +81,10 @@ const route = useRoute();
 const searchQuery = ref<string>("");
 const selectedProviders = ref<string[]>([]);
 const selectedPlayerTypes = ref<string[]>([]);
-const selectedStatuses = ref<string[]>([]);
 
 let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let providersDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
-let statusesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const availableProviders = computed(() => {
   const providers = Object.values(api.providers)
@@ -128,18 +104,11 @@ const playerTypes = computed(() => [
   { title: $t("player_type.stereo_pair"), value: PlayerType.STEREO_PAIR },
 ]);
 
-const statusOptions = computed(() => [
-  { title: $t("on"), value: "enabled" },
-  { title: $t("off"), value: "disabled" },
-  { title: $t("settings.not_loaded"), value: "not_available" },
-]);
-
 // Emits
 const emit = defineEmits<{
   (e: "update:search", value: string): void;
   (e: "update:providers", value: string[]): void;
   (e: "update:types", value: string[]): void;
-  (e: "update:statuses", value: string[]): void;
 }>();
 
 const toggleProvider = function (provider: string) {
@@ -160,15 +129,6 @@ const togglePlayerType = function (type: string) {
   }
 };
 
-const toggleStatus = function (status: string) {
-  const index = selectedStatuses.value.indexOf(status);
-  if (index > -1) {
-    selectedStatuses.value.splice(index, 1);
-  } else {
-    selectedStatuses.value.push(status);
-  }
-};
-
 const initializeFromUrl = function () {
   if (route.query.search) {
     searchQuery.value = route.query.search as string;
@@ -182,11 +142,6 @@ const initializeFromUrl = function () {
   if (route.query.types) {
     const types = route.query.types as string;
     selectedPlayerTypes.value = types.split(",");
-  }
-
-  if (route.query.statuses) {
-    const statuses = route.query.statuses as string;
-    selectedStatuses.value = statuses.split(",");
   }
 };
 
@@ -242,27 +197,6 @@ watch(
         query.types = newTypes.join(",");
       } else {
         delete query.types;
-      }
-      router.replace({ query });
-    }, 750);
-  },
-  { deep: true },
-);
-
-watch(
-  selectedStatuses,
-  (newStatuses) => {
-    emit("update:statuses", newStatuses);
-
-    if (statusesDebounceTimeout) {
-      clearTimeout(statusesDebounceTimeout);
-    }
-    statusesDebounceTimeout = setTimeout(() => {
-      const query = { ...route.query };
-      if (newStatuses.length > 0) {
-        query.statuses = newStatuses.join(",");
-      } else {
-        delete query.statuses;
       }
       router.replace({ query });
     }, 750);
