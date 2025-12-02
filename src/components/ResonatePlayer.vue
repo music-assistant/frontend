@@ -4,7 +4,8 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
-import { ResonatePlayer } from "@/helpers/resonate-player";
+import { ResonatePlayer } from "@music-assistant/resonate-js";
+import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
@@ -61,8 +62,12 @@ onMounted(() => {
     player = new ResonatePlayer({
       playerId: props.playerId,
       baseUrl: webPlayer.baseUrl,
+      // Web player config
+      audioOutputMode: "media-element",
       audioElement: audioRef.value,
       isAndroid,
+      silentAudioSrc: almostSilentMp3,
+      clientName: "Music Assistant Web Player",
       onStateChange: (state) => {
         // Update reactive state when player state changes
         isPlaying.value = state.isPlaying;
