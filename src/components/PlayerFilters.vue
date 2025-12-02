@@ -15,7 +15,7 @@
         {{ $t("settings.player_provider") }}
         <v-icon end>mdi-chevron-down</v-icon>
         <v-menu activator="parent" :close-on-content-click="false">
-          <v-list>
+          <v-list class="provider-filter-list">
             <v-list-item
               v-for="provider in availableProviders"
               :key="provider.lookup_key"
@@ -70,7 +70,7 @@
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { api } from "@/plugins/api";
-import { PlayerType } from "@/plugins/api/interfaces";
+import { PlayerType, ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -88,7 +88,7 @@ let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const availableProviders = computed(() => {
   const providers = Object.values(api.providers)
-    .filter((x) => x.available)
+    .filter((x) => x.available && x.type === ProviderType.PLAYER)
     .map((x) => ({
       lookup_key: x.lookup_key,
       domain: x.domain,
@@ -272,5 +272,10 @@ initializeFromUrl();
 
 :deep(.v-list-item .v-checkbox-btn .v-selection-control) {
   min-height: auto;
+}
+
+.provider-filter-list {
+  max-height: 300px;
+  overflow-y: auto;
 }
 </style>
