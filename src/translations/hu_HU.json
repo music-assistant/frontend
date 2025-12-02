@@ -128,7 +128,6 @@
         "sync": "Szinkronizálás most",
         "sync_running": "A szolgáltató szinkronizálása folyamatban van",
         "username": "Felhasználónév",
-        "core": "Alap",
         "core_modules": "Alapmodulok",
         "server_info": "Szerver információk",
         "server_id": "Szerverazonosító",
@@ -319,8 +318,6 @@
             "label": "Ikon",
             "description": "Material design ikon ehhez a lejátszóhoz. \n\nLásd: https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Felhasználói felület",
-        "frontend_desc": "A Music Assistant felhasználói felület (frontend) konfigurációs beállításai. Ezek a beállítások eszközszinten lerülnek tárolásra.",
         "theme": {
             "label": "Téma",
             "options": {

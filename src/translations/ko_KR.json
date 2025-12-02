@@ -128,7 +128,6 @@
         "sync": "지금 동기화",
         "sync_running": "이 공급자는 현재 동기화 중입니다.",
         "username": "사용자 이름",
-        "core": "코어",
         "core_modules": "코어 모듈",
         "server_info": "서버 정보",
         "server_id": "서버 ID",
@@ -319,8 +318,6 @@
             "label": "아이콘",
             "description": "이 플레이어의 디자인 아이콘입니다\n\nhttps:\/\/pictogrammers.com\/library\/mdi\/ 참조하십시오."
         },
-        "frontend": "유저 인터페이스",
-        "frontend_desc": "Music Assistant 사용자 인터페이스(프런트엔드)에 대한 구성 설정입니다. 이러한 설정은 장치 수준에서 저장됩니다.",
         "theme": {
             "label": "테마",
             "options": {
