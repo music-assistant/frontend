@@ -116,26 +116,32 @@ onMounted(() => {
 
   // Only show web player mode setting for local connections
   if (!api.isRemoteConnection.value) {
+    const webPlayerOptions = [
+      {
+        title: $t("settings.web_player_mode.options.builtin"),
+        value: "builtin",
+      },
+      {
+        title: $t("settings.web_player_mode.options.disabled"),
+        value: "disabled",
+      },
+    ];
+
+    // Only show resonate option if the provider is available
+    if (api.getProvider("resonate")?.available) {
+      webPlayerOptions.unshift({
+        title: $t("settings.web_player_mode.options.resonate"),
+        value: "resonate",
+      });
+    }
+
     configEntries.splice(3, 0, {
       key: "web_player_mode",
       type: ConfigEntryType.STRING,
       label: "web_player_mode",
       default_value: "builtin",
       required: false,
-      options: [
-        {
-          title: $t("settings.web_player_mode.options.resonate"),
-          value: "resonate",
-        },
-        {
-          title: $t("settings.web_player_mode.options.builtin"),
-          value: "builtin",
-        },
-        {
-          title: $t("settings.web_player_mode.options.disabled"),
-          value: "disabled",
-        },
-      ],
+      options: webPlayerOptions,
       multi_value: false,
       category: "generic",
       value:
