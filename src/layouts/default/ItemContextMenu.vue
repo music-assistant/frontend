@@ -550,7 +550,11 @@ export const getContextMenuItems = async function (
   const firstItem = items[0];
 
   // Edit Genre (admin only)
-  if (items.length === 1 && items[0].media_type === MediaType.GENRE && authManager.isAdmin()) {
+  if (
+    items.length === 1 &&
+    items[0].media_type === MediaType.GENRE &&
+    authManager.isAdmin()
+  ) {
     contextMenuItems.push({
       label: "edit",
       labelArgs: [],
