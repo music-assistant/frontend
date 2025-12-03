@@ -649,6 +649,18 @@ watchEffect(() => {
 
 const breadcrumbItems = computed(() => {
   if (route.query.genre_id && route.query.genre_name) {
+    const genreIdRaw = Array.isArray(route.query.genre_id)
+      ? route.query.genre_id[0]
+      : route.query.genre_id;
+    const genreNameRaw = Array.isArray(route.query.genre_name)
+      ? route.query.genre_name[0]
+      : route.query.genre_name;
+
+    // Ensure we have non-null strings
+    if (!genreIdRaw || !genreNameRaw) {
+      return [];
+    }
+
     return [
       {
         title: $t("genres.genres"),
@@ -656,9 +668,9 @@ const breadcrumbItems = computed(() => {
         to: { name: "genres" },
       },
       {
-        title: route.query.genre_name as string,
+        title: String(genreNameRaw),
         disabled: false,
-        to: { name: "genre", params: { id: route.query.genre_id } },
+        to: { name: "genre", params: { id: String(genreIdRaw) } },
       },
       {
         title: props.title || "",
