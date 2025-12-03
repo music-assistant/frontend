@@ -64,9 +64,14 @@
         class="d-flex"
       >
         <v-card
-          class="flex-fill rounded-lg"
+          class="flex-fill rounded-lg provider-card d-flex flex-column"
+          :class="{ 'player-provider-card': item.type === ProviderType.PLAYER }"
           min-height="200px"
-          @click="editProvider(item.instance_id)"
+          @click="
+            item.type === ProviderType.PLAYER && getPlayerCount(item) > 0
+              ? viewPlayers(item.instance_id)
+              : editProvider(item.instance_id)
+          "
         >
           <template #prepend>
             <provider-icon
@@ -135,6 +140,7 @@
             </v-btn>
 
             <v-chip
+              v-if="api.providerManifests[item.domain]"
               size="x-small"
               variant="flat"
               class="mx-1 text-uppercase"
@@ -162,7 +168,8 @@
           </v-card-title>
 
           <v-card-text
-            class="provider-description"
+            v-if="api.providerManifests[item.domain]"
+            class="provider-description flex-grow-1"
             :class="{
               'truncated-text': isTextTruncated(
                 api.providerManifests[item.domain].description,
@@ -170,6 +177,30 @@
             }"
           >
             {{ api.providerManifests[item.domain].description }}
+          </v-card-text>
+
+          <!-- Player count badge for player providers -->
+          <v-card-text
+            v-if="item.type === ProviderType.PLAYER && getPlayerCount(item) > 0"
+            class="provider-players-count mt-auto"
+          >
+            <v-chip
+              size="small"
+              variant="flat"
+              color="primary"
+              class="player-count-chip"
+              @click.stop="viewPlayers(item.instance_id)"
+            >
+              <v-icon start size="small">mdi-speaker</v-icon>
+              {{
+                getPlayerCount(item) === 1
+                  ? $t("settings.one_player")
+                  : $t("settings.players_count", [
+                      getPlayerCount(item),
+                      getPlayerCount(item) !== 1 ? "s" : "",
+                    ])
+              }}
+            </v-chip>
           </v-card-text>
         </v-card>
       </v-col>
@@ -186,6 +217,7 @@ import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
+  PlayerConfig,
   ProviderConfig,
   ProviderFeature,
   ProviderType,
@@ -206,6 +238,7 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviderTypes = ref<string[]>([]);
 const showAddProviderDialog = ref<boolean>(false);
+const playerConfigs = ref<PlayerConfig[]>([]);
 
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
@@ -214,7 +247,16 @@ const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
 onBeforeUnmount(unsub);
 
 const loadItems = async function () {
+  // Only load provider configs if provider manifests are available
+  // to avoid race conditions during initial connection
+  if (Object.keys(api.providerManifests).length === 0) {
+    console.debug(
+      "Waiting for provider manifests to load before loading provider configs",
+    );
+    return;
+  }
   providerConfigs.value = await api.getProviderConfigs();
+  playerConfigs.value = await api.getPlayerConfigs();
 };
 
 const dismissOnboarding = function () {
@@ -230,6 +272,32 @@ const removeProvider = function (providerInstanceId: string) {
 
 const editProvider = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
+};
+
+const viewPlayers = function (providerInstanceId: string) {
+  const providerInstance = api.getProvider(providerInstanceId);
+  if (providerInstance) {
+    router.push({
+      name: "playersettings",
+      query: { providers: providerInstance.lookup_key },
+    });
+  }
+};
+
+const getPlayerCount = function (providerConfig: ProviderConfig): number {
+  if (providerConfig.type !== ProviderType.PLAYER) return 0;
+  const providerInstance = api.getProvider(providerConfig.instance_id);
+  if (!providerInstance) return 0;
+
+  return playerConfigs.value.filter((playerConfig) => {
+    if (playerConfig.provider === "builtin_player") return false;
+    const playerProviderInstance = api.getProvider(playerConfig.provider);
+    return (
+      playerProviderInstance?.lookup_key === providerInstance.lookup_key ||
+      playerConfig.provider === providerInstance.lookup_key ||
+      playerConfig.provider === providerInstance.domain
+    );
+  }).length;
 };
 
 const toggleEnabled = function (config: ProviderConfig) {
@@ -253,6 +321,11 @@ const reloadProvider = function (providerInstanceId: string) {
 
 const onMenu = function (evt: Event, item: ProviderConfig) {
   const providerManifest = api.providerManifests[item.domain];
+  // Guard against race condition where providerManifests aren't loaded yet
+  if (!providerManifest) {
+    console.warn("Provider manifest not yet loaded for:", item.domain);
+    return;
+  }
   const providerInstance = api.getProvider(item.instance_id);
   const menuItems = [
     {
@@ -308,6 +381,20 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       icon: "mdi-refresh",
     },
   ];
+
+  if (item.type === ProviderType.PLAYER && providerInstance) {
+    menuItems.push({
+      label: "settings.view_players",
+      labelArgs: [],
+      action: () => {
+        router.push({
+          name: "playersettings",
+          query: { providers: providerInstance.lookup_key },
+        });
+      },
+      icon: "mdi-speaker",
+    });
+  }
   if (
     providerInstance?.available &&
     providerInstance.supported_features.includes(
@@ -339,8 +426,30 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () => api.players,
+  () => {
+    loadItems();
+  },
+);
+
+// Watch for provider manifests to become available
+watch(
+  () => Object.keys(api.providerManifests).length,
+  (manifestCount) => {
+    if (manifestCount > 0) {
+      loadItems();
+    }
+  },
+);
+
 const getProviderName = function (config: ProviderConfig) {
-  const providerBaseName = api.providerManifests[config.domain].name;
+  const manifest = api.providerManifests[config.domain];
+  // Guard against race condition where providerManifests aren't loaded yet
+  if (!manifest) {
+    return config.name || config.domain;
+  }
+  const providerBaseName = manifest.name;
   if (config.name) {
     return `${providerBaseName} [${config.name}]`;
   }
@@ -459,5 +568,34 @@ const getAllFilteredProviders = function () {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.provider-card {
+  transition: all 0.2s ease;
+}
+
+.provider-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.player-provider-card {
+  cursor: pointer;
+}
+
+.provider-players-count {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  margin-top: auto;
+  align-content: end;
+}
+
+.player-count-chip {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-count-chip:hover {
+  transform: scale(1.05);
 }
 </style>

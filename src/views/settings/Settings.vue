@@ -53,7 +53,7 @@
     </Container>
 
     <!-- Settings Subsections -->
-    <router-view v-else v-slot="{ Component }" app>
+    <router-view v-else v-slot="{ Component }">
       <component :is="Component" />
     </router-view>
   </div>
@@ -112,6 +112,15 @@ const allSettingsSections = [
     adminOnly: true,
   },
   {
+    name: "remote_access",
+    label: "settings.remote_access",
+    description: "settings.remote_access_description",
+    icon: "mdi-cloud-lock",
+    color: "deep-purple",
+    route: { name: "remoteaccesssettings" },
+    adminOnly: true,
+  },
+  {
     name: "frontend",
     label: "settings.frontend",
     description: "settings.frontend_description",
@@ -155,7 +164,7 @@ const activeTab = computed(() => {
   if (name === "profile") {
     return "profile";
   }
-  if (name.includes("player")) {
+  if (name.includes("player") || name === "addgroup") {
     return "players";
   }
   if (
@@ -167,6 +176,9 @@ const activeTab = computed(() => {
   }
   if (name.includes("frontend")) {
     return "frontend";
+  }
+  if (name.includes("remoteaccess")) {
+    return "remote_access";
   }
   if (name.includes("user")) {
     return "users";
@@ -215,6 +227,12 @@ const breadcrumbItems = computed(() => {
         disabled: name === "systemsettings",
         to: { name: "systemsettings" },
       });
+    } else if (currentTab === "remote_access") {
+      items.push({
+        title: t("settings.remote_access"),
+        disabled: name === "remoteaccesssettings",
+        to: { name: "remoteaccesssettings" },
+      });
     } else if (currentTab === "frontend") {
       items.push({
         title: t("settings.frontend"),
@@ -260,6 +278,9 @@ const breadcrumbItems = computed(() => {
     })
     .with("editplayer", () => {
       items.push({ title: t("settings.player_settings"), disabled: true });
+    })
+    .with("editplayerdsp", () => {
+      items.push({ title: "DSP", disabled: true });
     })
     .with("editcore", () => {
       const domain = route.params.domain as string;

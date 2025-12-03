@@ -1,100 +1,64 @@
 <template>
-  <div style="margin-bottom: 10px">
-    <v-toolbar
-      density="compact"
-      class="titlebar"
-      color="transparent"
-      style="height: 55px"
-    >
-      <template #title> {{ $t("settings.players") }} </template>
-      <template #append>
-        <!-- ADD group player button/menu -->
-        <v-menu v-if="providersWithCreateGroupSupport.length > 0" scrim>
-          <template #activator="{ props }">
-            <v-btn v-bind="props" color="accent" variant="outlined">
-              {{ $t("settings.add_group_player") }}
-            </v-btn>
-          </template>
-
-          <v-card density="compact">
-            <v-list-item
-              v-for="provider in providersWithCreateGroupSupport"
-              :key="provider.domain"
-              style="padding-top: 0; padding-bottom: 0; margin-bottom: 0"
-              :title="provider.name"
-              @click="addPlayerGroup(provider)"
-            >
-              <template #prepend>
-                <provider-icon
-                  :domain="provider.domain"
-                  :size="26"
-                  class="media-thumb"
-                  style="margin-left: 10px"
-                />
-              </template>
-            </v-list-item>
-          </v-card>
-        </v-menu>
-      </template>
-    </v-toolbar>
-    <Container>
-      <ListItem
-        v-for="item in playerConfigs"
-        :key="item.player_id"
-        show-menu-btn
-        link
-        @menu="(evt: Event) => onMenu(evt, item)"
-        @click="editPlayer(item.player_id, item.provider)"
+  <div>
+    <div class="players-header w-100">
+      <PlayerFilters
+        @update:search="searchQuery = $event"
+        @update:providers="selectedProviders = $event"
+        @update:types="selectedPlayerTypes = $event"
+      />
+      <v-btn
+        v-if="providersWithCreateGroupSupport.length > 0"
+        color="primary"
+        variant="outlined"
+        height="40"
+        class="add-player-group-btn"
+        @click="showAddPlayerGroupDialog = true"
       >
-        <template #prepend>
-          <provider-icon
-            :domain="api.getProviderManifest(item!.provider)?.domain || ''"
-            :size="40"
-            class="listitem-media-thumb"
+        {{ $t("settings.add_group_player") }}
+      </v-btn>
+    </div>
+
+    <div class="pl-5 font-weight-medium">
+      {{
+        $t("settings.players_total", [
+          getAllFilteredPlayers().length,
+          getAllFilteredPlayers().length !== 1 ? "s" : "",
+        ])
+      }}
+    </div>
+    <Container variant="comfortable" class="mt-4">
+      <v-row>
+        <v-col
+          v-for="item in getAllFilteredPlayers()"
+          :key="item.player_id"
+          cols="12"
+          md="6"
+          lg="4"
+          class="d-flex"
+        >
+          <SettingsPlayerCard
+            :player-config="item"
+            @click="(config) => editPlayer(config.player_id, config.provider)"
+            @menu="(evt, config) => onMenu(evt, config)"
           />
-        </template>
-
-        <!-- title -->
-        <template #title>
-          <div class="line-clamp-1">{{ getPlayerName(item) }}</div>
-        </template>
-
-        <!-- subtitle -->
-        <template #subtitle>
-          <div class="line-clamp-1">
-            {{ api.getProviderManifest(item!.provider)?.name || item.provider }}
-          </div>
-        </template>
-        <!-- actions -->
-        <template #append>
-          <!-- player disabled -->
-          <Button
-            v-if="!item.enabled"
-            icon
-            :title="$t('settings.player_disabled')"
-          >
-            <v-icon icon="mdi-cancel" />
-          </Button>
-
-          <!-- player not (yet) available -->
-          <Button
-            v-else-if="!api.players[item.player_id]?.available"
-            icon
-            :title="$t('settings.player_not_available')"
-          >
-            <v-icon icon="mdi-timer-sand" />
-          </Button>
-        </template>
-      </ListItem>
+        </v-col>
+      </v-row>
+      <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
+        <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
+        <div class="empty-title">{{ $t("no_content") }}</div>
+        <div class="empty-message">
+          {{ $t("no_content_filter") }}
+        </div>
+      </div>
     </Container>
+    <AddPlayerGroupDialog v-model:show="showAddPlayerGroupDialog" />
   </div>
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
 import Container from "@/components/Container.vue";
-import ListItem from "@/components/ListItem.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerFilters from "@/components/PlayerFilters.vue";
+import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { SYNCGROUP_PREFIX } from "@/constants";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
@@ -104,17 +68,22 @@ import {
   PlayerConfig,
   PlayerType,
   ProviderFeature,
-  ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
 
 // global refs
 const router = useRouter();
 
 // local refs
 const playerConfigs = ref<PlayerConfig[]>([]);
+const searchQuery = ref<string>("");
+const selectedProviders = ref<string[]>([]);
+const selectedPlayerTypes = ref<string[]>([]);
+const showAddPlayerGroupDialog = ref<boolean>(false);
+
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe_multi([EventType.PLAYER_CONFIG_UPDATED], () => {
   loadItems();
@@ -163,10 +132,6 @@ const editPlayer = function (playerId: string, provider: string) {
 
 const editPlayerDsp = function (playerId: string) {
   router.push(`/settings/editplayer/${playerId}/dsp`);
-};
-
-const addPlayerGroup = function (provider: ProviderInstance) {
-  router.push(`/settings/addgroup/${provider.lookup_key}`);
 };
 
 const playerCanBeDeleted = function (playerId: string) {
@@ -256,6 +221,41 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   });
 };
 
+const getAllFilteredPlayers = function () {
+  let filtered = [...playerConfigs.value];
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter((item) => {
+      const playerName = getPlayerName(item).toLowerCase();
+      const providerName = (
+        api.getProviderManifest(item.provider)?.name || item.provider
+      ).toLowerCase();
+      return playerName.includes(query) || providerName.includes(query);
+    });
+  }
+
+  if (selectedProviders.value.length > 0) {
+    filtered = filtered.filter((item) => {
+      const providerInstance = api.getProvider(item.provider);
+      if (!providerInstance) return false;
+      return selectedProviders.value.includes(providerInstance.lookup_key);
+    });
+  }
+
+  if (selectedPlayerTypes.value.length > 0) {
+    filtered = filtered.filter((item) => {
+      const player = api.players[item.player_id];
+      const playerType = player?.type ?? PlayerType.PLAYER;
+      return selectedPlayerTypes.value.includes(playerType);
+    });
+  }
+
+  return filtered.sort((a, b) =>
+    getPlayerName(a).localeCompare(getPlayerName(b)),
+  );
+};
+
 // watchers
 watch(
   () => api.players,
@@ -265,3 +265,71 @@ watch(
   { immediate: true },
 );
 </script>
+
+<style scoped>
+.players-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 20px 6px 20px;
+}
+
+.add-player-group-btn {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 0;
+}
+
+@media (max-width: 960px) {
+  .players-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-player-group-btn {
+    width: 100%;
+    align-self: stretch;
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 961px) and (max-width: 1400px) {
+  .players-header {
+    flex-wrap: wrap;
+  }
+
+  .add-player-group-btn {
+    margin-top: 12px;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  width: 100%;
+}
+
+.empty-icon {
+  color: rgba(var(--v-theme-on-surface), 0.3);
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin-bottom: 8px;
+}
+
+.empty-message {
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  line-height: 1.4;
+}
+</style>
