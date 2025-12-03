@@ -159,6 +159,7 @@
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
 import { api, ConnectionState } from "@/plugins/api";
 import {
@@ -171,7 +172,6 @@ import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
-import { useUserPreferences } from "@/composables/userPreferences";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
@@ -238,7 +238,7 @@ const checkDefaultPlayer = function () {
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  const lastPlayerId = getPreference<string>("activePlayerId");
+  const lastPlayerId = getPreference<string>("activePlayerId").value;
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&

@@ -23,16 +23,16 @@
 </template>
 
 <script setup lang="ts">
-import api from "@/plugins/api";
 import HomeWidgetRow, {
   WidgetRow,
   WidgetRowSettings,
 } from "@/components/WidgetRow.vue";
-import PlayersWidgetRow from "./PlayersWidgetRow.vue";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useUserPreferences } from "@/composables/userPreferences";
+import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import PlayersWidgetRow from "./PlayersWidgetRow.vue";
 
 const widgetRows = ref<WidgetRow[]>([]);
 const widgetRowSettings = ref<Record<string, WidgetRowSettings>>({});
@@ -49,15 +49,14 @@ const loadData = async function () {
   const savedSettings = getPreference<Record<string, WidgetRowSettings>>(
     "widgetRowSettings",
     {
-      // insert virtual row for players
       players: {
         position: 0,
         enabled: true,
       },
     },
   );
-  widgetRowSettings.value = savedSettings || {
-    // insert virtual row for players
+
+  widgetRowSettings.value = savedSettings.value || {
     players: {
       position: 0,
       enabled: true,
