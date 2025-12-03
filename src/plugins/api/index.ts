@@ -1842,6 +1842,17 @@ export class MusicAssistantApi {
     if (DEBUG) {
       console.log("[serverInfo]", msg);
     }
+
+    // Check if server setup is complete
+    if (msg.onboard_done === false) {
+      console.error("[API] Server setup not complete, disconnecting");
+      alert(
+        "Server is not yet set up. Please complete the setup process first.",
+      );
+      this.disconnect();
+      return;
+    }
+
     this.serverInfo.value = msg;
     // ServerInfo means transport is connected and server is ready, but not yet authenticated
     this.state.value = ConnectionState.CONNECTED;
