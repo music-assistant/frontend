@@ -62,9 +62,9 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
-import { openLinkInNewTab } from "@/helpers/utils";
 import { match } from "ts-pattern";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -189,6 +189,9 @@ const activeTab = computed(() => {
   return "providers";
 });
 
+const getProviderName = (instanceId: string | string[]) =>
+  Array.isArray(instanceId) ? instanceId[0] : instanceId;
+
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
@@ -269,7 +272,9 @@ const breadcrumbItems = computed(() => {
     })
     .with("editprovider", () => {
       items.push({
-        title: t("settings.edit_provider", [route.params.instanceId || ""]),
+        title:
+          getProviderName(route.params.instanceId).charAt(0).toUpperCase() +
+          getProviderName(route.params.instanceId).slice(1),
         disabled: true,
       });
     })
