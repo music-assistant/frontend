@@ -4,27 +4,16 @@
  */
 
 import type { User } from "./api/interfaces";
+import { store } from "./store";
 
 const TOKEN_STORAGE_KEY = "ma_access_token";
-const USER_STORAGE_KEY = "ma_current_user";
 
 export class AuthManager {
   private token: string | null = null;
-  private currentUser: User | null = null;
   private baseUrl: string = "";
 
   constructor() {
-    // Load token and user from localStorage on init
     this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-    if (storedUser) {
-      try {
-        this.currentUser = JSON.parse(storedUser);
-      } catch (e) {
-        console.error("Failed to parse stored user", e);
-        localStorage.removeItem(USER_STORAGE_KEY);
-      }
-    }
   }
 
   /**
@@ -44,22 +33,22 @@ export class AuthManager {
   /**
    * Get the currently authenticated user
    */
-  getCurrentUser(): User | null {
-    return this.currentUser;
+  getCurrentUser(): User | undefined {
+    return store.currentUser;
   }
 
   /**
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return this.token !== null && this.currentUser !== null;
+    return this.token !== null && store.currentUser !== null;
   }
 
   /**
    * Check if current user is admin
    */
   isAdmin(): boolean {
-    return this.currentUser?.role === "admin";
+    return store.currentUser?.role === "admin";
   }
 
   /**
@@ -71,21 +60,10 @@ export class AuthManager {
   }
 
   /**
-   * Set current user (for ingress mode where user info comes from backend)
+   * Set current user
    */
   setCurrentUser(user: User): void {
-    this.currentUser = user;
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-  }
-
-  /**
-   * Store authentication token and user
-   */
-  private storeAuth(token: string, user: User): void {
-    this.token = token;
-    this.currentUser = user;
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    store.currentUser = user;
   }
 
   /**
@@ -93,9 +71,8 @@ export class AuthManager {
    */
   clearAuth(): void {
     this.token = null;
-    this.currentUser = null;
+    store.currentUser = undefined;
     localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
   }
 
   /**
