@@ -686,10 +686,15 @@ const autoConnect = async () => {
     console.debug(
       "[Login] Found auth code in URL, storing token and continuing auto-connect",
     );
-    // Store the token and clean up the URL
+    // Store the token and clean up the URL (remove code param but keep others like onboard)
     localStorage.setItem(STORAGE_KEY_TOKEN, authCode);
+    urlParams.delete("code");
+    const queryString = urlParams.toString();
     const newUrl =
-      window.location.origin + window.location.pathname + window.location.hash;
+      window.location.origin +
+      window.location.pathname +
+      (queryString ? "?" + queryString : "") +
+      window.location.hash;
     window.history.replaceState({}, "", newUrl);
     // Continue with normal auto-connect flow which will use the stored token
   }
