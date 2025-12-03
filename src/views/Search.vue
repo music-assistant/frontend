@@ -142,11 +142,11 @@ import Container from "@/components/Container.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import WidgetRow from "@/components/WidgetRow.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useUserPreferences } from "@/composables/userPreferences";
 
 // local refs
 const searchHasFocus = ref(false);
@@ -191,7 +191,7 @@ const loadSearchResults = async function (
 
 onMounted(() => {
   if (!store.globalSearchTerm) {
-    const savedSearch = getPreference<string>("globalSearch");
+    const savedSearch = getPreference<string>("globalSearch").value;
     if (savedSearch && savedSearch !== "null") {
       store.globalSearchTerm = savedSearch;
     }
