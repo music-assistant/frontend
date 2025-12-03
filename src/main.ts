@@ -4,6 +4,19 @@
  * Bootstraps Vuetify and other plugins then mounts the App`
  */
 
+// Polyfill for Safari 15 / iOS 15 (AbortSignal.timeout not supported)
+if (typeof AbortSignal !== "undefined" && !AbortSignal.timeout) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (AbortSignal as any).timeout = (ms: number): AbortSignal => {
+    const controller = new AbortController();
+    setTimeout(
+      () => controller.abort(new DOMException("TimeoutError", "TimeoutError")),
+      ms,
+    );
+    return controller.signal;
+  };
+}
+
 // Global styles
 import "@/styles/global.css";
 
