@@ -21,6 +21,11 @@ export interface WebRTCTransportOptions {
   remoteId: string;
   iceServers?: IceServerConfig[];
   dataChannelLabel?: string;
+  reconnect?: boolean;
+  reconnectDelay?: number;
+  maxReconnectDelay?: number;
+  reconnectDelayGrowth?: number;
+  maxReconnectAttempts?: number;
 }
 
 // Default ICE servers (public STUN servers)
@@ -36,6 +41,9 @@ export class WebRTCTransport extends BaseTransport {
   private dataChannel: RTCDataChannel | null = null;
   private iceCandidateBuffer: RTCIceCandidateInit[] = [];
   private remoteDescriptionSet = false;
+  private reconnectAttempts = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private intentionalClose = false;
   private httpProxyCallbacks = new Map<
     string,
     { resolve: (value: any) => void; reject: (error: Error) => void }
@@ -48,6 +56,11 @@ export class WebRTCTransport extends BaseTransport {
       remoteId: options.remoteId,
       iceServers: options.iceServers || DEFAULT_ICE_SERVERS,
       dataChannelLabel: options.dataChannelLabel || "ma-api",
+      reconnect: options.reconnect ?? true,
+      reconnectDelay: options.reconnectDelay ?? 1000,
+      maxReconnectDelay: options.maxReconnectDelay ?? 30000,
+      reconnectDelayGrowth: options.reconnectDelayGrowth ?? 1.5,
+      maxReconnectAttempts: options.maxReconnectAttempts ?? Infinity,
     };
 
     this.signaling = new SignalingClient({
@@ -58,6 +71,7 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   async connect(): Promise<void> {
+    this.intentionalClose = false;
     this.setState(TransportState.CONNECTING);
 
     try {
@@ -80,15 +94,32 @@ export class WebRTCTransport extends BaseTransport {
 
       // Wait for connection to be established
       await this.waitForConnection();
+
+      // Reset reconnect attempts on successful connection
+      this.reconnectAttempts = 0;
+      this.setState(TransportState.CONNECTED);
     } catch (error) {
       console.error("[WebRTCTransport] Connection failed:", error);
-      this.setState(TransportState.FAILED);
       this.cleanup();
+
+      // Only set to FAILED if we're not going to retry
+      // During reconnect attempts, keep the RECONNECTING state
+      if (this.reconnectAttempts === 0) {
+        // This is the initial connection attempt
+        this.setState(TransportState.FAILED);
+      } else if (this.reconnectAttempts >= this.options.maxReconnectAttempts) {
+        // Max retries reached
+        this.setState(TransportState.FAILED);
+      }
+      // else: keep RECONNECTING state for next retry
+
       throw error;
     }
   }
 
   disconnect(): void {
+    this.intentionalClose = true;
+    this.clearReconnectTimer();
     this.cleanup();
     this.setState(TransportState.DISCONNECTED);
     this.emit("close", "Disconnected by user");
@@ -167,8 +198,13 @@ export class WebRTCTransport extends BaseTransport {
     };
 
     this.dataChannel.onclose = () => {
-      this.setState(TransportState.DISCONNECTED);
-      this.emit("close", "Data channel closed");
+      console.log("[WebRTCTransport] Data channel closed");
+      if (!this.intentionalClose && this.options.reconnect) {
+        this.scheduleReconnect();
+      } else {
+        this.setState(TransportState.DISCONNECTED);
+        this.emit("close", "Data channel closed");
+      }
     };
 
     this.dataChannel.onerror = () => {
@@ -236,15 +272,25 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   private handlePeerDisconnected(): void {
-    this.setState(TransportState.DISCONNECTED);
-    this.emit("close", "Peer disconnected");
-    this.cleanup();
+    console.log("[WebRTCTransport] Peer disconnected");
+    if (!this.intentionalClose && this.options.reconnect) {
+      this.scheduleReconnect();
+    } else {
+      this.setState(TransportState.DISCONNECTED);
+      this.emit("close", "Peer disconnected");
+      this.cleanup();
+    }
   }
 
   private handleConnectionFailure(): void {
-    this.setState(TransportState.FAILED);
-    this.emit("error", new Error("WebRTC connection failed"));
-    this.cleanup();
+    console.log("[WebRTCTransport] Connection failure detected");
+    if (!this.intentionalClose && this.options.reconnect) {
+      this.scheduleReconnect();
+    } else {
+      this.setState(TransportState.FAILED);
+      this.emit("error", new Error("WebRTC connection failed"));
+      this.cleanup();
+    }
   }
 
   private waitForConnection(): Promise<void> {
@@ -371,6 +417,59 @@ export class WebRTCTransport extends BaseTransport {
       bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
     }
     return bytes;
+  }
+
+  private scheduleReconnect(): void {
+    // Prevent duplicate reconnect schedules
+    if (this._state === TransportState.RECONNECTING && this.reconnectTimer) {
+      console.log("[WebRTCTransport] Reconnect already scheduled, ignoring");
+      return;
+    }
+
+    if (this.reconnectAttempts >= this.options.maxReconnectAttempts) {
+      console.error(
+        "[WebRTCTransport] Max reconnect attempts reached, giving up",
+      );
+      this.setState(TransportState.FAILED);
+      return;
+    }
+
+    this.clearReconnectTimer();
+    this.setState(TransportState.RECONNECTING);
+    this.emit("close", "Connection lost, reconnecting...");
+
+    const delay = Math.min(
+      this.options.reconnectDelay *
+        Math.pow(this.options.reconnectDelayGrowth, this.reconnectAttempts),
+      this.options.maxReconnectDelay,
+    );
+
+    console.log(
+      `[WebRTCTransport] Scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${delay}ms`,
+    );
+
+    this.reconnectTimer = setTimeout(async () => {
+      this.reconnectAttempts++;
+      // Clean up old connection first
+      this.cleanup();
+      // Attempt reconnection
+      try {
+        await this.connect();
+      } catch (error) {
+        console.error("[WebRTCTransport] Reconnect attempt failed:", error);
+        // Schedule another reconnect attempt
+        if (!this.intentionalClose && this.options.reconnect) {
+          this.scheduleReconnect();
+        }
+      }
+    }, delay);
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
   }
 
   private cleanup(): void {

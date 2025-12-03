@@ -623,7 +623,7 @@ const tryStoredTokenAuth = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.debug("[Login] Stored token authentication failed:", error);
-    // Clear invalid token
+    // Clear invalid token (we're already connected, so this is a real auth failure)
     localStorage.removeItem(STORAGE_KEY_TOKEN);
     return false;
   }
