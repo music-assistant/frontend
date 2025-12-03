@@ -2,6 +2,7 @@
 import { ref, watch, computed, onBeforeUnmount } from "vue";
 import { useGenresStore } from "@/stores/genres";
 import { store } from "@/plugins/store";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import type { Genre } from "@/plugins/api/interfaces";
 import { useI18n } from "vue-i18n";
@@ -99,6 +100,9 @@ const onSave = async () => {
     <v-card>
       <v-card-title>{{ $t("genres.link_genres") }}</v-card-title>
       <v-card-text>
+        <v-alert v-if="!authManager.isAdmin()" type="warning" class="mb-4">
+          {{ $t("admin_required") }}
+        </v-alert>
         <div class="mb-4">
           {{ $t("genres.link_genres_description", [sourceGenreNames]) }}
         </div>
@@ -117,6 +121,7 @@ const onSave = async () => {
           clearable
           autofocus
           :placeholder="$t('genres.search_or_enter_new_genre')"
+          :disabled="!authManager.isAdmin()"
         />
       </v-card-text>
       <v-card-actions>
@@ -130,7 +135,7 @@ const onSave = async () => {
         </v-btn>
         <v-btn
           color="primary"
-          :disabled="!targetGenre"
+          :disabled="!targetGenre || !authManager.isAdmin()"
           :loading="loading"
           @click="onSave"
         >
