@@ -403,7 +403,10 @@ const breadcrumbItems = computed(() => {
               {{ alias }}
             </template>
             <template #append>
-              <div v-if="authManager.isAdmin()" class="d-flex align-center ga-2">
+              <div
+                v-if="authManager.isAdmin()"
+                class="d-flex align-center ga-2"
+              >
                 <v-btn
                   icon="mdi-call-split"
                   :title="$t('genres.split_linked_genre')"

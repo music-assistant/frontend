@@ -275,7 +275,12 @@ const onDelete = async () => {
         </div>
       </v-card-text>
       <v-card-actions>
-        <v-btn v-if="isEdit && authManager.isAdmin()" color="error" variant="text" @click="onDelete">
+        <v-btn
+          v-if="isEdit && authManager.isAdmin()"
+          color="error"
+          variant="text"
+          @click="onDelete"
+        >
           {{ $t("settings.delete") }}
         </v-btn>
         <v-spacer />
@@ -286,7 +291,13 @@ const onDelete = async () => {
         >
           Cancel
         </v-btn>
-        <v-btn color="primary" :loading="loading" :disabled="!authManager.isAdmin()" @click="onSave">Save</v-btn>
+        <v-btn
+          color="primary"
+          :loading="loading"
+          :disabled="!authManager.isAdmin()"
+          @click="onSave"
+          >Save</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
