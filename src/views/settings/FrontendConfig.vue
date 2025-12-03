@@ -155,12 +155,13 @@ onMounted(() => {
         key: "resonate_sync_delay",
         type: ConfigEntryType.INTEGER,
         label: "resonate_sync_delay",
-        default_value: 0,
+        default_value: -200,
         required: false,
         multi_value: false,
         category: "generic",
         value: parseInt(
-          localStorage.getItem("frontend.settings.resonate_sync_delay") || "0",
+          localStorage.getItem("frontend.settings.resonate_sync_delay") ||
+            "-200",
           10,
         ),
       });
