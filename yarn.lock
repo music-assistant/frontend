@@ -1575,10 +1575,10 @@
   resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
   integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
 
-"@music-assistant/resonate-js@^0.1.4":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@music-assistant/resonate-js/-/resonate-js-0.1.4.tgz#5d0c04000025f5c64ae8e1f67c6756862590bbd4"
-  integrity sha512-lTOruXj+8qD9SeVGzc5kXf7LciIAVTwM41bJmlFkCr9n+sVs5Gc/BpB+1O2NzYviS+4Fqf2YW+YLfwZHSm3Fmg==
+"@music-assistant/resonate-js@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@music-assistant/resonate-js/-/resonate-js-0.1.5.tgz#014ea1c31fbf489be9b57333242e29dc485d42e4"
+  integrity sha512-QCS2jSKzAbOHRvts0dtK85TopXwyoQHcKKp4Mg/QL2bToo4Ec6wYPQ+SUYTtnKk6X6RTmI6vI0JAJe1wnIKwXw==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
