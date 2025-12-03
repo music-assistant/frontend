@@ -6,6 +6,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import { api } from "@/plugins/api";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import {
   EventMessage,
@@ -178,20 +179,25 @@ const toggleAliasesExpand = () => {
 };
 
 const aliasToolbarMenuItems = computed(() => {
-  return [
-    {
+  const menuItems = [];
+
+  if (authManager.isAdmin()) {
+    menuItems.push({
       label: "genres.add_linked_genre",
       icon: "mdi-plus",
       action: () => {
         showAddAliasDialog.value = true;
       },
-    },
-    {
-      label: "tooltip.collapse_expand",
-      icon: aliasesExpanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
-      action: toggleAliasesExpand,
-    },
-  ];
+    });
+  }
+
+  menuItems.push({
+    label: "tooltip.collapse_expand",
+    icon: aliasesExpanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
+    action: toggleAliasesExpand,
+  });
+
+  return menuItems;
 });
 
 const breadcrumbItems = computed(() => {
@@ -397,7 +403,7 @@ const breadcrumbItems = computed(() => {
               {{ alias }}
             </template>
             <template #append>
-              <div class="d-flex align-center ga-2">
+              <div v-if="authManager.isAdmin()" class="d-flex align-center ga-2">
                 <v-btn
                   icon="mdi-call-split"
                   :title="$t('genres.split_linked_genre')"

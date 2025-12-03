@@ -23,6 +23,7 @@ import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { authManager } from "@/plugins/auth";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -43,15 +44,18 @@ const sortKeys = [
   "timestamp_added_desc",
 ];
 
-const extraMenuItems = computed(() => [
-  {
-    label: "settings.add_new",
-    icon: "mdi-plus",
-    action: () => {
-      eventbus.emit("editGenre", undefined);
+const extraMenuItems = computed(() => {
+  if (!authManager.isAdmin()) return [];
+  return [
+    {
+      label: "settings.add_new",
+      icon: "mdi-plus",
+      action: () => {
+        eventbus.emit("editGenre", undefined);
+      },
     },
-  },
-]);
+  ];
+});
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;

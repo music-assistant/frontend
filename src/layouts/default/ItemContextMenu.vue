@@ -204,7 +204,7 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 // Helpers and utilities for Contextmenu items
 
 import router from "@/plugins/router";
-
+import { authManager } from "@/plugins/auth";
 import { playerVisible } from "@/helpers/utils";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -549,8 +549,8 @@ export const getContextMenuItems = async function (
 
   const firstItem = items[0];
 
-  // Edit Genre
-  if (items.length === 1 && items[0].media_type === MediaType.GENRE) {
+  // Edit Genre (admin only)
+  if (items.length === 1 && items[0].media_type === MediaType.GENRE && authManager.isAdmin()) {
     contextMenuItems.push({
       label: "edit",
       labelArgs: [],
@@ -572,10 +572,11 @@ export const getContextMenuItems = async function (
     });
   }
 
-  // Merge Genres
+  // Merge Genres (admin only)
   if (
     items.length > 1 &&
-    items.every((item) => item.media_type === MediaType.GENRE)
+    items.every((item) => item.media_type === MediaType.GENRE) &&
+    authManager.isAdmin()
   ) {
     contextMenuItems.push({
       label: "genres.link_genres",

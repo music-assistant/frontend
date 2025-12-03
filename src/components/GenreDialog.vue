@@ -3,6 +3,7 @@ import type { Genre } from "@/plugins/api/interfaces";
 import { ImageType } from "@/plugins/api/interfaces";
 import { useGenresStore } from "@/stores/genres";
 import { store } from "@/plugins/store";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { getMediaItemImage, getImageURL } from "./MediaItemThumb.vue";
@@ -209,11 +210,15 @@ const onDelete = async () => {
     <v-card @keydown.stop>
       <v-card-title>{{ title }}</v-card-title>
       <v-card-text>
+        <v-alert v-if="!authManager.isAdmin()" type="warning" class="mb-4">
+          {{ $t("admin_required") }}
+        </v-alert>
         <v-text-field
           v-model="name"
           :label="$t('name')"
           required
           autofocus
+          :disabled="!authManager.isAdmin()"
           @keyup.enter="onSave"
         />
 
@@ -233,6 +238,7 @@ const onDelete = async () => {
           clearable
           placeholder="Search for genres or type new alias..."
           class="mb-2"
+          :disabled="!authManager.isAdmin()"
         >
           <template #selection="{ item, index }">
             <v-chip
@@ -261,6 +267,7 @@ const onDelete = async () => {
             image && image.startsWith('data:') ? 'Image uploaded from file' : ''
           "
           persistent-hint
+          :disabled="!authManager.isAdmin()"
         />
 
         <div v-if="displayImage" class="mb-4 d-flex justify-center">
@@ -268,7 +275,7 @@ const onDelete = async () => {
         </div>
       </v-card-text>
       <v-card-actions>
-        <v-btn v-if="isEdit" color="error" variant="text" @click="onDelete">
+        <v-btn v-if="isEdit && authManager.isAdmin()" color="error" variant="text" @click="onDelete">
           {{ $t("settings.delete") }}
         </v-btn>
         <v-spacer />
@@ -279,7 +286,7 @@ const onDelete = async () => {
         >
           Cancel
         </v-btn>
-        <v-btn color="primary" :loading="loading" @click="onSave">Save</v-btn>
+        <v-btn color="primary" :loading="loading" :disabled="!authManager.isAdmin()" @click="onSave">Save</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
