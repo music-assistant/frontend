@@ -15,17 +15,6 @@
         v-model="showMergeGenreDialog"
         :source-genres="mergeSourceGenres"
       />
-      <v-snackbar
-        :model-value="store.activeAlert !== undefined"
-        :color="store.activeAlert?.type || 'grey'"
-        :text="store.activeAlert?.message"
-        close-on-content-click
-        position="sticky"
-        :timeout="store.activeAlert?.persistent ? -1 : 5000"
-        z-index="999999"
-        style="z-index: 999999"
-        @update:model-value="() => (store.activeAlert = undefined)"
-      />
     </div>
   </v-main>
 </template>
