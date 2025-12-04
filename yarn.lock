@@ -1575,10 +1575,10 @@
   resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
   integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
 
-"@music-assistant/resonate-js@^0.1.5":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@music-assistant/resonate-js/-/resonate-js-0.1.5.tgz#014ea1c31fbf489be9b57333242e29dc485d42e4"
-  integrity sha512-QCS2jSKzAbOHRvts0dtK85TopXwyoQHcKKp4Mg/QL2bToo4Ec6wYPQ+SUYTtnKk6X6RTmI6vI0JAJe1wnIKwXw==
+"@music-assistant/sendspin-js@0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-0.2.0.tgz#4e44be4c3bea2563373283c094d815e9b70f9c84"
+  integrity sha512-3xPI54SAIjaEMyhyxs4A9Di2emHvRCmyfZbD7jwHUYQ0PWEKwLFTOcOKXFxM38ec1ys8Gnm185pcwwNHf8ovyw==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
