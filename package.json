@@ -18,7 +18,7 @@
     "@intlify/unplugin-vue-i18n": "11.0.1",
     "@mdi/font": "7.4.47",
     "@mdi/js": "7.4.47",
-    "@music-assistant/resonate-js": "^0.1.5",
+    "@music-assistant/sendspin-js": "^0.1.5",
     "color": "5.0.3",
     "colorthief": "2.6.0",
     "marked": "^17.0.1",

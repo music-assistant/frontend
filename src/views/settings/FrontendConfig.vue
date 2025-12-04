@@ -127,12 +127,12 @@ onMounted(() => {
       },
     ];
 
-    // Only show resonate option if the provider is available
-    const resonateAvailable = api.getProvider("resonate")?.available;
-    if (resonateAvailable) {
+    // Only show sendspin option if the provider is available
+    const sendspinAvailable = api.getProvider("sendspin")?.available;
+    if (sendspinAvailable) {
       webPlayerOptions.unshift({
-        title: $t("settings.web_player_mode.options.resonate"),
-        value: "resonate",
+        title: $t("settings.web_player_mode.options.sendspin"),
+        value: "sendspin",
       });
     }
 
@@ -149,18 +149,18 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.web_player_mode") || "builtin",
     });
 
-    // Show resonate sync delay option when resonate is available
-    if (resonateAvailable) {
+    // Show sendspin sync delay option when sendspin is available
+    if (sendspinAvailable) {
       configEntries.splice(4, 0, {
-        key: "resonate_sync_delay",
+        key: "sendspin_sync_delay",
         type: ConfigEntryType.INTEGER,
-        label: "resonate_sync_delay",
+        label: "sendspin_sync_delay",
         default_value: -200,
         required: false,
         multi_value: false,
         category: "generic",
         value: parseInt(
-          localStorage.getItem("frontend.settings.resonate_sync_delay") ||
+          localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
             "-200",
           10,
         ),

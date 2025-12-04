@@ -6,12 +6,12 @@ export enum WebPlayerMode {
   DISABLED = "disabled",
   CONTROLS_ONLY = "controls_only",
   BUILTIN = "builtin",
-  RESONATE = "resonate",
+  SENDSPIN = "sendspin",
 }
 
 // Helper to check if a mode is a playback mode (handles actual audio)
 export const isPlaybackMode = (mode: WebPlayerMode) =>
-  mode === WebPlayerMode.BUILTIN || mode === WebPlayerMode.RESONATE;
+  mode === WebPlayerMode.BUILTIN || mode === WebPlayerMode.SENDSPIN;
 
 let unsubSubscriptions: (() => void)[] = [];
 
@@ -156,7 +156,7 @@ export const webPlayer = reactive({
   // This is target mode shared across all tabs
   mode: WebPlayerMode.DISABLED,
   // This is the true mode of this tab.
-  // In case of a playback mode (BUILTIN/RESONATE), exactly one tab will have this equal to mode to avoid double playback
+  // In case of a playback mode (BUILTIN/SENDSPIN), exactly one tab will have this equal to mode to avoid double playback
   tabMode: WebPlayerMode.DISABLED,
   // This dictates what component will play audio to have the notification show up on all browsers
   audioSource: WebPlayerMode.DISABLED,
@@ -185,7 +185,7 @@ export const webPlayer = reactive({
         // Notify other tabs, if another tab already has control, this will change nothing
         bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
         // Postpone unregister in case we would need to immediately re-register it again
-        // Only unregister for BUILTIN mode (RESONATE doesn't use registerBuiltinPlayer)
+        // Only unregister for BUILTIN mode (SENDSPIN doesn't use registerBuiltinPlayer)
         if (!silent && this.tabMode === WebPlayerMode.BUILTIN) {
           builtinPlayerToUnregister = this.player_id;
         }
@@ -208,18 +208,18 @@ export const webPlayer = reactive({
       }
     }
 
-    if (mode === WebPlayerMode.RESONATE) {
-      // Resonate player is handled separately through the ResonatePlayer component
+    if (mode === WebPlayerMode.SENDSPIN) {
+      // Sendspin player is handled separately through the SendspinPlayer component
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
       const saved_player_id = window.localStorage.getItem(
-        "resonate_webplayer_id",
+        "sendspin_webplayer_id",
       );
 
       // Use saved player_id or generate a new one if none exists
       let player_id = saved_player_id;
       if (!player_id) {
         player_id = `ma_${Math.random().toString(36).substring(2, 12)}`;
-        window.localStorage.setItem("resonate_webplayer_id", player_id);
+        window.localStorage.setItem("sendspin_webplayer_id", player_id);
       }
       this.player_id = player_id;
       this.lastUpdate = Date.now();
@@ -251,8 +251,8 @@ export const webPlayer = reactive({
       // This is guaranteed to not be a first tab (since that would have a playback tabMode)
       // Therefore, this player_id should be already set - read based on target mode
       const storageKey =
-        this.mode === WebPlayerMode.RESONATE
-          ? "resonate_webplayer_id"
+        this.mode === WebPlayerMode.SENDSPIN
+          ? "sendspin_webplayer_id"
           : "builtin_webplayer_id";
       const saved_player_id = window.localStorage.getItem(storageKey);
       this.player_id = saved_player_id;

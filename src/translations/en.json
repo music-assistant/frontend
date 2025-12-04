@@ -586,13 +586,13 @@
             "label": "Web player mode",
             "description": "Choose how this browser handles audio playback.",
             "options": {
-                "resonate": "Resonate (experimental)",
+                "sendspin": "Sendspin (experimental)",
                 "builtin": "Built-in player",
                 "disabled": "Disabled (controls only)"
             }
         },
-        "resonate_sync_delay": {
-            "label": "Resonate sync delay (ms) - requires page refresh",
+        "sendspin_sync_delay": {
+            "label": "Sendspin sync delay (ms) - requires page refresh",
             "description": "Static delay in milliseconds to adjust audio synchronization. Positive values delay playback, negative values advance it. Use this to compensate for device-specific audio latency. Requires page refresh to take effect."
         },
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",

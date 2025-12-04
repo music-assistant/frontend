@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
-import { ResonatePlayer } from "@music-assistant/resonate-js";
+import { SendspinPlayer } from "@music-assistant/sendspin-js";
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
@@ -21,8 +21,8 @@ const audioRef = ref<HTMLAudioElement>();
 // Detect Android for MediaSession workaround
 const isAndroid = /android/i.test(navigator.userAgent);
 
-// Resonate Player instance
-let player: ResonatePlayer | null = null;
+// Sendspin Player instance
+let player: SendspinPlayer | null = null;
 
 // Reactive state
 const isPlaying = ref(false);
@@ -48,11 +48,11 @@ let unsubMetadata: (() => void) | undefined;
 
 // Setup on mount
 onMounted(() => {
-  console.log("Resonate: Component mounted, connecting...");
+  console.log("Sendspin: Component mounted, connecting...");
 
   // Set audio source to indicate this tab is handling audio
   // (for coordination with other tabs via web_player.ts)
-  webPlayer.audioSource = WebPlayerMode.RESONATE;
+  webPlayer.audioSource = WebPlayerMode.SENDSPIN;
 
   // Setup metadata listener for MediaSession
   unsubMetadata = useMediaBrowserMetaData(props.playerId);
@@ -60,11 +60,11 @@ onMounted(() => {
   // Create and initialize player
   if (audioRef.value) {
     const syncDelay = parseInt(
-      localStorage.getItem("frontend.settings.resonate_sync_delay") || "0",
+      localStorage.getItem("frontend.settings.sendspin_sync_delay") || "0",
       10,
     );
 
-    player = new ResonatePlayer({
+    player = new SendspinPlayer({
       playerId: props.playerId,
       baseUrl: webPlayer.baseUrl,
       // Web player config
@@ -83,14 +83,14 @@ onMounted(() => {
       },
     });
 
-    // Connect to Resonate server
+    // Connect to Sendspin server
     player.connect().catch((error) => {
-      console.error("Resonate: Failed to connect", error);
+      console.error("Sendspin: Failed to connect", error);
     });
   }
 
   // MediaSession setup for browser controls
-  // These forward to Music Assistant player commands (not Resonate-specific)
+  // These forward to Music Assistant player commands (not Sendspin-specific)
   navigator.mediaSession.setActionHandler("play", () => {
     if (!props.playerId) return;
     api.playerCommandPlay(props.playerId);
@@ -115,21 +115,21 @@ onMounted(() => {
   if (audioRef.value) {
     // Ensure audio element doesn't pause unexpectedly
     audioRef.value.addEventListener("pause", () => {
-      console.log("Resonate: Audio element paused");
+      console.log("Sendspin: Audio element paused");
       if (isAndroid) {
         // On Android, ALWAYS keep the silent loop playing to maintain MediaSession
-        console.log("Resonate: Restarting silent loop (Android workaround)");
+        console.log("Sendspin: Restarting silent loop (Android workaround)");
         if (audioRef.value) {
           audioRef.value.play().catch((e) => {
-            console.warn("Resonate: Failed to restart silent loop:", e);
+            console.warn("Sendspin: Failed to restart silent loop:", e);
           });
         }
       } else {
         // On iOS/Desktop with MediaStream, restart only if playing
         if (isPlaying.value && audioRef.value) {
-          console.log("Resonate: Restarting audio element playback");
+          console.log("Sendspin: Restarting audio element playback");
           audioRef.value.play().catch((e) => {
-            console.warn("Resonate: Failed to restart audio:", e);
+            console.warn("Sendspin: Failed to restart audio:", e);
           });
         } else {
           // Update playbackState when legitimately paused
@@ -139,7 +139,7 @@ onMounted(() => {
     });
 
     audioRef.value.addEventListener("playing", () => {
-      console.log("Resonate: Audio element playing");
+      console.log("Sendspin: Audio element playing");
       // Explicitly set playbackState when audio starts playing
       if (isPlaying.value) {
         navigator.mediaSession.playbackState = "playing";
@@ -147,7 +147,7 @@ onMounted(() => {
     });
 
     audioRef.value.addEventListener("ended", () => {
-      console.log("Resonate: Audio element ended");
+      console.log("Sendspin: Audio element ended");
     });
   }
 });
