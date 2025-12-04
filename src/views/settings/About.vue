@@ -215,6 +215,25 @@
           <v-divider />
 
           <v-list-item
+            v-if="apiDocsUrl"
+            :href="apiDocsUrl"
+            target="_blank"
+            link
+            class="link-item"
+          >
+            <template #prepend>
+              <v-avatar color="teal-lighten-4" size="36">
+                <v-icon icon="mdi-api" color="teal-darken-2" size="small" />
+              </v-avatar>
+            </template>
+            <v-list-item-title>{{ $t("settings.api_docs") }}</v-list-item-title>
+            <template #append>
+              <v-icon icon="mdi-open-in-new" size="small" />
+            </template>
+          </v-list-item>
+          <v-divider />
+
+          <v-list-item
             href="https://github.com/orgs/music-assistant/discussions/categories/feature-requests-and-ideas"
             target="_blank"
             link
@@ -322,6 +341,11 @@ const documentationUrl = computed(() => {
     return "https://beta.music-assistant.io";
   }
   return "https://music-assistant.io";
+});
+
+const apiDocsUrl = computed(() => {
+  const baseUrl = api.serverInfo.value?.base_url || "";
+  return `${baseUrl}/api-docs`;
 });
 
 onMounted(async () => {

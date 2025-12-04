@@ -100,6 +100,7 @@
         "delete": "Delete",
         "disable": "Disable",
         "documentation": "Documentation",
+        "api_docs": "API Documentation",
         "view_documentation": "View documentation",
         "enable": "Enable",
         "enable_player": "Enable this player",
