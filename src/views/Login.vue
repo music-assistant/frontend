@@ -131,8 +131,14 @@
 
               <!-- Login Form (after connection) -->
               <template v-if="step === 'login'">
-                <!-- Connected server info -->
-                <div v-if="connectedServerName" class="text-center mb-4">
+                <!-- Connected server info (only show for remote connections) -->
+                <div
+                  v-if="
+                    connectedServerName &&
+                    (isRemoteConnection || !isHostedWithAPI)
+                  "
+                  class="text-center mb-4"
+                >
                   <v-chip color="success" variant="tonal" size="small">
                     <v-icon start size="small">mdi-check-circle</v-icon>
                     {{ connectedServerName }}
@@ -220,8 +226,9 @@
                   }}
                 </v-btn>
 
-                <!-- Back button -->
+                <!-- Back button (only show for remote connections or when not hosted with API) -->
                 <v-btn
+                  v-if="isRemoteConnection || !isHostedWithAPI"
                   variant="text"
                   class="mt-4"
                   block
@@ -601,30 +608,33 @@ const tryConnect = async (
 /**
  * Try to authenticate with stored token after connection
  */
-const tryStoredTokenAuth = async (): Promise<boolean> => {
-  const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
-  if (!storedToken) {
+const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
+  const authToken = token || localStorage.getItem(STORAGE_KEY_TOKEN);
+  if (!authToken) {
     return false;
   }
 
   try {
-    console.debug("[Login] Trying to authenticate with stored token");
+    console.debug("[Login] Trying to authenticate with token");
     connectionStatusMessage.value = t(
       "login.authenticating",
       "Authenticating...",
     );
 
     // Authenticate the WebSocket session with the token
-    const result = await api.authenticateWithToken(storedToken);
+    const result = await api.authenticateWithToken(authToken);
     console.debug("[Login] Token authentication successful");
 
     // Emit authenticated event - App.vue will handle the rest
-    emit("authenticated", { token: storedToken, user: result.user });
+    emit("authenticated", { token: authToken, user: result.user });
     return true;
   } catch (error) {
-    console.debug("[Login] Stored token authentication failed:", error);
+    console.debug("[Login] Token authentication failed:", error);
     // Clear invalid token (we're already connected, so this is a real auth failure)
-    localStorage.removeItem(STORAGE_KEY_TOKEN);
+    if (!token) {
+      // Only clear stored token if we're not using a URL parameter token
+      localStorage.removeItem(STORAGE_KEY_TOKEN);
+    }
     return false;
   }
 };
@@ -667,6 +677,27 @@ const autoConnect = async () => {
     "login.checking_stored",
     "Checking for saved connection...",
   );
+
+  // Check for auth code from setup flow in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const authCode = urlParams.get("code");
+
+  if (authCode) {
+    console.debug(
+      "[Login] Found auth code in URL, storing token and continuing auto-connect",
+    );
+    // Store the token and clean up the URL (remove code param but keep others like onboard)
+    localStorage.setItem(STORAGE_KEY_TOKEN, authCode);
+    urlParams.delete("code");
+    const queryString = urlParams.toString();
+    const newUrl =
+      window.location.origin +
+      window.location.pathname +
+      (queryString ? "?" + queryString : "") +
+      window.location.hash;
+    window.history.replaceState({}, "", newUrl);
+    // Continue with normal auto-connect flow which will use the stored token
+  }
 
   // Check if we're hosted with the API
   isHostedWithAPI.value = await checkIfHostedWithAPI();
