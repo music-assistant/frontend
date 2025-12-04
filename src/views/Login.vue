@@ -1325,8 +1325,16 @@ watch(
       // Show connecting state during authentication
       step.value = "connecting";
     } else if (connectionState === ConnectionState.AUTH_REQUIRED) {
-      // Auth is required - show select-mode to let user login
-      step.value = "select-mode";
+      // In Ingress mode, we should never show the login form
+      // The authentication is automatic via HA proxy headers
+      if (!isIngressMode.value) {
+        // Auth is required - show select-mode to let user login
+        step.value = "select-mode";
+      } else {
+        // In Ingress mode, stay on reconnecting screen
+        // App.vue will handle the re-authentication
+        step.value = "reconnecting";
+      }
     } else if (
       connectionState === ConnectionState.FAILED ||
       connectionState === ConnectionState.DISCONNECTED
@@ -1336,8 +1344,11 @@ watch(
         step.value === "reconnecting" &&
         api.state.value !== ConnectionState.AUTHENTICATED
       ) {
-        // Show select-mode if we were reconnecting and auth failed
-        step.value = "select-mode";
+        // In Ingress mode, don't show select-mode on reconnect failure
+        if (!isIngressMode.value) {
+          // Show select-mode if we were reconnecting and auth failed
+          step.value = "select-mode";
+        }
       }
     }
   },
