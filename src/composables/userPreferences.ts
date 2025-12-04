@@ -1,4 +1,4 @@
-import { computed } from "vue";
+import { computed, ComputedRef } from "vue";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
@@ -21,14 +21,19 @@ export function useUserPreferences() {
   const currentUser = computed(() => store.currentUser);
 
   /**
-   * Get a preference value from user preferences
+   * Get a preference value from user preferences as a computed ref
    */
-  function getPreference<T>(key: string, defaultValue?: T): T | undefined {
-    if (!currentUser.value?.preferences) {
-      return defaultValue;
-    }
-    const value = currentUser.value.preferences[key];
-    return value !== undefined ? value : defaultValue;
+  function getPreference<T>(
+    key: string,
+    defaultValue?: T,
+  ): ComputedRef<T | undefined> {
+    return computed(() => {
+      if (!store.currentUser?.preferences) {
+        return defaultValue;
+      }
+      const value = store.currentUser.preferences[key];
+      return value !== undefined ? value : defaultValue;
+    });
   }
 
   /**
@@ -36,43 +41,49 @@ export function useUserPreferences() {
    * Updates optimistically on the client and sends to server
    */
   async function setPreference(key: string, value: any): Promise<void> {
-    if (!currentUser.value) {
+    if (!store.currentUser) {
       console.warn("Cannot set preference: no user logged in");
       return;
     }
 
-    // Optimistically update the local preferences
+    if (!store.currentUser.preferences) {
+      store.currentUser.preferences = {};
+    }
+
+    // Deep clone to ensure we have plain objects, not reactive/computed refs
+    const plainValue = JSON.parse(JSON.stringify(value));
+
     const updatedPreferences = {
-      ...currentUser.value.preferences,
-      [key]: value,
+      ...store.currentUser.preferences,
+      [key]: plainValue,
     };
 
-    // Update locally first (optimistic)
-    currentUser.value.preferences = updatedPreferences;
+    store.currentUser.preferences = updatedPreferences;
 
-    // Send to server in the background
     try {
-      await api.updateUser(currentUser.value.user_id, {
+      await api.updateUser(store.currentUser.user_id, {
         preferences: updatedPreferences,
       });
     } catch (error) {
       console.error("Failed to update user preferences:", error);
-      // TODO: Consider reverting the optimistic update on error
     }
   }
 
   /**
-   * Get ItemsListing preferences for a specific path/itemtype
+   * Get ItemsListing preferences for a specific path/itemtype as a computed ref
    */
   function getItemsListingPreferences(
     path: string,
     itemtype: string,
-  ): ItemsListingPreferences {
+  ): ComputedRef<ItemsListingPreferences> {
     const storKey = `${path}.${itemtype}`;
-    return (
-      getPreference<ItemsListingPreferences>(`itemsListing.${storKey}`, {}) ||
-      {}
-    );
+    return computed(() => {
+      if (!store.currentUser?.preferences) {
+        return {};
+      }
+      const value = store.currentUser.preferences[`itemsListing.${storKey}`];
+      return (value as ItemsListingPreferences) || {};
+    });
   }
 
   /**
@@ -89,7 +100,7 @@ export function useUserPreferences() {
 
     const currentPrefs = getItemsListingPreferences(path, itemtype);
     const updatedPrefs = {
-      ...currentPrefs,
+      ...currentPrefs.value,
       [key]: value,
     };
 

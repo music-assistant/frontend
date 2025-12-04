@@ -46,6 +46,7 @@ import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import { remoteConnectionManager } from "./plugins/remote";
 import type { ITransport } from "./plugins/remote/transport";
 import { useRouter } from "vue-router";
+import authManager from "@/plugins/auth";
 
 const theme = useTheme();
 const router = useRouter();
@@ -157,6 +158,12 @@ const completeInitialization = async () => {
     console.error("[App] No server info received");
     return;
   }
+  const userInfo = await api.getCurrentUserInfo();
+  if (!userInfo) {
+    console.error("[App] No user info received");
+    return;
+  }
+  authManager.setCurrentUser(userInfo);
 
   store.serverInfo = serverInfo;
 
@@ -235,7 +242,6 @@ onMounted(async () => {
             const result = await api.authenticateWithToken(storedToken);
             if (result.user) {
               authManager.setCurrentUser(result.user);
-              store.currentUser = result.user;
             }
           } catch (error) {
             console.error(

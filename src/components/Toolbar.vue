@@ -67,7 +67,11 @@
               :title="$t(menuItem.label, menuItem.labelArgs || [])"
               :disabled="menuItem.disabled == true"
             >
-              <v-badge :model-value="menuItem.active == true" color="error" dot>
+              <v-badge
+                :model-value="menuItem.active == true"
+                color="primary"
+                dot
+              >
                 <v-icon
                   :icon="menuItem.icon"
                   :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
@@ -107,7 +111,7 @@
           :disabled="menuItem.disabled == true"
           @click="menuItem.action"
         >
-          <v-badge :model-value="menuItem.active == true" color="error" dot>
+          <v-badge :model-value="menuItem.active == true" color="primary" dot>
             <v-icon
               :icon="menuItem.icon"
               :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
@@ -160,7 +164,7 @@
               <template v-if="menuItem.icon" #prepend>
                 <v-badge
                   :model-value="menuItem.active == true"
-                  color="error"
+                  color="primary"
                   dot
                 >
                   <v-icon
@@ -191,8 +195,8 @@
 <script setup lang="ts">
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { getBreakpointValue } from "../plugins/breakpoint";
 import { store } from "@/plugins/store";
+import { getBreakpointValue } from "../plugins/breakpoint";
 
 // properties
 export interface Props {

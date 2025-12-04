@@ -901,12 +901,15 @@ const loadData = async function (
   tempHide.value = false;
 };
 
+// Get preferences as a computed ref that updates automatically
+const savedPrefs = getItemsListingPreferences(
+  props.path || props.itemtype,
+  props.itemtype,
+);
+
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
-  const prefs = getItemsListingPreferences(
-    props.path || props.itemtype,
-    props.itemtype,
-  );
+  const prefs = savedPrefs.value;
 
   // get stored/default viewMode for this itemtype
   if (prefs.viewMode) {
@@ -1058,8 +1061,10 @@ watch(
   { immediate: true },
 );
 
+// Watch savedPrefs and restore settings when they change (e.g., when user loads)
+watch(savedPrefs, () => restoreSettings(), { immediate: true });
+
 onMounted(async () => {
-  restoreSettings();
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;

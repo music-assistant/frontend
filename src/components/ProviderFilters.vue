@@ -11,9 +11,16 @@
       class="search-field"
     />
     <div class="d-flex ga-2 filter-buttons">
-      <v-btn height="40" elevation="0">
+      <v-btn
+        height="40"
+        elevation="0"
+        variant="outlined"
+        density="compact"
+        class="filter-btn"
+      >
         {{ $t("settings.provider_type") }}
         <v-icon end>mdi-chevron-down</v-icon>
+        <span v-if="hasActiveProviderTypes" class="filter-dot"></span>
         <v-menu activator="parent" :close-on-content-click="false">
           <v-list>
             <v-list-item
@@ -35,9 +42,17 @@
           </v-list>
         </v-menu>
       </v-btn>
-      <v-btn v-if="showStageFilter" height="40" elevation="0">
+      <v-btn
+        v-if="showStageFilter"
+        height="40"
+        elevation="0"
+        variant="outlined"
+        density="compact"
+        class="filter-btn"
+      >
         {{ $t("settings.stage.label") }}
         <v-icon end>mdi-chevron-down</v-icon>
+        <span v-if="hasActiveProviderStages" class="filter-dot"></span>
         <v-menu activator="parent" :close-on-content-click="false">
           <v-list>
             <v-list-item
@@ -106,6 +121,13 @@ const providerStages = computed(() => [
     value: ProviderStage.DEPRECATED,
   },
 ]);
+
+const hasActiveProviderTypes = computed(
+  () => selectedProviderTypes.value.length > 0,
+);
+const hasActiveProviderStages = computed(
+  () => selectedProviderStages.value.length > 0,
+);
 
 // Emits
 const emit = defineEmits<{
@@ -237,6 +259,28 @@ initializeFromUrl();
 
 .filter-buttons .v-btn {
   min-width: 100px;
+  border-color: rgba(var(--v-theme-on-surface), 0.2);
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.filter-buttons .v-btn .v-icon {
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.filter-btn {
+  position: relative;
+}
+
+.filter-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgb(var(--v-theme-primary));
+  z-index: 1;
+  box-shadow: 0 0 0 2px rgb(var(--v-theme-surface));
 }
 
 /* Mobile responsive */
