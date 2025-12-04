@@ -282,6 +282,14 @@ watch(
   margin-top: 0;
 }
 
+.players-header :deep(.filters-container) {
+  align-items: flex-start;
+}
+
+.players-header :deep(.filter-buttons) {
+  align-items: center;
+}
+
 @media (max-width: 960px) {
   .players-header {
     flex-direction: column;
@@ -298,10 +306,16 @@ watch(
 @media (min-width: 961px) and (max-width: 1400px) {
   .players-header {
     flex-wrap: wrap;
+    align-items: flex-end;
   }
 
   .add-player-group-btn {
-    margin-top: 12px;
+    margin-top: 0;
+    align-self: flex-end;
+  }
+
+  .players-header :deep(.filters-container) {
+    align-items: flex-end;
   }
 }
 

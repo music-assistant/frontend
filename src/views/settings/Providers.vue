@@ -67,11 +67,7 @@
           class="flex-fill rounded-lg provider-card d-flex flex-column"
           :class="{ 'player-provider-card': item.type === ProviderType.PLAYER }"
           min-height="200px"
-          @click="
-            item.type === ProviderType.PLAYER && getPlayerCount(item) > 0
-              ? viewPlayers(item.instance_id)
-              : editProvider(item.instance_id)
-          "
+          @click="editProvider(item.instance_id)"
         >
           <template #prepend>
             <provider-icon
