@@ -196,6 +196,18 @@
                 : 'mdi-play'
             "
         /></Button>
+        <Button
+          v-if="player.type === PlayerType.GROUP && showVolumeControl"
+          variant="icon"
+          class="player-command-btn group-expand-btn"
+          @click.stop="$emit('toggle-expand', player)"
+        >
+          <v-icon
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '20' : '22'"
+            >mdi-speaker-multiple</v-icon
+          >
+        </Button>
+
         <!-- power button -->
         <Button
           v-if="
@@ -289,6 +301,7 @@ const compProps = defineProps<Props>();
 // emits
 defineEmits<{
   (e: "click", player: Player): void;
+  (e: "toggle-expand", player: Player): void;
 }>();
 
 const playerQueue = computed(() => {

@@ -55,6 +55,7 @@
           :show-sync-controls="false"
           :allow-power-control="true"
           @click="playerClicked(api.players[webPlayer.player_id])"
+          @toggle-expand="toggleGroupExpand"
         />
         <!-- active/playing players on top -->
         <PlayerCard
@@ -79,6 +80,7 @@
           "
           :allow-power-control="true"
           @click="playerClicked(player)"
+          @toggle-expand="toggleGroupExpand"
         />
       </v-list>
 
@@ -114,6 +116,7 @@
                 "
                 :allow-power-control="true"
                 @click="playerClicked(player)"
+                @toggle-expand="toggleGroupExpand"
               />
             </v-list>
           </v-expansion-panel-text>
@@ -147,6 +150,7 @@
                 "
                 :allow-power-control="true"
                 @click="playerClicked(player)"
+                @toggle-expand="toggleGroupExpand"
               />
             </v-list>
           </v-expansion-panel-text>
@@ -215,13 +219,28 @@ watch(
 );
 
 function playerClicked(player: Player, close: boolean = false) {
-  if (store.activePlayerId == player.player_id) {
-    showSubPlayers.value = !showSubPlayers.value;
+  if (player.type === PlayerType.GROUP) {
+    if (store.activePlayerId !== player.player_id) {
+      store.activePlayerId = player.player_id;
+    }
   } else {
-    showSubPlayers.value = false;
-    store.activePlayerId = player.player_id;
+    if (store.activePlayerId == player.player_id) {
+      showSubPlayers.value = !showSubPlayers.value;
+    } else {
+      showSubPlayers.value = false;
+      store.activePlayerId = player.player_id;
+    }
   }
   if (close) store.showPlayersMenu = false;
+}
+
+function toggleGroupExpand(player: Player) {
+  if (store.activePlayerId !== player.player_id) {
+    store.activePlayerId = player.player_id;
+    showSubPlayers.value = true;
+  } else {
+    showSubPlayers.value = !showSubPlayers.value;
+  }
 }
 
 onMounted(() => {
