@@ -42,8 +42,7 @@ export const useGenresApi = () => {
   };
 
   const updateGenre = async (genre: any) => {
-    // Use direct genre update to avoid metadata throttling
-    return api.updateGenreDirectly(genre);
+    return api.updateMetadata(genre);
   };
 
   const toggleFavorite = async (genre: any) => {
