@@ -23,7 +23,10 @@
             />
           </template>
           <template #title>
-            {{ api.getProvider(providerMapping.provider_instance)?.name }}
+            {{
+              api.getProvider(providerMapping.provider_instance)?.name ||
+              providerMapping.provider_instance
+            }}
           </template>
           <template #subtitle>
             <span
@@ -184,7 +187,7 @@ const getPreviewUrl = function (provider: string, item_id: string) {
 };
 
 const getProviderUri = function (mapping: ProviderMapping) {
-  return `${api.getProvider(mapping.provider_instance)?.lookup_key}://${props.itemDetails.media_type}/${mapping.item_id}`;
+  return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
 const copyUriToClipboard = async function (uri: string) {

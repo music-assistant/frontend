@@ -21,11 +21,11 @@
           <v-list v-if="availableProviders.length > 0" class="provider-list">
             <v-list-item
               v-for="provider in availableProviders"
-              :key="provider.lookup_key"
+              :key="provider.instance_id"
               style="padding: 0"
               class="provider-item"
               rounded="lg"
-              @click="addPlayerGroup(provider.lookup_key)"
+              @click="addPlayerGroup(provider.instance_id)"
             >
               <template #prepend>
                 <provider-icon
@@ -100,7 +100,7 @@ const availableProviders = computed(() => {
         ),
     )
     .map((x) => ({
-      lookup_key: x.lookup_key,
+      instance_id: x.instance_id,
       domain: x.domain,
       name: x.name || api.providerManifests[x.domain]?.name || x.domain,
       description:

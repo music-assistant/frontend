@@ -25,9 +25,9 @@
           <v-list class="provider-filter-list">
             <v-list-item
               v-for="provider in availableProviders"
-              :key="provider.lookup_key"
-              :value="provider.lookup_key"
-              @click="toggleProvider(provider.lookup_key)"
+              :key="provider.instance_id"
+              :value="provider.instance_id"
+              @click="toggleProvider(provider.instance_id)"
             >
               <template #prepend>
                 <provider-icon
@@ -39,8 +39,10 @@
               </template>
               <template #append>
                 <v-checkbox-btn
-                  :model-value="selectedProviders.includes(provider.lookup_key)"
-                  @click.stop="toggleProvider(provider.lookup_key)"
+                  :model-value="
+                    selectedProviders.includes(provider.instance_id)
+                  "
+                  @click.stop="toggleProvider(provider.instance_id)"
                 />
               </template>
               <v-list-item-title>{{ provider.name }}</v-list-item-title>
@@ -106,11 +108,10 @@ const availableProviders = computed(() => {
       (x) =>
         x.available &&
         x.type === ProviderType.PLAYER &&
-        x.lookup_key !== "builtin_player" &&
         x.domain !== "builtin_player",
     )
     .map((x) => ({
-      lookup_key: x.lookup_key,
+      instance_id: x.instance_id,
       domain: x.domain,
       name: x.name || api.providerManifests[x.domain]?.name || x.domain,
     }))

@@ -239,7 +239,7 @@ const getAllFilteredPlayers = function () {
     filtered = filtered.filter((item) => {
       const providerInstance = api.getProvider(item.provider);
       if (!providerInstance) return false;
-      return selectedProviders.value.includes(providerInstance.lookup_key);
+      return selectedProviders.value.includes(providerInstance.instance_id);
     });
   }
 
