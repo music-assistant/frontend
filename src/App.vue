@@ -19,6 +19,10 @@
       webPlayer.interacted == true
     "
   />
+  <SendspinPlayer
+    v-if="webPlayer.tabMode === WebPlayerMode.SENDSPIN && webPlayer.player_id"
+    :player-id="webPlayer.player_id"
+  />
   <BuiltinPlayer
     v-if="webPlayer.tabMode === WebPlayerMode.BUILTIN && webPlayer.player_id"
     :player-id="webPlayer.player_id"
@@ -35,6 +39,7 @@ import { useTheme } from "vuetify";
 import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
 import BuiltinPlayer from "./components/BuiltinPlayer.vue";
+import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import Login from "./views/Login.vue";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
@@ -174,11 +179,22 @@ const completeInitialization = async () => {
   store.libraryRadiosCount = await api.getLibraryRadiosCount();
   store.libraryTracksCount = await api.getLibraryTracksCount();
 
-  const allowBuiltinPlayer =
-    localStorage.getItem("frontend.settings.enable_builtin_player") !=
-      "false" && !api.isRemoteConnection.value;
+  const webPlayerModePref =
+    localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
 
-  if (allowBuiltinPlayer && api.getProvider("builtin_player")) {
+  // Remote connections and ingress don't support builtin or sendspin players
+  if (api.isRemoteConnection.value || store.isIngressSession) {
+    webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+  } else if (
+    webPlayerModePref === "sendspin" &&
+    api.getProvider("sendspin")?.available
+  ) {
+    webPlayer.setMode(WebPlayerMode.SENDSPIN);
+  } else if (
+    webPlayerModePref !== "disabled" &&
+    api.getProvider("builtin_player")
+  ) {
+    // Fallback to builtin if sendspin requested but unavailable, or if builtin explicitly selected
     webPlayer.setMode(WebPlayerMode.BUILTIN);
   } else {
     webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
@@ -200,7 +216,6 @@ onMounted(async () => {
   if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
   }
-
   store.forceMobileLayout =
     localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
 

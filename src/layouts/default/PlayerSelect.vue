@@ -39,20 +39,27 @@
       <v-divider />
 
       <v-list flat style="margin: 0px 10px; padding: 0">
-        <!-- dedicated card for builtin player -->
+        <!-- dedicated card for the local web player -->
         <PlayerCard
           v-if="
-            webPlayer.mode === WebPlayerMode.BUILTIN &&
+            isPlaybackMode(webPlayer.mode) &&
             webPlayer.player_id &&
-            api.players[webPlayer.player_id]
+            api.players[webPlayer.player_id] &&
+            !api.players[webPlayer.player_id].synced_to
           "
           :id="webPlayer.player_id"
           style="margin: 10px 0px"
           :player="api.players[webPlayer.player_id]"
           :show-volume-control="true"
           :show-menu-button="true"
-          :show-sub-players="false"
-          :show-sync-controls="false"
+          :show-sub-players="
+            showSubPlayers && webPlayer.player_id == store.activePlayerId
+          "
+          :show-sync-controls="
+            api.players[webPlayer.player_id].supported_features.includes(
+              PlayerFeature.SET_MEMBERS,
+            )
+          "
           :allow-power-control="true"
           @click="playerClicked(api.players[webPlayer.player_id])"
           @toggle-expand="toggleGroupExpand"
@@ -174,7 +181,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer, isPlaybackMode } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);

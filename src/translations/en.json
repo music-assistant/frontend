@@ -584,9 +584,22 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
-        "enable_builtin_player": {
-            "label": "Allow playback to this device\/browser",
-            "description": "Enable the (experimental) built-in player for this device\/browser, which allows you to stream all Music Assistant content directly to this device."
+        "web_player_mode": {
+            "label": "Web player mode",
+            "description": "Choose how this browser handles audio playback.",
+            "options": {
+                "sendspin": "Sendspin (experimental)",
+                "builtin": "Built-in player",
+                "disabled": "Disabled (controls only)"
+            }
+        },
+        "sendspin_sync_delay": {
+            "label": "Sendspin sync delay (ms)",
+            "description": "Static delay in milliseconds to adjust audio synchronization. Positive values delay playback, negative values advance it. Use this to compensate for device-specific audio latency."
+        },
+        "sendspin_output_latency_compensation": {
+            "label": "Use browser latency detection",
+            "description": "Automatically compensate for hardware audio latency (e.g., Bluetooth headphones) using the browser's output latency API. This API is fairly new and may not work reliably on all browsers and operating systems."
         },
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",

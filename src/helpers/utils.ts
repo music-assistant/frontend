@@ -674,3 +674,23 @@ export const handleMenuBtnClick = function (
     includePlayMenuItems,
   );
 };
+
+/**
+ * Get platform-specific default sync delay for Sendspin player.
+ * Based on testing across various platforms/browsers.
+ */
+export const getSendspinDefaultSyncDelay = function (): number {
+  const ua = navigator.userAgent;
+  const isAndroid = /android/i.test(ua);
+  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const isFirefox = /firefox/i.test(ua);
+
+  if (isIOS) {
+    return -250;
+  } else if (!isAndroid && !isFirefox) {
+    // Desktop Chrome/Chromium/Edge
+    return -300;
+  }
+  // Android, Firefox (desktop/mobile)
+  return -200;
+};

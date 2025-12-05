@@ -33,6 +33,8 @@ import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
+import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -114,21 +116,76 @@ onMounted(() => {
     },
   ];
 
-  // Only show builtin player setting for local connections
-  // (builtin player uses HTTP which is not compatible with WebRTC)
-  if (!api.isRemoteConnection.value) {
+  // Only show web player mode setting for local connections (not remote or ingress)
+  if (!api.isRemoteConnection.value && !store.isIngressSession) {
+    const webPlayerOptions = [
+      {
+        title: $t("settings.web_player_mode.options.builtin"),
+        value: "builtin",
+      },
+      {
+        title: $t("settings.web_player_mode.options.disabled"),
+        value: "disabled",
+      },
+    ];
+
+    // Only show sendspin option if the provider is available
+    const sendspinAvailable = api.getProvider("sendspin")?.available;
+    if (sendspinAvailable) {
+      webPlayerOptions.unshift({
+        title: $t("settings.web_player_mode.options.sendspin"),
+        value: "sendspin",
+      });
+    }
+
     configEntries.splice(3, 0, {
-      key: "enable_builtin_player",
-      type: ConfigEntryType.BOOLEAN,
-      label: "enable_builtin_player",
-      default_value: true,
-      required: true,
+      key: "web_player_mode",
+      type: ConfigEntryType.STRING,
+      label: "web_player_mode",
+      default_value: "sendspin",
+      required: false,
+      options: webPlayerOptions,
       multi_value: false,
       category: "generic",
       value:
-        localStorage.getItem("frontend.settings.enable_builtin_player") !=
-        "false",
+        localStorage.getItem("frontend.settings.web_player_mode") || "sendspin",
     });
+
+    // Show sendspin sync delay option when sendspin is available
+    if (sendspinAvailable) {
+      const defaultSyncDelay = getSendspinDefaultSyncDelay();
+
+      configEntries.splice(4, 0, {
+        key: "sendspin_sync_delay",
+        type: ConfigEntryType.INTEGER,
+        label: "sendspin_sync_delay",
+        default_value: defaultSyncDelay,
+        required: false,
+        multi_value: false,
+        category: "generic",
+        value: parseInt(
+          localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
+            String(defaultSyncDelay),
+          10,
+        ),
+      });
+
+      // Output latency compensation - enabled by default everywhere
+      const storedOutputLatency = localStorage.getItem(
+        "frontend.settings.sendspin_output_latency_compensation",
+      );
+      configEntries.splice(5, 0, {
+        key: "sendspin_output_latency_compensation",
+        type: ConfigEntryType.BOOLEAN,
+        label: "sendspin_output_latency_compensation",
+        default_value: true,
+        required: false,
+        multi_value: false,
+        category: "generic",
+        value:
+          storedOutputLatency !== null ? storedOutputLatency === "true" : true,
+      });
+    }
   }
 
   config.value = configEntries;
