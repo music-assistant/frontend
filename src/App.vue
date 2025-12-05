@@ -182,8 +182,8 @@ const completeInitialization = async () => {
   const webPlayerModePref =
     localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
 
-  // Remote connections don't support builtin or sendspin players
-  if (api.isRemoteConnection.value) {
+  // Remote connections and ingress don't support builtin or sendspin players
+  if (api.isRemoteConnection.value || store.isIngressSession) {
     webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
   } else if (
     webPlayerModePref === "sendspin" &&

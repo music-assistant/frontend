@@ -33,6 +33,7 @@ import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 
 // global refs
@@ -115,8 +116,8 @@ onMounted(() => {
     },
   ];
 
-  // Only show web player mode setting for local connections
-  if (!api.isRemoteConnection.value) {
+  // Only show web player mode setting for local connections (not remote or ingress)
+  if (!api.isRemoteConnection.value && !store.isIngressSession) {
     const webPlayerOptions = [
       {
         title: $t("settings.web_player_mode.options.builtin"),
