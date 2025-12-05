@@ -271,14 +271,8 @@ const onDelete = async () => {
           :disabled="!authManager.isAdmin()"
           class="mb-2"
         >
-          <v-radio
-            :label="$t('genres.keep_existing_images')"
-            :value="false"
-          />
-          <v-radio
-            :label="$t('genres.update_image')"
-            :value="true"
-          />
+          <v-radio :label="$t('genres.keep_existing_images')" :value="false" />
+          <v-radio :label="$t('genres.update_image')" :value="true" />
         </v-radio-group>
 
         <v-text-field
@@ -294,7 +288,10 @@ const onDelete = async () => {
           :disabled="!authManager.isAdmin()"
         />
 
-        <div v-if="displayImage && (updateImage || !isEdit)" class="mb-4 d-flex justify-center">
+        <div
+          v-if="displayImage && (updateImage || !isEdit)"
+          class="mb-4 d-flex justify-center"
+        >
           <v-img :src="displayImage" max-height="200" max-width="200" contain />
         </div>
       </v-card-text>
