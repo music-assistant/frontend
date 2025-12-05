@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
+import { getDeviceName } from "@/plugins/api/helpers";
 import { SendspinPlayer } from "@music-assistant/sendspin-js";
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
@@ -82,7 +83,7 @@ onMounted(() => {
       audioElement: audioRef.value,
       isAndroid,
       silentAudioSrc: almostSilentMp3,
-      clientName: "Music Assistant Web Player",
+      clientName: getDeviceName(),
       syncDelay,
       useOutputLatencyCompensation,
       onStateChange: (state) => {
