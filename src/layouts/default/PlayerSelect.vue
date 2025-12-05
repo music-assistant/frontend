@@ -52,7 +52,9 @@
           :player="api.players[webPlayer.player_id]"
           :show-volume-control="true"
           :show-menu-button="true"
-          :show-sub-players="false"
+          :show-sub-players="
+            showSubPlayers && webPlayer.player_id == store.activePlayerId
+          "
           :show-sync-controls="
             api.players[webPlayer.player_id].supported_features.includes(
               PlayerFeature.SET_MEMBERS,
