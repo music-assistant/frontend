@@ -1575,10 +1575,10 @@
   resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
   integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
 
-"@music-assistant/sendspin-js@0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-0.2.0.tgz#4e44be4c3bea2563373283c094d815e9b70f9c84"
-  integrity sha512-3xPI54SAIjaEMyhyxs4A9Di2emHvRCmyfZbD7jwHUYQ0PWEKwLFTOcOKXFxM38ec1ys8Gnm185pcwwNHf8ovyw==
+"@music-assistant/sendspin-js@0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-0.3.1.tgz#50bfd90554720f66edabe697c19030f8fc040c42"
+  integrity sha512-R5F+FZ9qBcoMi3U/aH4Kp52H/4yRB/GZrantZgTzbEGTdwsrlECHLP/xo05Cc+X4sladaEc3GiYyPFaYPNy1cg==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
