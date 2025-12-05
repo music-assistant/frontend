@@ -5,13 +5,12 @@ import { EventType } from "./api/interfaces";
 export enum WebPlayerMode {
   DISABLED = "disabled",
   CONTROLS_ONLY = "controls_only",
-  BUILTIN = "builtin",
   SENDSPIN = "sendspin",
 }
 
 // Helper to check if a mode is a playback mode (handles actual audio)
 export const isPlaybackMode = (mode: WebPlayerMode) =>
-  mode === WebPlayerMode.BUILTIN || mode === WebPlayerMode.SENDSPIN;
+  mode === WebPlayerMode.SENDSPIN;
 
 let unsubSubscriptions: (() => void)[] = [];
 
@@ -156,7 +155,7 @@ export const webPlayer = reactive({
   // This is target mode shared across all tabs
   mode: WebPlayerMode.DISABLED,
   // This is the true mode of this tab.
-  // In case of a playback mode (BUILTIN/SENDSPIN), exactly one tab will have this equal to mode to avoid double playback
+  // In case of a playback mode (SENDSPIN), exactly one tab will have this equal to mode to avoid double playback
   tabMode: WebPlayerMode.DISABLED,
   // This dictates what component will play audio to have the notification show up on all browsers
   audioSource: WebPlayerMode.DISABLED,
@@ -177,18 +176,11 @@ export const webPlayer = reactive({
       u();
     }
     unsubSubscriptions = [];
-    // Player id of the builtin player that should be unregistered (only applies to BUILTIN mode)
-    let builtinPlayerToUnregister: undefined | string = undefined;
 
     if (isPlaybackMode(this.tabMode)) {
       if (this.player_id) {
         // Notify other tabs, if another tab already has control, this will change nothing
         bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
-        // Postpone unregister in case we would need to immediately re-register it again
-        // Only unregister for BUILTIN mode (SENDSPIN doesn't use registerBuiltinPlayer)
-        if (!silent && this.tabMode === WebPlayerMode.BUILTIN) {
-          builtinPlayerToUnregister = this.player_id;
-        }
       }
     }
     this.audioSource = WebPlayerMode.DISABLED;
@@ -225,43 +217,16 @@ export const webPlayer = reactive({
       this.lastUpdate = Date.now();
 
       bc.postMessage(BC_MSG.CONTROL_TAKEN);
-    } else if (mode === WebPlayerMode.BUILTIN) {
-      // Builtin player - register with the backend
-      this.audioSource = WebPlayerMode.CONTROLS_ONLY;
-      const saved_player_id = window.localStorage.getItem(
-        "builtin_webplayer_id",
-      );
-      builtinPlayerToUnregister = undefined;
-
-      const player = await api.registerBuiltinPlayer(
-        "This Device",
-        saved_player_id !== null ? saved_player_id : undefined,
-      );
-      this.lastUpdate = Date.now();
-      const player_id = player.player_id;
-
-      if (saved_player_id !== player_id) {
-        window.localStorage.setItem("builtin_webplayer_id", player_id);
-      }
-
-      this.player_id = player_id;
-
-      bc.postMessage(BC_MSG.CONTROL_TAKEN);
     } else if (mode == WebPlayerMode.CONTROLS_ONLY) {
       // This is guaranteed to not be a first tab (since that would have a playback tabMode)
       // Therefore, this player_id should be already set - read based on target mode
-      const storageKey =
-        this.mode === WebPlayerMode.SENDSPIN
-          ? "sendspin_webplayer_id"
-          : "builtin_webplayer_id";
-      const saved_player_id = window.localStorage.getItem(storageKey);
+      const saved_player_id = window.localStorage.getItem(
+        "sendspin_webplayer_id",
+      );
       this.player_id = saved_player_id;
       this.audioSource = WebPlayerMode.CONTROLS_ONLY;
     } else {
       this.audioSource = WebPlayerMode.DISABLED;
-    }
-    if (builtinPlayerToUnregister) {
-      await api.unregisterBuiltinPlayer(builtinPlayerToUnregister);
     }
 
     this.tabMode = mode;

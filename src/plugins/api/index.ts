@@ -29,7 +29,6 @@ import {
   AlbumType,
   Audiobook,
   AuthProvider,
-  BuiltinPlayerState,
   ConfigEntry,
   ConfigValueType,
   CoreConfig,
@@ -1409,32 +1408,6 @@ export class MusicAssistantApi {
     source: string,
   ): Promise<void> {
     return this.playerCommand(playerId, "select_source", { source });
-  }
-
-  // BuiltinPlayer related functions/commands
-
-  public async registerBuiltinPlayer(
-    player_name: string,
-    player_id?: string,
-  ): Promise<Player> {
-    return this.sendCommand("builtin_player/register", {
-      player_name,
-      player_id,
-    });
-  }
-
-  public async unregisterBuiltinPlayer(player_id: string): Promise<Player> {
-    return this.sendCommand("builtin_player/unregister", { player_id });
-  }
-
-  public async updateBuiltinPlayerState(
-    player_id: string,
-    state: BuiltinPlayerState,
-  ): Promise<boolean> {
-    return this.sendCommand("builtin_player/update_state", {
-      player_id,
-      state,
-    });
   }
 
   // Play Media related functions

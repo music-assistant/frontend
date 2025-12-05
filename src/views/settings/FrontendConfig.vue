@@ -117,75 +117,63 @@ onMounted(() => {
   ];
 
   // Only show web player mode setting for local connections (not remote or ingress)
-  if (!api.isRemoteConnection.value && !store.isIngressSession) {
-    const webPlayerOptions = [
-      {
-        title: $t("settings.web_player_mode.options.builtin"),
-        value: "builtin",
-      },
-      {
-        title: $t("settings.web_player_mode.options.disabled"),
-        value: "disabled",
-      },
-    ];
-
-    // Only show sendspin option if the provider is available
-    const sendspinAvailable = api.getProvider("sendspin")?.available;
-    if (sendspinAvailable) {
-      webPlayerOptions.unshift({
-        title: $t("settings.web_player_mode.options.sendspin"),
-        value: "sendspin",
-      });
-    }
-
+  const sendspinAvailable =
+    !api.isRemoteConnection.value && !store.isIngressSession;
+  if (sendspinAvailable) {
     configEntries.splice(3, 0, {
       key: "web_player_mode",
       type: ConfigEntryType.STRING,
       label: "web_player_mode",
       default_value: "sendspin",
       required: false,
-      options: webPlayerOptions,
+      options: [
+        {
+          title: $t("settings.web_player_mode.options.sendspin"),
+          value: "sendspin",
+        },
+        {
+          title: $t("settings.web_player_mode.options.disabled"),
+          value: "disabled",
+        },
+      ],
       multi_value: false,
       category: "generic",
       value:
         localStorage.getItem("frontend.settings.web_player_mode") || "sendspin",
     });
 
-    // Show sendspin sync delay option when sendspin is available
-    if (sendspinAvailable) {
-      const defaultSyncDelay = getSendspinDefaultSyncDelay();
+    // Sendspin sync delay option
+    const defaultSyncDelay = getSendspinDefaultSyncDelay();
+    configEntries.splice(4, 0, {
+      key: "sendspin_sync_delay",
+      type: ConfigEntryType.INTEGER,
+      label: "sendspin_sync_delay",
+      default_value: defaultSyncDelay,
+      required: false,
+      multi_value: false,
+      category: "generic",
+      value: parseInt(
+        localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
+          String(defaultSyncDelay),
+        10,
+      ),
+    });
 
-      configEntries.splice(4, 0, {
-        key: "sendspin_sync_delay",
-        type: ConfigEntryType.INTEGER,
-        label: "sendspin_sync_delay",
-        default_value: defaultSyncDelay,
-        required: false,
-        multi_value: false,
-        category: "generic",
-        value: parseInt(
-          localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-            String(defaultSyncDelay),
-          10,
-        ),
-      });
-
-      // Output latency compensation - enabled by default everywhere
-      const storedOutputLatency = localStorage.getItem(
-        "frontend.settings.sendspin_output_latency_compensation",
-      );
-      configEntries.splice(5, 0, {
-        key: "sendspin_output_latency_compensation",
-        type: ConfigEntryType.BOOLEAN,
-        label: "sendspin_output_latency_compensation",
-        default_value: true,
-        required: false,
-        multi_value: false,
-        category: "generic",
-        value:
-          storedOutputLatency !== null ? storedOutputLatency === "true" : true,
-      });
-    }
+    // Output latency compensation - enabled by default everywhere
+    const storedOutputLatency = localStorage.getItem(
+      "frontend.settings.sendspin_output_latency_compensation",
+    );
+    configEntries.splice(5, 0, {
+      key: "sendspin_output_latency_compensation",
+      type: ConfigEntryType.BOOLEAN,
+      label: "sendspin_output_latency_compensation",
+      default_value: true,
+      required: false,
+      multi_value: false,
+      category: "generic",
+      value:
+        storedOutputLatency !== null ? storedOutputLatency === "true" : true,
+    });
   }
 
   config.value = configEntries;

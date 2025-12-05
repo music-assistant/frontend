@@ -301,25 +301,10 @@ export enum EventType {
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
-  BUILTIN_PLAYER = "builtin_player",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
   ALL = "*",
-}
-
-export enum BuiltinPlayerEventType {
-  PLAY = "play",
-  PAUSE = "pause",
-  RESUME = "resume",
-  STOP = "stop",
-  MUTE = "mute",
-  UNMUTE = "unmute",
-  SET_VOLUME = "set_volume",
-  PLAY_MEDIA = "play_media",
-  TIMEOUT = "timeout",
-  POWER_OFF = "power_off",
-  POWER_ON = "power_on",
 }
 
 export enum ProviderFeature {
@@ -878,23 +863,6 @@ export interface Player {
   power_control: string;
   volume_control: string;
   mute_control: string;
-}
-
-// BuiltinPlayer
-
-export interface BuiltinPlayerEvent {
-  type: BuiltinPlayerEventType;
-  volume?: number;
-  media_url?: string;
-}
-
-export interface BuiltinPlayerState {
-  powered: boolean;
-  playing: boolean;
-  paused: boolean;
-  position: number;
-  volume: number;
-  muted: boolean;
 }
 
 // provider
