@@ -45,7 +45,7 @@
             isPlaybackMode(webPlayer.mode) &&
             webPlayer.player_id &&
             api.players[webPlayer.player_id] &&
-            !api.players[webPlayer.player_id].active_group
+            !api.players[webPlayer.player_id].synced_to
           "
           :id="webPlayer.player_id"
           style="margin: 10px 0px"
