@@ -33,6 +33,7 @@ import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { api } from "@/plugins/api";
+import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -151,19 +152,36 @@ onMounted(() => {
 
     // Show sendspin sync delay option when sendspin is available
     if (sendspinAvailable) {
+      const defaultSyncDelay = getSendspinDefaultSyncDelay();
+
       configEntries.splice(4, 0, {
         key: "sendspin_sync_delay",
         type: ConfigEntryType.INTEGER,
         label: "sendspin_sync_delay",
-        default_value: -200,
+        default_value: defaultSyncDelay,
         required: false,
         multi_value: false,
         category: "generic",
         value: parseInt(
           localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-            "-200",
+            String(defaultSyncDelay),
           10,
         ),
+      });
+
+      // Output latency compensation - enabled by default everywhere
+      const storedOutputLatency = localStorage.getItem(
+        "frontend.settings.sendspin_output_latency_compensation",
+      );
+      configEntries.splice(5, 0, {
+        key: "sendspin_output_latency_compensation",
+        type: ConfigEntryType.BOOLEAN,
+        label: "sendspin_output_latency_compensation",
+        default_value: true,
+        required: false,
+        multi_value: false,
+        category: "generic",
+        value: storedOutputLatency !== null ? storedOutputLatency === "true" : true,
       });
     }
   }

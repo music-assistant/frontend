@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
+import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 import { SendspinPlayer } from "@music-assistant/sendspin-js";
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
@@ -59,10 +60,19 @@ onMounted(() => {
 
   // Create and initialize player
   if (audioRef.value) {
+    const defaultSyncDelay = getSendspinDefaultSyncDelay();
     const syncDelay = parseInt(
-      localStorage.getItem("frontend.settings.sendspin_sync_delay") || "0",
+      localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
+        String(defaultSyncDelay),
       10,
     );
+
+    // Output latency compensation - enabled by default
+    const storedOutputLatency = localStorage.getItem(
+      "frontend.settings.sendspin_output_latency_compensation",
+    );
+    const useOutputLatencyCompensation =
+      storedOutputLatency !== null ? storedOutputLatency === "true" : true;
 
     player = new SendspinPlayer({
       playerId: props.playerId,
@@ -74,6 +84,7 @@ onMounted(() => {
       silentAudioSrc: almostSilentMp3,
       clientName: "Music Assistant Web Player",
       syncDelay,
+      useOutputLatencyCompensation,
       onStateChange: (state) => {
         // Update reactive state when player state changes
         isPlaying.value = state.isPlaying;
