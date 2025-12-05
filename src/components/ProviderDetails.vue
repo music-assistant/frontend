@@ -23,10 +23,7 @@
             />
           </template>
           <template #title>
-            {{
-              api.getProvider(providerMapping.provider_instance)?.name ||
-              providerMapping.provider_instance
-            }}
+            {{ getProviderName(providerMapping) }}
           </template>
           <template #subtitle>
             <span
@@ -197,6 +194,20 @@ const copyUriToClipboard = async function (uri: string) {
   } else {
     toast.error(t("uri_copy_failed"));
   }
+};
+
+const getProviderName = function (providerMapping: ProviderMapping) {
+  const providerInstance = api.getProvider(providerMapping.provider_instance);
+  if (providerInstance) {
+    return providerInstance.name;
+  }
+  const providerManifest = api.getProviderManifest(
+    providerMapping.provider_domain,
+  );
+  if (providerManifest) {
+    return `${providerManifest.name} (${providerMapping.provider_instance})`;
+  }
+  return providerMapping.provider_instance;
 };
 
 const toggleExpand = function () {
