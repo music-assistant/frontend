@@ -52,7 +52,11 @@
           :show-volume-control="true"
           :show-menu-button="true"
           :show-sub-players="false"
-          :show-sync-controls="false"
+          :show-sync-controls="
+            api.players[webPlayer.player_id].supported_features.includes(
+              PlayerFeature.SET_MEMBERS,
+            )
+          "
           :allow-power-control="true"
           @click="playerClicked(api.players[webPlayer.player_id])"
         />
