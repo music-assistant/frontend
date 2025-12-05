@@ -33,6 +33,7 @@ import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 
 // global refs
@@ -41,6 +42,8 @@ const config = ref<ConfigEntry[]>([]);
 const loading = ref(false);
 
 onMounted(() => {
+  const usingHaCloud = store.remoteAccessInfo?.using_ha_cloud ?? false;
+
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
@@ -128,8 +131,9 @@ onMounted(() => {
       },
     ];
 
-    // Only show sendspin option if the provider is available
-    const sendspinAvailable = api.getProvider("sendspin")?.available;
+    // Only show sendspin option if the provider is available and not using HA Cloud
+    const sendspinAvailable =
+      api.getProvider("sendspin")?.available && !usingHaCloud;
     if (sendspinAvailable) {
       webPlayerOptions.unshift({
         title: $t("settings.web_player_mode.options.sendspin"),
