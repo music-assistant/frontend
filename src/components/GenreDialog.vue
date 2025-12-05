@@ -168,6 +168,22 @@ const onSave = async () => {
       }
     } else {
       genreToUpdate = await createGenre(name.value);
+
+      // If image provided, update the genre with image metadata
+      if (genreToUpdate && image.value) {
+        const isDataUrl = image.value.startsWith("data:");
+        if (!genreToUpdate.metadata) genreToUpdate.metadata = {};
+        genreToUpdate.metadata.images = [
+          {
+            type: ImageType.THUMB,
+            path: image.value,
+            provider: isDataUrl ? "builtin" : "http",
+            remotely_accessible: !isDataUrl,
+          },
+        ];
+        genreToUpdate = await updateGenre(genreToUpdate);
+      }
+
       // For new genres, we need to add the aliases after creation
       if (genreToUpdate && newAliases.length > 0) {
         const genreId = parseInt(genreToUpdate.item_id);

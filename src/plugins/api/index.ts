@@ -1070,15 +1070,6 @@ export class MusicAssistantApi {
     });
   }
 
-  public updateGenreDirectly(genre: Genre): Promise<Genre> {
-    // Use direct genre update to avoid metadata throttling
-    return this.sendCommand("music/genres/update", {
-      item_id: parseInt(genre.item_id),
-      update: genre,
-      overwrite: false,
-    });
-  }
-
   public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
     return this.sendCommand("music/item_by_uri", {
