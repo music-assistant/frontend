@@ -196,6 +196,26 @@
                 : 'mdi-play'
             "
         /></Button>
+        <Button
+          v-if="player.type === PlayerType.GROUP && showVolumeControl"
+          variant="icon"
+          class="player-command-btn group-expand-btn"
+          @click.stop="$emit('toggle-expand', player)"
+        >
+          <v-badge
+            color="primary"
+            :offset-x="-5"
+            :offset-y="-5"
+            :content="player.group_members.length"
+            class="group-badge"
+          >
+            <v-icon
+              :size="getBreakpointValue({ breakpoint: 'phone' }) ? '20' : '22'"
+              >mdi-speaker-multiple</v-icon
+            >
+          </v-badge>
+        </Button>
+
         <!-- power button -->
         <Button
           v-if="
@@ -289,6 +309,7 @@ const compProps = defineProps<Props>();
 // emits
 defineEmits<{
   (e: "click", player: Player): void;
+  (e: "toggle-expand", player: Player): void;
 }>();
 
 const playerQueue = computed(() => {
@@ -466,5 +487,12 @@ watch(
   width: 35px;
   min-width: 35px;
   margin-left: 5px;
+}
+
+.group-badge :deep(.v-badge__badge) {
+  font-size: 10px;
+  height: 16px;
+  min-width: 16px;
+  padding: 0 3px 0 4px;
 }
 </style>
