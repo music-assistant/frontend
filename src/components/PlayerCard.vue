@@ -202,10 +202,18 @@
           class="player-command-btn group-expand-btn"
           @click.stop="$emit('toggle-expand', player)"
         >
-          <v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '20' : '22'"
-            >mdi-speaker-multiple</v-icon
+          <v-badge
+            color="primary"
+            :offset-x="-5"
+            :offset-y="-5"
+            :content="player.group_members.length"
+            class="group-badge"
           >
+            <v-icon
+              :size="getBreakpointValue({ breakpoint: 'phone' }) ? '20' : '22'"
+              >mdi-speaker-multiple</v-icon
+            >
+          </v-badge>
         </Button>
 
         <!-- power button -->
@@ -479,5 +487,12 @@ watch(
   width: 35px;
   min-width: 35px;
   margin-left: 5px;
+}
+
+.group-badge :deep(.v-badge__badge) {
+  font-size: 10px;
+  height: 16px;
+  min-width: 16px;
+  padding: 0 3px 0 4px;
 }
 </style>
