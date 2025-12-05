@@ -36,6 +36,7 @@ const linkedGenres = ref<(string | Genre)[]>([]);
 const loading = ref(false);
 const image = ref<string | null>(null);
 const searchInput = ref("");
+const updateImage = ref(false);
 
 const isEdit = computed(() => !!props.genre);
 const title = computed(() =>
@@ -99,6 +100,7 @@ watch(
         linkedGenres.value = [];
         image.value = null;
       }
+      updateImage.value = false;
       searchInput.value = "";
       if (genresStore.genres.value.length === 0) {
         genresStore.loadGenres();
@@ -127,8 +129,28 @@ const onSave = async () => {
     );
 
     if (isEdit.value && props.genre) {
-      // Update name
+      // Update name and optionally images
       genreToUpdate = { ...props.genre, name: name.value };
+
+      // Handle image updates - only update if explicitly requested
+      if (image.value && updateImage.value) {
+        if (!genreToUpdate.metadata) genreToUpdate.metadata = {};
+        const isDataUrl = image.value.startsWith("data:");
+        genreToUpdate.metadata.images = [
+          {
+            type: ImageType.THUMB,
+            path: image.value,
+            provider: isDataUrl ? "builtin" : "http",
+            remotely_accessible: !isDataUrl,
+          },
+        ];
+      } else if (!updateImage.value) {
+        // Remove images from update payload to keep existing
+        if (genreToUpdate.metadata) {
+          delete genreToUpdate.metadata.images;
+        }
+      }
+
       await updateGenre(genreToUpdate);
 
       // Handle aliases
@@ -160,21 +182,6 @@ const onSave = async () => {
       const sourceIds = genresToMerge.map((g) => parseInt(g.item_id));
       const targetId = parseInt(genreToUpdate.item_id);
       await mergeGenres(sourceIds, targetId);
-    }
-
-    // Handle Image
-    if (image.value && genreToUpdate) {
-      if (!genreToUpdate.metadata) genreToUpdate.metadata = {};
-      const isDataUrl = image.value.startsWith("data:");
-      genreToUpdate.metadata.images = [
-        {
-          type: ImageType.THUMB,
-          path: image.value,
-          provider: isDataUrl ? "builtin" : "http",
-          remotely_accessible: !isDataUrl,
-        },
-      ];
-      await updateGenre(genreToUpdate);
     }
 
     emit("saved");
@@ -215,7 +222,7 @@ const onDelete = async () => {
         </v-alert>
         <v-text-field
           v-model="name"
-          :label="$t('name')"
+          :label="$t('new_genre_name')"
           required
           autofocus
           :disabled="!authManager.isAdmin()"
@@ -229,7 +236,7 @@ const onDelete = async () => {
           :loading="genresStore.loading.value"
           item-title="name"
           item-value="item_id"
-          label="Linked Genres"
+          :label="$t('genres.linked_genres')"
           return-object
           multiple
           chips
@@ -258,9 +265,26 @@ const onDelete = async () => {
           </template>
         </v-combobox>
 
+        <v-radio-group
+          v-if="isEdit"
+          v-model="updateImage"
+          :disabled="!authManager.isAdmin()"
+          class="mb-2"
+        >
+          <v-radio
+            :label="$t('genres.keep_existing_images')"
+            :value="false"
+          />
+          <v-radio
+            :label="$t('genres.update_image')"
+            :value="true"
+          />
+        </v-radio-group>
+
         <v-text-field
+          v-if="updateImage || !isEdit"
           v-model="imageUrlInput"
-          label="Image URL"
+          :label="$t('image_url')"
           prepend-icon="mdi-image"
           clearable
           :hint="
@@ -270,7 +294,7 @@ const onDelete = async () => {
           :disabled="!authManager.isAdmin()"
         />
 
-        <div v-if="displayImage" class="mb-4 d-flex justify-center">
+        <div v-if="displayImage && (updateImage || !isEdit)" class="mb-4 d-flex justify-center">
           <v-img :src="displayImage" max-height="200" max-width="200" contain />
         </div>
       </v-card-text>

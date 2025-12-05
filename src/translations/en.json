@@ -42,6 +42,7 @@
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
+    "new_genre_name": "Enter a name for the genre",
     "new_playlist_name": "Enter a name for the new playlist",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
@@ -801,10 +802,13 @@
         "create_or_link_genres": "Create or Link Genres",
         "search_genres_or_type_new": "Search for genres or type new linked genre...",
         "target_genre": "Target Genre",
-        "search_or_enter_new_genre": "Search or enter new genre..."
+        "search_or_enter_new_genre": "Search or enter new genre...",
+        "keep_existing_images": "Keep existing images (default)",
+        "update_image": "Update image"
     },
     "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
     "dont_stop_the_music_disable": "Disable 'Don't stop the music!'",
+    "edit": "Edit",
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
