@@ -182,22 +182,12 @@ const completeInitialization = async () => {
   const webPlayerModePref =
     localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
 
-  // Fetch and cache remote access info
-  try {
-    store.remoteAccessInfo = await api.getRemoteAccessInfo();
-  } catch {
-    // Remote access info not available
-  }
-  const usingHaCloud = store.remoteAccessInfo?.using_ha_cloud ?? false;
-
   // Remote connections don't support builtin or sendspin players
-  // HA Cloud doesn't support sendspin but builtin works
   if (api.isRemoteConnection.value) {
     webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
   } else if (
     webPlayerModePref === "sendspin" &&
-    api.getProvider("sendspin")?.available &&
-    !usingHaCloud
+    api.getProvider("sendspin")?.available
   ) {
     webPlayer.setMode(WebPlayerMode.SENDSPIN);
   } else if (

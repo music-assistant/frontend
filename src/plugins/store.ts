@@ -4,7 +4,6 @@ import {
   Player,
   PlayerQueue,
   QueueItem,
-  RemoteAccessInfo,
   ServerInfoMessage,
   User,
 } from "./api/interfaces";
@@ -57,7 +56,6 @@ interface Store {
   mobileLayout: boolean;
   currentUser?: User;
   serverInfo?: ServerInfoMessage;
-  remoteAccessInfo?: RemoteAccessInfo;
   isIngressSession: boolean;
   isOnboarding: boolean;
 }
@@ -121,7 +119,6 @@ export const store: Store = reactive({
   }),
   currentUser: undefined,
   serverInfo: undefined,
-  remoteAccessInfo: undefined,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
   isOnboarding: false,
 });
