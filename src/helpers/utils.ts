@@ -540,12 +540,6 @@ export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
 ): boolean {
-  if (
-    player.provider == "builtin_player" &&
-    player.player_id == webPlayer.player_id
-  ) {
-    return true;
-  }
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
   if (player.hide_player_in_ui.includes(HidePlayerOption.ALWAYS)) {

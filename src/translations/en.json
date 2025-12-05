@@ -589,7 +589,6 @@
             "description": "Choose how this browser handles audio playback.",
             "options": {
                 "sendspin": "Sendspin (experimental)",
-                "builtin": "Built-in player",
                 "disabled": "Disabled (controls only)"
             }
         },
