@@ -141,13 +141,13 @@ onMounted(() => {
       key: "web_player_mode",
       type: ConfigEntryType.STRING,
       label: "web_player_mode",
-      default_value: "builtin",
+      default_value: "sendspin",
       required: false,
       options: webPlayerOptions,
       multi_value: false,
       category: "generic",
       value:
-        localStorage.getItem("frontend.settings.web_player_mode") || "builtin",
+        localStorage.getItem("frontend.settings.web_player_mode") || "sendspin",
     });
 
     // Show sendspin sync delay option when sendspin is available
@@ -181,7 +181,8 @@ onMounted(() => {
         required: false,
         multi_value: false,
         category: "generic",
-        value: storedOutputLatency !== null ? storedOutputLatency === "true" : true,
+        value:
+          storedOutputLatency !== null ? storedOutputLatency === "true" : true,
       });
     }
   }

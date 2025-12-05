@@ -180,7 +180,7 @@ const completeInitialization = async () => {
   store.libraryTracksCount = await api.getLibraryTracksCount();
 
   const webPlayerModePref =
-    localStorage.getItem("frontend.settings.web_player_mode") || "builtin";
+    localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
 
   // Remote connections don't support builtin or sendspin players
   if (api.isRemoteConnection.value) {
