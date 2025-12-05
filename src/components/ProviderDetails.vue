@@ -23,7 +23,7 @@
             />
           </template>
           <template #title>
-            {{ api.getProvider(providerMapping.provider_instance)?.name }}
+            {{ getProviderName(providerMapping) }}
           </template>
           <template #subtitle>
             <span
@@ -184,7 +184,7 @@ const getPreviewUrl = function (provider: string, item_id: string) {
 };
 
 const getProviderUri = function (mapping: ProviderMapping) {
-  return `${api.getProvider(mapping.provider_instance)?.lookup_key}://${props.itemDetails.media_type}/${mapping.item_id}`;
+  return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
 const copyUriToClipboard = async function (uri: string) {
@@ -194,6 +194,20 @@ const copyUriToClipboard = async function (uri: string) {
   } else {
     toast.error(t("uri_copy_failed"));
   }
+};
+
+const getProviderName = function (providerMapping: ProviderMapping) {
+  const providerInstance = api.getProvider(providerMapping.provider_instance);
+  if (providerInstance) {
+    return providerInstance.name;
+  }
+  const providerManifest = api.getProviderManifest(
+    providerMapping.provider_domain,
+  );
+  if (providerManifest) {
+    return `${providerManifest.name} (${providerMapping.provider_instance})`;
+  }
+  return providerMapping.provider_instance;
 };
 
 const toggleExpand = function () {

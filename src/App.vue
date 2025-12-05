@@ -235,23 +235,48 @@ onMounted(async () => {
         oldState === ConnectionState.RECONNECTING
       ) {
         const { authManager } = await import("@/plugins/auth");
-        const storedToken = authManager.getToken();
+        // Check if we're in Ingress mode by examining the URL path
+        const isIngressMode =
+          window.location.pathname.includes("/hassio_ingress/");
 
-        if (storedToken) {
+        if (isIngressMode) {
+          // In Ingress mode, authentication happens via HA proxy headers
+          // Just call auth/me to get the user info
           try {
-            const result = await api.authenticateWithToken(storedToken);
-            if (result.user) {
-              authManager.setCurrentUser(result.user);
+            const user = await api.getCurrentUserInfo();
+            if (user) {
+              console.info("[App] Ingress re-authentication successful");
+              authManager.setCurrentUser(user);
+              api.state.value = ConnectionState.AUTHENTICATED;
+              await api.fetchState();
+            } else {
+              console.error("[App] Ingress re-authentication failed - no user");
+              api.requireAuthentication();
             }
           } catch (error) {
-            console.error(
-              "[App] Re-authentication after reconnect failed:",
-              error,
-            );
+            console.error("[App] Ingress re-authentication failed:", error);
             api.requireAuthentication();
           }
         } else {
-          api.requireAuthentication();
+          // Normal mode: use token authentication
+          const storedToken = authManager.getToken();
+
+          if (storedToken) {
+            try {
+              const result = await api.authenticateWithToken(storedToken);
+              if (result.user) {
+                authManager.setCurrentUser(result.user);
+              }
+            } catch (error) {
+              console.error(
+                "[App] Re-authentication after reconnect failed:",
+                error,
+              );
+              api.requireAuthentication();
+            }
+          } else {
+            api.requireAuthentication();
+          }
         }
       }
 

@@ -7,7 +7,7 @@
           {{ $t("settings.add_group_player") }}
         </v-card-title>
         <v-card-subtitle
-          v-if="providerDetails?.lookup_key === 'universal_group'"
+          v-if="providerDetails?.domain === 'universal_group'"
           style="white-space: break-spaces"
           v-html="
             markdownToHtml($t('settings.add_group_player_desc_universal'))
@@ -53,7 +53,7 @@
             :label="$t('settings.dynamic_members.label')"
           />
           <v-card-subtitle
-            v-if="providerDetails?.lookup_key !== 'universal_group'"
+            v-if="providerDetails?.domain !== 'universal_group'"
             style="
               white-space: break-spaces;
               padding-left: 0;
@@ -112,7 +112,7 @@ const syncPlayers = computed(() => {
     (x) =>
       x.available &&
       x.type != PlayerType.GROUP &&
-      (x.provider == providerDetails.value?.lookup_key ||
+      (x.provider == providerDetails.value?.domain ||
         props.provider === "universal_group"),
   );
 });
