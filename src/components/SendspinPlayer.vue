@@ -1,5 +1,11 @@
 <template>
   <audio ref="audioRef" controls class="hidden-audio"></audio>
+  <audio
+    ref="silentAudioRef"
+    class="hidden-audio"
+    :src="almostSilentMp3"
+    loop
+  ></audio>
 </template>
 
 <script setup lang="ts">
@@ -9,8 +15,10 @@ import { getDeviceName } from "@/plugins/api/helpers";
 import { SendspinPlayer } from "@music-assistant/sendspin-js";
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
+import { PlaybackState } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // Properties
 export interface Props {
@@ -19,6 +27,7 @@ export interface Props {
 const props = defineProps<Props>();
 
 const audioRef = ref<HTMLAudioElement>();
+const silentAudioRef = ref<HTMLAudioElement>();
 
 // Detect Android for MediaSession workaround
 const isAndroid = /android/i.test(navigator.userAgent);
@@ -45,8 +54,59 @@ watch(muted, (newMuted) => {
   }
 });
 
-// MediaSession setup for metadata
+// MediaSession setup for metadata - at top level for proper reactivity
 let unsubMetadata: (() => void) | undefined;
+
+// Determine which player's metadata to show:
+// - Web player's metadata when it's playing
+// - Selected player's metadata otherwise (undefined = uses store.activePlayerId)
+const metadataPlayerId = computed(() => {
+  const thisPlayer = api.players[props.playerId];
+  if (thisPlayer?.playback_state === PlaybackState.PLAYING) {
+    return props.playerId;
+  }
+  return undefined;
+});
+
+// Watch and re-subscribe when the target player changes
+// Also watch webPlayer.interacted to wait for user interaction
+watch(
+  [metadataPlayerId, () => webPlayer.interacted],
+  ([newPlayerId, interacted]) => {
+    if (!interacted) return;
+
+    if (unsubMetadata) unsubMetadata();
+    unsubMetadata = useMediaBrowserMetaData(newPlayerId);
+
+    // Stop silent audio when web player takes over
+    if (newPlayerId !== undefined && silentAudioRef.value) {
+      silentAudioRef.value.pause();
+    }
+  },
+  { immediate: true },
+);
+
+// Watch active player's playback state to control silent audio and mediaSession.playbackState
+watch(
+  () => store.activePlayer?.playback_state,
+  (state) => {
+    // Only control when showing active player metadata (not web player)
+    if (metadataPlayerId.value !== undefined) return;
+    if (!silentAudioRef.value) return;
+
+    if (state === PlaybackState.PLAYING) {
+      silentAudioRef.value.play().catch(() => {});
+      navigator.mediaSession.playbackState = "playing";
+    } else if (state === PlaybackState.PAUSED) {
+      silentAudioRef.value.pause();
+      navigator.mediaSession.playbackState = "paused";
+    } else {
+      silentAudioRef.value.pause();
+      navigator.mediaSession.playbackState = "none";
+    }
+  },
+  { immediate: true },
+);
 
 // Setup on mount
 onMounted(() => {
@@ -56,8 +116,14 @@ onMounted(() => {
   // (for coordination with other tabs via web_player.ts)
   webPlayer.audioSource = WebPlayerMode.SENDSPIN;
 
-  // Setup metadata listener for MediaSession
-  unsubMetadata = useMediaBrowserMetaData(props.playerId);
+  // If already showing active player metadata, play silent audio now that silentAudioRef exists
+  if (
+    metadataPlayerId.value === undefined &&
+    webPlayer.interacted &&
+    silentAudioRef.value
+  ) {
+    silentAudioRef.value.play().catch(() => {});
+  }
 
   // Create and initialize player
   if (audioRef.value) {
@@ -102,25 +168,36 @@ onMounted(() => {
   }
 
   // MediaSession setup for browser controls
-  // These forward to Music Assistant player commands (not Sendspin-specific)
+  // Commands go to the player whose metadata is being shown
+  const getTargetPlayerId = () => {
+    // If web player is playing, target it; otherwise target the active player
+    return metadataPlayerId.value !== undefined
+      ? props.playerId
+      : store.activePlayerId;
+  };
+
   navigator.mediaSession.setActionHandler("play", () => {
-    if (!props.playerId) return;
-    api.playerCommandPlay(props.playerId);
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    api.playerCommandPlay(targetId);
   });
 
   navigator.mediaSession.setActionHandler("pause", () => {
-    if (!props.playerId) return;
-    api.playerCommandPause(props.playerId);
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    api.playerCommandPause(targetId);
   });
 
   navigator.mediaSession.setActionHandler("nexttrack", () => {
-    if (!props.playerId) return;
-    api.playerCommandNext(props.playerId);
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    api.playerCommandNext(targetId);
   });
 
   navigator.mediaSession.setActionHandler("previoustrack", () => {
-    if (!props.playerId) return;
-    api.playerCommandPrevious(props.playerId);
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    api.playerCommandPrevious(targetId);
   });
 
   // Audio element event listeners for Android MediaSession
