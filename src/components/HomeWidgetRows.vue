@@ -31,12 +31,22 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import PlayersWidgetRow from "./PlayersWidgetRow.vue";
 
 const widgetRows = ref<WidgetRow[]>([]);
 const widgetRowSettings = ref<Record<string, WidgetRowSettings>>({});
 const { getPreference, setPreference } = useUserPreferences();
+const savedSettings = getPreference<Record<string, WidgetRowSettings>>(
+  "widgetRowSettings",
+  {
+    players: {
+      position: 0,
+      enabled: true,
+    },
+  },
+);
 
 export interface Props {
   editMode?: boolean;
@@ -46,22 +56,21 @@ withDefaults(defineProps<Props>(), {
 });
 
 const loadData = async function () {
-  const savedSettings = getPreference<Record<string, WidgetRowSettings>>(
-    "widgetRowSettings",
-    {
+  if (store.currentUser?.preferences) {
+    widgetRowSettings.value = savedSettings.value || {
       players: {
         position: 0,
         enabled: true,
       },
-    },
-  );
-
-  widgetRowSettings.value = savedSettings.value || {
-    players: {
-      position: 0,
-      enabled: true,
-    },
-  };
+    };
+  } else {
+    widgetRowSettings.value = {
+      players: {
+        position: 0,
+        enabled: true,
+      },
+    };
+  }
 
   const recommendations = await api.getRecommendations();
   const _widgetRows: WidgetRow[] = [];
@@ -100,6 +109,16 @@ onMounted(() => {
   );
   onBeforeUnmount(unsub);
 });
+
+watch(
+  () => store.currentUser?.preferences,
+  (newPrefs) => {
+    if (newPrefs) {
+      loadData();
+    }
+  },
+  { immediate: false },
+);
 
 const onUpdateSettings = function (uri: string, settings: WidgetRowSettings) {
   // update the item in-place of the list
