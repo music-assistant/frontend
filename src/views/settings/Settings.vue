@@ -189,8 +189,15 @@ const activeTab = computed(() => {
   return "providers";
 });
 
-const getProviderName = (instanceId: string | string[]) =>
-  Array.isArray(instanceId) ? instanceId[0] : instanceId;
+const getProviderName = (instanceId: string) => {
+  const providerInstance = api.getProvider(instanceId);
+  if (providerInstance) {
+    return providerInstance.name;
+  }
+  const providerDomain = instanceId.split("--")[0];
+  const manifest = api.providerManifests[providerDomain];
+  return manifest?.name || instanceId;
+};
 
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
@@ -272,9 +279,7 @@ const breadcrumbItems = computed(() => {
     })
     .with("editprovider", () => {
       items.push({
-        title:
-          getProviderName(route.params.instanceId).charAt(0).toUpperCase() +
-          getProviderName(route.params.instanceId).slice(1),
+        title: getProviderName(route.params.instanceId as string),
         disabled: true,
       });
     })

@@ -275,7 +275,7 @@ const viewPlayers = function (providerInstanceId: string) {
   if (providerInstance) {
     router.push({
       name: "playersettings",
-      query: { providers: providerInstance.lookup_key },
+      query: { providers: providerInstance.instance_id },
     });
   }
 };
@@ -289,8 +289,8 @@ const getPlayerCount = function (providerConfig: ProviderConfig): number {
     if (playerConfig.provider === "builtin_player") return false;
     const playerProviderInstance = api.getProvider(playerConfig.provider);
     return (
-      playerProviderInstance?.lookup_key === providerInstance.lookup_key ||
-      playerConfig.provider === providerInstance.lookup_key ||
+      playerProviderInstance?.instance_id === providerInstance.instance_id ||
+      playerConfig.provider === providerInstance.instance_id ||
       playerConfig.provider === providerInstance.domain
     );
   }).length;
@@ -385,7 +385,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       action: () => {
         router.push({
           name: "playersettings",
-          query: { providers: providerInstance.lookup_key },
+          query: { providers: providerInstance.instance_id },
         });
       },
       icon: "mdi-speaker",
@@ -401,7 +401,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       label: "settings.add_group_player",
       labelArgs: [],
       action: () => {
-        router.push(`/settings/addgroup/${providerInstance.lookup_key}`);
+        router.push(`/settings/addgroup/${providerInstance.instance_id}`);
       },
       icon: "mdi-speaker-multiple",
     });
@@ -440,20 +440,14 @@ watch(
 );
 
 const getProviderName = function (config: ProviderConfig) {
-  const manifest = api.providerManifests[config.domain];
-  // Guard against race condition where providerManifests aren't loaded yet
-  if (!manifest) {
-    return config.name || config.domain;
-  }
-  const providerBaseName = manifest.name;
-  if (config.name) {
-    return `${providerBaseName} [${config.name}]`;
-  }
+  // Try to get the name from the provider instance first
   const providerInstance = api.getProvider(config.instance_id);
-  if (providerInstance && providerInstance.instance_name_postfix) {
-    return `${providerBaseName} [${providerInstance.instance_name_postfix}]`;
+  if (providerInstance && providerInstance.name) {
+    return providerInstance.name;
   }
-  return providerBaseName;
+  // fallback on configured name or manifest name
+  const manifest = api.providerManifests[config.domain];
+  return config.name || manifest?.name;
 };
 
 const isTextTruncated = function (text: string) {

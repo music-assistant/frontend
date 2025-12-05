@@ -16,29 +16,16 @@
         <v-btn icon="mdi-close" variant="text" size="small" @click="close" />
       </v-card-title>
 
-      <v-card-text class="pa-4 pb-2">
-        <v-text-field
-          v-model="searchQuery"
-          prepend-inner-icon="mdi-magnify"
-          :placeholder="$t('search')"
-          variant="outlined"
-          density="compact"
-          clearable
-          hide-details
-          class="search-field"
-        />
-      </v-card-text>
-
-      <v-card-text class="pa-4 pt-2">
+      <v-card-text class="pa-4">
         <div class="provider-list-container">
-          <v-list v-if="filteredProviders.length > 0" class="provider-list">
+          <v-list v-if="availableProviders.length > 0" class="provider-list">
             <v-list-item
-              v-for="provider in filteredProviders"
-              :key="provider.lookup_key"
+              v-for="provider in availableProviders"
+              :key="provider.instance_id"
               style="padding: 0"
               class="provider-item"
               rounded="lg"
-              @click="addPlayerGroup(provider.lookup_key)"
+              @click="addPlayerGroup(provider.instance_id)"
             >
               <template #prepend>
                 <provider-icon
@@ -65,10 +52,14 @@
           </v-list>
 
           <div v-else class="empty-state">
-            <v-icon icon="mdi-magnify" size="48" class="empty-icon" />
+            <v-icon
+              icon="mdi-account-group-outline"
+              size="48"
+              class="empty-icon"
+            />
             <div class="empty-title">{{ $t("no_content") }}</div>
             <div class="empty-message">
-              {{ $t("no_content_filter") }}
+              {{ $t("settings.no_group_providers") }}
             </div>
           </div>
         </div>
@@ -83,7 +74,7 @@ import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { computed, ref, watch } from "vue";
+import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 
 const { show = false } = defineProps<{
@@ -95,7 +86,6 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
-const searchQuery = ref("");
 
 const availableProviders = computed(() => {
   return Object.values(api.providers)
@@ -103,10 +93,14 @@ const availableProviders = computed(() => {
       (x) =>
         x.available &&
         (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
-          x.supported_features.includes(ProviderFeature.SYNC_PLAYERS)),
+          x.supported_features.includes(ProviderFeature.SYNC_PLAYERS)) &&
+        // Only include providers that have actual players
+        Object.values(api.players).some(
+          (player) => player.provider === x.instance_id,
+        ),
     )
     .map((x) => ({
-      lookup_key: x.lookup_key,
+      instance_id: x.instance_id,
       domain: x.domain,
       name: x.name || api.providerManifests[x.domain]?.name || x.domain,
       description:
@@ -114,21 +108,6 @@ const availableProviders = computed(() => {
         $t("settings.playerprovider"),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
-});
-
-const filteredProviders = computed(() => {
-  let providers = availableProviders.value;
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    providers = providers.filter(
-      (provider) =>
-        provider.name.toLowerCase().includes(query) ||
-        provider.description.toLowerCase().includes(query),
-    );
-  }
-
-  return providers;
 });
 
 const addPlayerGroup = function (lookupKey: string) {
@@ -154,12 +133,8 @@ watch(
   flex-direction: column;
 }
 
-.search-field {
-  width: 100%;
-}
-
 .provider-list-container {
-  height: 400px;
+  height: 500px;
   display: flex;
   flex-direction: column;
 }

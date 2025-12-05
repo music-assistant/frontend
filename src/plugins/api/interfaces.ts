@@ -945,7 +945,6 @@ export interface ProviderInstance {
   default_name: string;
   instance_name_postfix?: string;
   instance_id: string;
-  lookup_key: string;
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider?: boolean;
