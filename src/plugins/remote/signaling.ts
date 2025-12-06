@@ -161,10 +161,7 @@ export class SignalingClient {
         reject(new Error("Connection request timeout"));
       }, 30000);
 
-      const handleConnected = (
-        id: string,
-        iceServers?: IceServerConfig[],
-      ) => {
+      const handleConnected = (id: string, iceServers?: IceServerConfig[]) => {
         clearTimeout(timeout);
         this.off("connected", handleConnected);
         this.off("error", handleError);
