@@ -115,7 +115,6 @@ export class SignalingClient {
         this.ws.onmessage = (event) => {
           try {
             const message: SignalingMessage = JSON.parse(event.data);
-            console.log("[Signaling] Received message:", message.type, message);
             this.handleMessage(message);
           } catch (error) {
             console.error("[Signaling] Failed to parse message:", error);
@@ -265,11 +264,6 @@ export class SignalingClient {
     switch (message.type) {
       case "connected":
         this.currentSessionId = message.sessionId || null;
-        console.log(
-          "[Signaling] Received connected message with ICE servers:",
-          message.iceServers ? message.iceServers.length : "none",
-          message.iceServers,
-        );
         this.emit("connected", message.remoteId || "", message.iceServers);
         break;
 

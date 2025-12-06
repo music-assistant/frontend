@@ -74,26 +74,12 @@ export class WebRTCTransport extends BaseTransport {
       // Connect to signaling server
       await this.signaling.connect();
 
-      // Request connection to the remote MA instance
-      // This returns ICE servers provided by the MA server
+      // Request connection - receives ICE servers from MA server
       const { iceServers } = await this.signaling.requestConnection(
         this.options.remoteId,
       );
 
-      // Store ICE servers from server, or use fallback if none provided
       this.iceServers = iceServers || FALLBACK_ICE_SERVERS;
-      console.log(
-        `[WebRTCTransport] Using ${this.iceServers.length} ICE servers:`,
-        JSON.stringify(
-          this.iceServers.map((s) => ({
-            urls: s.urls,
-            hasUsername: !!s.username,
-            hasCredential: !!s.credential,
-          })),
-        ),
-      );
-
-      // Create peer connection with the ICE servers from the MA server
       this.createPeerConnection();
 
       // Create data channel (we're the initiator)
@@ -171,33 +157,15 @@ export class WebRTCTransport extends BaseTransport {
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        // Log the ICE candidate type for debugging
-        const candidateStr = event.candidate.candidate;
-        let candidateType = "unknown";
-        if (candidateStr.includes("typ host")) candidateType = "host";
-        else if (candidateStr.includes("typ srflx"))
-          candidateType = "srflx (STUN)";
-        else if (candidateStr.includes("typ relay"))
-          candidateType = "relay (TURN)";
-        else if (candidateStr.includes("typ prflx")) candidateType = "prflx";
-        console.log(`[WebRTCTransport] ICE candidate: ${candidateType}`);
         this.signaling.sendIceCandidate(event.candidate.toJSON());
-      } else {
-        console.log("[WebRTCTransport] ICE gathering complete");
       }
     };
 
     this.peerConnection.oniceconnectionstatechange = () => {
       const state = this.peerConnection?.iceConnectionState;
-      console.log(`[WebRTCTransport] ICE connection state: ${state}`);
       if (state === "failed" || state === "disconnected") {
         this.handleConnectionFailure();
       }
-    };
-
-    this.peerConnection.onicegatheringstatechange = () => {
-      const state = this.peerConnection?.iceGatheringState;
-      console.log(`[WebRTCTransport] ICE gathering state: ${state}`);
     };
 
     this.peerConnection.onconnectionstatechange = () => {
