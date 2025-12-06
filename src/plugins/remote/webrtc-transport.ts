@@ -6,20 +6,14 @@
  */
 
 import { BaseTransport, TransportState } from "./transport";
-import { SignalingClient } from "./signaling";
+import { SignalingClient, IceServerConfig } from "./signaling";
 
-// ICE server configuration
-// Using public STUN servers and optionally TURN servers
-export interface IceServerConfig {
-  urls: string | string[];
-  username?: string;
-  credential?: string;
-}
+// Re-export for convenience
+export type { IceServerConfig };
 
 export interface WebRTCTransportOptions {
   signalingServerUrl: string;
   remoteId: string;
-  iceServers?: IceServerConfig[];
   dataChannelLabel?: string;
   reconnect?: boolean;
   reconnectDelay?: number;
@@ -28,8 +22,9 @@ export interface WebRTCTransportOptions {
   maxReconnectAttempts?: number;
 }
 
-// Default ICE servers (public STUN servers)
-const DEFAULT_ICE_SERVERS: IceServerConfig[] = [
+// Fallback ICE servers (only public STUN servers - no TURN)
+// These will only be used if the server doesn't provide ICE servers
+const FALLBACK_ICE_SERVERS: IceServerConfig[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun.cloudflare.com:3478" },
 ];
@@ -48,13 +43,14 @@ export class WebRTCTransport extends BaseTransport {
     string,
     { resolve: (value: any) => void; reject: (error: Error) => void }
   >();
+  // ICE servers received from the signaling server (provided by MA server)
+  private iceServers: IceServerConfig[] = [];
 
   constructor(options: WebRTCTransportOptions) {
     super();
     this.options = {
       signalingServerUrl: options.signalingServerUrl,
       remoteId: options.remoteId,
-      iceServers: options.iceServers || DEFAULT_ICE_SERVERS,
       dataChannelLabel: options.dataChannelLabel || "ma-api",
       reconnect: options.reconnect ?? true,
       reconnectDelay: options.reconnectDelay ?? 1000,
@@ -75,14 +71,23 @@ export class WebRTCTransport extends BaseTransport {
     this.setState(TransportState.CONNECTING);
 
     try {
-      // Create peer connection early (can pre-gather ICE candidates)
-      this.createPeerConnection();
-
       // Connect to signaling server
       await this.signaling.connect();
 
       // Request connection to the remote MA instance
-      await this.signaling.requestConnection(this.options.remoteId);
+      // This returns ICE servers provided by the MA server
+      const { iceServers } = await this.signaling.requestConnection(
+        this.options.remoteId,
+      );
+
+      // Store ICE servers from server, or use fallback if none provided
+      this.iceServers = iceServers || FALLBACK_ICE_SERVERS;
+      console.log(
+        `[WebRTCTransport] Using ${this.iceServers.length} ICE servers from server`,
+      );
+
+      // Create peer connection with the ICE servers from the MA server
+      this.createPeerConnection();
 
       // Create data channel (we're the initiator)
       this.createDataChannel();
@@ -153,7 +158,7 @@ export class WebRTCTransport extends BaseTransport {
 
   private createPeerConnection(): void {
     this.peerConnection = new RTCPeerConnection({
-      iceServers: this.options.iceServers,
+      iceServers: this.iceServers,
       iceCandidatePoolSize: 4,
     });
 

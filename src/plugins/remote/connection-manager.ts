@@ -9,7 +9,7 @@
 import { ref, reactive } from "vue";
 import { ITransport } from "./transport";
 import { WebSocketTransport } from "./websocket-transport";
-import { WebRTCTransport, IceServerConfig } from "./webrtc-transport";
+import { WebRTCTransport } from "./webrtc-transport";
 import { httpProxyBridge } from "./http-proxy";
 
 export enum ConnectionMode {
@@ -29,8 +29,6 @@ export enum RemoteConnectionState {
 export interface RemoteConnectionConfig {
   // Signaling server URL for WebRTC connections
   signalingServerUrl: string;
-  // ICE servers for WebRTC (STUN/TURN)
-  iceServers?: IceServerConfig[];
 }
 
 export interface StoredRemoteConnection {
@@ -43,25 +41,8 @@ const REMOTE_CONNECTIONS_STORAGE_KEY = "ma_remote_connections";
 const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
 const CURRENT_REMOTE_ID_STORAGE_KEY = "ma_current_remote_id";
 
-// Detect if we're in development/local testing mode
-const isLocalDev =
-  typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1");
-
-// Default configuration - use local signaling server for testing
 const DEFAULT_CONFIG: RemoteConnectionConfig = {
-  // Use local signaling server in dev, production URL otherwise
-  signalingServerUrl: isLocalDev
-    ? "ws://localhost:8787/ws"
-    : import.meta.env.VITE_SIGNALING_URL ||
-      "wss://signaling.music-assistant.io/ws",
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun.cloudflare.com:3478" },
-    { urls: "stun:stun.home-assistant.io:3478" },
-  ],
+  signalingServerUrl: "wss://signaling.music-assistant.io/ws",
 };
 
 class RemoteConnectionManager {
@@ -166,7 +147,6 @@ class RemoteConnectionManager {
       const transport = new WebRTCTransport({
         signalingServerUrl: this.config.signalingServerUrl,
         remoteId: remoteId,
-        iceServers: this.config.iceServers,
       });
 
       this.transport = transport;

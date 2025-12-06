@@ -12,6 +12,12 @@ export enum SignalingState {
   ERROR = "error",
 }
 
+export interface IceServerConfig {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+}
+
 export interface SignalingMessage {
   type:
     | "offer"
@@ -24,6 +30,7 @@ export interface SignalingMessage {
   sessionId?: string;
   data?: RTCSessionDescriptionInit | RTCIceCandidateInit;
   error?: string;
+  iceServers?: IceServerConfig[];
 }
 
 export interface SignalingConfig {
@@ -36,7 +43,7 @@ type SignalingEventHandler = {
   offer: (offer: RTCSessionDescriptionInit, sessionId: string) => void;
   answer: (answer: RTCSessionDescriptionInit) => void;
   "ice-candidate": (candidate: RTCIceCandidateInit) => void;
-  connected: (remoteId: string) => void;
+  connected: (remoteId: string, iceServers?: IceServerConfig[]) => void;
   "peer-disconnected": () => void;
   error: (error: string) => void;
   stateChange: (state: SignalingState) => void;
@@ -138,8 +145,11 @@ export class SignalingClient {
 
   /**
    * Request connection to a remote Music Assistant instance
+   * Returns the remote ID and ICE servers provided by the server
    */
-  async requestConnection(remoteId: string): Promise<string> {
+  async requestConnection(
+    remoteId: string,
+  ): Promise<{ remoteId: string; iceServers?: IceServerConfig[] }> {
     if (this._state !== SignalingState.CONNECTED) {
       await this.connect();
     }
@@ -151,11 +161,14 @@ export class SignalingClient {
         reject(new Error("Connection request timeout"));
       }, 30000);
 
-      const handleConnected = (id: string) => {
+      const handleConnected = (
+        id: string,
+        iceServers?: IceServerConfig[],
+      ) => {
         clearTimeout(timeout);
         this.off("connected", handleConnected);
         this.off("error", handleError);
-        resolve(id);
+        resolve({ remoteId: id, iceServers });
       };
 
       const handleError = (error: string) => {
@@ -254,7 +267,7 @@ export class SignalingClient {
     switch (message.type) {
       case "connected":
         this.currentSessionId = message.sessionId || null;
-        this.emit("connected", message.remoteId || "");
+        this.emit("connected", message.remoteId || "", message.iceServers);
         break;
 
       case "offer":
