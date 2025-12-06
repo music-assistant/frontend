@@ -10,15 +10,46 @@
       </router-view>
       <add-to-playlist-dialog />
       <item-context-menu />
+      <GenreDialog v-model="showGenreDialog" :genre="editingGenre" />
+      <MergeGenreDialog
+        v-model="showMergeGenreDialog"
+        :source-genres="mergeSourceGenres"
+      />
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import GenreDialog from "@/components/GenreDialog.vue";
+import MergeGenreDialog from "@/components/MergeGenreDialog.vue";
 import Navigation from "@/components/navigation/Navigation.vue";
+import type { Genre } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
+
+const showGenreDialog = ref(false);
+const editingGenre = ref<Genre | undefined>(undefined);
+const showMergeGenreDialog = ref(false);
+const mergeSourceGenres = ref<Genre[]>([]);
+
+onMounted(() => {
+  eventbus.on("editGenre", (genre: any) => {
+    editingGenre.value = genre;
+    showGenreDialog.value = true;
+  });
+  eventbus.on("mergeGenres", (genres: any) => {
+    mergeSourceGenres.value = genres;
+    showMergeGenreDialog.value = true;
+  });
+});
+
+onBeforeUnmount(() => {
+  eventbus.off("editGenre");
+  eventbus.off("mergeGenres");
+});
 </script>
 
 <style scoped>
