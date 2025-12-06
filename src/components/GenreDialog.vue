@@ -181,7 +181,7 @@ const onSave = async () => {
             remotely_accessible: !isDataUrl,
           },
         ];
-        genreToUpdate = await updateGenre(genreToUpdate);
+        await updateGenre(genreToUpdate);
       }
 
       // For new genres, we need to add the aliases after creation
