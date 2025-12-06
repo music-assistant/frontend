@@ -18,6 +18,7 @@ import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { prepareSendspinSession } from "@/plugins/sendspin-connection";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // Properties
@@ -141,9 +142,11 @@ onMounted(() => {
     const useOutputLatencyCompensation =
       storedOutputLatency !== null ? storedOutputLatency === "true" : true;
 
+    // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
+    // The URL just needs to be valid and contain "/sendspin" for the interceptor
     player = new SendspinPlayer({
       playerId: props.playerId,
-      baseUrl: webPlayer.baseUrl,
+      baseUrl: "http://sendspin.local",
       // Web player config
       audioOutputMode: "media-element",
       audioElement: audioRef.value,
@@ -161,10 +164,12 @@ onMounted(() => {
       },
     });
 
-    // Connect to Sendspin server
-    player.connect().catch((error) => {
-      console.error("Sendspin: Failed to connect", error);
-    });
+    // Prepare authenticated session and connect to Sendspin server
+    prepareSendspinSession()
+      .then(() => player?.connect())
+      .catch((error) => {
+        console.error("Sendspin: Failed to connect", error);
+      });
   }
 
   // MediaSession setup for browser controls

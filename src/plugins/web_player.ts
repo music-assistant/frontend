@@ -169,7 +169,7 @@ export const webPlayer = reactive({
   lastUpdate: 0,
   async setMode(mode: WebPlayerMode) {
     this.mode = mode;
-    this.setTabMode(mode);
+    await this.setTabMode(mode);
   },
   async setTabMode(mode: WebPlayerMode, silent: boolean = false) {
     for (const u of unsubSubscriptions) {

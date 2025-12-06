@@ -177,10 +177,9 @@ const completeInitialization = async () => {
   const webPlayerModePref =
     localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
 
-  // Remote connections and ingress don't support sendspin player
-  if (api.isRemoteConnection.value || store.isIngressSession) {
-    webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
-  } else if (
+  // Enable Sendspin if available and not explicitly disabled
+  // Sendspin works over WebRTC DataChannel which requires signaling via the API server
+  if (
     webPlayerModePref !== "disabled" &&
     api.getProvider("sendspin")?.available
   ) {

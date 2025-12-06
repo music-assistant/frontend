@@ -55,11 +55,12 @@ const DEFAULT_CONFIG: RemoteConnectionConfig = {
   signalingServerUrl: isLocalDev
     ? "ws://localhost:8787/ws"
     : import.meta.env.VITE_SIGNALING_URL ||
-      "wss://ma-signaling-server.onrender.com/ws",
+      "wss://signaling.music-assistant.io/ws",
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
+    { urls: "stun:stun.home-assistant.io:3478" },
   ],
 };
 

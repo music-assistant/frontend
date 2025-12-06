@@ -488,7 +488,7 @@ export class WebRTCTransport extends BaseTransport {
     this.iceCandidateBuffer = [];
 
     // Clear pending HTTP proxy requests
-    for (const [id, callbacks] of this.httpProxyCallbacks.entries()) {
+    for (const [, callbacks] of this.httpProxyCallbacks.entries()) {
       callbacks.reject(new Error("Transport closed"));
     }
     this.httpProxyCallbacks.clear();

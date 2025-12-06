@@ -116,9 +116,8 @@ onMounted(() => {
     },
   ];
 
-  // Only show web player mode setting for local connections (not remote or ingress)
-  const sendspinAvailable =
-    !api.isRemoteConnection.value && !store.isIngressSession;
+  // Show web player mode setting when Sendspin provider is available
+  const sendspinAvailable = api.getProvider("sendspin")?.available ?? false;
   if (sendspinAvailable) {
     configEntries.splice(3, 0, {
       key: "web_player_mode",
