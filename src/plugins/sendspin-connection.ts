@@ -226,6 +226,9 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
     "ICE candidates",
   );
 
+  // Get the client_id from localStorage to pass to server for auto-whitelisting
+  const clientId = window.localStorage.getItem("sendspin_webplayer_id");
+
   // Send offer to server via API
   const response = await api.sendCommand<{
     session_id: string;
@@ -236,6 +239,7 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
       sdp: peerConnection.localDescription!.sdp,
       type: peerConnection.localDescription!.type,
     },
+    client_id: clientId,
   });
 
   sessionId = response.session_id;
