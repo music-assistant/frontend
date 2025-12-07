@@ -264,7 +264,14 @@ export const showContextMenuForMediaItem = async function (
     mediaItems[0].is_playable &&
     itemIsAvailable(mediaItems[0])
   ) {
-    menuItems.push(...(await getPlayMenuItems(mediaItems, parentItem)));
+    // add play menu as submenu
+    menuItems.push({
+      label: "play",
+      subItems: await getPlayMenuItems(mediaItems, parentItem),
+      icon: "mdi-playlist-play",
+      labelArgs: [],
+      disabled: !store.activePlayer,
+    });
   }
 
   if (menuItems.length == 0) return;
@@ -421,8 +428,7 @@ export const getPlayMenuItems = async function (
     });
   }
 
-  // add all/other options as submenu
-  const subItems: ContextMenuItem[] = [];
+  // add default enqueue options
   for (const option of [
     QueueOption.PLAY,
     QueueOption.NEXT,
@@ -430,7 +436,8 @@ export const getPlayMenuItems = async function (
     QueueOption.REPLACE,
     QueueOption.REPLACE_NEXT,
   ]) {
-    subItems.push({
+    if (option == defaultEnqueueOption) continue;
+    playMenuItems.push({
       label: queueOptionLabelMap[option],
       action: () => {
         api.playMedia(
@@ -442,17 +449,8 @@ export const getPlayMenuItems = async function (
       icon: queueOptionIconMap[option],
       labelArgs: [],
       disabled: !store.activePlayer,
-      selected: option == defaultEnqueueOption,
     });
   }
-  playMenuItems.push({
-    label: "all_enqueue_options",
-    subItems: subItems,
-    icon: "mdi-playlist-play",
-    labelArgs: [],
-    disabled: !store.activePlayer,
-  });
-
   // Multi-select mark as played/unplayed for podcast episodes
   if (
     items.length > 1 &&
