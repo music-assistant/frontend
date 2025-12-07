@@ -487,9 +487,23 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dit type groep ondersteunt geen DSP wanneer er naar meerdere apparaten afgespeeld wordt."
         },
-        "enable_builtin_player": {
-            "label": "Afspelen op dit apparaat\/deze browser toestaan",
-            "description": "Schakel de (experimentele) ingebouwde speler voor dit apparaat\/browser in, waarmee je alle inhoud van Music Assistant rechtstreeks naar dit apparaat kunt streamen."
+        "api_docs": "API documentatie",
+        "no_group_providers": "Er zijn momenteel geen providers die het aanmaken van groepen ondersteunen",
+        "web_player_mode": {
+            "label": "Webspelermodus",
+            "description": "Kies hoe deze browser omgaat met het afspelen van audio.",
+            "options": {
+                "sendspin": "Sendspin (experimenteel)",
+                "disabled": "Uitgeschakeld (alleen besturingselementen)"
+            }
+        },
+        "sendspin_sync_delay": {
+            "label": "Sendspin-synchronisatievertraging (ms)",
+            "description": "Statische vertraging in milliseconden om de audiosynchronisatie aan te passen. Positieve waarden vertragen het afspelen, negatieve waarden vervroegen het. Gebruik dit om apparaatspecifieke audiovertraging te compenseren."
+        },
+        "sendspin_output_latency_compensation": {
+            "label": "Gebruik browserlatencydetectie",
+            "description": "Compenseer automatisch voor hardware-audiolatency (bijv. Bluetooth-koptelefoons) met behulp van de uitvoerlatency-API van de browser. Deze API is vrij nieuw en werkt mogelijk niet betrouwbaar in alle browsers en besturingssystemen."
         }
     },
     "show_info": "Bekijk informatie",

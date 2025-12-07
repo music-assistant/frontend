@@ -127,7 +127,6 @@
         "sync": "סנכרן כעת",
         "sync_running": "ספק זה עובר כעת סנכרון",
         "username": "שם משתמש",
-        "core": "ליבה",
         "core_modules": "מודולי ליבה",
         "server_info": "מידע על השרת",
         "server_id": "מזהה שרת",
@@ -155,10 +154,28 @@
                 "FR": "R"
             }
         },
-        "enable_builtin_player": {
-            "label": "אפשר השמעה למכשיר\/דפדפן זה",
-            "description": "הפעל את הנגן המובנה (הניסיוני) עבור מכשיר\/דפדפן זה, מצב זה יאפשר לך להזרים את כל התוכן של Music Assistant ישירות למכשיר זה."
-        }
+        "music": "מוזיקה",
+        "musicprovider": "ספקי מוסיקה",
+        "plugin": "תוסף",
+        "pluginprovider": "ספקי תוספים",
+        "providers_total": "{0} כלל הספקים{1}",
+        "stage": {
+            "label": "שָׁלָב",
+            "options": {
+                "stable": "יַצִיב",
+                "beta": "בטא",
+                "alpha": "אלפא",
+                "experimental": "נִסיוֹנִי",
+                "unmaintained": "לא מתוחזק",
+                "deprecated": "הוצא משימוש"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "כפיית פריסה לנייד",
+            "description": "כפו את הפריסה למובייל (עם ניווט התפריטים בתחתית), אפילו על מסכים גדולים יותר."
+        },
+        "providers_description": "נהל את מקורות המוזיקה, שירותי הסטרימינג והאינטגרציות שלך",
+        "players_description": "הגדר ונהל את התקני פלט האודיו שלך"
     },
     "show_info": "הצג מידע",
     "show_select_boxes": "הצג תיבות בחירה",
