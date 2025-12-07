@@ -92,10 +92,7 @@ function tryDirectWebSocket(url: string): Promise<WebSocket | null> {
 
     // Skip direct WebSocket if page is loaded over HTTPS and the URL is ws://
     // This avoids mixed content errors that would block the connection
-    if (
-      window.location.protocol === "https:" &&
-      url.startsWith("ws://")
-    ) {
+    if (window.location.protocol === "https:" && url.startsWith("ws://")) {
       console.log(
         "[Sendspin] Skipping direct WebSocket (mixed content not allowed over HTTPS)",
       );
