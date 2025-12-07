@@ -90,10 +90,31 @@ function tryDirectWebSocket(url: string): Promise<WebSocket | null> {
       return;
     }
 
+    // Skip direct WebSocket if page is loaded over HTTPS and the URL is ws://
+    // This avoids mixed content errors that would block the connection
+    if (
+      window.location.protocol === "https:" &&
+      url.startsWith("ws://")
+    ) {
+      console.log(
+        "[Sendspin] Skipping direct WebSocket (mixed content not allowed over HTTPS)",
+      );
+      resolve(null);
+      return;
+    }
+
     console.log("[Sendspin] Trying direct WebSocket connection to:", url);
 
-    // Use OriginalWebSocket to bypass the interceptor
-    const ws = new OriginalWebSocket(url);
+    let ws: WebSocket;
+    try {
+      // Use OriginalWebSocket to bypass the interceptor
+      ws = new OriginalWebSocket(url);
+    } catch (error) {
+      // SecurityError can be thrown synchronously when attempting mixed content
+      console.log("[Sendspin] Direct WebSocket connection failed:", error);
+      resolve(null);
+      return;
+    }
 
     const timeoutId = setTimeout(() => {
       console.log("[Sendspin] Direct WebSocket connection timed out");
