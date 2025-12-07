@@ -53,8 +53,129 @@
       ])
     }}
   </div>
-  <Container variant="comfortable" class="mt-4">
-    <v-row>
+  <Container :variant="viewMode === 'list' ? 'default' : 'panel'" class="mt-4">
+    <v-list v-if="viewMode === 'list'" class="providers-list">
+      <ListItem
+        v-for="item in getAllFilteredProviders()"
+        :key="item.instance_id"
+        link
+        :show-menu-btn="true"
+        :class="{
+          'provider-disabled': !item.enabled,
+          'provider-unavailable': !api.providers[item.instance_id]?.available,
+        }"
+        @click="editProvider(item.instance_id)"
+        @menu="(evt) => onMenu(evt, item)"
+      >
+        <template #prepend>
+          <ProviderIcon
+            :domain="item.domain"
+            :size="40"
+            class="provider-icon"
+          />
+        </template>
+
+        <template #title>
+          <div class="provider-name-title">
+            {{ getProviderName(item) }}
+          </div>
+        </template>
+
+        <template #subtitle>
+          <div class="provider-meta">
+            <span
+              v-if="api.providerManifests[item.domain]"
+              class="provider-description-text"
+            >
+              {{ api.providerManifests[item.domain].description }}
+            </span>
+            <span v-else class="provider-type-badge">
+              {{ getProviderTypeTitle(item.type) }}
+            </span>
+          </div>
+        </template>
+
+        <template #append>
+          <div class="provider-status-icons">
+            <v-chip
+              v-if="
+                item.type === ProviderType.PLAYER && getPlayerCount(item) > 0
+              "
+              size="x-small"
+              variant="flat"
+              color="primary"
+              class="player-count-chip"
+              @click.stop="viewPlayers(item.instance_id)"
+            >
+              <v-icon start size="small">mdi-speaker</v-icon>
+              {{
+                getPlayerCount(item) === 1
+                  ? $t("settings.one_player")
+                  : $t("settings.players_count", [
+                      getPlayerCount(item),
+                      getPlayerCount(item) !== 1 ? "s" : "",
+                    ])
+              }}
+            </v-chip>
+            <v-icon
+              v-if="
+                api.syncTasks.value.filter(
+                  (x) => x.provider_instance == item.instance_id,
+                ).length > 0
+              "
+              icon="mdi-sync"
+              size="20"
+              color="grey"
+              :title="$t('settings.sync_running')"
+            />
+            <v-icon
+              v-if="!item.enabled"
+              icon="mdi-cancel"
+              size="20"
+              color="grey"
+              :title="$t('settings.provider_disabled')"
+            />
+            <v-icon
+              v-else-if="item.last_error"
+              icon="mdi-alert-circle"
+              size="20"
+              color="red"
+              :title="item.last_error"
+            />
+            <v-icon
+              v-else-if="!api.providers[item.instance_id]?.available"
+              icon="mdi-timer-sand"
+              size="20"
+              color="grey"
+              :title="$t('settings.not_loaded')"
+            />
+            <v-icon
+              :icon="getProviderTypeIcon(item.type)"
+              size="20"
+              color="grey"
+              :title="getProviderTypeTitle(item.type)"
+            />
+            <v-chip
+              v-if="api.providerManifests[item.domain]"
+              size="x-small"
+              variant="flat"
+              class="mx-1 text-uppercase"
+              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
+            >
+              {{
+                $t(
+                  String(
+                    api.providerManifests[item.domain]?.stage || "",
+                  ).toLowerCase(),
+                )
+              }}
+            </v-chip>
+          </div>
+        </template>
+      </ListItem>
+    </v-list>
+
+    <v-row v-else>
       <v-col
         v-for="item in getAllFilteredProviders()"
         :key="item.instance_id"
@@ -201,12 +322,21 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <div v-if="getAllFilteredProviders().length === 0" class="empty-state">
+      <v-icon icon="mdi-puzzle-outline" size="64" class="empty-icon" />
+      <div class="empty-title">{{ $t("no_content") }}</div>
+      <div class="empty-message">
+        {{ $t("no_content_filter") }}
+      </div>
+    </div>
   </Container>
   <AddProviderDialog v-model:show="showAddProviderDialog" />
 </template>
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { openLinkInNewTab } from "@/helpers/utils";
@@ -222,12 +352,19 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { match } from "ts-pattern";
-import { onBeforeUnmount, ref, watch } from "vue";
+import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
 const router = useRouter();
+
+const providersViewMode = inject<{
+  viewMode: { value: "list" | "card" };
+  toggleViewMode: () => void;
+}>("providersViewMode")!;
+
+const viewMode = computed(() => providersViewMode.viewMode.value);
 
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
@@ -587,5 +724,112 @@ const getAllFilteredProviders = function () {
 
 .player-count-chip:hover {
   transform: scale(1.05);
+}
+
+.providers-list {
+  background: transparent;
+}
+
+.provider-name-title {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.provider-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.provider-description-text {
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  line-height: 1.4;
+}
+
+.provider-type-badge {
+  font-size: 11px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.provider-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 960px) {
+  .provider-description-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .provider-status-icons {
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .player-count-chip {
+    flex-shrink: 1;
+  }
+}
+
+.player-count-chip {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-count-chip:hover {
+  transform: scale(1.05);
+}
+
+.provider-icon {
+  margin-right: 12px;
+}
+
+.provider-disabled {
+  opacity: 0.6;
+}
+
+.provider-unavailable {
+  opacity: 0.7;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  width: 100%;
+}
+
+.empty-icon {
+  color: rgba(var(--v-theme-on-surface), 0.3);
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin-bottom: 8px;
+}
+
+.empty-message {
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  line-height: 1.4;
 }
 </style>

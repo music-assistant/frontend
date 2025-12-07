@@ -11,7 +11,7 @@
         size="large"
         :disabled="iconAction == null"
         style="opacity: 0.8"
-        @click="iconAction()"
+        @click="iconAction?.()"
       />
     </template>
 
@@ -240,6 +240,14 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 .header.v-toolbar {
   height: 55px;
   font-family: "JetBrains Mono Medium";
+}
+
+.header.v-toolbar :deep(.v-toolbar__content) {
+  height: 55px !important;
+  min-height: 55px !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  align-items: center;
 }
 
 .header.v-toolbar :deep(.v-toolbar__content) > .v-toolbar__append {
