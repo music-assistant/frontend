@@ -83,9 +83,10 @@ const breadcrumbSegments = computed((): BreadcrumbSegment[] => {
     if (props.path.includes("://")) {
       const [providerPart, pathPart] = props.path.split("://");
       const provider = providerPart + "://";
+      const providerName = api.getProviderName(providerPart);
 
       segments.push({
-        text: provider,
+        text: providerName,
         path: provider,
         clickable: (pathPart && pathPart.length > 0) || false,
       });
@@ -152,12 +153,15 @@ const navigateToSegment = (path: string | null) => {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .breadcrumb-segment {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 .breadcrumb-link {
@@ -170,6 +174,10 @@ const navigateToSegment = (path: string | null) => {
   font-size: inherit;
   padding: 0;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .breadcrumb-link:hover {
@@ -178,10 +186,33 @@ const navigateToSegment = (path: string | null) => {
 
 .breadcrumb-text {
   color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .breadcrumb-separator {
   opacity: 0.5;
   margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Scale down font size when there are many segments */
+.breadcrumb-container:has(.breadcrumb-segment:nth-child(4)) .breadcrumb-link,
+.breadcrumb-container:has(.breadcrumb-segment:nth-child(4)) .breadcrumb-text {
+  font-size: 0.9em;
+}
+
+.breadcrumb-container:has(.breadcrumb-segment:nth-child(5)) .breadcrumb-link,
+.breadcrumb-container:has(.breadcrumb-segment:nth-child(5)) .breadcrumb-text {
+  font-size: 0.85em;
+  max-width: 150px;
+}
+
+.breadcrumb-container:has(.breadcrumb-segment:nth-child(6)) .breadcrumb-link,
+.breadcrumb-container:has(.breadcrumb-segment:nth-child(6)) .breadcrumb-text {
+  font-size: 0.8em;
+  max-width: 120px;
 }
 </style>
