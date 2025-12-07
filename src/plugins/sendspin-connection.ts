@@ -1,10 +1,11 @@
 /**
- * Sendspin WebRTC Connection
+ * Sendspin Connection
  *
- * Provides WebRTC-based Sendspin connections that work for all connection modes.
- * Uses the MA API for WebRTC signaling (no external signaling server needed).
+ * Provides Sendspin connections with automatic fallback:
+ * 1. First tries direct WebSocket connection (fast, low latency)
+ * 2. Falls back to WebRTC if direct connection fails (works through NAT/firewalls)
  *
- * Flow:
+ * WebRTC Flow (fallback):
  * 1. Frontend creates RTCPeerConnection and DataChannel
  * 2. Frontend sends WebRTC offer via "sendspin/connect" API command
  * 3. Server creates its own RTCPeerConnection and returns answer
@@ -14,6 +15,13 @@
 
 import api from "@/plugins/api";
 
+// Store the original WebSocket constructor before any interception
+// This must be at the top so we can use it for direct connection attempts
+const OriginalWebSocket = window.WebSocket;
+
+// Timeout for direct WebSocket connection attempt (ms)
+const DIRECT_WS_TIMEOUT_MS = 2000;
+
 // Default ICE servers (public STUN servers) - used as fallback
 const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
@@ -21,43 +29,96 @@ const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.home-assistant.io:3478" },
 ];
 
-// Cache for ICE servers to avoid repeated API calls
-let cachedIceServers: RTCIceServer[] | null = null;
-let iceServersCacheTime = 0;
-const ICE_SERVERS_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+// Connection info from server
+interface ConnectionInfo {
+  local_ws_url: string;
+  ice_servers: RTCIceServer[];
+}
+
+// Cache for connection info to avoid repeated API calls
+let cachedConnectionInfo: ConnectionInfo | null = null;
+let connectionInfoCacheTime = 0;
+const CONNECTION_INFO_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Fetch ICE servers from the MA server.
- * Uses HA Cloud TURN servers if available, otherwise falls back to public STUN servers.
+ * Fetch connection info from the MA server.
+ * Returns local WebSocket URL and ICE servers.
+ * Also handles auto-whitelisting of the player for restricted users.
  */
-async function getIceServers(): Promise<RTCIceServer[]> {
+async function getConnectionInfo(): Promise<ConnectionInfo> {
   // Check cache
   if (
-    cachedIceServers &&
-    Date.now() - iceServersCacheTime < ICE_SERVERS_CACHE_DURATION_MS
+    cachedConnectionInfo &&
+    Date.now() - connectionInfoCacheTime < CONNECTION_INFO_CACHE_DURATION_MS
   ) {
-    return cachedIceServers;
+    return cachedConnectionInfo;
   }
 
   try {
-    const servers = await api.sendCommand<{ urls: string | string[] }[]>(
-      "sendspin/ice_servers",
+    // Pass client_id for auto-whitelisting
+    const clientId = window.localStorage.getItem("sendspin_webplayer_id");
+    const info = await api.sendCommand<ConnectionInfo>(
+      "sendspin/connection_info",
+      { client_id: clientId },
     );
-    if (servers && servers.length > 0) {
-      cachedIceServers = servers;
-      iceServersCacheTime = Date.now();
-      console.log("[SendspinWebRTC] Using ICE servers from server:", servers);
-      return servers;
+    if (info && info.local_ws_url) {
+      cachedConnectionInfo = info;
+      connectionInfoCacheTime = Date.now();
+      console.log("[Sendspin] Connection info from server:", info);
+      return info;
     }
   } catch (error) {
-    console.warn(
-      "[SendspinWebRTC] Failed to fetch ICE servers from server, using defaults:",
-      error,
-    );
+    console.warn("[Sendspin] Failed to fetch connection info:", error);
   }
 
-  // Fallback to default STUN servers
-  return DEFAULT_ICE_SERVERS;
+  // Fallback - no local URL, default ICE servers
+  return {
+    local_ws_url: "",
+    ice_servers: DEFAULT_ICE_SERVERS,
+  };
+}
+
+/**
+ * Try to establish a direct WebSocket connection.
+ * Uses OriginalWebSocket to bypass the interceptor.
+ * Returns the WebSocket if successful, null if failed.
+ */
+function tryDirectWebSocket(url: string): Promise<WebSocket | null> {
+  return new Promise((resolve) => {
+    if (!url) {
+      resolve(null);
+      return;
+    }
+
+    console.log("[Sendspin] Trying direct WebSocket connection to:", url);
+
+    // Use OriginalWebSocket to bypass the interceptor
+    const ws = new OriginalWebSocket(url);
+
+    const timeoutId = setTimeout(() => {
+      console.log("[Sendspin] Direct WebSocket connection timed out");
+      ws.close();
+      resolve(null);
+    }, DIRECT_WS_TIMEOUT_MS);
+
+    ws.onopen = () => {
+      clearTimeout(timeoutId);
+      console.log("[Sendspin] Direct WebSocket connection successful!");
+      resolve(ws);
+    };
+
+    ws.onerror = () => {
+      clearTimeout(timeoutId);
+      console.log("[Sendspin] Direct WebSocket connection failed");
+      resolve(null);
+    };
+
+    ws.onclose = () => {
+      clearTimeout(timeoutId);
+      // Only resolve null if we haven't already resolved with the ws
+      // This handles the case where close fires after error
+    };
+  });
 }
 
 /**
@@ -85,11 +146,10 @@ export interface SendspinWebSocketBridge {
  * Creates a WebRTC connection to the Sendspin server via MA API signaling.
  * Returns a WebSocket-like interface that sendspin-js can use.
  */
-export async function createSendspinConnection(): Promise<SendspinWebSocketBridge> {
-  console.log("[SendspinWebRTC] Creating connection...");
-
-  // Fetch ICE servers from server (may include HA Cloud TURN servers)
-  const iceServers = await getIceServers();
+async function createWebRTCConnection(
+  iceServers: RTCIceServer[],
+): Promise<SendspinWebSocketBridge> {
+  console.log("[Sendspin] Creating WebRTC connection...");
 
   const peerConnection = new RTCPeerConnection({
     iceServers: iceServers,
@@ -221,13 +281,10 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
   });
 
   console.log(
-    "[SendspinWebRTC] Sending offer to server with",
+    "[Sendspin] Sending offer to server with",
     iceCandidates.length,
     "ICE candidates",
   );
-
-  // Get the client_id from localStorage to pass to server for auto-whitelisting
-  const clientId = window.localStorage.getItem("sendspin_webplayer_id");
 
   // Send offer to server via API
   const response = await api.sendCommand<{
@@ -239,7 +296,6 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
       sdp: peerConnection.localDescription!.sdp,
       type: peerConnection.localDescription!.type,
     },
-    client_id: clientId,
   });
 
   sessionId = response.session_id;
@@ -279,12 +335,79 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
     }
   };
 
-  console.log("[SendspinWebRTC] Connection setup complete");
+  console.log("[Sendspin] WebRTC connection setup complete");
   return bridge;
 }
 
-// Store the original WebSocket constructor
-const OriginalWebSocket = window.WebSocket;
+/**
+ * Wraps a native WebSocket to match the SendspinWebSocketBridge interface.
+ */
+function wrapWebSocket(ws: WebSocket): SendspinWebSocketBridge {
+  const bridge: SendspinWebSocketBridge = {
+    send: (data: string | ArrayBuffer) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(data);
+      }
+    },
+    close: (code?: number, reason?: string) => {
+      ws.close(code, reason);
+    },
+    get readyState() {
+      return ws.readyState;
+    },
+    onopen: null,
+    onmessage: null,
+    onerror: null,
+    onclose: null,
+    _isOpen: ws.readyState === WebSocket.OPEN,
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3,
+  };
+
+  // Wire up events
+  ws.onopen = (event) => {
+    bridge._isOpen = true;
+    if (bridge.onopen) bridge.onopen(event);
+  };
+  ws.onmessage = (event) => {
+    if (bridge.onmessage) bridge.onmessage(event);
+  };
+  ws.onerror = (event) => {
+    if (bridge.onerror) bridge.onerror(event);
+  };
+  ws.onclose = (event) => {
+    if (bridge.onclose) bridge.onclose(event);
+  };
+
+  return bridge;
+}
+
+/**
+ * Creates a Sendspin connection.
+ * First tries direct WebSocket for lower latency, falls back to WebRTC.
+ * Returns a WebSocket-like interface that sendspin-js can use.
+ */
+export async function createSendspinConnection(): Promise<SendspinWebSocketBridge> {
+  console.log("[Sendspin] Creating connection...");
+
+  // Get connection info (local WS URL + ICE servers)
+  const connectionInfo = await getConnectionInfo();
+
+  // Try direct WebSocket first (faster, lower latency)
+  if (connectionInfo.local_ws_url) {
+    const directWs = await tryDirectWebSocket(connectionInfo.local_ws_url);
+    if (directWs) {
+      console.log("[Sendspin] Using direct WebSocket connection");
+      return wrapWebSocket(directWs);
+    }
+  }
+
+  // Fall back to WebRTC
+  console.log("[Sendspin] Falling back to WebRTC connection");
+  return createWebRTCConnection(connectionInfo.ice_servers);
+}
 
 // Track if we've installed the interceptor
 let interceptorInstalled = false;
