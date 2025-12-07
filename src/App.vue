@@ -11,7 +11,7 @@
   />
 
   <!-- Main app (when authenticated) -->
-  <router-view v-else />
+  <router-view v-else-if="api.state.value == ConnectionState.INITIALIZED" />
 
   <PlayerBrowserMediaControls
     v-if="
@@ -49,7 +49,7 @@ const router = useRouter();
 const isConnected = ref(false);
 const loginComponent = ref<InstanceType<typeof Login> | null>(null);
 const showLogin = computed(
-  () => api.state.value !== ConnectionState.AUTHENTICATED,
+  () => api.state.value !== ConnectionState.INITIALIZED,
 );
 
 const setTheme = function () {
@@ -101,7 +101,6 @@ const handleRemoteAuthenticated = async (credentials: {
       // Ingress mode: user is already authenticated by the server
       authManager.setCurrentUser(credentials.user);
       api.state.value = ConnectionState.AUTHENTICATED;
-      await api.fetchState();
     } else if (credentials.token && credentials.user) {
       authManager.setToken(credentials.token);
       authManager.setCurrentUser(credentials.user);
@@ -159,26 +158,23 @@ const completeInitialization = async () => {
     return;
   }
   authManager.setCurrentUser(userInfo);
-
   store.serverInfo = serverInfo;
 
-  // Set webPlayer baseUrl from api.baseUrl
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  // Fetch library counts
+  await api.fetchState();
   store.libraryArtistsCount = await api.getLibraryArtistsCount();
   store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
   store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
   store.libraryRadiosCount = await api.getLibraryRadiosCount();
   store.libraryTracksCount = await api.getLibraryTracksCount();
 
-  const webPlayerModePref =
-    localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
-
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
+  const webPlayerModePref =
+    localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
   if (
     webPlayerModePref !== "disabled" &&
     api.getProvider("sendspin")?.available
@@ -187,12 +183,12 @@ const completeInitialization = async () => {
   } else {
     webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
   }
-
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("onboard") === "true") {
     store.isOnboarding = true;
     router.push("/settings/providers");
   }
+  api.state.value = ConnectionState.INITIALIZED;
 };
 
 onMounted(async () => {
@@ -229,16 +225,12 @@ onMounted(async () => {
 
         if (isIngressMode) {
           // In Ingress mode, authentication happens via HA proxy headers
-          // Just call auth/me to get the user info
           try {
             const user = await api.getCurrentUserInfo();
             if (user) {
-              console.info("[App] Ingress re-authentication successful");
               authManager.setCurrentUser(user);
               api.state.value = ConnectionState.AUTHENTICATED;
-              await api.fetchState();
             } else {
-              console.error("[App] Ingress re-authentication failed - no user");
               api.requireAuthentication();
             }
           } catch (error) {

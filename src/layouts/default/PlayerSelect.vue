@@ -203,6 +203,7 @@ watch(
     if (newVal) {
       // remember last selected playerId
       setPreference("activePlayerId", newVal);
+      localStorage.setItem("activePlayerId", newVal);
     }
   },
 );
@@ -255,7 +256,11 @@ const checkDefaultPlayer = function () {
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  const lastPlayerId = getPreference<string>("activePlayerId").value;
+  // we prefer localStorage over user preferences to allow having a prefered
+  // player per device - especially useful in case of using the built-in web player
+  const lastPlayerId =
+    localStorage.getItem("activePlayerId") ||
+    getPreference<string>("activePlayerId").value;
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&

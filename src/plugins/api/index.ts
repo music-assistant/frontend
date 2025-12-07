@@ -61,7 +61,8 @@ export enum ConnectionState {
   CONNECTED = "connected", // Transport connected, ServerInfo received
   AUTH_REQUIRED = "auth_required", // Connected but needs authentication (no stored token or auto-auth failed)
   AUTHENTICATING = "authenticating", // Authentication in progress
-  AUTHENTICATED = "authenticated", // Fully authenticated and ready
+  AUTHENTICATED = "authenticated", // Fully authenticated, ready to fetch state
+  INITIALIZED = "initialized", // Initial state sync completed
   RECONNECTING = "reconnecting", // Lost connection, attempting to reconnect
   FAILED = "failed", // Connection failed permanently
 }
@@ -311,14 +312,8 @@ export class MusicAssistantApi {
     const token = result.access_token || result.token;
 
     if (token) {
-      // Now authenticate the WebSocket session with the token
       await this.sendCommand("auth", { token });
-
-      // Mark as authenticated
       this.state.value = ConnectionState.AUTHENTICATED;
-
-      // Now that we're authenticated, fetch the full state
-      this.fetchState();
     }
 
     return { token: token || "", user: result.user! };
@@ -341,10 +336,7 @@ export class MusicAssistantApi {
       });
 
       if (result.user) {
-        // Mark as authenticated
         this.state.value = ConnectionState.AUTHENTICATED;
-        // Now that we're authenticated, fetch the full state
-        this.fetchState();
       }
 
       return result;
@@ -2262,12 +2254,13 @@ export class MusicAssistantApi {
     args?: Record<string, any>,
     msgId?: string,
   ): void {
-    // Allow commands when CONNECTED, AUTH_REQUIRED, AUTHENTICATING, or AUTHENTICATED
+    // Allow commands only when fully connected
     if (
       this.state.value !== ConnectionState.CONNECTED &&
       this.state.value !== ConnectionState.AUTH_REQUIRED &&
       this.state.value !== ConnectionState.AUTHENTICATING &&
-      this.state.value !== ConnectionState.AUTHENTICATED
+      this.state.value !== ConnectionState.AUTHENTICATED &&
+      this.state.value !== ConnectionState.INITIALIZED
     ) {
       throw new Error("Connection lost");
     }
