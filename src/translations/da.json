@@ -496,11 +496,27 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Denne type gruppe understøtter ikke DSP ved afspilning til flere enheder."
         },
-        "enable_builtin_player": {
-            "label": "Tillad afspilning til denne enhed\/browser",
-            "description": "Aktiver den (eksperimentelle) indbyggede afspiller til denne enhed\/browser, som giver dig mulighed for at streame alt Music Assistant-indhold direkte til denne enhed."
-        },
-        "add_group_player_desc_universal": "Ved at oprette en Universal Afspiller-gruppe kan du gruppere afspillere fra forskellige udbydere\/økosystemer. \nDette vil distribuere den samme lyd til alle afspillere i gruppen (dog ikke synkroniseret)."
+        "add_group_player_desc_universal": "Ved at oprette en Universal Afspiller-gruppe kan du gruppere afspillere fra forskellige udbydere\/økosystemer. \nDette vil distribuere den samme lyd til alle afspillere i gruppen (dog ikke synkroniseret).",
+        "core_module": {
+            "metadata": {
+                "name": "Metadata"
+            },
+            "music": {
+                "name": "Musik"
+            },
+            "players": {
+                "name": "Afspillere"
+            },
+            "remote_access": {
+                "name": "Fjernadgang"
+            },
+            "streams": {
+                "name": "Streams"
+            },
+            "webserver": {
+                "name": "Webserver"
+            }
+        }
     },
     "show_info": "Vis info",
     "show_select_boxes": "Vis valgfelter",

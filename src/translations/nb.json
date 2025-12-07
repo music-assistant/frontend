@@ -474,10 +474,6 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Denne gruppetypen støtter ikke DSP ved avspilling til flere enheter."
         },
-        "enable_builtin_player": {
-            "label": "Tillat avspilling til denne enheten\/nettleseren",
-            "description": "Aktiver den (eksperimentelle) innebygde spilleren for denne enheten\/nettleseren, slik at du kan strømme alt Music Assistant-innhold direkte til denne enheten."
-        },
         "add_group_player_desc_universal": "Ved å opprette en universell spillergruppe kan du gruppere spillere fra forskjellige leverandører\/økosystemer sammen. \n Dette vil sende den samme lyden til alle spillere i gruppen (men lyden er ikke synkronisert)."
     },
     "show_info": "Vis informasjon",

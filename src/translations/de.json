@@ -486,10 +486,6 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dieser Gruppentyp unterstützt keinen DSP, wenn die Wiedergabe auf mehrere Geräte erfolgt."
-        },
-        "enable_builtin_player": {
-            "label": "Wiedergabe auf diesem Gerät\/Browser erlauben",
-            "description": "(Experimentelles) integriertes Wiedergabegerät für dieses Gerät\/diesen Browser aktivieren. Erlaubt das Streamen der gesamten Inhalte direkt auf dieses Gerät."
         }
     },
     "show_info": "Zeige Informationen",
