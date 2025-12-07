@@ -6,16 +6,18 @@
         @update:providers="selectedProviders = $event"
         @update:types="selectedPlayerTypes = $event"
       />
-      <v-btn
-        v-if="providersWithCreateGroupSupport.length > 0"
-        color="primary"
-        variant="outlined"
-        height="40"
-        class="add-player-group-btn"
-        @click="showAddPlayerGroupDialog = true"
-      >
-        {{ $t("settings.add_group_player") }}
-      </v-btn>
+      <div class="header-actions">
+        <v-btn
+          v-if="providersWithCreateGroupSupport.length > 0"
+          color="primary"
+          variant="outlined"
+          height="40"
+          class="add-player-group-btn"
+          @click="showAddPlayerGroupDialog = true"
+        >
+          {{ $t("settings.add_group_player") }}
+        </v-btn>
+      </div>
     </div>
 
     <div class="pl-5 font-weight-medium">
@@ -26,8 +28,87 @@
         ])
       }}
     </div>
-    <Container variant="comfortable" class="mt-4">
-      <v-row>
+    <Container
+      :variant="viewMode === 'list' ? 'default' : 'panel'"
+      class="mt-4"
+    >
+      <v-list v-if="viewMode === 'list'" class="players-list">
+        <ListItem
+          v-for="item in getAllFilteredPlayers()"
+          :key="item.player_id"
+          link
+          :show-menu-btn="true"
+          :class="{
+            'player-disabled': !item.enabled,
+            'player-unavailable': !api.players[item.player_id]?.available,
+          }"
+          @click="editPlayer(item.player_id, item.provider)"
+          @menu="(evt) => onMenu(evt, item)"
+        >
+          <template #prepend>
+            <ProviderIcon
+              :domain="
+                api.getProviderManifest(item.provider)?.domain || item.provider
+              "
+              :size="40"
+              class="player-icon"
+            />
+          </template>
+
+          <template #title>
+            <div class="player-name">
+              {{ getPlayerName(item) }}
+            </div>
+          </template>
+
+          <template #subtitle>
+            <div class="player-meta">
+              <span class="provider-name">
+                {{
+                  api.getProviderManifest(item.provider)?.name || item.provider
+                }}
+              </span>
+              <span
+                v-if="
+                  api.players[item.player_id]?.type &&
+                  api.players[item.player_id]?.type !== PlayerType.PLAYER
+                "
+                class="player-type-badge"
+              >
+                {{ $t(`player_type.${api.players[item.player_id]?.type}`) }}
+              </span>
+            </div>
+          </template>
+
+          <template #append>
+            <div class="player-status-icons">
+              <v-icon
+                v-if="!item.enabled"
+                icon="mdi-cancel"
+                size="20"
+                color="grey"
+                :title="$t('settings.player_disabled')"
+              />
+              <v-icon
+                v-else-if="!api.players[item.player_id]?.available"
+                icon="mdi-timer-sand"
+                size="20"
+                color="grey"
+                :title="$t('settings.player_not_available')"
+              />
+              <v-icon
+                v-if="api.players[item.player_id]?.type"
+                :icon="getPlayerTypeIcon(api.players[item.player_id]?.type)"
+                size="20"
+                color="grey"
+                :title="$t(`player_type.${api.players[item.player_id]?.type}`)"
+              />
+            </div>
+          </template>
+        </ListItem>
+      </v-list>
+
+      <v-row v-else>
         <v-col
           v-for="item in getAllFilteredPlayers()"
           :key="item.player_id"
@@ -43,6 +124,7 @@
           />
         </v-col>
       </v-row>
+
       <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
         <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
         <div class="empty-title">{{ $t("no_content") }}</div>
@@ -57,7 +139,9 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { SYNCGROUP_PREFIX } from "@/constants";
 import { openLinkInNewTab } from "@/helpers/utils";
@@ -70,12 +154,19 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
 
 // global refs
 const router = useRouter();
+
+const playersViewMode = inject<{
+  viewMode: { value: "list" | "card" };
+  toggleViewMode: () => void;
+}>("playersViewMode")!;
+
+const viewMode = computed(() => playersViewMode.viewMode.value);
 
 // local refs
 const playerConfigs = ref<PlayerConfig[]>([]);
@@ -162,6 +253,19 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
     playerConfig.default_name ||
     playerConfig.player_id
   );
+};
+
+const getPlayerTypeIcon = function (playerType?: PlayerType) {
+  const iconMap = {
+    [PlayerType.PLAYER]: "mdi-speaker",
+    [PlayerType.GROUP]: "mdi-speaker-multiple",
+    [PlayerType.STEREO_PAIR]: "mdi-speaker-wireless",
+  };
+  return iconMap[playerType || PlayerType.PLAYER] || "mdi-speaker";
+};
+
+const toggleViewMode = function () {
+  playersViewMode.toggleViewMode();
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
@@ -276,6 +380,14 @@ watch(
   padding: 20px 20px 6px 20px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
 .add-player-group-btn {
   flex-shrink: 0;
   align-self: flex-start;
@@ -296,8 +408,14 @@ watch(
     align-items: stretch;
   }
 
-  .add-player-group-btn {
+  .header-actions {
     width: 100%;
+    justify-content: space-between;
+    align-self: stretch;
+  }
+
+  .add-player-group-btn {
+    flex: 1;
     align-self: stretch;
     margin-top: 0;
   }
@@ -345,5 +463,52 @@ watch(
   font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.5);
   line-height: 1.4;
+}
+
+.players-list {
+  background: transparent;
+}
+
+.player-name {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.player-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.provider-name {
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.player-type-badge {
+  font-size: 11px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.player-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-icon {
+  margin-right: 12px;
+}
+
+.player-disabled {
+  opacity: 0.6;
+}
+
+.player-unavailable {
+  opacity: 0.7;
 }
 </style>

@@ -4,8 +4,23 @@
       <template #title>
         <v-breadcrumbs :items="breadcrumbItems" class="pa-0" />
       </template>
-      <template v-if="documentationUrl" #append>
+      <template #append>
         <v-btn
+          v-if="isPlayersPage"
+          :icon="playersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
+          variant="text"
+          :title="t('tooltip.toggle_view_mode')"
+          @click="togglePlayersViewMode()"
+        />
+        <v-btn
+          v-if="isProvidersPage"
+          :icon="providersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
+          variant="text"
+          :title="t('tooltip.toggle_view_mode')"
+          @click="toggleProvidersViewMode()"
+        />
+        <v-btn
+          v-if="documentationUrl"
           icon="mdi-help-circle"
           variant="text"
           :title="t('settings.view_documentation')"
@@ -54,7 +69,7 @@
 
     <!-- Settings Subsections -->
     <router-view v-else v-slot="{ Component }">
-      <component :is="Component" />
+      <component :is="Component" v-if="Component" />
     </router-view>
   </div>
 </template>
@@ -62,17 +77,86 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { match } from "ts-pattern";
-import { computed } from "vue";
+import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
+const { getPreference, setPreference } = useUserPreferences();
+
+const playersViewMode = ref<"list" | "card">("list");
+const isPlayersPage = computed(() => {
+  const name = router.currentRoute.value.name?.toString() || "";
+  return name.includes("player") || name === "addgroup";
+});
+
+const savedPlayersViewMode = getPreference<"list" | "card">(
+  "settings.players.viewMode",
+  "list",
+);
+
+watch(
+  () => savedPlayersViewMode.value,
+  (savedViewMode) => {
+    if (isPlayersPage.value && savedViewMode) {
+      if (savedViewMode === "list" || savedViewMode === "card") {
+        playersViewMode.value = savedViewMode;
+      }
+    }
+  },
+  { immediate: true },
+);
+
+const togglePlayersViewMode = function () {
+  playersViewMode.value = playersViewMode.value === "list" ? "card" : "list";
+  setPreference("settings.players.viewMode", playersViewMode.value);
+};
+
+provide("playersViewMode", {
+  viewMode: playersViewMode,
+  toggleViewMode: togglePlayersViewMode,
+});
+
+const providersViewMode = ref<"list" | "card">("list");
+const isProvidersPage = computed(() => {
+  const name = router.currentRoute.value.name?.toString() || "";
+  return name.includes("provider");
+});
+
+const savedProvidersViewMode = getPreference<"list" | "card">(
+  "settings.providers.viewMode",
+  "list",
+);
+
+watch(
+  () => savedProvidersViewMode.value,
+  (savedViewMode) => {
+    if (isProvidersPage.value && savedViewMode) {
+      if (savedViewMode === "list" || savedViewMode === "card") {
+        providersViewMode.value = savedViewMode;
+      }
+    }
+  },
+  { immediate: true },
+);
+
+const toggleProvidersViewMode = function () {
+  providersViewMode.value =
+    providersViewMode.value === "list" ? "card" : "list";
+  setPreference("settings.providers.viewMode", providersViewMode.value);
+};
+
+provide("providersViewMode", {
+  viewMode: providersViewMode,
+  toggleViewMode: toggleProvidersViewMode,
+});
 
 const allSettingsSections = [
   {
