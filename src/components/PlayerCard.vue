@@ -197,7 +197,10 @@
             "
         /></Button>
         <Button
-          v-if="player.type === PlayerType.GROUP && showVolumeControl"
+          v-if="
+            player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
+            showVolumeControl
+          "
           variant="icon"
           class="player-command-btn group-expand-btn"
           @click.stop="$emit('toggle-expand', player)"
@@ -206,7 +209,11 @@
             color="primary"
             :offset-x="-5"
             :offset-y="-5"
-            :content="player.group_members.length"
+            :content="
+              player.type == PlayerType.GROUP
+                ? player.group_members.length
+                : player.group_members.length + 1
+            "
             class="group-badge"
           >
             <v-icon
@@ -285,6 +292,7 @@ import {
   PlaybackState,
   Player,
   PLAYER_CONTROL_NONE,
+  PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";

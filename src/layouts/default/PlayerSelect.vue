@@ -226,17 +226,8 @@ watch(
 );
 
 function playerClicked(player: Player, close: boolean = false) {
-  if (player.type === PlayerType.GROUP) {
-    if (store.activePlayerId !== player.player_id) {
-      store.activePlayerId = player.player_id;
-    }
-  } else {
-    if (store.activePlayerId == player.player_id) {
-      showSubPlayers.value = !showSubPlayers.value;
-    } else {
-      showSubPlayers.value = false;
-      store.activePlayerId = player.player_id;
-    }
+  if (store.activePlayerId !== player.player_id) {
+    store.activePlayerId = player.player_id;
   }
   if (close) store.showPlayersMenu = false;
 }
