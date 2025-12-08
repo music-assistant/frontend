@@ -94,7 +94,7 @@ const { getPreference, setPreference } = useUserPreferences();
 const playersViewMode = ref<"list" | "card">("list");
 const isPlayersPage = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("player") || name === "addgroup";
+  return name.includes("players") || name === "addgroup";
 });
 
 const savedPlayersViewMode = getPreference<"list" | "card">(
@@ -127,7 +127,7 @@ provide("playersViewMode", {
 const providersViewMode = ref<"list" | "card">("list");
 const isProvidersPage = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("provider");
+  return name.includes("providers");
 });
 
 const savedProvidersViewMode = getPreference<"list" | "card">(
