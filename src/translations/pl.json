@@ -128,7 +128,6 @@
         "sync": "Synchronizuj teraz",
         "sync_running": "Ten dostawca jest teraz synchronizowany",
         "username": "Nazwa użytkownika",
-        "core": "Główne",
         "core_modules": "Główne moduły",
         "server_info": "Informacje o serwerze",
         "server_id": "Identyfikator serwera",
@@ -320,21 +319,12 @@
             "label": "Ikona",
             "description": "Ikona MDI (Material design icon) dla tego odtwarzacza.\n\nZobacz https:\/\/pictogrammmers.com\/library\/mdi\/."
         },
-        "frontend": "Interfejs użytkownika",
-        "frontend_desc": "Ustawienia konfiguracyjne interfejsu użytkownika (frontend) Music Assistant. Należy pamiętać, że te ustawienia są przechowywane na poziomie urządzenia.",
         "theme": {
             "label": "Motyw",
             "options": {
                 "auto": "Auto (zgodnie z konfiguracją systemu)",
                 "light": "Jasny",
                 "dark": "Ciemny"
-            }
-        },
-        "menu_style": {
-            "label": "Styl menu",
-            "options": {
-                "horizontal": "Poziomy",
-                "vertical": "Pionowy"
             }
         },
         "menu_items": {
@@ -370,10 +360,6 @@
                 "it": "Włoski"
             }
         },
-        "hide_settings": {
-            "label": "Ukryj przycisk ustawień",
-            "description": "Ukryj przycisk ustawień na ekranie głównym.\n\n Pamiętaj, że jeśli wyłączysz ustawienia na ekranie głównym i w menu, możesz się zablokować.\n\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko!"
-        },
         "no_music_providers": "Nie skonfigurowano żadnych dostawców muzyki",
         "no_music_providers_detail": "Rozpocznij korzystanie z Music Assistant, dodając swoich dostawców muzyki.",
         "no_player_providers": "Nie skonfigurowano żadnych dostawców odtwarzaczy",
@@ -381,7 +367,6 @@
         "volume_normalization_radio": {
             "label": "Metoda normalizacji głośności stosowana w przypadku strumieni radiowych"
         },
-        "group_type": "Typ grupy",
         "dsp": {
             "input": "Wejście",
             "output": "Wyjście",
@@ -510,7 +495,6 @@
     "item_in_library": "Element dostępny w bibliotece",
     "back": "Powrót",
     "recently_played": "Ostatnio odtwarzane",
-    "radiobrowser_by_popularity": "Wg popularności",
     "radiobrowser_by_country": "Wg kraju",
     "radiobrowser_by_tag": "Wg tagu",
     "load_more_items": "Załaduj więcej pozycji...",

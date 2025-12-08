@@ -1,27 +1,25 @@
 <template>
-  <ResponsiveIcon
+  <Icon
     v-if="isVisible"
     v-bind="props.icon"
     :disabled="disabled || !item"
     :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
     :title="$t('tooltip.favorite')"
-    :type="'btn'"
+    variant="button"
     @click="onClick"
   />
 </template>
 
 <script setup lang="ts">
-import { type MediaItemType } from "@/plugins/api/interfaces";
+import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
-import ResponsiveIcon, {
-  ResponsiveIconProps,
-} from "@/components/mods/ResponsiveIcon.vue";
+import { type MediaItemType } from "@/plugins/api/interfaces";
 
 // properties
 export interface Props {
   item?: MediaItemType;
   isVisible?: boolean;
-  icon?: ResponsiveIconProps;
+  icon?: IconProps;
   disabled?: boolean;
 }
 

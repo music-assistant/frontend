@@ -5,8 +5,6 @@
     }`"
   >
     <v-toolbar class="header" color="transparent">
-      <template #prepend><v-icon :icon="widgetRow.icon" /></template>
-
       <template #title>
         <span class="mr-3">{{ widgetRow.title }}</span>
         <v-chip
@@ -65,23 +63,27 @@
       </template>
     </v-toolbar>
 
-    <carousel v-if="widgetRow.items.length > 0">
-      <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
-        <PanelviewItemCompact
-          :item="item"
-          :permanent-overlay="
-            ![MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO].includes(
-              item.media_type,
-            )
-          "
-          :is-available="itemIsAvailable(item)"
-          :disabled="editMode"
-        />
-      </swiper-slide>
-    </carousel>
-    <v-alert v-else>
-      {{ $t("no_content") }}
-    </v-alert>
+    <div class="carousel-wrapper">
+      <carousel v-if="widgetRow.items.length > 0">
+        <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
+          <PanelviewItemCompact
+            :item="item"
+            :show-provider-on-cover="showProviderOnCover"
+            :permanent-overlay="
+              ![MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO].includes(
+                item.media_type,
+              )
+            "
+            :is-available="itemIsAvailable(item)"
+            :disabled="editMode"
+          />
+        </swiper-slide>
+      </carousel>
+
+      <v-alert v-else>
+        {{ $t("no_content") }}
+      </v-alert>
+    </div>
   </div>
 </template>
 
@@ -93,8 +95,8 @@ import {
   MediaItemTypeOrItemMapping,
   MediaType,
 } from "@/plugins/api/interfaces";
-import ProviderIcon from "./ProviderIcon.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import ProviderIcon from "./ProviderIcon.vue";
 
 export interface WidgetRowSettings {
   position: number;
@@ -114,17 +116,25 @@ export interface WidgetRow {
 interface Props {
   widgetRow: WidgetRow;
   editMode?: boolean;
+  showProviderOnCover?: boolean;
 }
 
 const emit = defineEmits(["update:settings"]);
 
-const { widgetRow } = defineProps<Props>();
+const { widgetRow, showProviderOnCover } = defineProps<Props>();
 </script>
 
 <style scoped>
-.header.v-toolbar {
-  height: 55px;
-  font-family: "JetBrains Mono Medium";
+.header.v-toolbar :deep(.v-toolbar-title) {
+  margin-inline-start: 0px;
+  font-size: x-large;
+  font-weight: bold;
+}
+
+.carousel-wrapper {
+  background-color: rgb(var(--v-theme-panel));
+  padding: 10px;
+  border-radius: 5px;
 }
 
 .widget-row {

@@ -127,7 +127,6 @@
         "sync": "Sincronizar agora",
         "sync_running": "Este provedor está agora a ser sincronizado",
         "username": "Nome de utilizador",
-        "core": "Núcleo",
         "core_modules": "Módulos principais",
         "server_info": "Informações sobre o servidor",
         "server_id": "ID do servidor",
@@ -318,21 +317,12 @@
             "label": "Ícone",
             "description": "Ícones para este leitor.\n\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
         },
-        "frontend": "Interface de utilizador",
-        "frontend_desc": "Definições de configuração para a interface de utilizador do Music Assistant (frontend). De notar que estas definições são armazenadas ao nível do dispositivo.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Automático (seguir a configuração do sistema)",
                 "light": "Claro",
                 "dark": "Escuro"
-            }
-        },
-        "menu_style": {
-            "label": "Estilo de menu",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Vertical"
             }
         },
         "menu_items": {
@@ -365,10 +355,6 @@
                 "pt_BR": "Português (Brasil)",
                 "sl_SI": "Esloveno"
             }
-        },
-        "hide_settings": {
-            "label": "Esconder botão de configurações",
-            "description": "Esconde o botão de configurações na página inicial.\n\nDe notar que se desativares as configurações na página inicial e no menu, poderás ficar sem acesso ao mesmo.\n\nNesse caso, terás de colocar manualmente o caminho para as configurações ou limpar as cookies do browser para voltar a ter acesso, Usa por tua conta e risco!"
         },
         "no_music_providers": "Nenhum provedor de música configurado",
         "no_music_providers_detail": "Começa a tua experiência com o Music Assistant a adicionar os teus provedores de música.",
@@ -455,7 +441,6 @@
     "item_in_library": "Este item está disponível na biblioteca",
     "back": "Voltar",
     "recently_played": "Reproduzido recentemente",
-    "radiobrowser_by_popularity": "Por popularidade",
     "radiobrowser_by_country": "Por país",
     "radiobrowser_by_tag": "Por etiqueta",
     "load_more_items": "Carregar mais itens...",

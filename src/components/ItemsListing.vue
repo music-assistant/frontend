@@ -9,7 +9,11 @@
       color="transparent"
       :menu-items="menuItems"
       @title-clicked="toggleExpand"
-    />
+    >
+      <template #title>
+        <slot name="title">{{ title }}</slot>
+      </template>
+    </Toolbar>
 
     <v-divider />
 
@@ -65,6 +69,7 @@
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -84,6 +89,7 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -111,6 +117,7 @@
               :show-checkboxes="showCheckboxes"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
+              :is-playing="isPlaying(item, itemtype)"
               :show-details="itemtype.includes('versions')"
               :parent-item="parentItem"
               @select="onSelect"
@@ -174,40 +181,47 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 
+import Container from "@/components/Container.vue";
+import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import {
-  computed,
-  ref,
-  onBeforeUnmount,
-  nextTick,
-  onMounted,
-  watch,
-  watchEffect,
-} from "vue";
+  handleMenuBtnClick,
+  panelViewItemResponsive,
+  scrollElement,
+} from "@/helpers/utils";
+import { api } from "@/plugins/api";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
+  EventMessage,
+  EventType,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
   MediaType,
+  PlaybackState,
+  PodcastEpisode,
+  ProviderFeature,
+  ProviderType,
+  Radio,
   type Album,
   type MediaItemType,
   type Track,
-  ItemMapping,
-  MediaItemTypeOrItemMapping,
-  EventMessage,
-  EventType,
 } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
-import { useRouter } from "vue-router";
-import { api } from "@/plugins/api";
-import Container from "@/components/mods/Container.vue";
-import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import {
-  panelViewItemResponsive,
-  scrollElement,
-  handleMenuBtnClick,
-} from "@/helpers/utils";
-import { useI18n } from "vue-i18n";
+import { useUserPreferences } from "@/composables/userPreferences";
 
 export interface LoadDataParams {
   offset: number;
@@ -219,6 +233,7 @@ export interface LoadDataParams {
   libraryOnly?: boolean;
   refresh?: boolean;
   albumType?: string[];
+  provider?: string[];
 }
 // properties
 export interface Props {
@@ -235,6 +250,7 @@ export interface Props {
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
+  showProviderFilter?: boolean;
   updateAvailable?: boolean;
   title?: string;
   hideOnEmpty?: boolean;
@@ -252,6 +268,7 @@ export interface Props {
   path?: string;
   icon?: string;
   restoreState?: boolean;
+  onTitleClick?: () => void;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -266,6 +283,7 @@ const props = withDefaults(defineProps<Props>(), {
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
+  showProviderFilter: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
@@ -279,11 +297,14 @@ const props = withDefaults(defineProps<Props>(), {
   path: undefined,
   icon: undefined,
   restoreState: false,
+  onTitleClick: undefined,
 });
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
+const { getItemsListingPreferences, setItemsListingPreference } =
+  useUserPreferences();
 
 // local refs
 const params = ref<LoadDataParams>({
@@ -327,45 +348,106 @@ const toggleSearch = function () {
 };
 
 const toggleExpand = function () {
+  // If a custom title click handler is provided, use it
+  if (props.onTitleClick) {
+    props.onTitleClick();
+    return;
+  }
+
+  // Otherwise, use the default expand/collapse behavior
   expanded.value = !expanded.value;
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`expand.${storKey}`, expanded.value.toString());
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "expand",
+    expanded.value,
+  );
 };
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`viewMode.${storKey}`, newMode);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "viewMode",
+    newMode,
+  );
 };
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
-  const favoritesOnlyStr = params.value.favoritesOnly ? "true" : "false";
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`favoriteFilter.${storKey}`, favoritesOnlyStr);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "favoriteFilter",
+    params.value.favoritesOnly,
+  );
   loadData(undefined, undefined, true);
 };
 
 const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
-  const libraryOnlyStr = params.value.libraryOnly ? "true" : "false";
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`libraryFilter.${storKey}`, libraryOnlyStr);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "libraryFilter",
+    params.value.libraryOnly,
+  );
   loadData(true, undefined, true);
 };
 
 const toggleAlbumArtistsFilter = function () {
   params.value.albumArtistsFilter = !params.value.albumArtistsFilter;
-  const albumArtistsOnlyStr = params.value.albumArtistsFilter
-    ? "true"
-    : "false";
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`albumArtistsFilter.${storKey}`, albumArtistsOnlyStr);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "albumArtistsFilter",
+    params.value.albumArtistsFilter,
+  );
   loadData(undefined, undefined, true);
 };
 
 const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
+};
+
+const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
+  if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
+  const current = store.curQueueItem?.media_item as
+    | Track
+    | Radio
+    | PodcastEpisode
+    | undefined;
+  if (!current) return false;
+  switch (itemtype) {
+    case "tracks": {
+      return item.item_id === current.item_id;
+    }
+    case "albums": {
+      if (!("album" in current)) return false;
+      return item.item_id === current.album.item_id;
+    }
+    case "artists": {
+      if (!("artists" in current)) return false;
+      return (
+        Array.isArray(current.artists) &&
+        current.artists.some((artist) => artist.item_id === item.item_id)
+      );
+    }
+    case "radios": {
+      return item.item_id === current.item_id;
+    }
+    case "podcasts": {
+      if (!("podcast" in current)) return false;
+      return item.item_id === current.podcast.item_id;
+    }
+    case "podcastepisodes": {
+      return item.item_id === current.item_id;
+    }
+    default: {
+      return false;
+    }
+  }
 };
 
 const onSelect = function (
@@ -405,8 +487,12 @@ const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
   }
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(`sortBy.${storKey}`, params.value.sortBy);
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "sortBy",
+    params.value.sortBy,
+  );
   loadData(undefined, undefined, true);
 };
 
@@ -419,10 +505,33 @@ const changeAlbumTypeFilter = function (albumType: string) {
     params.value.albumType = params.value.albumType || [];
     params.value.albumType.push(albumType);
   }
-  const storKey = `${props.path}.${props.itemtype}`;
-  localStorage.setItem(
-    `albumType.${storKey}`,
-    params.value.albumType.join(","),
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "albumType",
+    params.value.albumType,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const changeProviderFilter = function (providerId: string) {
+  if (params.value.provider?.includes(providerId))
+    params.value.provider = params.value.provider?.filter(
+      (id) => id !== providerId,
+    );
+  else {
+    params.value.provider = params.value.provider || [];
+    params.value.provider.push(providerId);
+  }
+  // If the array is empty, set to undefined (show all)
+  if (params.value.provider.length === 0) {
+    params.value.provider = undefined;
+  }
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "providerFilter",
+    params.value.provider,
   );
   loadData(undefined, undefined, true);
 };
@@ -481,6 +590,37 @@ const isSearchActive = computed(() => {
 
 const showSearchInput = computed(() => {
   return showSearch.value && expanded.value;
+});
+
+const musicProviders = computed(() => {
+  // Map itemtype to required ProviderFeature
+  const featureMap: Record<string, ProviderFeature> = {
+    artists: ProviderFeature.LIBRARY_ARTISTS,
+    albums: ProviderFeature.LIBRARY_ALBUMS,
+    tracks: ProviderFeature.LIBRARY_TRACKS,
+    playlists: ProviderFeature.LIBRARY_PLAYLISTS,
+    radios: ProviderFeature.LIBRARY_RADIOS,
+    podcasts: ProviderFeature.LIBRARY_PODCASTS,
+    audiobooks: ProviderFeature.LIBRARY_AUDIOBOOKS,
+  };
+
+  const requiredFeature = featureMap[props.itemtype];
+
+  return Object.values(api.providers)
+    .filter((provider) => {
+      if (provider.type !== ProviderType.MUSIC) return false;
+      // If we have a required feature for this itemtype, filter by it
+      if (requiredFeature) {
+        return provider.supported_features.includes(requiredFeature);
+      }
+      // Otherwise, include all music providers
+      return true;
+    })
+    .map((provider) => ({
+      label: provider.name,
+      value: provider.instance_id,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
 watchEffect(() => {
@@ -560,17 +700,45 @@ const menuItems = computed(() => {
       label: "tooltip.album_type",
       icon: "mdi-album",
       disabled: loading.value,
-      subItems: ["album", "single", "ep", "compilation", "unknown"].map(
-        (key) => {
-          return {
-            label: `album_type.${key}`,
-            selected: params.value.albumType?.includes(key),
-            action: () => {
-              changeAlbumTypeFilter(key);
-            },
-          };
-        },
-      ),
+      active: params.value.albumType && params.value.albumType.length > 0,
+      closeOnContentClick: false,
+      subItems: [
+        "album",
+        "single",
+        "ep",
+        "compilation",
+        "live",
+        "soundtrack",
+        "unknown",
+      ].map((key) => {
+        return {
+          label: `album_type.${key}`,
+          selected: params.value.albumType?.includes(key),
+          action: () => {
+            changeAlbumTypeFilter(key);
+          },
+        };
+      }),
+    });
+  }
+
+  // provider filter
+  if (props.showProviderFilter && musicProviders.value.length > 1) {
+    items.push({
+      label: "tooltip.filter_provider",
+      icon: "mdi-package-variant",
+      disabled: loading.value,
+      active: params.value.provider && params.value.provider.length > 0,
+      closeOnContentClick: false,
+      subItems: musicProviders.value.map((provider) => {
+        return {
+          label: provider.label,
+          selected: params.value.provider?.includes(provider.value),
+          action: () => {
+            changeProviderFilter(provider.value);
+          },
+        };
+      }),
     });
   }
 
@@ -733,13 +901,19 @@ const loadData = async function (
   tempHide.value = false;
 };
 
+// Get preferences as a computed ref that updates automatically
+const savedPrefs = getItemsListingPreferences(
+  props.path || props.itemtype,
+  props.itemtype,
+);
+
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
-  const storKey = `${props.path}.${props.itemtype}`;
+  const prefs = savedPrefs.value;
+
   // get stored/default viewMode for this itemtype
-  const savedViewMode = localStorage.getItem(`viewMode.${storKey}`);
-  if (savedViewMode && savedViewMode !== "null") {
-    viewMode.value = savedViewMode;
+  if (prefs.viewMode) {
+    viewMode.value = prefs.viewMode;
   } else if (props.itemtype == "artists") {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
@@ -747,74 +921,50 @@ const restoreSettings = async function () {
   } else {
     viewMode.value = "list";
   }
+
   // get stored/default sortBy for this itemtype
-  const savedSortBy = localStorage.getItem(`sortBy.${storKey}`);
-  if (
-    savedSortBy &&
-    savedSortBy !== "null" &&
-    props.sortKeys.includes(savedSortBy)
-  ) {
-    params.value.sortBy = savedSortBy;
+  if (prefs.sortBy && props.sortKeys.includes(prefs.sortBy)) {
+    params.value.sortBy = prefs.sortBy;
   } else {
     params.value.sortBy = props.sortKeys[0];
   }
 
   // get stored/default favoriteOnlyFilter for this itemtype
-  if (props.showFavoritesOnlyFilter !== false) {
-    const savedInFavoriteOnlyStr = localStorage.getItem(
-      `favoriteFilter.${storKey}`,
-    );
-    if (savedInFavoriteOnlyStr && savedInFavoriteOnlyStr == "true") {
-      params.value.favoritesOnly = true;
-    }
+  if (props.showFavoritesOnlyFilter !== false && prefs.favoriteFilter) {
+    params.value.favoritesOnly = prefs.favoriteFilter;
   }
 
   // get stored/default libraryOnlyFilter for this itemtype
-  if (props.showLibraryOnlyFilter !== false) {
-    const savedLibraryOnlyStr = localStorage.getItem(
-      `libraryFilter.${storKey}`,
-    );
-    if (savedLibraryOnlyStr && savedLibraryOnlyStr == "true") {
-      params.value.libraryOnly = true;
-    }
+  if (props.showLibraryOnlyFilter !== false && prefs.libraryFilter) {
+    params.value.libraryOnly = prefs.libraryFilter;
   }
 
   // get stored/default albumArtistsOnlyFilter for this itemtype
-  if (props.showAlbumArtistsOnlyFilter !== false) {
-    const albumArtistsOnlyStr = localStorage.getItem(
-      `albumArtistsFilter.${storKey}`,
-    );
-    if (albumArtistsOnlyStr) {
-      params.value.albumArtistsFilter = albumArtistsOnlyStr == "true";
-    }
+  if (
+    props.showAlbumArtistsOnlyFilter !== false &&
+    prefs.albumArtistsFilter !== undefined
+  ) {
+    params.value.albumArtistsFilter = prefs.albumArtistsFilter;
   }
 
   // get stored/default expand property for this itemtype
-  if (props.allowCollapse !== false) {
-    const expandStr = localStorage.getItem(`expand.${storKey}`);
-    if (expandStr) {
-      expanded.value = expandStr == "true";
-    }
+  if (props.allowCollapse !== false && prefs.expand !== undefined) {
+    expanded.value = prefs.expand;
   }
 
   // get stored/default albumType filter for this itemtype
-  if (props.showAlbumTypeFilter === true) {
-    const savedAlbumTypeFilterStr = localStorage.getItem(
-      `albumType.${storKey}`,
-    );
-    if (savedAlbumTypeFilterStr) {
-      params.value.albumType = savedAlbumTypeFilterStr.split(",");
-    }
+  if (props.showAlbumTypeFilter === true && prefs.albumType) {
+    params.value.albumType = prefs.albumType;
+  }
+
+  // get stored/default provider filter for this itemtype
+  if (props.showProviderFilter === true && prefs.providerFilter) {
+    params.value.provider = prefs.providerFilter;
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
-  if (props.restoreState) {
-    let savedSearchKey = `search.${storKey}`;
-    if (props.parentItem) savedSearchKey += props.parentItem.item_id;
-    const savedSearch = localStorage.getItem(savedSearchKey);
-    if (savedSearch && savedSearch !== "null") {
-      params.value.search = savedSearch;
-    }
+  if (props.restoreState && prefs.search) {
+    params.value.search = prefs.search;
   }
 };
 
@@ -867,9 +1017,14 @@ watch(
   (newVal) => {
     if (newVal) showSearch.value = true;
     loadData(undefined, undefined, true);
-    let storKey = `search.${props.path}.${props.itemtype}`;
-    if (props.parentItem) storKey += props.parentItem.item_id;
-    localStorage.setItem(storKey, params.value.search);
+    if (props.restoreState) {
+      setItemsListingPreference(
+        props.path || props.itemtype,
+        props.itemtype,
+        "search",
+        params.value.search,
+      );
+    }
   },
 );
 watch(
@@ -906,8 +1061,10 @@ watch(
   { immediate: true },
 );
 
+// Watch savedPrefs and restore settings when they change (e.g., when user loads)
+watch(savedPrefs, () => restoreSettings(), { immediate: true });
+
 onMounted(async () => {
-  restoreSettings();
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
@@ -928,6 +1085,12 @@ onMounted(async () => {
   } else {
     loadData(true);
   }
+
+  // Listen for selection clearing events
+  eventbus.on("clearSelection", () => {
+    selectedItems.value = [];
+    showCheckboxes.value = false;
+  });
 
   // signal if/when items get played/updated/removed
   const unsub = api.subscribe_multi(
@@ -960,7 +1123,10 @@ onMounted(async () => {
       }
     },
   );
-  onBeforeUnmount(unsub);
+  onBeforeUnmount(() => {
+    eventbus.off("clearSelection");
+    unsub();
+  });
 });
 
 export interface StoredState {

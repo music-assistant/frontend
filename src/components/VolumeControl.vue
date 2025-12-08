@@ -32,72 +32,63 @@
     </v-list-item>
     <!-- mute btn + volume slider + volume level text (or collapse btn)-->
     <v-list-item
-      v-if="
-        showVolumeControl &&
-        (player.volume_control != PLAYER_CONTROL_NONE ||
-          player.group_childs.length)
-      "
+      v-if="showVolumeControl"
       class="volumesliderrow"
       :link="false"
       :style="player.powered == false ? 'opacity: 0.35' : 'opacity: 0.75'"
     >
       <template #prepend>
-        <!-- mute button -->
+        <!-- mute button with dynamic volume icon -->
         <Button
           icon
-          style="height: 25px"
+          style="height: 25px; width: 25px; min-width: 25px"
           :disabled="
-            player.type == PlayerType.GROUP ||
-            player.group_childs.length > 0 ||
-            player.mute_control == PLAYER_CONTROL_NONE
+            !player.available ||
+            player.powered == false ||
+            !player.supported_features.includes(PlayerFeature.VOLUME_MUTE)
           "
           @click.stop="api.playerCommandMuteToggle(player.player_id)"
         >
-          <v-icon
-            :size="25"
-            :icon="
-              player.volume_muted ? 'mdi-volume-mute' : 'mdi-volume-medium'
-            "
-          />
+          <v-icon :size="25" :icon="getVolumeIcon(player, mainDisplayVolume)" />
         </Button>
       </template>
       <template #default>
         <PlayerVolume
-          v-if="
-            player.volume_control != PLAYER_CONTROL_NONE ||
-            player.group_childs.length
-          "
           color="secondary"
           width="100%"
           :is-powered="player.powered != false"
-          :disabled="!player.available"
+          :disabled="
+            !player.available ||
+            player.powered == false ||
+            player.volume_muted ||
+            !player.supported_features.includes(PlayerFeature.VOLUME_SET)
+          "
           :model-value="
             Math.round(
-              player.group_childs.length
+              player.group_members.length
                 ? player.group_volume
                 : player.volume_level || 0,
             )
           "
           @click.stop
           @update:model-value="
-            player.group_childs.length > 0
+            player.group_members.length > 0
               ? api.playerCommandGroupVolume(player.player_id, $event)
               : api.playerCommandVolumeSet(player.player_id, $event)
           "
+          @update:local-value="mainDisplayVolume = $event"
         />
       </template>
       <template #append>
-        <v-icon v-if="canExpand && !showSubPlayers" class="expandbtn">
-          mdi-chevron-down
-        </v-icon>
+        <v-icon
+          v-if="canExpand"
+          variant="plain"
+          :icon="showSubPlayers ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          class="expandbtn"
+          @click="$emit('toggle-expand', player)"
+        />
         <div v-else class="text-caption volumecaption">
-          {{
-            Math.round(
-              player.group_childs.length
-                ? player.group_volume
-                : player.volume_level || 0,
-            )
-          }}
+          {{ Math.round(mainDisplayVolume) }}
         </div>
       </template>
     </v-list-item>
@@ -106,7 +97,7 @@
     <div
       v-if="
         showSubPlayers &&
-        (player.group_childs.length > 0 || showSyncControls) &&
+        (player.group_members.length > 0 || showSyncControls) &&
         getVolumePlayers(player).length > 0
       "
       @click.stop
@@ -136,15 +127,19 @@
             />
           </template>
           <template #default>
-            <h6>{{ truncateString(childPlayer.display_name, 27) }}</h6>
+            <h6>{{ truncateString(childPlayer.name, 27) }}</h6>
           </template>
           <template #append>
             <v-checkbox
               v-if="showSyncControls"
               :ripple="false"
-              :disabled="childPlayer.player_id == player.player_id"
+              :disabled="
+                childPlayer.player_id == player.player_id ||
+                (player.static_group_members.includes(childPlayer.player_id) &&
+                  player.group_members.includes(childPlayer.player_id))
+              "
               :model-value="
-                player.group_childs.includes(childPlayer.player_id) ||
+                player.group_members.includes(childPlayer.player_id) ||
                 childPlayer.player_id == player.player_id
               "
               size="22"
@@ -157,7 +152,7 @@
         </v-list-item>
         <!-- mute btn + volume slider + volume level text-->
         <v-list-item
-          v-if="childPlayer.volume_control != PLAYER_CONTROL_NONE"
+          v-if="player.group_members.includes(childPlayer.player_id)"
           class="volumesliderrow"
           :link="false"
           :style="
@@ -166,45 +161,67 @@
           @click.stop
         >
           <template #prepend>
+            <!-- mute button with dynamic volume icon -->
             <Button
               icon
+              style="
+                height: 25px;
+                margin-left: 5px;
+                width: 25px;
+                min-width: 25px;
+              "
               :disabled="
                 !childPlayer.available ||
-                childPlayer.mute_control == PLAYER_CONTROL_NONE
+                childPlayer.powered == false ||
+                !childPlayer.supported_features.includes(
+                  PlayerFeature.VOLUME_MUTE,
+                )
               "
-              style="height: 25px"
               @click="api.playerCommandMuteToggle(childPlayer.player_id)"
             >
               <v-icon
                 :size="25"
                 :icon="
-                  childPlayer.volume_muted
-                    ? 'mdi-volume-mute'
-                    : 'mdi-volume-medium'
+                  getVolumeIcon(
+                    childPlayer,
+                    childDisplayVolumes[childPlayer.player_id],
+                  )
                 "
               />
             </Button>
           </template>
           <template #default>
             <PlayerVolume
-              v-if="childPlayer.volume_control != PLAYER_CONTROL_NONE"
               color="secondary"
               width="100%"
               :is-powered="childPlayer.powered != false"
-              :disabled="!childPlayer.available"
+              :disabled="
+                !childPlayer.available ||
+                childPlayer.powered == false ||
+                childPlayer.volume_muted ||
+                !childPlayer.supported_features.includes(
+                  PlayerFeature.VOLUME_SET,
+                )
+              "
               :allow-wheel="allowWheel"
               :model-value="Math.round(childPlayer.volume_level || 0)"
               @update:model-value="
                 api.playerCommandVolumeSet(childPlayer.player_id, $event)
               "
+              @update:local-value="
+                childDisplayVolumes[childPlayer.player_id] = $event
+              "
             />
           </template>
           <template #append>
-            <div
-              v-if="childPlayer.volume_control != PLAYER_CONTROL_NONE"
-              class="text-caption volumecaption"
-            >
-              {{ childPlayer.volume_level }}
+            <div class="text-caption volumecaption">
+              {{
+                Math.round(
+                  childDisplayVolumes[childPlayer.player_id] ??
+                    childPlayer.volume_level ??
+                    0,
+                )
+              }}
             </div>
           </template>
         </v-list-item>
@@ -215,18 +232,18 @@
 </template>
 
 <script setup lang="ts">
-import {
-  Player,
-  PlayerFeature,
-  PlayerState,
-  PlayerType,
-  PLAYER_CONTROL_NONE,
-} from "@/plugins/api/interfaces";
-import { api } from "@/plugins/api";
-import { truncateString, getPlayerName } from "@/helpers/utils";
+import Button from "@/components/Button.vue";
+import { getPlayerName, truncateString } from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import Button from "@/components/mods/Button.vue";
-import { computed, ref } from "vue";
+import { api } from "@/plugins/api";
+import {
+  PlaybackState,
+  Player,
+  PLAYER_CONTROL_NONE,
+  PlayerFeature,
+  PlayerType,
+} from "@/plugins/api/interfaces";
+import { computed, ref, watch } from "vue";
 
 export interface Props {
   player: Player;
@@ -240,15 +257,63 @@ const compProps = defineProps<Props>();
 const playersToSync = ref<string[]>([]);
 const playersToUnSync = ref<string[]>([]);
 const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
+const mainDisplayVolume = ref(0);
+const childDisplayVolumes = ref<Record<string, number>>({});
+
+// emits
+defineEmits<{
+  (e: "toggle-expand", player: Player): void;
+}>();
+
+watch(
+  () => compProps.player,
+  (player) => {
+    mainDisplayVolume.value = Math.round(
+      player.group_members.length
+        ? player.group_volume
+        : player.volume_level || 0,
+    );
+
+    for (const childId of player.group_members) {
+      if (api?.players[childId] && !(childId in childDisplayVolumes.value)) {
+        childDisplayVolumes.value[childId] = Math.round(
+          api.players[childId].volume_level || 0,
+        );
+      }
+    }
+  },
+  { immediate: true, deep: true },
+);
 
 const canExpand = computed(() => {
-  return compProps.player.group_childs.length > 0;
+  return compProps.player.group_members.length > 0;
 });
+
+const getVolumeIcon = function (player: Player, displayVolume?: number) {
+  if (player.volume_muted) {
+    return "mdi-volume-mute";
+  }
+
+  const volume =
+    displayVolume !== undefined
+      ? displayVolume
+      : player.group_members.length
+        ? player.group_volume
+        : player.volume_level || 0;
+
+  if (volume === 0) {
+    return "mdi-volume-low";
+  } else if (volume < 50) {
+    return "mdi-volume-medium";
+  } else {
+    return "mdi-volume-high";
+  }
+};
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
   // always include group_childs
-  for (const groupChildId of player.group_childs) {
+  for (const groupChildId of player.group_members) {
     const volumeChild = api?.players[groupChildId];
     if (!volumeChild) continue;
     if (volumeChild.volume_control == PLAYER_CONTROL_NONE) continue;
@@ -272,6 +337,9 @@ const getVolumePlayers = function (player: Player) {
       // skip unavailable players
       if (!syncPlayer.available) continue;
 
+      // skip for group players
+      if (syncPlayer.type == PlayerType.GROUP) continue;
+
       // skip if player has (another) group active
       if (
         syncPlayer.active_group &&
@@ -282,7 +350,7 @@ const getVolumePlayers = function (player: Player) {
       // skip if player is already playing other content
       if (
         syncPlayer.active_source &&
-        syncPlayer.state == PlayerState.PLAYING &&
+        syncPlayer.playback_state == PlaybackState.PLAYING &&
         ![player.player_id, syncPlayer.player_id].includes(
           syncPlayer.active_source,
         )
@@ -294,9 +362,13 @@ const getVolumePlayers = function (player: Player) {
       }
     }
   }
-  items.sort((a, b) =>
-    a.display_name.toUpperCase() > b.display_name.toUpperCase() ? 1 : -1,
-  );
+  // Sort: selected (in group) first, then by name
+  items.sort((a, b) => {
+    const aSelected = player.group_members.includes(a.player_id);
+    const bSelected = player.group_members.includes(b.player_id);
+    if (aSelected !== bSelected) return aSelected ? -1 : 1;
+    return a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1;
+  });
   return items;
 };
 
@@ -318,7 +390,7 @@ const syncCheckBoxChange = async function (
       playersToSync.value.push(syncPlayerId);
     }
     // optimistically update player state
-    api.players[parentPlayerId].group_childs.push(syncPlayerId);
+    api.players[parentPlayerId].group_members.push(syncPlayerId);
   } else {
     // remove player from syncgroup
     if (playersToSync.value.includes(syncPlayerId)) {
@@ -331,9 +403,9 @@ const syncCheckBoxChange = async function (
       playersToUnSync.value.push(syncPlayerId);
     }
     // optimistically update player state
-    api.players[parentPlayerId].group_childs = api.players[
+    api.players[parentPlayerId].group_members = api.players[
       parentPlayerId
-    ].group_childs.filter((x) => x != syncPlayerId);
+    ].group_members.filter((x) => x != syncPlayerId);
   }
 
   // clear existing debounce timer
@@ -342,31 +414,27 @@ const syncCheckBoxChange = async function (
   // execute (un)sync with a debounce timer to account for someone
   // changing multiple checkboxes in quick succession
 
+  if (playersToSync.value.length == 0 && playersToUnSync.value.length == 0) {
+    // no changes to be made, so return
+    return;
+  }
+
   timeOutId.value = setTimeout(async () => {
-    if (playersToUnSync.value.length > 0) {
-      // power off will also unsync
-      api
-        .playerCommandUnGroupMany(playersToUnSync.value)
-        .catch(async () => {
-          // restore state if command failed
-          api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
-        })
-        .finally(() => {
-          playersToUnSync.value = [];
-        });
-    }
-    if (playersToSync.value.length > 0) {
-      api
-        .playerCommandGroupMany(parentPlayerId, playersToSync.value)
-        .catch(async () => {
-          // restore state if command failed
-          api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
-        })
-        .finally(() => {
-          playersToSync.value = [];
-        });
-    }
-  }, 1000);
+    api
+      .playerCommandSetMembers(
+        parentPlayerId,
+        playersToSync.value.length ? playersToSync.value : undefined,
+        playersToUnSync.value.length ? playersToUnSync.value : undefined,
+      )
+      .catch(async () => {
+        // restore state if command failed
+        api.players[parentPlayerId] = await api.getPlayer(parentPlayerId);
+      })
+      .finally(() => {
+        playersToSync.value = [];
+        playersToUnSync.value = [];
+      });
+  }, 500);
 };
 </script>
 
@@ -375,8 +443,15 @@ const syncCheckBoxChange = async function (
   margin-top: 0px;
   padding-top: 0px;
   padding-bottom: 0px;
-  height: 30px;
-  min-height: 30px;
+  height: 40px;
+  min-height: 40px;
+}
+
+.volumesliderrow :deep(.v-list-item__content) {
+  height: 40px;
+  min-height: 40px;
+  overflow: visible !important;
+  align-content: center;
 }
 
 .heading {
@@ -385,9 +460,9 @@ const syncCheckBoxChange = async function (
 }
 
 .volumecaption {
-  width: 28px;
+  width: 34px;
   text-align: right;
-  margin-right: -8px;
+  margin-right: -20px;
 }
 
 .expandbtn {
@@ -399,7 +474,7 @@ const syncCheckBoxChange = async function (
 
 .volumesliderrow :deep(.v-list-item__prepend) {
   width: 40px;
-  margin-left: -25px;
+  margin-left: -20px;
 }
 .volumesliderrow :deep(.v-list-item__append) {
   width: 20px;

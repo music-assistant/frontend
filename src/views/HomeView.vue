@@ -1,13 +1,89 @@
 <template>
   <div>
-    <Toolbar
-      title="Music Assistant"
-      :show-loading="true"
-      :enforce-overflow-menu="true"
-      :menu-items="menuItems"
-    />
+    <Toolbar :show-loading="true" :home="true" color="background">
+      <template #append>
+        <!-- User avatar menu -->
+        <v-menu location="bottom end" scrim>
+          <template #activator="{ props }">
+            <v-btn
+              variant="plain"
+              style="width: 40px; height: 40px; margin-right: 8px"
+              v-bind="props"
+            >
+              <v-avatar
+                size="40"
+                :color="store.currentUser?.avatar_url ? undefined : 'primary'"
+                class="user-avatar"
+              >
+                <v-img
+                  v-if="store.currentUser?.avatar_url"
+                  :src="store.currentUser.avatar_url"
+                />
+                <v-icon v-else icon="mdi-account" size="20" color="white" />
+              </v-avatar>
+            </v-btn>
+          </template>
+          <v-list density="compact" slim tile>
+            <v-list-item
+              :title="
+                store.currentUser?.display_name || store.currentUser?.username
+              "
+              :subtitle="store.currentUser?.username"
+              disabled
+              class="user-header-item"
+            >
+              <template #prepend>
+                <v-avatar
+                  size="40"
+                  :color="store.currentUser?.avatar_url ? undefined : 'primary'"
+                  class="user-avatar"
+                >
+                  <v-img
+                    v-if="store.currentUser?.avatar_url"
+                    :src="store.currentUser.avatar_url"
+                  />
+                  <v-icon v-else icon="mdi-account" size="20" color="white" />
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider class="my-1" />
+            <v-list-item
+              :title="$t('auth.profile')"
+              @click="router.push({ name: 'profile' })"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-account-cog" />
+              </template>
+            </v-list-item>
+            <v-list-item
+              :title="
+                $t(
+                  editMode
+                    ? 'homescreen_edit_disable'
+                    : 'homescreen_edit_enable',
+                )
+              "
+              @click="editMode = !editMode"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-pencil" />
+              </template>
+            </v-list-item>
+            <v-list-item
+              v-if="!store.isIngressSession"
+              :title="$t('auth.logout')"
+              @click="handleLogout"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-logout" />
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
+    </Toolbar>
 
-    <Container variant="panel">
+    <Container variant="comfortable">
       <Suspense>
         <div>
           <HomeWidgetRows :edit-mode="editMode" />
@@ -19,44 +95,39 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/mods/Container.vue";
+import Container from "@/components/Container.vue";
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { computed, ref } from "vue";
-import router from "@/plugins/router";
+import { authManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 
-const hideSettings = ref(
-  localStorage.getItem("frontend.settings.hide_settings") == "true",
-);
-
+const router = useRouter();
 const editMode = ref(false);
 
-const menuItems = computed(() => {
-  return [
-    {
-      label: "settings.settings",
-      icon: "mdi-cog-outline",
-      action: () => {
-        router.push({ path: "settings" });
-      },
-      hide: hideSettings.value,
-    },
-    {
-      label: editMode.value
-        ? "homescreen_edit_disable"
-        : "homescreen_edit_enable",
-      icon: "mdi-pencil",
-      action: () => {
-        editMode.value = !editMode.value;
-      },
-    },
-  ];
-});
+const handleLogout = () => {
+  authManager.logout();
+};
 </script>
 
 <style scoped>
 .v-progress-circular {
   display: block;
   margin-inline: auto;
+}
+
+.editButton {
+  float: right;
+  margin-bottom: 10px;
+}
+
+.user-header-item :deep(.v-list-item__prepend) {
+  margin-inline-end: 8px;
+  margin-left: -8px;
+}
+
+.user-avatar {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>

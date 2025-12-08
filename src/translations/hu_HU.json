@@ -128,7 +128,6 @@
         "sync": "Szinkronizálás most",
         "sync_running": "A szolgáltató szinkronizálása folyamatban van",
         "username": "Felhasználónév",
-        "core": "Alap",
         "core_modules": "Alapmodulok",
         "server_info": "Szerver információk",
         "server_id": "Szerverazonosító",
@@ -319,21 +318,12 @@
             "label": "Ikon",
             "description": "Material design ikon ehhez a lejátszóhoz. \n\nLásd: https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Felhasználói felület",
-        "frontend_desc": "A Music Assistant felhasználói felület (frontend) konfigurációs beállításai. Ezek a beállítások eszközszinten lerülnek tárolásra.",
         "theme": {
             "label": "Téma",
             "options": {
                 "auto": "Automatikus (a rendszerkonfiguráció követése)",
                 "light": "Világos",
                 "dark": "Sötét"
-            }
-        },
-        "menu_style": {
-            "label": "Menü stílusa",
-            "options": {
-                "horizontal": "Vízszintes",
-                "vertical": "Függőleges"
             }
         },
         "menu_items": {
@@ -368,10 +358,6 @@
                 "hu_HU": "Magyar",
                 "it": "Olasz"
             }
-        },
-        "hide_settings": {
-            "label": "Beállítások gomb elrejtése",
-            "description": "Beállítások gomb elrejtése a kezdőképernyőn. \n\nVedd figyelembe, hogy ha letiltod a beállításokat a kezdőképernyőn, kizárhatod magad. \n\nEbben az esetben manuálisan kell megadnod a beállítások elérési útját, vagy törölnöd kell a böngésző sütijeit, hogy ismét hozzáférj a beállításokhoz. Saját felelősségedre használd!"
         },
         "no_music_providers": "Nincs zeneszolgáltató konfigurálva",
         "no_music_providers_detail": "Kezdd a Music Assistant élményed zeneszolgáltatók hozzáadásával.",
@@ -409,7 +395,6 @@
             "label": "Fix\/tartalék erősítés-beállítás a rádióhoz",
             "description": "Rögzített\/tartalék erősítéskorrekció a rádiófolyamra (a \"Hangerő normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheted a hangerőt, negatív értékkel csökkentheted azt.\n\nEz a beállítás akkor használható, ha a hangerő normalizálási módszer a 'Fix erősítés korrekció' vagy a 'Tartalék erősítéskorrekció' beállításra van állítva."
         },
-        "group_type": "Csoport típusa",
         "add_group_player_desc": "A natív csoportosítást\/szinkronizálást biztosító lejátszószolgáltatók\/ökoszisztémák esetében automatikusan létrejön egy szinkronizált csoport, ami azt jelenti, hogy ha a lejátszás ezen a lejátszócsoporton történik, a taglejátszók automatikusan szinkronizálódnak. \n\nA csoportosítást nem támogató lejátszók\/ökoszisztémák esetében, vagy abban az esetben, ha különböző ökoszisztémákból származó lejátszókat szeretnél csoportosítani, használhatod az Univerzális csoport típust, amely ugyanazt a hangot fogja szétosztani az összes taglejátszóra (de nem szinkronizálva). \n\nVedd figyelembe, hogy egyes szolgáltatók támogatják a csoportosítást, de a csoportosításhoz a natív alkalmazást kell használnod. Ilyenek például a Google Cast alapú lejátszók, ahol csak a Google Home alkalmazáson belül hozhatsz létre Google Cast csoportokat.",
         "dynamic_members": {
             "label": "Dinamikus csoporttagok",
@@ -543,7 +528,6 @@
     "item_in_library": "Ez az elem elérhető a könyvtárban",
     "back": "Vissza",
     "recently_played": "Nemrég lejátszott",
-    "radiobrowser_by_popularity": "Népszerűség szerint",
     "radiobrowser_by_country": "Ország szerint",
     "radiobrowser_by_tag": "Címke szerint",
     "load_more_items": "További elemek betöltése...",

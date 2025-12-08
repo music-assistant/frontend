@@ -128,7 +128,6 @@
         "sync": "Sincronizar ahora",
         "sync_running": "Este proveedor está siendo sincronizado ahora",
         "username": "Usuario",
-        "core": "Núcleo",
         "core_modules": "Módulos del núcleo",
         "server_info": "Información del servidor",
         "server_id": "ID del servidor",
@@ -319,21 +318,12 @@
             "label": "Icono",
             "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Interfaz de Usuario",
-        "frontend_desc": "Ajustes de configuración de la interfaz de usuario (frontend) de Music Assistant. Tenga en cuenta que estos ajustes se almacenan a nivel de dispositivo.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Automático (seguir la configuración del sistema)",
                 "light": "Claro",
                 "dark": "Oscuro"
-            }
-        },
-        "menu_style": {
-            "label": "Estilo de menú",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Vertical"
             }
         },
         "menu_items": {
@@ -369,10 +359,6 @@
                 "it": "Italiano"
             }
         },
-        "hide_settings": {
-            "label": "Ocultar botón de configuración",
-            "description": "Ocultar el botón de configuración en la pantalla de inicio. \n\nTenga en cuenta que si desactiva la configuración en la pantalla de inicio y en el menú, puede bloquearse. \n\nEn ese caso, deberá ingresar manualmente la ruta a la configuración o borrar las cookies del navegador para volver a acceder a la configuración. ¡Úselo bajo su propia responsabilidad!"
-        },
         "no_music_providers": "No hay Proveedores de Música configurados",
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
         "no_player_providers": "No hay Proveedores de Música configurados",
@@ -400,8 +386,12 @@
                 "fallback_dynamic": "Retroceder a dinamico"
             }
         },
-        "group_type": "Tipo de grupo",
-        "add_group_player_desc": "Para los proveedores\/ecosistemas de reproductores que proporcionan agrupación\/sincronización nativa, se creará automáticamente un grupo de sincronizado, lo que significa que si reproduce en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente. \n\nPara los reproductores\/ecosistemas que no admiten la agrupación, o en caso de que desee agrupar reproductores de distintos ecosistemas, puede utilizar el tipo de grupo Universal, que distribuirá el mismo audio a todos los reproductores miembros (pero no de forma sincronizada). \n\nTenga en cuenta que algunos proveedores admiten la agrupación, pero debe utilizar la aplicación nativa para realizarla. Un ejemplo son los reproductores basados en Google Cast, en los que solo se pueden crear grupos de Google Cast dentro de la aplicación Google Home. "
+        "add_group_player_desc": "Para los proveedores\/ecosistemas de reproductores que proporcionan agrupación\/sincronización nativa, se creará automáticamente un grupo de sincronizado, lo que significa que si reproduce en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente. \n\nPara los reproductores\/ecosistemas que no admiten la agrupación, o en caso de que desee agrupar reproductores de distintos ecosistemas, puede utilizar el tipo de grupo Universal, que distribuirá el mismo audio a todos los reproductores miembros (pero no de forma sincronizada). \n\nTenga en cuenta que algunos proveedores admiten la agrupación, pero debe utilizar la aplicación nativa para realizarla. Un ejemplo son los reproductores basados en Google Cast, en los que solo se pueden crear grupos de Google Cast dentro de la aplicación Google Home. ",
+        "dsp": {
+            "channels": {
+                "FL": "Izquierda"
+            }
+        }
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -485,7 +475,6 @@
     "item_in_library": "Este elemento está disponible en la biblioteca",
     "back": "Atrás",
     "recently_played": "Reproducido recientemente",
-    "radiobrowser_by_popularity": "Por popularidad",
     "radiobrowser_by_country": "Por país",
     "radiobrowser_by_tag": "Por etiqueta",
     "load_more_items": "Cargar más elementos...",

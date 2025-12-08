@@ -15,27 +15,16 @@
     icon="mdi-podcast"
     :restore-state="true"
     :total="total"
-    :extra-menu-items="[
-      {
-        label: 'sync_now',
-        icon: 'mdi-sync',
-        action: () => {
-          api.startSync([MediaType.PODCAST]);
-        },
-        overflowAllowed: true,
-        disabled: api.syncTasks.value.length > 0,
-      },
-    ]"
+    :show-provider-filter="true"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
-import { sleep } from "@/helpers/utils";
+import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
   name: "Podcasts",
@@ -68,12 +57,19 @@ const loadItems = async function (params: LoadDataParams) {
     params.limit,
     params.offset,
     params.sortBy,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly) {
+  if (!params.favoritesOnly && !params.provider) {
     total.value = store.libraryPodcastsCount;
+    return;
+  }
+  // When provider filter is active, we can't get accurate count from the count endpoint
+  // The total will be determined by the actual results returned
+  if (params.provider && params.provider.length > 0) {
+    total.value = undefined;
     return;
   }
   total.value = await api.getLibraryPodcastsCount(

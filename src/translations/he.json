@@ -127,7 +127,6 @@
         "sync": "סנכרן כעת",
         "sync_running": "ספק זה עובר כעת סנכרון",
         "username": "שם משתמש",
-        "core": "ליבה",
         "core_modules": "מודולי ליבה",
         "server_info": "מידע על השרת",
         "server_id": "מזהה שרת",
@@ -143,7 +142,40 @@
         "download_log": "הורד קובץ יומן",
         "edit_group_members": "ערוך ערכי קבוצה",
         "add_new_provider_button": "הוסף ספק {0}",
-        "add_group_player": "הוסף נגן קבוצתי"
+        "add_group_player": "הוסף נגן קבוצתי",
+        "dsp": {
+            "channels": {
+                "ALL": "הכל",
+                "FL": "שמאל",
+                "FR": "ימין"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
+            }
+        },
+        "music": "מוזיקה",
+        "musicprovider": "ספקי מוסיקה",
+        "plugin": "תוסף",
+        "pluginprovider": "ספקי תוספים",
+        "providers_total": "{0} כלל הספקים{1}",
+        "stage": {
+            "label": "שָׁלָב",
+            "options": {
+                "stable": "יַצִיב",
+                "beta": "בטא",
+                "alpha": "אלפא",
+                "experimental": "נִסיוֹנִי",
+                "unmaintained": "לא מתוחזק",
+                "deprecated": "הוצא משימוש"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "כפיית פריסה לנייד",
+            "description": "כפו את הפריסה למובייל (עם ניווט התפריטים בתחתית), אפילו על מסכים גדולים יותר."
+        },
+        "providers_description": "נהל את מקורות המוזיקה, שירותי הסטרימינג והאינטגרציות שלך",
+        "players_description": "הגדר ונהל את התקני פלט האודיו שלך"
     },
     "show_info": "הצג מידע",
     "show_select_boxes": "הצג תיבות בחירה",
@@ -190,7 +222,9 @@
         "open_provider_link": "פתח פריט זה באתר האינטרנט של הספק",
         "collapse_expand": "כווץ\/הרחב רישום זה",
         "back": "חזור",
-        "show_menu": "הצג\/הסתר תפריט"
+        "show_menu": "הצג\/הסתר תפריט",
+        "copy_uri": "העתקת URI ללוח",
+        "select_all": "בחר את כל הפריטים"
     },
     "topresult": "תוצאה נבחרת",
     "track": "שיר",
@@ -211,9 +245,43 @@
     "item_in_library": "פריט זה זמין בספרייה",
     "back": "חזור",
     "recently_played": "הושמעו לאחרונה",
-    "radiobrowser_by_popularity": "לפי פופולריות",
     "radiobrowser_by_country": "לפי מדינה",
     "radiobrowser_by_tag": "לפי תג",
     "load_more_items": "טען עוד פריטים...",
-    "radio": "רדיו"
+    "radio": "רדיו",
+    "mark_unplayed": "סמן כלא נוגן",
+    "searchtype_all": "הכל",
+    "global_search": "חיפוש גלובלי",
+    "dsp_active": "פעיל",
+    "currently_playing_players": "מנגן כעת",
+    "select_source": "בחר מקור",
+    "streamdetails": {
+        "click_to_expand": "לחץ כדי להציג את כל הנגנים"
+    },
+    "in_progress_items": "המשך להאזין...",
+    "play_replace_next": "נגן כעת (נקה רשימה)",
+    "music_assistant_source": "תור Music Assistant",
+    "music_assistant_library": "ספריית Music Assistant",
+    "select_all_confirmation": "לבחור את כל הפריטים? טעינת כל הנתונים עשויה להימשך זמן מה.",
+    "this_device": "מכשיר זה",
+    "recommendations": {
+        "in_progress_items": "המשך להאזין...",
+        "recommended_new_tracks": "רצועות חדשות מומלצות",
+        "recently_played": "הושמעו לאחרונה",
+        "suggested_new_albums_for_you": "הצעות לאלבומים חדשים עבורך",
+        "random_artists": "אמנים אקראיים",
+        "random_albums": "אלבומים אקראיים",
+        "your_listening_history": "היסטוריית ההאזנה שלך",
+        "popular_albums": "אלבומים פופולריים",
+        "staff_picks_tracks": "בחירת הצוות: מסלולים",
+        "staff_picks_albums": "בחירת הצוות: אלבומים",
+        "radio_stations_for_you": "תחנות רדיו בשבילך",
+        "new_releases_for_you": "ריליסים חדשים עבורך",
+        "recent_favorite_tracks": "רצועות מועדפות לאחרונה",
+        "favorite_playlists": "פלייליסטים מועדפים",
+        "favorite_radio_stations": "תחנות רדיו מועדפות"
+    },
+    "homescreen_edit_enable": "עריכת מסך הבית",
+    "homescreen_edit_disable": "יציאה ממצב עריכה של מסך הבית",
+    "lyrics_will_appear_soon": "המילים יופיעו כשהשיר מתחיל..."
 }

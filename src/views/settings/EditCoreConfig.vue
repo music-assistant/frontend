@@ -1,46 +1,12 @@
 <template>
   <section>
     <v-card-text>
-      <!-- header -->
       <div v-if="config" style="margin-left: -5px; margin-right: -5px">
-        <v-card-title>
-          {{
-            $t("settings.setup_provider", [
-              api.providerManifests[config.domain].name,
-            ])
-          }}
-        </v-card-title>
         <v-card-subtitle>
-          {{
-            api.providerManifests[config.domain].description
-          }} </v-card-subtitle
-        ><br />
-        <v-card-subtitle
-          v-if="api.providerManifests[config.domain].codeowners.length"
-        >
-          <b>{{ $t("settings.codeowners") }}: </b
-          >{{ api.providerManifests[config.domain].codeowners.join(" / ") }}
+          {{ getItemDescription(config) }}
         </v-card-subtitle>
-
-        <v-card-subtitle
-          v-if="api.providerManifests[config.domain].documentation"
-        >
-          <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
-          <a
-            @click="
-              openLinkInNewTab(
-                api.providerManifests[config.domain].documentation!,
-              )
-            "
-            >{{ $t("settings.check_docs") }}</a
-          >
-        </v-card-subtitle>
-        <br />
-        <v-divider />
-        <br />
         <br />
       </div>
-      <v-divider />
       <edit-config
         v-if="config"
         :config-entries="Object.values(config.values)"
@@ -63,14 +29,15 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { api } from "@/plugins/api";
 import { CoreConfig, ConfigValueType } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { nanoid } from "nanoid";
-import { openLinkInNewTab } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
+const { t } = useI18n();
 const config = ref<CoreConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
@@ -92,6 +59,22 @@ watch(
 );
 
 // methods
+const getItemTitle = (item: CoreConfig) => {
+  // Try translation first, fall back to manifest
+  const translated = t(`settings.core_module.${item.domain}.name`);
+  // If translation returns the key itself, it doesn't exist - use manifest
+  return translated !== `settings.core_module.${item.domain}.name`
+    ? translated
+    : api.providerManifests[item.domain].name;
+};
+
+const getItemDescription = (item: CoreConfig) => {
+  const translated = t(`settings.core_module.${item.domain}.description`);
+  return translated !== `settings.core_module.${item.domain}.description`
+    ? translated
+    : api.providerManifests[item.domain].description;
+};
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   // save new provider config
   loading.value = true;

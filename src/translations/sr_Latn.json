@@ -13,7 +13,9 @@
         "single": "Singl",
         "unknown": "Nepoznata vrsta albuma",
         "audiobook": "Audio knjiga",
-        "podcast": "Podkast"
+        "podcast": "Podkast",
+        "live": "Uživo",
+        "soundtrack": "Saundtrek"
     },
     "albums": "Albumi",
     "appears_on": "Pojavljuje se na",
@@ -115,7 +117,7 @@
         "player_provider": "Provajder",
         "player_settings": "Podešavanja plejera",
         "player_type_label": "Tip plejera",
-        "playerproviders": "Plejer provajdera",
+        "playerproviders": "Provajderi plejera",
         "players": "Plejeri",
         "pluginproviders": "Dodatak provajdera",
         "provider_disabled": "Ovaj unos provajdera je onemogućen",
@@ -128,7 +130,6 @@
         "sync": "Sinhronizuj sada",
         "sync_running": "Ovaj provajder se trenutno sinhronizuje",
         "username": "Korisničko ime",
-        "core": "Jezgro",
         "core_modules": "Osnovni moduli jezgra",
         "server_info": "Informacije o serveru",
         "server_id": "ID servera",
@@ -289,7 +290,9 @@
             "announcements": "Konfiguracija objava",
             "airplay": "Airplay specifična podešavanja",
             "player_controls": "Kontrole plejera",
-            "presets": "Unapred podešena podešavanja"
+            "presets": "Unapred podešena podešavanja",
+            "sync_options": "Opcije sinhronizacije\/uvoza",
+            "builtin_playlists": "Ugrađena podešavanja liste pesama"
         },
         "tts_pre_announce": {
             "label": "Prethodno najavite TTS objave",
@@ -321,21 +324,12 @@
             "label": "Ikona",
             "description": "Ikona dizajna materijala za ovaj plejer.\n\nPogledajte https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Korisnički interfejs",
-        "frontend_desc": "Podešavanja konfiguracije za korisnički interfejs Music Assistant-a (frontend). Imajte na umu da se ova podešavanja čuvaju na nivou uređaja.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Automatski (prati konfiguraciju sistema)",
                 "light": "Svetla",
                 "dark": "Tamna"
-            }
-        },
-        "menu_style": {
-            "label": "Stil menija",
-            "options": {
-                "horizontal": "Horizontalno",
-                "vertical": "Vertikalno"
             }
         },
         "menu_items": {
@@ -368,12 +362,9 @@
                 "pt_BR": "Portugalski (Brazil)",
                 "sl_SI": "Slovenački",
                 "hu_HU": "Mađarski",
-                "it": "Italijanski"
+                "it": "Italijanski",
+                "el_GR": "Grčki"
             }
-        },
-        "hide_settings": {
-            "label": "Dugme za sakrivanje podešavanja",
-            "description": "Sakrij dugme za podešavanja na početnom ekranu. \n \n Imajte na umu da ako onemogućite podešavanja na početnom ekranu i u meniju, možete se zaključati. \n \n U tom slučaju ćete morati ručno da unesete putanju do podešavanja ili da obrišete kolačiće pregledača da biste ponovo dobili pristup podešavanjima, koristite na sopstveni rizik!"
         },
         "no_music_providers": "Nijedan muzički provajder nije konfigurisan",
         "no_music_providers_detail": "Započnite svoje iskustvo sa Music Assistant-om dodavanjem svojih muzičkih provajdera.",
@@ -411,8 +402,7 @@
             "label": "Fiksno\/rezervno podešavanje pojačanja za radio",
             "description": "Korekcija fiksnog\/rezervnog pojačanja koja se primenjuje na radio strim (zavisi od podešavanja „Metod normalizacije jačine zvuka“). \n Koristite pozitivnu vrednost za povećanje jačine zvuka, negativnu vrednost za smanjenje jačine zvuka. \n \n Ovo podešavanje se koristi kada je metod normalizacije jačine zvuka podešen na „Korekcija fiksnog pojačanja“ ili „Rezervni korak za korekciju pojačanja“."
         },
-        "group_type": "Tip grupe",
-        "add_group_player_desc": "Za provajdere plejera\/ekosisteme koji pružaju izvorno grupisanje\/sinhronizaciju, automatski će se kreirati grupa za sinhronizaciju, što znači da ako reprodukujete preko  ove grupe plejera, članovi plejera će se automatski sinhronizovati. \n \nZa provajdere plejera\/ekosisteme koji ne podržavaju grupisanje, ili u slučaju da želite da grupišete plejere iz različitih ekosistema, možete koristiti tip grupe Univerzalna, koja će distribuirati isti zvuk svim  plejerima grupe (ali ne sinhronizovano). \n \n Imajte na umu da neki provajderi podržavaju grupisanje, ali morate da koristite izvornu aplikaciju da biste izvršili grupisanje. Primer su plejeri zasnovani na Google Cast-u, gde možete da kreirate Google Cast grupe samo u okviru aplikacije Google Home.",
+        "add_group_player_desc": "Kada se kreira grupni plejer za {0} provajdera, automatski će biti formirana sinhronizovana grupa, što znači da će svi članovi te grupe biti sinhronizovani kada pustite muziku na toj grupi plejera.",
         "dynamic_members": {
             "label": "Članovi dinamičke grupe",
             "description": "Dozvolite članovima da se (privremeno) dinamički pridruže\/napuste grupu, tako da se grupa manje-više ponaša isto kao i ručna sinhronizacija plejera, s tim da je glavna razlika u tome što će plejer grupe čuvati red."
@@ -476,6 +466,14 @@
             "channels_compact": {
                 "FL": "L",
                 "FR": "R"
+            },
+            "presets": {
+                "load": "Učitaj DSP preset",
+                "empty_warning": "Nema dostupnih DSP preseta",
+                "save": "Sačuvaj DSP preset",
+                "name": "Ime preseta",
+                "name_placeholder": "Moj novi preset",
+                "remove_confirm": "Da li ste sigurni da želite da uklonite ovaj DSP preset?"
             }
         },
         "power_control": {
@@ -505,7 +503,37 @@
         "enable_builtin_player": {
             "label": "Dozvoli reprodukciju na ovom uređaju\/pregledaču",
             "description": "Omogućite (eksperimentalni) ugrađeni plejer za ovaj uređaj\/pregledač, koji vam omogućava da strimujete sav sadržaj Music Assistant-a direktno na ovaj uređaj."
-        }
+        },
+        "add_group_player_desc_universal": "Kreiranjem Univerzalne grupe plejera, možete grupisati plejere iz različitih provajdera\/ekosistema. \n Ovo će distribuirati isti zvuk svim plejerima članovima (ali ne sinhronizovano).",
+        "edit_provider": "Uredi provajdera: {0}",
+        "metadata": "Metapodaci",
+        "metadataprovider": "Provajder metapodataka",
+        "music": "Muzika",
+        "musicprovider": "Provajder muzike",
+        "player": "Plejer",
+        "playerprovider": "Provajder plejera",
+        "plugin": "Dodatak",
+        "pluginprovider": "Provajder dodatka",
+        "providers_total": "{0} ukupno provajdera {1}",
+        "stage": {
+            "label": "Faza",
+            "options": {
+                "stable": "Stabilno",
+                "beta": "Beta",
+                "alpha": "Alfa",
+                "experimental": "Eksperimentalno",
+                "unmaintained": "Neodržavano",
+                "deprecated": "Zastarelo"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Nametni mobilni raspored",
+            "description": "Nametni mobilni raspored (sa navigacijom menija na dnu), čak i na većim ekranima."
+        },
+        "providers_description": "Upravljaj svojim muzičkim izvorima, striming servisima i integracijama",
+        "players_description": "Konfiguriši i upravljaj svojim audio izlaznim uređajima",
+        "frontend_description": "Prilagodi temu i izgled korisničkog interfejsa",
+        "provider_type": "Tip"
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",
@@ -569,7 +597,7 @@
         "album_type": "Tip albuma",
         "loading": "Server obrađuje zahtev ili sinhronizuje muziku.",
         "primary_image": "Ovo je primarna slika za ovaj tip slike",
-        "copy_uri": "Kopiraj URL u međuspremnik",
+        "copy_uri": "Kopiraj URI u međuspremnik",
         "select_all": "Izaberite sve stavke"
     },
     "topresult": "Top rezultat",
@@ -591,7 +619,6 @@
     "item_in_library": "Ova stavka je dostupna u biblioteci",
     "back": "Nazad",
     "recently_played": "Nedavno reprodukovano",
-    "radiobrowser_by_popularity": "Po popularnosti",
     "radiobrowser_by_country": "Po zemlji",
     "radiobrowser_by_tag": "Po oznaci (tagu)",
     "load_more_items": "Učitaj još stavki...",
@@ -709,7 +736,7 @@
         "recommended_new_tracks": "Preporučene nove numere",
         "recently_played": "Nedavno reprodukovano",
         "suggested_new_albums_for_you": "Predloženi novi albumi za vas",
-        "random_artists": "Slučajni umetnici",
+        "random_artists": "Nasumični izvođači",
         "random_albums": "Slučajni albumi",
         "custom_mixes": "Prilagođeni miksevi",
         "your_listening_history": "Vaša istorija slušanja",
@@ -726,5 +753,7 @@
     "homescreen_edit_enable": "Izmeni početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
     "lyrics_will_appear_soon": "Tekst će se pojaviti kada pesma počne...",
-    "builtin_playlists": "Ugrađena podešavanja plejliste"
+    "radiobrowser_by_votes": "Po glasovima",
+    "radiobrowser_by_clicks": "Po kliku",
+    "radiobrowser_by_language": "Po jeziku"
 }

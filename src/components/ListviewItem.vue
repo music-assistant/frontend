@@ -31,10 +31,15 @@
         v-if="!showCheckboxes && item.is_playable"
         :class="{ hidden: !showPlayBtn }"
         icon="mdi-play"
-        color="primary"
-        fab
+        variant="text"
         size="small"
-        style="position: absolute; left: 12px; bottom: 12px"
+        style="
+          position: absolute;
+          left: 14px;
+          bottom: 12px;
+          color: white;
+          font-size: 18px;
+        "
         @click.stop="onPlayClick"
         @mouseenter="showPlayBtn = true"
         @mouseleave="showPlayBtn = false"
@@ -46,7 +51,7 @@
       <span v-if="item.media_type == MediaType.FOLDER">
         <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
       </span>
-      <span v-else>
+      <span v-else :class="{ 'is-playing': isPlaying }">
         {{ item.name }}
         <span v-if="'version' in item && item.version"
           >({{ item.version }})</span
@@ -147,6 +152,11 @@
 
     <!-- actions -->
     <template #append>
+      <!-- Now Playing Badge -->
+      <NowPlayingBadge
+        v-if="isPlaying"
+        :show-badge="getBreakpointValue('bp7')"
+      />
       <!-- hi res icon -->
       <v-img
         v-if="HiResDetails"
@@ -217,32 +227,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { VTooltip } from "vuetify/components";
-import MediaItemThumb from "./MediaItemThumb.vue";
-import { iconHiRes } from "./QualityDetailsBtn.vue";
-import ProviderIcon from "./ProviderIcon.vue";
-import {
-  ContentType,
-  type BrowseFolder,
-  type MediaItemType,
-  MediaType,
-  AlbumType,
-} from "@/plugins/api/interfaces";
+import FavouriteButton from "@/components/FavoriteButton.vue";
+import ListItem from "@/components/ListItem.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   formatDuration,
-  parseBool,
   getArtistsString,
   getBrowseFolderName,
-  truncateString,
-  handlePlayBtnClick,
   handleMediaItemClick,
   handleMenuBtnClick,
+  handlePlayBtnClick,
+  parseBool,
+  truncateString,
 } from "@/helpers/utils";
-import { useI18n } from "vue-i18n";
+import {
+  AlbumType,
+  ContentType,
+  MediaType,
+  type BrowseFolder,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import ListItem from "@/components/mods/ListItem.vue";
-import FavouriteButton from "@/components/FavoriteButton.vue";
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { VTooltip } from "vuetify/components";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import ProviderIcon from "./ProviderIcon.vue";
+import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 // properties
 export interface Props {
@@ -258,6 +269,7 @@ export interface Props {
   isSelected: boolean;
   isDisabled?: boolean;
   isAvailable?: boolean;
+  isPlaying?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
   parentItem?: MediaItemType;
@@ -314,18 +326,23 @@ const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
-const onMenu = function (evt: PointerEvent | TouchEvent) {
-  const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
-  const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
-  handleMenuBtnClick(compProps.item, posX, posY, compProps.parentItem);
+const onMenu = function (evt: Event) {
+  const mouseEvt = evt as MouseEvent;
+  handleMenuBtnClick(
+    compProps.item,
+    mouseEvt.clientX,
+    mouseEvt.clientY,
+    compProps.parentItem,
+  );
 };
 
-const onClick = function (evt: PointerEvent) {
+const onClick = function (evt: Event) {
   if (compProps.showCheckboxes) return;
+  const mouseEvt = evt as MouseEvent;
   handleMediaItemClick(
     compProps.item,
-    evt.clientX,
-    evt.clientY,
+    mouseEvt.clientX,
+    mouseEvt.clientY,
     compProps.parentItem,
   );
 };

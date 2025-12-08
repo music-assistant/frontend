@@ -4,7 +4,7 @@
       v-hold="onMenu"
       v-bind="props"
       :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
-      :elevation="isHovering ? 3 : 0"
+      elevation="0"
       :disabled="disabled"
       @click="onClick"
       @click.right.prevent="onMenu"
@@ -27,85 +27,101 @@
           :model-value="isSelected"
         />
       </v-overlay>
-      <MediaItemThumb :item="isAvailable ? item : undefined" />
-      <div
-        :class="
-          $vuetify.theme.current.dark ? 'paneldetails-dark' : 'paneldetails'
-        "
-        :model-value="isHovering || $vuetify.display.mobile || permanentOverlay"
-      >
-        <v-list-item
-          variant="text"
-          slim
-          tile
-          density="compact"
-          class="panel-item-details"
+      <div class="thumb-container">
+        <MediaItemThumb :item="isAvailable ? item : undefined" />
+        <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
+          <ProviderIcon
+            v-if="showProviderOnCover && 'provider_mappings' in item"
+            :domain="
+              item.media_type == MediaType.PLAYLIST
+                ? item.provider_mappings[0].provider_domain
+                : item.provider
+            "
+            :size="20"
+          />
+        </div>
+        <!-- Now Playing Badge -->
+        <NowPlayingBadge
+          v-if="isPlaying"
+          icon-style="position: absolute; right: 5px; bottom: 5px"
+          :show-badge="false"
+        />
+        <!-- play button -->
+        <div
+          v-if="
+            (isHovering || store.isTouchscreen) &&
+            isAvailable &&
+            item.is_playable
+          "
+          class="play-button-overlay"
         >
-          <v-list-item-title>
-            <span v-if="item.media_type == MediaType.FOLDER">
-              <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
-            </span>
-            <span v-else>{{ item.name }}</span>
-            <span v-if="'version' in item && item.version">
-              - {{ item.version }}</span
-            >
-          </v-list-item-title>
-          <v-list-item-subtitle
-            v-if="'artists' in item && item.artists"
-            class="line-clamp-1"
-          >
-            {{ getArtistsString(item.artists, 1) }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-if="'authors' in item && item.authors"
-            class="line-clamp-1"
-          >
-            {{ item.authors.join(" / ") }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-else-if="'publisher' in item && item.publisher"
-            class="line-clamp-1"
-          >
-            {{ item.publisher }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-else-if="'owner' in item && item.owner"
-            class="line-clamp-1"
-          >
-            {{ item.owner }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-else-if="!('provider_mappings' in item)"
-            class="line-clamp-1"
-          >
-            {{ $t(item.media_type) }}
-          </v-list-item-subtitle>
-        </v-list-item>
+          <v-btn
+            icon="mdi-play"
+            color="white"
+            fab
+            style="opacity: 0.6; font-size: 20px"
+            @click.stop="onPlayClick"
+          />
+        </div>
       </div>
-      <!-- play button -->
-      <v-btn
-        v-if="
-          (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
-        "
-        icon="mdi-play"
-        color="primary"
-        fab
-        size="small"
-        style="position: absolute; right: 10px; bottom: 35px; opacity: 0.8"
-        @click.stop="onPlayClick"
-      />
+      <v-list-item
+        variant="text"
+        slim
+        tile
+        density="compact"
+        class="panel-item-details"
+      >
+        <v-list-item-title>
+          <span v-if="item.media_type == MediaType.FOLDER">
+            <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
+          </span>
+          <span v-else :class="{ 'is-playing': isPlaying }">{{
+            item.name
+          }}</span>
+          <span
+            v-if="'version' in item && item.version"
+            :class="{ 'is-playing': isPlaying }"
+          >
+            - {{ item.version }}</span
+          >
+        </v-list-item-title>
+        <v-list-item-subtitle
+          v-if="'artists' in item && item.artists"
+          class="line-clamp-1"
+        >
+          {{ getArtistsString(item.artists, 1) }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-if="'authors' in item && item.authors"
+          class="line-clamp-1"
+        >
+          {{ item.authors.join(" / ") }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-else-if="'publisher' in item && item.publisher"
+          class="line-clamp-1"
+        >
+          {{ item.publisher }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-else-if="'owner' in item && item.owner"
+          class="line-clamp-1"
+        >
+          {{ item.owner }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle
+          v-else-if="!('provider_mappings' in item)"
+          class="line-clamp-1"
+        >
+          {{ $t(item.media_type) }}
+        </v-list-item-subtitle>
+      </v-list-item>
     </v-card>
   </v-hover>
 </template>
 
 <script setup lang="ts">
-import MediaItemThumb from "./MediaItemThumb.vue";
-import {
-  BrowseFolder,
-  ItemMapping,
-  type MediaItemType,
-  MediaType,
-} from "@/plugins/api/interfaces";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
@@ -113,7 +129,15 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/utils";
+import {
+  BrowseFolder,
+  ItemMapping,
+  type MediaItemType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import ProviderIcon from "./ProviderIcon.vue";
 
 // properties
 export interface Props {
@@ -122,7 +146,9 @@ export interface Props {
   isSelected?: boolean;
   showCheckboxes?: boolean;
   permanentOverlay?: boolean;
+  showProviderOnCover?: boolean;
   isAvailable?: boolean;
+  isPlaying?: boolean;
   parentItem?: MediaItemType;
   disabled?: boolean;
 }
@@ -131,6 +157,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   isSelected: false,
   showCheckboxes: false,
   permanentOverlay: false,
+  showProviderOnCover: false,
   isAvailable: true,
   parentItem: undefined,
 });
@@ -172,14 +199,33 @@ const onPlayClick = function (evt: PointerEvent) {
 </script>
 
 <style scoped>
-.v-card {
-  transition: opacity 0.4s ease-in-out;
-  padding: 0px;
-  margin-bottom: 10px;
+.thumb-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.v-card:not(.on-hover) {
-  opacity: 0.75;
+.play-button-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  .v-btn {
+    pointer-events: all;
+  }
+}
+.v-card {
+  background-color: rgb(var(--v-theme-panel));
+  transition: opacity 0.4s ease-in-out;
+  border-radius: 3px;
+  padding: 10px;
 }
 
 .v-card.unavailable {
@@ -187,9 +233,8 @@ const onPlayClick = function (evt: PointerEvent) {
 }
 
 .panel-item-details {
-  padding: 5px !important;
-  height: 50px;
-  bottom: 5px;
+  padding: 0px !important;
+  margin-top: 10px;
 }
 
 .hiresicon {
@@ -202,20 +247,9 @@ const onPlayClick = function (evt: PointerEvent) {
   margin-right: 10px;
   filter: invert(100%);
 }
-</style>
 
-<style lang="scss" scoped>
-.paneldetails {
-  background-color: rgba(255, 255, 255, 0.75);
-  position: absolute;
-  width: 100%;
-  height: 50px;
-  bottom: 0px;
-  border-radius: 0;
-}
-
-.paneldetails-dark {
-  @extend .paneldetails;
-  background-color: rgba(0, 0, 0, 0.75);
+.v-list-item-subtitle {
+  color: rgb(var(--v-theme-on-panel), 0.6) !important;
+  font-size: small !important;
 }
 </style>

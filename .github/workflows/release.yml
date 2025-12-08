@@ -1,66 +1,198 @@
-name: 'publish'
+name: Publish Release
+
+# Creates a GitHub release, builds and publishes to PyPI, and creates a PR in the server repo
+# Can be triggered manually with a version number or called by the auto-release workflow
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - release
+    inputs:
+      version:
+        description: "Version number (e.g., 2.16.7) - Creates release, publishes to PyPI, and updates server repo"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: "Version number (e.g., 2.16.7)"
+        required: true
+        type: string
+    secrets:
+      PYPI_TOKEN:
+        required: true
+      PRIVILEGED_GITHUB_TOKEN:
+        required: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22.x"
+  NODE_OPTIONS: --max_old_space_size=6144
+
+# Set default workflow permissions
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
-  publish-tauri:
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: 'macos-latest' # for Arm based macs (M1 and above).
-            args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest' # for Intel based macs.
-            args: '--target x86_64-apple-darwin'
-          - platform: 'ubuntu-22.04'
-            args: ''
-          - platform: 'windows-latest'
-            args: ''
-
-    runs-on: ${{ matrix.platform }}
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ inputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout the repository
+        uses: actions/checkout@v6
 
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+      - name: Create and push tag
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: 'yarn' # Set this to npm, yarn or pnpm.
-
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
-        with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
-
-      - name: install frontend dependencies
-        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: yarn install # change this to npm or pnpm depending on which one you use.
-
-      - uses: tauri-apps/tauri-action@v0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ inputs.version }}" -m "Release ${{ inputs.version }}"
+          git push origin "${{ inputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release notes with Release Drafter
+        id: release_drafter
+        uses: release-drafter/release-drafter@v6.1.0
         with:
-          tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
-          releaseName: 'App v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          config-name: release-drafter.yml
+          version: ${{ inputs.version }}
+          tag: ${{ inputs.version }}
+          publish: true
           prerelease: false
-          args: ${{ matrix.args }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-publish:
+    name: Build and Publish
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: |
+          yarn install
+          python3 -m pip install build tomli tomli-w
+
+      - name: Set Python project version
+        shell: python
+        run: |-
+          import tomli
+          import tomli_w
+
+          with open("pyproject.toml", "rb") as f:
+            pyproject = tomli.load(f)
+
+          pyproject["project"]["version"] = "${{ inputs.version }}"
+
+          with open("pyproject.toml", "wb") as f:
+            tomli_w.dump(pyproject, f)
+
+      - name: Build package
+        run: |
+          yarn build
+          rm -rf dist music_assistant_frontend.egg-info
+          python3 -m build
+
+      - name: Publish release to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.13.0
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Upload release assets
+        run: |
+          gh release upload "${{ inputs.version }}" dist/*.whl dist/*.tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  server-repo-pr:
+    name: Server repo PR
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for PyPI availability
+        run: |
+          echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend ${{ inputs.version }}..."
+          sleep 300
+          echo "Done waiting, proceeding with server repo update"
+
+      - name: Get release notes
+        id: release_notes
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          # Get the release notes from the frontend release
+          RELEASE_DATA=$(gh release view "$VERSION" --repo music-assistant/frontend --json body)
+
+          RELEASE_NOTES=$(echo "$RELEASE_DATA" | jq -r '.body')
+
+          # Fix relative links in release notes to point to frontend repo
+          # Convert frontend#123 or #123 to [#123](https://github.com/music-assistant/frontend/pull/123)
+          RELEASE_NOTES=$(echo "$RELEASE_NOTES" | sed -E 's/(^|[^[])(frontend)?#([0-9]+)/\1[#\3](https:\/\/github.com\/music-assistant\/frontend\/pull\/\3)/g')
+
+          # Set multiline output
+          {
+            echo 'notes<<EOF'
+            echo "$RELEASE_NOTES"
+            echo EOF
+          } >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+
+      - name: Checkout server repository
+        uses: actions/checkout@v6
+        with:
+          repository: music-assistant/server
+          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          path: .
+
+      - name: Update frontend version
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          # Update pyproject.toml
+          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$VERSION\",/" pyproject.toml
+
+          # Update requirements_all.txt
+          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$VERSION/" requirements_all.txt
+
+          # Remove backup files
+          rm -f pyproject.toml.bak requirements_all.txt.bak
+
+      - name: Create Pull Request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
+          branch: "auto-update-frontend-${{ inputs.version }}"
+          delete-branch: true
+          title: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
+          body: |
+            Update music-assistant-frontend to version [${{ inputs.version }}](https://github.com/music-assistant/frontend/releases/tag/${{ inputs.version }})
+
+            ${{ steps.release_notes.outputs.notes }}
+
+          labels: |
+            dependencies
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: create-release
+    uses: ./.github/workflows/deploy-pages.yml

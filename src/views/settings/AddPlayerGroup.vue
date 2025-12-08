@@ -7,24 +7,44 @@
           {{ $t("settings.add_group_player") }}
         </v-card-title>
         <v-card-subtitle
+          v-if="providerDetails?.domain === 'universal_group'"
           style="white-space: break-spaces"
-          v-html="markdownToHtml($t('settings.add_group_player_desc'))"
+          v-html="
+            markdownToHtml($t('settings.add_group_player_desc_universal'))
+          "
+        />
+        <v-card-subtitle
+          v-else
+          style="white-space: break-spaces"
+          v-html="
+            markdownToHtml(
+              $t('settings.add_group_player_desc', [providerDetails?.name]),
+            )
+          "
         />
         <br />
         <v-divider />
         <br />
         <br />
         <v-form ref="form" v-model="valid" style="margin-right: 10px">
-          <!-- providertype with dropdown -->
-          <v-select
-            v-model="group_type"
+          <!-- name field -->
+          <v-text-field
+            v-model="name"
+            :label="$t('settings.player_name')"
+            variant="outlined"
             clearable
-            :items="groupTypes"
-            item-title="name"
-            item-value="instance_id"
-            :label="$t('settings.group_type')"
             required
-            :disabled="members.length > 0"
+            :rules="[(v) => v.length > 0 || $t('settings.invalid_input')]"
+          />
+          <!-- dropdown with group members -->
+          <v-select
+            v-model="members"
+            clearable
+            multiple
+            :items="syncPlayers"
+            item-title="display_name"
+            item-value="player_id"
+            :label="$t('settings.group_members')"
           />
           <!-- dynamic mode -->
           <v-switch
@@ -33,6 +53,7 @@
             :label="$t('settings.dynamic_members.label')"
           />
           <v-card-subtitle
+            v-if="providerDetails?.domain !== 'universal_group'"
             style="
               white-space: break-spaces;
               padding-left: 0;
@@ -42,25 +63,6 @@
           >
             {{ $t("settings.dynamic_members.description") }}
           </v-card-subtitle>
-          <!-- name field -->
-          <v-text-field
-            v-model="name"
-            :label="$t('settings.player_name')"
-            variant="outlined"
-            clearable
-            required
-          />
-          <!-- value with dropdown -->
-          <v-select
-            v-model="members"
-            clearable
-            multiple
-            :items="syncPlayers"
-            item-title="display_name"
-            item-value="player_id"
-            :label="$t('settings.group_members')"
-            required
-          />
           <br />
           <v-btn
             block
@@ -84,42 +86,41 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { ProviderFeature } from "@/plugins/api/interfaces";
 import { markdownToHtml } from "@/helpers/utils";
+import { PlayerType } from "@/plugins/api/interfaces";
 
 // global refs
 const router = useRouter();
-const group_type = ref<string>("universal");
 const name = ref<string>("");
 const members = ref<string[]>([]);
-const dynamic = ref<boolean>(false);
+const dynamic = ref<boolean>(true);
 const valid = ref<boolean>(false);
 
+// props
+const props = defineProps<{
+  provider: string;
+}>();
+
 // computed properties
-const groupTypes = computed(() => {
-  return [
-    ...Object.values(api.providers).filter((x) =>
-      x.supported_features.includes(ProviderFeature.SYNC_PLAYERS),
-    ),
-    // return universal group type (as last option, so it isn't mistakenly selected)
-    { name: "Universal", instance_id: "universal" },
-  ];
+
+const providerDetails = computed(() => {
+  return api.getProvider(props.provider);
 });
 
 const syncPlayers = computed(() => {
   return Object.values(api.players).filter(
     (x) =>
       x.available &&
-      // prevent group-in-group (for now)
-      !x.provider.startsWith("player_group") &&
-      (x.provider == group_type.value || group_type.value == "universal"),
+      x.type != PlayerType.GROUP &&
+      (x.provider == providerDetails.value?.domain ||
+        props.provider === "universal_group"),
   );
 });
 
 // methods
 const onSubmit = async function () {
   api.createPlayerGroup(
-    group_type.value,
+    props.provider,
     name.value,
     members.value,
     dynamic.value,

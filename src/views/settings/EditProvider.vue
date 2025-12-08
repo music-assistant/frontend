@@ -25,20 +25,6 @@
             )
           "
         />
-
-        <v-card-subtitle
-          v-if="api.providerManifests[config.domain].documentation"
-        >
-          <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
-          <a
-            @click="
-              openLinkInNewTab(
-                api.providerManifests[config.domain].documentation!,
-              )
-            "
-            >{{ $t("settings.check_docs") }}</a
-          >
-        </v-card-subtitle>
         <br />
         <v-divider />
         <br />
@@ -106,7 +92,7 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { nanoid } from "nanoid";
-import { openLinkInNewTab, markdownToHtml } from "@/helpers/utils";
+import { markdownToHtml } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
 

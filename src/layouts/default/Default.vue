@@ -1,23 +1,12 @@
 <template>
-  <v-app v-if="store.connected">
+  <v-app>
     <MainView v-if="store.frameless" />
     <template v-else>
       <PlayerSelect />
-      <Footer />
-
       <MainView />
+      <Footer />
     </template>
   </v-app>
-  <v-overlay
-    v-else
-    class="centeredoverlay"
-    persistent
-    :model-value="!store.connected"
-  >
-    <div>
-      <v-progress-circular color="primary" indeterminate size="64" />
-    </div>
-  </v-overlay>
   <reload-prompt v-if="store.isInStandaloneMode" />
 </template>
 
@@ -42,7 +31,7 @@ watch(
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
         p.player_id.toLowerCase() === newPlayerString ||
-        p.display_name.toLowerCase() === newPlayerString
+        p.name.toLowerCase() === newPlayerString
       );
     })?.player_id;
 

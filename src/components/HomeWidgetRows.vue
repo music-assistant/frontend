@@ -23,18 +23,30 @@
 </template>
 
 <script setup lang="ts">
-import api from "@/plugins/api";
 import HomeWidgetRow, {
   WidgetRow,
   WidgetRowSettings,
 } from "@/components/WidgetRow.vue";
-import PlayersWidgetRow from "./PlayersWidgetRow.vue";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useUserPreferences } from "@/composables/userPreferences";
+import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import PlayersWidgetRow from "./PlayersWidgetRow.vue";
 
 const widgetRows = ref<WidgetRow[]>([]);
 const widgetRowSettings = ref<Record<string, WidgetRowSettings>>({});
+const { getPreference, setPreference } = useUserPreferences();
+const savedSettings = getPreference<Record<string, WidgetRowSettings>>(
+  "widgetRowSettings",
+  {
+    players: {
+      position: 0,
+      enabled: true,
+    },
+  },
+);
 
 export interface Props {
   editMode?: boolean;
@@ -44,16 +56,21 @@ withDefaults(defineProps<Props>(), {
 });
 
 const loadData = async function () {
-  const widgetRowSettingsRaw = localStorage.getItem("widgetRowSettings");
-  widgetRowSettings.value = widgetRowSettingsRaw
-    ? JSON.parse(widgetRowSettingsRaw)
-    : {
-        // insert virtual row for players
-        players: {
-          position: 0,
-          enabled: true,
-        },
-      };
+  if (store.currentUser?.preferences) {
+    widgetRowSettings.value = savedSettings.value || {
+      players: {
+        position: 0,
+        enabled: true,
+      },
+    };
+  } else {
+    widgetRowSettings.value = {
+      players: {
+        position: 0,
+        enabled: true,
+      },
+    };
+  }
 
   const recommendations = await api.getRecommendations();
   const _widgetRows: WidgetRow[] = [];
@@ -93,6 +110,16 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
+watch(
+  () => store.currentUser?.preferences,
+  (newPrefs) => {
+    if (newPrefs) {
+      loadData();
+    }
+  },
+  { immediate: false },
+);
+
 const onUpdateSettings = function (uri: string, settings: WidgetRowSettings) {
   // update the item in-place of the list
   for (const widgetRow of widgetRows.value) {
@@ -103,10 +130,7 @@ const onUpdateSettings = function (uri: string, settings: WidgetRowSettings) {
   }
   // update persistent settings
   widgetRowSettings.value[uri] = settings;
-  localStorage.setItem(
-    "widgetRowSettings",
-    JSON.stringify(widgetRowSettings.value),
-  );
+  setPreference("widgetRowSettings", widgetRowSettings.value);
 };
 </script>
 

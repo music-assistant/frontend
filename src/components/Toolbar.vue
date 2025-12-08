@@ -1,28 +1,40 @@
 <template>
   <v-toolbar :color="color" class="header">
-    <template v-if="icon" #prepend>
+    <template
+      v-if="
+        (!getBreakpointValue({ breakpoint: 'tablet' }) || iconAction) && icon
+      "
+      #prepend
+    >
       <v-btn
         :icon="icon"
         size="large"
         :disabled="iconAction == null"
         style="opacity: 0.8"
-        @click="iconAction()"
+        @click="iconAction?.()"
       />
     </template>
 
-    <template v-if="title" #title>
-      <button @click="emit('titleClicked')">
-        {{ title }}
-        <v-badge
-          v-if="count && getBreakpointValue('bp4')"
-          color="grey"
-          :content="count"
-          inline
-        />
-      </button>
+    <template #title>
+      <slot name="title">
+        <div v-if="store.mobileLayout && home" class="mobile-brand">
+          <img
+            src="@/assets/icon.svg"
+            alt="Music Assistant"
+            class="mobile-brand-logo"
+          />
+          <span class="mobile-brand-text">Music Assistant</span>
+        </div>
+        <button v-else-if="title" @click="emit('titleClicked')">
+          {{ title }}
+        </button>
+      </slot>
     </template>
 
-    <template v-if="menuItems?.length" #append>
+    <template v-if="$slots.append" #append>
+      <slot name="append"></slot>
+    </template>
+    <template v-else-if="menuItems?.length" #append>
       <v-progress-circular
         v-if="
           showLoading &&
@@ -45,6 +57,7 @@
           density="compact"
           slim
           tile
+          :close-on-content-click="menuItem.closeOnContentClick !== false"
         >
           <template #activator="{ props }">
             <v-btn
@@ -54,7 +67,11 @@
               :title="$t(menuItem.label, menuItem.labelArgs || [])"
               :disabled="menuItem.disabled == true"
             >
-              <v-badge :model-value="menuItem.active == true" color="error" dot>
+              <v-badge
+                :model-value="menuItem.active == true"
+                color="primary"
+                dot
+              >
                 <v-icon
                   :icon="menuItem.icon"
                   :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
@@ -94,7 +111,7 @@
           :disabled="menuItem.disabled == true"
           @click="menuItem.action"
         >
-          <v-badge :model-value="menuItem.active == true" color="error" dot>
+          <v-badge :model-value="menuItem.active == true" color="primary" dot>
             <v-icon
               :icon="menuItem.icon"
               :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
@@ -147,7 +164,7 @@
               <template v-if="menuItem.icon" #prepend>
                 <v-badge
                   :model-value="menuItem.active == true"
-                  color="error"
+                  color="primary"
                   dot
                 >
                   <v-icon
@@ -177,18 +194,19 @@
 
 <script setup lang="ts">
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
-import { getBreakpointValue } from "../plugins/breakpoint";
 import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
+import { getBreakpointValue } from "../plugins/breakpoint";
 
 // properties
 export interface Props {
   color?: string;
   icon?: string;
   title?: string;
-  count?: number;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
   showLoading?: boolean;
+  home?: boolean;
   iconAction?: () => void;
 }
 withDefaults(defineProps<Props>(), {
@@ -214,6 +232,7 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   active?: boolean;
   subItems?: ContextMenuItem[];
   overflowAllowed?: boolean;
+  closeOnContentClick?: boolean;
 }
 </script>
 
@@ -221,6 +240,14 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 .header.v-toolbar {
   height: 55px;
   font-family: "JetBrains Mono Medium";
+}
+
+.header.v-toolbar :deep(.v-toolbar__content) {
+  height: 55px !important;
+  min-height: 55px !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  align-items: center;
 }
 
 .header.v-toolbar :deep(.v-toolbar__content) > .v-toolbar__append {
@@ -249,5 +276,21 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 
 .header.v-toolbar-default > .v-toolbar__content > .v-toolbar__append {
   margin-inline-end: 10px;
+}
+
+/* Mobile branding on the left */
+.mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.mobile-brand-logo {
+  height: 30px;
+  width: 30px;
+}
+.mobile-brand-text {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
 }
 </style>

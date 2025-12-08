@@ -8,20 +8,19 @@
       <div
         class="media-thumb player-media-thumb"
         :style="`cursor: pointer;height: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
+          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
         }px; width: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 50 : 64
+          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
         }px; `"
         @click="store.showFullscreenPlayer = true"
       >
+        <!-- queue item (mediaitem) image -->
         <MediaItemThumb
-          v-if="
-            store.activePlayer?.powered != false &&
-            (store.curQueueItem?.media_item || store.curQueueItem?.image)
-          "
-          :item="store.curQueueItem?.media_item || store.curQueueItem"
+          v-if="store.activePlayer?.powered != false && store.curQueueItem"
+          :item="store.curQueueItem"
           :fallback="imgCoverDark"
         />
+        <!-- player (external source) media image (if no queue item)-->
         <div
           v-else-if="
             store.activePlayer?.powered != false &&
@@ -31,20 +30,20 @@
           <v-img
             class="media-thumb"
             style="border-radius: 4px"
-            size="55"
+            size="60"
             :src="store.activePlayer.current_media.image_url"
           />
         </div>
+        <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
           <v-icon
-            size="35"
+            size="24"
             :icon="
               store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_childs.length
+              store.activePlayer?.group_members.length
                 ? 'mdi-speaker-multiple'
                 : store.activePlayer?.icon || 'mdi-speaker'
             "
-            style="display: table-cell; opacity: 0.8"
           />
         </div>
       </div>
@@ -63,7 +62,7 @@
           v-if="store.activePlayer?.powered == false"
           @click="store.showPlayersMenu = true"
         >
-          {{ store.activePlayer?.display_name }}
+          {{ store.activePlayer?.name }}
         </div>
         <!-- queue item media item + optional version-->
         <div
@@ -95,7 +94,7 @@
         </div>
         <!-- fallback: display player name -->
         <div v-else-if="store.activePlayer">
-          {{ store.activePlayer?.display_name }}
+          {{ store.activePlayer?.name }}
         </div>
         <!-- no player selected message -->
         <div v-else @click="store.showPlayersMenu = true">
@@ -165,12 +164,25 @@
           >
             {{ store.curQueueItem.media_item.podcast.name }}
           </div>
-          <!-- radio live metadata -->
+          <!-- live (stream) metadata (artist + title) -->
           <div
-            v-else-if="store.curQueueItem?.streamdetails?.stream_title"
-            class="line-clamp-1"
+            v-else-if="
+              store.curQueueItem?.streamdetails?.stream_metadata &&
+              store.curQueueItem?.streamdetails?.stream_metadata.title &&
+              store.curQueueItem?.streamdetails?.stream_metadata.artist
+            "
           >
-            {{ store.curQueueItem?.streamdetails?.stream_title }}
+            {{ store.curQueueItem?.streamdetails?.stream_metadata.artist }} -
+            {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
+          </div>
+          <!-- live (stream) metadata (only title) -->
+          <div
+            v-else-if="
+              store.curQueueItem?.streamdetails?.stream_metadata &&
+              store.curQueueItem?.streamdetails?.stream_metadata.title
+            "
+          >
+            {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
           </div>
           <!-- other description -->
           <div
@@ -229,7 +241,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onUnmounted } from "vue";
+import computeElapsedTime from "@/helpers/elapsed";
 
 import { MediaType, PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -239,6 +252,7 @@ import {
   getArtistsString,
   getPlayerName,
   truncateString,
+  formatDuration,
 } from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 import QualityDetailsBtn, {
@@ -269,9 +283,79 @@ const props = withDefaults(defineProps<Props>(), {
 const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
 });
+
+// ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
+const nowTick = ref(0);
+let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+const startTick = (interval = 500) => {
+  if (!tickTimer)
+    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
+};
+
+const stopTick = () => {
+  if (tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+};
+
+onUnmounted(() => {
+  stopTick();
+});
+
+const currentElapsed = computed(() => {
+  // include nowTick so this computed re-evaluates periodically while mounted
+  void nowTick.value;
+
+  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
+  const isPlaying = store.activePlayer?.playback_state === "playing";
+  const usingQueue = !!(
+    store.activePlayerQueue && store.activePlayerQueue.active
+  );
+  const hasCurrentMedia =
+    store.activePlayer?.current_media?.elapsed_time != null;
+
+  if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
+  else stopTick();
+
+  const queue = store.activePlayerQueue;
+  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
+    return computeElapsedTime(
+      queue.elapsed_time,
+      queue.elapsed_time_last_updated,
+      store.activePlayer?.playback_state,
+    );
+  }
+
+  // If there's an external source active on the player prefer the current_media timing
+  if (
+    store.activePlayer?.current_media?.elapsed_time != null &&
+    store.activePlayer?.current_media?.elapsed_time_last_updated != null
+  ) {
+    return computeElapsedTime(
+      store.activePlayer.current_media.elapsed_time,
+      store.activePlayer.current_media.elapsed_time_last_updated,
+      store.activePlayer?.playback_state,
+    );
+  }
+
+  // Fall back to player-level elapsed_time (legacy / provider-level value)
+  if (
+    store.activePlayer?.elapsed_time != null &&
+    store.activePlayer?.elapsed_time_last_updated != null
+  ) {
+    return computeElapsedTime(
+      store.activePlayer.elapsed_time,
+      store.activePlayer.elapsed_time_last_updated,
+      store.activePlayer?.playback_state,
+    );
+  }
+  return undefined;
+});
 </script>
 
-<style>
+<style scoped>
 .player-media-thumb {
   margin-right: 10px;
 }
@@ -289,12 +373,13 @@ const streamDetails = computed(() => {
 }
 
 .icon-thumb {
-  width: 55px;
-  height: 55px;
-  margin-top: 5px;
-  border-radius: 4px;
+  width: 60px;
+  height: 60px;
+  border-radius: 3px;
   background-color: rgba(0, 0, 0, 0.3);
-  display: inline-table;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* this fixes missing subtitle items on webkit*/
