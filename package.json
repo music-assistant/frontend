@@ -56,7 +56,7 @@
     "material-design-icons-iconfont": "6.7.0",
     "nanoid": "5.1.6",
     "prettier": "3.7.4",
-    "replace-in-file": "8.3.0",
+    "replace-in-file": "8.4.0",
     "sass": "1.94.2",
     "typescript": "5.9.3",
     "unplugin": "^2.3.11",
