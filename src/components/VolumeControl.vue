@@ -80,9 +80,13 @@
         />
       </template>
       <template #append>
-        <v-icon v-if="canExpand && !showSubPlayers" class="expandbtn">
-          mdi-chevron-down
-        </v-icon>
+        <v-icon
+          v-if="canExpand"
+          variant="plain"
+          :icon="showSubPlayers ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          class="expandbtn"
+          @click="$emit('toggle-expand', player)"
+        />
         <div v-else class="text-caption volumecaption">
           {{ Math.round(mainDisplayVolume) }}
         </div>
@@ -255,6 +259,11 @@ const playersToUnSync = ref<string[]>([]);
 const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
 const mainDisplayVolume = ref(0);
 const childDisplayVolumes = ref<Record<string, number>>({});
+
+// emits
+defineEmits<{
+  (e: "toggle-expand", player: Player): void;
+}>();
 
 watch(
   () => compProps.player,
