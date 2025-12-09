@@ -22,16 +22,7 @@ struct Song {
 // Function for running the Discord rich presence
 pub fn start_rpc(mass_ws: String) {
     // Create the Discord RPC client
-    let mut client: DiscordIpcClient = match DiscordIpcClient::new(CLIENT_ID) {
-        Ok(client) => client,
-        Err(e) => {
-            eprintln!(
-                "Couldn't create the Discord client: {}. Is Discord running?",
-                e
-            );
-            return;
-        }
-    };
+    let mut client = DiscordIpcClient::new(CLIENT_ID);
 
     // Connect to the Discord Rich Presence socket
     if let Err(e) = client.connect() {
