@@ -874,6 +874,7 @@ export interface ProviderManifest {
   name: string;
   description: string;
   codeowners: string[];
+  credits: string[];
   requirements: string[];
   // documentation: link/url to documentation.
   documentation?: string;

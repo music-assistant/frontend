@@ -25,6 +25,17 @@
                 )
               "
             ></div>
+            <div
+              v-if="api.providerManifests[config.domain].credits.length"
+              class="header-authors"
+              v-html="
+                markdownToHtml(
+                  getCreditsMarkdown(
+                    api.providerManifests[config.domain].credits,
+                  ),
+                )
+              "
+            ></div>
           </div>
         </div>
       </v-card>
@@ -341,14 +352,23 @@ const getAuthorsMarkdown = function (authors: string[]) {
   const { t } = useI18n();
   for (const author of authors) {
     if (author.includes("@")) {
+      let authorName = author.replace("@", "");
+      if (authorName == "music-assistant") {
+        authorName = "the Music Assistant team";
+      }
       allAuthors.push(
-        `[${author.replace("@", "")}](https://github.com/${author.replace("@", "")})`,
+        `[${authorName}](https://github.com/${author.replace("@", "")})`,
       );
     } else {
       allAuthors.push(author);
     }
   }
-  return `**${t("settings.codeowners")}**: ` + allAuthors.join(" / ");
+  return `**${t("settings.provider_codeowners")}**: ` + allAuthors.join(" / ");
+};
+
+const getCreditsMarkdown = function (credits: string[]) {
+  const { t } = useI18n();
+  return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 
 const openLink = function (url: string) {
