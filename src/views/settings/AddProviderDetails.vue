@@ -9,7 +9,11 @@
           </div>
           <div class="header-info">
             <h2 class="header-title">
-              {{ $t("settings.setup_provider", [api.providerManifests[domain].name]) }}
+              {{
+                $t("settings.setup_provider", [
+                  api.providerManifests[domain].name,
+                ])
+              }}
             </h2>
             <p class="header-description">
               {{ api.providerManifests[domain].description }}
