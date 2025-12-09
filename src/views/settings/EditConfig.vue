@@ -361,6 +361,7 @@ const getCategoryIcon = function (category: string): string {
     ugp: "mdi-speaker-multiple",
     authentication: "mdi-lock",
     sync: "mdi-sync",
+    web_player: "mdi-play-network",
   };
   return iconMap[category] || "mdi-cog-outline";
 };
