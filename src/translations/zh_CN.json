@@ -486,10 +486,6 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "在向多个设备播放时，该群组类型不支持 DSP。"
-        },
-        "enable_builtin_player": {
-            "label": "允许在此设备\/浏览器上播放",
-            "description": "启用此设备\/浏览器的（实验性）内置播放器，这样您就可以将所有音乐助手内容直接传输到此设备。"
         }
     },
     "show_info": "显示信息",

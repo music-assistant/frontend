@@ -486,6 +486,67 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dieser Gruppentyp unterstützt keinen DSP, wenn die Wiedergabe auf mehrere Geräte erfolgt."
+        },
+        "system": "System",
+        "view_documentation": "View documentation",
+        "about": "Über",
+        "system_logging": "Serverprotokollierung",
+        "system_logging_description": "Zeige und lade Protokoll zur Problembehandlung herunter",
+        "auto_refresh_log": "Automatische  aktualisierung",
+        "version_info": "Versionsinformationen",
+        "links": "Links",
+        "changelog": "Änderungshistorie",
+        "feature_requests": "Funktionswünsche",
+        "discussion_forums": "Forum",
+        "license": "Lizenz",
+        "open_home_foundation": "Open Home Foundation",
+        "proud_part_of": "Stolzer Teil der",
+        "core_module": {
+            "cache": {
+                "name": "Cache"
+            },
+            "metadata": {
+                "name": "Metadaten"
+            },
+            "music": {
+                "name": "Musik"
+            },
+            "players": {
+                "name": "Wiedergabegeräte"
+            },
+            "remote_access": {
+                "name": "Fernzugriffsstatus"
+            },
+            "streams": {
+                "name": "Streams"
+            },
+            "webserver": {
+                "name": "Webserver"
+            }
+        },
+        "remote_access": "Fernzugriff",
+        "remote_access_title": "Sicherer Fernzugriff",
+        "remote_access_feature_encrypted": "Ende-zu-Ende verschlüsselt - deine Daten bleiben privat.",
+        "remote_access_feature_no_port_forwarding": "Keine Portweiterleitung oder VPN benötigt",
+        "remote_access_upgrade_to_optimized": "Upgrade auf Home Assistant Cloud",
+        "remote_access_status": "Fernzugriffsstatus",
+        "remote_access_enabled": "Fernzugriff ist aktiviert",
+        "remote_access_disabled": "Fernzugriff ist deaktiviert",
+        "remote_access_connected": "Verbunden",
+        "remote_access_connecting": "Verbinde...",
+        "remote_access_id_copied": "Remote ID wurde in die Zwischenablage kopiert!",
+        "remote_access_technical_details": "Technische Details",
+        "remote_access_protocol": "Verbindungsprotokoll",
+        "remote_access_encryption": "Verschlüsselung",
+        "remote_access_error_copy": "Remote ID konnte nicht kopiert werden.",
+        "remote_access_enabled_success": "Fernzugriff wurde aktiviert.",
+        "remote_access_disabled_success": "Fernzugriff wurde deaktiviert.",
+        "frontend": "Benutzeroberfläche",
+        "players_count": "Wiedergabegerät",
+        "web_player_mode": {
+            "options": {
+                "sendspin": "Sendspin (experimentell)"
+            }
         }
     },
     "show_info": "Zeige Informationen",
@@ -551,7 +612,8 @@
         "loading": "Der Server verarbeitet eine Anfrage oder synchronisiert Musik.",
         "primary_image": "Dieses ist das primäre Bild für diesen Bildtyp",
         "copy_uri": "URI in die Zwischenablage kopieren",
-        "select_all": "Alle Einträge auswählen"
+        "select_all": "Alle Einträge auswählen",
+        "filter_provider": "Filter nach Musikanbieter"
     },
     "topresult": "Top-Ergebnis",
     "track": "Track",
@@ -705,5 +767,56 @@
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
-    "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt"
+    "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt",
+    "login": {
+        "remote_server": "Remote",
+        "server_address": "Serveradresse",
+        "remote_id_placeholder": "z.B.",
+        "connect": "Verbinde",
+        "username": "Benutzername",
+        "username_placeholder": "Gebe dein Benutzernamen ein",
+        "password": "Passwort",
+        "password_placeholder": "Gebe dein Passwort ein",
+        "sign_in": "Anmelden",
+        "back": "Zurück ",
+        "cancel": "Abbrechen",
+        "waiting_for_auth": "Warte auf authentifizierung...",
+        "connection_failed": "Verbindung fehlgeschlagen",
+        "try_again": "Erneut probieren",
+        "error_unknown": "Unbekannter Fehler aufgetreten",
+        "error_login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten.",
+        "error_oauth_failed": "Authentifizierung mit Home Assistant fehlgeschlagen."
+    },
+    "remote": {
+        "connect_title": "Verbinde mit deinem Server",
+        "remote_id": "Remote ID",
+        "remote_id_placeholder": "z.B.",
+        "recent_connections": "Frühere Verbindungen",
+        "connect": "Verbinde",
+        "username": "Benutzername",
+        "password": "Passwort",
+        "sign_in": "Anmelden",
+        "back": "Zurück",
+        "connecting": "Verbinde...",
+        "status_finding_server": "Suche deinen Server...",
+        "cancel": "Abbrechen",
+        "connection_failed": "Verbindung fehlgeschlagen",
+        "retry": "Versuche nochmal ",
+        "error_unknown": "Unbekannter Fehler aufgetreten.",
+        "error_login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten",
+        "or": "oder",
+        "oauth_waiting_title": "Schließe Anmeldung ab",
+        "oauth_waiting_hint": "Warte auf Authentifizierung...",
+        "error_oauth_failed": "Authentifizierung mit Home Assistant fehlgeschlagen."
+    },
+    "auth": {
+        "player_filter": "Wiedergabegeräte Filter.",
+        "no_players_selected": "Alle Wiedergabegeräte (ohne Einschränkungen)",
+        "no_providers_selected": "Alle Musikanbieter (ohne Einschränkungen)",
+        "select_players": "Wähle Wiedergabegeräte",
+        "select_providers": "Wähle Musikanbieter"
+    },
+    "yes": "Ja",
+    "no": "Nein",
+    "uri_copied": "URI in Zwischenablage kopiert"
 }
