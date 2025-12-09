@@ -110,8 +110,8 @@ const availableProviders = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const addPlayerGroup = function (lookupKey: string) {
-  router.push(`/settings/addgroup/${lookupKey}`);
+const addPlayerGroup = function (instanceId: string) {
+  router.push(`/settings/addgroup/${instanceId}`);
   close();
 };
 
