@@ -5,6 +5,7 @@
     :scrim="false"
     transition="dialog-bottom-transition"
     z-index="9999"
+    persistent
   >
     <v-card :color="backgroundColor">
       <v-toolbar class="v-toolbar-default" color="transparent">
@@ -911,6 +912,17 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+});
+
+// Handle Escape key to close fullscreen player (since persistent disables default behavior)
+const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === "Escape" && store.showFullscreenPlayer && !store.dialogActive) {
+    store.showFullscreenPlayer = false;
+  }
+};
+onMounted(() => {
+  window.addEventListener("keydown", onKeydown);
+  onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 });
 
 const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {

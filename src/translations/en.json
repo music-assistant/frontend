@@ -560,23 +560,23 @@
         "core_module": {
             "cache": {
                 "name": "Cache",
-                "description": "Manages caching of metadata and images"
+                "description": "Configuration of the core module that handles caching of data across the application"
             },
             "metadata": {
                 "name": "Metadata",
-                "description": "Handles metadata retrieval and matching"
+                "description": "Configuration of the core metadata management module"
             },
             "music": {
                 "name": "Music",
-                "description": "Core music library management"
+                "description": "Configuration of the core music (library) management module"
             },
             "players": {
                 "name": "Players",
-                "description": "Core player management and control"
+                "description": "Configuration of the core player management module"
             },
             "player_queues": {
                 "name": "Player Queues",
-                "description": "Manages playback queues for all players"
+                "description": "Configuration of the core player queue management module"
             },
             "remote_access": {
                 "name": "Remote Access",
@@ -584,11 +584,11 @@
             },
             "streams": {
                 "name": "Streams",
-                "description": "Audio streaming and processing engine"
+                "description": "Configuration of the audio streaming and processing engine"
             },
             "webserver": {
                 "name": "Webserver",
-                "description": "Manage the webserver and API"
+                "description": "Configuration of the webserver and API"
             }
         },
         "remote_access": "Remote Access",

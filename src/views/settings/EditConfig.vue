@@ -3,884 +3,122 @@
     <!-- config rows for all config entries -->
 
     <!-- Generic category entries are always displayed without expansion panels -->
-    <div v-if="entriesForCategory('generic').length > 0">
+    <div
+      v-if="
+        showGenericSection !== false && entriesForCategory('generic').length > 0
+      "
+      class="config-section"
+    >
       <div
         v-for="conf_entry of entriesForCategory('generic')"
         :key="conf_entry.key"
-        class="configrow"
+        class="config-entry"
       >
-        <div class="configcolumnleft">
-          <!-- divider value -->
-          <div v-if="conf_entry.type == ConfigEntryType.DIVIDER">
-            <br />
-            <v-divider />
-            <v-label
-              v-if="conf_entry.label"
-              style="margin-left: 8px; margin-top: 10px; margin-bottom: 10px"
-            >
-              <b>{{ conf_entry.label }}</b>
-            </v-label>
-            <br />
-            <br />
-          </div>
-
-          <!-- label value -->
-          <div v-else-if="conf_entry.type == ConfigEntryType.LABEL">
-            <br />
-            <v-alert variant="outlined" type="info">
-              {{ $t(`settings.${conf_entry.key}.label`, conf_entry.label) }}
-            </v-alert>
-            <br />
-            <br />
-          </div>
-
-          <!-- alert value -->
-          <div v-else-if="conf_entry.type == ConfigEntryType.ALERT">
-            <br />
-            <v-alert density="compact" type="warning">
-              {{ $t(`settings.${conf_entry.key}.label`, conf_entry.label) }}
-            </v-alert>
-            <br />
-            <br />
-          </div>
-
-          <!-- action type -->
-          <div
-            v-else-if="
-              conf_entry.type == ConfigEntryType.ACTION ||
-              (conf_entry.action && !conf_entry.value)
-            "
-          >
-            <br />
-            <v-btn
-              class="actionbutton"
-              :disabled="conf_entry.read_only"
-              @click="
-                action(conf_entry.action || conf_entry.key);
-                conf_entry.value = conf_entry.action ? null : conf_entry.key;
-              "
-            >
-              {{
-                $t(
-                  `settings.${conf_entry.action || conf_entry.key}.label`,
-                  conf_entry.action_label || conf_entry.label,
-                )
-              }}
-            </v-btn>
-          </div>
-
-          <!-- DSP Config Button -->
-          <div v-else-if="conf_entry.type == ConfigEntryType.DSP_SETTINGS">
-            <br />
-            {{
-              conf_entry.value
-                ? $t("settings.dsp_enabled")
-                : $t("settings.dsp_disabled")
-            }}
-            <v-btn class="actionbutton" @click="openDspConfig">
-              {{ $t("open_dsp_settings") }}
-            </v-btn>
-          </div>
-
-          <!-- boolean value: toggle switch -->
-          <v-switch
-            v-else-if="conf_entry.type == ConfigEntryType.BOOLEAN"
-            v-model="conf_entry.value"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            color="primary"
-            :disabled="conf_entry.read_only"
-          />
-
-          <!-- int/float value in range: slider control -->
-          <!-- eslint-disable vue/valid-v-model -->
-          <v-slider
-            v-else-if="
-              (conf_entry.type == ConfigEntryType.INTEGER ||
-                conf_entry.type == ConfigEntryType.FLOAT) &&
-              conf_entry.range &&
-              conf_entry.range.length == 2
-            "
-            v-model="conf_entry.value as number"
-            :disabled="conf_entry.read_only"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            :required="conf_entry.required"
-            class="align-center"
-            :min="conf_entry.range[0]"
-            :max="conf_entry.range[1]"
-            :step="conf_entry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
-            hide-details
-            style="margin-top: 10px; margin-bottom: 25px"
-            color="primary"
-          >
-            <template #append>
-              <v-text-field
-                v-model="conf_entry.value"
-                hide-details
-                single-line
-                density="compact"
-                type="number"
-                style="width: 70px"
-              />
-            </template>
-          </v-slider>
-          <!-- eslint-enable vue/valid-v-model -->
-
-          <!-- password value -->
-          <v-text-field
-            v-else-if="conf_entry.type == ConfigEntryType.SECURE_STRING"
-            v-model="conf_entry.value"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            :required="conf_entry.required"
-            :disabled="conf_entry.read_only"
-            :rules="[
-              (v) =>
-                !(!v && conf_entry.required) || $t('settings.invalid_input'),
-            ]"
-            :type="showPasswordValues ? 'text' : 'password'"
-            :append-inner-icon="
-              showPasswordValues
-                ? 'mdi-eye'
-                : typeof conf_entry.value == 'string' &&
-                    conf_entry.value.includes(SECURE_STRING_SUBSTITUTE)
-                  ? ''
-                  : 'mdi-eye-off'
-            "
-            variant="outlined"
-            clearable
-            :readonly="!!conf_entry.action"
-            @click:append-inner="showPasswordValues = !showPasswordValues"
-            @click:clear="conf_entry.value = conf_entry.default_value"
-          />
-
-          <!-- value with dropdown -->
-          <v-select
-            v-else-if="conf_entry.options && conf_entry.options.length > 0"
-            v-model="conf_entry.value"
-            :chips="conf_entry.multi_value"
-            :clearable="true"
-            :multiple="conf_entry.multi_value"
-            :items="getTranslatedOptions(conf_entry)"
-            :disabled="conf_entry.read_only"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            :required="conf_entry.required"
-            :rules="[
-              (v) =>
-                !((v === null || v === undefined) && conf_entry.required) ||
-                $t('settings.invalid_input'),
-            ]"
-            variant="outlined"
-            @click:clear="conf_entry.value = conf_entry.default_value"
-          />
-          <!-- int value without range -->
-          <v-text-field
-            v-else-if="
-              conf_entry.type == ConfigEntryType.INTEGER ||
-              conf_entry.type == ConfigEntryType.FLOAT
-            "
-            v-model="conf_entry.value"
-            :placeholder="conf_entry.default_value?.toString()"
-            :disabled="conf_entry.read_only"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            :required="conf_entry.required"
-            :rules="[
-              (v) =>
-                !(!v && conf_entry.required) || $t('settings.invalid_input'),
-            ]"
-            variant="outlined"
-            :clearable="!conf_entry.required"
-            type="number"
-            @click:clear="conf_entry.value = conf_entry.default_value"
-          />
-          <!-- icon 'picker' -->
-          <v-text-field
-            v-else-if="conf_entry.type == ConfigEntryType.ICON"
-            v-model="conf_entry.value"
-            :placeholder="conf_entry.default_value?.toString()"
-            clearable
-            :disabled="conf_entry.read_only"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            :prepend-inner-icon="conf_entry.value as string"
-            variant="outlined"
-            @click:clear="conf_entry.value = conf_entry.default_value"
-          />
-          <!-- value with dropdown -->
-          <v-combobox
-            v-else-if="
-              conf_entry.type == ConfigEntryType.STRING &&
-              conf_entry.multi_value
-            "
-            v-model="conf_entry.value as string[]"
-            multiple
-            chips
-            :clearable="true"
-            :disabled="conf_entry.read_only"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            :required="conf_entry.required"
-            :rules="[
-              (v) =>
-                !(!v && conf_entry.required) || $t('settings.invalid_input'),
-            ]"
-            variant="outlined"
-            @click:clear="conf_entry.value = conf_entry.default_value"
-          />
-          <!-- all other: textbox with single value -->
-          <v-text-field
-            v-else
-            v-model="conf_entry.value"
-            :placeholder="conf_entry.default_value?.toString()"
-            clearable
-            :disabled="conf_entry.read_only"
-            :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-            :required="conf_entry.required"
-            :rules="[
-              (v) =>
-                !(!v && conf_entry.required) || $t('settings.invalid_input'),
-            ]"
-            variant="outlined"
-            :readonly="!!conf_entry.action"
-            @click:clear="conf_entry.value = conf_entry.default_value"
-          />
-        </div>
-        <!-- right side of control: help icon with description-->
-        <div
+        <!-- Config entry component -->
+        <ConfigEntryField
+          :conf-entry="conf_entry"
+          :show-password-values="showPasswordValues"
+          :disabled="isDisabled(conf_entry)"
+          @toggle-password="showPasswordValues = !showPasswordValues"
+          @clear-value="conf_entry.value = conf_entry.default_value"
+          @update:value="conf_entry.value = $event"
+          @action="
+            action(conf_entry.action || conf_entry.key);
+            conf_entry.value = conf_entry.action ? null : conf_entry.key;
+          "
+          @open-dsp="openDspConfig"
+        />
+        <!-- Help button -->
+        <v-btn
           v-if="hasDescriptionOrHelpLink(conf_entry)"
-          class="configcolumnright"
-        >
-          <v-btn
-            icon="mdi-help-box"
-            variant="plain"
-            class="helpicon"
-            size="x-large"
-            @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          />
-        </div>
+          icon="mdi-help-circle-outline"
+          variant="text"
+          size="small"
+          class="help-btn"
+          @click="
+            $t(
+              `settings.${conf_entry?.key}.description`,
+              conf_entry.description || '',
+            )
+              ? (showHelpInfo = conf_entry)
+              : openLink(conf_entry.help_link!)
+          "
+        />
       </div>
     </div>
 
-    <!-- Other category entries with expansion panels or static headers -->
-    <template v-if="shouldUseExpansionPanels">
-      <v-expansion-panels
-        v-model="activePanel"
-        variant="accordion"
-        multiple
-        flat
-      >
-        <!--
-            we split up the config settings in multiple sections,
-            using expansion panels to divide them.
-          -->
-        <v-expansion-panel
-          v-for="panel of panels.filter(
-            (p) => p !== 'generic' && entriesForCategory(p).length > 0,
-          )"
-          :key="panel"
-          :value="panel"
-          flat
-          accordion
-          class="configrowpanel"
-        >
-          <v-expansion-panel-title>
-            <h3>
-              {{ $t("settings.category." + panel, panel) }}
-            </h3>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <div style="padding-top: 16px">
-              <div
-                v-for="conf_entry of entriesForCategory(panel)"
-                :key="conf_entry.key"
-                class="configrow"
-              >
-                <div class="configcolumnleft">
-                  <!-- divider value -->
-                  <div v-if="conf_entry.type == ConfigEntryType.DIVIDER">
-                    <br />
-                    <v-divider />
-                    <v-label
-                      v-if="conf_entry.label"
-                      style="
-                        margin-left: 8px;
-                        margin-top: 10px;
-                        margin-bottom: 10px;
-                      "
-                    >
-                      <b>{{ conf_entry.label }}</b>
-                    </v-label>
-                    <br />
-                    <br />
-                  </div>
-
-                  <!-- label value -->
-                  <div v-else-if="conf_entry.type == ConfigEntryType.LABEL">
-                    <br />
-                    <v-alert variant="outlined" type="info">
-                      {{
-                        $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                      }}
-                    </v-alert>
-                    <br />
-                    <br />
-                  </div>
-
-                  <!-- alert value -->
-                  <div v-else-if="conf_entry.type == ConfigEntryType.ALERT">
-                    <br />
-                    <v-alert density="compact" type="warning">
-                      {{
-                        $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                      }}
-                    </v-alert>
-                    <br />
-                    <br />
-                  </div>
-
-                  <!-- action type -->
-                  <div
-                    v-else-if="
-                      conf_entry.type == ConfigEntryType.ACTION ||
-                      (conf_entry.action && !conf_entry.value)
-                    "
-                  >
-                    <br />
-                    <v-btn
-                      class="actionbutton"
-                      :disabled="conf_entry.read_only"
-                      @click="
-                        action(conf_entry.action || conf_entry.key);
-                        conf_entry.value = conf_entry.action
-                          ? null
-                          : conf_entry.key;
-                      "
-                    >
-                      {{
-                        $t(
-                          `settings.${conf_entry.action || conf_entry.key}.label`,
-                          conf_entry.action_label || conf_entry.label,
-                        )
-                      }}
-                    </v-btn>
-                  </div>
-
-                  <!-- DSP Config Button -->
-                  <div
-                    v-else-if="conf_entry.type == ConfigEntryType.DSP_SETTINGS"
-                  >
-                    <br />
-                    {{
-                      conf_entry.value
-                        ? $t("settings.dsp_enabled")
-                        : $t("settings.dsp_disabled")
-                    }}
-                    <v-btn class="actionbutton" @click="openDspConfig">
-                      {{ $t("open_dsp_settings") }}
-                    </v-btn>
-                  </div>
-
-                  <!-- boolean value: toggle switch -->
-                  <v-switch
-                    v-else-if="conf_entry.type == ConfigEntryType.BOOLEAN"
-                    v-model="conf_entry.value"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    color="primary"
-                    :disabled="conf_entry.read_only"
-                  />
-
-                  <!-- int/float value in range: slider control -->
-                  <!-- eslint-disable vue/valid-v-model -->
-                  <v-slider
-                    v-else-if="
-                      (conf_entry.type == ConfigEntryType.INTEGER ||
-                        conf_entry.type == ConfigEntryType.FLOAT) &&
-                      conf_entry.range &&
-                      conf_entry.range.length == 2
-                    "
-                    v-model="conf_entry.value as number"
-                    :disabled="conf_entry.read_only"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    :required="conf_entry.required"
-                    class="align-center"
-                    :min="conf_entry.range[0]"
-                    :max="conf_entry.range[1]"
-                    :step="conf_entry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
-                    hide-details
-                    style="margin-top: 10px; margin-bottom: 25px"
-                    color="primary"
-                  >
-                    <template #append>
-                      <v-text-field
-                        v-model="conf_entry.value"
-                        hide-details
-                        single-line
-                        density="compact"
-                        type="number"
-                        style="width: 70px"
-                      />
-                    </template>
-                  </v-slider>
-                  <!-- eslint-enable vue/valid-v-model -->
-
-                  <!-- password value -->
-                  <v-text-field
-                    v-else-if="conf_entry.type == ConfigEntryType.SECURE_STRING"
-                    v-model="conf_entry.value"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    :required="conf_entry.required"
-                    :disabled="conf_entry.read_only"
-                    :rules="[
-                      (v) =>
-                        !(!v && conf_entry.required) ||
-                        $t('settings.invalid_input'),
-                    ]"
-                    :type="showPasswordValues ? 'text' : 'password'"
-                    :append-inner-icon="
-                      showPasswordValues
-                        ? 'mdi-eye'
-                        : typeof conf_entry.value == 'string' &&
-                            conf_entry.value.includes(SECURE_STRING_SUBSTITUTE)
-                          ? ''
-                          : 'mdi-eye-off'
-                    "
-                    variant="outlined"
-                    clearable
-                    :readonly="!!conf_entry.action"
-                    @click:append-inner="
-                      showPasswordValues = !showPasswordValues
-                    "
-                    @click:clear="conf_entry.value = conf_entry.default_value"
-                  />
-
-                  <!-- value with dropdown -->
-                  <v-select
-                    v-else-if="
-                      conf_entry.options && conf_entry.options.length > 0
-                    "
-                    v-model="conf_entry.value"
-                    :chips="conf_entry.multi_value"
-                    :clearable="true"
-                    :multiple="conf_entry.multi_value"
-                    :items="getTranslatedOptions(conf_entry)"
-                    :disabled="conf_entry.read_only"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    :required="conf_entry.required"
-                    :rules="[
-                      (v) =>
-                        !(
-                          (v === null || v === undefined) &&
-                          conf_entry.required
-                        ) || $t('settings.invalid_input'),
-                    ]"
-                    variant="outlined"
-                    @click:clear="conf_entry.value = conf_entry.default_value"
-                  />
-                  <!-- int value without range -->
-                  <v-text-field
-                    v-else-if="
-                      conf_entry.type == ConfigEntryType.INTEGER ||
-                      conf_entry.type == ConfigEntryType.FLOAT
-                    "
-                    v-model="conf_entry.value"
-                    :placeholder="conf_entry.default_value?.toString()"
-                    :disabled="conf_entry.read_only"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    :required="conf_entry.required"
-                    :rules="[
-                      (v) =>
-                        !(!v && conf_entry.required) ||
-                        $t('settings.invalid_input'),
-                    ]"
-                    variant="outlined"
-                    :clearable="!conf_entry.required"
-                    type="number"
-                    @click:clear="conf_entry.value = conf_entry.default_value"
-                  />
-                  <!-- icon 'picker' -->
-                  <v-text-field
-                    v-else-if="conf_entry.type == ConfigEntryType.ICON"
-                    v-model="conf_entry.value"
-                    :placeholder="conf_entry.default_value?.toString()"
-                    clearable
-                    :disabled="conf_entry.read_only"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    :prepend-inner-icon="conf_entry.value as string"
-                    variant="outlined"
-                    @click:clear="conf_entry.value = conf_entry.default_value"
-                  />
-                  <!-- value with dropdown -->
-                  <v-combobox
-                    v-else-if="
-                      conf_entry.type == ConfigEntryType.STRING &&
-                      conf_entry.multi_value
-                    "
-                    v-model="conf_entry.value as string[]"
-                    multiple
-                    chips
-                    :clearable="true"
-                    :disabled="conf_entry.read_only"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    :required="conf_entry.required"
-                    :rules="[
-                      (v) =>
-                        !(!v && conf_entry.required) ||
-                        $t('settings.invalid_input'),
-                    ]"
-                    variant="outlined"
-                    @click:clear="conf_entry.value = conf_entry.default_value"
-                  />
-                  <!-- all other: textbox with single value -->
-                  <v-text-field
-                    v-else
-                    v-model="conf_entry.value"
-                    :placeholder="conf_entry.default_value?.toString()"
-                    clearable
-                    :disabled="conf_entry.read_only"
-                    :label="
-                      $t(`settings.${conf_entry.key}.label`, conf_entry.label)
-                    "
-                    :required="conf_entry.required"
-                    :rules="[
-                      (v) =>
-                        !(!v && conf_entry.required) ||
-                        $t('settings.invalid_input'),
-                    ]"
-                    variant="outlined"
-                    :readonly="!!conf_entry.action"
-                    @click:clear="conf_entry.value = conf_entry.default_value"
-                  />
-                </div>
-                <!-- right side of control: help icon with description-->
-                <div
-                  v-if="hasDescriptionOrHelpLink(conf_entry)"
-                  class="configcolumnright"
-                >
-                  <v-btn
-                    icon="mdi-help-box"
-                    variant="plain"
-                    class="helpicon"
-                    size="x-large"
-                    @click="
-                      $t(
-                        `settings.${conf_entry?.key}.description`,
-                        conf_entry.description || '',
-                      )
-                        ? (showHelpInfo = conf_entry)
-                        : openLink(conf_entry.help_link!)
-                    "
-                  />
-                </div>
-              </div>
-            </div>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </template>
-
-    <!-- Static headers for small number of entries -->
-    <template v-else>
-      <div
+    <!-- Other category entries - always use expansion panels -->
+    <v-expansion-panels v-model="activePanel" multiple class="config-panels">
+      <v-expansion-panel
         v-for="panel of panels.filter(
           (p) => p !== 'generic' && entriesForCategory(p).length > 0,
         )"
         :key="panel"
+        :value="panel"
+        class="config-panel"
       >
-        <h3 style="padding-bottom: 10px; padding-top: 30px">
-          {{ $t("settings.category." + panel, panel) }}
-        </h3>
-        <div
-          v-for="conf_entry of entriesForCategory(panel)"
-          :key="conf_entry.key"
-          class="configrow"
-        >
-          <div class="configcolumnleft">
-            <!-- divider value -->
-            <div v-if="conf_entry.type == ConfigEntryType.DIVIDER">
-              <br />
-              <v-divider />
-              <v-label
-                v-if="conf_entry.label"
-                style="margin-left: 8px; margin-top: 10px; margin-bottom: 10px"
-              >
-                <b>{{ conf_entry.label }}</b>
-              </v-label>
-              <br />
-              <br />
-            </div>
-
-            <!-- label value -->
-            <div v-else-if="conf_entry.type == ConfigEntryType.LABEL">
-              <br />
-              <v-alert variant="outlined" type="info">
-                {{ $t(`settings.${conf_entry.key}.label`, conf_entry.label) }}
-              </v-alert>
-              <br />
-              <br />
-            </div>
-
-            <!-- alert value -->
-            <div v-else-if="conf_entry.type == ConfigEntryType.ALERT">
-              <br />
-              <v-alert density="compact" type="warning">
-                {{ $t(`settings.${conf_entry.key}.label`, conf_entry.label) }}
-              </v-alert>
-              <br />
-              <br />
-            </div>
-
-            <!-- action type -->
+        <v-expansion-panel-title class="config-panel-title">
+          <v-icon :icon="getCategoryIcon(panel)" class="mr-3" size="20" />
+          <span class="panel-title-text">
+            {{ $t("settings.category." + panel, panel) }}
+          </span>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <div class="config-panel-content">
             <div
-              v-else-if="
-                conf_entry.type == ConfigEntryType.ACTION ||
-                (conf_entry.action && !conf_entry.value)
-              "
+              v-for="conf_entry of entriesForCategory(panel)"
+              :key="conf_entry.key"
+              class="config-entry"
             >
-              <br />
-              <v-btn
-                class="actionbutton"
-                :disabled="conf_entry.read_only"
-                @click="
+              <ConfigEntryField
+                :conf-entry="conf_entry"
+                :show-password-values="showPasswordValues"
+                :disabled="isDisabled(conf_entry)"
+                @toggle-password="showPasswordValues = !showPasswordValues"
+                @clear-value="conf_entry.value = conf_entry.default_value"
+                @update:value="conf_entry.value = $event"
+                @action="
                   action(conf_entry.action || conf_entry.key);
                   conf_entry.value = conf_entry.action ? null : conf_entry.key;
                 "
-              >
-                {{
+                @open-dsp="openDspConfig"
+              />
+              <v-btn
+                v-if="hasDescriptionOrHelpLink(conf_entry)"
+                icon="mdi-help-circle-outline"
+                variant="text"
+                size="small"
+                class="help-btn"
+                @click="
                   $t(
-                    `settings.${conf_entry.action || conf_entry.key}.label`,
-                    conf_entry.action_label || conf_entry.label,
+                    `settings.${conf_entry?.key}.description`,
+                    conf_entry.description || '',
                   )
-                }}
-              </v-btn>
+                    ? (showHelpInfo = conf_entry)
+                    : openLink(conf_entry.help_link!)
+                "
+              />
             </div>
-
-            <!-- DSP Config Button -->
-            <div v-else-if="conf_entry.type == ConfigEntryType.DSP_SETTINGS">
-              <br />
-              {{
-                conf_entry.value
-                  ? $t("settings.dsp_enabled")
-                  : $t("settings.dsp_disabled")
-              }}
-              <v-btn class="actionbutton" @click="openDspConfig">
-                {{ $t("open_dsp_settings") }}
-              </v-btn>
-            </div>
-
-            <!-- boolean value: toggle switch -->
-            <v-switch
-              v-else-if="conf_entry.type == ConfigEntryType.BOOLEAN"
-              v-model="conf_entry.value"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              color="primary"
-              :disabled="conf_entry.read_only"
-            />
-
-            <!-- int/float value in range: slider control -->
-            <!-- eslint-disable vue/valid-v-model -->
-            <v-slider
-              v-else-if="
-                (conf_entry.type == ConfigEntryType.INTEGER ||
-                  conf_entry.type == ConfigEntryType.FLOAT) &&
-                conf_entry.range &&
-                conf_entry.range.length == 2
-              "
-              v-model="conf_entry.value as number"
-              :disabled="conf_entry.read_only"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              :required="conf_entry.required"
-              class="align-center"
-              :min="conf_entry.range[0]"
-              :max="conf_entry.range[1]"
-              :step="conf_entry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
-              hide-details
-              style="margin-top: 10px; margin-bottom: 25px"
-              color="primary"
-            >
-              <template #append>
-                <v-text-field
-                  v-model="conf_entry.value"
-                  hide-details
-                  single-line
-                  density="compact"
-                  type="number"
-                  style="width: 70px"
-                />
-              </template>
-            </v-slider>
-            <!-- eslint-enable vue/valid-v-model -->
-
-            <!-- password value -->
-            <v-text-field
-              v-else-if="conf_entry.type == ConfigEntryType.SECURE_STRING"
-              v-model="conf_entry.value"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              :required="conf_entry.required"
-              :disabled="conf_entry.read_only"
-              :rules="[
-                (v) =>
-                  !(!v && conf_entry.required) || $t('settings.invalid_input'),
-              ]"
-              :type="showPasswordValues ? 'text' : 'password'"
-              :append-inner-icon="
-                showPasswordValues
-                  ? 'mdi-eye'
-                  : typeof conf_entry.value == 'string' &&
-                      conf_entry.value.includes(SECURE_STRING_SUBSTITUTE)
-                    ? ''
-                    : 'mdi-eye-off'
-              "
-              variant="outlined"
-              clearable
-              :readonly="!!conf_entry.action"
-              @click:append-inner="showPasswordValues = !showPasswordValues"
-              @click:clear="conf_entry.value = conf_entry.default_value"
-            />
-
-            <!-- value with dropdown -->
-            <v-select
-              v-else-if="conf_entry.options && conf_entry.options.length > 0"
-              v-model="conf_entry.value"
-              :chips="conf_entry.multi_value"
-              :clearable="true"
-              :multiple="conf_entry.multi_value"
-              :items="getTranslatedOptions(conf_entry)"
-              :disabled="conf_entry.read_only"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              :required="conf_entry.required"
-              :rules="[
-                (v) =>
-                  !((v === null || v === undefined) && conf_entry.required) ||
-                  $t('settings.invalid_input'),
-              ]"
-              variant="outlined"
-              @click:clear="conf_entry.value = conf_entry.default_value"
-            />
-            <!-- int value without range -->
-            <v-text-field
-              v-else-if="
-                conf_entry.type == ConfigEntryType.INTEGER ||
-                conf_entry.type == ConfigEntryType.FLOAT
-              "
-              v-model="conf_entry.value"
-              :placeholder="conf_entry.default_value?.toString()"
-              :disabled="conf_entry.read_only"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              :required="conf_entry.required"
-              :rules="[
-                (v) =>
-                  !(!v && conf_entry.required) || $t('settings.invalid_input'),
-              ]"
-              variant="outlined"
-              :clearable="!conf_entry.required"
-              type="number"
-              @click:clear="conf_entry.value = conf_entry.default_value"
-            />
-            <!-- icon 'picker' -->
-            <v-text-field
-              v-else-if="conf_entry.type == ConfigEntryType.ICON"
-              v-model="conf_entry.value"
-              :placeholder="conf_entry.default_value?.toString()"
-              clearable
-              :disabled="conf_entry.read_only"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              :prepend-inner-icon="conf_entry.value as string"
-              variant="outlined"
-              @click:clear="conf_entry.value = conf_entry.default_value"
-            />
-            <!-- value with dropdown -->
-            <v-combobox
-              v-else-if="
-                conf_entry.type == ConfigEntryType.STRING &&
-                conf_entry.multi_value
-              "
-              v-model="conf_entry.value as string[]"
-              multiple
-              chips
-              :clearable="true"
-              :disabled="conf_entry.read_only"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              :required="conf_entry.required"
-              :rules="[
-                (v) =>
-                  !(!v && conf_entry.required) || $t('settings.invalid_input'),
-              ]"
-              variant="outlined"
-              @click:clear="conf_entry.value = conf_entry.default_value"
-            />
-            <!-- all other: textbox with single value -->
-            <v-text-field
-              v-else
-              v-model="conf_entry.value"
-              :placeholder="conf_entry.default_value?.toString()"
-              clearable
-              :disabled="conf_entry.read_only"
-              :label="$t(`settings.${conf_entry.key}.label`, conf_entry.label)"
-              :required="conf_entry.required"
-              :rules="[
-                (v) =>
-                  !(!v && conf_entry.required) || $t('settings.invalid_input'),
-              ]"
-              variant="outlined"
-              :readonly="!!conf_entry.action"
-              @click:clear="conf_entry.value = conf_entry.default_value"
-            />
           </div>
-          <!-- right side of control: help icon with description-->
-          <div
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            class="configcolumnright"
-          >
-            <v-btn
-              icon="mdi-help-box"
-              variant="plain"
-              class="helpicon"
-              size="x-large"
-              @click="
-                $t(
-                  `settings.${conf_entry?.key}.description`,
-                  conf_entry.description || '',
-                )
-                  ? (showHelpInfo = conf_entry)
-                  : openLink(conf_entry.help_link!)
-              "
-            />
-          </div>
-        </div>
-      </div>
-    </template>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
-    <br />
-    <v-btn
-      block
-      color="primary"
-      :disabled="!requiredValuesPresent"
-      @click="submit"
-    >
-      {{ $t("settings.save") }}
-    </v-btn>
+    <div class="config-actions">
+      <v-btn
+        block
+        color="primary"
+        size="large"
+        :disabled="!requiredValuesPresent"
+        @click="submit"
+      >
+        {{ $t("settings.save") }}
+      </v-btn>
+      <v-btn block variant="outlined" size="large" @click="router.back()">
+        {{ $t("close") }}
+      </v-btn>
+    </div>
   </v-form>
-  <br />
-  <v-btn block @click="router.back()">
-    {{ $t("close") }}
-  </v-btn>
   <v-dialog
     :model-value="showHelpInfo !== undefined"
     width="auto"
@@ -932,16 +170,18 @@ import {
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
   ConfigEntry,
-  ConfigValueOption,
 } from "@/plugins/api/interfaces";
 import { markdownToHtml } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import ConfigEntryField from "./ConfigEntryField.vue";
+
 const router = useRouter();
 
 export interface Props {
   configEntries: ConfigEntry[];
   disabled: boolean;
+  showGenericSection?: boolean;
 }
 
 const emit = defineEmits<{
@@ -971,23 +211,6 @@ const panels = computed(() => {
   );
   // ensure generic is always first and advanced always last
   return ["generic", ...allCategories, "advanced"];
-});
-
-const totalConfigEntries = computed(() => {
-  // Count all visible entries (excluding special types)
-  if (!entries.value) return 0;
-  return entries.value.filter(
-    (x) =>
-      !x.hidden &&
-      x.type != ConfigEntryType.DIVIDER &&
-      x.type != ConfigEntryType.LABEL &&
-      x.type != ConfigEntryType.ALERT,
-  ).length;
-});
-
-const shouldUseExpansionPanels = computed(() => {
-  // Use expansion panels if there are 10 or more config entries
-  return totalConfigEntries.value >= 10;
 });
 
 const requiredValuesPresent = computed(() => {
@@ -1025,13 +248,11 @@ watch(
       entries.value.push(entry);
     }
     // Set active panels after entries are populated
-    if (shouldUseExpansionPanels.value && entries.value.length > 0) {
-      // Expand all non-generic panels by default when using expansion panels
-      const nonGenericPanels = panels.value.filter((p) => p !== "generic");
-      activePanel.value = nonGenericPanels;
-    } else {
-      activePanel.value = [];
-    }
+    // Expand all panels by default, except "advanced" which stays collapsed
+    const expandedPanels = panels.value.filter(
+      (p) => p !== "generic" && p !== "advanced",
+    );
+    activePanel.value = expandedPanels;
   },
   { immediate: true },
 );
@@ -1055,35 +276,56 @@ const openLink = function (url: string) {
   openUrl(url);
 };
 
-const entriesForCategory = function (category: string) {
-  return entries.value!.filter((x) => x.category == category && isVisible(x));
-};
-
 const openDspConfig = function () {
   router.push(`${router.currentRoute.value.path}/dsp`);
 };
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
+
 const isVisible = function (entry: ConfigEntry) {
-  if (entry.hidden) return false;
-  // check if the UI element should be hidden due to 'depends_on' conditions
+  return !entry.hidden;
+};
+
+const isDisabled = function (entry: ConfigEntry) {
   if (!isNullOrUndefined(entry.depends_on)) {
-    const dependent = entries.value?.find((x) => x.key == entry.depends_on);
-    if (dependent) {
-      const dependentValue = dependent.value;
-      if (!isNullOrUndefined(entry.depends_on_value)) {
-        return dependentValue == entry.depends_on_value;
-      }
-      if (!isNullOrUndefined(entry.depends_on_value_not)) {
-        return dependentValue != entry.depends_on_value_not;
-      }
-      if (dependent.required && isNullOrUndefined(dependent)) return true;
-      if (dependent.type == ConfigEntryType.BOOLEAN && !dependentValue)
-        return false;
+    const dependentEntry = entries.value?.find(
+      (x) => x.key == entry.depends_on,
+    );
+    if (!dependentEntry) return false;
+
+    const dependentValue = dependentEntry.value;
+
+    if (!isNullOrUndefined(entry.depends_on_value)) {
+      return dependentValue != entry.depends_on_value;
     }
+
+    if (!isNullOrUndefined(entry.depends_on_value_not)) {
+      return dependentValue == entry.depends_on_value_not;
+    }
+
+    return !dependentValue;
   }
-  return true;
+  return false;
+};
+
+const visibleEntriesByCategory = computed(() => {
+  const result: Record<string, ConfigEntry[]> = {};
+  if (!entries.value) return result;
+
+  for (const entry of entries.value) {
+    if (!isVisible(entry)) continue;
+    const category = entry.category || "generic";
+    if (!result[category]) {
+      result[category] = [];
+    }
+    result[category].push(entry);
+  }
+  return result;
+});
+
+const entriesForCategory = function (category: string) {
+  return visibleEntriesByCategory.value[category] || [];
 };
 const getCurrentValues = function () {
   const values: Record<string, ConfigValueType> = {};
@@ -1101,34 +343,23 @@ const getCurrentValues = function () {
   }
   return values;
 };
-const getTranslatedOptions = function (entry: ConfigEntry) {
-  if (!entry.options) return [];
-  const options: ConfigValueOption[] = [];
-  for (const orgOption of entry.options) {
-    // handle weird edge case where value or title contains
-    // a special character which is not handled well by i18n
-    // for example "@" in a HA entity name
-    let cleanVal = orgOption.value?.toString() || "";
-    let cleanTitle = orgOption.title?.toString() || "";
-    for (const specialChar of ["@", "$", "|"]) {
-      if (cleanVal.includes(specialChar)) {
-        cleanVal = cleanVal.replaceAll(specialChar, "");
-      }
-      if (cleanTitle.includes(specialChar)) {
-        cleanTitle = cleanTitle.toString().replaceAll(specialChar, "");
-      }
-    }
-    let title = $t(`settings.${entry.key}.options.${cleanVal}`, cleanTitle);
-    const option: ConfigValueOption = {
-      title: title,
-      value: orgOption.value,
-    };
-    if (option.value == entry.default_value) {
-      option.title += ` [${$t("settings.default")}]`;
-    }
-    options.push(option);
-  }
-  return options;
+const getCategoryIcon = function (category: string): string {
+  const iconMap: Record<string, string> = {
+    generic: "mdi-cog",
+    audio: "mdi-volume-high",
+    advanced: "mdi-tune",
+    network: "mdi-lan",
+    playback: "mdi-play-circle",
+    announcements: "mdi-bullhorn",
+    airplay: "mdi-apple",
+    chromecast: "mdi-cast",
+    slimproto: "mdi-speaker-wireless",
+    snapcast: "mdi-speaker-multiple",
+    ugp: "mdi-speaker-multiple",
+    authentication: "mdi-lock",
+    sync: "mdi-sync",
+  };
+  return iconMap[category] || "mdi-cog-outline";
 };
 
 const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
@@ -1149,50 +380,122 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
 </script>
 
 <style scoped>
-.configrow {
+/* Config sections */
+.config-section {
+  margin-bottom: 16px;
+}
+
+/* Config entry row */
+.config-entry {
   display: flex;
-  width: 100%;
-  padding: 0;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.configcolumnleft {
-  flex: 90%;
+.config-entry:last-child {
+  margin-bottom: 0;
 }
 
-.configcolumnright {
-  align-content: flex-end;
-  vertical-align: middle;
+/* Add extra top margin for entries that follow a checkbox (which is shorter) */
+.config-entry:has(.v-checkbox) + .config-entry:has(.v-text-field),
+.config-entry:has(.v-checkbox) + .config-entry:has(.v-select),
+.config-entry:has(.v-checkbox) + .config-entry:has(.v-slider),
+.config-entry:has(.v-checkbox) + .config-entry:has(.v-combobox) {
+  margin-top: 16px;
 }
 
-.helpicon {
-  margin-top: 0px;
-  margin-right: -10px;
-}
-
-.actionbutton.v-btn.v-btn--density-default {
-  height: 50px;
-  width: 100%;
-  margin-top: 0px;
-  margin-bottom: 10px;
-}
-
-div.v-expansion-panel {
-  background-color: transparent;
-}
-
-.configrowpanel :deep(.v-expansion-panel-title) {
-  padding: 0;
-  padding-right: 5px;
-  padding-bottom: 10px;
-}
-.configrowpanel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-  padding-top: 10px;
-}
-
-.configcolumnleft :deep(.v-text-field),
-.configcolumnleft :deep(.v-select),
-.configcolumnleft :deep(.v-combobox) {
+/* Help button */
+.help-btn {
+  flex-shrink: 0;
   margin-top: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.help-btn:hover {
+  opacity: 1;
+}
+
+/* Expansion panels */
+.config-panels {
+  margin-top: 16px;
+}
+
+.config-panel {
+  margin-bottom: 8px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.config-panel::before {
+  display: none;
+}
+
+.config-panel-title {
+  min-height: 52px;
+  padding: 14px 20px;
+  background: rgba(var(--v-theme-primary), 0.08);
+}
+
+.config-panel-title .v-icon {
+  color: rgb(var(--v-theme-primary));
+}
+
+.panel-title-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-primary));
+}
+
+.config-panel :deep(.v-expansion-panel-text__wrapper) {
+  padding: 0;
+}
+
+.config-panel-content {
+  padding: 16px 20px 20px;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+/* Card-based sections */
+.config-card {
+  margin-top: 16px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.config-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(var(--v-theme-primary), 0.08);
+  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.12);
+}
+
+.config-card-header .v-icon {
+  color: rgb(var(--v-theme-primary));
+}
+
+.config-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: rgb(var(--v-theme-primary));
+}
+
+.config-card-content {
+  padding: 16px 20px 20px;
+}
+
+/* Action buttons */
+.config-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
 }
 </style>
