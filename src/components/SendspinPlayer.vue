@@ -12,13 +12,16 @@
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 import { getDeviceName } from "@/plugins/api/helpers";
-import { SendspinPlayer } from "@music-assistant/sendspin-js";
+import { SendspinPlayer, Codec } from "@music-assistant/sendspin-js";
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
-import { prepareSendspinSession } from "@/plugins/sendspin-connection";
+import {
+  prepareSendspinSession,
+  isDirectConnection,
+} from "@/plugins/sendspin-connection";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // Properties
@@ -128,6 +131,8 @@ onMounted(() => {
 
   // Create and initialize player
   if (audioRef.value) {
+    const audioElement = audioRef.value;
+
     const defaultSyncDelay = getSendspinDefaultSyncDelay();
     const syncDelay = parseInt(
       localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
@@ -142,31 +147,45 @@ onMounted(() => {
     const useOutputLatencyCompensation =
       storedOutputLatency !== null ? storedOutputLatency === "true" : true;
 
-    // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
-    // The URL just needs to be valid and contain "/sendspin" for the interceptor
-    player = new SendspinPlayer({
-      playerId: props.playerId,
-      baseUrl: "http://sendspin.local",
-      // Web player config
-      audioOutputMode: "media-element",
-      audioElement: audioRef.value,
-      isAndroid,
-      silentAudioSrc: almostSilentMp3,
-      clientName: getDeviceName(),
-      syncDelay,
-      useOutputLatencyCompensation,
-      onStateChange: (state) => {
-        // Update reactive state when player state changes
-        isPlaying.value = state.isPlaying;
-        volume.value = state.volume;
-        muted.value = state.muted;
-        playerState.value = state.playerState;
-      },
-    });
-
-    // Prepare authenticated session and connect to Sendspin server
+    // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
-      .then(() => player?.connect())
+      .then(() => {
+        // Select codecs based on connection type:
+        // - Direct (local WebSocket): opus + flac for quality
+        // - Remote (WebRTC): opus only for bandwidth efficiency
+        const codecs: Codec[] = isDirectConnection()
+          ? ["opus", "flac"]
+          : ["opus"];
+
+        console.log(
+          `Sendspin: Using codecs [${codecs.join(", ")}] for ${isDirectConnection() ? "direct" : "remote"} connection`,
+        );
+
+        // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
+        // The URL just needs to be valid and contain "/sendspin" for the interceptor
+        player = new SendspinPlayer({
+          playerId: props.playerId,
+          baseUrl: "http://sendspin.local",
+          // Web player config
+          audioOutputMode: "media-element",
+          audioElement,
+          isAndroid,
+          silentAudioSrc: almostSilentMp3,
+          clientName: getDeviceName(),
+          codecs,
+          syncDelay,
+          useOutputLatencyCompensation,
+          onStateChange: (state) => {
+            // Update reactive state when player state changes
+            isPlaying.value = state.isPlaying;
+            volume.value = state.volume;
+            muted.value = state.muted;
+            playerState.value = state.playerState;
+          },
+        });
+
+        return player.connect();
+      })
       .catch((error) => {
         console.error("Sendspin: Failed to connect", error);
       });
