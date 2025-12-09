@@ -434,10 +434,6 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "Tento typ skupiny nepodporuje DSP při přehrávání na více zařízeních."
-        },
-        "enable_builtin_player": {
-            "label": "Povolit přehrávání na tomto zařízení\/prohlížeči",
-            "description": "Povolit (experimentální) vestavěný přehrávač pro toto zařízení\/prohlížeč, který vám umožní streamovat veškerý obsah Music Assistant přímo do tohoto zařízení."
         }
     },
     "show_info": "Zobrazit informace",
