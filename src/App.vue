@@ -41,7 +41,7 @@ import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import { remoteConnectionManager } from "./plugins/remote";
 import type { ITransport } from "./plugins/remote/transport";
 import { useRouter } from "vue-router";
-import { authManager } from "@/plugins/auth";
+import authManager from "@/plugins/auth";
 
 const theme = useTheme();
 const router = useRouter();
@@ -54,15 +54,19 @@ const showLogin = computed(
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
   if (themePref == "dark") {
+    // forced dark mode
     theme.global.name.value = "dark";
   } else if (themePref == "light") {
+    // forced light mode
     theme.global.name.value = "light";
   } else if (
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
   ) {
+    // dark mode is enabled in system
     theme.global.name.value = "dark";
   } else {
+    // light mode is enabled in system
     theme.global.name.value = localStorage.getItem("systemTheme") || "light";
   }
 };
@@ -87,6 +91,7 @@ const handleRemoteAuthenticated = async (credentials: {
   user?: any;
 }) => {
   try {
+    const { authManager } = await import("@/plugins/auth");
     let user = credentials.user;
 
     if (credentials.user && !credentials.token && !credentials.username) {
@@ -115,6 +120,7 @@ const handleRemoteAuthenticated = async (credentials: {
       store.currentUser = user;
     }
 
+    // Update remote connection manager
     remoteConnectionManager.setAuthenticated(
       api.serverInfo.value?.server_id || undefined,
     );
@@ -131,6 +137,7 @@ const handleLocalConnect = async (serverAddress: string) => {
     console.debug("[App] API already initialized, skipping");
     return;
   }
+  const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
   await api.initialize(serverAddress);
 };
@@ -160,6 +167,8 @@ const completeInitialization = async () => {
   store.libraryRadiosCount = await api.getLibraryRadiosCount();
   store.libraryTracksCount = await api.getLibraryTracksCount();
 
+  // Enable Sendspin if available and not explicitly disabled
+  // Sendspin works over WebRTC DataChannel which requires signaling via the API server
   const webPlayerModePref =
     localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
   if (
@@ -182,6 +191,7 @@ onMounted(async () => {
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
 
+  // Cache language settings
   const langPref = localStorage.getItem("frontend.settings.language") || "auto";
   if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
@@ -199,14 +209,18 @@ onMounted(async () => {
   watch(
     () => api.state.value,
     async (newState, oldState) => {
+      // Re-authenticate on reconnection (not initial connection - Login.vue handles that)
       if (
         newState === ConnectionState.CONNECTED &&
         oldState === ConnectionState.RECONNECTING
       ) {
+        const { authManager } = await import("@/plugins/auth");
+        // Check if we're in Ingress mode by examining the URL path
         const isIngressMode =
           window.location.pathname.includes("/hassio_ingress/");
 
         if (isIngressMode) {
+          // In Ingress mode, authentication happens via HA proxy headers
           try {
             const user = await api.getCurrentUserInfo();
             if (user) {
@@ -220,6 +234,7 @@ onMounted(async () => {
             api.requireAuthentication();
           }
         } else {
+          // Normal mode: use token authentication
           const storedToken = authManager.getToken();
 
           if (storedToken) {
