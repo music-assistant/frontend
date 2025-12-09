@@ -122,3 +122,71 @@ venv/*
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/tasks.json
+
+# ===================
+# Rust / Cargo
+# ===================
+target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+!src-tauri/Cargo.lock
+
+# ===================
+# Tauri
+# ===================
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/gen/
+
+# ===================
+# Nix
+# ===================
+result
+result-*
+.direnv/
+.envrc.local
+
+# Nix-managed pre-commit (if migrating from .pre-commit-config.yaml)
+# Uncomment the line below after migrating to Nix-managed hooks:
+# .pre-commit-config.yaml
+
+# ===================
+# OS-specific
+# ===================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.nfs*
+
+# ===================
+# Security - Never commit these
+# ===================
+*.pem
+*.key
+*.p12
+*.pfx
+.env.local
+.env.*.local
+secrets.yaml
+secrets.json
+credentials.json

@@ -1,4 +1,4 @@
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+use discord_rich_presence::{activity::{self, StatusDisplayType}, DiscordIpc, DiscordIpcClient};
 use serde_json;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tungstenite::connect;
@@ -11,6 +11,7 @@ const CLIENT_ID: &str = "1107294634507518023";
 struct Song {
     name: String,
     artist: String,
+    artist_url: String,
     artist_image: String,
     album: String,
     album_image: String,
@@ -22,16 +23,7 @@ struct Song {
 // Function for running the Discord rich presence
 pub fn start_rpc(mass_ws: String) {
     // Create the Discord RPC client
-    let mut client: DiscordIpcClient = match DiscordIpcClient::new(CLIENT_ID) {
-        Ok(client) => client,
-        Err(e) => {
-            eprintln!(
-                "Couldn't create the Discord client: {}. Is Discord running?",
-                e
-            );
-            return;
-        }
-    };
+    let mut client = DiscordIpcClient::new(CLIENT_ID);
 
     // Connect to the Discord Rich Presence socket
     if let Err(e) = client.connect() {
@@ -140,6 +132,10 @@ pub fn start_rpc(mass_ws: String) {
                 .as_str()
                 .unwrap_or("")
                 .to_string(),
+            artist_url: media_item["artists"][0]["provider_mappings"][0]["url"]
+                .as_str()
+                .unwrap_or("")
+                .to_string(),
             provider_url: media_item["provider_mappings"][0]["url"]
                 .as_str()
                 .unwrap_or("")
@@ -181,12 +177,23 @@ pub fn start_rpc(mass_ws: String) {
         };
 
         // Construct the final payload
-        let payload = activity::Activity::new()
+        // state = artist name, details = track name
+        // status_display_type = Details shows "Listening to <track name>" in member list
+        let mut payload = activity::Activity::new()
             .state(&current_song.artist)
             .details(&current_song.name)
             .assets(assets)
             .buttons(buttons)
-            .timestamps(timestamps);
+            .timestamps(timestamps)
+            .status_display_type(StatusDisplayType::Details);
+
+        // Add URLs if available (clickable links in Discord)
+        if current_song.provider_url.contains("https://") {
+            payload = payload.details_url(&current_song.provider_url);
+        }
+        if current_song.artist_url.contains("https://") {
+            payload = payload.state_url(&current_song.artist_url);
+        }
 
         // Set the activity
         if let Err(e) = client.set_activity(payload) {

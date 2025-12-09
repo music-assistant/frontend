@@ -128,7 +128,6 @@
         "sync": "Sinhronizirajte zdaj",
         "sync_running": "Ta ponudnik se zdaj sinhronizira",
         "username": "Uporabniško ime",
-        "core": "Jedro",
         "core_modules": "Jedrni moduli",
         "server_info": "Informacije o strežniku",
         "server_id": "ID strežnika",
@@ -319,21 +318,12 @@
             "label": "Ikona",
             "description": "Ikona oblikovanja materiala za ta predvajalnik.\n\nGlej https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Uporabniški vmesnik",
-        "frontend_desc": "Konfiguracijske nastavitve uporabniškega vmesnika Music Assistant. Upoštevajte, da so te nastavitve shranjene na ravni naprave.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Samodejno (sledi konfiguraciji sistema)",
                 "light": "Svetlo",
                 "dark": "Temno"
-            }
-        },
-        "menu_style": {
-            "label": "Slog menija",
-            "options": {
-                "horizontal": "Vodoravno",
-                "vertical": "Navpično"
             }
         },
         "menu_items": {
@@ -368,10 +358,6 @@
                 "hu_HU": "Madžarski",
                 "it": "Italijanski"
             }
-        },
-        "hide_settings": {
-            "label": "Skrij gumb za nastavitve",
-            "description": "Skrij gumb za nastavitve na začetnem zaslonu.\n\nUpoštevajte, se lahko zaklenete, če onemogočite nastavitve na začetnem zaslonu in v meniju.\n\nV tem primeru boste morali ročno vnesti pot do nastavitev ali počistiti piškotke brskalnika, da boste znova dobili dostop do nastavitev. Uporabljajte na lastno odgovornost!"
         },
         "no_music_providers": "Noben ponudnik glasbe ni konfiguriran",
         "no_music_providers_detail": "Začnite izkušnjo Music Assistant z dodajanjem ponudnikov glasbe.",
@@ -409,11 +395,16 @@
             "label": "Fiksna\/nadomestna nastavitev ojačitve za radio",
             "description": "Fiksni\/nadomestni popravek ojačitve za radijski tok (odvisno od nastavitve »Metoda normalizacije glasnosti«).\nUporabite pozitivno vrednost za povečanje glasnosti, negativno vrednost, da zmanjšate glasnost.\n\nTa nastavitev se uporabi, ko je metoda normalizacije glasnosti nastavljena na »Fiksni popravek ojačitve« ali »Povratni popravek ojačitve«."
         },
-        "group_type": "Vrsta skupine",
         "add_group_player_desc": "Pri ponudnikih predvajalnikov\/ekosistemih, ki omogočajo nativno združevanje v skupine\/sinhronizacijo, bo samodejno ustvarjena skupina za sinhronizacijo, kar pomeni, da se bodo predvajalniki, ki so člani skupine, samodejno sinhronizirali, če boste predvajali v tej skupini predvajalnikov. \n\nZa predvajalnike\/ekosisteme, ki ne podpirajo združevanja v skupine, ali če želite združiti predvajalnike iz različnih ekosistemov, lahko uporabite vrsto skupine Universal (Univerzalna skupina), ki bo vsem članskim predvajalnikom razdelila enak zvok (vendar ne sinhronizirano). \n\nUpoštevajte, da nekateri ponudniki podpirajo združevanje v skupine, vendar morate za izvedbo združevanja uporabiti izvorno aplikacijo. Primer so predvajalniki, ki temeljijo na storitvi Google Cast, kjer lahko skupine Google Cast ustvarite samo v aplikaciji Google Home.",
         "dynamic_members": {
             "label": "Dinamični člani skupine",
             "description": "Omogočite članom, da se (začasno) dinamično pridružijo\/zapustijo skupino, tako da se skupina bolj ali manj obnaša enako kot ročna sinhronizacija predvajalnikov skupaj, z glavno razliko, da bo skupinski predvajalnik držal čakalno vrsto."
+        },
+        "dsp": {
+            "output": "Izhod",
+            "channels": {
+                "FR": "Desno"
+            }
         }
     },
     "show_info": "Prikaži informacije",
@@ -498,7 +489,6 @@
     "item_in_library": "Ta element je na voljo v knjižnici",
     "back": "Nazaj",
     "recently_played": "Nedavno predvajano",
-    "radiobrowser_by_popularity": "Po priljubljenosti",
     "radiobrowser_by_country": "Po državi",
     "radiobrowser_by_tag": "Po oznaki",
     "load_more_items": "Naloži več elementov ...",
@@ -538,5 +528,10 @@
     "shuffle_disable": "Onemogoči naključno predvajanje",
     "shuffle_enable": "Omogoči naključno predvajanje",
     "dont_stop_the_music_enable": "Omogoči »Ne ustavljaj glasbe!«",
-    "dont_stop_the_music_disable": "Onemogoči »Ne ustavljaj glasbe!«"
+    "dont_stop_the_music_disable": "Onemogoči »Ne ustavljaj glasbe!«",
+    "searchtype_all": "Vse",
+    "recommendations": {
+        "random_artists": "Naključni umetniki",
+        "random_albums": "Naključni albumi"
+    }
 }

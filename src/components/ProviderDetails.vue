@@ -23,7 +23,7 @@
             />
           </template>
           <template #title>
-            {{ api.getProvider(providerMapping.provider_instance)?.name }}
+            {{ getProviderName(providerMapping) }}
           </template>
           <template #subtitle>
             <span
@@ -67,37 +67,39 @@
               style="margin-right: 15px"
             />
             <!-- play sample button -->
-            <v-btn
-              v-if="
-                getBreakpointValue('bp1') &&
-                itemDetails.media_type == MediaType.TRACK
-              "
-              :icon="
-                demoPlayer[
-                  `${providerMapping.provider_instance}.${providerMapping.item_id}`
-                ]
-                  ? 'mdi-pause'
-                  : 'mdi-play-circle'
-              "
-              :title="$t('tooltip.play_sample')"
-              @click="playBtnClick(providerMapping)"
-            />
-            <!-- visit website button -->
-            <v-btn
-              v-if="
-                providerMapping.url &&
-                !providerMapping.provider_domain.startsWith('file')
-              "
-              icon="mdi-open-in-new"
-              :title="$t('tooltip.open_provider_link')"
-              @click.prevent="openLinkInNewTab(providerMapping.url)"
-            />
-            <!-- copy URI to clipboard button -->
-            <v-btn
-              icon="mdi-link"
-              :title="$t('tooltip.copy_uri')"
-              @click="copyUriToClipboard(getProviderUri(providerMapping))"
-            />
+            <div class="d-flex align-center ga-2">
+              <v-btn
+                v-if="
+                  getBreakpointValue('bp1') &&
+                  itemDetails.media_type == MediaType.TRACK
+                "
+                :icon="
+                  demoPlayer[
+                    `${providerMapping.provider_instance}.${providerMapping.item_id}`
+                  ]
+                    ? 'mdi-pause'
+                    : 'mdi-play-circle'
+                "
+                :title="$t('tooltip.play_sample')"
+                @click="playBtnClick(providerMapping)"
+              />
+              <!-- visit website button -->
+              <v-btn
+                v-if="
+                  providerMapping.url &&
+                  !providerMapping.provider_domain.startsWith('file')
+                "
+                icon="mdi-open-in-new"
+                :title="$t('tooltip.open_provider_link')"
+                @click.prevent="openLinkInNewTab(providerMapping.url)"
+              />
+              <!-- copy URI to clipboard button -->
+              <v-btn
+                icon="mdi-link"
+                :title="$t('tooltip.copy_uri')"
+                @click="copyUriToClipboard(getProviderUri(providerMapping))"
+              />
+            </div>
           </template>
         </ListItem>
         <ListItem v-if="itemDetails.provider == 'library'">
@@ -130,26 +132,30 @@
 </template>
 
 <script setup lang="ts">
+import Container from "@/components/Container.vue";
+import ListItem from "@/components/ListItem.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
+import Toolbar from "@/components/Toolbar.vue";
+import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
-import { api } from "@/plugins/api";
-import ListItem from "@/components/mods/ListItem.vue";
-import Container from "@/components/mods/Container.vue";
-import Toolbar from "@/components/Toolbar.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed, reactive, ref } from "vue";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { copyToClipboard } from "@/helpers/utils";
+import { toast } from "vuetify-sonner";
+import { useI18n } from "vue-i18n";
 
 export interface Props {
   itemDetails: MediaItemType;
 }
 const props = defineProps<Props>();
 
+const { t } = useI18n();
 const expanded = ref(false);
 
 const openLinkInNewTab = function (url: string) {
@@ -179,11 +185,30 @@ const getPreviewUrl = function (provider: string, item_id: string) {
 };
 
 const getProviderUri = function (mapping: ProviderMapping) {
-  return `${api.getProvider(mapping.provider_instance)?.lookup_key}://${props.itemDetails.media_type}/${mapping.item_id}`;
+  return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
-const copyUriToClipboard = function (uri: string) {
-  navigator.clipboard.writeText(uri);
+const copyUriToClipboard = async function (uri: string) {
+  const success = await copyToClipboard(uri);
+  if (success) {
+    toast.success(t("uri_copied"));
+  } else {
+    toast.error(t("uri_copy_failed"));
+  }
+};
+
+const getProviderName = function (providerMapping: ProviderMapping) {
+  const providerInstance = api.getProvider(providerMapping.provider_instance);
+  if (providerInstance) {
+    return providerInstance.name;
+  }
+  const providerManifest = api.getProviderManifest(
+    providerMapping.provider_domain,
+  );
+  if (providerManifest) {
+    return `${providerManifest.name} (${providerMapping.provider_instance})`;
+  }
+  return providerMapping.provider_instance;
 };
 
 const toggleExpand = function () {

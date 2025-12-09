@@ -28,6 +28,9 @@ export default defineConfig({
       },
     }),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "public",
+      filename: "sw.js",
       includeAssets: [
         "favicon.svg",
         "favicon.ico",

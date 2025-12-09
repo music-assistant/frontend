@@ -140,22 +140,26 @@ const hasLyrics = computed(() => {
 });
 
 const hasTimestamps = computed(() => {
-  // Only consider lyrics to have timestamps if they come from lrc_lyrics field
-  // or if they have at least one line with a non-zero timestamp
-  if (props.mediaItem?.metadata?.lrc_lyrics) {
+  // First check if we have parsed lyrics with timestamps
+  if (lyrics.value.some((line) => line.time > 0)) {
     return true;
   }
 
-  // For lyrics from the regular lyrics field, they should never be considered timestamped
-  if (
-    !props.mediaItem?.metadata?.lrc_lyrics &&
-    props.mediaItem?.metadata?.lyrics
-  ) {
-    return false;
+  // If no parsed lyrics yet, check the raw data for LRC format patterns
+  const syncedLyrics = props.mediaItem?.metadata?.lrc_lyrics;
+  const plainLyrics = props.mediaItem?.metadata?.lyrics;
+
+  // Check lrc_lyrics field
+  if (syncedLyrics && syncedLyrics.includes("[")) {
+    return true;
   }
 
-  // Fallback to checking timestamps in current lyrics
-  return lyrics.value.some((line) => line.time > 0);
+  // Check regular lyrics field for LRC patterns like [00:29.79]
+  if (plainLyrics && /\[\d+:\d+[.:]?\d*\]/.test(plainLyrics)) {
+    return true;
+  }
+
+  return false;
 });
 
 // Methods for lyrics handling
@@ -191,36 +195,52 @@ const fetchLyrics = () => {
 
   loading.value = true;
   try {
-    // First check for synced LRC lyrics (preferred)
     const syncedLyrics = props.mediaItem.metadata?.lrc_lyrics || "";
     const plainLyrics = props.mediaItem.metadata?.lyrics || "";
 
+    // Determine which lyrics to use - prefer lrc_lyrics but check both for LRC format
+    let lyricsToProcess = "";
+    let isLrcFormat = false;
+
     if (syncedLyrics) {
-      // Process LRC formatted lyrics - these already have timestamps
-      const lyricsLines = syncedLyrics
+      lyricsToProcess = syncedLyrics;
+      isLrcFormat = true;
+    } else if (plainLyrics && /\[\d+:\d+[.:]?\d*\]/.test(plainLyrics)) {
+      // Plain lyrics field contains LRC format
+      lyricsToProcess = plainLyrics;
+      isLrcFormat = true;
+    } else if (plainLyrics) {
+      // Plain text lyrics without timestamps
+      lyricsToProcess = plainLyrics;
+      isLrcFormat = false;
+    }
+
+    if (isLrcFormat) {
+      // Process LRC formatted lyrics
+      const lyricsLines = lyricsToProcess
         .split("\n")
         .filter((line) => line.trim());
 
       lyrics.value = lyricsLines
         .map((line) => parseLrcLine(line))
-        .filter((line) => line.text)
+        .filter((line) => line.text.trim()) // Filter out empty text
         .sort((a, b) => a.time - b.time);
 
       logSync(`Loaded ${lyrics.value.length} synchronized lyrics lines`, false);
-      logSync(`Processed synced lyrics: ${lyrics.value.length} lines`);
-    } else if (plainLyrics) {
+    } else if (lyricsToProcess) {
       // For plain text lyrics without timestamps
-      const lyricsLines = plainLyrics.split("\n").filter((line) => line.trim());
+      const lyricsLines = lyricsToProcess
+        .split("\n")
+        .filter((line) => line.trim());
 
       lyrics.value = lyricsLines
         .map((line) => ({
           time: 0,
-          text: line.trim() || " ",
+          text: line.trim(),
         }))
         .filter((line) => line.text);
 
       logSync(`Loaded ${lyrics.value.length} plain text lyrics lines`, false);
-      logSync(`Processed plain lyrics: ${lyrics.value.length} lines`);
     } else {
       lyrics.value = [];
     }

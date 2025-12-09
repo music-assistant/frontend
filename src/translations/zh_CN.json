@@ -128,7 +128,6 @@
         "sync": "立即同步",
         "sync_running": "现在同步该提供者",
         "username": "用户名",
-        "core": "核心",
         "core_modules": "核心模块",
         "server_info": "服务器信息",
         "server_id": "服务器 ID",
@@ -321,21 +320,12 @@
             "label": "Icon图标",
             "description": "此播放器的MDI图标,参见https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "用户界面",
-        "frontend_desc": "音乐助手用户界面（前端）的配置设置。请注意，这些设置存储在设备里面。",
         "theme": {
             "label": "主题",
             "options": {
                 "auto": "自动(遵循系统配置)",
                 "light": "明亮模式",
                 "dark": "暗黑模式"
-            }
-        },
-        "menu_style": {
-            "label": "菜单样式",
-            "options": {
-                "horizontal": "底部栏模式",
-                "vertical": "侧边栏模式"
             }
         },
         "menu_items": {
@@ -370,10 +360,6 @@
                 "hu_HU": "匈牙利语",
                 "it": "意大利语"
             }
-        },
-        "hide_settings": {
-            "label": "隐藏设置按钮",
-            "description": "隐藏主屏幕上的设置按钮。\n请注意，如果您禁用主屏幕和菜单中的设置按钮，您可能会无法进入设置界面,在这种情况下,您需要手动输入设置路径或清除浏览器cookie才能再次访问设置."
         },
         "no_music_providers": "未配置音乐提供者",
         "no_music_providers_detail": "添加音乐提供者，开始您的音乐助手体验!",
@@ -411,7 +397,6 @@
             "label": "收音机的固定\/回退增益调整",
             "description": "应用于收音机的固定\/回退增益校正（取决于“音量归一化方法”设置）。\n使用正值可增加音量，使用负值可减小音量。\n当\"音量归一化方法\"设置为“固定增益校正”或“回退到增益校正”时，使用此设置。"
         },
-        "group_type": "组类型",
         "add_group_player_desc": "对于提供本地分组\/同步功能的播放器提供者\/生态系统，将自动创建一个同步组，这意味着如果您在此播放器组中播放，成员播放器将自动同步。 \n\n对于不支持分组的播放器\/生态系统，或者如果要对来自不同生态系统的播放器进行分组，可以使用通用分组类型，它将向所有成员播放器分发相同的音频（但不同步）。 \n\n请注意，有些提供者确实支持分组，但你需要使用本机应用程序来执行分组。例如，基于 Google Cast 的播放器只能在 Google Home 应用程序中创建 Google Cast 群组。",
         "dynamic_members": {
             "label": "动态组成员",
@@ -591,7 +576,6 @@
     "item_in_library": "此项目可在媒体库中找到",
     "back": "返回",
     "recently_played": "最近播放",
-    "radiobrowser_by_popularity": "按受欢迎程度",
     "radiobrowser_by_country": "按国家\/地区",
     "radiobrowser_by_tag": "按标签",
     "load_more_items": "加载更多项目",
@@ -725,6 +709,5 @@
     },
     "homescreen_edit_enable": "编辑主屏幕",
     "homescreen_edit_disable": "退出主屏幕编辑模式",
-    "lyrics_will_appear_soon": "歌词将在歌曲开始时出现...",
-    "builtin_playlists": "内建播放列表设置"
+    "lyrics_will_appear_soon": "歌词将在歌曲开始时出现..."
 }

@@ -7,7 +7,7 @@ import {
   MediaItemTypeOrItemMapping,
   MediaType,
   Player,
-  PlayerState,
+  PlaybackState,
   PlayerType,
   ProviderMapping,
 } from "@/plugins/api/interfaces";
@@ -26,8 +26,6 @@ import {
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
-import { openUrl } from "@tauri-apps/plugin-opener";
-
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
   // auto-translate music-assistant.io links to beta site
@@ -40,7 +38,17 @@ export const openLinkInNewTab = function (url: string) {
   ) {
     url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
   }
-  openUrl(url);
+  // use tauri opener when available; otherwise fall back to window.open for tests/web
+  try {
+    // dynamic import avoids bundling in non-tauri/test environments
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { openUrl } = require("@tauri-apps/plugin-opener");
+    openUrl(url);
+  } catch (e) {
+    if (typeof window !== "undefined" && window?.open) {
+      window.open(url, "_blank");
+    }
+  }
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -158,15 +166,15 @@ export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
 
 export const getPlayerName = function (player: Player, truncate = 26) {
   if (!player) return "";
-  const availableChildPlayers = player.group_childs.filter(
+  const availableChildPlayers = player.group_members.filter(
     (x) => api.players[x]?.available && x != player.player_id,
   );
   if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
-    return `${truncateString(player.display_name, truncate - 3)} +${
+    return `${truncateString(player.name, truncate - 3)} +${
       availableChildPlayers.length
     }`;
   }
-  return truncateString(player.display_name, truncate);
+  return truncateString(player.name, truncate);
 };
 
 export const getStreamingProviderMappings = function (
@@ -485,16 +493,62 @@ export const markdownToHtml = function (text: string): string {
   return marked(text) as string;
 };
 
+/**
+ * Copy text to clipboard with proper error handling.
+ *
+ * Handles scenarios where navigator.clipboard is unavailable (non-HTTPS contexts,
+ * unsupported browsers, or permission issues) by falling back to a temporary
+ * textarea element.
+ *
+ * :param text: The text to copy to the clipboard.
+ * :return: Promise that resolves to true if successful, false otherwise.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
+
+  // Try modern Clipboard API first (requires HTTPS or localhost)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.error(
+        "Clipboard API failed, falling back to legacy method:",
+        error,
+      );
+    }
+  }
+
+  // Fallback for older browsers or non-secure contexts
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (successful) {
+      return true;
+    } else {
+      console.error("Legacy copy method failed");
+      return false;
+    }
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+    return false;
+  }
+}
+
 export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
 ): boolean {
-  if (
-    player.provider == "builtin_player" &&
-    player.player_id == webPlayer.player_id
-  ) {
-    return true;
-  }
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
   if (player.hide_player_in_ui.includes(HidePlayerOption.ALWAYS)) {
@@ -541,8 +595,8 @@ export const handlePlayBtnClick = function (
     !forceMenu &&
     store.playMenuShown &&
     store.activePlayer?.available &&
-    [PlayerState.PLAYING, PlayerState.PAUSED].includes(
-      store.activePlayer?.state as PlayerState,
+    [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
+      store.activePlayer?.playback_state as PlaybackState,
     )
   ) {
     store.playActionInProgress = true;
@@ -622,4 +676,24 @@ export const handleMenuBtnClick = function (
     posY,
     includePlayMenuItems,
   );
+};
+
+/**
+ * Get platform-specific default sync delay for Sendspin player.
+ * Based on testing across various platforms/browsers.
+ */
+export const getSendspinDefaultSyncDelay = function (): number {
+  const ua = navigator.userAgent;
+  const isAndroid = /android/i.test(ua);
+  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const isFirefox = /firefox/i.test(ua);
+
+  if (isIOS) {
+    return -250;
+  } else if (!isAndroid && !isFirefox) {
+    // Desktop Chrome/Chromium/Edge
+    return -300;
+  }
+  // Android, Firefox (desktop/mobile)
+  return -200;
 };

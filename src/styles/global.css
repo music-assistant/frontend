@@ -1,10 +1,10 @@
 /* Various global styles used throughout the app */
 
 @font-face {
-  font-family: 'Material Icons Outlined';
+  font-family: "Material Icons Outlined";
   font-style: normal;
   font-weight: 400;
-  src: url(@/assets/material-icons-outlined.woff2) format('woff2');
+  src: url(@/assets/material-icons-outlined.woff2) format("woff2");
 }
 
 @font-face {
@@ -16,7 +16,7 @@
 }
 
 .material-icons-outlined {
-  font-family: 'Material Icons Outlined';
+  font-family: "Material Icons Outlined";
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -27,8 +27,8 @@
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
-  -webkit-font-feature-settings: 'liga';
-  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: "liga";
+  font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
 }
 
@@ -101,7 +101,6 @@ a {
   align-content: center;
 }
 
-
 .line-clamp-1 {
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -146,8 +145,6 @@ a {
 .flicking-camera {
   display: flex !important;
 }
-
-
 
 h1 {
   font-size: 1.5rem;
@@ -218,4 +215,17 @@ h6 {
 /* Workaround for vuetify issue https://github.com/vuetifyjs/vuetify/issues/1197 */
 html {
   overflow-y: hidden !important;
+}
+
+.is-playing {
+  color: rgb(var(--v-theme-primary));
+  font-weight: 800;
+}
+
+/* iOS Safari 15 scroll momentum */
+.scroll-container,
+.v-list,
+.v-navigation-drawer__content,
+.v-main__wrap {
+  -webkit-overflow-scrolling: touch;
 }

@@ -14,7 +14,7 @@
 import audio from "@/assets/almost_silent.mp3";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
-import { PlayerState } from "@/plugins/api/interfaces";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onMounted, ref, watch } from "vue";
 
@@ -30,7 +30,7 @@ function apiCommandWithCurrentPlayer<T extends (id: string) => any>(
 
 let interval = undefined as undefined | any;
 
-function updateMediaState(state?: PlayerState) {
+function updateMediaState(state?: PlaybackState) {
   if (!state || !audioRef.value) return;
   let mediaState: MediaSessionPlaybackState;
 
@@ -38,7 +38,7 @@ function updateMediaState(state?: PlayerState) {
   interval = undefined;
 
   switch (state) {
-    case PlayerState.PLAYING:
+    case PlaybackState.PLAYING:
       audioRef.value.play();
       mediaState = state;
       interval = setInterval(() => {
@@ -46,7 +46,7 @@ function updateMediaState(state?: PlayerState) {
         if (audioRef.value) audioRef.value.currentTime = 2;
       }, 55000);
       break;
-    case PlayerState.PAUSED:
+    case PlaybackState.PAUSED:
       audioRef.value.pause();
       audioRef.value.currentTime = 2;
       mediaState = state;
@@ -61,7 +61,7 @@ function updateMediaState(state?: PlayerState) {
 }
 
 watch(
-  () => store.activePlayer?.state,
+  () => store.activePlayer?.playback_state,
   (stateUpdate) => updateMediaState(stateUpdate),
 );
 
@@ -71,18 +71,18 @@ watch(
   () => {
     // Briefly start the playback to make the notification
     // even show up when paused.
-    updateMediaState(PlayerState.PLAYING);
+    updateMediaState(PlaybackState.PLAYING);
     setTimeout(() => {
       // not sure if this is needed, but lets make sure that the notification will
       // definitly show up even if some quick state changes will occur
       if (audioRef.value) audioRef.value.currentTime = 0;
-      updateMediaState(store.activePlayer?.state);
+      updateMediaState(store.activePlayer?.playback_state);
     }, 100);
   },
   { once: true },
 );
 
-updateMediaState(store.activePlayer?.state);
+updateMediaState(store.activePlayer?.playback_state);
 
 // This allows for correct seeking on repeated seek forward/backward presses
 let lastSeekPos = undefined as undefined | number;
@@ -107,8 +107,9 @@ const seekHandler = function (
     to = evt.seekTime;
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
     const offset = evt.seekOffset || 10;
-    const elapsed_time = lastSeekPos || store.activePlayerQueue?.elapsed_time;
-    if (!elapsed_time) return;
+    const elapsed_time =
+      lastSeekPos != null ? lastSeekPos : store.activePlayerQueue?.elapsed_time;
+    if (elapsed_time == null) return;
     if (evt.action === "seekbackward") {
       to = elapsed_time - offset;
     } else {

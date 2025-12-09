@@ -128,7 +128,6 @@
         "sync": "Synkroniser nu",
         "sync_running": "Denne udbyder synkroniseres",
         "username": "Brugernavn",
-        "core": "Generelt",
         "core_modules": "Generelle moduler",
         "server_info": "Serveroplysninger",
         "server_id": "Server-ID",
@@ -288,7 +287,8 @@
             "generic": "Generelle indstillinger",
             "announcements": "Konfiguration af meddelelser",
             "airplay": "Airplay-specifikke indstillinger",
-            "player_controls": "Afspillerstyring"
+            "player_controls": "Afspillerstyring",
+            "presets": "Forudindstillinger"
         },
         "tts_pre_announce": {
             "label": "Forhåndsannoncering af TTS-meddelelser",
@@ -320,21 +320,12 @@
             "label": "Ikon",
             "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Brugergrænseflade",
-        "frontend_desc": "Konfigurationsindstillinger for Music Assistant-brugergrænsefladen. Bemærk, at disse indstillinger gemmes på enhedsniveau.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Auto (følger systemkonfigurationen)",
                 "light": "Lys",
                 "dark": "Mørk"
-            }
-        },
-        "menu_style": {
-            "label": "Menu-stil",
-            "options": {
-                "horizontal": "Vandret",
-                "vertical": "Lodret"
             }
         },
         "menu_items": {
@@ -367,12 +358,9 @@
                 "pt_BR": "Portugisisk (Brasilien)",
                 "sl_SI": "Slovensk",
                 "hu_HU": "Ungarsk",
-                "it": "Italiensk"
+                "it": "Italiensk",
+                "el_GR": "Græsk"
             }
-        },
-        "hide_settings": {
-            "label": "Skjul knap til indstillinger",
-            "description": "Skjul indstillingsknappen på startskærmen.\n\n Bemærk, at hvis du deaktiverer indstillinger på startskærmen og i menuen, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller slette browsercookies for at få adgang til indstillingerne igen - brug dem på eget ansvar!"
         },
         "no_music_providers": "Ingen musikudbydere konfigureret",
         "no_music_providers_detail": "Start din Music Assistant-oplevelse ved at tilføje dine musikudbydere.",
@@ -410,7 +398,6 @@
             "label": "Fast\/standard gain-justering for radio",
             "description": "Fast\/standard forstærkningskorrektion, der skal anvendes på en radiostream (afhænger af indstillingen \"Volume normalization method\").\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\n\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
         },
-        "group_type": "Gruppetype",
         "add_group_player_desc": "For afspillerudbydere, der tilbyder indbygget gruppering\/synkronisering, oprettes der automatisk en synkroniseringsgruppe, hvilket betyder, at hvis du spiller til denne afspillergruppe, synkroniseres afspillerne automatisk. \n\nFor afspillereudbydere, der ikke understøtter gruppering, eller hvis du vil gruppere afspillere fra forskellige udbydere, kan du bruge gruppetypen \"Universal\", som vil distribuere den samme lyd til alle afspillere (dog ikke synkroniseret). \n\nBemærk, at nogle udbydere understøtter gruppering, men du skal bruge den oprindelige app til at udføre grupperingen. Et eksempel er Google Cast-baserede afspillere, hvor du kun kan oprette Google Cast-grupper i Google Home-appen.",
         "dynamic_members": {
             "label": "Dynamiske gruppemedlemmer",
@@ -445,7 +432,13 @@
                 },
                 "import_apo": "Importer APO\/REW-forudindstilling",
                 "export_apo": "Eksporter APO-forudindstilling",
-                "preamp": "Forforstærker"
+                "preamp": "Forforstærker",
+                "add_band_channel": "Tilføj bånd (kun {channel})",
+                "band_channel": "Bånd {index} (kun {channel})",
+                "show_multichannel_controls": "Vis kontrolelementer til flere kanaler",
+                "edited_channel": "Plot svaret fra EQ'en for denne\/disse kanal(er)",
+                "channel": "Dette bånd vil blive anvendt på",
+                "per_channel_preamp": "Ekstra forforstærkning til {channel}"
             },
             "tone_control": {
                 "bass_level": "Basniveau",
@@ -460,6 +453,23 @@
             "types": {
                 "parametric_eq": "Parametrisk EQ",
                 "tone_control": "Tonekontrol"
+            },
+            "channels": {
+                "ALL": "Alle",
+                "FL": "Venstre",
+                "FR": "Højre"
+            },
+            "channels_compact": {
+                "FL": "V",
+                "FR": "H"
+            },
+            "presets": {
+                "load": "Indlæs DSP-forudindstilling",
+                "empty_warning": "Ingen tilgængelige DSP-forudindstillinger",
+                "save": "Gem DSP-forudindstilling",
+                "name": "Forudindstillingsnavn",
+                "name_placeholder": "Min nye forudindstilling",
+                "remove_confirm": "Er du sikker på, at du vil fjerne denne DSP-forudindstilling?"
             }
         },
         "power_control": {
@@ -473,6 +483,39 @@
         "mute_control": {
             "label": "Mutekontrol",
             "description": "Definer\/tilsidesæt mutekontrol-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere mutekontrol-kommandoerne til en anden enhed eller deaktivere det helt. \n \nVi tilbyder en \"falsk\" mutekontrol-mulighed, som vil simulere muting ved at indstille lydstyrken til 0 og genoprette lydstyrken, når lyden slås til."
+        },
+        "output_limiter": {
+            "label": "Aktivér begrænsning for at forhindre klipning",
+            "description": "Aktiverer en begrænser, der forhindrer lydforvrængning ved at gøre høje toppe mere stille."
+        },
+        "dsp_enabled": "DSP er aktiveret",
+        "dsp_disabled": "DSP er deaktiveret",
+        "dsp_note_multi_device_group": {
+            "label": "Du kan konfigurere DSP'en for hver enkelt afspiller."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Denne type gruppe understøtter ikke DSP ved afspilning til flere enheder."
+        },
+        "add_group_player_desc_universal": "Ved at oprette en Universal Afspiller-gruppe kan du gruppere afspillere fra forskellige udbydere\/økosystemer. \nDette vil distribuere den samme lyd til alle afspillere i gruppen (dog ikke synkroniseret).",
+        "core_module": {
+            "metadata": {
+                "name": "Metadata"
+            },
+            "music": {
+                "name": "Musik"
+            },
+            "players": {
+                "name": "Afspillere"
+            },
+            "remote_access": {
+                "name": "Fjernadgang"
+            },
+            "streams": {
+                "name": "Streams"
+            },
+            "webserver": {
+                "name": "Webserver"
+            }
         }
     },
     "show_info": "Vis info",
@@ -536,7 +579,9 @@
         "play_sample": "Afspil prøve",
         "album_type": "Album type",
         "loading": "Serveren behandler en anmodning eller synkroniserer musik.",
-        "primary_image": "Dette er det primære billede for denne billedtype"
+        "primary_image": "Dette er det primære billede for denne billedtype",
+        "copy_uri": "Kopier URI til udklipsholder",
+        "select_all": "Vælg alle elementer"
     },
     "topresult": "Bedste resultat",
     "track": "Spor",
@@ -557,7 +602,6 @@
     "item_in_library": "Dette element er tilgængeligt i biblioteket",
     "back": "Tilbage",
     "recently_played": "Nyligt afspillet",
-    "radiobrowser_by_popularity": "Efter popularitet",
     "radiobrowser_by_country": "Efter land",
     "radiobrowser_by_tag": "Efter tag",
     "load_more_items": "Indlæs flere emner...",
@@ -643,7 +687,8 @@
             "bit_rate": "Bit rate: {0} kbps",
             "sample_rate": "Samplingsfrekvens: {0} kHz",
             "channels": "Kanaler: {0}",
-            "bit_depth": "Bitdybde: {0}"
+            "bit_depth": "Bitdybde: {0}",
+            "processing_notice": "Lyd behandles internt som 32-bit float PCM"
         },
         "volume_normalization": {
             "target_level": "Målniveau: {0} LUFS",
@@ -656,8 +701,39 @@
                 "measurement_album": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af albummets (integrerede) lydstyrke.",
                 "fixed_gain": "Normalisering af lydstyrken er aktiv, baseret på bestemt forstærkningskorrektion."
             }
-        }
+        },
+        "click_to_expand": "Klik for at vise alle spillere",
+        "output_format_pcm_info": "Lyden sendes som PCM til afspillerudbyderen. Afspillerudbyderen kan derefter konvertere lyden til et andet format, før den sendes til afspilleren."
     },
     "volume_normalization_gain_correction": "{0} dB",
-    "select_source": "Vælg kilde"
+    "select_source": "Vælg kilde",
+    "in_progress_items": "Fortsæt med at lytte...",
+    "play_replace_next": "Afspil næste (ryd køen)",
+    "all_enqueue_options": "Alle muligheder for at sætte i kø",
+    "music_assistant_source": "Music Assistant kø ",
+    "music_assistant_library": "Music Assistent bibliotek",
+    "select_all_confirmation": "Vælg alle elementer? Denne handling kan bruge et øjeblik på at indlæse alle data.",
+    "this_device": "Denne enhed",
+    "recommendations": {
+        "in_progress_items": "Fortsæt med at lytte...",
+        "recommended_new_tracks": "Anbefalede nye numre",
+        "recently_played": "Spillet for nylig",
+        "suggested_new_albums_for_you": "Foreslåede nye albums til dig",
+        "random_artists": "Tilfældige kunstnere",
+        "random_albums": "Tilfældige albums",
+        "custom_mixes": "Tilpassede mix",
+        "your_listening_history": "Din lyttehistorik",
+        "popular_albums": "Populære albums",
+        "staff_picks_tracks": "Medarbejdernes valg: numre",
+        "staff_picks_albums": "Medarbejdernes valg: albums",
+        "radio_stations_for_you": "Radiostationer til dig",
+        "producers__songwriters": "Producere og sangskrivere",
+        "new_releases_for_you": "Nye udgivelser til dig",
+        "recent_favorite_tracks": "Nyligt foretrukne numre",
+        "favorite_playlists": "Favorit-playlister",
+        "favorite_radio_stations": "Favorit-radiostationer"
+    },
+    "homescreen_edit_enable": "Rediger startskærmen",
+    "homescreen_edit_disable": "Forlad redigeringstilstand for startskærmen",
+    "lyrics_will_appear_soon": "Sangteksten vises, når sangen begynder..."
 }

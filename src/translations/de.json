@@ -128,7 +128,6 @@
         "sync": "Jetzt Änderungen synchronisieren",
         "sync_running": "Dieser Anbieter wird jetzt synchronisiert",
         "username": "Benutzername",
-        "core": "Grundsystem",
         "core_modules": "Kernmodule",
         "server_info": "Server-Informationen",
         "server_id": "Server-ID",
@@ -321,21 +320,12 @@
             "label": "Icon",
             "description": "Material Design Icon für dieses Wiedergabegerät. \n\nSiehe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Benutzeroberfläche",
-        "frontend_desc": "Konfigurationen für die Music Assistant Benutzeroberfläche. Diese Einstellungen werden nur auf dem nutzenden Gerät gespeichert.",
         "theme": {
             "label": "Theme",
             "options": {
                 "auto": "Automatisch (entsprechend der Systemeinstellung)",
                 "light": "Hell",
                 "dark": "Dunkel"
-            }
-        },
-        "menu_style": {
-            "label": "Menüstil",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Vertikal"
             }
         },
         "menu_items": {
@@ -370,10 +360,6 @@
                 "hu_HU": "Ungarisch",
                 "it": "Italienisch"
             }
-        },
-        "hide_settings": {
-            "label": "Verstecke den Einstellungsknopf",
-            "description": "Versteckt den Einstellungsknopf auf der Startseite.\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Einstellungsknopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du die URL der Seite in den Einstellungen manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu den Einstellungen zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
         },
         "no_music_providers": "Keine Musikanbieter konfiguriert",
         "no_music_providers_detail": "Starte mit Music Assistant, indem du deine Musikanbieter hinzufügst.",
@@ -411,7 +397,6 @@
             "label": "Fixed\/fallback Gainanpassung für Radio",
             "description": "Feste\/fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'fallback auf Gainkorrektur' eingestellt ist."
         },
-        "group_type": "Art der Gruppe",
         "add_group_player_desc": "\nBei Player-Anbietern\/Ökosystemen, die eine native Gruppierung\/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, somit werden die Player-Mitglieder automatisch synchronisiert, wenn diese Player-Gruppe abgespielt wird.\n\nFür Player\/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \n\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können.",
         "dynamic_members": {
             "label": "Dynamische Gruppenmitglieder",
@@ -501,10 +486,6 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dieser Gruppentyp unterstützt keinen DSP, wenn die Wiedergabe auf mehrere Geräte erfolgt."
-        },
-        "enable_builtin_player": {
-            "label": "Wiedergabe auf diesem Gerät\/Browser erlauben",
-            "description": "(Experimentelles) integriertes Wiedergabegerät für dieses Gerät\/diesen Browser aktivieren. Erlaubt das Streamen der gesamten Inhalte direkt auf dieses Gerät."
         }
     },
     "show_info": "Zeige Informationen",
@@ -591,7 +572,6 @@
     "item_in_library": "Dieses Element ist in der Bibliothek vorhanden",
     "back": "Zurück",
     "recently_played": "Zuletzt gespielt",
-    "radiobrowser_by_popularity": "Nach Beliebtheit",
     "radiobrowser_by_country": "Nach Land",
     "radiobrowser_by_tag": "Nach Tag",
     "load_more_items": "Weitere Elemente laden…",
@@ -725,6 +705,5 @@
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
-    "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt",
-    "builtin_playlists": "Integrierte Wiedergabelisten-Einstellungen"
+    "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt"
 }

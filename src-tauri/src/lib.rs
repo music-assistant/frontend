@@ -1,8 +1,8 @@
 use std::{sync::Once, thread};
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri_plugin_updater::UpdaterExt;
 use tauri::Manager;
+use tauri_plugin_updater::UpdaterExt;
 
 mod discord_rpc;
 
@@ -23,8 +23,7 @@ fn start_rpc(websocket: String) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let mut builder =
-        tauri::Builder::default();
+    let mut builder = tauri::Builder::default();
 
     // start_rpc("ws://localhost:8095/ws".to_string());
 
@@ -33,12 +32,16 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             use tauri::Manager;
 
-            let window = app
-                .get_webview_window("main")
-                .expect("no main window");
-            
-            let _ = window.set_focus().expect("failed to focus window");
-            let _ = window.show().expect("failed to show window");
+            if let Some(window) = app.get_webview_window("main") {
+                if let Err(err) = window.show() {
+                    eprintln!("failed to show window: {err}");
+                }
+                if let Err(err) = window.set_focus() {
+                    eprintln!("failed to focus window: {err}");
+                }
+            } else {
+                eprintln!("no main window");
+            }
 
             println!("An instance was already running, focusing on it");
         }));

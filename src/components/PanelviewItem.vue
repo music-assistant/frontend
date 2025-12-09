@@ -45,8 +45,13 @@
           <span v-if="item.media_type == MediaType.FOLDER">
             <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
           </span>
-          <span v-else>{{ item.name }}</span>
-          <span v-if="'version' in item && item.version">
+          <span v-else :class="{ 'is-playing': isPlaying }">{{
+            item.name
+          }}</span>
+          <span
+            v-if="'version' in item && item.version"
+            :class="{ 'is-playing': isPlaying }"
+          >
             - {{ item.version }}</span
           >
         </v-list-item-title>
@@ -81,6 +86,11 @@
       </v-list-item>
 
       <!-- play button -->
+      <NowPlayingBadge
+        v-if="isPlaying && !showActions"
+        icon-style="position: absolute; right: 5px; bottom: 5px"
+        :show-badge="false"
+      />
       <v-btn
         v-if="
           (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
@@ -129,6 +139,9 @@
             <FavouriteButton :item="item" />
           </v-item>
         </v-item-group>
+
+        <!-- Now Playing Badge -->
+        <NowPlayingBadge v-if="isPlaying" :show-badge="false" />
         <v-spacer />
         <MAButton
           v-if="isHovering || $vuetify.display.mobile"
@@ -143,15 +156,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import MediaItemThumb from "./MediaItemThumb.vue";
-import MAButton from "./mods/Button.vue";
-import {
-  BrowseFolder,
-  ContentType,
-  type MediaItemType,
-  MediaType,
-} from "@/plugins/api/interfaces";
+import MAButton from "@/components/Button.vue";
+import FavouriteButton from "@/components/FavoriteButton.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
@@ -160,10 +167,17 @@ import {
   handlePlayBtnClick,
   parseBool,
 } from "@/helpers/utils";
-import { iconHiRes } from "./QualityDetailsBtn.vue";
+import {
+  BrowseFolder,
+  ContentType,
+  type MediaItemType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import FavouriteButton from "@/components/FavoriteButton.vue";
 import { store } from "@/plugins/store";
+import { computed } from "vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 // properties
 export interface Props {
@@ -175,6 +189,7 @@ export interface Props {
   showActions?: boolean;
   showTrackNumber?: boolean;
   isAvailable?: boolean;
+  isPlaying?: boolean;
   parentItem?: MediaItemType;
 }
 const compProps = withDefaults(defineProps<Props>(), {
@@ -218,7 +233,7 @@ const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
 
-const onMenu = function (evt: PointerEvent | TouchEvent) {
+const onMenu = function (evt: PointerEvent | TouchEvent | MouseEvent) {
   if (compProps.showCheckboxes) return;
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;

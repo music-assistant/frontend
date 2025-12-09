@@ -11,3 +11,5 @@ export const DEFAULT_MENU_ITEMS = [
   "browse",
   "settings",
 ];
+
+export const SYNCGROUP_PREFIX = "syncgroup_";

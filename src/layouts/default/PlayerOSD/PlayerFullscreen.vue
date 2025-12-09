@@ -5,6 +5,7 @@
     :scrim="false"
     transition="dialog-bottom-transition"
     z-index="9999"
+    persistent
   >
     <v-card :color="backgroundColor">
       <v-toolbar class="v-toolbar-default" color="transparent">
@@ -55,17 +56,9 @@
             v-if="$vuetify.display.height > 600"
             class="main-media-details-image"
           >
-            <v-img
-              v-if="
-                store.activePlayer?.powered != false &&
-                !store.curQueueItem?.image &&
-                store.activePlayer?.current_media?.image_url
-              "
-              style="max-width: 100%; width: auto; border-radius: 4px"
-              :src="store.activePlayer.current_media.image_url"
-            />
+            <!-- queue item (mediaitem) image -->
             <MediaItemThumb
-              v-else-if="store.activePlayer?.powered != false"
+              v-if="store.activePlayer?.powered != false && store.curQueueItem"
               :item="store.curQueueItem"
               :thumbnail="false"
               style="max-width: 100%; width: auto"
@@ -73,6 +66,17 @@
                 $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
               "
             />
+            <!-- player (external source) media image (if no queue item)-->
+            <v-img
+              v-else-if="
+                store.activePlayer?.powered != false &&
+                !store.curQueueItem?.image &&
+                store.activePlayer?.current_media?.image_url
+              "
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.activePlayer.current_media.image_url"
+            />
+
             <v-img
               v-else
               style="max-width: 100%; width: auto; border-radius: 4px"
@@ -85,7 +89,7 @@
               v-if="store.activePlayer?.powered == false"
               :style="`font-size: ${titleFontSize};`"
             >
-              {{ store.activePlayer?.display_name }}
+              {{ store.activePlayer?.name }}
             </v-card-title>
             <!-- queue item media item + optional version-->
             <v-card-title
@@ -134,7 +138,7 @@
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer?.display_name || $t("no_player") }}
+                {{ store.activePlayer?.name || $t("no_player") }}
               </MarqueeText>
             </v-card-title>
 
@@ -148,19 +152,42 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: radio station stream title -->
+            <!-- live (stream) metadata (artist + title) -->
             <v-card-subtitle
               v-if="
-                store.curQueueItem?.streamdetails?.stream_title &&
-                store.activePlayer?.powered != false
+                store.curQueueItem?.streamdetails?.stream_metadata &&
+                store.curQueueItem?.streamdetails?.stream_metadata.title &&
+                store.curQueueItem?.streamdetails?.stream_metadata.artist
               "
               class="text-h6 text-md-h5 text-lg-h4"
               @click="
-                radioTitleClick(store.curQueueItem?.streamdetails?.stream_title)
+                radioTitleClick(
+                  `${store.curQueueItem?.streamdetails?.stream_metadata.artist} - ${store.curQueueItem?.streamdetails?.stream_metadata.title}`,
+                )
               "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.streamdetails.stream_title }}
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.artist }}
+                -
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- live (stream) metadata (only title) -->
+            <v-card-subtitle
+              v-if="
+                store.curQueueItem?.streamdetails?.stream_metadata &&
+                store.curQueueItem?.streamdetails?.stream_metadata.title
+              "
+              class="text-h6 text-md-h5 text-lg-h4"
+              @click="
+                radioTitleClick(
+                  store.curQueueItem?.streamdetails?.stream_metadata.title,
+                )
+              "
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -300,8 +327,8 @@
                     link
                     :show-menu-btn="true"
                     :disabled="!item.available"
-                    @click.stop="(e) => openQueueItemMenu(e, item)"
-                    @menu.stop="(e) => openQueueItemMenu(e, item)"
+                    @click.stop="(e: Event) => openQueueItemMenu(e, item)"
+                    @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
                     @mouseenter="hoveredQueueIndex = index"
                     @mouseleave="hoveredQueueIndex = -1"
                   >
@@ -311,22 +338,32 @@
                       </div>
                     </template>
                     <template #title>
-                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
-                      <MarqueeText
-                        :sync="
-                          index == 0 && activeQueuePanel == 0
-                            ? playerMarqueeSync
-                            : hoveredMarqueeSync
-                        "
-                        :disabled="
-                          !(
-                            (index == 0 && activeQueuePanel == 0) ||
-                            hoveredQueueIndex == index
-                          )
-                        "
-                      >
-                        {{ item.name }}
-                      </MarqueeText>
+                      <div class="title-row">
+                        <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
+                        <MarqueeText
+                          :sync="
+                            index == 0 && activeQueuePanel == 0
+                              ? playerMarqueeSync
+                              : hoveredMarqueeSync
+                          "
+                          :disabled="
+                            !(
+                              (index == 0 && activeQueuePanel == 0) ||
+                              hoveredQueueIndex == index
+                            )
+                          "
+                        >
+                          <span
+                            :class="{
+                              'is-playing':
+                                item.queue_item_id ===
+                                store.curQueueItem?.queue_item_id,
+                            }"
+                          >
+                            {{ item.name }}
+                          </span>
+                        </MarqueeText>
+                      </div>
                     </template>
                     <template #subtitle>
                       <div class="d-flex">
@@ -359,6 +396,15 @@
                       </div>
                     </template>
                     <template #append>
+                      <NowPlayingBadge
+                        v-if="
+                          item.queue_item_id ===
+                            store.curQueueItem?.queue_item_id &&
+                          store.activePlayer?.playback_state !=
+                            PlaybackState.IDLE
+                        "
+                        :show-badge="getBreakpointValue('bp4')"
+                      />
                       <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>
                   </ListItem>
@@ -425,7 +471,7 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <ResponsiveIcon
+          <Icon
             v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
             :icon="
@@ -434,7 +480,7 @@
                 : 'mdi-heart-outline'
             "
             :title="$t('tooltip.favorite')"
-            :type="'btn'"
+            variant="button"
             class="media-controls-item"
             max-height="30px"
             @click="onHeartBtnClick"
@@ -455,7 +501,7 @@
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="100px"
+            max-height="70px"
           />
           <NextBtn
             :player="store.activePlayer"
@@ -485,24 +531,37 @@
           <PlayerVolume
             width="100%"
             :is-powered="store.activePlayer?.powered != false"
-            :disabled="!store.activePlayer || !store.activePlayer?.available"
-            :model-value="Math.round(store.activePlayer?.group_volume || 0)"
+            :disabled="
+              !store.activePlayer ||
+              !store.activePlayer?.available ||
+              store.activePlayer.powered == false ||
+              !store.activePlayer.supported_features.includes(
+                PlayerFeature.VOLUME_SET,
+              )
+            "
+            :model-value="
+              Math.round(
+                store.activePlayer.group_members.length > 0
+                  ? store.activePlayer.group_volume
+                  : store.activePlayer.volume_level || 0,
+              )
+            "
             prepend-icon="mdi-volume-minus"
             append-icon="mdi-volume-plus"
             :color="sliderColor"
             :allow-wheel="true"
             @update:model-value="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
                 : api.playerCommandVolumeSet(store.activePlayerId!, $event)
             "
             @click:prepend="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
                 : api.playerCommandVolumeDown(store.activePlayerId!)
             "
             @click:append="
-              store.activePlayer!.group_childs.length > 0
+              store.activePlayer!.group_members.length > 0
                 ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
                 : api.playerCommandVolumeUp(store.activePlayerId!)
             "
@@ -537,16 +596,33 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  watch,
-  onMounted,
-  onBeforeUnmount,
-  watchEffect,
-} from "vue";
+import Button from "@/components/Button.vue";
+import Icon from "@/components/Icon.vue";
+import ListItem from "@/components/ListItem.vue";
+import LyricsViewer from "@/components/LyricsViewer.vue";
+import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import QualityDetailsBtn, {
+  imgCoverDark,
+  imgCoverLight,
+} from "@/components/QualityDetailsBtn.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import {
+  ImageColorPalette,
+  formatDuration,
+  getPlayerName,
+  sleep,
+} from "@/helpers/utils";
+import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
+import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
+import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
+import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   Album,
   Artist,
@@ -555,48 +631,33 @@ import {
   MediaItemChapter,
   MediaItemType,
   MediaType,
+  PlaybackState,
+  PlayerFeature,
   PlayerQueue,
   QueueItem,
   QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import PlayerTimeline from "./PlayerTimeline.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import Button from "@/components/mods/Button.vue";
-import ResponsiveIcon from "@/components/mods/ResponsiveIcon.vue";
-import ListItem from "@/components/mods/ListItem.vue";
-import LyricsViewer from "@/components/LyricsViewer.vue";
-import vuetify from "@/plugins/vuetify";
-import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
-import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
-import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
-import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
-import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
-import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
-import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
-import MarqueeText from "@/components/MarqueeText.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
-import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
-import {
-  imgCoverLight,
-  imgCoverDark,
-} from "@/components/QualityDetailsBtn.vue";
-import router from "@/plugins/router";
-import {
-  ImageColorPalette,
-  formatDuration,
-  getPlayerName,
-  sleep,
-} from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
+import router from "@/plugins/router";
+import { store } from "@/plugins/store";
+import vuetify from "@/plugins/vuetify";
+import Color from "color";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import { useDisplay } from "vuetify";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
-import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { getSourceName } from "@/plugins/api/helpers";
-import { $t } from "@/plugins/i18n";
-import Color from "color";
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
+import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name } = useDisplay();
 
@@ -851,6 +912,17 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+});
+
+// Handle Escape key to close fullscreen player (since persistent disables default behavior)
+const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === "Escape" && store.showFullscreenPlayer && !store.dialogActive) {
+    store.showFullscreenPlayer = false;
+  }
+};
+onMounted(() => {
+  window.addEventListener("keydown", onKeydown);
+  onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 });
 
 const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
@@ -1216,5 +1288,11 @@ button {
   height: 100%;
   width: 100%;
   overflow: hidden;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>

@@ -54,6 +54,7 @@
             icon: 'mdi-file-music',
             items: searchResult.tracks,
           }"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -62,6 +63,7 @@
             icon: 'mdi-account-music',
             items: searchResult.artists,
           }"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -70,6 +72,7 @@
             icon: 'mdi-album',
             items: searchResult.albums,
           }"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -78,6 +81,7 @@
             icon: 'mdi-playlist-music',
             items: searchResult.playlists,
           }"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -86,6 +90,7 @@
             icon: 'mdi-podcast',
             items: searchResult.podcasts,
           }"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -94,6 +99,7 @@
             icon: 'mdi-book-play-outline',
             items: searchResult.audiobooks,
           }"
+          :show-provider-on-cover="true"
         />
         <WidgetRow
           v-if="searchResult && !loading"
@@ -102,6 +108,7 @@
             icon: 'mdi-radio',
             items: searchResult.radio,
           }"
+          :show-provider-on-cover="true"
         />
       </div>
       <!-- tracks-only searchresult -->
@@ -131,20 +138,22 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import { ref, onBeforeUnmount, onMounted, watch } from "vue";
-import { MediaType, SearchResults } from "@/plugins/api/interfaces";
-import WidgetRow from "@/components/WidgetRow.vue";
-import { store } from "@/plugins/store";
+import Container from "@/components/Container.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
-import Container from "@/components/mods/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import WidgetRow from "@/components/WidgetRow.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
+import { MediaType, SearchResults } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // local refs
 const searchHasFocus = ref(false);
 const searchResult = ref<SearchResults>();
 const loading = ref(false);
 const throttleId = ref();
+const { getPreference, setPreference } = useUserPreferences();
 
 // watchers
 watch(
@@ -169,7 +178,7 @@ const loadSearchResults = async function (
   filter?: MediaType,
 ) {
   loading.value = true;
-  localStorage.setItem("globalsearch", searchTerm || "");
+  setPreference("globalSearch", searchTerm || "");
   const limit = store.globalSearchType ? 50 : 8;
   const mediaTypes = filter ? [filter] : undefined;
   if (searchTerm) {
@@ -182,7 +191,7 @@ const loadSearchResults = async function (
 
 onMounted(() => {
   if (!store.globalSearchTerm) {
-    const savedSearch = localStorage.getItem("globalsearch");
+    const savedSearch = getPreference<string>("globalSearch").value;
     if (savedSearch && savedSearch !== "null") {
       store.globalSearchTerm = savedSearch;
     }

@@ -22,15 +22,6 @@
             )
           "
         />
-        <v-card-subtitle v-if="api.providerManifests[domain].documentation">
-          <b>{{ $t("settings.need_help_setup_provider") }} </b>&nbsp;
-          <a
-            @click="
-              openLinkInNewTab(api.providerManifests[domain].documentation!)
-            "
-            >{{ $t("settings.check_docs") }}</a
-          >
-        </v-card-subtitle>
       </div>
       <br />
       <v-divider />
@@ -79,7 +70,7 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
-import { openLinkInNewTab, markdownToHtml } from "@/helpers/utils";
+import { markdownToHtml } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
 

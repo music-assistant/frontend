@@ -13,7 +13,9 @@
         "single": "Singel",
         "unknown": "Ukjent albumtype",
         "audiobook": "Lydbok",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Live",
+        "soundtrack": "Lydspor"
     },
     "albums": "Album",
     "appears_on": "Deltar på",
@@ -128,7 +130,6 @@
         "sync": "Synkroniser nå",
         "sync_running": "Denne leverandøren blir nå synkronisert",
         "username": "Brukernavn",
-        "core": "Kjerne",
         "core_modules": "Kjernemoduler",
         "server_info": "Serverinformasjon",
         "server_id": "Server ID",
@@ -287,7 +288,11 @@
             "advanced": "Avanserte innstillinger",
             "generic": "Generiske innstillinger",
             "announcements": "Konfigurasjon av kunngjøringer",
-            "airplay": "Airplay-spesifikke innstillinger"
+            "airplay": "Airplay-spesifikke innstillinger",
+            "player_controls": "Spillerkontroller",
+            "presets": "Forhåndsinnstillinger",
+            "sync_options": "Instillinger for synkronisering og importering",
+            "builtin_playlists": "Innstillinger for innebygde spillelister"
         },
         "tts_pre_announce": {
             "label": "Forhåndsannonsere TTS-kunngjøringer",
@@ -319,21 +324,12 @@
             "label": "Ikon",
             "description": "Ikon i materialdesign for denne spilleren.\n\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Brukergrensesnitt",
-        "frontend_desc": "Konfigurasjonsinnstillinger for Music Assistant-brukergrensesnittet (frontend). Merk at disse innstillingene lagres på enhetsnivå.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Automatisk (følger systemkonfigurasjonen)",
                 "light": "Lys",
                 "dark": "Mørk"
-            }
-        },
-        "menu_style": {
-            "label": "Menystil",
-            "options": {
-                "horizontal": "Vannrett",
-                "vertical": "Loddrett"
             }
         },
         "menu_items": {
@@ -363,18 +359,122 @@
                 "ko_KR": "Koreansk",
                 "nb": "Norsk",
                 "ru_RU": "Russisk",
+                "pt_BR": "Portugisisk (Brasil)",
+                "sl_SI": "Slovensk",
                 "hu_HU": "Ungarsk",
-                "it": "Italiensk"
+                "it": "Italiensk",
+                "el_GR": "Gresk"
             }
-        },
-        "hide_settings": {
-            "label": "Skjul innstillingsknappen",
-            "description": "Skjul innstillingsknappen på startskjermen.\n\nMerk at hvis du deaktiverer innstillinger på startskjermen og i menyen, kan du låse deg selv ute.\n\nI så fall må du manuelt gå inn på banen til innstillingene eller slette informasjonskapslene i nettleseren for å få tilgang til innstillingene igjen."
         },
         "no_music_providers": "Ingen musikkleverandører er konfigurert",
         "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine.",
         "no_player_providers": "Ingen spillerleverandører er konfigurert",
-        "no_player_providers_detail": "Konfigurer spillerleverandører for å velge enheter der Music Assistant kan spille av musikken din."
+        "no_player_providers_detail": "Konfigurer spillerleverandører for å velge enheter der Music Assistant kan spille av musikken din.",
+        "volume_normalization_radio": {
+            "label": "Metode for volumnormalisering til bruk for radiostrømmer",
+            "description": "Angi den foretrukne strategien for volumnormalisering for radiostrømmer. \nSom standard gjør Music Assistant en måling av radiostasjonens (gjennomsnittlige) lydstyrke i henhold til EBU-R128-spesifikasjonen, og justerer deretter den totale forsterkningen\/volumet til strømmen i henhold til denne målingen, slik at lydens dynamiske område ikke påvirkes. Når det ikke er gjort en måling (ennå) for en radiostasjon, vil Music Assistant bruke et dynamisk (men mindre nøyaktig) lydstyrkeutjevningsfilter. \n \n TIPS: Radio har ofte varierende lydstyrkenivå, spesielt under kunngjøringer og reklamer. \n Du kan velge å håndheve dynamisk volumnormalisering for radiostrømmer, selv om det finnes en (gjennomsnittlig) lydstyrkemåling for radiostasjonen. \n \n **Alternativer:** \n \n – Avslått – ikke bruk volumnormalisering i det hele tatt for radiostrømmer. \n – Tving dynamisk – Håndhev dynamisk volumutjevning til enhver tid. \n – Kun måling (ingen reserveløsning) – Bruk (total) volum-\/forsterkningskorreksjon basert på lagret måling. Hvis det ikke finnes noen måling, ikke bruk normalisering. \n – Reserveløsning til forsterkningskorreksjon – Bruk (total) volum-\/forsterkningskorreksjon basert på lagret måling. Hvis det ikke finnes har noen måling, bruk en forhåndsdefinert forsterkningskorreksjon. \n – Fast forsterkningskorreksjon – Bruk alltid den faste volum-\/forsterkningskorreksjonen. \n – Reserveløsning til dynamisk modus – Velg automatisk det beste alternativet: Bruk (total) volum-\/forsterkningskorreksjon basert på lagret måling hvis den finnes, tillat reserveløsning til dynamisk modus hvis ingen måling er tilgjengelig.",
+            "options": {
+                "disabled": "Avslått",
+                "dynamic": "Tving dynamisk",
+                "measurement_only": "Kun måling (ingen reserveløsning)",
+                "fallback_dynamic": "Bruk dynamisk som reserveløsning"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Metode for volumnormalisering til bruk for spor",
+            "options": {
+                "disabled": "Avslått",
+                "dynamic": "Tving dynamisk",
+                "measurement_only": "Kun måling (ingen reserveløsning)",
+                "fixed_gain": "Fast forsterkningskorreksjon",
+                "fallback_dynamic": "Bruk dynamisk som reserveløsning"
+            }
+        },
+        "add_group_player_desc": "For en gruppespiller som er opprettet for {0} leverandør, vil en synkroniseringsgruppe automatisk bli opprettet, noe som betyr at hvis du spiller til denne spillergruppen, vil medlemene automatisk bli synkronisert.",
+        "dynamic_members": {
+            "label": "Dynamiske gruppemedlemmer",
+            "description": "Tillat spillere å bli med i eller forlate gruppen dynamisk. Gruppespilleren beholder alltid køen."
+        },
+        "dsp": {
+            "disabled_message": "DSP er for øyeblikket avslått. Aktiver den ved hjelp av bryteren ovenfor",
+            "input": "Inngang",
+            "output": "Utgang",
+            "filter": {
+                "add": "Legg til filter",
+                "new": "Ny {type}"
+            },
+            "move_up": "Flytt opp",
+            "move_down": "Flytt ned",
+            "delete_filter": "Slett filter",
+            "parametric_eq": {
+                "band": "Bånd {index}",
+                "enable_band": "Slå på bånd",
+                "import_apo": "Importer APO\/REW-forhåndsinnstilling",
+                "export_apo": "Eksporter APO-forhåndsinnstilling",
+                "preamp": "Forforsterker",
+                "add_band_channel": "Legg til bånd (kun {channel} )",
+                "band_channel": "Bånd {index} (kun {channel} )",
+                "show_multichannel_controls": "Vis kontroller for flere kanaler",
+                "edited_channel": "Plott EQ-responsen for kanalen(e)",
+                "channel": "Dette båndet vil bli brukt på",
+                "per_channel_preamp": "Ekstra forforsterker av forsterkning for {channel}"
+            },
+            "tone_control": {
+                "bass_level": "Bassnivå",
+                "treble_level": "Diskantnivå"
+            },
+            "parameter": {
+                "frequency": "Frekvens",
+                "gain": "Forsterkning",
+                "q_factor": "Q-faktor"
+            },
+            "types": {
+                "parametric_eq": "Parametrisk EQ",
+                "tone_control": "Tonekontroll"
+            },
+            "channels": {
+                "ALL": "Alle",
+                "FL": "Venstre",
+                "FR": "Høyre"
+            },
+            "channels_compact": {
+                "FL": "V",
+                "FR": "H"
+            },
+            "presets": {
+                "load": "Last inn DSP-forhåndsinnstilling",
+                "empty_warning": "Ingen DSP-forhåndsinnstillinger er tilgjengelig",
+                "save": "Lagre DSP-forhåndsinnstilling",
+                "name": "Navn på forhåndsinnstilling",
+                "name_placeholder": "Min nye forhåndsinnstilling",
+                "remove_confirm": "Er du sikker på at du vil fjerne denne DSP-forhåndsinnstillingen?"
+            }
+        },
+        "power_control": {
+            "label": "Strømstyring",
+            "description": "Definer\/overstyr strømstyringsoppførselen for denne spilleren.\nDette gjør det mulig å omdirigere på\/av-kommandoene til en annen enhet, eller bruke en 'falsk' strømstyring dersom spilleren ikke støtter på\/av-kommandoer, men du ønsker en dedikert tilstand for en spiller som ikke er i bruk."
+        },
+        "volume_control": {
+            "label": "Volumkontroll",
+            "description": "Definer\/overstyr volumkontrollens virkemåte for denne spilleren. \nDen lar deg for eksempel omdirigere volumkontrollkommandoene til en annen enhet, eller slå den av helt."
+        },
+        "mute_control": {
+            "label": "Dempingskontroll",
+            "description": "Velg hvordan demping skal fungere for denne spilleren.\nDu kan sende dempekommandoer til en annen enhet, slå av funksjonen helt, eller bruke 'simulert demping', som setter volumet til null og gjenoppretter volumet igjen når du opphever dempingen."
+        },
+        "output_limiter": {
+            "label": "Aktiver en begrenser for å forhindre forvrengning (klipping)",
+            "description": "Aktiverer en begrenser som gjør de høyeste lydnivåene lavere for å unngå forvrengning."
+        },
+        "dsp_enabled": "DSP er påslått",
+        "dsp_disabled": "DSP er avslått",
+        "dsp_note_multi_device_group": {
+            "label": "Du kan konfigurere DSP for hver enkelt spiller."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Denne gruppetypen støtter ikke DSP ved avspilling til flere enheter."
+        },
+        "add_group_player_desc_universal": "Ved å opprette en universell spillergruppe kan du gruppere spillere fra forskjellige leverandører\/økosystemer sammen. \n Dette vil sende den samme lyden til alle spillere i gruppen (men lyden er ikke synkronisert)."
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
@@ -437,7 +537,9 @@
         "play_sample": "Spill av eksempel",
         "album_type": "Albumtype",
         "loading": "Serveren behandler en forespørsel eller synkroniserer musikk.",
-        "primary_image": "Dette er hovedbildet for denne bildetypen"
+        "primary_image": "Dette er hovedbildet for denne bildetypen",
+        "copy_uri": "Kopier URI til utklippstavlen",
+        "select_all": "Velg alle elementer"
     },
     "topresult": "Toppresultat",
     "track": "Spor",
@@ -458,7 +560,6 @@
     "item_in_library": "Dette elementet er tilgjengelig i biblioteket",
     "back": "Tilbake",
     "recently_played": "Nylig spilt",
-    "radiobrowser_by_popularity": "Etter popularitet",
     "radiobrowser_by_country": "Etter land",
     "radiobrowser_by_tag": "Etter merke",
     "load_more_items": "Last inn flere elementer ...",
@@ -483,5 +584,115 @@
     "image_make_primary": "Gjør primær",
     "update_metadata": "Oppdater metadata",
     "cancel": "Avbryt",
-    "transfer_queue": "Overfør køen til en annen spiller"
+    "transfer_queue": "Overfør køen til en annen spiller",
+    "power_on_player": "Slå på",
+    "power_off_player": "Slå av",
+    "powered_off_players": "Avslåtte spillere",
+    "sync_player_with": "Synkroniser med en annen spiller",
+    "open_player_settings": "Åpne innstillinger",
+    "select_repeat_mode": "Velg repetisjonsmodus",
+    "repeat_mode": {
+        "all": "Gjenta hele køen",
+        "off": "Repetisjonsmodus avslått",
+        "one": "Gjenta enkeltspor"
+    },
+    "shuffle_disable": "Deaktiver tilfeldig rekkefølge",
+    "shuffle_enable": "Aktiver tilfeldig rekkefølge",
+    "open_dsp_settings": "Åpne DSP-innstillinger",
+    "audiobook": "Lydbok",
+    "audiobooks": "Lydbøker",
+    "chapter": "Kapittel",
+    "chapters": "Kapitler",
+    "podcast": "Podkast",
+    "podcasts": "Podcaster",
+    "item_fully_played": "Dette elementet er ferdigspilt",
+    "item_in_progress": "Dette elementet har blitt delvis avspilt",
+    "duration_in_seconds": "{0} sekunder",
+    "mark_played": "Merk som avspilt",
+    "mark_unplayed": "Merk som uspilt",
+    "searchtype_all": "Alle",
+    "global_search": "Globalt søk",
+    "podcast_episode": "Episode",
+    "podcast_episodes": "Episoder",
+    "play_from_here": "Spill herfra",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamisk volumnormalisering",
+    "loudness_fixed": "Fast forsterkningskorreksjon",
+    "dsp_active": "Aktiv",
+    "currently_playing_players": "Spiller for øyeblikket",
+    "all_players": "Alle spillere",
+    "all_groups": "Alle grupper",
+    "no_player_playing": "Ingen spillere spiller for øyeblikket",
+    "stop_playback": "Stopp avspillingen",
+    "streamdetails": {
+        "input_header": "Inngang",
+        "output_header": "Utgang",
+        "output_format_info": "Lyd sendes i formatet {0}",
+        "eq_band_count": "{0} bånd",
+        "eq_band_count_singular": "1 bånd",
+        "input_gain": "Inngangsforsterkning ({0} dB)",
+        "output_gain": "Utgangsforsterkning ( {0} dB)",
+        "output_limiter": "Utgangsbegrenser",
+        "output_limiter_info": "Reduserer automatisk svært høye lyder for å forhindre forvrengning og beskytte høyttalerne dine",
+        "dsp_unsupported": "DSP støttes ikke",
+        "dsp_disabled_by_unsupported_group": "Denne spillerleverandøren støtter ikke DSP med synkronisert avspilling",
+        "file_info": {
+            "container": "Beholder: {0}",
+            "codec": "Kodek: {0}",
+            "bit_rate": "Bithastighet: {0} kbps",
+            "sample_rate": "Samplingsfrekvens: {0} kHz",
+            "channels": "Kanaler: {0}",
+            "bit_depth": "Bitdybde: {0}",
+            "processing_notice": "Lyden behandles internt som 32-biters float PCM"
+        },
+        "volume_normalization": {
+            "target_level": "Målnivå: {0} LUFS",
+            "integrated_loudness": "Målt (integrert) lydstyrke: {0} LUFS",
+            "integrated_album_loudness": "Albumets lydstyrke: {0} LUFS",
+            "applied_gain_correction": "Brukt forsterkningskorreksjon: {0} Db",
+            "mode": {
+                "dynamic": "Volumnormalisering er påslått i dynamisk modus.",
+                "measurement_only": "Volumnormalisering er aktivert ut fra en lagret verdi for det samlede (integrerte) lydstyrke på lyden.",
+                "measurement_album": "Volumnormalisering er aktivert ut fra en lagret verdi for albumets samlede (integrerte) lydstyrke.",
+                "fixed_gain": "Volumnormalisering er påslått og bruker fast forsterkningskorreksjon."
+            }
+        },
+        "click_to_expand": "Klikk for å vise alle spillere",
+        "output_format_pcm_info": "Lyden sendes som PCM til spillerleverandøren. Spillerleverandøren kan deretter konvertere lyden til et annet format før den sendes til spilleren."
+    },
+    "volume_normalization_gain_correction": "{0} Db",
+    "select_source": "Velg kilde",
+    "in_progress_items": "Fortsett å lytte...",
+    "play_replace_next": "Spill av neste (tøm køen)",
+    "all_enqueue_options": "Alle køinstillinger",
+    "music_assistant_source": "Music Assistant Kø",
+    "music_assistant_library": "Music Assistant Bibliotek",
+    "select_all_confirmation": "Vil du velge alle elementene? Det kan ta litt tid før alt lastes inn.",
+    "this_device": "Denne enheten",
+    "recommendations": {
+        "in_progress_items": "Fortsett å lytte...",
+        "recommended_new_tracks": "Anbefalte nye spor",
+        "recently_played": "Nylig spilt",
+        "suggested_new_albums_for_you": "Foreslåtte nye album for deg",
+        "random_artists": "Tilfeldige artister",
+        "random_albums": "Tilfeldige album",
+        "custom_mixes": "Tilpassede mikser",
+        "your_listening_history": "Din lyttehistorikk",
+        "popular_albums": "Populære album",
+        "staff_picks_tracks": "Redaksjonens utvalgte: spor",
+        "staff_picks_albums": "Redaksjonens utvalgte: album",
+        "radio_stations_for_you": "Radiostasjoner for deg",
+        "producers__songwriters": "Produsenter og låtskrivere",
+        "new_releases_for_you": "Nye utgivelser for deg",
+        "recent_favorite_tracks": "Nylige favorittspor",
+        "favorite_playlists": "Favorittspillelister",
+        "favorite_radio_stations": "Favorittradiostasjoner"
+    },
+    "homescreen_edit_enable": "Rediger startskjermen",
+    "homescreen_edit_disable": "Gå ut av redigeringsmodus for startskjermen",
+    "lyrics_will_appear_soon": "Tekster vises når sangen begynner...",
+    "radiobrowser_by_votes": "Etter stemmer",
+    "radiobrowser_by_clicks": "Etter klikk",
+    "radiobrowser_by_language": "Etter språk"
 }

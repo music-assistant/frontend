@@ -1,5 +1,3 @@
-import { ComputedRef } from "vue";
-
 /// constants
 export const SECURE_STRING_SUBSTITUTE = "this_value_is_encrypted";
 export const MASS_LOGO_ONLINE =
@@ -66,6 +64,13 @@ export interface DSPConfig {
   filters: DSPFilter[];
   input_gain: number;
   output_gain: number;
+}
+
+// DSPConfigPreset represents a preset configuration for DSP
+export interface DSPConfigPreset {
+  preset_id?: string;
+  name: string;
+  config: DSPConfig;
 }
 
 // DSPDetails used in StreamDetails
@@ -136,6 +141,8 @@ export enum AlbumType {
   SINGLE = "single",
   COMPILATION = "compilation",
   EP = "ep",
+  LIVE = "live",
+  SOUNDTRACK = "soundtrack",
   UNKNOWN = "unknown",
 }
 
@@ -247,7 +254,7 @@ export enum RepeatMode {
   ALL = "all", // repeat entire queue
 }
 
-export enum PlayerState {
+export enum PlaybackState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
@@ -291,27 +298,13 @@ export enum EventType {
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
+  DSP_PRESETS_UPDATED = "dsp_presets_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
-  BUILTIN_PLAYER = "builtin_player",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
   ALL = "*",
-}
-
-export enum BuiltinPlayerEventType {
-  PLAY = "play",
-  PAUSE = "pause",
-  RESUME = "resume",
-  STOP = "stop",
-  MUTE = "mute",
-  UNMUTE = "unmute",
-  SET_VOLUME = "set_volume",
-  PLAY_MEDIA = "play_media",
-  TIMEOUT = "timeout",
-  POWER_OFF = "power_off",
-  POWER_ON = "power_on",
 }
 
 export enum ProviderFeature {
@@ -325,6 +318,8 @@ export enum ProviderFeature {
   LIBRARY_TRACKS = "library_tracks",
   LIBRARY_PLAYLISTS = "library_playlists",
   LIBRARY_RADIOS = "library_radios",
+  LIBRARY_PODCASTS = "library_podcasts",
+  LIBRARY_AUDIOBOOKS = "library_audiobooks",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
   ARTIST_TOPTRACKS = "artist_toptracks",
@@ -334,6 +329,8 @@ export enum ProviderFeature {
   LIBRARY_TRACKS_EDIT = "library_tracks_edit",
   LIBRARY_PLAYLISTS_EDIT = "library_playlists_edit",
   LIBRARY_RADIOS_EDIT = "library_radios_edit",
+  LIBRARY_PODCASTS_EDIT = "library_podcasts_edit",
+  LIBRARY_AUDIOBOOKS_EDIT = "library_audiobooks_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features
@@ -342,6 +339,8 @@ export enum ProviderFeature {
   // player provider specific features
   SYNC_PLAYERS = "sync_players",
   REMOVE_PLAYER = "remove_player",
+  REMOVE_GROUP_PLAYER = "remove_group_player",
+  CREATE_GROUP_PLAYER = "create_group_player",
   // metadata provider specific features
   ARTIST_METADATA = "artist_metadata",
   ALBUM_METADATA = "album_metadata",
@@ -394,7 +393,7 @@ export enum HidePlayerOption {
 export interface CommandMessage {
   // Model for a Message holding a command from server to client or client to server.
 
-  message_id?: string | number;
+  message_id?: string;
   command: string;
   args?: Record<string, any>;
 }
@@ -402,7 +401,7 @@ export interface CommandMessage {
 export interface ResultMessageBase {
   // Base class for a result/response of a Command Message.
 
-  message_id: string | number;
+  message_id: string;
 }
 
 export interface SuccessResultMessage extends ResultMessageBase {
@@ -489,6 +488,8 @@ export interface ConfigEntry {
   depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
+  // read_only: prevent user from changing this setting (make it disabled)
+  read_only?: boolean;
   // category: category to group this setting into in the frontend (e.g. advanced)
   category: string;
   // action: (configentry)action that is needed to get the value for this entry
@@ -716,12 +717,23 @@ export interface LoudnessMeasurement {
   target_offset: number;
 }
 
+export interface StreamMetadata {
+  // mandatory fields
+  title: string;
+  // optional fields
+  artist?: string;
+  album?: string;
+  image_url?: string;
+  duration?: number;
+  uri?: string;
+}
+
 export interface StreamDetails {
   provider: string;
   item_id: string;
   audio_format: AudioFormat;
   media_type: MediaType;
-  stream_title?: string;
+  stream_metadata?: StreamMetadata;
   duration?: number;
 
   queue_id?: string;
@@ -765,8 +777,20 @@ export interface PlayerQueue {
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
+  /**
+   * UTC timestamp (seconds since epoch) when `elapsed_time` was last updated.
+   *
+   * Semantics/units:
+   * - `elapsed_time` is expressed in seconds (number, can be fractional).
+   * - `elapsed_time_last_updated` is a UTC timestamp in seconds since epoch.
+   *   Convert to milliseconds (multiply by 1000) when comparing to Date.now().
+   *
+   * Use this timestamp to compute the current progress while playback is
+   * ongoing by adding (now - elapsed_time_last_updated*1000)/1000 to
+   * `elapsed_time`.
+   */
   elapsed_time_last_updated: number;
-  state: PlayerState;
+  state: PlaybackState;
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
@@ -792,6 +816,9 @@ export interface PlayerMedia {
   album?: string; // optional
   image_url?: string; // optional
   duration?: number; // optional
+  source_id?: string; // optional
+  elapsed_time?: number; // optional
+  elapsed_time_last_updated?: number; // optional
   queue_id?: string; // only present for requests from queue controller
   queue_item_id?: string; // only present for requests from queue controller
 }
@@ -819,40 +846,23 @@ export interface Player {
   elapsed_time?: number;
   elapsed_time_last_updated?: number;
   current_media?: PlayerMedia;
-  state?: PlayerState;
+  playback_state?: PlaybackState;
   powered?: boolean;
   volume_level?: number;
   volume_muted?: boolean;
-  group_childs: string[];
+  group_members: string[];
+  static_group_members: string[];
   active_source?: string;
   source_list: PlayerSource[];
   active_group?: string;
   synced_to?: string;
 
   group_volume: number;
-  display_name: string;
   hide_player_in_ui: HidePlayerOption[];
   icon: string;
   power_control: string;
   volume_control: string;
   mute_control: string;
-}
-
-// BuiltinPlayer
-
-export interface BuiltinPlayerEvent {
-  type: BuiltinPlayerEventType;
-  volume?: number;
-  media_url?: string;
-}
-
-export interface BuiltinPlayerState {
-  powered: boolean;
-  playing: boolean;
-  paused: boolean;
-  position: number;
-  volume: number;
-  muted: boolean;
 }
 
 // provider
@@ -873,6 +883,7 @@ export interface ProviderManifest {
   builtin: boolean;
   // allow_disable: whether this provider can be disabled (used with builtin)
   allow_disable: boolean;
+  stage: ProviderStage;
   // icon: material design icon
   icon?: string;
   // icon_svg: svg icon (full xml string)
@@ -885,6 +896,15 @@ export interface ProviderManifest {
   depends_on?: string;
 }
 
+export enum ProviderStage {
+  ALPHA = "alpha",
+  BETA = "beta",
+  STABLE = "stable",
+  EXPERIMENTAL = "experimental",
+  UNMAINTAINED = "unmaintained",
+  DEPRECATED = "deprecated",
+}
+
 export interface ProviderInstance {
   // Provider instance details when a provider is serialized over the api.
   type: ProviderType;
@@ -893,7 +913,6 @@ export interface ProviderInstance {
   default_name: string;
   instance_name_postfix?: string;
   instance_id: string;
-  lookup_key: string;
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider?: boolean;
@@ -928,4 +947,80 @@ export interface ButtonProps {
   size?: number;
   icon?: string;
   iconOptions?: IconProps; //Experimental
+}
+
+// Authentication interfaces
+
+export enum UserRole {
+  ADMIN = "admin",
+  USER = "user",
+}
+
+export enum AuthProviderType {
+  BUILTIN = "builtin",
+  OAUTH_HOMEASSISTANT = "oauth_homeassistant",
+}
+
+export interface User {
+  user_id: string;
+  username: string;
+  role: UserRole;
+  enabled: boolean;
+  created_at: string;
+  display_name?: string;
+  avatar_url?: string;
+  preferences: Record<string, any>;
+  provider_filter: string[];
+  player_filter: string[];
+}
+
+export interface AuthToken {
+  token_id: string;
+  name: string;
+  created_at: string;
+  last_used_at?: string;
+  expires_at?: string;
+  is_long_lived: boolean;
+}
+
+export interface AuthProvider {
+  provider_id: string;
+  provider_type: AuthProviderType;
+  requires_redirect: boolean;
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  provider_id: string;
+  credentials: LoginCredentials;
+  device_name?: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  token?: string;
+  user?: User;
+  error?: string;
+}
+
+export interface SetupRequest {
+  username: string;
+  password: string;
+  display_name?: string;
+  device_name?: string;
+}
+
+// Remote Access interfaces
+
+export interface RemoteAccessInfo {
+  enabled: boolean;
+  running: boolean;
+  connected: boolean;
+  remote_id: string;
+  using_ha_cloud: boolean;
+  signaling_url: string;
 }

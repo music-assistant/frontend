@@ -13,7 +13,9 @@
         "single": "Single",
         "unknown": "Unknown album type",
         "audiobook": "Audiobook",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Live",
+        "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
     "appears_on": "Appears on",
@@ -125,10 +127,9 @@
         "save": "Save",
         "settings": "Settings",
         "setup_provider": "Setup provider: {0}",
-        "sync": "Synchronize now",
-        "sync_running": "This provider is now being synchronized",
+        "sync": "Synchronise now",
+        "sync_running": "This provider is now being synchronised",
         "username": "Username",
-        "core": "Core",
         "core_modules": "Core modules",
         "server_info": "Server information",
         "server_id": "Server ID",
@@ -289,7 +290,9 @@
             "announcements": "Announcements configuration",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
-            "presets": "Presets"
+            "presets": "Presets",
+            "sync_options": "Sync\/import options",
+            "builtin_playlists": "Builtin Playlist Settings"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -321,21 +324,12 @@
             "label": "Icon",
             "description": "Material design icon for this player. \n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "User Interface",
-        "frontend_desc": "Configuration settings for the Music Assistant User Interface (frontend). Note that these settings are stored at a device level.",
         "theme": {
             "label": "Theme",
             "options": {
                 "auto": "Auto (follow system configuration)",
                 "light": "Light",
                 "dark": "Dark"
-            }
-        },
-        "menu_style": {
-            "label": "Menu style",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Vertical"
             }
         },
         "menu_items": {
@@ -368,12 +362,9 @@
                 "pt_BR": "Portuguese (Brazil)",
                 "sl_SI": "Slovenian",
                 "hu_HU": "Hungarian",
-                "it": "Italian"
+                "it": "Italian",
+                "el_GR": "Greek"
             }
-        },
-        "hide_settings": {
-            "label": "Hide settings button",
-            "description": "Hide the settings button on the home screen.\n\nNote that if you disable the settings on the home screen and in the menu you may lock yourself out.\n\nTo gain access again, you will need to manually enter the path to the settings or clear the browser cookies. Use at your own risk!"
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
@@ -411,7 +402,6 @@
             "label": "Fixed\/fallback gain adjustment for radio",
             "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalisation method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalisation method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
-        "group_type": "Group type",
         "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised. \n\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app.",
         "dynamic_members": {
             "label": "Dynamic group members",
@@ -476,6 +466,14 @@
             "channels_compact": {
                 "FL": "L",
                 "FR": "R"
+            },
+            "presets": {
+                "load": "Load DSP Preset",
+                "empty_warning": "No DSP presets available",
+                "save": "Save DSP Preset",
+                "name": "Preset Name",
+                "name_placeholder": "My new preset",
+                "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
         },
         "power_control": {
@@ -505,7 +503,36 @@
         "enable_builtin_player": {
             "label": "Allow playback to this device\/browser",
             "description": "Enable the (experimental) built-in player for this device\/browser, which allows you to stream all Music Assistant content directly to this device."
-        }
+        },
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+        "edit_provider": "Edit provider: {0}",
+        "metadata": "Metadata",
+        "metadataprovider": "Metadata provider",
+        "music": "Music",
+        "musicprovider": "Music provider",
+        "player": "Player",
+        "playerprovider": "Player provider",
+        "plugin": "Plugin",
+        "pluginprovider": "Plugin provider",
+        "providers_total": "{0} total provider{1}",
+        "stage": {
+            "label": "Stage",
+            "options": {
+                "stable": "Stable",
+                "beta": "Beta",
+                "alpha": "Alpha",
+                "experimental": "Experimental",
+                "unmaintained": "Unmaintained",
+                "deprecated": "Deprecated"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Force mobile layout",
+            "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
+        },
+        "providers_description": "Manage your music sources, streaming services, and integrations",
+        "players_description": "Configure and manage your audio output devices",
+        "frontend_description": "Customise the user interface theme and appearance"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
@@ -545,7 +572,7 @@
         "playing": "playing"
     },
     "sync_now": "Synchronise now",
-    "sync_running": "One or more music providers are being synchronized.",
+    "sync_running": "One or more music providers are being synchronised.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
         "explicit": "Explicit",
@@ -591,7 +618,6 @@
     "item_in_library": "This item is available in the library",
     "back": "Back",
     "recently_played": "Recently played",
-    "radiobrowser_by_popularity": "By popularity",
     "radiobrowser_by_country": "By country",
     "radiobrowser_by_tag": "By tag",
     "load_more_items": "Load more items...",
@@ -726,5 +752,7 @@
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
-    "builtin_playlists": "Builtin Playlist Settings"
+    "radiobrowser_by_votes": "By votes",
+    "radiobrowser_by_clicks": "By clicks",
+    "radiobrowser_by_language": "By language"
 }

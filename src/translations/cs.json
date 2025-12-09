@@ -128,7 +128,6 @@
         "sync": "Synchronizovat nyní",
         "sync_running": "Tento poskytovatel se nyní synchronizuje",
         "username": "Uživatelské jméno",
-        "core": "Jádro",
         "core_modules": "Moduly jádra",
         "server_info": "Informace o serveru",
         "server_id": "ID serveru",
@@ -320,21 +319,12 @@
             "label": "Ikona",
             "description": "Ikona Material Design pro tento přehrávač.\n\nViz https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Uživatelské rozhraní",
-        "frontend_desc": "Konfigurační nastavení uživatelského rozhraní (frontend) aplikace Music Assistant. Tato nastavení jsou uložena na úrovni zařízení.",
         "theme": {
             "label": "Téma",
             "options": {
                 "auto": "Automaticky (podle konfigurace systému)",
                 "light": "Světlý",
                 "dark": "Tmavý"
-            }
-        },
-        "menu_style": {
-            "label": "Styl nabídky",
-            "options": {
-                "horizontal": "Horizontální",
-                "vertical": "Vertikální"
             }
         },
         "menu_items": {
@@ -368,10 +358,6 @@
                 "sl_SI": "Slovinština",
                 "hu_HU": "Maďarština"
             }
-        },
-        "hide_settings": {
-            "label": "Skrýt tlačítko nastavení",
-            "description": "Skrýt tlačítka nastavení na domovské obrazovce.\n\nUpozorňujeme, že pokud zakážete nastavení na domovské obrazovce a v nabídce, můžete se zablokovat.\n\nV takovém případě budete muset ručně zadat cestu k nastavení nebo vymazat soubory cookie prohlížeče, abyste znovu získali přístup k nastavení, používejte na vlastní nebezpečí!"
         },
         "no_music_providers": "Žádní nakonfigurovaní poskytovatelé hudby",
         "no_music_providers_detail": "Začněte pracovat s Music Assistant přidáním svých poskytovatelů hudby.",
@@ -409,7 +395,6 @@
             "label": "Pevné\/záložní korekce zesílení pro rádio",
             "description": "Pevná\/záložní korekce zesílení, která se použije na přehrávání rádia (závisí na nastavení \"Metoda normalizace hlasitosti\").\nKladnou hodnotu použijte pro zvýšení hlasitosti, zápornou hodnotu pro snížení hlasitosti.\n\nToto nastavení se používá, když je metoda normalizace hlasitosti nastavena na \"Fixní korekce zisku\" nebo \"Korekce záložního zisku\"."
         },
-        "group_type": "Typ skupiny",
         "add_group_player_desc": "U poskytovatelů přehrávačů\/ekosystémů, které poskytují nativní seskupování\/synchronizaci, se automaticky vytvoří synchronizační skupina, což znamená, že pokud přehráváte na této skupině přehrávačů, budou členské přehrávače automaticky synchronizovány. \n\nU přehrávačů\/ekosystémů, které seskupování nepodporují, nebo v případě, že chcete seskupit přehrávače z různých ekosystémů, můžete použít typ skupiny Universal, který bude distribuovat stejný zvuk do všech členských přehrávačů (ale ne synchronizovaně). \n\nPoznámka: někteří poskytovatelé seskupování podporují, ale k provedení seskupení je třeba použít nativní aplikaci. Příkladem jsou přehrávače založené na službě Google Cast, kde lze skupiny Google Cast vytvářet pouze v aplikaci Google Home.",
         "dsp": {
             "types": {
@@ -537,7 +522,6 @@
     "item_in_library": "Tato položka je k dispozici v knihovně",
     "back": "Zpět",
     "recently_played": "Nedávno přehrávané",
-    "radiobrowser_by_popularity": "Podle oblíbenosti",
     "radiobrowser_by_country": "Podle země",
     "radiobrowser_by_tag": "Podle štítku",
     "load_more_items": "Načíst další položky...",

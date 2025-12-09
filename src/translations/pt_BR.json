@@ -13,7 +13,9 @@
         "single": "Single",
         "unknown": "Tipo de álbum desconhecido",
         "audiobook": "Audiolivro",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Ao vivo",
+        "soundtrack": "Trilha sonora"
     },
     "albums": "Álbuns",
     "appears_on": "Incluído em",
@@ -128,7 +130,6 @@
         "sync": "Sincronizar agora",
         "sync_running": "Esse provedor está sendo sincronizado",
         "username": "Usuário",
-        "core": "Principal",
         "core_modules": "Módulos principais",
         "server_info": "Informação do servidor",
         "server_id": "ID do servidor",
@@ -289,7 +290,9 @@
             "announcements": "Configuração de anúncios",
             "airplay": "Configurações específicas do Airplay",
             "player_controls": "Controles do reprodutor",
-            "presets": "Predefinições"
+            "presets": "Predefinições",
+            "sync_options": "Opções de sincronização\/importação",
+            "builtin_playlists": "Configurações da lista de reprodução integrada"
         },
         "tts_pre_announce": {
             "label": "Pré-anunciar anúncios TTS",
@@ -321,21 +324,12 @@
             "label": "Ícone",
             "description": "Ícones para este reprodutor.\n\nVeja mais em: https:\/\/pictogrammers.com\/library\/mdi\/"
         },
-        "frontend": "Interface de usuário",
-        "frontend_desc": "Definições de configuração para a interface de usuário do Music Assistant (frontend). Observe que essas configurações são armazenadas no nível do dispositivo.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Automático (seguir a configuração do sistema)",
                 "light": "Claro",
                 "dark": "Escuro"
-            }
-        },
-        "menu_style": {
-            "label": "Estilo de menu",
-            "options": {
-                "horizontal": "Horizontal",
-                "vertical": "Vertical"
             }
         },
         "menu_items": {
@@ -368,12 +362,9 @@
                 "pt_BR": "Português (Brasil)",
                 "sl_SI": "Esloveno",
                 "hu_HU": "Húngaro",
-                "it": "Italiano"
+                "it": "Italiano",
+                "el_GR": "Grego"
             }
-        },
-        "hide_settings": {
-            "label": "Ocultar botão de configuração",
-            "description": "Ocultar botão de configurações na tela inicial.\n\nNote que se você desabilitar botão de configurações na tela inicial e no menu, você irá se bloquear.\n\nCaso isso ocorra, para obter acesso novamente você terá que manualmente inserir o caminho para as configurações ou apagar os cookies do seu navegador. Use por sua conta e risco!"
         },
         "no_music_providers": "Nenhum provedor de música configurado",
         "no_music_providers_detail": "Comece sua experiência com o Music Assistant adicionando seus provedores de música.",
@@ -411,7 +402,6 @@
             "label": "Ajuste de ganho fixo\/retorno para rádio",
             "description": "Correção de ganho fixo\/retorno a ser aplicada a uma estação de rádio (depende da configuração \"Método de normalização de volume\"). Use um valor positivo para aumentar o volume e um valor negativo para diminuir o volume.\n\nEssa configuração é usada quando o método de normalização de volume é definido como \"Correção de ganho fixo\" ou \"Retorno para correção de ganho\"."
         },
-        "group_type": "Tipo de grupo",
         "add_group_player_desc": "Para provedores\/ecossistemas de players que oferecem agrupamento\/sincronização nativos, um syncgroup será criado automaticamente, o que significa que, se você reproduzir nesse Player Group, os players membros serão sincronizados automaticamente. \n\nPara players\/ecossistemas que não suportam agrupamento, ou caso você queira agrupar players de diferentes ecossistemas, é possível usar o tipo de grupo Universal, que distribuirá o mesmo áudio para todos os players membros (mas não em sincronia). \n\nObserve que alguns provedores são compatíveis com o agrupamento, mas você precisa usar o aplicativo nativo para realizar o agrupamento. Um exemplo são os players baseados no Google Cast, em que você só pode criar grupos do Google Cast no aplicativo Google Home. ",
         "dynamic_members": {
             "label": "Membros dinâmicos do grupo",
@@ -476,6 +466,14 @@
             "channels_compact": {
                 "FL": "E",
                 "FR": "D"
+            },
+            "presets": {
+                "load": "Carregar predefinição de DSP",
+                "empty_warning": "Não há predefinições de DSP disponíveis",
+                "save": "Salvar predefinição de DSP",
+                "name": "Nome da predefinição",
+                "name_placeholder": "Minha nova predefinição",
+                "remove_confirm": "Tem certeza de que deseja remover essa predefinição de DSP?"
             }
         },
         "power_control": {
@@ -505,6 +503,32 @@
         "enable_builtin_player": {
             "label": "Permitir a reprodução neste dispositivo\/navegador",
             "description": "Ative o reprodutor incorporado (experimental) para esse dispositivo\/navegador, que permite transmitir todo o conteúdo do Music Assistant diretamente para esse dispositivo."
+        },
+        "add_group_player_desc_universal": "Ao criar um Grupo Universal de Reprodutores, você pode agrupar reprodutores de diferentes provedores\/ecossistemas. \n Isso distribuirá o mesmo áudio para todos os reprodutores membros (mas não em sincronia).",
+        "edit_provider": "Editar provedor: {0}",
+        "metadata": "Metadados",
+        "metadataprovider": "Provedor de metadados",
+        "music": "Música",
+        "musicprovider": "Provedor de música",
+        "player": "Reprodutor",
+        "playerprovider": "Provedor do reprodutor",
+        "plugin": "Plug-in",
+        "pluginprovider": "Provedor de plug-in",
+        "providers_total": "{0} provedor total{1}",
+        "stage": {
+            "label": "Estágio",
+            "options": {
+                "stable": "Estável",
+                "beta": "Beta",
+                "alpha": "Alfa",
+                "experimental": "Experimental",
+                "unmaintained": "Não mantido",
+                "deprecated": "Obsoleto"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Forçar layout móvel",
+            "description": "Forçar o layout móvel (com o menu de navegação na parte inferior), mesmo em telas maiores."
         }
     },
     "show_info": "Mostrar informação",
@@ -591,7 +615,6 @@
     "item_in_library": "Esse item está disponível na biblioteca",
     "back": "Voltar",
     "recently_played": "Reproduzido recentemente",
-    "radiobrowser_by_popularity": "Por popularidade",
     "radiobrowser_by_country": "Por país",
     "radiobrowser_by_tag": "Por tag",
     "load_more_items": "Carregar mais itens...",
@@ -726,5 +749,7 @@
     "homescreen_edit_enable": "Editar tela inicial",
     "homescreen_edit_disable": "Sair do modo de edição da tela inicial",
     "lyrics_will_appear_soon": "A letra aparecerá quando a música começar...",
-    "builtin_playlists": "Configurações da lista de reprodução integrada"
+    "radiobrowser_by_votes": "Por votos",
+    "radiobrowser_by_clicks": "Por cliques",
+    "radiobrowser_by_language": "Por idioma"
 }

@@ -14,27 +14,16 @@
     :restore-state="true"
     :total="total"
     :show-album-type-filter="true"
-    :extra-menu-items="[
-      {
-        label: 'sync_now',
-        icon: 'mdi-sync',
-        action: () => {
-          api.startSync([MediaType.ALBUM]);
-        },
-        overflowAllowed: true,
-        disabled: api.syncTasks.value.length > 0,
-      },
-    ]"
+    :show-provider-filter="true"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
-import { MediaType, EventMessage, EventType } from "@/plugins/api/interfaces";
-import { sleep } from "@/helpers/utils";
+import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
   name: "Albums",
@@ -84,12 +73,19 @@ const loadItems = async function (params: LoadDataParams) {
     params.offset,
     params.sortBy,
     params.albumType,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly && !params.albumType) {
+  if (!params.favoritesOnly && !params.albumType && !params.provider) {
     total.value = store.libraryAlbumsCount;
+    return;
+  }
+  // When provider filter is active, we can't get accurate count from the count endpoint
+  // The total will be determined by the actual results returned
+  if (params.provider && params.provider.length > 0) {
+    total.value = undefined;
     return;
   }
   total.value = await api.getLibraryAlbumsCount(

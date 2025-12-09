@@ -48,7 +48,7 @@
             <v-list-item
               :title="$t('play_on')"
               density="compact"
-              :subtitle="store.activePlayer?.display_name || $t('no_player')"
+              :subtitle="store.activePlayer?.name || $t('no_player')"
             />
           </template>
         </v-list-item>
@@ -60,12 +60,14 @@
           v-for="menuItem of items.filter((x) => !x.hide)"
           :key="menuItem.label"
           class="menurow"
+          :class="{ 'menu-item-error': menuItem.color === 'error' }"
         >
           <v-list-item
             variant="text"
             :title="$t(menuItem.label, menuItem.labelArgs || [])"
             :disabled="menuItem.disabled == true"
             :prepend-icon="menuItem.icon"
+            :color="menuItem.color"
             border="bottom"
             :append-icon="
               menuItem.selected
@@ -94,12 +96,14 @@
           v-for="subMenuItem of subMenuItems.filter((x) => !x.hide)"
           :key="subMenuItem.label"
           class="menurow"
+          :class="{ 'menu-item-error': subMenuItem.color === 'error' }"
         >
           <v-list-item
             variant="text"
             :title="$t(subMenuItem.label, subMenuItem.labelArgs || [])"
             :disabled="subMenuItem.disabled == true"
             :prepend-icon="subMenuItem.icon"
+            :color="subMenuItem.color"
             :append-icon="subMenuItem.selected ? 'mdi-check' : undefined"
             @click.stop="(e) => menuItemClicked(e, subMenuItem)"
           />
@@ -110,10 +114,10 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 const show = ref<boolean>(false);
 const items = ref<ContextMenuItem[]>([]);
@@ -147,9 +151,9 @@ const menuItemClicked = function (
   if (menuItem.subItems) {
     evt.preventDefault();
     subMenuItems.value = menuItem.subItems;
-    (subMenuPosX.value = (evt as PointerEvent).clientX),
+    ((subMenuPosX.value = (evt as PointerEvent).clientX),
       (subMenuPosY.value = (evt as PointerEvent).clientY),
-      (showSubmenu.value = true);
+      (showSubmenu.value = true));
     return;
   } else if (menuItem.action) {
     menuItem.action();
@@ -173,13 +177,11 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 
   const sortedPlayers = Object.values(api.players)
     .filter((x) => playerVisible(x))
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-    );
+    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
 
   for (const player of sortedPlayers) {
     _subItems.push({
-      label: player.display_name,
+      label: player.name,
       action: () => {
         evt.preventDefault();
         store.activePlayerId = player.player_id;
@@ -192,9 +194,9 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
   }
 
   subMenuItems.value = _subItems;
-  (subMenuPosX.value = (evt as PointerEvent).clientX),
+  ((subMenuPosX.value = (evt as PointerEvent).clientX),
     (subMenuPosY.value = (evt as PointerEvent).clientY),
-    (showSubmenu.value = true);
+    (showSubmenu.value = true));
 };
 </script>
 
@@ -203,22 +205,22 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 
 import router from "@/plugins/router";
 
+import { playerVisible } from "@/helpers/utils";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  ProviderFeature,
+  Album,
+  BrowseFolder,
   MediaItem,
-  QueueOption,
+  MediaItemType,
+  MediaItemTypeOrItemMapping,
   MediaType,
   Playlist,
-  Album,
-  Track,
-  MediaItemType,
   PodcastEpisode,
-  MediaItemTypeOrItemMapping,
-  BrowseFolder,
+  ProviderFeature,
+  QueueOption,
+  Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import { playerVisible } from "@/helpers/utils";
 
 export interface ContextMenuItem {
   label: string;
@@ -230,6 +232,7 @@ export interface ContextMenuItem {
   selected?: boolean;
   subItems?: ContextMenuItem[];
   close_on_click?: boolean;
+  color?: string;
 }
 
 export const showContextMenuForMediaItem = async function (
@@ -261,7 +264,14 @@ export const showContextMenuForMediaItem = async function (
     mediaItems[0].is_playable &&
     itemIsAvailable(mediaItems[0])
   ) {
-    menuItems.push(...(await getPlayMenuItems(mediaItems, parentItem)));
+    // add play menu as submenu
+    menuItems.push({
+      label: "play",
+      subItems: await getPlayMenuItems(mediaItems, parentItem),
+      icon: "mdi-playlist-play",
+      labelArgs: [],
+      disabled: !store.activePlayer,
+    });
   }
 
   if (menuItems.length == 0) return;
@@ -418,8 +428,7 @@ export const getPlayMenuItems = async function (
     });
   }
 
-  // add all/other options as submenu
-  const subItems: ContextMenuItem[] = [];
+  // add default enqueue options
   for (const option of [
     QueueOption.PLAY,
     QueueOption.NEXT,
@@ -427,7 +436,8 @@ export const getPlayMenuItems = async function (
     QueueOption.REPLACE,
     QueueOption.REPLACE_NEXT,
   ]) {
-    subItems.push({
+    if (option == defaultEnqueueOption) continue;
+    playMenuItems.push({
       label: queueOptionLabelMap[option],
       action: () => {
         api.playMedia(
@@ -439,17 +449,91 @@ export const getPlayMenuItems = async function (
       icon: queueOptionIconMap[option],
       labelArgs: [],
       disabled: !store.activePlayer,
-      selected: option == defaultEnqueueOption,
     });
   }
-  playMenuItems.push({
-    label: "all_enqueue_options",
-    subItems: subItems,
-    icon: "mdi-playlist-play",
-    labelArgs: [],
-    disabled: !store.activePlayer,
-  });
+  // Multi-select mark as played/unplayed for podcast episodes
+  if (
+    items.length > 1 &&
+    items.every(
+      (item) =>
+        item.media_type === MediaType.PODCAST_EPISODE &&
+        "fully_played" in item &&
+        "resume_position_ms" in item,
+    )
+  ) {
+    const podcastEpisodes = items as PodcastEpisode[];
 
+    // Helper functions for clearer state detection
+    const hasProgress = (item: PodcastEpisode) =>
+      (item.resume_position_ms || 0) > 0;
+    const isFullyPlayed = (item: PodcastEpisode) => item.fully_played;
+    const isUnplayed = (item: PodcastEpisode) =>
+      !item.fully_played && !hasProgress(item);
+
+    const allFullyPlayed = podcastEpisodes.every(isFullyPlayed);
+    const allUnplayed = podcastEpisodes.every(isUnplayed);
+
+    // If all items are fully played, show "mark unplayed" option
+    if (allFullyPlayed) {
+      playMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemUnPlayed(item);
+              item.fully_played = false;
+              item.resume_position_ms = 0;
+            }),
+          );
+        },
+      });
+    }
+    // If all items are unplayed, show "mark played" option
+    else if (allUnplayed) {
+      playMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemPlayed(item, true);
+              item.fully_played = true;
+            }),
+          );
+        },
+      });
+    }
+    // If mixed state, show both options
+    else {
+      playMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemPlayed(item, true);
+              item.fully_played = true;
+            }),
+          );
+        },
+      });
+
+      playMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemUnPlayed(item);
+              item.fully_played = false;
+              item.resume_position_ms = 0;
+            }),
+          );
+        },
+      });
+    }
+  }
   return playMenuItems;
 };
 
@@ -607,6 +691,8 @@ export const getContextMenuItems = async function (
       labelArgs: [],
       action: () => {
         for (const item of items) api.addItemToLibrary(item);
+        // Clear the multi-select after action
+        eventbus.emit("clearSelection");
       },
       icon: "mdi-bookshelf",
     });
@@ -632,65 +718,97 @@ export const getContextMenuItems = async function (
         for (const item of items)
           api.removeItemFromLibrary(item.media_type, item.item_id);
         if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
+        // Clear the multi-select after action
+        eventbus.emit("clearSelection");
       },
       icon: "mdi-bookshelf",
     });
   }
-  // add to favorites
-  if (
-    "favorite" in resolvedItem &&
-    !resolvedItem.favorite &&
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type) &&
-    itemIsAvailable(resolvedItem)
-  ) {
-    contextMenuItems.push({
-      label: "favorites_add",
-      labelArgs: [],
-      action: () => {
-        for (const item of items) {
-          api.addItemToFavorites(item);
-        }
-      },
-      icon: "mdi-heart-outline",
-    });
+
+  // Favorites handling - supports mixed states like played/unplayed
+  if (items.length > 0 && items.every((item) => "favorite" in item)) {
+    const favoritableItems = items.filter(
+      (item) =>
+        [
+          MediaType.ALBUM,
+          MediaType.ARTIST,
+          MediaType.AUDIOBOOK,
+          MediaType.PLAYLIST,
+          MediaType.PODCAST,
+          MediaType.RADIO,
+          MediaType.TRACK,
+        ].includes(item.media_type) && itemIsAvailable(item),
+    );
+
+    if (favoritableItems.length > 0) {
+      const allFavorited = favoritableItems.every((item) => item.favorite);
+      const allNotFavorited = favoritableItems.every((item) => !item.favorite);
+
+      // If all items are favorited, show "remove from favorites"
+      if (allFavorited) {
+        contextMenuItems.push({
+          label: "favorites_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart",
+        });
+      }
+      // If all items are not favorited, show "add to favorites"
+      else if (allNotFavorited) {
+        contextMenuItems.push({
+          label: "favorites_add",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems) {
+              api.addItemToFavorites(item);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart-outline",
+        });
+      }
+      // If mixed state, show both options
+      else {
+        contextMenuItems.push({
+          label: "favorites_add",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(
+              (item) => !item.favorite,
+            )) {
+              api.addItemToFavorites(item);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart-outline",
+        });
+
+        contextMenuItems.push({
+          label: "favorites_remove",
+          labelArgs: [],
+          action: () => {
+            for (const item of favoritableItems.filter(
+              (item) => item.favorite,
+            )) {
+              api.removeItemFromFavorites(item.media_type, item.item_id);
+            }
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+          icon: "mdi-heart",
+        });
+      }
+    }
   }
-  // remove from favorites
-  if (
-    items.length === 1 &&
-    "favorite" in resolvedItem &&
-    resolvedItem.favorite &&
-    resolvedItem.provider == "library" &&
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type)
-  ) {
-    contextMenuItems.push({
-      label: "favorites_remove",
-      labelArgs: [],
-      action: () => {
-        api.removeItemFromFavorites(
-          resolvedItem.media_type,
-          resolvedItem.item_id,
-        );
-        resolvedItem.favorite = false;
-      },
-      icon: "mdi-heart",
-    });
-  }
+
   // remove from playlist (playlist tracks only)
   if (parentItem && parentItem.media_type === MediaType.PLAYLIST) {
     const playlist = parentItem as Playlist;
@@ -847,5 +965,10 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
 
 .menurow :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
+}
+
+.menu-item-error :deep(.v-list-item-title),
+.menu-item-error :deep(.v-icon) {
+  color: rgb(var(--v-theme-error)) !important;
 }
 </style>

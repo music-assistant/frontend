@@ -128,7 +128,6 @@
         "sync": "Sincronizza ora",
         "sync_running": "Questo provider si sta sincronizzando",
         "username": "Nome utente",
-        "core": "Principale",
         "core_modules": "Moduli principali",
         "server_info": "Informazione server",
         "server_id": "ID server",
@@ -320,21 +319,12 @@
             "label": "Icona",
             "description": "Icona di Material Design per questo lettore.\n\nVedi https:\/\/pictogrammers.com\/library\/mdi\/."
         },
-        "frontend": "Interfaccia utente",
-        "frontend_desc": "Impostazioni di configurazione per l'interfaccia utente di Music Assistant (frontend). Nota che queste impostazioni sono memorizzate a livello di dispositivo.",
         "theme": {
             "label": "Tema",
             "options": {
                 "auto": "Auto (seguire la configurazione sistema)",
                 "light": "Chiaro",
                 "dark": "Scuro"
-            }
-        },
-        "menu_style": {
-            "label": "Stile menù",
-            "options": {
-                "horizontal": "Orizzontale",
-                "vertical": "Verticale"
             }
         },
         "menu_items": {
@@ -369,10 +359,6 @@
                 "hu_HU": "Ungherese",
                 "it": "Italiano"
             }
-        },
-        "hide_settings": {
-            "label": "Nascondi il pulsante delle impostazioni",
-            "description": "Nascondi il pulsante delle impostazioni nella schermata iniziale.\n\nNota che se disabiliti le impostazioni nella schermata iniziale e nel menu potresti bloccarti.\n\nIn tal caso dovrai inserire manualmente il percorso alle impostazioni o cancellare i cookie del browser per accedere nuovamente alle impostazioni, usalo a tuo rischio e pericolo!"
         },
         "no_music_providers": "Nessuna Sorgente di Musica configurata",
         "no_music_providers_detail": "Inizia la tua esperienza con Music Assistant aggiungendo i tuoi provider musicali.",
@@ -410,7 +396,6 @@
             "label": "Regolazione del guadagno fisso\/alternativa per la radio",
             "description": "Correzione del guadagno fisso\/alternativa da applicare a un flusso radio (dipende dall'impostazione 'Metodo di normalizzazione del volume').\nUtilizzare un valore positivo per aumentare il volume, un valore negativo per diminuirlo.\n\nQuesta impostazione viene utilizzata quando il metodo di normalizzazione del volume è impostato su 'Correzione del guadagno fisso' o 'Alternativa per la correzione del guadagno'."
         },
-        "group_type": "Tipo di gruppo",
         "add_group_player_desc": "Per i provider\/ecosistemi di lettori che forniscono raggruppamento\/sincronizzazione nativi, verrà creato automaticamente un gruppo di sincronizzazione, il che significa che se suoni con questo Gruppo Lettori, i lettori membri verranno sincronizzati automaticamente.\n\nPer i lettori\/ecosistemi che non supportano il raggruppamento, o nel caso in cui desideri raggruppare lettori da diversi ecosistemi, puoi usare il tipo di gruppo Universale, che distribuirà lo stesso audio a tutti i lettori membri (ma non in sincronia).\n\nNota che alcuni provider supportano il raggruppamento, ma devi usare l'app nativa per eseguirlo. Un esempio sono i lettori basati su Google Cast, in cui puoi creare gruppi Google Cast solo all'interno dell'app Google Home.",
         "dynamic_members": {
             "label": "Membri dinamici del gruppo",
@@ -450,7 +435,29 @@
         },
         "mute_control": {
             "label": "Controllo del silenziamento"
-        }
+        },
+        "plugin": "Plugin",
+        "pluginprovider": "Plugin provider",
+        "providers_total": "{0} fornitori totali {1}",
+        "stage": {
+            "label": "Stage",
+            "options": {
+                "stable": "Stabile",
+                "beta": "Beta",
+                "alpha": "Alpha",
+                "experimental": "Sperimentale",
+                "unmaintained": "Non mantenuto",
+                "deprecated": "Obsoleto"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Forza il layout mobile",
+            "description": "Forzare il layout mobile (con il menu di navigazione in basso), anche su schermi più grandi."
+        },
+        "providers_description": "Gestisci le tue fonti musicali, i servizi di streaming e le integrazioni",
+        "players_description": "Configura e gestisci i tuoi dispositivi di output audio",
+        "frontend_description": "Personalizza il tema e l'aspetto dell'interfaccia utente",
+        "provider_type": "Tipo"
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
@@ -534,7 +541,6 @@
     "item_in_library": "Questo articolo è disponibile nella libreria",
     "back": "Indietro",
     "recently_played": "Riprodotto recentemente",
-    "radiobrowser_by_popularity": "Per popolarità",
     "radiobrowser_by_country": "Per nazione",
     "radiobrowser_by_tag": "Per tag...",
     "load_more_items": "Carica altri elementi...",

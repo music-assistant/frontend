@@ -16,22 +16,22 @@
     icon="mdi-playlist-play"
     :restore-state="true"
     :total="total"
+    :show-provider-filter="true"
   />
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import api from "@/plugins/api";
 import {
-  ProviderFeature,
   EventMessage,
   EventType,
-  MediaType,
+  ProviderFeature,
 } from "@/plugins/api/interfaces";
-import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { store } from "@/plugins/store";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 defineOptions({
   name: "Playlists",
@@ -40,17 +40,7 @@ defineOptions({
 const { t } = useI18n();
 const updateAvailable = ref(false);
 const total = ref(store.libraryPlaylistsCount);
-const extraMenuItems = ref<ToolBarMenuItem[]>([
-  {
-    label: "sync_now",
-    icon: "mdi-sync",
-    action: () => {
-      api.startSync([MediaType.PLAYLIST]);
-    },
-    overflowAllowed: true,
-    disabled: api.syncTasks.value.length > 0,
-  },
-]);
+const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 
 const sortKeys = [
   "name",
@@ -76,12 +66,19 @@ const loadItems = async function (params: LoadDataParams) {
     params.limit,
     params.offset,
     params.sortBy,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly) {
+  if (!params.favoritesOnly && !params.provider) {
     total.value = store.libraryPlaylistsCount;
+    return;
+  }
+  // When provider filter is active, we can't get accurate count from the count endpoint
+  // The total will be determined by the actual results returned
+  if (params.provider && params.provider.length > 0) {
+    total.value = undefined;
     return;
   }
   total.value = await api.getLibraryPlaylistsCount(

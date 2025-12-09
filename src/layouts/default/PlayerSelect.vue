@@ -11,6 +11,7 @@
     :width="460"
     style="z-index: 99999"
     z-index="99999"
+    color="background"
   >
     <div>
       <!-- heading with Players as title-->
@@ -20,8 +21,12 @@
       >
         <b>{{ $t("players") }}</b>
         <div style="float: right; margin-right: -20px">
-          <!-- settings button -->
-          <Button variant="icon" :to="{ name: 'playersettings' }">
+          <!-- settings button (admin only) -->
+          <Button
+            v-if="authManager.isAdmin()"
+            variant="icon"
+            :to="{ name: 'playersettings' }"
+          >
             <v-icon size="30">mdi-cog-outline</v-icon>
           </Button>
           <!-- close button -->
@@ -33,32 +38,44 @@
 
       <v-divider />
 
-      <v-list flat style="margin: 0px 15px 5px 15px">
-        <!-- dedicated card for builtin player -->
+      <v-list flat style="margin: 0px 10px; padding: 0">
+        <!-- dedicated card for the local web player -->
         <PlayerCard
           v-if="
-            webPlayer.mode === WebPlayerMode.BUILTIN &&
+            isPlaybackMode(webPlayer.mode) &&
             webPlayer.player_id &&
-            api.players[webPlayer.player_id]
+            api.players[webPlayer.player_id] &&
+            !api.players[webPlayer.player_id].synced_to
           "
           :id="webPlayer.player_id"
+          style="margin: 10px 0px"
           :player="api.players[webPlayer.player_id]"
           :show-volume-control="true"
           :show-menu-button="true"
-          :show-sub-players="false"
-          :show-sync-controls="false"
+          :show-sub-players="
+            showSubPlayers && webPlayer.player_id == store.activePlayerId
+          "
+          :show-sync-controls="
+            api.players[webPlayer.player_id].supported_features.includes(
+              PlayerFeature.SET_MEMBERS,
+            )
+          "
           :allow-power-control="true"
           @click="playerClicked(api.players[webPlayer.player_id])"
+          @toggle-expand="toggleGroupExpand"
         />
         <!-- active/playing players on top -->
         <PlayerCard
           v-for="player in sortedPlayers.filter(
             (x) =>
-              [PlayerState.PLAYING, PlayerState.PAUSED].includes(x.state!) ||
+              [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
+                x.playback_state!,
+              ) ||
               (api.queues[x.player_id]?.items > 0 && x.powered != false),
           )"
           :id="player.player_id"
           :key="player.player_id"
+          style="margin: 10px 0px"
           :player="player"
           :show-volume-control="true"
           :show-menu-button="true"
@@ -70,6 +87,7 @@
           "
           :allow-power-control="true"
           @click="playerClicked(player)"
+          @toggle-expand="toggleGroupExpand"
         />
       </v-list>
 
@@ -93,6 +111,7 @@
                 )"
                 :id="player.player_id"
                 :key="player.player_id"
+                style="margin: 5px 0px"
                 :player="player"
                 :show-volume-control="true"
                 :show-menu-button="true"
@@ -104,6 +123,7 @@
                 "
                 :allow-power-control="true"
                 @click="playerClicked(player)"
+                @toggle-expand="toggleGroupExpand"
               />
             </v-list>
           </v-expansion-panel-text>
@@ -125,6 +145,7 @@
                 )"
                 :id="player.player_id"
                 :key="player.player_id"
+                style="margin: 5px 0px"
                 :player="player"
                 :show-volume-control="true"
                 :show-menu-button="true"
@@ -136,6 +157,7 @@
                 "
                 :allow-power-control="true"
                 @click="playerClicked(player)"
+                @toggle-expand="toggleGroupExpand"
               />
             </v-list>
           </v-expansion-panel-text>
@@ -146,31 +168,32 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import Button from "@/components/Button.vue";
+import PlayerCard from "@/components/PlayerCard.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
+import { playerVisible } from "@/helpers/utils";
+import { api, ConnectionState } from "@/plugins/api";
 import {
+  PlaybackState,
   Player,
   PlayerFeature,
   PlayerType,
-  PlayerState,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { ConnectionState, api } from "@/plugins/api";
-import PlayerCard from "@/components/PlayerCard.vue";
-import Button from "@/components/mods/Button.vue";
-import { playerVisible } from "@/helpers/utils";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer, isPlaybackMode } from "@/plugins/web_player";
+import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
 const selectedPanel = ref<number | null>(null);
+const { getPreference, setPreference } = useUserPreferences();
 
 // computed properties
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
     .filter((x) => playerVisible(x))
     .filter((x) => x.player_id !== webPlayer.player_id) // In case the user made the player visible for everyone
-    .sort((a, b) =>
-      a.display_name.toUpperCase() > b.display_name?.toUpperCase() ? 1 : -1,
-    );
+    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
 });
 
 //watchers
@@ -179,7 +202,8 @@ watch(
   (newVal) => {
     if (newVal) {
       // remember last selected playerId
-      localStorage.setItem("mass.LastPlayerId", newVal);
+      setPreference("activePlayerId", newVal);
+      localStorage.setItem("activePlayerId", newVal);
     }
   },
 );
@@ -203,13 +227,19 @@ watch(
 );
 
 function playerClicked(player: Player, close: boolean = false) {
-  if (store.activePlayerId == player.player_id) {
-    showSubPlayers.value = !showSubPlayers.value;
-  } else {
-    showSubPlayers.value = false;
+  if (store.activePlayerId !== player.player_id) {
     store.activePlayerId = player.player_id;
   }
   if (close) store.showPlayersMenu = false;
+}
+
+function toggleGroupExpand(player: Player) {
+  if (store.activePlayerId !== player.player_id) {
+    store.activePlayerId = player.player_id;
+    showSubPlayers.value = true;
+  } else {
+    showSubPlayers.value = !showSubPlayers.value;
+  }
 }
 
 onMounted(() => {
@@ -226,7 +256,11 @@ const checkDefaultPlayer = function () {
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  const lastPlayerId = localStorage.getItem("mass.LastPlayerId");
+  // we prefer localStorage over user preferences to allow having a prefered
+  // player per device - especially useful in case of using the built-in web player
+  const lastPlayerId =
+    localStorage.getItem("activePlayerId") ||
+    getPreference<string>("activePlayerId").value;
   if (
     lastPlayerId &&
     lastPlayerId in api.players &&

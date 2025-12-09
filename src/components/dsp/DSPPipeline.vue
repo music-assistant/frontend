@@ -29,7 +29,7 @@
       size="x-small"
       :hide-dot="isDisabled(index)"
       @click="handleSelect(index)"
-      @contextmenu.prevent="(e) => openFilterContextMenu(e, index)"
+      @contextmenu.prevent="(e: MouseEvent) => openFilterContextMenu(e, index)"
     >
       <v-btn
         flat

@@ -1,11 +1,19 @@
 import { computed, reactive } from "vue";
-import { MediaType, Player, PlayerQueue, QueueItem } from "./api/interfaces";
+import {
+  MediaType,
+  Player,
+  PlayerQueue,
+  QueueItem,
+  ServerInfoMessage,
+  User,
+} from "./api/interfaces";
 
-import api from "./api";
 import { StoredState } from "@/components/ItemsListing.vue";
-import { isTouchscreenDevice } from "@/helpers/utils";
+import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
+import api from "./api";
 
 import MobileDetect from "mobile-detect";
+import { getBreakpointValue } from "./breakpoint";
 
 type DeviceType = "desktop" | "phone" | "tablet";
 const md = new MobileDetect(window.navigator.userAgent);
@@ -16,24 +24,10 @@ const DEVICE_TYPE: DeviceType = md.tablet()
     ? "phone"
     : "desktop";
 
-export enum AlertType {
-  ERROR = "error",
-  WARNING = "warning",
-  INFO = "info",
-  SUCCESS = "success",
-}
-
-interface Alert {
-  type: AlertType;
-  message: string;
-  persistent: boolean;
-}
-
 interface Store {
   activePlayerId?: string;
   isInStandaloneMode: boolean;
   showPlayersMenu: boolean;
-  navigationMenuStyle: string;
   showFullscreenPlayer: boolean;
   frameless: boolean;
   showQueueItems: boolean;
@@ -46,7 +40,6 @@ interface Store {
   globalSearchTerm?: string;
   globalSearchType?: MediaType;
   prevState?: StoredState;
-  activeAlert?: Alert;
   prevRoute?: string;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
@@ -55,18 +48,22 @@ interface Store {
   libraryRadiosCount?: number;
   libraryPodcastsCount?: number;
   libraryAudiobooksCount?: number;
-  connected?: boolean;
   isTouchscreen: boolean;
   playMenuShown: boolean;
   playActionInProgress: boolean;
   deviceType: DeviceType;
+  forceMobileLayout?: boolean;
+  mobileLayout: boolean;
+  currentUser?: User;
+  serverInfo?: ServerInfoMessage;
+  isIngressSession: boolean;
+  isOnboarding: boolean;
 }
 
 export const store: Store = reactive({
   activePlayerId: undefined,
   isInStandaloneMode: false,
   showPlayersMenu: false,
-  navigationMenuStyle: "horizontal",
   showFullscreenPlayer: false,
   frameless: false,
   showQueueItems: false,
@@ -104,16 +101,24 @@ export const store: Store = reactive({
   globalSearchTerm: undefined,
   globalSearchType: undefined,
   prevState: undefined,
-  activeAlert: undefined,
   prevRoute: undefined,
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,
   libraryTracksCount: undefined,
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
-  connected: false,
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   playActionInProgress: false,
   deviceType: DEVICE_TYPE,
+  mobileLayout: computed(() => {
+    return (
+      getBreakpointValue({ breakpoint: "tablet" }) ||
+      parseBool(store.forceMobileLayout)
+    );
+  }),
+  currentUser: undefined,
+  serverInfo: undefined,
+  isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
+  isOnboarding: false,
 });

@@ -1,14 +1,6 @@
 <template>
   <section>
-    <v-toolbar color="transparent">
-      <template #title>{{ $t("settings.frontend") }} </template>
-    </v-toolbar>
-    <v-card-text style="margin-left: -5px; margin-right: -5px">
-      <v-card-subtitle> {{ $t("settings.frontend_desc") }} </v-card-subtitle>
-      <br />
-      <br />
-
-      <v-divider />
+    <v-card-text>
       <edit-config
         v-if="config"
         :config-entries="config"
@@ -40,6 +32,9 @@ import EditConfig from "./EditConfig.vue";
 import { onMounted } from "vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
+import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
+import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 
 // global refs
 const router = useRouter();
@@ -52,7 +47,7 @@ onMounted(() => {
     ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
 
-  config.value = [
+  const configEntries: ConfigEntry[] = [
     {
       key: "server_address",
       type: ConfigEntryType.STRING,
@@ -113,20 +108,6 @@ onMounted(() => {
       value: localStorage.getItem("frontend.settings.language"),
     },
     {
-      key: "menu_style",
-      type: ConfigEntryType.STRING,
-      label: "menu_style",
-      default_value: "horizontal",
-      required: false,
-      options: [
-        { title: "horizontal", value: "horizontal" },
-        { title: "vertical", value: "vertical" },
-      ],
-      multi_value: false,
-      category: "generic",
-      value: localStorage.getItem("frontend.settings.menu_style"),
-    },
-    {
       key: "menu_items",
       type: ConfigEntryType.STRING,
       label: "menu_items",
@@ -150,28 +131,79 @@ onMounted(() => {
       value: enabledMenuItems,
     },
     {
-      key: "hide_settings",
+      key: "force_mobile_layout",
       type: ConfigEntryType.BOOLEAN,
-      label: "hide_settings",
+      label: "force_mobile_layout",
       default_value: false,
       required: false,
       multi_value: false,
-      category: "advanced",
-      value: localStorage.getItem("frontend.settings.hide_settings") == "true",
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.force_mobile_layout") ===
+        "true",
     },
-    {
-      key: "enable_builtin_player",
-      type: ConfigEntryType.BOOLEAN,
-      label: "enable_builtin_player",
-      default_value: true,
-      required: true,
+  ];
+
+  // Show web player mode setting when Sendspin provider is available
+  const sendspinAvailable = api.getProvider("sendspin")?.available ?? false;
+  if (sendspinAvailable) {
+    configEntries.splice(3, 0, {
+      key: "web_player_mode",
+      type: ConfigEntryType.STRING,
+      label: "web_player_mode",
+      default_value: "sendspin",
+      required: false,
+      options: [
+        {
+          title: $t("settings.web_player_mode.options.sendspin"),
+          value: "sendspin",
+        },
+        {
+          title: $t("settings.web_player_mode.options.disabled"),
+          value: "disabled",
+        },
+      ],
       multi_value: false,
       category: "generic",
       value:
-        localStorage.getItem("frontend.settings.enable_builtin_player") !=
-        "false",
-    },
-  ];
+        localStorage.getItem("frontend.settings.web_player_mode") || "sendspin",
+    });
+
+    // Sendspin sync delay option
+    const defaultSyncDelay = getSendspinDefaultSyncDelay();
+    configEntries.splice(4, 0, {
+      key: "sendspin_sync_delay",
+      type: ConfigEntryType.INTEGER,
+      label: "sendspin_sync_delay",
+      default_value: defaultSyncDelay,
+      required: false,
+      multi_value: false,
+      category: "generic",
+      value: parseInt(
+        localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
+          String(defaultSyncDelay),
+        10,
+      ),
+    });
+
+    // Output latency compensation - enabled by default everywhere
+    const storedOutputLatency = localStorage.getItem(
+      "frontend.settings.sendspin_output_latency_compensation",
+    );
+    configEntries.splice(5, 0, {
+      key: "sendspin_output_latency_compensation",
+      type: ConfigEntryType.BOOLEAN,
+      label: "sendspin_output_latency_compensation",
+      default_value: true,
+      required: false,
+      multi_value: false,
+      category: "generic",
+      value:
+        storedOutputLatency !== null ? storedOutputLatency === "true" : true,
+    });
+  }
+
+  config.value = configEntries;
 });
 
 // methods
