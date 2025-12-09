@@ -10,6 +10,13 @@ export default mergeConfig(
       globals: true,
       css: false,
       setupFiles: [],
+      exclude: [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/.direnv/**",
+        "**/result/**",
+        "**/src-tauri/**",
+      ],
     },
   }),
 );
