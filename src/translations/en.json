@@ -293,7 +293,8 @@
             "player_controls": "Player controls",
             "presets": "Presets",
             "sync_options": "Sync\/import options",
-            "builtin_playlists": "Builtin Playlist Settings"
+            "builtin_playlists": "Builtin Playlist Settings",
+            "web_player": "Web Player"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
