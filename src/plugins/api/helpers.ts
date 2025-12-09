@@ -155,6 +155,9 @@ export function getDeviceName(): string {
     device = "Unknown Device";
   }
 
+  // Check if running in Tauri desktop app
+  const isTauri = "__TAURI__" in window || "__TAURI_INTERNALS__" in window;
+
   // Check if running as installed PWA
   const isPwa =
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -163,7 +166,14 @@ export function getDeviceName(): string {
     ("standalone" in navigator &&
       (navigator as Navigator & { standalone: boolean }).standalone);
 
-  const appType = isPwa ? "Music Assistant" : "Music Assistant Web";
+  let appType: string;
+  if (isTauri) {
+    appType = "MA Companion";
+  } else if (isPwa) {
+    appType = "Music Assistant";
+  } else {
+    appType = "Music Assistant Web";
+  }
 
   return `${appType} (${browser} on ${device})`;
 }
