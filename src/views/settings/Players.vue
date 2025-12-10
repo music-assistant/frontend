@@ -144,7 +144,7 @@ import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { SYNCGROUP_PREFIX } from "@/constants";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {
@@ -202,7 +202,7 @@ const providersWithCreateGroupSupport = computed(() => {
 // methods
 const loadItems = async function () {
   playerConfigs.value = (await api.getPlayerConfigs())
-    .filter((x) => x.provider != "builtin_player")
+    .filter((x) => !isHiddenSendspinWebPlayer(x))
     .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };
 
