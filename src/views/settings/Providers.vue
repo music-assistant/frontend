@@ -373,7 +373,7 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -469,17 +469,7 @@ const getPlayerCount = function (providerConfig: ProviderConfig): number {
   if (!providerInstance) return 0;
 
   return playerConfigs.value.filter((playerConfig) => {
-    // Hide unavailable Sendspin web players
-    if (playerConfig.provider === "sendspin") {
-      const name = playerConfig.default_name || "";
-      if (
-        name.startsWith("Music Assistant (") ||
-        name.startsWith("Music Assistant Web (")
-      ) {
-        const player = api.players[playerConfig.player_id];
-        if (!player?.available) return false;
-      }
-    }
+    if (isHiddenSendspinWebPlayer(playerConfig)) return false;
 
     const playerProviderInstance = api.getProvider(playerConfig.provider);
     return (
