@@ -99,7 +99,6 @@ onMounted(() => {
             )
           ) {
             itemDetails.value = updatedItem as Track;
-            updateKey.value++;
             break;
           }
         }
