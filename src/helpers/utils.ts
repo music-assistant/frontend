@@ -692,11 +692,10 @@ export const getSendspinDefaultSyncDelay = function (): number {
 
 /**
  * Check if a player config should be hidden from settings due to being a
- * web player that is currently unavailable.
+ * Sendspin web player that is currently unavailable.
  *
- * This prevents users from being confused by non-functional players.
- * We don't just hide them in general, since a core feature is grouping them
- * with other Sendspin players.
+ * This prevents users from being confused by a lot of auto-generated players
+ * in the Players and Providers settings pages.
  */
 export const isHiddenSendspinWebPlayer = function (
   playerConfig: PlayerConfig,
