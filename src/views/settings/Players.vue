@@ -202,7 +202,21 @@ const providersWithCreateGroupSupport = computed(() => {
 // methods
 const loadItems = async function () {
   playerConfigs.value = (await api.getPlayerConfigs())
-    .filter((x) => x.provider != "builtin_player")
+    .filter((x) => {
+      // Hide unavailable Sendspin web players
+      if (x.provider === "sendspin") {
+        const name = x.default_name || "";
+        if (
+          name.startsWith("Music Assistant (") ||
+          name.startsWith("Music Assistant Web (")
+        ) {
+          const player = api.players[x.player_id];
+          return player?.available ?? false;
+        }
+      }
+
+      return true;
+    })
     .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };
 

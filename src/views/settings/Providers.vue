@@ -469,7 +469,18 @@ const getPlayerCount = function (providerConfig: ProviderConfig): number {
   if (!providerInstance) return 0;
 
   return playerConfigs.value.filter((playerConfig) => {
-    if (playerConfig.provider === "builtin_player") return false;
+    // Hide unavailable Sendspin web players
+    if (playerConfig.provider === "sendspin") {
+      const name = playerConfig.default_name || "";
+      if (
+        name.startsWith("Music Assistant (") ||
+        name.startsWith("Music Assistant Web (")
+      ) {
+        const player = api.players[playerConfig.player_id];
+        if (!player?.available) return false;
+      }
+    }
+
     const playerProviderInstance = api.getProvider(playerConfig.provider);
     return (
       playerProviderInstance?.instance_id === providerInstance.instance_id ||
