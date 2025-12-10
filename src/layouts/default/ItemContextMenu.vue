@@ -217,6 +217,7 @@ import {
   Playlist,
   PodcastEpisode,
   ProviderFeature,
+  ProviderMapping,
   QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
@@ -901,6 +902,38 @@ export const getContextMenuItems = async function (
         }
       },
       icon: "mdi-refresh",
+    });
+  }
+  // map to main item (add provider mapping)
+  if (
+    items.length === 1 &&
+    parentItem &&
+    parentItem.provider == "library" &&
+    resolvedItem.provider != "library" &&
+    parentItem.media_type == resolvedItem.media_type
+  ) {
+    const mapping: ProviderMapping =
+      "provider_mappings" in items[0]
+        ? items[0].provider_mappings[0]
+        : {
+            provider_instance: resolvedItem.provider,
+            provider_domain:
+              api.providers[resolvedItem.provider]?.domain ||
+              resolvedItem.provider.split("--")[0],
+            item_id: resolvedItem.item_id,
+            available: true,
+          };
+    contextMenuItems.push({
+      label: "map_provider_mapping",
+      labelArgs: [],
+      action: async () => {
+        api.sendCommand("music/add_provider_mapping", {
+          media_type: items[0].media_type,
+          db_id: parentItem.item_id,
+          mapping: mapping,
+        });
+      },
+      icon: "mdi-link",
     });
   }
   return contextMenuItems;

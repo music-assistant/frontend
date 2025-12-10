@@ -15,6 +15,8 @@
             !providerMapping.available ||
             !api.getProvider(providerMapping.provider_instance)
           "
+          show-menu-btn
+          @menu.stop="(evt) => onMenu(evt, providerMapping)"
         >
           <template #prepend>
             <ProviderIcon
@@ -24,6 +26,15 @@
           </template>
           <template #title>
             {{ getProviderName(providerMapping) }}
+            <v-chip
+              v-if="providerMapping.in_library"
+              size="x-small"
+              density="compact"
+              class="ml-2"
+              :title="$t('tooltip.in_provider_library')"
+            >
+              {{ $t("library") }}
+            </v-chip>
           </template>
           <template #subtitle>
             <span
@@ -37,7 +48,6 @@
               }}
               bits |
             </span>
-
             <a
               v-if="
                 providerMapping.url &&
@@ -64,7 +74,6 @@
               :class="
                 $vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'
               "
-              style="margin-right: 15px"
             />
             <!-- play sample button -->
             <div class="d-flex align-center ga-2">
@@ -73,6 +82,7 @@
                   getBreakpointValue('bp1') &&
                   itemDetails.media_type == MediaType.TRACK
                 "
+                variant="plain"
                 :icon="
                   demoPlayer[
                     `${providerMapping.provider_instance}.${providerMapping.item_id}`
@@ -83,26 +93,23 @@
                 :title="$t('tooltip.play_sample')"
                 @click="playBtnClick(providerMapping)"
               />
-              <!-- visit website button -->
-              <v-btn
-                v-if="
-                  providerMapping.url &&
-                  !providerMapping.provider_domain.startsWith('file')
-                "
-                icon="mdi-open-in-new"
-                :title="$t('tooltip.open_provider_link')"
-                @click.prevent="openLinkInNewTab(providerMapping.url)"
-              />
-              <!-- copy URI to clipboard button -->
-              <v-btn
-                icon="mdi-link"
-                :title="$t('tooltip.copy_uri')"
-                @click="copyUriToClipboard(getProviderUri(providerMapping))"
-              />
             </div>
           </template>
         </ListItem>
-        <ListItem v-if="itemDetails.provider == 'library'">
+        <!-- virtual mapping for library -->
+        <ListItem
+          v-if="itemDetails.provider == 'library'"
+          show-menu-btn
+          @menu.stop="
+            (evt) =>
+              onMenu(evt, {
+                provider_instance: 'library',
+                provider_domain: 'library',
+                item_id: itemDetails.item_id,
+                available: true,
+              })
+          "
+        >
           <template #prepend>
             <ProviderIcon domain="library" :size="30" />
           </template>
@@ -113,17 +120,6 @@
                 itemDetails.item_id
               }}</span
             >
-          </template>
-          <template #append>
-            <v-btn
-              icon="mdi-link"
-              :title="$t('tooltip.copy_uri')"
-              @click="
-                copyUriToClipboard(
-                  `library://${itemDetails.media_type}/${itemDetails.item_id}`,
-                )
-              "
-            />
           </template>
         </ListItem>
       </v-list>
@@ -148,6 +144,7 @@ import { computed, reactive, ref } from "vue";
 import { copyToClipboard } from "@/helpers/utils";
 import { toast } from "vuetify-sonner";
 import { useI18n } from "vue-i18n";
+import { eventbus } from "@/plugins/eventbus";
 
 export interface Props {
   itemDetails: MediaItemType;
@@ -156,6 +153,7 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 const expanded = ref(false);
+const mappingSearchInProgress = ref(false);
 
 const openLinkInNewTab = function (url: string) {
   window.open(url, "_blank");
@@ -214,8 +212,82 @@ const toggleExpand = function () {
   expanded.value = !expanded.value;
 };
 
+const onMenu = function (evt: Event, providerMapping: ProviderMapping) {
+  const mouseEvt = evt as MouseEvent;
+  const menuItems = [
+    {
+      label: t("tooltip.copy_uri"),
+      icon: "mdi-link",
+      action: () => {
+        if (providerMapping) {
+          copyUriToClipboard(getProviderUri(providerMapping));
+        }
+      },
+    },
+  ];
+  // visit website button
+  if (
+    providerMapping.url &&
+    !providerMapping.provider_domain.startsWith("file")
+  ) {
+    menuItems.push({
+      label: t("tooltip.open_provider_link"),
+      icon: "mdi-open-in-new",
+      action: () => {
+        openLinkInNewTab(providerMapping.url!);
+      },
+    });
+  }
+  // remove mapping option (only for streaming provider mapping)
+  if (api.providers[providerMapping.provider_instance]?.is_streaming_provider) {
+    menuItems.push({
+      label: t("remove_provider_mapping"),
+      icon: "mdi-delete",
+      action: async () => {
+        if (!confirm(t("remove_provider_mapping_confirm"))) return;
+        await api.sendCommand("music/remove_provider_mapping", {
+          media_type: props.itemDetails.media_type,
+          db_id: props.itemDetails.item_id,
+          mapping: providerMapping,
+        });
+      },
+    });
+  }
+
+  // open the contextmenu by emitting the event
+  eventbus.emit("contextmenu", {
+    items: menuItems,
+    posX: mouseEvt.clientX,
+    posY: mouseEvt.clientY,
+  });
+};
+
+const searchAllProviders = function () {
+  if (!confirm(t("search_all_providers_confirm"))) return;
+  mappingSearchInProgress.value = true;
+  api
+    .sendCommand("music/match_providers", {
+      media_type: props.itemDetails.media_type,
+      db_id: props.itemDetails.item_id,
+    })
+    .finally(() => {
+      mappingSearchInProgress.value = false;
+    });
+};
+
 const toolbarMenuItems = computed(() => {
   return [
+    // search all providers option (only for library items when streaming providers are available)
+    {
+      label: "search_all_providers",
+      icon: "mdi-database-search",
+      action: searchAllProviders,
+      overflowAllowed: true,
+      disabled: mappingSearchInProgress.value,
+      hide:
+        props.itemDetails.provider != "library" ||
+        !api.hasStreamingProviders.value,
+    },
     // toggle expand
     {
       label: "tooltip.collapse_expand",
@@ -226,3 +298,18 @@ const toolbarMenuItems = computed(() => {
   ];
 });
 </script>
+
+<style>
+.hiresicon {
+  margin-top: 5px;
+  margin-right: 15px;
+  margin-left: 15px;
+  filter: invert(100%);
+}
+
+.hiresicondark {
+  margin-top: 5px;
+  margin-right: 15px;
+  margin-left: 15px;
+}
+</style>

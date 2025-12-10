@@ -85,6 +85,8 @@
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
     "search": "Search",
+    "search_all_providers": "Search all providers for matches",
+    "search_all_providers_confirm": "Are you sure you want to search for matches on all providers? This can take some time to complete and will be executed in the background.",
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
@@ -725,7 +727,8 @@
         "primary_image": "This is the primary image for this image type",
         "copy_uri": "Copy URI to clipboard",
         "select_all": "Select all items",
-        "filter_provider": "Filter by music provider"
+        "filter_provider": "Filter by music provider",
+        "in_provider_library": "This item is in the provider's library"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -1071,5 +1074,8 @@
     "yes": "Yes",
     "no": "No",
     "uri_copied": "URI copied to clipboard",
-    "uri_copy_failed": "Failed to copy URI to clipboard"
+    "uri_copy_failed": "Failed to copy URI to clipboard",
+    "remove_provider_mapping": "Remove provider mapping",
+    "remove_provider_mapping_confirm": "Are you sure you want to remove this provider mapping? This will unlink the item from the current item details. It may come back if you perform a rescan for all provider matches.",
+    "map_provider_mapping": "Map this provider entry to the current item"
 }

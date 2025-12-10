@@ -545,6 +545,7 @@ export interface ProviderMapping {
   provider_domain: string;
   provider_instance: string;
   available: boolean;
+  in_library?: boolean;
   // quality details (streamable content only)
   audio_format?: AudioFormat;
   // optional details to store provider specific details
