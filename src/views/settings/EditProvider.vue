@@ -33,7 +33,7 @@
               <h2 class="header-title">
                 {{
                   config.name ||
-                  api.getProvider(config.instance_id)?.name ||
+                  api.providers[config.instance_id]?.name ||
                   api.providerManifests[config.domain].name
                 }}
               </h2>
@@ -219,7 +219,6 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   // save new provider config
   loading.value = true;
   values["enabled"] = config.value!.enabled;
-  values["name"] = config.value!.name || null;
   api
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
@@ -298,9 +297,21 @@ const getCreditsMarkdown = function (credits: string[]) {
 
 const saveRename = function () {
   if (config.value) {
-    config.value.name = editName.value || undefined;
+    config.value.name = editName.value || "";
   }
-  showRenameDialog.value = false;
+  api
+    .saveProviderConfig(
+      config.value!.domain,
+      { name: config.value!.name || null },
+      config.value!.instance_id,
+    )
+    .then(() => {
+      loading.value = true;
+    })
+    .finally(() => {
+      loading.value = false;
+      showRenameDialog.value = false;
+    });
 };
 </script>
 

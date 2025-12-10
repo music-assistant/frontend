@@ -110,7 +110,7 @@
           <v-text-field
             v-model="editName"
             :placeholder="
-              api.players[config?.player_id ?? '']?.name || config?.default_name
+              api.players[config?.player_id!]?.name || config?.default_name
             "
             variant="outlined"
             density="comfortable"
@@ -265,12 +265,21 @@ const saveRename = function () {
   if (config.value) {
     config.value.name = editName.value || undefined;
   }
+  api
+    .savePlayerConfig(props.playerId!, { name: config.value!.name || null })
+    .then(() => {
+      loading.value = true;
+    })
+    .finally(() => {
+      loading.value = false;
+      showRenameDialog.value = false;
+    });
   showRenameDialog.value = false;
 };
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   delete values["dsp_settings"]; // delete the injected dsp_settings since its UI only
   values["enabled"] = config.value!.enabled;
-  values["name"] = config.value!.name || null;
   api.savePlayerConfig(props.playerId!, values);
   router.push({ name: "playersettings" });
 };
