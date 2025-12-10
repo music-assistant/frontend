@@ -41,14 +41,12 @@
       </v-card>
     </div>
 
-    <v-card-text>
-      <edit-config
-        :config-entries="config_entries"
-        :disabled="false"
-        @submit="onSubmit"
-        @action="onAction"
-      />
-    </v-card-text>
+    <edit-config
+      :config-entries="config_entries"
+      :disabled="false"
+      @submit="onSubmit"
+      @action="onAction"
+    />
     <v-overlay
       v-model="loading"
       scrim="true"

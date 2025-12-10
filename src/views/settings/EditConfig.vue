@@ -1,83 +1,9 @@
 <template>
   <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
-    <!-- Basic settings card with name/enabled and generic entries -->
-    <v-card
-      v-if="
-        hasNameField || hasEnabledField || entriesForCategory('generic').length
-      "
-      class="config-card mb-4"
-      elevation="0"
-    >
-      <div class="config-card-header">
-        <v-icon size="20">mdi-cog</v-icon>
-        <h3 class="config-card-title">
-          {{ $t("settings.category.generic", "Basic settings") }}
-        </h3>
-      </div>
-      <div class="config-card-content">
-        <!-- Name field -->
-        <v-text-field
-          v-if="hasNameField"
-          v-model="localName"
-          :placeholder="namePlaceholder"
-          :label="nameLabel || $t('settings.provider_name')"
-          variant="outlined"
-          density="comfortable"
-          clearable
-        />
-        <!-- Enabled switch -->
-        <v-switch
-          v-if="hasEnabledField"
-          v-model="localEnabled"
-          :label="enabledLabel || $t('settings.enable_provider')"
-          color="primary"
-          :disabled="enabledDisabled"
-          hide-details
-        />
-        <!-- Generic config entries -->
-        <div
-          v-for="conf_entry of entriesForCategory('generic')"
-          :key="conf_entry.key"
-          class="config-entry"
-        >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="isDisabled(conf_entry)"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @clear-value="conf_entry.value = conf_entry.default_value"
-            @update:value="conf_entry.value = $event"
-            @action="
-              action(conf_entry.action || conf_entry.key);
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-            @open-dsp="openDspConfig"
-          />
-          <v-btn
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            icon="mdi-help-circle-outline"
-            variant="text"
-            size="small"
-            class="help-btn"
-            @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          />
-        </div>
-      </div>
-    </v-card>
-
-    <!-- Other category entries - always use expansion panels -->
+    <!-- Category entries - use expansion panels -->
     <v-expansion-panels v-model="activePanel" multiple class="config-panels">
       <v-expansion-panel
-        v-for="panel of panels.filter(
-          (p) => p !== 'generic' && entriesForCategory(p).length > 0,
-        )"
+        v-for="panel of panels.filter((p) => entriesForCategory(p).length > 0)"
         :key="panel"
         :value="panel"
         class="config-panel"
@@ -205,21 +131,11 @@ const router = useRouter();
 export interface Props {
   configEntries: ConfigEntry[];
   disabled: boolean;
-  // Optional name field configuration
-  nameValue?: string | null | undefined;
-  namePlaceholder?: string;
-  nameLabel?: string;
-  // Optional enabled field configuration
-  enabledValue?: boolean;
-  enabledLabel?: string;
-  enabledDisabled?: boolean;
 }
 
 const emit = defineEmits<{
   (e: "submit", values: Record<string, ConfigValueType>): void;
   (e: "action", action: string, values: Record<string, ConfigValueType>): void;
-  (e: "update:nameValue", value: string | null): void;
-  (e: "update:enabledValue", value: boolean): void;
 }>();
 
 // global refs
@@ -233,21 +149,6 @@ const oldValues = ref<Record<string, ConfigValueType>>({});
 
 // props
 const props = defineProps<Props>();
-
-// Computed for v-model binding of name and enabled
-const localName = computed({
-  get: () => props.nameValue ?? null,
-  set: (val) => emit("update:nameValue", val),
-});
-
-const localEnabled = computed({
-  get: () => props.enabledValue ?? true,
-  set: (val) => emit("update:enabledValue", val),
-});
-
-// Check if we have name/enabled fields configured
-const hasNameField = computed(() => props.nameValue !== undefined);
-const hasEnabledField = computed(() => props.enabledValue !== undefined);
 
 // computed props
 const panels = computed(() => {
@@ -297,9 +198,7 @@ watch(
     }
     // Set active panels after entries are populated
     // Expand all panels by default, except "advanced" which stays collapsed
-    const expandedPanels = panels.value.filter(
-      (p) => p !== "generic" && p !== "advanced",
-    );
+    const expandedPanels = panels.value.filter((p) => p !== "advanced");
     activePanel.value = expandedPanels;
   },
   { immediate: true },
@@ -512,38 +411,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
 .config-panel-content {
   padding: 16px 20px 20px;
   border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-/* Card-based sections */
-.config-card {
-  margin-top: 16px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.config-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.12);
-}
-
-.config-card-header .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.config-card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-  color: rgb(var(--v-theme-primary));
-}
-
-.config-card-content {
-  padding: 16px 20px 20px;
 }
 
 /* Action buttons */

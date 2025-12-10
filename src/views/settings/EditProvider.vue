@@ -1,6 +1,27 @@
 <template>
   <section class="edit-provider">
     <div v-if="config && api.providerManifests[config.domain]">
+      <!-- Disabled banner -->
+      <v-alert
+        v-if="!config.enabled"
+        type="warning"
+        variant="tonal"
+        class="mb-4"
+        closable
+      >
+        <div class="disabled-banner">
+          <span>{{ $t("settings.provider_disabled") }}</span>
+          <v-btn
+            size="small"
+            color="warning"
+            variant="flat"
+            @click="config.enabled = true"
+          >
+            {{ $t("settings.enable_provider") }}
+          </v-btn>
+        </div>
+      </v-alert>
+
       <!-- Header card -->
       <v-card class="header-card mb-4" elevation="0">
         <div class="header-content">
@@ -8,9 +29,23 @@
             <provider-icon :domain="config.domain" :size="48" />
           </div>
           <div class="header-info">
-            <h2 class="header-title">
-              {{ api.providerManifests[config.domain].name }}
-            </h2>
+            <div class="header-title-row">
+              <h2 class="header-title">
+                {{
+                  config.name ||
+                  api.getProvider(config.instance_id)?.name ||
+                  api.providerManifests[config.domain].name
+                }}
+              </h2>
+              <v-btn
+                icon="mdi-pencil"
+                variant="text"
+                size="small"
+                density="compact"
+                class="rename-btn"
+                @click="showRenameDialog = true"
+              />
+            </div>
             <p class="header-description">
               {{ api.providerManifests[config.domain].description }}
             </p>
@@ -45,17 +80,39 @@
       v-if="config"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"
-      :name-value="config.name ?? null"
-      :name-placeholder="api.getProvider(config.instance_id)?.name"
-      :name-label="$t('settings.provider_name')"
-      :enabled-value="config.enabled"
-      :enabled-label="$t('settings.enable_provider')"
-      :enabled-disabled="!api.providerManifests[config.domain]?.allow_disable"
-      @update:name-value="config.name = $event ?? undefined"
-      @update:enabled-value="config.enabled = $event"
       @submit="onSubmit"
       @action="onAction"
     />
+
+    <!-- Rename dialog -->
+    <v-dialog v-model="showRenameDialog" max-width="400">
+      <v-card>
+        <v-card-title>{{ $t("settings.provider_name") }}</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="editName"
+            :placeholder="
+              api.getProvider(config?.instance_id ?? '')?.name ||
+              api.providerManifests[config?.domain ?? '']?.name
+            "
+            variant="outlined"
+            density="comfortable"
+            autofocus
+            clearable
+            @keyup.enter="saveRename"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showRenameDialog = false">
+            {{ $t("close") }}
+          </v-btn>
+          <v-btn color="primary" variant="flat" @click="saveRename">
+            {{ $t("settings.save") }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-overlay
       v-model="loading"
       scrim="true"
@@ -102,6 +159,8 @@ const config = ref<ProviderConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
 const showAuthLink = ref(false);
+const showRenameDialog = ref(false);
+const editName = ref<string | null>(null);
 
 // props
 const props = defineProps<{
@@ -148,6 +207,12 @@ watch(
   },
   { immediate: true },
 );
+
+watch(showRenameDialog, (val) => {
+  if (val && config.value) {
+    editName.value = config.value.name || null;
+  }
+});
 
 // methods
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
@@ -230,6 +295,13 @@ const getCreditsMarkdown = function (credits: string[]) {
   const { t } = useI18n();
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
+
+const saveRename = function () {
+  if (config.value) {
+    config.value.name = editName.value || undefined;
+  }
+  showRenameDialog.value = false;
+};
 </script>
 
 <style scoped>
@@ -257,11 +329,34 @@ const getCreditsMarkdown = function (credits: string[]) {
   min-width: 0;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .header-title {
   font-size: 1.25rem;
   font-weight: 600;
-  margin: 0 0 8px 0;
+  margin: 0;
   color: rgb(var(--v-theme-on-surface));
+}
+
+.rename-btn {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.rename-btn:hover {
+  opacity: 1;
+}
+
+.disabled-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .header-description {
