@@ -1,51 +1,76 @@
 <template>
   <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
-    <!-- config rows for all config entries -->
-
-    <!-- Generic category entries are always displayed without expansion panels -->
-    <div
+    <!-- Basic settings card with name/enabled and generic entries -->
+    <v-card
       v-if="
-        showGenericSection !== false && entriesForCategory('generic').length > 0
+        hasNameField || hasEnabledField || entriesForCategory('generic').length
       "
-      class="config-section"
+      class="config-card mb-4"
+      elevation="0"
     >
-      <div
-        v-for="conf_entry of entriesForCategory('generic')"
-        :key="conf_entry.key"
-        class="config-entry"
-      >
-        <!-- Config entry component -->
-        <ConfigEntryField
-          :conf-entry="conf_entry"
-          :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
-          @toggle-password="showPasswordValues = !showPasswordValues"
-          @clear-value="conf_entry.value = conf_entry.default_value"
-          @update:value="conf_entry.value = $event"
-          @action="
-            action(conf_entry.action || conf_entry.key);
-            conf_entry.value = conf_entry.action ? null : conf_entry.key;
-          "
-          @open-dsp="openDspConfig"
-        />
-        <!-- Help button -->
-        <v-btn
-          v-if="hasDescriptionOrHelpLink(conf_entry)"
-          icon="mdi-help-circle-outline"
-          variant="text"
-          size="small"
-          class="help-btn"
-          @click="
-            $t(
-              `settings.${conf_entry?.key}.description`,
-              conf_entry.description || '',
-            )
-              ? (showHelpInfo = conf_entry)
-              : openLink(conf_entry.help_link!)
-          "
-        />
+      <div class="config-card-header">
+        <v-icon size="20">mdi-cog</v-icon>
+        <h3 class="config-card-title">
+          {{ $t("settings.category.generic", "Basic settings") }}
+        </h3>
       </div>
-    </div>
+      <div class="config-card-content">
+        <!-- Name field -->
+        <v-text-field
+          v-if="hasNameField"
+          v-model="localName"
+          :placeholder="namePlaceholder"
+          :label="nameLabel || $t('settings.provider_name')"
+          variant="outlined"
+          density="comfortable"
+          clearable
+        />
+        <!-- Enabled switch -->
+        <v-switch
+          v-if="hasEnabledField"
+          v-model="localEnabled"
+          :label="enabledLabel || $t('settings.enable_provider')"
+          color="primary"
+          :disabled="enabledDisabled"
+          hide-details
+        />
+        <!-- Generic config entries -->
+        <div
+          v-for="conf_entry of entriesForCategory('generic')"
+          :key="conf_entry.key"
+          class="config-entry"
+        >
+          <ConfigEntryField
+            :conf-entry="conf_entry"
+            :show-password-values="showPasswordValues"
+            :disabled="isDisabled(conf_entry)"
+            @toggle-password="showPasswordValues = !showPasswordValues"
+            @clear-value="conf_entry.value = conf_entry.default_value"
+            @update:value="conf_entry.value = $event"
+            @action="
+              action(conf_entry.action || conf_entry.key);
+              conf_entry.value = conf_entry.action ? null : conf_entry.key;
+            "
+            @open-dsp="openDspConfig"
+          />
+          <v-btn
+            v-if="hasDescriptionOrHelpLink(conf_entry)"
+            icon="mdi-help-circle-outline"
+            variant="text"
+            size="small"
+            class="help-btn"
+            @click="
+              $t(
+                `settings.${conf_entry?.key}.description`,
+                conf_entry.description || '',
+              )
+                ? (showHelpInfo = conf_entry)
+                : openLink(conf_entry.help_link!)
+            "
+          />
+        </div>
+      </div>
+    </v-card>
 
     <!-- Other category entries - always use expansion panels -->
     <v-expansion-panels v-model="activePanel" multiple class="config-panels">
@@ -180,12 +205,21 @@ const router = useRouter();
 export interface Props {
   configEntries: ConfigEntry[];
   disabled: boolean;
-  showGenericSection?: boolean;
+  // Optional name field configuration
+  nameValue?: string | null | undefined;
+  namePlaceholder?: string;
+  nameLabel?: string;
+  // Optional enabled field configuration
+  enabledValue?: boolean;
+  enabledLabel?: string;
+  enabledDisabled?: boolean;
 }
 
 const emit = defineEmits<{
   (e: "submit", values: Record<string, ConfigValueType>): void;
   (e: "action", action: string, values: Record<string, ConfigValueType>): void;
+  (e: "update:nameValue", value: string | null): void;
+  (e: "update:enabledValue", value: boolean): void;
 }>();
 
 // global refs
@@ -199,6 +233,21 @@ const oldValues = ref<Record<string, ConfigValueType>>({});
 
 // props
 const props = defineProps<Props>();
+
+// Computed for v-model binding of name and enabled
+const localName = computed({
+  get: () => props.nameValue ?? null,
+  set: (val) => emit("update:nameValue", val),
+});
+
+const localEnabled = computed({
+  get: () => props.enabledValue ?? true,
+  set: (val) => emit("update:enabledValue", val),
+});
+
+// Check if we have name/enabled fields configured
+const hasNameField = computed(() => props.nameValue !== undefined);
+const hasEnabledField = computed(() => props.enabledValue !== undefined);
 
 // computed props
 const panels = computed(() => {
@@ -318,6 +367,9 @@ const visibleEntriesByCategory = computed(() => {
 
   for (const entry of entries.value) {
     if (!isVisible(entry)) continue;
+    // Always skip 'enabled' and 'name' entries - they're either handled via dedicated props
+    // or shouldn't be shown (e.g., when adding a new provider)
+    if (entry.key === "enabled" || entry.key === "name") continue;
     const category = entry.category || "generic";
     if (!result[category]) {
       result[category] = [];

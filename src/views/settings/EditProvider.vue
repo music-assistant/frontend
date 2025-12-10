@@ -39,76 +39,20 @@
           </div>
         </div>
       </v-card>
-
-      <!-- Basic settings card -->
-      <v-card class="settings-card mb-4" elevation="0">
-        <div class="settings-card-header">
-          <v-icon size="20">mdi-cog</v-icon>
-          <h3 class="settings-card-title">
-            {{ $t("settings.category.generic", "Basic settings") }}
-          </h3>
-        </div>
-        <div class="settings-card-content">
-          <v-text-field
-            v-if="'name' in config"
-            v-model="config.name"
-            :placeholder="api.getProvider(config.instance_id)?.name"
-            :label="$t('settings.provider_name')"
-            variant="outlined"
-            density="comfortable"
-            clearable
-          />
-          <v-switch
-            v-if="'enabled' in config"
-            v-model="config.enabled"
-            :label="$t('settings.enable_provider')"
-            color="primary"
-            :disabled="!api.providerManifests[config.domain]?.allow_disable"
-            hide-details
-          />
-          <!-- Generic config entries -->
-          <div
-            v-for="conf_entry of genericConfigEntries"
-            :key="conf_entry.key"
-            class="config-entry"
-          >
-            <ConfigEntryField
-              :conf-entry="conf_entry"
-              :show-password-values="showPasswordValues"
-              :disabled="isDisabled(conf_entry)"
-              @toggle-password="showPasswordValues = !showPasswordValues"
-              @clear-value="conf_entry.value = conf_entry.default_value"
-              @update:value="conf_entry.value = $event"
-              @action="
-                onAction(conf_entry.action || conf_entry.key, {});
-                conf_entry.value = conf_entry.action ? null : conf_entry.key;
-              "
-            />
-            <v-btn
-              v-if="hasDescriptionOrHelpLink(conf_entry)"
-              icon="mdi-help-circle-outline"
-              variant="text"
-              size="small"
-              class="help-btn"
-              @click="
-                $t(
-                  `settings.${conf_entry?.key}.description`,
-                  conf_entry.description || '',
-                )
-                  ? (showHelpInfo = conf_entry)
-                  : openLink(conf_entry.help_link!)
-              "
-            />
-          </div>
-        </div>
-      </v-card>
     </div>
 
     <edit-config
       v-if="config"
-      :config-entries="nonGenericConfigEntries"
+      :config-entries="allConfigEntries"
       :disabled="!config.enabled"
-      :show-generic-section="false"
+      :name-value="config.name ?? null"
+      :name-placeholder="api.getProvider(config.instance_id)?.name"
+      :name-label="$t('settings.provider_name')"
+      :enabled-value="config.enabled"
+      :enabled-label="$t('settings.enable_provider')"
+      :enabled-disabled="!api.providerManifests[config.domain]?.allow_disable"
+      @update:name-value="config.name = $event ?? undefined"
+      @update:enabled-value="config.enabled = $event"
       @submit="onSubmit"
       @action="onAction"
     />
@@ -132,50 +76,6 @@
       </v-card>
       <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
-    <v-dialog
-      :model-value="showHelpInfo !== undefined"
-      width="auto"
-      @update:model-value="showHelpInfo = undefined"
-    >
-      <v-card>
-        <v-card-text>
-          <h2>
-            {{
-              $t(
-                `settings.${showHelpInfo?.key}.label`,
-                showHelpInfo?.label || "",
-              )
-            }}
-          </h2>
-        </v-card-text>
-        <!-- eslint-disable vue/no-v-html -->
-        <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-        <v-card-text
-          v-html="
-            markdownToHtml(
-              $t(
-                `settings.${showHelpInfo?.key}.description`,
-                showHelpInfo?.description || '',
-              ),
-            )
-          "
-        />
-        <!-- eslint-enable vue/no-v-html -->
-        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
-        <v-card-actions>
-          <v-btn
-            v-if="showHelpInfo?.help_link"
-            @click="openLink(showHelpInfo!.help_link!)"
-          >
-            {{ $t("read_more") }}
-          </v-btn>
-          <v-spacer />
-          <v-btn color="primary" @click="showHelpInfo = undefined">
-            {{ $t("close") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </section>
 </template>
 
@@ -192,7 +92,6 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import ConfigEntryField from "./ConfigEntryField.vue";
 import { nanoid } from "nanoid";
 import { markdownToHtml } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
@@ -209,54 +108,15 @@ const props = defineProps<{
   instanceId?: string;
 }>();
 
-const showPasswordValues = ref(false);
-const showHelpInfo = ref<ConfigEntry>();
-
 // helper functions
-const isNullOrUndefined = (value: unknown) => {
-  return value === null || value === undefined;
-};
-
 const isVisible = (entry: ConfigEntry) => {
   return !entry.hidden;
 };
 
-const isDisabled = (entry: ConfigEntry) => {
-  if (!config.value) return false;
-  if (!isNullOrUndefined(entry.depends_on)) {
-    const allEntries = Object.values(config.value.values);
-    const dependentEntry = allEntries.find((x) => x.key == entry.depends_on);
-    if (!dependentEntry) return false;
-
-    const dependentValue = dependentEntry.value;
-
-    if (!isNullOrUndefined(entry.depends_on_value)) {
-      return dependentValue != entry.depends_on_value;
-    }
-
-    if (!isNullOrUndefined(entry.depends_on_value_not)) {
-      return dependentValue == entry.depends_on_value_not;
-    }
-
-    return !dependentValue;
-  }
-  return false;
-};
-
 // computed properties
-const genericConfigEntries = computed(() => {
+const allConfigEntries = computed(() => {
   if (!config.value) return [];
-  return Object.values(config.value.values).filter(
-    (entry) =>
-      (!entry.category || entry.category === "generic") && isVisible(entry),
-  );
-});
-
-const nonGenericConfigEntries = computed(() => {
-  if (!config.value) return [];
-  return Object.values(config.value.values).filter(
-    (entry) => entry.category && entry.category !== "generic",
-  );
+  return Object.values(config.value.values).filter((entry) => isVisible(entry));
 });
 
 onMounted(() => {
@@ -370,27 +230,6 @@ const getCreditsMarkdown = function (credits: string[]) {
   const { t } = useI18n();
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
-
-const openLink = function (url: string) {
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.click();
-};
-
-const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
-  const { t } = useI18n();
-  return (
-    (
-      t(
-        `settings.${conf_entry?.key}.description`,
-        conf_entry.description || " ",
-      ) ||
-      conf_entry.help_link ||
-      " "
-    )?.length > 1
-  );
-};
 </script>
 
 <style scoped>
@@ -444,68 +283,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
 
 .header-authors :deep(a:hover) {
   text-decoration: underline;
-}
-
-.settings-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.settings-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.12);
-}
-
-.settings-card-header .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.settings-card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-  color: rgb(var(--v-theme-primary));
-}
-
-.settings-card-content {
-  padding: 20px;
-}
-
-/* Config entry row */
-.config-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.config-entry:first-child {
-  margin-top: 0;
-}
-
-/* Help button */
-.help-btn {
-  flex-shrink: 0;
-  margin-top: 8px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.help-btn:hover {
-  opacity: 1;
-}
-
-/* Add extra top margin for entries that follow a checkbox (which is shorter) */
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-text-field),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-select),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-slider),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-combobox) {
-  margin-top: 16px;
 }
 
 @media (max-width: 600px) {

@@ -17,104 +17,14 @@
       </div>
     </v-card>
 
-    <!-- Basic settings card (only if there are generic entries) -->
-    <v-card
-      v-if="genericConfigEntries.length > 0"
-      class="settings-card mb-4"
-      elevation="0"
-    >
-      <div class="settings-card-header">
-        <v-icon size="20">mdi-cog</v-icon>
-        <h3 class="settings-card-title">
-          {{ $t("settings.category.generic", "Basic settings") }}
-        </h3>
-      </div>
-      <div class="settings-card-content">
-        <div
-          v-for="conf_entry of genericConfigEntries"
-          :key="conf_entry.key"
-          class="config-entry"
-        >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="false"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @clear-value="conf_entry.value = conf_entry.default_value"
-            @update:value="conf_entry.value = $event"
-            @action="
-              onAction(conf_entry.action || conf_entry.key, {});
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-          />
-          <v-btn
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            icon="mdi-help-circle-outline"
-            variant="text"
-            size="small"
-            class="help-btn"
-            @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          />
-        </div>
-      </div>
-    </v-card>
-
-    <!-- Non-generic config entries (rendered in expansion panels by EditConfig) -->
+    <!-- Config entries (generic entries shown in card, non-generic in expansion panels) -->
     <EditConfig
-      v-if="nonGenericConfigEntries.length > 0"
-      :config-entries="nonGenericConfigEntries"
+      v-if="config.length > 0"
+      :config-entries="config"
       :disabled="false"
-      :show-generic-section="false"
-      @submit="onEditConfigSubmit"
+      @submit="onSubmit"
       @action="onAction"
     />
-
-    <!-- Help dialog -->
-    <v-dialog
-      :model-value="showHelpInfo !== undefined"
-      width="auto"
-      @update:model-value="showHelpInfo = undefined"
-    >
-      <v-card>
-        <v-card-text>
-          <h2>
-            {{
-              $t(
-                `settings.${showHelpInfo?.key}.label`,
-                showHelpInfo?.label || "",
-              )
-            }}
-          </h2>
-        </v-card-text>
-        <v-card-text>
-          {{
-            $t(
-              `settings.${showHelpInfo?.key}.description`,
-              showHelpInfo?.description || "",
-            )
-          }}
-        </v-card-text>
-        <v-card-actions>
-          <v-btn
-            v-if="showHelpInfo?.help_link"
-            @click="openLink(showHelpInfo!.help_link!)"
-          >
-            {{ $t("read_more") }}
-          </v-btn>
-          <v-spacer />
-          <v-btn color="primary" @click="showHelpInfo = undefined">
-            {{ $t("close") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <v-overlay
       v-model="loading"
@@ -128,14 +38,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import {
   ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
 } from "@/plugins/api/interfaces";
-import ConfigEntryField from "./ConfigEntryField.vue";
 import EditConfig from "./EditConfig.vue";
 import { $t, i18n } from "@/plugins/i18n";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
@@ -146,21 +55,6 @@ import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const loading = ref(false);
-const showPasswordValues = ref(false);
-const showHelpInfo = ref<ConfigEntry>();
-
-// computed properties
-const genericConfigEntries = computed(() => {
-  return config.value.filter(
-    (entry) => !entry.category || entry.category === "generic",
-  );
-});
-
-const nonGenericConfigEntries = computed(() => {
-  return config.value.filter(
-    (entry) => entry.category && entry.category !== "generic",
-  );
-});
 
 onMounted(() => {
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
@@ -316,40 +210,14 @@ const saveValues = function (values: Record<string, ConfigValueType>) {
   });
 };
 
-const onEditConfigSubmit = function (values: Record<string, ConfigValueType>) {
-  // Merge generic entries values with the values from EditConfig
-  for (const entry of genericConfigEntries.value) {
-    if (entry.value !== undefined) {
-      values[entry.key] = entry.value;
-    }
-  }
+const onSubmit = function (values: Record<string, ConfigValueType>) {
   saveValues(values);
 };
 
 const onAction = async function (
-  action: string,
+  _action: string,
   _values: Record<string, ConfigValueType>,
 ) {};
-
-const openLink = function (url: string) {
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.click();
-};
-
-const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
-  return (
-    (
-      $t(
-        `settings.${conf_entry?.key}.description`,
-        conf_entry.description || " ",
-      ) ||
-      conf_entry.help_link ||
-      " "
-    )?.length > 1
-  );
-};
 </script>
 
 <style scoped>
@@ -403,76 +271,5 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
     flex-direction: column;
     align-items: flex-start;
   }
-}
-
-.settings-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.settings-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.12);
-}
-
-.settings-card-header .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.settings-card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-  color: rgb(var(--v-theme-primary));
-}
-
-.settings-card-content {
-  padding: 20px;
-}
-
-/* Config entry row */
-.config-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.config-entry:first-child {
-  margin-top: 0;
-}
-
-/* Help button */
-.help-btn {
-  flex-shrink: 0;
-  margin-top: 8px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.help-btn:hover {
-  opacity: 1;
-}
-
-/* Add extra top margin for entries that follow a checkbox (which is shorter) */
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-text-field),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-select),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-slider),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-combobox) {
-  margin-top: 16px;
-}
-
-/* Action buttons */
-.config-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
 }
 </style>
