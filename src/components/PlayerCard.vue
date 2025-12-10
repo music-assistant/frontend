@@ -60,19 +60,20 @@
           v-if="webPlayer.player_id === player.player_id"
           style="margin-bottom: 3px"
         >
-          <!-- translate 'This Device' if no custom name given -->
-          <span v-if="player.name == 'This Device'">{{
-            $t("this_device")
+          <span>{{
+            getPlayerName(player, store.deviceType == "phone" ? 10 : 16)
           }}</span>
-          <span v-else>{{ getPlayerName(player, 27) }}</span>
           <!-- append small icon to the title -->
-          <v-icon
-            size="20"
-            class="ml-2"
-            :icon="
-              store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
-            "
-          />
+          <v-chip density="compact" size="small" class="ml-2" outlined>
+            <v-icon
+              size="14"
+              :icon="
+                store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
+              "
+              style="margin-right: 6px"
+            />
+            {{ $t("this_device") }}
+          </v-chip>
         </div>
         <!-- regular player -->
         <div v-else>

@@ -39,31 +39,6 @@
       <v-divider />
 
       <v-list flat style="margin: 0px 10px; padding: 0">
-        <!-- dedicated card for the local web player -->
-        <PlayerCard
-          v-if="
-            isPlaybackMode(webPlayer.mode) &&
-            webPlayer.player_id &&
-            api.players[webPlayer.player_id] &&
-            !api.players[webPlayer.player_id].synced_to
-          "
-          :id="webPlayer.player_id"
-          style="margin: 10px 0px"
-          :player="api.players[webPlayer.player_id]"
-          :show-volume-control="true"
-          :show-menu-button="true"
-          :show-sub-players="
-            showSubPlayers && webPlayer.player_id == store.activePlayerId
-          "
-          :show-sync-controls="
-            api.players[webPlayer.player_id].supported_features.includes(
-              PlayerFeature.SET_MEMBERS,
-            )
-          "
-          :allow-power-control="true"
-          @click="playerClicked(api.players[webPlayer.player_id])"
-          @toggle-expand="toggleGroupExpand"
-        />
         <!-- active/playing players on top -->
         <PlayerCard
           v-for="player in sortedPlayers.filter(
@@ -71,7 +46,8 @@
               [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
                 x.playback_state!,
               ) ||
-              (api.queues[x.player_id]?.items > 0 && x.powered != false),
+              (api.queues[x.player_id]?.items > 0 && x.powered != false) ||
+              webPlayer.player_id === x.player_id,
           )"
           :id="player.player_id"
           :key="player.player_id"
@@ -181,7 +157,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { webPlayer, isPlaybackMode } from "@/plugins/web_player";
+import { webPlayer } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
@@ -192,7 +168,6 @@ const { getPreference, setPreference } = useUserPreferences();
 const sortedPlayers = computed(() => {
   return Object.values(api.players)
     .filter((x) => playerVisible(x))
-    .filter((x) => x.player_id !== webPlayer.player_id) // In case the user made the player visible for everyone
     .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
 });
 
@@ -267,6 +242,9 @@ const selectDefaultPlayer = function () {
     api.players[lastPlayerId].available
   ) {
     return lastPlayerId;
+  }
+  if (!lastPlayerId && webPlayer.player_id) {
+    return webPlayer.player_id;
   }
 };
 </script>
