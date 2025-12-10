@@ -67,7 +67,7 @@
       v-if="config"
       :disabled="!config.enabled"
       :config-entries="allConfigEntries"
-      :name-value="config.name ?? undefined"
+      :name-value="config.name ?? null"
       :name-placeholder="config.name || config.default_name"
       :name-label="$t('settings.player_name')"
       :enabled-value="config.enabled"
