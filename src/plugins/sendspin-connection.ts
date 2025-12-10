@@ -418,12 +418,14 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
     const directWs = await tryDirectWebSocket(connectionInfo.local_ws_url);
     if (directWs) {
       console.log("[Sendspin] Using direct WebSocket connection");
+      lastConnectionWasDirect = true;
       return wrapWebSocket(directWs);
     }
   }
 
   // Fall back to WebRTC
   console.log("[Sendspin] Falling back to WebRTC connection");
+  lastConnectionWasDirect = false;
   return createWebRTCConnection(connectionInfo.ice_servers);
 }
 
@@ -432,6 +434,17 @@ let interceptorInstalled = false;
 
 // Pending WebRTC bridge for next connection
 let pendingBridge: SendspinWebSocketBridge | null = null;
+
+// Track if last connection was direct (local WebSocket) or remote (WebRTC)
+let lastConnectionWasDirect = false;
+
+/**
+ * Returns true if the last Sendspin connection was direct (local WebSocket).
+ * Use this to determine codec selection - direct connections can use more codecs.
+ */
+export function isDirectConnection(): boolean {
+  return lastConnectionWasDirect;
+}
 
 /**
  * Wrapper class that makes our WebRTC bridge look like a WebSocket
