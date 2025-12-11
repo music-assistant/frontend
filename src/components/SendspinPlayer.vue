@@ -129,17 +129,19 @@ watch(
 watch(
   [
     isPlaying,
+    playerState,
     () => store.activePlayer?.playback_state,
     metadataPlayerId,
     () => webPlayer.interacted,
   ],
-  ([, , metaPlayerId, interacted]) => {
+  ([, pState, , metaPlayerId, interacted]) => {
     if (!interacted) return;
 
     let state: MediaSessionPlaybackState;
     if (metaPlayerId !== undefined) {
       // Web player is the source - use isPlaying from library
-      state = isPlaying.value ? "playing" : "paused";
+      // Show as paused if player has error
+      state = isPlaying.value && pState !== "error" ? "playing" : "paused";
     } else {
       // Active player is the source
       const activeState = store.activePlayer?.playback_state;
