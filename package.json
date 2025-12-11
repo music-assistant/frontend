@@ -19,6 +19,7 @@
     "@mdi/font": "7.4.47",
     "@mdi/js": "7.4.47",
     "@music-assistant/sendspin-js": "0.4.0",
+    "@scure/base": "^2.0.0",
     "color": "5.0.3",
     "colorthief": "2.6.0",
     "marked": "^17.0.1",
