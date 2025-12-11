@@ -62,6 +62,9 @@ watch(muted, (newMuted) => {
 // MediaSession setup for metadata - at top level for proper reactivity
 let unsubMetadata: (() => void) | undefined;
 
+// Interval to reset silent audio to avoid audible tone portion
+let silentAudioInterval: number | undefined;
+
 // Determine which player's metadata to show:
 // - Web player's metadata when it's playing
 // - Selected player's metadata otherwise (undefined = uses store.activePlayerId)
@@ -99,14 +102,26 @@ watch(
     if (metadataPlayerId.value !== undefined) return;
     if (!silentAudioRef.value) return;
 
+    // Clear existing interval
+    if (silentAudioInterval) {
+      clearInterval(silentAudioInterval);
+      silentAudioInterval = undefined;
+    }
+
     if (state === PlaybackState.PLAYING) {
       silentAudioRef.value.play().catch(() => {});
       navigator.mediaSession.playbackState = "playing";
+      // Reset to silent portion every 55 seconds to avoid audible tone on loop restart
+      silentAudioInterval = window.setInterval(() => {
+        if (silentAudioRef.value) silentAudioRef.value.currentTime = 2;
+      }, 55000);
     } else if (state === PlaybackState.PAUSED) {
       silentAudioRef.value.pause();
+      silentAudioRef.value.currentTime = 2; // Skip to silent portion
       navigator.mediaSession.playbackState = "paused";
     } else {
       silentAudioRef.value.pause();
+      silentAudioRef.value.currentTime = 2; // Skip to silent portion
       navigator.mediaSession.playbackState = "none";
     }
   },
@@ -251,7 +266,10 @@ onMounted(() => {
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
       const elapsed = store.activePlayerQueue?.elapsed_time ?? 0;
-      api.playerCommandSeek(targetId, Math.round(Math.max(0, elapsed - offset)));
+      api.playerCommandSeek(
+        targetId,
+        Math.round(Math.max(0, elapsed - offset)),
+      );
     });
   }
 
@@ -303,6 +321,7 @@ onBeforeUnmount(() => {
     player = null;
   }
   if (unsubMetadata) unsubMetadata();
+  if (silentAudioInterval) clearInterval(silentAudioInterval);
 });
 </script>
 
