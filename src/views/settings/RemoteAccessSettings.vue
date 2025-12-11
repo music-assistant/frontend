@@ -141,20 +141,25 @@
             {{ $t("settings.remote_access_id_explanation") }}
           </p>
           <div class="remote-id-display-wrapper">
-            <div class="remote-id-display">
-              <code class="remote-id-text">
-                {{ remoteAccessInfo.remote_id }}
-              </code>
-              <v-btn
-                icon="mdi-content-copy"
-                variant="text"
-                size="small"
-                color="primary"
-                class="copy-button"
-                :title="$t('settings.remote_access_copy_id')"
-                @click="copyRemoteId"
-              />
+            <div class="remote-id-boxes">
+              <div
+                v-for="(part, index) in remoteIdParts"
+                :key="index"
+                class="remote-id-box"
+                :class="`remote-id-box-${index}`"
+              >
+                <code class="remote-id-box-text">{{ part }}</code>
+              </div>
             </div>
+            <v-btn
+              icon="mdi-content-copy"
+              variant="text"
+              size="small"
+              color="primary"
+              class="copy-button"
+              :title="$t('settings.remote_access_copy_id')"
+              @click="copyRemoteId"
+            />
           </div>
 
           <div>
@@ -303,7 +308,7 @@ import Container from "@/components/Container.vue";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { RemoteAccessInfo } from "@/plugins/api/interfaces";
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
@@ -313,6 +318,19 @@ const loading = ref(true);
 const switching = ref(false);
 const remoteAccessInfo = ref<RemoteAccessInfo | null>(null);
 let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+// Split remote ID into 4 parts: 8-5-5-8 characters
+const remoteIdLengths = [8, 5, 5, 8];
+const remoteIdParts = computed(() => {
+  const id = remoteAccessInfo.value?.remote_id || "";
+  const parts: string[] = [];
+  let offset = 0;
+  for (const len of remoteIdLengths) {
+    parts.push(id.slice(offset, offset + len));
+    offset += len;
+  }
+  return parts;
+});
 
 onMounted(async () => {
   await loadRemoteAccessInfo();
@@ -368,7 +386,9 @@ const toggleRemoteAccess = async (enabled: boolean | null) => {
 const copyRemoteId = async () => {
   if (!remoteAccessInfo.value?.remote_id) return;
 
-  const success = await copyToClipboard(remoteAccessInfo.value.remote_id);
+  // Format with dashes for user-friendly sharing
+  const formattedId = remoteIdParts.value.join("-");
+  const success = await copyToClipboard(formattedId);
   if (success) {
     toast.success(t("settings.remote_access_id_copied"));
   } else {
@@ -535,33 +555,52 @@ const copyRemoteId = async () => {
 
 .remote-id-display-wrapper {
   margin-bottom: 24px;
-}
-
-.remote-id-display {
-  background: rgba(var(--v-theme-surface), 0.8);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 8px;
-  padding: 12px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  transition: all 0.2s ease;
 }
 
-.remote-id-display:hover {
+.remote-id-boxes {
+  display: flex;
+  gap: 8px;
+}
+
+.remote-id-box {
+  background: rgba(var(--v-theme-surface), 0.8);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 10px;
+  padding: 12px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-width: 0;
+}
+
+.remote-id-box:hover {
   border-color: rgba(var(--v-theme-primary), 0.3);
   background: rgba(var(--v-theme-surface), 1);
 }
 
-.remote-id-text {
+/* Adjust widths proportionally based on character count (8, 5, 5, 8) */
+.remote-id-box-0,
+.remote-id-box-3 {
+  flex: 8;
+}
+
+.remote-id-box-1,
+.remote-id-box-2 {
+  flex: 5;
+}
+
+.remote-id-box-text {
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.05em;
   color: rgb(var(--v-theme-on-surface));
-  word-break: break-all;
-  flex: 1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .copy-button {
@@ -710,8 +749,17 @@ const copyRemoteId = async () => {
     justify-content: flex-start;
   }
 
-  .remote-id-text {
-    font-size: 1.1rem;
+  .remote-id-boxes {
+    gap: 6px;
+  }
+
+  .remote-id-box {
+    padding: 10px 4px;
+  }
+
+  .remote-id-box-text {
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
   }
 
   .step-item {
@@ -722,6 +770,31 @@ const copyRemoteId = async () => {
     width: 32px;
     height: 32px;
     font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .remote-id-display-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .remote-id-boxes {
+    gap: 4px;
+  }
+
+  .remote-id-box {
+    padding: 8px 2px;
+  }
+
+  .remote-id-box-text {
+    font-size: 0.75rem;
+    letter-spacing: 0;
+  }
+
+  .copy-button {
+    align-self: flex-end;
   }
 }
 </style>

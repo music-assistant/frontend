@@ -86,19 +86,31 @@
                   <label class="text-body-2 font-weight-medium mb-2 d-block">
                     {{ $t("login.remote_id", "Remote ID") }}
                   </label>
-                  <v-text-field
-                    v-model="remoteId"
-                    :placeholder="
-                      $t('login.remote_id_placeholder', 'e.g., MA-X7K9-P2M4')
-                    "
-                    variant="outlined"
-                    density="comfortable"
-                    hide-details="auto"
-                    :error-messages="connectionError"
-                    :disabled="isConnecting"
-                    bg-color="surface-light"
-                    @keyup.enter="connectToRemote"
-                  />
+                  <div class="remote-id-inputs">
+                    <v-text-field
+                      v-for="(_, index) in 4"
+                      :key="index"
+                      :ref="setRemoteIdRef(index)"
+                      :model-value="remoteIdParts[index]"
+                      :maxlength="remoteIdLengths[index]"
+                      variant="outlined"
+                      density="comfortable"
+                      hide-details
+                      :disabled="isConnecting"
+                      bg-color="surface-light"
+                      class="remote-id-input"
+                      :class="`remote-id-input-${index}`"
+                      @input="handleRemoteIdInput(index, $event)"
+                      @keydown="handleRemoteIdKeydown(index, $event)"
+                      @paste="handleRemoteIdPaste(index, $event)"
+                    />
+                  </div>
+                  <p
+                    v-if="connectionError"
+                    class="text-caption text-error mt-2"
+                  >
+                    {{ connectionError }}
+                  </p>
                   <p class="text-caption text-medium-emphasis mt-2">
                     {{
                       $t(
@@ -118,7 +130,10 @@
                   class="mb-4 text-none"
                   :loading="isConnecting"
                   :disabled="
-                    (isRemoteOnlyMode && !remoteId.trim()) ||
+                    (isRemoteOnlyMode &&
+                      !remoteIdParts.every(
+                        (p, i) => p.length === remoteIdLengths[i],
+                      )) ||
                     (showServerAddressInput && !serverAddress.trim())
                   "
                   @click="
@@ -375,7 +390,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useI18n } from "vue-i18n";
 import { remoteConnectionManager } from "@/plugins/remote";
 import { api, ConnectionState } from "@/plugins/api";
@@ -487,7 +502,11 @@ const showLoginUI = ref(false);
 
 // Connection state
 const serverAddress = ref("");
-const remoteId = ref("");
+// Remote ID split into 4 parts: 8-5-5-8 characters
+const remoteIdParts = ref(["", "", "", ""]);
+const remoteIdLengths = [8, 5, 5, 8];
+const remoteIdRefs = ref<(HTMLInputElement | null)[]>([null, null, null, null]);
+const remoteId = computed(() => remoteIdParts.value.join(""));
 const isConnecting = ref(false);
 const connectionError = ref<string | null>(null);
 const connectionStatusMessage = ref("");
@@ -763,7 +782,7 @@ const autoConnect = async () => {
         "login.connecting_remote",
         "Connecting to remote server...",
       );
-      remoteId.value = storedRemoteId;
+      setRemoteIdFromString(storedRemoteId);
 
       try {
         const cleanRemoteId = storedRemoteId.trim().toUpperCase();
@@ -798,7 +817,7 @@ const autoConnect = async () => {
         "[Login] Found stored remote ID (no token):",
         storedRemoteId,
       );
-      remoteId.value = storedRemoteId;
+      setRemoteIdFromString(storedRemoteId);
     }
 
     // Show selection screen (only remote option)
@@ -924,7 +943,7 @@ const autoConnect = async () => {
       "login.connecting_remote",
       "Connecting to remote server...",
     );
-    remoteId.value = storedRemoteId;
+    setRemoteIdFromString(storedRemoteId);
 
     try {
       const cleanRemoteId = storedRemoteId.trim().toUpperCase();
@@ -957,7 +976,7 @@ const autoConnect = async () => {
   } else if (storedRemoteId) {
     // Just pre-fill the remote ID field
     console.debug("[Login] Found stored remote ID (no token):", storedRemoteId);
-    remoteId.value = storedRemoteId;
+    setRemoteIdFromString(storedRemoteId);
   }
 
   // 5. No auto-connect possible, show selection screen
@@ -979,6 +998,137 @@ const waitForApiConnection = async (
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   return false;
+};
+
+/**
+ * Handle input in remote ID segmented fields
+ */
+const handleRemoteIdInput = (index: number, event: Event) => {
+  const input = event.target as HTMLInputElement;
+  // Convert to uppercase and remove non-alphanumeric characters
+  let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const maxLen = remoteIdLengths[index];
+
+  if (value.length > maxLen) {
+    // Overflow: put excess in next field(s)
+    const overflow = value.slice(maxLen);
+    value = value.slice(0, maxLen);
+    remoteIdParts.value[index] = value;
+
+    if (index < 3 && overflow) {
+      distributeRemoteIdText(overflow, index + 1);
+    }
+  } else {
+    remoteIdParts.value[index] = value;
+
+    // Auto-advance to next field when current is full
+    if (value.length === maxLen && index < 3) {
+      nextTick(() => {
+        remoteIdRefs.value[index + 1]?.focus();
+      });
+    }
+  }
+};
+
+/**
+ * Distribute text across remote ID fields starting from a given index
+ */
+const distributeRemoteIdText = (text: string, startIndex: number) => {
+  let remaining = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let focusIndex = startIndex;
+
+  for (let i = startIndex; i < 4 && remaining.length > 0; i++) {
+    const maxLen = remoteIdLengths[i];
+    remoteIdParts.value[i] = remaining.slice(0, maxLen);
+    if (remaining.length <= maxLen) {
+      focusIndex = i;
+    }
+    remaining = remaining.slice(maxLen);
+  }
+
+  nextTick(() => {
+    const field = remoteIdRefs.value[focusIndex];
+    field?.focus();
+    // Position cursor at end
+    const len = remoteIdParts.value[focusIndex].length;
+    field?.setSelectionRange(len, len);
+  });
+};
+
+/**
+ * Handle keydown in remote ID fields (for backspace navigation)
+ */
+const handleRemoteIdKeydown = (index: number, event: KeyboardEvent) => {
+  const input = event.target as HTMLInputElement;
+
+  if (event.key === "Backspace" && input.selectionStart === 0 && input.selectionEnd === 0 && index > 0) {
+    // Backspace at start of field: move to previous field
+    event.preventDefault();
+    const prevField = remoteIdRefs.value[index - 1];
+    prevField?.focus();
+    const len = remoteIdParts.value[index - 1].length;
+    prevField?.setSelectionRange(len, len);
+  } else if (event.key === "ArrowLeft" && input.selectionStart === 0 && index > 0) {
+    // Left arrow at start: move to previous field
+    event.preventDefault();
+    const prevField = remoteIdRefs.value[index - 1];
+    prevField?.focus();
+    const len = remoteIdParts.value[index - 1].length;
+    prevField?.setSelectionRange(len, len);
+  } else if (event.key === "ArrowRight" && input.selectionStart === input.value.length && index < 3) {
+    // Right arrow at end: move to next field
+    event.preventDefault();
+    const nextField = remoteIdRefs.value[index + 1];
+    nextField?.focus();
+    nextField?.setSelectionRange(0, 0);
+  } else if (event.key === "Enter") {
+    // Enter: submit
+    connectToRemote();
+  }
+};
+
+/**
+ * Handle paste in remote ID fields
+ */
+const handleRemoteIdPaste = (index: number, event: ClipboardEvent) => {
+  event.preventDefault();
+  const pastedText = event.clipboardData?.getData("text") || "";
+  // Remove dashes and non-alphanumeric, convert to uppercase
+  const cleanText = pastedText.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  if (cleanText) {
+    // If pasting into first field with full content, replace all
+    if (index === 0) {
+      // Clear all fields and distribute
+      remoteIdParts.value = ["", "", "", ""];
+      distributeRemoteIdText(cleanText, 0);
+    } else {
+      // Distribute from current field
+      distributeRemoteIdText(cleanText, index);
+    }
+  }
+};
+
+/**
+ * Set ref for remote ID input field
+ */
+const setRemoteIdRef = (index: number) => (el: any) => {
+  remoteIdRefs.value[index] = el?.$el?.querySelector("input") || el;
+};
+
+/**
+ * Set remote ID from a full string (e.g., from localStorage)
+ */
+const setRemoteIdFromString = (value: string) => {
+  // Remove dashes and non-alphanumeric, then distribute
+  const cleanText = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let remaining = cleanText;
+
+  for (let i = 0; i < 4; i++) {
+    const maxLen = remoteIdLengths[i];
+    remoteIdParts.value[i] = remaining.slice(0, maxLen);
+    remaining = remaining.slice(maxLen);
+  }
 };
 
 /**
@@ -1052,7 +1202,8 @@ const connectToLocal = async () => {
  * Connect to remote server
  */
 const connectToRemote = async () => {
-  if (!remoteId.value.trim()) return;
+  if (!remoteIdParts.value.every((p, i) => p.length === remoteIdLengths[i]))
+    return;
 
   isConnecting.value = true;
   connectionError.value = null;
@@ -1497,6 +1648,53 @@ onUnmounted(() => {
 .oauth-btn:hover {
   border-color: var(--primary) !important;
   background: var(--input-focus-bg) !important;
+}
+
+/* Remote ID segmented input */
+.remote-id-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.remote-id-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.remote-id-input :deep(input) {
+  text-align: center;
+  font-family: monospace;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Adjust widths proportionally based on character count (8, 5, 5, 8) */
+.remote-id-input-0,
+.remote-id-input-3 {
+  flex: 8;
+}
+
+.remote-id-input-1,
+.remote-id-input-2 {
+  flex: 5;
+}
+
+@media (max-width: 500px) {
+  .remote-id-inputs {
+    gap: 4px;
+  }
+
+  .remote-id-input :deep(input) {
+    font-size: 0.875rem;
+    padding: 0 4px;
+  }
+
+  .remote-id-input :deep(.v-field__input) {
+    min-height: 44px;
+    padding: 0 8px;
+  }
 }
 
 :deep(.v-field) {
