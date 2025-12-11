@@ -94,7 +94,7 @@ watch(
   { immediate: true },
 );
 
-// Watch active player's playback state to control silent audio and mediaSession.playbackState
+// Watch active player's playback state to control silent audio
 watch(
   () => store.activePlayer?.playback_state,
   (state) => {
@@ -110,7 +110,6 @@ watch(
 
     if (state === PlaybackState.PLAYING) {
       silentAudioRef.value.play().catch(() => {});
-      navigator.mediaSession.playbackState = "playing";
       // Reset to silent portion every 55 seconds to avoid audible tone on loop restart
       silentAudioInterval = window.setInterval(() => {
         if (silentAudioRef.value) silentAudioRef.value.currentTime = 2;
@@ -118,12 +117,41 @@ watch(
     } else if (state === PlaybackState.PAUSED) {
       silentAudioRef.value.pause();
       silentAudioRef.value.currentTime = 2; // Skip to silent portion
-      navigator.mediaSession.playbackState = "paused";
     } else {
       silentAudioRef.value.pause();
       silentAudioRef.value.currentTime = 2; // Skip to silent portion
-      navigator.mediaSession.playbackState = "none";
     }
+  },
+  { immediate: true },
+);
+
+// Centralized watcher for playbackState - handles all state changes
+watch(
+  [
+    isPlaying,
+    () => store.activePlayer?.playback_state,
+    metadataPlayerId,
+    () => webPlayer.interacted,
+  ],
+  ([, , metaPlayerId, interacted]) => {
+    if (!interacted) return;
+
+    let state: MediaSessionPlaybackState;
+    if (metaPlayerId !== undefined) {
+      // Web player is the source - use isPlaying from library
+      state = isPlaying.value ? "playing" : "paused";
+    } else {
+      // Active player is the source
+      const activeState = store.activePlayer?.playback_state;
+      if (activeState === PlaybackState.PLAYING) {
+        state = "playing";
+      } else if (activeState === PlaybackState.PAUSED) {
+        state = "paused";
+      } else {
+        state = "none";
+      }
+    }
+    navigator.mediaSession.playbackState = state;
   },
   { immediate: true },
 );
@@ -293,23 +321,8 @@ onMounted(() => {
           audioRef.value.play().catch((e) => {
             console.warn("Sendspin: Failed to restart audio:", e);
           });
-        } else {
-          // Update playbackState when legitimately paused
-          navigator.mediaSession.playbackState = "paused";
         }
       }
-    });
-
-    audioRef.value.addEventListener("playing", () => {
-      console.log("Sendspin: Audio element playing");
-      // Explicitly set playbackState when audio starts playing
-      if (isPlaying.value) {
-        navigator.mediaSession.playbackState = "playing";
-      }
-    });
-
-    audioRef.value.addEventListener("ended", () => {
-      console.log("Sendspin: Audio element ended");
     });
   }
 });
