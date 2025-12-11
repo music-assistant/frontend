@@ -230,6 +230,31 @@ onMounted(() => {
     api.playerCommandPrevious(targetId);
   });
 
+  navigator.mediaSession.setActionHandler("seekto", (evt) => {
+    const targetId = getTargetPlayerId();
+    if (!targetId || !evt.seekTime) return;
+    api.playerCommandSeek(targetId, Math.round(evt.seekTime));
+  });
+
+  // Implementing seek forward/backward hides prev/next buttons on iOS/Mac
+  if (!navigator.userAgent.match(/(iPhone|iPod|iPad|Mac)/i)) {
+    navigator.mediaSession.setActionHandler("seekforward", (evt) => {
+      const targetId = getTargetPlayerId();
+      if (!targetId) return;
+      const offset = evt.seekOffset || 10;
+      const elapsed = store.activePlayerQueue?.elapsed_time ?? 0;
+      api.playerCommandSeek(targetId, Math.round(elapsed + offset));
+    });
+
+    navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
+      const targetId = getTargetPlayerId();
+      if (!targetId) return;
+      const offset = evt.seekOffset || 10;
+      const elapsed = store.activePlayerQueue?.elapsed_time ?? 0;
+      api.playerCommandSeek(targetId, Math.round(Math.max(0, elapsed - offset)));
+    });
+  }
+
   // Audio element event listeners for Android MediaSession
   if (audioRef.value) {
     // Ensure audio element doesn't pause unexpectedly
