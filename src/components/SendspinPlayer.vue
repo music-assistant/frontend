@@ -261,18 +261,18 @@ onMounted(() => {
   navigator.mediaSession.setActionHandler("pause", () => {
     const targetId = getTargetPlayerId();
     if (!targetId) return;
-    api.playerCommandPause(targetId);
+    // workaround-alert: delay the pause command a tiny bit
+    // to workaround a browser bug where pause is sent if a laptop/computer
+    // goes to standby (lid closed). This issue seems to only exist on Chromium based browsers.
+    setTimeout(() => {
+      api.playerCommandPause(targetId);
+    }, 250);
   });
 
   navigator.mediaSession.setActionHandler("nexttrack", () => {
     const targetId = getTargetPlayerId();
     if (!targetId) return;
-    // workaround-alert: delay the pause command a tiny bit
-    // to workaround a browser bug where pause is sent if a laptop/computer
-    // goes to standby (lid closed). This issue seems to only exist on Chromium based browsers.
-    setTimeout(() => {
-      api.playerCommandNext(targetId);
-    }, 250);
+    api.playerCommandNext(targetId);
   });
 
   navigator.mediaSession.setActionHandler("previoustrack", () => {
