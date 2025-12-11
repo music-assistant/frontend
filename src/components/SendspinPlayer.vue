@@ -76,15 +76,21 @@ const metadataPlayerId = computed(() => {
   return undefined;
 });
 
-// Watch and re-subscribe when the target player changes
-// Also watch webPlayer.interacted to wait for user interaction
+// Subscribe to metadata immediately (doesn't require user interaction)
+watch(
+  metadataPlayerId,
+  (newPlayerId) => {
+    if (unsubMetadata) unsubMetadata();
+    unsubMetadata = useMediaBrowserMetaData(newPlayerId);
+  },
+  { immediate: true },
+);
+
+// Control silent audio based on interaction and metadata target
 watch(
   [metadataPlayerId, () => webPlayer.interacted],
   ([newPlayerId, interacted]) => {
     if (!interacted) return;
-
-    if (unsubMetadata) unsubMetadata();
-    unsubMetadata = useMediaBrowserMetaData(newPlayerId);
 
     // Stop silent audio when web player takes over
     if (newPlayerId !== undefined && silentAudioRef.value) {
