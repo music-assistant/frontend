@@ -343,6 +343,11 @@ onBeforeUnmount(() => {
   }
   if (unsubMetadata) unsubMetadata();
   if (silentAudioInterval) clearInterval(silentAudioInterval);
+
+  // Clear MediaSession state
+  navigator.mediaSession.metadata = null;
+  navigator.mediaSession.setPositionState();
+  navigator.mediaSession.playbackState = "none";
 });
 </script>
 
