@@ -65,6 +65,18 @@ let unsubMetadata: (() => void) | undefined;
 // Interval to reset silent audio to avoid audible tone portion
 let silentAudioInterval: number | undefined;
 
+// Track seek position for accurate repeated seek forward/backward
+let lastSeekPos: number | undefined;
+let lastSeekPosTimeout: number | undefined;
+
+const resetLastSeekPos = () => {
+  if (lastSeekPosTimeout) clearTimeout(lastSeekPosTimeout);
+  lastSeekPosTimeout = window.setTimeout(() => {
+    lastSeekPos = undefined;
+    lastSeekPosTimeout = undefined;
+  }, 2000);
+};
+
 // Determine which player's metadata to show:
 // - Web player's metadata when it's playing
 // - Selected player's metadata otherwise (undefined = uses store.activePlayerId)
@@ -293,19 +305,22 @@ onMounted(() => {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const elapsed = store.activePlayerQueue?.elapsed_time ?? 0;
-      api.playerCommandSeek(targetId, Math.round(elapsed + offset));
+      const elapsed = lastSeekPos ?? store.activePlayerQueue?.elapsed_time ?? 0;
+      const newPos = Math.round(elapsed + offset);
+      lastSeekPos = newPos;
+      resetLastSeekPos();
+      api.playerCommandSeek(targetId, newPos);
     });
 
     navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const elapsed = store.activePlayerQueue?.elapsed_time ?? 0;
-      api.playerCommandSeek(
-        targetId,
-        Math.round(Math.max(0, elapsed - offset)),
-      );
+      const elapsed = lastSeekPos ?? store.activePlayerQueue?.elapsed_time ?? 0;
+      const newPos = Math.round(Math.max(0, elapsed - offset));
+      lastSeekPos = newPos;
+      resetLastSeekPos();
+      api.playerCommandSeek(targetId, newPos);
     });
   }
 
