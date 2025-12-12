@@ -50,12 +50,12 @@
                 :ripple="false"
                 v-bind="{ ...menu }"
               >
-                <v-icon
+                <component
+                  :is="volumeIconComponent"
                   :color="props.color ? color : ''"
-                  :size="24"
-                  :icon="volumeIcon"
+                  :size="18"
                 />
-                <div class="text-caption">
+                <div class="text-caption ml-1">
                   {{ Math.round(displayVolume) }}
                 </div>
               </Button>
@@ -64,7 +64,11 @@
         </div>
         <div v-else>
           <Button v-bind="{ ...menu }" size="48" variant="icon">
-            <v-icon :color="props.color ? color : ''" :icon="volumeIcon" />
+            <component
+              :is="volumeIconComponent"
+              :color="props.color ? color : ''"
+              :size="24"
+            />
             <div
               class="text-caption"
               :style="{ color: props.color ? color : '' }"
@@ -106,7 +110,8 @@ import api from "@/plugins/api";
 import { PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { computed, ref, watch } from "vue";
+import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
+import { computed, ref } from "vue";
 import PlayerVolume from "../PlayerVolume.vue";
 
 // properties
@@ -127,43 +132,29 @@ const props = withDefaults(defineProps<Props>(), {
 
 //refs
 const showVolume = ref(false);
-const displayVolume = ref(0);
-
-if (store.activePlayer) {
-  displayVolume.value = Math.round(
-    store.activePlayer.group_members.length > 0
-      ? store.activePlayer.group_volume
-      : store.activePlayer.volume_level || 0,
-  );
-}
-
-watch(
-  () => store.activePlayer,
-  (player) => {
-    if (player) {
-      displayVolume.value = Math.round(
-        player.group_members.length > 0
-          ? player.group_volume
-          : player.volume_level || 0,
-      );
-    }
-  },
-  { immediate: true, deep: true },
+const displayVolume = ref(
+  store.activePlayer
+    ? Math.round(
+        store.activePlayer.group_members.length > 0
+          ? store.activePlayer.group_volume
+          : store.activePlayer.volume_level || 0,
+      )
+    : 0,
 );
 
 // computed
-const volumeIcon = computed(() => {
-  if (!store.activePlayer) return "mdi-volume-high";
+const volumeIconComponent = computed(() => {
+  if (!store.activePlayer) return Volume2;
   if (store.activePlayer.volume_muted) {
-    return "mdi-volume-mute";
+    return VolumeX;
   }
   const volume = displayVolume.value;
   if (volume === 0) {
-    return "mdi-volume-low";
+    return Volume;
   } else if (volume < 50) {
-    return "mdi-volume-medium";
+    return Volume1;
   } else {
-    return "mdi-volume-high";
+    return Volume2;
   }
 });
 </script>
