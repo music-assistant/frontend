@@ -19,6 +19,7 @@ if (typeof AbortSignal !== "undefined" && !AbortSignal.timeout) {
 
 // Global styles
 import "@/styles/global.css";
+import "@/styles/style.css";
 
 // Components
 import App from "./App.vue";

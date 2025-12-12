@@ -181,7 +181,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { webPlayer, isPlaybackMode } from "@/plugins/web_player";
+import { isPlaybackMode, webPlayer } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);

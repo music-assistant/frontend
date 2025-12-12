@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
-import { VitePWA } from "vite-plugin-pwa";
-import { fileURLToPath, URL } from "node:url";
-import webfontDownload from "vite-plugin-webfont-dl";
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
-import svgLoader from "vite-svg-loader";
+import tailwindcss from "@tailwindcss/vite";
+import vue from "@vitejs/plugin-vue";
+import { fileURLToPath, URL } from "node:url";
 import path from "path";
+import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
+import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
+import webfontDownload from "vite-plugin-webfont-dl";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -16,6 +16,7 @@ export default defineConfig({
     vue({
       template: { transformAssetUrls },
     }),
+    tailwindcss(),
     webfontDownload([
       "https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap",
     ]),

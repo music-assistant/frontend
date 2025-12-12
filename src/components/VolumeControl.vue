@@ -49,7 +49,10 @@
           "
           @click.stop="api.playerCommandMuteToggle(player.player_id)"
         >
-          <v-icon :size="25" :icon="getVolumeIcon(player, mainDisplayVolume)" />
+          <component
+            :is="getVolumeIconComponent(player, mainDisplayVolume)"
+            :size="22"
+          />
         </Button>
       </template>
       <template #default>
@@ -179,14 +182,14 @@
               "
               @click="api.playerCommandMuteToggle(childPlayer.player_id)"
             >
-              <v-icon
-                :size="25"
-                :icon="
-                  getVolumeIcon(
+              <component
+                :is="
+                  getVolumeIconComponent(
                     childPlayer,
                     childDisplayVolumes[childPlayer.player_id],
                   )
                 "
+                :size="22"
               />
             </Button>
           </template>
@@ -243,7 +246,8 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { computed, ref, watch } from "vue";
+import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
 
 export interface Props {
   player: Player;
@@ -259,39 +263,42 @@ const playersToUnSync = ref<string[]>([]);
 const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
 const mainDisplayVolume = ref(0);
 const childDisplayVolumes = ref<Record<string, number>>({});
+const isInitialized = ref(false);
 
 // emits
 defineEmits<{
   (e: "toggle-expand", player: Player): void;
 }>();
 
-watch(
-  () => compProps.player,
-  (player) => {
+onMounted(() => {
+  if (!isInitialized.value) {
     mainDisplayVolume.value = Math.round(
-      player.group_members.length
-        ? player.group_volume
-        : player.volume_level || 0,
+      compProps.player.group_members.length
+        ? compProps.player.group_volume
+        : compProps.player.volume_level || 0,
     );
 
-    for (const childId of player.group_members) {
-      if (api?.players[childId] && !(childId in childDisplayVolumes.value)) {
+    for (const childId of compProps.player.group_members) {
+      if (api?.players[childId]) {
         childDisplayVolumes.value[childId] = Math.round(
           api.players[childId].volume_level || 0,
         );
       }
     }
-  },
-  { immediate: true, deep: true },
-);
+    isInitialized.value = true;
+  }
+});
 
 const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
 
-const getVolumeIcon = function (player: Player, displayVolume?: number) {
+const getVolumeIconComponent = function (
+  player: Player,
+  displayVolume?: number,
+) {
   if (player.volume_muted) {
-    return "mdi-volume-mute";
+    return VolumeX;
   }
 
   const volume =
@@ -302,11 +309,11 @@ const getVolumeIcon = function (player: Player, displayVolume?: number) {
         : player.volume_level || 0;
 
   if (volume === 0) {
-    return "mdi-volume-low";
+    return Volume;
   } else if (volume < 50) {
-    return "mdi-volume-medium";
+    return Volume1;
   } else {
-    return "mdi-volume-high";
+    return Volume2;
   }
 };
 
@@ -474,7 +481,7 @@ const syncCheckBoxChange = async function (
 
 .volumesliderrow :deep(.v-list-item__prepend) {
   width: 40px;
-  margin-left: -20px;
+  margin-left: -10px;
 }
 .volumesliderrow :deep(.v-list-item__append) {
   width: 20px;
