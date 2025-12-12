@@ -83,9 +83,22 @@
 
                 <!-- Remote ID Input (for remote-only mode) -->
                 <div v-if="isRemoteOnlyMode" class="mb-4">
-                  <label class="text-body-2 font-weight-medium mb-2 d-block">
-                    {{ $t("login.remote_id", "Remote ID") }}
-                  </label>
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <label class="text-body-2 font-weight-medium">
+                      {{ $t("login.remote_id", "Remote ID") }}
+                    </label>
+                    <v-btn
+                      variant="text"
+                      size="small"
+                      color="primary"
+                      class="text-none"
+                      :disabled="isConnecting"
+                      @click="openQrScanner"
+                    >
+                      <v-icon start size="small">mdi-qrcode-scan</v-icon>
+                      {{ $t("login.scan_qr", "Scan QR") }}
+                    </v-btn>
+                  </div>
                   <div class="remote-id-inputs">
                     <v-text-field
                       v-for="(_, index) in 4"
@@ -359,6 +372,47 @@
               </template>
             </v-card>
 
+            <!-- QR Scanner Dialog -->
+            <v-dialog v-model="showQrScanner" max-width="400" persistent>
+              <v-card class="qr-scanner-card" rounded="xl">
+                <v-card-title class="d-flex align-center justify-space-between">
+                  <span>{{ $t("login.scan_qr_code", "Scan QR Code") }}</span>
+                  <v-btn
+                    icon="mdi-close"
+                    variant="text"
+                    size="small"
+                    @click="closeQrScanner"
+                  />
+                </v-card-title>
+                <v-card-text class="qr-scanner-content">
+                  <p class="text-body-2 text-medium-emphasis mb-4">
+                    {{
+                      $t(
+                        "login.scan_qr_hint",
+                        "Point your camera at the QR code shown in your Music Assistant server settings.",
+                      )
+                    }}
+                  </p>
+                  <div class="qr-scanner-wrapper">
+                    <QrcodeStream
+                      :paused="!showQrScanner"
+                      @detect="onQrCodeDetected"
+                      @error="onQrScannerError"
+                    />
+                  </div>
+                  <v-alert
+                    v-if="qrScannerError"
+                    type="error"
+                    variant="tonal"
+                    density="compact"
+                    class="mt-4"
+                  >
+                    {{ qrScannerError }}
+                  </v-alert>
+                </v-card-text>
+              </v-card>
+            </v-dialog>
+
             <!-- Footer -->
             <div class="text-center login-footer">
               <a
@@ -396,6 +450,7 @@ import { remoteConnectionManager } from "@/plugins/remote";
 import { api, ConnectionState } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import type { AuthProvider } from "@/plugins/api/interfaces";
+import { QrcodeStream } from "vue-qrcode-reader";
 
 const { t } = useI18n();
 
@@ -507,6 +562,10 @@ const remoteIdParts = ref(["", "", "", ""]);
 const remoteIdLengths = [8, 5, 5, 8];
 const remoteIdRefs = ref<(HTMLInputElement | null)[]>([null, null, null, null]);
 const remoteId = computed(() => remoteIdParts.value.join(""));
+
+// QR Scanner state
+const showQrScanner = ref(false);
+const qrScannerError = ref<string | null>(null);
 const isConnecting = ref(false);
 const connectionError = ref<string | null>(null);
 const connectionStatusMessage = ref("");
@@ -700,6 +759,25 @@ const autoConnect = async () => {
   // Check for auth code from setup flow in URL
   const urlParams = new URLSearchParams(window.location.search);
   const authCode = urlParams.get("code");
+  const urlRemoteId = urlParams.get("remote_id");
+
+  // If remote_id is in URL, pre-fill and potentially auto-connect
+  if (urlRemoteId) {
+    console.debug("[Login] Found remote_id in URL:", urlRemoteId);
+    const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (cleanRemoteId.length === 26) {
+      setRemoteIdFromString(cleanRemoteId);
+      // Clean up the URL
+      urlParams.delete("remote_id");
+      const queryString = urlParams.toString();
+      const newUrl =
+        window.location.origin +
+        window.location.pathname +
+        (queryString ? "?" + queryString : "") +
+        window.location.hash;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }
 
   if (authCode) {
     console.debug(
@@ -1061,21 +1139,34 @@ const distributeRemoteIdText = (text: string, startIndex: number) => {
 const handleRemoteIdKeydown = (index: number, event: KeyboardEvent) => {
   const input = event.target as HTMLInputElement;
 
-  if (event.key === "Backspace" && input.selectionStart === 0 && input.selectionEnd === 0 && index > 0) {
+  if (
+    event.key === "Backspace" &&
+    input.selectionStart === 0 &&
+    input.selectionEnd === 0 &&
+    index > 0
+  ) {
     // Backspace at start of field: move to previous field
     event.preventDefault();
     const prevField = remoteIdRefs.value[index - 1];
     prevField?.focus();
     const len = remoteIdParts.value[index - 1].length;
     prevField?.setSelectionRange(len, len);
-  } else if (event.key === "ArrowLeft" && input.selectionStart === 0 && index > 0) {
+  } else if (
+    event.key === "ArrowLeft" &&
+    input.selectionStart === 0 &&
+    index > 0
+  ) {
     // Left arrow at start: move to previous field
     event.preventDefault();
     const prevField = remoteIdRefs.value[index - 1];
     prevField?.focus();
     const len = remoteIdParts.value[index - 1].length;
     prevField?.setSelectionRange(len, len);
-  } else if (event.key === "ArrowRight" && input.selectionStart === input.value.length && index < 3) {
+  } else if (
+    event.key === "ArrowRight" &&
+    input.selectionStart === input.value.length &&
+    index < 3
+  ) {
     // Right arrow at end: move to next field
     event.preventDefault();
     const nextField = remoteIdRefs.value[index + 1];
@@ -1466,6 +1557,62 @@ const retry = () => {
   step.value = "select-mode";
 };
 
+// QR Scanner functions
+const openQrScanner = () => {
+  qrScannerError.value = null;
+  showQrScanner.value = true;
+};
+
+const closeQrScanner = () => {
+  showQrScanner.value = false;
+  qrScannerError.value = null;
+};
+
+const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
+  if (detectedCodes.length === 0) return;
+
+  const qrData = detectedCodes[0].rawValue;
+  console.debug("[Login] QR code detected:", qrData);
+
+  // Try to extract remote_id from the QR code
+  let extractedRemoteId: string | null = null;
+
+  // Check if it's a URL with remote_id parameter
+  try {
+    const url = new URL(qrData);
+    extractedRemoteId = url.searchParams.get("remote_id");
+  } catch {
+    // Not a URL, check if it's a raw remote ID (26 alphanumeric characters)
+    const cleanData = qrData.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (cleanData.length === 26) {
+      extractedRemoteId = cleanData;
+    }
+  }
+
+  if (extractedRemoteId) {
+    console.debug("[Login] Extracted remote ID:", extractedRemoteId);
+    setRemoteIdFromString(extractedRemoteId);
+    closeQrScanner();
+    // Auto-connect after scanning
+    nextTick(() => {
+      connectToRemote();
+    });
+  } else {
+    qrScannerError.value = t(
+      "login.qr_invalid",
+      "Invalid QR code. Please scan a Music Assistant remote ID QR code.",
+    );
+  }
+};
+
+const onQrScannerError = (error: Error) => {
+  console.error("[Login] QR scanner error:", error);
+  qrScannerError.value = t(
+    "login.qr_camera_error",
+    "Could not access camera. Please check permissions.",
+  );
+};
+
 // Watch for connection state changes from App.vue
 watch(
   () => api.state.value,
@@ -1795,5 +1942,52 @@ onUnmounted(() => {
   .ohf-text {
     margin-left: 3px;
   }
+}
+
+/* QR Scanner styles */
+.qr-scanner-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.qr-scanner-card :deep(.v-card-title) {
+  color: #000000 !important;
+}
+
+.qr-scanner-card :deep(.text-medium-emphasis) {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .qr-scanner-card {
+    background: #232323 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .qr-scanner-card :deep(.v-card-title) {
+    color: #ffffff !important;
+  }
+
+  .qr-scanner-card :deep(.text-medium-emphasis) {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+}
+
+.qr-scanner-content {
+  padding: 16px 24px 24px;
+}
+
+.qr-scanner-wrapper {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.qr-scanner-wrapper :deep(video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>

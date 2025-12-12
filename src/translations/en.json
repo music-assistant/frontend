@@ -639,6 +639,8 @@
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
         "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
+        "remote_access_qr_code": "QR Code",
+        "remote_access_qr_code_description": "Scan this QR code with your phone to quickly connect to your Music Assistant server.",
         "frontend": "User Interface",
         "players_count": "{0} player{1}",
         "one_player": "1 player",
@@ -1035,7 +1037,12 @@
         "try_again": "Try Again",
         "error_unknown": "Unknown error occurred",
         "error_login_failed": "Login failed. Please check your credentials.",
-        "error_oauth_failed": "Failed to authenticate with Home Assistant."
+        "error_oauth_failed": "Failed to authenticate with Home Assistant.",
+        "scan_qr": "Scan QR",
+        "scan_qr_code": "Scan QR Code",
+        "scan_qr_hint": "Point your camera at the QR code shown in your Music Assistant server settings.",
+        "qr_invalid": "Invalid QR code. Please scan a Music Assistant remote ID QR code.",
+        "qr_camera_error": "Could not access camera. Please check permissions."
     },
     "remote": {
         "connect_title": "Connect to your server",

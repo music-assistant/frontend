@@ -162,6 +162,31 @@
             />
           </div>
 
+          <!-- QR Code Section -->
+          <div class="qr-code-section">
+            <div class="qr-code-title">
+              <v-icon size="20" color="primary" class="mr-2">mdi-qrcode</v-icon>
+              {{ $t("settings.remote_access_qr_code") }}
+            </div>
+            <p class="qr-code-description">
+              {{ $t("settings.remote_access_qr_code_description") }}
+            </p>
+            <div class="qr-code-wrapper">
+              <img
+                v-if="qrCodeDataUrl"
+                :src="qrCodeDataUrl"
+                alt="Remote ID QR Code"
+                class="qr-code-image"
+              />
+              <v-progress-circular
+                v-else
+                indeterminate
+                size="32"
+                color="primary"
+              />
+            </div>
+          </div>
+
           <div>
             <div class="usage-title">
               {{ $t("settings.remote_access_how_to_use") }}
@@ -308,7 +333,8 @@ import Container from "@/components/Container.vue";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { RemoteAccessInfo } from "@/plugins/api/interfaces";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import QRCode from "qrcode";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
@@ -395,6 +421,46 @@ const copyRemoteId = async () => {
     toast.error(t("settings.remote_access_error_copy"));
   }
 };
+
+// QR Code generation
+const qrCodeDataUrl = ref<string | null>(null);
+
+const generateQrCode = async (remoteId: string) => {
+  if (!remoteId) {
+    qrCodeDataUrl.value = null;
+    return;
+  }
+
+  try {
+    // Generate QR code with the remote ID
+    // The QR code contains a URL that will auto-fill the remote ID on the login page
+    const qrData = `https://app.music-assistant.io/?remote_id=${remoteId}`;
+    qrCodeDataUrl.value = await QRCode.toDataURL(qrData, {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    });
+  } catch (error) {
+    console.error("Error generating QR code:", error);
+    qrCodeDataUrl.value = null;
+  }
+};
+
+// Watch for remote ID changes and regenerate QR code
+watch(
+  () => remoteAccessInfo.value?.remote_id,
+  (newRemoteId) => {
+    if (newRemoteId) {
+      generateQrCode(newRemoteId);
+    } else {
+      qrCodeDataUrl.value = null;
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -605,6 +671,46 @@ const copyRemoteId = async () => {
 
 .copy-button {
   flex-shrink: 0;
+}
+
+.qr-code-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(var(--v-theme-surface), 0.5);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-radius: 12px;
+}
+
+.qr-code-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: rgb(var(--v-theme-on-surface));
+  display: flex;
+  align-items: center;
+}
+
+.qr-code-description {
+  font-size: 0.85rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.qr-code-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.qr-code-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  background: white;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .usage-title {

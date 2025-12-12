@@ -7,7 +7,6 @@
 
 import { base32nopad } from "@scure/base";
 
-
 export class CertificateVerificationError extends Error {
   constructor(message: string) {
     super(message);
