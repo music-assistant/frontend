@@ -185,8 +185,9 @@ const completeInitialization = async () => {
   }
   const urlParams = new URLSearchParams(window.location.search);
   if (
-    urlParams.get("onboard") === "true" ||
-    serverInfo.onboard_done === false
+    (urlParams.get("onboard") === "true" ||
+      serverInfo.onboard_done === false) &&
+    userInfo.role === "admin"
   ) {
     store.isOnboarding = true;
     router.push("/settings/providers");
