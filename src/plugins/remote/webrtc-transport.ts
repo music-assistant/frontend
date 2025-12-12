@@ -3,16 +3,27 @@
  *
  * Implements the transport interface using WebRTC DataChannel.
  * Used for remote connections to Music Assistant instances via NAT traversal.
+ *
+ * Security: Uses DTLS certificate pinning for server authentication.
  */
 
 import { BaseTransport, TransportState } from "./transport";
 import { SignalingClient, IceServerConfig } from "./signaling";
+import {
+  verifySdpFingerprint,
+  CertificateVerificationError,
+} from "./crypto-utils";
 
 // Re-export for convenience
 export type { IceServerConfig };
+export { CertificateVerificationError };
 
 export interface WebRTCTransportOptions {
   signalingServerUrl: string;
+  /**
+   * Remote server ID - encoded fingerprint of the server's DTLS certificate.
+   * Used for both routing and authentication.
+   */
   remoteId: string;
   dataChannelLabel?: string;
   reconnect?: boolean;
@@ -20,6 +31,11 @@ export interface WebRTCTransportOptions {
   maxReconnectDelay?: number;
   reconnectDelayGrowth?: number;
   maxReconnectAttempts?: number;
+  /**
+   * Skip certificate verification (for development only - INSECURE)
+   * Default: false
+   */
+  skipCertificateVerification?: boolean;
 }
 
 // Fallback ICE servers (only public STUN servers - no TURN)
@@ -57,6 +73,7 @@ export class WebRTCTransport extends BaseTransport {
       maxReconnectDelay: options.maxReconnectDelay ?? 30000,
       reconnectDelayGrowth: options.reconnectDelayGrowth ?? 1.5,
       maxReconnectAttempts: options.maxReconnectAttempts ?? Infinity,
+      skipCertificateVerification: options.skipCertificateVerification ?? false,
     };
 
     this.signaling = new SignalingClient({
@@ -230,6 +247,13 @@ export class WebRTCTransport extends BaseTransport {
     if (!this.peerConnection) return;
 
     try {
+      // Verify certificate fingerprint from SDP before setting remote description
+      // This happens BEFORE the DTLS handshake, providing early rejection of untrusted peers
+      if (!this.options.skipCertificateVerification && answer.sdp) {
+        verifySdpFingerprint(answer.sdp, this.options.remoteId);
+        console.log("[WebRTCTransport] SDP fingerprint verified");
+      }
+
       await this.peerConnection.setRemoteDescription(
         new RTCSessionDescription(answer),
       );
@@ -243,6 +267,15 @@ export class WebRTCTransport extends BaseTransport {
       }
       this.iceCandidateBuffer = [];
     } catch (error) {
+      if (error instanceof CertificateVerificationError) {
+        console.error(
+          "[WebRTCTransport] Certificate verification failed:",
+          error.message,
+        );
+        this.emit("error", error);
+        this.cleanup();
+        return;
+      }
       console.error(
         "[WebRTCTransport] Error setting remote description:",
         error,

@@ -11,6 +11,7 @@ export * from "./websocket-transport";
 export * from "./webrtc-transport";
 export * from "./signaling";
 export * from "./connection-manager";
+export * from "./crypto-utils";
 
 // Re-export the singleton manager as default
 export { remoteConnectionManager as default } from "./connection-manager";

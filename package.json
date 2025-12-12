@@ -19,6 +19,7 @@
     "@mdi/font": "7.4.47",
     "@mdi/js": "7.4.47",
     "@music-assistant/sendspin-js": "0.4.2",
+    "@scure/base": "^2.0.0",
     "@tailwindcss/vite": "^4.1.17",
     "@vueuse/core": "^14.1.0",
     "class-variance-authority": "^0.7.1",
