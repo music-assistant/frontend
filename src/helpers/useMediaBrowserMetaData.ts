@@ -105,7 +105,7 @@ export function useMediaBrowserMetaData(player_id?: string) {
     () => {
       if (
         !playerQueue.value?.active ||
-        store.activePlayerQueue?.current_item?.media_item?.media_type !==
+        playerQueue.value?.current_item?.media_item?.media_type !==
           MediaType.TRACK
       ) {
         // Clear the progress bar.
