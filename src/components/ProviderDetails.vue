@@ -282,7 +282,7 @@ const toolbarMenuItems = computed(() => {
       label: "search_all_providers",
       icon: "mdi-database-search",
       action: searchAllProviders,
-      overflowAllowed: true,
+      overflowAllowed: false,
       disabled: mappingSearchInProgress.value,
       hide:
         props.itemDetails.provider != "library" ||
