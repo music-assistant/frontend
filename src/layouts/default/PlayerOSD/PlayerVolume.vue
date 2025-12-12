@@ -53,7 +53,7 @@ import { cn } from "@/lib/utils";
 import { store } from "@/plugins/store";
 import { Minus, Plus } from "lucide-vue-next";
 import type { Component } from "vue";
-import { onUnmounted, ref } from "vue";
+import { onUnmounted, ref, watch } from "vue";
 
 export interface Props {
   modelValue?: number;
@@ -142,6 +142,9 @@ onUnmounted(() => {
   if (blockingTimeout) {
     clearTimeout(blockingTimeout);
   }
+  if (sliderUpdateDebounceTimeout) {
+    clearTimeout(sliderUpdateDebounceTimeout);
+  }
 });
 
 const clamp = (value: number, min: number, max: number) =>
@@ -187,8 +190,8 @@ const vibrate = (duration: number = 10) => {
   }
 };
 
-let lastEmitTime = 0;
-const EMIT_THROTTLE_MS = 100;
+let sliderUpdateDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+const SLIDER_UPDATE_DEBOUNCE_MS = 100;
 
 const getPercentageFromX = (clientX: number): number => {
   if (!sliderContainerRef.value) return displayValue.value;
@@ -253,12 +256,6 @@ const onTouchMove = (event: TouchEvent) => {
     if (valueChanged) {
       vibrate(5);
     }
-
-    const now = Date.now();
-    if (now - lastEmitTime >= EMIT_THROTTLE_MS) {
-      emit("update:model-value", newValue);
-      lastEmitTime = now;
-    }
   }
 };
 
@@ -321,7 +318,16 @@ const onSliderUpdate = (values: number[] | undefined) => {
   const newValue = values[0] ?? displayValue.value;
   displayValue.value = newValue;
   emit("update:local-value", newValue);
-  emit("update:model-value", newValue);
+
+  if (sliderUpdateDebounceTimeout) {
+    clearTimeout(sliderUpdateDebounceTimeout);
+    sliderUpdateDebounceTimeout = null;
+  }
+
+  sliderUpdateDebounceTimeout = setTimeout(() => {
+    emit("update:model-value", newValue);
+    sliderUpdateDebounceTimeout = null;
+  }, SLIDER_UPDATE_DEBOUNCE_MS);
 };
 
 const onPrependClick = () => {
@@ -343,6 +349,23 @@ const onAppendClick = () => {
   emit("update:model-value", newValue);
   emit("click:append");
 };
+
+watch(
+  () => props.modelValue,
+  (val: number | undefined) => {
+    if (typeof val !== "number") return;
+
+    if (isBlocking.value) {
+      return;
+    }
+
+    if (Math.abs(displayValue.value - val) > 0.5) {
+      displayValue.value = val;
+      emit("update:local-value", val);
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -413,5 +436,13 @@ const onAppendClick = () => {
   .volume-slider {
     pointer-events: none;
   }
+}
+
+.player-volume-container :deep([data-slot="slider-track"]) {
+  background-color: rgba(var(--v-theme-on-surface), 0.15) !important;
+}
+
+.v-theme--dark .player-volume-container :deep([data-slot="slider-track"]) {
+  background-color: rgba(var(--v-theme-on-surface), 0.2) !important;
 }
 </style>
