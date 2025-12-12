@@ -304,7 +304,6 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { webPlayer } from "@/plugins/web_player";
-import { emit } from "process";
 import { computed, ref, watch } from "vue";
 
 // properties
@@ -438,14 +437,14 @@ watch(
   width: 60px;
   height: 60px;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .icon-thumb {
   width: 60px;
   height: 60px;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -455,26 +454,26 @@ watch(
   width: 55px;
   height: 55px;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 .icon-thumb {
   width: 55px;
   height: 55px;
   margin-top: 5px;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: inline-table;
 }
 
 .panel-item {
   border-style: ridge;
   border-width: thin;
-  border-color: #cccccc5e;
+  border-color: rgba(var(--v-theme-on-surface), 0.12);
   padding-left: 8px;
   padding-right: 8px;
   padding-top: 5px;
   padding-bottom: 5px;
-  background-color: rgba(162, 188, 255, 0.1);
+  background-color: rgba(var(--v-theme-primary), 0.08);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
   border-radius: 6px;
@@ -492,8 +491,8 @@ watch(
   opacity: 0.6;
 }
 .panel-item-selected {
-  border-color: #2f2f2f5e;
-  background-color: rgba(162, 188, 255, 0.4);
+  border-color: rgba(var(--v-theme-primary), 0.3);
+  background-color: rgba(var(--v-theme-primary), 0.15);
 }
 
 .player-command-btn {
