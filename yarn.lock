@@ -1640,10 +1640,12 @@
   resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
   integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
 
-"@music-assistant/sendspin-js@0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-0.3.1.tgz#50bfd90554720f66edabe697c19030f8fc040c42"
-  integrity sha512-R5F+FZ9qBcoMi3U/aH4Kp52H/4yRB/GZrantZgTzbEGTdwsrlECHLP/xo05Cc+X4sladaEc3GiYyPFaYPNy1cg==
+"@music-assistant/sendspin-js@0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-0.4.2.tgz#bbecbca210f118fff3514683dd1a18277f12fead"
+  integrity sha512-lH+zEGVMiKNcGOp2gVyMUikyzC4h4Dqd1KLp5ob+KYT4aZoiP0V1hPKXQN+cOvi6s0D5sPl/CL94r3Tqyg5rdA==
+  dependencies:
+    opus-encdec "^0.1.1"
 
 "@napi-rs/wasm-runtime@^1.0.7":
   version "1.1.0"
@@ -5430,6 +5432,11 @@ optionator@^0.9.3:
     prelude-ls "^1.2.1"
     type-check "^0.4.0"
     word-wrap "^1.2.5"
+
+opus-encdec@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/opus-encdec/-/opus-encdec-0.1.1.tgz#8b6f9ccbb2e97bc0ae0dac2966111937b6aedcf9"
+  integrity sha512-TDzyGqYqrwn5UEUNaLsfLGu8Ma+HRNrgLYj7Vx5wfTnafAA21G6Bnm/qTIa3orQi/yZPZYmkdpO/gez4nfA1Rw==
 
 p-limit@^3.0.2:
   version "3.1.0"

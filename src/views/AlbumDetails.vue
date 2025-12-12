@@ -35,6 +35,7 @@
       :sort-keys="['provider', 'name', 'year']"
       :title="$t('other_versions')"
       :hide-on-empty="true"
+      :refresh-on-parent-update="true"
     />
     <br />
     <!-- media images -->

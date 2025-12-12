@@ -18,7 +18,7 @@
     "@intlify/unplugin-vue-i18n": "11.0.1",
     "@mdi/font": "7.4.47",
     "@mdi/js": "7.4.47",
-    "@music-assistant/sendspin-js": "0.3.1",
+    "@music-assistant/sendspin-js": "0.4.2",
     "@tailwindcss/vite": "^4.1.17",
     "@vueuse/core": "^14.1.0",
     "class-variance-authority": "^0.7.1",

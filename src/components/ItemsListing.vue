@@ -269,6 +269,7 @@ export interface Props {
   icon?: string;
   restoreState?: boolean;
   onTitleClick?: () => void;
+  refreshOnParentUpdate?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -298,6 +299,7 @@ const props = withDefaults(defineProps<Props>(), {
   icon: undefined,
   restoreState: false,
   onTitleClick: undefined,
+  refreshOnParentUpdate: false,
 });
 
 // global refs
@@ -743,7 +745,10 @@ const menuItems = computed(() => {
   }
 
   // refresh action
-  if (props.showRefreshButton !== false || newContentAvailable.value) {
+  if (
+    props.showRefreshButton !== false ||
+    (newContentAvailable.value && !props.refreshOnParentUpdate)
+  ) {
     items.push({
       label: newContentAvailable.value
         ? "tooltip.refresh_new_content"
@@ -1041,8 +1046,13 @@ watch(
   () => props.parentItem,
   () => {
     if (loading.value == true) return;
-    allItems.value = [];
-    newContentAvailable.value = true;
+    console.log("parent item changed", props.refreshOnParentUpdate);
+    if (props.refreshOnParentUpdate) {
+      loadData(true);
+    } else {
+      allItems.value = [];
+      newContentAvailable.value = true;
+    }
   },
   { deep: true },
 );

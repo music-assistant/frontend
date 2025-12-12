@@ -373,7 +373,7 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -469,7 +469,8 @@ const getPlayerCount = function (providerConfig: ProviderConfig): number {
   if (!providerInstance) return 0;
 
   return playerConfigs.value.filter((playerConfig) => {
-    if (playerConfig.provider === "builtin_player") return false;
+    if (isHiddenSendspinWebPlayer(playerConfig)) return false;
+
     const playerProviderInstance = api.getProvider(playerConfig.provider);
     return (
       playerProviderInstance?.instance_id === providerInstance.instance_id ||
