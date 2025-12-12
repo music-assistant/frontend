@@ -1,39 +1,52 @@
 <template>
-  <section>
-    <v-card-text>
-      <!-- header -->
-      <div
-        v-if="api.providerManifests[domain]"
-        style="margin-left: -5px; margin-right: -5px"
-      >
-        <v-card-title>
-          {{
-            $t("settings.setup_provider", [api.providerManifests[domain].name])
-          }}
-        </v-card-title>
-        <v-card-subtitle
-          v-html="markdownToHtml(api.providerManifests[domain].description)"
-        /><br />
-        <v-card-subtitle
-          v-if="api.providerManifests[domain].codeowners.length"
-          v-html="
-            markdownToHtml(
-              getAuthorsMarkdown(api.providerManifests[domain].codeowners),
-            )
-          "
-        />
-      </div>
-      <br />
-      <v-divider />
-      <br />
-      <br />
-      <edit-config
-        :config-entries="config_entries"
-        :disabled="false"
-        @submit="onSubmit"
-        @action="onAction"
-      />
-    </v-card-text>
+  <section class="add-provider-details">
+    <div v-if="api.providerManifests[domain]">
+      <!-- Header card -->
+      <v-card class="header-card mb-4" elevation="0">
+        <div class="header-content">
+          <div class="header-icon">
+            <provider-icon :domain="domain" :size="48" />
+          </div>
+          <div class="header-info">
+            <h2 class="header-title">
+              {{
+                $t("settings.setup_provider", [
+                  api.providerManifests[domain].name,
+                ])
+              }}
+            </h2>
+            <p class="header-description">
+              {{ api.providerManifests[domain].description }}
+            </p>
+            <div
+              v-if="api.providerManifests[domain].codeowners.length"
+              class="header-authors"
+              v-html="
+                markdownToHtml(
+                  getAuthorsMarkdown(api.providerManifests[domain].codeowners),
+                )
+              "
+            ></div>
+            <div
+              v-if="api.providerManifests[domain].credits.length"
+              class="header-authors"
+              v-html="
+                markdownToHtml(
+                  getCreditsMarkdown(api.providerManifests[domain].credits),
+                )
+              "
+            ></div>
+          </div>
+        </div>
+      </v-card>
+    </div>
+
+    <edit-config
+      :config-entries="config_entries"
+      :disabled="false"
+      @submit="onSubmit"
+      @action="onAction"
+    />
     <v-overlay
       v-model="loading"
       scrim="true"
@@ -69,6 +82,7 @@ import {
   EventMessage,
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import { watch } from "vue";
 import { markdownToHtml } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
@@ -177,15 +191,83 @@ const getAuthorsMarkdown = function (authors: string[]) {
   const { t } = useI18n();
   for (const author of authors) {
     if (author.includes("@")) {
+      let authorName = author.replace("@", "");
+      if (authorName == "music-assistant") {
+        authorName = "the Music Assistant team";
+      }
       allAuthors.push(
-        `[${author.replace("@", "")}](https://github.com/${author.replace("@", "")})`,
+        `[${authorName}](https://github.com/${author.replace("@", "")})`,
       );
     } else {
       allAuthors.push(author);
     }
   }
-  return `**${t("settings.codeowners")}**: ` + allAuthors.join(" / ");
+  return `**${t("settings.provider_codeowners")}**: ` + allAuthors.join(" / ");
+};
+
+const getCreditsMarkdown = function (credits: string[]) {
+  const { t } = useI18n();
+  return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.add-provider-details {
+  padding: 16px;
+}
+
+.header-card {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 12px;
+}
+
+.header-content {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+}
+
+.header-icon {
+  flex-shrink: 0;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.header-description {
+  font-size: 0.875rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.header-authors {
+  font-size: 0.813rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.header-authors :deep(a) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+
+.header-authors :deep(a:hover) {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+</style>

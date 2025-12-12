@@ -1,25 +1,39 @@
 <template>
-  <section>
-    <v-card-text>
-      <div v-if="config" style="margin-left: -5px; margin-right: -5px">
-        <v-card-subtitle>
-          {{ getItemDescription(config) }}
-        </v-card-subtitle>
-        <br />
-      </div>
-      <edit-config
-        v-if="config"
-        :config-entries="Object.values(config.values)"
-        :disabled="false"
-        @submit="onSubmit"
-        @action="onAction"
-      />
-    </v-card-text>
+  <section class="edit-core-config">
+    <div v-if="config && api.providerManifests[config.domain]">
+      <!-- Header card -->
+      <v-card class="header-card mb-4" elevation="0">
+        <div class="header-content">
+          <div class="header-icon">
+            <v-icon size="32" color="primary">{{
+              getCoreIcon(config.domain)
+            }}</v-icon>
+          </div>
+          <div class="header-info">
+            <h2 class="header-title">
+              {{ getItemTitle(config) }}
+            </h2>
+            <p class="header-description">
+              {{ getItemDescription(config) }}
+            </p>
+          </div>
+        </div>
+      </v-card>
+    </div>
+
+    <edit-config
+      v-if="config"
+      :config-entries="allConfigEntries"
+      :disabled="false"
+      @submit="onSubmit"
+      @action="onAction"
+    />
+
     <v-overlay
       v-model="loading"
       scrim="true"
       persistent
-      style="display: flex; align-items: center; justify-content: center"
+      class="loading-overlay"
     >
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-overlay>
@@ -27,11 +41,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { api } from "@/plugins/api";
-import { CoreConfig, ConfigValueType } from "@/plugins/api/interfaces";
+import {
+  CoreConfig,
+  ConfigValueType,
+  ConfigEntry,
+} from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { nanoid } from "nanoid";
 
@@ -46,6 +64,17 @@ const loading = ref(false);
 const props = defineProps<{
   domain?: string;
 }>();
+
+// helper functions
+const isVisible = (entry: ConfigEntry) => {
+  return !entry.hidden;
+};
+
+// computed properties
+const allConfigEntries = computed(() => {
+  if (!config.value) return [];
+  return Object.values(config.value.values).filter((entry) => isVisible(entry));
+});
 
 // watchers
 watch(
@@ -73,6 +102,18 @@ const getItemDescription = (item: CoreConfig) => {
   return translated !== `settings.core_module.${item.domain}.description`
     ? translated
     : api.providerManifests[item.domain].description;
+};
+
+const getCoreIcon = (domain: string): string => {
+  const iconMap: Record<string, string> = {
+    streams: "mdi-radio-tower",
+    players: "mdi-speaker-multiple",
+    metadata: "mdi-tag-multiple",
+    music: "mdi-music",
+    webserver: "mdi-web",
+    cache: "mdi-cached",
+  };
+  return iconMap[domain] || "mdi-cog";
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
@@ -121,3 +162,63 @@ const onAction = async function (
     });
 };
 </script>
+
+<style scoped>
+.edit-core-config {
+  padding: 16px;
+}
+
+.header-card {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 12px;
+}
+
+.header-content {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+}
+
+.header-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-primary), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.header-description {
+  font-size: 0.875rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.loading-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+</style>

@@ -184,7 +184,10 @@ const completeInitialization = async () => {
     webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
   }
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("onboard") === "true") {
+  if (
+    urlParams.get("onboard") === "true" ||
+    serverInfo.onboard_done === false
+  ) {
     store.isOnboarding = true;
     router.push("/settings/providers");
   }

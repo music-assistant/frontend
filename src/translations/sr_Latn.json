@@ -500,10 +500,6 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Ovaj tip grupe ne podržava DSP pri reprodukciji na više uređaja."
         },
-        "enable_builtin_player": {
-            "label": "Dozvoli reprodukciju na ovom uređaju\/pregledaču",
-            "description": "Omogućite (eksperimentalni) ugrađeni plejer za ovaj uređaj\/pregledač, koji vam omogućava da strimujete sav sadržaj Music Assistant-a direktno na ovaj uređaj."
-        },
         "add_group_player_desc_universal": "Kreiranjem Univerzalne grupe plejera, možete grupisati plejere iz različitih provajdera\/ekosistema. \n Ovo će distribuirati isti zvuk svim plejerima članovima (ali ne sinhronizovano).",
         "edit_provider": "Uredi provajdera: {0}",
         "metadata": "Metapodaci",

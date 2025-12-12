@@ -406,10 +406,7 @@
             "label": "Ljud av-kontroll"
         },
         "dsp_enabled": "DSP är aktiverat",
-        "dsp_disabled": "DSP är inaktiverat",
-        "enable_builtin_player": {
-            "description": "Aktivera den (experimentella) inbyggda spelaren för den här enheten\/webbläsaren, vilket gör att du kan strömma allt innehåll från Music Assistant direkt till den här enheten."
-        }
+        "dsp_disabled": "DSP är inaktiverat"
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",

@@ -1,91 +1,135 @@
 <template>
-  <section>
-    <v-card-text>
-      <!-- header -->
-      <div
-        v-if="
-          config &&
-          api.getProviderManifest(config.provider)!.domain in
-            api.providerManifests
-        "
-        style="margin-left: -5px; margin-right: -5px"
+  <section class="edit-player">
+    <div
+      v-if="
+        config &&
+        api.getProviderManifest(config.provider)!.domain in
+          api.providerManifests
+      "
+    >
+      <!-- Disabled banner -->
+      <v-alert
+        v-if="!config.enabled"
+        type="warning"
+        variant="tonal"
+        class="mb-4"
+        closable
       >
-        <v-card-title>
-          {{
-            $t("settings.config_player", [
-              config.name ||
-                api.players[config.player_id]?.name ||
-                config.default_name,
-            ])
-          }}
-        </v-card-title>
-        <v-card-subtitle>
-          <b>{{ $t("settings.player_id") }}: </b>{{ config.player_id }}
-        </v-card-subtitle>
-        <v-card-subtitle>
-          <b>{{ $t("settings.player_provider") }}: </b
-          >{{ api.getProviderManifest(config.provider)?.name }}
-          <a
-            v-if="api.getProviderManifest(config.provider)?.documentation"
-            @click="
-              openLinkInNewTab(
-                api.getProviderManifest(config.provider)?.documentation!,
-              )
-            "
+        <div class="disabled-banner">
+          <span>{{ $t("settings.player_disabled") }}</span>
+          <v-btn
+            size="small"
+            color="warning"
+            variant="flat"
+            @click="config.enabled = true"
           >
-            [{{ $t("settings.check_docs") }}]</a
-          >
-        </v-card-subtitle>
-        <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t("settings.player_model") }}: </b
-          >{{ api.players[config.player_id].device_info.manufacturer }} /
-          {{ api.players[config.player_id].device_info.model }}
-        </v-card-subtitle>
-        <v-card-subtitle
-          v-if="api.players[config.player_id]?.device_info.ip_address"
-        >
-          <b>{{ $t("settings.player_address") }}: </b
-          >{{ api.players[config.player_id].device_info.ip_address }}
-        </v-card-subtitle>
-        <v-card-subtitle v-if="api.players[config.player_id]">
-          <b>{{ $t("settings.player_type_label") }}: </b
-          >{{ $t(`player_type.${api.players[config.player_id].type}`) }}
-        </v-card-subtitle>
-        <br />
-        <v-divider />
-        <br />
-        <br />
+            {{ $t("settings.enable_player") }}
+          </v-btn>
+        </div>
+      </v-alert>
 
-        <!-- name field -->
-        <v-text-field
-          v-if="'name' in config"
-          v-model="config.name"
-          :placeholder="config?.name"
-          :label="$t('settings.player_name')"
-          variant="outlined"
-          clearable
-          class="configcolumnleft"
-          style="margin-right: 25px"
-        />
-        <!-- enable field -->
-        <v-switch
-          v-if="'enabled' in config"
-          v-model="config.enabled"
-          :label="$t('settings.enable_player')"
-          color="primary"
-          :disabled="api.getProviderManifest(config.provider)?.builtin"
-        />
-      </div>
-      <br />
-      <v-divider />
-      <edit-config
-        v-if="config"
-        :disabled="!config.enabled"
-        :config-entries="config_entries"
-        @submit="onSubmit"
-        @action="onAction"
-      />
-    </v-card-text>
+      <!-- Header card -->
+      <v-card class="header-card mb-4" elevation="0">
+        <div class="header-content">
+          <div class="header-icon">
+            <v-icon size="32" color="primary">mdi-speaker</v-icon>
+          </div>
+          <div class="header-info">
+            <div class="header-title-row">
+              <h2 class="header-title">
+                {{
+                  config.name ||
+                  api.players[config.player_id]?.name ||
+                  config.default_name
+                }}
+              </h2>
+              <v-btn
+                icon="mdi-pencil"
+                variant="text"
+                size="small"
+                density="compact"
+                class="rename-btn"
+                @click="showRenameDialog = true"
+              />
+            </div>
+            <div class="header-meta">
+              <span class="meta-item">
+                <v-icon size="14" class="mr-1">mdi-identifier</v-icon>
+                {{ config.player_id }}
+              </span>
+              <span class="meta-item">
+                <v-icon size="14" class="mr-1">mdi-puzzle</v-icon>
+                {{ api.getProviderManifest(config.provider)?.name }}
+                <a
+                  v-if="api.getProviderManifest(config.provider)?.documentation"
+                  class="docs-link"
+                  @click="
+                    openLinkInNewTab(
+                      api.getProviderManifest(config.provider)?.documentation!,
+                    )
+                  "
+                >
+                  <v-icon size="12">mdi-open-in-new</v-icon>
+                </a>
+              </span>
+              <span v-if="api.players[config.player_id]" class="meta-item">
+                <v-icon size="14" class="mr-1">mdi-information</v-icon>
+                {{ api.players[config.player_id].device_info.manufacturer }} /
+                {{ api.players[config.player_id].device_info.model }}
+              </span>
+              <span
+                v-if="api.players[config.player_id]?.device_info.ip_address"
+                class="meta-item"
+              >
+                <v-icon size="14" class="mr-1">mdi-ip-network</v-icon>
+                {{ api.players[config.player_id].device_info.ip_address }}
+              </span>
+              <span v-if="api.players[config.player_id]" class="meta-item">
+                <v-icon size="14" class="mr-1">mdi-tag</v-icon>
+                {{ $t(`player_type.${api.players[config.player_id].type}`) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </v-card>
+    </div>
+
+    <edit-config
+      v-if="config"
+      :disabled="!config.enabled"
+      :config-entries="allConfigEntries"
+      @submit="onSubmit"
+      @action="onAction"
+    />
+
+    <!-- Rename dialog -->
+    <v-dialog v-model="showRenameDialog" max-width="400">
+      <v-card>
+        <v-card-title>{{ $t("settings.player_name") }}</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="editName"
+            :placeholder="
+              api.players[config?.player_id!]?.name || config?.default_name
+            "
+            variant="outlined"
+            density="comfortable"
+            autofocus
+            clearable
+            @keyup.enter="saveRename"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showRenameDialog = false">
+            {{ $t("close") }}
+          </v-btn>
+          <v-btn color="primary" variant="flat" @click="saveRename">
+            {{ $t("settings.save") }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </section>
 </template>
 
@@ -101,6 +145,7 @@ import {
   PlayerConfig,
   PlayerFeature,
   PlayerType,
+  ConfigEntry,
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
@@ -112,6 +157,8 @@ const router = useRouter();
 const config = ref<PlayerConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
+const showRenameDialog = ref(false);
+const editName = ref<string | null>(null);
 
 // props
 const props = defineProps<{
@@ -119,6 +166,11 @@ const props = defineProps<{
 }>();
 
 const dspEnabled = ref(false);
+
+// helper functions
+const isVisible = (entry: ConfigEntry) => {
+  return !entry.hidden;
+};
 
 const loadDSPEnabled = async () => {
   if (props.playerId) {
@@ -186,6 +238,10 @@ const config_entries = computed(() => {
   return entries;
 });
 
+const allConfigEntries = computed(() => {
+  return config_entries.value.filter((entry) => isVisible(entry));
+});
+
 // watchers
 
 watch(
@@ -198,11 +254,32 @@ watch(
   { immediate: true },
 );
 
+watch(showRenameDialog, (val) => {
+  if (val && config.value) {
+    editName.value = config.value.name || null;
+  }
+});
+
 // methods
+const saveRename = function () {
+  if (config.value) {
+    config.value.name = editName.value || undefined;
+  }
+  api
+    .savePlayerConfig(props.playerId!, { name: config.value!.name || null })
+    .then(() => {
+      loading.value = true;
+    })
+    .finally(() => {
+      loading.value = false;
+      showRenameDialog.value = false;
+    });
+  showRenameDialog.value = false;
+};
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   delete values["dsp_settings"]; // delete the injected dsp_settings since its UI only
   values["enabled"] = config.value!.enabled;
-  values["name"] = config.value!.name || null;
   api.savePlayerConfig(props.playerId!, values);
   router.push({ name: "playersettings" });
 };
@@ -237,10 +314,104 @@ const onAction = async function (
       loading.value = false;
     });
 };
-
-const openDspConfig = function () {
-  router.push(`/settings/editplayer/${props.playerId}/dsp`);
-};
 </script>
 
-<style scoped></style>
+<style scoped>
+.edit-player {
+  padding: 16px;
+}
+
+.header-card {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 12px;
+}
+
+.header-content {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+}
+
+.header-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-primary), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.rename-btn {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.rename-btn:hover {
+  opacity: 1;
+}
+
+.disabled-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.813rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.docs-link {
+  margin-left: 4px;
+  cursor: pointer;
+  color: rgb(var(--v-theme-primary));
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.docs-link:hover {
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+</style>

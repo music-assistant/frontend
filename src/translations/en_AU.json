@@ -35,7 +35,7 @@
         "volume_normalization_fixed_gain_radio": {
             "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalisation method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalisation method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
-        "add_group_player_desc": "For player providers\/ecosystems that provide native grouping\/syncing, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised. \n\nFor players\/ecosystems that do not support grouping, or in case you want to group players from different ecosystems, you can use the Universal group type, which will distribute the same audio to all member players (but not in sync). \n\nNote that some providers do support grouping, but you need to use the native app to perform the grouping. An example is Google Cast based players, where you can only create Google Cast groups within the Google Home app.",
+        "add_group_player_desc": "For a group player created for the {0} provider, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised.",
         "power_control": {
             "description": "Define\/override the power control behaviour for this player.\nIt allows you for example to redirect the power on\/off commands to a different appliance, or use a fake power control if your player does not support power on\/off commands but you like to have a dedicated state for a player not in use."
         },
@@ -45,7 +45,9 @@
         "mute_control": {
             "description": "Define\/override the mute control behaviour for this player.\nIt allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
         },
-        "frontend_description": "Customise the user interface theme and appearance"
+        "frontend_description": "Customise the user interface theme and appearance",
+        "remote_access_mode_optimized": "Optimised Mode (HA Cloud)",
+        "remote_access_protocol_optimized": "WebRTC with optimised STUN\/TURN servers from Home Assistant Cloud (works in all network setups)."
     },
     "sync_now": "Synchronise now",
     "sync_running": "One or more music providers are being synchronised.",

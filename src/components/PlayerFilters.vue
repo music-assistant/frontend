@@ -104,12 +104,7 @@ let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const availableProviders = computed(() => {
   const providers = Object.values(api.providers)
-    .filter(
-      (x) =>
-        x.available &&
-        x.type === ProviderType.PLAYER &&
-        x.domain !== "builtin_player",
-    )
+    .filter((x) => x.available && x.type === ProviderType.PLAYER)
     .map((x) => ({
       instance_id: x.instance_id,
       domain: x.domain,

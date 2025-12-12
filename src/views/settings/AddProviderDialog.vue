@@ -1,6 +1,6 @@
 <template>
   <v-dialog
-    :model-value="show"
+    :model-value="props.show"
     max-width="800px"
     scrollable
     @update:model-value="
@@ -171,9 +171,21 @@ import { match } from "ts-pattern";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
-const { show = false } = defineProps<{
+const props = defineProps<{
   show?: boolean;
+  initialType?: string;
 }>();
+
+const POPULAR_PROVIDERS = [
+  "spotify",
+  "tidal",
+  "qobuz",
+  "filesystem_local",
+  "filesystem_smb",
+  "sonos",
+  "chromecast",
+  "airplay",
+];
 
 const emit = defineEmits<{
   (e: "update:show", value: boolean): void;
@@ -224,6 +236,15 @@ const availableProviders = computed(() => {
         !providerConfigs.value.find((y) => y.domain == x.domain),
     )
     .sort((a, b) => {
+      const aPopularIndex = POPULAR_PROVIDERS.indexOf(a.domain);
+      const bPopularIndex = POPULAR_PROVIDERS.indexOf(b.domain);
+      const aIsPopular = aPopularIndex !== -1;
+      const bIsPopular = bPopularIndex !== -1;
+
+      if (aIsPopular && !bIsPopular) return -1;
+      if (!aIsPopular && bIsPopular) return 1;
+      if (aIsPopular && bIsPopular) return aPopularIndex - bPopularIndex;
+
       const nameA = (
         a.name || api.providerManifests[a.domain].name
       ).toUpperCase();
@@ -332,6 +353,20 @@ watch(
     if (val) loadItems();
   },
   { immediate: true },
+);
+
+watch(
+  () => props.show,
+  (isOpen) => {
+    if (isOpen && props.initialType) {
+      selectedProviderTypes.value = [props.initialType];
+      searchQuery.value = "";
+    } else if (!isOpen) {
+      selectedProviderTypes.value = [];
+      selectedProviderStages.value = [];
+      searchQuery.value = "";
+    }
+  },
 );
 </script>
 

@@ -1736,11 +1736,11 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
       this.syncTasks.value = msg.data as SyncTask[];
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
-      const providers: { [instance_id: string]: ProviderInstance } = {};
+      // Clear and repopulate the existing reactive object to preserve reactivity
+      Object.keys(this.providers).forEach((key) => delete this.providers[key]);
       for (const prov of msg.data as ProviderInstance[]) {
-        providers[prov.instance_id] = prov;
+        this.providers[prov.instance_id] = prov;
       }
-      this.providers = providers;
     }
     // signal + log all events
     if (DEBUG) console.log("[event]", msg);
@@ -1806,16 +1806,6 @@ export class MusicAssistantApi {
     // Handle ServerInfo message which is sent as first message on connect
     if (DEBUG) {
       console.log("[serverInfo]", msg);
-    }
-
-    // Check if server setup is complete
-    if (msg.onboard_done === false) {
-      console.error("[API] Server setup not complete, disconnecting");
-      alert(
-        "Server is not yet set up. Please complete the setup process first.",
-      );
-      this.disconnect();
-      return;
     }
 
     this.serverInfo.value = msg;

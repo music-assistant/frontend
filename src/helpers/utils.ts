@@ -7,6 +7,7 @@ import {
   MediaItemTypeOrItemMapping,
   MediaType,
   Player,
+  PlayerConfig,
   PlaybackState,
   PlayerType,
   ProviderMapping,
@@ -687,4 +688,28 @@ export const getSendspinDefaultSyncDelay = function (): number {
   }
   // Android, Firefox (desktop/mobile)
   return -200;
+};
+
+/**
+ * Check if a player config should be hidden from settings due to being a
+ * Sendspin web player that is currently unavailable.
+ *
+ * This prevents users from being confused by a lot of auto-generated players
+ * in the Players and Providers settings pages.
+ */
+export const isHiddenSendspinWebPlayer = function (
+  playerConfig: PlayerConfig,
+): boolean {
+  if (playerConfig.provider !== "sendspin") return false;
+
+  const name = playerConfig.default_name || "";
+  if (
+    !name.startsWith("Music Assistant (") && // PWA app
+    !name.startsWith("Music Assistant Web (") // Regular web interface
+  ) {
+    return false;
+  }
+
+  const player = api.players[playerConfig.player_id];
+  return !player?.available;
 };

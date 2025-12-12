@@ -2,7 +2,7 @@
 
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import mitt, { Emitter } from "mitt";
-import { MediaItemType } from "./api/interfaces";
+import { MediaItemType, MediaItemTypeOrItemMapping } from "./api/interfaces";
 
 export type PlaylistDialogEvent = {
   items: MediaItemType[];

@@ -85,12 +85,15 @@
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
     "search": "Search",
+    "search_all_providers": "Search all providers for matches",
+    "search_all_providers_confirm": "Are you sure you want to search for matches on all providers? This can take some time to complete and will be executed in the background.",
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
         "advanced_settings": "Advanced settings",
         "check_docs": "Check out the documentation",
-        "codeowners": "Authors\/credits",
+        "provider_codeowners": "This provider is contributed/maintained by",
+        "provider_credits": "Made possible by",
         "config_player": "Configure player: {0}",
         "configure": "Configure",
         "delete": "Delete",
@@ -292,7 +295,8 @@
             "player_controls": "Player controls",
             "presets": "Presets",
             "sync_options": "Sync\/import options",
-            "builtin_playlists": "Builtin Playlist Settings"
+            "builtin_playlists": "Builtin Playlist Settings",
+            "web_player": "Web Player"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -531,10 +535,14 @@
         "frontend_description": "Customize the user interface theme and appearance",
         "provider_type": "Type",
         "onboarding_title": "Welcome to Music Assistant!",
-        "onboarding_message": "Start your Music Assistant journey by adding providers:",
-        "onboarding_players": "Add player providers to output audio to your speakers and devices",
-        "onboarding_music": "Add music providers to connect your music sources and streaming services",
-        "onboarding_plugins": "Add plugins to extend capabilities even further",
+        "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
+        "onboarding_music_title": "Music",
+        "onboarding_music_desc": "Connect your streaming services like Spotify, Tidal, or your local music library.",
+        "onboarding_add_music": "Add Music",
+        "onboarding_player_title": "Players",
+        "onboarding_player_desc": "Connect your speakers and devices like Sonos, Chromecast, or AirPlay.",
+        "onboarding_add_player": "Add Players",
+        "onboarding_footer": "You can always add more providers later from this settings page.",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
@@ -560,23 +568,23 @@
         "core_module": {
             "cache": {
                 "name": "Cache",
-                "description": "Manages caching of metadata and images"
+                "description": "Configuration of the core module that handles caching of data across the application"
             },
             "metadata": {
                 "name": "Metadata",
-                "description": "Handles metadata retrieval and matching"
+                "description": "Configuration of the core metadata management module"
             },
             "music": {
                 "name": "Music",
-                "description": "Core music library management"
+                "description": "Configuration of the core music (library) management module"
             },
             "players": {
                 "name": "Players",
-                "description": "Core player management and control"
+                "description": "Configuration of the core player management module"
             },
             "player_queues": {
                 "name": "Player Queues",
-                "description": "Manages playback queues for all players"
+                "description": "Configuration of the core player queue management module"
             },
             "remote_access": {
                 "name": "Remote Access",
@@ -584,11 +592,11 @@
             },
             "streams": {
                 "name": "Streams",
-                "description": "Audio streaming and processing engine"
+                "description": "Configuration of the audio streaming and processing engine"
             },
             "webserver": {
                 "name": "Webserver",
-                "description": "Manage the webserver and API"
+                "description": "Configuration of the webserver and API"
             }
         },
         "remote_access": "Remote Access",
@@ -719,7 +727,8 @@
         "primary_image": "This is the primary image for this image type",
         "copy_uri": "Copy URI to clipboard",
         "select_all": "Select all items",
-        "filter_provider": "Filter by music provider"
+        "filter_provider": "Filter by music provider",
+        "in_provider_library": "This item is in the provider's library"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -1065,5 +1074,8 @@
     "yes": "Yes",
     "no": "No",
     "uri_copied": "URI copied to clipboard",
-    "uri_copy_failed": "Failed to copy URI to clipboard"
+    "uri_copy_failed": "Failed to copy URI to clipboard",
+    "remove_provider_mapping": "Remove provider mapping",
+    "remove_provider_mapping_confirm": "Are you sure you want to remove this provider mapping? This will unlink the item from the current item details. It may come back if you perform a rescan for all provider matches.",
+    "map_provider_mapping": "Map this provider entry to the current item"
 }

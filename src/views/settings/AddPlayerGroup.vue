@@ -112,7 +112,7 @@ const syncPlayers = computed(() => {
     (x) =>
       x.available &&
       x.type != PlayerType.GROUP &&
-      (x.provider == providerDetails.value?.domain ||
+      (x.provider == providerDetails.value?.instance_id ||
         props.provider === "universal_group"),
   );
 });
