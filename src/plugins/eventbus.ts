@@ -20,6 +20,9 @@ export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
   clearSelection: void;
+  refreshItems: string;
+  editGenre: any;
+  mergeGenres: any;
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();

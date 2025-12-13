@@ -641,6 +641,16 @@ export const handleMediaItemClick = function (
   }
 
   // all other: go to details view
+  if (item.media_type == MediaType.GENRE) {
+    router.push({
+      name: "genre",
+      params: {
+        id: item.item_id,
+      },
+    });
+    return;
+  }
+
   router.push({
     name: item.media_type,
     params: {

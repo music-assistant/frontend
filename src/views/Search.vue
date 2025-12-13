@@ -26,12 +26,17 @@
             MediaType.ARTIST,
             MediaType.ALBUM,
             MediaType.PLAYLIST,
+            MediaType.GENRE,
             MediaType.PODCAST,
             MediaType.AUDIOBOOK,
             MediaType.RADIO,
           ]"
           :key="item"
-          :text="$t(item ? item + 's' : 'searchtype_all')"
+          :text="
+            item === MediaType.GENRE
+              ? $t('genres.genres')
+              : $t(item ? item + 's' : 'searchtype_all')
+          "
           :value="item"
         />
       </v-chip-group>
@@ -86,6 +91,15 @@
         <WidgetRow
           v-if="searchResult && !loading"
           :widget-row="{
+            title: $t('genres.genres'),
+            icon: 'mdi-tag-multiple',
+            items: searchResult.genres,
+          }"
+          :show-provider-on-cover="true"
+        />
+        <WidgetRow
+          v-if="searchResult && !loading"
+          :widget-row="{
             title: $t('podcasts'),
             icon: 'mdi-podcast',
             items: searchResult.podcasts,
@@ -124,7 +138,11 @@
               return filteredItems(store.globalSearchType!);
             }
           "
-          :title="$t(`${store.globalSearchType}s`)"
+          :title="
+            store.globalSearchType === MediaType.GENRE
+              ? $t('genres.genres')
+              : $t(`${store.globalSearchType}s`)
+          "
           :allow-key-hooks="false"
           :show-search-button="false"
           :infinite-scroll="true"
@@ -223,6 +241,7 @@ const filteredItems = function (mediaType: MediaType) {
   if (mediaType == MediaType.ARTIST) return searchResult.value.artists;
   if (mediaType == MediaType.ALBUM) return searchResult.value.albums;
   if (mediaType == MediaType.PLAYLIST) return searchResult.value.playlists;
+  if (mediaType == MediaType.GENRE) return searchResult.value.genres;
   if (mediaType == MediaType.PODCAST) return searchResult.value.podcasts;
   if (mediaType == MediaType.AUDIOBOOK) return searchResult.value.audiobooks;
   if (mediaType == MediaType.RADIO) return searchResult.value.radio;

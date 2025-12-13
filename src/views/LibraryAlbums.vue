@@ -7,7 +7,7 @@
     :load-paged-data="loadItems"
     :sort-keys="sortKeys"
     :update-available="updateAvailable"
-    :title="$t('albums')"
+    :title="title"
     :allow-key-hooks="true"
     :show-search-button="true"
     icon="mdi-album"
@@ -23,14 +23,25 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
 defineOptions({
   name: "Albums",
 });
 
+const route = useRoute();
+const { t } = useI18n();
+const genreId = route.query.genre_id as string | undefined;
+const genreName = route.query.genre_name as string | undefined;
+
 const updateAvailable = ref<boolean>(false);
 const total = ref(store.libraryAlbumsCount);
+
+const title = computed(() => {
+  return t("albums");
+});
 
 const sortKeys = [
   "name",
@@ -66,6 +77,17 @@ onMounted(() => {
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
+
+  if (genreId) {
+    return await api.getGenreAlbums(
+      genreId,
+      "library",
+      params.libraryOnly,
+      params.limit,
+      params.offset,
+    );
+  }
+
   return await api.getLibraryAlbums(
     params.favoritesOnly || undefined,
     params.search,
@@ -78,6 +100,10 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 const setTotals = async function (params: LoadDataParams) {
+  if (genreId) {
+    total.value = undefined;
+    return;
+  }
   if (!params.favoritesOnly && !params.albumType && !params.provider) {
     total.value = store.libraryAlbumsCount;
     return;
