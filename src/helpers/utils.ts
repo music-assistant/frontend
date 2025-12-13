@@ -571,6 +571,15 @@ export const playerVisible = function (
   ) {
     return false;
   }
+  if (
+    store.currentUser &&
+    store.currentUser.player_filter.length > 0 &&
+    !store.currentUser.player_filter.includes(player.player_id)
+  ) {
+    // for non-admin users, the playerfilter is applied in the backend
+    // but for admin users we need to filter here as well
+    return false;
+  }
   return true;
 };
 

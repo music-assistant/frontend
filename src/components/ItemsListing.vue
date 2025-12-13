@@ -611,6 +611,15 @@ const musicProviders = computed(() => {
   return Object.values(api.providers)
     .filter((provider) => {
       if (provider.type !== ProviderType.MUSIC) return false;
+      if (
+        store.currentUser &&
+        store.currentUser.provider_filter.length &&
+        !store.currentUser.provider_filter.includes(provider.instance_id)
+      ) {
+        // for non-admin users, the providerfilter is applied in the backend
+        // but for admin users we need to filter here as well
+        return false;
+      }
       // If we have a required feature for this itemtype, filter by it
       if (requiredFeature) {
         return provider.supported_features.includes(requiredFeature);
