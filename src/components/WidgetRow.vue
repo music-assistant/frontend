@@ -17,6 +17,7 @@
         />
       </template>
       <template #append>
+        <slot name="header-append"></slot>
         <div v-if="editMode && widgetRow.settings">
           <!-- up button -->
           <v-btn

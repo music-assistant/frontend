@@ -167,6 +167,7 @@ const completeInitialization = async () => {
   await api.fetchState();
   store.libraryArtistsCount = await api.getLibraryArtistsCount();
   store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
+  store.libraryGenresCount = await api.getLibraryGenresCount();
   store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
   store.libraryRadiosCount = await api.getLibraryRadiosCount();
   store.libraryTracksCount = await api.getLibraryTracksCount();

@@ -11,7 +11,12 @@
       @title-clicked="toggleExpand"
     >
       <template #title>
-        <slot name="title">{{ title }}</slot>
+        <v-breadcrumbs
+          v-if="breadcrumbItems.length"
+          :items="breadcrumbItems"
+          class="pa-0"
+        />
+        <slot v-else name="title">{{ title }}</slot>
       </template>
     </Toolbar>
 
@@ -65,7 +70,14 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :show-actions="
-                ['tracks', 'albums', 'albumtracks'].includes(itemtype)
+                [
+                  'tracks',
+                  'albums',
+                  'albumtracks',
+                  'genrealbums',
+                  'genretracks',
+                  'genres',
+                ].includes(itemtype)
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
@@ -217,11 +229,12 @@ import {
   watchEffect,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { $t } from "@/plugins/i18n";
 
 export interface LoadDataParams {
   offset: number;
@@ -304,6 +317,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // global refs
 const router = useRouter();
+const route = useRoute();
 const { t } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
@@ -422,10 +436,12 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
     | undefined;
   if (!current) return false;
   switch (itemtype) {
-    case "tracks": {
+    case "tracks":
+    case "genretracks": {
       return item.item_id === current.item_id;
     }
-    case "albums": {
+    case "albums":
+    case "genrealbums": {
       if (!("album" in current)) return false;
       return item.item_id === current.album.item_id;
     }
@@ -542,9 +558,9 @@ const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
   if (props.itemtype == "artists") {
     store.globalSearchType = MediaType.ARTIST;
-  } else if (props.itemtype == "albums") {
+  } else if (props.itemtype == "albums" || props.itemtype == "genrealbums") {
     store.globalSearchType = MediaType.ALBUM;
-  } else if (props.itemtype == "tracks") {
+  } else if (props.itemtype == "tracks" || props.itemtype == "genretracks") {
     store.globalSearchType = MediaType.TRACK;
   } else if (props.itemtype == "playlists") {
     store.globalSearchType = MediaType.PLAYLIST;
@@ -638,6 +654,40 @@ watchEffect(() => {
   if (!showSearchInput.value) {
     searchHasFocus.value = false;
   }
+});
+
+const breadcrumbItems = computed(() => {
+  if (route.query.genre_id && route.query.genre_name) {
+    const genreIdRaw = Array.isArray(route.query.genre_id)
+      ? route.query.genre_id[0]
+      : route.query.genre_id;
+    const genreNameRaw = Array.isArray(route.query.genre_name)
+      ? route.query.genre_name[0]
+      : route.query.genre_name;
+
+    // Ensure we have non-null strings
+    if (!genreIdRaw || !genreNameRaw) {
+      return [];
+    }
+
+    return [
+      {
+        title: $t("genres.genres"),
+        disabled: false,
+        to: { name: "genres" },
+      },
+      {
+        title: String(genreNameRaw),
+        disabled: false,
+        to: { name: "genre", params: { id: String(genreIdRaw) } },
+      },
+      {
+        title: props.title || "",
+        disabled: true,
+      },
+    ];
+  }
+  return [];
 });
 
 const menuItems = computed(() => {
@@ -930,7 +980,7 @@ const restoreSettings = async function () {
     viewMode.value = prefs.viewMode;
   } else if (props.itemtype == "artists") {
     viewMode.value = "panel";
-  } else if (props.itemtype == "albums") {
+  } else if (props.itemtype == "albums" || props.itemtype == "genrealbums") {
     viewMode.value = "panel";
   } else {
     viewMode.value = "list";
@@ -1111,6 +1161,13 @@ onMounted(async () => {
     showCheckboxes.value = false;
   });
 
+  // Listen for refresh events
+  eventbus.on("refreshItems", (type: string) => {
+    if (type === props.itemtype) {
+      loadData(true, true);
+    }
+  });
+
   // signal if/when items get played/updated/removed
   const unsub = api.subscribe_multi(
     [
@@ -1144,6 +1201,7 @@ onMounted(async () => {
   );
   onBeforeUnmount(() => {
     eventbus.off("clearSelection");
+    eventbus.off("refreshItems");
     unsub();
   });
 });

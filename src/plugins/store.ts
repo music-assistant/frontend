@@ -44,6 +44,7 @@ interface Store {
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
   libraryTracksCount?: number;
+  libraryGenresCount?: number;
   libraryPlaylistsCount?: number;
   libraryRadiosCount?: number;
   libraryPodcastsCount?: number;
@@ -105,6 +106,7 @@ export const store: Store = reactive({
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,
   libraryTracksCount: undefined,
+  libraryGenresCount: undefined,
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
   isTouchscreen: isTouchscreenDevice(),
