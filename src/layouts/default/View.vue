@@ -3,12 +3,7 @@
     id="cont"
     :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
   >
-    <SidebarProvider
-      :style="{
-        '--sidebar-width': 'calc(var(--spacing) * 72)',
-        '--header-height': 'calc(var(--spacing) * 12)',
-      }"
-    >
+    <SidebarProvider>
       <AppSidebar v-if="!store.mobileLayout" />
       <SidebarInset>
         <div class="content-section">
@@ -35,7 +30,11 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 .main-layout {
   display: flex;
   height: 100vh;
+  overflow-x: hidden;
   overflow-y: auto;
+  /* Reset Vuetify's automatic padding that accounts for drawers */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 .main-layout--mobile {
