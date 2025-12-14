@@ -11,7 +11,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="sortKeys"
-    icon="mdi-account-outline"
+    :icon="UserRound"
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
@@ -23,6 +23,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { UserRound } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

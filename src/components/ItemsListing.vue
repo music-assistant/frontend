@@ -180,6 +180,7 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
+import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
@@ -266,7 +267,7 @@ export interface Props {
   total?: number;
   infiniteScroll?: boolean;
   path?: string;
-  icon?: string;
+  icon?: string | Component;
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;

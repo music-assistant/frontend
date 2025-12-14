@@ -68,14 +68,14 @@
   --chart-3: #ff9800;
   --chart-4: #9c27b0;
   --chart-5: #f44336;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #000000;
-  --sidebar-primary: #03a9f4;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e7e7e7;
-  --sidebar-accent-foreground: #000000;
-  --sidebar-border: #d4d4d4;
-  --sidebar-ring: #03a9f4;
+  --sidebar: rgb(var(--v-theme-panel));
+  --sidebar-foreground: rgb(var(--v-theme-on-surface));
+  --sidebar-primary: rgb(var(--v-theme-primary));
+  --sidebar-primary-foreground: rgb(var(--v-theme-on-primary));
+  --sidebar-accent: rgba(var(--v-theme-on-surface), 0.08);
+  --sidebar-accent-foreground: rgb(var(--v-theme-on-surface));
+  --sidebar-border: rgba(var(--v-theme-on-surface), 0.12);
+  --sidebar-ring: rgb(var(--v-theme-primary));
 }
 
 .dark {
@@ -103,12 +103,12 @@
   --chart-3: #ff9800;
   --chart-4: #9c27b0;
   --chart-5: #f44336;
-  --sidebar: #232323;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #03a9f4;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2d2d2d;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #3d3d3d;
-  --sidebar-ring: #03a9f4;
+  --sidebar: rgb(var(--v-theme-panel));
+  --sidebar-foreground: rgb(var(--v-theme-on-surface));
+  --sidebar-primary: rgb(var(--v-theme-primary));
+  --sidebar-primary-foreground: rgb(var(--v-theme-on-primary));
+  --sidebar-accent: rgba(var(--v-theme-on-surface), 0.12);
+  --sidebar-accent-foreground: rgb(var(--v-theme-on-surface));
+  --sidebar-border: rgba(var(--v-theme-on-surface), 0.2);
+  --sidebar-ring: rgb(var(--v-theme-primary));
 }

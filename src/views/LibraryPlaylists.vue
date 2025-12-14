@@ -13,7 +13,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :extra-menu-items="extraMenuItems"
-    icon="mdi-playlist-play"
+    :icon="ListMusic"
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
@@ -30,6 +30,7 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { ListMusic } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

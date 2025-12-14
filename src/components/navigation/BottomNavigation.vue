@@ -15,7 +15,7 @@
       active-color="fg"
       base-color="grey"
     >
-      <v-icon size="xx-large">{{ menuItem.icon }}</v-icon>
+      <component :is="menuItem.icon" class="w-6 h-6" />
       <span class="menuButton">{{ $t(menuItem.label) }}</span>
     </v-btn>
 
@@ -28,7 +28,7 @@
           aria-label="Open library menu"
           base-color="grey"
         >
-          <v-icon size="xx-large">mdi-bookshelf</v-icon>
+          <LibraryIcon class="w-6 h-6" />
           <span class="menuButton">{{ $t("library") }}</span>
         </v-btn>
       </template>
@@ -38,15 +38,19 @@
           v-for="menuItem of menuItems.filter((x) => x.isLibraryNode)"
           :key="menuItem.label"
           :title="$t(menuItem.label)"
-          :prepend-icon="menuItem.icon"
           :to="menuItem.path"
-        />
+        >
+          <template #prepend>
+            <component :is="menuItem.icon" class="w-5 h-5 mr-3" />
+          </template>
+        </v-list-item>
       </v-list>
     </v-menu>
   </v-bottom-navigation>
 </template>
 
 <script setup lang="ts">
+import { LibraryIcon } from "lucide-vue-next";
 import { ref } from "vue";
 import { getMenuItems } from "./utils/getMenuItems";
 

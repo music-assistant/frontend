@@ -28,23 +28,25 @@
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
+import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { onMounted, ref, computed, watch } from "vue";
+import { useColorMode } from "@vueuse/core";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useTheme } from "vuetify";
 import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
-import Login from "./views/Login.vue";
-import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import { remoteConnectionManager } from "./plugins/remote";
 import type { ITransport } from "./plugins/remote/transport";
-import { useRouter } from "vue-router";
-import authManager from "@/plugins/auth";
+import { webPlayer, WebPlayerMode } from "./plugins/web_player";
+import Login from "./views/Login.vue";
 
 const theme = useTheme();
 const router = useRouter();
+const mode = useColorMode();
 
 const isConnected = ref(false);
 const loginComponent = ref<InstanceType<typeof Login> | null>(null);
@@ -54,22 +56,30 @@ const showLogin = computed(
 
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
+  let themeValue: "light" | "dark";
+
   if (themePref == "dark") {
     // forced dark mode
     theme.global.name.value = "dark";
+    themeValue = "dark";
   } else if (themePref == "light") {
     // forced light mode
     theme.global.name.value = "light";
+    themeValue = "light";
   } else if (
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
   ) {
     // dark mode is enabled in browser
     theme.global.name.value = "dark";
+    themeValue = "dark";
   } else {
     // light mode is enabled in browser
     theme.global.name.value = "light";
+    themeValue = "light";
   }
+
+  mode.value = themePref === "auto" ? "auto" : themeValue;
 };
 
 const interactedHandler = function () {

@@ -1,9 +1,23 @@
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { store } from "@/plugins/store";
+import {
+  BookAudio,
+  Disc3,
+  Folder,
+  House,
+  ListMusic,
+  Music2,
+  Podcast,
+  Radio,
+  Search,
+  Settings,
+  UserRound,
+} from "lucide-vue-next";
+import { Component } from "vue";
 
 export interface MenuItem {
   label: string;
-  icon: string;
+  icon: Component;
   path: string;
   isLibraryNode: boolean;
   hidden?: boolean;
@@ -20,7 +34,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "home") {
       items.push({
         label: "home",
-        icon: "mdi-home-outline",
+        icon: House,
         path: "/home",
         isLibraryNode: false,
       });
@@ -28,7 +42,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "search") {
       items.push({
         label: "search",
-        icon: "mdi-magnify",
+        icon: Search,
         path: "/search",
         isLibraryNode: false,
       });
@@ -36,7 +50,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "artists") {
       items.push({
         label: "artists",
-        icon: "mdi-account-outline",
+        icon: UserRound,
         path: "/artists",
         isLibraryNode: true,
         hidden: store.libraryArtistsCount === 0,
@@ -45,7 +59,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "albums") {
       items.push({
         label: "albums",
-        icon: "md:album",
+        icon: Disc3,
         path: "/albums",
         isLibraryNode: true,
         hidden: store.libraryAlbumsCount === 0,
@@ -54,7 +68,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "tracks") {
       items.push({
         label: "tracks",
-        icon: "mdi-music-note",
+        icon: Music2,
         path: "/tracks",
         isLibraryNode: true,
         hidden: store.libraryTracksCount === 0,
@@ -63,34 +77,34 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "playlists") {
       items.push({
         label: "playlists",
-        icon: "md:playlist_play",
+        icon: ListMusic,
         path: "/playlists",
         isLibraryNode: true,
         hidden: store.libraryPlaylistsCount === 0,
       });
     }
-    if (enabledMenuItemStr === "podcasts") {
-      items.push({
-        label: "podcasts",
-        icon: "mdi-podcast",
-        path: "/podcasts",
-        isLibraryNode: true,
-        hidden: store.libraryPodcastsCount === 0,
-      });
-    }
     if (enabledMenuItemStr === "audiobooks") {
       items.push({
         label: "audiobooks",
-        icon: "mdi-book-play-outline",
+        icon: BookAudio,
         path: "/audiobooks",
         isLibraryNode: true,
         hidden: store.libraryAudiobooksCount === 0,
       });
     }
+    if (enabledMenuItemStr === "podcasts") {
+      items.push({
+        label: "podcasts",
+        icon: Podcast,
+        path: "/podcasts",
+        isLibraryNode: true,
+        hidden: store.libraryPodcastsCount === 0,
+      });
+    }
     if (enabledMenuItemStr === "radios") {
       items.push({
         label: "radios",
-        icon: "mdi-access-point",
+        icon: Radio,
         path: "/radios",
         isLibraryNode: true,
         hidden: store.libraryRadiosCount === 0,
@@ -99,7 +113,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "browse") {
       items.push({
         label: "browse",
-        icon: "mdi-folder-outline",
+        icon: Folder,
         path: "/browse",
         isLibraryNode: true,
       });
@@ -107,7 +121,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "settings") {
       items.push({
         label: "settings.settings",
-        icon: "mdi-cog-outline",
+        icon: Settings,
         path: "/settings",
         isLibraryNode: true,
       });

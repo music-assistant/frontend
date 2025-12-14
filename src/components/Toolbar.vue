@@ -7,12 +7,14 @@
       #prepend
     >
       <v-btn
-        :icon="icon"
+        :icon="typeof icon === 'string' ? icon : undefined"
         size="large"
         :disabled="iconAction == null"
         style="opacity: 0.8"
         @click="iconAction?.()"
-      />
+      >
+        <component :is="icon" v-if="typeof icon !== 'string'" class="w-6 h-6" />
+      </v-btn>
     </template>
 
     <template #title>
@@ -73,9 +75,16 @@
                 dot
               >
                 <v-icon
+                  v-if="typeof menuItem.icon === 'string'"
                   :icon="menuItem.icon"
                   :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
                   size="22px"
+                />
+                <component
+                  :is="menuItem.icon"
+                  v-else-if="menuItem.icon"
+                  class="w-[22px] h-[22px]"
+                  :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
                 />
               </v-badge>
             </v-btn>
@@ -91,7 +100,11 @@
               @click="subItem.action ? subItem.action() : ''"
             >
               <template v-if="subItem.icon" #prepend>
-                <v-icon :icon="subItem.icon" />
+                <v-icon
+                  v-if="typeof subItem.icon === 'string'"
+                  :icon="subItem.icon"
+                />
+                <component :is="subItem.icon" v-else class="w-5 h-5" />
               </template>
               <template #append>
                 <v-icon v-if="subItem.selected" icon="mdi-check" />
@@ -113,9 +126,16 @@
         >
           <v-badge :model-value="menuItem.active == true" color="primary" dot>
             <v-icon
+              v-if="typeof menuItem.icon === 'string'"
               :icon="menuItem.icon"
               :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
               size="22px"
+            />
+            <component
+              :is="menuItem.icon"
+              v-else-if="menuItem.icon"
+              class="w-[22px] h-[22px]"
+              :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
             />
           </v-badge>
         </v-btn>
@@ -168,9 +188,16 @@
                   dot
                 >
                   <v-icon
+                    v-if="typeof menuItem.icon === 'string'"
                     :icon="menuItem.icon"
                     :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
                     size="22px"
+                  />
+                  <component
+                    :is="menuItem.icon"
+                    v-else
+                    class="w-[22px] h-[22px]"
+                    :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
                   />
                 </v-badge>
               </template>
@@ -198,10 +225,12 @@ import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { getBreakpointValue } from "../plugins/breakpoint";
 
+import type { Component } from "vue";
+
 // properties
 export interface Props {
   color?: string;
-  icon?: string;
+  icon?: string | Component;
   title?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;

@@ -38,29 +38,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { DEFAULT_MENU_ITEMS } from "@/constants";
+import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import {
   ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
 } from "@/plugins/api/interfaces";
-import EditConfig from "./EditConfig.vue";
 import { $t, i18n } from "@/plugins/i18n";
-import { DEFAULT_MENU_ITEMS } from "@/constants";
-import { api } from "@/plugins/api";
-import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
+import { useColorMode } from "@vueuse/core";
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const loading = ref(false);
+const mode = useColorMode();
 
 onMounted(() => {
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
+
+  const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
+  mode.value = storedTheme as "light" | "dark" | "auto";
 
   const configEntries: ConfigEntry[] = [
     {
@@ -76,7 +81,7 @@ onMounted(() => {
       ],
       multi_value: false,
       category: "generic",
-      value: localStorage.getItem("frontend.settings.theme"),
+      value: storedTheme,
     },
     {
       key: "language",
@@ -200,6 +205,10 @@ const saveValues = function (values: Record<string, ConfigValueType>) {
     const value = values[key];
     if (value != null) {
       localStorage.setItem(storageKey, value.toString());
+
+      if (key === "theme") {
+        mode.value = value.toString() as "light" | "dark" | "auto";
+      }
     } else {
       localStorage.removeItem(storageKey);
     }

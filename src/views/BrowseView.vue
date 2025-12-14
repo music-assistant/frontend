@@ -13,7 +13,7 @@
       :sort-keys="['original', 'name', 'name_desc']"
       :path="path"
       :allow-key-hooks="true"
-      icon="mdi-folder-outline"
+      :icon="Folder"
       :title="title"
     >
       <template #title>
@@ -51,6 +51,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
 import api from "@/plugins/api";
 import router from "@/plugins/router";
+import { Folder } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

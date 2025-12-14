@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Toolbar icon="mdi-cog-outline" :show-loading="true">
+    <Toolbar :icon="Settings" :show-loading="true">
       <template #title>
         <v-breadcrumbs :items="breadcrumbItems" class="pa-0" />
       </template>
@@ -81,6 +81,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
+import { Settings } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
