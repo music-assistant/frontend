@@ -80,6 +80,7 @@ a {
 }
 
 .listitem-media-thumb {
+  position: relative;
   height: 50px;
   width: 50px;
   margin-right: 10px;
