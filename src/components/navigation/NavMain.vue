@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { Component } from "vue";
+import { markRaw, type Component } from "vue";
 import { RouterLink, useRoute } from "vue-router";
+
+const RouterLinkComponent = markRaw(RouterLink);
 
 import {
   SidebarGroup,
@@ -33,7 +35,7 @@ const isActive = (url: string) => {
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">
           <SidebarMenuButton
-            :as="RouterLink"
+            :as="RouterLinkComponent"
             v-bind="{ to: item.url }"
             :is-active="isActive(item.url)"
             :tooltip="item.title"
