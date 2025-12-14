@@ -48,6 +48,7 @@ const { listItemProps, listItemClasses } = useListItem(props);
   border-radius: 4px !important;
   padding: 7px !important;
   padding-right: 0 !important;
+  margin-right: -18px !important;
 }
 
 .list-item-main :deep(.v-list-item__append) {

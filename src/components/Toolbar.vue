@@ -1,14 +1,9 @@
 <template>
   <v-toolbar :color="color" class="header">
-    <template
-      v-if="
-        (!getBreakpointValue({ breakpoint: 'tablet' }) || iconAction) && icon
-      "
-      #prepend
-    >
+    <template v-if="icon" #prepend>
       <v-btn
         :icon="typeof icon === 'string' ? icon : undefined"
-        size="large"
+        size="small"
         :disabled="iconAction == null"
         style="opacity: 0.8"
         @click="iconAction?.()"
@@ -47,113 +42,50 @@
         indeterminate
         :title="$t('tooltip.loading')"
       />
-      <div
-        v-for="menuItem of menuItems.filter((x) => !x.hide)"
-        :key="menuItem.label"
-      >
-        <!-- menu item with subitems -->
-        <v-menu
-          v-if="menuItem.subItems?.length"
-          location="bottom end"
-          scrim
-          density="compact"
-          slim
-          tile
-          :close-on-content-click="menuItem.closeOnContentClick !== false"
-        >
-          <template #activator="{ props }">
-            <v-btn
-              variant="text"
-              style="width: 40px"
-              v-bind="props"
-              :title="$t(menuItem.label, menuItem.labelArgs || [])"
-              :disabled="menuItem.disabled == true"
-            >
-              <v-badge
-                :model-value="menuItem.active == true"
-                color="primary"
-                dot
-              >
-                <v-icon
-                  v-if="typeof menuItem.icon === 'string'"
-                  :icon="menuItem.icon"
-                  :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                  size="22px"
-                />
-                <component
-                  :is="menuItem.icon"
-                  v-else-if="menuItem.icon"
-                  class="w-[22px] h-[22px]"
-                  :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                />
-              </v-badge>
-            </v-btn>
-          </template>
-          <v-list>
-            <v-list-item
-              v-for="(subItem, index) in menuItem.subItems.filter(
-                (x) => x.hide != true,
-              )"
-              :key="index"
-              :title="$t(subItem.label, subItem.labelArgs || [])"
-              :disabled="subItem.disabled == true"
-              @click="subItem.action ? subItem.action() : ''"
-            >
-              <template v-if="subItem.icon" #prepend>
-                <v-icon
-                  v-if="typeof subItem.icon === 'string'"
-                  :icon="subItem.icon"
-                />
-                <component :is="subItem.icon" v-else class="w-5 h-5" />
-              </template>
-              <template #append>
-                <v-icon v-if="subItem.selected" icon="mdi-check" />
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-        <!-- regular menuitem without subitems -->
-        <v-btn
-          v-else-if="
+      <v-btn
+        v-for="menuItem of menuItems.filter(
+          (x) =>
+            !x.hide &&
             !enforceOverflowMenu &&
-            (getBreakpointValue('bp5') || menuItem.overflowAllowed == false)
-          "
-          variant="text"
-          style="width: 40px"
-          :title="$t(menuItem.label, menuItem.labelArgs || [])"
-          :disabled="menuItem.disabled == true"
-          @click="menuItem.action"
-        >
-          <v-badge :model-value="menuItem.active == true" color="primary" dot>
-            <v-icon
-              v-if="typeof menuItem.icon === 'string'"
-              :icon="menuItem.icon"
-              :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-              size="22px"
-            />
-            <component
-              :is="menuItem.icon"
-              v-else-if="menuItem.icon"
-              class="w-[22px] h-[22px]"
-              :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-            />
-          </v-badge>
-        </v-btn>
-      </div>
+            (getBreakpointValue('bp5') || x.overflowAllowed === false),
+        )"
+        :key="menuItem.label"
+        variant="text"
+        style="width: 40px"
+        :title="$t(menuItem.label, menuItem.labelArgs || [])"
+        :disabled="menuItem.disabled == true"
+        @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
+      >
+        <v-badge :model-value="menuItem.active == true" color="primary" dot>
+          <v-icon
+            v-if="typeof menuItem.icon === 'string'"
+            :icon="menuItem.icon"
+            :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+            size="22px"
+          />
+          <component
+            :is="menuItem.icon"
+            v-else-if="menuItem.icon"
+            class="w-[22px] h-[22px]"
+            :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+          />
+        </v-badge>
+      </v-btn>
 
       <!-- overflow menu with (remaining) items if on mobile -->
       <div
         v-if="
           (!getBreakpointValue('bp5') || enforceOverflowMenu) &&
-          menuItems.filter(
-            (x) =>
-              x.hide != true &&
-              !x.subItems?.length &&
-              x.overflowAllowed !== false,
-          ).length
+          menuItems.filter((x) => x.hide != true && x.overflowAllowed !== false)
+            .length
         "
       >
-        <v-menu location="bottom end" scrim>
+        <v-menu
+          v-model="overflowMenuOpen"
+          location="bottom end"
+          scrim
+          :close-on-content-click="false"
+        >
           <template #activator="{ props }">
             <v-btn
               variant="plain"
@@ -171,15 +103,17 @@
           <v-list density="compact" slim tile>
             <v-list-item
               v-for="(menuItem, index) in menuItems.filter(
-                (x) =>
-                  x.hide != true &&
-                  !x.subItems?.length &&
-                  x.overflowAllowed !== false,
+                (x) => x.hide != true && x.overflowAllowed != false,
               )"
               :key="index"
               :title="$t(menuItem.label, menuItem.labelArgs || [])"
               :disabled="menuItem.disabled == true"
-              @click="menuItem.action ? menuItem.action() : ''"
+              :append-icon="
+                menuItem.subItems?.length ? 'mdi-chevron-right' : undefined
+              "
+              @click.prevent.stop="
+                (e: MouseEvent | KeyboardEvent) => onMenuItemClick(e, menuItem)
+              "
             >
               <template v-if="menuItem.icon" #prepend>
                 <v-badge
@@ -222,13 +156,47 @@
 <script setup lang="ts">
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getBreakpointValue } from "../plugins/breakpoint";
 
 import type { Component } from "vue";
+import { ref } from "vue";
+
+const overflowMenuOpen = ref(false);
+
+const onMenuItemClick = (
+  event: MouseEvent | KeyboardEvent,
+  menuItem: ToolBarMenuItem,
+) => {
+  event.preventDefault();
+  if (menuItem.subItems?.length) {
+    // Open submenu via global context menu
+    // Map closeOnContentClick to close_on_click on subItems if needed
+    const items =
+      menuItem.closeOnContentClick === false
+        ? menuItem.subItems.map((item) => ({
+            ...item,
+            close_on_click: item.close_on_click ?? false,
+          }))
+        : menuItem.subItems;
+    const posX = "clientX" in event ? event.clientX : 0;
+    const posY = "clientY" in event ? event.clientY : 0;
+    eventbus.emit("contextmenu", {
+      items,
+      posX,
+      posY,
+    });
+  } else if (menuItem.action) {
+    // Close overflow menu before executing action
+    overflowMenuOpen.value = false;
+    // Execute direct action
+    menuItem.action();
+  }
+};
 
 // properties
-export interface Props {
+interface Props {
   color?: string;
   icon?: string | Component;
   title?: string;
@@ -279,28 +247,17 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   align-items: center;
 }
 
-.header.v-toolbar :deep(.v-toolbar__content) > .v-toolbar__append {
-  margin-right: 0px;
+.header.v-toolbar :deep(.v-toolbar-title) {
+  margin-inline-start: 10px !important;
 }
 
-.header.v-toolbar > .v-toolbar__content > .v-toolbar-title {
-  margin-inline-start: 10px;
-}
-
-.header.v-toolbar > .v-toolbar__content > .v-toolbar__prepend {
-  margin-inline-start: 6px;
+.header.v-toolbar :deep(.v-toolbar__prepend) {
+  margin-inline-start: 12px !important;
+  margin-inline-end: 0px !important;
 }
 
 .header.v-toolbar > .v-toolbar__content > .v-toolbar__append {
-  margin-inline-end: 21px;
-}
-
-.header.v-toolbar-default > .v-toolbar__content > .v-toolbar-title {
-  margin-inline-start: 0px;
-}
-
-.header.v-toolbar-default > .v-toolbar__content > .v-toolbar__prepend {
-  margin-inline-start: 10px;
+  margin-inline-end: 5px;
 }
 
 .header.v-toolbar-default > .v-toolbar__content > .v-toolbar__append {

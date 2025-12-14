@@ -663,6 +663,7 @@ const menuItems = computed(() => {
         label: "tooltip.select_all",
         icon: "mdi-select-all",
         action: selectAll,
+        overflowAllowed: true,
       });
     }
     items.push({
@@ -672,6 +673,7 @@ const menuItems = computed(() => {
         : "mdi-checkbox-multiple-blank-outline",
       action: toggleCheckboxes,
       active: showCheckboxes.value,
+      overflowAllowed: true,
     });
   }
   // library only filter
@@ -681,6 +683,7 @@ const menuItems = computed(() => {
       icon: "mdi-bookshelf",
       action: toggleLibraryOnlyFilter,
       active: params.value.libraryOnly,
+      overflowAllowed: true,
     });
   }
 
@@ -691,6 +694,7 @@ const menuItems = computed(() => {
       icon: params.value.favoritesOnly ? "mdi-heart" : "mdi-heart-outline",
       action: toggleFavoriteFilter,
       active: params.value.favoritesOnly,
+      overflowAllowed: true,
     });
   }
 
@@ -703,6 +707,7 @@ const menuItems = computed(() => {
         : "mdi-account-music-outline",
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
+      overflowAllowed: true,
     });
   }
 
@@ -714,6 +719,7 @@ const menuItems = computed(() => {
       disabled: loading.value,
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
+      overflowAllowed: true,
       subItems: [
         "album",
         "single",
@@ -742,6 +748,7 @@ const menuItems = computed(() => {
       disabled: loading.value,
       active: params.value.provider && params.value.provider.length > 0,
       closeOnContentClick: false,
+      overflowAllowed: true,
       subItems: musicProviders.value.map((provider) => {
         return {
           label: provider.label,
@@ -776,6 +783,7 @@ const menuItems = computed(() => {
       label: "tooltip.sort_options",
       icon: "mdi-sort",
       disabled: props.sortKeys.length <= 1 || loading.value,
+      overflowAllowed: true,
       subItems: props.sortKeys.map((sortKey) => {
         return {
           label: `sort.${sortKey}`,
@@ -798,6 +806,7 @@ const menuItems = computed(() => {
       action: toggleSearch,
       active: isSearchActive.value,
       disabled: loading.value,
+      overflowAllowed: false,
     });
   }
 
@@ -805,6 +814,7 @@ const menuItems = computed(() => {
   items.push({
     label: "tooltip.toggle_view_mode",
     icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
+    overflowAllowed: true,
     subItems: [
       {
         label: "view.list",

@@ -101,6 +101,7 @@ onMounted(() => {
         newPlaylist(prov.instance_id);
       },
       icon: "mdi-playlist-plus",
+      overflowAllowed: true,
     });
   }
   if (playListCreateItems.length) {
@@ -108,6 +109,7 @@ onMounted(() => {
       label: "create_playlist_on",
       icon: "mdi-playlist-plus",
       subItems: playListCreateItems,
+      overflowAllowed: true,
     });
   }
   // signal if/when items get added/updated/removed within this library

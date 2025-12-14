@@ -177,6 +177,12 @@ const menuItemClicked = function (
     return;
   } else if (menuItem.action) {
     menuItem.action();
+    // Toggle selected state for multi-select menus (optimistic update)
+    if (menuItem.close_on_click === false) {
+      menuItem.selected = !menuItem.selected;
+      // Trigger reactivity by reassigning the array
+      items.value = [...items.value];
+    }
   }
   if (showSubmenu.value) {
     showSubmenu.value = false;
