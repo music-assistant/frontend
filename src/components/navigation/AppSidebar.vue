@@ -12,6 +12,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { getMenuItems } from "./utils/getMenuItems";
+import { useSidebar } from "@/components/ui/sidebar/utils";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -27,13 +28,15 @@ const navItems = computed(() => {
       icon: item.icon,
     }));
 });
+
+const { toggleSidebar } = useSidebar();
 </script>
 
 <template>
   <Sidebar collapsible="icon">
     <SidebarHeader>
       <SidebarMenu>
-        <div class="sidebar-header" @click="router.push({ name: 'home' })">
+        <div class="sidebar-header" @click="toggleSidebar">
           <img
             src="@/assets/icon.svg"
             alt="Music Assistant"
