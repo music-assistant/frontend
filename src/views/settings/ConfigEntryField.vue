@@ -137,9 +137,9 @@
       density="comfortable"
       clearable
       :readonly="!!confEntry.action"
-      @update:model-value="$emit('update:value', $event)"
-      @click:append-inner="$emit('togglePassword')"
-      @click:clear="$emit('clearValue')"
+      @update:model-value="onUpdateValue($event)"
+      @click:append-inner="emit('togglePassword')"
+      @click:clear="onClear"
     />
 
     <!-- value with dropdown -->
@@ -160,8 +160,8 @@
       ]"
       variant="outlined"
       density="comfortable"
-      @update:model-value="$emit('update:value', $event)"
-      @click:clear="$emit('clearValue')"
+      @update:model-value="onUpdateValue($event)"
+      @click:clear="onClear"
     />
 
     <!-- int value without range -->
@@ -182,8 +182,8 @@
       density="comfortable"
       :clearable="!confEntry.required"
       type="number"
-      @update:model-value="$emit('update:value', $event)"
-      @click:clear="$emit('clearValue')"
+      @update:model-value="onUpdateValue($event)"
+      @click:clear="onClear"
     />
 
     <!-- icon 'picker' -->
@@ -197,8 +197,8 @@
       :prepend-inner-icon="confEntry.value as string"
       variant="outlined"
       density="comfortable"
-      @update:model-value="$emit('update:value', $event)"
-      @click:clear="$emit('clearValue')"
+      @update:model-value="onUpdateValue($event)"
+      @click:clear="onClear"
     />
 
     <!-- multi-value string combobox -->
@@ -218,8 +218,8 @@
       ]"
       variant="outlined"
       density="comfortable"
-      @update:model-value="$emit('update:value', $event)"
-      @click:clear="$emit('clearValue')"
+      @update:model-value="onUpdateValue($event)"
+      @click:clear="onClear"
     />
 
     <!-- all other: textbox with single value -->
@@ -237,8 +237,8 @@
       variant="outlined"
       density="comfortable"
       :readonly="!!confEntry.action"
-      @update:model-value="$emit('update:value', $event)"
-      @click:clear="$emit('clearValue')"
+      @update:model-value="onUpdateValue($event)"
+      @click:clear="onClear"
     />
   </div>
 </template>
@@ -264,13 +264,31 @@ const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
 
-defineEmits<{
+const emit = defineEmits<{
   (e: "togglePassword"): void;
-  (e: "clearValue"): void;
   (e: "action"): void;
   (e: "openDsp"): void;
   (e: "update:value", value: ConfigValueType): void;
 }>();
+
+const onUpdateValue = (value: ConfigValueType) => {
+  // When value is cleared (null/undefined/empty string/empty array), emit the default value instead
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    (Array.isArray(value) && value.length === 0)
+  ) {
+    emit("update:value", props.confEntry.default_value);
+  } else {
+    emit("update:value", value);
+  }
+};
+
+const onClear = () => {
+  // Explicitly emit the default value when clear button is clicked
+  emit("update:value", props.confEntry.default_value);
+};
 
 const translatedOptions = computed(() => {
   if (!props.confEntry.options) return [];

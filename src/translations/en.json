@@ -285,6 +285,8 @@
             }
         },
         "default": "default",
+        "reset_to_defaults": "Reset to defaults",
+        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
             "audio": "Audio",

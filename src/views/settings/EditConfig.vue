@@ -26,7 +26,6 @@
                 :show-password-values="showPasswordValues"
                 :disabled="isDisabled(conf_entry)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
-                @clear-value="conf_entry.value = conf_entry.default_value"
                 @update:value="conf_entry.value = $event"
                 @action="
                   action(conf_entry.action || conf_entry.key);
@@ -67,6 +66,9 @@
       </v-btn>
       <v-btn block variant="outlined" size="large" @click="router.back()">
         {{ $t("close") }}
+      </v-btn>
+      <v-btn block variant="text" size="large" @click="resetToDefaults">
+        {{ $t("settings.reset_to_defaults") }}
       </v-btn>
     </div>
   </v-form>
@@ -229,6 +231,13 @@ const openLink = function (url: string) {
 
 const openDspConfig = function () {
   router.push(`${router.currentRoute.value.path}/dsp`);
+};
+
+const resetToDefaults = function () {
+  if (!entries.value) return;
+  for (const entry of entries.value) {
+    entry.value = entry.default_value;
+  }
 };
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
