@@ -47,7 +47,7 @@
           (x) =>
             !x.hide &&
             !enforceOverflowMenu &&
-            (getBreakpointValue('bp5') || x.overflowAllowed === false),
+            (getBreakpointValue('bp7') || x.overflowAllowed === false),
         )"
         :key="menuItem.label"
         variant="text"
@@ -75,7 +75,7 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <div
         v-if="
-          (!getBreakpointValue('bp5') || enforceOverflowMenu) &&
+          (!getBreakpointValue('bp7') || enforceOverflowMenu) &&
           menuItems.filter((x) => x.hide != true && x.overflowAllowed !== false)
             .length
         "
