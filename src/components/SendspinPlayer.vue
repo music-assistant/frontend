@@ -178,7 +178,7 @@ watch(
 
 // Setup on mount
 onMounted(() => {
-  console.log("Sendspin: Component mounted, connecting...");
+  console.debug("Sendspin: Component mounted, connecting...");
 
   // Set audio source to indicate this tab is handling audio
   // (for coordination with other tabs via web_player.ts)
@@ -221,7 +221,7 @@ onMounted(() => {
           ? ["opus", "flac"]
           : ["opus"];
 
-        console.log(
+        console.debug(
           `Sendspin: Using codecs [${codecs.join(", ")}] for ${isDirectConnection() ? "direct" : "remote"} connection`,
         );
 
@@ -328,10 +328,10 @@ onMounted(() => {
   if (audioRef.value) {
     // Ensure audio element doesn't pause unexpectedly
     audioRef.value.addEventListener("pause", () => {
-      console.log("Sendspin: Audio element paused");
+      console.debug("Sendspin: Audio element paused");
       if (isAndroid) {
         // On Android, ALWAYS keep the silent loop playing to maintain MediaSession
-        console.log("Sendspin: Restarting silent loop (Android workaround)");
+        console.debug("Sendspin: Restarting silent loop (Android workaround)");
         if (audioRef.value) {
           audioRef.value.play().catch((e) => {
             console.warn("Sendspin: Failed to restart silent loop:", e);
@@ -340,7 +340,7 @@ onMounted(() => {
       } else {
         // On iOS/Desktop with MediaStream, restart only if playing
         if (isPlaying.value && audioRef.value) {
-          console.log("Sendspin: Restarting audio element playback");
+          console.debug("Sendspin: Restarting audio element playback");
           audioRef.value.play().catch((e) => {
             console.warn("Sendspin: Failed to restart audio:", e);
           });

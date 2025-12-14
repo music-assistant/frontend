@@ -64,7 +64,7 @@ async function getConnectionInfo(): Promise<ConnectionInfo> {
     if (info && info.local_ws_url) {
       cachedConnectionInfo = info;
       connectionInfoCacheTime = Date.now();
-      console.log("[Sendspin] Connection info from server:", info);
+      console.debug("[Sendspin] Connection info from server:", info);
       return info;
     }
   } catch (error) {
@@ -93,14 +93,14 @@ function tryDirectWebSocket(url: string): Promise<WebSocket | null> {
     // Skip direct WebSocket if page is loaded over HTTPS and the URL is ws://
     // This avoids mixed content errors that would block the connection
     if (window.location.protocol === "https:" && url.startsWith("ws://")) {
-      console.log(
+      console.debug(
         "[Sendspin] Skipping direct WebSocket (mixed content not allowed over HTTPS)",
       );
       resolve(null);
       return;
     }
 
-    console.log("[Sendspin] Trying direct WebSocket connection to:", url);
+    console.debug("[Sendspin] Trying direct WebSocket connection to:", url);
 
     let ws: WebSocket;
     try {
@@ -108,26 +108,26 @@ function tryDirectWebSocket(url: string): Promise<WebSocket | null> {
       ws = new OriginalWebSocket(url);
     } catch (error) {
       // SecurityError can be thrown synchronously when attempting mixed content
-      console.log("[Sendspin] Direct WebSocket connection failed:", error);
+      console.debug("[Sendspin] Direct WebSocket connection failed:", error);
       resolve(null);
       return;
     }
 
     const timeoutId = setTimeout(() => {
-      console.log("[Sendspin] Direct WebSocket connection timed out");
+      console.debug("[Sendspin] Direct WebSocket connection timed out");
       ws.close();
       resolve(null);
     }, DIRECT_WS_TIMEOUT_MS);
 
     ws.onopen = () => {
       clearTimeout(timeoutId);
-      console.log("[Sendspin] Direct WebSocket connection successful!");
+      console.debug("[Sendspin] Direct WebSocket connection successful");
       resolve(ws);
     };
 
     ws.onerror = () => {
       clearTimeout(timeoutId);
-      console.log("[Sendspin] Direct WebSocket connection failed");
+      console.debug("[Sendspin] Direct WebSocket connection failed");
       resolve(null);
     };
 
@@ -167,7 +167,7 @@ export interface SendspinWebSocketBridge {
 async function createWebRTCConnection(
   iceServers: RTCIceServer[],
 ): Promise<SendspinWebSocketBridge> {
-  console.log("[Sendspin] Creating WebRTC connection...");
+  console.debug("[Sendspin] Creating WebRTC connection...");
 
   const peerConnection = new RTCPeerConnection({
     iceServers: iceServers,
@@ -232,7 +232,7 @@ async function createWebRTCConnection(
 
   // Handle DataChannel events
   dataChannel.onopen = () => {
-    console.log("[SendspinWebRTC] DataChannel opened");
+    console.debug("[SendspinWebRTC] DataChannel opened");
     bridge._isOpen = true;
     if (bridge.onopen) {
       bridge.onopen(new Event("open"));
@@ -253,7 +253,7 @@ async function createWebRTCConnection(
   };
 
   dataChannel.onclose = () => {
-    console.log("[SendspinWebRTC] DataChannel closed");
+    console.debug("[SendspinWebRTC] DataChannel closed");
     if (bridge.onclose) {
       bridge.onclose(new CloseEvent("close"));
     }
@@ -298,7 +298,7 @@ async function createWebRTCConnection(
     setTimeout(resolve, 2000);
   });
 
-  console.log(
+  console.debug(
     "[Sendspin] Sending offer to server with",
     iceCandidates.length,
     "ICE candidates",
@@ -317,7 +317,7 @@ async function createWebRTCConnection(
   });
 
   sessionId = response.session_id;
-  console.log("[SendspinWebRTC] Received answer, session:", sessionId);
+  console.debug("[SendspinWebRTC] Received answer, session:", sessionId);
 
   // Set remote description (answer from server)
   await peerConnection.setRemoteDescription(
@@ -353,7 +353,7 @@ async function createWebRTCConnection(
     }
   };
 
-  console.log("[Sendspin] WebRTC connection setup complete");
+  console.debug("[Sendspin] WebRTC connection setup complete");
   return bridge;
 }
 
@@ -408,7 +408,7 @@ function wrapWebSocket(ws: WebSocket): SendspinWebSocketBridge {
  * Returns a WebSocket-like interface that sendspin-js can use.
  */
 export async function createSendspinConnection(): Promise<SendspinWebSocketBridge> {
-  console.log("[Sendspin] Creating connection...");
+  console.debug("[Sendspin] Creating connection...");
 
   // Get connection info (local WS URL + ICE servers)
   const connectionInfo = await getConnectionInfo();
@@ -417,14 +417,14 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
   if (connectionInfo.local_ws_url) {
     const directWs = await tryDirectWebSocket(connectionInfo.local_ws_url);
     if (directWs) {
-      console.log("[Sendspin] Using direct WebSocket connection");
+      console.info("[Sendspin] Using direct WebSocket connection");
       lastConnectionWasDirect = true;
       return wrapWebSocket(directWs);
     }
   }
 
   // Fall back to WebRTC
-  console.log("[Sendspin] Falling back to WebRTC connection");
+  console.info("[Sendspin] Using WebRTC connection");
   lastConnectionWasDirect = false;
   return createWebRTCConnection(connectionInfo.ice_servers);
 }
@@ -451,7 +451,7 @@ export function isDirectConnection(): boolean {
  * Call this when the API connection is lost to ensure a fresh connection is created on reconnect.
  */
 export function resetSendspinConnection(): void {
-  console.log("[SendspinConnection] Resetting connection state");
+  console.debug("[SendspinConnection] Resetting connection state");
   if (pendingBridge) {
     try {
       pendingBridge.close();
@@ -527,7 +527,7 @@ class SendspinWebSocketWrapper {
     this.bridge.onopen = handler;
     // If the channel is already open, call the handler immediately
     if (handler && this.bridge._isOpen) {
-      console.log(
+      console.debug(
         "[SendspinWebSocketWrapper] Channel already open, calling onopen handler",
       );
       setTimeout(
@@ -574,7 +574,7 @@ class SendspinWebSocketWrapper {
       this.bridge.onopen = listener as (event: Event) => void;
       // If the channel is already open, call the handler immediately
       if (this.bridge._isOpen) {
-        console.log(
+        console.debug(
           "[SendspinWebSocketWrapper] Channel already open, calling open listener",
         );
         setTimeout(
@@ -625,7 +625,7 @@ export function installSendspinInterceptor(): void {
 
     // Only intercept /sendspin URLs
     if (urlStr.includes("/sendspin")) {
-      console.log("[SendspinInterceptor] Intercepting WebSocket to:", urlStr);
+      console.debug("[SendspinInterceptor] Intercepting WebSocket to:", urlStr);
       return new SendspinWebSocketWrapper(url, protocols);
     }
 
@@ -644,7 +644,7 @@ export function installSendspinInterceptor(): void {
     OriginalWebSocket.CLOSED;
 
   interceptorInstalled = true;
-  console.log("[SendspinInterceptor] Installed");
+  console.info("[SendspinInterceptor] Installed");
 }
 
 /**
@@ -652,7 +652,7 @@ export function installSendspinInterceptor(): void {
  * This must be called before creating a SendspinPlayer
  */
 export async function prepareSendspinSession(): Promise<void> {
-  console.log("[SendspinConnection] Creating WebRTC session...");
+  console.debug("[SendspinConnection] Creating session...");
   pendingBridge = await createSendspinConnection();
-  console.log("[SendspinConnection] WebRTC session ready");
+  console.debug("[SendspinConnection] Session ready");
 }
