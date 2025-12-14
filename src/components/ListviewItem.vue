@@ -19,31 +19,34 @@
           "
         />
       </div>
-      <div v-else class="media-thumb listitem-media-thumb">
+      <div
+        v-else
+        class="media-thumb listitem-media-thumb"
+        @mouseenter="showPlayBtn = true"
+        @mouseleave="showPlayBtn = false"
+      >
         <MediaItemThumb
           size="50"
           :item="isAvailable ? item : undefined"
           :class="{ dimmed: showPlayBtn }"
         />
+        <!-- play button -->
+        <v-btn
+          v-if="item.is_playable"
+          :class="{ hidden: !showPlayBtn }"
+          icon="mdi-play"
+          variant="text"
+          size="small"
+          style="
+            position: absolute;
+            left: 14px;
+            bottom: 12px;
+            color: white;
+            font-size: 18px;
+          "
+          @click.stop="onPlayClick"
+        />
       </div>
-      <!-- play button -->
-      <v-btn
-        v-if="!showCheckboxes && item.is_playable"
-        :class="{ hidden: !showPlayBtn }"
-        icon="mdi-play"
-        variant="text"
-        size="small"
-        style="
-          position: absolute;
-          left: 14px;
-          bottom: 12px;
-          color: white;
-          font-size: 18px;
-        "
-        @click.stop="onPlayClick"
-        @mouseenter="showPlayBtn = true"
-        @mouseleave="showPlayBtn = false"
-      />
     </template>
 
     <!-- title -->
