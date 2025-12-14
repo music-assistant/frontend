@@ -12,7 +12,7 @@
     :title="$t('podcasts')"
     :allow-key-hooks="true"
     :show-search-button="true"
-    icon="mdi-podcast"
+    :icon="Podcast"
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
@@ -24,6 +24,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Podcast } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

@@ -66,7 +66,9 @@
             variant="text"
             :title="$t(menuItem.label, menuItem.labelArgs || [])"
             :disabled="menuItem.disabled == true"
-            :prepend-icon="menuItem.icon"
+            :prepend-icon="
+              typeof menuItem.icon === 'string' ? menuItem.icon : undefined
+            "
             :color="menuItem.color"
             border="bottom"
             :append-icon="
@@ -78,7 +80,14 @@
             "
             style="padding-left: 25px"
             @click.stop="(e) => menuItemClicked(e, menuItem)"
-          />
+          >
+            <template
+              v-if="menuItem.icon && typeof menuItem.icon !== 'string'"
+              #prepend
+            >
+              <component :is="menuItem.icon" class="w-5 h-5" />
+            </template>
+          </v-list-item>
         </div>
       </v-list>
     </v-card>
@@ -102,11 +111,22 @@
             variant="text"
             :title="$t(subMenuItem.label, subMenuItem.labelArgs || [])"
             :disabled="subMenuItem.disabled == true"
-            :prepend-icon="subMenuItem.icon"
+            :prepend-icon="
+              typeof subMenuItem.icon === 'string'
+                ? subMenuItem.icon
+                : undefined
+            "
             :color="subMenuItem.color"
             :append-icon="subMenuItem.selected ? 'mdi-check' : undefined"
             @click.stop="(e) => menuItemClicked(e, subMenuItem)"
-          />
+          >
+            <template
+              v-if="subMenuItem.icon && typeof subMenuItem.icon !== 'string'"
+              #prepend
+            >
+              <component :is="subMenuItem.icon" class="w-5 h-5" />
+            </template>
+          </v-list-item>
         </div>
       </v-list>
     </v-card>
@@ -223,11 +243,13 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
+import type { Component } from "vue";
+
 export interface ContextMenuItem {
   label: string;
   labelArgs?: Array<string | number>;
   action?: () => void;
-  icon?: string;
+  icon?: string | Component;
   disabled?: boolean;
   hide?: boolean;
   selected?: boolean;

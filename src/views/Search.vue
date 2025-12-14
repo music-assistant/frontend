@@ -1,6 +1,6 @@
 <template>
   <section>
-    <Toolbar icon="mdi-magnify" :title="$t('global_search')" />
+    <Toolbar :icon="Search" :title="$t('global_search')" />
 
     <Container variant="default">
       <v-text-field
@@ -146,6 +146,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Search } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // local refs

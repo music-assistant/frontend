@@ -22,7 +22,7 @@
         icon: 'mdi-playlist-plus',
       },
     ]"
-    icon="mdi-music-note"
+    :icon="Music2"
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
@@ -36,6 +36,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Music2 } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

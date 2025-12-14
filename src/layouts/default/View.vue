@@ -3,19 +3,29 @@
     id="cont"
     :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
   >
-    <Navigation v-if="!store.mobileLayout" class="nav-section" />
-    <div class="content-section">
-      <router-view v-slot="{ Component }">
-        <component :is="Component" />
-      </router-view>
-      <add-to-playlist-dialog />
-      <item-context-menu />
-    </div>
+    <SidebarProvider
+      :style="{
+        '--sidebar-width': 'calc(var(--spacing) * 72)',
+        '--header-height': 'calc(var(--spacing) * 12)',
+      }"
+    >
+      <AppSidebar v-if="!store.mobileLayout" />
+      <SidebarInset>
+        <div class="content-section">
+          <router-view v-slot="{ Component }">
+            <component :is="Component" />
+          </router-view>
+          <add-to-playlist-dialog />
+          <item-context-menu />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   </v-main>
 </template>
 
 <script lang="ts" setup>
-import Navigation from "@/components/navigation/Navigation.vue";
+import AppSidebar from "@/components/navigation/AppSidebar.vue";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
