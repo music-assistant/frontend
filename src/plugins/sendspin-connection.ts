@@ -447,6 +447,25 @@ export function isDirectConnection(): boolean {
 }
 
 /**
+ * Reset the Sendspin connection state.
+ * Call this when the API connection is lost to ensure a fresh connection is created on reconnect.
+ */
+export function resetSendspinConnection(): void {
+  console.log("[SendspinConnection] Resetting connection state");
+  if (pendingBridge) {
+    try {
+      pendingBridge.close();
+    } catch {
+      // Ignore close errors
+    }
+    pendingBridge = null;
+  }
+  // Also invalidate the cached connection info since the server connection changed
+  cachedConnectionInfo = null;
+  connectionInfoCacheTime = 0;
+}
+
+/**
  * Wrapper class that makes our WebRTC bridge look like a WebSocket
  * This is needed because sendspin-js expects a WebSocket-like constructor
  */

@@ -1,6 +1,7 @@
 import { reactive } from "vue";
 import api from "./api";
 import { EventType } from "./api/interfaces";
+import { resetSendspinConnection } from "./sendspin-connection";
 
 export enum WebPlayerMode {
   DISABLED = "disabled",
@@ -234,6 +235,8 @@ export const webPlayer = reactive({
     if (this.player_id) {
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
+          // Reset sendspin connection state so a fresh connection is created on reconnect
+          resetSendspinConnection();
           // Reconnect is handled in App.vue
           this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
         }),
