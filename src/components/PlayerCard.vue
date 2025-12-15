@@ -177,7 +177,7 @@
       <!-- power/play/pause + menu button -->
       <template #append>
         <!-- play/pause button -->
-        <UiButton
+        <Button
           v-if="
             player.playback_state == PlaybackState.PAUSED ||
             player.playback_state == PlaybackState.PLAYING ||
@@ -195,9 +195,9 @@
             :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
-        </UiButton>
+        </Button>
         <!-- group members button -->
-        <UiButton
+        <Button
           v-if="
             showSyncControls &&
             player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
@@ -223,10 +223,10 @@
               :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
             />
           </v-badge>
-        </UiButton>
+        </Button>
 
         <!-- power button -->
-        <UiButton
+        <Button
           v-if="
             player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
           "
@@ -241,10 +241,10 @@
           <Power
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
-        </UiButton>
+        </Button>
 
         <!-- menu button -->
-        <UiButton
+        <Button
           v-if="showMenuButton"
           variant="ghost-icon"
           size="icon"
@@ -255,7 +255,7 @@
           <MoreVertical
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 26 : 30"
           />
-        </UiButton>
+        </Button>
       </template>
     </v-list-item>
     <VolumeControl
@@ -279,7 +279,7 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
-import { Button as UiButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
