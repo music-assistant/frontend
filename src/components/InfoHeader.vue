@@ -21,6 +21,8 @@
             ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
             : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
         "
+        :transition="false"
+        eager
       />
       <Toolbar
         :icon="ArrowLeft"
