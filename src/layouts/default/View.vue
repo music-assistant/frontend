@@ -30,14 +30,16 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 .main-layout {
   display: flex;
   height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   /* Reset Vuetify's automatic padding that accounts for drawers */
   padding-left: 0 !important;
   padding-right: 0 !important;
+  padding-bottom: 80px !important;
 }
 
 .main-layout--mobile {
-  padding-bottom: 230px;
+  padding-bottom: 230px !important;
 }
 
 .nav-section {
@@ -48,6 +50,7 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 .content-section {
   flex: 1;
   overflow-y: auto;
-  height: 100%;
+  min-height: 0;
+  padding-bottom: 90px;
 }
 </style>
