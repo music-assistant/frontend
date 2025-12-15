@@ -1623,7 +1623,15 @@ watch(
       // The authentication is automatic via HA proxy headers
       if (!isIngressMode.value) {
         // Auth is required - show select-mode to let user login
-        step.value = "select-mode";
+        // BUT: don't kick back to select-mode if we're in the login flow
+        // (this happens when login fails - handleAuthenticationError will show the error)
+        // Check for both 'login' and 'connecting' steps since AUTHENTICATING changes step to 'connecting'
+        if (step.value !== "login" && step.value !== "connecting") {
+          step.value = "select-mode";
+        } else {
+          // Go back to login step to show the error
+          step.value = "login";
+        }
       } else {
         // In Ingress mode, stay on reconnecting screen
         // App.vue will handle the re-authentication
