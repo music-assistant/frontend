@@ -68,7 +68,6 @@
                     hide-details="auto"
                     :error-messages="connectionError"
                     :disabled="isConnecting"
-                    bg-color="surface-light"
                     @keyup.enter="connectToLocal"
                   />
                   <p class="text-caption text-medium-emphasis mt-2">
@@ -187,7 +186,6 @@
                     density="comfortable"
                     hide-details="auto"
                     :disabled="isAuthenticating"
-                    bg-color="surface-light"
                     autofocus
                   />
                 </div>
@@ -211,7 +209,6 @@
                     "
                     :error-messages="loginError"
                     :disabled="isAuthenticating"
-                    bg-color="surface-light"
                     @click:append-inner="showPassword = !showPassword"
                     @keyup.enter="login"
                   />
@@ -444,12 +441,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { useI18n } from "vue-i18n";
-import { remoteConnectionManager } from "@/plugins/remote";
 import { api, ConnectionState } from "@/plugins/api";
-import { store } from "@/plugins/store";
 import type { AuthProvider } from "@/plugins/api/interfaces";
+import { remoteConnectionManager } from "@/plugins/remote";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
 
 const { t } = useI18n();
@@ -1886,6 +1882,14 @@ onUnmounted(() => {
 
 :deep(.v-label) {
   color: var(--text-secondary) !important;
+}
+
+:deep(.v-field__field) {
+  background: var(--input-bg) !important;
+}
+
+:deep(.v-field--focused .v-field__field) {
+  background: var(--input-focus-bg) !important;
 }
 
 /* Responsive button sizing */
