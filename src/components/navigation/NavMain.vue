@@ -71,4 +71,9 @@ const isActive = (url: string) => {
   height: 1.2rem !important;
   padding-right: 3px !important;
 }
+
+:deep([data-sidebar="menu-item"]) {
+  display: flex !important;
+  flex-direction: column !important;
+}
 </style>
