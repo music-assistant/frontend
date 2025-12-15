@@ -5,8 +5,8 @@
     :class="{ disabled: disabled, 'not-powered': !isPowered }"
     :style="{ width: width, ...(style ? parseStyle(style) : {}) }"
     @wheel.prevent="onWheel"
-    @touchstart.passive="onTouchStart"
-    @touchmove.passive="onTouchMove"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
     @touchend="onTouchEnd"
     @touchcancel="onTouchCancel"
   >
@@ -206,6 +206,8 @@ const getPercentageFromX = (clientX: number): number => {
 const onTouchStart = (event: TouchEvent) => {
   if (props.disabled) return;
 
+  event.preventDefault();
+
   isTouching.value = true;
   const touch = event.touches[0];
   touchStartX.value = touch.clientX;
@@ -247,6 +249,8 @@ const onTouchMove = (event: TouchEvent) => {
   }
 
   if (isDrag.value) {
+    event.preventDefault();
+
     const newValue = getPercentageFromX(touch.clientX);
     const valueChanged = newValue !== displayValue.value;
 
