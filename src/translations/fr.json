@@ -90,7 +90,6 @@
         "add_provider": "Ajouter un nouveau fournisseur",
         "advanced_settings": "Paramètres avancés",
         "check_docs": "Consultez la documentation",
-        "codeowners": "Auteurs\/crédits",
         "config_player": "Configurer le lecteur : {0}",
         "configure": "Configurer",
         "delete": "Supprimer",
@@ -531,10 +530,6 @@
         "frontend_description": "Personnaliser le thème et l'apparence de l'interface utilisateur",
         "provider_type": "Type",
         "onboarding_title": "Bienvenue dans Music Assistant !",
-        "onboarding_message": "Commencez votre aventure avec Music Assistant en ajoutant des fournisseurs :",
-        "onboarding_players": "Ajoutez des fournisseurs de lecteurs pour diffuser le son sur vos haut-parleurs et appareils.",
-        "onboarding_music": "Ajoutez des fournisseurs de musique pour connecter vos sources musicales et vos services de streaming.",
-        "onboarding_plugins": "Ajoutez des plugins pour étendre encore davantage les fonctionnalités.",
         "profile_description": "Gérez les paramètres et préférences de votre compte personnel",
         "users": "Utilisateurs",
         "users_description": "Gérer les comptes utilisateurs, les rôles et les autorisations"
