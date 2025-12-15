@@ -286,12 +286,7 @@ const onUpdateValue = (value: ConfigValueType) => {
 };
 
 const onClear = () => {
-  // If the field is required, restore the default value; otherwise set to null
-  if (props.confEntry.required) {
-    emit("update:value", props.confEntry.default_value);
-  } else {
-    emit("update:value", null);
-  }
+  emit("update:value", null);
 };
 
 const translatedOptions = computed(() => {
