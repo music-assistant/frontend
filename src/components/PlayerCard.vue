@@ -177,34 +177,34 @@
       <!-- power/play/pause + menu button -->
       <template #append>
         <!-- play/pause button -->
-        <Button
+        <UiButton
           v-if="
             player.playback_state == PlaybackState.PAUSED ||
             player.playback_state == PlaybackState.PLAYING ||
             playerQueue?.items
           "
-          variant="icon"
+          variant="ghost-icon"
+          size="icon"
           class="player-command-btn"
           @click.stop="
             api.playerCommandPlayPause(player.player_id);
             store.activePlayerId = player.player_id;
           "
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            :icon="
-              player.playback_state == PlaybackState.PLAYING
-                ? 'mdi-pause'
-                : 'mdi-play'
-            "
-        /></Button>
+        >
+          <component
+            :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
+          />
+        </UiButton>
         <!-- group members button -->
-        <Button
+        <UiButton
           v-if="
             showSyncControls &&
             player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
             showVolumeControl
           "
-          variant="icon"
+          variant="ghost-icon"
+          size="icon"
           class="player-command-btn group-expand-btn"
           @click.stop="$emit('toggle-expand', player)"
         >
@@ -219,43 +219,43 @@
             "
             class="group-badge"
           >
-            <v-icon
-              :size="getBreakpointValue({ breakpoint: 'phone' }) ? '20' : '22'"
-              >mdi-speaker-multiple</v-icon
-            >
+            <Speaker
+              :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
+            />
           </v-badge>
-        </Button>
+        </UiButton>
 
         <!-- power button -->
-        <Button
+        <UiButton
           v-if="
             player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
           "
-          variant="icon"
+          variant="ghost-icon"
+          size="icon"
           class="player-command-btn"
           @click.stop="
             api.playerCommandPowerToggle(player.player_id);
             store.activePlayerId = player.player_id;
           "
-          ><v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-power</v-icon
-          ></Button
         >
+          <Power
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
+          />
+        </UiButton>
 
         <!-- menu button -->
-        <Button
+        <UiButton
           v-if="showMenuButton"
-          variant="icon"
+          variant="ghost-icon"
+          size="icon"
           class="player-command-btn"
           style="margin-right: -5px"
           @click.stop="openPlayerMenu"
         >
-          <v-icon
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? '30' : '32'"
-            >mdi-dots-vertical</v-icon
-          >
-        </Button>
+          <MoreVertical
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 26 : 30"
+          />
+        </UiButton>
       </template>
     </v-list-item>
     <VolumeControl
@@ -272,7 +272,6 @@
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
 import MediaItemThumb, {
   getImageThumbForItem,
 } from "@/components/MediaItemThumb.vue";
@@ -280,6 +279,7 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
+import { Button as UiButton } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -304,6 +304,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { webPlayer } from "@/plugins/web_player";
+import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 
 // properties
@@ -503,8 +504,8 @@ watch(
 
 .group-badge :deep(.v-badge__badge) {
   font-size: 10px;
-  height: 16px;
-  min-width: 16px;
-  padding: 0 3px 0 4px;
+  height: 14px;
+  min-width: 14px;
+  padding: 0 4px 0 4px;
 }
 </style>
