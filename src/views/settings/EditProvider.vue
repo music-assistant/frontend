@@ -82,6 +82,7 @@
       :disabled="!config.enabled"
       @submit="onSubmit"
       @action="onAction"
+      @immediate-apply="onImmediateApply"
     />
 
     <!-- Rename dialog -->
@@ -229,6 +230,17 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
       loading.value = false;
       showAuthLink.value = false;
     });
+};
+
+const onImmediateApply = async function (
+  values: Record<string, ConfigValueType>,
+) {
+  // Immediately apply a config value change to the backend
+  api.saveProviderConfig(
+    config.value!.domain,
+    values,
+    config.value!.instance_id,
+  );
 };
 
 const onAction = async function (

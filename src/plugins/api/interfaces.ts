@@ -496,6 +496,8 @@ export interface ConfigEntry {
   action?: string;
   // action_label: default label for the action when no translation for the action is present
   action_label?: string;
+  // immediate_apply: whether changes to this config entry should be applied immediately
+  immediate_apply?: boolean;
 
   value?: ConfigValueType;
 }

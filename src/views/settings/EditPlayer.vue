@@ -100,6 +100,7 @@
       :config-entries="allConfigEntries"
       @submit="onSubmit"
       @action="onAction"
+      @immediate-apply="onImmediateApply"
     />
 
     <!-- Rename dialog -->
@@ -279,6 +280,13 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["enabled"] = config.value!.enabled;
   api.savePlayerConfig(props.playerId!, values);
   router.push({ name: "playersettings" });
+};
+
+const onImmediateApply = async function (
+  values: Record<string, ConfigValueType>,
+) {
+  // Immediately apply a config value change to the backend
+  api.savePlayerConfig(props.playerId!, values);
 };
 
 const onAction = async function (

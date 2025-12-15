@@ -26,7 +26,7 @@
                 :show-password-values="showPasswordValues"
                 :disabled="isDisabled(conf_entry)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
-                @update:value="conf_entry.value = $event"
+                @update:value="onValueUpdate(conf_entry, $event)"
                 @action="
                   action(conf_entry.action || conf_entry.key);
                   conf_entry.value = conf_entry.action ? null : conf_entry.key;
@@ -156,6 +156,7 @@ export interface Props {
 const emit = defineEmits<{
   (e: "submit", values: Record<string, ConfigValueType>): void;
   (e: "action", action: string, values: Record<string, ConfigValueType>): void;
+  (e: "immediateApply", values: Record<string, ConfigValueType>): void;
 }>();
 
 // global refs
@@ -272,6 +273,14 @@ const submit = async function () {
 const action = async function (action: string) {
   // call config entries action
   emit("action", action, getCurrentValues());
+};
+
+const onValueUpdate = function (entry: ConfigEntry, value: ConfigValueType) {
+  entry.value = value;
+  // If immediate_apply is set, emit the value change immediately
+  if (entry.immediate_apply) {
+    emit("immediateApply", { [entry.key]: value });
+  }
 };
 const openLink = function (url: string) {
   // window.open(url, "_blank");
