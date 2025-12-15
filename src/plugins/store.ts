@@ -112,9 +112,15 @@ export const store: Store = reactive({
   playActionInProgress: false,
   deviceType: DEVICE_TYPE,
   mobileLayout: computed(() => {
+    const isMobileDevice = getBreakpointValue({ breakpoint: "tablet" });
+    const isNarrowScreen = getBreakpointValue({
+      breakpoint: "bp5",
+      condition: "lt",
+      offset: -31, // bp5 (800px) - 31 ≈ 769px
+    });
+
     return (
-      getBreakpointValue({ breakpoint: "tablet" }) ||
-      parseBool(store.forceMobileLayout)
+      isMobileDevice || isNarrowScreen || parseBool(store.forceMobileLayout)
     );
   }),
   currentUser: undefined,
