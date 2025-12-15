@@ -20,7 +20,7 @@ class HttpProxyBridge {
     if ("serviceWorker" in navigator) {
       try {
         this.serviceWorkerRegistration =
-          await navigator.serviceWorker.register("/sw.js");
+          await navigator.serviceWorker.register("./sw.js");
 
         // Wait for service worker to be ready
         await navigator.serviceWorker.ready;
