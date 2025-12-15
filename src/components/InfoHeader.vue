@@ -23,8 +23,8 @@
         "
       />
       <Toolbar
-        icon="mdi-arrow-left"
-        style="position: absolute"
+        :icon="ArrowLeft"
+        style="position: absolute; z-index: 999999"
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :show-loading="true"
@@ -344,6 +344,7 @@ import type {
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { ArrowLeft } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
