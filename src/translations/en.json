@@ -667,7 +667,7 @@
         "onboarding_add_player": "Add Players",
         "onboarding_footer": "You can always add more providers later from this settings page.",
         "remote_access_qr_code": "QR Code",
-        "remote_access_qr_code_description": "Scan this QR code with your phone to quickly connect to your Music Assistant server."
+        "remote_access_qr_code_description": "Scan with your phone camera to connect instantly."
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",

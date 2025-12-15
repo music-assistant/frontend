@@ -124,51 +124,59 @@
         </v-card-item>
       </v-card>
 
-      <v-card
+      <!-- Two-card layout for ID and QR code -->
+      <div
         v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
-        class="remote-id-card mb-6"
-        elevation="0"
-        rounded="lg"
+        class="remote-id-grid mb-6"
       >
-        <v-card-item class="remote-id-header">
-          <v-icon size="28" color="primary" class="mr-2">mdi-identifier</v-icon>
-          <v-card-title class="remote-id-title">
-            {{ $t("settings.remote_access_your_id") }}
-          </v-card-title>
-        </v-card-item>
-        <v-card-text class="remote-id-content">
-          <p class="remote-id-explanation">
-            {{ $t("settings.remote_access_id_explanation") }}
-          </p>
-          <div class="remote-id-display-wrapper">
-            <div class="remote-id-boxes">
-              <div
-                v-for="(part, index) in remoteIdParts"
-                :key="index"
-                class="remote-id-box"
-                :class="`remote-id-box-${index}`"
-              >
-                <code class="remote-id-box-text">{{ part }}</code>
+        <!-- Text ID Card -->
+        <v-card class="remote-id-card" elevation="0" rounded="lg">
+          <v-card-item class="remote-id-header">
+            <v-icon size="28" color="primary" class="mr-2"
+              >mdi-identifier</v-icon
+            >
+            <v-card-title class="remote-id-title">
+              {{ $t("settings.remote_access_your_id") }}
+            </v-card-title>
+          </v-card-item>
+          <v-card-text class="remote-id-content">
+            <p class="remote-id-explanation">
+              {{ $t("settings.remote_access_id_explanation") }}
+            </p>
+            <div class="remote-id-display-wrapper">
+              <div class="remote-id-boxes">
+                <div
+                  v-for="(part, index) in remoteIdParts"
+                  :key="index"
+                  class="remote-id-box"
+                  :class="`remote-id-box-${index}`"
+                >
+                  <code class="remote-id-box-text">{{ part }}</code>
+                </div>
               </div>
+              <v-btn
+                icon="mdi-content-copy"
+                variant="text"
+                size="small"
+                color="primary"
+                class="copy-button"
+                :title="$t('settings.remote_access_copy_id')"
+                @click="copyRemoteId"
+              />
             </div>
-            <v-btn
-              icon="mdi-content-copy"
-              variant="text"
-              size="small"
-              color="primary"
-              class="copy-button"
-              :title="$t('settings.remote_access_copy_id')"
-              @click="copyRemoteId"
-            />
-          </div>
+          </v-card-text>
+        </v-card>
 
-          <!-- QR Code Section -->
-          <div class="qr-code-section">
-            <div class="qr-code-title">
-              <v-icon size="20" color="primary" class="mr-2">mdi-qrcode</v-icon>
+        <!-- QR Code Card -->
+        <v-card class="remote-id-card" elevation="0" rounded="lg">
+          <v-card-item class="remote-id-header">
+            <v-icon size="28" color="primary" class="mr-2">mdi-qrcode</v-icon>
+            <v-card-title class="remote-id-title">
               {{ $t("settings.remote_access_qr_code") }}
-            </div>
-            <p class="qr-code-description">
+            </v-card-title>
+          </v-card-item>
+          <v-card-text class="remote-id-content">
+            <p class="remote-id-explanation">
               {{ $t("settings.remote_access_qr_code_description") }}
             </p>
             <div class="qr-code-wrapper">
@@ -185,8 +193,17 @@
                 color="primary"
               />
             </div>
-          </div>
+          </v-card-text>
+        </v-card>
+      </div>
 
+      <v-card
+        v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
+        class="usage-card mb-6"
+        elevation="0"
+        rounded="lg"
+      >
+        <v-card-text class="usage-content">
           <div>
             <div class="usage-title">
               {{ $t("settings.remote_access_how_to_use") }}
@@ -593,6 +610,12 @@ watch(
   margin-top: 8px;
 }
 
+.remote-id-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
 .remote-id-card {
   border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
@@ -619,8 +642,15 @@ watch(
   line-height: 1.5;
 }
 
+.usage-card {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.usage-content {
+  padding: 20px;
+}
+
 .remote-id-display-wrapper {
-  margin-bottom: 24px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -673,40 +703,15 @@ watch(
   flex-shrink: 0;
 }
 
-.qr-code-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: rgba(var(--v-theme-surface), 0.5);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 12px;
-}
-
-.qr-code-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: rgb(var(--v-theme-on-surface));
-  display: flex;
-  align-items: center;
-}
-
-.qr-code-description {
-  font-size: 0.85rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-
 .qr-code-wrapper {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  min-height: 200px;
 }
 
 .qr-code-image {
-  width: 200px;
-  height: 200px;
+  width: 160px;
+  height: 160px;
   border-radius: 8px;
   background: white;
   padding: 8px;
@@ -833,6 +838,12 @@ watch(
 
 .error-alert {
   margin: 24px;
+}
+
+@media (max-width: 1160px) {
+  .remote-id-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 960px) {
