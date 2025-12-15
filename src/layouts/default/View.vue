@@ -6,7 +6,7 @@
     <SidebarProvider>
       <AppSidebar v-if="!store.mobileLayout" />
       <SidebarInset>
-        <div class="content-section">
+        <div :class="['content-section', { 'content-section--mobile': store.mobileLayout }]">
           <router-view v-slot="{ Component }">
             <component :is="Component" />
           </router-view>
@@ -30,27 +30,20 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 .main-layout {
   display: flex;
   height: 100vh;
-  overflow-x: hidden;
-  overflow-y: hidden;
+  overflow: hidden;
   /* Reset Vuetify's automatic padding that accounts for drawers */
   padding-left: 0 !important;
   padding-right: 0 !important;
-  padding-bottom: 80px !important;
 }
 
-.main-layout--mobile {
-  padding-bottom: 230px !important;
-}
-
-.nav-section {
-  flex: 0 0 auto;
-  width: 290px;
-  transition: width 0.3s ease;
-}
 .content-section {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
   padding-bottom: 90px;
+}
+
+.content-section--mobile {
+  padding-bottom: 230px;
 }
 </style>
