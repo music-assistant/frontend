@@ -146,7 +146,7 @@ import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
 const showUnsavedDialog = ref(false);
-const discardConfirmed = ref(false);
+const allowNavigation = ref(false);
 
 export interface Props {
   configEntries: ConfigEntry[];
@@ -265,6 +265,7 @@ const validate = async function () {
 const submit = async function () {
   // submit button is pressed
   if (await validate()) {
+    allowNavigation.value = true;
     emit("submit", getCurrentValues());
   }
 };
@@ -301,7 +302,7 @@ const handleClose = function () {
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
-  discardConfirmed.value = true;
+  allowNavigation.value = true;
   // Navigate back after setting the flag
   router.back();
 };
@@ -312,7 +313,7 @@ const cancelDiscard = function () {
 
 // Navigation guard for route changes
 onBeforeRouteLeave((_to, _from, next) => {
-  if (discardConfirmed.value || !hasUnsavedChanges.value) {
+  if (allowNavigation.value || !hasUnsavedChanges.value) {
     next();
   } else {
     showUnsavedDialog.value = true;
