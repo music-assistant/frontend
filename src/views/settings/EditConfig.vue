@@ -64,7 +64,7 @@
       >
         {{ $t("settings.save") }}
       </v-btn>
-      <v-btn block variant="outlined" size="large" @click="router.back()">
+      <v-btn block variant="outlined" size="large" @click="handleClose">
         {{ $t("close") }}
       </v-btn>
       <v-btn block variant="text" size="large" @click="resetToDefaults">
@@ -113,11 +113,27 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <!-- Unsaved changes confirmation dialog -->
+  <v-dialog v-model="showUnsavedDialog" max-width="400" persistent>
+    <v-card>
+      <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
+      <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="cancelDiscard">
+          {{ $t("settings.stay") }}
+        </v-btn>
+        <v-btn color="warning" variant="flat" @click="confirmDiscard">
+          {{ $t("settings.discard") }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, VNodeRef, computed, watch } from "vue";
-import { useRouter } from "vue-router";
+import { ref, VNodeRef, computed, watch, onBeforeUnmount } from "vue";
+import { useRouter, onBeforeRouteLeave } from "vue-router";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -129,6 +145,8 @@ import { $t } from "@/plugins/i18n";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
+const showUnsavedDialog = ref(false);
+const discardConfirmed = ref(false);
 
 export interface Props {
   configEntries: ConfigEntry[];
@@ -185,17 +203,50 @@ const requiredValuesPresent = computed(() => {
   return false;
 });
 
+const hasUnsavedChanges = computed(() => {
+  if (!entries.value) return false;
+  for (const entry of entries.value) {
+    // Skip non-value entry types
+    if (
+      entry.type == ConfigEntryType.DIVIDER ||
+      entry.type == ConfigEntryType.LABEL ||
+      entry.type == ConfigEntryType.ALERT ||
+      entry.type == ConfigEntryType.ACTION
+    ) {
+      continue;
+    }
+    // Skip secure strings that haven't been modified (still showing substitute)
+    if (
+      entry.type == ConfigEntryType.SECURE_STRING &&
+      entry.value == SECURE_STRING_SUBSTITUTE
+    ) {
+      continue;
+    }
+    const oldValue = oldValues.value[entry.key];
+    const currentValue = entry.value;
+    // Compare values (handle arrays and objects)
+    if (JSON.stringify(oldValue) !== JSON.stringify(currentValue)) {
+      return true;
+    }
+  }
+  return false;
+});
+
 // watchers
 watch(
   () => props.configEntries,
   (val) => {
     entries.value = [];
+    oldValues.value = {}; // Reset old values when config entries change
     for (const entry of val || []) {
       // handle missing values (undefined or null)
-      if (entry.value !== undefined && entry.value !== null)
-        oldValues.value[entry.key] = entry.value;
       if (entry.value == undefined || entry.value == null)
         entry.value = entry.default_value;
+      // Store the initial value AFTER applying defaults (deep clone for arrays/objects)
+      oldValues.value[entry.key] =
+        typeof entry.value === "object" && entry.value !== null
+          ? JSON.parse(JSON.stringify(entry.value))
+          : entry.value;
       entries.value.push(entry);
     }
     // Set active panels after entries are populated
@@ -239,6 +290,50 @@ const resetToDefaults = function () {
     entry.value = entry.default_value;
   }
 };
+
+const handleClose = function () {
+  if (hasUnsavedChanges.value) {
+    showUnsavedDialog.value = true;
+  } else {
+    router.back();
+  }
+};
+
+const confirmDiscard = function () {
+  showUnsavedDialog.value = false;
+  discardConfirmed.value = true;
+  // Navigate back after setting the flag
+  router.back();
+};
+
+const cancelDiscard = function () {
+  showUnsavedDialog.value = false;
+};
+
+// Navigation guard for route changes
+onBeforeRouteLeave((_to, _from, next) => {
+  if (discardConfirmed.value || !hasUnsavedChanges.value) {
+    next();
+  } else {
+    showUnsavedDialog.value = true;
+    next(false);
+  }
+});
+
+// Handle browser back/refresh
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (hasUnsavedChanges.value) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+};
+
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", handleBeforeUnload);
+});
+
+// Add listener when component mounts
+window.addEventListener("beforeunload", handleBeforeUnload);
 const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
