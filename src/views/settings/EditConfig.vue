@@ -388,17 +388,21 @@ const entriesForCategory = function (category: string) {
 };
 const getCurrentValues = function () {
   const values: Record<string, ConfigValueType> = {};
+  // Iterate over props.configEntries to include all entries
+  // Note: entries.value contains the same object references as props.configEntries
+  // (pushed in the watch), so user modifications via the form update both
   for (const entry of props.configEntries!) {
+    let value = entry.value;
     // filter out undefined values
-    if (entry.value == undefined) entry.value = null;
-    // filter out obfuscated strings
+    if (value == undefined) value = null;
+    // filter out obfuscated strings (only skip if it's the substitute placeholder)
     if (
       entry.type == ConfigEntryType.SECURE_STRING &&
-      entry.value == SECURE_STRING_SUBSTITUTE
+      value == SECURE_STRING_SUBSTITUTE
     ) {
       continue;
     }
-    values[entry.key] = entry.value;
+    values[entry.key] = value;
   }
   return values;
 };

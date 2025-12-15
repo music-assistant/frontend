@@ -167,11 +167,6 @@ const props = defineProps<{
 
 const dspEnabled = ref(false);
 
-// helper functions
-const isVisible = (entry: ConfigEntry) => {
-  return !entry.hidden;
-};
-
 const loadDSPEnabled = async () => {
   if (props.playerId) {
     try {
@@ -239,7 +234,9 @@ const config_entries = computed(() => {
 });
 
 const allConfigEntries = computed(() => {
-  return config_entries.value.filter((entry) => isVisible(entry));
+  // Pass all entries (including hidden ones) to EditConfig
+  // Hidden entries contain values that need to be preserved on save
+  return config_entries.value;
 });
 
 // watchers

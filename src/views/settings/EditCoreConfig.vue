@@ -65,15 +65,12 @@ const props = defineProps<{
   domain?: string;
 }>();
 
-// helper functions
-const isVisible = (entry: ConfigEntry) => {
-  return !entry.hidden;
-};
-
 // computed properties
 const allConfigEntries = computed(() => {
   if (!config.value) return [];
-  return Object.values(config.value.values).filter((entry) => isVisible(entry));
+  // Pass all entries (including hidden ones) to EditConfig
+  // Hidden entries contain values that need to be preserved on save
+  return Object.values(config.value.values);
 });
 
 // watchers
