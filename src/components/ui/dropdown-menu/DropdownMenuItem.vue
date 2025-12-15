@@ -15,6 +15,8 @@ const props = withDefaults(
   >(),
   {
     variant: "default",
+    class: undefined,
+    inset: false,
   },
 );
 
