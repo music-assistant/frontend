@@ -11,6 +11,7 @@ const props = withDefaults(
   }>(),
   {
     align: "inline-start",
+    class: undefined,
   },
 );
 

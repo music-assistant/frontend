@@ -9,6 +9,7 @@ const props = withDefaults(
   defineProps<ScrollAreaScrollbarProps & { class?: HTMLAttributes["class"] }>(),
   {
     orientation: "vertical",
+    class: undefined,
   },
 );
 
