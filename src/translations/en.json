@@ -281,6 +281,12 @@
             }
         },
         "default": "default",
+        "reset_to_defaults": "Reset to defaults",
+        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
+        "unsaved_changes": "Unsaved changes",
+        "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
+        "stay": "Stay",
+        "discard": "Discard changes",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
             "audio": "Audio",
@@ -661,9 +667,7 @@
         "onboarding_add_player": "Add Players",
         "onboarding_footer": "You can always add more providers later from this settings page.",
         "remote_access_qr_code": "QR Code",
-        "remote_access_qr_code_description": "Scan this QR code with your phone to quickly connect to your Music Assistant server.",
-        "reset_to_defaults": "Reset to defaults",
-        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately."
+        "remote_access_qr_code_description": "Scan this QR code with your phone to quickly connect to your Music Assistant server."
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
