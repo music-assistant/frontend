@@ -264,10 +264,6 @@ const getPlayerTypeIcon = function (playerType?: PlayerType) {
   return iconMap[playerType || PlayerType.PLAYER] || "mdi-speaker";
 };
 
-const toggleViewMode = function () {
-  playersViewMode.toggleViewMode();
-};
-
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   const menuItems: ContextMenuItem[] = [
     {
