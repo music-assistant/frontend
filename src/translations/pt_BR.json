@@ -90,7 +90,6 @@
         "add_provider": "Adicionar novo provedor",
         "advanced_settings": "Configurações avançadas",
         "check_docs": "Verifique a documentação",
-        "codeowners": "Autores\/créditos",
         "config_player": "Configurar o player: {0}",
         "configure": "Configurar",
         "delete": "Excluir",
@@ -525,7 +524,33 @@
         "force_mobile_layout": {
             "label": "Forçar layout móvel",
             "description": "Forçar o layout móvel (com o menu de navegação na parte inferior), mesmo em telas maiores."
-        }
+        },
+        "system": "Sistema",
+        "links": "Links",
+        "changelog": "Registro de alterações",
+        "license": "Licença",
+        "core_module": {
+            "cache": {
+                "name": "Cache"
+            },
+            "metadata": {
+                "name": "Metadados"
+            },
+            "music": {
+                "name": "Música"
+            },
+            "webserver": {
+                "name": "Servidor Web"
+            }
+        },
+        "remote_access": "Acesso remoto",
+        "remote_access_connected": "Conectado",
+        "remote_access_connecting": "Conectando...",
+        "remote_access_step_1": "Ir para",
+        "remote_access_encryption": "Criptografia",
+        "frontend": "Interface de usuário",
+        "api_docs": "Documentação da API",
+        "provider_credits": "Possibilitado por"
     },
     "show_info": "Mostrar informação",
     "show_select_boxes": "Mostrar caixas de seleção",
@@ -747,5 +772,45 @@
     "lyrics_will_appear_soon": "A letra aparecerá quando a música começar...",
     "radiobrowser_by_votes": "Por votos",
     "radiobrowser_by_clicks": "Por cliques",
-    "radiobrowser_by_language": "Por idioma"
+    "radiobrowser_by_language": "Por idioma",
+    "auth": {
+        "username": "Nome de usuário",
+        "password": "Senha",
+        "confirm_password": "Confirmar senha",
+        "profile": "Perfil",
+        "change_password": "Alterar senha",
+        "old_password": "Senha atual",
+        "new_password": "Nova senha",
+        "tokens": "Tokens de acesso",
+        "active_sessions": "Sessões ativas",
+        "no_active_sessions": "Nenhuma sessão ativa",
+        "token_name": "Nome do token",
+        "create_token": "Criar novo token",
+        "change_role": "Alterar função",
+        "avatar_url": "URL do avatar",
+        "change_avatar": "Alterar avatar"
+    },
+    "login": {
+        "server_address_placeholder": "http:\/\/192.168.1.100:8095",
+        "connect": "Conectar",
+        "username": "Nome de usuário",
+        "username_placeholder": "Digite seu nome de usuário",
+        "password": "Senha",
+        "password_placeholder": "Digite sua senha",
+        "back": "Voltar",
+        "cancel": "Cancelar",
+        "connecting": "Conectando...",
+        "authenticating": "Autenticando..."
+    },
+    "remote": {
+        "password": "Senha",
+        "back": "Voltar",
+        "connecting": "Conectando...",
+        "cancel": "Cancelar",
+        "connection_failed": "Falha na conexão",
+        "retry": "Tente novamente",
+        "or": "ou"
+    },
+    "yes": "Sim",
+    "no": "Não"
 }

@@ -90,7 +90,6 @@
         "add_provider": "Додај новог провајдера",
         "advanced_settings": "Напредна подешавања",
         "check_docs": "Проверите документацију",
-        "codeowners": "Аутори\/заслуге",
         "config_player": "Конфигуриши плејер: {0}",
         "configure": "Конфигуриши",
         "delete": "Избриши",
@@ -751,5 +750,16 @@
     "lyrics_will_appear_soon": "Текст ће се појавити када песма почне...",
     "radiobrowser_by_votes": "По гласовима",
     "radiobrowser_by_clicks": "По клику",
-    "radiobrowser_by_language": "По језику"
+    "radiobrowser_by_language": "По језику",
+    "auth": {
+        "confirm_password": "Потврдите лозинку",
+        "account_settings": "Подешавања налога",
+        "change_password": "Промените лозинку",
+        "active_sessions": "Активне сесије",
+        "admin_role": "Администратор",
+        "admin_required": "Потребан администраторски приступ",
+        "change_role": "Промените улогу",
+        "avatar_url": "\"URL\" аватара",
+        "change_avatar": "Промените аватар"
+    }
 }

@@ -108,7 +108,7 @@
           single-line
           density="compact"
           type="number"
-          style="width: 70px"
+          style="width: 100px"
           @update:model-value="$emit('update:value', $event)"
         />
       </template>
