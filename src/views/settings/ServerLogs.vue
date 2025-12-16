@@ -110,15 +110,7 @@ const fetchLogs = async (isRefresh = false) => {
       refreshing.value = true;
     }
     error.value = "";
-
-    // Fetch the log file from the server
-    const response = await fetch(`${api.baseUrl}/music-assistant.log`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch logs: ${response.statusText}`);
-    }
-
-    const text = await response.text();
+    const text = await api.sendCommand<string>("logging/get");
     const previousContent = logContent.value;
     logContent.value = text;
 
@@ -142,9 +134,10 @@ const refreshLog = () => {
 
 const downloadLog = async () => {
   try {
-    const response = await fetch(`${api.baseUrl}/music-assistant.log`);
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+    const text = await api.sendCommand<string>("logging/get");
+    const url = window.URL.createObjectURL(
+      new Blob([text], { type: "text/plain" }),
+    );
     const link = document.createElement("a");
     link.href = url;
     link.download = "music-assistant.log";
