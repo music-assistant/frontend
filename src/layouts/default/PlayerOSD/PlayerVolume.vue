@@ -206,8 +206,6 @@ const getPercentageFromX = (clientX: number): number => {
 const onTouchStart = (event: TouchEvent) => {
   if (props.disabled) return;
 
-  event.preventDefault();
-
   isTouching.value = true;
   const touch = event.touches[0];
   touchStartX.value = touch.clientX;
@@ -234,7 +232,7 @@ const onTouchMove = (event: TouchEvent) => {
   touchMoveCount.value++;
   maxMovement.value = Math.max(maxMovement.value, absDeltaX);
 
-  if (!isDrag.value && touchMoveCount.value <= 3) {
+  if (!isDrag.value && !isScrolling.value) {
     if (absDeltaY > 10 && absDeltaY > absDeltaX * 2) {
       isScrolling.value = true;
       displayValue.value = touchStartValue.value;
@@ -243,8 +241,9 @@ const onTouchMove = (event: TouchEvent) => {
       return;
     }
 
-    if (absDeltaX > 15) {
+    if (absDeltaX > 8) {
       isDrag.value = true;
+      event.preventDefault();
     }
   }
 
@@ -378,7 +377,7 @@ watch(
   display: flex;
   align-items: center;
   gap: 8px;
-  touch-action: pan-y; /* Allow vertical scrolling, we handle horizontal */
+  touch-action: pan-x;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
