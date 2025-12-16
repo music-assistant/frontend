@@ -168,6 +168,11 @@ export const webPlayer = reactive({
   interacted: false,
   // Timestamp from when the last update was sent
   lastUpdate: 0,
+  // Callback for sync delay changes, registered by SendspinPlayer
+  onSyncDelayChange: null as ((delay: number) => void) | null,
+  setSyncDelay(delay: number) {
+    this.onSyncDelayChange?.(delay);
+  },
   async setMode(mode: WebPlayerMode) {
     this.mode = mode;
     await this.setTabMode(mode);
