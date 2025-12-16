@@ -39,16 +39,8 @@
       <v-divider />
 
       <v-list flat style="margin: 0px 10px; padding: 0">
-        <!-- active/playing players on top -->
         <PlayerCard
-          v-for="player in sortedPlayers.filter(
-            (x) =>
-              [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
-                x.playback_state!,
-              ) ||
-              (api.queues[x.player_id]?.items > 0 && x.powered != false) ||
-              webPlayer.player_id === x.player_id,
-          )"
+          v-for="player in sortedPlayers"
           :id="player.player_id"
           :key="player.player_id"
           style="margin: 10px 0px"
@@ -66,79 +58,6 @@
           @toggle-expand="toggleGroupExpand"
         />
       </v-list>
-
-      <v-expansion-panels
-        v-model="selectedPanel"
-        variant="accordion"
-        flat
-        class="expansion"
-      >
-        <v-expansion-panel style="padding: 0">
-          <v-expansion-panel-title
-            ><h3>
-              {{ $t("all_players") }}
-            </h3></v-expansion-panel-title
-          >
-          <v-expansion-panel-text style="padding: 0">
-            <v-list flat style="margin: -20px 3px 5px 3px">
-              <PlayerCard
-                v-for="player in sortedPlayers.filter(
-                  (x) => x.type != PlayerType.GROUP,
-                )"
-                :id="player.player_id"
-                :key="player.player_id"
-                style="margin: 5px 0px"
-                :player="player"
-                :show-volume-control="true"
-                :show-menu-button="true"
-                :show-sub-players="
-                  showSubPlayers && player.player_id == store.activePlayerId
-                "
-                :show-sync-controls="
-                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
-                "
-                :allow-power-control="true"
-                @click="playerClicked(player)"
-                @toggle-expand="toggleGroupExpand"
-              />
-            </v-list>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-        <v-expansion-panel
-          v-if="sortedPlayers.filter((x) => x.type == PlayerType.GROUP).length"
-          style="padding: 0"
-        >
-          <v-expansion-panel-title
-            ><h3>
-              {{ $t("all_groups") }}
-            </h3></v-expansion-panel-title
-          >
-          <v-expansion-panel-text style="padding: 0">
-            <v-list flat style="margin: -20px 3px 5px 3px">
-              <PlayerCard
-                v-for="player in sortedPlayers.filter(
-                  (x) => x.type == PlayerType.GROUP,
-                )"
-                :id="player.player_id"
-                :key="player.player_id"
-                style="margin: 5px 0px"
-                :player="player"
-                :show-volume-control="true"
-                :show-menu-button="true"
-                :show-sub-players="
-                  showSubPlayers && player.player_id == store.activePlayerId
-                "
-                :show-sync-controls="
-                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
-                "
-                :allow-power-control="true"
-                @click="playerClicked(player)"
-                @toggle-expand="toggleGroupExpand"
-              />
-            </v-list>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
     </div>
   </v-navigation-drawer>
 </template>
@@ -149,36 +68,125 @@ import PlayerCard from "@/components/PlayerCard.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
 import { api, ConnectionState } from "@/plugins/api";
-import {
-  PlaybackState,
-  Player,
-  PlayerFeature,
-  PlayerType,
-} from "@/plugins/api/interfaces";
+import { PlaybackState, Player, PlayerFeature } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { computed, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
-const selectedPanel = ref<number | null>(null);
+const recentlySelectedPlayerIds = ref<string[]>([]);
+const playerSortOrder = ref<string[]>([]);
 const { getPreference, setPreference } = useUserPreferences();
+
+const MAX_RECENT_PLAYERS = 3;
+
+// Load recently selected players from user preferences
+const recentPlayersPref = getPreference<string[]>("recentlySelectedPlayerIds");
+watch(
+  recentPlayersPref,
+  (newVal) => {
+    recentlySelectedPlayerIds.value = newVal || [];
+  },
+  { immediate: true },
+);
+
+// Calculate priority score for a player
+const getPlayerPriority = (player: Player): number => {
+  let score = 0;
+
+  // Playing or paused = 5 points
+  if (
+    player.playback_state === PlaybackState.PLAYING ||
+    player.playback_state === PlaybackState.PAUSED
+  ) {
+    score += 5;
+  }
+
+  // Active player in store = 1 points
+  if (player.player_id === store.activePlayerId) {
+    score += 1;
+  }
+
+  // "This device" web player = 3 points
+  if (player.player_id === webPlayer.player_id) {
+    score += 3;
+  }
+
+  // Has current_media = 1 point
+  if (player.current_media) {
+    score += 1;
+  }
+
+  // Recently selected (last 3) = 1 point
+  if (recentlySelectedPlayerIds.value.includes(player.player_id)) {
+    score += 1;
+  }
+
+  return score;
+};
+
+// Calculate sort order once when menu opens (snapshot of priorities)
+const calculateSortOrder = () => {
+  const players = Object.values(api.players).filter((x) => playerVisible(x));
+  const sorted = players.sort((a, b) => {
+    const priorityA = getPlayerPriority(a);
+    const priorityB = getPlayerPriority(b);
+    if (priorityB !== priorityA) {
+      return priorityB - priorityA;
+    }
+    return a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1;
+  });
+  playerSortOrder.value = sorted.map((p) => p.player_id);
+};
 
 // computed properties
 const sortedPlayers = computed(() => {
-  return Object.values(api.players)
-    .filter((x) => playerVisible(x))
-    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
+  const players = Object.values(api.players).filter((x) => playerVisible(x));
+  // Sort based on the frozen sort order, with new players at the end
+  return players.sort((a, b) => {
+    const indexA = playerSortOrder.value.indexOf(a.player_id);
+    const indexB = playerSortOrder.value.indexOf(b.player_id);
+    // Players not in sort order go to the end, sorted alphabetically
+    if (indexA === -1 && indexB === -1) {
+      return a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1;
+    }
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
 });
 
 //watchers
 watch(
+  () => store.showPlayersMenu,
+  (newVal) => {
+    if (newVal) {
+      // Calculate sort order when menu opens
+      calculateSortOrder();
+    } else {
+      // Save preferences when menu closes
+      if (store.activePlayerId) {
+        setPreference("activePlayerId", store.activePlayerId);
+        localStorage.setItem("activePlayerId", store.activePlayerId);
+      }
+      setPreference(
+        "recentlySelectedPlayerIds",
+        recentlySelectedPlayerIds.value,
+      );
+    }
+  },
+);
+watch(
   () => store.activePlayerId,
   (newVal) => {
     if (newVal) {
-      // remember last selected playerId
-      setPreference("activePlayerId", newVal);
-      localStorage.setItem("activePlayerId", newVal);
+      // Track recently selected players (last 3) - saved when menu closes
+      const recent = recentlySelectedPlayerIds.value.filter(
+        (id) => id !== newVal,
+      );
+      recent.unshift(newVal);
+      recentlySelectedPlayerIds.value = recent.slice(0, MAX_RECENT_PLAYERS);
     }
   },
 );
@@ -254,11 +262,5 @@ const selectDefaultPlayer = function () {
   font-family: "JetBrains Mono Medium";
   font-size: x-large;
   opacity: 0.7;
-}
-.expansion :deep(.v-expansion-panel-title) {
-  padding: 10px 16px;
-}
-.expansion :deep(.v-expansion-panel-text__wrapper) {
-  padding: 10px 5px;
 }
 </style>
