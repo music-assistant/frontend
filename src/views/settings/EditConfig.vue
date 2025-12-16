@@ -33,11 +33,10 @@
                 "
                 @open-dsp="openDspConfig"
               />
-              <v-btn
+              <Button
                 v-if="hasDescriptionOrHelpLink(conf_entry)"
-                icon="mdi-help-circle-outline"
-                variant="text"
-                size="small"
+                variant="ghost"
+                size="icon"
                 class="help-btn"
                 @click="
                   $t(
@@ -47,7 +46,9 @@
                     ? (showHelpInfo = conf_entry)
                     : openLink(conf_entry.help_link!)
                 "
-              />
+              >
+                <HelpCircle :size="20" />
+              </Button>
             </div>
           </div>
         </v-expansion-panel-text>
@@ -132,16 +133,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, VNodeRef, computed, watch, onBeforeUnmount } from "vue";
-import { useRouter, onBeforeRouteLeave } from "vue-router";
+import { Button } from "@/components/ui/button";
+import { markdownToHtml } from "@/helpers/utils";
 import {
+  ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
-  ConfigEntry,
 } from "@/plugins/api/interfaces";
-import { markdownToHtml } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
+import { HelpCircle } from "lucide-vue-next";
+import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
+import { onBeforeRouteLeave, useRouter } from "vue-router";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
@@ -484,10 +487,25 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
   margin-top: 8px;
   opacity: 0.6;
   transition: opacity 0.2s ease;
+  height: 36px;
 }
 
 .help-btn:hover {
   opacity: 1;
+}
+
+@media (min-width: 601px) {
+  .config-entry:has(.config-slider-wrapper) .help-btn {
+    margin-top: 0;
+    align-self: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .config-entry:has(.config-slider-wrapper) .help-btn {
+    align-self: flex-start;
+    margin-top: 0;
+  }
 }
 
 /* Expansion panels */
