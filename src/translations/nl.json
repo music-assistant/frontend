@@ -289,7 +289,7 @@
             "announcements": "Configuratie van aankondigingen (announce)",
             "airplay": "Airplay-specifieke instellingen",
             "player_controls": "Spelerbediening",
-            "presets": "Voorkeuzes",
+            "presets": "Presets",
             "sync_options": "Synchronisatie-\/importopties",
             "builtin_playlists": "Ingebouwde afspeellijstinstellingen",
             "web_player": "Webspeler"
@@ -434,8 +434,8 @@
                     "high_pass": "High Pass",
                     "notch": "Notch"
                 },
-                "import_apo": "APO\/REW preset importeren",
-                "export_apo": "APO preset exporteren",
+                "import_apo": "APO\/REW Preset importeren",
+                "export_apo": "APO Preset exporteren",
                 "preamp": "Preamp",
                 "add_band_channel": "Band toevoegen (alleen {channel})",
                 "band_channel": "Band {index} (alleen {channel})",
@@ -468,17 +468,17 @@
                 "FR": "R"
             },
             "presets": {
-                "load": "DSP-voorinstelling laden",
-                "empty_warning": "Geen DSP-voorinstellingen beschikbaar",
-                "save": "DSP-voorinstelling opslaan",
-                "name": "Naam Voorinstelling",
-                "name_placeholder": "Mijn nieuwe voorinstelling",
-                "remove_confirm": "Weet je zeker dat je deze DSP-voorinstelling wilt verwijderen?"
+                "load": "DSP Preset laden",
+                "empty_warning": "Geen DSP preset beschikbaar",
+                "save": "DSP Preset opslaan",
+                "name": "Preset naam",
+                "name_placeholder": "Mijn nieuwe preset",
+                "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?"
             }
         },
         "power_control": {
-            "label": "Vermogensregeling",
-            "description": "Definieer\/overschrijf het gedrag van de aan\/uit bediening voor deze speler.\nHiermee kunt u bijvoorbeeld de aan\/uit-commando's omleiden naar een ander apparaat, of een nep aan\/uit gebruiken als uw speler geen aan\/uit-commando's ondersteunt, maar u een speciale status wilt voor een speler die niet in gebruik is."
+            "label": "Aan\/uit-regeling",
+            "description": "Definieer\/overschrijf het gedrag van de aan\/uit-regeling voor deze speler.\nHiermee kunt u bijvoorbeeld de aan\/uit-commando's omleiden naar een ander apparaat, of een nep aan\/uit gebruiken als uw speler geen aan\/uit-commando's ondersteunt, maar u een speciale status wilt voor een speler die niet in gebruik is."
         },
         "volume_control": {
             "label": "Volumeregeling",
@@ -534,7 +534,7 @@
         "profile_description": "Beheer je persoonlijke accountinstellingen en voorkeuren",
         "users": "Gebruikers",
         "users_description": "Beheer gebruikersaccounts, rollen en machtigingen",
-        "system_description": "Configureer de serverinstellingen en kernmodules van Music Assistant",
+        "system_description": "Configureer de serverinstellingen en core modules van Music Assistant",
         "system": "Systeem",
         "view_documentation": "Bekijk documentatie",
         "about": "Over",
@@ -552,27 +552,27 @@
         "discussion_forums": "Discussiefora",
         "license": "Licentie",
         "open_home_foundation": "Open Home Foundation",
-        "proud_part_of": "Trots onderdeel van",
+        "proud_part_of": "Met trots onderdeel van",
         "core_module": {
             "cache": {
                 "name": "Cache",
-                "description": "Configuratie van de kernmodule die het cachen van gegevens binnen de applicatie afhandelt"
+                "description": "Configuratie van de core module die het cachen van gegevens binnen de applicatie afhandelt"
             },
             "metadata": {
                 "name": "Metadata",
-                "description": "Configuratie van de kernmodule voor metadata-beheer"
+                "description": "Configuratie van de core module voor metadata-beheer"
             },
             "music": {
                 "name": "Muziek",
-                "description": "Configuratie van de kernmodule voor muziek (bibliotheek) beheer"
+                "description": "Configuratie van de core module voor muziek(bibliotheek)beheer"
             },
             "players": {
                 "name": "Spelers",
-                "description": "Configuratie van de kernmodule voor spelersbeheer"
+                "description": "Configuratie van de core module voor spelersbeheer"
             },
             "player_queues": {
-                "name": "Speler wachtrijen",
-                "description": "Configuratie van de kernmodule voor het beheer van de spelerswachtrij"
+                "name": "Spelerwachtrijen",
+                "description": "Configuratie van de core module voor het beheer van de spelerswachtrij"
             },
             "remote_access": {
                 "name": "Externe Toegang",
@@ -588,7 +588,7 @@
             }
         },
         "remote_access": "Externe Toegang",
-        "remote_access_description": "Krijg veilige toegang tot Music Assistant vanaf elke locatie",
+        "remote_access_description": "Krijg vanaf elke locatie veilige toegang tot Music Assistant",
         "remote_access_title": "Beveiligde Externe Toegang",
         "remote_access_explanation_intro": "Met Externe Toegang kun je overal ter wereld veilig verbinding maken met jouw Music Assistant server.",
         "remote_access_explanation_ha_cloud": "Voor de beste ervaring en betrouwbaarheid is een Home Assistant Cloud-abonnement vereist.",
@@ -631,8 +631,8 @@
         "players_count": "{0} speler{1}",
         "one_player": "1 speler",
         "view_players": "Bekijk spelers",
-        "players_total": "{0}totale speler{1}",
-        "api_docs": "API documentatie",
+        "players_total": "{0} totale speler{1}",
+        "api_docs": "API-documentatie",
         "no_group_providers": "Er zijn momenteel geen providers die het aanmaken van groepen ondersteunen",
         "web_player_mode": {
             "label": "Webspelermodus",
@@ -661,7 +661,13 @@
         "onboarding_add_player": "Spelers toevoegen",
         "onboarding_footer": "Je kunt later altijd meer providers toevoegen via deze instellingenpagina.",
         "remote_access_qr_code": "QR-code",
-        "remote_access_qr_code_description": "Scan deze QR-code met je telefoon om snel verbinding te maken met je Music Assistant server."
+        "remote_access_qr_code_description": "Scan deze QR-code met je telefoon om snel verbinding te maken met je Music Assistant server.",
+        "reset_to_defaults": "Standaardwaarden herstellen",
+        "reset_to_defaults_confirm": "Weet je zeker dat je alle instellingen wilt terugzetten naar de standaardwaarden? Deze wijziging wordt direct opgeslagen.",
+        "unsaved_changes": "Niet-opgeslagen wijzigingen",
+        "unsaved_changes_message": "Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je wilt vertrekken zonder op te slaan?",
+        "stay": "Blijf",
+        "discard": "Wijzigingen ongedaan maken"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -678,7 +684,7 @@
         "artist": "Artiest",
         "name": "Alfabetisch",
         "name_desc": "Alfabetisch (aflopend)",
-        "recent": "Recent toegevoegd",
+        "recent": "Onlangs toegevoegd",
         "year_desc": "Jaar van uitgave (aflopend)",
         "duration_desc": "Duur (aflopend)",
         "original": "Origineel",
@@ -864,7 +870,7 @@
     "recommendations": {
         "in_progress_items": "Verder luisteren...",
         "recommended_new_tracks": "Aanbevolen nieuwe nummers",
-        "recently_played": "Recent gespeeld",
+        "recently_played": "Onlangs afgespeeld",
         "suggested_new_albums_for_you": "Voorgestelde nieuwe albums voor jou",
         "random_artists": "Willekeurige artiesten",
         "random_albums": "Willekeurige albums",
@@ -1032,7 +1038,7 @@
         "oauth_waiting_message": "Er is een browservenster geopend. Meld je eerst aan bij Home Assistant en keer vervolgens terug naar deze pagina.",
         "waiting_for_auth": "Wachten op authenticatie...",
         "connection_failed": "Verbinding mislukt",
-        "try_again": "Probeer het opnieuw",
+        "try_again": "Probeer opnieuw",
         "error_unknown": "Er is een onbekende fout opgetreden",
         "error_login_failed": "Inloggen mislukt. Controleer je inloggegevens.",
         "error_oauth_failed": "Authenticatie met Home Assistant is mislukt.",
@@ -1040,7 +1046,7 @@
         "scan_qr_code": "Scan de QR-code",
         "scan_qr_hint": "Richt je camera op de QR-code die wordt weergegeven in de serverinstellingen van Music Assistant.",
         "qr_invalid": "Ongeldige QR-code. Scan een Music Assistant Externe ID QR-code.",
-        "qr_camera_error": "Geen toegang tot de camera. Controleer de machtigingen."
+        "qr_camera_error": "Kon camera niet benaderen. Controleer de machtigingen."
     },
     "remote": {
         "connect_title": "Maak verbinding met je server",
@@ -1064,7 +1070,7 @@
         "status_establishing": "Beveiligde verbinding tot stand brengen...",
         "cancel": "Annuleren",
         "connection_failed": "Verbinding mislukt",
-        "retry": "Probeer het opnieuw",
+        "retry": "Probeer opnieuw",
         "error_unknown": "Er is een onbekende fout opgetreden",
         "error_login_failed": "Inloggen mislukt. Controleer je inloggegevens.",
         "error_server_not_found": "Server niet gevonden. Zorg ervoor dat je Music Assistant server actief is en dat Externe Toegang is ingeschakeld.",

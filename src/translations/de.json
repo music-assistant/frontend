@@ -546,7 +546,10 @@
             "options": {
                 "sendspin": "Sendspin (experimentell)"
             }
-        }
+        },
+        "reset_to_defaults": "Auf Standardeinstellungen zurücksetzen",
+        "unsaved_changes": "Ungesicherte Änderungen",
+        "discard": "Änderungen verwerfen"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -784,7 +787,10 @@
         "try_again": "Erneut probieren",
         "error_unknown": "Unbekannter Fehler aufgetreten",
         "error_login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten.",
-        "error_oauth_failed": "Authentifizierung mit Home Assistant fehlgeschlagen."
+        "error_oauth_failed": "Authentifizierung mit Home Assistant fehlgeschlagen.",
+        "scan_qr": "Scanne den QR-Code.",
+        "scan_qr_code": "Scanne den QR-Code.",
+        "qr_camera_error": "Kann nicht auf Kamera zugreifen. Prüfe die Berechtigungen."
     },
     "remote": {
         "connect_title": "Verbinde mit deinem Server",
