@@ -176,6 +176,7 @@ onMounted(() => {
           String(defaultSyncDelay),
         10,
       ),
+      range: [-1000, 1000],
     });
 
     // Output latency compensation - enabled by default everywhere
