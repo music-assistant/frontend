@@ -180,6 +180,8 @@ const completeInitialization = async () => {
   store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
   store.libraryRadiosCount = await api.getLibraryRadiosCount();
   store.libraryTracksCount = await api.getLibraryTracksCount();
+  store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
+  store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
