@@ -82,5 +82,30 @@ export default defineConfig({
   },
   build: {
     outDir: "./music_assistant_frontend",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("vuetify")) return "vuetify";
+            if (id.includes("vue-i18n") || id.includes("@intlify"))
+              return "vue-i18n";
+            if (id.includes("vue-router")) return "vue-router";
+            if (id.includes("@vueuse")) return "vueuse";
+            if (id.includes("reka-ui")) return "reka-ui";
+            if (id.includes("swiper")) return "swiper";
+            if (id.includes("lucide")) return "lucide";
+            if (id.includes("colorthief") || id.includes("color/"))
+              return "color";
+            if (
+              id.includes("@mdi/js") ||
+              id.includes("material-design-icons")
+            )
+              return "mdi";
+            if (id.includes("marked")) return "marked";
+            if (id.includes("qrcode")) return "qrcode";
+          }
+        },
+      },
+    },
   },
 });
