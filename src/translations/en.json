@@ -120,10 +120,6 @@
         "players": "Players",
         "pluginproviders": "Plugin providers",
         "provider_disabled": "This provider entry is disabled",
-        "provider_requires_attention": "This provider requires attention",
-        "provider_requires_attention_detail": "One or more providers require attention. Please check the provider settings.",
-        "reconfigure": "Reconfigure",
-        "fix_now": "Fix now",
         "provider_name": "Custom name for this provider entry",
         "providers": "Providers",
         "reload": "Reload",
@@ -285,12 +281,6 @@
             }
         },
         "default": "default",
-        "reset_to_defaults": "Reset to defaults",
-        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
-        "unsaved_changes": "Unsaved changes",
-        "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
-        "stay": "Stay",
-        "discard": "Discard changes",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
             "audio": "Audio",
@@ -365,7 +355,6 @@
                 "sv_SE": "Swedish",
                 "en_GB": "English (United Kingdom)",
                 "es": "Spanish",
-                "lt_LT": "Lithuanian",
                 "pt_PT": "Portuguese",
                 "ko_KR": "Korean",
                 "nb": "Norwegian",
@@ -374,7 +363,8 @@
                 "sl_SI": "Slovenian",
                 "hu_HU": "Hungarian",
                 "it": "Italian",
-                "el_GR": "Greek"
+                "el_GR": "Greek",
+                "lt_LT": "Lithuanian"
             }
         },
         "no_music_providers": "No Music Providers configured",
@@ -672,7 +662,17 @@
         "onboarding_add_player": "Add Players",
         "onboarding_footer": "You can always add more providers later from this settings page.",
         "remote_access_qr_code": "QR Code",
-        "remote_access_qr_code_description": "Scan with your phone camera to connect instantly."
+        "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
+        "reset_to_defaults": "Reset to defaults",
+        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
+        "unsaved_changes": "Unsaved changes",
+        "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
+        "stay": "Stay",
+        "discard": "Discard changes",
+        "provider_requires_attention": "This provider requires attention",
+        "provider_requires_attention_detail": "One or more providers require attention. Please check the provider settings.",
+        "reconfigure": "Reconfigure",
+        "fix_now": "Fix now"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
