@@ -1,0 +1,557 @@
+{
+    "actions": "Accions",
+    "add_library": "Afegeix a la biblioteca",
+    "add_playlist": "Afegeix a la llista de reproducció...",
+    "add_queue": "Afegeix a la cua",
+    "add_url_item": "Afegeix un element des de l'URL",
+    "album": "Àlbum",
+    "album_tracks": "Pistes de l'àlbum",
+    "album_type": {
+        "album": "Àlbum",
+        "compilation": "Compilació",
+        "ep": "Mini àlbum (EP)",
+        "single": "Senzill",
+        "unknown": "Tipus d'àlbum desconegut",
+        "audiobook": "Audiollibre",
+        "podcast": "Podcast"
+    },
+    "albums": "Àlbums",
+    "appears_on": "Apareix a",
+    "artist": "Artista",
+    "artist_albums": "Àlbums",
+    "artist_toptracks": "Cançons més populars",
+    "artists": "Artistes",
+    "browse": "Navega",
+    "clear_selection": "Neteja la selecció",
+    "close": "Tanca",
+    "create_playlist": "Crea una nova llista de reproducció a {0}",
+    "crossfade_disabled": "La transició suau està desactivada",
+    "crossfade_enabled": "La transició suau està activada",
+    "dark_mode": "Mode fosc",
+    "delete_db": "Suprimeix l'element de la base de dades",
+    "details": "Detalls",
+    "enter_url": "Introduïu l'URL que voleu afegir manualment a la base de dades",
+    "external_source_active": "Font externa activa: {0}",
+    "goto_album": "Vés a l'àlbum {0}",
+    "goto_artist": "Vés a l'artista {0}",
+    "home": "Inici",
+    "items_selected": "{0} element(s) seleccionat(s)",
+    "items_total": "{0} element(s) en total",
+    "library": "Biblioteca",
+    "loading": "S'estan recuperant les dades del servidor.",
+    "mass": "Music Assistant",
+    "new_playlist_name": "Introdueix un nom per a la nova llista de reproducció",
+    "no_content": "No s'han trobat elements.",
+    "no_content_filter": "No s'han trobat elements per a les condicions actuals de filtre\/cerca.",
+    "no_player": "No s'ha seleccionat cap reproductor",
+    "off": "Desactivat",
+    "on": "Activat",
+    "other_versions": "Altres versions",
+    "perform_action": "Realitza l'acció a l'element {0}",
+    "play": "Reprodueix",
+    "play_album_from": "Reprodueix l'àlbum des d'aquí",
+    "play_next": "Reprodueix a continuació",
+    "play_now": "Reprodueix ara",
+    "play_on": "Reprodueix a: {0}",
+    "play_playlist_from": "Reprodueix la llista de reproducció des d'aquí",
+    "play_radio": "Inicia la ràdio",
+    "player_type": {
+        "group": "Grup",
+        "player": "Reproductor",
+        "stereo_pair": "Conjunt d'altaveus estèreo",
+        "sync_group": "Grup de sincronització"
+    },
+    "players": "Reproductors",
+    "playlist": "Llista de reproducció",
+    "playlist_tracks": "Pistes de la llista de reproducció",
+    "playlists": "Llistes de reproducció",
+    "provider_details": "Detalls del proveïdor",
+    "queue": "Cua",
+    "queue_clear": "Neteja la cua",
+    "queue_delete": "Suprimeix l'element",
+    "queue_empty": "No hi ha elements a la cua",
+    "queue_move_down": "Mou cap avall",
+    "queue_move_up": "Mou cap amunt",
+    "queue_next_items": "Elements següents",
+    "queue_options": "Opcions de la cua",
+    "queue_previous_items": "Elements reproduïts",
+    "queue_radio_based_on": "La cua s'omple dinàmicament amb pistes en funció de:",
+    "queue_radio_enabled": "El mode ràdio està activat",
+    "radios": "Ràdio",
+    "read_more": "llegeix més",
+    "refresh_item": "Actualitza l'element",
+    "remove_library": "Elimina de la biblioteca",
+    "remove_playlist": "Elimina de la llista de reproducció",
+    "search": "Cerca",
+    "settings": {
+        "add_new": "Afegeix nou",
+        "add_provider": "Afegeix un proveïdor nou",
+        "advanced_settings": "Configuració avançada",
+        "configure": "Configura",
+        "delete": "Suprimeix",
+        "disable": "Desactiva",
+        "documentation": "Documentació",
+        "enable": "Activa",
+        "enable_player": "Habilita aquest reproductor",
+        "enable_provider": "Habilita aquesta entrada de proveïdor",
+        "enabled": "Activa",
+        "password": "Contrasenya",
+        "player_address": "Adreça",
+        "player_id": "ID del reproductor",
+        "player_model": "Model",
+        "player_name": "Nom personalitzat del reproductor",
+        "player_not_available": "Aquest reproductor encara no està disponible",
+        "player_provider": "Proveïdor",
+        "player_settings": "Configuració del reproductor",
+        "player_type_label": "Tipus de reproductor",
+        "playerproviders": "Proveïdors del reproductor",
+        "players": "Reproductors",
+        "pluginproviders": "Proveïdors de connectors",
+        "providers": "Proveïdors",
+        "reload": "Torna a carregar",
+        "save": "Desa",
+        "settings": "Configuració",
+        "sync": "Sincronitza ara",
+        "username": "Nom d'usuari",
+        "server_id": "ID del servidor",
+        "server_version": "Versió del servidor",
+        "albums_in_library": "Àlbums a la biblioteca",
+        "playlists_in_library": "Llistes de reproducció a la biblioteca",
+        "radio_in_library": "Ràdio a la biblioteca",
+        "download_log": "Descarrega el fitxer de registre",
+        "edit_group_members": "Edita els membres del grup",
+        "add_new_provider_button": "Afegeix el proveïdor {0}",
+        "add_group_player": "Afegeix reproductor de grup",
+        "log_level": {
+            "label": "Nivell de registre",
+            "options": {
+                "global": "Global",
+                "info": "Informació",
+                "warning": "Avís",
+                "error": "Error",
+                "debug": "Depuració"
+            }
+        },
+        "flow_mode": {
+            "label": "Activa el mode de flux de cua",
+            "description": "Activa el mode \"flux\" on totes les pistes de la cua s'envien com a flux d'àudio continu.\nUtilitzeu-lo per a reproductors que no admeten de forma nativa sense interrupcions i\/o crossfading o si el jugador té problemes per fer la transició entre pistes."
+        },
+        "auto_play": {
+            "label": "Reproducció automàtica (reprèn a l'engegada)",
+            "description": "Quan aquest reproductor estigui activat, comença a reproduir automàticament (si hi ha elements a la cua)."
+        },
+        "output_channels": {
+            "label": "Mode de canal de sortida",
+            "description": "Podeu configurar aquest reproductor per reproduir només el canal esquerre o dret, per exemple per crear una parella estèreo amb 2 reproductors.",
+            "options": {
+                "stereo": "Estèreo (ambdós canals)",
+                "left": "Només el canal esquerre",
+                "right": "Només el canal dret",
+                "mono": "Mono (ambdós canals)"
+            }
+        },
+        "volume_normalization": {
+            "label": "Habilita la normalització del volum (basat en EBU-R128)",
+            "description": "Habilita la normalització del volum basada en l'estàndard EBU-R128 sense afectar el rang dinàmic"
+        },
+        "volume_normalization_target": {
+            "label": "Nivell objectiu per a la normalització del volum"
+        },
+        "eq_mid": {
+            "label": "Equalitzador: mitjos"
+        },
+        "eq_treble": {
+            "label": "Equalitzador: aguts"
+        },
+        "crossfade": {
+            "label": "Activa la transició suau",
+            "description": "Activa una transició de suau entre les pistes de la cua."
+        },
+        "crossfade_duration": {
+            "label": "Durada de la transició suau",
+            "description": "Durada en segons de la transició gradual entre pistes (si està activada)"
+        },
+        "default_enqueue_select_artist": {
+            "options": {
+                "library_tracks": "Només pistes de la biblioteca",
+                "library_album_tracks": "Totes les pistes de tots els àlbums de la biblioteca"
+            }
+        },
+        "default_enqueue_action_artist": {
+            "options": {
+                "next": "Reprodueix els elements just després de l'element reproduït\/a la memòria intermèdia.",
+                "replace_next": "Esborra la cua i reprodueix les pistes de l'artista just després de l'element reproduït\/emmagatzemat en memòria intermèdia actualment.",
+                "add": "Afegeix les pistes de l'artista al final de la cua."
+            }
+        },
+        "default_enqueue_action_album": {
+            "label": "Opció de cua per defecte per als elements de l'àlbum.",
+            "description": "Definiu l'acció de cua predeterminada per a aquest tipus de suport (si no heu especificat cap acció).",
+            "options": {
+                "play": "Reprodueix les pistes de l'àlbum ara i conserva els elements de la cua restants.",
+                "replace": "Esborra la cua i reprodueix les pistes de l'àlbum",
+                "next": "Reprodueix els elements just després de l'element reproduït\/a la memòria intermèdia.",
+                "replace_next": "Esborra la cua i reprodueix les pistes de l'àlbum just després de l'element reproduït\/emmagatzemat a la memòria intermèdia actualment.",
+                "add": "Afegeix les pistes de l'àlbum al final de la cua."
+            }
+        },
+        "default_enqueue_action_track": {
+            "label": "Opció de cua predeterminada per a les pistes.",
+            "description": "Definiu l'acció de cua per defecte per a aquest tipus de suport (si no heu especificat cap acció).",
+            "options": {
+                "play": "Reprodueix les pistes ara i conserva els elements restants de la cua.",
+                "replace": "Esborra la cua i reprodueix les pistes.",
+                "next": "Reprodueix les pistes just després de l'element reproduït o emmagatzemat en memòria intermèdia actualment.",
+                "replace_next": "Neteja la cua i reprodueix les pistes just després de l'element reproduït\/a la memòria intermèdia.",
+                "add": "Afegiu les pistes al final de la cua."
+            }
+        },
+        "default_enqueue_action_playlist": {
+            "label": "Opció de cua per defecte per als elements de la llista de reproducció.",
+            "description": "Definiu l'acció de cua per defecte per a aquest tipus de suport (si no heu especificat cap acció).",
+            "options": {
+                "play": "Reprodueix les pistes de la llista de reproducció ara i conserva els elements restants de la cua.",
+                "replace": "Esborra la cua i reprodueix les pistes de la llista de reproducció",
+                "next": "Reprodueix els ítems just després de l'element reproduït\/emmagatzemat a la memòria intermèdia actualment.",
+                "replace_next": "Esborra la cua i reprodueix les pistes de la llista de reproducció just després de l'element reproduït\/emmagatzemat a la memòria intermèdia actualment.",
+                "add": "Afegeix les pistes de la llista de reproducció al final de la cua."
+            }
+        },
+        "default_enqueue_action_radio": {
+            "label": "Opció de cua per defecte per als elements de ràdio.",
+            "description": "Definiu l'acció de cua per defecte per a aquest tipus de suport (si no heu especificat cap acció).",
+            "options": {
+                "play": "Reprodueix l'emissora de ràdio ara i conserva els elements de la cua restants.",
+                "replace": "Esborra la cua i reprodueix l'emissora de ràdio",
+                "next": "Reprodueix els ítems just després de l'element reproduït\/emmagatzemat a la memòria intermèdia actualment.",
+                "replace_next": "Esborreu la cua i reproduïu les emissores de ràdio just després de l'element reproduït\/emmagatzemat a la memòria intermèdia actualment."
+            }
+        },
+        "default": "per defecte",
+        "provider_depends_on_confirm": "Abans de poder configurar {0}, cal que tingueu configurat el proveïdor {1}. Voleu fer-ho ara?",
+        "category": {
+            "audio": "Àudio",
+            "generic": "Configuració general",
+            "player_controls": "Controls del reproductor",
+            "presets": "Predefinits"
+        },
+        "announce_volume_strategy": {
+            "options": {
+                "absolute": "Volum absolut",
+                "none": "No ajustis el volum"
+            }
+        },
+        "announce_volume": {
+            "label": "Volum per als anuncis",
+            "description": "El nivell de volum percentual, relatiu o absolut, utilitzat amb l'estratègia per als anuncis."
+        },
+        "announce_volume_max": {
+            "description": "El volum (ajust) dels anuncis no hauria de superar aquest nivell."
+        },
+        "theme": {
+            "label": "Tema",
+            "options": {
+                "auto": "Automàtic (segueix la configuració del sistema)",
+                "light": "Clar",
+                "dark": "Fosc"
+            }
+        },
+        "menu_items": {
+            "label": "Elements de menú habilitats",
+            "description": "Configureu quins elements es mostraran al menú.\n\nTingueu en compte que si desactiveu la configuració, podeu bloquejar-vos.\n\nEn aquest cas, haureu d'introduir manualment el camí a la configuració o esborrar les galetes del navegador per accedir de nou a la configuració, utilitzeu-la sota el vostre propi risc."
+        },
+        "language": {
+            "label": "Llengua",
+            "options": {
+                "auto": "Auto (segueix la configuració del sistema)",
+                "cs": "Txec",
+                "da": "Danès",
+                "de": "Alemany",
+                "en": "Anglès",
+                "fr": "Francès",
+                "nl": "Holandès",
+                "pl": "Polonès",
+                "uk_UA": "Ucraïnès",
+                "zh_CN": "Xinès (Simplificat)",
+                "en_AU": "Anglès (Australià)",
+                "sr": "Serbi",
+                "sr_Latn": "Serbi (llatí)",
+                "sv_SE": "Suec",
+                "en_GB": "Anglès (Regne Unit)",
+                "es": "Espanyol",
+                "pt_PT": "Portuguès",
+                "ko_KR": "Coreà",
+                "nb": "Noruec",
+                "ru_RU": "Rus",
+                "pt_BR": "Portuguès (Brasil)",
+                "sl_SI": "Eslovè",
+                "hu_HU": "Hongarès",
+                "it": "Italià",
+                "el_GR": "Grec"
+            }
+        },
+        "volume_normalization_radio": {
+            "label": "Mètode de normalització de volum que s'utilitzarà per a fluxos de ràdio",
+            "description": "Definiu l'estratègia de normalització de volum preferida per als fluxos de ràdio. \nPer defecte, Music Assistant recull una mesura de la sonoritat de l'emissora de ràdio (mitjana percebuda) d'acord amb l'especificació EBU-R128 i després ajusta el guany\/volum general del flux d'acord amb aquesta mesura perquè el rang dinàmic de l'àudio no es vegi afectat. Quan no existeix cap mesura (encara) per a una emissora de ràdio, l'Assistent de música recorrerà a un filtre d'anivellament de sonoritat dinàmic (però menys precís).\n\nCONSELL: els fluxos de ràdio solen tenir diferents nivells de sonoritat, especialment durant anuncis i anuncis.\nPodeu optar per aplicar la normalització dinàmica del volum als fluxos de ràdio, fins i tot si existeix una mesura de sonoritat (mitjana) per a l'emissora de ràdio. \n \n**Opcions:**\n\n- Desactivat: no apliqueu la normalització de volum per als fluxos de ràdio. \n  - Força dinàmica: aplica l'anivellament dinàmic del volum en tot moment. \n  - Només mesurament (sense alternativa) - Aplica la correcció de volum\/guany (general) basada en la mesura emmagatzemada. Si no tenim cap mesura, no apliquem normalització.\n  - Alternativa a la correcció de guany - Aplica la correcció de volum\/guany (general) en funció de la mesura emmagatzemada. Si no tenim cap mesura, retrocedir a una correcció de guany predefinida.\n - Correcció de guany fixa - Apliqueu sempre la correcció de volum \/ guany fixa.\n  - Retorn a dinàmic - Trieu automàticament la millor opció: Apliqueu la correcció de volum \/ guany (general) basada en la mesura emmagatzemada si en tenim, permeteu la reserva al mode dinàmic si no hi ha cap mesura disponible.",
+            "options": {
+                "disabled": "Inhabilitat",
+                "dynamic": "Força dinàmic",
+                "measurement_only": "Només mesurament (sense retorn)",
+                "fallback_fixed_gain": "Retorna a correcció de guany",
+                "fixed_gain": "Correcció de guany fixa",
+                "fallback_dynamic": "Retorn a dinàmic"
+            }
+        },
+        "volume_normalization_tracks": {
+            "label": "Mètode de normalització de volum que s'utilitzarà per a les pistes",
+            "description": "Definiu l'estratègia de normalització de volum preferida per a les pistes o cançons.\nMusic Assistant utilitza una mesura de la sonoritat de les pistes (mitjana percebuda) segons l'especificació EBU-R128 per ajustar el guany\/volum general del flux sense afectar el rang dinàmic de l'àudio.\nAquestes mesures són proporcionades pel proveïdor de streaming o, en el cas de fitxers locals, poden estar contingudes a les etiquetes ID3 (ReplayGain 2.0 \/ Opus R128).\nSi no es proporciona la mesura, l'Assistent de música realitzarà automàticament una mesura quan\/després de la (primera) reproducció de la pista. Quan no existeix cap mesura (encara) per a una pista, l'Assistent de música tornarà per defecte a un filtre d'anivellament de sonoritat dinàmic (però menys precís). Això garanteix que no hi hagi grans pics \/ caigudes en el nivell de volum entre pistes, fins i tot si encara no hi ha una mesura precisa, però el nivellador dinàmic de vegades pot comprimir una mica el rang dinàmic, tot i que això no hauria de ser audible en la majoria dels casos.\n\n**Opcions:**\n\n- Desactivat: no apliqueu la normalització de volum per als fluxos de ràdio.\n - Força dinàmica: aplica l'anivellament dinàmic del volum en tot moment. \n - Només mesurament (sense alternativa) - Aplica la correcció de volum\/guany (general) basada en la mesura emmagatzemada. Si no tenim cap mesura, no apliquem normalització. \n - Alternativa a la correcció de guany - Aplica la correcció de volum\/guany (general) en funció de la mesura emmagatzemada. Si no tenim cap mesura, retrocedir a una correcció de guany predefinida. \n - Correcció de guany fixa - Apliqueu sempre la correcció de volum \/ guany fixa. \n - Retorn a dinàmic - Trieu automàticament la millor opció: Apliqueu la correcció de volum \/ guany (general) basada en la mesura emmagatzemada si en tenim, permeteu la reserva al mode dinàmic si no hi ha cap mesura disponible.",
+            "options": {
+                "disabled": "Inhabilitat",
+                "dynamic": "Força dinàmic",
+                "measurement_only": "Només mesurament (sense retorn)",
+                "fallback_fixed_gain": "Retorna a correcció de guany",
+                "fixed_gain": "Correcció de guany fix",
+                "fallback_dynamic": "Alternatiu a dinàmic"
+            }
+        },
+        "volume_normalization_fixed_gain_tracks": {
+            "label": "Ajust de guany fix\/alternatiu per a pistes",
+            "description": "Correcció de guany fix\/ alternatiu per aplicar a un flux d'àudio de pista (depèn de la configuració \"Mètode de normalització del volum\").\nUtilitzeu un valor positiu per augmentar el volum, un valor negatiu per disminuir el volum.\n\nAquesta configuració s'utilitza quan el mètode de normalització de volum s'estableix a \"Correcció de guany fixa\" o \"Correcció de retorn per guanyar\"."
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "label": "Ajust de guany fix\/alternatiu per a la ràdio",
+            "description": "S'ha corregit la correcció de guany de reserva per aplicar-la a un flux de ràdio (depèn de la configuració del \"Mètode de normalització del volum\"). \n Utilitzeu un valor positiu per augmentar el volum, un valor negatiu per reduir-lo. \n \n Aquesta opció de configuració s'utilitza quan el mètode de normalització del volum s'estableix a \"Correcció de guany fix\" o \"Retorn a la correcció de guany\"."
+        },
+        "add_group_player_desc": "Per als proveïdors\/ecosistemes de reproductors que ofereixen agrupació\/sincronització nativa, es crearà automàticament un grup de sincronització, el que significa que si reprodueixes a aquest Grup de Reproductors, els reproductors membres es sincronitzaran automàticament. \n\nPer als reproductors\/ecosistemes que no admeten l'agrupació, o en cas que vulguis agrupar reproductors de diferents ecosistemes, pots utilitzar el tipus de grup Universal, que distribuirà el mateix àudio a tots els reproductors membres (però no de manera sincronitzada). \n\nTingues en compte que alguns proveïdors sí que admeten l'agrupació, però cal utilitzar l'aplicació nativa per realitzar l'agrupació. Un exemple són els reproductors basats en Google Cast, on només pots crear grups de Google Cast dins de l'aplicació Google Home.",
+        "dynamic_members": {
+            "label": "Membres dinàmics del grup",
+            "description": "Permetre als membres unir-se o deixar el grup temporalment de manera dinàmica, de manera que el grup es comporti més o menys igual que sincronitzar manualment plegats els reproductors, amb la principal diferència que el reproductor de grup mantindrà la cua."
+        },
+        "dsp": {
+            "configure_on": "Configurant el DSP a: {name}",
+            "disabled_message": "El DSP està actualment desactivat. Activa'l utilitzant l'interruptor de dalt",
+            "input": "Entrada",
+            "output": "Sortida",
+            "filter": {
+                "add": "Afegeix filtre",
+                "type": "Tipus de filtre",
+                "new": "Nou {type}"
+            },
+            "move_up": "Mou cap amunt",
+            "move_down": "Mou cap avall",
+            "delete_filter": "Elimina el filtre",
+            "parametric_eq": {
+                "add_band": "Afegeix banda"
+            },
+            "tone_control": {
+                "bass_level": "Nivell de greus",
+                "mid_level": "Nivell de mitjans",
+                "treble_level": "Nivell d'aguts"
+            },
+            "parameter": {
+                "frequency": "Freqüència",
+                "gain": "Guany",
+                "q_factor": "Factor Q"
+            },
+            "channels": {
+                "ALL": "Tots",
+                "FL": "Esquerra",
+                "FR": "Dreta"
+            },
+            "channels_compact": {
+                "FL": "Esquerra",
+                "FR": "Dreta"
+            }
+        },
+        "power_control": {
+            "label": "Control d'energia",
+            "description": "Defineix\/anul·la el comportament del control d'energia per a aquest reproductor. \n Permet, per exemple, redirigir les ordres d'engegada\/apagada a un aparell diferent o utilitzar un control d'energia fals si el reproductor no admet ordres d'engegada\/apagada però voleu tenir un estat dedicat per a un reproductor que no estigui en ús."
+        },
+        "volume_control": {
+            "label": "Control de volum"
+        },
+        "mute_control": {
+            "label": "Control de silenci"
+        },
+        "add_group_player_desc_universal": "En crear un Grup Universal de Reproductors, podeu agrupar reproductors de diferents proveïdors\/ecosistemes. \nAixò distribuirà el mateix àudio a tots els reproductors membres (però no de manera sincronitzada)."
+    },
+    "show_info": "Mostra informació",
+    "show_select_boxes": "Mostra les caselles de selecció",
+    "shuffle": "Aleatori",
+    "sort": {
+        "duration": "Durada",
+        "position": "Posició",
+        "provider": "Proveïdor",
+        "sort_name": "Ordena per nom",
+        "track_number": "Número de pista",
+        "year": "Any de llançament",
+        "position_desc": "Posició (descendent)",
+        "album": "Àlbum",
+        "artist": "Artista",
+        "name": "Alfabèticament",
+        "name_desc": "Alfabèticament (descendent)",
+        "recent": "Afegit recentment",
+        "year_desc": "Any de llançament (descendent)",
+        "duration_desc": "Durada (descendent)",
+        "original": "Original",
+        "sort_name_desc": "Ordena per nom (descendent)",
+        "timestamp_added": "Data d'addició",
+        "timestamp_added_desc": "Data d'addició (descendent)",
+        "timestamp_modified": "Data d'actualització",
+        "timestamp_modified_desc": "Data d'actualització (descendent)",
+        "last_played": "Darrera reproducció",
+        "last_played_desc": "Darrera reproducció (descendent)",
+        "play_count": "Recompte de reproduccions",
+        "play_count_desc": "Recompte de reproduccions (descendent)",
+        "artist_name": "Artista de l'àlbum",
+        "artist_name_desc": "Artista de l'àlbum (descendent)"
+    },
+    "state": {
+        "idle": "inactiu",
+        "off": "apagat",
+        "paused": "pausat",
+        "playing": "reproduint"
+    },
+    "sync_now": "Sincronitza ara",
+    "sync_running": "S'estan sincronitzant un o més proveïdors de música.",
+    "tooltip": {
+        "explicit": "Explícit",
+        "filter_library": "Commuta el filtre de biblioteca\/preferits",
+        "refresh_new_content": "Hi ha contingut nou disponible, feu clic per actualitzar la llista",
+        "search": "Mostra\/amaga el camp de cerca",
+        "select_items": "Selecciona diversos elements",
+        "sort_options": "Opcions d'ordenació",
+        "toggle_view_mode": "Canvia el mode de visualització llista\/miniatures",
+        "filter_favorites": "Mostra només els preferits",
+        "favorite": "Marca\/desmarca com a preferit",
+        "back": "Enrere",
+        "show_menu": "Mostra\/amaga el menú",
+        "search_filter_active": "La cerca està filtrant els resultats actualment",
+        "primary_image": "Aquesta és la imatge principal d'aquest tipus d'imatge",
+        "select_all": "Selecciona tots els elements"
+    },
+    "topresult": "Resultat principal",
+    "track": "Pista",
+    "track_number": "Disc {0} Pista {1}",
+    "tracks": "Pistes",
+    "try_global_search": "Prova la cerca global",
+    "type_to_search": "Escriu aquí per cercar...",
+    "volume_normalization": "Normalització del volum",
+    "play_now_replace": "Reprodueix ara (buida la cua)",
+    "currently_playing": "Reproduint ara",
+    "favorites_add": "Afegeix als preferits",
+    "favorites_remove": "Elimina dels preferits",
+    "confirm_library_remove": "Esteu segur que voleu suprimir aquest element de la biblioteca? Qualsevol element que depengui d’aquest element també s’eliminarà de manera recursiva. Tingueu en compte que això només eliminarà aquest element de la biblioteca. Si es tracta d’un fitxer de música al disc, podria tornar a aparèixer en la propera sincronització.",
+    "check_item_on_provider": "Comprova {0} a {1}",
+    "check_item_in_library": "Comprova {0} a la biblioteca",
+    "media_details": "Detalls del mitjà",
+    "mapped_providers": "Detalls del proveïdor",
+    "item_in_library": "Aquest element està disponible a la biblioteca",
+    "back": "Enrere",
+    "recently_played": "Reproduït recentment",
+    "radiobrowser_by_country": "Per país",
+    "radiobrowser_by_tag": "Per etiqueta",
+    "load_more_items": "Carrega més elements...",
+    "radio": "Ràdio",
+    "muted": "silenciat",
+    "enter_name": "Introduïu un nom nou (personalitzat)",
+    "image_url": "Introdueix l'URL d'una imatge o icona (opcional)",
+    "invalid_input": "L'entrada no era vàlida",
+    "new_playlist": "Llista de reproducció nova",
+    "create_playlist_on": "Crea una nova llista de reproducció a {0}",
+    "view": {
+        "list": "Vista de llista",
+        "panel": "Vista de miniatures",
+        "panel_compact": "Vista compacta de miniatures"
+    },
+    "play_replace": "Reprodueix ara (buida la cua)",
+    "played": "Reproduït",
+    "background_task_added": "L'acció la realitza el servidor en segon pla i pot trigar una mica a completar-se. Estigueu atents al registre del servidor per al progrés.",
+    "images": "Imatges",
+    "image_type": "Tipus",
+    "image_source": "Font",
+    "image_make_primary": "Converteix en principal",
+    "update_metadata": "Actualitza les metadades",
+    "cancel": "Cancel·la",
+    "transfer_queue": "Cua de transferència",
+    "power_on_player": "Engega",
+    "power_off_player": "Apaga",
+    "powered_off_players": "Reproductors desendollats",
+    "sync_player_with": "Sincronitza amb un altre reproductor",
+    "open_player_settings": "Obre la configuració",
+    "select_repeat_mode": "Selecciona el mode de repetició",
+    "repeat_mode": {
+        "all": "Repeteix tota la cua",
+        "off": "Repetir apagat",
+        "one": "Repeteix una sola pista"
+    },
+    "shuffle_disable": "Desactiva la reproducció aleatòria",
+    "shuffle_enable": "Activa la reproducció aleatòria",
+    "dont_stop_the_music_enable": "Activa \"No aturis la música!\"",
+    "dont_stop_the_music_disable": "Desactiva \"No aturis la música!\"",
+    "open_dsp_settings": "Obre la configuració DSP",
+    "audiobook": "Audiollibre",
+    "audiobooks": "Audiollibres",
+    "chapter": "Capítol",
+    "chapters": "Capítols",
+    "podcast": "Podcast",
+    "podcasts": "Podcasts",
+    "item_fully_played": "Aquest element s'ha reproduït completament",
+    "item_in_progress": "Aquest element s'ha reproduït parcialment",
+    "duration_in_seconds": "{0} segons",
+    "mark_played": "Marca com a reproduït",
+    "mark_unplayed": "Marca com a no reproduït",
+    "searchtype_all": "Tot",
+    "global_search": "Cerca global",
+    "podcast_episode": "Episodi",
+    "podcast_episodes": "Episodis",
+    "play_from_here": "Reprodueix des d'aquí",
+    "loudness_measurement": "{0} LUFS (nivell de sonoritat)",
+    "loudness_measurement_album": "{0} LUFS (àlbum)",
+    "loudness_dynamic": "Normalització dinàmica del volum",
+    "loudness_fixed": "Configuració del guany fix",
+    "dsp_active": "Actiu",
+    "currently_playing_players": "Reproduint ara",
+    "all_players": "Tots els reproductors",
+    "all_groups": "Tots els grups",
+    "no_player_playing": "Actualment no hi ha cap reproductor en funcionament",
+    "stop_playback": "Atura la reproducció",
+    "streamdetails": {
+        "eq_band_count": "{0} bandes",
+        "eq_band_count_singular": "1 banda",
+        "file_info": {
+            "channels": "Canals: {0}"
+        }
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Selecciona la font",
+    "in_progress_items": "Continua escoltant...",
+    "play_replace_next": "Reprodueix a continuació (neteja la cua)",
+    "all_enqueue_options": "Totes les opcions d'afegir a la cua",
+    "music_assistant_source": "Cua de Music Assistant",
+    "music_assistant_library": "Biblioteca de Music Assistant",
+    "select_all_confirmation": "Voleu seleccionar-ho tot? Pot trigar una mica a carregar totes les dades.",
+    "this_device": "Aquest dispositiu",
+    "recommendations": {
+        "in_progress_items": "Continua escoltant...",
+        "recommended_new_tracks": "Noves pistes recomanades",
+        "recently_played": "Reproduït recentment",
+        "suggested_new_albums_for_you": "Nous àlbums suggerits per a tu",
+        "random_artists": "Artistes aleatoris",
+        "random_albums": "Àlbums aleatoris",
+        "custom_mixes": "Mescles personalitzades",
+        "your_listening_history": "El teu historial d'escolta",
+        "popular_albums": "Àlbums populars",
+        "staff_picks_tracks": "Cançons escollides pel nostre equip",
+        "staff_picks_albums": "Àlbums triats pel nostre equip",
+        "radio_stations_for_you": "Emissores de ràdio per a tu",
+        "producers__songwriters": "Productors i compositors",
+        "new_releases_for_you": "Novetats per a tu",
+        "recent_favorite_tracks": "Pistes afegides recentment als preferits",
+        "favorite_playlists": "Llistes de reproducció preferides",
+        "favorite_radio_stations": "Emissores de ràdio preferides"
+    },
+    "homescreen_edit_enable": "Edita la pantalla d'inici",
+    "homescreen_edit_disable": "Surt del mode d'edició de la pantalla d'inici",
+    "lyrics_will_appear_soon": "La lletra apareixerà quan comenci la cançó..."
+}
