@@ -182,20 +182,20 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+.user-header-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+  background-color: hsl(var(--muted) / 0.3);
+  border-radius: calc(var(--radius) - 2px);
+  margin-bottom: 4px;
+}
+
 @media (max-width: 600px) {
   .provider-warning-content {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .user-header-section {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 4px;
-    background-color: hsl(var(--muted) / 0.3);
-    border-radius: calc(var(--radius) - 2px);
-    margin-bottom: 4px;
   }
 }
 </style>
