@@ -6,6 +6,7 @@
  * caching and avoiding Base64 overhead.
  */
 
+import { ref } from "vue";
 import { WebRTCTransport } from "./webrtc-transport";
 
 // Storage key for remote mode (must match connection-manager.ts)
@@ -27,6 +28,8 @@ class HttpProxyBridge {
   private static readonly EXTENDED_COOLDOWN_MS = 30000;
   // Promise that resolves when service worker is ready and controlling
   private initPromise: Promise<void> | null = null;
+  // Reactive ref indicating if service worker is ready and controlling
+  public isReady = ref(false);
 
   /**
    * Initialize the HTTP proxy bridge
@@ -69,7 +72,7 @@ class HttpProxyBridge {
 
         // Wait for service worker to be controlling the page
         // This is critical to prevent race conditions on hard refresh
-        await this.waitForController();
+        const hasController = await this.waitForController();
 
         // Listen for messages from service worker
         navigator.serviceWorker.addEventListener("message", (event) => {
@@ -79,30 +82,47 @@ class HttpProxyBridge {
         // Check if we were in remote mode (from localStorage) and notify SW early
         // This prevents the race condition where images load before remote mode is set
         const storedMode = localStorage.getItem(REMOTE_MODE_STORAGE_KEY);
-        if (storedMode === "remote") {
+        if (storedMode === "remote" && hasController) {
           console.log(
             "[HttpProxyBridge] Restoring remote mode from localStorage",
           );
           await this.notifyRemoteMode(true);
         }
 
-        console.log("[HttpProxyBridge] Service worker ready and controlling");
+        if (hasController) {
+          console.log("[HttpProxyBridge] Service worker ready and controlling");
+        } else {
+          // SW isn't controlling yet (first load after install)
+          // Set isReady anyway so the app doesn't block forever
+          // Images may fail on this load but will work on next refresh
+          console.warn(
+            "[HttpProxyBridge] Service worker not controlling yet, app will proceed but images may fail",
+          );
+          this.isReady.value = true;
+        }
       } catch (error) {
         console.error(
           "[HttpProxyBridge] Service worker registration failed:",
           error,
         );
+        // Set isReady so app doesn't block
+        this.isReady.value = true;
       }
+    } else {
+      // No service worker support
+      this.isReady.value = true;
     }
   }
 
   /**
    * Wait for the service worker to be controlling the page
+   * Returns true if controller is available, false if timed out
    */
-  private waitForController(): Promise<void> {
+  private waitForController(): Promise<boolean> {
     return new Promise((resolve) => {
       if (navigator.serviceWorker.controller) {
-        resolve();
+        this.isReady.value = true;
+        resolve(true);
         return;
       }
 
@@ -112,7 +132,8 @@ class HttpProxyBridge {
           "controllerchange",
           onControllerChange,
         );
-        resolve();
+        this.isReady.value = true;
+        resolve(true);
       };
       navigator.serviceWorker.addEventListener(
         "controllerchange",
@@ -130,7 +151,8 @@ class HttpProxyBridge {
         console.warn(
           "[HttpProxyBridge] Timeout waiting for service worker controller",
         );
-        resolve();
+        // Don't set isReady = true here - SW isn't actually controlling
+        resolve(false);
       }, 3000);
     });
   }
@@ -149,16 +171,14 @@ class HttpProxyBridge {
    */
   private notifyRemoteMode(isRemote: boolean): Promise<void> {
     return new Promise((resolve) => {
-      const sendMessage = () => {
-        if (navigator.serviceWorker?.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: "set-remote-mode",
-            data: { isRemote },
-          });
-          return true;
-        }
-        return false;
-      };
+      // If no service worker support or no controller, resolve immediately
+      if (!navigator.serviceWorker?.controller) {
+        console.warn(
+          "[HttpProxyBridge] No service worker controller, skipping remote mode notification",
+        );
+        resolve();
+        return;
+      }
 
       // Set up listener for acknowledgment BEFORE sending message
       const onAck = (event: MessageEvent) => {
@@ -170,7 +190,7 @@ class HttpProxyBridge {
           resolve();
         }
       };
-      navigator.serviceWorker?.addEventListener("message", onAck);
+      navigator.serviceWorker.addEventListener("message", onAck);
 
       // Set a timeout in case ack never comes
       setTimeout(() => {
@@ -181,30 +201,11 @@ class HttpProxyBridge {
         resolve();
       }, 2000);
 
-      // Try to send immediately
-      if (sendMessage()) {
-        return;
-      }
-
-      // If no controller yet, wait for controllerchange event
-      const onControllerChange = () => {
-        if (sendMessage()) {
-          navigator.serviceWorker?.removeEventListener(
-            "controllerchange",
-            onControllerChange,
-          );
-        }
-      };
-
-      navigator.serviceWorker?.addEventListener(
-        "controllerchange",
-        onControllerChange,
-      );
-
-      // Also retry after a short delay in case controllerchange doesn't fire
-      setTimeout(() => {
-        sendMessage();
-      }, 1000);
+      // Send the message
+      navigator.serviceWorker.controller.postMessage({
+        type: "set-remote-mode",
+        data: { isRemote },
+      });
     });
   }
 

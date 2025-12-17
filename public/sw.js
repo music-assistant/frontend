@@ -193,7 +193,14 @@ function generateRequestId() {
 // Initialize state
 self.isRemoteMode = false;
 
+// Skip waiting to activate the new service worker immediately
+self.addEventListener("install", (event) => {
+  console.log("[ServiceWorker] Installing...");
+  event.waitUntil(self.skipWaiting());
+});
+
 // Claim clients immediately when service worker activates
 self.addEventListener("activate", (event) => {
+  console.log("[ServiceWorker] Activating...");
   event.waitUntil(self.clients.claim());
 });
