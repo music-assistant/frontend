@@ -124,14 +124,13 @@
 import { computed, ref, watch } from "vue";
 //@ts-ignore
 
-import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
 import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
 import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { ImageType, MediaType, PlayerFeature } from "@/plugins/api/interfaces";
+import { MediaType, PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
@@ -184,16 +183,12 @@ const backgroundColor = computed(() => {
 
 // watchers
 watch(
-  () => store.curQueueItem?.queue_item_id,
+  () => store.activePlayer?.current_media?.image_url,
   () => {
     // load cover image for the (new) QueueItem
     // make sure that the image selection is exactly the same as on the player OSD thumb
-    if (store.curQueueItem?.media_item) {
-      img.src =
-        getImageThumbForItem(store.curQueueItem.media_item, ImageType.THUMB) ||
-        "";
-    } else if (store.curQueueItem) {
-      img.src = getImageThumbForItem(store.curQueueItem, ImageType.THUMB) || "";
+    if (store.activePlayer?.current_media?.image_url) {
+      img.src = store.activePlayer.current_media.image_url;
     } else {
       img.src = "";
     }

@@ -56,32 +56,27 @@
             v-if="$vuetify.display.height > 600"
             class="main-media-details-image"
           >
-            <!-- queue item (mediaitem) image -->
-            <MediaItemThumb
-              v-if="store.activePlayer?.powered != false && store.curQueueItem"
-              :item="store.curQueueItem"
-              :thumbnail="false"
-              style="max-width: 100%; width: auto"
-              :fallback="
-                $vuetify.theme.current.dark ? imgCoverDark : imgCoverLight
-              "
-            />
-            <!-- player (external source) media image (if no queue item)-->
+            <!-- current media image -->
             <v-img
-              v-else-if="
+              v-if="
                 store.activePlayer?.powered != false &&
-                !store.curQueueItem?.image &&
                 store.activePlayer?.current_media?.image_url
               "
               style="max-width: 100%; width: auto; border-radius: 4px"
               :src="store.activePlayer.current_media.image_url"
             />
-
-            <v-img
-              v-else
-              style="max-width: 100%; width: auto; border-radius: 4px"
-              :src="$vuetify.theme.current.dark ? imgCoverDark : imgCoverLight"
-            />
+            <!-- fallback: display player icon in box -->
+            <div v-else class="icon-thumb-large">
+              <v-icon
+                size="128"
+                :icon="
+                  store.activePlayer?.type == PlayerType.PLAYER &&
+                  store.activePlayer?.group_members.length
+                    ? 'mdi-speaker-multiple'
+                    : store.activePlayer?.icon || 'mdi-speaker'
+                "
+              />
+            </div>
           </div>
           <div class="main-media-details-track-info">
             <!-- player name as title if its powered off-->
@@ -91,46 +86,16 @@
             >
               {{ store.activePlayer?.name }}
             </v-card-title>
-            <!-- queue item media item + optional version-->
+            <!-- current media title -->
             <v-card-title
-              v-else-if="store.curQueueItem?.media_item"
+              v-else-if="store.activePlayer?.current_media?.title"
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
-              @click="itemClick(store.curQueueItem.media_item as MediaItemType)"
+              @click="onTitleClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.media_item.name }}
-                <span
-                  v-if="
-                    'version' in store.curQueueItem.media_item &&
-                    store.curQueueItem.media_item.version
-                  "
-                  >({{ store.curQueueItem.media_item.version }})</span
-                >
+                {{ store.activePlayer.current_media.title }}
               </MarqueeText>
             </v-card-title>
-
-            <!-- external source current media item present -->
-            <v-card-title
-              v-else-if="
-                !store.activePlayerQueue &&
-                store.activePlayer?.current_media?.title
-              "
-            >
-              <div v-if="store.activePlayer?.current_media?.artist">
-                <MarqueeText :sync="playerMarqueeSync">
-                  {{ store.activePlayer?.current_media?.artist }}
-                </MarqueeText>
-              </div>
-              <div
-                v-if="store.activePlayer?.current_media?.title"
-                :style="`font-size: ${subTitleFontSize};`"
-              >
-                <MarqueeText :sync="playerMarqueeSync">
-                  {{ store.activePlayer?.current_media?.title }}
-                </MarqueeText>
-              </div>
-            </v-card-title>
-
             <!-- no player selected message -->
             <v-card-title
               v-else
@@ -152,102 +117,35 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- live (stream) metadata (artist + title) -->
-            <v-card-subtitle
-              v-if="
-                store.curQueueItem?.streamdetails?.stream_metadata &&
-                store.curQueueItem?.streamdetails?.stream_metadata.title &&
-                store.curQueueItem?.streamdetails?.stream_metadata.artist
-              "
-              class="text-h6 text-md-h5 text-lg-h4"
-              @click="
-                radioTitleClick(
-                  `${store.curQueueItem?.streamdetails?.stream_metadata.artist} - ${store.curQueueItem?.streamdetails?.stream_metadata.title}`,
-                )
-              "
-            >
-              <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem?.streamdetails?.stream_metadata.artist }}
-                -
-                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
-              </MarqueeText>
-            </v-card-subtitle>
-
-            <!-- live (stream) metadata (only title) -->
-            <v-card-subtitle
-              v-if="
-                store.curQueueItem?.streamdetails?.stream_metadata &&
-                store.curQueueItem?.streamdetails?.stream_metadata.title
-              "
-              class="text-h6 text-md-h5 text-lg-h4"
-              @click="
-                radioTitleClick(
-                  store.curQueueItem?.streamdetails?.stream_metadata.title,
-                )
-              "
-            >
-              <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
-              </MarqueeText>
-            </v-card-subtitle>
-
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-if="
-                store.curQueueItem?.media_item &&
-                'album' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.album &&
-                store.activePlayer?.powered != false
-              "
+              v-else-if="store.activePlayer?.current_media?.album"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
-              @click="itemClick(store.curQueueItem.media_item.album as Album)"
+              @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.media_item.album.name }}
+                {{ store.activePlayer.current_media.album }}
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: artist(s) -->
-            <!-- TODO enumerate all artists -->
+            <!-- subtitle: artist -->
             <v-card-subtitle
-              v-if="
-                store.curQueueItem?.media_item &&
-                'artists' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.artists.length &&
-                store.activePlayer?.powered != false
-              "
+              v-if="store.activePlayer?.current_media?.artist"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
-              @click="
-                itemClick(store.curQueueItem.media_item.artists[0] as Artist)
-              "
+              @click="onArtistClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.media_item.artists[0].name }}
+                {{ store.activePlayer.current_media.artist }}
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: podcast name -->
+            <!-- subtitle: queue empty or other source active -->
+            <!-- 3rd party source active -->
             <v-card-subtitle
               v-if="
-                store.curQueueItem?.media_item &&
-                'podcast' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.podcast
+                !store.activePlayerQueue && store.activePlayer?.active_source
               "
-              :style="`font-size: ${subTitleFontSize};`"
-            >
-              <MarqueeText :sync="playerMarqueeSync">
-                {{ store.curQueueItem.media_item.podcast.name }}
-              </MarqueeText>
-            </v-card-subtitle>
-
-            <!-- subtitle: other source active -->
-            <v-card-subtitle
-              v-else-if="
-                store.activePlayer &&
-                store.activePlayer?.active_source !=
-                  store.activePlayer?.player_id &&
-                store.activePlayer?.powered != false
-              "
+              class="caption"
             >
               {{
                 $t("external_source_active", [
@@ -255,22 +153,21 @@
                 ])
               }}
             </v-card-subtitle>
-
-            <!-- subtitle: queue empty -->
             <v-card-subtitle
               v-else-if="
-                store.activePlayerQueue &&
-                store.activePlayerQueue.items == 0 &&
-                store.activePlayer?.powered != false
+                store.activePlayerQueue && store.activePlayerQueue.items == 0
               "
-              :style="`font-size: ${subTitleFontSize}`"
+              class="caption"
             >
               {{ $t("queue_empty") }}
             </v-card-subtitle>
 
             <!-- streamdetails/contenttype button-->
             <div
-              v-if="store.activePlayer?.powered != false"
+              v-if="
+                store.activePlayer?.powered != false &&
+                store.curQueueItem?.streamdetails
+              "
               style="margin: auto; padding-top: 20px"
             >
               <QualityDetailsBtn />
@@ -279,7 +176,10 @@
         </div>
 
         <!-- right column: queue items-->
-        <div v-if="store.showQueueItems" class="main-queue-items">
+        <div
+          v-if="store.showQueueItems && store.activePlayerQueue"
+          class="main-queue-items"
+        >
           <v-tabs
             v-model="activeQueuePanel"
             hide-slider
@@ -453,11 +353,23 @@
           class="main-queue-items"
         >
           <div class="main-media-details-image main-media-details-image-alt">
-            <MediaItemThumb
-              :item="store.curQueueItem"
-              :thumbnail="false"
-              style="max-width: 100%; width: auto"
+            <v-img
+              v-if="store.activePlayer?.current_media?.image_url"
+              style="max-width: 100%; width: auto; border-radius: 4px"
+              :src="store.activePlayer.current_media.image_url"
             />
+            <!-- fallback: display player icon in box -->
+            <div v-else class="icon-thumb-large">
+              <v-icon
+                size="128"
+                :icon="
+                  store.activePlayer?.type == PlayerType.PLAYER &&
+                  store.activePlayer?.group_members.length
+                    ? 'mdi-speaker-multiple'
+                    : store.activePlayer?.icon || 'mdi-speaker'
+                "
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -603,10 +515,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
-import QualityDetailsBtn, {
-  imgCoverDark,
-  imgCoverLight,
-} from "@/components/QualityDetailsBtn.vue";
+import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -622,10 +531,7 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
 import {
-  Album,
-  Artist,
   EventMessage,
   EventType,
   MediaItemChapter,
@@ -634,6 +540,7 @@ import {
   PlaybackState,
   PlayerFeature,
   PlayerQueue,
+  PlayerType,
   QueueItem,
   QueueOption,
   Track,
@@ -658,6 +565,7 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
+import { getSourceName } from "@/plugins/api/helpers";
 
 const { name } = useDisplay();
 
@@ -754,11 +662,88 @@ const itemClick = function (item: MediaItemType) {
   });
 };
 
-const radioTitleClick = function (streamTitle: string) {
-  // radio station title clicked
-  store.globalSearchTerm = streamTitle;
-  router.push({ name: "search" });
-  store.showFullscreenPlayer = false;
+// Helper to parse a Music Assistant URI
+// Supports both formats:
+// - MA style: <provider>://<mediaType>/<itemId>
+// - Spotify style: <provider>:<mediaType>:<itemId>
+const parseUri = function (uri: string | undefined) {
+  if (!uri) return null;
+
+  // Valid media types
+  const validTypes = [
+    MediaType.ALBUM,
+    MediaType.ARTIST,
+    MediaType.TRACK,
+    MediaType.PLAYLIST,
+    MediaType.RADIO,
+    MediaType.PODCAST,
+    MediaType.AUDIOBOOK,
+    MediaType.PODCAST_EPISODE,
+  ];
+
+  // Try MA style: provider://mediaType/itemId
+  let match = uri.match(/^([^:]+):\/\/([^/]+)\/(.+)$/);
+  if (match) {
+    const [, provider, mediaType, itemId] = match;
+    if (validTypes.includes(mediaType as MediaType)) {
+      return { provider, mediaType: mediaType as MediaType, itemId };
+    }
+  }
+
+  // Try Spotify style: provider:mediaType:itemId
+  match = uri.match(/^([^:]+):([^:]+):(.+)$/);
+  if (match) {
+    const [, provider, mediaType, itemId] = match;
+    if (validTypes.includes(mediaType as MediaType)) {
+      return { provider, mediaType: mediaType as MediaType, itemId };
+    }
+  }
+
+  return null;
+};
+
+const navigateOrSearch = function (searchTerm: string, uri?: string) {
+  const parsed = parseUri(uri);
+  if (parsed && api.getProvider(parsed.provider)) {
+    // Valid URI - navigate to item details
+    store.showFullscreenPlayer = false;
+    router.push({
+      name: parsed.mediaType,
+      params: {
+        itemId: parsed.itemId,
+        provider: parsed.provider,
+      },
+    });
+  } else {
+    // No valid URI - open global search
+    store.globalSearchTerm = searchTerm;
+    router.push({ name: "search" });
+    store.showFullscreenPlayer = false;
+  }
+};
+
+const onTitleClick = function () {
+  const currentMedia = store.activePlayer?.current_media;
+  if (!currentMedia) return;
+  const searchTerm = currentMedia.artist
+    ? `${currentMedia.artist} - ${currentMedia.title}`
+    : currentMedia.title || "";
+  navigateOrSearch(searchTerm, currentMedia.uri);
+};
+
+const onAlbumClick = function () {
+  const currentMedia = store.activePlayer?.current_media;
+  if (!currentMedia?.album) return;
+  const searchTerm = currentMedia.artist
+    ? `${currentMedia.artist} - ${currentMedia.album}`
+    : currentMedia.title || "";
+  navigateOrSearch(searchTerm, currentMedia.uri);
+};
+
+const onArtistClick = function () {
+  const currentMedia = store.activePlayer?.current_media;
+  if (!currentMedia?.artist) return;
+  navigateOrSearch(currentMedia.artist, currentMedia.uri);
 };
 
 const openQueueItemMenu = function (evt: Event, item: QueueItem) {
@@ -1296,5 +1281,17 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.icon-thumb-large {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 400px;
+  margin: 0 auto;
+  border-radius: 4px;
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

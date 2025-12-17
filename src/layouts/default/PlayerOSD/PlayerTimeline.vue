@@ -6,10 +6,7 @@
         :disabled="!canSeek"
         style="width: 100%"
         :min="0"
-        :max="
-          store.curQueueItem?.duration ||
-          store.activePlayer?.current_media?.duration
-        "
+        :max="store.activePlayer?.current_media?.duration"
         hide-details
         :track-size="4"
         :thumb-size="isThumbHidden ? 0 : 10"
@@ -66,7 +63,7 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
-import { ref, computed, watch, toRef, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import computeElapsedTime from "@/helpers/elapsed";
 
 // properties
@@ -112,88 +109,52 @@ onUnmounted(() => {
 const canSeek = computed(() => {
   // Check if active source allows seeking
   if (activeSource.value) {
-    // When an active external source is present, only allow seeking if the
-    // source reports that it supports seeking (can_seek) AND the current
-    // media (or queue item) has a known duration. We also keep checks for
-    // powered state and radio streams.
+    // Only allow seeking if the source reports that it supports seeking
+    // (can_seek) AND the current media has a known duration.
     if (store.activePlayer?.powered === false) return false;
-
-    // If queue is active prefer queue duration
-    const queueHasDuration = !!store.curQueueItem?.duration;
     const currentMediaDuration = store.activePlayer?.current_media?.duration;
     const currentMediaHasDuration = !!currentMediaDuration;
 
-    // Disallow seeking for radio streams
+    // Disallow seeking for radio streams (or other duration-less streams)
     const isRadio =
-      store.curQueueItem?.media_item?.media_type == MediaType.RADIO ||
-      store.activePlayer?.current_media?.media_type == MediaType.RADIO;
+      store.activePlayer?.current_media?.media_type == MediaType.RADIO ||
+      store.activePlayer?.current_media?.duration == null;
     if (isRadio) return false;
 
     // If the active source reports can_seek, allow seeking when there is a
-    // duration available (either queue item or current_media).
-    if (
-      activeSource.value.can_seek &&
-      (queueHasDuration || currentMediaHasDuration)
-    )
-      return true;
-
-    return false;
+    // duration available.
+    if (activeSource.value.can_seek && currentMediaHasDuration) return true;
   }
-
-  if (store.curQueueItem?.media_item?.media_type == MediaType.RADIO)
-    return false;
-  if (store.activePlayer?.powered == false) return false;
-  if (!store.curQueueItem) return false;
-  if (!store.curQueueItem.media_item) return false;
-  // Duration must be present and truthy (non-zero) for seeking when using the
-  // local queue. Elapsed_time may be 0, but duration of 0 isn't seekable.
-  if (!store.curQueueItem.duration) return false;
-
-  // Default to true if no active source (queue control)
-  return true;
+  return false;
 });
 
 const playerCurTimeStr = computed(() => {
-  // If there's an active queue item use its duration arithmetic
-  if (store.curQueueItem) {
-    if (showRemainingTime.value) {
-      return `-${formatDuration(
-        store.curQueueItem.duration - curQueueItemTime.value,
-      )}`;
+  if (curTimeValue.value != null) {
+    if (
+      showRemainingTime.value &&
+      store.activePlayer?.current_media?.duration
+    ) {
+      const remaining =
+        store.activePlayer.current_media.duration - curTimeValue.value;
+      return `-${formatDuration(remaining)}`;
     }
-    return `${formatDuration(curQueueItemTime.value)}`;
+    return formatDuration(curTimeValue.value);
   }
-
-  // No queue item: prefer current_media elapsed when available
-  if (
-    store.activePlayer?.current_media?.elapsed_time != null ||
-    store.activePlayer?.elapsed_time != null
-  ) {
-    const val = curQueueItemTime.value || 0;
-    if (showRemainingTime.value && store.activePlayer?.current_media?.duration)
-      return `-${formatDuration(
-        store.activePlayer.current_media.duration - val,
-      )}`;
-    return `${formatDuration(val)}`;
-  }
-
   return "0:00";
 });
 
 const playerTotalTimeStr = computed(() => {
-  // Prefer queue item duration, fall back to current_media duration for external sources
-  const duration =
-    store.curQueueItem?.duration || store.activePlayer?.current_media?.duration;
-  if (!duration) return "";
+  const duration = store.activePlayer?.current_media?.duration;
   // If radio/streaming with unknown duration, don't show
-  const isRadio =
-    store.curQueueItem?.media_item?.media_type == MediaType.RADIO ||
-    store.activePlayer?.current_media?.media_type == MediaType.RADIO;
-  if (isRadio) return "";
+  if (
+    !duration ||
+    store.activePlayer?.current_media?.media_type == MediaType.RADIO
+  )
+    return "";
   return formatDuration(duration);
 });
 
-const curQueueItemTime = computed(() => {
+const computedElapsedTime = computed(() => {
   // include nowTick.value so this computed re-evaluates periodically while mounted
   // and updates UI for fallback player-level current_media that relies on Date.now()
   void nowTick.value;
@@ -269,7 +230,7 @@ const chapterTicks = computed(() => {
 });
 
 //watch
-watch(curQueueItemTime, (newTime) => {
+watch(computedElapsedTime, (newTime) => {
   if (!isDragging.value) {
     curTimeValue.value = newTime;
   }
