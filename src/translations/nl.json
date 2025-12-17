@@ -363,7 +363,8 @@
                 "sl_SI": "Sloveens",
                 "hu_HU": "Hongaars",
                 "it": "Italiaans",
-                "el_GR": "Grieks"
+                "el_GR": "Grieks",
+                "lt_LT": "Litouws"
             }
         },
         "no_music_providers": "Geen muziekaanbieders geconfigureerd",
