@@ -24,6 +24,7 @@
       :disabled="false"
       @submit="onSubmit"
       @action="onAction"
+      @immediate-apply="onImmediateApply"
     />
 
     <v-overlay
@@ -41,6 +42,7 @@
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { webPlayer } from "@/plugins/web_player";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -176,6 +178,8 @@ onMounted(() => {
           String(defaultSyncDelay),
         10,
       ),
+      range: [-1000, 1000],
+      immediate_apply: true,
     });
 
     // Output latency compensation - enabled by default everywhere
@@ -227,6 +231,15 @@ const onAction = async function (
   _action: string,
   _values: Record<string, ConfigValueType>,
 ) {};
+
+const onImmediateApply = function (values: Record<string, ConfigValueType>) {
+  for (const key in values) {
+    localStorage.setItem(`frontend.settings.${key}`, String(values[key]));
+  }
+  if ("sendspin_sync_delay" in values) {
+    webPlayer.setSyncDelay(values.sendspin_sync_delay as number);
+  }
+};
 </script>
 
 <style scoped>

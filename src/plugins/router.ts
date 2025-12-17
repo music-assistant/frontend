@@ -1,7 +1,5 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import { store } from "./store";
-import { authManager } from "./auth";
-import { api, ConnectionState } from "./api";
 
 const routes = [
   // All routes go through default layout - authentication is handled by server redirect
@@ -364,27 +362,29 @@ const router = createRouter({
   routes,
 });
 
-// Navigation guard for authentication
-router.beforeEach(async (to, from, next) => {
-  // Check if user is authenticated
-  if (
-    api.state.value !== ConnectionState.AUTHENTICATED ||
-    !authManager.getToken()
-  ) {
-    // Not authenticated - App.vue will handle redirect to server login
-    next();
-    return;
+// Navigation guard for admin-only routes
+router.beforeEach((to, _from, next) => {
+  // Check admin-only routes - check all matched routes for requiresAdmin meta
+  const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
+
+  if (requiresAdmin) {
+    const currentUser = store.currentUser;
+    console.debug(
+      "Admin route check:",
+      to.path,
+      "user:",
+      currentUser?.username,
+      "role:",
+      currentUser?.role,
+    );
+
+    if (!currentUser || currentUser.role !== "admin") {
+      console.warn("Admin access required for", to.path);
+      next({ name: "home" });
+      return;
+    }
   }
 
-  // Check admin-only routes
-  if (to.meta.requiresAdmin && !authManager.isAdmin()) {
-    // User is not admin, redirect to home
-    console.warn("Admin access required for", to.path);
-    next({ name: "home" });
-    return;
-  }
-
-  // All checks passed
   next();
 });
 

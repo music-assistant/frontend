@@ -24,9 +24,9 @@
       api.queueCommandRepeat(
         playerQueue.queue_id || '',
         getValueFromSources(null, [
-          [playerQueue.repeat_mode == RepeatMode.OFF, RepeatMode.ONE],
-          [playerQueue.repeat_mode == RepeatMode.ALL, RepeatMode.OFF],
-          [playerQueue.repeat_mode == RepeatMode.ONE, RepeatMode.ALL],
+          [playerQueue.repeat_mode == RepeatMode.OFF, RepeatMode.ALL],
+          [playerQueue.repeat_mode == RepeatMode.ALL, RepeatMode.ONE],
+          [playerQueue.repeat_mode == RepeatMode.ONE, RepeatMode.OFF],
         ]),
       )
     "

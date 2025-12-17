@@ -661,13 +661,7 @@
         "onboarding_add_player": "Dodaj plejere",
         "onboarding_footer": "Uvek možete dodati još provajdera kasnije sa ove stranice podešavanja.",
         "remote_access_qr_code": "QR kod",
-        "remote_access_qr_code_description": "Skenirajte kamerom svog telefona da se odmah povežete.",
-        "reset_to_defaults": "Resetuj na podrazumevano",
-        "reset_to_defaults_confirm": "Da li ste sigurni da želite da resetujete sva podešavanja na njihove podrazumevane vrednosti? Ovo će odmah sačuvati izmene.",
-        "unsaved_changes": "Nesačuvane izmene",
-        "unsaved_changes_message": "Imate nesačuvane izmene. Da li ste sigurni da želite da napustite bez čuvanja?",
-        "stay": "Ostani",
-        "discard": "Odbaci izmene"
+        "remote_access_qr_code_description": "Skenirajte ovaj QR kod telefonom da se brzo povežete sa Music Assistant serverom."
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",

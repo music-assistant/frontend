@@ -667,12 +667,8 @@
         "reset_to_defaults_confirm": "Weet je zeker dat je alle instellingen wilt terugzetten naar de standaardwaarden? Deze wijziging wordt direct opgeslagen.",
         "unsaved_changes": "Niet-opgeslagen wijzigingen",
         "unsaved_changes_message": "Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je wilt vertrekken zonder op te slaan?",
-        "stay": "Blijven",
-        "discard": "Wijzigingen ongedaan maken",
-        "provider_requires_attention": "Deze provider heeft aandacht nodig",
-        "provider_requires_attention_detail": "Een of meerdere providers hebben aandacht nodig. Controleer de providerinstellingen.",
-        "reconfigure": "Opnieuw instellen",
-        "fix_now": "Nu oplossen"
+        "stay": "Blijf",
+        "discard": "Wijzigingen ongedaan maken"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",

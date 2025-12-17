@@ -1159,9 +1159,11 @@ watchEffect(() => {
 }
 
 .main-media-details-track-info {
-  height: 20%;
-  max-height: 20%;
-  align-content: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align: center;
   padding: 20px;
 }

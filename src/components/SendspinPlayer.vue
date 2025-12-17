@@ -248,6 +248,9 @@ onMounted(() => {
           },
         });
 
+        // Register callback for real-time sync delay changes from settings
+        webPlayer.onSyncDelayChange = (delay) => player?.setSyncDelay(delay);
+
         return player.connect();
       })
       .catch((error) => {
@@ -358,6 +361,7 @@ onBeforeUnmount(() => {
   }
   if (unsubMetadata) unsubMetadata();
   if (silentAudioInterval) clearInterval(silentAudioInterval);
+  webPlayer.onSyncDelayChange = null;
 
   // Clear MediaSession state
   navigator.mediaSession.metadata = null;
