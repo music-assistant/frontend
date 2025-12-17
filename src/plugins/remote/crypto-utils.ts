@@ -40,7 +40,7 @@ export function verifyAndSanitizeSdp(
 
   // Remove all non-SHA-256 fingerprints from SDP to prevent algorithm substitution attacks
   // The browser might prefer sha-384/sha-512 which we cannot verify
-  const sanitizedSdp = sdp.replace(/^a=fingerprint:(?!sha-256).*$/gim, "");
+  const sanitizedSdp = sdp.replace(/^a=fingerprint:(?!sha-256).*\r?\n?/gim, "");
 
   // Extract ALL SHA-256 fingerprints from the sanitized SDP
   const allSha256Matches = [
