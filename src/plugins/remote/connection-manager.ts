@@ -120,7 +120,7 @@ class RemoteConnectionManager {
       this.state.value = RemoteConnectionState.CONNECTED;
 
       // Clear HTTP proxy bridge (not needed for local connections)
-      httpProxyBridge.setTransport(null);
+      await httpProxyBridge.setTransport(null);
 
       return this.transport;
     } catch (err) {
@@ -160,7 +160,8 @@ class RemoteConnectionManager {
       this.state.value = RemoteConnectionState.CONNECTED;
 
       // Set up HTTP proxy bridge for remote connections
-      httpProxyBridge.setTransport(transport);
+      // This must be awaited to ensure SW has remote mode set before images load
+      await httpProxyBridge.setTransport(transport);
 
       // Store successful connection
       this.storeConnection(remoteId);

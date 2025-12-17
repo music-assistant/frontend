@@ -47,7 +47,10 @@ class HttpProxyBridge {
    * Call this before making any remote connections to ensure the service worker is ready
    */
   async ensureReady(): Promise<void> {
-    if (this.initPromise) {
+    // If not yet initialized, trigger initialization
+    if (!this.initPromise) {
+      await this.initialize();
+    } else {
       await this.initPromise;
     }
   }
@@ -80,7 +83,7 @@ class HttpProxyBridge {
           console.log(
             "[HttpProxyBridge] Restoring remote mode from localStorage",
           );
-          this.notifyRemoteMode(true);
+          await this.notifyRemoteMode(true);
         }
 
         console.log("[HttpProxyBridge] Service worker ready and controlling");
@@ -135,50 +138,74 @@ class HttpProxyBridge {
   /**
    * Set the WebRTC transport to use for proxying
    */
-  setTransport(transport: WebRTCTransport | null): void {
+  async setTransport(transport: WebRTCTransport | null): Promise<void> {
     this.transport = transport;
-    this.notifyRemoteMode(transport !== null);
+    await this.notifyRemoteMode(transport !== null);
   }
 
   /**
    * Notify service worker of remote mode state
+   * Returns a promise that resolves when the SW acknowledges the message
    */
-  private notifyRemoteMode(isRemote: boolean): void {
-    const sendMessage = () => {
-      if (navigator.serviceWorker?.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: "set-remote-mode",
-          data: { isRemote },
-        });
-        return true;
-      }
-      return false;
-    };
+  private notifyRemoteMode(isRemote: boolean): Promise<void> {
+    return new Promise((resolve) => {
+      const sendMessage = () => {
+        if (navigator.serviceWorker?.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: "set-remote-mode",
+            data: { isRemote },
+          });
+          return true;
+        }
+        return false;
+      };
 
-    // Try to send immediately
-    if (sendMessage()) {
-      return;
-    }
+      // Set up listener for acknowledgment BEFORE sending message
+      const onAck = (event: MessageEvent) => {
+        if (event.data?.type === "remote-mode-ack") {
+          navigator.serviceWorker?.removeEventListener("message", onAck);
+          console.log(
+            "[HttpProxyBridge] Remote mode acknowledged by service worker",
+          );
+          resolve();
+        }
+      };
+      navigator.serviceWorker?.addEventListener("message", onAck);
 
-    // If no controller yet, wait for controllerchange event
-    const onControllerChange = () => {
-      if (sendMessage()) {
-        navigator.serviceWorker?.removeEventListener(
-          "controllerchange",
-          onControllerChange,
+      // Set a timeout in case ack never comes
+      setTimeout(() => {
+        navigator.serviceWorker?.removeEventListener("message", onAck);
+        console.warn(
+          "[HttpProxyBridge] Timeout waiting for remote mode acknowledgment",
         );
+        resolve();
+      }, 2000);
+
+      // Try to send immediately
+      if (sendMessage()) {
+        return;
       }
-    };
 
-    navigator.serviceWorker?.addEventListener(
-      "controllerchange",
-      onControllerChange,
-    );
+      // If no controller yet, wait for controllerchange event
+      const onControllerChange = () => {
+        if (sendMessage()) {
+          navigator.serviceWorker?.removeEventListener(
+            "controllerchange",
+            onControllerChange,
+          );
+        }
+      };
 
-    // Also retry after a short delay in case controllerchange doesn't fire
-    setTimeout(() => {
-      sendMessage();
-    }, 1000);
+      navigator.serviceWorker?.addEventListener(
+        "controllerchange",
+        onControllerChange,
+      );
+
+      // Also retry after a short delay in case controllerchange doesn't fire
+      setTimeout(() => {
+        sendMessage();
+      }, 1000);
+    });
   }
 
   /**

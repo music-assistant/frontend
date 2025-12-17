@@ -44,6 +44,14 @@ self.addEventListener("message", (event) => {
   } else if (type === "set-remote-mode") {
     // Update remote mode state
     self.isRemoteMode = data.isRemote;
+    console.log("[ServiceWorker] Remote mode set to:", data.isRemote);
+    // Send acknowledgment back to the main thread
+    if (event.source) {
+      event.source.postMessage({
+        type: "remote-mode-ack",
+        data: { isRemote: data.isRemote },
+      });
+    }
   }
 });
 
