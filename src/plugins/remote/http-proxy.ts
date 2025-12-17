@@ -11,6 +11,8 @@ import { WebRTCTransport } from "./webrtc-transport";
 
 // Storage key for remote mode (must match connection-manager.ts)
 const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
+// Storage key to track reload attempts (prevents infinite loops)
+const SW_RELOAD_ATTEMPT_KEY = "ma_sw_reload_attempt";
 
 class HttpProxyBridge {
   private transport: WebRTCTransport | null = null;
@@ -91,13 +93,38 @@ class HttpProxyBridge {
 
         if (hasController) {
           console.log("[HttpProxyBridge] Service worker ready and controlling");
+          // Clear any previous reload attempt flag
+          sessionStorage.removeItem(SW_RELOAD_ATTEMPT_KEY);
         } else {
           // SW isn't controlling yet (first load after install)
-          // Set isReady anyway so the app doesn't block forever
-          // Images may fail on this load but will work on next refresh
-          console.warn(
-            "[HttpProxyBridge] Service worker not controlling yet, app will proceed but images may fail",
-          );
+          // Check if we're in remote mode - if so, we need to reload for images to work
+          const storedMode = localStorage.getItem(REMOTE_MODE_STORAGE_KEY);
+          const reloadAttempted = sessionStorage.getItem(SW_RELOAD_ATTEMPT_KEY);
+
+          if (storedMode === "remote" && !reloadAttempted) {
+            console.log(
+              "[HttpProxyBridge] Service worker not controlling yet, reloading page for remote mode...",
+            );
+            // Mark that we've attempted a reload to prevent infinite loops
+            sessionStorage.setItem(SW_RELOAD_ATTEMPT_KEY, "true");
+            // Small delay to ensure SW is fully activated before reload
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            window.location.reload();
+            return; // Don't continue - page is reloading
+          }
+
+          if (storedMode === "remote" && reloadAttempted) {
+            // We already tried reloading but SW still isn't controlling
+            // This can happen in certain edge cases - proceed anyway
+            console.warn(
+              "[HttpProxyBridge] Service worker still not controlling after reload, images may not load correctly",
+            );
+          } else {
+            // Not in remote mode, proceed normally
+            console.log(
+              "[HttpProxyBridge] Service worker not controlling yet (not in remote mode)",
+            );
+          }
           this.isReady.value = true;
         }
       } catch (error) {
