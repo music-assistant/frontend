@@ -25,7 +25,7 @@
             class="media-thumb"
             style="border-radius: 4px"
             size="60"
-            :src="store.activePlayer.current_media.image_url"
+            :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
           />
         </div>
         <!-- fallback: display player icon -->
@@ -164,7 +164,11 @@
 import { computed } from "vue";
 import { PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { ImageColorPalette, getPlayerName } from "@/helpers/utils";
+import {
+  ImageColorPalette,
+  getMediaImageUrl,
+  getPlayerName,
+} from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";

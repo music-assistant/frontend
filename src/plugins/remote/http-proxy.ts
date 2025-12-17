@@ -8,6 +8,9 @@
 
 import { WebRTCTransport } from "./webrtc-transport";
 
+// Storage key for remote mode (must match connection-manager.ts)
+const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
+
 class HttpProxyBridge {
   private transport: WebRTCTransport | null = null;
   // Cache of recently failed requests to prevent retry loops
@@ -22,11 +25,37 @@ class HttpProxyBridge {
   private static readonly MAX_FAILURES_BEFORE_EXTENDED_COOLDOWN = 3;
   // Extended cooldown for persistent failures (30 seconds)
   private static readonly EXTENDED_COOLDOWN_MS = 30000;
+  // Promise that resolves when service worker is ready and controlling
+  private initPromise: Promise<void> | null = null;
 
   /**
    * Initialize the HTTP proxy bridge
+   * Returns a promise that resolves when the service worker is ready and controlling
    */
   async initialize(): Promise<void> {
+    // Only initialize once
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this.doInitialize();
+    return this.initPromise;
+  }
+
+  /**
+   * Wait for initialization to complete
+   * Call this before making any remote connections to ensure the service worker is ready
+   */
+  async ensureReady(): Promise<void> {
+    if (this.initPromise) {
+      await this.initPromise;
+    }
+  }
+
+  /**
+   * Internal initialization logic
+   */
+  private async doInitialize(): Promise<void> {
     // Register service worker if not already registered
     if ("serviceWorker" in navigator) {
       try {
@@ -35,10 +64,26 @@ class HttpProxyBridge {
         // Wait for service worker to be ready
         await navigator.serviceWorker.ready;
 
+        // Wait for service worker to be controlling the page
+        // This is critical to prevent race conditions on hard refresh
+        await this.waitForController();
+
         // Listen for messages from service worker
         navigator.serviceWorker.addEventListener("message", (event) => {
           this.handleServiceWorkerMessage(event);
         });
+
+        // Check if we were in remote mode (from localStorage) and notify SW early
+        // This prevents the race condition where images load before remote mode is set
+        const storedMode = localStorage.getItem(REMOTE_MODE_STORAGE_KEY);
+        if (storedMode === "remote") {
+          console.log(
+            "[HttpProxyBridge] Restoring remote mode from localStorage",
+          );
+          this.notifyRemoteMode(true);
+        }
+
+        console.log("[HttpProxyBridge] Service worker ready and controlling");
       } catch (error) {
         console.error(
           "[HttpProxyBridge] Service worker registration failed:",
@@ -46,6 +91,45 @@ class HttpProxyBridge {
         );
       }
     }
+  }
+
+  /**
+   * Wait for the service worker to be controlling the page
+   */
+  private waitForController(): Promise<void> {
+    return new Promise((resolve) => {
+      if (navigator.serviceWorker.controller) {
+        resolve();
+        return;
+      }
+
+      // Wait for controllerchange event
+      const onControllerChange = () => {
+        navigator.serviceWorker.removeEventListener(
+          "controllerchange",
+          onControllerChange,
+        );
+        resolve();
+      };
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        onControllerChange,
+      );
+
+      // Also set a timeout to prevent hanging forever
+      setTimeout(() => {
+        navigator.serviceWorker.removeEventListener(
+          "controllerchange",
+          onControllerChange,
+        );
+        // Resolve anyway after timeout - the app should still work
+        // even if service worker isn't controlling yet
+        console.warn(
+          "[HttpProxyBridge] Timeout waiting for service worker controller",
+        );
+        resolve();
+      }, 3000);
+    });
   }
 
   /**

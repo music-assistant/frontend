@@ -128,7 +128,11 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
-import { ImageColorPalette, getColorPalette } from "@/helpers/utils";
+import {
+  ImageColorPalette,
+  getColorPalette,
+  getMediaImageUrl,
+} from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { MediaType, PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -188,7 +192,7 @@ watch(
     // load cover image for the (new) QueueItem
     // make sure that the image selection is exactly the same as on the player OSD thumb
     if (store.activePlayer?.current_media?.image_url) {
-      img.src = store.activePlayer.current_media.image_url;
+      img.src = getMediaImageUrl(store.activePlayer.current_media.image_url);
     } else {
       img.src = "";
     }

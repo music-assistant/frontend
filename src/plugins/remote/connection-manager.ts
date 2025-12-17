@@ -143,6 +143,10 @@ class RemoteConnectionManager {
     // Store the remote ID
     localStorage.setItem(CURRENT_REMOTE_ID_STORAGE_KEY, remoteId);
 
+    // Ensure the service worker is ready and controlling before proceeding
+    // This prevents race conditions where images load before the SW can intercept them
+    await httpProxyBridge.ensureReady();
+
     try {
       const transport = new WebRTCTransport({
         signalingServerUrl: this.config.signalingServerUrl,

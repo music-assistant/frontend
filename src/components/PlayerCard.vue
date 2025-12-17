@@ -23,7 +23,7 @@
             <v-img
               class="media-thumb"
               size="60"
-              :src="player.current_media.image_url"
+              :src="getMediaImageUrl(player.current_media.image_url)"
             />
           </div>
           <!-- fallback: display player icon -->
@@ -222,6 +222,7 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getColorPalette,
+  getMediaImageUrl,
   getPlayerName,
   ImageColorPalette,
 } from "@/helpers/utils";
@@ -309,7 +310,7 @@ img.addEventListener("load", function () {
 watch(
   () => compProps.player.current_media?.image_url,
   (newImageUrl) => {
-    img.src = newImageUrl || "";
+    img.src = getMediaImageUrl(newImageUrl) || "";
   },
   { immediate: true },
 );

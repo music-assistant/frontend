@@ -37,7 +37,7 @@
               "
             >
               <v-img
-                :src="getImageURL(image, 256)"
+                :src="getMediaItemImageUrl(image, 256)"
                 class="bg-grey-lighten-2"
                 width="100%"
               >
@@ -89,7 +89,7 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
-import { getImageURL } from "@/components/MediaItemThumb.vue";
+import { getMediaItemImageUrl } from "@/helpers/utils";
 import Toolbar from "@/components/Toolbar.vue";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -139,7 +139,7 @@ const getProviderName = function (provider: string) {
 };
 
 const onClick = function (evt: PointerEvent, image: MediaItemImage) {
-  openLinkInNewTab(getImageURL(image));
+  openLinkInNewTab(getMediaItemImageUrl(image));
 };
 
 const toggleExpand = function () {

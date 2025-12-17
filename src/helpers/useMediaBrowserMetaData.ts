@@ -1,4 +1,4 @@
-import { getImageThumbForItem } from "@/components/MediaItemThumb.vue";
+import { getImageThumbForItem } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   ImageType,

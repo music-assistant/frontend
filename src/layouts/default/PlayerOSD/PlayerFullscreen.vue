@@ -63,7 +63,9 @@
                 store.activePlayer?.current_media?.image_url
               "
               style="max-width: 100%; width: auto; border-radius: 4px"
-              :src="store.activePlayer.current_media.image_url"
+              :src="
+                getMediaImageUrl(store.activePlayer.current_media.image_url)
+              "
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
@@ -356,7 +358,9 @@
             <v-img
               v-if="store.activePlayer?.current_media?.image_url"
               style="max-width: 100%; width: auto; border-radius: 4px"
-              :src="store.activePlayer.current_media.image_url"
+              :src="
+                getMediaImageUrl(store.activePlayer.current_media.image_url)
+              "
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
@@ -521,6 +525,7 @@ import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
   formatDuration,
+  getMediaImageUrl,
   getPlayerName,
   sleep,
 } from "@/helpers/utils";

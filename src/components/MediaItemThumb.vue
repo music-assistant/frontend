@@ -15,18 +15,17 @@
 import { computed } from "vue";
 import type {
   ItemMapping,
-  MediaItemImage,
   MediaItemType,
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType } from "@/plugins/api/interfaces";
-import { api } from "@/plugins/api";
 import { useTheme } from "vuetify";
 import {
   imgCoverDark,
   imgCoverLight,
   iconFolder,
 } from "@/components/QualityDetailsBtn.vue";
+import { getImageThumbForItem } from "@/helpers/utils";
 
 export interface Props {
   item?: MediaItemType | ItemMapping | QueueItem;
@@ -97,111 +96,6 @@ export const getAvatarImage = function (
     return `https://ui-avatars.com/api/?name=${name}&size=${
       size || 256
     }&bold=true&background=a0a0a0&color=cccccc`;
-};
-
-export const getMediaItemImage = function (
-  mediaItem?: MediaItemType | ItemMapping | QueueItem,
-  type: ImageType = ImageType.THUMB,
-): MediaItemImage | undefined {
-  // get imageurl for mediaItem
-  if (!mediaItem) return undefined;
-
-  // handle QueueItem
-  if ("media_item" in mediaItem && mediaItem.media_item) {
-    // prefer image_url provided in queueItem's streamdetails
-    if (
-      "streamdetails" in mediaItem.media_item &&
-      mediaItem.streamdetails?.stream_metadata?.image_url
-    )
-      return {
-        type: ImageType.THUMB,
-        path: mediaItem.streamdetails.stream_metadata.image_url,
-        provider: "builtin",
-        remotely_accessible: true,
-      };
-    // fallback to media_item's image
-    const mediaItemImage = getMediaItemImage(mediaItem.media_item);
-    if (mediaItemImage) return mediaItemImage;
-  }
-
-  // handle image in queueitem or itemmapping
-  if (
-    "image" in mediaItem &&
-    mediaItem.image &&
-    mediaItem.image.type == type &&
-    imageProviderIsAvailable(mediaItem.image.provider)
-  )
-    return mediaItem.image;
-
-  // always prefer album image for tracks
-  if ("album" in mediaItem && mediaItem.album) {
-    const albumImage = getMediaItemImage(mediaItem.album, type);
-    if (albumImage) return albumImage;
-  }
-
-  // handle regular image within mediaitem
-  if ("metadata" in mediaItem && mediaItem.metadata.images) {
-    for (const img of mediaItem.metadata.images) {
-      if (img.type == type && imageProviderIsAvailable(img.provider))
-        return img;
-    }
-  }
-
-  // retry with album/track artist(s)
-  if ("artists" in mediaItem && mediaItem.artists) {
-    for (const artist of mediaItem.artists) {
-      const artistImage = getMediaItemImage(artist, type);
-      if (artistImage) return artistImage;
-    }
-  }
-
-  // allow landscape fallback
-  if (type == ImageType.THUMB) {
-    return getMediaItemImage(mediaItem, ImageType.LANDSCAPE);
-  }
-};
-
-export const getImageURL = function (
-  img: MediaItemImage,
-  size?: number,
-  checksum?: string,
-): string {
-  if (!checksum) checksum = "";
-  if (!img || !img.path) return "";
-  if (img.path.startsWith("data:image")) return img.path;
-  if (
-    !img.remotely_accessible ||
-    size ||
-    img.path.split("//")[0] != window.location.protocol
-  ) {
-    // force imageproxy if image is not remotely accessible or we need a resized thumb
-    // Note that we play it safe here and always enforce the proxy if the schema is different
-    const encUrl = encodeURIComponent(encodeURIComponent(img.path));
-    let imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
-    if (size) return imageUrl + `&size=${size}`;
-    return imageUrl;
-  }
-  // else: return image as-is
-  return img.path;
-};
-
-export const getImageThumbForItem = function (
-  mediaItem?: MediaItemType | ItemMapping | QueueItem,
-  type: ImageType = ImageType.THUMB,
-  size?: number,
-): string | undefined {
-  if (!mediaItem) return;
-  // find image in mediaitem
-  const img = getMediaItemImage(mediaItem, type);
-  if (!img || !img.path) return undefined;
-  const checksum =
-    "metadata" in mediaItem ? mediaItem.metadata?.cache_checksum : "";
-  return getImageURL(img, size, checksum);
-};
-
-const imageProviderIsAvailable = function (provider: string) {
-  if (provider === "http" || provider === "builtin") return true;
-  return api.getProvider(provider)?.available === true;
 };
 </script>
 
