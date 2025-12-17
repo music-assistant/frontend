@@ -15,31 +15,20 @@ export class CertificateVerificationError extends Error {
 }
 
 /**
- * Verify that an SDP's SHA-256 fingerprint matches the expected remote ID.
- * Throws CertificateVerificationError if verification fails.
+ * Verify and sanitize an SDP's fingerprint(s) against the expected remote ID.
  *
- * @param sdp - The SDP string containing the fingerprint
+ * @param sdp - The SDP string containing the fingerprint(s)
  * @param expectedRemoteId - The expected remote ID
  *   custom base32-encoded (with 9s instead of 2s) 128-bit truncated SHA-256 fingerprint
- * @throws CertificateVerificationError if no fingerprint found or if fingerprint doesn't match
+ * @returns Sanitized SDP with only verified SHA-256 fingerprints
+ * @throws CertificateVerificationError if SDP is empty, no fingerprint found, or fingerprint doesn't match
  */
-export function verifySdpFingerprint(
-  sdp: string,
+export function verifyAndSanitizeSdp(
+  sdp: string | undefined,
   expectedRemoteId: string,
-): void {
-  // Extract fingerprint from SDP
-  const match = sdp.match(/a=fingerprint:sha-256\s+([A-Fa-f0-9:]+)/);
-  if (!match) {
-    throw new CertificateVerificationError(
-      "No SHA-256 fingerprint found in SDP",
-    );
-  }
-
-  // Parse fingerprint hex to bytes and truncate to 128 bits
-  const hex = match[1].replace(/:/g, "");
-  const fingerprint = new Uint8Array(16);
-  for (let i = 0; i < 16; i++) {
-    fingerprint[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+): string {
+  if (!sdp) {
+    throw new CertificateVerificationError("No SDP provided");
   }
 
   // Remote ID uses modified base32 with "9" instead of "2", reverse before decoding
@@ -49,9 +38,37 @@ export function verifySdpFingerprint(
     throw new CertificateVerificationError("Invalid remote ID format");
   }
 
-  for (let i = 0; i < 16; i++) {
-    if (fingerprint[i] !== expected[i]) {
-      throw new CertificateVerificationError("Fingerprint mismatch");
+  // Remove all non-SHA-256 fingerprints from SDP to prevent algorithm substitution attacks
+  // The browser might prefer sha-384/sha-512 which we cannot verify
+  const sanitizedSdp = sdp.replace(/^a=fingerprint:(?!sha-256).*$/gim, "");
+
+  // Extract ALL SHA-256 fingerprints from the sanitized SDP
+  const allSha256Matches = [
+    ...sanitizedSdp.matchAll(/a=fingerprint:sha-256\s+([A-Fa-f0-9:]+)/gi),
+  ];
+
+  if (allSha256Matches.length === 0) {
+    throw new CertificateVerificationError(
+      "No SHA-256 fingerprint found in SDP",
+    );
+  }
+
+  // Verify EVERY SHA-256 fingerprint matches the expected value
+  // This prevents attacks where a valid fingerprint is placed at session level
+  // but a malicious one at media level (which the browser would use)
+  for (const match of allSha256Matches) {
+    const hex = match[1].replace(/:/g, "");
+    const fingerprint = new Uint8Array(16);
+    for (let i = 0; i < 16; i++) {
+      fingerprint[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+    }
+
+    for (let i = 0; i < 16; i++) {
+      if (fingerprint[i] !== expected[i]) {
+        throw new CertificateVerificationError("Fingerprint mismatch");
+      }
     }
   }
+
+  return sanitizedSdp;
 }
