@@ -1,0 +1,387 @@
+{
+    "album_type": {
+        "compilation": "Kompilácia",
+        "ep": "EP",
+        "single": "Single",
+        "unknown": "Neznámy typ albumu",
+        "audiobook": "Audiokniha",
+        "podcast": "Podcast"
+    },
+    "albums": "Albumy",
+    "appears_on": "Objavuje sa na",
+    "artist": "Umelec",
+    "artist_albums": "Albumy",
+    "artist_toptracks": "Najlepšie skladby",
+    "artists": "Umelci",
+    "browse": "Prehľadávať",
+    "clear_selection": "Vymazať výber",
+    "close": "Zatvoriť",
+    "create_playlist": "Vytvoriť nový zoznam skladieb na {0}",
+    "crossfade_disabled": "Prelínanie je vypnuté",
+    "crossfade_enabled": "Prelínanie je povolené",
+    "dark_mode": "Tmavý režim",
+    "settings": {
+        "settings": "Nastavenia",
+        "core_modules": "Základné moduly",
+        "server_info": "Informácie o serveri",
+        "server_id": "ID servera",
+        "server_version": "Verzia servera",
+        "server_base_url": "Základná adresa URL",
+        "server_as_addon": "Doplnok Home Assistant",
+        "artists_in_library": "Umelci v knižnici",
+        "albums_in_library": "Albumy v knižnici",
+        "tracks_in_library": "Skladby v knižnici",
+        "playlists_in_library": "Zoznamy skladieb v knižnici",
+        "radio_in_library": "Rádio v knižnici",
+        "server_logging": "Protokolovanie servera",
+        "download_log": "Stiahnutie súboru denníka",
+        "edit_group_members": "Upraviť členov skupiny",
+        "add_new_provider_button": "Pridať poskytovateľa {0}",
+        "add_group_player": "Pridať skupinový prehrávač",
+        "group_members": "Členovia skupiny",
+        "log_level": {
+            "label": "Úroveň logovania",
+            "options": {
+                "global": "Globálne",
+                "info": "Info",
+                "warning": "Warning",
+                "error": "Error",
+                "debug": "Debug"
+            }
+        },
+        "default": "predvolené",
+        "category": {
+            "audio": "Zvuk",
+            "advanced": "Rozšírené nastavenia",
+            "generic": "Všeobecné nastavenia",
+            "player_controls": "Ovládacie prvky prehrávača",
+            "presets": "Predvoľby"
+        },
+        "announce_volume_strategy": {
+            "options": {
+                "absolute": "Absolútna hlasitosť",
+                "relative": "Relatívne zvýšenie hlasitosti",
+                "percentual": "Zvýšenie objemu o fixné percento",
+                "none": "Neupravovať hlasitosť"
+            }
+        },
+        "announce_volume": {
+            "label": "Hlasitosť oznámení",
+            "description": "Percentuálna, relatívna alebo absolútna úroveň hlasitosti, ktorá sa používa pri stratégii pre oznámenia."
+        },
+        "announce_volume_min": {
+            "label": "Minimálna úroveň hlasitosti pre hlásenia",
+            "description": "Hlasitosť (úprava) oznámení by nemala klesnúť pod túto úroveň."
+        },
+        "announce_volume_max": {
+            "label": "Maximálna úroveň hlasitosti pre hlásenia",
+            "description": "Hlasitosť (úprava) oznámení by nemala prekročiť túto úroveň."
+        },
+        "icon": {
+            "label": "Ikona",
+            "description": "Ikona Material Design pre tento prehrávač. Pozri https:\/\/pictogrammers.com\/library\/mdi\/."
+        },
+        "language": {
+            "label": "Jazyk",
+            "options": {
+                "auto": "Automaticky (podľa konfigurácie systému)",
+                "cs": "Čeština",
+                "da": "Dánčina",
+                "de": "Nemčina",
+                "en": "Angličtina",
+                "fr": "Francúzština",
+                "nl": "Holandčina",
+                "pl": "Poľština",
+                "uk_UA": "Ukrajinčina",
+                "zh_CN": "Čínština (zjednodušená)",
+                "en_AU": "Angličtina (Austrálčina)",
+                "sr": "Srbčina",
+                "sr_Latn": "Srbčina (latinka)",
+                "sv_SE": "Švédčina",
+                "en_GB": "Angličtina (Spojené kráľovstvo)",
+                "es": "Španielčina",
+                "pt_BR": "Portugalčina (Brazília)",
+                "sl_SI": "Slovinčina",
+                "hu_HU": "Maďarčina",
+                "it": "Taliančina",
+                "el_GR": "Gréčtina"
+            }
+        },
+        "no_music_providers": "Nie sú nakonfigurovaní žiadni poskytovatelia hudby",
+        "no_music_providers_detail": "Spustite prácu s Music Assistant pridaním poskytovateľov hudby.",
+        "no_player_providers": "Nie sú nakonfigurovaní žiadni poskytovatelia prehrávačov",
+        "volume_normalization_tracks": {
+            "options": {
+                "dynamic": "Vynútiť dynamické",
+                "measurement_only": "Iba meranie (bez záložného)",
+                "fallback_fixed_gain": "Záložná korekcia zosilnenia",
+                "fixed_gain": "Korekcia pevného zosilnenia",
+                "fallback_dynamic": "Návrat k dynamickému"
+            }
+        },
+        "volume_normalization_fixed_gain_tracks": {
+            "label": "Pevné\/záložné nastavenie zosilnenia pre skladby",
+            "description": "Korekcia pevného\/záložného zosilnenia, ktorá sa použije na zvukový stream stopy (závisí od nastavenia „Metóda normalizácie hlasitosti“). \nNa zvýšenie hlasitosti použite kladnú hodnotu, na zníženie hlasitosti zápornú hodnotu. \n \nToto nastavenie sa používa, keď je metóda normalizácie hlasitosti nastavená na možnosť „Korekcia pevného zosilnenia“ alebo „Záložná korekcia zosilnenia“."
+        },
+        "volume_normalization_fixed_gain_radio": {
+            "label": "Nastavenie pevného\/záložného zosilnenia pre rádio",
+            "description": "Korekcia pevného\/záložného zosilnenia, ktorá sa použije na rádiový stream (závisí od nastavenia „Metóda normalizácie hlasitosti“). \nNa zvýšenie hlasitosti použite kladnú hodnotu, na zníženie hlasitosti zápornú hodnotu. \n \nToto nastavenie sa používa, keď je metóda normalizácie hlasitosti nastavená na možnosť „Korekcia pevného zosilnenia“ alebo „Záložná korekcia zisku“."
+        },
+        "add_group_player_desc": "Pre skupinu prehrávačov vytvorenú pre poskytovateľa {0} sa automaticky vytvorí synchronizačná skupina, čo znamená, že ak prehrávate na tejto skupine prehrávačov, členské prehrávače sa automaticky synchronizujú.",
+        "dynamic_members": {
+            "label": "Členovia dynamickej skupiny",
+            "description": "Povoliť členom (dočasne) dynamicky sa pripojiť\/opustiť skupinu, takže skupina sa správa viac-menej rovnako ako manuálna synchronizácia prehrávačov, s hlavným rozdielom, že prehrávač skupiny bude držať frontu."
+        },
+        "dsp": {
+            "configure_on": "Konfigurácia DSP na: {name}",
+            "disabled_message": "DSP je momentálne vypnuté. Povoľte ho pomocou prepínača vyššie.",
+            "input": "Vstup",
+            "output": "Výstup",
+            "filter": {
+                "add": "Pridať filter",
+                "type": "Typ filtra",
+                "new": "Nový {type}"
+            },
+            "move_up": "Posunúť nahor",
+            "move_down": "Posunúť nadol",
+            "delete_filter": "Odstrániť filter",
+            "parametric_eq": {
+                "add_band": "Pridať pásmo",
+                "delete_band": "Odstrániť pásmo",
+                "filter_type": "Typ filtra",
+                "band": "Pásmo {index}",
+                "enable_band": "Povoliť pásmo",
+                "filter_types": {
+                    "peak": "Peak",
+                    "low_shelf": "Low Shelf",
+                    "high_shelf": "High Shelf",
+                    "low_pass": "Low Pass",
+                    "high_pass": "High Pass",
+                    "notch": "Zárez"
+                },
+                "import_apo": "Importovať predvoľbu APO\/REW",
+                "export_apo": "Exportovať predvoľbu APO",
+                "preamp": "Predzosilňovač",
+                "add_band_channel": "Pridať pásmo (iba {channel})",
+                "band_channel": "Pásmo {index} (iba {channel} )",
+                "show_multichannel_controls": "Zobraziť viackanálové ovládacie prvky",
+                "edited_channel": "Vykreslenie reakcie ekvalizérov pre tento kanál (kanály)",
+                "channel": "Toto pásmo bude použité na",
+                "per_channel_preamp": "Dodatočné zosilnenie predzosilňovača pre {channel}"
+            },
+            "tone_control": {
+                "bass_level": "Úroveň basov",
+                "mid_level": "Úroveň stredov",
+                "treble_level": "Úroveň výšok"
+            },
+            "parameter": {
+                "frequency": "Frekvencia",
+                "gain": "Zisk",
+                "q_factor": "Q faktor"
+            },
+            "types": {
+                "parametric_eq": "Parametrický ekvalizér",
+                "tone_control": "Ovládanie tónov"
+            },
+            "channels": {
+                "ALL": "Všetky",
+                "FL": "Vľavo",
+                "FR": "Vpravo"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
+            },
+            "presets": {
+                "load": "Načítať predvoľbu DSP",
+                "empty_warning": "Nie sú k dispozícii žiadne predvoľby DSP",
+                "save": "Uložiť predvoľbu DSP",
+                "name": "Názov predvoľby",
+                "name_placeholder": "Moja nová predvoľba",
+                "remove_confirm": "Naozaj chcete odstrániť túto predvoľbu DSP?"
+            }
+        },
+        "power_control": {
+            "label": "Ovládanie napájania",
+            "description": "Definujte\/prepíšte správanie ovládania napájania pre tento prehrávač. \nUmožňuje vám napríklad presmerovať príkazy na zapnutie\/vypnutie napájania na iné zariadenie alebo použiť falošné ovládanie napájania, ak váš prehrávač nepodporuje príkazy na zapnutie\/vypnutie, ale chcete mať vyhradený stav pre prehrávač, ktorý sa nepoužíva."
+        },
+        "volume_control": {
+            "label": "Ovládanie hlasitosti",
+            "description": "Definujte\/prepíšte správanie ovládania hlasitosti pre tento prehrávač. \nUmožňuje vám napríklad presmerovať príkazy ovládania hlasitosti na iné zariadenie alebo ich úplne vypnúť."
+        },
+        "mute_control": {
+            "label": "Ovládanie stlmenia zvuku",
+            "description": "Definujte\/prepíšte správanie ovládania stlmenia zvuku pre tento prehrávač. \nUmožňuje vám napríklad presmerovať príkazy ovládania stlmenia zvuku na iné zariadenie alebo ho úplne vypnúť. \n \nPonúkame možnosť „falošného“ ovládania stlmenia zvuku, ktorá simuluje stlmenie zvuku nastavením hlasitosti na 0 a obnovením hlasitosti po vypnutí stlmenia zvuku."
+        },
+        "output_limiter": {
+            "label": "Povoliť obmedzenie, aby sa zabránilo orezaniu",
+            "description": "Aktivuje obmedzovač, ktorý zabraňuje skresleniu zvuku tým, že stlmí hlasné špičky."
+        },
+        "dsp_enabled": "DSP je povolené",
+        "dsp_disabled": "DSP je vypnuté",
+        "dsp_note_multi_device_group": {
+            "label": "DSP môžete nakonfigurovať pre každý prehrávač samostatne."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Tento typ skupiny nepodporuje DSP pri prehrávaní na viacerých zariadeniach."
+        },
+        "add_group_player_desc_universal": "Vytvorením Univerzálnej Skupiny Prehrávačov môžete zoskupiť prehrávače od rôznych poskytovateľov\/ekosystémov. \nTým sa distribuuje rovnaký zvuk všetkým členským prehrávačom (ale nie synchronizovane)."
+    },
+    "volume_normalization": "Normalizácia hlasitosti",
+    "play_now_replace": "Prehrať teraz (vymazať frontu)",
+    "tooltip": {
+        "filter_favorites": "Zobraziť iba obľúbené",
+        "favorite": "Označiť\/odznačiť ako obľúbené",
+        "open_provider_link": "Otvorenie tejto položky na webovej lokalite poskytovateľa",
+        "collapse_expand": "Zbaliť\/rozbaliť tento záznam",
+        "back": "Späť",
+        "show_menu": "Zobraziť\/skryť ponuku",
+        "album_type": "Typ albumu",
+        "primary_image": "Toto je primárny obrázok pre tento typ obrázka",
+        "copy_uri": "Kopírovať URI do schránky",
+        "select_all": "Vybrať všetky položky"
+    },
+    "currently_playing": "Práve sa hrá",
+    "favorites_add": "Pridať k obľúbeným",
+    "media_details": "Podrobnosti o médiu",
+    "mapped_providers": "Podrobnosti o poskytovateľovi",
+    "item_in_library": "Táto položka je dostupná v knižnici",
+    "back": "Späť",
+    "sort": {
+        "position_desc": "Pozícia (zostupne)",
+        "album": "Album",
+        "artist": "Umelec",
+        "name": "Abecedne",
+        "name_desc": "Abecedne (zostupne)",
+        "recent": "Nedávno pridané",
+        "year_desc": "Rok vydania (zostupne)",
+        "duration_desc": "Trvanie (zostupne)",
+        "original": "Originál"
+    },
+    "recently_played": "Nedávno hrané",
+    "radiobrowser_by_country": "Podľa krajiny",
+    "radiobrowser_by_tag": "Podľa značky",
+    "load_more_items": "Načítať ďalšie položky...",
+    "radio": "Rádio",
+    "muted": "Stlmený",
+    "enter_name": "Zadajte nový (vlastný) názov",
+    "invalid_input": "Vstup bol neplatný",
+    "new_playlist": "Nový zoznam skladieb",
+    "play_replace": "Hrať teraz (vymazať frontu)",
+    "view": {
+        "panel_compact": "Kompaktné zobrazenie náhľadov"
+    },
+    "played": "Hrané",
+    "images": "Obrázky",
+    "image_type": "Typ",
+    "image_source": "Zdroj",
+    "power_on_player": "Zapnutie",
+    "power_off_player": "Vypnúť",
+    "powered_off_players": "Vypnuté prehrávače",
+    "sync_player_with": "Synchronizácia s iným hráčom",
+    "open_player_settings": "Otvoriť nastavenia",
+    "select_repeat_mode": "Vyberte režim opakovania",
+    "repeat_mode": {
+        "all": "Opakovať celú frontu",
+        "off": "Opakovanie vypnuté",
+        "one": "Opakovanie jednej skladby"
+    },
+    "shuffle_disable": "Zakázať náhodné prehrávanie",
+    "shuffle_enable": "Povoliť náhodné prehrávanie",
+    "dont_stop_the_music_enable": "Povoliť „Nezastavuj hudbu!“",
+    "dont_stop_the_music_disable": "Vypnúť možnosť „Nezastavuj hudbu!“",
+    "open_dsp_settings": "Otvoriť nastavenia DSP",
+    "audiobook": "Audiokniha",
+    "audiobooks": "Audioknihy",
+    "chapter": "Kapitola",
+    "chapters": "Kapitoly",
+    "podcast": "Podcast",
+    "podcasts": "Podcasty",
+    "item_fully_played": "Táto položka bola úplne prehraná",
+    "item_in_progress": "Táto položka bola čiastočne prehraná",
+    "duration_in_seconds": "{0} sekúnd",
+    "mark_played": "Označiť ako prehrané",
+    "mark_unplayed": "Označiť ako neprehrané",
+    "searchtype_all": "Všetky",
+    "global_search": "Globálne vyhľadávanie",
+    "podcast_episode": "Epizóda",
+    "podcast_episodes": "Epizódy",
+    "play_from_here": "Prehrať odtiaľto",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Dynamická normalizácia hlasitosti",
+    "loudness_fixed": "Korekcia pevného zisku",
+    "dsp_active": "Aktívne",
+    "currently_playing_players": "Práve sa hrá",
+    "all_players": "Všetky prehrávače",
+    "all_groups": "Všetky skupiny",
+    "no_player_playing": "Momentálne nehrajú žiadne prehrávače",
+    "stop_playback": "Zastaviť prehrávanie",
+    "streamdetails": {
+        "input_header": "Vstup",
+        "output_header": "Výstup",
+        "output_format_info": "Zvuk sa odosiela vo formáte {0}",
+        "eq_band_count": "{0} pásiem",
+        "eq_band_count_singular": "1 pásmo",
+        "input_gain": "Vstupný zisk ( {0} dB)",
+        "output_gain": "Výstupný zisk ( {0} dB)",
+        "output_limiter": "Výstupný obmedzovač",
+        "output_limiter_info": "Automaticky redukuje veľmi hlasné zvuky, aby sa zabránilo skresleniu a chránili vaše reproduktory",
+        "dsp_unsupported": "DSP nie je podporované",
+        "dsp_disabled_by_unsupported_group": "Tento poskytovateľ prehrávača nepodporuje DSP so synchronizovaným prehrávaním",
+        "file_info": {
+            "container": "Kontajner: {0}",
+            "codec": "Kodek: {0}",
+            "bit_rate": "Bitová rýchlosť: {0} kb\/s",
+            "sample_rate": "Vzorkovacia frekvencia: {0} kHz",
+            "channels": "Kanály: {0}",
+            "bit_depth": "Bitová hĺbka: {0}",
+            "processing_notice": "Zvuk sa interne spracúva ako 32-bitový float PCM"
+        },
+        "volume_normalization": {
+            "target_level": "Cieľová úroveň: {0} LUFS",
+            "integrated_loudness": "Nameraná (integrovaná) hlasitosť: {0} LUFS",
+            "integrated_album_loudness": "Hlasitosť albumu: {0} LUFS",
+            "applied_gain_correction": "Použitá korekcia zosilnenia: {0} dB",
+            "mode": {
+                "dynamic": "Normalizácia hlasitosti je aktívna v dynamickom režime.",
+                "measurement_only": "Normalizácia hlasitosti je aktívna na základe uloženého merania (integrovanej) hlasitosti zvuku.",
+                "measurement_album": "Normalizácia hlasitosti je aktívna na základe uloženého merania (integrovanej) hlasitosti albumu.",
+                "fixed_gain": "Normalizácia hlasitosti je aktívna na základe korekcie pevného zisku."
+            }
+        },
+        "click_to_expand": "Kliknutím zobrazíte všetky prehrávače",
+        "output_format_pcm_info": "Zvuk sa odosiela poskytovateľovi prehrávača ako PCM. Poskytovateľ prehrávača potom môže zvuk pred odoslaním do prehrávača previesť do iného formátu."
+    },
+    "volume_normalization_gain_correction": "{0} dB",
+    "select_source": "Vyberte zdroj",
+    "in_progress_items": "Pokračovať v počúvaní...",
+    "play_replace_next": "Prehrať ďalšie (vymazať frontu)",
+    "all_enqueue_options": "Všetky možnosti zaradenia do frontu",
+    "music_assistant_source": "Fronta Music Asistenta",
+    "music_assistant_library": "Knižnica Music Asistenta",
+    "select_all_confirmation": "Vybrať všetky položky? Načítanie všetkých údajov pri tejto operácii môže chvíľu trvať.",
+    "this_device": "Toto zariadenie",
+    "recommendations": {
+        "in_progress_items": "Pokračujte v počúvaní...",
+        "recommended_new_tracks": "Odporúčané nové skladby",
+        "recently_played": "Nedávno hrané",
+        "suggested_new_albums_for_you": "Navrhované nové albumy pre vás",
+        "random_artists": "Náhodní umelci",
+        "random_albums": "Náhodné albumy",
+        "custom_mixes": "Vlastné mixy",
+        "your_listening_history": "Vaša história počúvania",
+        "popular_albums": "Obľúbené albumy",
+        "staff_picks_tracks": "Výbery zamestnancov: skladby",
+        "staff_picks_albums": "Výbery zamestnancov: albumy",
+        "radio_stations_for_you": "Rozhlasové stanice pre vás",
+        "producers__songwriters": "Producenti a skladatelia",
+        "new_releases_for_you": "Nové vydania pre vás",
+        "recent_favorite_tracks": "Nedávno pridané obľúbené skladby",
+        "favorite_playlists": "Obľúbené zoznamy skladieb",
+        "favorite_radio_stations": "Obľúbené rozhlasové stanice"
+    },
+    "homescreen_edit_enable": "Úprava domovskej obrazovky",
+    "homescreen_edit_disable": "Opustenie režimu úprav domovskej obrazovky",
+    "lyrics_will_appear_soon": "Text piesne sa zobrazí, keď skladba začne..."
+}
