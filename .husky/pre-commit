@@ -1,2 +1,7 @@
+#!/usr/bin/env sh
+
+# Ensure yarn is available in PATH
+export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+
 yarn lint
 yarn test:run
