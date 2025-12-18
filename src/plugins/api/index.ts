@@ -926,6 +926,14 @@ export class MusicAssistantApi {
     });
   }
 
+  public getTrackLyrics(track: Track): Promise<[string | null, string | null]> {
+    // Get lyrics for a track.
+    // Returns a tuple of (lyrics, lrc_lyrics) - plain text and synced lyrics.
+    return this.sendCommand("metadata/get_track_lyrics", {
+      track,
+    });
+  }
+
   public getItem(
     media_type: MediaType,
     item_id: string,

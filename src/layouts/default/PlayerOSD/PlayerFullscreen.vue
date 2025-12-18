@@ -340,10 +340,12 @@
             <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
               <LyricsViewer
                 :media-item="store.curQueueItem?.media_item"
-                :position="store.activePlayerQueue?.elapsed_time"
+                :position="lyricsElapsedTime"
                 :duration="store.curQueueItem?.duration"
                 :stream-details="store.curQueueItem?.streamdetails"
                 :text-color="sliderColor"
+                :lyrics="currentLyrics.plain"
+                :lrc-lyrics="currentLyrics.synced"
               />
             </div>
           </div>
@@ -571,6 +573,7 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import { getSourceName } from "@/plugins/api/helpers";
+import computeElapsedTime from "@/helpers/elapsed";
 
 const { name } = useDisplay();
 
@@ -588,6 +591,52 @@ const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
 
+// Lyrics elapsed time computation (similar to PlayerTimeline)
+const nowTick = ref(0);
+let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+const startTick = (interval = 250) => {
+  if (!tickTimer) {
+    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
+  }
+};
+
+const stopTick = () => {
+  if (tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+};
+
+const lyricsElapsedTime = computed(() => {
+  // Include nowTick.value so this computed re-evaluates periodically
+  void nowTick.value;
+
+  const isPlaying =
+    store.activePlayer?.playback_state === PlaybackState.PLAYING;
+  const queue = store.activePlayerQueue;
+
+  // Start/stop tick based on playback state
+  if (isPlaying && queue?.active) {
+    startTick();
+  } else {
+    stopTick();
+  }
+
+  // Compute elapsed time from queue
+  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
+    return (
+      computeElapsedTime(
+        queue.elapsed_time,
+        queue.elapsed_time_last_updated,
+        store.activePlayer?.playback_state,
+      ) ?? 0
+    );
+  }
+
+  return 0;
+});
+
 // Computed properties
 
 const nextItems = computed(() => {
@@ -602,14 +651,65 @@ const previousItems = computed(() => {
       .reverse();
   } else return [];
 });
+// Local reactive state for lyrics
+const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
+  plain: null,
+  synced: null,
+});
+
 const hasLyrics = computed(() => {
-  const plainLyrics = store.curQueueItem?.media_item?.metadata?.lyrics;
-  const syncedLyrics = store.curQueueItem?.media_item?.metadata?.lrc_lyrics;
+  const plain = currentLyrics.value.plain;
+  const synced = currentLyrics.value.synced;
   return (
-    (!!plainLyrics && plainLyrics.trim().length > 0) ||
-    (!!syncedLyrics && syncedLyrics.trim().length > 0)
+    (!!plain && plain.trim().length > 0) ||
+    (!!synced && synced.trim().length > 0)
   );
 });
+
+// Watch for track changes and handle lyrics
+watch(
+  () => store.curQueueItem?.media_item?.item_id,
+  async () => {
+    // Clear lyrics immediately
+    currentLyrics.value = { plain: null, synced: null };
+
+    const mediaItem = store.curQueueItem?.media_item;
+
+    // Only proceed if we have a track media item
+    if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) {
+      return;
+    }
+
+    const track = mediaItem as Track;
+
+    // Check if lyrics are already in metadata
+    const existingPlain = track.metadata?.lyrics?.trim() || null;
+    const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+
+    if (existingPlain || existingSynced) {
+      currentLyrics.value = { plain: existingPlain, synced: existingSynced };
+      return;
+    }
+
+    // Fetch lyrics from API
+    try {
+      const [lyrics, lrcLyrics] = await api.getTrackLyrics(track);
+      currentLyrics.value = { plain: lyrics, synced: lrcLyrics };
+
+      // Also update the media item's metadata for future reference
+      if (lyrics || lrcLyrics) {
+        track.metadata = {
+          ...track.metadata,
+          ...(lyrics && { lyrics }),
+          ...(lrcLyrics && { lrc_lyrics: lrcLyrics }),
+        };
+      }
+    } catch (error) {
+      console.error("Failed to fetch track lyrics:", error);
+    }
+  },
+  { immediate: true },
+);
 
 const titleFontSize = computed(() => {
   switch (name.value) {
@@ -912,7 +1012,10 @@ const onKeydown = (e: KeyboardEvent) => {
 };
 onMounted(() => {
   window.addEventListener("keydown", onKeydown);
-  onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
+  onBeforeUnmount(() => {
+    window.removeEventListener("keydown", onKeydown);
+    stopTick();
+  });
 });
 
 const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
