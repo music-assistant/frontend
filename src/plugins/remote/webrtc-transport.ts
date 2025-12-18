@@ -10,7 +10,7 @@
 import { BaseTransport, TransportState } from "./transport";
 import { SignalingClient, IceServerConfig } from "./signaling";
 import {
-  verifySdpFingerprint,
+  verifyAndSanitizeSdp,
   CertificateVerificationError,
 } from "./crypto-utils";
 
@@ -247,15 +247,17 @@ export class WebRTCTransport extends BaseTransport {
     if (!this.peerConnection) return;
 
     try {
+      let sdp = answer.sdp;
+
       // Verify certificate fingerprint from SDP before setting remote description
       // This happens BEFORE the DTLS handshake, providing early rejection of untrusted peers
-      if (!this.options.skipCertificateVerification && answer.sdp) {
-        verifySdpFingerprint(answer.sdp, this.options.remoteId);
+      if (!this.options.skipCertificateVerification) {
+        sdp = verifyAndSanitizeSdp(answer.sdp, this.options.remoteId);
         console.log("[WebRTCTransport] SDP fingerprint verified");
       }
 
       await this.peerConnection.setRemoteDescription(
-        new RTCSessionDescription(answer),
+        new RTCSessionDescription({ type: answer.type, sdp }),
       );
       this.remoteDescriptionSet = true;
 
