@@ -35,6 +35,7 @@
               />
               <Button
                 v-if="hasDescriptionOrHelpLink(conf_entry)"
+                type="button"
                 variant="ghost"
                 size="icon"
                 class="help-btn"

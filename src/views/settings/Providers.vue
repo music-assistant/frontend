@@ -93,7 +93,8 @@
         :show-menu-btn="true"
         :class="{
           'provider-disabled': !item.enabled,
-          'provider-unavailable': !api.providers[item.instance_id]?.available,
+          'provider-unavailable':
+            item.enabled && !api.providers[item.instance_id]?.available,
         }"
         @click="editProvider(item.instance_id)"
         @menu="(evt) => onMenu(evt, item)"
