@@ -2322,6 +2322,28 @@ export class MusicAssistantApi {
       ).toString(16);
     });
   }
+
+  /**
+   * Create a sendspin DataChannel through the remote access WebRTC connection.
+   * Returns null if not in remote mode or if WebRTC transport doesn't support it.
+   */
+  public async createSendspinDataChannel(): Promise<RTCDataChannel | null> {
+    if (!this.transport) {
+      return null;
+    }
+
+    // Check if transport supports creating sendspin channels
+    if (typeof this.transport.createSendspinDataChannel === "function") {
+      try {
+        return await this.transport.createSendspinDataChannel();
+      } catch (error) {
+        console.error("[API] Failed to create sendspin DataChannel:", error);
+        return null;
+      }
+    }
+
+    return null;
+  }
 }
 
 export const api = new MusicAssistantApi();

@@ -526,4 +526,61 @@ export class WebRTCTransport extends BaseTransport {
     }
     this.httpProxyCallbacks.clear();
   }
+
+  /**
+   * Create a new DataChannel for sendspin.
+   * This allows sendspin to use the existing WebRTC connection for audio data.
+   */
+  async createSendspinDataChannel(): Promise<RTCDataChannel | null> {
+    if (!this.peerConnection) {
+      console.warn(
+        "[WebRTCTransport] Cannot create sendspin channel: no peer connection",
+      );
+      return null;
+    }
+
+    if (
+      this.peerConnection.connectionState !== "connected" &&
+      this.peerConnection.connectionState !== "connecting"
+    ) {
+      console.warn(
+        "[WebRTCTransport] Cannot create sendspin channel: connection state is",
+        this.peerConnection.connectionState,
+      );
+      return null;
+    }
+
+    console.debug("[WebRTCTransport] Creating sendspin DataChannel");
+
+    // Create a new DataChannel labeled "sendspin" (ordered for TCP-like behavior)
+    const channel = this.peerConnection.createDataChannel("sendspin", {
+      ordered: true,
+    });
+
+    // Wait for the channel to open
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        console.warn("[WebRTCTransport] Sendspin DataChannel open timeout");
+        reject(new Error("Sendspin DataChannel open timeout"));
+      }, 10000);
+
+      channel.onopen = () => {
+        clearTimeout(timeout);
+        console.debug("[WebRTCTransport] Sendspin DataChannel opened");
+        resolve(channel);
+      };
+
+      channel.onerror = (event) => {
+        clearTimeout(timeout);
+        console.error("[WebRTCTransport] Sendspin DataChannel error:", event);
+        reject(new Error("Sendspin DataChannel error"));
+      };
+
+      // If channel is already open (unlikely but possible), resolve immediately
+      if (channel.readyState === "open") {
+        clearTimeout(timeout);
+        resolve(channel);
+      }
+    });
+  }
 }

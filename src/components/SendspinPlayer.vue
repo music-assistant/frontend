@@ -214,12 +214,9 @@ onMounted(() => {
     // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
       .then(() => {
-        // Select codecs based on connection type:
-        // - Direct (local WebSocket): opus + flac for quality
-        // - Remote (WebRTC): opus only for bandwidth efficiency
-        const codecs: Codec[] = isDirectConnection()
-          ? ["opus", "flac"]
-          : ["opus"];
+        // Prefer opus for bandwidth efficiency, flac as fallback
+        // (opus requires secure context which may not be available)
+        const codecs: Codec[] = ["opus", "flac"];
 
         console.debug(
           `Sendspin: Using codecs [${codecs.join(", ")}] for ${isDirectConnection() ? "direct" : "remote"} connection`,
