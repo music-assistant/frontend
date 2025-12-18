@@ -8,6 +8,7 @@
 
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 
 const OriginalWebSocket = window.WebSocket;
 
@@ -23,19 +24,23 @@ function getSendspinProxyUrl(): string {
 }
 
 /**
- * Create an authenticated proxy WebSocket connection.
- * Includes client_id in auth message for auto-whitelist.
+ * Create a proxy WebSocket connection.
+ * In ingress mode, no auth message is needed (HA handles auth via headers).
+ * Otherwise, sends auth message with token and client_id.
  */
 function createProxyWebSocket(): Promise<WebSocket | null> {
   const url = getSendspinProxyUrl();
+  const isIngress = store.isIngressSession;
+
   return new Promise((resolve) => {
     if (!url) {
       resolve(null);
       return;
     }
 
+    // In non-ingress mode, we need a token
     const token = authManager.getToken();
-    if (!token) {
+    if (!isIngress && !token) {
       console.error("[Sendspin] No auth token available for proxy connection");
       resolve(null);
       return;
@@ -52,34 +57,42 @@ function createProxyWebSocket(): Promise<WebSocket | null> {
       return;
     }
 
-    let authenticated = false;
+    let ready = false;
 
     ws.onopen = () => {
-      const clientId =
-        window.localStorage.getItem("sendspin_webplayer_id") || "";
-      console.debug("[Sendspin] Sending auth to proxy");
-      ws.send(JSON.stringify({ type: "auth", token, client_id: clientId }));
+      if (isIngress) {
+        // In ingress mode, no auth message needed - connection is ready immediately
+        console.debug("[Sendspin] Proxy WebSocket connected (ingress mode)");
+        ready = true;
+        resolve(ws);
+      } else {
+        // Send auth message with token
+        const clientId =
+          window.localStorage.getItem("sendspin_webplayer_id") || "";
+        console.debug("[Sendspin] Sending auth to proxy");
+        ws.send(JSON.stringify({ type: "auth", token, client_id: clientId }));
+      }
     };
 
     ws.onmessage = () => {
-      if (!authenticated) {
-        authenticated = true;
+      if (!ready && !isIngress) {
+        ready = true;
         console.debug("[Sendspin] Proxy WebSocket authenticated and ready");
         resolve(ws);
       }
     };
 
     ws.onerror = (error) => {
-      if (!authenticated) {
+      if (!ready) {
         console.error("[Sendspin] Proxy WebSocket error:", error);
         resolve(null);
       }
     };
 
     ws.onclose = (event) => {
-      if (!authenticated) {
+      if (!ready) {
         console.debug(
-          "[Sendspin] Proxy WebSocket closed before auth:",
+          "[Sendspin] Proxy WebSocket closed before ready:",
           event.code,
           event.reason,
         );
@@ -88,8 +101,8 @@ function createProxyWebSocket(): Promise<WebSocket | null> {
     };
 
     setTimeout(() => {
-      if (!authenticated) {
-        console.debug("[Sendspin] Proxy WebSocket auth timed out");
+      if (!ready) {
+        console.debug("[Sendspin] Proxy WebSocket connection timed out");
         ws.close();
         resolve(null);
       }
