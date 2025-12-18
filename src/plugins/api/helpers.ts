@@ -163,7 +163,7 @@ export function getDeviceName(): string {
     ("standalone" in navigator &&
       (navigator as Navigator & { standalone: boolean }).standalone);
 
-  const appType = isPwa ? "Music Assistant" : "Music Assistant Web";
+  const appType = isPwa ? "PWA" : "Web";
 
   return `${appType} (${browser} on ${device})`;
 }
