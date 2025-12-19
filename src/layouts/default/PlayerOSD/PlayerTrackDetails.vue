@@ -1,7 +1,7 @@
 <template>
   <!-- now playing media -->
   <v-list-item
-    style="height: auto; width: fit-content; margin: 0px; padding: 0px"
+    style="height: auto; width: 100%; margin: 0px; padding: 0px"
     lines="two"
   >
     <template #prepend>

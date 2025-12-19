@@ -148,7 +148,7 @@ import Button from "@/components/Button.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
-import { api, ConnectionState } from "@/plugins/api";
+import { api } from "@/plugins/api";
 import {
   PlaybackState,
   Player,
@@ -185,25 +185,35 @@ watch(
 watch(
   () => api.players,
   (newVal) => {
-    if (newVal && !store.activePlayer) {
+    if (newVal) {
       checkDefaultPlayer();
     }
   },
   { deep: true },
 );
+// watch(
+//   () => api.state,
+//   (newVal) => {
+//     if (newVal.value != ConnectionState.CONNECTED) {
+//       store.activePlayerId = undefined;
+//     }
+//   },
+//   { deep: true },
+// );
+
 watch(
-  () => api.state,
+  () => webPlayer.player_id,
   (newVal) => {
-    if (newVal.value != ConnectionState.CONNECTED) {
-      store.activePlayerId = undefined;
+    if (newVal) {
+      checkDefaultPlayer();
     }
   },
-  { deep: true },
 );
 
 function playerClicked(player: Player, close: boolean = false) {
   if (store.activePlayerId !== player.player_id) {
     store.activePlayerId = player.player_id;
+    store.playMenuShown = true;
   }
   if (close) store.showPlayersMenu = false;
 }
@@ -243,7 +253,7 @@ const selectDefaultPlayer = function () {
   ) {
     return lastPlayerId;
   }
-  if (!lastPlayerId && webPlayer.player_id) {
+  if (webPlayer.player_id) {
     return webPlayer.player_id;
   }
 };

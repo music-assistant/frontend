@@ -47,8 +47,8 @@ const bottomNavHeight = computed(() => {
   display: flex;
   flex-direction: column;
   margin: 10px;
-  margin-bottom: 0;
-  width: calc((100% - 20px) - 0px) !important;
+  margin-bottom: 5px;
+  width: calc(100% - 20px) !important;
   border-radius: 10px !important;
 }
 

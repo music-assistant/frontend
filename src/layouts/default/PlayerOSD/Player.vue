@@ -1,122 +1,155 @@
 <template>
-  <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-
-  <div class="mediacontrols" :data-mobile="mobile">
-    <div class="mediacontrols-left">
-      <PlayerTrackDetails
-        :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
-        :show-only-artist="getBreakpointValue('bp7') ? false : true"
-        :color-palette="coverImageColorPalette"
-        :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-      />
-    </div>
-    <div class="mediacontrols-bottom-center">
-      <!-- player control buttons -->
-      <PlayerControls
-        :visible-components="{
-          repeat: { isVisible: getBreakpointValue('bp3') },
-          shuffle: { isVisible: getBreakpointValue('bp3') },
-          play: {
-            isVisible: true,
-            icon: {
-              staticWidth: '48px',
-              staticHeight: '48px',
+  <!-- Non-mobile: background gradient and player bar -->
+  <template v-if="!mobile">
+    <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
+    <div class="mediacontrols">
+      <div class="mediacontrols-left">
+        <PlayerTrackDetails
+          :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
+          :show-only-artist="getBreakpointValue('bp7') ? false : true"
+          :color-palette="coverImageColorPalette"
+          :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+        />
+      </div>
+      <div class="mediacontrols-bottom-center">
+        <!-- player control buttons -->
+        <PlayerControls
+          :visible-components="{
+            repeat: { isVisible: getBreakpointValue('bp3') },
+            shuffle: { isVisible: getBreakpointValue('bp3') },
+            play: {
+              isVisible: true,
+              icon: {
+                staticWidth: '48px',
+                staticHeight: '48px',
+              },
             },
-          },
-          previous: { isVisible: getBreakpointValue('bp3') },
-          next: { isVisible: getBreakpointValue('bp3') },
-        }"
-      />
-      <!-- progress bar -->
-      <PlayerTimeline
-        v-if="getBreakpointValue('bp6')"
-        :is-progress-bar="false"
+            previous: { isVisible: getBreakpointValue('bp3') },
+            next: { isVisible: getBreakpointValue('bp3') },
+          }"
+        />
+        <!-- progress bar -->
+        <PlayerTimeline
+          v-if="getBreakpointValue('bp6')"
+          :is-progress-bar="false"
+          :disabled="
+            !store.activePlayerQueue?.active ||
+            store.activePlayerQueue?.current_item?.media_item?.media_type !==
+              MediaType.TRACK
+          "
+        />
+      </div>
+      <div class="mediacontrols-bottom-right">
+        <div>
+          <!-- player extended control buttons -->
+          <PlayerExtendedControls
+            :queue="{
+              isVisible: getBreakpointValue('bp3'),
+              color: $vuetify.theme.current.dark ? '#fff' : '#000',
+            }"
+            :player="{
+              isVisible: true,
+              color: $vuetify.theme.current.dark ? '#fff' : '#000',
+            }"
+            :volume="{
+              isVisible: store.activePlayer != undefined,
+              color: $vuetify.theme.current.dark ? '#fff' : '#000',
+            }"
+          />
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Mobile: floating player with volume slider inside container -->
+  <div v-else class="mediacontrols-mobile-container">
+    <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
+    <div class="mediacontrols" :data-mobile="true">
+      <div class="mediacontrols-left">
+        <PlayerTrackDetails
+          :show-quality-details-btn="false"
+          :show-only-artist="true"
+          :color-palette="coverImageColorPalette"
+          :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+        />
+      </div>
+      <div class="mediacontrols-bottom-right">
+        <div>
+          <!-- player mobile extended control buttons -->
+          <PlayerExtendedControls
+            :queue="{
+              isVisible: false,
+              color: $vuetify.theme.current.dark ? '#fff' : '#000',
+            }"
+            :player="{
+              isVisible: true,
+              color: $vuetify.theme.current.dark ? '#fff' : '#000',
+            }"
+            :volume="{
+              isVisible: false,
+              color: $vuetify.theme.current.dark ? '#fff' : '#000',
+            }"
+          />
+          <!-- player mobile control buttons -->
+          <PlayerControls
+            style="padding-right: 5px"
+            :visible-components="{
+              repeat: { isVisible: false },
+              shuffle: { isVisible: false },
+              play: {
+                isVisible: true,
+                icon: {
+                  staticWidth: '40px',
+                  staticHeight: '40px',
+                  color: $vuetify.theme.current.dark ? '#fff' : '#000',
+                },
+              },
+              previous: { isVisible: false },
+              next: { isVisible: false },
+            }"
+          />
+        </div>
+      </div>
+    </div>
+    <div v-if="store.activePlayer" class="volume-slider">
+      <PlayerVolume
+        width="100%"
+        color="secondary"
+        :is-powered="store.activePlayer?.powered != false"
         :disabled="
-          !store.activePlayerQueue?.active ||
-          store.activePlayerQueue?.current_item?.media_item?.media_type !==
-            MediaType.TRACK
+          !store.activePlayer ||
+          !store.activePlayer?.available ||
+          store.activePlayer.powered == false ||
+          !store.activePlayer.supported_features.includes(
+            PlayerFeature.VOLUME_SET,
+          )
+        "
+        :model-value="
+          Math.round(
+            store.activePlayer.group_members.length > 0
+              ? store.activePlayer.group_volume
+              : store.activePlayer.volume_level || 0,
+          )
+        "
+        prepend-icon="mdi-volume-minus"
+        append-icon="mdi-volume-plus"
+        @update:model-value="
+          store.activePlayer!.group_members.length > 0
+            ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
+            : api.playerCommandVolumeSet(store.activePlayerId!, $event)
+        "
+        @click:prepend="
+          store.activePlayer!.group_members.length > 0
+            ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
+            : api.playerCommandVolumeDown(store.activePlayerId!)
+        "
+        @click:append="
+          store.activePlayer!.group_members.length > 0
+            ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
+            : api.playerCommandVolumeUp(store.activePlayerId!)
         "
       />
     </div>
-    <div class="mediacontrols-bottom-right">
-      <div>
-        <!-- player mobile extended control buttons -->
-        <PlayerExtendedControls
-          :queue="{
-            isVisible: getBreakpointValue('bp3'),
-            color: $vuetify.theme.current.dark ? '#fff' : '#000',
-          }"
-          :player="{
-            isVisible: true,
-            color: $vuetify.theme.current.dark ? '#fff' : '#000',
-          }"
-          :volume="{
-            isVisible: !mobile && store.activePlayer != undefined,
-            color: $vuetify.theme.current.dark ? '#fff' : '#000',
-          }"
-        />
-        <!-- player mobile control buttons -->
-        <PlayerControls
-          style="padding-right: 5px"
-          :visible-components="{
-            repeat: { isVisible: false },
-            shuffle: { isVisible: false },
-            play: {
-              isVisible: getBreakpointValue({
-                breakpoint: 'bp3',
-                condition: 'lt',
-              }),
-              icon: {
-                staticWidth: '40px',
-                staticHeight: '40px',
-                color: $vuetify.theme.current.dark ? '#fff' : '#000',
-              },
-            },
-            previous: { isVisible: false },
-            next: { isVisible: false },
-          }"
-        />
-      </div>
-    </div>
-  </div>
-  <div v-if="mobile && store.activePlayer" class="volume-slider">
-    <PlayerVolume
-      width="100%"
-      color="secondary"
-      :is-powered="store.activePlayer?.powered != false"
-      :disabled="
-        !store.activePlayer ||
-        !store.activePlayer?.available ||
-        store.activePlayer.powered == false ||
-        !store.activePlayer.supported_features.includes(
-          PlayerFeature.VOLUME_SET,
-        )
-      "
-      :model-value="
-        Math.round(
-          store.activePlayer.group_members.length > 0
-            ? store.activePlayer.group_volume
-            : store.activePlayer.volume_level || 0,
-        )
-      "
-      prepend-icon="mdi-volume-minus"
-      append-icon="mdi-volume-plus"
-      @update:model-value="
-        store.activePlayer!.group_members.length > 0
-          ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
-          : api.playerCommandVolumeSet(store.activePlayerId!, $event)
-      "
-      @click:prepend="
-        store.activePlayer!.group_members.length > 0
-          ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
-          : api.playerCommandVolumeDown(store.activePlayerId!)
-      "
-      @click:append="
-        store.activePlayer!.group_members.length > 0
-          ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
-          : api.playerCommandVolumeUp(store.activePlayerId!)
-      "
-    />
   </div>
 </template>
 
@@ -148,7 +181,7 @@ import PlayerVolume from "./PlayerVolume.vue";
 interface Props {
   useFloatingPlayer: boolean;
 }
-defineProps<Props>();
+const props = defineProps<Props>();
 
 // Custom breakpoint for compatibility with `getBreakpointValue`. Can replace once we switch to using built-in Vuetify breakpoints
 const { mobile } = useDisplay({ mobileBreakpoint: 576 });
@@ -205,6 +238,16 @@ watch(
   opacity: 100;
 }
 
+.mediacontrols-mobile-container {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  background-color: rgb(var(--v-theme-overlay));
+}
+
 .mediacontrols {
   display: flex;
   align-items: center;
@@ -216,12 +259,13 @@ watch(
   }
 
   &[data-mobile="true"] {
-    border-radius: 10px;
+    background-color: transparent;
     .mediacontrols-bottom-center {
       display: none;
     }
     .mediacontrols-left {
-      width: unset;
+      flex: 1;
+      min-width: 0;
     }
   }
 }
@@ -266,8 +310,8 @@ watch(
 }
 
 .volume-slider {
-  width: calc(100% - 30px);
-  margin-bottom: 6px;
-  margin-top: -10px;
+  width: calc(100% - 16px);
+  margin: -4px 8px 8px 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 </style>
