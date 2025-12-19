@@ -1402,7 +1402,7 @@ const loginWithHomeAssistant = async () => {
       throw new Error("Invalid response from server");
     }
 
-    window.location.href = response.authorization_url;
+    window.location.replace(response.authorization_url);
   } catch (error) {
     console.error("[Login] Failed to start Home Assistant OAuth:", error);
     loginError.value =
