@@ -93,8 +93,6 @@
         :show-menu-btn="true"
         :class="{
           'provider-disabled': !item.enabled,
-          'provider-unavailable':
-            item.enabled && !api.providers[item.instance_id]?.available,
         }"
         @click="editProvider(item.instance_id)"
         @menu="(evt) => onMenu(evt, item)"
@@ -1023,10 +1021,6 @@ const getAllFilteredProviders = function () {
 
 .provider-disabled {
   opacity: 0.6;
-}
-
-.provider-unavailable {
-  opacity: 0.7;
 }
 
 .provider-error-inline {
