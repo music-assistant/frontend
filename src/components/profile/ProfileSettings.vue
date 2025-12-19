@@ -32,6 +32,7 @@
             variant="elevated"
             class="avatar-edit-btn"
             color="surface"
+            :disabled="isIngressSession"
             @click="showAvatarDialog = true"
           />
         </div>
@@ -40,6 +41,7 @@
             variant="text"
             size="small"
             class="text-capitalize"
+            :disabled="isIngressSession"
             @click="showAvatarDialog = true"
           >
             {{ $t("auth.change_avatar") }}
@@ -53,6 +55,7 @@
           variant="outlined"
           density="comfortable"
           :rules="[rules.required, rules.usernameLength]"
+          :disabled="isIngressSession"
           class="mb-2"
         />
         <v-text-field
@@ -62,6 +65,7 @@
           density="comfortable"
           :hint="$t('optional')"
           persistent-hint
+          :disabled="isIngressSession"
           class="mb-2"
         />
         <v-text-field
@@ -145,6 +149,7 @@ import { toast } from "vuetify-sonner";
 const { t } = useI18n();
 
 const user = computed(() => store.currentUser);
+const isIngressSession = computed(() => store.isIngressSession);
 
 const editedUsername = ref("");
 const editedDisplayName = ref("");
