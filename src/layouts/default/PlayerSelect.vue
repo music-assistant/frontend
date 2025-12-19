@@ -191,15 +191,6 @@ watch(
   },
   { deep: true },
 );
-// watch(
-//   () => api.state,
-//   (newVal) => {
-//     if (newVal.value != ConnectionState.CONNECTED) {
-//       store.activePlayerId = undefined;
-//     }
-//   },
-//   { deep: true },
-// );
 
 watch(
   () => webPlayer.player_id,

@@ -397,7 +397,7 @@ watch(
   padding-right: 8px;
   padding-top: 5px;
   padding-bottom: 5px;
-  background-color: rgba(var(--v-theme-primary), 0.08);
+  background-color: rgba(var(--v-theme-primary), 0.04);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
   border-radius: 6px;
@@ -415,8 +415,8 @@ watch(
   opacity: 0.6;
 }
 .panel-item-selected {
-  border-color: rgba(var(--v-theme-primary), 0.3);
-  background-color: rgba(var(--v-theme-primary), 0.15);
+  border-color: rgba(var(--v-theme-primary), 0.6);
+  background-color: rgba(var(--v-theme-primary), 0.3);
 }
 
 .player-command-btn {
