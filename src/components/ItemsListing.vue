@@ -427,21 +427,23 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
       return item.item_id === current.item_id;
     }
     case "albums": {
-      if (!("album" in current)) return false;
+      if (!("album" in current) || !current.album) return false;
       return item.item_id === current.album.item_id;
     }
     case "artists": {
-      if (!("artists" in current)) return false;
+      if (!("artists" in current) || !current.artists) return false;
       return (
         Array.isArray(current.artists) &&
-        current.artists.some((artist) => artist.item_id === item.item_id)
+        current.artists.some(
+          (artist) => artist && artist.item_id === item.item_id,
+        )
       );
     }
     case "radios": {
       return item.item_id === current.item_id;
     }
     case "podcasts": {
-      if (!("podcast" in current)) return false;
+      if (!("podcast" in current) || !current.podcast) return false;
       return item.item_id === current.podcast.item_id;
     }
     case "podcastepisodes": {
