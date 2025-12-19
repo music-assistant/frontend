@@ -666,49 +666,65 @@ const hasLyrics = computed(() => {
   );
 });
 
+// Fetch lyrics for the current track (only when fullscreen player is open)
+const fetchLyrics = async () => {
+  // Clear lyrics immediately
+  currentLyrics.value = { plain: null, synced: null };
+
+  // Only fetch lyrics when fullscreen player is open
+  if (!store.showFullscreenPlayer) {
+    return;
+  }
+
+  const mediaItem = store.curQueueItem?.media_item;
+
+  // Only proceed if we have a track media item
+  if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) {
+    return;
+  }
+
+  const track = mediaItem as Track;
+
+  // Check if lyrics are already in metadata
+  const existingPlain = track.metadata?.lyrics?.trim() || null;
+  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+
+  if (existingPlain || existingSynced) {
+    currentLyrics.value = { plain: existingPlain, synced: existingSynced };
+    return;
+  }
+
+  // Fetch lyrics from API
+  try {
+    const [lyrics, lrcLyrics] = await api.getTrackLyrics(track);
+    currentLyrics.value = { plain: lyrics, synced: lrcLyrics };
+
+    // Also update the media item's metadata for future reference
+    if (lyrics || lrcLyrics) {
+      track.metadata = {
+        ...track.metadata,
+        ...(lyrics && { lyrics }),
+        ...(lrcLyrics && { lrc_lyrics: lrcLyrics }),
+      };
+    }
+  } catch (error) {
+    console.error("Failed to fetch track lyrics:", error);
+  }
+};
+
 // Watch for track changes and handle lyrics
+watch(() => store.curQueueItem?.media_item?.item_id, fetchLyrics, {
+  immediate: true,
+});
+
+// Also fetch lyrics when fullscreen player is opened
 watch(
-  () => store.curQueueItem?.media_item?.item_id,
-  async () => {
-    // Clear lyrics immediately
-    currentLyrics.value = { plain: null, synced: null };
-
-    const mediaItem = store.curQueueItem?.media_item;
-
-    // Only proceed if we have a track media item
-    if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) {
-      return;
-    }
-
-    const track = mediaItem as Track;
-
-    // Check if lyrics are already in metadata
-    const existingPlain = track.metadata?.lyrics?.trim() || null;
-    const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
-
-    if (existingPlain || existingSynced) {
-      currentLyrics.value = { plain: existingPlain, synced: existingSynced };
-      return;
-    }
-
-    // Fetch lyrics from API
-    try {
-      const [lyrics, lrcLyrics] = await api.getTrackLyrics(track);
-      currentLyrics.value = { plain: lyrics, synced: lrcLyrics };
-
-      // Also update the media item's metadata for future reference
-      if (lyrics || lrcLyrics) {
-        track.metadata = {
-          ...track.metadata,
-          ...(lyrics && { lyrics }),
-          ...(lrcLyrics && { lrc_lyrics: lrcLyrics }),
-        };
-      }
-    } catch (error) {
-      console.error("Failed to fetch track lyrics:", error);
+  () => store.showFullscreenPlayer,
+  (isOpen) => {
+    if (isOpen) {
+      fetchLyrics();
     }
   },
-  { immediate: true },
 );
 
 const titleFontSize = computed(() => {
