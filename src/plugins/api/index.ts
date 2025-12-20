@@ -580,11 +580,13 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     in_library_only = false,
+    provider_filter?: string[],
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/artist_tracks", {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
+      provider_filter,
     });
   }
 

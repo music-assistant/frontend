@@ -538,7 +538,7 @@ const changeProviderFilter = function (providerId: string) {
     "providerFilter",
     params.value.provider,
   );
-  loadData(undefined, undefined, true);
+  loadData(true, undefined, true);
 };
 
 const redirectSearch = function () {
@@ -598,18 +598,22 @@ const showSearchInput = computed(() => {
 });
 
 const musicProviders = computed(() => {
-  // Map itemtype to required ProviderFeature
-  const featureMap: Record<string, ProviderFeature> = {
+  // Map itemtype to required ProviderFeature(s)
+  const featureMap: Record<string, ProviderFeature | ProviderFeature[]> = {
     artists: ProviderFeature.LIBRARY_ARTISTS,
     albums: ProviderFeature.LIBRARY_ALBUMS,
     tracks: ProviderFeature.LIBRARY_TRACKS,
+    artisttracks: [
+      ProviderFeature.ARTIST_TOPTRACKS,
+      ProviderFeature.LIBRARY_TRACKS,
+    ],
     playlists: ProviderFeature.LIBRARY_PLAYLISTS,
     radios: ProviderFeature.LIBRARY_RADIOS,
     podcasts: ProviderFeature.LIBRARY_PODCASTS,
     audiobooks: ProviderFeature.LIBRARY_AUDIOBOOKS,
   };
 
-  const requiredFeature = featureMap[props.itemtype];
+  const requiredFeatures = featureMap[props.itemtype];
 
   return Object.values(api.providers)
     .filter((provider) => {
@@ -623,9 +627,14 @@ const musicProviders = computed(() => {
         // but for admin users we need to filter here as well
         return false;
       }
-      // If we have a required feature for this itemtype, filter by it
-      if (requiredFeature) {
-        return provider.supported_features.includes(requiredFeature);
+      // If we have required feature(s) for this itemtype, filter by them
+      if (requiredFeatures) {
+        const features = Array.isArray(requiredFeatures)
+          ? requiredFeatures
+          : [requiredFeatures];
+        return features.some((feature) =>
+          provider.supported_features.includes(feature),
+        );
       }
       // Otherwise, include all music providers
       return true;
