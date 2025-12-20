@@ -74,6 +74,7 @@ onMounted(() => {
       // signal user that there might be updated info available for this item
       const updatedItem = evt.data as MediaItemType;
       if (itemDetails.value?.uri == updatedItem.uri) {
+        itemDetails.value = updatedItem as Podcast;
         updateAvailable.value = true;
       }
     },

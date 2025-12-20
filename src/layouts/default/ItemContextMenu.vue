@@ -937,7 +937,6 @@ export const getContextMenuItems = async function (
     items.length === 1 &&
     parentItem &&
     parentItem.provider == "library" &&
-    resolvedItem.provider != "library" &&
     parentItem.media_type == resolvedItem.media_type
   ) {
     const mapping: ProviderMapping =
