@@ -20,18 +20,18 @@
         style="padding-top: 20px; padding-bottom: 20px"
       >
         <b>{{ $t("players") }}</b>
-        <div style="float: right; margin-right: -20px">
+        <div style="float: right">
           <!-- settings button (admin only) -->
           <Button
             v-if="authManager.isAdmin()"
             variant="icon"
             :to="{ name: 'playersettings' }"
           >
-            <v-icon size="30">mdi-cog-outline</v-icon>
+            <v-icon size="24">mdi-cog</v-icon>
           </Button>
           <!-- close button -->
           <Button variant="icon" @click="store.showPlayersMenu = false">
-            <v-icon size="30">mdi-window-close</v-icon>
+            <v-icon size="24">mdi-close</v-icon>
           </Button>
         </div>
       </v-card-title>
