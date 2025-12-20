@@ -10,8 +10,8 @@
     @local-connect="handleLocalConnect"
   />
 
-  <!-- Main app (when authenticated) -->
-  <router-view v-else-if="api.state.value == ConnectionState.INITIALIZED" />
+  <!-- Main app (when authenticated and service worker ready for remote) -->
+  <router-view v-else-if="showMainApp" />
 
   <PlayerBrowserMediaControls
     v-if="
@@ -40,6 +40,7 @@ import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { remoteConnectionManager } from "./plugins/remote";
+import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import Login from "./views/Login.vue";
@@ -53,6 +54,18 @@ const loginComponent = ref<InstanceType<typeof Login> | null>(null);
 const showLogin = computed(
   () => api.state.value !== ConnectionState.INITIALIZED,
 );
+
+// Show main app when API is initialized AND (not remote OR service worker is ready)
+const showMainApp = computed(() => {
+  if (api.state.value !== ConnectionState.INITIALIZED) {
+    return false;
+  }
+  // For remote connections, also require service worker to be ready
+  if (api.isRemoteConnection.value && !httpProxyBridge.isReady.value) {
+    return false;
+  }
+  return true;
+});
 
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
@@ -180,6 +193,8 @@ const completeInitialization = async () => {
   store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
   store.libraryRadiosCount = await api.getLibraryRadiosCount();
   store.libraryTracksCount = await api.getLibraryTracksCount();
+  store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
+  store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server

@@ -1,7 +1,7 @@
 <template>
   <!-- now playing media -->
   <v-list-item
-    style="height: auto; width: fit-content; margin: 0px; padding: 0px"
+    style="height: auto; width: 100%; margin: 0px; padding: 0px"
     lines="two"
   >
     <template #prepend>
@@ -14,15 +14,9 @@
         }px; `"
         @click="store.showFullscreenPlayer = true"
       >
-        <!-- queue item (mediaitem) image -->
-        <MediaItemThumb
-          v-if="store.activePlayer?.powered != false && store.curQueueItem"
-          :item="store.curQueueItem"
-          :fallback="imgCoverDark"
-        />
-        <!-- player (external source) media image (if no queue item)-->
+        <!-- player.current_media has content loaded (will work for all sources)  -->
         <div
-          v-else-if="
+          v-if="
             store.activePlayer?.powered != false &&
             store.activePlayer?.current_media?.image_url
           "
@@ -31,13 +25,13 @@
             class="media-thumb"
             style="border-radius: 4px"
             size="60"
-            :src="store.activePlayer.current_media.image_url"
+            :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
           />
         </div>
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
           <v-icon
-            size="24"
+            size="32"
             :icon="
               store.activePlayer?.type == PlayerType.PLAYER &&
               store.activePlayer?.group_members.length
@@ -64,33 +58,14 @@
         >
           {{ store.activePlayer?.name }}
         </div>
-        <!-- queue item media item + optional version-->
+        <!-- player.current_media has content loaded (will work for all sources)  -->
         <div
-          v-else-if="store.curQueueItem?.media_item"
+          v-else-if="store.activePlayer?.current_media?.title"
           @click="store.showFullscreenPlayer = true"
         >
           <MarqueeText :sync="marqueeSync">
-            {{ store.curQueueItem.media_item.name }}
-            <span
-              v-if="
-                'version' in store.curQueueItem.media_item &&
-                store.curQueueItem.media_item.version
-              "
-              >({{ store.curQueueItem.media_item.version }})</span
-            >
+            {{ store.activePlayer.current_media.title }}
           </MarqueeText>
-        </div>
-        <!-- queue item fallback: queue item name -->
-        <div v-else-if="store.curQueueItem">
-          {{ store.curQueueItem.name }}
-        </div>
-        <!-- external source current media item present -->
-        <div
-          v-else-if="
-            !store.activePlayerQueue && store.activePlayer?.current_media?.title
-          "
-        >
-          {{ store.activePlayer.current_media.title }}
         </div>
         <!-- fallback: display player name -->
         <div v-else-if="store.activePlayer">
@@ -131,80 +106,25 @@
           <div v-if="store.activePlayer?.powered == false">
             {{ $t("off") }}
           </div>
-          <!-- track: artists(s) + album -->
+          <!-- player.current_media has content loaded (will work for all sources)-->
+          <!-- artists(s) + album -->
           <div
             v-else-if="
-              store.curQueueItem &&
-              store.curQueueItem.media_item?.media_type == MediaType.TRACK &&
-              'album' in store.curQueueItem.media_item &&
-              store.curQueueItem.media_item.album &&
+              store.activePlayer?.current_media?.artist &&
+              store.activePlayer?.current_media?.album &&
               !props.showOnlyArtist
             "
           >
-            {{ getArtistsString(store.curQueueItem.media_item.artists) }} •
-            {{ store.curQueueItem.media_item.album.name }}
+            {{ store.activePlayer?.current_media?.artist }} •
+            {{ store.activePlayer?.current_media?.album }}
           </div>
-          <!-- track fallback: (only artist, no album) -->
-          <div
-            v-else-if="
-              store.curQueueItem?.media_item &&
-              'artists' in store.curQueueItem.media_item &&
-              store.curQueueItem.media_item.artists.length > 0
-            "
-          >
-            {{ store.curQueueItem.media_item.artists[0].name }}
+          <!-- artists(s) only -->
+          <div v-else-if="store.activePlayer?.current_media?.artist">
+            {{ store.activePlayer?.current_media?.artist }}
           </div>
-          <!-- podcast episode - podcast name as subtitle -->
-          <div
-            v-else-if="
-              store.curQueueItem?.media_item &&
-              'podcast' in store.curQueueItem.media_item &&
-              store.curQueueItem.media_item.podcast?.name
-            "
-          >
-            {{ store.curQueueItem.media_item.podcast.name }}
-          </div>
-          <!-- live (stream) metadata (artist + title) -->
-          <div
-            v-else-if="
-              store.curQueueItem?.streamdetails?.stream_metadata &&
-              store.curQueueItem?.streamdetails?.stream_metadata.title &&
-              store.curQueueItem?.streamdetails?.stream_metadata.artist
-            "
-          >
-            {{ store.curQueueItem?.streamdetails?.stream_metadata.artist }} -
-            {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
-          </div>
-          <!-- live (stream) metadata (only title) -->
-          <div
-            v-else-if="
-              store.curQueueItem?.streamdetails?.stream_metadata &&
-              store.curQueueItem?.streamdetails?.stream_metadata.title
-            "
-          >
-            {{ store.curQueueItem?.streamdetails?.stream_metadata.title }}
-          </div>
-          <!-- other description -->
-          <div
-            v-else-if="store.curQueueItem?.media_item?.metadata.description"
-            class="line-clamp-1"
-          >
-            {{
-              truncateString(
-                store.curQueueItem.media_item.metadata.description,
-                100,
-              )
-            }}
-          </div>
-          <!-- external source artist -->
-          <div
-            v-else-if="
-              !store.activePlayerQueue &&
-              store.activePlayer?.active_source &&
-              store.activePlayer?.current_media?.artist
-            "
-          >
-            {{ store.activePlayer.current_media.artist }}
+          <!-- album only -->
+          <div v-else-if="store.activePlayer?.current_media?.album">
+            {{ store.activePlayer?.current_media?.album }}
           </div>
           <!-- 3rd party source active -->
           <div
@@ -241,23 +161,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onUnmounted } from "vue";
-import computeElapsedTime from "@/helpers/elapsed";
-
-import { MediaType, PlayerType } from "@/plugins/api/interfaces";
+import { computed } from "vue";
+import { PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import {
   ImageColorPalette,
-  getArtistsString,
+  getMediaImageUrl,
   getPlayerName,
-  truncateString,
-  formatDuration,
 } from "@/helpers/utils";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
-import QualityDetailsBtn, {
-  imgCoverDark,
-} from "@/components/QualityDetailsBtn.vue";
+import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import MarqueeText from "@/components/MarqueeText.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -282,76 +195,6 @@ const props = withDefaults(defineProps<Props>(), {
 // computed properties
 const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
-});
-
-// ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
-const nowTick = ref(0);
-let tickTimer: ReturnType<typeof setInterval> | null = null;
-
-const startTick = (interval = 500) => {
-  if (!tickTimer)
-    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
-};
-
-const stopTick = () => {
-  if (tickTimer) {
-    clearInterval(tickTimer);
-    tickTimer = null;
-  }
-};
-
-onUnmounted(() => {
-  stopTick();
-});
-
-const currentElapsed = computed(() => {
-  // include nowTick so this computed re-evaluates periodically while mounted
-  void nowTick.value;
-
-  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
-  const isPlaying = store.activePlayer?.playback_state === "playing";
-  const usingQueue = !!(
-    store.activePlayerQueue && store.activePlayerQueue.active
-  );
-  const hasCurrentMedia =
-    store.activePlayer?.current_media?.elapsed_time != null;
-
-  if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
-  else stopTick();
-
-  const queue = store.activePlayerQueue;
-  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
-    return computeElapsedTime(
-      queue.elapsed_time,
-      queue.elapsed_time_last_updated,
-      store.activePlayer?.playback_state,
-    );
-  }
-
-  // If there's an external source active on the player prefer the current_media timing
-  if (
-    store.activePlayer?.current_media?.elapsed_time != null &&
-    store.activePlayer?.current_media?.elapsed_time_last_updated != null
-  ) {
-    return computeElapsedTime(
-      store.activePlayer.current_media.elapsed_time,
-      store.activePlayer.current_media.elapsed_time_last_updated,
-      store.activePlayer?.playback_state,
-    );
-  }
-
-  // Fall back to player-level elapsed_time (legacy / provider-level value)
-  if (
-    store.activePlayer?.elapsed_time != null &&
-    store.activePlayer?.elapsed_time_last_updated != null
-  ) {
-    return computeElapsedTime(
-      store.activePlayer.elapsed_time,
-      store.activePlayer.elapsed_time_last_updated,
-      store.activePlayer?.playback_state,
-    );
-  }
-  return undefined;
 });
 </script>
 

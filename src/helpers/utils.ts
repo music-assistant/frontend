@@ -2,7 +2,9 @@ import {
   Artist,
   BrowseFolder,
   HidePlayerOption,
+  ImageType,
   ItemMapping,
+  MediaItemImage,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -11,6 +13,7 @@ import {
   PlaybackState,
   PlayerType,
   ProviderMapping,
+  QueueItem,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { api } from "@/plugins/api";
@@ -189,6 +192,161 @@ export const getStreamingProviderMappings = function (
 
 export const sleep = (delay: number) =>
   new Promise((resolve) => setTimeout(resolve, delay));
+
+/**
+ * Get the proper image URL for player media, handling protocol mismatches
+ * and backend-provided imageproxy URLs.
+ *
+ * - If URL is HTTP but frontend is served over HTTPS, proxy through imageproxy
+ * - If URL is already an imageproxy URL from another host, transform to use our baseUrl
+ * - Otherwise return the URL as-is
+ */
+export const getMediaImageUrl = function (
+  imageUrl: string | undefined,
+): string {
+  if (!imageUrl) return "";
+
+  // Handle data URLs directly
+  if (imageUrl.startsWith("data:image")) return imageUrl;
+
+  // Check if this is already an imageproxy URL from the backend
+  // e.g., http://192.168.1.1:8097/imageproxy?provider=tunein&size=500&path=...
+  if (imageUrl.includes("/imageproxy") && imageUrl.includes("provider=")) {
+    // Extract query params and rebuild with our baseUrl
+    const url = new URL(imageUrl);
+    const params = url.searchParams.toString();
+    return `${api.baseUrl}/imageproxy?${params}`;
+  }
+
+  // Check for protocol mismatch: HTTP image URL but HTTPS frontend
+  const urlProtocol = imageUrl.split("://")[0];
+  const pageProtocol = window.location.protocol.replace(":", "");
+
+  if (urlProtocol === "http" && pageProtocol === "https") {
+    // Proxy through imageproxy to avoid mixed content issues
+    const encUrl = encodeURIComponent(encodeURIComponent(imageUrl));
+    return `${api.baseUrl}/imageproxy?path=${encUrl}`;
+  }
+
+  return imageUrl;
+};
+
+/**
+ * Check if an image provider is available.
+ */
+const imageProviderIsAvailable = function (provider: string) {
+  if (provider === "http" || provider === "builtin") return true;
+  return api.getProvider(provider)?.available === true;
+};
+
+/**
+ * Get image from a MediaItem, ItemMapping, or QueueItem.
+ */
+export const getMediaItemImage = function (
+  mediaItem?: MediaItemType | ItemMapping | QueueItem,
+  type: ImageType = ImageType.THUMB,
+): MediaItemImage | undefined {
+  if (!mediaItem) return undefined;
+
+  // handle QueueItem
+  if ("media_item" in mediaItem && mediaItem.media_item) {
+    // prefer image_url provided in queueItem's streamdetails
+    if (
+      "streamdetails" in mediaItem.media_item &&
+      mediaItem.streamdetails?.stream_metadata?.image_url
+    )
+      return {
+        type: ImageType.THUMB,
+        path: mediaItem.streamdetails.stream_metadata.image_url,
+        provider: "builtin",
+        remotely_accessible: true,
+      };
+    // fallback to media_item's image
+    const mediaItemImage = getMediaItemImage(mediaItem.media_item);
+    if (mediaItemImage) return mediaItemImage;
+  }
+
+  // handle image in queueitem or itemmapping
+  if (
+    "image" in mediaItem &&
+    mediaItem.image &&
+    mediaItem.image.type == type &&
+    imageProviderIsAvailable(mediaItem.image.provider)
+  )
+    return mediaItem.image;
+
+  // always prefer album image for tracks
+  if ("album" in mediaItem && mediaItem.album) {
+    const albumImage = getMediaItemImage(mediaItem.album, type);
+    if (albumImage) return albumImage;
+  }
+
+  // handle regular image within mediaitem
+  if ("metadata" in mediaItem && mediaItem.metadata.images) {
+    for (const img of mediaItem.metadata.images) {
+      if (img.type == type && imageProviderIsAvailable(img.provider))
+        return img;
+    }
+  }
+
+  // retry with album/track artist(s)
+  if ("artists" in mediaItem && mediaItem.artists) {
+    for (const artist of mediaItem.artists) {
+      const artistImage = getMediaItemImage(artist, type);
+      if (artistImage) return artistImage;
+    }
+  }
+
+  // allow landscape fallback
+  if (type == ImageType.THUMB) {
+    return getMediaItemImage(mediaItem, ImageType.LANDSCAPE);
+  }
+};
+
+/**
+ * Get the URL for a MediaItemImage, handling protocol mismatches and resizing.
+ * This is used for MediaItem images (albums, tracks, artists, etc.)
+ */
+export const getMediaItemImageUrl = function (
+  img: MediaItemImage,
+  size?: number,
+  checksum?: string,
+): string {
+  if (!checksum) checksum = "";
+  if (!img || !img.path) return "";
+  if (img.path.startsWith("data:image")) return img.path;
+  if (
+    !img.remotely_accessible ||
+    size ||
+    img.path.split("//")[0] != window.location.protocol
+  ) {
+    // force imageproxy if image is not remotely accessible or we need a resized thumb
+    // Note that we play it safe here and always enforce the proxy if the schema is different
+    const encUrl = encodeURIComponent(encodeURIComponent(img.path));
+    const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
+    if (size) return imageUrl + `&size=${size}`;
+    return imageUrl;
+  }
+  // else: return image as-is (use getMediaImageUrl for protocol handling)
+  return getMediaImageUrl(img.path);
+};
+
+/**
+ * Get the image thumbnail URL for a MediaItem, ItemMapping, or QueueItem.
+ */
+export const getImageThumbForItem = function (
+  mediaItem?: MediaItemType | ItemMapping | QueueItem,
+  type: ImageType = ImageType.THUMB,
+  size?: number,
+): string | undefined {
+  if (!mediaItem) return;
+  // find image in mediaitem
+  const img = getMediaItemImage(mediaItem, type);
+  if (!img || !img.path) return undefined;
+  const checksum =
+    "metadata" in mediaItem ? mediaItem.metadata?.cache_checksum : "";
+  return getMediaItemImageUrl(img, size, checksum);
+};
 
 export const numberRange = function (start: number, end: number): number[] {
   return Array(end - start + 1)

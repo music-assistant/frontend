@@ -580,11 +580,13 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     in_library_only = false,
+    provider_filter?: string[],
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/artist_tracks", {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
+      provider_filter,
     });
   }
 
@@ -923,6 +925,14 @@ export class MusicAssistantApi {
     return this.sendCommand("metadata/update_metadata", {
       item,
       force_refresh,
+    });
+  }
+
+  public getTrackLyrics(track: Track): Promise<[string | null, string | null]> {
+    // Get lyrics for a track.
+    // Returns a tuple of (lyrics, lrc_lyrics) - plain text and synced lyrics.
+    return this.sendCommand("metadata/get_track_lyrics", {
+      track,
     });
   }
 
@@ -2321,6 +2331,28 @@ export class MusicAssistantApi {
         (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (num / 4)))
       ).toString(16);
     });
+  }
+
+  /**
+   * Create a sendspin DataChannel through the remote access WebRTC connection.
+   * Returns null if not in remote mode or if WebRTC transport doesn't support it.
+   */
+  public async createSendspinDataChannel(): Promise<RTCDataChannel | null> {
+    if (!this.transport) {
+      return null;
+    }
+
+    // Check if transport supports creating sendspin channels
+    if (typeof this.transport.createSendspinDataChannel === "function") {
+      try {
+        return await this.transport.createSendspinDataChannel();
+      } catch (error) {
+        console.error("[API] Failed to create sendspin DataChannel:", error);
+        return null;
+      }
+    }
+
+    return null;
   }
 }
 

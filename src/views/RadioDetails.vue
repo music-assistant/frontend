@@ -25,11 +25,15 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
-import { ref } from "vue";
-import type { Radio } from "@/plugins/api/interfaces";
+import { ref, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  EventType,
+  type Radio,
+  type EventMessage,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { api } from "@/plugins/api";
-import { watch } from "vue";
 import { getStreamingProviderMappings } from "@/helpers/utils";
 
 export interface Props {
@@ -50,6 +54,20 @@ watch(
   },
   { immediate: true },
 );
+
+onMounted(() => {
+  //signal if/when item updates
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_UPDATED,
+    (evt: EventMessage) => {
+      const updatedItem = evt.data as MediaItemType;
+      if (itemDetails.value?.uri == updatedItem.uri) {
+        itemDetails.value = updatedItem as Radio;
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
 
 const loadRadioVersions = async function (params: LoadDataParams) {
   const allVersions: Radio[] = [];

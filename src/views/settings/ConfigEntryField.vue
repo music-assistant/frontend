@@ -82,37 +82,54 @@
     />
 
     <!-- int/float value in range: slider control -->
-    <v-slider
+    <div
       v-else-if="
         (confEntry.type == ConfigEntryType.INTEGER ||
           confEntry.type == ConfigEntryType.FLOAT) &&
         confEntry.range &&
         confEntry.range.length == 2
       "
-      :model-value="confEntry.value as number"
-      :disabled="isFieldDisabled"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
-      :required="confEntry.required"
-      class="config-slider"
-      :min="confEntry.range[0]"
-      :max="confEntry.range[1]"
-      :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
-      hide-details
-      color="primary"
-      @update:model-value="$emit('update:value', $event)"
+      class="config-slider-wrapper"
     >
-      <template #append>
-        <v-text-field
-          :model-value="confEntry.value"
+      <v-label class="config-slider-label">
+        {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+      </v-label>
+      <div class="config-slider-block">
+        <v-slider
+          :model-value="confEntry.value as number"
+          :disabled="isFieldDisabled"
+          :required="confEntry.required"
+          :min="confEntry.range[0]"
+          :max="confEntry.range[1]"
+          :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
           hide-details
-          single-line
-          density="compact"
-          type="number"
-          style="width: 70px"
+          color="primary"
+          class="config-slider"
           @update:model-value="$emit('update:value', $event)"
         />
-      </template>
-    </v-slider>
+
+        <div class="config-slider-input">
+          <NumberField
+            :model-value="confEntry.value as number"
+            :min="confEntry.range[0]"
+            :max="confEntry.range[1]"
+            :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
+            :format-options="{
+              maximumFractionDigits:
+                confEntry.type == ConfigEntryType.FLOAT ? 1 : 0,
+            }"
+            class="w-[100px]"
+            @update:model-value="$emit('update:value', $event)"
+          >
+            <NumberFieldContent>
+              <NumberFieldInput />
+              <NumberFieldDecrement />
+              <NumberFieldIncrement />
+            </NumberFieldContent>
+          </NumberField>
+        </div>
+      </div>
+    </div>
 
     <!-- password value -->
     <v-text-field
@@ -244,7 +261,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import {
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/ui/number-field";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -253,6 +276,7 @@ import {
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { computed } from "vue";
 
 const props = defineProps<{
   confEntry: ConfigEntry;
@@ -345,6 +369,46 @@ const translatedOptions = computed(() => {
   margin: 8px 0;
 }
 
+.config-slider-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-slider-label {
+  font-size: 0.875rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin-bottom: 0;
+}
+
+.config-slider-block {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.config-slider-input {
+  flex-shrink: 0;
+}
+
+@media (min-width: 601px) {
+  .config-slider-wrapper {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .config-slider-label {
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+
+  .config-slider-block {
+    flex: 1;
+  }
+}
+
 .dsp-config {
   display: flex;
   align-items: center;
@@ -355,9 +419,5 @@ const translatedOptions = computed(() => {
 .dsp-status {
   font-size: 0.875rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.config-slider {
-  padding-top: 8px;
 }
 </style>

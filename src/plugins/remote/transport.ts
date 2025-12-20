@@ -43,6 +43,12 @@ export interface ITransport {
     event: K,
     handler: TransportEventHandler<K>,
   ): void;
+
+  /**
+   * Create a new DataChannel for sendspin (WebRTC transports only).
+   * Returns null for non-WebRTC transports.
+   */
+  createSendspinDataChannel?(): Promise<RTCDataChannel | null>;
 }
 
 /**

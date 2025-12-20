@@ -44,6 +44,14 @@ self.addEventListener("message", (event) => {
   } else if (type === "set-remote-mode") {
     // Update remote mode state
     self.isRemoteMode = data.isRemote;
+    console.log("[ServiceWorker] Remote mode set to:", data.isRemote);
+    // Send acknowledgment back to the main thread
+    if (event.source) {
+      event.source.postMessage({
+        type: "remote-mode-ack",
+        data: { isRemote: data.isRemote },
+      });
+    }
   }
 });
 
@@ -185,7 +193,14 @@ function generateRequestId() {
 // Initialize state
 self.isRemoteMode = false;
 
+// Skip waiting to activate the new service worker immediately
+self.addEventListener("install", (event) => {
+  console.log("[ServiceWorker] Installing...");
+  event.waitUntil(self.skipWaiting());
+});
+
 // Claim clients immediately when service worker activates
 self.addEventListener("activate", (event) => {
+  console.log("[ServiceWorker] Activating...");
   event.waitUntil(self.clients.claim());
 });

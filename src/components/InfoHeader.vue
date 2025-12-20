@@ -351,7 +351,8 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
-import MediaItemThumb, { getImageThumbForItem } from "./MediaItemThumb.vue";
+import MediaItemThumb from "./MediaItemThumb.vue";
+import { getImageThumbForItem } from "@/helpers/utils";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 

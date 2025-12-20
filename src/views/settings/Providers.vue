@@ -93,7 +93,6 @@
         :show-menu-btn="true"
         :class="{
           'provider-disabled': !item.enabled,
-          'provider-unavailable': !api.providers[item.instance_id]?.available,
         }"
         @click="editProvider(item.instance_id)"
         @menu="(evt) => onMenu(evt, item)"
@@ -114,8 +113,27 @@
 
         <template #subtitle>
           <div class="provider-meta">
+            <!-- Provider error warning -->
+            <div
+              v-if="item.enabled && item.last_error"
+              class="provider-error-inline"
+            >
+              <v-icon icon="mdi-alert-circle" size="16" color="error" />
+              <span class="provider-error-text">{{
+                $t("settings.provider_requires_attention")
+              }}</span>
+              <v-btn
+                size="x-small"
+                color="error"
+                variant="tonal"
+                class="ml-2"
+                @click.stop="editProvider(item.instance_id)"
+              >
+                {{ $t("settings.reconfigure") }}
+              </v-btn>
+            </div>
             <span
-              v-if="api.providerManifests[item.domain]"
+              v-else-if="api.providerManifests[item.domain]"
               class="provider-description-text"
             >
               {{ api.providerManifests[item.domain].description }}
@@ -258,7 +276,7 @@
 
             <!-- provider has errors -->
             <v-btn
-              v-else-if="item.last_error"
+              v-else-if="item.enabled && item.last_error"
               variant="text"
               size="small"
               icon
@@ -315,8 +333,34 @@
             {{ getProviderName(item) }}
           </v-card-title>
 
+          <!-- Provider error warning for card view -->
           <v-card-text
-            v-if="api.providerManifests[item.domain]"
+            v-if="item.enabled && item.last_error"
+            class="provider-error-card py-2"
+          >
+            <div class="provider-error-inline">
+              <v-icon icon="mdi-alert-circle" size="16" color="error" />
+              <span class="provider-error-text">{{
+                $t("settings.provider_requires_attention")
+              }}</span>
+            </div>
+            <div class="provider-error-detail mt-1">
+              {{ item.last_error }}
+            </div>
+            <v-btn
+              size="small"
+              color="error"
+              variant="tonal"
+              class="mt-2"
+              block
+              @click.stop="editProvider(item.instance_id)"
+            >
+              {{ $t("settings.reconfigure") }}
+            </v-btn>
+          </v-card-text>
+
+          <v-card-text
+            v-else-if="api.providerManifests[item.domain]"
             class="provider-description flex-grow-1"
             :class="{
               'truncated-text': isTextTruncated(
@@ -685,9 +729,15 @@ const getAllFilteredProviders = function () {
     );
   }
 
-  return filtered.sort((a, b) =>
-    getProviderName(a).localeCompare(getProviderName(b)),
-  );
+  // Sort: providers with errors first, then alphabetically
+  return filtered.sort((a, b) => {
+    const aHasError = a.enabled && a.last_error ? 1 : 0;
+    const bHasError = b.enabled && b.last_error ? 1 : 0;
+    if (aHasError !== bHasError) {
+      return bHasError - aHasError; // Errors first
+    }
+    return getProviderName(a).localeCompare(getProviderName(b));
+  });
 };
 </script>
 
@@ -973,8 +1023,33 @@ const getAllFilteredProviders = function () {
   opacity: 0.6;
 }
 
-.provider-unavailable {
-  opacity: 0.7;
+.provider-error-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(var(--v-theme-error));
+}
+
+.provider-error-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.provider-error-card {
+  background: rgba(var(--v-theme-error), 0.08);
+  border-radius: 8px;
+  margin: 0 12px 12px 12px;
+}
+
+.provider-error-detail {
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .empty-state {

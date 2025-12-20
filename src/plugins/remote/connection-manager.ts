@@ -120,7 +120,7 @@ class RemoteConnectionManager {
       this.state.value = RemoteConnectionState.CONNECTED;
 
       // Clear HTTP proxy bridge (not needed for local connections)
-      httpProxyBridge.setTransport(null);
+      await httpProxyBridge.setTransport(null);
 
       return this.transport;
     } catch (err) {
@@ -143,6 +143,10 @@ class RemoteConnectionManager {
     // Store the remote ID
     localStorage.setItem(CURRENT_REMOTE_ID_STORAGE_KEY, remoteId);
 
+    // Ensure the service worker is ready and controlling before proceeding
+    // This prevents race conditions where images load before the SW can intercept them
+    await httpProxyBridge.ensureReady();
+
     try {
       const transport = new WebRTCTransport({
         signalingServerUrl: this.config.signalingServerUrl,
@@ -156,7 +160,8 @@ class RemoteConnectionManager {
       this.state.value = RemoteConnectionState.CONNECTED;
 
       // Set up HTTP proxy bridge for remote connections
-      httpProxyBridge.setTransport(transport);
+      // This must be awaited to ensure SW has remote mode set before images load
+      await httpProxyBridge.setTransport(transport);
 
       // Store successful connection
       this.storeConnection(remoteId);

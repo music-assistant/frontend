@@ -34,10 +34,12 @@
       :show-library-only-filter="
         itemDetails.provider == 'library' && api.hasStreamingProviders.value
       "
+      :show-provider-filter="itemDetails.provider == 'library'"
       :show-refresh-button="false"
       :show-track-number="false"
       :load-items="loadArtistTracks"
       :sort-keys="[
+        'original',
         'name',
         'sort_name',
         'album',
@@ -45,7 +47,6 @@
         'name_desc',
         'sort_name_desc',
         'duration_desc',
-        'original',
       ]"
       :title="$t('tracks')"
       :allow-collapse="true"
@@ -145,6 +146,7 @@ const loadArtistTracks = async function (params: LoadDataParams) {
     props.itemId,
     props.provider,
     params.libraryOnly,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
   );
 };
 

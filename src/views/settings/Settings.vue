@@ -106,10 +106,8 @@ const savedPlayersViewMode = getPreference<"list" | "card">(
 watch(
   () => savedPlayersViewMode.value,
   (savedViewMode) => {
-    if (isPlayersPage.value && savedViewMode) {
-      if (savedViewMode === "list" || savedViewMode === "card") {
-        playersViewMode.value = savedViewMode;
-      }
+    if (savedViewMode === "list" || savedViewMode === "card") {
+      playersViewMode.value = savedViewMode;
     }
   },
   { immediate: true },
@@ -139,10 +137,8 @@ const savedProvidersViewMode = getPreference<"list" | "card">(
 watch(
   () => savedProvidersViewMode.value,
   (savedViewMode) => {
-    if (isProvidersPage.value && savedViewMode) {
-      if (savedViewMode === "list" || savedViewMode === "card") {
-        providersViewMode.value = savedViewMode;
-      }
+    if (savedViewMode === "list" || savedViewMode === "card") {
+      providersViewMode.value = savedViewMode;
     }
   },
   { immediate: true },

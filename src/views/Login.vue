@@ -264,48 +264,6 @@
                 </v-btn>
               </template>
 
-              <!-- OAuth Waiting -->
-              <template v-if="step === 'oauth-waiting'">
-                <div class="text-center py-6">
-                  <img
-                    src="@/assets/home-assistant-logo.svg"
-                    alt="Home Assistant"
-                    width="64"
-                    height="64"
-                    class="mb-4"
-                    style="margin: 0 auto; display: block"
-                  />
-                  <p class="text-h6 mb-2">
-                    {{ $t("login.complete_sign_in", "Complete Sign-in") }}
-                  </p>
-                  <p class="text-body-2 text-medium-emphasis mb-6">
-                    {{
-                      $t(
-                        "login.oauth_waiting_message",
-                        "A browser window has opened. Please sign in with Home Assistant, then return here.",
-                      )
-                    }}
-                  </p>
-                  <v-progress-circular
-                    indeterminate
-                    color="primary"
-                    size="40"
-                    class="mb-4"
-                  />
-                  <p class="text-caption text-medium-emphasis">
-                    {{
-                      $t(
-                        "login.waiting_for_auth",
-                        "Waiting for authentication...",
-                      )
-                    }}
-                  </p>
-                </div>
-                <v-btn variant="text" block @click="cancelOAuth">
-                  {{ $t("login.cancel", "Cancel") }}
-                </v-btn>
-              </template>
-
               <!-- Connecting State -->
               <template v-if="step === 'connecting'">
                 <div class="text-center py-6">
@@ -444,7 +402,7 @@
 import { api, ConnectionState } from "@/plugins/api";
 import type { AuthProvider } from "@/plugins/api/interfaces";
 import { remoteConnectionManager } from "@/plugins/remote";
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
 
@@ -545,7 +503,6 @@ type Step =
   | "select-mode"
   | "login"
   | "connecting"
-  | "oauth-waiting"
   | "reconnecting"
   | "error";
 const step = ref<Step>("auto-connect");
@@ -581,10 +538,6 @@ const hasHomeAssistantAuth = computed(() =>
   authProviders.value.some((p) => p.provider_id === "homeassistant"),
 );
 
-// OAuth state
-const oauthSessionId = ref<string | null>(null);
-const oauthPollingInterval = ref<number | null>(null);
-
 // Computed
 const getSubtitle = computed(() => {
   if (step.value === "auto-connect") {
@@ -592,9 +545,6 @@ const getSubtitle = computed(() => {
   }
   if (step.value === "login") {
     return t("login.sign_in_to_continue", "Sign in to continue");
-  }
-  if (step.value === "oauth-waiting") {
-    return t("login.complete_in_browser", "Complete sign-in in your browser");
   }
   if (step.value === "connecting") {
     return t("login.establishing_connection", "Establishing connection...");
@@ -1443,20 +1393,16 @@ const loginWithHomeAssistant = async () => {
   try {
     const response = await api.sendCommand<{
       authorization_url: string;
-      session_id: string;
     }>("auth/authorization_url", {
       provider_id: "homeassistant",
-      for_remote_client: true,
+      return_url: window.location.href,
     });
 
-    if (!response?.authorization_url || !response?.session_id) {
+    if (!response?.authorization_url) {
       throw new Error("Invalid response from server");
     }
 
-    oauthSessionId.value = response.session_id;
-    window.open(response.authorization_url, "_blank");
-    step.value = "oauth-waiting";
-    startOAuthPolling();
+    window.location.replace(response.authorization_url);
   } catch (error) {
     console.error("[Login] Failed to start Home Assistant OAuth:", error);
     loginError.value =
@@ -1470,63 +1416,7 @@ const loginWithHomeAssistant = async () => {
   }
 };
 
-const startOAuthPolling = () => {
-  oauthPollingInterval.value = window.setInterval(async () => {
-    if (!oauthSessionId.value) {
-      stopOAuthPolling();
-      return;
-    }
-
-    try {
-      const status = await api.sendCommand<{
-        status: "pending" | "completed" | "error";
-        access_token?: string;
-        message?: string;
-      }>("auth/oauth_status", {
-        session_id: oauthSessionId.value,
-      });
-
-      if (status.status === "completed" && status.access_token) {
-        stopOAuthPolling();
-
-        // Store the token in localStorage before emitting
-        localStorage.setItem(STORAGE_KEY_TOKEN, status.access_token);
-
-        const result = await api.authenticateWithToken(status.access_token);
-        emit("authenticated", {
-          token: status.access_token,
-          user: result.user,
-        });
-      } else if (status.status === "error") {
-        stopOAuthPolling();
-        loginError.value =
-          status.message ||
-          t("login.error_oauth_failed", "Authentication failed.");
-        step.value = "login";
-        isAuthenticating.value = false;
-      }
-    } catch (error) {
-      console.error("[Login] OAuth polling error:", error);
-    }
-  }, 2000);
-};
-
-const stopOAuthPolling = () => {
-  if (oauthPollingInterval.value) {
-    clearInterval(oauthPollingInterval.value);
-    oauthPollingInterval.value = null;
-  }
-  oauthSessionId.value = null;
-};
-
-const cancelOAuth = () => {
-  stopOAuthPolling();
-  isAuthenticating.value = false;
-  step.value = "login";
-};
-
 const goBack = () => {
-  stopOAuthPolling();
   remoteConnectionManager.disconnect();
   api.disconnect();
   step.value = "select-mode";
@@ -1539,7 +1429,6 @@ const goBack = () => {
 };
 
 const cancelConnection = () => {
-  stopOAuthPolling();
   remoteConnectionManager.disconnect();
   api.disconnect();
   isConnecting.value = false;
@@ -1668,10 +1557,6 @@ onMounted(() => {
   } else {
     step.value = "reconnecting";
   }
-});
-
-onUnmounted(() => {
-  stopOAuthPolling();
 });
 </script>
 

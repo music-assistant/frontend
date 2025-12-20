@@ -16,26 +16,14 @@
       <!-- prepend: media thumb -->
       <template #prepend>
         <div class="player-media-thumb">
-          <!-- queue item (mediaitem) image -->
-          <MediaItemThumb
-            v-if="player.powered != false && curQueueItem"
-            class="media-thumb"
-            size="60"
-            :item="curQueueItem"
-            :fallback="imgCoverDark"
-          />
-          <!-- player (external source) media image (if no queue item)-->
+          <!-- current media image -->
           <div
-            v-else-if="
-              player.powered != false &&
-              !playerQueue &&
-              player.current_media?.image_url
-            "
+            v-if="player.powered != false && player.current_media?.image_url"
           >
             <v-img
               class="media-thumb"
               size="60"
-              :src="player.current_media.image_url"
+              :src="getMediaImageUrl(player.current_media.image_url)"
             />
           </div>
           <!-- fallback: display player icon -->
@@ -87,20 +75,7 @@
           v-if="player.powered != false"
           style="font-size: 0.85rem; font-weight: 500; white-space: nowrap"
         >
-          <div v-if="curQueueItem?.media_item">
-            {{ curQueueItem?.media_item.name }}
-            <span
-              v-if="
-                'version' in curQueueItem?.media_item &&
-                curQueueItem?.media_item.version
-              "
-              >({{ curQueueItem?.media_item.version }})</span
-            >
-          </div>
-          <div v-else-if="curQueueItem">
-            {{ curQueueItem?.name }}
-          </div>
-          <div v-else-if="!playerQueue && player.current_media?.title">
+          <div v-if="player.current_media?.title">
             {{ player.current_media.title }}
           </div>
         </div>
@@ -116,56 +91,22 @@
           <div v-if="player.powered == false">
             {{ $t("off") }}
           </div>
-          <!-- track: artists(s) + album -->
+          <!-- artist + album -->
           <div
             v-else-if="
-              curQueueItem?.media_item &&
-              curQueueItem?.media_item?.media_type == MediaType.TRACK &&
-              'album' in curQueueItem?.media_item &&
-              curQueueItem?.media_item.album
+              player.current_media?.artist && player.current_media?.album
             "
           >
-            {{ getArtistsString(curQueueItem?.media_item.artists) }} •
-            {{ curQueueItem?.media_item.album.name }}
+            {{ player.current_media.artist }} •
+            {{ player.current_media.album }}
           </div>
-          <!-- track fallback: (only artist, no album) -->
-          <div
-            v-else-if="
-              curQueueItem?.media_item &&
-              'artists' in curQueueItem?.media_item &&
-              curQueueItem?.media_item.artists.length > 0
-            "
-          >
-            {{ curQueueItem?.media_item.artists[0].name }}
+          <!-- artist only -->
+          <div v-else-if="player.current_media?.artist">
+            {{ player.current_media.artist }}
           </div>
-          <!-- live (stream) metadata (artist + title) -->
-          <div
-            v-else-if="
-              curQueueItem?.streamdetails?.stream_metadata &&
-              curQueueItem?.streamdetails?.stream_metadata.title &&
-              curQueueItem?.streamdetails?.stream_metadata.artist
-            "
-          >
-            {{ curQueueItem?.streamdetails?.stream_metadata.artist }} -
-            {{ curQueueItem?.streamdetails?.stream_metadata.title }}
-          </div>
-          <!-- live (stream) metadata (only title) -->
-          <div
-            v-else-if="
-              curQueueItem?.streamdetails?.stream_metadata &&
-              curQueueItem?.streamdetails?.stream_metadata.title
-            "
-          >
-            {{ curQueueItem?.streamdetails?.stream_metadata.title }}
-          </div>
-
-          <!-- other description -->
-          <div v-else-if="curQueueItem?.media_item?.metadata.description">
-            {{ curQueueItem?.media_item.metadata.description }}
-          </div>
-          <!-- 3rd party source active -->
-          <div v-else-if="!playerQueue && player.active_source">
-            {{ $t("external_source_active", [getSourceName(player)]) }}
+          <!-- album only -->
+          <div v-else-if="player.current_media?.album">
+            {{ player.current_media.album }}
           </div>
           <!-- queue empty message -->
           <div v-else-if="playerQueue?.items == 0">
@@ -272,9 +213,6 @@
 </template>
 
 <script setup lang="ts">
-import MediaItemThumb, {
-  getImageThumbForItem,
-} from "@/components/MediaItemThumb.vue";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -283,16 +221,13 @@ import { Button } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
-  getArtistsString,
   getColorPalette,
+  getMediaImageUrl,
   getPlayerName,
   ImageColorPalette,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
 import {
-  ImageType,
-  MediaType,
   PlaybackState,
   Player,
   PLAYER_CONTROL_NONE,
@@ -342,11 +277,6 @@ const playerQueue = computed(() => {
   }
   return undefined;
 });
-const curQueueItem = computed(() => {
-  if (playerQueue.value && playerQueue.value.active)
-    return playerQueue.value.current_item;
-  return undefined;
-});
 
 const openPlayerMenu = function (evt: Event) {
   eventbus.emit("contextmenu", {
@@ -378,16 +308,9 @@ img.addEventListener("load", function () {
 });
 
 watch(
-  curQueueItem,
-  (newQueueItem) => {
-    if (newQueueItem?.media_item) {
-      img.src =
-        getImageThumbForItem(newQueueItem.media_item, ImageType.THUMB) || "";
-    } else if (newQueueItem) {
-      img.src = getImageThumbForItem(newQueueItem, ImageType.THUMB) || "";
-    } else {
-      img.src = "";
-    }
+  () => compProps.player.current_media?.image_url,
+  (newImageUrl) => {
+    img.src = getMediaImageUrl(newImageUrl) || "";
   },
   { immediate: true },
 );
@@ -474,7 +397,7 @@ watch(
   padding-right: 8px;
   padding-top: 5px;
   padding-bottom: 5px;
-  background-color: rgba(var(--v-theme-primary), 0.08);
+  background-color: rgba(var(--v-theme-primary), 0.04);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
   border-radius: 6px;
@@ -492,8 +415,8 @@ watch(
   opacity: 0.6;
 }
 .panel-item-selected {
-  border-color: rgba(var(--v-theme-primary), 0.3);
-  background-color: rgba(var(--v-theme-primary), 0.15);
+  border-color: rgba(var(--v-theme-primary), 0.6);
+  background-color: rgba(var(--v-theme-primary), 0.3);
 }
 
 .player-command-btn {
