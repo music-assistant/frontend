@@ -18,6 +18,7 @@
 
       <v-card-text class="pa-4 pb-2">
         <v-text-field
+          ref="searchInput"
           v-model="searchQuery"
           prepend-inner-icon="mdi-magnify"
           :placeholder="$t('search')"
@@ -168,7 +169,7 @@ import {
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { match } from "ts-pattern";
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 const props = defineProps<{
@@ -196,6 +197,7 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
+const searchInput = ref<HTMLInputElement | null>(null);
 
 const providerTypes = computed(() => [
   { title: $t("settings.musicprovider"), value: ProviderType.MUSIC },
@@ -365,6 +367,12 @@ watch(
       selectedProviderTypes.value = [];
       selectedProviderStages.value = [];
       searchQuery.value = "";
+    }
+
+    if (isOpen) {
+      nextTick(() => {
+        searchInput.value?.focus();
+      });
     }
   },
 );
