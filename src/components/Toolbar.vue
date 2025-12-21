@@ -33,11 +33,7 @@
     </template>
     <template v-else-if="menuItems?.length" #append>
       <v-progress-circular
-        v-if="
-          showLoading &&
-          (api.fetchesInProgress.value.length > 0 ||
-            api.syncTasks.value.length > 0)
-        "
+        v-if="showLoading && api.syncTasks.value.length > 0"
         color="primary"
         indeterminate
         :title="$t('tooltip.loading')"

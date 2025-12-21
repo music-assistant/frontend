@@ -37,13 +37,6 @@
       :variant="viewMode == 'list' ? 'default' : 'panel'"
       style="overflow: hidden"
     >
-      <v-progress-linear
-        v-if="loading"
-        color="accent"
-        height="4"
-        indeterminate
-        rounded
-      />
       <v-infinite-scroll
         v-if="!tempHide && !(pagedItems.length == 0 && allItemsReceived)"
         :onLoad="loadNextPage"

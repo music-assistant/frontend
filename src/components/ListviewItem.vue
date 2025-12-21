@@ -19,29 +19,8 @@
           "
         />
       </div>
-      <div
-        v-else
-        class="media-thumb listitem-media-thumb"
-        @mouseenter="showPlayBtn = true"
-        @mouseleave="showPlayBtn = false"
-      >
+      <div v-else class="media-thumb listitem-media-thumb">
         <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
-        <!-- play button -->
-        <div
-          v-if="(showPlayBtn || store.isTouchscreen) && item.is_playable"
-          class="play-button-overlay"
-        >
-          <v-btn
-            icon="mdi-play"
-            color="white"
-            fab
-            size="x-small"
-            style="opacity: 0.6"
-            @click.stop="onPlayClick"
-          >
-            <v-icon size="26" style="margin-left: 3px">mdi-play</v-icon>
-          </v-btn>
-        </div>
       </div>
     </template>
 
@@ -221,6 +200,17 @@
           >
         </div>
       </div>
+
+      <!-- play button -->
+      <v-btn
+        v-if="item.is_playable && (showPlayButton ?? !$vuetify.display.mobile)"
+        icon
+        variant="text"
+        size="small"
+        @click.stop="onPlayClick"
+      >
+        <v-icon size="24">mdi-play-circle-outline</v-icon>
+      </v-btn>
     </template>
   </ListItem>
 </template>
@@ -247,8 +237,7 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { store } from "@/plugins/store";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
@@ -272,12 +261,12 @@ export interface Props {
   isPlaying?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
+  showPlayButton?: boolean;
   parentItem?: MediaItemType;
 }
 
 // global refs
 const { t } = useI18n();
-const showPlayBtn = ref(false);
 
 const compProps = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
@@ -289,6 +278,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   showFavorite: false,
   showDuration: true,
   showCheckboxes: false,
+  showPlayButton: undefined,
   isDisabled: false,
   isAvailable: true,
   parentItem: undefined,
@@ -369,22 +359,6 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .hidden {
   opacity: 0;
-}
-
-.play-button-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-
-  .v-btn {
-    pointer-events: all;
-  }
 }
 
 .hiresicon {

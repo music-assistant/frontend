@@ -57,6 +57,11 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_radio": "Start Radio",
+    "player_tip": {
+        "selected_player": "Selected player",
+        "currently_playing": "Currently playing on",
+        "click_to_change": "Click below to change output device"
+    },
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -764,6 +769,7 @@
     "radiobrowser_by_tag": "By tag",
     "load_more_items": "Load more items...",
     "radio": "Radio",
+    "more_options": "More options",
     "muted": "muted",
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",

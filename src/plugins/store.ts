@@ -49,7 +49,6 @@ interface Store {
   libraryPodcastsCount?: number;
   libraryAudiobooksCount?: number;
   isTouchscreen: boolean;
-  playMenuShown: boolean;
   playerTipShown: boolean;
   playActionInProgress: boolean;
   deviceType: DeviceType;
