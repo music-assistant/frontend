@@ -13,8 +13,8 @@
     z-index="99999"
     color="background"
   >
-    <div>
-      <!-- heading with Players as title-->
+    <!-- heading with Players as title - fixed at top -->
+    <template #prepend>
       <v-card-title
         class="title"
         style="padding-top: 20px; padding-bottom: 20px"
@@ -35,9 +35,11 @@
           </Button>
         </div>
       </v-card-title>
-
       <v-divider />
+    </template>
 
+    <!-- scrollable content -->
+    <div class="player-content">
       <!-- preferred/active players on top -->
       <v-list flat style="margin: 0px 10px; padding: 0">
         <PlayerCard
@@ -285,14 +287,14 @@ watch(
 function playerClicked(player: Player, close: boolean = false) {
   if (store.activePlayerId !== player.player_id) {
     store.activePlayerId = player.player_id;
-    store.playMenuShown = true;
+    store.playerTipShown = true;
   }
   if (close) store.showPlayersMenu = false;
-  // Scroll the player card into view
+  // Scroll the player card into view (use nearest to avoid hiding header)
   nextTick(() => {
     const element = document.getElementById(player.player_id);
     if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   });
 }
@@ -304,12 +306,12 @@ function toggleGroupExpand(player: Player) {
   } else {
     showSubPlayers.value = !showSubPlayers.value;
   }
-  // Scroll the player card into view when expanding
+  // Scroll the player card into view when expanding (use nearest to avoid hiding header)
   if (showSubPlayers.value) {
     nextTick(() => {
       const element = document.getElementById(player.player_id);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        element.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
     });
   }
@@ -352,6 +354,10 @@ const selectDefaultPlayer = function () {
   font-family: "JetBrains Mono Medium";
   font-size: x-large;
   opacity: 0.7;
+}
+.player-content {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .expansion :deep(.v-expansion-panel-title) {
   padding: 10px 16px;
