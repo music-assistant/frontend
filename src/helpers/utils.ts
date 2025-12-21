@@ -749,9 +749,23 @@ export const handlePlayBtnClick = function (
   parentItem?: MediaItemType,
   forceMenu?: boolean,
 ) {
-  // we show the play menu for the item once
+  // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.playerTipShown && store.activePlayer?.available) {
     store.playActionInProgress = true;
+    if (
+      item.media_type == MediaType.TRACK &&
+      parentItem?.media_type == MediaType.PLAYLIST &&
+      store.activePlayerQueue &&
+      (store.activePlayerQueue.items <= 1 ||
+        store.activePlayerQueue.state != PlaybackState.PLAYING)
+    ) {
+      // special case: playing a track from a playlist - play playlist from here
+      api.playMedia(parentItem.uri, undefined, false, item.item_id).then(() => {
+        store.playActionInProgress = false;
+      });
+      return;
+    }
+    // else: play the item directly
     api.playMedia(item).then(() => {
       store.playActionInProgress = false;
     });
@@ -769,7 +783,7 @@ export const handleMediaItemClick = function (
 ) {
   // open menu when item is unavailable so the user has a way to remove/refresh the item
   if (!itemIsAvailable(item)) {
-    handleMenuBtnClick(item, posX, posY);
+    handleMenuBtnClick(item, posX, posY, undefined, false);
     return;
   }
 
@@ -784,19 +798,15 @@ export const handleMediaItemClick = function (
     return;
   }
 
-  // podcast episode has no details view so always show play menu
+  // podcast episode has no details view so always start playback
   if (item.media_type == MediaType.PODCAST_EPISODE) {
-    handlePlayBtnClick(item, posX, posY, parentItem, true);
+    handlePlayBtnClick(item, posX, posY, parentItem);
     return;
   }
 
-  // track or radio clicked in a sublisting (e.g. album/playlist) listview
-  // open menu to show play options
-  if (
-    [MediaType.TRACK, MediaType.RADIO].includes(item.media_type) &&
-    parentItem
-  ) {
-    handlePlayBtnClick(item, posX, posY, parentItem, true);
+  // track or radio clicked in a sublisting - start playback
+  if ([MediaType.TRACK, MediaType.RADIO].includes(item.media_type)) {
+    handlePlayBtnClick(item, posX, posY, parentItem, false);
     return;
   }
 
