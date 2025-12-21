@@ -211,7 +211,6 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
       action: () => {
         evt.preventDefault();
         store.activePlayerId = player.player_id;
-        store.playMenuShown = true;
       },
       icon: player.icon,
       selected: store.activePlayerId == player.player_id,
@@ -287,20 +286,28 @@ export const showContextMenuForMediaItem = async function (
     return;
   }
 
-  const menuItems = await getContextMenuItems(mediaItems, parentItem);
+  const contextMenuItems = await getContextMenuItems(mediaItems, parentItem);
+
+  let menuItems: ContextMenuItem[] = [];
+
   if (
     includePlayMenuItems &&
     mediaItems[0].is_playable &&
     itemIsAvailable(mediaItems[0])
   ) {
-    // add play menu as submenu
-    menuItems.push({
-      label: "play",
-      subItems: await getPlayMenuItems(mediaItems, parentItem),
-      icon: "mdi-playlist-play",
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
+    // Play menu items first, then context items in "More options" submenu
+    menuItems = await getPlayMenuItems(mediaItems, parentItem);
+    if (contextMenuItems.length > 0) {
+      menuItems.push({
+        label: "more_options",
+        subItems: contextMenuItems,
+        icon: "mdi-dots-horizontal",
+        labelArgs: [],
+      });
+    }
+  } else {
+    // No play items - just show context menu items directly
+    menuItems = contextMenuItems;
   }
 
   if (menuItems.length == 0) return;
@@ -379,8 +386,6 @@ export const getPlayMenuItems = async function (
         playableItems.map((x) => x.uri),
         defaultEnqueueOption,
       );
-      // set flag in store that we have (at least once) shown the play menu
-      store.playMenuShown = true;
     },
     icon: queueOptionIconMap[defaultEnqueueOption],
     labelArgs: [],
@@ -404,7 +409,6 @@ export const getPlayMenuItems = async function (
             false,
             playableItems[0].item_id,
           );
-          store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
@@ -417,7 +421,6 @@ export const getPlayMenuItems = async function (
         label: "play_album_from",
         action: () => {
           api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
-          store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
@@ -430,7 +433,6 @@ export const getPlayMenuItems = async function (
         label: "play_from_here",
         action: () => {
           api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
-          store.playMenuShown = true;
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
@@ -449,7 +451,6 @@ export const getPlayMenuItems = async function (
           QueueOption.REPLACE,
           true,
         );
-        store.playMenuShown = true;
       },
       icon: "mdi-radio-tower",
       labelArgs: [],
@@ -473,7 +474,6 @@ export const getPlayMenuItems = async function (
           items.map((x) => x.uri),
           option,
         );
-        store.playMenuShown = true;
       },
       icon: queueOptionIconMap[option],
       labelArgs: [],
@@ -937,6 +937,7 @@ export const getContextMenuItems = async function (
     items.length === 1 &&
     parentItem &&
     parentItem.provider == "library" &&
+    parentItem.item_id != resolvedItem.item_id &&
     parentItem.media_type == resolvedItem.media_type
   ) {
     const mapping: ProviderMapping =

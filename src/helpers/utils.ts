@@ -750,14 +750,7 @@ export const handlePlayBtnClick = function (
   forceMenu?: boolean,
 ) {
   // we show the play menu for the item once
-  if (
-    !forceMenu &&
-    store.playMenuShown &&
-    store.activePlayer?.available &&
-    [PlaybackState.PLAYING, PlaybackState.PAUSED].includes(
-      store.activePlayer?.playback_state as PlaybackState,
-    )
-  ) {
+  if (!forceMenu && store.playerTipShown && store.activePlayer?.available) {
     store.playActionInProgress = true;
     api.playMedia(item).then(() => {
       store.playActionInProgress = false;
