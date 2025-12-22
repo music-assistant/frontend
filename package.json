@@ -41,7 +41,7 @@
         "vaul-vue": "^0.4.1",
         "vue": "3.5.25",
         "vue-audio-better": "3.0.1",
-        "vue-i18n": "11.2.2",
+        "vue-i18n": "11.2.7",
         "vue-qrcode-reader": "^5.7.3",
         "vue-router": "4.6.4",
         "vue-sonner": "^2.0.9",
