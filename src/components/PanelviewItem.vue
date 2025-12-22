@@ -57,32 +57,32 @@
         </v-list-item-title>
         <v-list-item-subtitle
           v-if="'artists' in item && item.artists"
-          class="line-clamp-1"
+          class="ma-line-clamp-1"
         >
           {{ getArtistsString(item.artists, 1) }}
         </v-list-item-subtitle>
         <v-list-item-subtitle
           v-if="'authors' in item && item.authors"
-          class="line-clamp-1"
+          class="ma-line-clamp-1"
         >
           {{ item.authors.join(" / ") }}
         </v-list-item-subtitle>
         <v-list-item-subtitle
           v-else-if="'publisher' in item && item.publisher"
-          class="line-clamp-1"
+          class="ma-line-clamp-1"
         >
           {{ item.publisher }}
         </v-list-item-subtitle>
         <v-list-item-subtitle
           v-else-if="'owner' in item && item.owner"
-          class="line-clamp-1"
+          class="ma-line-clamp-1"
         >
           {{ item.owner }}
         </v-list-item-subtitle>
-        <v-list-item-subtitle v-else-if="showMediaType" class="line-clamp-1">
+        <v-list-item-subtitle v-else-if="showMediaType" class="ma-line-clamp-1">
           {{ $t(item.media_type) }}
         </v-list-item-subtitle>
-        <v-list-item-subtitle v-else class="line-clamp-1" />
+        <v-list-item-subtitle v-else class="ma-line-clamp-1" />
       </v-list-item>
 
       <!-- play button -->

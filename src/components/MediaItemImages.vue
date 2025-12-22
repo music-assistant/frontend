@@ -63,7 +63,7 @@
                   {{ $t("image_type") + ": " + image.type }}
                 </v-list-item-title>
                 <v-list-item-subtitle
-                  class="line-clamp-1"
+                  class="ma-line-clamp-1"
                   style="margin-right: 25px"
                 >
                   {{

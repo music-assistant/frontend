@@ -98,7 +98,7 @@
           cursor: 'pointer',
           color: primaryColor,
         }"
-        class="line-clamp-1"
+        class="ma-line-clamp-1"
         @click="store.showFullscreenPlayer = true"
       >
         <MarqueeText :sync="marqueeSync">
@@ -131,7 +131,7 @@
             v-else-if="
               !store.activePlayerQueue && store.activePlayer?.active_source
             "
-            class="line-clamp-1"
+            class="ma-line-clamp-1"
           >
             {{
               $t("external_source_active", [getSourceName(store.activePlayer)])
@@ -142,7 +142,7 @@
             v-else-if="
               store.activePlayerQueue && store.activePlayerQueue.items == 0
             "
-            class="line-clamp-1"
+            class="ma-line-clamp-1"
           >
             {{ $t("queue_empty") }}
           </div>
