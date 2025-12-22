@@ -1,6 +1,7 @@
 <template>
   <!-- now playing media -->
   <v-list-item
+    class="player-track-details"
     style="height: auto; width: 100%; margin: 0px; padding: 0px"
     lines="two"
   >
@@ -224,9 +225,11 @@ const streamDetails = computed(() => {
   align-items: center;
   justify-content: center;
 }
+</style>
 
+<style>
 /* this fixes missing subtitle items on webkit*/
-.v-list-item-subtitle {
+.player-track-details .v-list-item-subtitle {
   -webkit-line-clamp: unset !important;
   line-clamp: unset !important;
 }
