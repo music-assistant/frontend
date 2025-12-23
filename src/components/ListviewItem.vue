@@ -54,7 +54,7 @@
       <!-- track: artists(s) + album (check for provider_mappings to filter out ItemMapping) -->
       <div
         v-if="item.media_type == MediaType.TRACK && 'provider_mappings' in item"
-        class="line-clamp-1"
+        class="ma-line-clamp-1"
       >
         <v-item-group>
           <v-item v-if="'artists' in item">

@@ -48,12 +48,12 @@
           </div>
         </template>
         <template #title>
-          <div class="line-clamp-1">
+          <div class="ma-line-clamp-1">
             {{ user.display_name || user.username }}
           </div>
         </template>
         <template #subtitle>
-          <div class="line-clamp-1">
+          <div class="ma-line-clamp-1">
             {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
           </div>
         </template>
