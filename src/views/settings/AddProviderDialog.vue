@@ -1,164 +1,100 @@
 <template>
-  <v-dialog
-    :model-value="props.show"
-    max-width="800px"
-    scrollable
-    @update:model-value="
-      (v) => {
-        store.dialogActive = v;
-        emit('update:show', v);
-      }
-    "
-  >
-    <v-card class="add-provider-dialog">
-      <v-card-title class="d-flex align-center justify-space-between pa-4">
-        <span class="text-h6">{{ $t("settings.add_provider") }}</span>
-        <v-btn icon="mdi-close" variant="text" size="small" @click="close" />
-      </v-card-title>
+  <Dialog :open="props.show" @update:open="handleOpenChange">
+    <DialogContent
+      class="add-provider-dialog max-w-[800px] h-[60vh] max-h-[60vh] flex flex-col p-0"
+    >
+      <DialogHeader class="px-6 pt-4 pb-4 flex-shrink-0">
+        <DialogTitle>{{ $t("settings.add_provider") }}</DialogTitle>
+      </DialogHeader>
 
-      <v-card-text class="pa-4 pb-2">
-        <v-text-field
-          ref="searchInput"
-          v-model="searchQuery"
-          prepend-inner-icon="mdi-magnify"
-          :placeholder="$t('search')"
-          variant="outlined"
-          density="compact"
-          clearable
-          hide-details
-          class="search-field"
-        />
-      </v-card-text>
+      <div class="px-6 pb-2 flex-shrink-0">
+        <InputGroup class="search-field">
+          <InputGroupInput
+            ref="searchInput"
+            v-model="searchQuery"
+            :placeholder="$t('search')"
+          />
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+        </InputGroup>
+      </div>
 
-      <v-card-text class="pa-4 pt-2 pb-2">
-        <div class="d-flex ga-2 filter-buttons">
-          <v-btn
-            height="40"
-            elevation="0"
-            variant="outlined"
-            density="compact"
-            class="filter-btn"
-          >
-            {{ $t("settings.provider_type") }}
-            <v-icon end>mdi-chevron-down</v-icon>
-            <span v-if="hasActiveProviderTypes" class="filter-dot"></span>
-            <v-menu activator="parent" :close-on-content-click="false">
-              <v-list>
-                <v-list-item
-                  v-for="(providerType, index) in providerTypes"
-                  :key="index"
-                  :value="index"
-                  @click="toggleProviderType(providerType.value)"
-                >
-                  <template #append>
-                    <v-checkbox-btn
-                      :model-value="
-                        selectedProviderTypes.includes(providerType.value)
-                      "
-                      @click.stop="toggleProviderType(providerType.value)"
-                    />
-                  </template>
-                  <v-list-item-title>
-                    {{ providerType.title }}
-                  </v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </v-btn>
-          <v-btn
-            height="40"
-            elevation="0"
-            variant="outlined"
-            density="compact"
-            class="filter-btn"
-          >
-            {{ $t("settings.stage.label") }}
-            <v-icon end>mdi-chevron-down</v-icon>
-            <span v-if="hasActiveProviderStages" class="filter-dot"></span>
-            <v-menu activator="parent" :close-on-content-click="false">
-              <v-list>
-                <v-list-item
-                  v-for="(stage, index) in providerStages"
-                  :key="index"
-                  :value="index"
-                  @click="toggleProviderStage(stage.value)"
-                >
-                  <template #append>
-                    <v-checkbox-btn
-                      :model-value="
-                        selectedProviderStages.includes(stage.value)
-                      "
-                      @click.stop="toggleProviderStage(stage.value)"
-                    />
-                  </template>
-                  <v-list-item-title>{{ stage.title }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </v-btn>
+      <div class="px-6 flex-shrink-0">
+        <div class="filter-buttons">
+          <FacetedFilter
+            v-model="selectedProviderTypes"
+            :title="$t('settings.provider_type')"
+            :options="providerTypeOptions"
+          />
+          <FacetedFilter
+            v-model="selectedProviderStages"
+            :title="$t('settings.stage.label')"
+            :options="providerStageOptions"
+          />
         </div>
-      </v-card-text>
+      </div>
 
-      <v-card-text class="pa-4 pt-2">
-        <div class="provider-list-container">
-          <v-list v-if="filteredProviders.length > 0" class="provider-list">
-            <v-list-item
-              v-for="provider in filteredProviders"
-              :key="provider.domain"
-              style="padding: 0"
-              class="provider-item"
-              rounded="lg"
-              @click="addProvider(provider)"
-            >
-              <template #prepend>
-                <provider-icon
-                  :domain="provider.domain"
-                  :size="40"
-                  class="provider-icon"
-                />
-              </template>
-
-              <template #title>
-                <div class="provider-name">{{ provider.name }}</div>
-              </template>
-
-              <template #subtitle>
-                <div class="provider-description">
-                  {{ provider.description }}
-                </div>
-              </template>
-
-              <template #append>
-                <div class="d-flex align-center ga-2">
-                  <v-chip
-                    size="x-small"
-                    variant="flat"
-                    class="text-uppercase"
-                    :color="getStageColor(provider.stage)"
-                  >
-                    {{ $t(String(provider.stage || "").toLowerCase()) }}
-                  </v-chip>
-                  <v-icon icon="mdi-chevron-right" size="small" />
-                </div>
-              </template>
-            </v-list-item>
-          </v-list>
-
-          <div v-else class="empty-state">
-            <v-icon icon="mdi-magnify" size="48" class="empty-icon" />
-            <div class="empty-title">{{ $t("no_content") }}</div>
-            <div class="empty-message">
-              {{ $t("no_content_filter") }}
+      <div
+        class="provider-list-container px-6 pt-2 pb-6 flex-1 min-h-0 overflow-y-auto"
+      >
+        <div v-if="filteredProviders.length > 0" class="provider-list">
+          <div
+            v-for="provider in filteredProviders"
+            :key="provider.domain"
+            class="provider-item"
+            @click="addProvider(provider)"
+          >
+            <provider-icon
+              :domain="provider.domain"
+              :size="40"
+              class="provider-icon"
+            />
+            <div class="provider-content">
+              <div class="provider-name">{{ provider.name }}</div>
+              <div class="provider-description">
+                {{ provider.description }}
+              </div>
+            </div>
+            <div class="provider-actions">
+              <Badge
+                :variant="getStageVariant(provider.stage)"
+                class="text-uppercase"
+              >
+                {{ $t(String(provider.stage || "").toLowerCase()) }}
+              </Badge>
+              <ChevronRight class="h-4 w-4" />
             </div>
           </div>
         </div>
-      </v-card-text>
-    </v-card>
-  </v-dialog>
+
+        <div v-else class="empty-state">
+          <Search class="empty-icon" />
+          <div class="empty-title">{{ $t("no_content") }}</div>
+          <div class="empty-message">
+            {{ $t("no_content_filter") }}
+          </div>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
+import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,
@@ -168,6 +104,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { ChevronRight, Search } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -197,29 +134,29 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
-const searchInput = ref<HTMLInputElement | null>(null);
+const searchInput = ref<{ $el?: HTMLElement } | null>(null);
 
-const providerTypes = computed(() => [
-  { title: $t("settings.musicprovider"), value: ProviderType.MUSIC },
-  { title: $t("settings.playerprovider"), value: ProviderType.PLAYER },
-  { title: $t("settings.metadataprovider"), value: ProviderType.METADATA },
-  { title: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
+const providerTypeOptions = computed(() => [
+  { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
+  { label: $t("settings.playerprovider"), value: ProviderType.PLAYER },
+  { label: $t("settings.metadataprovider"), value: ProviderType.METADATA },
+  { label: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
 ]);
 
-const providerStages = computed(() => [
-  { title: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
-  { title: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
-  { title: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
+const providerStageOptions = computed(() => [
+  { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
+  { label: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
+  { label: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
   {
-    title: $t("settings.stage.options.experimental"),
+    label: $t("settings.stage.options.experimental"),
     value: ProviderStage.EXPERIMENTAL,
   },
   {
-    title: $t("settings.stage.options.unmaintained"),
+    label: $t("settings.stage.options.unmaintained"),
     value: ProviderStage.UNMAINTAINED,
   },
   {
-    title: $t("settings.stage.options.deprecated"),
+    label: $t("settings.stage.options.deprecated"),
     value: ProviderStage.DEPRECATED,
   },
 ]);
@@ -284,13 +221,6 @@ const filteredProviders = computed(() => {
   return providers;
 });
 
-const hasActiveProviderTypes = computed(
-  () => selectedProviderTypes.value.length > 0,
-);
-const hasActiveProviderStages = computed(
-  () => selectedProviderStages.value.length > 0,
-);
-
 const loadItems = async function () {
   providerConfigs.value = await api.getProviderConfigs();
 };
@@ -316,33 +246,22 @@ const addProvider = function (provider: ProviderManifest) {
   close();
 };
 
-const toggleProviderType = function (type: string) {
-  const index = selectedProviderTypes.value.indexOf(type);
-  if (index > -1) {
-    selectedProviderTypes.value.splice(index, 1);
-  } else {
-    selectedProviderTypes.value.push(type);
-  }
-};
-
-const toggleProviderStage = function (stage: string) {
-  const index = selectedProviderStages.value.indexOf(stage);
-  if (index > -1) {
-    selectedProviderStages.value.splice(index, 1);
-  } else {
-    selectedProviderStages.value.push(stage);
-  }
-};
-
-const getStageColor = function (stage?: string) {
+const getStageVariant = function (
+  stage?: string,
+): "default" | "secondary" | "outline" | "destructive" {
   return match(stage)
-    .with("stable", () => "green")
-    .with("beta", () => "blue")
-    .with("alpha", () => "purple")
-    .with("experimental", () => "orange")
-    .with("unmaintained", () => "grey")
-    .with("deprecated", () => "red")
-    .otherwise(() => "green");
+    .with("stable", () => "default" as const)
+    .with("beta", () => "secondary" as const)
+    .with("alpha", () => "outline" as const)
+    .with("experimental", () => "outline" as const)
+    .with("unmaintained", () => "secondary" as const)
+    .with("deprecated", () => "destructive" as const)
+    .otherwise(() => "default" as const);
+};
+
+const handleOpenChange = (open: boolean) => {
+  store.dialogActive = open;
+  emit("update:show", open);
 };
 
 const close = function () {
@@ -371,7 +290,13 @@ watch(
 
     if (isOpen) {
       nextTick(() => {
-        searchInput.value?.focus();
+        const el = searchInput.value?.$el;
+        if (el) {
+          const input = (el as HTMLElement).querySelector(
+            "input",
+          ) as HTMLInputElement | null;
+          input?.focus();
+        }
       });
     }
   },
@@ -380,7 +305,6 @@ watch(
 
 <style scoped>
 .add-provider-dialog {
-  height: 600px;
   display: flex;
   flex-direction: column;
 }
@@ -390,48 +314,23 @@ watch(
 }
 
 .filter-buttons {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.filter-buttons .v-btn {
-  border-color: rgba(var(--v-theme-on-surface), 0.2);
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.filter-buttons .v-btn .v-icon {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.filter-btn {
-  position: relative;
-}
-
-.filter-dot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: rgb(var(--v-theme-primary));
-  z-index: 1;
-  box-shadow: 0 0 0 2px rgb(var(--v-theme-surface));
-}
-
-.provider-list-container {
-  height: 400px;
+.provider-list {
   display: flex;
   flex-direction: column;
-}
-
-.provider-list {
-  flex: 1;
-  overflow-y: auto;
+  gap: 4px;
 }
 
 .provider-item {
-  height: 80px;
-  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
   transition: all 0.2s ease;
   cursor: pointer;
 }
@@ -442,7 +341,12 @@ watch(
 }
 
 .provider-icon {
-  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.provider-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .provider-name {
@@ -465,17 +369,26 @@ watch(
   max-height: 2.6em;
 }
 
+.provider-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  min-height: 300px;
   text-align: center;
   padding: 40px 20px;
 }
 
 .empty-icon {
+  width: 48px;
+  height: 48px;
   color: rgba(var(--v-theme-on-surface), 0.3);
   margin-bottom: 16px;
 }
@@ -495,11 +408,7 @@ watch(
 
 @media (max-width: 600px) {
   .add-provider-dialog {
-    height: 500px;
-  }
-
-  .provider-list-container {
-    height: 300px;
+    max-height: 500px;
   }
 }
 </style>

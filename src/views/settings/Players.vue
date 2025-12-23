@@ -7,16 +7,14 @@
         @update:types="selectedPlayerTypes = $event"
       />
       <div class="header-actions">
-        <v-btn
+        <Button
           v-if="providersWithCreateGroupSupport.length > 0"
-          color="primary"
-          variant="outlined"
-          height="40"
           class="add-player-group-btn"
           @click="showAddPlayerGroupDialog = true"
         >
+          <Plus class="size-4" />
           {{ $t("settings.add_group_player") }}
-        </v-btn>
+        </Button>
       </div>
     </div>
 
@@ -143,6 +141,7 @@ import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
+import { Button } from "@/components/ui/button";
 import { SYNCGROUP_PREFIX } from "@/constants";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
@@ -154,6 +153,7 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { Plus } from "lucide-vue-next";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";

@@ -65,15 +65,10 @@
       @update:search="searchQuery = $event"
       @update:types="selectedProviderTypes = $event"
     />
-    <v-btn
-      color="primary"
-      variant="outlined"
-      height="40"
-      class="add-provider-btn"
-      @click="showAddProviderDialog = true"
-    >
+    <Button class="add-provider-btn" @click="showAddProviderDialog = true">
+      <Plus class="size-4" />
       {{ $t("settings.add_provider") }}
-    </v-btn>
+    </Button>
   </div>
 
   <div class="pl-5 font-weight-medium">
@@ -417,6 +412,7 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -429,6 +425,7 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
