@@ -37,8 +37,39 @@
       :variant="viewMode == 'list' ? 'default' : 'panel'"
       style="overflow: hidden"
     >
+      <!-- Skeleton loading states -->
+      <template v-if="loading && pagedItems.length === 0 && isLibraryItem">
+        <div v-if="viewMode === 'list'">
+          <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
+        </div>
+        <v-row v-else-if="viewMode === 'panel'">
+          <v-col
+            v-for="n in 12"
+            :key="'skeleton-panel-' + n"
+            cols="12"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          >
+            <PanelViewSkeleton />
+          </v-col>
+        </v-row>
+        <v-row v-else-if="viewMode === 'panel_compact'">
+          <v-col
+            v-for="n in 12"
+            :key="'skeleton-compact-' + n"
+            cols="12"
+            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          >
+            <PanelViewSkeleton />
+          </v-col>
+        </v-row>
+      </template>
+
       <v-infinite-scroll
-        v-if="!tempHide && !(pagedItems.length == 0 && allItemsReceived)"
+        v-if="
+          !tempHide &&
+          !(pagedItems.length == 0 && allItemsReceived) &&
+          !(loading && pagedItems.length === 0)
+        "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
@@ -176,7 +207,10 @@
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
+import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
+import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import {
   handleMenuBtnClick,
   panelViewItemResponsive,
@@ -215,7 +249,6 @@ import { useRouter } from "vue-router";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
-import { useUserPreferences } from "@/composables/userPreferences";
 
 export interface LoadDataParams {
   offset: number;
@@ -590,6 +623,20 @@ const showSearchInput = computed(() => {
   return showSearch.value && expanded.value;
 });
 
+const isLibraryItem = computed(() => {
+  const libraryItemTypes = [
+    "artists",
+    "albums",
+    "tracks",
+    "playlists",
+    "audiobooks",
+    "podcasts",
+    "radios",
+  ];
+
+  return libraryItemTypes.includes(props.itemtype);
+});
+
 const musicProviders = computed(() => {
   // Map itemtype to required ProviderFeature(s)
   const featureMap: Record<string, ProviderFeature | ProviderFeature[]> = {
@@ -893,6 +940,23 @@ const loadData = async function (
     initialDataReceived.value = false;
     newContentAvailable.value = false;
   }
+
+  const libraryItemTypes = [
+    "artists",
+    "albums",
+    "tracks",
+    "playlists",
+    "audiobooks",
+    "podcasts",
+    "radios",
+  ];
+  if (
+    (clear || !initialDataReceived.value) &&
+    libraryItemTypes.includes(props.itemtype)
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
   params.value.offset = offset;
   params.value.limit = props.limit;
   params.value.refresh = refresh;
