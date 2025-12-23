@@ -668,7 +668,7 @@
         "unsaved_changes": "Niet-opgeslagen wijzigingen",
         "unsaved_changes_message": "Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je wilt vertrekken zonder op te slaan?",
         "stay": "Blijven",
-        "discard": "Wijzigingen ongedaan maken",
+        "discard": "Ongedaan maken",
         "provider_requires_attention": "Deze provider heeft aandacht nodig",
         "provider_requires_attention_detail": "Een of meerdere providers hebben aandacht nodig. Controleer de providerinstellingen.",
         "reconfigure": "Opnieuw instellen",
@@ -775,7 +775,7 @@
         "panel": "Thumbnail weergave",
         "panel_compact": "Compacte thumbnails"
     },
-    "play_replace": "Nu afspelen (queue leegmaken)",
+    "play_replace": "Nu afspelen (wachtrij leegmaken)",
     "played": "Gespeeld",
     "background_task_added": "De actie wordt door de server op de achtergrond uitgevoerd en kan enige tijd in beslag nemen. Houd het serverlogboek in de gaten voor de voortgang",
     "images": "Afbeeldingen",
@@ -1095,5 +1095,11 @@
     "search_all_providers_confirm": "Weet je zeker dat je bij alle providers naar overeenkomsten wilt zoeken? Dit kan even duren en wordt op de achtergrond uitgevoerd.",
     "remove_provider_mapping": "Verwijder providerkoppeling",
     "remove_provider_mapping_confirm": "Weet je zeker dat je deze providerkoppeling wilt verwijderen? Hierdoor wordt het item losgekoppeld van de huidige itemdetails. Het kan zijn dat de koppeling opnieuw wordt gemaakt als je een nieuwe scan uitvoert voor alle overeenkomende providers.",
-    "map_provider_mapping": "Koppel deze providerinvoer aan het huidige item"
+    "map_provider_mapping": "Koppel deze providerinvoer aan het huidige item",
+    "player_tip": {
+        "selected_player": "Geselecteerde speler",
+        "currently_playing": "Speelt nu af op",
+        "click_to_change": "Klik hieronder om het uitvoerapparaat te wijzigen"
+    },
+    "more_options": "Meer opties"
 }

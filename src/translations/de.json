@@ -1,7 +1,7 @@
 {
     "actions": "Aktionen",
     "add_library": "Zu Bibliothek hinzufügen",
-    "add_playlist": "Zu Playlist hinzufügen...",
+    "add_playlist": "Zu Playlist hinzufügen…",
     "add_queue": "Zur Warteschlange hinzufügen",
     "add_url_item": "Hinzufügen von URL",
     "album": "Album",
@@ -13,7 +13,9 @@
         "single": "Single",
         "unknown": "Unbekannter Albumtyp",
         "audiobook": "Hörbuch",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Live",
+        "soundtrack": "Soundtrack"
     },
     "albums": "Alben",
     "appears_on": "Erscheint auf",
@@ -59,7 +61,7 @@
         "group": "Gruppe",
         "player": "Wiedergabegerät",
         "stereo_pair": "Stereo-Paar",
-        "sync_group": "Synchronisierte Player"
+        "sync_group": "Sync-Gruppe"
     },
     "players": "Wiedergabegeräte",
     "playlist": "Playlist",
@@ -107,14 +109,14 @@
         "password": "Passwort",
         "player_address": "Adresse",
         "player_disabled": "Dieses Wiedergabegerät ist deaktiviert",
-        "player_id": "Wiedergabegerät ID",
+        "player_id": "Wiedergabegerät-ID",
         "player_model": "Modell",
         "player_name": "Benutzerdefinierter Name",
         "player_not_available": "Dieses Wiedergabegerät ist derzeit (noch) nicht verfügbar",
         "player_provider": "Anbieter",
-        "player_settings": "Wiedergabegerät-Einstellungen",
+        "player_settings": "Wiedergabegeräte-Einstellungen",
         "player_type_label": "Art des Wiedergabegeräts",
-        "playerproviders": "Wiedergabegerät-Anbieter",
+        "playerproviders": "Wiedergabegeräte-Anbieter",
         "players": "Wiedergabegeräte",
         "pluginproviders": "Plugin-Anbieter",
         "provider_disabled": "Dieser Anbietereintrag ist deaktiviert",
@@ -142,7 +144,7 @@
         "download_log": "Protokoll-Datei herunterladen",
         "edit_group_members": "Gruppenmitglieder bearbeiten",
         "add_new_provider_button": "{0}-Anbieter hinzufügen",
-        "add_group_player": "Wiedergabegruppen hinzufügen",
+        "add_group_player": "Wiedergabegeräte-Gruppen hinzufügen",
         "group_members": "Gruppenmitglieder",
         "log_level": {
             "label": "Log-Level",
@@ -157,7 +159,7 @@
         },
         "flow_mode": {
             "label": "Warteschlangen-\"Flow\"-Modus aktivieren",
-            "description": "Aktiviere den \"Flow\"-Modus, bei dem alle Warteschlangentitel als kontinuierlicher Audiostream gesendet werden. \nVerwende diesen Modus für Wiedergabegeräte, die keine native lückenlosen Crossfade unterstützen, oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
+            "description": "Aktiviere den „Flow“-Modus, in dem alle Titel der Warteschlange als kontinuierlicher Audiostream gesendet werden. \nVerwende diese Funktion für Wiedergabegeräte, die lückenloses Abspielen und\/oder Überblenden nicht nativ unterstützen oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
         },
         "auto_play": {
             "label": "Automatische Wiedergabe (Fortsetzen beim Einschalten)",
@@ -165,7 +167,7 @@
         },
         "output_channels": {
             "label": "Ausgangskanal-Modus",
-            "description": "Das Wiedergabegerät kann so konfiguriert werden, dass nur der linke oder der rechte Kanal wiedergegeben wird, um z.B. ein Stereo-Paar mit zwei Wiedergabegeräten zu bilden.",
+            "description": "Das Wiedergabegerät kann so konfiguriert werden, dass nur der linke oder der rechte Kanal wiedergegeben wird, um z. B. ein Stereo-Paar mit zwei Wiedergabegeräten zu bilden.",
             "options": {
                 "stereo": "Stereo (beide Kanäle)",
                 "left": "Nur linker Kanal",
@@ -191,7 +193,7 @@
         },
         "eq_treble": {
             "label": "Equalizer: Höhen",
-            "description": "Verwende den integrierten Basis-Equalizer, um die hohen Audiofrequenzen anzupassen."
+            "description": "Verwenden Sie den integrierten Basis-Equalizer, um den Höhenpegel (hohe Töne) des Audiosignals anzupassen."
         },
         "crossfade": {
             "label": "Crossfade aktivieren",
@@ -286,8 +288,11 @@
             "generic": "Allgemeine Einstellungen",
             "announcements": "Einstellungen für Ankündigungen",
             "airplay": "Spezielle AirPlay-Einstellungen",
-            "player_controls": "Wiedergabesteuerung",
-            "presets": "Voreinstellungen"
+            "player_controls": "Wiedergabegeräte-Steuerung",
+            "presets": "Voreinstellungen",
+            "sync_options": "Synchronisiere\/Importiere Optionen",
+            "builtin_playlists": "Integrierte Wiedergabelisten-Einstellungen",
+            "web_player": "Webplayer"
         },
         "tts_pre_announce": {
             "label": "TTS-Durchsagen vorankündigen",
@@ -329,7 +334,7 @@
         },
         "menu_items": {
             "label": "Aktivierte Menüeinträge",
-            "description": "Konfiguriere, welche Einträge im Menü angezeigt werden\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Knopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du die URL der Seite manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
+            "description": "Konfiguriere, welche Einträge im Menü angezeigt werden.\n\nBedenke, dass du dich selbst aussperren könntest, falls du den Knopf auf Startseite und Menü versteckst.\n\nIn diesem Fall musst du die URL der Seite manuell eingeben oder die Cookies des Browsers von dieser Seite löschen, um wieder Zugang zu erhalten; die Verwendung erfolgt auf eigene Gefahr!"
         },
         "language": {
             "label": "Sprache",
@@ -343,7 +348,7 @@
                 "nl": "Niederländisch",
                 "pl": "Polnisch",
                 "uk_UA": "Ukrainisch",
-                "zh_CN": "Chinesisch",
+                "zh_CN": "Chinesisch (vereinfacht)",
                 "en_AU": "Englisch (Australisch)",
                 "sr": "Serbisch",
                 "sr_Latn": "Serbisch (Latein)",
@@ -357,16 +362,18 @@
                 "pt_BR": "Portugiesisch (Brasilien)",
                 "sl_SI": "Slowenisch",
                 "hu_HU": "Ungarisch",
-                "it": "Italienisch"
+                "it": "Italienisch",
+                "el_GR": "Griechisch",
+                "lt_LT": "Litauisch"
             }
         },
         "no_music_providers": "Keine Musikanbieter konfiguriert",
         "no_music_providers_detail": "Starte mit Music Assistant, indem du deine Musikanbieter hinzufügst.",
-        "no_player_providers": "Keine Wiedergabe-Gerätanbieter konfiguriert",
-        "no_player_providers_detail": "Konfiguriere die Wiedergabe-Gerätanbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann.",
+        "no_player_providers": "Keine Wiedergabegeräte-Anbieter konfiguriert",
+        "no_player_providers_detail": "Konfiguriere die Wiedergabegeräte-Anbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann.",
         "volume_normalization_radio": {
             "label": "Methode zur Normalisierung der Lautstärke für Radiostreams",
-            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\nOptionen:\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\nOptionen:\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Ausgeschaltet",
                 "dynamic": "Erzwinge dynamisch",
@@ -378,7 +385,7 @@
         },
         "volume_normalization_tracks": {
             "label": "Lautstärkenormalisierungsmethode für Titel",
-            "description": "Stelle die bevorzugte Lautstärken-Normalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/Die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\nOptionen:\n- Deaktiviert – Keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- \"Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/Die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\nOptionen:\n- Deaktiviert – Keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- \"Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Deaktiviert",
                 "dynamic": "Erzwinge dynamisch",
@@ -389,14 +396,14 @@
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "label": "Fixe\/Fallback Gainanpassung für Songs",
-            "description": "Feste\/fallback Gainkorrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung 'Lautstärkenormalisierungsmethode').\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärke-Normalisierungsmethode auf \"Feste Gainkorrektur\" oder \"Fallback auf Gainkorrektur\" eingestellt ist"
+            "label": "Feste\/Fallback Gainanpassung für Songs",
+            "description": "Feste\/Fallback Gainkorrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung 'Lautstärkenormalisierungsmethode').\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf \"Feste Gainkorrektur\" oder \"Fallback auf Gainkorrektur\" eingestellt ist"
         },
         "volume_normalization_fixed_gain_radio": {
-            "label": "Fixed\/fallback Gainanpassung für Radio",
-            "description": "Feste\/fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'fallback auf Gainkorrektur' eingestellt ist."
+            "label": "Feste\/Fallback Gainanpassung für Radio",
+            "description": "Feste\/Fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'Fallback auf Gainkorrektur' eingestellt ist."
         },
-        "add_group_player_desc": "\nBei Player-Anbietern\/Ökosystemen, die eine native Gruppierung\/Synchronisierung bieten, wird automatisch eine Syncgroup erstellt, somit werden die Player-Mitglieder automatisch synchronisiert, wenn diese Player-Gruppe abgespielt wird.\n\nFür Player\/Ökosysteme, die keine Gruppierung unterstützen, oder für den Fall, dass Sie Player aus verschiedenen Ökosystemen gruppieren möchten, können Sie den Gruppentyp \"Universal\" verwenden, der dieselben Audiodaten an alle Player-Mitglieder verteilt (jedoch werden dann die Player nicht synchronisier). \n\nBeachten Sie, dass einige Anbieter die Gruppierung unterstützen, aber Sie müssen die native App verwenden, um die Gruppierung durchzuführen. Ein Beispiel sind Google Cast-basierte Player, bei denen Sie Google Cast-Gruppen nur innerhalb der Google Home-App erstellen können.",
+        "add_group_player_desc": "Für ein Gruppen-Wiedergabegerät, das für den Anbieter {0} erstellt wurde, wird automatisch eine Syncgroup erstellt, d.h., wenn du zu dieser Wiedergabegeräte-Gruppe spielst, werden die Wiedergabegeräte der Mitglieder automatisch synchronisiert.",
         "dynamic_members": {
             "label": "Dynamische Gruppenmitglieder",
             "description": "Erlaube Mitgliedern (vorübergehend) der Gruppe beizutreten\/die Gruppe zu verlassen, sodass die Gruppe sich mehr oder weniger verhält wie beim manuellen Synchronisieren der Wiedergabegeräte mit dem Hauptunterschied, dass das Gruppenwiedergabegerät die Warteschlange hält"
@@ -460,11 +467,19 @@
             "channels_compact": {
                 "FL": "L",
                 "FR": "R"
+            },
+            "presets": {
+                "load": "DSP-Voreinstellung laden",
+                "empty_warning": "Keine DSP-Voreinstellungen verfügbar",
+                "save": "DSP-Voreinstellung speichern",
+                "name": "Voreinstellung-Name",
+                "name_placeholder": "Mein neues Preset",
+                "remove_confirm": "Möchtest du diese DSP-Voreinstellung wirklich entfernen?"
             }
         },
         "power_control": {
             "label": "Steuerung Ein-\/Ausschaltverhalten",
-            "description": "Bestimme\/Übersteuere das Verhalten der Energiesteuerung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Energiesteuerung an ein anderes Gerät oder die Verwendung einer 'Fake' Energiesteuerung falls das Wiedergabegerät die Befehle für das Ein-\/Ausschalten nicht unterstützt, man aber einen dedizierten Status für ein nicht verwendetes Wiedergabegerät haben möchte."
+            "description": "Bestimme\/Übersteuere das Verhalten der Energiesteuerung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Energiesteuerung an ein anderes Gerät oder die Verwendung einer ’Fake’ Energiesteuerung, falls das Wiedergabegerät die Befehle für das Ein-\/Ausschalten nicht unterstützt, man aber einen dedizierten Status für ein nicht verwendetes Wiedergabegerät haben möchte."
         },
         "volume_control": {
             "label": "Lautstärkeregelung",
@@ -472,7 +487,7 @@
         },
         "mute_control": {
             "label": "Stummschaltung",
-            "description": "Bestimme\/Übersteuere das Verhalten der Stummschaltung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Stummschaltung an ein anderes Gerät oder die vollständige Abschaltung.\n\nWir bieten eine 'Fake' Stummschaltung an, welche die Stummschaltung simuliert, indem die Lautstärke auf 0 gesetzt wird und die Lautstärke wiederherstellt, wenn die Stummschaltung aufgehoben wird."
+            "description": "Bestimme\/Übersteuere das Verhalten der Stummschaltung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Stummschaltung an ein anderes Gerät oder die vollständige Abschaltung.\n\nWir bieten eine ’Fake’ Stummschaltung an, welche die Stummschaltung simuliert, indem die Lautstärke auf 0 gesetzt wird und die Lautstärke wiederherstellt, wenn die Stummschaltung aufgehoben wird."
         },
         "output_limiter": {
             "label": "Begrenzer aktivieren, um Clipping zu verhindern",
@@ -486,70 +501,178 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dieser Gruppentyp unterstützt keinen DSP, wenn die Wiedergabe auf mehrere Geräte erfolgt."
         },
+        "add_group_player_desc_universal": "Durch das Erstellen einer universellen Wiedergabegeräte-Gruppe kannst du Wiedergabegeräte von verschiedenen Anbietern\/Ökosystemen zusammenfassen. \nDadurch werden dieselben Audiodaten an alle Wiedergabegeräte der Gruppe verteilt (jedoch nicht synchron).",
+        "edit_provider": "Anbieter bearbeiten: {0}",
+        "metadata": "Metadaten",
+        "metadataprovider": "Metadatenanbieter",
+        "music": "Musik",
+        "musicprovider": "Musikanbieter",
+        "player": "Wiedergabegerät",
+        "playerprovider": "Wiedergabegerät-Anbieter",
+        "plugin": "Plugin",
+        "pluginprovider": "Plugin-Anbieter",
+        "providers_total": "{0} Anbieter gesamt{1}",
+        "stage": {
+            "label": "Phase",
+            "options": {
+                "stable": "Stabil",
+                "beta": "Beta",
+                "alpha": "Alpha",
+                "experimental": "Experimentell",
+                "unmaintained": "Nicht gewartet",
+                "deprecated": "Veraltet"
+            }
+        },
+        "force_mobile_layout": {
+            "label": "Mobiles Layout erzwingen",
+            "description": "Erzwingt das mobile Layout (mit der Menünavigation am unteren Rand), auch auf größeren Bildschirmen."
+        },
+        "providers_description": "Verwalte deine Musikquellen, Wiedergabegeräte-Anbieter und Plugins",
+        "players_description": "Konfigurieren und verwalten Sie Ihre Audioausgabegeräte",
+        "frontend_description": "Anpassen von Thema und Aussehen der Benutzeroberfläche",
+        "provider_type": "Typ",
+        "onboarding_title": "Willkommen bei Music Assistant!",
+        "profile_description": "Verwalte deine persönlichen Kontoeinstellungen und Präferenzen.",
+        "users": "Benutzer",
+        "users_description": "Benutzerkonten, Rollen und Berechtigungen verwalten",
+        "system_description": "Konfigurieren der Servereinstellungen und Kernmodule von Music Assistant",
         "system": "System",
-        "view_documentation": "View documentation",
+        "view_documentation": "Dokumentation ansehen",
         "about": "Über",
+        "about_description": "Versionsinformationen, Mitwirkende und mehr",
         "system_logging": "Serverprotokollierung",
         "system_logging_description": "Zeige und lade Protokoll zur Problembehandlung herunter",
-        "auto_refresh_log": "Automatische  aktualisierung",
+        "auto_refresh_log": "Automatische Aktualisierung",
+        "log_truncated": "Zeigt die letzten {0} Zeilen. Lade die vollständige Protokolldatei herunter, um den gesamten Verlauf zu sehen.",
         "version_info": "Versionsinformationen",
+        "library_stats": "Bibliotheksstatistiken",
         "links": "Links",
         "changelog": "Änderungshistorie",
         "feature_requests": "Funktionswünsche",
+        "bug_reports": "Fehlerberichte",
         "discussion_forums": "Forum",
         "license": "Lizenz",
         "open_home_foundation": "Open Home Foundation",
         "proud_part_of": "Stolzer Teil der",
         "core_module": {
             "cache": {
-                "name": "Cache"
+                "name": "Cache",
+                "description": "Konfiguration des Kernmoduls, das das Caching von Daten innerhalb der Anwendung übernimmt."
             },
             "metadata": {
-                "name": "Metadaten"
+                "name": "Metadaten",
+                "description": "Konfiguration des Core-Metadatenverwaltungsmoduls"
             },
             "music": {
-                "name": "Musik"
+                "name": "Musik",
+                "description": "Konfiguration des Kernmoduls für Musikverwaltung (Bibliotheksverwaltung)"
             },
             "players": {
-                "name": "Wiedergabegeräte"
+                "name": "Wiedergabegeräte",
+                "description": "Konfiguration des Kern-Wiedergabegeräte-Verwaltungsmoduls"
+            },
+            "player_queues": {
+                "name": "Wiedergabegeräte-Warteschlangen",
+                "description": "Konfiguration für die Kern-Wiedergabegeräte-Warteschlangenverwaltung"
             },
             "remote_access": {
-                "name": "Fernzugriffsstatus"
+                "name": "Fernzugriffsstatus",
+                "description": "Ermöglicht den Fernzugriff auf deinen Music Assistant-Server."
             },
             "streams": {
-                "name": "Streams"
+                "name": "Streams",
+                "description": "Konfiguration der Audio-Streaming- und Verarbeitungs-Engine"
             },
             "webserver": {
-                "name": "Webserver"
+                "name": "Webserver",
+                "description": "Konfiguration des Webservers und der API"
             }
         },
         "remote_access": "Fernzugriff",
+        "remote_access_description": "Sicherer Zugriff auf Music Assistant von überall",
         "remote_access_title": "Sicherer Fernzugriff",
-        "remote_access_feature_encrypted": "Ende-zu-Ende verschlüsselt - deine Daten bleiben privat.",
+        "remote_access_explanation_intro": "Mit Remote Access kannst du dich von überall auf der Welt sicher mit deinem Music Assistant-Server verbinden.",
+        "remote_access_explanation_ha_cloud": "Für ein optimales Nutzungserlebnis und höchste Zuverlässigkeit ist ein Home Assistant Cloud-Abonnement erforderlich.",
+        "remote_access_feature_webrtc": "Basierend auf der WebRTC-Technologie für Peer-to-Peer-Verbindungen",
+        "remote_access_feature_encrypted": "Ende-zu-Ende verschlüsselt – deine Daten bleiben privat.",
         "remote_access_feature_no_port_forwarding": "Keine Portweiterleitung oder VPN benötigt",
+        "remote_access_mode_optimized": "Optimierter Modus (HA Cloud)",
+        "remote_access_mode_basic": "Betrieb im Basismodus",
+        "remote_access_mode_optimized_description": "Für optimale Leistung werden STUN\/TURN-Server von Home Assistant Cloud verwendet. Funktioniert zuverlässig in allen Netzwerkkonfigurationen.",
+        "remote_access_mode_basic_description": "Die Verwendung öffentlicher STUN-Server kann in komplexen Netzwerkumgebungen zu Problemen führen. Für ein optimales Nutzungserlebnis empfehlen wir ein Upgrade auf Home Assistant Cloud.",
         "remote_access_upgrade_to_optimized": "Upgrade auf Home Assistant Cloud",
         "remote_access_status": "Fernzugriffsstatus",
         "remote_access_enabled": "Fernzugriff ist aktiviert",
         "remote_access_disabled": "Fernzugriff ist deaktiviert",
         "remote_access_connected": "Verbunden",
-        "remote_access_connecting": "Verbinde...",
+        "remote_access_connecting": "Verbinde…",
+        "remote_access_your_id": "Deine Remote-ID",
+        "remote_access_id_explanation": "Verwende diese eindeutige ID, um von entfernten Geräten eine Verbindung zu deinem Music Assistant-Server herzustellen:",
+        "remote_access_copy_id": "Remote-ID kopieren",
         "remote_access_id_copied": "Remote ID wurde in die Zwischenablage kopiert!",
+        "remote_access_how_to_use": "Verwendung des Fernzugriffs",
+        "remote_access_step_1": "Gehe zu",
+        "remote_access_step_2": "Gib deine Remote Access ID ein, wenn du dazu aufgefordert wirst",
+        "remote_access_step_3": "Verbinde dich und genieße deine Musik von überall!",
         "remote_access_technical_details": "Technische Details",
+        "remote_access_connection_flow": "Verbindungsflussdiagramm",
+        "remote_access_signaling_server": "Signalisierungsserver",
         "remote_access_protocol": "Verbindungsprotokoll",
         "remote_access_encryption": "Verschlüsselung",
+        "remote_access_error_loading": "Die Fernzugriffsinformationen konnten nicht geladen werden.",
+        "remote_access_error_toggle": "Fernzugriff konnte nicht umgeschaltet werden",
         "remote_access_error_copy": "Remote ID konnte nicht kopiert werden.",
         "remote_access_enabled_success": "Fernzugriff wurde aktiviert.",
         "remote_access_disabled_success": "Fernzugriff wurde deaktiviert.",
+        "remote_access_signaling_server_description": "Signalisierungsserver in der Cloud, gehostet von der Open Home Foundation.",
+        "remote_access_protocol_basic": "WebRTC mit öffentlichen STUN-Servern (funktioniert möglicherweise nicht in komplexen Netzwerkkonfigurationen).",
+        "remote_access_protocol_optimized": "WebRTC mit optimierten STUN\/TURN-Servern von Home Assistant Cloud (funktioniert in allen Netzwerkkonfigurationen).",
+        "remote_access_encryption_description": "Die Ende-zu-Ende-Verschlüsselung mit DTLS-SRTP gewährleistet, dass deine Daten privat und sicher bleiben.",
         "frontend": "Benutzeroberfläche",
-        "players_count": "Wiedergabegerät",
+        "players_count": "{0} Wiedergabegerät{1}",
+        "one_player": "Ein Wiedergabegerät",
+        "view_players": "Wiedergabegeräte ansehen",
+        "players_total": "{0} Wiedergabegeräte insgesamt{1}",
+        "api_docs": "API-Dokumentation",
+        "no_group_providers": "Du hast derzeit keine Anbieter, die die Erstellung von Gruppen unterstützen.",
         "web_player_mode": {
+            "label": "Webplayer-Modus",
+            "description": "Wähle aus, wie dieser Browser die Audiowiedergabe handhabt.",
             "options": {
-                "sendspin": "Sendspin (experimentell)"
+                "sendspin": "Sendspin (experimentell)",
+                "disabled": "Deaktiviert (nur Steuerung)"
             }
         },
+        "sendspin_sync_delay": {
+            "label": "Sendspin-Synchronisierungsverzögerung (ms)",
+            "description": "Statische Verzögerung in Millisekunden zur Anpassung der Audiosynchronisation. Positive Werte verzögern die Wiedergabe, negative Werte beschleunigen sie. Verwende diese Einstellung, um gerätespezifische Audiolatenzen auszugleichen."
+        },
+        "sendspin_output_latency_compensation": {
+            "label": "Browser-Latenzzeit-Erkennung verwenden",
+            "description": "Hardware-Audiolatenz (z. B. von Bluetooth-Kopfhörern) wird automatisch mithilfe der Ausgabelatenz-API des Browsers kompensiert. Diese API ist relativ neu und funktioniert möglicherweise nicht zuverlässig auf allen Browsern und Betriebssystemen."
+        },
+        "provider_codeowners": "Dieser Anbieter wird unterstützt\/gewartet von",
+        "provider_credits": "Ermöglicht durch",
+        "onboarding_subtitle": "Verbinde zunächst deine Musikquellen und Audiogeräte.",
+        "onboarding_music_title": "Musik",
+        "onboarding_music_desc": "Verbinde deine Streaming-Dienste wie Spotify, Tidal oder deine lokale Musikbibliothek.",
+        "onboarding_add_music": "Musik hinzufügen",
+        "onboarding_player_title": "Wiedergabegeräte",
+        "onboarding_player_desc": "Verbinde deine Lautsprecher und Geräte wie Sonos, Chromecast oder AirPlay.",
+        "onboarding_add_player": "Wiedergabegeräte hinzufügen",
+        "onboarding_footer": "Du kannst über diese Einstellungsseite jederzeit weitere Anbieter hinzufügen.",
+        "remote_access_qr_code": "QR-Code",
+        "remote_access_qr_code_description": "Scanne mit deiner Handykamera, um sofort eine Verbindung herzustellen.",
         "reset_to_defaults": "Auf Standardeinstellungen zurücksetzen",
+        "reset_to_defaults_confirm": "Möchtest du wirklich alle Einstellungen auf die Standardwerte zurücksetzen? Dadurch werden die Änderungen sofort gespeichert.",
         "unsaved_changes": "Ungesicherte Änderungen",
-        "discard": "Änderungen verwerfen"
+        "unsaved_changes_message": "Du hast ungespeicherte Änderungen. Möchtest du die Änderungen wirklich ohne Speichern beenden?",
+        "stay": "Bleiben",
+        "discard": "Änderungen verwerfen",
+        "provider_requires_attention": "Dieser Anbieter erfordert Aufmerksamkeit",
+        "provider_requires_attention_detail": "Bei einem oder mehreren Anbietern ist Aufmerksamkeit erforderlich. Bitte überprüfe die Anbietereinstellungen.",
+        "reconfigure": "Neu konfigurieren",
+        "fix_now": "Jetzt reparieren"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -597,7 +720,7 @@
         "library": "Bibliothek\/Favorit umschalten",
         "linked": "Dieser Anbieter ist mit den aktuellen Details des Elements verknüpft",
         "refresh": "Liste aktualisieren",
-        "refresh_new_content": "Neue Inhalte verfügbar. Zum Aktualisieren, hier klicken",
+        "refresh_new_content": "Neue Inhalte verfügbar. Zum Aktualisieren, hier klicken.",
         "search": "Sucheingabe ein-\/ausblenden",
         "select_items": "Mehrere Elemente wählen",
         "sort_options": "Sortieroptionen",
@@ -615,7 +738,8 @@
         "primary_image": "Dieses ist das primäre Bild für diesen Bildtyp",
         "copy_uri": "URI in die Zwischenablage kopieren",
         "select_all": "Alle Einträge auswählen",
-        "filter_provider": "Filter nach Musikanbieter"
+        "filter_provider": "Filter nach Musikanbieter",
+        "in_provider_library": "Dieser Artikel befindet sich in der Bibliothek des Anbieters."
     },
     "topresult": "Top-Ergebnis",
     "track": "Track",
@@ -674,8 +798,8 @@
     },
     "shuffle_disable": "Deaktiviere Zufallswiedergabe",
     "shuffle_enable": "Aktiviere Zufallswiedergabe",
-    "dont_stop_the_music_enable": "'Dont stop the music!' einschalten.",
-    "dont_stop_the_music_disable": "'Dont stop the Music!' ausschalten.",
+    "dont_stop_the_music_enable": "'Don't stop the Music!' einschalten.",
+    "dont_stop_the_music_disable": "'Don't stop the Music!' ausschalten.",
     "open_dsp_settings": "DSP Einstellungen öffnen",
     "audiobook": "Audiobuch",
     "audiobooks": "Audiobücher",
@@ -696,7 +820,7 @@
     "loudness_measurement": "{0} LUFS",
     "loudness_measurement_album": "{0} LUFS (Album)",
     "loudness_dynamic": "Dynamische Lautstärkenormalisierung",
-    "loudness_fixed": "Fixe Gainanpassung",
+    "loudness_fixed": "Feste Verstärkungskorrektur",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Aktuelle Wiedergabe",
     "all_players": "Alle Wiedergabegeräte",
@@ -714,7 +838,7 @@
         "output_limiter": "Ausgangsbegrenzer",
         "output_limiter_info": "Reduziert automatisch sehr laute Töne, um Verzerrungen zu vermeiden und die Lautsprecher zu schützen",
         "dsp_unsupported": "DSP nicht unterstützt.",
-        "dsp_disabled_by_unsupported_group": "Dieser Wiedergabeanbieter unterstützt keinen DSP bei synchronisierter Wiedergabe.",
+        "dsp_disabled_by_unsupported_group": "Dieser Wiedergabegeräte-Anbieter unterstützt keinen DSP bei synchronisierter Wiedergabe.",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
@@ -728,7 +852,7 @@
             "target_level": "Zielpegel: {0} LUFS",
             "integrated_loudness": "Gemessene (integrierte) Lautstärke: {0} LUFS",
             "integrated_album_loudness": "Album-Lautstärke: {0} LUFS",
-            "applied_gain_correction": "Angewendete Gainanpassung: {0} dB",
+            "applied_gain_correction": "Angewendete Verstärkungskorrektur: {0} dB",
             "mode": {
                 "dynamic": "Lautstärkenormalisierung ist im dynamischen Modus aktiv",
                 "measurement_only": "Lautstärkenormalisierung ist basierend auf einer\n gespeicherten Messung der (integrierten) Audio-Loudness.",
@@ -737,19 +861,19 @@
             }
         },
         "click_to_expand": "Zur Anzeige alle Wiedergabegeräte klicken",
-        "output_format_pcm_info": "Audio wird als PCM an den Wiedergabe-Anbieter übergeben. Der Wiedergabe-Anbieter kann das Audio in ein anderes Format konvertieren bevor es an das Wiedergabegerät übertragen wird."
+        "output_format_pcm_info": "Audio wird als PCM an den Wiedergabegeräte-Anbieter übergeben. Der Wiedergabegeräte-Anbieter kann das Audio in ein anderes Format konvertieren bevor es an das Wiedergabegerät übertragen wird."
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Quelle auswählen",
-    "in_progress_items": "Wiedergabe fortsetzen...",
+    "in_progress_items": "Wiedergabe fortsetzen…",
     "play_replace_next": "Nächstes abspielen (Warteschlange leeren)",
     "all_enqueue_options": "Alle Warteschlangenoptionen",
     "music_assistant_source": "Music Assistant-Warteschlange",
     "music_assistant_library": "Music Assistant-Bibliothek",
-    "select_all_confirmation": "Alle Einträge auswählen? Dieser Vorgang kann für das Laden der Daten einen Moment dauern",
+    "select_all_confirmation": "Alle Einträge auswählen? Dieser Vorgang kann für das Laden der Daten einen Moment dauern.",
     "this_device": "Dieses Gerät",
     "recommendations": {
-        "in_progress_items": "Wiedergabe fortsetzen...",
+        "in_progress_items": "Wiedergabe fortsetzen…",
         "recommended_new_tracks": "Empfohlene Song-Neuerscheinungen für dich",
         "recently_played": "Zuletzt gespielt",
         "suggested_new_albums_for_you": "Empfohlene Album-Neuerscheinungen für dich",
@@ -770,19 +894,154 @@
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
     "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt",
+    "radiobrowser_by_votes": "Nach Stimmen",
+    "radiobrowser_by_clicks": "Nach Klicks",
+    "radiobrowser_by_language": "Nach Sprache",
+    "optional": "Optional",
+    "created": "Erstellt",
+    "last_used": "Zuletzt verwendet",
+    "create": "Erstellen",
+    "are_you_sure": "Bist du sicher?",
+    "auth": {
+        "login_title": "Melde dich in deinem Konto an",
+        "username": "Benutzername",
+        "username_readonly": "Benutzername kann nicht geändert werden",
+        "password": "Passwort",
+        "confirm_password": "Passwort bestätigen",
+        "display_name": "Anzeigename",
+        "display_name_readonly": "Bearbeitung des Anzeigenamens noch nicht verfügbar",
+        "login": "Anmelden",
+        "logout": "Abmelden",
+        "field_required": "Dieses Feld ist erforderlich",
+        "username_min_length": "Der Benutzername muss mindestens 3 Zeichen lang sein.",
+        "username_already_exists": "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen Benutzernamen.",
+        "invalid_username": "Ungültiger Benutzername. Bitte wähle einen anderen Benutzernamen.",
+        "password_min_length": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+        "passwords_must_match": "Die Passwörter müssen übereinstimmen",
+        "login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten.",
+        "login_error": "Bei der Anmeldung ist ein Fehler aufgetreten",
+        "setup_subtitle": "Los geht's!",
+        "create_admin_account": "Erstelle dein Administratorkonto.",
+        "setup_description": "Erstelle dir dein Administratorkonto, um Music Assistant zu verwalten. Dieses Konto hat vollen Zugriff auf alle Einstellungen und Funktionen.",
+        "create_account": "Konto erstellen",
+        "setup_failed": "Einrichtung fehlgeschlagen. Bitte versuche es erneut.",
+        "setup_error": "Bei der Einrichtung ist ein Fehler aufgetreten",
+        "profile": "Profil",
+        "account_settings": "Kontoeinstellungen",
+        "manage_your_profile_info": "Verwalte deine Profilinformationen und Einstellungen",
+        "change_password": "Passwort ändern",
+        "update_your_password": "Aktualisiere dein Kontopasswort.",
+        "old_password": "Aktuelles Passwort",
+        "new_password": "Neues Passwort",
+        "password_changed": "Passwort erfolgreich geändert",
+        "password_change_failed": "Passwortänderung fehlgeschlagen",
+        "tokens": "Zugriffstokens",
+        "active_sessions": "Aktive Sitzungen",
+        "manage_active_sessions": "Deine aktiven Anmeldesitzungen anzeigen und verwalten",
+        "active_sessions_description": "Hierbei handelt es sich um Sitzungen, die beim Anmelden erstellt werden. Sie werden bei jeder Nutzung automatisch verlängert und verfallen nach 30 Tagen Inaktivität.",
+        "no_active_sessions": "Keine aktiven Sitzungen",
+        "long_lived_tokens": "Langlebige Zugangstokens",
+        "api_tokens_description": "API-Token für externe Integrationen erstellen und verwalten",
+        "long_lived_tokens_description": "Langlebige Token werden für externe Integrationen und den API-Zugriff verwendet. Sie verfallen nach 10 Jahren und werden nicht automatisch verlängert.",
+        "no_long_lived_tokens": "Keine langlebigen Zugriffstokens",
+        "no_tokens": "Noch keine Tokens",
+        "create_token_hint": "Erstellen eines Tokens zur Verwendung von Music Assistant mit externen Anwendungen",
+        "token_name": "Token-Name",
+        "token_name_hint": "z. B. „Home Assistant“, „Mobile App“",
+        "create_token": "Neuen Token erstellen",
+        "revoke_token": "Token widerrufen",
+        "revoke_token_confirm": "Bist du sicher, dass du diesen Token widerrufen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "revoke_session": "Sitzung widerrufen",
+        "revoke_session_confirm": "Bist du sicher, dass du diese Sitzung abbrechen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "revoke": "Widerrufen",
+        "token_revoked": "Token erfolgreich widerrufen",
+        "token_revoke_failed": "Token konnte nicht widerrufen werden",
+        "session_revoked": "Sitzung erfolgreich widerrufen",
+        "session_revoke_failed": "Sitzung konnte nicht widerrufen werden",
+        "manage_tokens": "Zugriffstoken verwalten",
+        "token_created": "Token erfolgreich erstellt",
+        "token_create_failed": "Fehler beim Erstellen des Tokens. Bitte versuche es erneut.",
+        "user_management": "Benutzerverwaltung",
+        "users": "Benutzer",
+        "create_user": "Benutzer erstellen",
+        "edit_user": "Benutzer bearbeiten",
+        "role": "Rolle",
+        "admin_role": "Administrator",
+        "user_role": "Benutzer",
+        "enabled": "Aktiviert",
+        "disabled": "Deaktiviert",
+        "enable_user": "Benutzer aktivieren",
+        "disable_user": "Benutzer deaktivieren",
+        "user_created": "Benutzer erfolgreich erstellt",
+        "user_create_failed": "Benutzer konnte nicht erstellt werden",
+        "user_updated": "Benutzeraktualisierung erfolgreich",
+        "user_update_failed": "Benutzeraktualisierung fehlgeschlagen",
+        "user_deleted": "Benutzer erfolgreich gelöscht",
+        "user_delete_failed": "Benutzer konnte nicht gelöscht werden",
+        "user_disabled": "Benutzer erfolgreich deaktiviert",
+        "user_disable_failed": "Benutzer konnte nicht deaktiviert werden",
+        "user_enabled": "Benutzer erfolgreich aktiviert",
+        "user_enable_failed": "Benutzer konnte nicht aktiviert werden",
+        "password_optional_hint": "Lasse dieses Feld leer, um das aktuelle Passwort beizubehalten.",
+        "confirm_disable_user": "Bist du sicher, dass du diesen Benutzer deaktivieren möchtest?",
+        "confirm_delete_user": "Bist du sicher, dass du diesen Benutzer löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "delete_user": "Benutzer löschen",
+        "admin_required": "Administratorzugriff erforderlich",
+        "change_role": "Rolle ändern",
+        "avatar_url": "Avatar-URL",
+        "avatar_url_hint": "URL zum Avatarbild eingeben",
+        "change_avatar": "Avatar ändern",
+        "profile_updated": "Profil erfolgreich aktualisiert",
+        "ingress_password_note": "Wenn du auf Music Assistant außerhalb von Home Assistant zugreifst, benötigst du dieses Passwort, um dich anzumelden.",
+        "copy_new_token_hint": "Kopiere dein Zugriffstoken. Es wird nicht erneut angezeigt.",
+        "token_copied": "Token in die Zwischenablage kopiert",
+        "token_copy_failed": "Token konnte nicht in die Zwischenablage kopiert werden",
+        "player_filter": "Wiedergabegeräte Filter.",
+        "player_filter_hint": "Beschränke den Zugriff dieses Benutzers auf die ausgewählten Wiedergabegeräte. Lasse dieses Feld leer, um vollen Zugriff auf alle Wiedergabegeräte zu gewähren.",
+        "provider_filter": "Musikanbieter-Filter",
+        "provider_filter_hint": "Beschränke den Zugriff dieses Benutzers auf die ausgewählten Musikanbieter. Lasse dieses Feld leer, um vollen Zugriff auf alle Musikanbieter zu gewähren.",
+        "no_players_selected": "Alle Wiedergabegeräte (ohne Einschränkungen)",
+        "no_providers_selected": "Alle Musikanbieter (ohne Einschränkungen)",
+        "select_players": "Wähle Wiedergabegeräte",
+        "select_providers": "Wähle Musikanbieter"
+    },
     "login": {
+        "subtitle": "Verbinde dich mit deinem Musikserver",
+        "auto_connecting": "Auf der Suche nach deinem Server...",
+        "sign_in_to_continue": "Zum Fortfahren anmelden",
+        "complete_in_browser": "Schließe die Anmeldung in deinem Browser ab.",
+        "establishing_connection": "Verbindung wird hergestellt...",
+        "local_server": "Lokaler Server",
         "remote_server": "Remote",
         "server_address": "Serveradresse",
-        "remote_id_placeholder": "z.B.",
+        "server_address_placeholder": "http:\/\/192.168.1.100:8095",
+        "remote_id": "Remote-ID",
+        "remote_id_placeholder": "z. B. MA-X7K9-P2M4",
+        "remote_id_hint": "Du findest diese Option in deinen Servereinstellungen unter „Fernzugriff“.",
         "connect": "Verbinde",
         "username": "Benutzername",
-        "username_placeholder": "Gebe dein Benutzernamen ein",
+        "username_placeholder": "Gebe deinen Benutzernamen ein",
         "password": "Passwort",
         "password_placeholder": "Gebe dein Passwort ein",
         "sign_in": "Anmelden",
-        "back": "Zurück ",
+        "or_continue_with": "Oder fahre fort mit",
+        "sign_in_with_ha": "Mit Home Assistant anmelden",
+        "back": "Zurück",
         "cancel": "Abbrechen",
-        "waiting_for_auth": "Warte auf authentifizierung...",
+        "different_server": "Anderen Server verwenden",
+        "connecting": "Verbinde…",
+        "connecting_to_server": "Verbindung zum Server wird hergestellt...",
+        "connecting_to_signaling": "Verbindung zum Signalisierungsserver wird hergestellt...",
+        "checking_stored": "Suche nach gespeicherter Verbindung...",
+        "connecting_to_saved": "Verbindung zum gespeicherten Server herstellen...",
+        "connecting_remote": "Verbindung zum Remote-Server wird hergestellt...",
+        "authenticating": "Authentifizierung läuft...",
+        "checking_local": "Überprüfe lokalen Server...",
+        "finding_server": "Suche deinen Server…",
+        "establishing_secure": "Sichere Verbindung wird hergestellt...",
+        "complete_sign_in": "Schließe Anmeldung ab",
+        "oauth_waiting_message": "Es hat sich ein Browserfenster geöffnet. Bitte melde dich mit Home Assistant an und kehre dann hierher zurück.",
+        "waiting_for_auth": "Warten auf Authentifizierung…",
         "connection_failed": "Verbindung fehlgeschlagen",
         "try_again": "Erneut probieren",
         "error_unknown": "Unbekannter Fehler aufgetreten",
@@ -790,38 +1049,57 @@
         "error_oauth_failed": "Authentifizierung mit Home Assistant fehlgeschlagen.",
         "scan_qr": "Scanne den QR-Code.",
         "scan_qr_code": "Scanne den QR-Code.",
+        "scan_qr_hint": "Richte deine Kamera auf den QR-Code, der in den Servereinstellungen deines Musikassistenten angezeigt wird.",
+        "qr_invalid": "Ungültiger QR-Code. Bitte scanne einen QR-Code mit der Fernbedienungs-ID des Musikassistenten.",
         "qr_camera_error": "Kann nicht auf Kamera zugreifen. Prüfe die Berechtigungen."
     },
     "remote": {
         "connect_title": "Verbinde mit deinem Server",
+        "subtitle": "Verbinde dich von überall mit deinem Heimserver.",
+        "subtitle_login": "Melde dich an, um auf deine Musik zuzugreifen.",
         "remote_id": "Remote ID",
-        "remote_id_placeholder": "z.B.",
+        "remote_id_placeholder": "z. B. MA-X7K9-P2M4",
+        "remote_id_hint": "Deine Remote-ID findest du in den Einstellungen deines Music Assistant Servers unter \"Remote Access\".",
         "recent_connections": "Frühere Verbindungen",
         "connect": "Verbinde",
+        "connect_locally": "Stattdessen mit lokalem Server verbinden",
+        "login_title": "Melde dich auf deinem Server an.",
         "username": "Benutzername",
         "password": "Passwort",
+        "remember_me": "Auf diesem Gerät merken",
         "sign_in": "Anmelden",
         "back": "Zurück",
-        "connecting": "Verbinde...",
-        "status_finding_server": "Suche deinen Server...",
+        "connecting": "Verbinde…",
+        "status_connecting_signaling": "Verbindung zum Signalisierungsserver wird hergestellt...",
+        "status_finding_server": "Suche deinen Server…",
+        "status_establishing": "Sichere Verbindung wird hergestellt...",
         "cancel": "Abbrechen",
         "connection_failed": "Verbindung fehlgeschlagen",
-        "retry": "Versuche nochmal ",
+        "retry": "Erneut versuchen",
         "error_unknown": "Unbekannter Fehler aufgetreten.",
-        "error_login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten",
+        "error_login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten.",
+        "error_server_not_found": "Server nicht gefunden. Stelle sicher, dass dein Music Assistant-Server ausgeführt wird und der Fernzugriff aktiviert ist.",
+        "login_with_ha": "Mit Home Assistant anmelden",
         "or": "oder",
+        "subtitle_oauth": "Schließe die Anmeldung in deinem Browser ab.",
         "oauth_waiting_title": "Schließe Anmeldung ab",
-        "oauth_waiting_hint": "Warte auf Authentifizierung...",
+        "oauth_waiting_message": "Es hat sich ein Browserfenster geöffnet. Bitte melde dich mit Home Assistant an und kehre dann hierher zurück.",
+        "oauth_waiting_hint": "Warte auf Authentifizierung…",
         "error_oauth_failed": "Authentifizierung mit Home Assistant fehlgeschlagen."
-    },
-    "auth": {
-        "player_filter": "Wiedergabegeräte Filter.",
-        "no_players_selected": "Alle Wiedergabegeräte (ohne Einschränkungen)",
-        "no_providers_selected": "Alle Musikanbieter (ohne Einschränkungen)",
-        "select_players": "Wähle Wiedergabegeräte",
-        "select_providers": "Wähle Musikanbieter"
     },
     "yes": "Ja",
     "no": "Nein",
-    "uri_copied": "URI in Zwischenablage kopiert"
+    "uri_copied": "URI in Zwischenablage kopiert",
+    "uri_copy_failed": "URI konnte nicht in die Zwischenablage kopiert werden",
+    "search_all_providers": "Suche bei allen Anbietern nach Übereinstimmungen",
+    "search_all_providers_confirm": "Möchtest du wirklich bei allen Anbietern nach passenden Ergebnissen suchen? Dieser Vorgang kann einige Zeit dauern und wird im Hintergrund ausgeführt.",
+    "remove_provider_mapping": "Anbieterzuordnung entfernen",
+    "remove_provider_mapping_confirm": "Möchtest du diese Anbieterzuordnung wirklich entfernen? Dadurch wird die Verknüpfung des Artikels mit den aktuellen Artikeldetails aufgehoben. Sie kann wiederhergestellt werden, wenn du erneut nach allen Anbieterübereinstimmungen suchst.",
+    "map_provider_mapping": "Diesen Anbietereintrag dem aktuellen Eintrag zuordnen",
+    "player_tip": {
+        "selected_player": "Ausgewähltes Wiedergabegerät",
+        "currently_playing": "Derzeit abgespielt auf",
+        "click_to_change": "Klicke unten, um das Ausgabegerät zu ändern."
+    },
+    "more_options": "Mehr Optionen"
 }
