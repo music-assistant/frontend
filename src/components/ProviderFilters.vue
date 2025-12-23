@@ -1,84 +1,37 @@
 <template>
   <div class="filters-container">
-    <v-text-field
-      v-model="searchQuery"
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
-      variant="outlined"
-      density="compact"
-      clearable
-      hide-details
-      class="search-field"
-    />
-    <div class="d-flex ga-2 filter-buttons">
-      <v-btn
-        height="40"
-        elevation="0"
-        variant="outlined"
-        density="compact"
-        class="filter-btn"
-      >
-        {{ $t("settings.provider_type") }}
-        <v-icon end>mdi-chevron-down</v-icon>
-        <span v-if="hasActiveProviderTypes" class="filter-dot"></span>
-        <v-menu activator="parent" :close-on-content-click="false">
-          <v-list>
-            <v-list-item
-              v-for="(providerType, index) in providerTypes"
-              :key="index"
-              :value="index"
-              @click="toggleProviderType(providerType.value)"
-            >
-              <template #append>
-                <v-checkbox-btn
-                  :model-value="
-                    selectedProviderTypes.includes(providerType.value)
-                  "
-                  @click.stop="toggleProviderType(providerType.value)"
-                />
-              </template>
-              <v-list-item-title>{{ providerType.title }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-btn>
-      <v-btn
+    <InputGroup class="search-field">
+      <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
+      <InputGroupAddon>
+        <Search />
+      </InputGroupAddon>
+    </InputGroup>
+    <div class="filter-buttons">
+      <FacetedFilter
+        v-model="selectedProviderTypes"
+        :title="$t('settings.provider_type')"
+        :options="providerTypeOptions"
+      />
+      <FacetedFilter
         v-if="showStageFilter"
-        height="40"
-        elevation="0"
-        variant="outlined"
-        density="compact"
-        class="filter-btn"
-      >
-        {{ $t("settings.stage.label") }}
-        <v-icon end>mdi-chevron-down</v-icon>
-        <span v-if="hasActiveProviderStages" class="filter-dot"></span>
-        <v-menu activator="parent" :close-on-content-click="false">
-          <v-list>
-            <v-list-item
-              v-for="(stage, index) in providerStages"
-              :key="index"
-              :value="index"
-              @click="toggleProviderStage(stage.value)"
-            >
-              <template #append>
-                <v-checkbox-btn
-                  :model-value="selectedProviderStages.includes(stage.value)"
-                  @click.stop="toggleProviderStage(stage.value)"
-                />
-              </template>
-              <v-list-item-title>{{ stage.title }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-btn>
+        v-model="selectedProviderStages"
+        :title="$t('settings.stage.label')"
+        :options="providerStageOptions"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FacetedFilter from "@/components/FacetedFilter.vue";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { Search } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -97,37 +50,30 @@ let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let stagesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const providerTypes = computed(() => [
-  { title: $t("settings.musicprovider"), value: ProviderType.MUSIC },
-  { title: $t("settings.playerprovider"), value: ProviderType.PLAYER },
-  { title: $t("settings.metadataprovider"), value: ProviderType.METADATA },
-  { title: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
+const providerTypeOptions = computed(() => [
+  { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
+  { label: $t("settings.playerprovider"), value: ProviderType.PLAYER },
+  { label: $t("settings.metadataprovider"), value: ProviderType.METADATA },
+  { label: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
 ]);
 
-const providerStages = computed(() => [
-  { title: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
-  { title: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
-  { title: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
+const providerStageOptions = computed(() => [
+  { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
+  { label: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
+  { label: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
   {
-    title: $t("settings.stage.options.experimental"),
+    label: $t("settings.stage.options.experimental"),
     value: ProviderStage.EXPERIMENTAL,
   },
   {
-    title: $t("settings.stage.options.unmaintained"),
+    label: $t("settings.stage.options.unmaintained"),
     value: ProviderStage.UNMAINTAINED,
   },
   {
-    title: $t("settings.stage.options.deprecated"),
+    label: $t("settings.stage.options.deprecated"),
     value: ProviderStage.DEPRECATED,
   },
 ]);
-
-const hasActiveProviderTypes = computed(
-  () => selectedProviderTypes.value.length > 0,
-);
-const hasActiveProviderStages = computed(
-  () => selectedProviderStages.value.length > 0,
-);
 
 // Emits
 const emit = defineEmits<{
@@ -135,24 +81,6 @@ const emit = defineEmits<{
   (e: "update:types", value: string[]): void;
   (e: "update:stages", value: string[]): void;
 }>();
-
-const toggleProviderType = function (type: string) {
-  const index = selectedProviderTypes.value.indexOf(type);
-  if (index > -1) {
-    selectedProviderTypes.value.splice(index, 1);
-  } else {
-    selectedProviderTypes.value.push(type);
-  }
-};
-
-const toggleProviderStage = function (stage: string) {
-  const index = selectedProviderStages.value.indexOf(stage);
-  if (index > -1) {
-    selectedProviderStages.value.splice(index, 1);
-  } else {
-    selectedProviderStages.value.push(stage);
-  }
-};
 
 const initializeFromUrl = function () {
   if (route.query.search) {
@@ -257,32 +185,6 @@ initializeFromUrl();
   flex-wrap: wrap;
 }
 
-.filter-buttons .v-btn {
-  min-width: 100px;
-  border-color: rgba(var(--v-theme-on-surface), 0.2);
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.filter-buttons .v-btn .v-icon {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.filter-btn {
-  position: relative;
-}
-
-.filter-dot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: rgb(var(--v-theme-primary));
-  z-index: 1;
-  box-shadow: 0 0 0 2px rgb(var(--v-theme-surface));
-}
-
 /* Mobile responsive */
 @media (max-width: 960px) {
   .filters-container {
@@ -298,24 +200,5 @@ initializeFromUrl();
   .filter-buttons {
     width: 100%;
   }
-
-  .filter-buttons .v-btn {
-    flex: 1 1 auto;
-    min-width: 120px;
-  }
-}
-
-:deep(.v-list-item .v-checkbox-btn) {
-  display: flex;
-  align-items: center;
-}
-
-:deep(.v-list-item .v-checkbox-btn .v-input__control) {
-  display: flex;
-  align-items: center;
-}
-
-:deep(.v-list-item .v-checkbox-btn .v-selection-control) {
-  min-height: auto;
 }
 </style>

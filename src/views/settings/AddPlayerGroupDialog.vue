@@ -1,79 +1,62 @@
 <template>
-  <v-dialog
-    :model-value="show"
-    max-width="800px"
-    scrollable
-    @update:model-value="
-      (v) => {
-        store.dialogActive = v;
-        emit('update:show', v);
-      }
-    "
-  >
-    <v-card class="add-player-group-dialog">
-      <v-card-title class="d-flex align-center justify-space-between pa-4">
-        <span class="text-h6">{{ $t("settings.add_group_player") }}</span>
-        <v-btn icon="mdi-close" variant="text" size="small" @click="close" />
-      </v-card-title>
+  <Dialog :open="show" @update:open="handleOpenChange">
+    <DialogContent
+      class="add-player-group-dialog max-w-[800px] h-[60vh] max-h-[60vh] flex flex-col p-0"
+    >
+      <DialogHeader class="px-6 pt-4 pb-4 flex-shrink-0">
+        <DialogTitle>{{ $t("settings.add_group_player") }}</DialogTitle>
+      </DialogHeader>
 
-      <v-card-text class="pa-4">
-        <div class="provider-list-container">
-          <v-list v-if="availableProviders.length > 0" class="provider-list">
-            <v-list-item
-              v-for="provider in availableProviders"
-              :key="provider.instance_id"
-              style="padding: 0"
-              class="provider-item"
-              rounded="lg"
-              @click="addPlayerGroup(provider.instance_id)"
-            >
-              <template #prepend>
-                <provider-icon
-                  :domain="provider.domain"
-                  :size="40"
-                  class="provider-icon"
-                />
-              </template>
-
-              <template #title>
-                <div class="provider-name">{{ provider.name }}</div>
-              </template>
-
-              <template #subtitle>
-                <div class="provider-description">
-                  {{ provider.description }}
-                </div>
-              </template>
-
-              <template #append>
-                <v-icon icon="mdi-chevron-right" size="small" />
-              </template>
-            </v-list-item>
-          </v-list>
-
-          <div v-else class="empty-state">
-            <v-icon
-              icon="mdi-account-group-outline"
-              size="48"
-              class="empty-icon"
+      <div
+        class="provider-list-container px-6 pt-2 pb-6 flex-1 min-h-0 overflow-y-auto"
+      >
+        <div v-if="availableProviders.length > 0" class="provider-list">
+          <div
+            v-for="provider in availableProviders"
+            :key="provider.instance_id"
+            class="provider-item"
+            @click="addPlayerGroup(provider.instance_id)"
+          >
+            <provider-icon
+              :domain="provider.domain"
+              :size="40"
+              class="provider-icon"
             />
-            <div class="empty-title">{{ $t("no_content") }}</div>
-            <div class="empty-message">
-              {{ $t("settings.no_group_providers") }}
+            <div class="provider-content">
+              <div class="provider-name">{{ provider.name }}</div>
+              <div class="provider-description">
+                {{ provider.description }}
+              </div>
             </div>
+            <ChevronRight class="h-4 w-4 flex-shrink-0" />
           </div>
         </div>
-      </v-card-text>
-    </v-card>
-  </v-dialog>
+
+        <div v-else class="empty-state">
+          <Users class="empty-icon" />
+          <div class="empty-title">{{ $t("no_content") }}</div>
+          <div class="empty-message">
+            {{ $t("settings.no_group_providers") }}
+          </div>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { ChevronRight, Users } from "lucide-vue-next";
 import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -115,6 +98,11 @@ const addPlayerGroup = function (instanceId: string) {
   close();
 };
 
+const handleOpenChange = (open: boolean) => {
+  store.dialogActive = open;
+  emit("update:show", open);
+};
+
 const close = function () {
   emit("update:show", false);
 };
@@ -128,25 +116,22 @@ watch(
 
 <style scoped>
 .add-player-group-dialog {
-  height: 600px;
-  display: flex;
-  flex-direction: column;
-}
-
-.provider-list-container {
-  height: 500px;
   display: flex;
   flex-direction: column;
 }
 
 .provider-list {
-  flex: 1;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .provider-item {
-  height: 80px;
-  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
   transition: all 0.2s ease;
   cursor: pointer;
 }
@@ -157,7 +142,12 @@ watch(
 }
 
 .provider-icon {
-  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.provider-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .provider-name {
@@ -185,12 +175,14 @@ watch(
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  min-height: 300px;
   text-align: center;
   padding: 40px 20px;
 }
 
 .empty-icon {
+  width: 48px;
+  height: 48px;
   color: rgba(var(--v-theme-on-surface), 0.3);
   margin-bottom: 16px;
 }
@@ -206,15 +198,5 @@ watch(
   font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.5);
   line-height: 1.4;
-}
-
-@media (max-width: 600px) {
-  .add-player-group-dialog {
-    height: 500px;
-  }
-
-  .provider-list-container {
-    height: 300px;
-  }
 }
 </style>

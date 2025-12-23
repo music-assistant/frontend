@@ -1,93 +1,38 @@
 <template>
   <div class="filters-container">
-    <v-text-field
-      v-model="searchQuery"
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
-      variant="outlined"
-      density="compact"
-      clearable
-      hide-details
-      class="search-field"
-    />
+    <InputGroup class="search-field">
+      <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
+      <InputGroupAddon>
+        <Search />
+      </InputGroupAddon>
+    </InputGroup>
     <div class="d-flex ga-2 filter-buttons">
-      <v-btn
-        height="40"
-        elevation="0"
-        variant="outlined"
-        density="compact"
-        class="filter-btn"
-      >
-        {{ $t("settings.player_provider") }}
-        <v-icon end>mdi-chevron-down</v-icon>
-        <span v-if="hasActiveProviders" class="filter-dot"></span>
-        <v-menu activator="parent" :close-on-content-click="false">
-          <v-list class="provider-filter-list">
-            <v-list-item
-              v-for="provider in availableProviders"
-              :key="provider.instance_id"
-              :value="provider.instance_id"
-              @click="toggleProvider(provider.instance_id)"
-            >
-              <template #prepend>
-                <provider-icon
-                  :domain="provider.domain"
-                  :size="26"
-                  class="media-thumb"
-                  style="margin-right: 12px"
-                />
-              </template>
-              <template #append>
-                <v-checkbox-btn
-                  :model-value="
-                    selectedProviders.includes(provider.instance_id)
-                  "
-                  @click.stop="toggleProvider(provider.instance_id)"
-                />
-              </template>
-              <v-list-item-title>{{ provider.name }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-btn>
-      <v-btn
-        height="40"
-        elevation="0"
-        variant="outlined"
-        density="compact"
-        class="filter-btn"
-      >
-        {{ $t("settings.player_type_label") }}
-        <v-icon end>mdi-chevron-down</v-icon>
-        <span v-if="hasActivePlayerTypes" class="filter-dot"></span>
-        <v-menu activator="parent" :close-on-content-click="false">
-          <v-list>
-            <v-list-item
-              v-for="(playerType, index) in playerTypes"
-              :key="index"
-              :value="index"
-              @click="togglePlayerType(playerType.value)"
-            >
-              <template #append>
-                <v-checkbox-btn
-                  :model-value="selectedPlayerTypes.includes(playerType.value)"
-                  @click.stop="togglePlayerType(playerType.value)"
-                />
-              </template>
-              <v-list-item-title>{{ playerType.title }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-btn>
+      <FacetedFilter
+        v-model="selectedProviders"
+        :title="$t('settings.player_provider')"
+        :options="providerOptions"
+      />
+      <FacetedFilter
+        v-model="selectedPlayerTypes"
+        :title="$t('settings.player_type_label')"
+        :options="playerTypeOptions"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { api } from "@/plugins/api";
 import { PlayerType, ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { Search } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -120,9 +65,20 @@ const playerTypes = computed(() => [
   { title: $t("player_type.stereo_pair"), value: PlayerType.STEREO_PAIR },
 ]);
 
-const hasActiveProviders = computed(() => selectedProviders.value.length > 0);
-const hasActivePlayerTypes = computed(
-  () => selectedPlayerTypes.value.length > 0,
+const providerOptions = computed(() =>
+  availableProviders.value.map((p) => ({
+    label: p.name,
+    value: p.instance_id,
+    icon: ProviderIcon,
+    domain: p.domain,
+  })),
+);
+
+const playerTypeOptions = computed(() =>
+  playerTypes.value.map((p) => ({
+    label: p.title,
+    value: p.value,
+  })),
 );
 
 // Emits
