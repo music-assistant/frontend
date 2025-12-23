@@ -87,13 +87,13 @@ a {
   align-content: center;
 }
 
-.line-clamp-1 {
+.ma-line-clamp-1 {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
 
-.line-clamp-2 {
+.ma-line-clamp-2 {
   white-space: pre-line;
   overflow: hidden;
   line-height: 1.5em;

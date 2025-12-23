@@ -33,7 +33,7 @@
                 </v-avatar>
               </template>
               <template #title>
-                <div class="line-clamp-1">{{ token.name }}</div>
+                <div class="ma-line-clamp-1">{{ token.name }}</div>
               </template>
               <template #subtitle>
                 <div class="token-meta">
@@ -95,7 +95,7 @@
                 </v-avatar>
               </template>
               <template #title>
-                <div class="line-clamp-1">{{ token.name }}</div>
+                <div class="ma-line-clamp-1">{{ token.name }}</div>
               </template>
               <template #subtitle>
                 <div class="token-meta">
