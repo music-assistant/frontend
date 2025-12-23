@@ -286,7 +286,8 @@
             "generic": "Ustawienia ogólne",
             "announcements": "Konfiguracja powiadomień",
             "airplay": "Ustawienia specyficzne dla Airplay",
-            "player_controls": "Sterowanie odtwarzaczem"
+            "player_controls": "Sterowanie odtwarzaczem",
+            "web_player": "Odtwarzacz internetowy"
         },
         "tts_pre_announce": {
             "label": "Ogłaszaj z wyprzedzeniem powiadomienia TTS",
@@ -356,7 +357,8 @@
                 "pt_BR": "portugalski (Brazylia)",
                 "sl_SI": "słoweński",
                 "hu_HU": "węgierski",
-                "it": "Włoski"
+                "it": "Włoski",
+                "lt_LT": "litewski"
             }
         },
         "no_music_providers": "Nie skonfigurowano żadnych dostawców muzyki",
@@ -410,7 +412,55 @@
         "mute_control": {
             "label": "Kontrola wyciszenia",
             "description": "Zdefiniuj\/zastąp zachowanie kontroli wyciszenia dla tego odtwarzacza.\nPozwala to na przykład przekierować polecenia sterujące wyciszeniem do innego urządzenia lub całkowicie je wyłączyć.\n\nOferujemy opcję „fałszywej” kontroli wyciszenia, która symuluje wyciszenie poprzez ustawienie głośności na 0 i przywrócenie głośności po wyłączeniu wyciszenia."
-        }
+        },
+        "remote_access_enabled_success": "Dostęp zdalny włączony",
+        "remote_access_disabled_success": "Dostęp zdalny wyłączony",
+        "remote_access_signaling_server_description": "Serwer sygnalizacyjny w chmurze, hostowany przez Open Home Foundation.",
+        "remote_access_protocol_basic": "WebRTC z publicznymi serwerami STUN (może nie działać w złożonych konfiguracjach sieci).",
+        "remote_access_protocol_optimized": "WebRTC ze zoptymalizowanymi serwerami STUN\/TURN od Home Assistant Cloud (działa we wszystkich konfiguracjach sieci).",
+        "remote_access_encryption_description": "Szyfrowanie end-to-end przy użyciu DTLS-SRTP zapewnia prywatność i bezpieczeństwo danych.",
+        "frontend": "Interfejs użytkownika",
+        "one_player": "1 odtwarzacz",
+        "view_players": "Pokaż odtwarzacze",
+        "api_docs": "Dokumentacja API",
+        "no_group_providers": "Obecnie nie masz żadnych dostawców obsługujących tworzenie grup",
+        "web_player_mode": {
+            "label": "Tryb odtwarzacza internetowego",
+            "description": "Wybierz sposób, w jaki ta przeglądarka będzie obsługiwać odtwarzanie dźwięku.",
+            "options": {
+                "sendspin": "Sendspin (eksperymentalne)",
+                "disabled": "Wyłączone (tylko sterowanie)"
+            }
+        },
+        "sendspin_sync_delay": {
+            "label": "Opóźnienie synchronizacji Sendspin (ms)",
+            "description": "Statyczne opóźnienie w milisekundach do regulacji synchronizacji dźwięku. Wartości dodatnie opóźniają odtwarzanie, wartości ujemne przyspieszają je. Służy do kompensacji opóźnienia dźwięku specyficznego dla urządzenia."
+        },
+        "sendspin_output_latency_compensation": {
+            "label": "Użyj wykrywania opóźnień przeglądarki",
+            "description": "Automatycznie kompensuj sprzętowe opóźnienie dźwięku (np. w słuchawkach Bluetooth) za pomocą interfejsu API do pomiaru opóźnienia wyjściowego przeglądarki. To API jest dość nowe i może nie działać niezawodnie we wszystkich przeglądarkach i systemach operacyjnych."
+        },
+        "provider_codeowners": "Ten dostawca jest współtworzony\/obsługiwany przez",
+        "provider_credits": "Możliwe dzięki",
+        "onboarding_subtitle": "Zacznijmy od podłączenia źródeł muzyki i urządzeń audio.",
+        "onboarding_music_title": "Muzyka",
+        "onboarding_music_desc": "Podłącz swoje usługi streamingowe, takie jak Spotify, Tidal lub lokalną bibliotekę muzyczną.",
+        "onboarding_add_music": "Dodaj muzykę",
+        "onboarding_player_title": "Odtwarzacze",
+        "onboarding_player_desc": "Podłącz głośniki i urządzenia, takie jak Sonos, Chromecast lub AirPlay.",
+        "onboarding_add_player": "Dodaj odtwarzacze",
+        "onboarding_footer": "Później możesz dodać kolejnych dostawców na tej stronie ustawień.",
+        "remote_access_qr_code": "Kod QR",
+        "remote_access_qr_code_description": "Skanuj za pomocą aparatu w telefonie, aby natychmiast nawiązać połączenie.",
+        "reset_to_defaults": "Przywróć ustawienia domyślne",
+        "reset_to_defaults_confirm": "Czy na pewno chcesz zresetować wszystkie ustawienia do wartości domyślnych? Spowoduje to natychmiastowe zapisanie zmian.",
+        "unsaved_changes": "Niezapisane zmiany",
+        "unsaved_changes_message": "Masz niezapisane zmiany. Czy na pewno chcesz wyjść bez zapisywania?",
+        "discard": "Odrzuć zmiany",
+        "provider_requires_attention": "Ten dostawca wymaga uwagi",
+        "provider_requires_attention_detail": "Jeden lub więcej dostawców wymaga uwagi. Sprawdź ustawienia dostawców.",
+        "reconfigure": "Skonfiguruj ponownie",
+        "fix_now": "Napraw teraz"
     },
     "show_info": "Pokaż informacje",
     "show_select_boxes": "Pokaż pola wyboru",
@@ -473,7 +523,8 @@
         "play_sample": "Odtwórz próbkę",
         "album_type": "Typ albumu",
         "loading": "Serwer przetwarza żądanie lub synchronizuje muzykę.",
-        "primary_image": "To jest podstawowy obraz dla tego typu obrazów"
+        "primary_image": "To jest podstawowy obraz dla tego typu obrazów",
+        "in_provider_library": "Ta pozycja znajduje się w bibliotece dostawcy"
     },
     "topresult": "Najlepszy wynik",
     "track": "Ścieżka",
@@ -588,5 +639,18 @@
         "output_format_pcm_info": "Dźwięk jest przekazywany jako PCM do dostawcy odtwarzacza. Dostawca odtwarzacza może następnie przekonwertować dźwięk na inny format przed wysłaniem go do odtwarzacza."
     },
     "volume_normalization_gain_correction": "{0} dB",
-    "select_source": "Wybierz źródło"
+    "select_source": "Wybierz źródło",
+    "uri_copied": "Skopiowano URI",
+    "uri_copy_failed": "Nie udało się skopiować URI",
+    "search_all_providers": "Wyszukaj dopasowań u wszystkich dostawców",
+    "search_all_providers_confirm": "Czy na pewno chcesz wyszukiwać dopasowania u wszystkich dostawców? Może to zająć trochę czasu i będzie wykonywane w tle.",
+    "remove_provider_mapping": "Usuń mapowanie dostawcy",
+    "remove_provider_mapping_confirm": "Czy na pewno chcesz usunąć mapowanie dostawcy? Spowoduje to odłączenie pozycji od bieżących szczegółów pozycji. Może powrócić, jeśli wykonasz ponowne skanowanie dla wszystkich dopasowań dostawcy.",
+    "map_provider_mapping": "Mapuj dostawcę do tego elementu",
+    "login": {
+        "scan_qr": "Zeskanuj kod QR",
+        "scan_qr_code": "Zeskanuj kod QR",
+        "scan_qr_hint": "Skieruj aparat na kod QR widoczny w ustawieniach serwera Music Assistant.",
+        "qr_camera_error": "Nie można uzyskać dostępu do kamery. Sprawdź uprawnienia."
+    }
 }

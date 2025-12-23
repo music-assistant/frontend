@@ -358,7 +358,9 @@
         "no_music_providers": "Nenhum provedor de música configurado",
         "no_music_providers_detail": "Começa a tua experiência com o Music Assistant a adicionar os teus provedores de música.",
         "no_player_providers": "Nenhum provedor de reprodução configurado",
-        "no_player_providers_detail": "Configura os provedores de reprodução para selecionar dispositivos nos quais o Music Assistant pode reproduzir as tuas músicas."
+        "no_player_providers_detail": "Configura os provedores de reprodução para selecionar dispositivos nos quais o Music Assistant pode reproduzir as tuas músicas.",
+        "library_stats": "Estatísticas da biblioteca",
+        "reconfigure": "Reconfigurar"
     },
     "show_info": "Mostrar informação",
     "show_select_boxes": "Mostrar caixas de seleção",
@@ -419,7 +421,8 @@
         "play_sample": "Reproduzir amostra",
         "album_type": "Tipo de álbum",
         "loading": "O servidor está a processar um pedido ou a sincronizar alguma música.",
-        "primary_image": "Esta é a imagem primária para este tipo de imagem"
+        "primary_image": "Esta é a imagem primária para este tipo de imagem",
+        "filter_provider": "Filtrar por fornecedor de música"
     },
     "topresult": "Melhor resultado",
     "track": "Faixa",
@@ -463,5 +466,24 @@
     "image_source": "Fonte",
     "image_make_primary": "Tornar primário",
     "update_metadata": "Atualizar metadados",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "item_fully_played": "Este item foi reproduzido totalmente",
+    "item_in_progress": "Este item foi reproduzido parcialmente",
+    "mark_played": "Marcar como reproduzido",
+    "mark_unplayed": "Marcar como não reproduzido",
+    "this_device": "Este dispositivo",
+    "recommendations": {
+        "recently_played": "Reproduzido recentemente",
+        "random_artists": "Artistas aleatórios",
+        "random_albums": "Álbuns aleatórios",
+        "recent_favorite_tracks": "Últimas músicas favoritas"
+    },
+    "remote": {
+        "remember_me": "Manter sessão neste dispositivo"
+    },
+    "player_tip": {
+        "currently_playing": "A tocar em",
+        "click_to_change": "Clique abaixo para alterar o dispositivo de saída"
+    },
+    "more_options": "Mais opções"
 }
