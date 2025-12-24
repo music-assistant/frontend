@@ -84,7 +84,6 @@ import { useForm } from "@tanstack/vue-form";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -102,6 +101,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { createPasswordSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
@@ -112,26 +112,13 @@ const changing = ref(false);
 const currentNewPassword = ref("");
 const currentConfirmPassword = ref("");
 
-const formSchema = z
-  .object({
-    newPassword: z
-      .string()
-      .min(8, t("auth.password_min_length"))
-      .max(128, "Password must be at most 128 characters."),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: t("auth.passwords_must_match"),
-    path: ["confirmPassword"],
-  });
-
 const form = useForm({
   defaultValues: {
     newPassword: "",
     confirmPassword: "",
   },
   validators: {
-    onSubmit: formSchema,
+    onSubmit: createPasswordSchema(t),
   },
   onSubmit: async ({ value }) => {
     changing.value = true;
@@ -160,11 +147,7 @@ const canChangePassword = computed(() => {
     currentNewPassword.value || form.state.values.newPassword || "";
   const confirmPassword =
     currentConfirmPassword.value || form.state.values.confirmPassword || "";
-  return (
-    newPassword.length >= 8 &&
-    newPassword === confirmPassword &&
-    confirmPassword.length > 0
-  );
+  return newPassword === confirmPassword && confirmPassword.length > 0;
 });
 
 function isInvalid(field: any) {

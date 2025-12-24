@@ -196,7 +196,6 @@ import { Camera, User } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
-import { z } from "zod";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -224,6 +223,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { profileSettingsSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
@@ -242,22 +242,6 @@ const currentUsername = ref("");
 const currentDisplayName = ref("");
 const currentAvatarUrl = ref("");
 
-const formSchema = z.object({
-  username: z
-    .string()
-    .min(3, t("auth.username_min_length"))
-    .max(50, "Username must be at most 50 characters."),
-  displayName: z
-    .string()
-    .max(100, "Display name must be at most 100 characters."),
-  avatarUrl: z
-    .string()
-    .refine((val) => !val || z.string().url().safeParse(val).success, {
-      message: "Invalid URL format.",
-    }),
-  role: z.string(),
-});
-
 const form = useForm({
   defaultValues: {
     username: user.value?.username || "",
@@ -266,7 +250,7 @@ const form = useForm({
     role: user.value ? t(`auth.${user.value.role}_role`) : "",
   },
   validators: {
-    onSubmit: formSchema as any,
+    onSubmit: profileSettingsSchema(t),
   },
   onSubmit: async ({ value }) => {
     if (!user.value) return;

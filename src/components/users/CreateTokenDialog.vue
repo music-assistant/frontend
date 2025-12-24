@@ -15,7 +15,7 @@
           <form.Field
             name="tokenName"
             :validators="{
-              onChange: tokenNameSchema,
+              onChange: tokenNameSchema(t),
             }"
           >
             <template #default="{ field }">
@@ -97,7 +97,6 @@ import { Copy } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -117,6 +116,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { copyToClipboard } from "@/helpers/utils";
+import { createTokenSchema, tokenNameSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
 
 const { t } = useI18n();
@@ -135,21 +135,12 @@ const loading = ref(false);
 const createdToken = ref("");
 const tokenName = ref("");
 
-const tokenNameSchema = z
-  .string()
-  .min(1, t("auth.field_required"))
-  .max(100, "Token name must be at most 100 characters.");
-
-const formSchema = z.object({
-  tokenName: tokenNameSchema,
-});
-
 const form = useForm({
   defaultValues: {
     tokenName: "",
   },
   validators: {
-    onSubmit: formSchema as any,
+    onSubmit: createTokenSchema(t) as any,
   },
   onSubmit: async ({ value }) => {
     loading.value = true;
