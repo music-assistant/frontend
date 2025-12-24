@@ -1,16 +1,13 @@
 <template>
   <div class="user-profile">
     <Container variant="comfortable" class="profile-container">
-      <div class="profile-content">
+      <div class="profile-content space-y-6">
         <ProfileSettings />
-        <v-divider class="my-6" />
         <PasswordSettings />
-        <v-divider class="my-6" />
         <SessionTokensList
           :tokens="sessionTokens"
           @revoke="confirmRevokeToken"
         />
-        <v-divider class="my-6" />
         <LongLivedTokensList
           :tokens="longLivedTokens"
           @revoke="confirmRevokeToken"
@@ -18,43 +15,44 @@
         />
       </div>
     </Container>
-    <v-dialog v-model="showRevokeDialog" max-width="480">
-      <v-card>
-        <v-card-title class="text-h6 pl-6 pb-0 mt-3">
-          {{
-            tokenToRevoke?.is_long_lived
-              ? $t("auth.revoke_token")
-              : $t("auth.revoke_session")
-          }}
-        </v-card-title>
-        <v-card-text class="px-6 pb-2">
-          <p class="text-body-1 mb-4">
+
+    <Dialog v-model:open="showRevokeDialog">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {{
+              tokenToRevoke?.is_long_lived
+                ? $t("auth.revoke_token")
+                : $t("auth.revoke_session")
+            }}
+          </DialogTitle>
+        </DialogHeader>
+        <div class="py-4">
+          <p class="text-sm text-muted-foreground mb-4">
             {{
               tokenToRevoke?.is_long_lived
                 ? $t("auth.revoke_token_confirm")
                 : $t("auth.revoke_session_confirm")
             }}
           </p>
-          <div class="token-name-box">
-            {{ tokenToRevoke?.name }}
+          <div class="rounded-md bg-destructive/10 p-4">
+            <p class="font-medium">{{ tokenToRevoke?.name }}</p>
           </div>
-        </v-card-text>
-        <v-card-actions class="pa-6 pt-4">
-          <v-spacer />
-          <v-btn variant="text" @click="showRevokeDialog = false">
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showRevokeDialog = false">
             {{ $t("cancel") }}
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="flat"
+          </Button>
+          <Button
+            variant="destructive"
             :loading="revokingToken"
             @click="handleRevokeToken"
           >
             {{ $t("auth.revoke") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -64,6 +62,14 @@ import LongLivedTokensList from "@/components/profile/LongLivedTokensList.vue";
 import PasswordSettings from "@/components/profile/PasswordSettings.vue";
 import ProfileSettings from "@/components/profile/ProfileSettings.vue";
 import SessionTokensList from "@/components/profile/SessionTokensList.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "@/plugins/api";
 import type { AuthToken } from "@/plugins/api/interfaces";
 import { computed, onMounted, ref } from "vue";
@@ -154,29 +160,13 @@ onMounted(() => {
 }
 
 .profile-content {
-  background: rgba(var(--v-theme-surface), 0.4);
-  border-radius: 8px;
-  padding: 24px;
-  border: 1px solid rgba(var(--v-border-color), 0.12);
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 600px) {
   .profile-container {
     padding: 12px;
   }
-
-  .profile-content {
-    padding: 16px;
-    border-radius: 8px;
-  }
-}
-
-.token-name-box {
-  background: rgba(var(--v-theme-error), 0.08);
-  border-left: 3px solid rgb(var(--v-theme-error));
-  padding: 12px 16px;
-  border-radius: 4px;
-  font-weight: 500;
-  font-size: 0.938rem;
 }
 </style>
