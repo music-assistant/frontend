@@ -32,6 +32,7 @@
     "dark_mode": "Dark mode",
     "delete_db": "Delete item from database",
     "details": "Details",
+    "edit": "Edit",
     "enter_url": "Enter the URL you want to manually add to the database",
     "external_source_active": "External source active: {0}",
     "goto_album": "Go to album {0}",

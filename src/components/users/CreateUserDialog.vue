@@ -1,148 +1,249 @@
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="500"
-    @update:model-value="emit('update:modelValue', $event)"
-  >
-    <v-card>
-      <v-card-title class="text-h6 pa-6 pb-4">
-        {{ $t("auth.create_user") }}
-      </v-card-title>
-      <v-card-text class="px-6 pb-2">
-        <v-text-field
-          v-model="localUser.username"
-          :label="$t('auth.username')"
-          variant="outlined"
-          density="comfortable"
-          class="mb-2"
-          :rules="[rules.required, rules.usernameLength]"
-          autofocus
-        />
-        <v-text-field
-          v-model="localUser.displayName"
-          :label="$t('auth.display_name')"
-          variant="outlined"
-          density="comfortable"
-          class="mb-2"
-          :hint="$t('optional')"
-          persistent-hint
-        />
-        <v-text-field
-          v-model="localUser.password"
-          :label="$t('auth.password')"
-          type="password"
-          variant="outlined"
-          density="comfortable"
-          class="mb-2"
-          :rules="[rules.required, rules.passwordLength]"
-        />
-        <v-text-field
-          v-model="localUser.confirmPassword"
-          :label="$t('auth.confirm_password')"
-          type="password"
-          variant="outlined"
-          density="comfortable"
-          class="mb-2"
-          :rules="[rules.required, rules.passwordMatch]"
-        />
-        <v-select
-          v-model="localUser.role"
-          :label="$t('auth.role')"
-          :items="roleOptions"
-          variant="outlined"
-          density="comfortable"
-          class="mb-2"
-        />
+  <Dialog v-model:open="isOpen">
+    <DialogContent class="max-h-[70vh] flex flex-col p-0">
+      <DialogHeader class="px-6 pt-6 pb-4">
+        <DialogTitle>{{ $t("auth.create_user") }}</DialogTitle>
+      </DialogHeader>
+      <div ref="scrollContainer" class="flex-1 overflow-y-auto px-6">
+        <form id="form-create-user" @submit.prevent="handleFormSubmit">
+          <FieldGroup>
+            <form.Field name="username">
+              <template #default="{ field }">
+                <Field :data-invalid="isInvalid(field)">
+                  <FieldLabel :for="field.name">
+                    {{ $t("auth.username") }}
+                  </FieldLabel>
+                  <Input
+                    :id="field.name"
+                    :name="field.name"
+                    :model-value="field.state.value"
+                    :aria-invalid="isInvalid(field)"
+                    autofocus
+                    autocomplete="username"
+                    @blur="field.handleBlur"
+                    @input="
+                      (e: Event) => {
+                        field.handleChange(
+                          (e.target as HTMLInputElement).value,
+                        );
+                      }
+                    "
+                  />
+                  <FieldError
+                    v-if="isInvalid(field)"
+                    :errors="field.state.meta.errors"
+                  />
+                </Field>
+              </template>
+            </form.Field>
 
-        <!-- Player Filter -->
-        <v-select
-          v-model="localUser.playerFilter"
-          :label="$t('auth.player_filter')"
-          :items="playerOptions"
-          variant="outlined"
-          density="comfortable"
-          multiple
-          chips
-          closable-chips
-          class="mb-2"
-          :hint="$t('auth.player_filter_hint')"
-          persistent-hint
-        >
-          <template #selection="{ item, index }">
-            <v-chip
-              v-if="index < 2"
-              size="small"
-              closable
-              @click:close="removePlayer(item.value)"
-            >
-              {{ item.title }}
-            </v-chip>
-            <span
-              v-if="index === 2"
-              class="text-grey text-caption align-self-center"
-            >
-              (+{{ localUser.playerFilter.length - 2 }} {{ $t("actions") }})
-            </span>
-          </template>
-        </v-select>
+            <form.Field name="displayName">
+              <template #default="{ field }">
+                <Field>
+                  <FieldLabel :for="field.name">
+                    {{ $t("auth.display_name") }}
+                  </FieldLabel>
+                  <Input
+                    :id="field.name"
+                    :name="field.name"
+                    :model-value="field.state.value"
+                    autocomplete="name"
+                    @blur="field.handleBlur"
+                    @input="
+                      (e: Event) => {
+                        field.handleChange(
+                          (e.target as HTMLInputElement).value,
+                        );
+                      }
+                    "
+                  />
+                  <FieldDescription>
+                    {{ $t("optional") }}
+                  </FieldDescription>
+                </Field>
+              </template>
+            </form.Field>
 
-        <!-- Provider Filter -->
-        <v-select
-          v-model="localUser.providerFilter"
-          :label="$t('auth.provider_filter')"
-          :items="providerOptions"
-          variant="outlined"
-          density="comfortable"
-          multiple
-          chips
-          closable-chips
-          class="mb-2"
-          :hint="$t('auth.provider_filter_hint')"
-          persistent-hint
-        >
-          <template #selection="{ item, index }">
-            <v-chip
-              v-if="index < 2"
-              size="small"
-              closable
-              @click:close="removeProvider(item.value)"
-            >
-              {{ item.title }}
-            </v-chip>
-            <span
-              v-if="index === 2"
-              class="text-grey text-caption align-self-center"
-            >
-              (+{{ localUser.providerFilter.length - 2 }} {{ $t("actions") }})
-            </span>
-          </template>
-        </v-select>
-      </v-card-text>
-      <v-card-actions class="pa-6 pt-4">
-        <v-spacer />
-        <v-btn variant="text" @click="handleClose">
+            <form.Field name="password">
+              <template #default="{ field }">
+                <Field :data-invalid="isInvalid(field)">
+                  <FieldLabel :for="field.name">
+                    {{ $t("auth.password") }}
+                  </FieldLabel>
+                  <Input
+                    :id="field.name"
+                    :name="field.name"
+                    type="password"
+                    :model-value="field.state.value"
+                    :aria-invalid="isInvalid(field)"
+                    autocomplete="new-password"
+                    @blur="field.handleBlur"
+                    @input="
+                      (e: Event) => {
+                        field.handleChange(
+                          (e.target as HTMLInputElement).value,
+                        );
+                      }
+                    "
+                  />
+                  <FieldError
+                    v-if="isInvalid(field)"
+                    :errors="field.state.meta.errors"
+                  />
+                </Field>
+              </template>
+            </form.Field>
+
+            <form.Field name="confirmPassword">
+              <template #default="{ field }">
+                <Field :data-invalid="isInvalid(field)">
+                  <FieldLabel :for="field.name">
+                    {{ $t("auth.confirm_password") }}
+                  </FieldLabel>
+                  <Input
+                    :id="field.name"
+                    :name="field.name"
+                    type="password"
+                    :model-value="field.state.value"
+                    :aria-invalid="isInvalid(field)"
+                    autocomplete="new-password"
+                    @blur="field.handleBlur"
+                    @input="
+                      (e: Event) => {
+                        field.handleChange(
+                          (e.target as HTMLInputElement).value,
+                        );
+                      }
+                    "
+                  />
+                  <FieldError
+                    v-if="isInvalid(field)"
+                    :errors="field.state.meta.errors"
+                  />
+                </Field>
+              </template>
+            </form.Field>
+
+            <form.Field name="role">
+              <template #default="{ field }">
+                <Field>
+                  <FieldLabel :for="field.name">
+                    {{ $t("auth.role") }}
+                  </FieldLabel>
+                  <Select
+                    :model-value="field.state.value"
+                    @update:model-value="
+                      (value) => field.handleChange(value as any)
+                    "
+                  >
+                    <SelectTrigger :id="field.name" class="w-full">
+                      <SelectValue :placeholder="$t('auth.role')" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        v-for="option in roleOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </template>
+            </form.Field>
+
+            <form.Field name="playerFilter">
+              <template #default="{ field }">
+                <Field>
+                  <FieldLabel>
+                    {{ $t("auth.player_filter") }}
+                  </FieldLabel>
+                  <MultiSelect
+                    :model-value="field.state.value"
+                    :options="playerOptions"
+                    :placeholder="$t('auth.select_players')"
+                    @update:model-value="field.handleChange"
+                  />
+                  <FieldDescription>
+                    {{ $t("auth.player_filter_hint") }}
+                  </FieldDescription>
+                </Field>
+              </template>
+            </form.Field>
+
+            <form.Field name="providerFilter">
+              <template #default="{ field }">
+                <Field>
+                  <FieldLabel>
+                    {{ $t("auth.provider_filter") }}
+                  </FieldLabel>
+                  <MultiSelect
+                    :model-value="field.state.value"
+                    :options="providerOptions"
+                    :placeholder="$t('auth.select_providers')"
+                    @update:model-value="field.handleChange"
+                  />
+                  <FieldDescription>
+                    {{ $t("auth.provider_filter_hint") }}
+                  </FieldDescription>
+                </Field>
+              </template>
+            </form.Field>
+          </FieldGroup>
+        </form>
+      </div>
+      <DialogFooter class="px-6 pb-6 pt-4 border-t shrink-0">
+        <Button variant="outline" @click="handleClose">
           {{ $t("cancel") }}
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
+        </Button>
+        <Button
+          type="submit"
+          form="form-create-user"
+          :disabled="loading"
           :loading="loading"
-          :disabled="!canCreate"
-          @click="handleCreate"
         >
           {{ $t("create") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { api } from "@/plugins/api";
-import { UserRole, ProviderType } from "@/plugins/api/interfaces";
-import { computed, ref, watch } from "vue";
+import { useForm } from "@tanstack/vue-form";
+import { useVModel } from "@vueuse/core";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { createUserSchema } from "@/lib/forms/profile";
+import { api } from "@/plugins/api";
+import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
 
@@ -155,125 +256,119 @@ const emit = defineEmits<{
   created: [];
 }>();
 
+const isOpen = useVModel(props, "modelValue", emit);
+
 const loading = ref(false);
+const scrollContainer = ref<HTMLElement | null>(null);
 
-const localUser = ref({
-  username: "",
-  displayName: "",
-  password: "",
-  confirmPassword: "",
-  role: "user" as UserRole,
-  playerFilter: [] as string[],
-  providerFilter: [] as string[],
-});
+const scrollToFirstError = async () => {
+  await nextTick();
+  if (!scrollContainer.value) return;
 
-const roleOptions = [
-  { title: t("auth.admin_role"), value: "admin" },
-  { title: t("auth.user_role"), value: "user" },
-];
+  const firstErrorInput = scrollContainer.value.querySelector(
+    "[aria-invalid='true'], [data-invalid='true']",
+  ) as HTMLElement;
+
+  if (firstErrorInput) {
+    firstErrorInput.scrollIntoView({ behavior: "smooth", block: "center" });
+    firstErrorInput.focus();
+  }
+};
+
+const handleFormSubmit = async () => {
+  await form.handleSubmit();
+  await nextTick();
+
+  if (scrollContainer.value) {
+    const hasErrors = scrollContainer.value.querySelector(
+      "[aria-invalid='true'], [data-invalid='true']",
+    );
+    if (hasErrors) {
+      await scrollToFirstError();
+    }
+  }
+};
+
+const roleOptions = computed(() => [
+  { label: t("auth.admin_role"), value: "admin" },
+  { label: t("auth.user_role"), value: "user" },
+]);
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
     .map((player) => ({
-      title: player.name,
+      label: player.name,
       value: player.player_id,
     }))
-    .sort((a, b) => a.title.localeCompare(b.title));
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
 const providerOptions = computed(() => {
   return Object.values(api.providers)
     .filter((provider) => provider.type === ProviderType.MUSIC)
     .map((provider) => ({
-      title: provider.name,
+      label: provider.name,
       value: provider.instance_id,
     }))
-    .sort((a, b) => a.title.localeCompare(b.title));
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const removePlayer = (playerId: string) => {
-  localUser.value.playerFilter = localUser.value.playerFilter.filter(
-    (id) => id !== playerId,
-  );
-};
-
-const removeProvider = (instanceId: string) => {
-  localUser.value.providerFilter = localUser.value.providerFilter.filter(
-    (id) => id !== instanceId,
-  );
-};
-
-const rules = {
-  required: (v: string) => !!v || t("auth.field_required"),
-  usernameLength: (v: string) => v.length >= 3 || t("auth.username_min_length"),
-  passwordLength: (v: string) => v.length >= 8 || t("auth.password_min_length"),
-  passwordMatch: (v: string) =>
-    v === localUser.value.password || t("auth.passwords_must_match"),
-};
-
-const canCreate = computed(() => {
-  return (
-    localUser.value.username.length >= 3 &&
-    localUser.value.password.length >= 8 &&
-    localUser.value.password === localUser.value.confirmPassword &&
-    localUser.value.role
-  );
-});
-
-const resetForm = () => {
-  localUser.value = {
+const form = useForm({
+  defaultValues: {
     username: "",
     displayName: "",
     password: "",
     confirmPassword: "",
-    role: UserRole.USER,
-    playerFilter: [],
-    providerFilter: [],
-  };
+    role: "user" as UserRole,
+    playerFilter: [] as string[],
+    providerFilter: [] as string[],
+  },
+  validators: {
+    onSubmit: createUserSchema(t) as any,
+  },
+  onSubmit: async ({ value }) => {
+    loading.value = true;
+
+    try {
+      const user = await api.createUser(
+        value.username,
+        value.password,
+        value.role,
+        value.displayName || undefined,
+        value.playerFilter.length > 0 ? value.playerFilter : undefined,
+        value.providerFilter.length > 0 ? value.providerFilter : undefined,
+      );
+
+      if (user) {
+        toast.success(t("auth.user_created"));
+        form.reset();
+        emit("created");
+        emit("update:modelValue", false);
+      } else {
+        toast.error(t("auth.user_create_failed"));
+      }
+    } catch (error) {
+      toast.error(t("auth.user_create_failed"));
+    } finally {
+      loading.value = false;
+    }
+  },
+});
+
+const isInvalid = (field: any) => {
+  return field.state.meta.errors.length > 0;
 };
 
 const handleClose = () => {
-  resetForm();
+  form.reset();
   emit("update:modelValue", false);
-};
-
-const handleCreate = async () => {
-  loading.value = true;
-
-  try {
-    const user = await api.createUser(
-      localUser.value.username,
-      localUser.value.password,
-      localUser.value.role,
-      localUser.value.displayName || undefined,
-      localUser.value.playerFilter.length > 0
-        ? localUser.value.playerFilter
-        : undefined,
-      localUser.value.providerFilter.length > 0
-        ? localUser.value.providerFilter
-        : undefined,
-    );
-
-    if (user) {
-      toast.success(t("auth.user_created"));
-      resetForm();
-      emit("created");
-      emit("update:modelValue", false);
-    } else {
-      toast.error(t("auth.user_create_failed"));
-    }
-  } catch (error) {
-    toast.error(t("auth.user_create_failed"));
-  } finally {
-    loading.value = false;
-  }
 };
 
 watch(
   () => props.modelValue,
   (newVal) => {
     if (!newVal) {
-      resetForm();
+      form.reset();
     }
   },
 );

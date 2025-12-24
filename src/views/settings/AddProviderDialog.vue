@@ -1,7 +1,7 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent
-      class="add-provider-dialog max-w-[800px] h-[60vh] max-h-[60vh] flex flex-col p-0"
+      class="add-provider-dialog h-[60vh] max-h-[60vh] flex flex-col p-0"
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
         <DialogTitle>{{ $t("settings.add_provider") }}</DialogTitle>
