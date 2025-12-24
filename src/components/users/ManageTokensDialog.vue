@@ -1,148 +1,294 @@
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="900"
-    scrollable
-    @update:model-value="emit('update:modelValue', $event)"
-  >
-    <v-card>
-      <v-card-title class="text-h6 pa-6 pb-4">
-        {{ $t("auth.tokens") }} -
-        {{ user?.display_name || user?.username }}
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pa-0">
-        <div class="pa-4">
-          <h3 class="mb-2">{{ $t("auth.active_sessions") }}</h3>
-          <p class="section-subtitle mb-6">
+  <Dialog v-model:open="isOpen">
+    <DialogContent class="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>
+          {{ $t("auth.tokens") }} -
+          {{ user?.display_name || user?.username }}
+        </DialogTitle>
+      </DialogHeader>
+
+      <div class="space-y-6">
+        <!-- Active Sessions Section -->
+        <div>
+          <h3 class="text-base font-semibold mb-2 mt-4">
+            {{ $t("auth.active_sessions") }}
+          </h3>
+          <p class="text-sm text-muted-foreground mb-4">
             {{ $t("auth.active_sessions_description") }}
           </p>
-          <div v-if="sessionTokens.length === 0" class="empty-state">
-            <v-avatar color="blue-grey-darken-2" size="64" class="mb-3">
-              <v-icon icon="mdi-devices" size="32" />
-            </v-avatar>
-            <p class="text-medium-emphasis">
+          <div
+            v-if="sessionTokens.length === 0"
+            class="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg"
+          >
+            <div
+              class="size-16 rounded-full bg-blue-900/20 flex items-center justify-center mb-3"
+            >
+              <Monitor :size="32" class="text-blue-500" />
+            </div>
+            <p class="text-sm text-muted-foreground">
               {{ $t("auth.no_active_sessions") }}
             </p>
           </div>
-          <div v-else class="tokens-list">
-            <ListItem v-for="token in sessionTokens" :key="token.token_id">
-              <template #prepend>
-                <v-avatar color="blue-grey-darken-2" size="40">
-                  <v-icon icon="mdi-devices" size="20" />
-                </v-avatar>
-              </template>
-              <template #title>
-                <div class="ma-line-clamp-1">{{ token.name }}</div>
-              </template>
-              <template #subtitle>
-                <div class="token-meta">
-                  <span
-                    >{{ $t("created") }}:
-                    {{ formatDate(token.created_at) }}</span
-                  >
-                  <span v-if="token.last_used_at" class="token-divider">•</span>
-                  <span v-if="token.last_used_at">
-                    {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
-                  </span>
+          <div v-else class="space-y-2">
+            <Card
+              v-for="token in sessionTokens"
+              :key="token.token_id"
+              class="p-4"
+            >
+              <div class="flex items-center gap-4">
+                <div
+                  class="size-10 rounded-full bg-blue-900/20 flex items-center justify-center shrink-0"
+                >
+                  <Monitor :size="20" class="text-blue-500" />
                 </div>
-              </template>
-              <template #append>
-                <v-btn
-                  icon="mdi-delete"
-                  variant="text"
-                  color="error"
-                  size="small"
+                <div class="flex-1 min-w-0">
+                  <div class="font-medium text-sm truncate">
+                    {{ token.name }}
+                  </div>
+                  <div
+                    class="text-xs text-muted-foreground flex items-center gap-2 flex-wrap"
+                  >
+                    <span>
+                      {{ $t("created") }}: {{ formatDate(token.created_at) }}
+                    </span>
+                    <span
+                      v-if="token.last_used_at"
+                      class="text-muted-foreground"
+                    >
+                      •
+                    </span>
+                    <span v-if="token.last_used_at">
+                      {{ $t("last_used") }}:
+                      {{ formatDate(token.last_used_at) }}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="text-destructive hover:text-destructive"
                   @click.stop="emit('revoke', token)"
-                />
-              </template>
-            </ListItem>
+                >
+                  <Trash2 :size="16" />
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
-        <div class="pa-4">
-          <div class="section-header-with-action">
-            <div class="w-100">
-              <div class="d-flex justify-space-between align-center gap-2">
-                <h3 class="mb-2">{{ $t("auth.long_lived_tokens") }}</h3>
-                <v-btn
-                  color="primary"
-                  variant="flat"
-                  prepend-icon="mdi-plus"
-                  size="small"
-                  @click="showCreateDialog = true"
-                >
-                  {{ $t("auth.create_token") }}
-                </v-btn>
-              </div>
-              <p class="section-subtitle">
+
+        <div>
+          <div class="flex items-start justify-between gap-4 mb-4">
+            <div class="flex-1">
+              <h3 class="text-base font-semibold mb-2">
+                {{ $t("auth.long_lived_tokens") }}
+              </h3>
+              <p class="text-sm text-muted-foreground">
                 {{ $t("auth.long_lived_tokens_description") }}
               </p>
             </div>
+            <Button
+              v-if="!showCreateForm"
+              size="sm"
+              @click="showCreateForm = true"
+            >
+              <Plus :size="16" />
+              {{ $t("auth.create_token") }}
+            </Button>
+            <Button
+              v-else
+              variant="outline"
+              size="sm"
+              @click="showCreateForm = false"
+            >
+              {{ $t("cancel") }}
+            </Button>
           </div>
-          <div v-if="longLivedTokens.length === 0" class="empty-state">
-            <v-avatar color="deep-purple-darken-2" size="64" class="mb-3">
-              <v-icon icon="mdi-key-variant" size="32" />
-            </v-avatar>
-            <p class="text-medium-emphasis">
+
+          <Card v-if="showCreateForm" class="p-4 mb-4 border-primary/20">
+            <form id="form-create-token" @submit.prevent="handleCreateToken">
+              <form.Field
+                name="tokenName"
+                :validators="{
+                  onChange: tokenNameSchema(t),
+                }"
+              >
+                <template #default="{ field }">
+                  <Field :data-invalid="isInvalid(field)">
+                    <FieldLabel :for="field.name">
+                      {{ $t("auth.token_name") }}
+                    </FieldLabel>
+                    <Input
+                      :id="field.name"
+                      :name="field.name"
+                      :model-value="tokenName"
+                      :aria-invalid="isInvalid(field)"
+                      :placeholder="$t('auth.token_name_hint')"
+                      autofocus
+                      autocomplete="off"
+                      @blur="field.handleBlur"
+                      @input="
+                        (e: Event) => {
+                          tokenName = (e.target as HTMLInputElement).value;
+                          field.handleChange(
+                            (e.target as HTMLInputElement).value,
+                          );
+                        }
+                      "
+                    />
+                    <FieldError
+                      v-if="isInvalid(field)"
+                      :errors="field.state.meta.errors"
+                    />
+                  </Field>
+                </template>
+              </form.Field>
+              <div class="flex justify-end gap-2 mt-4">
+                <Button variant="outline" @click="showCreateForm = false">
+                  {{ $t("cancel") }}
+                </Button>
+                <Button
+                  type="submit"
+                  :disabled="!canCreate"
+                  :loading="creating"
+                >
+                  {{ $t("create") }}
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          <Card
+            v-if="createdToken"
+            class="p-4 mb-4 bg-destructive/10 border-destructive/20"
+          >
+            <p class="text-sm text-muted-foreground mb-4">
+              {{ $t("auth.copy_new_token_hint") }}
+            </p>
+            <InputGroup>
+              <InputGroupInput
+                :model-value="createdToken"
+                readonly
+                class="font-mono text-sm"
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  size="icon-sm"
+                  variant="ghost"
+                  @click="copyToken"
+                >
+                  <Copy :size="16" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+            <Button
+              variant="outline"
+              class="mt-4 w-full"
+              @click="handleCloseCreateForm"
+            >
+              {{ $t("close") }}
+            </Button>
+          </Card>
+
+          <div
+            v-if="longLivedTokens.length === 0"
+            class="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg"
+          >
+            <div
+              class="size-16 rounded-full bg-purple-900/20 flex items-center justify-center mb-3"
+            >
+              <Key :size="32" class="text-purple-500" />
+            </div>
+            <p class="text-sm text-muted-foreground">
               {{ $t("auth.no_long_lived_tokens") }}
             </p>
           </div>
-          <div v-else class="tokens-list">
-            <ListItem v-for="token in longLivedTokens" :key="token.token_id">
-              <template #prepend>
-                <v-avatar color="deep-purple-darken-2" size="40">
-                  <v-icon icon="mdi-key-variant" size="20" />
-                </v-avatar>
-              </template>
-              <template #title>
-                <div class="ma-line-clamp-1">{{ token.name }}</div>
-              </template>
-              <template #subtitle>
-                <div class="token-meta">
-                  <span
-                    >{{ $t("created") }}:
-                    {{ formatDate(token.created_at) }}</span
-                  >
-                  <span v-if="token.last_used_at" class="token-divider">•</span>
-                  <span v-if="token.last_used_at">
-                    {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
-                  </span>
+          <div v-else class="space-y-2">
+            <Card
+              v-for="token in longLivedTokens"
+              :key="token.token_id"
+              class="p-4"
+            >
+              <div class="flex items-center gap-4">
+                <div
+                  class="size-10 rounded-full bg-purple-900/20 flex items-center justify-center shrink-0"
+                >
+                  <Key :size="20" class="text-purple-500" />
                 </div>
-              </template>
-              <template #append>
-                <v-btn
-                  icon="mdi-delete"
-                  variant="text"
-                  color="error"
-                  size="small"
+                <div class="flex-1 min-w-0">
+                  <div class="font-medium text-sm truncate">
+                    {{ token.name }}
+                  </div>
+                  <div
+                    class="text-xs text-muted-foreground flex items-center gap-2 flex-wrap"
+                  >
+                    <span>
+                      {{ $t("created") }}: {{ formatDate(token.created_at) }}
+                    </span>
+                    <span
+                      v-if="token.last_used_at"
+                      class="text-muted-foreground"
+                    >
+                      •
+                    </span>
+                    <span v-if="token.last_used_at">
+                      {{ $t("last_used") }}:
+                      {{ formatDate(token.last_used_at) }}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="text-destructive hover:text-destructive"
                   @click.stop="emit('revoke', token)"
-                />
-              </template>
-            </ListItem>
+                >
+                  <Trash2 :size="16" />
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
-      </v-card-text>
-      <v-card-actions class="pa-6">
-        <v-spacer />
-        <v-btn variant="tonal" @click="emit('update:modelValue', false)">
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" @click="emit('update:modelValue', false)">
           {{ $t("close") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-    <CreateTokenDialog
-      v-model="showCreateDialog"
-      :user-id="user?.user_id"
-      @created="emit('token-created')"
-    />
-  </v-dialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import ListItem from "@/components/ListItem.vue";
-import type { AuthToken, User } from "@/plugins/api/interfaces";
+import { useForm } from "@tanstack/vue-form";
+import { useVModel } from "@vueuse/core";
+import { Copy, Key, Monitor, Plus, Trash2 } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import CreateTokenDialog from "./CreateTokenDialog.vue";
+import { toast } from "vuetify-sonner";
+
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { copyToClipboard } from "@/helpers/utils";
+import { createTokenSchema, tokenNameSchema } from "@/lib/forms/profile";
+import { api } from "@/plugins/api";
+import type { AuthToken, User } from "@/plugins/api/interfaces";
 
 const { t } = useI18n();
 
@@ -158,7 +304,12 @@ const emit = defineEmits<{
   "token-created": [];
 }>();
 
-const showCreateDialog = ref(false);
+const isOpen = useVModel(props, "modelValue", emit);
+
+const showCreateForm = ref(false);
+const creating = ref(false);
+const tokenName = ref("");
+const createdToken = ref("");
 
 const sessionTokens = computed(() =>
   props.tokens.filter((token) => !token.is_long_lived),
@@ -171,83 +322,64 @@ const longLivedTokens = computed(() =>
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString();
 };
-</script>
 
-<style scoped>
-.section-subtitle {
-  color: var(--v-theme-secondary);
-  font-size: 0.813rem;
-  margin: 0;
-  line-height: 1.4;
-  margin-bottom: 12px;
-  margin-top: 16px;
-}
+const form = useForm({
+  defaultValues: {
+    tokenName: "",
+  },
+  validators: {
+    onSubmit: createTokenSchema(t) as any,
+  },
+  onSubmit: async () => {
+    // Handled in handleCreateToken
+  },
+});
 
-.section-header-with-action {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
+const isInvalid = (field: any) => {
+  return field.state.meta.errors.length > 0;
+};
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  border: 2px dashed rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  text-align: center;
-}
+const canCreate = computed(() => {
+  const name = tokenName.value || "";
+  return name.trim().length > 0 && name.length <= 100 && !creating.value;
+});
 
-.empty-state .v-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
+const handleCreateToken = async () => {
+  if (!props.user || !canCreate.value) return;
 
-.empty-state .v-avatar .v-icon {
-  margin: 0 !important;
-}
+  creating.value = true;
 
-.tokens-list {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  overflow: hidden;
-  padding: 10px;
-}
+  try {
+    const token = await api.createToken(tokenName.value, props.user.user_id);
 
-.token-meta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 0.875rem;
-}
-
-.token-divider {
-  color: rgb(var(--v-theme-on-surface-variant));
-}
-
-.tokens-list :deep(.v-avatar) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.tokens-list :deep(.v-avatar .v-icon) {
-  margin: 0 !important;
-}
-
-@media (max-width: 600px) {
-  .section-header-with-action {
-    flex-direction: column;
-    align-items: stretch;
+    if (token) {
+      createdToken.value = token;
+      tokenName.value = "";
+      showCreateForm.value = false;
+      form.reset();
+      emit("token-created");
+      toast.success(t("auth.token_created"));
+    } else {
+      toast.error(t("auth.token_create_failed"));
+    }
+  } catch (error: any) {
+    toast.error(error.message || t("auth.token_create_failed"));
+  } finally {
+    creating.value = false;
   }
-}
-</style>
+};
+
+const copyToken = async () => {
+  if (createdToken.value) {
+    await copyToClipboard(createdToken.value);
+    toast.success(t("auth.token_copied"));
+  }
+};
+
+const handleCloseCreateForm = () => {
+  createdToken.value = "";
+  tokenName.value = "";
+  showCreateForm.value = false;
+  form.reset();
+};
+</script>

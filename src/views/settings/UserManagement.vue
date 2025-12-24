@@ -1,75 +1,113 @@
 <template>
-  <div>
-    <div class="users-header w-100">
-      <v-text-field
-        v-model="searchQuery"
-        :placeholder="$t('search')"
-        prepend-inner-icon="mdi-magnify"
-        variant="outlined"
-        density="compact"
-        hide-details
-        clearable
-        style="max-width: 400px"
-      />
-      <v-btn
-        color="primary"
-        variant="flat"
-        height="40"
-        class="add-user-btn"
-        prepend-icon="mdi-plus"
-        @click="showCreateDialog = true"
-      >
+  <div class="space-y-6 p-6">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div class="relative flex-1 min-w-[200px] max-w-[400px]">
+        <Input v-model="searchQuery" :placeholder="$t('search')" class="w-full">
+          <template #prepend>
+            <Search :size="16" class="text-muted-foreground" />
+          </template>
+        </Input>
+      </div>
+      <Button @click="showCreateDialog = true">
+        <Plus :size="16" />
         {{ $t("auth.create_user") }}
-      </v-btn>
+      </Button>
     </div>
-    <Container>
-      <ListItem
+
+    <div
+      v-if="filteredUsers.length === 0"
+      class="flex flex-col items-center justify-center py-16 text-center"
+    >
+      <p class="text-muted-foreground">{{ $t("no_content") }}</p>
+    </div>
+
+    <div
+      v-else
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+    >
+      <Card
         v-for="user in filteredUsers"
         :key="user.user_id"
-        show-menu-btn
-        link
-        @menu="(evt: Event) => onMenu(evt, user)"
+        class="cursor-pointer hover:bg-accent/50 transition-colors"
         @click="editUser(user)"
       >
-        <template #prepend>
-          <div class="user-avatar-wrapper">
-            <v-avatar
-              size="40"
-              :color="user.avatar_url ? undefined : 'grey-darken-2'"
-            >
-              <v-img v-if="user.avatar_url" :src="user.avatar_url" />
-              <v-icon
-                v-else
-                icon="mdi-account"
-                size="20"
-                color="grey-lighten-1"
-              />
-            </v-avatar>
+        <CardContent class="px-4 py-0">
+          <div class="flex items-center gap-4">
+            <Avatar class="size-12 shrink-0">
+              <AvatarImage v-if="user.avatar_url" :src="user.avatar_url" />
+              <AvatarFallback class="bg-muted">
+                <UserIcon :size="24" class="text-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-semibold text-sm truncate">
+                    {{ user.display_name || user.username }}
+                  </h3>
+                  <p class="text-xs text-muted-foreground truncate">
+                    {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
+                  </p>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="size-8 shrink-0"
+                      @click.stop
+                    >
+                      <MoreVertical :size="16" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem @click.stop="editUser(user)">
+                      <Pencil :size="16" />
+                      {{ $t("auth.edit_user") }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem @click.stop="manageTokens(user)">
+                      <Key :size="16" />
+                      {{ $t("auth.manage_tokens") }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      v-if="!isCurrentUser(user)"
+                      @click.stop="
+                        user.enabled
+                          ? confirmDisableUser(user)
+                          : enableUser(user)
+                      "
+                    >
+                      <component
+                        :is="user.enabled ? MonitorOff : Monitor"
+                        :size="16"
+                      />
+                      {{
+                        user.enabled
+                          ? $t("auth.disable_user")
+                          : $t("auth.enable_user")
+                      }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator v-if="!isCurrentUser(user)" />
+                    <DropdownMenuItem
+                      v-if="!isCurrentUser(user)"
+                      class="text-destructive focus:text-destructive"
+                      @click.stop="confirmDeleteUser(user)"
+                    >
+                      <Trash2 :size="16" />
+                      {{ $t("auth.delete_user") }}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <Badge v-if="!user.enabled" variant="destructive" class="mt-2">
+                {{ $t("auth.disabled") }}
+              </Badge>
+            </div>
           </div>
-        </template>
-        <template #title>
-          <div class="ma-line-clamp-1">
-            {{ user.display_name || user.username }}
-          </div>
-        </template>
-        <template #subtitle>
-          <div class="ma-line-clamp-1">
-            {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
-          </div>
-        </template>
-        <template #append>
-          <v-chip v-if="!user.enabled" size="small" color="error">
-            {{ $t("auth.disabled") }}
-          </v-chip>
-        </template>
-      </ListItem>
-      <div
-        v-if="users.length === 0"
-        class="text-center pa-8 text-medium-emphasis"
-      >
-        {{ $t("no_content") }}
-      </div>
-    </Container>
+        </CardContent>
+      </Card>
+    </div>
+
     <CreateUserDialog v-model="showCreateDialog" @created="loadUsers" />
     <EditUserDialog
       v-model="showEditDialog"
@@ -102,8 +140,32 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
-import ListItem from "@/components/ListItem.vue";
+import {
+  Key,
+  Monitor,
+  MonitorOff,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { toast } from "vuetify-sonner";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
 import DeleteUserDialog from "@/components/users/DeleteUserDialog.vue";
 import DisableUserDialog from "@/components/users/DisableUserDialog.vue";
@@ -112,11 +174,7 @@ import ManageTokensDialog from "@/components/users/ManageTokensDialog.vue";
 import RevokeTokenDialog from "@/components/users/RevokeTokenDialog.vue";
 import { api } from "@/plugins/api";
 import type { AuthToken, User } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { computed, onMounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
-import { toast } from "vuetify-sonner";
 
 const { t } = useI18n();
 
@@ -218,105 +276,7 @@ const enableUser = async (user: User) => {
   }
 };
 
-const onMenu = (evt: Event, user: User) => {
-  const menuItems = [
-    {
-      label: "auth.edit_user",
-      labelArgs: [],
-      action: () => {
-        editUser(user);
-      },
-      icon: "mdi-pencil",
-    },
-    {
-      label: "auth.manage_tokens",
-      labelArgs: [],
-      action: () => {
-        manageTokens(user);
-      },
-      icon: "mdi-key-variant",
-    },
-    {
-      label: user.enabled ? "auth.disable_user" : "auth.enable_user",
-      labelArgs: [],
-      action: () => {
-        if (user.enabled) {
-          confirmDisableUser(user);
-        } else {
-          enableUser(user);
-        }
-      },
-      icon: user.enabled ? "mdi-account-off" : "mdi-account-check",
-      hide: isCurrentUser(user),
-    },
-    {
-      label: "auth.delete_user",
-      labelArgs: [],
-      action: () => {
-        confirmDeleteUser(user);
-      },
-      icon: "mdi-delete",
-      color: "error",
-      hide: isCurrentUser(user),
-    },
-  ];
-  eventbus.emit("contextmenu", {
-    items: menuItems,
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
-  });
-};
-
 onMounted(() => {
   loadUsers();
 });
 </script>
-
-<style scoped>
-.users-header {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 20px 20px 6px 20px;
-}
-
-.add-user-btn {
-  flex-shrink: 0;
-  align-self: center;
-}
-
-@media (max-width: 960px) {
-  .users-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .add-user-btn {
-    width: 100%;
-    align-self: stretch;
-  }
-}
-
-.user-avatar-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.user-avatar-wrapper :deep(.v-icon) {
-  margin-inline-end: 0 !important;
-}
-
-.user-avatar-wrapper :deep(.v-avatar) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.user-avatar-wrapper :deep(.v-avatar .v-icon) {
-  margin: 0 !important;
-}
-</style>
