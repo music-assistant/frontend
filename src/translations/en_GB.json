@@ -992,6 +992,8 @@
         "avatar_url_hint": "Enter URL to avatar image",
         "change_avatar": "Change avatar",
         "profile_updated": "Profile updated successfully",
+        "save_changes": "Save changes",
+        "update_password": "Update password",
         "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in.",
         "copy_new_token_hint": "Copy your access token. It will not be shown again.",
         "token_copied": "Token copied to clipboard",

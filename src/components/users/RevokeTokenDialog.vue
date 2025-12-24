@@ -1,48 +1,48 @@
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="480"
-    @update:model-value="emit('update:modelValue', $event)"
-  >
-    <v-card>
-      <v-card-title class="text-h6 pa-6 pb-4">
-        {{
-          token?.is_long_lived
-            ? $t("auth.revoke_token")
-            : $t("auth.revoke_session")
-        }}
-      </v-card-title>
-      <v-card-text class="px-6 pb-2">
-        <p class="text-body-1 mb-4">
+  <Dialog :open="modelValue" @update:open="emit('update:modelValue', $event)">
+    <DialogContent class="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>
+          {{
+            token?.is_long_lived
+              ? $t("auth.revoke_token")
+              : $t("auth.revoke_session")
+          }}
+        </DialogTitle>
+      </DialogHeader>
+      <div class="py-4">
+        <p class="text-sm text-muted-foreground mb-4">
           {{
             token?.is_long_lived
               ? $t("auth.revoke_token_confirm")
               : $t("auth.revoke_session_confirm")
           }}
         </p>
-        <div v-if="token" class="token-name-box">
-          {{ token.name }}
+        <div v-if="token" class="rounded-md bg-destructive/10 p-4">
+          <p class="font-medium">{{ token.name }}</p>
         </div>
-      </v-card-text>
-      <v-card-actions class="pa-6 pt-4">
-        <v-spacer />
-        <v-btn variant="text" @click="emit('update:modelValue', false)">
+      </div>
+      <DialogFooter>
+        <Button variant="outline" @click="emit('update:modelValue', false)">
           {{ $t("cancel") }}
-        </v-btn>
-        <v-btn
-          color="error"
-          variant="flat"
-          :loading="loading"
-          @click="handleRevoke"
-        >
+        </Button>
+        <Button variant="destructive" :loading="loading" @click="handleRevoke">
           {{ $t("auth.revoke") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "@/plugins/api";
 import type { AuthToken } from "@/plugins/api/interfaces";
 import { ref } from "vue";
@@ -95,14 +95,3 @@ const handleRevoke = async () => {
   }
 };
 </script>
-
-<style scoped>
-.token-name-box {
-  background: rgba(var(--v-theme-error), 0.08);
-  border-left: 3px solid rgb(var(--v-theme-error));
-  padding: 12px 16px;
-  border-radius: 4px;
-  font-weight: 500;
-  font-size: 0.938rem;
-}
-</style>
