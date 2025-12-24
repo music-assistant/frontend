@@ -382,6 +382,10 @@
                 "el_GR": "Greek"
             }
         },
+        "startup_view": {
+            "label": "Startup view",
+            "description": "Select which view to display when Music Assistant starts. Choose from Home, Search, Artists, Albums, Tracks, Playlists, Audiobooks, Podcasts, Radio, or Browse."
+        },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
         "no_player_providers": "No Player Providers configured",

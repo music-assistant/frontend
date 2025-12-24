@@ -9,7 +9,11 @@ const routes = [
     children: [
       {
         path: "",
-        redirect: "/home",
+        redirect: () => {
+          const startupView =
+            localStorage.getItem("frontend.settings.startup_view") || "home";
+          return `/${startupView}`;
+        },
       },
       {
         path: "/home",
