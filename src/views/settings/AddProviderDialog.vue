@@ -134,7 +134,7 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
-const searchInput = ref<{ $el?: HTMLElement } | null>(null);
+const searchInput = ref<{ focus: () => void } | null>(null);
 
 const providerTypeOptions = computed(() => [
   { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
@@ -290,13 +290,7 @@ watch(
 
     if (isOpen) {
       nextTick(() => {
-        const el = searchInput.value?.$el;
-        if (el) {
-          const input = (el as HTMLElement).querySelector(
-            "input",
-          ) as HTMLInputElement | null;
-          input?.focus();
-        }
+        searchInput.value?.focus();
       });
     }
   },
