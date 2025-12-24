@@ -162,7 +162,7 @@
             v-if="createdToken"
             class="p-4 mb-4 bg-destructive/10 border-destructive/20"
           >
-            <p class="text-sm text-muted-foreground mb-4">
+            <p class="text-sm text-muted-foreground">
               {{ $t("auth.copy_new_token_hint") }}
             </p>
             <InputGroup>

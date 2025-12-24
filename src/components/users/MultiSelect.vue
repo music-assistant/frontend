@@ -13,7 +13,7 @@
           :value="item"
           class="flex items-center justify-center gap-1.5 text-sm bg-primary text-primary-foreground rounded px-2 py-0.5"
         >
-          <span>{{ getLabelForValue(item) }}</span>
+          <span>{{ getLabelForValue(String(item)) }}</span>
           <TagsInputItemDelete>
             <X :size="12" />
           </TagsInputItemDelete>
@@ -138,8 +138,9 @@ const toggleOption = (value: string) => {
   selectedValues.value = newValue;
 };
 
-const getLabelForValue = (value: string) => {
-  const option = props.options.find((opt) => opt.value === value);
-  return option?.label || value;
+const getLabelForValue = (value: string | number) => {
+  const stringValue = String(value);
+  const option = props.options.find((opt) => opt.value === stringValue);
+  return option?.label || stringValue;
 };
 </script>

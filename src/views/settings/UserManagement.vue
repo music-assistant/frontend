@@ -149,6 +149,7 @@ import {
   Plus,
   Search,
   Trash2,
+  User as UserIcon,
 } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
