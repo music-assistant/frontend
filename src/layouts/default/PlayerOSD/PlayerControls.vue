@@ -19,7 +19,7 @@
       <PreviousBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        class="media-controls-item"
+        class="prev-next-btn"
         :icon="visibleComponents.previous.icon"
       />
     </div>
@@ -28,7 +28,7 @@
       <PlayBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        class="media-controls-item"
+        class="play-btn"
         icon-style="circle"
         :icon="visibleComponents.play.icon"
       />
@@ -41,9 +41,8 @@
       <NextBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
+        class="prev-next-btn"
         :icon="visibleComponents.next.icon"
-        static-height="24px"
-        static-width="24px"
       />
     </div>
     <!-- repeat button -->
@@ -118,5 +117,13 @@ withDefaults(defineProps<Props>(), {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.play-btn .icon {
+  font-size: 48px !important;
+}
+
+.prev-next-btn .icon {
+  font-size: 36px !important;
 }
 </style>

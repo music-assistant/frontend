@@ -31,6 +31,7 @@
         <!-- progress bar -->
         <PlayerTimeline
           v-if="getBreakpointValue('bp6')"
+          show-labels
           :is-progress-bar="false"
           :disabled="
             !store.activePlayerQueue?.active ||

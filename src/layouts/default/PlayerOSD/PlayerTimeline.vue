@@ -1,6 +1,25 @@
 <template>
-  <div style="width: auto; height: 24px">
+  <div style="width: auto; position: relative;">
     <div v-if="store.activePlayer" style="width: 100%">
+      <div v-if="showLabels" class="time-text-row">
+        <!-- current time detail -->
+        <div
+          class="text-caption time-text-left"
+          @click="
+            showRemainingTime
+              ? (showRemainingTime = false)
+              : (showRemainingTime = true)
+          "
+        >
+          {{ playerCurTimeStr }}
+        </div>
+
+        <!-- end time detail -->
+        <div class="text-caption time-text-right">
+          {{ playerTotalTimeStr }}
+        </div>
+      </div>
+
       <v-slider
         v-model="curTimeValue"
         :disabled="!canSeek"
@@ -10,7 +29,7 @@
         hide-details
         :track-size="4"
         :thumb-size="isThumbHidden ? 0 : 10"
-        :show-ticks="chapterTicks ? 'always' : false"
+        :show-ticks="Object.keys(chapterTicks).length > 0 ? 'always' : false"
         :ticks="chapterTicks"
         tick-size="4"
         :color="color"
@@ -34,25 +53,6 @@
           >
         </template>
       </v-slider>
-
-      <div v-if="showLabels" class="time-text-row">
-        <!-- current time detail -->
-        <div
-          class="text-caption time-text-left"
-          @click="
-            showRemainingTime
-              ? (showRemainingTime = false)
-              : (showRemainingTime = true)
-          "
-        >
-          {{ playerCurTimeStr }}
-        </div>
-
-        <!-- end time detail -->
-        <div class="text-caption time-text-right">
-          {{ playerTotalTimeStr }}
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -279,16 +279,18 @@ const chapterClicked = function (chaperPos: number) {
   right: 0;
 }
 .time-text-row {
+  position: absolute;
+  top: -14px;
+  left: 0;
+  width: 100%;
   cursor: pointer;
-  height: 8px;
+  height: auto;
   flex-basis: 0;
   flex-grow: 1;
   max-width: 100%;
   opacity: 0.6;
   display: flex;
   flex: 1 1 auto;
-  margin-top: -10px;
-  margin-bottom: 5px;
 }
 .time-text-row > div {
   width: calc(100% / 2);

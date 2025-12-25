@@ -6,13 +6,21 @@
     lines="two"
   >
     <template #prepend>
+      <!-- expand button -->
+      <div class="d-flex align-center justify-center mr-2">
+        <v-btn
+          icon="mdi-chevron-up"
+          variant="text"
+          @click="store.showFullscreenPlayer = true"
+        />
+      </div>
       <div
         class="media-thumb player-media-thumb"
         :style="`cursor: pointer;height: ${
           getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
         }px; width: ${
           getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-        }px; `"
+        }px; flex-shrink: 0;`"
         @click="store.showFullscreenPlayer = true"
       >
         <!-- player.current_media has content loaded (will work for all sources)  -->
