@@ -1,11 +1,7 @@
 <template>
   <!-- play/pause button: disabled if no content -->
   <div v-if="isVisible && player" class="play-btn-root">
-    <v-progress-circular
-      v-if="isLoading"
-      indeterminate
-      size="48"
-    />
+    <v-progress-circular v-if="isLoading" indeterminate size="48" />
     <Icon
       v-else
       v-bind="icon"
@@ -76,18 +72,21 @@ const togglePlay = async () => {
   if (!compProps.player) return;
   isLoading.value = true;
   api.playerCommandPlayPause(compProps.player.player_id);
-  
+
   // Safety timeout
   setTimeout(() => {
     isLoading.value = false;
   }, 2000);
 };
 
-watch(() => compProps.player?.playback_state, (newVal, oldVal) => {
-  if (newVal !== oldVal) {
+watch(
+  () => compProps.player?.playback_state,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal) {
       isLoading.value = false;
-  }
-});
+    }
+  },
+);
 </script>
 
 <style scoped>

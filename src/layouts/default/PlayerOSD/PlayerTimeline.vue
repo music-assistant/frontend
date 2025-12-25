@@ -1,5 +1,5 @@
 <template>
-  <div style="width: auto; position: relative;">
+  <div style="width: auto; position: relative">
     <div v-if="store.activePlayer" style="width: 100%">
       <div v-if="showLabels" class="time-text-row">
         <!-- current time detail -->

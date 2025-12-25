@@ -1,7 +1,7 @@
 <template>
   <v-dialog
-    class="fullscreen-player-dialog"
     v-model="store.showFullscreenPlayer"
+    class="fullscreen-player-dialog"
     fullscreen
     :scrim="false"
     transition="dialog-bottom-transition"
@@ -20,33 +20,48 @@
         <div class="player-background-overlay"></div>
       </div>
       <div class="player-layout">
-        <v-toolbar class="v-toolbar-default" color="transparent" density="comfortable">
+        <v-toolbar
+          class="v-toolbar-default"
+          color="transparent"
+          density="comfortable"
+        >
           <template #prepend>
             <Button icon @click="store.showFullscreenPlayer = false">
               <v-icon icon="mdi-chevron-down" />
             </Button>
-            
+
             <!-- Meta Info (Source/Quality) moved to toolbar -->
             <div class="toolbar-meta-info ml-4 d-flex align-center">
-               <div
-                  v-if="!store.activePlayerQueue && store.activePlayer?.active_source"
-                  class="text-caption opacity-70"
-                >
-                  {{ $t("external_source_active", [getSourceName(store.activePlayer)]) }}
-                </div>
-                <div
-                  v-else-if="store.activePlayerQueue && store.activePlayerQueue.items == 0"
-                  class="text-caption opacity-70"
-                >
-                  {{ $t("queue_empty") }}
-                </div>
-                
-                <div
-                  v-if="store.activePlayer?.powered != false && store.curQueueItem?.streamdetails"
-                  class="quality-badge ml-2"
-                >
-                  <QualityDetailsBtn />
-                </div>
+              <div
+                v-if="
+                  !store.activePlayerQueue && store.activePlayer?.active_source
+                "
+                class="text-caption opacity-70"
+              >
+                {{
+                  $t("external_source_active", [
+                    getSourceName(store.activePlayer),
+                  ])
+                }}
+              </div>
+              <div
+                v-else-if="
+                  store.activePlayerQueue && store.activePlayerQueue.items == 0
+                "
+                class="text-caption opacity-70"
+              >
+                {{ $t("queue_empty") }}
+              </div>
+
+              <div
+                v-if="
+                  store.activePlayer?.powered != false &&
+                  store.curQueueItem?.streamdetails
+                "
+                class="quality-badge ml-2"
+              >
+                <QualityDetailsBtn />
+              </div>
             </div>
           </template>
           <template #append>
@@ -93,7 +108,9 @@
                     store.activePlayer?.powered != false &&
                     store.activePlayer?.current_media?.image_url
                   "
-                  :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
+                  :src="
+                    getMediaImageUrl(store.activePlayer.current_media.image_url)
+                  "
                   cover
                   class="artwork-image"
                 />
@@ -122,7 +139,7 @@
               <v-card-title
                 v-else-if="store.activePlayer?.current_media?.title"
                 class="text-h4 font-weight-bold"
-                style="cursor:pointer;"
+                style="cursor: pointer"
                 @click="onTitleClick"
               >
                 <MarqueeText :sync="playerMarqueeSync">
@@ -132,7 +149,7 @@
               <v-card-title
                 v-else
                 class="text-h4 font-weight-bold"
-                style="cursor:pointer;"
+                style="cursor: pointer"
                 @click="store.showPlayersMenu = true"
               >
                 <MarqueeText :sync="playerMarqueeSync">
@@ -148,9 +165,13 @@
                 {{ $t("off") }}
               </v-card-subtitle>
               <v-card-subtitle
-                v-else-if="store.activePlayer?.current_media?.album && store.activePlayer?.current_media?.album !== store.activePlayer?.current_media?.title"
+                v-else-if="
+                  store.activePlayer?.current_media?.album &&
+                  store.activePlayer?.current_media?.album !==
+                    store.activePlayer?.current_media?.title
+                "
                 class="text-h6"
-                style="cursor:pointer;"
+                style="cursor: pointer"
                 @click="onAlbumClick"
               >
                 <MarqueeText :sync="playerMarqueeSync">
@@ -160,7 +181,7 @@
               <v-card-subtitle
                 v-if="store.activePlayer?.current_media?.artist"
                 class="text-h6"
-                style="cursor:pointer;"
+                style="cursor: pointer"
                 @click="onArtistClick"
               >
                 <MarqueeText :sync="playerMarqueeSync">
@@ -181,7 +202,11 @@
                 <Icon
                   v-if="store.activePlayerQueue"
                   :disabled="!store.curQueueItem?.media_item"
-                  :icon="store.curQueueItem?.media_item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+                  :icon="
+                    store.curQueueItem?.media_item?.favorite
+                      ? 'mdi-heart'
+                      : 'mdi-heart-outline'
+                  "
                   :title="$t('tooltip.favorite')"
                   variant="button"
                   class="media-control-btn"
@@ -218,23 +243,54 @@
                 />
               </div>
 
-              <div class="volume-wrapper" v-if="store.activePlayer">
+              <div v-if="store.activePlayer" class="volume-wrapper">
                 <PlayerVolume
                   width="100%"
                   :is-powered="store.activePlayer?.powered != false"
-                  :disabled="!store.activePlayer || !store.activePlayer?.available || store.activePlayer.powered == false || !store.activePlayer.supported_features.includes(PlayerFeature.VOLUME_SET)"
-                  :model-value="Math.round(store.activePlayer.group_members.length > 0 ? store.activePlayer.group_volume : store.activePlayer.volume_level || 0)"
+                  :disabled="
+                    !store.activePlayer ||
+                    !store.activePlayer?.available ||
+                    store.activePlayer.powered == false ||
+                    !store.activePlayer.supported_features.includes(
+                      PlayerFeature.VOLUME_SET,
+                    )
+                  "
+                  :model-value="
+                    Math.round(
+                      store.activePlayer.group_members.length > 0
+                        ? store.activePlayer.group_volume
+                        : store.activePlayer.volume_level || 0,
+                    )
+                  "
                   prepend-icon="mdi-volume-minus"
                   append-icon="mdi-volume-plus"
                   :color="sliderColor"
                   :allow-wheel="true"
-                  @update:model-value="store.activePlayer!.group_members.length > 0 ? api.playerCommandGroupVolume(store.activePlayerId!, $event) : api.playerCommandVolumeSet(store.activePlayerId!, $event)"
-                  @click:prepend="store.activePlayer!.group_members.length > 0 ? api.playerCommandGroupVolumeDown(store.activePlayerId!) : api.playerCommandVolumeDown(store.activePlayerId!)"
-                  @click:append="store.activePlayer!.group_members.length > 0 ? api.playerCommandGroupVolumeUp(store.activePlayerId!) : api.playerCommandVolumeUp(store.activePlayerId!)"
+                  @update:model-value="
+                    store.activePlayer!.group_members.length > 0
+                      ? api.playerCommandGroupVolume(
+                          store.activePlayerId!,
+                          $event,
+                        )
+                      : api.playerCommandVolumeSet(
+                          store.activePlayerId!,
+                          $event,
+                        )
+                  "
+                  @click:prepend="
+                    store.activePlayer!.group_members.length > 0
+                      ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
+                      : api.playerCommandVolumeDown(store.activePlayerId!)
+                  "
+                  @click:append="
+                    store.activePlayer!.group_members.length > 0
+                      ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
+                      : api.playerCommandVolumeUp(store.activePlayerId!)
+                  "
                 />
               </div>
-              
-               <div
+
+              <div
                 v-if="showExpandedPlayerSelectButton"
                 class="player-select-wrapper"
               >
@@ -243,8 +299,13 @@
                   variant="outlined"
                   @click="store.showPlayersMenu = true"
                 >
-                  <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" class="mr-2"/>
-                  {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
+                  <v-icon
+                    :icon="store.activePlayer?.icon || 'mdi-speaker'"
+                    class="mr-2"
+                  />
+                  {{
+                    store.activePlayer ? getPlayerName(store.activePlayer) : ""
+                  }}
                 </v-btn>
               </div>
             </div>
@@ -260,15 +321,18 @@
                 v-model="activeQueuePanel"
                 hide-slider
                 density="compact"
-                @click="activeQueuePanelClick"
                 class="queue-tabs"
                 bg-color="transparent"
+                @click="activeQueuePanelClick"
               >
                 <v-tab :value="0">
                   {{ $t("queue") }}
                   <v-badge
                     color="grey"
-                    :content="(store.activePlayerQueue?.items || 0) - (store.activePlayerQueue?.current_index || 0)"
+                    :content="
+                      (store.activePlayerQueue?.items || 0) -
+                      (store.activePlayerQueue?.current_index || 0)
+                    "
                     inline
                   />
                 </v-tab>
@@ -293,8 +357,12 @@
                 <v-icon>mdi-close</v-icon>
               </v-btn>
             </div>
-            
-            <div class="queue-list-container" :style="scrollMaskStyle" ref="queueContainerRef">
+
+            <div
+              ref="queueContainerRef"
+              class="queue-list-container"
+              :style="scrollMaskStyle"
+            >
               <v-infinite-scroll
                 v-if="!tempHide && activeQueuePanel !== 2"
                 :onLoad="loadNextPage"
@@ -311,11 +379,11 @@
                       link
                       :show-menu-btn="true"
                       :disabled="!item.available"
+                      class="queue-list-item"
                       @click.stop="(e: Event) => openQueueItemMenu(e, item)"
                       @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
                       @mouseenter="hoveredQueueIndex = index"
                       @mouseleave="hoveredQueueIndex = -1"
-                      class="queue-list-item"
                     >
                       <template #prepend>
                         <div class="media-thumb listitem-media-thumb">
@@ -325,10 +393,25 @@
                       <template #title>
                         <div class="title-row">
                           <MarqueeText
-                            :sync="index == 0 && activeQueuePanel == 0 ? playerMarqueeSync : hoveredMarqueeSync"
-                            :disabled="!((index == 0 && activeQueuePanel == 0) || hoveredQueueIndex == index)"
+                            :sync="
+                              index == 0 && activeQueuePanel == 0
+                                ? playerMarqueeSync
+                                : hoveredMarqueeSync
+                            "
+                            :disabled="
+                              !(
+                                (index == 0 && activeQueuePanel == 0) ||
+                                hoveredQueueIndex == index
+                              )
+                            "
                           >
-                            <span :class="{'is-playing': item.queue_item_id === store.curQueueItem?.queue_item_id}">
+                            <span
+                              :class="{
+                                'is-playing':
+                                  item.queue_item_id ===
+                                  store.curQueueItem?.queue_item_id,
+                              }"
+                            >
                               {{ item.name }}
                             </span>
                           </MarqueeText>
@@ -340,10 +423,25 @@
                             {{ formatDuration(item.duration) }} |
                           </span>
                           <MarqueeText
-                            :sync="index == 0 && activeQueuePanel == 0 ? playerMarqueeSync : hoveredMarqueeSync"
-                            :disabled="!((index == 0 && activeQueuePanel == 0) || hoveredQueueIndex == index)"
+                            :sync="
+                              index == 0 && activeQueuePanel == 0
+                                ? playerMarqueeSync
+                                : hoveredMarqueeSync
+                            "
+                            :disabled="
+                              !(
+                                (index == 0 && activeQueuePanel == 0) ||
+                                hoveredQueueIndex == index
+                              )
+                            "
                           >
-                            <span v-if="item.media_item && 'album' in item.media_item && item.media_item.album">
+                            <span
+                              v-if="
+                                item.media_item &&
+                                'album' in item.media_item &&
+                                item.media_item.album
+                              "
+                            >
                               {{ item.media_item.album.name }}
                             </span>
                           </MarqueeText>
@@ -351,7 +449,12 @@
                       </template>
                       <template #append>
                         <NowPlayingBadge
-                          v-if="item.queue_item_id === store.curQueueItem?.queue_item_id && store.activePlayer?.playback_state != PlaybackState.IDLE"
+                          v-if="
+                            item.queue_item_id ===
+                              store.curQueueItem?.queue_item_id &&
+                            store.activePlayer?.playback_state !=
+                              PlaybackState.IDLE
+                          "
                           :show-badge="getBreakpointValue('bp4')"
                         />
                         <v-icon v-if="!item.available">mdi-alert</v-icon>
@@ -359,7 +462,11 @@
                     </ListItem>
                     <!-- Chapters -->
                     <div
-                      v-if="item.queue_item_id == store.curQueueItem?.queue_item_id && item.media_item?.metadata?.chapters?.length"
+                      v-if="
+                        item.queue_item_id ==
+                          store.curQueueItem?.queue_item_id &&
+                        item.media_item?.metadata?.chapters?.length
+                      "
                       style="margin-left: 50px"
                     >
                       <v-list-item
@@ -371,14 +478,16 @@
                           <div>{{ chapter.name }}</div>
                         </template>
                         <template #append>
-                          <span v-if="chapter.end" class="text-caption">{{ formatDuration(chapter.end - chapter.start) }}</span>
+                          <span v-if="chapter.end" class="text-caption">{{
+                            formatDuration(chapter.end - chapter.start)
+                          }}</span>
                         </template>
                       </v-list-item>
                     </div>
                   </template>
                 </v-virtual-scroll>
               </v-infinite-scroll>
-              
+
               <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
                 <LyricsViewer
                   :media-item="store.curQueueItem?.media_item"
@@ -1043,18 +1152,24 @@ const canScrollDown = ref(false);
 const scrollMaskStyle = computed(() => {
   if (canScrollUp.value && canScrollDown.value) {
     return {
-      maskImage: 'linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)',
-      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)'
+      maskImage:
+        "linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)",
+      WebkitMaskImage:
+        "linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)",
     };
   } else if (canScrollUp.value) {
     return {
-      maskImage: 'linear-gradient(to bottom, transparent 0%, black 40px, black 100%)',
-      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40px, black 100%)'
+      maskImage:
+        "linear-gradient(to bottom, transparent 0%, black 40px, black 100%)",
+      WebkitMaskImage:
+        "linear-gradient(to bottom, transparent 0%, black 40px, black 100%)",
     };
   } else if (canScrollDown.value) {
     return {
-      maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 40px), transparent 100%)',
-      WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 40px), transparent 100%)'
+      maskImage:
+        "linear-gradient(to bottom, black 0%, black calc(100% - 40px), transparent 100%)",
+      WebkitMaskImage:
+        "linear-gradient(to bottom, black 0%, black calc(100% - 40px), transparent 100%)",
     };
   }
   return {};
@@ -1065,38 +1180,43 @@ const queueContainerRef = ref<HTMLElement | null>(null);
 const updateScrollState = () => {
   const container = queueContainerRef.value;
   if (!container) return;
-  
+
   // Find the element that actually has the scrollbar
   // We prioritize v-virtual-scroll as it's the inner container
-  let scrollable = container.querySelector('.v-virtual-scroll') as HTMLElement;
-  
+  let scrollable = container.querySelector(".v-virtual-scroll") as HTMLElement;
+
   // If not found or not scrollable, try v-infinite-scroll
-  if (!scrollable || getComputedStyle(scrollable).overflowY === 'hidden') {
-      scrollable = container.querySelector('.v-infinite-scroll') as HTMLElement;
+  if (!scrollable || getComputedStyle(scrollable).overflowY === "hidden") {
+    scrollable = container.querySelector(".v-infinite-scroll") as HTMLElement;
   }
-  
+
   // Fallback: find any scrolling child
   if (!scrollable || scrollable.scrollHeight <= scrollable.clientHeight) {
-      const candidates = container.querySelectorAll('div');
-      for (const el of candidates) {
-          const style = getComputedStyle(el);
-          if (el.scrollHeight > el.clientHeight && (style.overflowY === 'auto' || style.overflowY === 'scroll')) {
-              scrollable = el as HTMLElement;
-              break;
-          }
+    const candidates = container.querySelectorAll("div");
+    for (const el of candidates) {
+      const style = getComputedStyle(el);
+      if (
+        el.scrollHeight > el.clientHeight &&
+        (style.overflowY === "auto" || style.overflowY === "scroll")
+      ) {
+        scrollable = el as HTMLElement;
+        break;
       }
+    }
   }
 
   if (scrollable) {
     const checkScroll = () => {
-       canScrollUp.value = scrollable.scrollTop > 0;
-       canScrollDown.value = scrollable.scrollHeight > scrollable.clientHeight && 
-                             scrollable.scrollTop + scrollable.clientHeight < scrollable.scrollHeight - 10;
+      canScrollUp.value = scrollable.scrollTop > 0;
+      canScrollDown.value =
+        scrollable.scrollHeight > scrollable.clientHeight &&
+        scrollable.scrollTop + scrollable.clientHeight <
+          scrollable.scrollHeight - 10;
     };
-    
+
     // Run immediately
     checkScroll();
-    
+
     // Attach listener
     scrollable.onscroll = checkScroll;
   } else {
@@ -1107,20 +1227,24 @@ const updateScrollState = () => {
 };
 
 // Check scroll state when items change or tab changes
-watch([queueItems, activeQueuePanel], async () => {
-  await sleep(200); // Wait for render
-  updateScrollState();
-}, { deep: true });
+watch(
+  [queueItems, activeQueuePanel],
+  async () => {
+    await sleep(200); // Wait for render
+    updateScrollState();
+  },
+  { deep: true },
+);
 
 // Also check on mount/resize
 onMounted(async () => {
   await sleep(500);
   updateScrollState();
-  window.addEventListener('resize', updateScrollState);
+  window.addEventListener("resize", updateScrollState);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateScrollState);
+  window.removeEventListener("resize", updateScrollState);
 });
 
 // watchers
@@ -1280,7 +1404,7 @@ watchEffect(() => {
   width: 100%;
   height: 100%;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   object-fit: cover;
 }
 
@@ -1362,7 +1486,7 @@ watchEffect(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 16px;
   overflow: hidden;
   max-width: 600px;
@@ -1378,7 +1502,7 @@ watchEffect(() => {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   padding-right: 0.5rem;
 }
 
@@ -1389,13 +1513,13 @@ watchEffect(() => {
 }
 
 .queue-list-item {
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .icon-thumb-large {
   width: 100%;
   height: 100%;
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1421,19 +1545,19 @@ watchEffect(() => {
     padding: 1rem;
     gap: 1rem;
   }
-  
+
   .player-panel-left {
     max-width: 100%;
     justify-content: space-evenly;
   }
-  
+
   .artwork-container {
     margin-bottom: 1rem;
     flex: 0 1 auto;
     min-height: 0;
     width: 100%;
   }
-  
+
   .artwork-wrapper {
     width: 100%;
     max-width: 40vh;
@@ -1441,7 +1565,7 @@ watchEffect(() => {
     height: auto;
     margin: 0 auto;
   }
-  
+
   .player-panel-right {
     max-width: 100%;
     height: 100%;
@@ -1462,7 +1586,7 @@ watchEffect(() => {
   .track-info-container {
     margin-bottom: 1rem;
   }
-  
+
   .media-controls-wrapper {
     gap: 1rem;
     margin: 0.5rem 0;
@@ -1471,7 +1595,7 @@ watchEffect(() => {
   .media-control-btn {
     transform: scale(0.9);
   }
-  
+
   .play-btn {
     transform: scale(1.1);
   }
@@ -1483,23 +1607,23 @@ watchEffect(() => {
     flex-direction: row;
     align-items: center;
   }
-  
+
   .player-panel-left {
     flex-direction: row;
     gap: 2rem;
   }
-  
+
   .artwork-container {
     flex: 0 0 auto;
     width: 40%;
     height: 100%;
     margin-bottom: 0;
   }
-  
+
   .artwork-wrapper {
     max-height: 80vh;
   }
-  
+
   .controls-container {
     flex: 1;
     justify-content: center;
