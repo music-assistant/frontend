@@ -4,7 +4,7 @@
       <v-card-title class="px-4 pt-4">
         {{ $t("auth.edit_user") }}
       </v-card-title>
-      
+
       <v-card-text class="px-4 py-2" style="max-height: 70vh; overflow-y: auto">
         <form id="form-edit-user" @submit.prevent="handleFormSubmit">
           <form.Field name="username">
@@ -97,10 +97,7 @@
             </template>
           </form.Field>
 
-          <form.Field
-            v-if="form.state.values.password"
-            name="confirmPassword"
-          >
+          <form.Field v-if="form.state.values.password" name="confirmPassword">
             <template #default="{ field }">
               <v-text-field
                 :id="field.name"

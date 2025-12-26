@@ -4,7 +4,7 @@
       <v-card-title class="px-4 pt-4">
         {{ $t("auth.create_user") }}
       </v-card-title>
-      
+
       <v-card-text class="px-4 py-2" style="max-height: 70vh; overflow-y: auto">
         <form id="form-create-user" @submit.prevent="handleFormSubmit">
           <form.Field name="username">

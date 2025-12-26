@@ -27,7 +27,11 @@
           <!-- Header card -->
           <v-card class="mb-6">
             <v-card-text class="d-flex gap-4 align-start">
-              <provider-icon :domain="config.domain" :size="48" class="flex-shrink-0" />
+              <provider-icon
+                :domain="config.domain"
+                :size="48"
+                class="flex-shrink-0"
+              />
               <div class="flex-grow-1">
                 <div class="d-flex align-center gap-2 mb-2">
                   <h2 class="text-h5 font-weight-bold">

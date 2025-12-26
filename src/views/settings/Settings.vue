@@ -17,17 +17,21 @@
 
     <v-divider />
 
-    <v-container v-if="isOverview" class="pa-4 mx-auto" style="max-width: 600px">
+    <v-container
+      v-if="isOverview"
+      class="pa-4 mx-auto"
+      style="max-width: 600px"
+    >
       <v-list lines="two" class="bg-transparent pa-0">
         <v-list-item
           v-for="section in settingsSections"
           :key="section.name"
           :title="t(section.label)"
           :subtitle="t(section.description)"
-          @click="router.push(section.route)"
           class="settings-item py-3 mb-3 rounded-lg border"
           elevation="0"
           link
+          @click="router.push(section.route)"
         >
           <template #prepend>
             <v-avatar

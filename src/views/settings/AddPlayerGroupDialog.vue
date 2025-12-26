@@ -1,9 +1,9 @@
 <template>
   <v-dialog
     :model-value="show"
-    @update:model-value="(val) => emit('update:show', val)"
     max-width="800"
     scrollable
+    @update:model-value="(val) => emit('update:show', val)"
   >
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between pa-4">
@@ -20,16 +20,12 @@
           <v-list-item
             v-for="provider in availableProviders"
             :key="provider.instance_id"
-            @click="addPlayerGroup(provider.instance_id)"
             :title="provider.name"
             link
+            @click="addPlayerGroup(provider.instance_id)"
           >
             <template #prepend>
-              <ProviderIcon
-                :domain="provider.domain"
-                :size="40"
-                class="mr-4"
-              />
+              <ProviderIcon :domain="provider.domain" :size="40" class="mr-4" />
             </template>
             <template #subtitle>
               <div class="text-truncate">{{ provider.description }}</div>
@@ -43,7 +39,11 @@
           v-else
           class="d-flex flex-column align-center justify-center fill-height pa-6"
         >
-          <v-icon icon="mdi-account-group" size="64" class="mb-4 text-disabled" />
+          <v-icon
+            icon="mdi-account-group"
+            size="64"
+            class="mb-4 text-disabled"
+          />
           <div class="text-h6 text-medium-emphasis">{{ $t("no_content") }}</div>
           <div class="text-body-2 text-disabled">
             {{ $t("settings.no_group_providers") }}

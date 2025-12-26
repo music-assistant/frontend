@@ -1,42 +1,42 @@
 <template>
   <v-container class="pa-4 mx-auto" style="max-width: 600px">
-  <section class="frontend-config">
-    <!-- Header card -->
-    <v-card class="header-card mb-4" elevation="0">
-      <div class="header-content">
-        <div class="header-icon">
-          <v-icon size="32" color="orange">mdi-palette</v-icon>
+    <section class="frontend-config">
+      <!-- Header card -->
+      <v-card class="header-card mb-4" elevation="0">
+        <div class="header-content">
+          <div class="header-icon">
+            <v-icon size="32" color="orange">mdi-palette</v-icon>
+          </div>
+          <div class="header-info">
+            <h2 class="header-title">
+              {{ $t("settings.frontend") }}
+            </h2>
+            <p class="header-description">
+              {{ $t("settings.frontend_description") }}
+            </p>
+          </div>
         </div>
-        <div class="header-info">
-          <h2 class="header-title">
-            {{ $t("settings.frontend") }}
-          </h2>
-          <p class="header-description">
-            {{ $t("settings.frontend_description") }}
-          </p>
-        </div>
-      </div>
-    </v-card>
+      </v-card>
 
-    <!-- Config entries (generic entries shown in card, non-generic in expansion panels) -->
-    <EditConfig
-      v-if="config.length > 0"
-      :config-entries="config"
-      :disabled="false"
-      @submit="onSubmit"
-      @action="onAction"
-      @immediate-apply="onImmediateApply"
-    />
+      <!-- Config entries (generic entries shown in card, non-generic in expansion panels) -->
+      <EditConfig
+        v-if="config.length > 0"
+        :config-entries="config"
+        :disabled="false"
+        @submit="onSubmit"
+        @action="onAction"
+        @immediate-apply="onImmediateApply"
+      />
 
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      style="display: flex; align-items: center; justify-content: center"
-    >
-      <v-progress-circular indeterminate size="64" color="primary" />
-    </v-overlay>
-  </section>
+      <v-overlay
+        v-model="loading"
+        scrim="true"
+        persistent
+        style="display: flex; align-items: center; justify-content: center"
+      >
+        <v-progress-circular indeterminate size="64" color="primary" />
+      </v-overlay>
+    </section>
   </v-container>
 </template>
 

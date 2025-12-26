@@ -19,13 +19,19 @@
             <div
               v-if="providerDetails?.domain === 'universal_group'"
               class="text-body-2 text-medium-emphasis mb-6"
-              v-html="markdownToHtml($t('settings.add_group_player_desc_universal'))"
-            />
+              v-html="
+                markdownToHtml($t('settings.add_group_player_desc_universal'))
+              "
+            ></div>
             <div
               v-else
               class="text-body-2 text-medium-emphasis mb-6"
-              v-html="markdownToHtml($t('settings.add_group_player_desc', [providerDetails?.name]))"
-            />
+              v-html="
+                markdownToHtml(
+                  $t('settings.add_group_player_desc', [providerDetails?.name]),
+                )
+              "
+            ></div>
 
             <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
               <v-text-field
@@ -57,7 +63,7 @@
                 hide-details
                 class="mb-2"
               />
-              
+
               <div
                 v-if="providerDetails?.domain !== 'universal_group'"
                 class="text-caption text-medium-emphasis ml-10 mb-6"
@@ -121,13 +127,15 @@ const syncPlayers = computed(() => {
         (x.provider == providerDetails.value?.instance_id ||
           props.provider === "universal_group"),
     )
-    .sort((a, b) => (a.display_name || a.name).localeCompare(b.display_name || b.name));
+    .sort((a, b) =>
+      (a.display_name || a.name).localeCompare(b.display_name || b.name),
+    );
 });
 
 // methods
 const onSubmit = async function () {
   if (!valid.value) return;
-  
+
   try {
     await api.createPlayerGroup(
       props.provider,

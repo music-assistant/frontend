@@ -29,10 +29,12 @@
               variant="outlined"
               class="mb-2"
               @blur="field.handleBlur"
-              @input="(e: any) => {
-                handleNewPasswordInput(e, field);
-                field.handleChange(e.target.value);
-              }"
+              @input="
+                (e: any) => {
+                  handleNewPasswordInput(e, field);
+                  field.handleChange(e.target.value);
+                }
+              "
             />
           </template>
         </form.Field>
@@ -50,10 +52,12 @@
               variant="outlined"
               class="mb-2"
               @blur="field.handleBlur"
-              @input="(e: any) => {
-                handleConfirmPasswordInput(e, field);
-                field.handleChange(e.target.value);
-              }"
+              @input="
+                (e: any) => {
+                  handleConfirmPasswordInput(e, field);
+                  field.handleChange(e.target.value);
+                }
+              "
             />
           </template>
         </form.Field>

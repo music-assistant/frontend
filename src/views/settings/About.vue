@@ -1,10 +1,12 @@
 <template>
   <v-container class="pa-4 mx-auto" style="max-width: 600px">
     <!-- Version Information Section -->
-    <div class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis">
+    <div
+      class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis"
+    >
       {{ $t("settings.version_info") }}
     </div>
-    
+
     <v-list class="bg-transparent pa-0 mb-6">
       <v-list-item class="settings-item py-3 mb-3 rounded-lg border">
         <template #prepend>
@@ -12,7 +14,9 @@
             <v-icon icon="mdi-information-variant" />
           </v-avatar>
         </template>
-        <v-list-item-title>{{ $t("settings.server_version") }}</v-list-item-title>
+        <v-list-item-title>{{
+          $t("settings.server_version")
+        }}</v-list-item-title>
         <template #append>
           <span class="text-body-2 font-weight-medium">
             {{ api.serverInfo.value?.server_version }}
@@ -29,7 +33,9 @@
             <v-icon icon="mdi-web" />
           </v-avatar>
         </template>
-        <v-list-item-title>{{ $t("settings.server_base_url") }}</v-list-item-title>
+        <v-list-item-title>{{
+          $t("settings.server_base_url")
+        }}</v-list-item-title>
         <template #append>
           <span class="text-body-2 font-weight-medium">
             {{ api.serverInfo.value?.base_url }}
@@ -43,13 +49,13 @@
             <v-icon icon="mdi-home-assistant" />
           </v-avatar>
         </template>
-        <v-list-item-title>{{ $t("settings.server_as_addon") }}</v-list-item-title>
+        <v-list-item-title>{{
+          $t("settings.server_as_addon")
+        }}</v-list-item-title>
         <template #append>
           <v-chip
             :color="
-              api.serverInfo.value?.homeassistant_addon
-                ? 'success'
-                : 'default'
+              api.serverInfo.value?.homeassistant_addon ? 'success' : 'default'
             "
             size="small"
             variant="flat"
@@ -63,9 +69,7 @@
               start
             />
             {{
-              api.serverInfo.value?.homeassistant_addon
-                ? $t("yes")
-                : $t("no")
+              api.serverInfo.value?.homeassistant_addon ? $t("yes") : $t("no")
             }}
           </v-chip>
         </template>
@@ -73,7 +77,9 @@
     </v-list>
 
     <!-- Open Home Foundation Section -->
-    <div class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis">
+    <div
+      class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis"
+    >
       {{ $t("settings.proud_part_of") }}
     </div>
     <v-card
@@ -94,7 +100,9 @@
     </v-card>
 
     <!-- Library Statistics Section -->
-    <div class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis">
+    <div
+      class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis"
+    >
       {{ $t("settings.library_stats") }}
     </div>
     <v-list class="bg-transparent pa-0 mb-6">
@@ -170,7 +178,9 @@
     </v-list>
 
     <!-- Links Section -->
-    <div class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis">
+    <div
+      class="text-subtitle-2 font-weight-bold mb-2 ml-1 text-medium-emphasis"
+    >
       {{ $t("settings.links") }}
     </div>
     <v-list class="bg-transparent pa-0 mb-6">
@@ -185,7 +195,9 @@
             <v-icon icon="mdi-book-open-page-variant" />
           </v-avatar>
         </template>
-        <v-list-item-title>{{ $t("settings.documentation") }}</v-list-item-title>
+        <v-list-item-title>{{
+          $t("settings.documentation")
+        }}</v-list-item-title>
         <template #append>
           <v-icon icon="mdi-open-in-new" size="small" color="grey" />
         </template>
@@ -237,7 +249,9 @@
             <v-icon icon="mdi-lightbulb-outline" />
           </v-avatar>
         </template>
-        <v-list-item-title>{{ $t("settings.feature_requests") }}</v-list-item-title>
+        <v-list-item-title>{{
+          $t("settings.feature_requests")
+        }}</v-list-item-title>
         <template #append>
           <v-icon icon="mdi-open-in-new" size="small" color="grey" />
         </template>
@@ -271,7 +285,9 @@
             <v-icon icon="mdi-forum" />
           </v-avatar>
         </template>
-        <v-list-item-title>{{ $t("settings.discussion_forums") }}</v-list-item-title>
+        <v-list-item-title>{{
+          $t("settings.discussion_forums")
+        }}</v-list-item-title>
         <template #append>
           <v-icon icon="mdi-open-in-new" size="small" color="grey" />
         </template>

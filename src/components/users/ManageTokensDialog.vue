@@ -16,7 +16,7 @@
             <p class="text-body-2 text-medium-emphasis mb-4">
               {{ $t("auth.active_sessions_description") }}
             </p>
-            
+
             <div
               v-if="sessionTokens.length === 0"
               class="d-flex flex-column align-center justify-center py-12 border-dashed rounded-lg"
@@ -29,7 +29,7 @@
                 {{ $t("auth.no_active_sessions") }}
               </p>
             </div>
-            
+
             <div v-else class="d-flex flex-column gap-2">
               <v-card
                 v-for="token in sessionTokens"
@@ -41,22 +41,25 @@
                   <v-avatar color="primary" variant="tonal" size="40">
                     <v-icon icon="mdi-monitor" size="20" color="primary" />
                   </v-avatar>
-                  
+
                   <div class="flex-grow-1" style="min-width: 0">
                     <div class="text-body-2 font-weight-medium text-truncate">
                       {{ token.name }}
                     </div>
-                    <div class="text-caption text-medium-emphasis d-flex align-center gap-2 flex-wrap">
+                    <div
+                      class="text-caption text-medium-emphasis d-flex align-center gap-2 flex-wrap"
+                    >
                       <span>
                         {{ $t("created") }}: {{ formatDate(token.created_at) }}
                       </span>
                       <span v-if="token.last_used_at">•</span>
                       <span v-if="token.last_used_at">
-                        {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
+                        {{ $t("last_used") }}:
+                        {{ formatDate(token.last_used_at) }}
                       </span>
                     </div>
                   </div>
-                  
+
                   <v-btn
                     icon="mdi-delete"
                     variant="text"
@@ -98,14 +101,19 @@
               </v-btn>
             </div>
 
-            <v-card v-if="showCreateForm" variant="outlined" class="pa-4 mb-4" color="primary">
+            <v-card
+              v-if="showCreateForm"
+              variant="outlined"
+              class="pa-4 mb-4"
+              color="primary"
+            >
               <form id="form-create-token" @submit.prevent="handleCreateToken">
                 <form.Field name="tokenName">
                   <template #default="{ field }">
                     <v-text-field
                       :id="field.name"
-                      :name="field.name"
                       v-model="tokenName"
+                      :name="field.name"
                       :label="$t('auth.token_name')"
                       :placeholder="$t('auth.token_name_hint')"
                       :error-messages="field.state.meta.errors"
@@ -113,10 +121,12 @@
                       autofocus
                       autocomplete="off"
                       @blur="field.handleBlur"
-                      @update:model-value="(val) => {
-                        tokenName = val;
-                        field.handleChange(val);
-                      }"
+                      @update:model-value="
+                        (val) => {
+                          tokenName = val;
+                          field.handleChange(val);
+                        }
+                      "
                     />
                   </template>
                 </form.Field>
@@ -176,14 +186,19 @@
               class="d-flex flex-column align-center justify-center py-12 border-dashed rounded-lg"
               style="border: 2px dashed rgba(var(--v-theme-on-surface), 0.12)"
             >
-              <v-avatar color="secondary" variant="tonal" size="64" class="mb-3">
+              <v-avatar
+                color="secondary"
+                variant="tonal"
+                size="64"
+                class="mb-3"
+              >
                 <v-icon icon="mdi-key" size="32" color="secondary" />
               </v-avatar>
               <p class="text-body-2 text-medium-emphasis">
                 {{ $t("auth.no_long_lived_tokens") }}
               </p>
             </div>
-            
+
             <div v-else class="d-flex flex-column gap-2">
               <v-card
                 v-for="token in longLivedTokens"
@@ -195,22 +210,25 @@
                   <v-avatar color="secondary" variant="tonal" size="40">
                     <v-icon icon="mdi-key" size="20" color="secondary" />
                   </v-avatar>
-                  
+
                   <div class="flex-grow-1" style="min-width: 0">
                     <div class="text-body-2 font-weight-medium text-truncate">
                       {{ token.name }}
                     </div>
-                    <div class="text-caption text-medium-emphasis d-flex align-center gap-2 flex-wrap">
+                    <div
+                      class="text-caption text-medium-emphasis d-flex align-center gap-2 flex-wrap"
+                    >
                       <span>
                         {{ $t("created") }}: {{ formatDate(token.created_at) }}
                       </span>
                       <span v-if="token.last_used_at">•</span>
                       <span v-if="token.last_used_at">
-                        {{ $t("last_used") }}: {{ formatDate(token.last_used_at) }}
+                        {{ $t("last_used") }}:
+                        {{ formatDate(token.last_used_at) }}
                       </span>
                     </div>
                   </div>
-                  
+
                   <v-btn
                     icon="mdi-delete"
                     variant="text"

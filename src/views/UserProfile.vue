@@ -1,18 +1,18 @@
 <template>
   <div class="user-profile">
     <v-container class="pa-4 mx-auto" style="max-width: 600px">
-          <ProfileSettings class="mb-6" />
-          <PasswordSettings class="mb-6" />
-          <SessionTokensList
-            :tokens="sessionTokens"
-            class="mb-6"
-            @revoke="confirmRevokeToken"
-          />
-          <LongLivedTokensList
-            :tokens="longLivedTokens"
-            @revoke="confirmRevokeToken"
-            @created="loadTokens"
-          />
+      <ProfileSettings class="mb-6" />
+      <PasswordSettings class="mb-6" />
+      <SessionTokensList
+        :tokens="sessionTokens"
+        class="mb-6"
+        @revoke="confirmRevokeToken"
+      />
+      <LongLivedTokensList
+        :tokens="longLivedTokens"
+        @revoke="confirmRevokeToken"
+        @created="loadTokens"
+      />
     </v-container>
 
     <v-dialog v-model="showRevokeDialog" max-width="500">

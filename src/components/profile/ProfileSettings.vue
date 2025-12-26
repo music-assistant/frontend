@@ -24,10 +24,15 @@
                       user?.avatar_url ||
                       ''
                     "
-                    @error="avatarError = true"
                     cover
+                    @error="avatarError = true"
                   />
-                  <v-icon v-else icon="mdi-account" size="64" color="grey-darken-2" />
+                  <v-icon
+                    v-else
+                    icon="mdi-account"
+                    size="64"
+                    color="grey-darken-2"
+                  />
                 </v-avatar>
                 <v-btn
                   v-if="!isIngressSession"
@@ -55,10 +60,12 @@
                     variant="outlined"
                     class="mb-2"
                     @blur="field.handleBlur"
-                    @input="(e: any) => {
-                      handleUsernameInput(e, field);
-                      field.handleChange(e.target.value);
-                    }"
+                    @input="
+                      (e: any) => {
+                        handleUsernameInput(e, field);
+                        field.handleChange(e.target.value);
+                      }
+                    "
                   />
                 </template>
               </form.Field>
@@ -78,10 +85,12 @@
                     variant="outlined"
                     class="mb-2"
                     @blur="field.handleBlur"
-                    @input="(e: any) => {
-                      handleDisplayNameInput(e, field);
-                      field.handleChange(e.target.value);
-                    }"
+                    @input="
+                      (e: any) => {
+                        handleDisplayNameInput(e, field);
+                        field.handleChange(e.target.value);
+                      }
+                    "
                   />
                 </template>
               </form.Field>
@@ -105,11 +114,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn
-          v-if="hasChanges"
-          variant="text"
-          @click="handleReset"
-        >
+        <v-btn v-if="hasChanges" variant="text" @click="handleReset">
           {{ $t("cancel") }}
         </v-btn>
         <v-btn
@@ -135,8 +140,8 @@
             <v-img
               v-if="tempAvatarUrl && !avatarError"
               :src="tempAvatarUrl"
-              @error="avatarError = true"
               cover
+              @error="avatarError = true"
             />
             <v-icon v-else icon="mdi-account" size="72" color="grey-darken-2" />
           </v-avatar>

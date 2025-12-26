@@ -107,79 +107,75 @@
             @click="editProvider(item.instance_id)"
             @menu="(evt) => onMenu(evt, item)"
           >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="item.domain"
-                      :size="40"
-                      class="provider-icon"
-                    />
-                  </template>
-                  <template #title>
-                    <div class="provider-name-title">
-                      {{ getProviderName(item) }}
-                    </div>
-                  </template>
-                  <template #subtitle>
-                    <div class="provider-meta">
-                      <div
-                        v-if="item.enabled && item.last_error"
-                        class="provider-error-inline"
-                      >
-                        <v-icon
-                          icon="mdi-alert-circle"
-                          size="16"
-                          color="error"
-                        />
-                        <span class="provider-error-text">{{
-                          $t("settings.provider_requires_attention")
-                        }}</span>
-                      </div>
-                      <span
-                        v-else-if="api.providerManifests[item.domain]"
-                        class="provider-description-text"
-                      >
-                        {{ api.providerManifests[item.domain].description }}
-                      </span>
-                    </div>
-                  </template>
-                  <template #append>
-                    <div class="provider-status-icons">
-                      <v-icon
-                        v-if="
-                          api.syncTasks.value.filter(
-                            (x) => x.provider_instance == item.instance_id,
-                          ).length > 0
-                        "
-                        icon="mdi-sync"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.sync_running')"
-                      />
-                      <v-icon
-                        v-if="!item.enabled"
-                        icon="mdi-cancel"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.provider_disabled')"
-                      />
-                      <v-icon
-                        v-else-if="item.last_error"
-                        icon="mdi-alert-circle"
-                        size="20"
-                        color="red"
-                        :title="item.last_error"
-                      />
-                      <v-icon
-                        v-else-if="!api.providers[item.instance_id]?.available"
-                        icon="mdi-timer-sand"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.not_loaded')"
-                      />
-                    </div>
-                  </template>
-                </ListItem>
-              </v-list>
+            <template #prepend>
+              <ProviderIcon
+                :domain="item.domain"
+                :size="40"
+                class="provider-icon"
+              />
+            </template>
+            <template #title>
+              <div class="provider-name-title">
+                {{ getProviderName(item) }}
+              </div>
+            </template>
+            <template #subtitle>
+              <div class="provider-meta">
+                <div
+                  v-if="item.enabled && item.last_error"
+                  class="provider-error-inline"
+                >
+                  <v-icon icon="mdi-alert-circle" size="16" color="error" />
+                  <span class="provider-error-text">{{
+                    $t("settings.provider_requires_attention")
+                  }}</span>
+                </div>
+                <span
+                  v-else-if="api.providerManifests[item.domain]"
+                  class="provider-description-text"
+                >
+                  {{ api.providerManifests[item.domain].description }}
+                </span>
+              </div>
+            </template>
+            <template #append>
+              <div class="provider-status-icons">
+                <v-icon
+                  v-if="
+                    api.syncTasks.value.filter(
+                      (x) => x.provider_instance == item.instance_id,
+                    ).length > 0
+                  "
+                  icon="mdi-sync"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.sync_running')"
+                />
+                <v-icon
+                  v-if="!item.enabled"
+                  icon="mdi-cancel"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.provider_disabled')"
+                />
+                <v-icon
+                  v-else-if="item.last_error"
+                  icon="mdi-alert-circle"
+                  size="20"
+                  color="red"
+                  :title="item.last_error"
+                />
+                <v-icon
+                  v-else-if="!api.providers[item.instance_id]?.available"
+                  icon="mdi-timer-sand"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.not_loaded')"
+                />
+              </div>
+            </template>
+          </ListItem>
+        </v-list>
       </div>
 
       <!-- Player Providers -->
@@ -205,86 +201,82 @@
             @click="editProvider(item.instance_id)"
             @menu="(evt) => onMenu(evt, item)"
           >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="item.domain"
-                      :size="40"
-                      class="provider-icon"
-                    />
-                  </template>
-                  <template #title>
-                    <div class="provider-name-title">
-                      {{ getProviderName(item) }}
-                    </div>
-                  </template>
-                  <template #subtitle>
-                    <div class="provider-meta">
-                      <div
-                        v-if="item.enabled && item.last_error"
-                        class="provider-error-inline"
-                      >
-                        <v-icon
-                          icon="mdi-alert-circle"
-                          size="16"
-                          color="error"
-                        />
-                        <span class="provider-error-text">{{
-                          $t("settings.provider_requires_attention")
-                        }}</span>
-                      </div>
-                      <span
-                        v-else-if="api.providerManifests[item.domain]"
-                        class="provider-description-text"
-                      >
-                        {{ api.providerManifests[item.domain].description }}
-                      </span>
-                    </div>
-                  </template>
-                  <template #append>
-                    <div class="provider-status-icons">
-                      <v-chip
-                        v-if="getPlayerCount(item) > 0"
-                        size="x-small"
-                        variant="flat"
-                        color="primary"
-                        class="player-count-chip"
-                        @click.stop="viewPlayers(item.instance_id)"
-                      >
-                        <v-icon start size="small">mdi-speaker</v-icon>
-                        {{
-                          getPlayerCount(item) === 1
-                            ? $t("settings.one_player")
-                            : $t("settings.players_count", [
-                                getPlayerCount(item),
-                                getPlayerCount(item) !== 1 ? "s" : "",
-                              ])
-                        }}
-                      </v-chip>
-                      <v-icon
-                        v-if="!item.enabled"
-                        icon="mdi-cancel"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.provider_disabled')"
-                      />
-                      <v-icon
-                        v-else-if="item.last_error"
-                        icon="mdi-alert-circle"
-                        size="20"
-                        color="red"
-                        :title="item.last_error"
-                      />
-                      <v-icon
-                        v-else-if="!api.providers[item.instance_id]?.available"
-                        icon="mdi-timer-sand"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.not_loaded')"
-                      />
-                    </div>
-                  </template>
-                </ListItem>
-              </v-list>
+            <template #prepend>
+              <ProviderIcon
+                :domain="item.domain"
+                :size="40"
+                class="provider-icon"
+              />
+            </template>
+            <template #title>
+              <div class="provider-name-title">
+                {{ getProviderName(item) }}
+              </div>
+            </template>
+            <template #subtitle>
+              <div class="provider-meta">
+                <div
+                  v-if="item.enabled && item.last_error"
+                  class="provider-error-inline"
+                >
+                  <v-icon icon="mdi-alert-circle" size="16" color="error" />
+                  <span class="provider-error-text">{{
+                    $t("settings.provider_requires_attention")
+                  }}</span>
+                </div>
+                <span
+                  v-else-if="api.providerManifests[item.domain]"
+                  class="provider-description-text"
+                >
+                  {{ api.providerManifests[item.domain].description }}
+                </span>
+              </div>
+            </template>
+            <template #append>
+              <div class="provider-status-icons">
+                <v-chip
+                  v-if="getPlayerCount(item) > 0"
+                  size="x-small"
+                  variant="flat"
+                  color="primary"
+                  class="player-count-chip"
+                  @click.stop="viewPlayers(item.instance_id)"
+                >
+                  <v-icon start size="small">mdi-speaker</v-icon>
+                  {{
+                    getPlayerCount(item) === 1
+                      ? $t("settings.one_player")
+                      : $t("settings.players_count", [
+                          getPlayerCount(item),
+                          getPlayerCount(item) !== 1 ? "s" : "",
+                        ])
+                  }}
+                </v-chip>
+                <v-icon
+                  v-if="!item.enabled"
+                  icon="mdi-cancel"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.provider_disabled')"
+                />
+                <v-icon
+                  v-else-if="item.last_error"
+                  icon="mdi-alert-circle"
+                  size="20"
+                  color="red"
+                  :title="item.last_error"
+                />
+                <v-icon
+                  v-else-if="!api.providers[item.instance_id]?.available"
+                  icon="mdi-timer-sand"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.not_loaded')"
+                />
+              </div>
+            </template>
+          </ListItem>
+        </v-list>
       </div>
 
       <!-- Metadata Providers -->
@@ -310,68 +302,64 @@
             @click="editProvider(item.instance_id)"
             @menu="(evt) => onMenu(evt, item)"
           >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="item.domain"
-                      :size="40"
-                      class="provider-icon"
-                    />
-                  </template>
-                  <template #title>
-                    <div class="provider-name-title">
-                      {{ getProviderName(item) }}
-                    </div>
-                  </template>
-                  <template #subtitle>
-                    <div class="provider-meta">
-                      <div
-                        v-if="item.enabled && item.last_error"
-                        class="provider-error-inline"
-                      >
-                        <v-icon
-                          icon="mdi-alert-circle"
-                          size="16"
-                          color="error"
-                        />
-                        <span class="provider-error-text">{{
-                          $t("settings.provider_requires_attention")
-                        }}</span>
-                      </div>
-                      <span
-                        v-else-if="api.providerManifests[item.domain]"
-                        class="provider-description-text"
-                      >
-                        {{ api.providerManifests[item.domain].description }}
-                      </span>
-                    </div>
-                  </template>
-                  <template #append>
-                    <div class="provider-status-icons">
-                      <v-icon
-                        v-if="!item.enabled"
-                        icon="mdi-cancel"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.provider_disabled')"
-                      />
-                      <v-icon
-                        v-else-if="item.last_error"
-                        icon="mdi-alert-circle"
-                        size="20"
-                        color="red"
-                        :title="item.last_error"
-                      />
-                      <v-icon
-                        v-else-if="!api.providers[item.instance_id]?.available"
-                        icon="mdi-timer-sand"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.not_loaded')"
-                      />
-                    </div>
-                  </template>
-                </ListItem>
-              </v-list>
+            <template #prepend>
+              <ProviderIcon
+                :domain="item.domain"
+                :size="40"
+                class="provider-icon"
+              />
+            </template>
+            <template #title>
+              <div class="provider-name-title">
+                {{ getProviderName(item) }}
+              </div>
+            </template>
+            <template #subtitle>
+              <div class="provider-meta">
+                <div
+                  v-if="item.enabled && item.last_error"
+                  class="provider-error-inline"
+                >
+                  <v-icon icon="mdi-alert-circle" size="16" color="error" />
+                  <span class="provider-error-text">{{
+                    $t("settings.provider_requires_attention")
+                  }}</span>
+                </div>
+                <span
+                  v-else-if="api.providerManifests[item.domain]"
+                  class="provider-description-text"
+                >
+                  {{ api.providerManifests[item.domain].description }}
+                </span>
+              </div>
+            </template>
+            <template #append>
+              <div class="provider-status-icons">
+                <v-icon
+                  v-if="!item.enabled"
+                  icon="mdi-cancel"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.provider_disabled')"
+                />
+                <v-icon
+                  v-else-if="item.last_error"
+                  icon="mdi-alert-circle"
+                  size="20"
+                  color="red"
+                  :title="item.last_error"
+                />
+                <v-icon
+                  v-else-if="!api.providers[item.instance_id]?.available"
+                  icon="mdi-timer-sand"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.not_loaded')"
+                />
+              </div>
+            </template>
+          </ListItem>
+        </v-list>
       </div>
 
       <!-- Plugin Providers -->
@@ -397,66 +385,62 @@
             @click="editProvider(item.instance_id)"
             @menu="(evt) => onMenu(evt, item)"
           >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="item.domain"
-                      :size="40"
-                      class="provider-icon"
-                    />
-                  </template>
-                  <template #title>
-                    <div class="provider-name-title">
-                      {{ getProviderName(item) }}
-                    </div>
-                  </template>
-                  <template #subtitle>
-                    <div class="provider-meta">
-                      <div
-                        v-if="item.enabled && item.last_error"
-                        class="provider-error-inline"
-                      >
-                        <v-icon
-                          icon="mdi-alert-circle"
-                          size="16"
-                          color="error"
-                        />
-                        <span class="provider-error-text">{{
-                          $t("settings.provider_requires_attention")
-                        }}</span>
-                      </div>
-                      <span
-                        v-else-if="api.providerManifests[item.domain]"
-                        class="provider-description-text"
-                      >
-                        {{ api.providerManifests[item.domain].description }}
-                      </span>
-                    </div>
-                  </template>
-                  <template #append>
-                    <div class="provider-status-icons">
-                      <v-icon
-                        v-if="!item.enabled"
-                        icon="mdi-cancel"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.provider_disabled')"
-                      />
-                      <v-icon
-                        v-else-if="item.last_error"
-                        icon="mdi-alert-circle"
-                        size="20"
-                        color="red"
-                        :title="item.last_error"
-                      />
-                      <v-icon
-                        v-else-if="!api.providers[item.instance_id]?.available"
-                        icon="mdi-timer-sand"
-                        size="20"
-                        color="grey"
-                        :title="$t('settings.not_loaded')"
-                      />
-                    </div>
-                  </template>
+            <template #prepend>
+              <ProviderIcon
+                :domain="item.domain"
+                :size="40"
+                class="provider-icon"
+              />
+            </template>
+            <template #title>
+              <div class="provider-name-title">
+                {{ getProviderName(item) }}
+              </div>
+            </template>
+            <template #subtitle>
+              <div class="provider-meta">
+                <div
+                  v-if="item.enabled && item.last_error"
+                  class="provider-error-inline"
+                >
+                  <v-icon icon="mdi-alert-circle" size="16" color="error" />
+                  <span class="provider-error-text">{{
+                    $t("settings.provider_requires_attention")
+                  }}</span>
+                </div>
+                <span
+                  v-else-if="api.providerManifests[item.domain]"
+                  class="provider-description-text"
+                >
+                  {{ api.providerManifests[item.domain].description }}
+                </span>
+              </div>
+            </template>
+            <template #append>
+              <div class="provider-status-icons">
+                <v-icon
+                  v-if="!item.enabled"
+                  icon="mdi-cancel"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.provider_disabled')"
+                />
+                <v-icon
+                  v-else-if="item.last_error"
+                  icon="mdi-alert-circle"
+                  size="20"
+                  color="red"
+                  :title="item.last_error"
+                />
+                <v-icon
+                  v-else-if="!api.providers[item.instance_id]?.available"
+                  icon="mdi-timer-sand"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.not_loaded')"
+                />
+              </div>
+            </template>
           </ListItem>
         </v-list>
       </div>
@@ -502,11 +486,7 @@
                   v-if="item.enabled && item.last_error"
                   class="provider-error-inline"
                 >
-                  <v-icon
-                    icon="mdi-alert-circle"
-                    size="16"
-                    color="error"
-                  />
+                  <v-icon icon="mdi-alert-circle" size="16" color="error" />
                   <span class="provider-error-text">{{
                     $t("settings.provider_requires_attention")
                   }}</span>

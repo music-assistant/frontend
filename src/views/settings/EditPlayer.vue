@@ -70,18 +70,22 @@
                     {{ $t("settings.dsp.title") }}
                   </v-btn>
                 </div>
-                
-                <div class="d-flex flex-wrap gap-4 text-body-2 text-medium-emphasis">
+
+                <div
+                  class="d-flex flex-wrap gap-4 text-body-2 text-medium-emphasis"
+                >
                   <div class="d-flex align-center">
                     <v-icon size="16" class="mr-2">mdi-identifier</v-icon>
                     {{ config.player_id }}
                   </div>
-                  
+
                   <div class="d-flex align-center">
                     <v-icon size="16" class="mr-2">mdi-puzzle</v-icon>
                     {{ api.getProviderManifest(config.provider)?.name }}
                     <v-btn
-                      v-if="api.getProviderManifest(config.provider)?.documentation"
+                      v-if="
+                        api.getProviderManifest(config.provider)?.documentation
+                      "
                       icon="mdi-open-in-new"
                       variant="text"
                       size="x-small"
@@ -89,15 +93,20 @@
                       class="ml-1"
                       @click="
                         openLinkInNewTab(
-                          api.getProviderManifest(config.provider)?.documentation!,
+                          api.getProviderManifest(config.provider)
+                            ?.documentation!,
                         )
                       "
                     />
                   </div>
 
-                  <div v-if="api.players[config.player_id]" class="d-flex align-center">
+                  <div
+                    v-if="api.players[config.player_id]"
+                    class="d-flex align-center"
+                  >
                     <v-icon size="16" class="mr-2">mdi-information</v-icon>
-                    {{ api.players[config.player_id].device_info.manufacturer }} /
+                    {{ api.players[config.player_id].device_info.manufacturer }}
+                    /
                     {{ api.players[config.player_id].device_info.model }}
                   </div>
 
@@ -109,9 +118,14 @@
                     {{ api.players[config.player_id].device_info.ip_address }}
                   </div>
 
-                  <div v-if="api.players[config.player_id]" class="d-flex align-center">
+                  <div
+                    v-if="api.players[config.player_id]"
+                    class="d-flex align-center"
+                  >
                     <v-icon size="16" class="mr-2">mdi-tag</v-icon>
-                    {{ $t(`player_type.${api.players[config.player_id].type}`) }}
+                    {{
+                      $t(`player_type.${api.players[config.player_id].type}`)
+                    }}
                   </div>
                 </div>
               </div>
@@ -142,8 +156,7 @@
           <v-text-field
             v-model="editName"
             :placeholder="
-              api.players[config?.player_id ?? '']?.name ||
-              config?.default_name
+              api.players[config?.player_id ?? '']?.name || config?.default_name
             "
             variant="outlined"
             density="comfortable"

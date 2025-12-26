@@ -1,5 +1,9 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)" max-width="400">
+  <v-dialog
+    :model-value="modelValue"
+    max-width="400"
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <v-card>
       <v-card-title class="px-4 pt-4">
         {{
@@ -8,7 +12,7 @@
             : $t("auth.revoke_session")
         }}
       </v-card-title>
-      
+
       <v-card-text class="px-4 py-4">
         <p class="text-body-2 text-medium-emphasis mb-4">
           {{
@@ -17,12 +21,7 @@
               : $t("auth.revoke_session_confirm")
           }}
         </p>
-        <v-card
-          v-if="token"
-          variant="tonal"
-          color="error"
-          class="pa-4"
-        >
+        <v-card v-if="token" variant="tonal" color="error" class="pa-4">
           <p class="font-weight-medium">{{ token.name }}</p>
         </v-card>
       </v-card-text>

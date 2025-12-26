@@ -5,7 +5,11 @@
         <div v-if="api.providerManifests[domain]" class="mb-6">
           <v-card>
             <v-card-text class="d-flex gap-4 align-start">
-              <provider-icon :domain="domain" :size="48" class="flex-shrink-0" />
+              <provider-icon
+                :domain="domain"
+                :size="48"
+                class="flex-shrink-0"
+              />
               <div>
                 <h2 class="text-h5 font-weight-bold mb-2">
                   {{
@@ -22,7 +26,9 @@
                   class="text-caption text-medium-emphasis"
                   v-html="
                     markdownToHtml(
-                      getAuthorsMarkdown(api.providerManifests[domain].codeowners),
+                      getAuthorsMarkdown(
+                        api.providerManifests[domain].codeowners,
+                      ),
                     )
                   "
                 ></div>

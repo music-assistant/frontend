@@ -1,69 +1,69 @@
 <template>
   <v-container class="pa-4 mx-auto" style="max-width: 600px">
-      <v-list lines="two" class="bg-transparent pa-0">
-        <!-- Core modules -->
-        <v-list-item
-          v-for="item in sortedCoreConfigs"
-          :key="item.domain"
-          :ripple="true"
-          class="settings-item py-3 mb-3 rounded-lg border"
-          elevation="0"
-          @click="handleItemClick(item)"
-        >
-          <template #prepend>
-            <v-avatar color="blue" variant="tonal" size="40" class="mr-4">
-              <provider-icon :domain="item.domain" :size="24" />
-            </v-avatar>
-          </template>
+    <v-list lines="two" class="bg-transparent pa-0">
+      <!-- Core modules -->
+      <v-list-item
+        v-for="item in sortedCoreConfigs"
+        :key="item.domain"
+        :ripple="true"
+        class="settings-item py-3 mb-3 rounded-lg border"
+        elevation="0"
+        @click="handleItemClick(item)"
+      >
+        <template #prepend>
+          <v-avatar color="blue" variant="tonal" size="40" class="mr-4">
+            <provider-icon :domain="item.domain" :size="24" />
+          </v-avatar>
+        </template>
 
-          <v-list-item-title>
-            {{ getItemTitle(item) }}
-          </v-list-item-title>
+        <v-list-item-title>
+          {{ getItemTitle(item) }}
+        </v-list-item-title>
 
-          <v-list-item-subtitle>
-            {{ getItemDescription(item) }}
-          </v-list-item-subtitle>
+        <v-list-item-subtitle>
+          {{ getItemDescription(item) }}
+        </v-list-item-subtitle>
 
-          <template #append>
-            <v-icon
-              v-if="item.last_error"
-              color="red"
-              icon="mdi-alert-circle"
-              class="mr-2"
-              :title="item.last_error"
-            />
-            <v-icon icon="mdi-chevron-right" color="grey" />
-          </template>
-        </v-list-item>
+        <template #append>
+          <v-icon
+            v-if="item.last_error"
+            color="red"
+            icon="mdi-alert-circle"
+            class="mr-2"
+            :title="item.last_error"
+          />
+          <v-icon icon="mdi-chevron-right" color="grey" />
+        </template>
+      </v-list-item>
 
-        <!-- Extra system entries -->
-        <v-list-item
-          v-for="item in extraSystemEntries"
-          :key="item.domain"
-          :ripple="true"
-          class="settings-item py-3 mb-3 rounded-lg border"
-          elevation="0"
-          @click="handleItemClick(item)"
-        >
-          <template #prepend>
-            <v-avatar color="purple" variant="tonal" size="40" class="mr-4">
-              <v-icon :icon="item.icon" size="24" />
-            </v-avatar>
-          </template>
+      <!-- Extra system entries -->
+      <v-list-item
+        v-for="item in extraSystemEntries"
+        :key="item.domain"
+        :ripple="true"
+        class="settings-item py-3 mb-3 rounded-lg border"
+        elevation="0"
+        @click="handleItemClick(item)"
+      >
+        <template #prepend>
+          <v-avatar color="purple" variant="tonal" size="40" class="mr-4">
+            <v-icon :icon="item.icon" size="24" />
+          </v-avatar>
+        </template>
 
-          <v-list-item-title>
-            {{ t(item.name) }}
-          </v-list-item-title>
+        <v-list-item-title>
+          {{ t(item.name) }}
+        </v-list-item-title>
 
-          <v-list-item-subtitle>
-            {{ t(item.description) }}
-          </v-list-item-subtitle>
+        <v-list-item-subtitle>
+          {{ t(item.description) }}
+        </v-list-item-subtitle>
 
-          <template #append>
-            <v-icon icon="mdi-chevron-right" color="grey" />
-          </template>
-        </v-list-item>
-      </v-list>
+        <template #append>
+          <v-icon icon="mdi-chevron-right" color="grey" />
+        </template>
+      </v-list-item>
+    </v-list>
   </v-container>
 </template>
 

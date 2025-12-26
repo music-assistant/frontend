@@ -57,21 +57,14 @@
     </v-expansion-panels>
 
     <div class="config-actions">
-      <v-btn
-        variant="text"
-        @click="resetToDefaults"
-      >
+      <v-btn variant="text" @click="resetToDefaults">
         {{ $t("settings.reset_to_defaults") }}
       </v-btn>
       <v-spacer />
       <v-btn variant="text" @click="handleClose">
         {{ $t("close") }}
       </v-btn>
-      <v-btn
-        color="primary"
-        :disabled="!requiredValuesPresent"
-        @click="submit"
-      >
+      <v-btn color="primary" :disabled="!requiredValuesPresent" @click="submit">
         {{ $t("settings.save") }}
       </v-btn>
     </div>

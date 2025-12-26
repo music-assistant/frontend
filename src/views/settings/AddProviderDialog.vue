@@ -1,9 +1,9 @@
 <template>
   <v-dialog
     :model-value="show"
-    @update:model-value="(val) => emit('update:show', val)"
     max-width="800"
     scrollable
+    @update:model-value="(val) => emit('update:show', val)"
   >
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between pa-4">
@@ -69,9 +69,9 @@
           <v-list-item
             v-for="provider in filteredProviders"
             :key="provider.domain"
-            @click="addProvider(provider)"
             :title="provider.name"
             link
+            @click="addProvider(provider)"
           >
             <template #prepend>
               <ProviderIcon :domain="provider.domain" :size="40" class="mr-4" />

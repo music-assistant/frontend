@@ -24,14 +24,14 @@
       </div>
 
       <div class="text-subtitle-2 text-medium-emphasis mb-2 ml-1">
-          {{
-            $t("settings.players_total", [
-              getAllFilteredPlayers().length,
-              getAllFilteredPlayers().length !== 1 ? "s" : "",
-            ])
-          }}
+        {{
+          $t("settings.players_total", [
+            getAllFilteredPlayers().length,
+            getAllFilteredPlayers().length !== 1 ? "s" : "",
+          ])
+        }}
       </div>
-      
+
       <div
         v-if="getAllFilteredPlayers().length === 0"
         class="d-flex flex-column align-center justify-center py-6 border rounded-lg"
@@ -54,68 +54,68 @@
           @click="editPlayer(item.player_id, item.provider)"
           @menu="(evt) => onMenu(evt, item)"
         >
-              <template #prepend>
-                <ProviderIcon
-                  :domain="
-                    api.getProviderManifest(item.provider)?.domain || item.provider
-                  "
-                  :size="40"
-                  class="mr-4"
-                />
-              </template>
+          <template #prepend>
+            <ProviderIcon
+              :domain="
+                api.getProviderManifest(item.provider)?.domain || item.provider
+              "
+              :size="40"
+              class="mr-4"
+            />
+          </template>
 
-              <template #title>
-                <div class="font-weight-medium">
-                  {{ getPlayerName(item) }}
-                </div>
-              </template>
+          <template #title>
+            <div class="font-weight-medium">
+              {{ getPlayerName(item) }}
+            </div>
+          </template>
 
-              <template #subtitle>
-                <div class="d-flex align-center gap-2 mt-1">
-                  <span class="text-medium-emphasis text-caption">
-                    {{
-                      api.getProviderManifest(item.provider)?.name || item.provider
-                    }}
-                  </span>
-                  <v-chip
-                    v-if="
-                      api.players[item.player_id]?.type &&
-                      api.players[item.player_id]?.type !== PlayerType.PLAYER
-                    "
-                    size="x-small"
-                    variant="tonal"
-                    label
-                  >
-                    {{ $t(`player_type.${api.players[item.player_id]?.type}`) }}
-                  </v-chip>
-                </div>
-              </template>
+          <template #subtitle>
+            <div class="d-flex align-center gap-2 mt-1">
+              <span class="text-medium-emphasis text-caption">
+                {{
+                  api.getProviderManifest(item.provider)?.name || item.provider
+                }}
+              </span>
+              <v-chip
+                v-if="
+                  api.players[item.player_id]?.type &&
+                  api.players[item.player_id]?.type !== PlayerType.PLAYER
+                "
+                size="x-small"
+                variant="tonal"
+                label
+              >
+                {{ $t(`player_type.${api.players[item.player_id]?.type}`) }}
+              </v-chip>
+            </div>
+          </template>
 
-              <template #append>
-                <div class="d-flex align-center gap-2">
-                  <v-icon
-                    v-if="!item.enabled"
-                    icon="mdi-cancel"
-                    size="20"
-                    color="grey"
-                    :title="$t('settings.player_disabled')"
-                  />
-                  <v-icon
-                    v-else-if="!api.players[item.player_id]?.available"
-                    icon="mdi-timer-sand"
-                    size="20"
-                    color="grey"
-                    :title="$t('settings.player_not_available')"
-                  />
-                  <v-icon
-                    v-if="api.players[item.player_id]?.type"
-                    :icon="getPlayerTypeIcon(api.players[item.player_id]?.type)"
-                    size="20"
-                    color="grey"
-                    :title="$t(`player_type.${api.players[item.player_id]?.type}`)"
-                  />
-                </div>
-              </template>
+          <template #append>
+            <div class="d-flex align-center gap-2">
+              <v-icon
+                v-if="!item.enabled"
+                icon="mdi-cancel"
+                size="20"
+                color="grey"
+                :title="$t('settings.player_disabled')"
+              />
+              <v-icon
+                v-else-if="!api.players[item.player_id]?.available"
+                icon="mdi-timer-sand"
+                size="20"
+                color="grey"
+                :title="$t('settings.player_not_available')"
+              />
+              <v-icon
+                v-if="api.players[item.player_id]?.type"
+                :icon="getPlayerTypeIcon(api.players[item.player_id]?.type)"
+                size="20"
+                color="grey"
+                :title="$t(`player_type.${api.players[item.player_id]?.type}`)"
+              />
+            </div>
+          </template>
         </ListItem>
       </v-list>
     </v-container>

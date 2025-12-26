@@ -1,23 +1,23 @@
 <template>
   <v-container class="pa-4 mx-auto" style="max-width: 600px">
     <div class="d-flex align-center justify-space-between mb-4">
-        <v-text-field
-          v-model="searchQuery"
-          :placeholder="$t('search')"
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined"
-          density="comfortable"
-          hide-details
-          clearable
-          class="search-field mr-4"
-        />
-        <v-btn
-          color="primary"
-          prepend-icon="mdi-plus"
-          @click="showCreateDialog = true"
-        >
-          {{ $t("auth.create_user") }}
-        </v-btn>
+      <v-text-field
+        v-model="searchQuery"
+        :placeholder="$t('search')"
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="comfortable"
+        hide-details
+        clearable
+        class="search-field mr-4"
+      />
+      <v-btn
+        color="primary"
+        prepend-icon="mdi-plus"
+        @click="showCreateDialog = true"
+      >
+        {{ $t("auth.create_user") }}
+      </v-btn>
     </div>
 
     <div
@@ -51,49 +51,55 @@
         </v-list-item-subtitle>
 
         <template #append>
-              <v-menu>
-                <template #activator="{ props }">
-                  <v-btn
-                    icon="mdi-dots-vertical"
-                    variant="text"
-                    v-bind="props"
-                    @click.stop
-                  />
-                </template>
-                <v-list>
-                  <v-list-item
-                    prepend-icon="mdi-pencil"
-                    :title="$t('auth.edit_user')"
-                    @click.stop="editUser(user)"
-                  />
-                  <v-list-item
-                    prepend-icon="mdi-key"
-                    :title="$t('auth.manage_tokens')"
-                    @click.stop="manageTokens(user)"
-                  />
-                  <v-list-item
-                    v-if="!isCurrentUser(user)"
-                    :prepend-icon="user.enabled ? 'mdi-monitor-off' : 'mdi-monitor'"
-                    :title="user.enabled ? $t('auth.disable_user') : $t('auth.enable_user')"
-                    @click.stop="user.enabled ? confirmDisableUser(user) : enableUser(user)"
-                  />
-                  <v-divider v-if="!isCurrentUser(user)" />
-                  <v-list-item
-                    v-if="!isCurrentUser(user)"
-                    prepend-icon="mdi-delete"
-                    :title="$t('auth.delete_user')"
-                    color="error"
-                    @click.stop="confirmDeleteUser(user)"
-                  />
-                </v-list>
-              </v-menu>
+          <v-menu>
+            <template #activator="{ props }">
+              <v-btn
+                icon="mdi-dots-vertical"
+                variant="text"
+                v-bind="props"
+                @click.stop
+              />
             </template>
-          
-          <div v-if="!user.enabled" class="mt-2">
-            <v-chip color="error" size="small" variant="flat">
-              {{ $t("auth.disabled") }}
-            </v-chip>
-          </div>
+            <v-list>
+              <v-list-item
+                prepend-icon="mdi-pencil"
+                :title="$t('auth.edit_user')"
+                @click.stop="editUser(user)"
+              />
+              <v-list-item
+                prepend-icon="mdi-key"
+                :title="$t('auth.manage_tokens')"
+                @click.stop="manageTokens(user)"
+              />
+              <v-list-item
+                v-if="!isCurrentUser(user)"
+                :prepend-icon="user.enabled ? 'mdi-monitor-off' : 'mdi-monitor'"
+                :title="
+                  user.enabled
+                    ? $t('auth.disable_user')
+                    : $t('auth.enable_user')
+                "
+                @click.stop="
+                  user.enabled ? confirmDisableUser(user) : enableUser(user)
+                "
+              />
+              <v-divider v-if="!isCurrentUser(user)" />
+              <v-list-item
+                v-if="!isCurrentUser(user)"
+                prepend-icon="mdi-delete"
+                :title="$t('auth.delete_user')"
+                color="error"
+                @click.stop="confirmDeleteUser(user)"
+              />
+            </v-list>
+          </v-menu>
+        </template>
+
+        <div v-if="!user.enabled" class="mt-2">
+          <v-chip color="error" size="small" variant="flat">
+            {{ $t("auth.disabled") }}
+          </v-chip>
+        </div>
       </v-list-item>
     </v-list>
 

@@ -5,7 +5,10 @@
       {{ $t("auth.manage_active_sessions") }}
     </v-card-subtitle>
     <v-card-text>
-      <div v-if="tokens.length === 0" class="d-flex flex-column align-center justify-center py-12">
+      <div
+        v-if="tokens.length === 0"
+        class="d-flex flex-column align-center justify-center py-12"
+      >
         <v-avatar color="grey-lighten-4" size="64" class="mb-3">
           <v-icon icon="mdi-monitor-off" size="32" color="grey-darken-1" />
         </v-avatar>
@@ -27,7 +30,7 @@
           <v-list-item-title class="font-weight-medium">
             {{ token.name }}
           </v-list-item-title>
-          
+
           <v-list-item-subtitle>
             <span class="mr-2">
               {{ $t("created") }}: {{ formatDate(token.created_at) }}
