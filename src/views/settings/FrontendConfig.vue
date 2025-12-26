@@ -1,4 +1,5 @@
 <template>
+  <v-container class="pa-4 mx-auto" style="max-width: 600px">
   <section class="frontend-config">
     <!-- Header card -->
     <v-card class="header-card mb-4" elevation="0">
@@ -36,6 +37,7 @@
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-overlay>
   </section>
+  </v-container>
 </template>
 
 <script setup lang="ts">

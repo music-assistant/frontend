@@ -58,19 +58,21 @@
 
     <div class="config-actions">
       <v-btn
-        block
+        variant="text"
+        @click="resetToDefaults"
+      >
+        {{ $t("settings.reset_to_defaults") }}
+      </v-btn>
+      <v-spacer />
+      <v-btn variant="text" @click="handleClose">
+        {{ $t("close") }}
+      </v-btn>
+      <v-btn
         color="primary"
-        size="large"
         :disabled="!requiredValuesPresent"
         @click="submit"
       >
         {{ $t("settings.save") }}
-      </v-btn>
-      <v-btn block variant="outlined" size="large" @click="handleClose">
-        {{ $t("close") }}
-      </v-btn>
-      <v-btn block variant="text" size="large" @click="resetToDefaults">
-        {{ $t("settings.reset_to_defaults") }}
       </v-btn>
     </div>
   </v-form>
@@ -553,9 +555,10 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
 /* Action buttons */
 .config-actions {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 </style>

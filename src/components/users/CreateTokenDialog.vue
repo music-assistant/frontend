@@ -1,36 +1,37 @@
 <template>
-  <Dialog :open="modelValue" @update:open="emit('update:modelValue', $event)">
-    <DialogContent class="sm:max-w-md">
-      <DialogHeader>
-        <DialogTitle>
-          {{ createdToken ? tokenName : $t("auth.create_token") }}
-        </DialogTitle>
-        <DialogDescription v-if="!createdToken">
-          {{ $t("auth.token_name_hint") }}
-        </DialogDescription>
-      </DialogHeader>
+  <v-dialog
+    :model-value="modelValue"
+    @update:model-value="emit('update:modelValue', $event)"
+    max-width="500"
+  >
+    <v-card>
+      <v-card-title>
+        {{ createdToken ? tokenName : $t("auth.create_token") }}
+      </v-card-title>
+      <v-card-subtitle v-if="!createdToken">
+        {{ $t("auth.token_name_hint") }}
+      </v-card-subtitle>
 
-      <div v-if="!createdToken" class="py-4">
-        <form id="form-create-token" @submit.prevent="form.handleSubmit">
-          <form.Field
-            name="tokenName"
-            :validators="{
-              onChange: tokenNameSchema(t),
-            }"
-          >
-            <template #default="{ field }">
-              <Field :data-invalid="isInvalid(field)">
-                <FieldLabel :for="field.name">
-                  {{ $t("auth.token_name") }}
-                </FieldLabel>
-                <Input
+      <v-card-text class="py-4">
+        <div v-if="!createdToken">
+          <form id="form-create-token" @submit.prevent="form.handleSubmit">
+            <form.Field
+              name="tokenName"
+              :validators="{
+                onChange: tokenNameSchema(t),
+              }"
+            >
+              <template #default="{ field }">
+                <v-text-field
                   :id="field.name"
                   :name="field.name"
                   :model-value="tokenName"
-                  :aria-invalid="isInvalid(field)"
+                  :label="$t('auth.token_name')"
                   :placeholder="$t('auth.token_name_hint')"
+                  :error-messages="field.state.meta.errors"
                   autofocus
                   autocomplete="off"
+                  variant="outlined"
                   @blur="field.handleBlur"
                   @input="
                     (e: Event) => {
@@ -39,82 +40,59 @@
                     }
                   "
                 />
-                <FieldError
-                  v-if="isInvalid(field)"
-                  :errors="field.state.meta.errors"
-                />
-              </Field>
-            </template>
-          </form.Field>
-        </form>
-      </div>
+              </template>
+            </form.Field>
+          </form>
+        </div>
 
-      <div v-else class="py-4">
-        <p class="text-sm text-muted-foreground mb-4">
-          {{ $t("auth.copy_new_token_hint") }}
-        </p>
-        <InputGroup>
-          <InputGroupInput
+        <div v-else>
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            {{ $t("auth.copy_new_token_hint") }}
+          </p>
+          <v-text-field
             :model-value="createdToken"
             readonly
-            class="font-mono text-sm"
+            variant="outlined"
+            density="comfortable"
+            class="font-monospace"
+            append-inner-icon="mdi-content-copy"
+            @click:append-inner="copyToken"
           />
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton size="icon-sm" variant="ghost" @click="copyToken">
-              <Copy :size="16" />
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
-      </div>
+        </div>
+      </v-card-text>
 
-      <DialogFooter>
+      <v-card-actions>
+        <v-spacer />
         <template v-if="!createdToken">
-          <Button variant="outline" @click="handleClose">
+          <v-btn variant="text" @click="handleClose">
             {{ $t("cancel") }}
-          </Button>
-          <Button
+          </v-btn>
+          <v-btn
             type="submit"
             form="form-create-token"
+            color="primary"
             :disabled="!canCreate"
             :loading="loading"
           >
             {{ $t("create") }}
-          </Button>
+          </v-btn>
         </template>
         <template v-else>
-          <Button variant="default" @click="handleClose">
+          <v-btn color="primary" @click="handleClose">
             {{ $t("close") }}
-          </Button>
+          </v-btn>
         </template>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
 import { useForm } from "@tanstack/vue-form";
-import { Copy } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import { copyToClipboard } from "@/helpers/utils";
 import { createTokenSchema, tokenNameSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
@@ -163,10 +141,6 @@ const form = useForm({
   },
 });
 
-function isInvalid(field: any) {
-  return field.state.meta.isTouched && !field.state.meta.isValid;
-}
-
 const canCreate = computed(() => {
   const name = tokenName.value || "";
   return name.trim().length > 0 && name.length <= 100 && !loading.value;
@@ -205,3 +179,9 @@ watch(
   },
 );
 </script>
+
+<style scoped>
+.font-monospace :deep(input) {
+  font-family: monospace;
+}
+</style>

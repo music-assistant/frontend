@@ -1,5 +1,5 @@
 <template>
-  <Container>
+  <v-container class="pa-4 mx-auto" style="max-width: 600px">
     <div v-if="loading" class="loading-wrapper">
       <v-progress-circular indeterminate size="64" color="primary" />
     </div>
@@ -341,7 +341,7 @@
     <v-alert v-else type="error" variant="tonal" class="error-alert">
       {{ $t("settings.remote_access_error_loading") }}
     </v-alert>
-  </Container>
+  </v-container>
 </template>
 
 <script setup lang="ts">

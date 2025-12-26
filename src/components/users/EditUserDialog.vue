@@ -1,288 +1,196 @@
 <template>
-  <Dialog v-model:open="isOpen">
-    <DialogContent class="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
-      <DialogHeader class="px-6 pt-6 pb-4">
-        <DialogTitle>{{ $t("auth.edit_user") }}</DialogTitle>
-      </DialogHeader>
-      <div ref="scrollContainer" class="flex-1 overflow-y-auto px-6">
+  <v-dialog v-model="isOpen" max-width="600" scrollable>
+    <v-card>
+      <v-card-title class="px-4 pt-4">
+        {{ $t("auth.edit_user") }}
+      </v-card-title>
+      
+      <v-card-text class="px-4 py-2" style="max-height: 70vh; overflow-y: auto">
         <form id="form-edit-user" @submit.prevent="handleFormSubmit">
-          <FieldGroup>
-            <form.Field name="username">
-              <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.username") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="username"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
-              </template>
-            </form.Field>
+          <form.Field name="username">
+            <template #default="{ field }">
+              <v-text-field
+                :id="field.name"
+                :name="field.name"
+                :model-value="field.state.value"
+                :label="$t('auth.username')"
+                :error-messages="field.state.meta.errors"
+                variant="outlined"
+                autocomplete="username"
+                class="mb-2"
+                @blur="field.handleBlur"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
 
-            <form.Field name="displayName">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.display_name") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    autocomplete="name"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("optional") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
+          <form.Field name="displayName">
+            <template #default="{ field }">
+              <v-text-field
+                :id="field.name"
+                :name="field.name"
+                :model-value="field.state.value"
+                :label="$t('auth.display_name')"
+                :hint="$t('optional')"
+                persistent-hint
+                variant="outlined"
+                autocomplete="name"
+                class="mb-2"
+                @blur="field.handleBlur"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
 
-            <form.Field name="avatarUrl">
-              <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.avatar_url") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.avatar_url_hint") }}
-                  </FieldDescription>
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
-              </template>
-            </form.Field>
+          <form.Field name="avatarUrl">
+            <template #default="{ field }">
+              <v-text-field
+                :id="field.name"
+                :name="field.name"
+                :model-value="field.state.value"
+                :label="$t('auth.avatar_url')"
+                :hint="$t('auth.avatar_url_hint')"
+                :error-messages="field.state.meta.errors"
+                persistent-hint
+                variant="outlined"
+                class="mb-2"
+                @blur="field.handleBlur"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
 
-            <form.Field name="role">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.role") }}
-                  </FieldLabel>
-                  <Select
-                    :model-value="field.state.value"
-                    :disabled="isCurrentUser"
-                    @update:model-value="
-                      (value) => field.handleChange(value as any)
-                    "
-                  >
-                    <SelectTrigger :id="field.name" class="w-full">
-                      <SelectValue :placeholder="$t('auth.role')" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="option in roleOptions"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </template>
-            </form.Field>
+          <form.Field name="role">
+            <template #default="{ field }">
+              <v-select
+                :id="field.name"
+                :model-value="field.state.value"
+                :items="roleOptions"
+                item-title="label"
+                item-value="value"
+                :label="$t('auth.role')"
+                :disabled="isCurrentUser"
+                variant="outlined"
+                class="mb-2"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
 
-            <form.Field name="password">
-              <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.new_password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.password_optional_hint") }}
-                  </FieldDescription>
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
-              </template>
-            </form.Field>
+          <form.Field name="password">
+            <template #default="{ field }">
+              <v-text-field
+                :id="field.name"
+                :name="field.name"
+                type="password"
+                :model-value="field.state.value"
+                :label="$t('auth.new_password')"
+                :hint="$t('auth.password_optional_hint')"
+                :error-messages="field.state.meta.errors"
+                persistent-hint
+                variant="outlined"
+                autocomplete="new-password"
+                class="mb-2"
+                @blur="field.handleBlur"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
 
-            <form.Field
-              v-if="form.state.values.password"
-              name="confirmPassword"
-            >
-              <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.confirm_password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
-              </template>
-            </form.Field>
+          <form.Field
+            v-if="form.state.values.password"
+            name="confirmPassword"
+          >
+            <template #default="{ field }">
+              <v-text-field
+                :id="field.name"
+                :name="field.name"
+                type="password"
+                :model-value="field.state.value"
+                :label="$t('auth.confirm_password')"
+                :error-messages="field.state.meta.errors"
+                variant="outlined"
+                autocomplete="new-password"
+                class="mb-2"
+                @blur="field.handleBlur"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
 
-            <form.Field name="playerFilter">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel>
-                    {{ $t("auth.player_filter") }}
-                  </FieldLabel>
-                  <MultiSelect
-                    :model-value="field.state.value"
-                    :options="playerOptions"
-                    :placeholder="$t('auth.select_players')"
-                    @update:model-value="field.handleChange"
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.player_filter_hint") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
+          <form.Field name="playerFilter">
+            <template #default="{ field }">
+              <v-select
+                :model-value="field.state.value"
+                :items="playerOptions"
+                item-title="label"
+                item-value="value"
+                :label="$t('auth.player_filter')"
+                :hint="$t('auth.player_filter_hint')"
+                persistent-hint
+                multiple
+                chips
+                closable-chips
+                variant="outlined"
+                class="mb-2"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
 
-            <form.Field name="providerFilter">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel>
-                    {{ $t("auth.provider_filter") }}
-                  </FieldLabel>
-                  <MultiSelect
-                    :model-value="field.state.value"
-                    :options="providerOptions"
-                    :placeholder="$t('auth.select_providers')"
-                    @update:model-value="field.handleChange"
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.provider_filter_hint") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
-          </FieldGroup>
+          <form.Field name="providerFilter">
+            <template #default="{ field }">
+              <v-select
+                :model-value="field.state.value"
+                :items="providerOptions"
+                item-title="label"
+                item-value="value"
+                :label="$t('auth.provider_filter')"
+                :hint="$t('auth.provider_filter_hint')"
+                persistent-hint
+                multiple
+                chips
+                closable-chips
+                variant="outlined"
+                class="mb-2"
+                @update:model-value="field.handleChange"
+              />
+            </template>
+          </form.Field>
         </form>
-      </div>
-      <DialogFooter class="px-6 pb-6 pt-4 border-t shrink-0">
-        <Button variant="outline" @click="handleClose">
+      </v-card-text>
+
+      <v-card-actions class="px-4 pb-4">
+        <v-spacer />
+        <v-btn variant="text" @click="handleClose">
           {{ $t("cancel") }}
-        </Button>
-        <Button
+        </v-btn>
+        <v-btn
+          color="primary"
           type="submit"
           form="form-edit-user"
-          :disabled="loading"
           :loading="loading"
+          :disabled="loading"
         >
           {{ $t("edit") }}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { editUserSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { ProviderType, UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
 
@@ -299,34 +207,9 @@ const emit = defineEmits<{
 const isOpen = useVModel(props, "modelValue", emit);
 
 const loading = ref(false);
-const scrollContainer = ref<HTMLElement | null>(null);
-
-const scrollToFirstError = async () => {
-  await nextTick();
-  if (!scrollContainer.value) return;
-
-  const firstErrorInput = scrollContainer.value.querySelector(
-    "[aria-invalid='true'], [data-invalid='true']",
-  ) as HTMLElement;
-
-  if (firstErrorInput) {
-    firstErrorInput.scrollIntoView({ behavior: "smooth", block: "center" });
-    firstErrorInput.focus();
-  }
-};
 
 const handleFormSubmit = async () => {
   await form.handleSubmit();
-  await nextTick();
-
-  if (scrollContainer.value) {
-    const hasErrors = scrollContainer.value.querySelector(
-      "[aria-invalid='true'], [data-invalid='true']",
-    );
-    if (hasErrors) {
-      await scrollToFirstError();
-    }
-  }
 };
 
 const roleOptions = computed(() => [
@@ -431,10 +314,6 @@ const form = useForm({
     }
   },
 });
-
-const isInvalid = (field: any) => {
-  return field.state.meta.errors.length > 0;
-};
 
 const resetForm = () => {
   if (props.user) {

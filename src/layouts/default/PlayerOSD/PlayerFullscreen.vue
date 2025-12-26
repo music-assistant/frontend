@@ -1382,6 +1382,13 @@ watchEffect(() => {
   margin: 0 auto;
 }
 
+/* player-panel-left on mobile margin auto */
+@media (max-width: 600px) {
+  .player-panel-left {
+    margin: 0;
+  }
+}
+
 .artwork-container {
   flex: 1;
   display: flex;

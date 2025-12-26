@@ -1,24 +1,20 @@
 <template>
-  <section class="edit-core-config">
+  <v-container class="pa-4 mx-auto" style="max-width: 600px">
     <div v-if="config && api.providerManifests[config.domain]">
-      <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
-        <div class="header-content">
-          <div class="header-icon">
-            <v-icon size="32" color="primary">{{
-              getCoreIcon(config.domain)
-            }}</v-icon>
-          </div>
-          <div class="header-info">
-            <h2 class="header-title">
-              {{ getItemTitle(config) }}
-            </h2>
-            <p class="header-description">
-              {{ getItemDescription(config) }}
-            </p>
-          </div>
+      <!-- Header -->
+      <div class="d-flex align-center mb-6">
+        <v-avatar color="primary" variant="tonal" size="48" class="mr-4">
+          <v-icon size="24">{{ getCoreIcon(config.domain) }}</v-icon>
+        </v-avatar>
+        <div>
+          <h2 class="text-h6 font-weight-bold">
+            {{ getItemTitle(config) }}
+          </h2>
+          <p class="text-body-2 text-medium-emphasis">
+            {{ getItemDescription(config) }}
+          </p>
         </div>
-      </v-card>
+      </div>
     </div>
 
     <edit-config
@@ -37,7 +33,7 @@
     >
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-overlay>
-  </section>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -161,61 +157,9 @@ const onAction = async function (
 </script>
 
 <style scoped>
-.edit-core-config {
-  padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0;
-  line-height: 1.5;
-}
-
 .loading-overlay {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 </style>

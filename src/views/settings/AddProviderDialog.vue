@@ -1,100 +1,113 @@
 <template>
-  <Dialog :open="props.show" @update:open="handleOpenChange">
-    <DialogContent
-      class="add-provider-dialog h-[60vh] max-h-[60vh] flex flex-col p-0"
-    >
-      <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
-        <DialogTitle>{{ $t("settings.add_provider") }}</DialogTitle>
-      </DialogHeader>
+  <v-dialog
+    :model-value="show"
+    @update:model-value="(val) => emit('update:show', val)"
+    max-width="800"
+    scrollable
+  >
+    <v-card>
+      <v-card-title class="d-flex align-center justify-space-between pa-4">
+        {{ $t("settings.add_provider") }}
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          @click="emit('update:show', false)"
+        />
+      </v-card-title>
 
-      <div class="px-6 pb-2 flex-shrink-0">
-        <InputGroup class="search-field">
-          <InputGroupInput
-            ref="searchInput"
-            v-model="searchQuery"
-            :placeholder="$t('search')"
-          />
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-        </InputGroup>
-      </div>
+      <v-divider />
 
-      <div class="px-6 flex-shrink-0">
-        <div class="filter-buttons">
-          <FacetedFilter
+      <div class="pa-4">
+        <v-text-field
+          ref="searchInput"
+          v-model="searchQuery"
+          prepend-inner-icon="mdi-magnify"
+          :label="$t('search')"
+          variant="outlined"
+          hide-details
+          class="mb-4"
+          autofocus
+          clearable
+        />
+
+        <div class="d-flex gap-4 flex-wrap">
+          <v-select
             v-model="selectedProviderTypes"
-            :title="$t('settings.provider_type')"
-            :options="providerTypeOptions"
+            :items="providerTypeOptions"
+            :label="$t('settings.provider_type')"
+            item-title="label"
+            item-value="value"
+            multiple
+            chips
+            closable-chips
+            variant="outlined"
+            hide-details
+            density="comfortable"
+            style="min-width: 200px; flex: 1"
           />
-          <FacetedFilter
+          <v-select
             v-model="selectedProviderStages"
-            :title="$t('settings.stage.label')"
-            :options="providerStageOptions"
+            :items="providerStageOptions"
+            :label="$t('settings.stage.label')"
+            item-title="label"
+            item-value="value"
+            multiple
+            chips
+            closable-chips
+            variant="outlined"
+            hide-details
+            density="comfortable"
+            style="min-width: 200px; flex: 1"
           />
         </div>
       </div>
 
-      <div
-        class="provider-list-container px-6 pt-2 pb-6 flex-1 min-h-0 overflow-y-auto"
-      >
-        <div v-if="filteredProviders.length > 0" class="provider-list">
-          <div
+      <v-divider />
+
+      <v-card-text class="pa-0" style="height: 60vh">
+        <v-list v-if="filteredProviders.length > 0" lines="two">
+          <v-list-item
             v-for="provider in filteredProviders"
             :key="provider.domain"
-            class="provider-item"
             @click="addProvider(provider)"
+            :title="provider.name"
+            link
           >
-            <provider-icon
-              :domain="provider.domain"
-              :size="40"
-              class="provider-icon"
-            />
-            <div class="provider-content">
-              <div class="provider-name">{{ provider.name }}</div>
-              <div class="provider-description">
-                {{ provider.description }}
-              </div>
-            </div>
-            <div class="provider-actions">
-              <Badge
-                :variant="getStageVariant(provider.stage)"
-                class="text-uppercase"
+            <template #prepend>
+              <ProviderIcon :domain="provider.domain" :size="40" class="mr-4" />
+            </template>
+            <template #subtitle>
+              <div class="text-truncate">{{ provider.description }}</div>
+            </template>
+            <template #append>
+              <v-chip
+                size="small"
+                class="text-uppercase font-weight-bold"
+                :color="getStageColor(provider.stage)"
+                label
               >
                 {{ $t(String(provider.stage || "").toLowerCase()) }}
-              </Badge>
-              <ChevronRight class="h-4 w-4" />
-            </div>
-          </div>
-        </div>
-
-        <div v-else class="empty-state">
-          <Search class="empty-icon" />
-          <div class="empty-title">{{ $t("no_content") }}</div>
-          <div class="empty-message">
+              </v-chip>
+            </template>
+          </v-list-item>
+        </v-list>
+        <div
+          v-else
+          class="d-flex flex-column align-center justify-center fill-height pa-6"
+        >
+          <v-icon icon="mdi-magnify" size="64" class="mb-4 text-disabled" />
+          <div class="text-h6 text-medium-emphasis">{{ $t("no_content") }}</div>
+          <div class="text-body-2 text-disabled">
             {{ $t("no_content_filter") }}
           </div>
         </div>
-      </div>
-    </DialogContent>
-  </Dialog>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
-import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,
@@ -104,7 +117,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ChevronRight, Search } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -134,7 +146,7 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
-const searchInput = ref<{ focus: () => void } | null>(null);
+const searchInput = ref<HTMLInputElement | null>(null);
 
 const providerTypeOptions = computed(() => [
   { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
@@ -246,22 +258,15 @@ const addProvider = function (provider: ProviderManifest) {
   close();
 };
 
-const getStageVariant = function (
-  stage?: string,
-): "default" | "secondary" | "outline" | "destructive" {
+const getStageColor = function (stage?: string) {
   return match(stage)
-    .with("stable", () => "default" as const)
-    .with("beta", () => "secondary" as const)
-    .with("alpha", () => "outline" as const)
-    .with("experimental", () => "outline" as const)
-    .with("unmaintained", () => "secondary" as const)
-    .with("deprecated", () => "destructive" as const)
-    .otherwise(() => "default" as const);
-};
-
-const handleOpenChange = (open: boolean) => {
-  store.dialogActive = open;
-  emit("update:show", open);
+    .with("stable", () => "success")
+    .with("beta", () => "info")
+    .with("alpha", () => "warning")
+    .with("experimental", () => "warning")
+    .with("unmaintained", () => "grey")
+    .with("deprecated", () => "error")
+    .otherwise(() => "grey");
 };
 
 const close = function () {
@@ -279,6 +284,7 @@ watch(
 watch(
   () => props.show,
   (isOpen) => {
+    store.dialogActive = isOpen;
     if (isOpen && props.initialType) {
       selectedProviderTypes.value = [props.initialType];
       searchQuery.value = "";
@@ -298,111 +304,7 @@ watch(
 </script>
 
 <style scoped>
-.add-provider-dialog {
-  display: flex;
-  flex-direction: column;
-}
-
-.search-field {
-  width: 100%;
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.provider-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.provider-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.provider-item:hover {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  transform: translateY(-1px);
-}
-
-.provider-icon {
-  flex-shrink: 0;
-}
-
-.provider-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.provider-name {
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.2;
-  margin-bottom: 4px;
-}
-
-.provider-description {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-height: 2.6em;
-}
-
-.provider-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-icon {
-  width: 48px;
-  height: 48px;
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
-}
-
-@media (max-width: 600px) {
-  .add-provider-dialog {
-    max-height: 500px;
-  }
+.gap-4 {
+  gap: 16px;
 }
 </style>

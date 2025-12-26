@@ -1,89 +1,95 @@
 <template>
-  <section class="edit-provider">
-    <div v-if="config && api.providerManifests[config.domain]">
-      <!-- Disabled banner -->
-      <v-alert
-        v-if="!config.enabled"
-        type="warning"
-        variant="tonal"
-        class="mb-4"
-        closable
-      >
-        <div class="disabled-banner">
-          <span>{{ $t("settings.provider_disabled") }}</span>
-          <v-btn
-            size="small"
-            color="warning"
-            variant="flat"
-            @click="config.enabled = true"
+  <v-container fluid class="pa-6">
+    <v-row>
+      <v-col cols="12" md="8" offset-md="2">
+        <div v-if="config && api.providerManifests[config.domain]">
+          <!-- Disabled banner -->
+          <v-alert
+            v-if="!config.enabled"
+            type="warning"
+            variant="tonal"
+            class="mb-6"
+            closable
           >
-            {{ $t("settings.enable_provider") }}
-          </v-btn>
-        </div>
-      </v-alert>
-
-      <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
-        <div class="header-content">
-          <div class="header-icon">
-            <provider-icon :domain="config.domain" :size="48" />
-          </div>
-          <div class="header-info">
-            <div class="header-title-row">
-              <h2 class="header-title">
-                {{
-                  config.name ||
-                  api.providers[config.instance_id]?.name ||
-                  api.providerManifests[config.domain].name
-                }}
-              </h2>
+            <div class="d-flex align-center justify-space-between w-100">
+              <span>{{ $t("settings.provider_disabled") }}</span>
               <v-btn
-                icon="mdi-pencil"
-                variant="text"
                 size="small"
-                density="compact"
-                class="rename-btn"
-                @click="showRenameDialog = true"
-              />
+                color="warning"
+                variant="flat"
+                @click="config.enabled = true"
+              >
+                {{ $t("settings.enable_provider") }}
+              </v-btn>
             </div>
-            <p class="header-description">
-              {{ api.providerManifests[config.domain].description }}
-            </p>
-            <div
-              v-if="api.providerManifests[config.domain].codeowners.length"
-              class="header-authors"
-              v-html="
-                markdownToHtml(
-                  getAuthorsMarkdown(
-                    api.providerManifests[config.domain].codeowners,
-                  ),
-                )
-              "
-            ></div>
-            <div
-              v-if="api.providerManifests[config.domain].credits.length"
-              class="header-authors"
-              v-html="
-                markdownToHtml(
-                  getCreditsMarkdown(
-                    api.providerManifests[config.domain].credits,
-                  ),
-                )
-              "
-            ></div>
-          </div>
-        </div>
-      </v-card>
-    </div>
+          </v-alert>
 
-    <edit-config
-      v-if="config"
-      :config-entries="allConfigEntries"
-      :disabled="!config.enabled"
-      @submit="onSubmit"
-      @action="onAction"
-      @immediate-apply="onImmediateApply"
-    />
+          <!-- Header card -->
+          <v-card class="mb-6">
+            <v-card-text class="d-flex gap-4 align-start">
+              <provider-icon :domain="config.domain" :size="48" class="flex-shrink-0" />
+              <div class="flex-grow-1">
+                <div class="d-flex align-center gap-2 mb-2">
+                  <h2 class="text-h5 font-weight-bold">
+                    {{
+                      config.name ||
+                      api.providers[config.instance_id]?.name ||
+                      api.providerManifests[config.domain].name
+                    }}
+                  </h2>
+                  <v-btn
+                    icon="mdi-pencil"
+                    variant="text"
+                    size="small"
+                    density="compact"
+                    class="text-medium-emphasis"
+                    @click="showRenameDialog = true"
+                  />
+                </div>
+                <p class="text-body-2 text-medium-emphasis mb-3">
+                  {{ api.providerManifests[config.domain].description }}
+                </p>
+                <div
+                  v-if="api.providerManifests[config.domain].codeowners.length"
+                  class="text-caption text-medium-emphasis"
+                  v-html="
+                    markdownToHtml(
+                      getAuthorsMarkdown(
+                        api.providerManifests[config.domain].codeowners,
+                      ),
+                    )
+                  "
+                ></div>
+                <div
+                  v-if="api.providerManifests[config.domain].credits.length"
+                  class="text-caption text-medium-emphasis"
+                  v-html="
+                    markdownToHtml(
+                      getCreditsMarkdown(
+                        api.providerManifests[config.domain].credits,
+                      ),
+                    )
+                  "
+                ></div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </div>
+
+        <v-card>
+          <v-card-text>
+            <edit-config
+              v-if="config"
+              :config-entries="allConfigEntries"
+              :disabled="!config.enabled"
+              @submit="onSubmit"
+              @action="onAction"
+              @immediate-apply="onImmediateApply"
+            />
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- Rename dialog -->
     <v-dialog v-model="showRenameDialog" max-width="400">
@@ -114,13 +120,14 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
     <v-overlay
       v-model="loading"
+      class="align-center justify-center"
       scrim="true"
       persistent
-      style="display: flex; align-items: center; justify-content: center"
     >
-      <v-card v-if="showAuthLink" style="background-color: white">
+      <v-card v-if="showAuthLink" color="surface">
         <v-card-title>Authenticating...</v-card-title>
         <v-card-subtitle
           >A new tab/popup should be opened where you can
@@ -134,7 +141,7 @@
       </v-card>
       <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
-  </section>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -325,85 +332,10 @@ const saveRename = function () {
 </script>
 
 <style scoped>
-.edit-provider {
-  padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.rename-btn {
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.rename-btn:hover {
-  opacity: 1;
-}
-
-.disabled-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.gap-4 {
   gap: 16px;
 }
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-.header-authors {
-  font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.header-authors :deep(a) {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-}
-
-.header-authors :deep(a:hover) {
-  text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.gap-2 {
+  gap: 8px;
 }
 </style>

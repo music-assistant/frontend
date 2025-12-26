@@ -1,24 +1,10 @@
 <template>
   <div>
-    <Toolbar :icon="Settings" :show-loading="true">
+    <Toolbar icon="mdi-cog" :show-loading="true">
       <template #title>
         <v-breadcrumbs :items="breadcrumbItems" class="pa-0" />
       </template>
       <template #append>
-        <v-btn
-          v-if="isPlayersPage"
-          :icon="playersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="text"
-          :title="t('tooltip.toggle_view_mode')"
-          @click="togglePlayersViewMode()"
-        />
-        <v-btn
-          v-if="isProvidersPage"
-          :icon="providersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="text"
-          :title="t('tooltip.toggle_view_mode')"
-          @click="toggleProvidersViewMode()"
-        />
         <v-btn
           v-if="documentationUrl"
           icon="mdi-help-circle"
@@ -31,41 +17,34 @@
 
     <v-divider />
 
-    <Container
-      v-if="isOverview"
-      variant="comfortable"
-      class="settings-overview"
-    >
-      <v-card class="settings-main-card">
-        <v-list class="settings-list">
-          <v-list-item
-            v-for="section in settingsSections"
-            :key="section.name"
-            :ripple="true"
-            class="settings-list-item"
-            @click="router.push(section.route)"
-          >
-            <template #prepend>
-              <v-avatar :color="section.color" size="48">
-                <v-icon :icon="section.icon" size="24" color="white" />
-              </v-avatar>
-            </template>
-
-            <v-list-item-title class="text-h6">
-              {{ t(section.label) }}
-            </v-list-item-title>
-
-            <v-list-item-subtitle>
-              {{ t(section.description) }}
-            </v-list-item-subtitle>
-
-            <template #append>
-              <v-icon icon="mdi-chevron-right" />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card>
-    </Container>
+    <v-container v-if="isOverview" class="pa-4 mx-auto" style="max-width: 600px">
+      <v-list lines="two" class="bg-transparent pa-0">
+        <v-list-item
+          v-for="section in settingsSections"
+          :key="section.name"
+          :title="t(section.label)"
+          :subtitle="t(section.description)"
+          @click="router.push(section.route)"
+          class="settings-item py-3 mb-3 rounded-lg border"
+          elevation="0"
+          link
+        >
+          <template #prepend>
+            <v-avatar
+              :color="section.color"
+              variant="tonal"
+              size="40"
+              class="mr-4"
+            >
+              <v-icon :icon="section.icon" />
+            </v-avatar>
+          </template>
+          <template #append>
+            <v-icon icon="mdi-chevron-right" color="grey" />
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-container>
 
     <!-- Settings Subsections -->
     <router-view v-else v-slot="{ Component }">
@@ -75,85 +54,18 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
-import { Settings } from "lucide-vue-next";
 import { match } from "ts-pattern";
-import { computed, provide, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
-const { getPreference, setPreference } = useUserPreferences();
-
-const playersViewMode = ref<"list" | "card">("list");
-const isPlayersPage = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("players") || name === "addgroup";
-});
-
-const savedPlayersViewMode = getPreference<"list" | "card">(
-  "settings.players.viewMode",
-  "list",
-);
-
-watch(
-  () => savedPlayersViewMode.value,
-  (savedViewMode) => {
-    if (savedViewMode === "list" || savedViewMode === "card") {
-      playersViewMode.value = savedViewMode;
-    }
-  },
-  { immediate: true },
-);
-
-const togglePlayersViewMode = function () {
-  playersViewMode.value = playersViewMode.value === "list" ? "card" : "list";
-  setPreference("settings.players.viewMode", playersViewMode.value);
-};
-
-provide("playersViewMode", {
-  viewMode: playersViewMode,
-  toggleViewMode: togglePlayersViewMode,
-});
-
-const providersViewMode = ref<"list" | "card">("list");
-const isProvidersPage = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("providers");
-});
-
-const savedProvidersViewMode = getPreference<"list" | "card">(
-  "settings.providers.viewMode",
-  "list",
-);
-
-watch(
-  () => savedProvidersViewMode.value,
-  (savedViewMode) => {
-    if (savedViewMode === "list" || savedViewMode === "card") {
-      providersViewMode.value = savedViewMode;
-    }
-  },
-  { immediate: true },
-);
-
-const toggleProvidersViewMode = function () {
-  providersViewMode.value =
-    providersViewMode.value === "list" ? "card" : "list";
-  setPreference("settings.providers.viewMode", providersViewMode.value);
-};
-
-provide("providersViewMode", {
-  viewMode: providersViewMode,
-  toggleViewMode: toggleProvidersViewMode,
-});
 
 const allSettingsSections = [
   {
@@ -428,67 +340,12 @@ const documentationUrl = computed(() => {
 </script>
 
 <style scoped>
-.settings-overview {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
+.settings-item {
+  transition: background-color 0.2s ease-in-out;
+  background-color: rgb(var(--v-theme-surface));
 }
 
-.settings-main-card {
-  overflow: hidden;
-}
-
-.settings-list {
-  padding: 0;
-}
-
-.settings-list-item {
-  cursor: pointer;
-  padding: 20px 24px;
-  min-height: 80px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.settings-list-item:last-child {
-  border-bottom: none;
-}
-
-.settings-list-item:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-}
-
-.settings-list-item :deep(.v-list-item__prepend) {
-  margin-right: 16px;
-}
-
-.v-avatar {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Mobile optimizations */
-@media (max-width: 600px) {
-  .settings-list-item {
-    padding: 12px 16px;
-    min-height: 64px;
-  }
-
-  .settings-list-item :deep(.v-list-item__prepend) {
-    margin-right: 12px;
-  }
-
-  .settings-list-item :deep(.v-avatar) {
-    width: 40px !important;
-    height: 40px !important;
-  }
-
-  .settings-list-item :deep(.v-list-item-title) {
-    font-size: 1rem !important;
-    line-height: 1.3;
-  }
-
-  .settings-list-item :deep(.v-list-item-subtitle) {
-    font-size: 0.813rem !important;
-    line-height: 1.3;
-  }
+.settings-item:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 </style>

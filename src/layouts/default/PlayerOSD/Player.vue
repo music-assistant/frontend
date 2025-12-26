@@ -1,7 +1,13 @@
 <template>
   <!-- Non-mobile: background gradient and player bar -->
   <template v-if="!mobile">
-    <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
+    <div class="mediacontrols-bg" :data-floating="useFloatingPlayer">
+      <img
+        v-if="currentImageUrl"
+        :src="currentImageUrl"
+        class="mediacontrols-bg-image"
+      />
+    </div>
     <div class="mediacontrols">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
@@ -64,7 +70,13 @@
 
   <!-- Mobile: floating player with volume slider inside container -->
   <div v-else class="mediacontrols-mobile-container">
-    <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
+    <div class="mediacontrols-bg" :data-floating="useFloatingPlayer">
+      <img
+        v-if="currentImageUrl"
+        :src="currentImageUrl"
+        class="mediacontrols-bg-image"
+      />
+    </div>
     <div class="mediacontrols" :data-mobile="true">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
@@ -232,6 +244,13 @@ watch(
     }
   },
 );
+
+const currentImageUrl = computed(() => {
+  if (store.activePlayer?.current_media?.image_url) {
+    return getMediaImageUrl(store.activePlayer.current_media.image_url);
+  }
+  return null;
+});
 </script>
 
 <style scoped lang="scss">
@@ -258,6 +277,7 @@ watch(
   .mediacontrols-bottom-center {
     width: 40%;
   }
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 
   &[data-mobile="true"] {
     background-color: transparent;
@@ -274,20 +294,38 @@ watch(
 .mediacontrols-bg {
   height: 100%;
   position: absolute;
-  width: 320px;
+  width: 100%;
   left: 0px;
   top: 0px;
+  overflow: hidden;
   background: linear-gradient(
     to right,
     v-bind("backgroundColor") 0%,
-    transparent
+    transparent 600px
   );
+  mask-image: linear-gradient(to right, black 0%, transparent 600px);
+  -webkit-mask-image: linear-gradient(to right, black 0%, transparent 600px);
 
   &[data-floating="true"] {
     border-radius: 10px;
     width: 100%;
     background: v-bind("backgroundColor");
+    mask-image: none;
+    -webkit-mask-image: none;
   }
+}
+
+.mediacontrols-bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(20px);
+  transform: scale(1.2);
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .mediacontrols-top-right {

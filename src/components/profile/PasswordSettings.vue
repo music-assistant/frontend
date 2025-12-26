@@ -1,82 +1,77 @@
 <template>
-  <Card>
-    <CardHeader>
-      <CardTitle>{{ $t("auth.change_password") }}</CardTitle>
-      <CardDescription>
-        {{ $t("auth.update_your_password") }}
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div
+  <v-card>
+    <v-card-title>{{ $t("auth.change_password") }}</v-card-title>
+    <v-card-subtitle>
+      {{ $t("auth.update_your_password") }}
+    </v-card-subtitle>
+    <v-card-text>
+      <v-alert
         v-if="store.isIngressSession"
-        class="mb-4 rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-600 dark:text-blue-400"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+        density="compact"
       >
         {{ $t("auth.ingress_password_note") }}
-      </div>
+      </v-alert>
 
       <form id="form-password-settings" @submit.prevent="form.handleSubmit">
-        <FieldGroup>
-          <form.Field name="newPassword">
-            <template #default="{ field }">
-              <Field :data-invalid="isInvalid(field)">
-                <FieldLabel :for="field.name">
-                  {{ $t("auth.new_password") }}
-                </FieldLabel>
-                <Input
-                  :id="field.name"
-                  :name="field.name"
-                  :model-value="field.state.value"
-                  type="password"
-                  :aria-invalid="isInvalid(field)"
-                  autocomplete="new-password"
-                  @blur="field.handleBlur"
-                  @input="handleNewPasswordInput($event, field)"
-                />
-                <FieldError
-                  v-if="isInvalid(field)"
-                  :errors="field.state.meta.errors"
-                />
-              </Field>
-            </template>
-          </form.Field>
+        <form.Field name="newPassword">
+          <template #default="{ field }">
+            <v-text-field
+              :id="field.name"
+              :name="field.name"
+              :model-value="field.state.value"
+              :label="$t('auth.new_password')"
+              type="password"
+              :error-messages="field.state.meta.errors"
+              autocomplete="new-password"
+              variant="outlined"
+              class="mb-2"
+              @blur="field.handleBlur"
+              @input="(e: any) => {
+                handleNewPasswordInput(e, field);
+                field.handleChange(e.target.value);
+              }"
+            />
+          </template>
+        </form.Field>
 
-          <form.Field name="confirmPassword">
-            <template #default="{ field }">
-              <Field :data-invalid="isInvalid(field)">
-                <FieldLabel :for="field.name">
-                  {{ $t("auth.confirm_password") }}
-                </FieldLabel>
-                <Input
-                  :id="field.name"
-                  :name="field.name"
-                  :model-value="field.state.value"
-                  type="password"
-                  :aria-invalid="isInvalid(field)"
-                  autocomplete="new-password"
-                  @blur="field.handleBlur"
-                  @input="handleConfirmPasswordInput($event, field)"
-                />
-                <FieldError
-                  v-if="isInvalid(field)"
-                  :errors="field.state.meta.errors"
-                />
-              </Field>
-            </template>
-          </form.Field>
-        </FieldGroup>
+        <form.Field name="confirmPassword">
+          <template #default="{ field }">
+            <v-text-field
+              :id="field.name"
+              :name="field.name"
+              :model-value="field.state.value"
+              :label="$t('auth.confirm_password')"
+              type="password"
+              :error-messages="field.state.meta.errors"
+              autocomplete="new-password"
+              variant="outlined"
+              class="mb-2"
+              @blur="field.handleBlur"
+              @input="(e: any) => {
+                handleConfirmPasswordInput(e, field);
+                field.handleChange(e.target.value);
+              }"
+            />
+          </template>
+        </form.Field>
       </form>
-    </CardContent>
-    <CardFooter>
-      <Button
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer />
+      <v-btn
         type="submit"
         form="form-password-settings"
+        color="primary"
         :disabled="!canChangePassword || changing"
         :loading="changing"
       >
         {{ $t("auth.update_password") || "Update password" }}
-      </Button>
-    </CardFooter>
-  </Card>
+      </v-btn>
+    </v-card-actions>
+  </v-card>
 </template>
 
 <script setup lang="ts">
@@ -85,22 +80,6 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { createPasswordSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
@@ -150,19 +129,13 @@ const canChangePassword = computed(() => {
   return newPassword === confirmPassword && confirmPassword.length > 0;
 });
 
-function isInvalid(field: any) {
-  return field.state.meta.isTouched && !field.state.meta.isValid;
-}
-
 const handleNewPasswordInput = (e: Event, field: any) => {
   const value = (e.target as HTMLInputElement).value;
   currentNewPassword.value = value;
-  field.handleChange(value);
 };
 
 const handleConfirmPasswordInput = (e: Event, field: any) => {
   const value = (e.target as HTMLInputElement).value;
   currentConfirmPassword.value = value;
-  field.handleChange(value);
 };
 </script>

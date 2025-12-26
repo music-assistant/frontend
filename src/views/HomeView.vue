@@ -1,99 +1,55 @@
 <template>
   <div>
-    <Toolbar :show-loading="true" :home="true" color="background">
-      <template #append>
-        <!-- User avatar menu -->
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <div class="avatar-trigger">
-              <Avatar class="user-avatar size-10">
-                <AvatarImage
-                  v-if="store.currentUser?.avatar_url"
-                  :src="store.currentUser.avatar_url"
-                />
-                <AvatarFallback class="bg-primary">
-                  <User :size="20" class="text-white" />
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <div class="user-header-section">
-              <Avatar class="user-avatar size-10">
-                <AvatarImage
-                  v-if="store.currentUser?.avatar_url"
-                  :src="store.currentUser.avatar_url"
-                />
-                <AvatarFallback class="bg-primary">
-                  <User :size="20" class="text-white" />
-                </AvatarFallback>
-              </Avatar>
-              <div class="flex flex-col">
-                <span class="text-sm font-semibold">
-                  {{
-                    store.currentUser?.display_name ||
-                    store.currentUser?.username
-                  }}
-                </span>
-                <span class="text-xs text-muted-foreground">
-                  {{ store.currentUser?.username }}
-                </span>
-              </div>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="router.push({ name: 'profile' })">
-              <Settings :size="16" />
-              <span>{{ $t("auth.profile") }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="editMode = !editMode">
-              <Pencil :size="16" />
-              <span>
-                {{
-                  $t(
-                    editMode
-                      ? "homescreen_edit_disable"
-                      : "homescreen_edit_enable",
-                  )
-                }}
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              v-if="!store.isIngressSession"
-              @click="handleLogout"
-            >
-              <LogOut :size="16" />
-              <span>{{ $t("auth.logout") }}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </template>
-    </Toolbar>
-
-    <!-- Provider error warning banner -->
-    <v-alert
-      v-if="hasProviderErrors && showProviderWarning"
-      variant="outlined"
-      type="error"
-      icon="mdi-alert-circle"
-      prominent
-      class="mx-5 mt-4"
-      closable
-      @click:close="showProviderWarning = false"
-    >
-      <div class="provider-warning-content">
-        <span>{{ $t("settings.provider_requires_attention_detail") }}</span>
-        <v-btn
-          size="small"
-          color="error"
-          variant="flat"
-          @click="navigateToProviders"
-        >
-          {{ $t("settings.fix_now") }}
-        </v-btn>
-      </div>
-    </v-alert>
-
     <Container variant="comfortable">
+      <!-- Header -->
+      <v-toolbar color="transparent" class="header mb-4" height="auto">
+        <template #title>
+          <div class="flex flex-col justify-center py-2">
+            <span class="text-h5 font-weight-bold">
+              Welcome back,
+              {{
+                store.currentUser?.display_name?.split(" ")[0] ||
+                store.currentUser?.username
+              }}
+            </span>
+            <span class="text-subtitle-1 text-medium-emphasis mt-1">
+              {{ subTitle }}
+            </span>
+          </div>
+        </template>
+        <template #append>
+          <v-btn
+            :icon="editMode ? 'mdi-check' : 'mdi-pencil'"
+            variant="text"
+            @click="editMode = !editMode"
+          />
+        </template>
+      </v-toolbar>
+
+      <!-- Provider error warning banner -->
+      <v-alert
+        v-if="hasProviderErrors && showProviderWarning"
+        variant="outlined"
+        type="error"
+        icon="mdi-alert-circle"
+        prominent
+        class="mb-4"
+        closable
+        @click:close="showProviderWarning = false"
+      >
+        <div class="provider-warning-content">
+          <span>{{ $t("settings.provider_requires_attention_detail") }}</span>
+          <v-btn
+            size="small"
+            color="error"
+            variant="flat"
+            @click="navigateToProviders"
+          >
+            {{ $t("settings.fix_now") }}
+          </v-btn>
+        </div>
+      </v-alert>
+
       <Suspense>
         <div>
           <HomeWidgetRows :edit-mode="editMode" />
@@ -107,20 +63,11 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
-import Toolbar from "@/components/Toolbar.vue";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { api } from "@/plugins/api";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { LogOut, Pencil, Settings, User } from "lucide-vue-next";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -128,9 +75,24 @@ const editMode = ref(false);
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
 
-const handleLogout = () => {
-  authManager.logout();
-};
+const timeGreeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+});
+
+const subTitle = computed(() => {
+  const parts = [];
+  if (
+    store.activePlayer?.display_name &&
+    store.activePlayer?.playback_state === PlaybackState.PLAYING
+  ) {
+    parts.push(`Listening on ${store.activePlayer.display_name}`);
+  }
+  parts.push(timeGreeting.value);
+  return parts.join(" • ");
+});
 
 const navigateToProviders = () => {
   router.push("/settings/providers");
@@ -156,24 +118,6 @@ onMounted(async () => {
   margin-inline: auto;
 }
 
-.editButton {
-  float: right;
-  margin-bottom: 10px;
-}
-
-.avatar-trigger {
-  cursor: pointer;
-  margin-right: 8px;
-}
-
-.avatar-trigger:hover {
-  opacity: 0.9;
-}
-
-.user-avatar {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
 .provider-warning-content {
   display: flex;
   align-items: center;
@@ -182,20 +126,16 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-.user-header-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px;
-  background-color: hsl(var(--muted) / 0.3);
-  border-radius: calc(var(--radius) - 2px);
-  margin-bottom: 4px;
-}
-
 @media (max-width: 600px) {
   .provider-warning-content {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+.header.v-toolbar :deep(.v-toolbar-title) {
+  margin-inline-start: 0px;
+  font-size: x-large;
+  font-weight: bold;
 }
 </style>

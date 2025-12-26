@@ -1,22 +1,22 @@
 <template>
-  <Container variant="comfortable" class="settings-overview">
-    <v-card class="settings-main-card">
-      <v-list class="settings-list">
+  <v-container class="pa-4 mx-auto" style="max-width: 600px">
+      <v-list lines="two" class="bg-transparent pa-0">
         <!-- Core modules -->
         <v-list-item
           v-for="item in sortedCoreConfigs"
           :key="item.domain"
           :ripple="true"
-          class="settings-list-item"
+          class="settings-item py-3 mb-3 rounded-lg border"
+          elevation="0"
           @click="handleItemClick(item)"
         >
           <template #prepend>
-            <v-avatar color="blue" size="48">
-              <provider-icon :domain="item.domain" :size="24" color="white" />
+            <v-avatar color="blue" variant="tonal" size="40" class="mr-4">
+              <provider-icon :domain="item.domain" :size="24" />
             </v-avatar>
           </template>
 
-          <v-list-item-title class="text-h6">
+          <v-list-item-title>
             {{ getItemTitle(item) }}
           </v-list-item-title>
 
@@ -32,7 +32,7 @@
               class="mr-2"
               :title="item.last_error"
             />
-            <v-icon icon="mdi-chevron-right" />
+            <v-icon icon="mdi-chevron-right" color="grey" />
           </template>
         </v-list-item>
 
@@ -41,16 +41,17 @@
           v-for="item in extraSystemEntries"
           :key="item.domain"
           :ripple="true"
-          class="settings-list-item"
+          class="settings-item py-3 mb-3 rounded-lg border"
+          elevation="0"
           @click="handleItemClick(item)"
         >
           <template #prepend>
-            <v-avatar color="purple" size="48">
-              <v-icon :icon="item.icon" size="24" color="white" />
+            <v-avatar color="purple" variant="tonal" size="40" class="mr-4">
+              <v-icon :icon="item.icon" size="24" />
             </v-avatar>
           </template>
 
-          <v-list-item-title class="text-h6">
+          <v-list-item-title>
             {{ t(item.name) }}
           </v-list-item-title>
 
@@ -59,12 +60,11 @@
           </v-list-item-subtitle>
 
           <template #append>
-            <v-icon icon="mdi-chevron-right" />
+            <v-icon icon="mdi-chevron-right" color="grey" />
           </template>
         </v-list-item>
       </v-list>
-    </v-card>
-  </Container>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -136,67 +136,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.settings-overview {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.settings-main-card {
-  overflow: hidden;
-}
-
-.settings-list {
-  padding: 0;
-}
-
-.settings-list-item {
+.settings-item {
+  transition: background-color 0.2s ease-in-out;
+  background-color: rgb(var(--v-theme-surface));
   cursor: pointer;
-  padding: 20px 24px;
-  min-height: 80px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-.settings-list-item:last-child {
-  border-bottom: none;
-}
-
-.settings-list-item:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-}
-
-.settings-list-item :deep(.v-list-item__prepend) {
-  margin-right: 16px;
-}
-
-.v-avatar {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Mobile optimizations */
-@media (max-width: 600px) {
-  .settings-list-item {
-    padding: 12px 16px;
-    min-height: 64px;
-  }
-
-  .settings-list-item :deep(.v-list-item__prepend) {
-    margin-right: 12px;
-  }
-
-  .settings-list-item :deep(.v-avatar) {
-    width: 40px !important;
-    height: 40px !important;
-  }
-
-  .settings-list-item :deep(.v-list-item-title) {
-    font-size: 1rem !important;
-    line-height: 1.3;
-  }
-
-  .settings-list-item :deep(.v-list-item-subtitle) {
-    font-size: 0.813rem !important;
-    line-height: 1.3;
-  }
+.settings-item:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 </style>

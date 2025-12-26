@@ -1,112 +1,101 @@
 <template>
-  <div class="space-y-6 p-6">
-    <div class="flex items-center justify-between gap-4 flex-wrap">
-      <div class="relative flex-1 min-w-[200px] max-w-[400px]">
-        <Input v-model="searchQuery" :placeholder="$t('search')" class="w-full">
-          <template #prepend>
-            <Search :size="16" class="text-muted-foreground" />
-          </template>
-        </Input>
-      </div>
-      <Button @click="showCreateDialog = true">
-        <Plus :size="16" />
-        {{ $t("auth.create_user") }}
-      </Button>
+  <v-container class="pa-4 mx-auto" style="max-width: 600px">
+    <div class="d-flex align-center justify-space-between mb-4">
+        <v-text-field
+          v-model="searchQuery"
+          :placeholder="$t('search')"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          clearable
+          class="search-field mr-4"
+        />
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-plus"
+          @click="showCreateDialog = true"
+        >
+          {{ $t("auth.create_user") }}
+        </v-btn>
     </div>
 
     <div
       v-if="filteredUsers.length === 0"
-      class="flex flex-col items-center justify-center py-16 text-center"
+      class="d-flex flex-column align-center justify-center py-6 border rounded-lg text-center"
     >
-      <p class="text-muted-foreground">{{ $t("no_content") }}</p>
+      <p class="text-medium-emphasis">{{ $t("no_content") }}</p>
     </div>
 
-    <div
-      v-else
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-    >
-      <Card
+    <v-list v-else lines="two" class="bg-transparent pa-0">
+      <v-list-item
         v-for="user in filteredUsers"
         :key="user.user_id"
-        class="cursor-pointer hover:bg-accent/50 transition-colors"
+        class="settings-item py-3 mb-3 rounded-lg border"
+        elevation="0"
         @click="editUser(user)"
       >
-        <CardContent class="px-4 py-0">
-          <div class="flex items-center gap-4">
-            <Avatar class="size-12 shrink-0">
-              <AvatarImage v-if="user.avatar_url" :src="user.avatar_url" />
-              <AvatarFallback class="bg-muted">
-                <UserIcon :size="24" class="text-foreground" />
-              </AvatarFallback>
-            </Avatar>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-semibold text-sm truncate">
-                    {{ user.display_name || user.username }}
-                  </h3>
-                  <p class="text-xs text-muted-foreground truncate">
-                    {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
-                  </p>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="size-8 shrink-0"
-                      @click.stop
-                    >
-                      <MoreVertical :size="16" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click.stop="editUser(user)">
-                      <Pencil :size="16" />
-                      {{ $t("auth.edit_user") }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem @click.stop="manageTokens(user)">
-                      <Key :size="16" />
-                      {{ $t("auth.manage_tokens") }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      v-if="!isCurrentUser(user)"
-                      @click.stop="
-                        user.enabled
-                          ? confirmDisableUser(user)
-                          : enableUser(user)
-                      "
-                    >
-                      <component
-                        :is="user.enabled ? MonitorOff : Monitor"
-                        :size="16"
-                      />
-                      {{
-                        user.enabled
-                          ? $t("auth.disable_user")
-                          : $t("auth.enable_user")
-                      }}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator v-if="!isCurrentUser(user)" />
-                    <DropdownMenuItem
-                      v-if="!isCurrentUser(user)"
-                      class="text-destructive focus:text-destructive"
-                      @click.stop="confirmDeleteUser(user)"
-                    >
-                      <Trash2 :size="16" />
-                      {{ $t("auth.delete_user") }}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <Badge v-if="!user.enabled" variant="destructive" class="mt-2">
-                {{ $t("auth.disabled") }}
-              </Badge>
-            </div>
+        <template #prepend>
+          <v-avatar size="48" color="surface-variant" class="mr-4">
+            <v-img v-if="user.avatar_url" :src="user.avatar_url" />
+            <v-icon v-else icon="mdi-account" />
+          </v-avatar>
+        </template>
+
+        <v-list-item-title class="text-subtitle-1 font-weight-bold">
+          {{ user.display_name || user.username }}
+        </v-list-item-title>
+
+        <v-list-item-subtitle>
+          {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
+        </v-list-item-subtitle>
+
+        <template #append>
+              <v-menu>
+                <template #activator="{ props }">
+                  <v-btn
+                    icon="mdi-dots-vertical"
+                    variant="text"
+                    v-bind="props"
+                    @click.stop
+                  />
+                </template>
+                <v-list>
+                  <v-list-item
+                    prepend-icon="mdi-pencil"
+                    :title="$t('auth.edit_user')"
+                    @click.stop="editUser(user)"
+                  />
+                  <v-list-item
+                    prepend-icon="mdi-key"
+                    :title="$t('auth.manage_tokens')"
+                    @click.stop="manageTokens(user)"
+                  />
+                  <v-list-item
+                    v-if="!isCurrentUser(user)"
+                    :prepend-icon="user.enabled ? 'mdi-monitor-off' : 'mdi-monitor'"
+                    :title="user.enabled ? $t('auth.disable_user') : $t('auth.enable_user')"
+                    @click.stop="user.enabled ? confirmDisableUser(user) : enableUser(user)"
+                  />
+                  <v-divider v-if="!isCurrentUser(user)" />
+                  <v-list-item
+                    v-if="!isCurrentUser(user)"
+                    prepend-icon="mdi-delete"
+                    :title="$t('auth.delete_user')"
+                    color="error"
+                    @click.stop="confirmDeleteUser(user)"
+                  />
+                </v-list>
+              </v-menu>
+            </template>
+          
+          <div v-if="!user.enabled" class="mt-2">
+            <v-chip color="error" size="small" variant="flat">
+              {{ $t("auth.disabled") }}
+            </v-chip>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+      </v-list-item>
+    </v-list>
 
     <CreateUserDialog v-model="showCreateDialog" @created="loadUsers" />
     <EditUserDialog
@@ -136,37 +125,14 @@
       :token="tokenToRevoke"
       @revoked="handleTokenRevoked"
     />
-  </div>
+  </v-container>
 </template>
 
 <script setup lang="ts">
-import {
-  Key,
-  Monitor,
-  MonitorOff,
-  MoreVertical,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  User as UserIcon,
-} from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
 import DeleteUserDialog from "@/components/users/DeleteUserDialog.vue";
 import DisableUserDialog from "@/components/users/DisableUserDialog.vue";
@@ -281,3 +247,12 @@ onMounted(() => {
   loadUsers();
 });
 </script>
+
+<style scoped>
+.hover-card {
+  transition: background-color 0.2s;
+}
+.hover-card:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
+}
+</style>

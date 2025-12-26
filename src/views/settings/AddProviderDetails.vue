@@ -1,59 +1,65 @@
 <template>
-  <section class="add-provider-details">
-    <div v-if="api.providerManifests[domain]">
-      <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
-        <div class="header-content">
-          <div class="header-icon">
-            <provider-icon :domain="domain" :size="48" />
-          </div>
-          <div class="header-info">
-            <h2 class="header-title">
-              {{
-                $t("settings.setup_provider", [
-                  api.providerManifests[domain].name,
-                ])
-              }}
-            </h2>
-            <p class="header-description">
-              {{ api.providerManifests[domain].description }}
-            </p>
-            <div
-              v-if="api.providerManifests[domain].codeowners.length"
-              class="header-authors"
-              v-html="
-                markdownToHtml(
-                  getAuthorsMarkdown(api.providerManifests[domain].codeowners),
-                )
-              "
-            ></div>
-            <div
-              v-if="api.providerManifests[domain].credits.length"
-              class="header-authors"
-              v-html="
-                markdownToHtml(
-                  getCreditsMarkdown(api.providerManifests[domain].credits),
-                )
-              "
-            ></div>
-          </div>
+  <v-container fluid class="pa-6">
+    <v-row>
+      <v-col cols="12" md="8" offset-md="2">
+        <div v-if="api.providerManifests[domain]" class="mb-6">
+          <v-card>
+            <v-card-text class="d-flex gap-4 align-start">
+              <provider-icon :domain="domain" :size="48" class="flex-shrink-0" />
+              <div>
+                <h2 class="text-h5 font-weight-bold mb-2">
+                  {{
+                    $t("settings.setup_provider", [
+                      api.providerManifests[domain].name,
+                    ])
+                  }}
+                </h2>
+                <p class="text-body-2 text-medium-emphasis mb-3">
+                  {{ api.providerManifests[domain].description }}
+                </p>
+                <div
+                  v-if="api.providerManifests[domain].codeowners.length"
+                  class="text-caption text-medium-emphasis"
+                  v-html="
+                    markdownToHtml(
+                      getAuthorsMarkdown(api.providerManifests[domain].codeowners),
+                    )
+                  "
+                ></div>
+                <div
+                  v-if="api.providerManifests[domain].credits.length"
+                  class="text-caption text-medium-emphasis"
+                  v-html="
+                    markdownToHtml(
+                      getCreditsMarkdown(api.providerManifests[domain].credits),
+                    )
+                  "
+                ></div>
+              </div>
+            </v-card-text>
+          </v-card>
         </div>
-      </v-card>
-    </div>
 
-    <edit-config
-      :config-entries="config_entries"
-      :disabled="false"
-      @submit="onSubmit"
-      @action="onAction"
-    />
+        <v-card>
+          <v-card-text>
+            <edit-config
+              :config-entries="config_entries"
+              :disabled="false"
+              @submit="onSubmit"
+              @action="onAction"
+            />
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <v-overlay
       v-model="loading"
+      class="align-center justify-center"
       scrim="true"
       persistent
-      style="display: flex; align-items: center; justify-content: center"
     >
-      <v-card v-if="showAuthLink" style="background-color: white">
+      <v-card v-if="showAuthLink" color="surface">
         <v-card-title>Authenticating...</v-card-title>
         <v-card-subtitle
           >A new tab/popup should be opened where you can
@@ -67,7 +73,7 @@
       </v-card>
       <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
-  </section>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -212,62 +218,7 @@ const getCreditsMarkdown = function (credits: string[]) {
 </script>
 
 <style scoped>
-.add-provider-details {
-  padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-.header-authors {
-  font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.header-authors :deep(a) {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-}
-
-.header-authors :deep(a:hover) {
-  text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.gap-4 {
+  gap: 16px;
 }
 </style>

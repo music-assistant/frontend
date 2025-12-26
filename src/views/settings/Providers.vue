@@ -60,347 +60,495 @@
       {{ $t("settings.onboarding_footer") }}
     </p>
   </div>
-  <div class="providers-header w-100">
-    <ProviderFilters
-      @update:search="searchQuery = $event"
-      @update:types="selectedProviderTypes = $event"
-    />
-    <Button class="add-provider-btn" @click="showAddProviderDialog = true">
-      <Plus class="size-4" />
-      {{ $t("settings.add_provider") }}
-    </Button>
-  </div>
 
-  <div class="pl-5 font-weight-medium">
-    {{
-      $t("settings.providers_total", [
-        getAllFilteredProviders().length,
-        getAllFilteredProviders().length > 1 ? "s" : "",
-      ])
-    }}
-  </div>
-  <Container :variant="viewMode === 'list' ? 'default' : 'panel'" class="mt-4">
-    <v-list v-if="viewMode === 'list'" class="providers-list">
-      <ListItem
-        v-for="item in getAllFilteredProviders()"
-        :key="item.instance_id"
-        link
-        :show-menu-btn="true"
-        :class="{
-          'provider-disabled': !item.enabled,
-        }"
-        @click="editProvider(item.instance_id)"
-        @menu="(evt) => onMenu(evt, item)"
-      >
-        <template #prepend>
-          <ProviderIcon
-            :domain="item.domain"
-            :size="40"
-            class="provider-icon"
-          />
-        </template>
-
-        <template #title>
-          <div class="provider-name-title">
-            {{ getProviderName(item) }}
-          </div>
-        </template>
-
-        <template #subtitle>
-          <div class="provider-meta">
-            <!-- Provider error warning -->
-            <div
-              v-if="item.enabled && item.last_error"
-              class="provider-error-inline"
-            >
-              <v-icon icon="mdi-alert-circle" size="16" color="error" />
-              <span class="provider-error-text">{{
-                $t("settings.provider_requires_attention")
-              }}</span>
-              <v-btn
-                size="x-small"
-                color="error"
-                variant="tonal"
-                class="ml-2"
-                @click.stop="editProvider(item.instance_id)"
-              >
-                {{ $t("settings.reconfigure") }}
-              </v-btn>
-            </div>
-            <span
-              v-else-if="api.providerManifests[item.domain]"
-              class="provider-description-text"
-            >
-              {{ api.providerManifests[item.domain].description }}
-            </span>
-            <span v-else class="provider-type-badge">
-              {{ getProviderTypeTitle(item.type) }}
-            </span>
-          </div>
-        </template>
-
-        <template #append>
-          <div class="provider-status-icons">
-            <v-chip
-              v-if="
-                item.type === ProviderType.PLAYER && getPlayerCount(item) > 0
-              "
-              size="x-small"
-              variant="flat"
-              color="primary"
-              class="player-count-chip"
-              @click.stop="viewPlayers(item.instance_id)"
-            >
-              <v-icon start size="small">mdi-speaker</v-icon>
-              {{
-                getPlayerCount(item) === 1
-                  ? $t("settings.one_player")
-                  : $t("settings.players_count", [
-                      getPlayerCount(item),
-                      getPlayerCount(item) !== 1 ? "s" : "",
-                    ])
-              }}
-            </v-chip>
-            <v-icon
-              v-if="
-                api.syncTasks.value.filter(
-                  (x) => x.provider_instance == item.instance_id,
-                ).length > 0
-              "
-              icon="mdi-sync"
-              size="20"
-              color="grey"
-              :title="$t('settings.sync_running')"
-            />
-            <v-icon
-              v-if="!item.enabled"
-              icon="mdi-cancel"
-              size="20"
-              color="grey"
-              :title="$t('settings.provider_disabled')"
-            />
-            <v-icon
-              v-else-if="item.last_error"
-              icon="mdi-alert-circle"
-              size="20"
-              color="red"
-              :title="item.last_error"
-            />
-            <v-icon
-              v-else-if="!api.providers[item.instance_id]?.available"
-              icon="mdi-timer-sand"
-              size="20"
-              color="grey"
-              :title="$t('settings.not_loaded')"
-            />
-            <v-icon
-              :icon="getProviderTypeIcon(item.type)"
-              size="20"
-              color="grey"
-              :title="getProviderTypeTitle(item.type)"
-            />
-            <v-chip
-              v-if="api.providerManifests[item.domain]"
-              size="x-small"
-              variant="flat"
-              class="mx-1 text-uppercase"
-              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
-            >
-              {{
-                $t(
-                  String(
-                    api.providerManifests[item.domain]?.stage || "",
-                  ).toLowerCase(),
-                )
-              }}
-            </v-chip>
-          </div>
-        </template>
-      </ListItem>
-    </v-list>
-
-    <v-row v-else>
-      <v-col
-        v-for="item in getAllFilteredProviders()"
-        :key="item.instance_id"
-        cols="12"
-        md="6"
-        lg="4"
-        class="d-flex"
-      >
-        <v-card
-          class="flex-fill rounded-lg provider-card d-flex flex-column"
-          :class="{ 'player-provider-card': item.type === ProviderType.PLAYER }"
-          min-height="200px"
-          @click="editProvider(item.instance_id)"
+  <div class="providers-settings">
+    <v-container class="pa-4 mx-auto" style="max-width: 600px">
+      <div class="d-flex align-center justify-space-between mb-4">
+        <v-text-field
+          v-model="searchQuery"
+          prepend-inner-icon="mdi-magnify"
+          :label="$t('search')"
+          single-line
+          hide-details
+          variant="outlined"
+          density="comfortable"
+          class="search-field mr-4"
+          clearable
+        />
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-plus"
+          @click="openAddProviderWithType()"
         >
-          <template #prepend>
-            <provider-icon
-              :domain="item.domain"
-              :size="50"
-              class="listitem-media-thumb"
-              style="margin-top: 5px; margin-bottom: 5px"
-            />
-          </template>
-
-          <template #append>
-            <v-btn
-              v-if="
-                api.syncTasks.value.filter(
-                  (x) => x.provider_instance == item.instance_id,
-                ).length > 0
-              "
-              variant="text"
-              size="small"
-              icon
-              :title="$t('settings.sync_running')"
-            >
-              <v-icon color="grey"> mdi-sync </v-icon>
-            </v-btn>
-
-            <!-- provider disabled -->
-            <v-btn
-              v-if="!item.enabled"
-              variant="text"
-              size="small"
-              icon
-              :title="$t('settings.provider_disabled')"
-            >
-              <v-icon color="grey"> mdi-cancel </v-icon>
-            </v-btn>
-
-            <!-- provider has errors -->
-            <v-btn
-              v-else-if="item.enabled && item.last_error"
-              variant="text"
-              size="small"
-              icon
-              :title="item.last_error"
-            >
-              <v-icon color="red"> mdi-alert-circle </v-icon>
-            </v-btn>
-
-            <!-- loading (provider not yet available) -->
-            <v-btn
-              v-else-if="!api.providers[item.instance_id]?.available"
-              variant="text"
-              size="small"
-              icon
-              :title="$t('settings.not_loaded')"
-            >
-              <v-icon icon="mdi-timer-sand" />
-            </v-btn>
-
-            <v-btn
-              variant="text"
-              size="small"
-              icon
-              :title="getProviderTypeTitle(item.type)"
-            >
-              <v-icon :icon="getProviderTypeIcon(item.type)" />
-            </v-btn>
-
-            <v-chip
-              v-if="api.providerManifests[item.domain]"
-              size="x-small"
-              variant="flat"
-              class="mx-1 text-uppercase"
-              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
-            >
-              {{
-                $t(
-                  String(
-                    api.providerManifests[item.domain]?.stage || "",
-                  ).toLowerCase(),
-                )
-              }}
-            </v-chip>
-
-            <v-btn
-              icon="mdi-dots-vertical"
-              size="small"
-              variant="text"
-              @click.stop="onMenu($event, item)"
-            />
-          </template>
-
-          <v-card-title>
-            {{ getProviderName(item) }}
-          </v-card-title>
-
-          <!-- Provider error warning for card view -->
-          <v-card-text
-            v-if="item.enabled && item.last_error"
-            class="provider-error-card py-2"
-          >
-            <div class="provider-error-inline">
-              <v-icon icon="mdi-alert-circle" size="16" color="error" />
-              <span class="provider-error-text">{{
-                $t("settings.provider_requires_attention")
-              }}</span>
-            </div>
-            <div class="provider-error-detail mt-1">
-              {{ item.last_error }}
-            </div>
-            <v-btn
-              size="small"
-              color="error"
-              variant="tonal"
-              class="mt-2"
-              block
-              @click.stop="editProvider(item.instance_id)"
-            >
-              {{ $t("settings.reconfigure") }}
-            </v-btn>
-          </v-card-text>
-
-          <v-card-text
-            v-else-if="api.providerManifests[item.domain]"
-            class="provider-description flex-grow-1"
-            :class="{
-              'truncated-text': isTextTruncated(
-                api.providerManifests[item.domain].description,
-              ),
-            }"
-          >
-            {{ api.providerManifests[item.domain].description }}
-          </v-card-text>
-
-          <!-- Player count badge for player providers -->
-          <v-card-text
-            v-if="item.type === ProviderType.PLAYER && getPlayerCount(item) > 0"
-            class="provider-players-count mt-auto"
-          >
-            <v-chip
-              size="small"
-              variant="flat"
-              color="primary"
-              class="player-count-chip"
-              @click.stop="viewPlayers(item.instance_id)"
-            >
-              <v-icon start size="small">mdi-speaker</v-icon>
-              {{
-                getPlayerCount(item) === 1
-                  ? $t("settings.one_player")
-                  : $t("settings.players_count", [
-                      getPlayerCount(item),
-                      getPlayerCount(item) !== 1 ? "s" : "",
-                    ])
-              }}
-            </v-chip>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <div v-if="getAllFilteredProviders().length === 0" class="empty-state">
-      <v-icon icon="mdi-puzzle-outline" size="64" class="empty-icon" />
-      <div class="empty-title">{{ $t("no_content") }}</div>
-      <div class="empty-message">
-        {{ $t("no_content_filter") }}
+          {{ $t("settings.add_provider") }}
+        </v-btn>
       </div>
-    </div>
-  </Container>
+
+      <!-- Music Providers -->
+      <div class="mb-6">
+        <div class="text-subtitle-2 text-medium-emphasis mb-2 ml-1">
+          {{ $t("settings.music") }}
+        </div>
+        <div
+          v-if="musicProviders.length === 0"
+          class="d-flex flex-column align-center justify-center py-6 border rounded-lg"
+        >
+          <p class="text-medium-emphasis">{{ $t("no_content") }}</p>
+        </div>
+        <v-list v-else lines="two" class="bg-transparent pa-0">
+          <ListItem
+            v-for="item in musicProviders"
+            :key="item.instance_id"
+            link
+            :show-menu-btn="true"
+            class="settings-item py-3 mb-3 rounded-lg border"
+            elevation="0"
+            :class="{ 'provider-disabled': !item.enabled }"
+            @click="editProvider(item.instance_id)"
+            @menu="(evt) => onMenu(evt, item)"
+          >
+                  <template #prepend>
+                    <ProviderIcon
+                      :domain="item.domain"
+                      :size="40"
+                      class="provider-icon"
+                    />
+                  </template>
+                  <template #title>
+                    <div class="provider-name-title">
+                      {{ getProviderName(item) }}
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <div class="provider-meta">
+                      <div
+                        v-if="item.enabled && item.last_error"
+                        class="provider-error-inline"
+                      >
+                        <v-icon
+                          icon="mdi-alert-circle"
+                          size="16"
+                          color="error"
+                        />
+                        <span class="provider-error-text">{{
+                          $t("settings.provider_requires_attention")
+                        }}</span>
+                      </div>
+                      <span
+                        v-else-if="api.providerManifests[item.domain]"
+                        class="provider-description-text"
+                      >
+                        {{ api.providerManifests[item.domain].description }}
+                      </span>
+                    </div>
+                  </template>
+                  <template #append>
+                    <div class="provider-status-icons">
+                      <v-icon
+                        v-if="
+                          api.syncTasks.value.filter(
+                            (x) => x.provider_instance == item.instance_id,
+                          ).length > 0
+                        "
+                        icon="mdi-sync"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.sync_running')"
+                      />
+                      <v-icon
+                        v-if="!item.enabled"
+                        icon="mdi-cancel"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.provider_disabled')"
+                      />
+                      <v-icon
+                        v-else-if="item.last_error"
+                        icon="mdi-alert-circle"
+                        size="20"
+                        color="red"
+                        :title="item.last_error"
+                      />
+                      <v-icon
+                        v-else-if="!api.providers[item.instance_id]?.available"
+                        icon="mdi-timer-sand"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.not_loaded')"
+                      />
+                    </div>
+                  </template>
+                </ListItem>
+              </v-list>
+      </div>
+
+      <!-- Player Providers -->
+      <div class="mb-6">
+        <div class="text-subtitle-2 text-medium-emphasis mb-2 ml-1">
+          {{ $t("settings.player") }}
+        </div>
+        <div
+          v-if="playerProviders.length === 0"
+          class="d-flex flex-column align-center justify-center py-6 border rounded-lg"
+        >
+          <p class="text-medium-emphasis">{{ $t("no_content") }}</p>
+        </div>
+        <v-list v-else lines="two" class="bg-transparent pa-0">
+          <ListItem
+            v-for="item in playerProviders"
+            :key="item.instance_id"
+            link
+            :show-menu-btn="true"
+            class="settings-item py-3 mb-3 rounded-lg border"
+            elevation="0"
+            :class="{ 'provider-disabled': !item.enabled }"
+            @click="editProvider(item.instance_id)"
+            @menu="(evt) => onMenu(evt, item)"
+          >
+                  <template #prepend>
+                    <ProviderIcon
+                      :domain="item.domain"
+                      :size="40"
+                      class="provider-icon"
+                    />
+                  </template>
+                  <template #title>
+                    <div class="provider-name-title">
+                      {{ getProviderName(item) }}
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <div class="provider-meta">
+                      <div
+                        v-if="item.enabled && item.last_error"
+                        class="provider-error-inline"
+                      >
+                        <v-icon
+                          icon="mdi-alert-circle"
+                          size="16"
+                          color="error"
+                        />
+                        <span class="provider-error-text">{{
+                          $t("settings.provider_requires_attention")
+                        }}</span>
+                      </div>
+                      <span
+                        v-else-if="api.providerManifests[item.domain]"
+                        class="provider-description-text"
+                      >
+                        {{ api.providerManifests[item.domain].description }}
+                      </span>
+                    </div>
+                  </template>
+                  <template #append>
+                    <div class="provider-status-icons">
+                      <v-chip
+                        v-if="getPlayerCount(item) > 0"
+                        size="x-small"
+                        variant="flat"
+                        color="primary"
+                        class="player-count-chip"
+                        @click.stop="viewPlayers(item.instance_id)"
+                      >
+                        <v-icon start size="small">mdi-speaker</v-icon>
+                        {{
+                          getPlayerCount(item) === 1
+                            ? $t("settings.one_player")
+                            : $t("settings.players_count", [
+                                getPlayerCount(item),
+                                getPlayerCount(item) !== 1 ? "s" : "",
+                              ])
+                        }}
+                      </v-chip>
+                      <v-icon
+                        v-if="!item.enabled"
+                        icon="mdi-cancel"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.provider_disabled')"
+                      />
+                      <v-icon
+                        v-else-if="item.last_error"
+                        icon="mdi-alert-circle"
+                        size="20"
+                        color="red"
+                        :title="item.last_error"
+                      />
+                      <v-icon
+                        v-else-if="!api.providers[item.instance_id]?.available"
+                        icon="mdi-timer-sand"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.not_loaded')"
+                      />
+                    </div>
+                  </template>
+                </ListItem>
+              </v-list>
+      </div>
+
+      <!-- Metadata Providers -->
+      <div class="mb-6">
+        <div class="text-subtitle-2 text-medium-emphasis mb-2 ml-1">
+          {{ $t("settings.metadata") }}
+        </div>
+        <div
+          v-if="metadataProviders.length === 0"
+          class="d-flex flex-column align-center justify-center py-6 border rounded-lg"
+        >
+          <p class="text-medium-emphasis">{{ $t("no_content") }}</p>
+        </div>
+        <v-list v-else lines="two" class="bg-transparent pa-0">
+          <ListItem
+            v-for="item in metadataProviders"
+            :key="item.instance_id"
+            link
+            :show-menu-btn="true"
+            class="settings-item py-3 mb-3 rounded-lg border"
+            elevation="0"
+            :class="{ 'provider-disabled': !item.enabled }"
+            @click="editProvider(item.instance_id)"
+            @menu="(evt) => onMenu(evt, item)"
+          >
+                  <template #prepend>
+                    <ProviderIcon
+                      :domain="item.domain"
+                      :size="40"
+                      class="provider-icon"
+                    />
+                  </template>
+                  <template #title>
+                    <div class="provider-name-title">
+                      {{ getProviderName(item) }}
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <div class="provider-meta">
+                      <div
+                        v-if="item.enabled && item.last_error"
+                        class="provider-error-inline"
+                      >
+                        <v-icon
+                          icon="mdi-alert-circle"
+                          size="16"
+                          color="error"
+                        />
+                        <span class="provider-error-text">{{
+                          $t("settings.provider_requires_attention")
+                        }}</span>
+                      </div>
+                      <span
+                        v-else-if="api.providerManifests[item.domain]"
+                        class="provider-description-text"
+                      >
+                        {{ api.providerManifests[item.domain].description }}
+                      </span>
+                    </div>
+                  </template>
+                  <template #append>
+                    <div class="provider-status-icons">
+                      <v-icon
+                        v-if="!item.enabled"
+                        icon="mdi-cancel"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.provider_disabled')"
+                      />
+                      <v-icon
+                        v-else-if="item.last_error"
+                        icon="mdi-alert-circle"
+                        size="20"
+                        color="red"
+                        :title="item.last_error"
+                      />
+                      <v-icon
+                        v-else-if="!api.providers[item.instance_id]?.available"
+                        icon="mdi-timer-sand"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.not_loaded')"
+                      />
+                    </div>
+                  </template>
+                </ListItem>
+              </v-list>
+      </div>
+
+      <!-- Plugin Providers -->
+      <div class="mb-6">
+        <div class="text-subtitle-2 text-medium-emphasis mb-2 ml-1">
+          {{ $t("settings.plugin") }}
+        </div>
+        <div
+          v-if="pluginProviders.length === 0"
+          class="d-flex flex-column align-center justify-center py-6 border rounded-lg"
+        >
+          <p class="text-medium-emphasis">{{ $t("no_content") }}</p>
+        </div>
+        <v-list v-else lines="two" class="bg-transparent pa-0">
+          <ListItem
+            v-for="item in pluginProviders"
+            :key="item.instance_id"
+            link
+            :show-menu-btn="true"
+            class="settings-item py-3 mb-3 rounded-lg border"
+            elevation="0"
+            :class="{ 'provider-disabled': !item.enabled }"
+            @click="editProvider(item.instance_id)"
+            @menu="(evt) => onMenu(evt, item)"
+          >
+                  <template #prepend>
+                    <ProviderIcon
+                      :domain="item.domain"
+                      :size="40"
+                      class="provider-icon"
+                    />
+                  </template>
+                  <template #title>
+                    <div class="provider-name-title">
+                      {{ getProviderName(item) }}
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <div class="provider-meta">
+                      <div
+                        v-if="item.enabled && item.last_error"
+                        class="provider-error-inline"
+                      >
+                        <v-icon
+                          icon="mdi-alert-circle"
+                          size="16"
+                          color="error"
+                        />
+                        <span class="provider-error-text">{{
+                          $t("settings.provider_requires_attention")
+                        }}</span>
+                      </div>
+                      <span
+                        v-else-if="api.providerManifests[item.domain]"
+                        class="provider-description-text"
+                      >
+                        {{ api.providerManifests[item.domain].description }}
+                      </span>
+                    </div>
+                  </template>
+                  <template #append>
+                    <div class="provider-status-icons">
+                      <v-icon
+                        v-if="!item.enabled"
+                        icon="mdi-cancel"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.provider_disabled')"
+                      />
+                      <v-icon
+                        v-else-if="item.last_error"
+                        icon="mdi-alert-circle"
+                        size="20"
+                        color="red"
+                        :title="item.last_error"
+                      />
+                      <v-icon
+                        v-else-if="!api.providers[item.instance_id]?.available"
+                        icon="mdi-timer-sand"
+                        size="20"
+                        color="grey"
+                        :title="$t('settings.not_loaded')"
+                      />
+                    </div>
+                  </template>
+          </ListItem>
+        </v-list>
+      </div>
+
+      <!-- Core Providers -->
+      <div class="mb-6">
+        <div class="text-subtitle-2 text-medium-emphasis mb-2 ml-1">
+          {{ $t("settings.core_modules") }}
+        </div>
+        <div
+          v-if="coreProviders.length === 0"
+          class="d-flex flex-column align-center justify-center py-6 border rounded-lg"
+        >
+          <p class="text-medium-emphasis">{{ $t("no_content") }}</p>
+        </div>
+        <v-list v-else lines="two" class="bg-transparent pa-0">
+          <ListItem
+            v-for="item in coreProviders"
+            :key="item.instance_id"
+            link
+            :show-menu-btn="true"
+            class="settings-item py-3 mb-3 rounded-lg border"
+            elevation="0"
+            :class="{ 'provider-disabled': !item.enabled }"
+            @click="editProvider(item.instance_id)"
+            @menu="(evt) => onMenu(evt, item)"
+          >
+            <template #prepend>
+              <ProviderIcon
+                :domain="item.domain"
+                :size="40"
+                class="provider-icon"
+              />
+            </template>
+            <template #title>
+              <div class="provider-name-title">
+                {{ getProviderName(item) }}
+              </div>
+            </template>
+            <template #subtitle>
+              <div class="provider-meta">
+                <div
+                  v-if="item.enabled && item.last_error"
+                  class="provider-error-inline"
+                >
+                  <v-icon
+                    icon="mdi-alert-circle"
+                    size="16"
+                    color="error"
+                  />
+                  <span class="provider-error-text">{{
+                    $t("settings.provider_requires_attention")
+                  }}</span>
+                </div>
+                <span
+                  v-else-if="api.providerManifests[item.domain]"
+                  class="provider-description-text"
+                >
+                  {{ api.providerManifests[item.domain].description }}
+                </span>
+              </div>
+            </template>
+            <template #append>
+              <div class="provider-status-icons">
+                <v-icon
+                  v-if="!item.enabled"
+                  icon="mdi-cancel"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.provider_disabled')"
+                />
+                <v-icon
+                  v-else-if="item.last_error"
+                  icon="mdi-alert-circle"
+                  size="20"
+                  color="red"
+                  :title="item.last_error"
+                />
+                <v-icon
+                  v-else-if="!api.providers[item.instance_id]?.available"
+                  icon="mdi-timer-sand"
+                  size="20"
+                  color="grey"
+                  :title="$t('settings.not_loaded')"
+                />
+              </div>
+            </template>
+          </ListItem>
+        </v-list>
+      </div>
+    </v-container>
+  </div>
   <AddProviderDialog
     v-model:show="showAddProviderDialog"
     :initial-type="addProviderInitialType"
@@ -408,11 +556,8 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
-import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Button } from "@/components/ui/button";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -425,7 +570,6 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -434,21 +578,13 @@ import AddProviderDialog from "./AddProviderDialog.vue";
 // global refs
 const router = useRouter();
 
-const providersViewMode = inject<{
-  viewMode: { value: "list" | "card" };
-  toggleViewMode: () => void;
-}>("providersViewMode")!;
-
-const viewMode = computed(() => providersViewMode.viewMode.value);
-
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
-const selectedProviderTypes = ref<string[]>([]);
 const showAddProviderDialog = ref<boolean>(false);
 const addProviderInitialType = ref<string | undefined>(undefined);
 
-const openAddProviderWithType = (type: string) => {
+const openAddProviderWithType = (type?: string) => {
   addProviderInitialType.value = type;
   showAddProviderDialog.value = true;
 };
@@ -720,12 +856,6 @@ const getAllFilteredProviders = function () {
     });
   }
 
-  if (selectedProviderTypes.value.length > 0) {
-    filtered = filtered.filter((item) =>
-      selectedProviderTypes.value.includes(item.type),
-    );
-  }
-
   // Sort: providers with errors first, then alphabetically
   return filtered.sort((a, b) => {
     const aHasError = a.enabled && a.last_error ? 1 : 0;
@@ -736,6 +866,22 @@ const getAllFilteredProviders = function () {
     return getProviderName(a).localeCompare(getProviderName(b));
   });
 };
+
+const musicProviders = computed(() =>
+  getAllFilteredProviders().filter((x) => x.type === ProviderType.MUSIC),
+);
+const playerProviders = computed(() =>
+  getAllFilteredProviders().filter((x) => x.type === ProviderType.PLAYER),
+);
+const metadataProviders = computed(() =>
+  getAllFilteredProviders().filter((x) => x.type === ProviderType.METADATA),
+);
+const pluginProviders = computed(() =>
+  getAllFilteredProviders().filter((x) => x.type === ProviderType.PLUGIN),
+);
+const coreProviders = computed(() =>
+  getAllFilteredProviders().filter((x) => x.type === ("core" as ProviderType)),
+);
 </script>
 
 <style scoped>

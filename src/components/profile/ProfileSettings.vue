@@ -1,29 +1,22 @@
 <template>
-  <Card>
-    <CardHeader>
-      <CardTitle>{{ $t("auth.account_settings") }}</CardTitle>
-      <CardDescription>
+  <div>
+    <v-card>
+      <v-card-title>{{ $t("auth.account_settings") }}</v-card-title>
+      <v-card-subtitle>
         {{ $t("auth.manage_your_profile_info") }}
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <form id="form-profile-settings" @submit.prevent="form.handleSubmit">
-        <FieldGroup>
-          <div class="flex flex-col sm:flex-row gap-6 mb-6">
-            <div class="flex flex-col items-center gap-3">
-              <div class="relative">
-                <Avatar class="size-32">
-                  <AvatarImage
+      </v-card-subtitle>
+      <v-card-text>
+        <form id="form-profile-settings" @submit.prevent="form.handleSubmit">
+          <div class="d-flex flex-column flex-sm-row gap-4 mb-6">
+            <div class="d-flex flex-column align-center gap-3">
+              <div class="position-relative">
+                <v-avatar size="128" color="grey-lighten-2">
+                  <v-img
                     v-if="
-                      currentAvatarUrl ||
-                      form.state.values.avatarUrl ||
-                      user?.avatar_url
-                    "
-                    :key="
-                      currentAvatarUrl ||
-                      form.state.values.avatarUrl ||
-                      user?.avatar_url ||
-                      ''
+                      (currentAvatarUrl ||
+                        form.state.values.avatarUrl ||
+                        user?.avatar_url) &&
+                      !avatarError
                     "
                     :src="
                       currentAvatarUrl ||
@@ -32,197 +25,151 @@
                       ''
                     "
                     @error="avatarError = true"
+                    cover
                   />
-                  <AvatarFallback class="bg-muted">
-                    <User :size="48" class="text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
-                <Button
+                  <v-icon v-else icon="mdi-account" size="64" color="grey-darken-2" />
+                </v-avatar>
+                <v-btn
                   v-if="!isIngressSession"
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  class="absolute bottom-0 right-0 size-8 rounded-full border-2 border-background bg-background shadow-md hover:bg-accent"
+                  icon="mdi-camera"
+                  variant="elevated"
+                  size="small"
+                  class="position-absolute bottom-0 right-0"
+                  color="surface"
                   @click="showAvatarDialog = true"
-                >
-                  <Camera :size="14" />
-                </Button>
+                />
               </div>
             </div>
 
-            <div class="flex-1 space-y-4">
+            <div class="flex-grow-1">
               <form.Field name="username">
                 <template #default="{ field }">
-                  <Field :data-invalid="isInvalid(field)">
-                    <FieldLabel :for="field.name">
-                      {{ $t("auth.username") }}
-                    </FieldLabel>
-                    <Input
-                      :id="field.name"
-                      :name="field.name"
-                      :model-value="field.state.value"
-                      :aria-invalid="isInvalid(field)"
-                      :disabled="isIngressSession"
-                      autocomplete="username"
-                      @blur="field.handleBlur"
-                      @input="handleUsernameInput($event, field)"
-                    />
-                    <FieldError
-                      v-if="isInvalid(field)"
-                      :errors="field.state.meta.errors"
-                    />
-                  </Field>
+                  <v-text-field
+                    :id="field.name"
+                    :name="field.name"
+                    :model-value="field.state.value"
+                    :label="$t('auth.username')"
+                    :error-messages="field.state.meta.errors"
+                    :disabled="isIngressSession"
+                    autocomplete="username"
+                    variant="outlined"
+                    class="mb-2"
+                    @blur="field.handleBlur"
+                    @input="(e: any) => {
+                      handleUsernameInput(e, field);
+                      field.handleChange(e.target.value);
+                    }"
+                  />
                 </template>
               </form.Field>
 
               <form.Field name="displayName">
                 <template #default="{ field }">
-                  <Field :data-invalid="isInvalid(field)">
-                    <FieldLabel :for="field.name">
-                      {{ $t("auth.display_name") }}
-                    </FieldLabel>
-                    <Input
-                      :id="field.name"
-                      :name="field.name"
-                      :model-value="field.state.value"
-                      :aria-invalid="isInvalid(field)"
-                      :disabled="isIngressSession"
-                      autocomplete="name"
-                      @blur="field.handleBlur"
-                      @input="handleDisplayNameInput($event, field)"
-                    />
-                    <FieldDescription>
-                      {{ $t("optional") }}
-                    </FieldDescription>
-                    <FieldError
-                      v-if="isInvalid(field)"
-                      :errors="field.state.meta.errors"
-                    />
-                  </Field>
+                  <v-text-field
+                    :id="field.name"
+                    :name="field.name"
+                    :model-value="field.state.value"
+                    :label="$t('auth.display_name')"
+                    :hint="$t('optional')"
+                    persistent-hint
+                    :error-messages="field.state.meta.errors"
+                    :disabled="isIngressSession"
+                    autocomplete="name"
+                    variant="outlined"
+                    class="mb-2"
+                    @blur="field.handleBlur"
+                    @input="(e: any) => {
+                      handleDisplayNameInput(e, field);
+                      field.handleChange(e.target.value);
+                    }"
+                  />
                 </template>
               </form.Field>
 
               <form.Field name="role">
                 <template #default="{ field }">
-                  <Field>
-                    <FieldLabel :for="field.name">
-                      {{ $t("auth.role") }}
-                    </FieldLabel>
-                    <Input
-                      :id="field.name"
-                      :name="field.name"
-                      :model-value="field.state.value"
-                      readonly
-                      disabled
-                      class="bg-muted"
-                    />
-                  </Field>
+                  <v-text-field
+                    :id="field.name"
+                    :name="field.name"
+                    :model-value="field.state.value"
+                    :label="$t('auth.role')"
+                    readonly
+                    disabled
+                    variant="filled"
+                  />
                 </template>
               </form.Field>
             </div>
           </div>
-        </FieldGroup>
-      </form>
-    </CardContent>
-    <CardFooter>
-      <Field orientation="horizontal">
-        <Button
+        </form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn
           v-if="hasChanges"
-          type="button"
-          variant="outline"
+          variant="text"
           @click="handleReset"
         >
           {{ $t("cancel") }}
-        </Button>
-        <Button
+        </v-btn>
+        <v-btn
           type="submit"
           form="form-profile-settings"
+          color="primary"
           :disabled="!hasChanges || updating"
           :loading="updating"
         >
           {{ $t("auth.save_changes") || "Save changes" }}
-        </Button>
-      </Field>
-    </CardFooter>
-  </Card>
+        </v-btn>
+      </v-card-actions>
+    </v-card>
 
-  <Dialog v-model:open="showAvatarDialog">
-    <DialogContent class="sm:max-w-md">
-      <DialogHeader>
-        <DialogTitle>{{ $t("auth.change_avatar") }}</DialogTitle>
-        <DialogDescription>
+    <v-dialog v-model="showAvatarDialog" max-width="400">
+      <v-card>
+        <v-card-title>{{ $t("auth.change_avatar") }}</v-card-title>
+        <v-card-subtitle>
           {{ $t("auth.avatar_url_hint") }}
-        </DialogDescription>
-      </DialogHeader>
-      <div class="flex flex-col items-center gap-4 py-4">
-        <Avatar class="size-36">
-          <AvatarImage
-            v-if="tempAvatarUrl"
-            :src="tempAvatarUrl"
-            @error="avatarError = true"
-          />
-          <AvatarFallback class="bg-muted">
-            <User :size="72" class="text-muted-foreground" />
-          </AvatarFallback>
-        </Avatar>
-        <Field class="w-full">
-          <FieldLabel>
-            {{ $t("auth.avatar_url") }}
-          </FieldLabel>
-          <Input
+        </v-card-subtitle>
+        <v-card-text class="d-flex flex-column align-center gap-4 py-4">
+          <v-avatar size="144" color="grey-lighten-2">
+            <v-img
+              v-if="tempAvatarUrl && !avatarError"
+              :src="tempAvatarUrl"
+              @error="avatarError = true"
+              cover
+            />
+            <v-icon v-else icon="mdi-account" size="72" color="grey-darken-2" />
+          </v-avatar>
+          <v-text-field
             v-model="tempAvatarUrl"
+            :label="$t('auth.avatar_url')"
             :placeholder="$t('auth.avatar_url_hint')"
+            :hint="$t('auth.avatar_url_hint')"
+            persistent-hint
+            variant="outlined"
+            class="w-100"
           />
-          <FieldDescription>
-            {{ $t("auth.avatar_url_hint") }}
-          </FieldDescription>
-        </Field>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" @click="closeAvatarDialog">
-          {{ $t("cancel") }}
-        </Button>
-        <Button @click="handleAvatarChange">
-          {{ $t("auth.save_changes") || "Save changes" }}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeAvatarDialog">
+            {{ $t("cancel") }}
+          </v-btn>
+          <v-btn color="primary" @click="handleAvatarChange">
+            {{ $t("auth.save_changes") || "Save changes" }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useForm } from "@tanstack/vue-form";
-import { Camera, User } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { profileSettingsSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
@@ -320,20 +267,14 @@ const hasChanges = computed(() => {
   );
 });
 
-function isInvalid(field: any) {
-  return field.state.meta.isTouched && !field.state.meta.isValid;
-}
-
 const handleUsernameInput = (e: Event, field: any) => {
   const value = (e.target as HTMLInputElement).value;
   currentUsername.value = value;
-  field.handleChange(value);
 };
 
 const handleDisplayNameInput = (e: Event, field: any) => {
   const value = (e.target as HTMLInputElement).value;
   currentDisplayName.value = value;
-  field.handleChange(value);
 };
 
 const handleReset = () => {
