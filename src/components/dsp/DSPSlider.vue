@@ -102,7 +102,9 @@ const displayValue = computed({
     return model.value.toFixed(2);
   },
   set: (value: string) => {
-    model.value = Number(value);
+    // Normalize comma to period for European users (browser validates first)
+    const normalized = value.replace(',', '.');
+    model.value = Number(normalized);
   },
 });
 
