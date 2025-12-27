@@ -17,7 +17,7 @@
       <v-text-field
         v-model="displayValue"
         type="number"
-        :step="config.step"
+        :step="config.input_step"
         hide-details
         density="compact"
         style="max-width: 100px"
@@ -40,6 +40,8 @@ type ParameterConfig = {
   max: number;
   // Step increment for the slider
   step: number;
+  // Step increment for the text input field (can be finer than slider step)
+  input_step: number;
   label: string;
   unit: string;
   // Whether the slider should behave logarithmically
@@ -58,7 +60,8 @@ const config = computed((): ParameterConfig => {
     return {
       min: -15,
       max: 15,
-      step: 0.1,
+      step: 0.1, // Slider step: comfortable dragging
+      input_step: 0.01, // Text input: 2 decimal precision (industry standard)
       label: $t("settings.dsp.parameter.gain"),
       unit: "dB",
       is_log: false,
@@ -67,7 +70,8 @@ const config = computed((): ParameterConfig => {
     return {
       min: 0.1,
       max: 20,
-      step: 0.1,
+      step: 0.1, // Slider step: comfortable dragging
+      input_step: 0.001, // Text input: 3 decimal precision (matches REW/APO)
       label: $t("settings.dsp.parameter.q_factor"),
       unit: "",
       is_log: false,
@@ -76,7 +80,8 @@ const config = computed((): ParameterConfig => {
     return {
       min: 20,
       max: 20000,
-      step: 1,
+      step: 1, // Slider step: 1 Hz increments work well with log scale
+      input_step: 0.1, // Text input: 1 decimal precision (allows fractional Hz)
       label: $t("settings.dsp.parameter.frequency"),
       unit: "Hz",
       is_log: true,
