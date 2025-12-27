@@ -81,7 +81,7 @@ const config = computed((): ParameterConfig => {
       min: 20,
       max: 20000,
       step: 1, // Slider step: 1 Hz increments work well with log scale
-      input_step: 0.1, // Text input: 1 decimal precision (allows fractional Hz)
+      input_step: 0.01, // Text input: 2 decimal precision (matches REW/APO)
       label: $t("settings.dsp.parameter.frequency"),
       unit: "Hz",
       is_log: true,
