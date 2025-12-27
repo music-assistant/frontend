@@ -17,7 +17,7 @@
       <v-text-field
         v-model="displayValue"
         type="number"
-        :step="config.input_step"
+        :step="config.input_step ?? config.step"
         hide-details
         density="compact"
         style="max-width: 100px"
@@ -41,7 +41,8 @@ type ParameterConfig = {
   // Step increment for the slider
   step: number;
   // Step increment for the text input field (can be finer than slider step)
-  input_step: number;
+  // Optional: defaults to step if not provided
+  input_step?: number;
   label: string;
   unit: string;
   // Whether the slider should behave logarithmically
