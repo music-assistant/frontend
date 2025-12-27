@@ -17,6 +17,7 @@
       <v-text-field
         v-model="displayValue"
         type="number"
+        :step="config.step"
         hide-details
         density="compact"
         style="max-width: 100px"
