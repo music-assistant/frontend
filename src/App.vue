@@ -199,7 +199,9 @@ async function migrateLocalStorageToUserPreferences() {
     }
 
     localStorage.setItem("frontend.settings.migrated_to_user_prefs", "true");
-    console.log("[Migration] Successfully migrated frontend settings to user preferences");
+    console.log(
+      "[Migration] Successfully migrated frontend settings to user preferences",
+    );
   } catch (error) {
     console.error("[Migration] Failed to migrate settings:", error);
   }

@@ -101,7 +101,9 @@ onMounted(() => {
       ],
       multi_value: false,
       category: "per_user",
-      value: store.currentUser?.preferences?.language || localStorage.getItem("frontend.settings.language"),
+      value:
+        store.currentUser?.preferences?.language ||
+        localStorage.getItem("frontend.settings.language"),
     },
     {
       key: "startup_view",
@@ -123,7 +125,10 @@ onMounted(() => {
       ],
       multi_value: false,
       category: "per_user",
-      value: store.currentUser?.preferences?.startup_view || localStorage.getItem("frontend.settings.startup_view") || "home",
+      value:
+        store.currentUser?.preferences?.startup_view ||
+        localStorage.getItem("frontend.settings.startup_view") ||
+        "home",
     },
     {
       key: "menu_items",
