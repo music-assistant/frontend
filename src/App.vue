@@ -44,6 +44,7 @@ import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import Login from "./views/Login.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 
 const theme = useTheme();
 const router = useRouter();
@@ -68,7 +69,11 @@ const showMainApp = computed(() => {
 });
 
 const setTheme = function () {
-  const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
+  // Read from user preferences first, fallback to localStorage for migration
+  const themePref =
+    store.currentUser?.preferences?.theme ||
+    localStorage.getItem("frontend.settings.theme") ||
+    "auto";
   let themeValue: "light" | "dark";
 
   if (themePref == "dark") {
@@ -169,6 +174,37 @@ const handleLocalConnect = async (serverAddress: string) => {
   isConnected.value = true;
 };
 
+// TODO: Remove this migration code in v2.9 release
+// Added in: current version
+// Can be removed: v2.9
+async function migrateLocalStorageToUserPreferences() {
+  // Check if migration already done
+  if (
+    localStorage.getItem("frontend.settings.migrated_to_user_prefs") === "true"
+  ) {
+    return;
+  }
+
+  const { setPreference } = useUserPreferences();
+  const settingsToMigrate = ["theme", "language", "startup_view", "menu_items"];
+
+  try {
+    for (const key of settingsToMigrate) {
+      const value = localStorage.getItem(`frontend.settings.${key}`);
+      if (value !== null && !store.currentUser?.preferences?.[key]) {
+        // Only migrate if backend doesn't already have a value
+        console.log(`[Migration] Migrating ${key} to user preferences:`, value);
+        await setPreference(key, value);
+      }
+    }
+
+    localStorage.setItem("frontend.settings.migrated_to_user_prefs", "true");
+    console.log("[Migration] Successfully migrated frontend settings to user preferences");
+  } catch (error) {
+    console.error("[Migration] Failed to migrate settings:", error);
+  }
+}
+
 const completeInitialization = async () => {
   const serverInfo = api.serverInfo.value;
   if (!serverInfo) {
@@ -182,6 +218,10 @@ const completeInitialization = async () => {
   }
   authManager.setCurrentUser(userInfo);
   store.serverInfo = serverInfo;
+
+  // TODO: Remove this migration code in v2.9 release
+  // Migrate localStorage settings to user preferences (one-time migration)
+  await migrateLocalStorageToUserPreferences();
 
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
@@ -224,8 +264,11 @@ onMounted(async () => {
   // @ts-ignore
   store.isInStandaloneMode = window.navigator.standalone || false;
 
-  // Cache language settings
-  const langPref = localStorage.getItem("frontend.settings.language") || "auto";
+  // Cache language settings - read from user preferences first, fallback to localStorage
+  const langPref =
+    store.currentUser?.preferences?.language ||
+    localStorage.getItem("frontend.settings.language") ||
+    "auto";
   if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
   }
@@ -233,6 +276,20 @@ onMounted(async () => {
     localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
 
   setTheme();
+
+  // Watch for user data changes and reapply theme/language
+  watch(
+    () => store.currentUser,
+    (newUser) => {
+      if (newUser) {
+        setTheme();
+        const userLangPref = newUser.preferences?.language || "auto";
+        if (userLangPref !== "auto") {
+          i18n.global.locale.value = userLangPref;
+        }
+      }
+    },
+  );
   window
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", setTheme);

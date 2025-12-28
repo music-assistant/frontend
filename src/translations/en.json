@@ -301,6 +301,8 @@
             "audio": "Audio",
             "advanced": "Advanced settings",
             "generic": "Generic settings",
+            "per_user": "Per User Settings",
+            "per_browser": "Per Browser Settings",
             "announcements": "Announcements configuration",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
