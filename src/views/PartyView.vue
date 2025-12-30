@@ -1,7 +1,7 @@
 <template>
   <div class="party-view" :style="backgroundStyle">
     <!-- Dark overlay when using album art background for better text readability -->
-    <div v-if="useAlbumArtBackground" class="background-overlay" />
+    <div v-if="useAlbumArtBackground" class="background-overlay"></div>
     <div class="party-content">
       <!-- QR Code Placeholder -->
       <div class="qr-section">
