@@ -82,6 +82,9 @@ const infoSizeClass = computed(() => {
 
 <style scoped>
 .track-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -89,36 +92,70 @@ const infoSizeClass = computed(() => {
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
-  transition: all 0.5s ease-in-out;
   width: 100%;
   max-width: 800px;
+  /* Transform combines centering, vertical position, and scale */
+  transform: translateX(-50%) translateY(calc(-50% + var(--y, 0px)))
+    scale(var(--scale, 1));
+  opacity: var(--opacity, 1);
+  z-index: var(--z-index, 1);
+  /* Transition the actual CSS properties, not the variables */
+  transition:
+    transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.track-card.position-previous-2,
-.track-card.position-next-2 {
-  opacity: 0.5;
-  transform: scale(0.85);
+.track-card.position-previous-2 {
+  --y: -300px;
+  --scale: 0.85;
+  --opacity: 0.5;
+  --z-index: 1;
   max-width: 680px;
 }
 
-.track-card.position-previous-1,
-.track-card.position-next-1 {
-  opacity: 0.7;
-  transform: scale(0.9);
+.track-card.position-previous-1 {
+  --y: -190px;
+  --scale: 0.9;
+  --opacity: 0.7;
+  --z-index: 2;
   max-width: 720px;
 }
 
 .track-card.position-current {
-  opacity: 1;
-  transform: scale(1);
+  --y: 0px;
+  --scale: 1;
+  --opacity: 1;
+  --z-index: 3;
   background: rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.track-card.position-next-1 {
+  --y: 190px;
+  --scale: 0.9;
+  --opacity: 0.7;
+  --z-index: 2;
+  max-width: 720px;
+}
+
+.track-card.position-next-2 {
+  --y: 300px;
+  --scale: 0.85;
+  --opacity: 0.5;
+  --z-index: 1;
+  max-width: 680px;
 }
 
 .track-artwork {
   flex-shrink: 0;
   border-radius: 8px;
   overflow: hidden;
+  transition:
+    width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .track-artwork.size-small {
@@ -145,10 +182,12 @@ const infoSizeClass = computed(() => {
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: rgba(255, 255, 255, 0.95);
+  transition: font-size 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .track-artist {
   color: rgba(255, 255, 255, 0.7);
+  transition: font-size 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .track-info.size-small .track-name {

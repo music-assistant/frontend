@@ -203,6 +203,24 @@ const routes = [
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
+        path: "/guest",
+        name: "guest",
+        component: () =>
+          import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
+        beforeEnter: async (to: any) => {
+          const token = to.query.token as string;
+          if (token) {
+            // Store the token
+            localStorage.setItem("auth_token", token);
+            // Reload to initialize with the new token
+            window.location.href = "/#/home";
+            return false;
+          }
+          // No token, redirect to home
+          return { name: "home" };
+        },
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>

@@ -32,12 +32,10 @@ const generateQRCode = async () => {
       "webserver",
       "party_mode_enabled",
     );
-    console.log("Party mode enabled from config:", partyModeEnabled);
     store.partyModeEnabled = !!partyModeEnabled;
 
     // Fetch guest URL from backend (will return empty string if disabled)
     const url = (await api.sendCommand("webserver/party_mode_url")) as string;
-    console.log("Guest URL from backend:", url);
 
     if (url) {
       qrCodeUrl.value = url;

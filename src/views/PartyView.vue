@@ -10,41 +10,18 @@
 
       <!-- Track Stack -->
       <div class="track-stack">
-        <!-- Previous tracks (top) -->
-        <div class="track-section previous">
-          <TransitionGroup name="track-slide">
-            <PartyTrackCard
-              v-for="(item, idx) in previousTwo"
-              :key="item?.queue_item_id || `prev-${idx}`"
-              :queue-item="item"
-              :position="idx === 0 ? 'previous-2' : 'previous-1'"
-            />
-          </TransitionGroup>
-        </div>
-
-        <!-- Current track (center, large) -->
-        <div class="track-section current">
-          <TransitionGroup name="track-slide">
-            <PartyTrackCard
-              v-if="current"
-              :key="current.queue_item_id"
-              :queue-item="current"
-              position="current"
-            />
-          </TransitionGroup>
-        </div>
-
-        <!-- Next tracks (bottom) -->
-        <div class="track-section next">
-          <TransitionGroup name="track-slide">
-            <PartyTrackCard
-              v-for="(item, idx) in nextTwo"
-              :key="item?.queue_item_id || `next-${idx}`"
-              :queue-item="item"
-              :position="idx === 0 ? 'next-1' : 'next-2'"
-            />
-          </TransitionGroup>
-        </div>
+        <TransitionGroup
+          :name="`track-slide-${animationDirection}`"
+          tag="div"
+          class="track-list"
+        >
+          <PartyTrackCard
+            v-for="item in visibleItems"
+            :key="item.queue_item_id"
+            :queue-item="item"
+            :position="getPosition(item)"
+          />
+        </TransitionGroup>
       </div>
     </div>
   </div>
@@ -76,6 +53,11 @@ const useAlbumArtBackground = computed(() => {
 
 // Queue items state
 const queueItems = ref<QueueItem[]>([]);
+const lastFetchedOffset = ref<number>(0);
+
+// Track direction for animations
+const previousCurrentIndex = ref<number | null>(null);
+const animationDirection = ref<"forward" | "backward">("forward");
 
 // Color palette state
 const colorPalette = ref<ImageColorPalette>({
@@ -88,64 +70,105 @@ const colorPalette = ref<ImageColorPalette>({
   darkColor: "",
 });
 
-// Computed properties for queue item display
-const previousTwo = computed(() => {
+// Single list of visible items for the unified TransitionGroup
+const visibleItems = computed(() => {
   if (!store.activePlayerQueue) return [];
   const currentIndex = store.activePlayerQueue.current_index || 0;
-  const items: (QueueItem | undefined)[] = [];
+  const offset = lastFetchedOffset.value;
 
-  if (currentIndex >= 2) {
-    items.push(queueItems.value[currentIndex - 2]);
-  }
-  if (currentIndex >= 1) {
-    items.push(queueItems.value[currentIndex - 1]);
+  // Return up to 5 items: previous-2, previous-1, current, next-1, next-2
+  const items: QueueItem[] = [];
+
+  for (let i = 0; i < 5; i++) {
+    const queuePosition = currentIndex - 2 + i;
+    const relativeIdx = queuePosition - offset;
+
+    if (relativeIdx >= 0 && relativeIdx < queueItems.value.length) {
+      const item = queueItems.value[relativeIdx];
+      if (item) {
+        items.push(item);
+      }
+    }
   }
 
-  return items.filter((item) => item !== undefined) as QueueItem[];
+  return items;
 });
 
-const current = computed(() => {
-  if (!store.activePlayerQueue) return undefined;
+// Helper to compute position for each item
+const getPosition = (item: QueueItem) => {
+  if (!store.activePlayerQueue) return "current";
   const currentIndex = store.activePlayerQueue.current_index || 0;
-  return queueItems.value[currentIndex];
-});
+  const offset = lastFetchedOffset.value;
 
-const nextTwo = computed(() => {
-  if (!store.activePlayerQueue) return [];
-  const currentIndex = store.activePlayerQueue.current_index || 0;
-  const items: (QueueItem | undefined)[] = [];
+  // Find the queue position of this item
+  const relativeIdx = queueItems.value.findIndex(
+    (q) => q?.queue_item_id === item.queue_item_id,
+  );
 
-  if (queueItems.value[currentIndex + 1]) {
-    items.push(queueItems.value[currentIndex + 1]);
-  }
-  if (queueItems.value[currentIndex + 2]) {
-    items.push(queueItems.value[currentIndex + 2]);
-  }
+  if (relativeIdx === -1) return "current";
 
-  return items.filter((item) => item !== undefined) as QueueItem[];
-});
+  const queuePosition = offset + relativeIdx;
+  const delta = queuePosition - currentIndex;
 
-// Queue data fetching
+  if (delta === -2) return "previous-2";
+  if (delta === -1) return "previous-1";
+  if (delta === 0) return "current";
+  if (delta === 1) return "next-1";
+  if (delta === 2) return "next-2";
+
+  return "current";
+};
+
+// Queue data fetching with identity preservation
 const fetchQueueItems = async () => {
   if (!store.activePlayerQueue) {
     queueItems.value = [];
+    lastFetchedOffset.value = 0;
     return;
   }
 
   const currentIndex = store.activePlayerQueue.current_index || 0;
   const offset = Math.max(0, currentIndex - 2);
-  const limit = 5;
+  // Fetch 6 items: 2 previous + current + 2 next + 1 buffer for smooth transitions
+  const limit = 6;
+
+  // Only fetch if we've moved outside our current buffer
+  // Check if current position is still within our fetched range
+  const isWithinBuffer =
+    queueItems.value.length > 0 &&
+    currentIndex >= lastFetchedOffset.value &&
+    currentIndex < lastFetchedOffset.value + queueItems.value.length - 2;
+
+  if (isWithinBuffer) {
+    return;
+  }
 
   try {
-    const items = await api.getPlayerQueueItems(
+    const newItems = await api.getPlayerQueueItems(
       store.activePlayerQueue.queue_id,
       limit,
       offset,
     );
-    queueItems.value = items;
+
+    // Preserve object identity for items that haven't changed
+    // This is critical for Vue's transition system to detect moves vs add/remove
+    const merged: QueueItem[] = [];
+    for (let i = 0; i < newItems.length; i++) {
+      const newItem = newItems[i];
+      // Find if this item already exists in our current array
+      const existing = queueItems.value.find(
+        (item) => item?.queue_item_id === newItem?.queue_item_id,
+      );
+      // If it exists, reuse the exact same object reference
+      merged.push(existing || newItem);
+    }
+
+    queueItems.value = merged;
+    lastFetchedOffset.value = offset;
   } catch (error) {
     console.error("Failed to fetch queue items:", error);
     queueItems.value = [];
+    lastFetchedOffset.value = 0;
   }
 };
 
@@ -276,6 +299,17 @@ watch(
     fetchQueueItems();
   },
 );
+
+// Watch for queue index changes to detect direction
+watch(
+  () => store.activePlayerQueue?.current_index,
+  (newIndex) => {
+    if (newIndex !== undefined && previousCurrentIndex.value !== null) {
+      animationDirection.value = newIndex > previousCurrentIndex.value ? "forward" : "backward";
+    }
+    previousCurrentIndex.value = newIndex ?? null;
+  },
+);
 </script>
 
 <style scoped>
@@ -323,42 +357,38 @@ watch(
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
   min-width: 0;
 }
 
-.track-section {
+.track-list {
+  position: relative;
   width: 100%;
+  height: 800px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.track-section.current {
-  flex: 0 0 auto;
-}
-
-.track-section.previous,
-.track-section.next {
-  flex: 1;
   justify-content: center;
+  align-items: center;
 }
 
-/* Transition animations */
-.track-slide-enter-active,
-.track-slide-leave-active {
-  transition: all 0.5s ease;
+/* Transition animations - Forward (next track) */
+.track-slide-forward-enter-active,
+.track-slide-forward-leave-active {
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.track-slide-enter-from {
+.track-slide-forward-enter-from,
+.track-slide-forward-leave-to {
   opacity: 0;
-  transform: translateY(50px);
 }
 
-.track-slide-leave-to {
+/* Transition animations - Backward (previous track) */
+.track-slide-backward-enter-active,
+.track-slide-backward-leave-active {
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.track-slide-backward-enter-from,
+.track-slide-backward-leave-to {
   opacity: 0;
-  transform: translateY(-50px);
 }
 
 /* Responsive adjustments */
@@ -371,6 +401,10 @@ watch(
 
   .qr-section {
     flex: 0 0 120px;
+  }
+
+  .track-list {
+    height: 600px;
   }
 
   .qr-box {
@@ -400,12 +434,8 @@ watch(
     padding: 0.5rem;
   }
 
-  .track-stack {
-    gap: 0.5rem;
-  }
-
-  .track-section {
-    gap: 0.5rem;
+  .track-list {
+    height: 500px;
   }
 }
 </style>
