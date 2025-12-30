@@ -1,5 +1,7 @@
 <template>
   <div class="party-view" :style="backgroundStyle">
+    <!-- Dark overlay when using album art background for better text readability -->
+    <div v-if="useAlbumArtBackground" class="background-overlay" />
     <div class="party-content">
       <!-- QR Code Placeholder -->
       <div class="qr-section">
@@ -57,6 +59,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useTheme } from "vuetify";
+import { useRoute } from "vue-router";
 import Color from "color";
 import PartyTrackCard from "@/components/PartyTrackCard.vue";
 import api from "@/plugins/api";
@@ -69,6 +72,12 @@ import {
 } from "@/helpers/utils";
 
 const theme = useTheme();
+const route = useRoute();
+
+// Check if album art background is enabled via query parameter
+const useAlbumArtBackground = computed(() => {
+  return !!route.query.albumArtBackground;
+});
 
 // Queue items state
 const queueItems = ref<QueueItem[]>([]);
@@ -177,6 +186,22 @@ watch(
 );
 
 const backgroundStyle = computed(() => {
+  // If album art background is enabled, use the image directly
+  if (useAlbumArtBackground.value && store.curQueueItem?.image) {
+    const imageUrl = getMediaItemImageUrl(store.curQueueItem.image);
+    if (imageUrl) {
+      return {
+        backgroundImage: `url(${imageUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        transition: "background 0.8s ease-in-out",
+        position: "relative" as const,
+      };
+    }
+  }
+
+  // Otherwise use color gradient (default behavior)
   const LIGHT_TEXT_COLOR = Color("white");
   const DARK_TEXT_COLOR = Color("black");
   const MIN_CONTRAST = 5;
@@ -269,7 +294,20 @@ watch(
   justify-content: center;
 }
 
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  z-index: 0;
+}
+
 .party-content {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   display: flex;
