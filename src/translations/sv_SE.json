@@ -1003,7 +1003,9 @@
         "no_players_selected": "Alla spelare (inga begränsningar)",
         "no_providers_selected": "Alla leverantörer (inga begränsningar)",
         "select_players": "Välj spelare",
-        "select_providers": "Välj leverantörer"
+        "select_providers": "Välj leverantörer",
+        "save_changes": "Spara ändringar",
+        "update_password": "Uppdatera lösenord"
     },
     "login": {
         "subtitle": "Anslut till din musikserver",
@@ -1101,5 +1103,6 @@
         "currently_playing": "Spelas just nu på",
         "click_to_change": "Klicka nedan för att byta utdataenhet"
     },
-    "more_options": "Fler alternativ"
+    "more_options": "Fler alternativ",
+    "edit": "Redigera"
 }
