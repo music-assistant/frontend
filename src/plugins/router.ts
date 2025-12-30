@@ -196,6 +196,13 @@ const routes = [
         ],
       },
       {
+        path: "/jukebox",
+        name: "jukebox",
+        component: () =>
+          import(/* webpackChunkName: "jukebox" */ "@/views/JukeboxView.vue"),
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>

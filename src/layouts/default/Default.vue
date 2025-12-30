@@ -51,9 +51,7 @@ watch(
 watch(
   () => route.query.frameless,
   (frameless) => {
-    if (frameless) {
-      store.frameless = true;
-    }
+    store.frameless = !!frameless;
   },
   { immediate: true },
 );
