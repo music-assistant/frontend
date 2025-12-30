@@ -1,12 +1,6 @@
 <template>
-  <div class="jukebox-view" :style="backgroundStyle">
-    <JukeboxScreensaver
-      v-if="shouldShowScreensaver"
-      :message="screensaverMessage"
-      @wake="resetIdleTimer"
-    />
-
-    <div v-else class="jukebox-content">
+  <div class="party-view" :style="backgroundStyle">
+    <div class="party-content">
       <!-- QR Code Placeholder -->
       <div class="qr-section">
         <div class="qr-placeholder">
@@ -23,7 +17,7 @@
         <!-- Previous tracks (top) -->
         <div class="track-section previous">
           <TransitionGroup name="track-slide">
-            <JukeboxTrackCard
+            <PartyTrackCard
               v-for="(item, idx) in previousTwo"
               :key="item?.queue_item_id || `prev-${idx}`"
               :queue-item="item"
@@ -35,7 +29,7 @@
         <!-- Current track (center, large) -->
         <div class="track-section current">
           <TransitionGroup name="track-slide">
-            <JukeboxTrackCard
+            <PartyTrackCard
               v-if="current"
               :key="current.queue_item_id"
               :queue-item="current"
@@ -47,7 +41,7 @@
         <!-- Next tracks (bottom) -->
         <div class="track-section next">
           <TransitionGroup name="track-slide">
-            <JukeboxTrackCard
+            <PartyTrackCard
               v-for="(item, idx) in nextTwo"
               :key="item?.queue_item_id || `next-${idx}`"
               :queue-item="item"
@@ -64,32 +58,24 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useTheme } from "vuetify";
 import Color from "color";
-import JukeboxScreensaver from "@/components/JukeboxScreensaver.vue";
-import JukeboxTrackCard from "@/components/JukeboxTrackCard.vue";
+import PartyTrackCard from "@/components/PartyTrackCard.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   EventType,
   EventMessage,
   QueueItem,
-  PlaybackState,
 } from "@/plugins/api/interfaces";
 import {
   ImageColorPalette,
   getColorPalette,
   getMediaItemImageUrl,
 } from "@/helpers/utils";
-import { getSourceName } from "@/plugins/api/helpers";
 
 const theme = useTheme();
 
 // Queue items state
 const queueItems = ref<QueueItem[]>([]);
-
-// Screensaver state
-const IDLE_TIMEOUT = 120000; // 2 minutes
-const showIdleScreensaver = ref(false);
-let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Color palette state
 const colorPalette = ref<ImageColorPalette>({
@@ -138,56 +124,6 @@ const nextTwo = computed(() => {
 
   return items.filter((item) => item !== undefined) as QueueItem[];
 });
-
-// Screensaver logic
-const screensaverMessage = computed(() => {
-  if (!store.activePlayer) {
-    return "No player selected";
-  }
-  if (store.activePlayer.powered === false) {
-    return "Player is off";
-  }
-  if (store.activePlayer.active_source && !store.activePlayerQueue) {
-    return `External source active: ${getSourceName(store.activePlayer)}`;
-  }
-  if (!store.activePlayerQueue || store.activePlayerQueue.items === 0) {
-    return "Queue is empty";
-  }
-  if (showIdleScreensaver.value) {
-    return "Idle";
-  }
-  return "Queue is empty";
-});
-
-const shouldShowScreensaver = computed(() => {
-  // Don't show screensaver if music is playing
-  const isPlaying = store.activePlayer?.playback_state === PlaybackState.PLAYING;
-
-  // Show screensaver only if:
-  // - No active player, OR
-  // - Player is powered off, OR
-  // - Queue is empty, OR
-  // - External source is active, OR
-  // - Idle timeout AND not currently playing
-  return (
-    !store.activePlayer ||
-    store.activePlayer.powered === false ||
-    !store.activePlayerQueue ||
-    store.activePlayerQueue.items === 0 ||
-    (store.activePlayer.active_source && !store.activePlayerQueue) ||
-    (showIdleScreensaver.value && !isPlaying)
-  );
-});
-
-// Idle detection
-const resetIdleTimer = () => {
-  if (idleTimer) clearTimeout(idleTimer);
-  showIdleScreensaver.value = false;
-
-  idleTimer = setTimeout(() => {
-    showIdleScreensaver.value = true;
-  }, IDLE_TIMEOUT);
-};
 
 // Queue data fetching
 const fetchQueueItems = async () => {
@@ -311,20 +247,9 @@ onMounted(() => {
     fetchQueueItems();
   });
 
-  // Setup idle detection
-  const events = ["mousemove", "keydown", "touchstart", "click"];
-  events.forEach((event) => {
-    window.addEventListener(event, resetIdleTimer);
-  });
-  resetIdleTimer();
-
   onBeforeUnmount(() => {
     unsub1();
     unsub2();
-    if (idleTimer) clearTimeout(idleTimer);
-    events.forEach((event) => {
-      window.removeEventListener(event, resetIdleTimer);
-    });
   });
 });
 
@@ -338,7 +263,7 @@ watch(
 </script>
 
 <style scoped>
-.jukebox-view {
+.party-view {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -348,7 +273,7 @@ watch(
   justify-content: center;
 }
 
-.jukebox-content {
+.party-content {
   width: 100%;
   height: 100%;
   display: flex;
@@ -447,7 +372,7 @@ watch(
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-  .jukebox-content {
+  .party-content {
     flex-direction: column;
     padding: 1rem;
     gap: 1rem;
@@ -480,7 +405,7 @@ watch(
     display: none;
   }
 
-  .jukebox-content {
+  .party-content {
     padding: 0.5rem;
   }
 

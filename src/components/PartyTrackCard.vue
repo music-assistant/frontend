@@ -9,9 +9,15 @@
           {{ queueItem.name }}
         </MarqueeText>
       </div>
-      <div v-if="queueItem.media_item && 'artists' in queueItem.media_item" class="track-artist">
+      <div
+        v-if="queueItem.media_item && 'artists' in queueItem.media_item"
+        class="track-artist"
+      >
         <MarqueeText :disabled="position !== 'current'">
-          {{ queueItem.media_item.artists?.map((a: any) => a.name).join(", ") || "" }}
+          {{
+            queueItem.media_item.artists?.map((a: any) => a.name).join(", ") ||
+            ""
+          }}
         </MarqueeText>
       </div>
     </div>
