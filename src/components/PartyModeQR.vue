@@ -4,7 +4,7 @@
       <v-progress-circular indeterminate />
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
-      <canvas ref="qrCanvas" />
+      <canvas ref="qrCanvas"></canvas>
       <p class="qr-instructions">Scan to join the party!</p>
     </div>
     <div v-else class="qr-disabled">
