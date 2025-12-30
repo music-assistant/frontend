@@ -10,11 +10,7 @@
 
       <!-- Track Stack -->
       <div class="track-stack">
-        <TransitionGroup
-          :name="`track-slide-${animationDirection}`"
-          tag="div"
-          class="track-list"
-        >
+        <TransitionGroup name="track-slide" tag="div" class="track-list">
           <PartyTrackCard
             v-for="item in visibleItems"
             :key="item.queue_item_id"
@@ -54,10 +50,6 @@ const useAlbumArtBackground = computed(() => {
 // Queue items state
 const queueItems = ref<QueueItem[]>([]);
 const lastFetchedOffset = ref<number>(0);
-
-// Track direction for animations
-const previousCurrentIndex = ref<number | null>(null);
-const animationDirection = ref<"forward" | "backward">("forward");
 
 // Color palette state
 const colorPalette = ref<ImageColorPalette>({
@@ -299,17 +291,6 @@ watch(
     fetchQueueItems();
   },
 );
-
-// Watch for queue index changes to detect direction
-watch(
-  () => store.activePlayerQueue?.current_index,
-  (newIndex) => {
-    if (newIndex !== undefined && previousCurrentIndex.value !== null) {
-      animationDirection.value = newIndex > previousCurrentIndex.value ? "forward" : "backward";
-    }
-    previousCurrentIndex.value = newIndex ?? null;
-  },
-);
 </script>
 
 <style scoped>
@@ -369,25 +350,14 @@ watch(
   align-items: center;
 }
 
-/* Transition animations - Forward (next track) */
-.track-slide-forward-enter-active,
-.track-slide-forward-leave-active {
+/* Transition animations */
+.track-slide-enter-active,
+.track-slide-leave-active {
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.track-slide-forward-enter-from,
-.track-slide-forward-leave-to {
-  opacity: 0;
-}
-
-/* Transition animations - Backward (previous track) */
-.track-slide-backward-enter-active,
-.track-slide-backward-leave-active {
-  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.track-slide-backward-enter-from,
-.track-slide-backward-leave-to {
+.track-slide-enter-from,
+.track-slide-leave-to {
   opacity: 0;
 }
 
