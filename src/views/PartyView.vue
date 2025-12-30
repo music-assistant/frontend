@@ -61,11 +61,7 @@ import Color from "color";
 import PartyTrackCard from "@/components/PartyTrackCard.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
-import {
-  EventType,
-  EventMessage,
-  QueueItem,
-} from "@/plugins/api/interfaces";
+import { EventType, EventMessage, QueueItem } from "@/plugins/api/interfaces";
 import {
   ImageColorPalette,
   getColorPalette,
