@@ -1003,7 +1003,9 @@
         "no_players_selected": "Visi grotuvai (be apribojimų)",
         "no_providers_selected": "Visi tiekėjai (be apribojimų)",
         "select_players": "Pasirinkite grotuvus",
-        "select_providers": "Pasirinkite tiekėjus"
+        "select_providers": "Pasirinkite tiekėjus",
+        "save_changes": "Išsaugoti pakeitimus",
+        "update_password": "Atnaujinti slaptažodį"
     },
     "login": {
         "subtitle": "Prisijunkite prie savo muzikos serverio",
@@ -1095,5 +1097,12 @@
     "search_all_providers_confirm": "Ar tikrai norite ieškoti atitikmenų visuose tiekėjuose? Tai gali užtrukti ir bus vykdoma fone.",
     "remove_provider_mapping": "Pašalinti tiekėjo susiejimą",
     "remove_provider_mapping_confirm": "Ar tikrai norite pašalinti šį tiekėjo susiejimą? Tai atsieis elementą nuo dabartinių elemento duomenų. Jis gali vėl atsirasti, jei iš naujo nuskaitysite visus atitikmenis tiekėjams.",
-    "map_provider_mapping": "Susieti šį teikėjo įrašą su dabartiniu elementu"
+    "map_provider_mapping": "Susieti šį teikėjo įrašą su dabartiniu elementu",
+    "player_tip": {
+        "selected_player": "Pasirinktas žaidėjas",
+        "currently_playing": "Šiuo metu žaidžiama",
+        "click_to_change": "Spustelėkite žemiau, kad pakeistumėte išvesties įrenginį"
+    },
+    "more_options": "Daugiau parinkčių",
+    "edit": "Redaguoti"
 }
