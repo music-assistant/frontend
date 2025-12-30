@@ -3,15 +3,9 @@
     <!-- Dark overlay when using album art background for better text readability -->
     <div v-if="useAlbumArtBackground" class="background-overlay"></div>
     <div class="party-content">
-      <!-- QR Code Placeholder -->
+      <!-- QR Code -->
       <div class="qr-section">
-        <div class="qr-placeholder">
-          <div class="qr-box">
-            <v-icon size="64" icon="mdi-qrcode" class="qr-icon" />
-            <p class="qr-text">Join the Party</p>
-            <p class="qr-subtext">QR Code</p>
-          </div>
-        </div>
+        <PartyModeQR />
       </div>
 
       <!-- Track Stack -->
@@ -62,6 +56,7 @@ import { useTheme } from "vuetify";
 import { useRoute } from "vue-router";
 import Color from "color";
 import PartyTrackCard from "@/components/PartyTrackCard.vue";
+import PartyModeQR from "@/components/PartyModeQR.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { EventType, EventMessage, QueueItem } from "@/plugins/api/interfaces";
@@ -320,44 +315,6 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.qr-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.qr-box {
-  width: 250px;
-  height: 250px;
-  border: 2px dashed rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-}
-
-.qr-icon {
-  opacity: 0.5;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.qr-text {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-}
-
-.qr-subtext {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0;
 }
 
 .track-stack {

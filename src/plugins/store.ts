@@ -58,6 +58,7 @@ interface Store {
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
   isOnboarding: boolean;
+  partyModeEnabled: boolean;
 }
 
 export const store: Store = reactive({
@@ -128,4 +129,5 @@ export const store: Store = reactive({
   serverInfo: undefined,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
   isOnboarding: false,
+  partyModeEnabled: false,
 });
