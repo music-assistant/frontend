@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
+import { UserRole } from "@/plugins/api/interfaces";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -198,15 +199,20 @@ const completeInitialization = async () => {
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
-  const webPlayerModePref =
-    localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
-  if (
-    webPlayerModePref !== "disabled" &&
-    api.getProvider("sendspin")?.available
-  ) {
-    webPlayer.setMode(WebPlayerMode.SENDSPIN);
+  // Disable web player for guest users
+  if (userInfo.role === UserRole.GUEST) {
+    webPlayer.setMode(WebPlayerMode.DISABLED);
   } else {
-    webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+    const webPlayerModePref =
+      localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
+    if (
+      webPlayerModePref !== "disabled" &&
+      api.getProvider("sendspin")?.available
+    ) {
+      webPlayer.setMode(WebPlayerMode.SENDSPIN);
+    } else {
+      webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+    }
   }
   const urlParams = new URLSearchParams(window.location.search);
   if (

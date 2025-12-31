@@ -2,7 +2,47 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import { store } from "./store";
 
 const routes = [
-  // All routes go through default layout - authentication is handled by server redirect
+  // Guest view uses minimal layout without navigation/player controls
+  {
+    path: "/guest",
+    component: () => import("@/layouts/GuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "guest",
+        component: () =>
+          import(/* webpackChunkName: "guest" */ "@/views/GuestView.vue"),
+        beforeEnter: async (to: any, _from: any, next: any) => {
+          const token = to.query.token as string;
+          if (token) {
+            // Store the token using the correct storage key
+            localStorage.setItem("auth_token", token);
+
+            // Store the server address derived from the URL the guest accessed
+            // This is needed for new users/devices that have never connected before
+            const serverAddress =
+              window.location.origin +
+              window.location.pathname.replace(/\/$/, "");
+            localStorage.setItem("mass_server_address", serverAddress);
+
+            // Mark as guest mode
+            localStorage.setItem("guest_mode", "true");
+
+            // Small delay to ensure localStorage write completes
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            // Navigate to guest without token in URL (removes ?token=xxx)
+            // This avoids full page reload and preserves app state
+            next({ name: "guest", replace: true });
+            return;
+          }
+          // Already authenticated as guest or no token, show guest view
+          next();
+        },
+      },
+    ],
+  },
+  // All other routes go through default layout with navigation/player controls
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
@@ -203,24 +243,6 @@ const routes = [
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
       },
       {
-        path: "/guest",
-        name: "guest",
-        component: () =>
-          import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
-        beforeEnter: async (to: any) => {
-          const token = to.query.token as string;
-          if (token) {
-            // Store the token
-            localStorage.setItem("auth_token", token);
-            // Reload to initialize with the new token
-            window.location.href = "/#/home";
-            return false;
-          }
-          // No token, redirect to home
-          return { name: "home" };
-        },
-      },
-      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -387,8 +409,18 @@ const router = createRouter({
   routes,
 });
 
-// Navigation guard for admin-only routes
+// Navigation guard for admin-only routes and guest mode restrictions
 router.beforeEach((to, _from, next) => {
+  // Check if user is in guest mode
+  const isGuestMode = localStorage.getItem("guest_mode") === "true";
+
+  // If in guest mode and trying to navigate away from /guest, redirect back to guest
+  if (isGuestMode && to.path !== "/guest") {
+    console.debug("Guest mode: preventing navigation to", to.path);
+    next({ name: "guest" });
+    return;
+  }
+
   // Check admin-only routes - check all matched routes for requiresAdmin meta
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 

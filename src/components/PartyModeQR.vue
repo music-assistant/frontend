@@ -4,7 +4,14 @@
       <v-progress-circular indeterminate />
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
-      <canvas ref="qrCanvas"></canvas>
+      <a
+        :href="qrCodeUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="qr-link"
+      >
+        <canvas ref="qrCanvas"></canvas>
+      </a>
       <p class="qr-instructions">Scan to join the party!</p>
     </div>
     <div v-else class="qr-disabled">
@@ -96,7 +103,21 @@ watch(
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+.qr-link {
+  display: block;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.qr-link:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
 .qr-display canvas {
+  display: block;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
