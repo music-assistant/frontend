@@ -50,11 +50,7 @@
                 :ripple="false"
                 v-bind="{ ...menu }"
               >
-                <component
-                  :is="volumeIconComponent"
-                  :color="props.color ? color : ''"
-                  :size="18"
-                />
+                <component :is="volumeIconComponent" :size="18" />
                 <div class="text-caption ml-1">
                   {{ Math.round(displayVolume) }}
                 </div>
@@ -64,15 +60,8 @@
         </div>
         <div v-else>
           <Button v-bind="{ ...menu }" size="48" variant="icon">
-            <component
-              :is="volumeIconComponent"
-              :color="props.color ? color : ''"
-              :size="24"
-            />
-            <div
-              class="text-caption"
-              :style="{ color: props.color ? color : '' }"
-            >
+            <component :is="volumeIconComponent" :size="24" />
+            <div class="text-caption">
               {{ Math.round(displayVolume) }}
             </div>
           </Button>
@@ -120,14 +109,12 @@ export interface Props {
   volumeSize?: string;
   responsiveVolumeSize?: boolean;
   isVisible?: boolean;
-  color?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   volumeSize: "150px",
   responsiveVolumeSize: true,
   isVisible: true,
-  color: "",
 });
 
 //refs

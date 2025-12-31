@@ -19,10 +19,6 @@
             shuffle: { isVisible: getBreakpointValue('bp3') },
             play: {
               isVisible: true,
-              icon: {
-                staticWidth: '48px',
-                staticHeight: '48px',
-              },
             },
             previous: { isVisible: getBreakpointValue('bp3') },
             next: { isVisible: getBreakpointValue('bp3') },
@@ -49,11 +45,9 @@
             }"
             :player="{
               isVisible: true,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
           />
         </div>
@@ -83,11 +77,9 @@
             }"
             :player="{
               isVisible: true,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
             :volume="{
               isVisible: false,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
           />
           <!-- player mobile control buttons -->

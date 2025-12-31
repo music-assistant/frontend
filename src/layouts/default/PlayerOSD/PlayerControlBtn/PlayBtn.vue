@@ -1,20 +1,35 @@
 <template>
-  <!-- play/pause button: disabled if no content -->
-  <Icon
+  <Button
     v-if="isVisible && player"
     v-bind="icon"
     :disabled="!canPlayPause"
-    :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
-    variant="button"
+    size="icon"
+    variant="inverted"
+    :class="
+      icon?.isFullscreen ? `rounded-full h-14 w-14` : 'rounded-full h-10 w-10'
+    "
     @click="api.playerCommandPlayPause(player.player_id)"
-  />
+  >
+    <Pause
+      v-if="player.playback_state == PlaybackState.PLAYING"
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+    />
+    <Play
+      v-else
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+    />
+  </Button>
 </template>
 
 <script setup lang="ts">
-import Icon, { IconProps } from "@/components/Icon.vue";
+import {
+  Button,
+  type ButtonVariants as ButtonProps,
+} from "@/components/ui/button";
+import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
-import { useActiveSource } from "@/composables/activeSource";
+import { Pause, Play } from "lucide-vue-next";
 import { computed, toRef } from "vue";
 
 // properties
@@ -23,7 +38,7 @@ export interface Props {
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
   withCircle?: boolean;
-  icon?: IconProps;
+  icon?: ButtonProps & { iconSize?: number; isFullscreen?: boolean };
   iconStyle?: string;
 }
 const compProps = withDefaults(defineProps<Props>(), {
@@ -55,12 +70,5 @@ const canPlayPause = computed(() => {
   }
   // Fall back to queue or player capabilities
   return queueCanPlay.value || playerCanPlay.value;
-});
-
-const baseIcon = computed(() => {
-  if (compProps.player?.playback_state == PlaybackState.PLAYING) {
-    return "mdi-pause";
-  }
-  return "mdi-play";
 });
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <Icon
+  <Button
     v-if="isVisible"
     v-bind="icon"
     :disabled="
@@ -8,26 +8,34 @@
         !store.curQueueItem &&
         !store.showQueueItems)
     "
-    icon="mdi-playlist-play"
-    :color="
-      getValueFromSources(icon?.color, [
-        [store.showFullscreenPlayer && store.showQueueItems, 'primary', ''],
-      ])
-    "
-    variant="button"
+    size="icon"
+    variant="ghost"
     @click="onClick"
-  />
+  >
+    <ListVideo
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+      :style="{
+        color:
+          store.showFullscreenPlayer && store.showQueueItems
+            ? 'var(--color-primary)'
+            : '',
+      }"
+    />
+  </Button>
 </template>
 
 <script setup lang="ts">
-import Icon, { IconProps } from "@/components/Icon.vue";
-import { getValueFromSources } from "@/helpers/utils";
+import {
+  Button,
+  type ButtonVariants as ButtonProps,
+} from "@/components/ui/button";
 import { store } from "@/plugins/store";
+import { ListVideo } from "lucide-vue-next";
 
 // properties
 export interface Props {
   isVisible?: boolean;
-  icon?: IconProps;
+  icon?: ButtonProps & { iconSize?: number };
 }
 
 withDefaults(defineProps<Props>(), {

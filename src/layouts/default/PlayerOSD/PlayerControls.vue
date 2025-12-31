@@ -8,7 +8,7 @@
       <ShuffleBtn
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
-        :icon="visibleComponents.shuffle.icon"
+        :icon="{ iconSize: 6 }"
       />
     </div>
     <!-- prev button -->
@@ -20,7 +20,7 @@
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
-        :icon="visibleComponents.previous.icon"
+        :icon="{ iconSize: 6 }"
       />
     </div>
     <!-- play/pause button -->
@@ -29,8 +29,7 @@
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
-        icon-style="circle"
-        :icon="visibleComponents.play.icon"
+        :icon="{ iconSize: 6 }"
       />
     </div>
     <!-- next button -->
@@ -41,9 +40,7 @@
       <NextBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        :icon="visibleComponents.next.icon"
-        static-height="24px"
-        static-width="24px"
+        :icon="{ iconSize: 6 }"
       />
     </div>
     <!-- repeat button -->
@@ -53,9 +50,7 @@
     >
       <RepeatBtn
         :player-queue="store.activePlayerQueue"
-        :icon="visibleComponents.repeat.icon"
-        static-height="24px"
-        static-width="24px"
+        :icon="{ iconSize: 6 }"
       />
     </div>
   </div>

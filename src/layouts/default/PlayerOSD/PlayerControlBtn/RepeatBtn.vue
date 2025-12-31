@@ -1,25 +1,10 @@
 <template>
-  <!-- repeat button -->
-  <Icon
+  <Button
     v-if="isVisible && playerQueue"
     v-bind="icon"
     :disabled="!playerQueue.active || playerQueue.items == 0"
-    :color="
-      getValueFromSources(icon?.color, [
-        [playerQueue.repeat_mode == RepeatMode.OFF, null],
-        [playerQueue.repeat_mode == RepeatMode.ALL, 'primary'],
-        [playerQueue.repeat_mode == RepeatMode.ONE, 'primary'],
-      ])
-    "
-    :icon="
-      getValueFromSources(icon?.icon, [
-        [playerQueue.repeat_mode == RepeatMode.OFF, 'mdi-repeat-off'],
-        [playerQueue.repeat_mode == RepeatMode.ALL, 'mdi-repeat'],
-        [playerQueue.repeat_mode == RepeatMode.ONE, 'mdi-repeat-once'],
-        [true, 'mdi-repeat-off'],
-      ])
-    "
-    variant="button"
+    size="icon"
+    variant="ghost"
     @click="
       api.queueCommandRepeat(
         playerQueue.queue_id || '',
@@ -30,20 +15,43 @@
         ]),
       )
     "
-  />
+  >
+    <IconRepeat
+      v-if="playerQueue.repeat_mode == RepeatMode.ALL"
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+      :style="{
+        color: 'var(--color-primary)',
+      }"
+    />
+    <IconRepeatOnce
+      v-else-if="playerQueue.repeat_mode == RepeatMode.ONE"
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+      :style="{
+        color: 'var(--color-primary)',
+      }"
+    />
+    <IconRepeatOff
+      v-else
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+    />
+  </Button>
 </template>
 
 <script setup lang="ts">
-import Icon, { IconProps } from "@/components/Icon.vue";
+import {
+  Button,
+  type ButtonVariants as ButtonProps,
+} from "@/components/ui/button";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
+import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
 // properties
 export interface Props {
   playerQueue: PlayerQueue | undefined;
   isVisible?: boolean;
-  icon?: IconProps;
+  icon?: ButtonProps & { iconSize?: number };
 }
 withDefaults(defineProps<Props>(), {
   isVisible: true,

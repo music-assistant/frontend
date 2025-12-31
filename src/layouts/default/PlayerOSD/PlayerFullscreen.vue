@@ -407,36 +407,35 @@
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="30px"
           />
           <PreviousBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="45px"
+            :icon="{ iconSize: 8 }"
           />
           <PlayBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="70px"
+            :icon="{ iconSize: 8, isFullscreen: true }"
           />
           <NextBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="45px"
+            :icon="{ iconSize: 8 }"
           />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="35px"
+            :icon="{ iconSize: 6 }"
           />
           <QueueBtn
             v-if="store.activePlayerQueue"
+            :icon="{ iconSize: 6 }"
             class="media-controls-item"
-            max-height="30px"
           />
         </div>
 
@@ -522,6 +521,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import computeElapsedTime from "@/helpers/elapsed";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -538,6 +538,7 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -572,8 +573,6 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { getSourceName } from "@/plugins/api/helpers";
-import computeElapsedTime from "@/helpers/elapsed";
 
 const { name } = useDisplay();
 

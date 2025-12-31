@@ -1,20 +1,25 @@
 <template>
-  <!-- prev button -->
-  <Icon
+  <Button
     v-if="isVisible && player"
     v-bind="icon"
     :disabled="!canPrevious"
-    icon="mdi-skip-previous-outline"
-    variant="button"
+    size="icon"
+    variant="ghost"
     @click="api.playerCommandPrevious(player.player_id)"
-  />
+  >
+    <StepBack :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'" />
+  </Button>
 </template>
 
 <script setup lang="ts">
-import Icon, { IconProps } from "@/components/Icon.vue";
+import {
+  Button,
+  type ButtonVariants as ButtonProps,
+} from "@/components/ui/button";
+import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
-import { useActiveSource } from "@/composables/activeSource";
+import { StepBack } from "lucide-vue-next";
 import { computed, toRef } from "vue";
 
 // properties
@@ -22,7 +27,7 @@ export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
-  icon?: IconProps;
+  icon?: ButtonProps & { iconSize?: number };
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
