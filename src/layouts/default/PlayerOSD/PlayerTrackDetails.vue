@@ -51,31 +51,32 @@
           cursor: 'pointer',
           color: primaryColor,
         }"
+        class="d-flex align-center"
       >
+        <div v-if="store.activePlayer && store.activePlayer?.powered != false">
+          {{ getPlayerName(store.activePlayer) }}
+        </div>
         <!-- player name as title if its powered off-->
         <div
-          v-if="store.activePlayer?.powered == false"
+          v-else-if="store.activePlayer?.powered == false"
           @click="store.showPlayersMenu = true"
         >
-          {{ store.activePlayer?.name }}
-        </div>
-        <!-- player.current_media has content loaded (will work for all sources)  -->
-        <div
-          v-else-if="store.activePlayer?.current_media?.title"
-          @click="store.showFullscreenPlayer = true"
-        >
-          <MarqueeText :sync="marqueeSync">
-            {{ store.activePlayer.current_media.title }}
-          </MarqueeText>
-        </div>
-        <!-- fallback: display player name -->
-        <div v-else-if="store.activePlayer">
           {{ store.activePlayer?.name }}
         </div>
         <!-- no player selected message -->
         <div v-else @click="store.showPlayersMenu = true">
           {{ $t("no_player") }}
         </div>
+        <NowPlayingBadge
+          v-if="
+            store.activePlayer &&
+            store.activePlayer?.powered != false &&
+            store.activePlayer?.playback_state != PlaybackState.IDLE
+          "
+          :show-badge="false"
+          :show-icon="true"
+          icon-style="margin-left: 12px; margin-bottom: 4px;"
+        />
       </div>
     </template>
     <!-- append chip(s): quality -->
@@ -99,58 +100,66 @@
           cursor: 'pointer',
           color: primaryColor,
         }"
-        class="ma-line-clamp-1"
         @click="store.showFullscreenPlayer = true"
       >
-        <MarqueeText :sync="marqueeSync">
-          <!-- player powered off -->
-          <div v-if="store.activePlayer?.powered == false">
-            {{ $t("off") }}
+        <!-- player powered off -->
+        <div v-if="store.activePlayer?.powered == false">
+          {{ $t("off") }}
+        </div>
+        <template v-else-if="store.activePlayer?.current_media?.title">
+          <div class="ma-line-clamp-1">
+            <MarqueeText :sync="marqueeSync">
+              {{ store.activePlayer.current_media.title }}
+            </MarqueeText>
           </div>
-          <!-- player.current_media has content loaded (will work for all sources)-->
-          <!-- artists(s) + album -->
-          <div
-            v-else-if="
-              store.activePlayer?.current_media?.artist &&
-              store.activePlayer?.current_media?.album &&
-              !props.showOnlyArtist
-            "
-          >
-            {{ store.activePlayer?.current_media?.artist }} •
-            {{ store.activePlayer?.current_media?.album }}
+          <div class="ma-line-clamp-1">
+            <MarqueeText :sync="marqueeSync">
+              <!-- artists(s) + album -->
+              <span
+                v-if="
+                  store.activePlayer?.current_media?.artist &&
+                  store.activePlayer?.current_media?.album &&
+                  !props.showOnlyArtist
+                "
+              >
+                {{ store.activePlayer?.current_media?.artist }} •
+                {{ store.activePlayer?.current_media?.album }}
+              </span>
+              <!-- artists(s) only -->
+              <span v-else-if="store.activePlayer?.current_media?.artist">
+                {{ store.activePlayer?.current_media?.artist }}
+              </span>
+              <!-- album only -->
+              <span v-else-if="store.activePlayer?.current_media?.album">
+                {{ store.activePlayer?.current_media?.album }}
+              </span>
+            </MarqueeText>
           </div>
-          <!-- artists(s) only -->
-          <div v-else-if="store.activePlayer?.current_media?.artist">
-            {{ store.activePlayer?.current_media?.artist }}
-          </div>
-          <!-- album only -->
-          <div v-else-if="store.activePlayer?.current_media?.album">
-            {{ store.activePlayer?.current_media?.album }}
-          </div>
-          <!-- 3rd party source active -->
-          <div
-            v-else-if="
-              !store.activePlayerQueue && store.activePlayer?.active_source
-            "
-            class="ma-line-clamp-1"
-          >
-            {{
-              $t("external_source_active", [getSourceName(store.activePlayer)])
-            }}
-          </div>
-          <!-- queue empty message -->
-          <div
-            v-else-if="
-              store.activePlayerQueue && store.activePlayerQueue.items == 0
-            "
-            class="ma-line-clamp-1"
-          >
-            {{ $t("queue_empty") }}
-          </div>
-        </MarqueeText>
-        <!-- active player -->
-        <div v-if="store.activePlayer && store.activePlayer?.powered != false">
-          {{ getPlayerName(store.activePlayer) }}
+        </template>
+        <!-- 3rd party source active -->
+        <div
+          v-else-if="
+            store.activePlayer &&
+            !store.activePlayerQueue &&
+            store.activePlayer?.active_source
+          "
+          class="ma-line-clamp-1"
+        >
+          {{
+            $t("external_source_active", [getSourceName(store.activePlayer)])
+          }}
+        </div>
+        <!-- queue empty message -->
+        <div
+          v-else-if="
+            store.activePlayerQueue && store.activePlayerQueue.items == 0
+          "
+          class="ma-line-clamp-1"
+        >
+          {{ $t("queue_empty") }}
+        </div>
+        <div v-else-if="store.activePlayer">
+          {{ store.activePlayer?.name }}
         </div>
       </div>
     </template>
@@ -162,20 +171,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { PlayerType } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import MarqueeText from "@/components/MarqueeText.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   ImageColorPalette,
   getMediaImageUrl,
   getPlayerName,
 } from "@/helpers/utils";
-import PlayerFullscreen from "./PlayerFullscreen.vue";
-import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
-import MarqueeText from "@/components/MarqueeText.vue";
-import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getSourceName } from "@/plugins/api/helpers";
+import { PlaybackState, PlayerType } from "@/plugins/api/interfaces";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { store } from "@/plugins/store";
+import { computed } from "vue";
+import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const marqueeSync = new MarqueeTextSync();
 
