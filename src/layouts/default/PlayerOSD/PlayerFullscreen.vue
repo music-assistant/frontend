@@ -12,7 +12,7 @@
         <template #prepend>
           <ButtonUI
             size="icon"
-            variant="ghost"
+            variant="ghost-icon"
             class="ml-4"
             @click="store.showFullscreenPlayer = false"
           >
@@ -46,7 +46,7 @@
 
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
-              <ButtonUI size="icon" variant="ghost">
+              <ButtonUI size="icon" variant="ghost-icon">
                 <EllipsisVertical class="size-6" />
               </ButtonUI>
             </DropdownMenuTrigger>
@@ -1434,8 +1434,11 @@ watchEffect(() => {
   opacity: 1;
 }
 
-div,
-button {
+.v-card div,
+.v-card button,
+.v-card span,
+.v-card .v-card-title,
+.v-card .v-card-subtitle {
   color: var(--text-color);
 }
 
