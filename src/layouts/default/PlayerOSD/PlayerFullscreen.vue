@@ -557,14 +557,18 @@
             padding-top: 15px;
           "
         >
-          <v-btn
-            class="responsive-icon-holder-btn"
-            variant="outlined"
+          <ButtonUI
+            variant="outline-secondary"
+            size="lg"
+            class="gap-2"
             @click="store.showPlayersMenu = true"
           >
-            <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
+            <v-icon
+              :icon="store.activePlayer?.icon || 'mdi-speaker'"
+              size="16"
+            />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
-          </v-btn>
+          </ButtonUI>
         </div>
       </div>
     </v-card>
