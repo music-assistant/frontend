@@ -19,7 +19,7 @@ export const buttonVariants = cva(
         "ghost-icon": "hover:bg-transparent",
         link: "text-primary underline-offset-4 hover:underline",
         inverted:
-          "bg-foreground text-background hover:bg-foreground/90 dark:bg-background dark:text-foreground dark:hover:bg-background/90",
+          "bg-foreground text-background hover:bg-foreground/90 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

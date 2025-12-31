@@ -1,22 +1,24 @@
 <template>
   <Button
     v-if="isVisible && player"
-    v-bind="icon"
     :disabled="!canPlayPause"
-    size="icon"
     variant="inverted"
     :class="
-      icon?.isFullscreen ? `rounded-full h-14 w-14` : 'rounded-full h-10 w-10'
+      icon?.isFullscreen
+        ? 'rounded-full h-14 w-14 min-w-14 min-h-14 p-0 flex-shrink-0'
+        : 'rounded-full h-11 w-11 min-w-11 min-h-11 p-0 flex-shrink-0'
     "
     @click="api.playerCommandPlayPause(player.player_id)"
   >
     <Pause
       v-if="player.playback_state == PlaybackState.PLAYING"
       :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+      fill="currentColor"
     />
     <Play
       v-else
       :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+      fill="currentColor"
     />
   </Button>
 </template>

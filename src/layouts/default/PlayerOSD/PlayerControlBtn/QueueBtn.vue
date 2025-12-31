@@ -9,7 +9,7 @@
         !store.showQueueItems)
     "
     size="icon"
-    variant="ghost"
+    variant="ghost-icon"
     @click="onClick"
   >
     <ListVideo

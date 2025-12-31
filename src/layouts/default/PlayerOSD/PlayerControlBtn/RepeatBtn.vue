@@ -4,7 +4,7 @@
     v-bind="icon"
     :disabled="!playerQueue.active || playerQueue.items == 0"
     size="icon"
-    variant="ghost"
+    variant="ghost-icon"
     @click="
       api.queueCommandRepeat(
         playerQueue.queue_id || '',

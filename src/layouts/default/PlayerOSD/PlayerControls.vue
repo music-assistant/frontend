@@ -106,12 +106,28 @@ withDefaults(defineProps<Props>(), {
 .player-controls {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 16px;
 }
 .player-controls-elements {
-  width: 46px;
-  height: 46px;
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 40px; /* Consistent height for alignment */
+}
+
+/* Play button container - allow it to be larger */
+.player-controls > div:has(.media-controls-item-play),
+.player-controls > div:has(button.rounded-full) {
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .player-controls {
+    gap: 4px;
+  }
 }
 </style>

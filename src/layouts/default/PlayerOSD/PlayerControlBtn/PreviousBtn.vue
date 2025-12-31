@@ -4,7 +4,7 @@
     v-bind="icon"
     :disabled="!canPrevious"
     size="icon"
-    variant="ghost"
+    variant="ghost-icon"
     @click="api.playerCommandPrevious(player.player_id)"
   >
     <StepBack :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'" />

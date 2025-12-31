@@ -10,9 +10,14 @@
     <v-card :color="backgroundColor">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
-          <Button icon @click="store.showFullscreenPlayer = false">
-            <v-icon icon="mdi-chevron-down" />
-          </Button>
+          <ButtonUI
+            size="icon"
+            variant="ghost"
+            class="ml-4"
+            @click="store.showFullscreenPlayer = false"
+          >
+            <ChevronDown class="size-6" />
+          </ButtonUI>
         </template>
         <template #append>
           <v-menu v-if="store.activePlayerQueue?.radio_source.length" scrim>
@@ -39,9 +44,59 @@
 
           <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
 
-          <Button icon @click.stop="openQueueMenu">
-            <v-icon icon="mdi-dots-vertical" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <ButtonUI size="icon" variant="ghost">
+                <EllipsisVertical class="size-6" />
+              </ButtonUI>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="z-[10000]">
+              <template v-for="item in playerMenuItems" :key="item.label">
+                <DropdownMenuSub v-if="item.subItems?.length">
+                  <DropdownMenuSubTrigger class="gap-3">
+                    <v-icon
+                      v-if="item.icon && typeof item.icon === 'string'"
+                      :icon="item.icon"
+                      class="size-4"
+                    />
+                    <span>{{ $t(item.label, item.labelArgs || []) }}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent :side-offset="8">
+                    <DropdownMenuItem
+                      v-for="subItem in item.subItems"
+                      :key="subItem.label"
+                      :disabled="subItem.disabled"
+                      class="gap-3"
+                      @click="subItem.action?.()"
+                    >
+                      <v-icon
+                        v-if="subItem.selected"
+                        icon="mdi-check"
+                        size="16"
+                        class="shrink-0"
+                      />
+                      <span v-else class="w-4 shrink-0"></span>
+                      <span>
+                        {{ $t(subItem.label, subItem.labelArgs || []) }}
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuItem
+                  v-else
+                  :disabled="item.disabled"
+                  @click="item.action?.()"
+                >
+                  <v-icon
+                    v-if="item.icon && typeof item.icon === 'string'"
+                    :icon="item.icon"
+                    class="size-4"
+                  />
+                  <span>{{ $t(item.label, item.labelArgs || []) }}</span>
+                </DropdownMenuItem>
+              </template>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </template>
       </v-toolbar>
 
@@ -389,54 +444,58 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <Icon
+          <!-- Heart button -->
+          <ButtonUI
             v-if="store.activePlayerQueue"
+            variant="ghost-icon"
             :disabled="!store.curQueueItem?.media_item"
-            :icon="
-              store.curQueueItem?.media_item?.favorite
-                ? 'mdi-heart'
-                : 'mdi-heart-outline'
-            "
-            :title="$t('tooltip.favorite')"
-            variant="button"
-            class="media-controls-item"
-            max-height="30px"
+            size="icon"
             @click="onHeartBtnClick"
-          />
+          >
+            <Heart
+              class="size-6"
+              :fill="
+                store.curQueueItem?.media_item?.favorite
+                  ? 'currentColor'
+                  : 'none'
+              "
+            />
+          </ButtonUI>
+          <!-- Shuffle button (desktop only) -->
           <ShuffleBtn
-            v-if="$vuetify.display.mdAndUp"
+            v-if="$vuetify.display.mdAndUp && store.activePlayerQueue"
             :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
+            :icon="{ iconSize: 5 }"
           />
+          <!-- Previous button -->
           <PreviousBtn
+            v-if="store.activePlayer"
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            :icon="{ iconSize: 8 }"
+            :icon="{ iconSize: 6 }"
           />
+          <!-- Play/Pause button -->
           <PlayBtn
+            v-if="store.activePlayer"
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            :icon="{ iconSize: 8, isFullscreen: true }"
+            :icon="{ iconSize: 6, isFullscreen: true }"
           />
+          <!-- Next button -->
           <NextBtn
+            v-if="store.activePlayer"
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            :icon="{ iconSize: 8 }"
+            :icon="{ iconSize: 6 }"
           />
+          <!-- Repeat button (desktop only) -->
           <RepeatBtn
-            v-if="$vuetify.display.mdAndUp"
+            v-if="$vuetify.display.mdAndUp && store.activePlayerQueue"
             :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            :icon="{ iconSize: 6 }"
+            :icon="{ iconSize: 5 }"
           />
-          <QueueBtn
-            v-if="store.activePlayerQueue"
-            :icon="{ iconSize: 6 }"
-            class="media-controls-item"
-          />
+          <!-- Queue button -->
+          <QueueBtn v-if="store.activePlayerQueue" :icon="{ iconSize: 5 }" />
         </div>
 
         <!-- volume control -->
@@ -514,13 +573,22 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { Button as ButtonUI } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import computeElapsedTime from "@/helpers/elapsed";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -560,6 +628,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import Color from "color";
+import { ChevronDown, EllipsisVertical, Heart } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -935,14 +1004,10 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
   });
 };
 
-const openQueueMenu = function (evt: Event) {
-  if (!store.activePlayer) return;
-  eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue),
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
-  });
-};
+const playerMenuItems = computed(() => {
+  if (!store.activePlayer) return [];
+  return getPlayerMenuItems(store.activePlayer, store.activePlayerQueue);
+});
 
 const queueCommand = function (item: QueueItem | undefined, command: string) {
   if (!item || !store.activePlayerQueue) return;
@@ -1308,26 +1373,10 @@ watchEffect(() => {
 
 .media-controls {
   display: flex;
-  flex: 1 1 auto;
   align-items: center;
-  justify-content: center;
-  max-width: 100%;
-  padding: 15px;
-  height: 100px;
-}
-
-.media-controls-item {
-  margin: 0 10px;
+  justify-content: space-between;
   width: 100%;
-  height: 100%;
-}
-
-@media (max-width: 768px) {
-  .media-controls-item {
-    margin: 0 5px;
-    width: 100%;
-    height: 100%;
-  }
+  padding: 10px 5%;
 }
 
 .row {
@@ -1338,10 +1387,6 @@ watchEffect(() => {
   justify-content: center;
   max-width: 100%;
   padding: 15px;
-}
-
-.media-controls > button {
-  flex: 1 1 auto;
 }
 
 .media-controls-bottom {
@@ -1355,10 +1400,6 @@ watchEffect(() => {
   flex-basis: 0;
   flex-grow: 1;
   max-width: 100%;
-}
-
-.media-controls > div {
-  width: calc(100% / 3);
 }
 
 .mediacontrols-right {

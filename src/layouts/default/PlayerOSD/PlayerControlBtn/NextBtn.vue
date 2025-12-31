@@ -4,7 +4,7 @@
     v-bind="icon"
     :disabled="!canNext"
     size="icon"
-    variant="ghost"
+    variant="ghost-icon"
     @click="api.playerCommandNext(player.player_id)"
   >
     <StepForward
