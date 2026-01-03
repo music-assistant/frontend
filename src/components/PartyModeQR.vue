@@ -45,9 +45,11 @@ const generateQRCode = async () => {
     const url = (await api.sendCommand("webserver/party_mode_url")) as string;
 
     if (url) {
+      // Set URL first to trigger v-else-if condition
       qrCodeUrl.value = url;
 
-      // Wait for DOM to be ready
+      // Wait for DOM to be ready - need multiple ticks to ensure canvas is mounted
+      await nextTick();
       await nextTick();
 
       // Generate QR code on canvas with MA brand blue and transparent background
@@ -60,6 +62,20 @@ const generateQRCode = async () => {
             light: "#00000000", // Transparent background
           },
         });
+      } else {
+        // Canvas not ready, try again after a small delay
+        setTimeout(async () => {
+          if (qrCanvas.value) {
+            await QRCode.toCanvas(qrCanvas.value, url, {
+              width: 220,
+              margin: 3,
+              color: {
+                dark: "#03a9f4", // Music Assistant brand blue
+                light: "#00000000", // Transparent background
+              },
+            });
+          }
+        }, 50);
       }
     } else {
       qrCodeUrl.value = "";

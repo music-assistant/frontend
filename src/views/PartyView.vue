@@ -8,9 +8,17 @@
         <PartyModeQR />
       </div>
 
-      <!-- Track Stack -->
+      <!-- Track Stack or Empty State -->
       <div class="track-stack">
-        <TransitionGroup name="track-slide" tag="div" class="track-list">
+        <!-- Empty State -->
+        <div v-if="!store.curQueueItem && !visibleItems.length" class="empty-state">
+          <v-icon size="120" icon="mdi-music-off" class="empty-icon" />
+          <h2 class="empty-title">Nothing Playing Right Now</h2>
+          <p class="empty-message">Play some music to get the party started!</p>
+        </div>
+
+        <!-- Track List -->
+        <TransitionGroup v-else name="track-slide" tag="div" class="track-list">
           <PartyTrackCard
             v-for="item in visibleItems"
             :key="item.queue_item_id"
@@ -382,6 +390,46 @@ watch(
   align-items: center;
 }
 
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem;
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+.empty-icon {
+  opacity: 0.5;
+  margin-bottom: 1.5rem;
+}
+
+.empty-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-message {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 500px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Transition animations */
 .track-slide-enter-active,
 .track-slide-leave-active {
@@ -425,6 +473,18 @@ watch(
   .qr-subtext {
     font-size: 0.75rem;
   }
+
+  .empty-icon {
+    font-size: 80px !important;
+  }
+
+  .empty-title {
+    font-size: 1.5rem;
+  }
+
+  .empty-message {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -438,6 +498,18 @@ watch(
 
   .track-list {
     height: 500px;
+  }
+
+  .empty-icon {
+    font-size: 60px !important;
+  }
+
+  .empty-title {
+    font-size: 1.25rem;
+  }
+
+  .empty-message {
+    font-size: 0.875rem;
   }
 }
 </style>
