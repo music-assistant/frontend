@@ -58,6 +58,8 @@ interface Store {
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
   isOnboarding: boolean;
+  partyModeEnabled: boolean;
+  isGuestMode: boolean;
 }
 
 export const store: Store = reactive({
@@ -128,4 +130,12 @@ export const store: Store = reactive({
   serverInfo: undefined,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
   isOnboarding: false,
+  partyModeEnabled: false,
+  isGuestMode: computed(() => {
+    // Check if guest mode is enabled via localStorage or if user role is guest
+    return (
+      localStorage.getItem("guest_mode") === "true" ||
+      (store.currentUser?.role as string) === "guest"
+    );
+  }),
 });
