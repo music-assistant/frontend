@@ -6,7 +6,7 @@
 import type { User } from "./api/interfaces";
 import { store } from "./store";
 
-const TOKEN_STORAGE_KEY = "auth_token";
+const TOKEN_STORAGE_KEY = "ma_access_token";
 
 export class AuthManager {
   private token: string | null = null;
