@@ -913,7 +913,8 @@
         "newest_episodes": "Newest episodes",
         "discover": "Discover",
         "libraries": "Libraries",
-        "library": "Library"
+        "library": "Library",
+        "trending_podcasts": "Trending podcasts"
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
