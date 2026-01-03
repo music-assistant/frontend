@@ -54,6 +54,7 @@ export const getMenuItems = function () {
         icon: PartyPopper,
         path: "/party",
         isLibraryNode: false,
+        hidden: !store.partyModeEnabled,
       });
     }
     if (enabledMenuItemStr === "artists") {

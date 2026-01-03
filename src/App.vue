@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
-import { UserRole } from "@/plugins/api/interfaces";
+import { ProviderType, UserRole } from "@/plugins/api/interfaces";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -196,6 +196,15 @@ const completeInitialization = async () => {
   store.libraryTracksCount = await api.getLibraryTracksCount();
   store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
   store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+
+  // Check if party mode plugin is enabled
+  try {
+    const partyModeProviders = await api.getProviderConfigs(ProviderType.PLUGIN, "party_mode");
+    store.partyModeEnabled = partyModeProviders.length > 0 && partyModeProviders[0].enabled;
+  } catch (error) {
+    console.error("[App] Failed to check party mode status:", error);
+    store.partyModeEnabled = false;
+  }
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server

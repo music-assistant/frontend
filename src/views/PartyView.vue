@@ -11,7 +11,10 @@
       <!-- Track Stack or Empty State -->
       <div class="track-stack">
         <!-- Empty State -->
-        <div v-if="!store.curQueueItem && !visibleItems.length" class="empty-state">
+        <div
+          v-if="!store.curQueueItem && !visibleItems.length"
+          class="empty-state"
+        >
           <v-icon size="120" icon="mdi-music-off" class="empty-icon" />
           <h2 class="empty-title">Nothing Playing Right Now</h2>
           <p class="empty-message">Play some music to get the party started!</p>
@@ -287,7 +290,7 @@ onMounted(async () => {
   // Fetch party mode configuration (for album art background setting)
   try {
     const config = (await api.sendCommand(
-      "webserver/party_mode_config",
+      "party_mode/config",
     )) as PartyModeConfig;
     if (config && config.album_art_background !== undefined) {
       albumArtBackgroundEnabled.value = config.album_art_background;

@@ -725,7 +725,7 @@ onMounted(async () => {
   // Fetch party mode configuration (token limits and refill rate)
   try {
     const config = (await api.sendCommand(
-      "webserver/party_mode_config",
+      "party_mode/config",
     )) as PartyModeConfig;
     if (config) {
       PLAY_NEXT_MAX_TOKENS.value = config.play_next_limit || 3;
@@ -761,9 +761,7 @@ onMounted(async () => {
 
   // Fetch party mode player configuration
   try {
-    partyModeQueueId.value = await api.sendCommand(
-      "webserver/party_mode_player",
-    );
+    partyModeQueueId.value = await api.sendCommand("party_mode/player");
   } catch (error) {
     console.error("Failed to fetch party mode player:", error);
   }

@@ -25,6 +25,7 @@
 import { ref, onMounted, watch, nextTick } from "vue";
 import QRCode from "qrcode";
 import api from "@/plugins/api";
+import { ProviderType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
@@ -34,15 +35,12 @@ const loading = ref(true);
 const generateQRCode = async () => {
   loading.value = true;
   try {
-    // Always fetch party mode enabled setting to ensure we have latest value
-    const partyModeEnabled = await api.getCoreConfigValue(
-      "webserver",
-      "party_mode_enabled",
-    );
-    store.partyModeEnabled = !!partyModeEnabled;
+    // Check if party_mode plugin provider is enabled
+    const providers = await api.getProviderConfigs(ProviderType.PLUGIN, "party_mode");
+    store.partyModeEnabled = providers.length > 0 && providers[0].enabled;
 
     // Fetch guest URL from backend (will return empty string if disabled)
-    const url = (await api.sendCommand("webserver/party_mode_url")) as string;
+    const url = (await api.sendCommand("party_mode/url")) as string;
 
     if (url) {
       // Set URL first to trigger v-else-if condition

@@ -241,6 +241,14 @@ const routes = [
         component: () =>
           import(/* webpackChunkName: "party" */ "@/views/PartyView.vue"),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
+        beforeEnter: (_to: any, _from: any, next: any) => {
+          // Only allow access if party mode plugin is enabled
+          if (!store.partyModeEnabled) {
+            next({ name: "home" });
+            return;
+          }
+          next();
+        },
       },
       {
         path: "/settings",
