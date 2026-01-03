@@ -411,7 +411,7 @@ const { t } = useI18n();
 // Storage keys
 const STORAGE_KEY_SERVER_ADDRESS = "mass_server_address";
 const STORAGE_KEY_REMOTE_ID = "mass_remote_id";
-const STORAGE_KEY_TOKEN = "auth_token";
+const STORAGE_KEY_TOKEN = "ma_access_token";
 
 // Props and emits
 const emit = defineEmits<{
