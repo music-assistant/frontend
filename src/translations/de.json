@@ -1003,7 +1003,9 @@
         "no_players_selected": "Alle Wiedergabegeräte (ohne Einschränkungen)",
         "no_providers_selected": "Alle Musikanbieter (ohne Einschränkungen)",
         "select_players": "Wähle Wiedergabegeräte",
-        "select_providers": "Wähle Musikanbieter"
+        "select_providers": "Wähle Musikanbieter",
+        "save_changes": "Änderungen speichern",
+        "update_password": "Passwort aktualisieren"
     },
     "login": {
         "subtitle": "Verbinde dich mit deinem Musikserver",
@@ -1101,5 +1103,6 @@
         "currently_playing": "Derzeit abgespielt auf",
         "click_to_change": "Klicke unten, um das Ausgabegerät zu ändern."
     },
-    "more_options": "Mehr Optionen"
+    "more_options": "Mehr Optionen",
+    "edit": "Bearbeiten"
 }

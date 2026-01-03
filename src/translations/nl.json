@@ -1003,7 +1003,9 @@
         "no_players_selected": "Alle spelers (geen beperkingen)",
         "no_providers_selected": "Alle providers (geen beperkingen)",
         "select_players": "Selecteer spelers",
-        "select_providers": "Selecteer providers"
+        "select_providers": "Selecteer providers",
+        "save_changes": "Wijzigingen opslaan",
+        "update_password": "Wachtwoord bijwerken"
     },
     "login": {
         "subtitle": "Maak verbinding met je muziekserver",
@@ -1101,5 +1103,6 @@
         "currently_playing": "Speelt nu af op",
         "click_to_change": "Klik hieronder om het uitvoerapparaat te wijzigen"
     },
-    "more_options": "Meer opties"
+    "more_options": "Meer opties",
+    "edit": "Bewerken"
 }
