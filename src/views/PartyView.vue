@@ -42,9 +42,25 @@ import {
 const theme = useTheme();
 const route = useRoute();
 
-// Check if album art background is enabled via query parameter
+// Party mode configuration
+interface PartyModeConfig {
+  play_next_limit: number;
+  play_next_refill_minutes: number;
+  add_queue_limit: number;
+  add_queue_refill_minutes: number;
+  album_art_background: boolean;
+}
+
+const albumArtBackgroundEnabled = ref(true); // Default to true
+
+// Check if album art background is enabled - prioritize query parameter over config
 const useAlbumArtBackground = computed(() => {
-  return !!route.query.albumArtBackground;
+  // Query parameter takes precedence for manual override
+  if (route.query.albumArtBackground !== undefined) {
+    return !!route.query.albumArtBackground;
+  }
+  // Otherwise use config value
+  return albumArtBackgroundEnabled.value;
 });
 
 // Queue items state
@@ -112,7 +128,7 @@ const getPosition = (item: QueueItem) => {
 };
 
 // Queue data fetching with identity preservation
-const fetchQueueItems = async () => {
+const fetchQueueItems = async (force = false) => {
   if (!store.activePlayerQueue) {
     queueItems.value = [];
     lastFetchedOffset.value = 0;
@@ -124,14 +140,14 @@ const fetchQueueItems = async () => {
   // Fetch 6 items: 2 previous + current + 2 next + 1 buffer for smooth transitions
   const limit = 6;
 
-  // Only fetch if we've moved outside our current buffer
+  // Only fetch if we've moved outside our current buffer (unless forced)
   // Check if current position is still within our fetched range
   const isWithinBuffer =
     queueItems.value.length > 0 &&
     currentIndex >= lastFetchedOffset.value &&
     currentIndex < lastFetchedOffset.value + queueItems.value.length - 2;
 
-  if (isWithinBuffer) {
+  if (!force && isWithinBuffer) {
     return;
   }
 
@@ -259,7 +275,20 @@ const backgroundStyle = computed(() => {
 });
 
 // Lifecycle and event subscriptions
-onMounted(() => {
+onMounted(async () => {
+  // Fetch party mode configuration (for album art background setting)
+  try {
+    const config = (await api.sendCommand(
+      "webserver/party_mode_config",
+    )) as PartyModeConfig;
+    if (config && config.album_art_background !== undefined) {
+      albumArtBackgroundEnabled.value = config.album_art_background;
+    }
+  } catch (error) {
+    console.error("Failed to fetch party mode config:", error);
+    // Use default (true) if fetch fails
+  }
+
   // Initial fetch
   fetchQueueItems();
 
@@ -268,13 +297,16 @@ onMounted(() => {
     EventType.QUEUE_ITEMS_UPDATED,
     (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
-      fetchQueueItems();
+      // Force refetch when items are added/removed (e.g., Play Next)
+      // This ensures the view updates even if we're "within buffer"
+      fetchQueueItems(true);
     },
   );
 
   // Subscribe to queue updates (for index changes)
   const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
     if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
+    // Don't force refetch for index changes - let buffer optimization work
     fetchQueueItems();
   });
 

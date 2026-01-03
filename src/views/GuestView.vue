@@ -2,18 +2,18 @@
   <div class="guest-view">
     <!-- Header -->
     <div class="guest-header">
-      <div class="header-content">
+      <!-- <div class="header-content">
         <h1 class="guest-title">🎵 Party Queue</h1>
         <p class="guest-subtitle">Search for songs and add them to the queue</p>
-      </div>
+      </div> -->
       <v-btn
         variant="text"
         size="small"
         class="exit-guest-btn"
         @click="exitGuestMode"
       >
-        <v-icon start>mdi-exit-to-app</v-icon>
-        Exit Guest Mode
+        <v-icon :start="!isMobile">mdi-exit-to-app</v-icon>
+        <span v-if="!isMobile">Exit Guest Mode</span>
       </v-btn>
     </div>
 
@@ -56,6 +56,13 @@
             >{{ playNextTokens }}/{{ PLAY_NEXT_MAX_TOKENS }}</span
           >
           <span class="token-label">Play Next available</span>
+          <span
+            v-if="playNextTokens < PLAY_NEXT_MAX_TOKENS && nextTokenCountdown"
+            class="token-countdown"
+          >
+            <v-icon size="x-small">mdi-clock-outline</v-icon>
+            {{ nextTokenCountdown }}
+          </span>
         </div>
       </div>
       <div ref="resultsListRef" class="results-list" @scroll="handleScroll">
@@ -127,13 +134,13 @@
     </div>
 
     <!-- Initial State -->
-    <div v-else-if="!searching && !searchQuery" class="empty-state">
+    <!-- <div v-else-if="!searching && !searchQuery" class="empty-state">
       <v-icon size="64" color="primary">mdi-music-note-plus</v-icon>
       <p>Start searching to add songs to the queue</p>
       <p class="empty-hint">
         Search for your favorite tracks, artists, or albums
       </p>
-    </div>
+    </div> -->
 
     <!-- Current Queue Section - Hidden when search results are showing -->
     <div
@@ -222,6 +229,9 @@ import { getMediaItemImageUrl } from "@/helpers/utils";
 
 const router = useRouter();
 
+// Responsive state
+const isMobile = computed(() => store.mobileLayout);
+
 // Search state
 const searchQuery = ref("");
 const searchResults = ref<any[]>([]);
@@ -258,11 +268,14 @@ interface PartyModeConfig {
   play_next_refill_minutes: number;
   add_queue_limit: number;
   add_queue_refill_minutes: number;
+  album_art_background: boolean;
 }
 
 const playNextTokens = ref(3);
 const addQueueTokens = ref(10);
 const playNextAvailable = computed(() => playNextTokens.value > 0);
+const nextTokenCountdown = ref<string>("");
+let countdownInterval: ReturnType<typeof setInterval> | null = null;
 
 // Generic token bucket functions
 const loadTokenBucket = (
@@ -368,6 +381,42 @@ const getTimeUntilNextAddQueueToken = (): number => {
   return Math.ceil(timeUntilNext / 1000 / 60); // Return minutes
 };
 
+// Format countdown timer for next token
+const formatCountdown = (milliseconds: number): string => {
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
+  return `${seconds}s`;
+};
+
+// Update countdown display
+const updateCountdown = () => {
+  const bucket = loadTokenBucket(
+    PLAY_NEXT_STORAGE_KEY,
+    PLAY_NEXT_MAX_TOKENS.value,
+    PLAY_NEXT_REFILL_RATE.value,
+  );
+
+  // Always update the token count display
+  playNextTokens.value = bucket.tokens;
+
+  if (bucket.tokens >= PLAY_NEXT_MAX_TOKENS.value) {
+    nextTokenCountdown.value = "";
+    return;
+  }
+
+  const timeSinceRefill = Date.now() - bucket.lastRefill;
+  const timeUntilNext =
+    PLAY_NEXT_REFILL_RATE.value -
+    (timeSinceRefill % PLAY_NEXT_REFILL_RATE.value);
+
+  nextTokenCountdown.value = formatCountdown(timeUntilNext);
+};
+
 // Queue state
 const queueItems = ref<QueueItem[]>([]);
 const partyModeQueueId = ref<string | null>(null);
@@ -400,7 +449,13 @@ const scrollToCurrentItem = async () => {
     const containerRect = container.getBoundingClientRect();
     const itemRect = activeItem.getBoundingClientRect();
     const relativeTop = itemRect.top - containerRect.top + container.scrollTop;
-    container.scrollTo({ top: relativeTop, behavior: "smooth" });
+
+    // Center the item in the viewport, accounting for container height
+    const containerHeight = containerRect.height;
+    const itemHeight = itemRect.height;
+    const centeredTop = relativeTop - containerHeight / 2 + itemHeight / 2;
+
+    container.scrollTo({ top: Math.max(0, centeredTop), behavior: "smooth" });
   }
 };
 
@@ -700,6 +755,10 @@ onMounted(async () => {
   );
   addQueueTokens.value = addQueueBucket.tokens;
 
+  // Start countdown timer
+  updateCountdown();
+  countdownInterval = setInterval(updateCountdown, 1000);
+
   // Fetch party mode player configuration
   try {
     partyModeQueueId.value = await api.sendCommand(
@@ -719,7 +778,8 @@ onMounted(async () => {
       const queueId =
         partyModeQueueId.value || store.activePlayerQueue?.queue_id;
       if (evt.object_id === queueId) {
-        fetchQueueItems();
+        // When items are added/removed, do a full reset to recalculate offset
+        fetchQueueItems(true);
       }
     },
   );
@@ -727,13 +787,30 @@ onMounted(async () => {
   const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
     const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
     if (evt.object_id === queueId) {
-      fetchQueueItems();
+      // Check if current index has moved outside our fetched range
+      const currentIdx = currentQueueIndex.value;
+      const fetchedStart = queueFetchOffset.value;
+      const fetchedEnd = queueFetchOffset.value + queueItems.value.length;
+
+      // Only reset if current index is outside our fetched range
+      // or if we're getting close to the boundaries (within 5 items)
+      if (
+        currentIdx < fetchedStart + 5 ||
+        currentIdx > fetchedEnd - 5 ||
+        queueItems.value.length === 0
+      ) {
+        fetchQueueItems(true);
+      }
+      // Otherwise, just let the watchers handle scrolling to the current item
     }
   });
 
   onBeforeUnmount(() => {
     unsub1();
     unsub2();
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
   });
 });
 </script>
@@ -764,13 +841,22 @@ onMounted(async () => {
 .exit-guest-btn {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
   opacity: 0.7;
   transition: opacity 0.2s ease;
+  min-width: auto;
+  padding: 0.5rem;
 }
 
 .exit-guest-btn:hover {
   opacity: 1;
+}
+
+/* Icon-only button on mobile */
+@media (max-width: 768px) {
+  .exit-guest-btn {
+    padding: 0.25rem;
+  }
 }
 
 .guest-title {
@@ -843,6 +929,17 @@ onMounted(async () => {
 .token-label {
   font-size: 0.875rem;
   opacity: 0.8;
+}
+
+.token-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-secondary));
+  padding-left: 0.5rem;
+  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.2);
 }
 
 .results-section {
@@ -1053,12 +1150,6 @@ onMounted(async () => {
 
   .guest-header {
     margin-bottom: 1.5rem;
-  }
-
-  .exit-guest-btn {
-    position: static;
-    margin-top: 1rem;
-    width: 100%;
   }
 
   .guest-title {
