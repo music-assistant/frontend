@@ -715,7 +715,7 @@ const exitGuestMode = () => {
   // Clear guest mode flag
   localStorage.removeItem("guest_mode");
   // Clear auth token
-  localStorage.removeItem("auth_token");
+  localStorage.removeItem("ma_access_token");
   // Redirect to home page (which will trigger normal login flow)
   window.location.href = "/";
 };

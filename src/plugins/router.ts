@@ -16,7 +16,7 @@ const routes = [
           const token = to.query.token as string;
           if (token) {
             // Store the token using the correct storage key
-            localStorage.setItem("auth_token", token);
+            localStorage.setItem("ma_access_token", token);
 
             // Store the server address derived from the URL the guest accessed
             // This is needed for new users/devices that have never connected before
@@ -31,7 +31,7 @@ const routes = [
             // Small delay to ensure localStorage write completes
             await new Promise((resolve) => setTimeout(resolve, 50));
 
-            // Navigate to guest without token in URL (removes ?token=xxx)
+            // Navigate to guest without token in URL (removes ?ma_access_token=xxx)
             // This avoids full page reload and preserves app state
             next({ name: "guest", replace: true });
             return;
