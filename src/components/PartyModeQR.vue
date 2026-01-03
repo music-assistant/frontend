@@ -36,7 +36,10 @@ const generateQRCode = async () => {
   loading.value = true;
   try {
     // Check if party_mode plugin provider is enabled
-    const providers = await api.getProviderConfigs(ProviderType.PLUGIN, "party_mode");
+    const providers = await api.getProviderConfigs(
+      ProviderType.PLUGIN,
+      "party_mode",
+    );
     store.partyModeEnabled = providers.length > 0 && providers[0].enabled;
 
     // Fetch guest URL from backend (will return empty string if disabled)

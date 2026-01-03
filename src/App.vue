@@ -199,8 +199,12 @@ const completeInitialization = async () => {
 
   // Check if party mode plugin is enabled
   try {
-    const partyModeProviders = await api.getProviderConfigs(ProviderType.PLUGIN, "party_mode");
-    store.partyModeEnabled = partyModeProviders.length > 0 && partyModeProviders[0].enabled;
+    const partyModeProviders = await api.getProviderConfigs(
+      ProviderType.PLUGIN,
+      "party_mode",
+    );
+    store.partyModeEnabled =
+      partyModeProviders.length > 0 && partyModeProviders[0].enabled;
   } catch (error) {
     console.error("[App] Failed to check party mode status:", error);
     store.partyModeEnabled = false;
