@@ -1,20 +1,37 @@
 <template>
-  <!-- play/pause button: disabled if no content -->
-  <Icon
+  <Button
     v-if="isVisible && player"
-    v-bind="icon"
     :disabled="!canPlayPause"
-    :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
-    variant="button"
+    variant="inverted"
+    :class="
+      icon?.isFullscreen
+        ? 'rounded-full h-14 w-14 min-w-14 min-h-14 p-0 flex-shrink-0'
+        : 'rounded-full h-11 w-11 min-w-11 min-h-11 p-0 flex-shrink-0'
+    "
     @click="api.playerCommandPlayPause(player.player_id)"
-  />
+  >
+    <Pause
+      v-if="player.playback_state == PlaybackState.PLAYING"
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+      fill="currentColor"
+    />
+    <Play
+      v-else
+      :class="icon?.iconSize ? `size-${icon?.iconSize}` : 'size-4'"
+      fill="currentColor"
+    />
+  </Button>
 </template>
 
 <script setup lang="ts">
-import Icon, { IconProps } from "@/components/Icon.vue";
+import {
+  Button,
+  type ButtonVariants as ButtonProps,
+} from "@/components/ui/button";
+import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
-import { useActiveSource } from "@/composables/activeSource";
+import { Pause, Play } from "lucide-vue-next";
 import { computed, toRef } from "vue";
 
 // properties
@@ -23,7 +40,7 @@ export interface Props {
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
   withCircle?: boolean;
-  icon?: IconProps;
+  icon?: ButtonProps & { iconSize?: number; isFullscreen?: boolean };
   iconStyle?: string;
 }
 const compProps = withDefaults(defineProps<Props>(), {
@@ -55,12 +72,5 @@ const canPlayPause = computed(() => {
   }
   // Fall back to queue or player capabilities
   return queueCanPlay.value || playerCanPlay.value;
-});
-
-const baseIcon = computed(() => {
-  if (compProps.player?.playback_state == PlaybackState.PLAYING) {
-    return "mdi-pause";
-  }
-  return "mdi-play";
 });
 </script>

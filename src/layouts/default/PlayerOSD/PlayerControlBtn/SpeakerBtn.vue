@@ -5,7 +5,7 @@
       <Button variant="icon" :ripple="false" icon @click="openPlayersMenu">
         <v-icon
           :color="color ? color : ''"
-          :size="24"
+          :size="20"
           :icon="
             store.activePlayer?.group_members.length
               ? 'mdi-speaker-multiple'
@@ -39,16 +39,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import Button from "@/components/Button.vue";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 export interface Props {
   color?: string;
