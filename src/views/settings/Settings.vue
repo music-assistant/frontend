@@ -36,35 +36,34 @@
       variant="comfortable"
       class="settings-overview"
     >
-      <v-card class="settings-main-card">
-        <v-list class="settings-list">
-          <v-list-item
-            v-for="section in settingsSections"
-            :key="section.name"
-            :ripple="true"
-            class="settings-list-item"
-            @click="router.push(section.route)"
-          >
-            <template #prepend>
-              <v-avatar :color="section.color" size="48">
-                <v-icon :icon="section.icon" size="24" color="white" />
-              </v-avatar>
-            </template>
-
-            <v-list-item-title class="text-h6">
+      <div class="settings-grid">
+        <Card
+          v-for="section in settingsSections"
+          :key="section.name"
+          class="setting-card"
+          @click="router.push(section.route)"
+        >
+          <CardHeader class="setting-card-header">
+            <div class="setting-header-top">
+              <div
+                class="setting-icon"
+                :style="getIconBackgroundStyle(section.color)"
+              >
+                <Icon :icon="section.icon" size="24" color="white" />
+              </div>
+              <div class="setting-chevron">
+                <Icon icon="mdi-chevron-right" size="20" />
+              </div>
+            </div>
+            <CardTitle class="setting-title">
               {{ t(section.label) }}
-            </v-list-item-title>
-
-            <v-list-item-subtitle>
+            </CardTitle>
+            <CardDescription class="setting-description">
               {{ t(section.description) }}
-            </v-list-item-subtitle>
-
-            <template #append>
-              <v-icon icon="mdi-chevron-right" />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card>
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     </Container>
 
     <!-- Settings Subsections -->
@@ -76,7 +75,14 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import Icon from "@/components/Icon.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -234,6 +240,20 @@ const settingsSections = computed(() => {
   const isAdmin = authManager.isAdmin();
   return allSettingsSections.filter((section) => !section.adminOnly || isAdmin);
 });
+
+const getIconBackgroundStyle = (color: string) => {
+  const colorMap: Record<string, string> = {
+    indigo: "rgb(99, 102, 241)",
+    blue: "rgb(59, 130, 246)",
+    green: "rgb(34, 197, 94)",
+    purple: "rgb(168, 85, 247)",
+    "deep-purple": "rgb(124, 58, 237)",
+    orange: "rgb(249, 115, 22)",
+    teal: "rgb(20, 184, 166)",
+    "grey-darken-1": "rgb(158, 158, 158)",
+  };
+  return { backgroundColor: colorMap[color] || colorMap.indigo };
+};
 
 // computed properties
 const isOverview = computed(() => {
@@ -429,66 +449,137 @@ const documentationUrl = computed(() => {
 
 <style scoped>
 .settings-overview {
-  padding: 24px;
-  max-width: 800px;
+  padding: 32px 24px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.settings-main-card {
-  overflow: hidden;
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
 }
 
-.settings-list {
-  padding: 0;
-}
-
-.settings-list-item {
+.setting-card {
   cursor: pointer;
-  padding: 20px 24px;
-  min-height: 80px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-.settings-list-item:last-child {
-  border-bottom: none;
+.setting-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
-.settings-list-item:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
+.setting-card-header {
+  position: relative;
+  padding: 10px 24px 10px 24px;
 }
 
-.settings-list-item :deep(.v-list-item__prepend) {
-  margin-right: 16px;
+.setting-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
-.v-avatar {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+.setting-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.setting-card:hover .setting-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.setting-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.setting-description {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin: 0;
+}
+
+.setting-chevron {
+  opacity: 0.4;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(var(--v-theme-on-surface), 0.05);
+  flex-shrink: 0;
+}
+
+.setting-card:hover .setting-chevron {
+  opacity: 1;
+  transform: translateX(4px);
+  background: rgba(var(--v-theme-primary), 0.1);
+  color: rgb(var(--v-theme-primary));
 }
 
 /* Mobile optimizations */
-@media (max-width: 600px) {
-  .settings-list-item {
-    padding: 12px 16px;
-    min-height: 64px;
+@media (max-width: 768px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
-  .settings-list-item :deep(.v-list-item__prepend) {
-    margin-right: 12px;
+  .settings-overview {
+    padding: 20px 16px;
   }
 
-  .settings-list-item :deep(.v-avatar) {
-    width: 40px !important;
-    height: 40px !important;
+  .setting-card-header {
+    padding: 20px;
+    padding-bottom: 16px;
   }
 
-  .settings-list-item :deep(.v-list-item-title) {
-    font-size: 1rem !important;
-    line-height: 1.3;
+  .setting-header-top {
+    margin-bottom: 12px;
   }
 
-  .settings-list-item :deep(.v-list-item-subtitle) {
-    font-size: 0.813rem !important;
-    line-height: 1.3;
+  .setting-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .setting-chevron {
+    width: 28px;
+    height: 28px;
+  }
+
+  .setting-title {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-overview {
+    padding: 16px 12px;
+  }
+
+  .setting-card-header {
+    padding: 16px;
   }
 }
 </style>
