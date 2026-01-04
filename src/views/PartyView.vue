@@ -354,7 +354,7 @@ watch(
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(2vw);
   z-index: 0;
 }
 
@@ -364,12 +364,12 @@ watch(
   width: 100%;
   height: 100%;
   display: flex;
-  padding: 2rem;
-  gap: 2rem;
+  padding: 2vw;
+  gap: 2vw;
 }
 
 .qr-section {
-  flex: 0 0 300px;
+  flex: 0 0 42vw;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,7 +387,7 @@ watch(
 .track-list {
   position: relative;
   width: 100%;
-  height: 800px;
+  height: 80vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -453,16 +453,16 @@ watch(
   }
 
   .qr-section {
-    flex: 0 0 120px;
+    flex: 0 0 12vh;
   }
 
   .track-list {
-    height: 600px;
+    height: 60vh;
   }
 
   .qr-box {
-    width: 120px;
-    height: 120px;
+    width: 12vh;
+    height: 12vh;
   }
 
   .qr-icon {
@@ -500,7 +500,7 @@ watch(
   }
 
   .track-list {
-    height: 500px;
+    height: 50vh;
   }
 
   .empty-icon {

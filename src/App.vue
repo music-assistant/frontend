@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
-import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import { EventType, ProviderType, UserRole } from "@/plugins/api/interfaces";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -320,5 +320,19 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
+
+  // Subscribe to PROVIDERS_UPDATED to keep partyModeEnabled in sync
+  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    try {
+      const partyModeProviders = await api.getProviderConfigs(
+        ProviderType.PLUGIN,
+        "party_mode",
+      );
+      store.partyModeEnabled =
+        partyModeProviders.length > 0 && partyModeProviders[0].enabled;
+    } catch (error) {
+      console.error("[App] Failed to update party mode status:", error);
+    }
+  });
 });
 </script>

@@ -87,15 +87,15 @@ const infoSizeClass = computed(() => {
   top: 50%;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding: 1rem;
-  border-radius: 12px;
+  gap: 1.5vw;
+  padding: 1vw;
+  border-radius: 1.2vw;
   background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(1vw);
   width: 100%;
-  max-width: 800px;
+  max-width: 80vw;
   /* Transform combines centering, vertical position, and scale */
-  transform: translateX(-50%) translateY(calc(-50% + var(--y, 0px)))
+  transform: translateX(-50%) translateY(calc(-50% + var(--y, 0vh)))
     scale(var(--scale, 1));
   opacity: var(--opacity, 1);
   z-index: var(--z-index, 1);
@@ -109,49 +109,49 @@ const infoSizeClass = computed(() => {
 }
 
 .track-card.position-previous-2 {
-  --y: -300px;
+  --y: -30vh;
   --scale: 0.85;
   --opacity: 0.5;
   --z-index: 1;
-  max-width: 680px;
+  max-width: 68vw;
 }
 
 .track-card.position-previous-1 {
-  --y: -190px;
+  --y: -19vh;
   --scale: 0.9;
   --opacity: 0.7;
   --z-index: 2;
-  max-width: 720px;
+  max-width: 72vw;
 }
 
 .track-card.position-current {
-  --y: 0px;
+  --y: 0vh;
   --scale: 1;
   --opacity: 1;
   --z-index: 3;
   background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0.8vh 3.2vh rgba(0, 0, 0, 0.3);
 }
 
 .track-card.position-next-1 {
-  --y: 190px;
+  --y: 19vh;
   --scale: 0.9;
   --opacity: 0.7;
   --z-index: 2;
-  max-width: 720px;
+  max-width: 72vw;
 }
 
 .track-card.position-next-2 {
-  --y: 300px;
+  --y: 30vh;
   --scale: 0.85;
   --opacity: 0.5;
   --z-index: 1;
-  max-width: 680px;
+  max-width: 68vw;
 }
 
 .track-artwork {
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 0.8vw;
   overflow: hidden;
   transition:
     width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
@@ -159,18 +159,18 @@ const infoSizeClass = computed(() => {
 }
 
 .track-artwork.size-small {
-  width: 80px;
-  height: 80px;
+  width: 8vh;
+  height: 8vh;
 }
 
 .track-artwork.size-medium {
-  width: 120px;
-  height: 120px;
+  width: 12vh;
+  height: 12vh;
 }
 
 .track-artwork.size-large {
-  width: 200px;
-  height: 200px;
+  width: 20vh;
+  height: 20vh;
 }
 
 .track-info {
@@ -236,8 +236,8 @@ const infoSizeClass = computed(() => {
   }
 
   .track-artwork.size-large {
-    width: 120px;
-    height: 120px;
+    width: 12vh;
+    height: 12vh;
   }
 
   .track-info.size-large .track-name {

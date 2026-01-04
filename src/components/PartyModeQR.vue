@@ -3,6 +3,11 @@
     <div v-if="loading" class="qr-loading">
       <v-progress-circular indeterminate />
     </div>
+    <div v-else-if="!guestAccessEnabled" class="qr-disabled">
+      <v-icon size="64" icon="mdi-qrcode-off" />
+      <p>Guest Access Disabled</p>
+      <p class="qr-hint">Enable in party mode plugin settings</p>
+    </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
       <a
         :href="qrCodeUrl"
@@ -14,75 +19,76 @@
       </a>
       <p class="qr-instructions">Scan to join the party!</p>
     </div>
-    <div v-else class="qr-disabled">
-      <v-icon size="64" icon="mdi-qrcode-off" />
-      <p>Party Mode Disabled</p>
+    <div v-else class="qr-error">
+      <v-icon size="64" icon="mdi-alert-circle-outline" />
+      <p>Failed to generate QR code</p>
+      <p class="qr-hint">Check your network settings</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import QRCode from "qrcode";
 import api from "@/plugins/api";
-import { ProviderType } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
+import { EventType } from "@/plugins/api/interfaces";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrCodeUrl = ref<string>("");
+const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
+let unsubscribe: (() => void) | null = null;
 
 const generateQRCode = async () => {
   loading.value = true;
   try {
-    // Check if party_mode plugin provider is enabled
-    const providers = await api.getProviderConfigs(
-      ProviderType.PLUGIN,
-      "party_mode",
-    );
-    store.partyModeEnabled = providers.length > 0 && providers[0].enabled;
-
-    // Fetch guest URL from backend (will return empty string if disabled)
+    // Fetch guest URL from backend (will return empty string if guest access is disabled)
     const url = (await api.sendCommand("party_mode/url")) as string;
 
-    if (url) {
-      // Set URL first to trigger v-else-if condition
-      qrCodeUrl.value = url;
+    // Update guest access enabled state based on whether we got a URL
+    guestAccessEnabled.value = !!(url && url.trim() !== "");
 
-      // Wait for DOM to be ready - need multiple ticks to ensure canvas is mounted
-      await nextTick();
-      await nextTick();
-
-      // Generate QR code on canvas with MA brand blue and transparent background
-      if (qrCanvas.value) {
-        await QRCode.toCanvas(qrCanvas.value, url, {
-          width: 220,
-          margin: 3,
-          color: {
-            dark: "#03a9f4", // Music Assistant brand blue
-            light: "#00000000", // Transparent background
-          },
-        });
-      } else {
-        // Canvas not ready, try again after a small delay
-        setTimeout(async () => {
-          if (qrCanvas.value) {
-            await QRCode.toCanvas(qrCanvas.value, url, {
-              width: 220,
-              margin: 3,
-              color: {
-                dark: "#03a9f4", // Music Assistant brand blue
-                light: "#00000000", // Transparent background
-              },
-            });
-          }
-        }, 50);
-      }
-    } else {
+    // Always update qrCodeUrl to ensure UI reflects backend state
+    if (!guestAccessEnabled.value) {
       qrCodeUrl.value = "";
+      return;
+    }
+
+    // Set URL to trigger display
+    qrCodeUrl.value = url;
+
+    // Wait for DOM to be ready - need multiple ticks to ensure canvas is mounted
+    await nextTick();
+    await nextTick();
+
+    // Generate QR code on canvas with MA brand blue and transparent background
+    if (qrCanvas.value) {
+      await QRCode.toCanvas(qrCanvas.value, url, {
+        width: 320,
+        margin: 2,
+        color: {
+          dark: "#03a9f4", // Music Assistant brand blue
+          light: "#00000000", // Transparent background
+        },
+      });
+    } else {
+      // Canvas not ready, try again after a small delay
+      setTimeout(async () => {
+        if (qrCanvas.value) {
+          await QRCode.toCanvas(qrCanvas.value, url, {
+            width: 320,
+            margin: 2,
+            color: {
+              dark: "#03a9f4", // Music Assistant brand blue
+              light: "#00000000", // Transparent background
+            },
+          });
+        }
+      }, 50);
     }
   } catch (error) {
     console.error("Failed to generate QR code:", error);
+    guestAccessEnabled.value = false;
     qrCodeUrl.value = "";
   } finally {
     loading.value = false;
@@ -91,15 +97,31 @@ const generateQRCode = async () => {
 
 onMounted(async () => {
   await generateQRCode();
+
+  // Subscribe to PROVIDERS_UPDATED to detect when party_mode provider is reloaded
+  // When config changes, the provider is unloaded and reloaded, firing this event twice
+  unsubscribe = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    // Check if party_mode provider exists
+    const hasPartyMode = Object.values(api.providers).some(
+      (p) => p.domain === "party_mode",
+    );
+    if (hasPartyMode) {
+      // Regenerate QR code to reflect any config changes
+      // This will fetch the latest URL from the backend with updated config
+      await generateQRCode();
+    } else {
+      // Provider was unloaded, clear the QR code and mark as disabled
+      guestAccessEnabled.value = false;
+      qrCodeUrl.value = "";
+    }
+  });
 });
 
-// Regenerate if party mode setting changes
-watch(
-  () => store.partyModeEnabled,
-  () => {
-    generateQRCode();
-  },
-);
+onUnmounted(() => {
+  if (unsubscribe) {
+    unsubscribe();
+  }
+});
 </script>
 
 <style scoped>
@@ -108,12 +130,13 @@ watch(
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 250px;
+  width: 100%;
+  height: 100%;
 }
 
 .qr-display {
   text-align: center;
-  padding: 1.5rem;
+  padding: 2rem;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 16px;
   backdrop-filter: blur(10px);
@@ -155,5 +178,21 @@ watch(
 .qr-disabled p {
   margin-top: 0.5rem;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.qr-error {
+  text-align: center;
+  opacity: 0.6;
+}
+
+.qr-error p {
+  margin-top: 0.5rem;
+  color: rgba(255, 100, 100, 0.8);
+}
+
+.qr-hint {
+  font-size: 0.75rem;
+  margin-top: 0.25rem !important;
+  opacity: 0.7;
 }
 </style>

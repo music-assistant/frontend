@@ -50,7 +50,7 @@
         <h2 class="section-title">
           Search Results ({{ searchResults.length }})
         </h2>
-        <div class="play-next-tokens">
+        <div v-if="rateLimitingEnabled" class="play-next-tokens">
           <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
           <span class="token-count"
             >{{ playNextTokens }}/{{ PLAY_NEXT_MAX_TOKENS }}</span
@@ -98,7 +98,7 @@
               :loading="
                 addingItems.has(`${item.media_type}-${item.item_id}-next`)
               "
-              :disabled="playNextTokens <= 0"
+              :disabled="rateLimitingEnabled && playNextTokens <= 0"
               class="action-btn action-btn-primary"
               @click="addToQueue(item, 'next')"
             >
@@ -264,6 +264,7 @@ interface TokenBucket {
 }
 
 interface PartyModeConfig {
+  enable_rate_limiting: boolean;
   play_next_limit: number;
   play_next_refill_minutes: number;
   add_queue_limit: number;
@@ -271,6 +272,7 @@ interface PartyModeConfig {
   album_art_background: boolean;
 }
 
+const rateLimitingEnabled = ref(true); // Default to enabled
 const playNextTokens = ref(3);
 const addQueueTokens = ref(10);
 const playNextAvailable = computed(() => playNextTokens.value > 0);
@@ -550,25 +552,28 @@ const loadMoreResults = () => {
 
 // Add to queue functionality
 const addToQueue = async (item: any, position: "next" | "end") => {
-  // Check token bucket rate limit for "Play Next"
-  if (position === "next") {
-    if (!consumePlayNextToken()) {
-      const minutesUntilNext = getTimeUntilNextToken();
-      showSnackbar(
-        `Play Next limit reached. Next use available in ${minutesUntilNext} minutes.`,
-        "warning",
-      );
-      return;
-    }
-  } else {
-    // Check token bucket rate limit for "Add to Queue"
-    if (!consumeAddQueueToken()) {
-      const minutesUntilNext = getTimeUntilNextAddQueueToken();
-      showSnackbar(
-        `Add to Queue limit reached. Next use available in ${minutesUntilNext} minutes.`,
-        "warning",
-      );
-      return;
+  // Only check token limits if rate limiting is enabled
+  if (rateLimitingEnabled.value) {
+    // Check token bucket rate limit for "Play Next"
+    if (position === "next") {
+      if (!consumePlayNextToken()) {
+        const minutesUntilNext = getTimeUntilNextToken();
+        showSnackbar(
+          `Play Next limit reached. Next use available in ${minutesUntilNext} minutes.`,
+          "warning",
+        );
+        return;
+      }
+    } else {
+      // Check token bucket rate limit for "Add to Queue"
+      if (!consumeAddQueueToken()) {
+        const minutesUntilNext = getTimeUntilNextAddQueueToken();
+        showSnackbar(
+          `Add to Queue limit reached. Next use available in ${minutesUntilNext} minutes.`,
+          "warning",
+        );
+        return;
+      }
     }
   }
 
@@ -728,6 +733,7 @@ onMounted(async () => {
       "party_mode/config",
     )) as PartyModeConfig;
     if (config) {
+      rateLimitingEnabled.value = config.enable_rate_limiting ?? true;
       PLAY_NEXT_MAX_TOKENS.value = config.play_next_limit || 3;
       PLAY_NEXT_REFILL_RATE.value =
         (config.play_next_refill_minutes || 20) * 60 * 1000;
