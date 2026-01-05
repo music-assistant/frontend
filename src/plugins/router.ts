@@ -28,6 +28,10 @@ const routes = [
             // Mark as guest mode
             localStorage.setItem("guest_mode", "true");
 
+            // Update the AuthManager's cached token so it's available immediately
+            const { authManager } = await import("@/plugins/auth");
+            authManager.setToken(token);
+
             // Small delay to ensure localStorage write completes
             await new Promise((resolve) => setTimeout(resolve, 50));
 
