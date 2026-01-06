@@ -81,10 +81,21 @@ onMounted(() => {
 });
 
 const loadPlaylistTracks = async function (params: LoadDataParams) {
-  return await api.getPlaylistTracks(
+  const tracks = await api.getPlaylistTracks(
     props.itemId,
     props.provider,
     params.refresh,
   );
+
+  // For builtin playlists, also refresh the playlist metadata when refreshing tracks
+  // This ensures metadata (like genres) updates when the random album changes
+  if (params.refresh && props.provider === 'builtin' && itemDetails.value) {
+    const updatedInfo = await api.refreshItem(itemDetails.value);
+    if (updatedInfo) {
+      itemDetails.value = updatedInfo as Playlist;
+    }
+  }
+
+  return tracks;
 };
 </script>
