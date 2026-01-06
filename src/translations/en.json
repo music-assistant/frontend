@@ -80,6 +80,7 @@
     "queue_empty": "No items in the queue",
     "queue_move_down": "Move down",
     "queue_move_up": "Move up",
+    "queue_move_end": "Move to end",
     "queue_next_items": "Next items",
     "queue_options": "Queue options",
     "queue_previous_items": "Played items",

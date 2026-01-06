@@ -74,6 +74,7 @@
     "queue_empty": "Geen items in de wachtrij",
     "queue_move_down": "Verplaats omlaag",
     "queue_move_up": "Verplaats omhoog",
+    "queue_move_end": "Verplaats naar einde",
     "queue_next_items": "Aankomende items",
     "queue_options": "Wachtrij opties",
     "queue_previous_items": "Reeds afgespeelde items",
