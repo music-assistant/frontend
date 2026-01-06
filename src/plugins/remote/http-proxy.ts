@@ -242,6 +242,12 @@ class HttpProxyBridge {
   private handleServiceWorkerMessage(event: MessageEvent): void {
     const { type, data } = event.data;
 
+    console.log(
+      "[HttpProxyBridge] Received message from service worker:",
+      type,
+      data?.id,
+    );
+
     if (type === "http-proxy-request") {
       this.handleHttpProxyRequest(data);
     }
@@ -307,8 +313,20 @@ class HttpProxyBridge {
     path: string;
     headers: Record<string, string>;
   }): Promise<void> {
+    console.log(
+      "[HttpProxyBridge] Processing http-proxy-request:",
+      data.id,
+      data.method,
+      data.path,
+    );
+
     // Check if this request should be suppressed due to recent failures
     if (this.shouldSuppressRequest(data.path)) {
+      console.warn(
+        "[HttpProxyBridge] Request suppressed due to recent failures:",
+        data.id,
+        data.path,
+      );
       // Return a 503 Service Unavailable to indicate temporary failure
       // This prevents retry loops while still informing the client
       if (navigator.serviceWorker?.controller) {
@@ -332,12 +350,19 @@ class HttpProxyBridge {
 
     if (!this.transport) {
       console.error(
-        "[HttpProxyBridge] No transport available for HTTP proxy request",
+        "[HttpProxyBridge] No transport available for HTTP proxy request:",
+        data.id,
       );
       this.recordFailure(data.path);
       this.sendErrorResponse(data.id, 503, "No transport available");
       return;
     }
+
+    console.log(
+      "[HttpProxyBridge] Forwarding request to WebRTC transport:",
+      data.id,
+      data.path,
+    );
 
     try {
       // Send request through WebRTC
@@ -345,6 +370,13 @@ class HttpProxyBridge {
         data.method,
         data.path,
         data.headers,
+      );
+
+      console.log(
+        "[HttpProxyBridge] Received response from WebRTC transport:",
+        data.id,
+        "status:",
+        response.status,
       );
 
       // Clear any previous failure record on success (2xx or 4xx client errors)
@@ -355,6 +387,10 @@ class HttpProxyBridge {
 
       // Send response back to service worker
       if (navigator.serviceWorker?.controller) {
+        console.log(
+          "[HttpProxyBridge] Sending response back to service worker:",
+          data.id,
+        );
         navigator.serviceWorker.controller.postMessage({
           type: "http-proxy-response",
           data: {
@@ -364,6 +400,11 @@ class HttpProxyBridge {
             body: this.bytesToHex(response.body),
           },
         });
+      } else {
+        console.error(
+          "[HttpProxyBridge] No service worker controller available to send response:",
+          data.id,
+        );
       }
     } catch (error) {
       // Record the failure to prevent immediate retries
