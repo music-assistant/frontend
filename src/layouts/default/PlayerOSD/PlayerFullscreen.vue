@@ -850,8 +850,13 @@ const onTitleClick = async function () {
   // Try to get the track from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
 
+  console.log("onTitleClick - currentMedia:", currentMedia);
+  console.log("onTitleClick - mediaItem:", mediaItem);
+  console.log("onTitleClick - mediaItem.media_type:", mediaItem?.media_type);
+
   if (mediaItem && mediaItem.media_type === MediaType.TRACK) {
     // Navigate directly to track detail page
+    console.log("onTitleClick - navigating to track:", mediaItem.item_id, mediaItem.provider);
     store.showFullscreenPlayer = false;
     router.push({
       name: "track",
@@ -866,14 +871,19 @@ const onTitleClick = async function () {
       ? `${currentMedia.artist} - ${currentMedia.title}`
       : currentMedia.title || "";
 
+    console.log("onTitleClick - searching library with term:", searchTerm);
+
     try {
       const results = await api.getLibraryTracks({
         search: searchTerm,
         limit: 1,
       });
 
+      console.log("onTitleClick - library search results:", results);
+
       if (results.length > 0) {
         // Found in library! Navigate to it
+        console.log("onTitleClick - found in library, navigating to:", results[0].item_id, results[0].provider);
         store.showFullscreenPlayer = false;
         router.push({
           name: "track",
@@ -889,6 +899,7 @@ const onTitleClick = async function () {
     }
 
     // Not found in library - fall back to global search
+    console.log("onTitleClick - not found in library, falling back to search:", searchTerm);
     store.globalSearchTerm = searchTerm;
     router.push({ name: "search" });
     store.showFullscreenPlayer = false;
