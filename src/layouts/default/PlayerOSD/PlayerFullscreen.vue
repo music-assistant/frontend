@@ -843,7 +843,7 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
   }
 };
 
-const onTitleClick = function () {
+const onTitleClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia) return;
 
@@ -861,17 +861,58 @@ const onTitleClick = function () {
       },
     });
   } else {
-    // Radio or non-library item - fall back to global search
+    // Radio or non-library item - try to find in library first
     const searchTerm = currentMedia.artist
       ? `${currentMedia.artist} - ${currentMedia.title}`
       : currentMedia.title || "";
+
+    try {
+      // Call with positional parameters: (favorite, search, limit, offset, order_by, provider)
+      const results = await api.getLibraryTracks(
+        undefined, // favorite
+        searchTerm, // search
+        5 // limit - get a few results to find best match
+      );
+
+      if (results.length > 0) {
+        // Try to find best match by comparing artist and title
+        let bestMatch = results[0];
+
+        if (currentMedia.artist && currentMedia.title) {
+          const exactMatch = results.find(track =>
+            track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
+            track.artists?.some(artist =>
+              artist.name.toLowerCase() === currentMedia.artist!.toLowerCase()
+            )
+          );
+          if (exactMatch) {
+            bestMatch = exactMatch;
+          }
+        }
+
+        // Found in library! Navigate to it
+        store.showFullscreenPlayer = false;
+        router.push({
+          name: "track",
+          params: {
+            itemId: bestMatch.item_id,
+            provider: bestMatch.provider,
+          },
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error searching library for track:", error);
+    }
+
+    // Not found in library - fall back to global search
     store.globalSearchTerm = searchTerm;
     router.push({ name: "search" });
     store.showFullscreenPlayer = false;
   }
 };
 
-const onAlbumClick = function () {
+const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.album) return;
 
@@ -889,7 +930,48 @@ const onAlbumClick = function () {
       },
     });
   } else {
-    // Radio or non-library item - fall back to global search
+    // Radio or non-library item - try to find in library first
+    try {
+      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
+      const results = await api.getLibraryAlbums(
+        undefined, // favorite
+        currentMedia.album, // search
+        5 // limit - get a few results to find best match
+      );
+
+      if (results.length > 0) {
+        let bestMatch = results[0];
+
+        // If we have artist info, try to find album by same artist
+        if (currentMedia.artist) {
+          const matchWithArtist = results.find(album =>
+            album.artists?.some(artist =>
+              artist.name.toLowerCase() === currentMedia.artist!.toLowerCase() ||
+              artist.name.toLowerCase().includes(currentMedia.artist!.toLowerCase()) ||
+              currentMedia.artist!.toLowerCase().includes(artist.name.toLowerCase())
+            )
+          );
+          if (matchWithArtist) {
+            bestMatch = matchWithArtist;
+          }
+        }
+
+        // Found in library! Navigate to it
+        store.showFullscreenPlayer = false;
+        router.push({
+          name: "album",
+          params: {
+            itemId: bestMatch.item_id,
+            provider: bestMatch.provider,
+          },
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error searching library for album:", error);
+    }
+
+    // Not found in library - fall back to global search
     const searchTerm = currentMedia.artist
       ? `${currentMedia.artist} - ${currentMedia.album}`
       : currentMedia.album || "";
@@ -899,7 +981,7 @@ const onAlbumClick = function () {
   }
 };
 
-const onArtistClick = function () {
+const onArtistClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.artist) return;
 
@@ -917,7 +999,42 @@ const onArtistClick = function () {
       },
     });
   } else {
-    // Radio or non-library item - fall back to global search
+    // Radio or non-library item - try to find in library first
+    try {
+      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_artists_only, provider)
+      const results = await api.getLibraryArtists(
+        undefined, // favorite
+        currentMedia.artist, // search
+        5 // limit
+      );
+
+      if (results.length > 0) {
+        // Try to find exact match by name
+        let bestMatch = results[0];
+
+        const exactMatch = results.find(artist =>
+          artist.name.toLowerCase() === currentMedia.artist!.toLowerCase()
+        );
+        if (exactMatch) {
+          bestMatch = exactMatch;
+        }
+
+        // Found in library! Navigate to it
+        store.showFullscreenPlayer = false;
+        router.push({
+          name: "artist",
+          params: {
+            itemId: bestMatch.item_id,
+            provider: bestMatch.provider,
+          },
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error searching library for artist:", error);
+    }
+
+    // Not found in library - fall back to global search
     store.globalSearchTerm = currentMedia.artist;
     router.push({ name: "search" });
     store.showFullscreenPlayer = false;
