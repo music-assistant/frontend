@@ -141,6 +141,9 @@ const fetchPlaylists = async function () {
     );
   }
 
+  // Check if we're adding radio items - radio can only be added to builtin playlists
+  const isAddingRadio = refItem?.media_type === MediaType.RADIO;
+
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
@@ -157,16 +160,24 @@ const fetchPlaylists = async function () {
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
 
-    // either the refItem has a provider match or builtin provider or streaming provider
-    if (
-      playListProvider &&
-      (playListProvider.domain == "builtin" ||
-        playListProvider.is_streaming_provider ||
-        refItem?.provider_mappings.filter(
-          (x) => x.provider_instance == playListProvider.instance_id,
-        ).length)
-    ) {
-      playlists.value.push(playlist);
+    // For radio items, only show builtin playlists
+    if (isAddingRadio) {
+      if (playListProvider && playListProvider.domain == "builtin") {
+        playlists.value.push(playlist);
+      }
+    } else {
+      // For other items, use existing logic
+      // either the refItem has a provider match or builtin provider or streaming provider
+      if (
+        playListProvider &&
+        (playListProvider.domain == "builtin" ||
+          playListProvider.is_streaming_provider ||
+          refItem?.provider_mappings.filter(
+            (x) => x.provider_instance == playListProvider.instance_id,
+          ).length)
+      ) {
+        playlists.value.push(playlist);
+      }
     }
   }
   // determine which providers may be used to create a new playlist
@@ -179,15 +190,23 @@ const fetchPlaylists = async function () {
       )
     )
       continue;
-    // either the refItem has a provider match or builtin provider
-    if (
-      provider.domain == "builtin" ||
-      provider.is_streaming_provider ||
-      refItem?.provider_mappings.filter(
-        (x) => x.provider_instance == provider.instance_id,
-      ).length
-    ) {
-      createPlaylistProviders.value.push(provider.instance_id);
+    // For radio items, only allow builtin provider
+    if (isAddingRadio) {
+      if (provider.domain == "builtin") {
+        createPlaylistProviders.value.push(provider.instance_id);
+      }
+    } else {
+      // For other items, use existing logic
+      // either the refItem has a provider match or builtin provider
+      if (
+        provider.domain == "builtin" ||
+        provider.is_streaming_provider ||
+        refItem?.provider_mappings.filter(
+          (x) => x.provider_instance == provider.instance_id,
+        ).length
+      ) {
+        createPlaylistProviders.value.push(provider.instance_id);
+      }
     }
   }
 };

@@ -838,27 +838,32 @@ export const getContextMenuItems = async function (
     }
   }
 
-  // remove from playlist (playlist tracks only)
+  // remove from playlist (playlist tracks and radio items)
   if (parentItem && parentItem.media_type === MediaType.PLAYLIST) {
     const playlist = parentItem as Playlist;
-    if (items[0].media_type === MediaType.TRACK && playlist.is_editable) {
+    if (
+      (items[0].media_type === MediaType.TRACK ||
+        items[0].media_type === MediaType.RADIO) &&
+      playlist.is_editable
+    ) {
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
         action: () => {
           api.removePlaylistTracks(
             playlist.item_id,
-            items.map((x) => (x as Track).position as number),
+            items.map((x) => ("position" in x ? x.position : 0) as number),
           );
         },
         icon: "mdi-minus-circle-outline",
       });
     }
   }
-  // add to playlist action (tracks only)
+  // add to playlist action (tracks, albums, and radios)
   if (
     items[0].media_type === MediaType.TRACK ||
-    items[0].media_type === MediaType.ALBUM
+    items[0].media_type === MediaType.ALBUM ||
+    items[0].media_type === MediaType.RADIO
   ) {
     contextMenuItems.push({
       label: "add_playlist",
