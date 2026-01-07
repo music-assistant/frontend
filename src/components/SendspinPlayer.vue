@@ -88,6 +88,14 @@ const metadataPlayerId = computed(() => {
   return undefined;
 });
 
+const correctionMode = computed(() => {
+  // Only do the more precise but distorting "full" correction when grouped
+  const thisPlayer = api.players[props.playerId];
+  const isGrouped =
+    thisPlayer && (thisPlayer.synced_to || thisPlayer.group_members.length > 0);
+  return isGrouped ? "sync" : "quality-local";
+});
+
 // Subscribe to metadata immediately (doesn't require user interaction)
 watch(
   metadataPlayerId,
@@ -176,6 +184,10 @@ watch(
   { immediate: true },
 );
 
+watch(correctionMode, (mode) => {
+  player?.setCorrectionMode(mode);
+});
+
 // Setup on mount
 onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
@@ -242,6 +254,7 @@ onMounted(() => {
             muted.value = state.muted;
             playerState.value = state.playerState;
           },
+          correctionMode: correctionMode.value,
         });
 
         // Register callback for real-time sync delay changes from settings
