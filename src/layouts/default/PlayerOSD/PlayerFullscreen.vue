@@ -858,10 +858,13 @@ const onAlbumClick = function () {
 
   // Try to get the album URI from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
+  console.log("onAlbumClick - currentMedia:", currentMedia);
+  console.log("onAlbumClick - mediaItem:", mediaItem);
   let albumUri: string | undefined;
 
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     albumUri = mediaItem.album.uri;
+    console.log("onAlbumClick - albumUri:", albumUri);
   }
 
   const searchTerm = currentMedia.artist
@@ -877,10 +880,13 @@ const onArtistClick = function () {
 
   // Try to get the artist URI from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
+  console.log("onArtistClick - currentMedia:", currentMedia);
+  console.log("onArtistClick - mediaItem:", mediaItem);
   let artistUri: string | undefined;
 
   if (mediaItem && "artists" in mediaItem && mediaItem.artists && mediaItem.artists.length > 0) {
     artistUri = mediaItem.artists[0].uri;
+    console.log("onArtistClick - artistUri:", artistUri);
   }
 
   navigateOrSearch(currentMedia.artist, artistUri);
