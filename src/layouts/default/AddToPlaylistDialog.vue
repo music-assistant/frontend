@@ -166,7 +166,6 @@ const fetchPlaylists = async function () {
         playlists.value.push(playlist);
       }
     } else {
-      // For other items, use existing logic
       // either the refItem has a provider match or builtin provider or streaming provider
       if (
         playListProvider &&
@@ -196,7 +195,6 @@ const fetchPlaylists = async function () {
         createPlaylistProviders.value.push(provider.instance_id);
       }
     } else {
-      // For other items, use existing logic
       // either the refItem has a provider match or builtin provider
       if (
         provider.domain == "builtin" ||
