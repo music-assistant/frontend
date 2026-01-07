@@ -235,9 +235,11 @@
           <div
             style="
               display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
               margin-left: 14px;
               padding-bottom: 10px;
-              cursor: pointer !important;
+              align-items: center;
             "
           >
             <!-- play button with contextmenu -->
@@ -249,28 +251,31 @@
               :disabled="!item"
               :loading="store.playActionInProgress"
               :open-menu-on-click="!store.activePlayer"
+              style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
               @menu="playButtonClick(true)"
             />
 
-            <!-- favorite (heart) icon -->
-            <v-btn
-              variant="plain"
-              ripple
-              :icon="item.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
-              size="x-large"
-              style="margin-top: -14px"
-              :title="$t('tooltip.favorite')"
-              @click="api.toggleFavorite(item)"
-              @click.prevent
-              @click.stop
-            />
-            <!-- provider icon -->
-            <provider-icon
-              :domain="item.provider"
-              :size="25"
-              style="margin-top: 6px"
-            />
+            <div class="flex items-center gap-2">
+              <!-- favorite (heart) icon -->
+              <IconHeartFilled
+                v-if="item.favorite"
+                :size="24"
+                class="cursor-pointer"
+                :title="$t('tooltip.favorite')"
+                @click="api.toggleFavorite(item)"
+              />
+              <IconHeart
+                v-else
+                :stroke-width="2"
+                :size="24"
+                class="cursor-pointer"
+                :title="$t('tooltip.favorite')"
+                @click="api.toggleFavorite(item)"
+              />
+              <!-- provider icon -->
+              <provider-icon :domain="item.provider" :size="25" />
+            </div>
           </div>
           <!-- Description/metadata -->
           <v-card-subtitle
@@ -328,6 +333,7 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getImageThumbForItem,
   handlePlayBtnClick,
   markdownToHtml,
   parseBool,
@@ -346,13 +352,13 @@ import type {
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { ArrowLeft } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
-import { getImageThumbForItem } from "@/helpers/utils";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 
