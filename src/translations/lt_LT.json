@@ -889,7 +889,19 @@
         "new_releases_for_you": "Nauji leidimai jums",
         "recent_favorite_tracks": "Neseniai į mėgstamiausius įrašyti takeliai",
         "favorite_playlists": "Mėgstamiausi grojaraščiai",
-        "favorite_radio_stations": "Mėgstamiausios radijo stotys"
+        "favorite_radio_stations": "Mėgstamiausios radijo stotys",
+        "listen_again": "Klausyk dar kartą",
+        "in_progress_series": "Tęskite seriją...",
+        "recommended": "Rekomenduojama",
+        "recently_added": "Neseniai pridėta",
+        "episodes_recently_added": "Neseniai pridėtos serijos",
+        "recent_series": "Naujausios serijos",
+        "newest_authors": "Naujausi autoriai",
+        "newest_episodes": "Naujausi epizodai",
+        "discover": "Atraskite",
+        "libraries": "Bibliotekos",
+        "library": "Biblioteka",
+        "trending_podcasts": "Populiariausi podcast'ai"
     },
     "homescreen_edit_enable": "Redaguoti pagrindinį ekraną",
     "homescreen_edit_disable": "Išeiti iš pagrindinio ekrano redagavimo režimo",
@@ -1104,5 +1116,11 @@
         "click_to_change": "Spustelėkite žemiau, kad pakeistumėte išvesties įrenginį"
     },
     "more_options": "Daugiau parinkčių",
-    "edit": "Redaguoti"
+    "edit": "Redaguoti",
+    "authors": "Autoriai",
+    "collection": "Kolekcija",
+    "collections": "Kolekcijos",
+    "narrators": "Pasakotojai",
+    "series_plural": "Serijos",
+    "series_singular": "Serijos"
 }

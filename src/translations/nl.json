@@ -516,8 +516,8 @@
             "label": "Fase",
             "options": {
                 "stable": "Stabiel",
-                "beta": "Beta",
-                "alpha": "Alpha",
+                "beta": "Bèta",
+                "alpha": "Alfa",
                 "experimental": "Experimenteel",
                 "unmaintained": "Niet onderhouden",
                 "deprecated": "Verouderd"
@@ -889,7 +889,19 @@
         "new_releases_for_you": "Nieuwe releases voor jou",
         "recent_favorite_tracks": "Onlangs als favoriet gemarkeerde nummers",
         "favorite_playlists": "Favoriete afspeellijsten",
-        "favorite_radio_stations": "Favoriete radiozenders"
+        "favorite_radio_stations": "Favoriete radiozenders",
+        "listen_again": "Opnieuw luisteren",
+        "in_progress_series": "Vervolg serie...",
+        "recommended": "Aanbevolen",
+        "recently_added": "Onlangs toegevoegd",
+        "episodes_recently_added": "Onlangs toegevoegde afleveringen",
+        "recent_series": "Recente series",
+        "newest_authors": "Nieuwste auteurs",
+        "newest_episodes": "Nieuwste afleveringen",
+        "discover": "Ontdekken",
+        "libraries": "Bibliotheken",
+        "library": "Bibliotheek",
+        "trending_podcasts": "Populaire podcasts"
     },
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
@@ -1104,5 +1116,11 @@
         "click_to_change": "Klik hieronder om het uitvoerapparaat te wijzigen"
     },
     "more_options": "Meer opties",
-    "edit": "Bewerken"
+    "edit": "Bewerken",
+    "authors": "Auteurs",
+    "collection": "Collectie",
+    "collections": "Collecties",
+    "narrators": "Vertellers",
+    "series_plural": "Series",
+    "series_singular": "Serie"
 }
