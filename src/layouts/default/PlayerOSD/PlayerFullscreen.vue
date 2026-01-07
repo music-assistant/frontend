@@ -843,7 +843,7 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
   }
 };
 
-const onTitleClick = function () {
+const onTitleClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia) return;
 
@@ -861,17 +861,41 @@ const onTitleClick = function () {
       },
     });
   } else {
-    // Fall back to global search (for radio, etc.)
+    // Radio or non-library item - try to find in library first
     const searchTerm = currentMedia.artist
       ? `${currentMedia.artist} - ${currentMedia.title}`
       : currentMedia.title || "";
+
+    try {
+      const results = await api.getLibraryTracks({
+        search: searchTerm,
+        limit: 1,
+      });
+
+      if (results.length > 0) {
+        // Found in library! Navigate to it
+        store.showFullscreenPlayer = false;
+        router.push({
+          name: "track",
+          params: {
+            itemId: results[0].item_id,
+            provider: results[0].provider,
+          },
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error searching library for track:", error);
+    }
+
+    // Not found in library - fall back to global search
     store.globalSearchTerm = searchTerm;
     router.push({ name: "search" });
     store.showFullscreenPlayer = false;
   }
 };
 
-const onAlbumClick = function () {
+const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.album) return;
 
@@ -889,17 +913,57 @@ const onAlbumClick = function () {
       },
     });
   } else {
-    // Fall back to global search (for radio, etc.)
+    // Radio or non-library item - try to find in library first
     const searchTerm = currentMedia.artist
       ? `${currentMedia.artist} - ${currentMedia.album}`
       : currentMedia.album || "";
+
+    try {
+      const results = await api.getLibraryAlbums({
+        search: currentMedia.album,
+        limit: 5, // Get a few results to find best match
+      });
+
+      // Try to find exact or close match
+      if (results.length > 0) {
+        let bestMatch = results[0];
+
+        // If we have artist info, try to find album by same artist
+        if (currentMedia.artist) {
+          const matchWithArtist = results.find(album =>
+            album.artists?.some(artist =>
+              artist.name.toLowerCase().includes(currentMedia.artist!.toLowerCase()) ||
+              currentMedia.artist!.toLowerCase().includes(artist.name.toLowerCase())
+            )
+          );
+          if (matchWithArtist) {
+            bestMatch = matchWithArtist;
+          }
+        }
+
+        // Found in library! Navigate to it
+        store.showFullscreenPlayer = false;
+        router.push({
+          name: "album",
+          params: {
+            itemId: bestMatch.item_id,
+            provider: bestMatch.provider,
+          },
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error searching library for album:", error);
+    }
+
+    // Not found in library - fall back to global search
     store.globalSearchTerm = searchTerm;
     router.push({ name: "search" });
     store.showFullscreenPlayer = false;
   }
 };
 
-const onArtistClick = function () {
+const onArtistClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.artist) return;
 
@@ -917,7 +981,30 @@ const onArtistClick = function () {
       },
     });
   } else {
-    // Fall back to global search (for radio, etc.)
+    // Radio or non-library item - try to find in library first
+    try {
+      const results = await api.getLibraryArtists({
+        search: currentMedia.artist,
+        limit: 1,
+      });
+
+      if (results.length > 0) {
+        // Found in library! Navigate to it
+        store.showFullscreenPlayer = false;
+        router.push({
+          name: "artist",
+          params: {
+            itemId: results[0].item_id,
+            provider: results[0].provider,
+          },
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error searching library for artist:", error);
+    }
+
+    // Not found in library - fall back to global search
     store.globalSearchTerm = currentMedia.artist;
     router.push({ name: "search" });
     store.showFullscreenPlayer = false;
