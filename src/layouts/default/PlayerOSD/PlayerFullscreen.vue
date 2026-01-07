@@ -919,6 +919,12 @@ const onAlbumClick = async function () {
   // Try to get the album from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
 
+  // Check if "album" is actually the radio station name - if so, do nothing
+  if (mediaItem && currentMedia.album === mediaItem.name) {
+    // Album field contains the station name, not a real album - ignore click
+    return;
+  }
+
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     // Navigate directly to album detail page
     store.showFullscreenPlayer = false;
