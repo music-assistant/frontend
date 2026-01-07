@@ -1,13 +1,8 @@
 <template>
-  <SpeakerBtn v-if="player && player.isVisible" :color="player.color" />
-  <QueueBtn
-    v-if="queue && queue.isVisible"
-    :color="player.color"
-    style="padding-left: 15px; padding-right: 20px"
-  />
+  <SpeakerBtn v-if="player && player.isVisible" />
+  <QueueBtn v-if="queue && queue.isVisible" class="mr-3.5" />
   <VolumeBtn
     v-if="volume && volume.isVisible"
-    :color="volume.color"
     :volume-size="volume.volumeSize"
     :responsive-volume-size="volume.responsiveVolumeSize"
   />
@@ -28,7 +23,6 @@ export interface Props {
   };
   player?: {
     isVisible?: boolean;
-    color?: string;
   };
   volume?: {
     isVisible?: boolean;
