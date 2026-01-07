@@ -856,40 +856,53 @@ const onAlbumClick = function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.album) return;
 
-  // Try to get the album URI from the full media item (for library items)
+  // Try to get the album from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
-  console.log("onAlbumClick - currentMedia:", currentMedia);
-  console.log("onAlbumClick - mediaItem:", mediaItem);
-  let albumUri: string | undefined;
 
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
-    albumUri = mediaItem.album.uri;
-    console.log("onAlbumClick - albumUri:", albumUri);
+    // Navigate directly to album detail page
+    store.showFullscreenPlayer = false;
+    router.push({
+      name: "album",
+      params: {
+        itemId: mediaItem.album.item_id,
+        provider: mediaItem.album.provider,
+      },
+    });
+  } else {
+    // Fall back to global search (for radio, etc.)
+    const searchTerm = currentMedia.artist
+      ? `${currentMedia.artist} - ${currentMedia.album}`
+      : currentMedia.album || "";
+    store.globalSearchTerm = searchTerm;
+    router.push({ name: "search" });
+    store.showFullscreenPlayer = false;
   }
-
-  const searchTerm = currentMedia.artist
-    ? `${currentMedia.artist} - ${currentMedia.album}`
-    : currentMedia.album || "";
-
-  navigateOrSearch(searchTerm, albumUri);
 };
 
 const onArtistClick = function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.artist) return;
 
-  // Try to get the artist URI from the full media item (for library items)
+  // Try to get the artist from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
-  console.log("onArtistClick - currentMedia:", currentMedia);
-  console.log("onArtistClick - mediaItem:", mediaItem);
-  let artistUri: string | undefined;
 
   if (mediaItem && "artists" in mediaItem && mediaItem.artists && mediaItem.artists.length > 0) {
-    artistUri = mediaItem.artists[0].uri;
-    console.log("onArtistClick - artistUri:", artistUri);
+    // Navigate directly to artist detail page
+    store.showFullscreenPlayer = false;
+    router.push({
+      name: "artist",
+      params: {
+        itemId: mediaItem.artists[0].item_id,
+        provider: mediaItem.artists[0].provider,
+      },
+    });
+  } else {
+    // Fall back to global search (for radio, etc.)
+    store.globalSearchTerm = currentMedia.artist;
+    router.push({ name: "search" });
+    store.showFullscreenPlayer = false;
   }
-
-  navigateOrSearch(currentMedia.artist, artistUri);
 };
 
 const openQueueItemMenu = function (evt: Event, item: QueueItem) {
