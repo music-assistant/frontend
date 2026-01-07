@@ -855,16 +855,35 @@ const onTitleClick = function () {
 const onAlbumClick = function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.album) return;
+
+  // Try to get the album URI from the full media item (for library items)
+  const mediaItem = store.curQueueItem?.media_item;
+  let albumUri: string | undefined;
+
+  if (mediaItem && "album" in mediaItem && mediaItem.album) {
+    albumUri = mediaItem.album.uri;
+  }
+
   const searchTerm = currentMedia.artist
     ? `${currentMedia.artist} - ${currentMedia.album}`
-    : currentMedia.title || "";
-  navigateOrSearch(searchTerm, currentMedia.uri);
+    : currentMedia.album || "";
+
+  navigateOrSearch(searchTerm, albumUri);
 };
 
 const onArtistClick = function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.artist) return;
-  navigateOrSearch(currentMedia.artist, currentMedia.uri);
+
+  // Try to get the artist URI from the full media item (for library items)
+  const mediaItem = store.curQueueItem?.media_item;
+  let artistUri: string | undefined;
+
+  if (mediaItem && "artists" in mediaItem && mediaItem.artists && mediaItem.artists.length > 0) {
+    artistUri = mediaItem.artists[0].uri;
+  }
+
+  navigateOrSearch(currentMedia.artist, artistUri);
 };
 
 const openQueueItemMenu = function (evt: Event, item: QueueItem) {
