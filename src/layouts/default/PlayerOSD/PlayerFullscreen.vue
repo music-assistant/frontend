@@ -846,10 +846,29 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
 const onTitleClick = function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia) return;
-  const searchTerm = currentMedia.artist
-    ? `${currentMedia.artist} - ${currentMedia.title}`
-    : currentMedia.title || "";
-  navigateOrSearch(searchTerm, currentMedia.uri);
+
+  // Try to get the track from the full media item (for library items)
+  const mediaItem = store.curQueueItem?.media_item;
+
+  if (mediaItem && mediaItem.media_type === MediaType.TRACK) {
+    // Navigate directly to track detail page
+    store.showFullscreenPlayer = false;
+    router.push({
+      name: "track",
+      params: {
+        itemId: mediaItem.item_id,
+        provider: mediaItem.provider,
+      },
+    });
+  } else {
+    // Fall back to global search (for radio, etc.)
+    const searchTerm = currentMedia.artist
+      ? `${currentMedia.artist} - ${currentMedia.title}`
+      : currentMedia.title || "";
+    store.globalSearchTerm = searchTerm;
+    router.push({ name: "search" });
+    store.showFullscreenPlayer = false;
+  }
 };
 
 const onAlbumClick = function () {
