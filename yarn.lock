@@ -2096,6 +2096,18 @@
   dependencies:
     tslib "^2.8.0"
 
+"@tabler/icons-vue@^3.36.1":
+  version "3.36.1"
+  resolved "https://registry.yarnpkg.com/@tabler/icons-vue/-/icons-vue-3.36.1.tgz#3b062c98bcd9a11034c0979a54115603f86cf8f1"
+  integrity sha512-ssIu0KSmGFKvvoC5PJhSYAj/J2kTEbIVIix0528zdRKfN6yohUlQt014tGnDDdJ/MyyG/xRXsKD1U6dyQY8rrg==
+  dependencies:
+    "@tabler/icons" ""
+
+"@tabler/icons@":
+  version "3.36.1"
+  resolved "https://registry.yarnpkg.com/@tabler/icons/-/icons-3.36.1.tgz#a893104b3c56e02458b13342abb6e466d4a81a8d"
+  integrity sha512-f4Jg3Fof/Vru5ioix/UO4GX+sdDsF9wQo47FbtvG+utIYYVQ/QVAC0QYgcBbAjQGfbdOh2CCf0BgiFOF9Ixtjw==
+
 "@tailwindcss/node@4.1.18":
   version "4.1.18"
   resolved "https://registry.yarnpkg.com/@tailwindcss/node/-/node-4.1.18.tgz#9863be0d26178638794a38d6c7c14666fb992e8a"
