@@ -855,10 +855,11 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action (tracks only)
+  // add to playlist action (tracks, albums, and folders)
   if (
     items[0].media_type === MediaType.TRACK ||
-    items[0].media_type === MediaType.ALBUM
+    items[0].media_type === MediaType.ALBUM ||
+    items[0].media_type === MediaType.FOLDER
   ) {
     contextMenuItems.push({
       label: "add_playlist",
