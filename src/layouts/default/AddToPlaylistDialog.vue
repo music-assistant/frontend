@@ -148,9 +148,10 @@ const fetchPlaylists = async function () {
   // Check if folder is from a radio provider
   // Radio stations can ONLY be added to builtin playlists
   const folderProvider = isFolder ? api.providers[refItem.provider] : undefined;
-  const isRadioFolder = folderProvider &&
-    (folderProvider.domain.includes('radio') ||
-     folderProvider.domain === 'tunein');
+  const isRadioFolder =
+    folderProvider &&
+    (folderProvider.domain.includes("radio") ||
+      folderProvider.domain === "tunein");
 
   for (const playlist of playlistResults) {
     // skip unavailable playlists
