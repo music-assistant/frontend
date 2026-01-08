@@ -150,7 +150,7 @@ const fetchPlaylists = async function () {
   const isLocalFilesystemFolder =
     folderProvider &&
     (folderProvider.domain === "filesystem_local" ||
-     folderProvider.domain === "filesystem_smb");
+      folderProvider.domain === "filesystem_smb");
 
   for (const playlist of playlistResults) {
     // skip unavailable playlists
