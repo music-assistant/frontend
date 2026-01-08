@@ -198,13 +198,13 @@ const fetchPlaylists = async function () {
       )
     )
       continue;
-    // Folders are compatible with any builtin/streaming provider
-    // For other media types, check for provider match
+    // Folders are compatible with any provider that supports playlist creation
+    // For other media types, check for provider match or builtin/streaming
     if (
+      isFolder ||
       provider.domain == "builtin" ||
       provider.is_streaming_provider ||
-      (!isFolder &&
-        "provider_mappings" in refItem &&
+      ("provider_mappings" in refItem &&
         refItem.provider_mappings.filter(
           (x) => x.provider_instance == provider.instance_id,
         ).length)
