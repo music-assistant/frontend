@@ -132,7 +132,11 @@ const fetchPlaylists = async function () {
   let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
 
   if (!refItem) return;
-  if (!("provider_mappings" in refItem)) {
+
+  // For folders, backend handles expansion, so they're compatible with any playlist
+  const isFolder = refItem.media_type === MediaType.FOLDER;
+
+  if (!isFolder && !("provider_mappings" in refItem)) {
     // resolve itemmapping
     refItem = await api.getItem(
       refItem.media_type,
@@ -157,14 +161,17 @@ const fetchPlaylists = async function () {
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
 
-    // either the refItem has a provider match or builtin provider or streaming provider
+    // Folders are compatible with any builtin/streaming provider playlist
+    // For other media types, check for provider match
     if (
       playListProvider &&
       (playListProvider.domain == "builtin" ||
         playListProvider.is_streaming_provider ||
-        refItem?.provider_mappings.filter(
-          (x) => x.provider_instance == playListProvider.instance_id,
-        ).length)
+        (!isFolder &&
+          "provider_mappings" in refItem &&
+          refItem.provider_mappings.filter(
+            (x) => x.provider_instance == playListProvider.instance_id,
+          ).length))
     ) {
       playlists.value.push(playlist);
     }
@@ -179,13 +186,16 @@ const fetchPlaylists = async function () {
       )
     )
       continue;
-    // either the refItem has a provider match or builtin provider
+    // Folders are compatible with any builtin/streaming provider
+    // For other media types, check for provider match
     if (
       provider.domain == "builtin" ||
       provider.is_streaming_provider ||
-      refItem?.provider_mappings.filter(
-        (x) => x.provider_instance == provider.instance_id,
-      ).length
+      (!isFolder &&
+        "provider_mappings" in refItem &&
+        refItem.provider_mappings.filter(
+          (x) => x.provider_instance == provider.instance_id,
+        ).length)
     ) {
       createPlaylistProviders.value.push(provider.instance_id);
     }
