@@ -178,18 +178,6 @@ const fetchPlaylists = async function () {
   }
   // determine which providers may be used to create a new playlist
   for (const provider of Object.values(api.providers)) {
-    console.log("[AddToPlaylist] Checking provider:", {
-      name: provider.name,
-      domain: provider.domain,
-      is_streaming: provider.is_streaming_provider,
-      has_create: provider.supported_features.includes(
-        ProviderFeature.PLAYLIST_CREATE,
-      ),
-      has_edit: provider.supported_features.includes(
-        ProviderFeature.PLAYLIST_TRACKS_EDIT,
-      ),
-      isFolder,
-    });
     if (!provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE))
       continue;
     if (
@@ -209,10 +197,6 @@ const fetchPlaylists = async function () {
           (x) => x.provider_instance == provider.instance_id,
         ).length)
     ) {
-      console.log(
-        "[AddToPlaylist] Adding provider to create list:",
-        provider.name,
-      );
       createPlaylistProviders.value.push(provider.instance_id);
     }
   }
