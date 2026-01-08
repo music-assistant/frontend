@@ -152,6 +152,14 @@ const fetchPlaylists = async function () {
     (folderProvider.domain === "filesystem_local" ||
       folderProvider.domain === "filesystem_smb");
 
+  console.log("[AddToPlaylist] Folder analysis:", {
+    isFolder,
+    provider: refItem.provider,
+    folderProviderDomain: folderProvider?.domain,
+    isLocalFilesystemFolder,
+    refItem,
+  });
+
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
