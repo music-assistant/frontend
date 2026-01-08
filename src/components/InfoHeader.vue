@@ -280,8 +280,8 @@
           <!-- Description/metadata -->
           <v-card-subtitle
             v-if="shortDescription"
-            class="body-2 justify-left"
-            style="padding-bottom: 10px; white-space: pre-line; cursor: pointer"
+            class="body-2 justify-left description-text"
+            style="padding-bottom: 10px; cursor: pointer"
             @click="showFullInfo = !showFullInfo"
           >
             <!-- eslint-disable vue/no-v-html -->
@@ -369,7 +369,7 @@ export interface Props {
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
-const { mobile } = useDisplay();
+useDisplay();
 const menuItems = ref<ContextMenuItem[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
@@ -470,9 +470,9 @@ const fullDescription = computed(() => {
 });
 
 const shortDescription = computed(() => {
-  const maxChars = mobile.value ? 160 : 300;
+  const maxChars = 800;
   if (rawDescription.value.length > maxChars) {
-    return fullDescription.value.substring(0, maxChars) + "...";
+    return fullDescription.value.substring(0, maxChars) + "…";
   }
   return fullDescription.value;
 });
@@ -497,5 +497,23 @@ const artistLogo = computed(() => {
   border-width: 1px;
   border-style: solid;
   font-size: smaller;
+}
+
+.description-text :deep(div) {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+}
+
+@media (max-width: 1280px) {
+  .description-text :deep(div) {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
 }
 </style>
