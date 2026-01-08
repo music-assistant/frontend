@@ -145,14 +145,6 @@ const fetchPlaylists = async function () {
     );
   }
 
-  // Check if folder is from a radio provider
-  // Radio stations can ONLY be added to builtin playlists
-  const folderProvider = isFolder ? api.providers[refItem.provider] : undefined;
-  const isRadioFolder =
-    folderProvider &&
-    (folderProvider.domain.includes("radio") ||
-      folderProvider.domain === "tunein");
-
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
@@ -169,19 +161,24 @@ const fetchPlaylists = async function () {
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
 
-    // Radio folders can ONLY be added to builtin playlists
-    if (isRadioFolder && playListProvider?.domain !== "builtin") {
+    // For folders: only support builtin and filesystem playlists
+    if (isFolder) {
+      if (
+        playListProvider &&
+        (playListProvider.domain === "builtin" ||
+          playListProvider.domain.includes("filesystem"))
+      ) {
+        playlists.value.push(playlist);
+      }
       continue;
     }
 
-    // Folders are compatible with any builtin/streaming provider playlist
     // For other media types, check for provider match
     if (
       playListProvider &&
       (playListProvider.domain == "builtin" ||
         playListProvider.is_streaming_provider ||
-        (!isFolder &&
-          "provider_mappings" in refItem &&
+        ("provider_mappings" in refItem &&
           refItem.provider_mappings.filter(
             (x) => x.provider_instance == playListProvider.instance_id,
           ).length))
@@ -200,15 +197,19 @@ const fetchPlaylists = async function () {
     )
       continue;
 
-    // Radio folders can ONLY create builtin playlists
-    if (isRadioFolder && provider.domain !== "builtin") {
+    // For folders: only support builtin and filesystem providers
+    if (isFolder) {
+      if (
+        provider.domain === "builtin" ||
+        provider.domain.includes("filesystem")
+      ) {
+        createPlaylistProviders.value.push(provider.instance_id);
+      }
       continue;
     }
 
-    // Folders are compatible with any provider that supports playlist creation
     // For other media types, check for provider match or builtin/streaming
     if (
-      isFolder ||
       provider.domain == "builtin" ||
       provider.is_streaming_provider ||
       ("provider_mappings" in refItem &&
