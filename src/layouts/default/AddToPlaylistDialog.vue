@@ -145,6 +145,13 @@ const fetchPlaylists = async function () {
     );
   }
 
+  // Check if folder is from local filesystem provider
+  const folderProvider = isFolder ? api.providers[refItem.provider] : undefined;
+  const isLocalFilesystemFolder =
+    folderProvider &&
+    (folderProvider.domain === "filesystem_local" ||
+     folderProvider.domain === "filesystem_smb");
+
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
@@ -161,14 +168,17 @@ const fetchPlaylists = async function () {
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
 
-    // For folders: only support builtin and filesystem playlists
+    // For folders: builtin always supported, filesystem only for local filesystem folders
     if (isFolder) {
-      if (
-        playListProvider &&
-        (playListProvider.domain === "builtin" ||
-          playListProvider.domain.includes("filesystem"))
-      ) {
-        playlists.value.push(playlist);
+      if (playListProvider) {
+        if (playListProvider.domain === "builtin") {
+          playlists.value.push(playlist);
+        } else if (
+          isLocalFilesystemFolder &&
+          playListProvider.domain.includes("filesystem")
+        ) {
+          playlists.value.push(playlist);
+        }
       }
       continue;
     }
@@ -197,10 +207,12 @@ const fetchPlaylists = async function () {
     )
       continue;
 
-    // For folders: only support builtin and filesystem providers
+    // For folders: builtin always supported, filesystem only for local filesystem folders
     if (isFolder) {
-      if (
-        provider.domain === "builtin" ||
+      if (provider.domain === "builtin") {
+        createPlaylistProviders.value.push(provider.instance_id);
+      } else if (
+        isLocalFilesystemFolder &&
         provider.domain.includes("filesystem")
       ) {
         createPlaylistProviders.value.push(provider.instance_id);
