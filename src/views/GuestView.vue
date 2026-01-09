@@ -1,22 +1,5 @@
 <template>
   <div class="guest-view">
-    <!-- Header -->
-    <div class="guest-header">
-      <!-- <div class="header-content">
-        <h1 class="guest-title">🎵 Party Queue</h1>
-        <p class="guest-subtitle">Search for songs and add them to the queue</p>
-      </div> -->
-      <v-btn
-        variant="text"
-        size="small"
-        class="exit-guest-btn"
-        @click="exitGuestMode"
-      >
-        <v-icon :start="!isMobile">mdi-exit-to-app</v-icon>
-        <span v-if="!isMobile">Exit Guest Mode</span>
-      </v-btn>
-    </div>
-
     <!-- Search Section -->
     <div class="search-section">
       <v-text-field
@@ -82,9 +65,11 @@
               </v-img>
             </v-avatar>
             <div class="result-text">
-              <div class="result-name">{{ item.name }}</div>
-              <div class="result-artist">
-                {{ getArtistName(item) }}
+              <div class="result-name scroll-text">
+                <span>{{ item.name }}</span>
+              </div>
+              <div class="result-artist scroll-text">
+                <span>{{ getArtistName(item) }}</span>
                 <span v-if="item.media_type !== 'track'" class="result-type">
                   • {{ formatMediaType(item.media_type) }}
                 </span>
@@ -96,26 +81,26 @@
               color="primary"
               variant="elevated"
               :loading="
-                addingItems.has(`${item.media_type}-${item.item_id}-next`)
+                addingItems.has(`${item.media_type}-${item.item_id}-end`)
               "
-              :disabled="rateLimitingEnabled && playNextTokens <= 0"
               class="action-btn action-btn-primary"
-              @click="addToQueue(item, 'next')"
+              @click="addToQueue(item, 'end')"
             >
-              <v-icon start>mdi-playlist-play</v-icon>
-              Play Next
+              <v-icon start>mdi-playlist-plus</v-icon>
+              Add
             </v-btn>
             <v-btn
               color="secondary"
               variant="flat"
               :loading="
-                addingItems.has(`${item.media_type}-${item.item_id}-end`)
+                addingItems.has(`${item.media_type}-${item.item_id}-next`)
               "
+              :disabled="rateLimitingEnabled && playNextTokens <= 0"
               class="action-btn action-btn-secondary"
-              @click="addToQueue(item, 'end')"
+              @click="addToQueue(item, 'next')"
             >
-              <v-icon start>mdi-playlist-plus</v-icon>
-              Add to Queue
+              <v-icon start>mdi-playlist-play</v-icon>
+              Next
             </v-btn>
           </div>
         </div>
@@ -181,8 +166,12 @@
             </v-img>
           </v-avatar>
           <div class="queue-info">
-            <div class="queue-name">{{ item.name }}</div>
-            <div class="queue-artist">{{ getQueueItemArtist(item) }}</div>
+            <div class="queue-name scroll-text">
+              <span>{{ item.name }}</span>
+            </div>
+            <div class="queue-artist scroll-text">
+              <span>{{ getQueueItemArtist(item) }}</span>
+            </div>
           </div>
         </div>
         <!-- Loading indicator for infinite scroll -->
@@ -228,6 +217,14 @@ import {
 import { getMediaItemImageUrl } from "@/helpers/utils";
 
 const router = useRouter();
+const handleBack = (event: PopStateEvent) => {
+  if (searchQuery.value || searchResults.value.length > 0) {
+    event.preventDefault(); // Prevent leaving
+    clearSearch();
+    // Push state so the user can press back again if needed
+    history.pushState(null, "", location.href);
+  }
+};
 
 // Responsive state
 const isMobile = computed(() => store.mobileLayout);
@@ -455,9 +452,8 @@ const scrollToCurrentItem = async () => {
     // Center the item in the viewport, accounting for container height
     const containerHeight = containerRect.height;
     const itemHeight = itemRect.height;
-    const centeredTop = relativeTop - containerHeight / 2 + itemHeight / 2;
 
-    container.scrollTo({ top: Math.max(0, centeredTop), behavior: "smooth" });
+    container.scrollTo({ top: relativeTop, behavior: "smooth" });
   }
 };
 
@@ -470,9 +466,19 @@ watch(
   async (newItems) => {
     if (newItems.length > 0) {
       scrollToCurrentItem();
+      runMarqueeScan();
     }
   },
   { deep: true },
+);
+
+// Run marquee scan when search results change
+watch(
+  () => displayedResults.value,
+  async () => {
+    await nextTick();
+    runMarqueeScan();
+  },
 );
 
 // Snackbar state
@@ -547,6 +553,7 @@ const loadMoreResults = () => {
     );
     displayedResultsCount.value = newCount;
     loadingMoreResults.value = false;
+    // runMarqueeScan();
   }, 300);
 };
 
@@ -664,7 +671,44 @@ const handleQueueScroll = (event: Event) => {
   }
 };
 
-// Helper functions
+// Marquee helper functions
+const applyMarquee = (el: HTMLElement) => {
+  const span = el.querySelector("span") as HTMLElement;
+  if (!span) return;
+
+  // Reset first to get accurate measurements
+  el.classList.remove("marquee");
+  span.style.setProperty("--marquee-distance", "0px");
+
+  // Use requestAnimationFrame to ensure layout is complete
+  requestAnimationFrame(() => {
+    const overflow = span.scrollWidth - el.clientWidth;
+
+    if (overflow <= 2) {
+      el.classList.remove("marquee");
+      span.style.setProperty("--marquee-distance", "0px");
+      return;
+    }
+
+    // Set the distance to scroll (the overflow amount + small padding)
+    span.style.setProperty("--marquee-distance", `-${overflow + 16}px`);
+    // Speed based on distance: ~30px per second
+    const duration = Math.max((overflow + 16) / 30, 3);
+    span.style.setProperty("--marquee-duration", `${duration}s`);
+    el.classList.add("marquee");
+  });
+};
+
+const runMarqueeScan = () => {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      document
+        .querySelectorAll(".scroll-text")
+        .forEach((el) => applyMarquee(el as HTMLElement));
+    });
+  });
+};
+
 const getImageUrl = (item: any) => {
   return getMediaItemImageUrl(item.metadata?.images?.[0] || item.image);
 };
@@ -746,6 +790,10 @@ onMounted(async () => {
     // Use defaults if fetch fails
   }
 
+  // Push initial state to enable back interception
+  history.pushState(null, "", location.href);
+  window.addEventListener("popstate", handleBack);
+
   // Initialize token buckets (after fetching config)
   const playNextBucket = loadTokenBucket(
     PLAY_NEXT_STORAGE_KEY,
@@ -810,6 +858,7 @@ onMounted(async () => {
   });
 
   onBeforeUnmount(() => {
+    window.removeEventListener("popstate", handleBack);
     unsub1();
     unsub2();
     if (countdownInterval) {
@@ -829,63 +878,16 @@ onMounted(async () => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-}
-
-.guest-header {
-  margin-bottom: 2rem;
-  text-align: center;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.header-content {
-  display: inline-block;
-}
-
-.exit-guest-btn {
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-  min-width: auto;
-  padding: 0.5rem;
-}
-
-.exit-guest-btn:hover {
-  opacity: 1;
-}
-
-/* Icon-only button on mobile */
-@media (max-width: 768px) {
-  .exit-guest-btn {
-    padding: 0.25rem;
-  }
-}
-
-.guest-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(
-    135deg,
-    var(--v-theme-primary) 0%,
-    var(--v-theme-secondary) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.guest-subtitle {
-  font-size: 1.125rem;
-  opacity: 0.7;
+  overflow-x: hidden;
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
 
 .search-section {
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
+  flex-shrink: 0;
 }
 
 .search-input {
@@ -949,7 +951,7 @@ onMounted(async () => {
 .results-section {
   margin-bottom: 2rem;
   flex: 1;
-  min-height: 0; /* Important for flex children with overflow */
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -959,9 +961,10 @@ onMounted(async () => {
   flex-direction: column;
   gap: 0.75rem;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
-  min-height: 0; /* Important for flex children with overflow */
-  padding-right: 0.5rem; /* Space for scrollbar */
+  min-height: 0;
+  padding-right: 0.5rem;
 }
 
 .loading-more {
@@ -974,12 +977,12 @@ onMounted(async () => {
 .result-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem;
   background: rgba(var(--v-theme-surface-variant), 0.25);
   border-radius: 12px;
-  transition: all 0.2s ease;
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  min-height: 72px;
 }
 
 .result-item:hover {
@@ -992,9 +995,10 @@ onMounted(async () => {
 .result-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .result-avatar,
@@ -1014,26 +1018,22 @@ onMounted(async () => {
 .result-text {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .result-name,
-.queue-name {
+.result-artist,
+.queue-name,
+.queue-artist {
   font-size: 1rem;
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.result-artist,
-.queue-artist {
-  font-size: 0.875rem;
   opacity: 0.7;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .result-type {
   text-transform: capitalize;
 }
@@ -1042,6 +1042,7 @@ onMounted(async () => {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .action-btn {
@@ -1088,8 +1089,8 @@ onMounted(async () => {
 }
 
 .queue-section {
-  margin-top: 3rem;
-  padding-top: 2rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
   border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
   flex-shrink: 0;
 }
@@ -1106,6 +1107,7 @@ onMounted(async () => {
   gap: 0.5rem;
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .queue-item {
@@ -1115,6 +1117,7 @@ onMounted(async () => {
   padding: 0.75rem;
   background: rgba(var(--v-theme-surface-variant), 0.3);
   border-radius: 8px;
+  min-height: 64px;
   transition: all 0.2s ease;
 }
 
@@ -1138,6 +1141,9 @@ onMounted(async () => {
 .queue-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .empty-queue {
@@ -1146,18 +1152,9 @@ onMounted(async () => {
   opacity: 0.5;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .guest-view {
     padding: 1rem;
-  }
-
-  .guest-header {
-    margin-bottom: 1.5rem;
-  }
-
-  .guest-title {
-    font-size: 2rem;
   }
 
   .section-header {
@@ -1180,17 +1177,62 @@ onMounted(async () => {
 
   .result-item {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+    align-items: stretch;
+    gap: 0.75rem;
+    min-height: auto;
+    padding: 1rem;
+  }
+
+  .result-info {
+    width: 100%;
+    overflow: visible;
+  }
+
+  .result-text {
+    overflow: hidden;
   }
 
   .result-actions {
     width: 100%;
-    flex-direction: column;
+    flex-direction: row;
+    margin-left: 0;
   }
 
   .result-actions .v-btn {
-    width: 100%;
+    flex: 1;
+  }
+}
+/* ---------- MARQUEE ---------- */
+
+.scroll-text {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.scroll-text span {
+  display: inline-block;
+  white-space: nowrap;
+  --marquee-distance: 0px;
+  --marquee-duration: 3s;
+}
+
+.scroll-text.marquee span {
+  animation: marquee var(--marquee-duration) linear infinite;
+  animation-delay: 1s;
+}
+
+@keyframes marquee {
+  0%,
+  10% {
+    transform: translateX(0);
+  }
+  45%,
+  55% {
+    transform: translateX(var(--marquee-distance));
+  }
+  90%,
+  100% {
+    transform: translateX(0);
   }
 }
 </style>
