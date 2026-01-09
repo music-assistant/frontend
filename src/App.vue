@@ -183,19 +183,29 @@ const completeInitialization = async () => {
   }
   authManager.setCurrentUser(userInfo);
   store.serverInfo = serverInfo;
+  store.currentUser = userInfo;
 
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  await api.fetchState();
-  store.libraryArtistsCount = await api.getLibraryArtistsCount();
-  store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
-  store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
-  store.libraryRadiosCount = await api.getLibraryRadiosCount();
-  store.libraryTracksCount = await api.getLibraryTracksCount();
-  store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
-  store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+  // For guest users, skip fetching library counts and state (they don't have permission)
+  // Just set them to initialized state so they can access the guest view
+  const isGuestUser = userInfo.role === UserRole.GUEST;
+
+  if (!isGuestUser) {
+    // Full initialization for non-guest users
+    await api.fetchState();
+    store.libraryArtistsCount = await api.getLibraryArtistsCount();
+    store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
+    store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
+    store.libraryRadiosCount = await api.getLibraryRadiosCount();
+    store.libraryTracksCount = await api.getLibraryTracksCount();
+    store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
+    store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+  } else {
+    console.debug("[App] Guest user - skipping full state fetch");
+  }
 
   // Check if party mode plugin is enabled
   try {
@@ -213,7 +223,7 @@ const completeInitialization = async () => {
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
   // Disable web player for guest users
-  if (userInfo.role === UserRole.GUEST) {
+  if (isGuestUser) {
     webPlayer.setMode(WebPlayerMode.DISABLED);
   } else {
     const webPlayerModePref =

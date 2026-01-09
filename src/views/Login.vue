@@ -412,6 +412,8 @@ const { t } = useI18n();
 const STORAGE_KEY_SERVER_ADDRESS = "mass_server_address";
 const STORAGE_KEY_REMOTE_ID = "mass_remote_id";
 const STORAGE_KEY_TOKEN = "ma_access_token";
+// Session storage key for pending guest code (survives SW reload but not browser close)
+const SESSION_KEY_PENDING_GUEST_CODE = "ma_pending_guest_code";
 
 // Props and emits
 const emit = defineEmits<{
@@ -664,6 +666,56 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
 };
 
 /**
+ * Try to authenticate with a guest code (exchange for JWT)
+ * This is the new short code system for party mode guest access
+ */
+const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
+  if (!code) {
+    return false;
+  }
+
+  try {
+    console.debug("[Login] Exchanging guest code for JWT");
+    connectionStatusMessage.value = t(
+      "login.authenticating",
+      "Authenticating...",
+    );
+
+    // Exchange the guest code for a JWT token via auth/guest API
+    const result = await api.sendCommand<{
+      success: boolean;
+      access_token?: string;
+      user?: { user_id: string; username: string; role: string };
+      error?: string;
+    }>("auth/guest", { code: code.toUpperCase() });
+
+    if (!result.success || !result.access_token) {
+      console.debug("[Login] Guest code exchange failed:", result.error);
+      return false;
+    }
+
+    console.debug("[Login] Guest code exchanged successfully");
+
+    // Store the JWT token for auto-login
+    localStorage.setItem(STORAGE_KEY_TOKEN, result.access_token);
+
+    // Now authenticate the WebSocket session with the JWT
+    const authResult = await api.authenticateWithToken(result.access_token);
+    console.debug("[Login] JWT authentication successful");
+
+    // Emit authenticated event - App.vue will handle the rest
+    emit("authenticated", {
+      token: result.access_token,
+      user: authResult.user,
+    });
+    return true;
+  } catch (error) {
+    console.debug("[Login] Guest code authentication failed:", error);
+    return false;
+  }
+};
+
+/**
  * Try to authenticate in ingress mode (no credentials needed)
  */
 const tryIngressAuth = async (): Promise<boolean> => {
@@ -696,6 +748,13 @@ const tryIngressAuth = async (): Promise<boolean> => {
  * Smart auto-connect logic
  */
 const autoConnect = async () => {
+  console.debug(
+    "[Login] autoConnect called, current URL:",
+    window.location.href,
+  );
+  console.debug("[Login] search params:", window.location.search);
+  console.debug("[Login] hash:", window.location.hash);
+
   step.value = "auto-connect";
   connectionStatusMessage.value = t(
     "login.checking_stored",
@@ -706,9 +765,149 @@ const autoConnect = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const authCode = urlParams.get("code");
   const urlRemoteId = urlParams.get("remote_id");
+  // Guest code is the short code (e.g., "ABCD1234") exchanged for JWT
+  const urlGuestCode = urlParams.get("code");
 
-  // If remote_id is in URL, pre-fill and potentially auto-connect
-  if (urlRemoteId) {
+  // Check for remote party mode: both remote_id and guest code in URL
+  // This happens when scanning a party mode QR code for remote access
+  console.debug(
+    "[Login] URL params - remote_id:",
+    urlRemoteId,
+    "code:",
+    urlGuestCode ? "present" : "absent",
+  );
+
+  // Also check for pending guest code from sessionStorage (survives SW reload)
+  const pendingGuestCode = sessionStorage.getItem(
+    SESSION_KEY_PENDING_GUEST_CODE,
+  );
+  const storedRemoteIdForPending = localStorage.getItem(STORAGE_KEY_REMOTE_ID);
+
+  // Determine the effective guest code and remote ID
+  // Priority: URL params > sessionStorage (for reload recovery)
+  let effectiveGuestCode =
+    urlGuestCode && urlGuestCode.length === 8 ? urlGuestCode : null;
+  let effectiveRemoteId = urlRemoteId;
+
+  // If no guest code in URL but we have a pending one in sessionStorage, use that
+  // This handles the case where SW reload cleared the URL but code was stored
+  if (!effectiveGuestCode && pendingGuestCode && storedRemoteIdForPending) {
+    console.debug(
+      "[Login] Found pending guest code in sessionStorage after reload",
+    );
+    effectiveGuestCode = pendingGuestCode;
+    effectiveRemoteId = storedRemoteIdForPending;
+  }
+
+  if (effectiveRemoteId && effectiveGuestCode) {
+    console.debug(
+      "[Login] Remote party mode detected - remote_id and guest code available",
+    );
+    const cleanRemoteId = effectiveRemoteId
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    console.debug(
+      "[Login] Cleaned remote_id:",
+      cleanRemoteId,
+      "length:",
+      cleanRemoteId.length,
+    );
+
+    if (cleanRemoteId.length === 26) {
+      // Clean up URL if needed - remove both remote_id and code
+      if (urlRemoteId || urlGuestCode) {
+        urlParams.delete("remote_id");
+        urlParams.delete("code");
+        const queryString = urlParams.toString();
+        const cleanUrl =
+          window.location.origin +
+          window.location.pathname +
+          (queryString ? "?" + queryString : "") +
+          window.location.hash;
+        console.debug("[Login] Cleaning URL to:", cleanUrl);
+        window.history.replaceState({}, "", cleanUrl);
+      }
+
+      localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
+      // Store guest code in sessionStorage BEFORE connectRemote
+      // This survives the potential SW reload but not browser close (for security)
+      sessionStorage.setItem(
+        SESSION_KEY_PENDING_GUEST_CODE,
+        effectiveGuestCode,
+      );
+
+      connectionStatusMessage.value = t(
+        "login.connecting_remote_party",
+        "Connecting to party...",
+      );
+
+      try {
+        console.debug("[Login] Starting remote party mode connection...");
+        setRemoteIdFromString(cleanRemoteId);
+        step.value = "connecting";
+        console.debug(
+          "[Login] Calling remoteConnectionManager.connectRemote...",
+        );
+        const transport =
+          await remoteConnectionManager.connectRemote(cleanRemoteId);
+        console.debug("[Login] WebRTC transport established");
+
+        // Connection established, emit connected event
+        // This triggers App.vue's handleRemoteConnected which calls api.initialize()
+        emit("connected", transport);
+
+        // Wait for API to be ready (serverInfo received from server)
+        console.debug("[Login] Waiting for API connection (serverInfo)...");
+        if (await waitForApiConnection(15000)) {
+          console.debug("[Login] API connected, serverInfo received");
+          console.debug("[Login] Exchanging guest code for JWT...");
+          // Exchange the guest code for a JWT token
+          if (await tryGuestCodeAuth(effectiveGuestCode)) {
+            console.info("[Login] Remote party mode auto-login successful!");
+            console.debug("[Login] Current API state:", api.state.value);
+            // Clear the pending guest code - it's been successfully used
+            sessionStorage.removeItem(SESSION_KEY_PENDING_GUEST_CODE);
+            // The authenticated event handler in App.vue will call completeInitialization
+            // which sets state to INITIALIZED. Wait for that before navigating.
+            // The watcher will handle the state transition and hide Login.vue
+            // Once state is INITIALIZED, router-view will show and navigation will work.
+            // We don't need to explicitly navigate - the hash #/guest in the URL
+            // will be picked up by vue-router once router-view is mounted.
+            return; // Success - App.vue will complete initialization and show guest view
+          } else {
+            console.error("[Login] tryGuestCodeAuth returned false");
+          }
+        } else {
+          console.error(
+            "[Login] waitForApiConnection timed out - no serverInfo received",
+          );
+        }
+
+        // Code exchange failed, show error and clear the pending code
+        sessionStorage.removeItem(SESSION_KEY_PENDING_GUEST_CODE);
+        console.error("[Login] Remote party mode authentication failed");
+        connectionError.value = t(
+          "login.error_party_auth_failed",
+          "Failed to join party. The code may have expired.",
+        );
+        step.value = "error";
+        return;
+      } catch (error) {
+        // Clear the pending guest code on error
+        sessionStorage.removeItem(SESSION_KEY_PENDING_GUEST_CODE);
+        console.error("[Login] Remote party mode connection failed:", error);
+        connectionError.value =
+          error instanceof Error
+            ? error.message
+            : t("login.error_unknown", "Unknown error occurred");
+        step.value = "error";
+        return;
+      }
+    }
+  }
+
+  // If remote_id is in URL (without guest code), pre-fill and potentially auto-connect
+  if (urlRemoteId && (!urlGuestCode || urlGuestCode.length !== 8)) {
     console.debug("[Login] Found remote_id in URL:", urlRemoteId);
     const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (cleanRemoteId.length === 26) {
@@ -725,9 +924,10 @@ const autoConnect = async () => {
     }
   }
 
-  if (authCode) {
+  // Handle auth code from OAuth flow (long codes, not 8-character guest codes)
+  if (authCode && authCode.length > 8) {
     console.debug(
-      "[Login] Found auth code in URL, storing token and continuing auto-connect",
+      "[Login] Found OAuth auth code in URL, storing token and continuing auto-connect",
     );
     // Store the token and clean up the URL (remove code param but keep others like onboard)
     localStorage.setItem(STORAGE_KEY_TOKEN, authCode);
@@ -740,6 +940,68 @@ const autoConnect = async () => {
       window.location.hash;
     window.history.replaceState({}, "", newUrl);
     // Continue with normal auto-connect flow which will use the stored token
+  }
+
+  // Handle local guest code (no remote_id, just the 8-char code)
+  // This is for local network party mode access
+  if (urlGuestCode && urlGuestCode.length === 8 && !urlRemoteId) {
+    console.debug("[Login] Local party mode detected - guest code in URL");
+
+    // Clean up URL first
+    urlParams.delete("code");
+    const queryString = urlParams.toString();
+    const cleanUrl =
+      window.location.origin +
+      window.location.pathname +
+      (queryString ? "?" + queryString : "") +
+      window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+
+    // Check if we're hosted with the API
+    isHostedWithAPI.value = await checkIfHostedWithAPI();
+
+    if (isHostedWithAPI.value) {
+      connectionStatusMessage.value = t(
+        "login.connecting_local_party",
+        "Connecting to party...",
+      );
+
+      try {
+        const address =
+          window.location.origin + window.location.pathname.replace(/\/$/, "");
+        serverAddress.value = address;
+
+        // Establish connection
+        emit("local-connect", address);
+        localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+
+        // Wait for WebSocket connection
+        if (await waitForApiConnection()) {
+          // Exchange guest code for JWT
+          if (await tryGuestCodeAuth(urlGuestCode)) {
+            console.info("[Login] Local party mode auto-login successful!");
+            return; // Success - App.vue will take over
+          }
+        }
+
+        // Code exchange failed, show error
+        console.error("[Login] Local party mode authentication failed");
+        connectionError.value = t(
+          "login.error_party_auth_failed",
+          "Failed to join party. The code may have expired.",
+        );
+        step.value = "error";
+        return;
+      } catch (error) {
+        console.error("[Login] Local party mode connection failed:", error);
+        connectionError.value =
+          error instanceof Error
+            ? error.message
+            : t("login.error_unknown", "Unknown error occurred");
+        step.value = "error";
+        return;
+      }
+    }
   }
 
   // Check if we're hosted with the API
@@ -796,12 +1058,14 @@ const autoConnect = async () => {
     const storedRemoteId =
       localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
       remoteConnectionManager.getStoredRemoteId();
+    // Use stored token for auto-login (guest code flow is handled earlier in this function)
     const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
 
     if (storedRemoteId && storedToken) {
       console.debug(
         "[Login] Found stored remote ID and token, trying auto-connect",
       );
+
       connectionStatusMessage.value = t(
         "login.connecting_remote",
         "Connecting to remote server...",
@@ -819,7 +1083,7 @@ const autoConnect = async () => {
         // Wait for API to be ready
         if (await waitForApiConnection()) {
           // Try to authenticate with stored token
-          if (await tryStoredTokenAuth()) {
+          if (await tryStoredTokenAuth(storedToken)) {
             console.info("[Login] Remote auto-login successful!");
             return; // Success - App.vue will take over
           }
@@ -1459,13 +1723,15 @@ const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
   const qrData = detectedCodes[0].rawValue;
   console.debug("[Login] QR code detected:", qrData);
 
-  // Try to extract remote_id from the QR code
+  // Try to extract remote_id and/or guest code from the QR code
   let extractedRemoteId: string | null = null;
+  let extractedGuestCode: string | null = null;
 
-  // Check if it's a URL with remote_id parameter
+  // Check if it's a URL with parameters
   try {
     const url = new URL(qrData);
     extractedRemoteId = url.searchParams.get("remote_id");
+    extractedGuestCode = url.searchParams.get("code");
   } catch {
     // Not a URL, check if it's a raw remote ID (26 alphanumeric characters)
     const cleanData = qrData.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -1474,6 +1740,31 @@ const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
     }
   }
 
+  // If we have a guest code (party mode QR), navigate to the full URL
+  // This will trigger the autoConnect flow with the code parameter
+  if (extractedGuestCode && extractedGuestCode.length === 8) {
+    console.debug(
+      "[Login] Party mode QR detected, guest code:",
+      extractedGuestCode,
+    );
+    closeQrScanner();
+
+    // Build the URL and navigate to trigger guest login flow
+    if (extractedRemoteId) {
+      // Remote party mode
+      const newUrl = `${window.location.origin}${window.location.pathname}?remote_id=${extractedRemoteId}&code=${extractedGuestCode}#/guest`;
+      console.debug("[Login] Navigating to remote party URL:", newUrl);
+      window.location.href = newUrl;
+    } else {
+      // Local party mode
+      const newUrl = `${window.location.origin}${window.location.pathname}?code=${extractedGuestCode}#/guest`;
+      console.debug("[Login] Navigating to local party URL:", newUrl);
+      window.location.href = newUrl;
+    }
+    return;
+  }
+
+  // If we only have a remote ID (regular remote access QR), connect to remote
   if (extractedRemoteId) {
     console.debug("[Login] Extracted remote ID:", extractedRemoteId);
     setRemoteIdFromString(extractedRemoteId);
@@ -1485,7 +1776,7 @@ const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
   } else {
     qrScannerError.value = t(
       "login.qr_invalid",
-      "Invalid QR code. Please scan a Music Assistant remote ID QR code.",
+      "Invalid QR code. Please scan a Music Assistant QR code.",
     );
   }
 };

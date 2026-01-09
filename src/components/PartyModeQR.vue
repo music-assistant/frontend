@@ -17,7 +17,7 @@
       >
         <canvas ref="qrCanvas"></canvas>
       </a>
-      <p class="qr-instructions">Scan to join the party!</p>
+      <p class="qr-instructions text-h6">Scan to join the party!</p>
     </div>
     <div v-else class="qr-error">
       <v-icon size="64" icon="mdi-alert-circle-outline" />
@@ -42,10 +42,15 @@ let unsubscribe: (() => void) | null = null;
 const generateQRCode = async () => {
   loading.value = true;
   try {
-    // Fetch guest URL from backend (will return empty string if guest access is disabled)
-    const url = (await api.sendCommand("party_mode/url")) as string;
+    // Fetch guest URL from backend (returns {url, code, expires_at} or empty values if disabled)
+    const result = (await api.sendCommand("party_mode/url")) as {
+      url: string;
+      code: string;
+      expires_at: string | null;
+    };
 
     // Update guest access enabled state based on whether we got a URL
+    const url = result?.url || "";
     guestAccessEnabled.value = !!(url && url.trim() !== "");
 
     // Always update qrCodeUrl to ensure UI reflects backend state

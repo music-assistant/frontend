@@ -31,6 +31,16 @@
         </TransitionGroup>
       </div>
     </div>
+
+    <!-- Player Controls (optional, hidden by default for frameless mode) -->
+    <div v-if="showPlayerControls" class="party-player-controls">
+      <PlayerControls />
+      <VolumeControl
+        v-if="store.activePlayer"
+        :player="store.activePlayer"
+        class="party-volume"
+      />
+    </div>
   </div>
 </template>
 
@@ -41,6 +51,8 @@ import { useRoute } from "vue-router";
 import Color from "color";
 import PartyTrackCard from "@/components/PartyTrackCard.vue";
 import PartyModeQR from "@/components/PartyModeQR.vue";
+import PlayerControls from "@/layouts/default/PlayerOSD/PlayerControls.vue";
+import VolumeControl from "@/components/VolumeControl.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { EventType, EventMessage, QueueItem } from "@/plugins/api/interfaces";
@@ -60,9 +72,11 @@ interface PartyModeConfig {
   add_queue_limit: number;
   add_queue_refill_minutes: number;
   album_art_background: boolean;
+  show_player_controls: boolean;
 }
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
+const showPlayerControlsEnabled = ref(false); // Default to false (frameless)
 
 // Check if album art background is enabled - prioritize query parameter over config
 const useAlbumArtBackground = computed(() => {
@@ -72,6 +86,18 @@ const useAlbumArtBackground = computed(() => {
   }
   // Otherwise use config value
   return albumArtBackgroundEnabled.value;
+});
+
+// Check if player controls should be shown - prioritize query parameter over config
+// frameless=false in URL means show controls, frameless=true means hide controls
+const showPlayerControls = computed(() => {
+  // Query parameter takes precedence for manual override
+  if (route.query.frameless !== undefined) {
+    // frameless=false means show controls, frameless=true means hide controls
+    return route.query.frameless === "false";
+  }
+  // Otherwise use config value
+  return showPlayerControlsEnabled.value;
 });
 
 // Queue items state
@@ -285,19 +311,44 @@ const backgroundStyle = computed(() => {
   };
 });
 
+// Track previous frameless state to restore on unmount
+const previousFrameless = ref(store.frameless);
+
+// Track unsubscribe functions
+const unsubscribeFunctions = ref<(() => void)[]>([]);
+
 // Lifecycle and event subscriptions
 onMounted(async () => {
-  // Fetch party mode configuration (for album art background setting)
+  // Save current frameless state before we modify it
+  previousFrameless.value = store.frameless;
+
+  // Set frameless mode immediately (default to frameless/no controls)
+  // This ensures the layout hides controls right away before config loads
+  if (route.query.frameless === undefined) {
+    store.frameless = true; // Default to frameless (no player controls)
+  }
+
+  // Fetch party mode configuration (for album art background and player controls settings)
   try {
     const config = (await api.sendCommand(
       "party_mode/config",
     )) as PartyModeConfig;
-    if (config && config.album_art_background !== undefined) {
-      albumArtBackgroundEnabled.value = config.album_art_background;
+    if (config) {
+      if (config.album_art_background !== undefined) {
+        albumArtBackgroundEnabled.value = config.album_art_background;
+      }
+      if (config.show_player_controls !== undefined) {
+        showPlayerControlsEnabled.value = config.show_player_controls;
+        // Update frameless based on config (unless URL query param overrides)
+        if (route.query.frameless === undefined) {
+          // show_player_controls=true means frameless=false (show the layout's controls)
+          store.frameless = !config.show_player_controls;
+        }
+      }
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
-    // Use default (true) if fetch fails
+    // Use defaults if fetch fails (already set frameless=true above)
   }
 
   // Initial fetch
@@ -321,10 +372,15 @@ onMounted(async () => {
     fetchQueueItems();
   });
 
-  onBeforeUnmount(() => {
-    unsub1();
-    unsub2();
-  });
+  unsubscribeFunctions.value = [unsub1, unsub2];
+});
+
+// Cleanup when leaving the party view
+onBeforeUnmount(() => {
+  // Unsubscribe from events
+  unsubscribeFunctions.value.forEach((unsub) => unsub());
+  // Restore previous frameless state when leaving party view
+  store.frameless = previousFrameless.value;
 });
 
 // Watch for active player queue changes
@@ -513,6 +569,39 @@ watch(
 
   .empty-message {
     font-size: 0.875rem;
+  }
+}
+
+/* Player Controls (when enabled) */
+.party-player-controls {
+  position: absolute;
+  bottom: 2vw;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 1rem 2rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.party-volume {
+  width: 150px;
+}
+
+@media (max-width: 768px) {
+  .party-player-controls {
+    bottom: 1rem;
+    padding: 0.75rem 1.5rem;
+    gap: 1rem;
+  }
+
+  .party-volume {
+    width: 100px;
   }
 }
 </style>
