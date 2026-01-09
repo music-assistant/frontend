@@ -311,24 +311,12 @@ const backgroundStyle = computed(() => {
   };
 });
 
-// Track previous frameless state to restore on unmount
-const previousFrameless = ref(store.frameless);
-
 // Track unsubscribe functions
 const unsubscribeFunctions = ref<(() => void)[]>([]);
 
 // Lifecycle and event subscriptions
 onMounted(async () => {
-  // Save current frameless state before we modify it
-  previousFrameless.value = store.frameless;
-
-  // Set frameless mode immediately (default to frameless/no controls)
-  // This ensures the layout hides controls right away before config loads
-  if (route.query.frameless === undefined) {
-    store.frameless = true; // Default to frameless (no player controls)
-  }
-
-  // Fetch party mode configuration (for album art background and player controls settings)
+  // Fetch party mode configuration (for album art background setting)
   try {
     const config = (await api.sendCommand(
       "party_mode/config",
@@ -339,16 +327,10 @@ onMounted(async () => {
       }
       if (config.show_player_controls !== undefined) {
         showPlayerControlsEnabled.value = config.show_player_controls;
-        // Update frameless based on config (unless URL query param overrides)
-        if (route.query.frameless === undefined) {
-          // show_player_controls=true means frameless=false (show the layout's controls)
-          store.frameless = !config.show_player_controls;
-        }
       }
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
-    // Use defaults if fetch fails (already set frameless=true above)
   }
 
   // Initial fetch
@@ -379,8 +361,6 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   // Unsubscribe from events
   unsubscribeFunctions.value.forEach((unsub) => unsub());
-  // Restore previous frameless state when leaving party view
-  store.frameless = previousFrameless.value;
 });
 
 // Watch for active player queue changes
