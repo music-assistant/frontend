@@ -707,7 +707,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-  ): Promise<Track[]> {
+  ): Promise<(Track | Radio)[]> {
     return this.sendCommand("music/playlists/playlist_tracks", {
       item_id,
       provider_instance_id_or_domain,
