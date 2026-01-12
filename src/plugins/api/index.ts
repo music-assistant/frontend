@@ -1731,7 +1731,7 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
-        this.queues[queueId].elapsed_time = msg.data as unknown as number
+        this.queues[queueId].elapsed_time = msg.data as unknown as number;
         this.queues[queueId].elapsed_time_last_updated = Date.now() / 1000;
       }
     } else if (msg.event == EventType.PLAYER_ADDED) {
