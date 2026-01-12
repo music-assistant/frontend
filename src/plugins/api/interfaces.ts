@@ -768,6 +768,11 @@ export interface QueueItem {
 
 // player_queue
 
+export interface QueueTimeUpdate {
+  elapsed_time: number;
+  elapsed_time_last_updated: number;
+}
+
 export interface PlayerQueue {
   queue_id: string;
   active: boolean;

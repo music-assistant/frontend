@@ -20,6 +20,7 @@ import {
   type Playlist,
   type ProviderInstance,
   type QueueItem,
+  type QueueTimeUpdate,
   type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
@@ -1730,8 +1731,12 @@ export class MusicAssistantApi {
       else this.queues[queue.queue_id] = queue;
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
-      if (queueId in this.queues)
-        this.queues[queueId].elapsed_time = msg.data as unknown as number;
+      if (queueId in this.queues) {
+        const data = msg.data as QueueTimeUpdate;
+        this.queues[queueId].elapsed_time = data.elapsed_time;
+        this.queues[queueId].elapsed_time_last_updated =
+          data.elapsed_time_last_updated;
+      }
     } else if (msg.event == EventType.PLAYER_ADDED) {
       const player = msg.data as Player;
       this.players[player.player_id] = player;
