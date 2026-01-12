@@ -32,7 +32,7 @@
     "dark_mode": "Dunkler Modus",
     "delete_db": "Element aus Datenbank entfernen",
     "details": "Details",
-    "enter_url": "Gebe die URL ein, die manuell zur Datenbank hinzugefügt werden soll.",
+    "enter_url": "Gib die URL ein, die manuell zur Datenbank hinzugefügt werden soll.",
     "external_source_active": "Externe Quelle aktiv: {0}",
     "goto_album": "Zum Album {0}",
     "goto_artist": "Zum Künstler {0}",
@@ -889,7 +889,10 @@
         "new_releases_for_you": "Neuerscheinungen für dich",
         "recent_favorite_tracks": "Zuletzt favorisierte Lieder",
         "favorite_playlists": "Playlist-Favoriten",
-        "favorite_radio_stations": "Radiosender-Favoriten"
+        "favorite_radio_stations": "Radiosender-Favoriten",
+        "listen_again": "Nochmal hören",
+        "recommended": "Empfohlen",
+        "recently_added": "Zuletzt hinzugefügt"
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
@@ -1003,7 +1006,9 @@
         "no_players_selected": "Alle Wiedergabegeräte (ohne Einschränkungen)",
         "no_providers_selected": "Alle Musikanbieter (ohne Einschränkungen)",
         "select_players": "Wähle Wiedergabegeräte",
-        "select_providers": "Wähle Musikanbieter"
+        "select_providers": "Wähle Musikanbieter",
+        "save_changes": "Änderungen speichern",
+        "update_password": "Passwort aktualisieren"
     },
     "login": {
         "subtitle": "Verbinde dich mit deinem Musikserver",
@@ -1020,9 +1025,9 @@
         "remote_id_hint": "Du findest diese Option in deinen Servereinstellungen unter „Fernzugriff“.",
         "connect": "Verbinde",
         "username": "Benutzername",
-        "username_placeholder": "Gebe deinen Benutzernamen ein",
+        "username_placeholder": "Gib deinen Benutzernamen ein",
         "password": "Passwort",
-        "password_placeholder": "Gebe dein Passwort ein",
+        "password_placeholder": "Gib dein Passwort ein",
         "sign_in": "Anmelden",
         "or_continue_with": "Oder fahre fort mit",
         "sign_in_with_ha": "Mit Home Assistant anmelden",
@@ -1101,5 +1106,8 @@
         "currently_playing": "Derzeit abgespielt auf",
         "click_to_change": "Klicke unten, um das Ausgabegerät zu ändern."
     },
-    "more_options": "Mehr Optionen"
+    "more_options": "Mehr Optionen",
+    "edit": "Bearbeiten",
+    "authors": "Autoren",
+    "narrators": "Erzähler"
 }

@@ -291,7 +291,8 @@
             "player_controls": "Χειριστήρια συσκευής αναπαραγωγής",
             "presets": "Προεπιλογές",
             "sync_options": "Επιλογές συγχρονισμού\/εισαγωγής",
-            "builtin_playlists": "Ρυθμίσεις ενσωματωμένης λίστας αναπαραγωγής"
+            "builtin_playlists": "Ρυθμίσεις ενσωματωμένης λίστας αναπαραγωγής",
+            "web_player": "Πρόγραμμα αναπαραγωγής ιστού"
         },
         "tts_pre_announce": {
             "label": "Προαναγγελία ανακοινώσεων TTS",
@@ -362,7 +363,8 @@
                 "sl_SI": "Σλοβενικά",
                 "hu_HU": "Ουγγρικά",
                 "it": "Ιταλικά",
-                "el_GR": "Ελληνικά"
+                "el_GR": "Ελληνικά",
+                "lt_LT": "Λιθουανικά"
             }
         },
         "no_music_providers": "Δεν έχουν ρυθμιστεί πάροχοι μουσικής",
@@ -528,7 +530,12 @@
         "providers_description": "Διαχειριστείτε τις πηγές μουσικής, τις υπηρεσίες streaming και τις ενσωματώσεις σας",
         "players_description": "Διαμορφώστε και διαχειριστείτε τις συσκευές εξόδου ήχου σας",
         "frontend_description": "Προσαρμογή του θέματος και της εμφάνισης της διεπαφής χρήστη",
-        "provider_type": "Τύπος"
+        "provider_type": "Τύπος",
+        "remote_access_connected": "Συνδεδεμένο",
+        "remote_access_connecting": "Σύνδεση…",
+        "remote_access_encryption": "Κρυπτογράφηση",
+        "reconfigure": "Επαναδιαμόρφωση",
+        "fix_now": "Διόρθωση τώρα"
     },
     "show_info": "Εμφάνιση πληροφοριών",
     "show_select_boxes": "Εμφάνιση πλαισίων επιλογής",
@@ -743,12 +750,41 @@
         "new_releases_for_you": "Νέες κυκλοφορίες για εσάς",
         "recent_favorite_tracks": "Πρόσφατα αγαπημένα κομμάτια",
         "favorite_playlists": "Αγαπημένες λίστες αναπαραγωγής",
-        "favorite_radio_stations": "Αγαπημένοι ραδιοφωνικοί σταθμοί"
+        "favorite_radio_stations": "Αγαπημένοι ραδιοφωνικοί σταθμοί",
+        "listen_again": "Ακούστε ξανά",
+        "in_progress_series": "Συνέχεια σειράς…",
+        "recommended": "Συνιστάται",
+        "recently_added": "Προστέθηκαν πρόσφατα",
+        "episodes_recently_added": "Επεισόδια που προστέθηκαν πρόσφατα",
+        "recent_series": "Πρόσφατες σειρές",
+        "newest_authors": "Νεότεροι συγγραφείς",
+        "newest_episodes": "Νεότερα επεισόδια",
+        "discover": "Ανακαλύψτε",
+        "libraries": "Βιβλιοθήκες",
+        "library": "Βιβλιοθήκη",
+        "trending_podcasts": "Δημοφιλή podcast"
     },
     "homescreen_edit_enable": "Επεξεργασία αρχικής οθόνης",
     "homescreen_edit_disable": "Εξοδος από τη λειτουργία επεξεργασίας αρχικής οθόνης",
     "lyrics_will_appear_soon": "Οι στίχοι θα εμφανιστούν όταν ξεκινήσει το τραγούδι…",
     "radiobrowser_by_votes": "Ανά ψήφους",
     "radiobrowser_by_clicks": "Ανά κλικ",
-    "radiobrowser_by_language": "Ανά γλώσσα"
+    "radiobrowser_by_language": "Ανά γλώσσα",
+    "player_tip": {
+        "selected_player": "Επιλεγμένος παίκτης",
+        "currently_playing": "Αυτή τη στιγμή παίζει στο",
+        "click_to_change": "Κάντε κλικ παρακάτω για να αλλάξετε τη συσκευή εξόδου"
+    },
+    "more_options": "Περισσότερες επιλογές",
+    "auth": {
+        "save_changes": "Αποθήκευση αλλαγών",
+        "update_password": "Ενημέρωση κωδικού πρόσβασης"
+    },
+    "edit": "Επεξεργασία",
+    "authors": "Συγγραφείς",
+    "collection": "Συλλογή",
+    "collections": "Συλλογές",
+    "narrators": "Αφηγητές",
+    "series_plural": "Σειρές",
+    "series_singular": "Σειρά"
 }
