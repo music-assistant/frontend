@@ -1733,7 +1733,7 @@ export class MusicAssistantApi {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
         // TODO: Remove number check in 2.8
-        if (typeof msg.data === 'number') {
+        if (typeof msg.data === "number") {
           this.queues[queueId].elapsed_time = msg.data;
         } else {
           const data = msg.data as QueueTimeUpdate;
