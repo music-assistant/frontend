@@ -6,6 +6,13 @@
       </template>
       <template #append>
         <v-btn
+          v-if="isOverview"
+          :icon="settingsViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
+          variant="text"
+          :title="t('tooltip.toggle_view_mode')"
+          @click="toggleSettingsViewMode()"
+        />
+        <v-btn
           v-if="isPlayersPage"
           :icon="playersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
           variant="text"
@@ -36,37 +43,149 @@
       variant="comfortable"
       class="settings-overview"
     >
-      <div class="settings-grid">
-        <Card
-          v-for="section in settingsSections"
-          :key="section.name"
-          class="setting-card"
-          @click="router.push(section.route)"
-        >
-          <CardHeader class="setting-card-header">
-            <div class="setting-header-top">
+      <div v-if="settingsViewMode === 'card'" class="settings-card-view">
+        <div class="settings-featured">
+          <Card
+            v-for="section in featuredSections"
+            :key="section.name"
+            class="setting-card"
+            @click="router.push(section.route)"
+          >
+            <CardHeader class="setting-card-header">
+              <div class="setting-header-top">
+                <div
+                  class="setting-icon"
+                  :style="getIconBackgroundStyle(section.color)"
+                >
+                  <Icon :icon="section.icon" size="24" color="white" />
+                </div>
+                <div class="setting-chevron">
+                  <Icon icon="mdi-chevron-right" size="20" />
+                </div>
+              </div>
+              <CardTitle class="setting-title">
+                {{ t(section.label) }}
+              </CardTitle>
+              <CardDescription class="setting-description">
+                {{ t(section.description) }}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+
+        <div class="settings-grid">
+          <Card
+            v-for="section in regularSections"
+            :key="section.name"
+            class="setting-card"
+            @click="router.push(section.route)"
+          >
+            <CardHeader class="setting-card-header">
+              <div class="setting-header-top">
+                <div
+                  class="setting-icon"
+                  :style="getIconBackgroundStyle(section.color)"
+                >
+                  <Icon :icon="section.icon" size="24" color="white" />
+                </div>
+                <div class="setting-chevron">
+                  <Icon icon="mdi-chevron-right" size="20" />
+                </div>
+              </div>
+              <CardTitle class="setting-title">
+                {{ t(section.label) }}
+              </CardTitle>
+              <CardDescription class="setting-description">
+                {{ t(section.description) }}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+
+      <div v-else class="settings-list-view">
+        <v-list class="settings-list">
+          <ListItem
+            v-for="section in providersSection"
+            :key="section.name"
+            link
+            class="settings-list-item"
+            @click="router.push(section.route)"
+          >
+            <template #prepend>
               <div
-                class="setting-icon"
+                class="setting-list-icon"
                 :style="getIconBackgroundStyle(section.color)"
               >
-                <Icon :icon="section.icon" size="24" color="white" />
+                <Icon :icon="section.icon" size="20" color="white" />
               </div>
-              <div class="setting-chevron">
-                <Icon icon="mdi-chevron-right" size="20" />
-              </div>
-            </div>
-            <CardTitle class="setting-title">
+            </template>
+            <template #title>
               {{ t(section.label) }}
-            </CardTitle>
-            <CardDescription class="setting-description">
+            </template>
+            <template #subtitle>
               {{ t(section.description) }}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+            </template>
+            <template #append>
+              <Icon icon="mdi-chevron-right" size="20" />
+            </template>
+          </ListItem>
+
+          <ListItem
+            v-for="section in playersSection"
+            :key="section.name"
+            link
+            class="settings-list-item"
+            @click="router.push(section.route)"
+          >
+            <template #prepend>
+              <div
+                class="setting-list-icon"
+                :style="getIconBackgroundStyle(section.color)"
+              >
+                <Icon :icon="section.icon" size="20" color="white" />
+              </div>
+            </template>
+            <template #title>
+              {{ t(section.label) }}
+            </template>
+            <template #subtitle>
+              {{ t(section.description) }}
+            </template>
+            <template #append>
+              <Icon icon="mdi-chevron-right" size="20" />
+            </template>
+          </ListItem>
+
+          <ListItem
+            v-for="section in otherSettingsSections"
+            :key="section.name"
+            link
+            class="settings-list-item"
+            @click="router.push(section.route)"
+          >
+            <template #prepend>
+              <div
+                class="setting-list-icon"
+                :style="getIconBackgroundStyle(section.color)"
+              >
+                <Icon :icon="section.icon" size="20" color="white" />
+              </div>
+            </template>
+            <template #title>
+              {{ t(section.label) }}
+            </template>
+            <template #subtitle>
+              {{ t(section.description) }}
+            </template>
+            <template #append>
+              <Icon icon="mdi-chevron-right" size="20" />
+            </template>
+          </ListItem>
+        </v-list>
       </div>
     </Container>
 
-    <!-- Settings Subsections -->
     <router-view v-else v-slot="{ Component }">
       <component :is="Component" v-if="Component" />
     </router-view>
@@ -76,6 +195,7 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import Icon from "@/components/Icon.vue";
+import ListItem from "@/components/ListItem.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import {
   Card,
@@ -97,6 +217,27 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const { t } = useI18n();
 const { getPreference, setPreference } = useUserPreferences();
+
+const settingsViewMode = ref<"list" | "card">("card");
+const savedSettingsViewMode = getPreference<"list" | "card">(
+  "settings.overview.viewMode",
+  "card",
+);
+
+watch(
+  () => savedSettingsViewMode.value,
+  (savedViewMode) => {
+    if (savedViewMode === "list" || savedViewMode === "card") {
+      settingsViewMode.value = savedViewMode;
+    }
+  },
+  { immediate: true },
+);
+
+const toggleSettingsViewMode = function () {
+  settingsViewMode.value = settingsViewMode.value === "list" ? "card" : "list";
+  setPreference("settings.overview.viewMode", settingsViewMode.value);
+};
 
 const playersViewMode = ref<"list" | "card">("list");
 const isPlayersPage = computed(() => {
@@ -239,6 +380,34 @@ const allSettingsSections = [
 const settingsSections = computed(() => {
   const isAdmin = authManager.isAdmin();
   return allSettingsSections.filter((section) => !section.adminOnly || isAdmin);
+});
+
+const featuredSections = computed(() => {
+  return settingsSections.value.filter(
+    (section) => section.name === "providers" || section.name === "players",
+  );
+});
+
+const regularSections = computed(() => {
+  return settingsSections.value.filter(
+    (section) => section.name !== "providers" && section.name !== "players",
+  );
+});
+
+const providersSection = computed(() => {
+  return settingsSections.value.filter(
+    (section) => section.name === "providers",
+  );
+});
+
+const playersSection = computed(() => {
+  return settingsSections.value.filter((section) => section.name === "players");
+});
+
+const otherSettingsSections = computed(() => {
+  return settingsSections.value.filter(
+    (section) => section.name !== "providers" && section.name !== "players",
+  );
 });
 
 const getIconBackgroundStyle = (color: string) => {
@@ -454,10 +623,38 @@ const documentationUrl = computed(() => {
   margin: 0 auto;
 }
 
+.settings-card-view {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.settings-featured {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 25px;
+}
+
+@media (min-width: 960px) {
+  .settings-featured {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .settings-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .setting-card {
@@ -538,8 +735,79 @@ const documentationUrl = computed(() => {
   color: rgb(var(--v-theme-primary));
 }
 
-/* Mobile optimizations */
+.settings-list-view {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-list {
+  padding: 0;
+  background: transparent;
+}
+
+.settings-list-item {
+  cursor: pointer;
+  padding: 20px 24px;
+  min-height: 80px;
+  border-bottom: none;
+  background: transparent;
+}
+
+.settings-list-item:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
+}
+
+.list-item-main {
+  border-radius: 10px !important;
+}
+
+.setting-list-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.settings-list-item :deep(.v-list-item__prepend) {
+  margin-right: 8px;
+}
+
+.settings-list-item :deep(.v-list-item__prepend .v-icon) {
+  margin-inline-end: 0 !important;
+}
+
+.settings-list-item :deep(.v-list-item-title) {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.settings-list-item :deep(.v-list-item-subtitle) {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin-top: 4px;
+}
+
+.settings-list-item :deep(.v-list-item__append) {
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.settings-list-item:hover :deep(.v-list-item__append) {
+  opacity: 1;
+}
+
 @media (max-width: 768px) {
+  .settings-featured {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
   .settings-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -571,6 +839,25 @@ const documentationUrl = computed(() => {
   .setting-title {
     font-size: 1.125rem;
   }
+
+  .settings-list-item {
+    padding: 16px;
+    min-height: 72px;
+  }
+
+  .setting-list-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+  }
+
+  .settings-list-item :deep(.v-list-item-title) {
+    font-size: 1rem;
+  }
+
+  .settings-list-item :deep(.v-list-item-subtitle) {
+    font-size: 0.813rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -580,6 +867,38 @@ const documentationUrl = computed(() => {
 
   .setting-card-header {
     padding: 16px;
+  }
+
+  .setting-card-featured .setting-card-header {
+    padding: 16px;
+  }
+
+  .setting-icon-featured {
+    width: 56px;
+    height: 56px;
+  }
+
+  .setting-card-featured .setting-title {
+    font-size: 1.25rem;
+  }
+
+  .settings-list-item {
+    padding: 16px;
+    min-height: 72px;
+  }
+
+  .setting-list-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+  }
+
+  .settings-list-item :deep(.v-list-item-title) {
+    font-size: 1rem;
+  }
+
+  .settings-list-item :deep(.v-list-item-subtitle) {
+    font-size: 0.813rem;
   }
 }
 </style>
