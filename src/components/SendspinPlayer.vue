@@ -231,7 +231,6 @@ onMounted(() => {
           audioOutputMode: "media-element",
           audioElement,
           isAndroid,
-          silentAudioSrc: almostSilentMp3,
           clientName: getDeviceName(),
           codecs,
           syncDelay,
