@@ -521,5 +521,9 @@
     "shuffle_disable": "셔플 비활성화",
     "shuffle_enable": "셔플 활성화",
     "dont_stop_the_music_enable": "'음악을 멈추지 마세요!'를 활성화합니다",
-    "dont_stop_the_music_disable": "'음악 멈추지 마세요!' 비활성화하기"
+    "dont_stop_the_music_disable": "'음악 멈추지 마세요!' 비활성화하기",
+    "edit": "수정",
+    "recommendations": {
+        "recommended": "권장됨"
+    }
 }
