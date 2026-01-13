@@ -891,8 +891,17 @@
         "favorite_playlists": "Playlist-Favoriten",
         "favorite_radio_stations": "Radiosender-Favoriten",
         "listen_again": "Nochmal hören",
+        "in_progress_series": "Fortsetzung der Serie...",
         "recommended": "Empfohlen",
-        "recently_added": "Zuletzt hinzugefügt"
+        "recently_added": "Zuletzt hinzugefügt",
+        "episodes_recently_added": "Kürzlich hinzugefügte Episoden",
+        "recent_series": "Aktuelle Serien",
+        "newest_authors": "Neueste Autoren",
+        "newest_episodes": "Neueste Episoden",
+        "discover": "Entdecken",
+        "libraries": "Bibliotheken",
+        "library": "Bibliothek",
+        "trending_podcasts": "Beliebte Podcasts"
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
@@ -1109,5 +1118,9 @@
     "more_options": "Mehr Optionen",
     "edit": "Bearbeiten",
     "authors": "Autoren",
-    "narrators": "Erzähler"
+    "collection": "Sammlung",
+    "collections": "Sammlungen",
+    "narrators": "Erzähler",
+    "series_plural": "Serien",
+    "series_singular": "Serien"
 }
