@@ -29,10 +29,24 @@
         />
       </v-overlay>
 
-      <MediaItemThumb
-        :item="isAvailable ? item : undefined"
-        style="height: auto"
-      />
+      <div class="thumb-container">
+        <MediaItemThumb
+          :item="isAvailable ? item : undefined"
+          style="height: auto"
+        />
+        <div
+          v-if="
+            item.media_type === MediaType.PLAYLIST &&
+            'provider_mappings' in item
+          "
+          class="provider-icon-overlay"
+        >
+          <ProviderIcon
+            :domain="item.provider_mappings[0].provider_domain"
+            :size="20"
+          />
+        </div>
+      </div>
 
       <v-list-item
         variant="text"
@@ -177,6 +191,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
+import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 // properties
@@ -315,5 +330,19 @@ panel-item-details :deep(.v-list-item__content) {
 .hiresiconinverted {
   margin-right: 10px;
   filter: invert(100%);
+}
+
+.thumb-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-icon-overlay {
+  position: absolute;
+  left: -10px;
+  top: 0px;
+  z-index: 2;
 }
 </style>
