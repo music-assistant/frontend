@@ -1,334 +1,363 @@
 <template>
-  <Container>
-    <!-- Version Information Section -->
-    <v-card class="mb-4" elevation="0" variant="flat">
-      <v-card-title class="text-subtitle-1 font-weight-bold py-3">
-        <v-icon icon="mdi-information-outline" class="mr-2" />
-        {{ $t("settings.version_info") }}
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pa-0">
-        <v-list class="py-0" bg-color="transparent">
-          <v-list-item class="info-list-item">
-            <v-list-item-title class="info-label">
-              {{ $t("settings.server_version") }}
-            </v-list-item-title>
-            <template #append>
-              <span class="info-value">
-                {{ api.serverInfo.value?.server_version }}
-              </span>
-            </template>
-          </v-list-item>
-          <v-divider v-if="!api.serverInfo.value?.homeassistant_addon" />
-          <v-list-item
-            v-if="!api.serverInfo.value?.homeassistant_addon"
-            class="info-list-item"
-          >
-            <v-list-item-title class="info-label">
-              {{ $t("settings.server_base_url") }}
-            </v-list-item-title>
-            <template #append>
-              <span class="info-value">
-                {{ api.serverInfo.value?.base_url }}
-              </span>
-            </template>
-          </v-list-item>
-          <v-divider />
-          <v-list-item class="info-list-item">
-            <v-list-item-title class="info-label">
-              {{ $t("settings.server_as_addon") }}
-            </v-list-item-title>
-            <template #append>
-              <v-chip
-                :color="
-                  api.serverInfo.value?.homeassistant_addon
-                    ? 'success'
-                    : 'default'
-                "
-                size="small"
-                variant="flat"
-              >
-                <v-icon
-                  :icon="
-                    api.serverInfo.value?.homeassistant_addon
-                      ? 'mdi-check'
-                      : 'mdi-close'
-                  "
-                  start
-                />
-                {{
-                  api.serverInfo.value?.homeassistant_addon
-                    ? $t("yes")
-                    : $t("no")
-                }}
-              </v-chip>
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card-text>
-    </v-card>
+  <Container class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+    <!-- Version Information -->
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t("settings.version_info") }}</CardTitle>
+        <CardDescription>
+          {{ $t("settings.server_version") }}
+        </CardDescription>
+      </CardHeader>
+      <CardContent class="space-y-2">
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.server_version") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-xs font-mono text-muted-foreground">
+              {{ api.serverInfo.value?.server_version }}
+            </span>
+          </ItemContent>
+        </Item>
 
-    <!-- Open Home Foundation Section -->
-    <v-card
+        <Item
+          v-if="!api.serverInfo.value?.homeassistant_addon"
+          variant="outline"
+          size="sm"
+          class="justify-between"
+        >
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.server_base_url") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-xs font-mono text-muted-foreground break-all">
+              {{ api.serverInfo.value?.base_url }}
+            </span>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.server_as_addon") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <Badge
+              :variant="
+                api.serverInfo.value?.homeassistant_addon
+                  ? 'default'
+                  : 'outline'
+              "
+            >
+              {{
+                api.serverInfo.value?.homeassistant_addon ? $t("yes") : $t("no")
+              }}
+            </Badge>
+          </ItemContent>
+        </Item>
+      </CardContent>
+    </Card>
+
+    <!-- Open Home Foundation -->
+    <Card
+      as="a"
       href="https://www.openhomefoundation.org/"
       target="_blank"
-      class="foundation-card mb-4"
-      elevation="0"
-      variant="flat"
+      class="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-lg"
     >
-      <v-card-text class="text-center py-6">
-        <div class="foundation-text text-subtitle-1 mb-4">
+      <CardContent class="flex flex-col items-center text-center gap-4 py-8">
+        <div
+          class="text-sm font-medium text-muted-foreground uppercase tracking-wide"
+        >
           {{ $t("settings.proud_part_of") }}
         </div>
-        <div class="foundation-logo">
+        <div class="w-full max-w-xs">
           <img
             :src="openHomeFoundationLogo"
             alt="Open Home Foundation"
-            class="foundation-img"
+            class="w-full h-auto opacity-90 transition-opacity group-hover:opacity-100"
           />
         </div>
-      </v-card-text>
-    </v-card>
+      </CardContent>
+    </Card>
 
-    <!-- Library Statistics Section -->
-    <v-card class="mb-4" elevation="0" variant="flat">
-      <v-card-title class="text-subtitle-1 font-weight-bold py-3">
-        <v-icon icon="mdi-music-box-multiple" class="mr-2" />
-        {{ $t("settings.library_stats") }}
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pa-0">
-        <v-list class="py-0" bg-color="transparent">
-          <v-list-item class="info-list-item">
-            <v-list-item-title class="info-label">
-              {{ $t("settings.artists_in_library") }}
-            </v-list-item-title>
-            <template #append>
-              <span class="info-value">
-                {{ (store.libraryArtistsCount || 0).toLocaleString() }}
+    <!-- Library Statistics -->
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t("settings.library_stats") }}</CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-2">
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.artists_in_library") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-sm font-medium">
+              {{ (store.libraryArtistsCount || 0).toLocaleString() }}
+            </span>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.albums_in_library") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-sm font-medium">
+              {{ (store.libraryAlbumsCount || 0).toLocaleString() }}
+            </span>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.tracks_in_library") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-sm font-medium">
+              {{ (store.libraryTracksCount || 0).toLocaleString() }}
+            </span>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.playlists_in_library") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-sm font-medium">
+              {{ (store.libraryPlaylistsCount || 0).toLocaleString() }}
+            </span>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.radio_in_library") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-sm font-medium">
+              {{ (store.libraryRadiosCount || 0).toLocaleString() }}
+            </span>
+          </ItemContent>
+        </Item>
+      </CardContent>
+    </Card>
+
+    <!-- Links -->
+    <Card>
+      <CardHeader class="pb-2">
+        <CardTitle>{{ $t("settings.links") }}</CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-2 p-4">
+        <a
+          :href="changelogUrl"
+          target="_blank"
+          class="flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 no-underline"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500"
+            >
+              <v-icon icon="mdi-text-box-outline" size="24" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-primary underline">
+                {{ $t("settings.changelog") }}
               </span>
-            </template>
-          </v-list-item>
-          <v-divider />
-          <v-list-item class="info-list-item">
-            <v-list-item-title class="info-label">
-              {{ $t("settings.albums_in_library") }}
-            </v-list-item-title>
-            <template #append>
-              <span class="info-value">
-                {{ (store.libraryAlbumsCount || 0).toLocaleString() }}
+              <span class="text-xs text-muted-foreground underline">
+                github.com/music-assistant/server
               </span>
-            </template>
-          </v-list-item>
-          <v-divider />
-          <v-list-item class="info-list-item">
-            <v-list-item-title class="info-label">
-              {{ $t("settings.tracks_in_library") }}
-            </v-list-item-title>
-            <template #append>
-              <span class="info-value">
-                {{ (store.libraryTracksCount || 0).toLocaleString() }}
+            </div>
+          </div>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="20"
+            class="text-primary shrink-0"
+          />
+        </a>
+
+        <a
+          :href="documentationUrl"
+          target="_blank"
+          class="flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 no-underline"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500"
+            >
+              <v-icon icon="mdi-bookshelf" size="24" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-primary underline">
+                {{ $t("settings.documentation") }}
               </span>
-            </template>
-          </v-list-item>
-          <v-divider />
-          <v-list-item class="info-list-item">
-            <v-list-item-title class="info-label">
-              {{ $t("settings.playlists_in_library") }}
-            </v-list-item-title>
-            <template #append>
-              <span class="info-value">
-                {{ (store.libraryPlaylistsCount || 0).toLocaleString() }}
+              <span class="text-xs text-muted-foreground underline">
+                music-assistant.io
               </span>
-            </template>
-          </v-list-item>
-          <v-divider />
-          <v-list-item class="info-list-item">
-            <v-list-item-title class="info-label">
-              {{ $t("settings.radio_in_library") }}
-            </v-list-item-title>
-            <template #append>
-              <span class="info-value">
-                {{ (store.libraryRadiosCount || 0).toLocaleString() }}
+            </div>
+          </div>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="20"
+            class="text-primary shrink-0"
+          />
+        </a>
+
+        <a
+          v-if="apiDocsUrl"
+          :href="apiDocsUrl"
+          target="_blank"
+          class="flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 no-underline"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-500/10 text-teal-500"
+            >
+              <v-icon icon="mdi-api" size="24" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-primary underline">
+                {{ $t("settings.api_docs") }}
               </span>
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card-text>
-    </v-card>
+              <span class="text-xs text-muted-foreground underline">
+                {{ apiDocsUrl }}
+              </span>
+            </div>
+          </div>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="20"
+            class="text-primary shrink-0"
+          />
+        </a>
 
-    <!-- Links Section -->
-    <v-card class="mb-4" elevation="0" variant="flat">
-      <v-card-title class="text-subtitle-1 font-weight-bold py-3">
-        <v-icon icon="mdi-link-variant" class="mr-2" />
-        {{ $t("settings.links") }}
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pa-0">
-        <v-list class="py-0" bg-color="transparent">
-          <v-list-item
-            :href="changelogUrl"
-            target="_blank"
-            link
-            class="link-item"
-          >
-            <template #prepend>
-              <v-avatar color="blue-grey-lighten-4" size="36">
-                <v-icon
-                  icon="mdi-text-box-outline"
-                  color="blue-grey-darken-2"
-                  size="small"
-                />
-              </v-avatar>
-            </template>
-            <v-list-item-title>{{
-              $t("settings.changelog")
-            }}</v-list-item-title>
-            <template #append>
-              <v-icon icon="mdi-open-in-new" size="small" />
-            </template>
-          </v-list-item>
-          <v-divider />
+        <a
+          href="https://github.com/orgs/music-assistant/discussions/categories/feature-requests-and-ideas"
+          target="_blank"
+          class="flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 no-underline"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500"
+            >
+              <v-icon icon="mdi-lightbulb-outline" size="24" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-primary underline">
+                {{ $t("settings.feature_requests") }}
+              </span>
+              <span class="text-xs text-muted-foreground underline">
+                GitHub Discussions
+              </span>
+            </div>
+          </div>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="20"
+            class="text-primary shrink-0"
+          />
+        </a>
 
-          <v-list-item
-            :href="documentationUrl"
-            target="_blank"
-            link
-            class="link-item"
-          >
-            <template #prepend>
-              <v-avatar color="indigo-lighten-4" size="36">
-                <v-icon
-                  icon="mdi-bookshelf"
-                  color="indigo-darken-2"
-                  size="small"
-                />
-              </v-avatar>
-            </template>
-            <v-list-item-title>{{
-              $t("settings.documentation")
-            }}</v-list-item-title>
-            <template #append>
-              <v-icon icon="mdi-open-in-new" size="small" />
-            </template>
-          </v-list-item>
-          <v-divider />
+        <a
+          href="https://github.com/music-assistant/support"
+          target="_blank"
+          class="flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 no-underline"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500"
+            >
+              <v-icon icon="mdi-bug" size="24" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-primary underline">
+                {{ $t("settings.bug_reports") }}
+              </span>
+              <span class="text-xs text-muted-foreground underline">
+                GitHub Support repository
+              </span>
+            </div>
+          </div>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="20"
+            class="text-primary shrink-0"
+          />
+        </a>
 
-          <v-list-item
-            v-if="apiDocsUrl"
-            :href="apiDocsUrl"
-            target="_blank"
-            link
-            class="link-item"
-          >
-            <template #prepend>
-              <v-avatar color="teal-lighten-4" size="36">
-                <v-icon icon="mdi-api" color="teal-darken-2" size="small" />
-              </v-avatar>
-            </template>
-            <v-list-item-title>{{ $t("settings.api_docs") }}</v-list-item-title>
-            <template #append>
-              <v-icon icon="mdi-open-in-new" size="small" />
-            </template>
-          </v-list-item>
-          <v-divider />
+        <a
+          href="https://github.com/orgs/music-assistant/discussions"
+          target="_blank"
+          class="flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 no-underline"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500"
+            >
+              <v-icon icon="mdi-forum" size="24" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-primary underline">
+                {{ $t("settings.discussion_forums") }}
+              </span>
+              <span class="text-xs text-muted-foreground underline">
+                GitHub Discussions
+              </span>
+            </div>
+          </div>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="20"
+            class="text-primary shrink-0"
+          />
+        </a>
 
-          <v-list-item
-            href="https://github.com/orgs/music-assistant/discussions/categories/feature-requests-and-ideas"
-            target="_blank"
-            link
-            class="link-item"
-          >
-            <template #prepend>
-              <v-avatar color="amber-lighten-4" size="36">
-                <v-icon
-                  icon="mdi-lightbulb-outline"
-                  color="amber-darken-3"
-                  size="small"
-                />
-              </v-avatar>
-            </template>
-            <v-list-item-title>{{
-              $t("settings.feature_requests")
-            }}</v-list-item-title>
-            <template #append>
-              <v-icon icon="mdi-open-in-new" size="small" />
-            </template>
-          </v-list-item>
-          <v-divider />
-
-          <v-list-item
-            href="https://github.com/music-assistant/support"
-            target="_blank"
-            link
-            class="link-item"
-          >
-            <template #prepend>
-              <v-avatar color="red-lighten-4" size="36">
-                <v-icon icon="mdi-bug" color="red-darken-2" size="small" />
-              </v-avatar>
-            </template>
-            <v-list-item-title>{{
-              $t("settings.bug_reports")
-            }}</v-list-item-title>
-            <template #append>
-              <v-icon icon="mdi-open-in-new" size="small" />
-            </template>
-          </v-list-item>
-          <v-divider />
-
-          <v-list-item
-            href="https://github.com/orgs/music-assistant/discussions"
-            target="_blank"
-            link
-            class="link-item"
-          >
-            <template #prepend>
-              <v-avatar color="purple-lighten-4" size="36">
-                <v-icon icon="mdi-forum" color="purple-darken-2" size="small" />
-              </v-avatar>
-            </template>
-            <v-list-item-title>{{
-              $t("settings.discussion_forums")
-            }}</v-list-item-title>
-            <template #append>
-              <v-icon icon="mdi-open-in-new" size="small" />
-            </template>
-          </v-list-item>
-          <v-divider />
-
-          <v-list-item
-            href="https://github.com/music-assistant/server/blob/dev/LICENSE"
-            target="_blank"
-            link
-            class="link-item"
-          >
-            <template #prepend>
-              <v-avatar color="green-lighten-4" size="36">
-                <v-icon
-                  icon="mdi-license"
-                  color="green-darken-2"
-                  size="small"
-                />
-              </v-avatar>
-            </template>
-            <v-list-item-title>{{ $t("settings.license") }}</v-list-item-title>
-            <template #append>
-              <v-icon icon="mdi-open-in-new" size="small" />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card-text>
-    </v-card>
+        <a
+          href="https://github.com/music-assistant/server/blob/dev/LICENSE"
+          target="_blank"
+          class="flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 no-underline"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500"
+            >
+              <v-icon icon="mdi-license" size="24" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-primary underline">
+                {{ $t("settings.license") }}
+              </span>
+              <span class="text-xs text-muted-foreground underline">
+                Apache 2.0 License
+              </span>
+            </div>
+          </div>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="20"
+            class="text-primary shrink-0"
+          />
+        </a>
+      </CardContent>
+    </Card>
   </Container>
 </template>
 
 <script setup lang="ts">
+import openHomeFoundationLogo from "@/assets/open-home-foundation-logo.svg";
 import Container from "@/components/Container.vue";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { computed, onMounted } from "vue";
-import openHomeFoundationLogo from "@/assets/open-home-foundation-logo.svg";
 
 const changelogUrl = computed(() => {
   return "https://github.com/music-assistant/server/releases";
@@ -362,76 +391,5 @@ onMounted(async () => {
 .font-monospace {
   font-family: monospace;
   font-size: 0.9em;
-}
-
-/* Info list item styling */
-.info-list-item {
-  min-height: 48px;
-}
-
-.info-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.info-value {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.9);
-  text-align: right;
-  word-break: break-all;
-}
-
-/* Make items wrap on mobile */
-@media (max-width: 600px) {
-  .info-list-item :deep(.v-list-item__content) {
-    display: block !important;
-  }
-
-  .info-list-item :deep(.v-list-item__append) {
-    margin-top: 4px;
-    margin-left: 0 !important;
-    align-self: flex-start !important;
-  }
-
-  .info-value {
-    text-align: left;
-  }
-}
-
-.foundation-card {
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.foundation-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
-}
-
-.foundation-logo {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 24px;
-}
-
-.foundation-img {
-  max-width: 400px;
-  width: 100%;
-  height: auto;
-  opacity: 0.9;
-  transition: opacity 0.2s ease;
-}
-
-.foundation-card:hover .foundation-img {
-  opacity: 1;
-}
-
-/* Improve avatar colors in dark mode */
-@media (prefers-color-scheme: dark) {
-  :deep(.v-avatar) {
-    opacity: 0.9;
-  }
 }
 </style>
