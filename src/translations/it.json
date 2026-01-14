@@ -13,7 +13,9 @@
         "single": "Singolo",
         "unknown": "Tipo di album sconosciuto",
         "audiobook": "Audiobook",
-        "podcast": "Podcast"
+        "podcast": "Podcast",
+        "live": "Live",
+        "soundtrack": "Colonna sonora"
     },
     "albums": "Album",
     "appears_on": "Appare su",
@@ -286,7 +288,8 @@
             "generic": "Impostazioni generiche",
             "announcements": "Configurazione degli annunci",
             "airplay": "Impostazioni specifiche di Airplay",
-            "player_controls": "Controlli generali"
+            "player_controls": "Controlli generali",
+            "sync_options": "Sincronizzazione\/importazione opzioni"
         },
         "tts_pre_announce": {
             "label": "Pre-annunciare annunci TTS",
@@ -356,7 +359,8 @@
                 "pt_BR": "Portoghese (Brasiliano)",
                 "sl_SI": "Sloveno",
                 "hu_HU": "Ungherese",
-                "it": "Italiano"
+                "it": "Italiano",
+                "el_GR": "Greco"
             }
         },
         "no_music_providers": "Nessuna Sorgente di Musica configurata",
@@ -414,8 +418,24 @@
             "move_down": "Sposta giù",
             "delete_filter": "Elimina filtro",
             "parametric_eq": {
+                "add_band": "Aggiungi Banda",
+                "delete_band": "Rimuovi Banda",
                 "filter_type": "Tipo di filtro",
-                "preamp": "Preamplificatore"
+                "band": "Banda {index}",
+                "enable_band": "Abilita Banda",
+                "filter_types": {
+                    "peak": "Picco",
+                    "low_pass": "Passa Basso",
+                    "high_pass": "Passa Alto",
+                    "notch": "Notch"
+                },
+                "preamp": "Preamplificatore",
+                "add_band_channel": "Aggiungi Banda (solo {channel})",
+                "band_channel": "Banda {index} (solo {channel}",
+                "show_multichannel_controls": "Visualizza controlli Multicanale",
+                "edited_channel": "Grafico per risposta EQ per questo canale\/i",
+                "channel": "Questa banda sarà applicata a",
+                "per_channel_preamp": "Guadagno addizionale preamplificatore per {channel}"
             },
             "tone_control": {
                 "bass_level": "Livello dei bassi",
@@ -423,11 +443,29 @@
                 "treble_level": "Livello degli acuti"
             },
             "parameter": {
-                "frequency": "Frequenza"
+                "frequency": "Frequenza",
+                "gain": "Guadagno",
+                "q_factor": "Fattore Q"
+            },
+            "types": {
+                "parametric_eq": "EQ Parametrico"
+            },
+            "channels_compact": {
+                "FL": "L",
+                "FR": "R"
+            },
+            "presets": {
+                "load": "Carica Preset DSP",
+                "empty_warning": "Nessun preset DSP disponibile",
+                "save": "Salva preset DSP",
+                "name": "Nome Preset",
+                "name_placeholder": "Mio nuovo preset",
+                "remove_confirm": "Confermi di voler rimuovere questo preset DSP?"
             }
         },
         "power_control": {
-            "label": "Accensione e spegnimento"
+            "label": "Accensione e spegnimento",
+            "description": "Definisci\/sovrascrivi comportamento dell'alimentazione per questo player.\nConsente, per esempio, di inoltrare i comandi on\/off a un diverso apparecchio, o, nel caso in cui si voglia avere un controllo di stato per un player non in uso consente di utilizzare un controllo fittizio se il player non supporta comandi on\/off"
         },
         "volume_control": {
             "label": "Controllo del volume"
@@ -435,6 +473,23 @@
         "mute_control": {
             "label": "Controllo del silenziamento"
         },
+        "output_limiter": {
+            "label": "Abilitare limitazione per prevenire clipping",
+            "description": "Attiva limitatore che previene distorsioni audio riducendo i picchi massimi."
+        },
+        "dsp_enabled": "DSP abilitato",
+        "dsp_note_multi_device_group": {
+            "label": "Possibilità di configurare DSP per ogni player individualmente."
+        },
+        "dsp_note_multi_device_group_unsupported": {
+            "label": "Questo tipo di gruppo non supporta DSP quando in riproduzione su più dispositivi."
+        },
+        "add_group_player_desc_universal": "Creando un Universal Player Group, è possibile raggruppare player di diversi provider\/ecosistemi insieme. \nQuesto distribuirà il medesimo audio a tutti i membri del gruppo (non in sincronia).",
+        "metadata": "Metadati",
+        "metadataprovider": "Provider metadati",
+        "music": "Musica",
+        "musicprovider": "Provider musica",
+        "player": "Player",
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
         "providers_total": "{0} fornitori totali {1}",
@@ -456,7 +511,11 @@
         "providers_description": "Gestisci le tue fonti musicali, i servizi di streaming e le integrazioni",
         "players_description": "Configura e gestisci i tuoi dispositivi di output audio",
         "frontend_description": "Personalizza il tema e l'aspetto dell'interfaccia utente",
-        "provider_type": "Tipo"
+        "provider_type": "Tipo",
+        "onboarding_title": "Benvenuto in Music Assistant!",
+        "profile_description": "Gestisci impostazioni e preferenze tuo account personale",
+        "users": "Utenti",
+        "users_description": "Gestisci account utenti, ruoli e autorizzazioni"
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
@@ -519,7 +578,9 @@
         "play_sample": "Ascolta il campione",
         "album_type": "Tipo di album",
         "loading": "Il server sta elaborando una richiesta o sincronizzando la musica.",
-        "primary_image": "Questa è l'immagine principale per questo tipo di immagine"
+        "primary_image": "Questa è l'immagine principale per questo tipo di immagine",
+        "copy_uri": "Copia URI negli appunti",
+        "select_all": "Seleziona tutto"
     },
     "topresult": "Miglior risultato",
     "track": "Traccia",
@@ -597,15 +658,22 @@
     "podcast_episode": "Episodio",
     "podcast_episodes": "Episodi",
     "play_from_here": "Riproduci da qui",
+    "loudness_measurement": "{0} LUFS",
+    "loudness_measurement_album": "{0} LUFS (album)",
+    "loudness_dynamic": "Normalizzazione dinamica volume",
+    "loudness_fixed": "Correzione guadagno fissa",
     "dsp_active": "Attivo",
     "currently_playing_players": "In riproduzione",
     "all_players": "Tutti i lettori",
     "all_groups": "Tutti i gruppi",
+    "no_player_playing": "Nessun player attivo al momento",
     "stop_playback": "Interrompere la riproduzione",
     "streamdetails": {
         "input_header": "Ingresso",
         "output_header": "Uscita",
-        "output_format_info": "L'audio viene convertito nel formato ' {0} ' prima di essere inviato al lettore.",
+        "output_format_info": "L'audio viene convertito nel formato {0} prima di essere inviato al lettore",
+        "eq_band_count": "{0} bande",
+        "eq_band_count_singular": "1 banda",
         "input_gain": "Guadagno di ingresso ( {0} dB)",
         "output_gain": "Guadagno in uscita ( {0} dB)",
         "output_limiter": "Limitatore di uscita",
@@ -613,17 +681,136 @@
         "dsp_unsupported": "DSP non supportato",
         "dsp_disabled_by_unsupported_group": "Questo provider di lettori non supporta il DSP con la riproduzione sincronizzata",
         "file_info": {
+            "container": "Container: {0}",
             "codec": "Codice: {0}",
+            "sample_rate": "Rate campionamento: {0} kHz",
             "channels": "Canali: {0}"
+        },
+        "volume_normalization": {
+            "integrated_album_loudness": "Album loudness: {0} LUFS",
+            "applied_gain_correction": "Correzione guadagno applicata: {0} dB",
+            "mode": {
+                "dynamic": "Normalizzazione volume attiva in modalità dinamica",
+                "fixed_gain": "Normalizzazione volume attiva in base alla correzione guadagno fissa"
+            }
         },
         "click_to_expand": "Clicca per mostrare tutti i lettori"
     },
+    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Seleziona la fonte",
     "in_progress_items": "Continua ad ascoltare...",
+    "music_assistant_source": "Coda Music Assistant",
+    "music_assistant_library": "Libreria Music Assistant",
+    "select_all_confirmation": "Selezionare tutti gli elementi? Quest'operazione potrebbe impiegare tempo a caricare tutti i dati.",
     "this_device": "Questo dispositivo",
     "recommendations": {
         "in_progress_items": "Continua ad ascoltare...",
         "random_artists": "Artisti casuali",
-        "random_albums": "Album casuali"
+        "random_albums": "Album casuali",
+        "your_listening_history": "Storico ascolto",
+        "popular_albums": "Album popolari",
+        "radio_stations_for_you": "Stazioni radio per te",
+        "producers__songwriters": "Produttori & autori",
+        "recent_favorite_tracks": "Tracce recentemente preferite",
+        "favorite_playlists": "Playlist preferite",
+        "favorite_radio_stations": "Stazioni radio preferite"
+    },
+    "homescreen_edit_enable": "Modifica schermata Home",
+    "lyrics_will_appear_soon": "Testi appariranno all'inizio della canzone...",
+    "radiobrowser_by_clicks": "Per click",
+    "radiobrowser_by_language": "Per lingua",
+    "optional": "Opzionale",
+    "created": "Creato",
+    "last_used": "Ultimo utilizzo",
+    "create": "Crea",
+    "are_you_sure": "Sei sicuro?",
+    "auth": {
+        "login_title": "Accedi al tuo account",
+        "username": "Nome utente",
+        "username_readonly": "Il Nome utente non può essere modificato",
+        "password": "Password",
+        "confirm_password": "Conferma password",
+        "display_name": "Nome visualizzato",
+        "display_name_readonly": "Modifica del nome visualizzato non ancora disponibile",
+        "login": "Accedi",
+        "logout": "Esci",
+        "field_required": "Questo campo è obbligatorio",
+        "username_min_length": "Il Nome utente deve consistere in almeno 3 caratteri",
+        "username_already_exists": "Nome utente esiste già. Per favore scegliere un'altro nome utente.",
+        "invalid_username": "Nome utente non valido. Per favore scegliere un'altro nome utente",
+        "password_min_length": "La Password deve consistere in almeno 8 caratteri",
+        "passwords_must_match": "Le Password devono corrispondere",
+        "login_failed": "Accesso fallito. Per favore verifica le tue credenziali.",
+        "login_error": "Errore durante il login",
+        "setup_subtitle": "Cominciamo",
+        "create_admin_account": "Crea il tuo account amministratore",
+        "setup_description": "Crea il tuo account amministratore per gestire Music Assistant. Questo account avrà accesso completo a tutte le impostazioni e funzionalità.",
+        "create_account": "Crea account",
+        "setup_failed": "Impostazione fallita. Per favore prova di nuovo.",
+        "setup_error": "Si è presentato un errore durante il setup.",
+        "profile": "Profilo",
+        "account_settings": "Impostazioni Account",
+        "manage_your_profile_info": "Gestisci informazioni ed impostazioni del tuo profilo",
+        "change_password": "Cambia password",
+        "update_your_password": "Aggiorna password tuo account",
+        "old_password": "Password corrente",
+        "new_password": "Nuova password",
+        "password_changed": "Password modificata con successo",
+        "password_change_failed": "Impossibile modificare password",
+        "tokens": "Token accesso",
+        "active_sessions": "Sessioni attive",
+        "manage_active_sessions": "Visualizza e gestisci le sessioni attive",
+        "no_active_sessions": "Nessuna sessione attiva",
+        "no_long_lived_tokens": "Nessun long-lived token",
+        "no_tokens": "Nessun token",
+        "create_token_hint": "Crea token per utilizzare Music Assistant con applicazioni esterne",
+        "token_name": "Nome Token",
+        "token_name_hint": "es.'Home Assistant', 'App Cellulare'",
+        "create_token": "Crea nuovo toke",
+        "revoke_token": "Revoka token",
+        "revoke_token_confirm": "Confermi di voler revocare questo token? Quest'azione non può essere annullata.",
+        "revoke_session": "Revoca sessione",
+        "revoke_session_confirm": "Confermi di voler revocare questo token? Quest'azione non può essere annullata.",
+        "revoke": "Revoca",
+        "token_revoked": "Token revocato con successo",
+        "token_revoke_failed": "Impossibile revocare token",
+        "session_revoked": "Sessione revocata con successo",
+        "session_revoke_failed": "Impossibile revocare sessione",
+        "manage_tokens": "Gestisci token accesso",
+        "token_created": "Token creato con successo",
+        "token_create_failed": "Impossibile creare token. Riprova.",
+        "user_management": "Gestione utenti",
+        "users": "Utenti",
+        "create_user": "Crea utente",
+        "edit_user": "Modifica utente",
+        "role": "Ruolo",
+        "admin_role": "Amministratore",
+        "user_role": "Utente",
+        "enabled": "Abilitato",
+        "disabled": "Disabilitato",
+        "enable_user": "Abilita utente",
+        "disable_user": "Disabilita utente",
+        "user_created": "Utente creato con successo",
+        "user_create_failed": "Impossibile creare utente",
+        "user_updated": "Utente aggiornato con successo",
+        "user_update_failed": "Impossibile aggiornare utente"
+    },
+    "login": {
+        "server_address": "Indirizzo Server",
+        "server_address_placeholder": "http:\/\/192.168.1.100:8095",
+        "remote_id": "ID remoto",
+        "remote_id_placeholder": "es., MA-X7K9-P2M4",
+        "finding_server": "Ricerca tuo server...",
+        "complete_sign_in": "Completa Accesso",
+        "waiting_for_auth": "In attesa di autenticazione...",
+        "connection_failed": "Connessione fallita",
+        "try_again": "Prova di nuovo",
+        "error_unknown": "Errore sconosciuto",
+        "error_login_failed": "Login fallito. Per favore verifica le tue credenziali.",
+        "error_oauth_failed": "Autenticazione con Home Assistant fallita."
+    },
+    "remote": {
+        "connect_title": "Connessione a tuo server",
+        "subtitle": "Connettiti al tuo home server da ovunque"
     }
 }

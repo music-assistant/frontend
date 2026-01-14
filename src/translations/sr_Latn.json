@@ -889,7 +889,19 @@
         "new_releases_for_you": "Nova izdanja za vas",
         "recent_favorite_tracks": "Nedavno dodate numere u omiljene",
         "favorite_playlists": "Omiljene plejliste",
-        "favorite_radio_stations": "Omiljene radio stanice"
+        "favorite_radio_stations": "Omiljene radio stanice",
+        "listen_again": "Preslušaj ponovo",
+        "in_progress_series": "Nastavi seriju...",
+        "recommended": "Preporučeno",
+        "recently_added": "Nedavno dodato",
+        "episodes_recently_added": "Nedavno dodate epizode",
+        "recent_series": "Nedavne serije",
+        "newest_authors": "Najnoviji autori",
+        "newest_episodes": "Najnovije epizode",
+        "discover": "Otkrij",
+        "libraries": "Biblioteke",
+        "library": "Biblioteka",
+        "trending_podcasts": "Podkasti u trendu"
     },
     "homescreen_edit_enable": "Izmeni početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
@@ -1104,5 +1116,11 @@
         "click_to_change": "Kliknite ispod da promenite izlazni uređaj"
     },
     "more_options": "Više opcija",
-    "edit": "Uredi"
+    "edit": "Uredi",
+    "authors": "Autori",
+    "collection": "Kolekcija",
+    "collections": "Kolekcije",
+    "narrators": "Naratori",
+    "series_plural": "Serije",
+    "series_singular": "Serije"
 }
