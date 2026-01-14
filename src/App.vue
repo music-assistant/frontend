@@ -245,6 +245,10 @@ const completeInitialization = async () => {
   ) {
     store.isOnboarding = true;
     router.push("/settings/providers");
+  } else if (isGuestUser) {
+    // Guest users should always be redirected to the guest view
+    localStorage.setItem("guest_mode", "true");
+    router.push("/guest");
   }
   api.state.value = ConnectionState.INITIALIZED;
 };
