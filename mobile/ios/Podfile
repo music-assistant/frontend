@@ -1,0 +1,53 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+
+project 'MusicAssistant.xcodeproj'
+
+platform :ios, '15.1'
+prepare_react_native_project!
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+target 'MusicAssistant' do
+  begin
+    config = use_native_modules!
+  rescue => e
+    puts "Warning: use_native_modules! failed: #{e.message}"
+    config = {
+      :reactNativePath => '../node_modules/react-native'
+    }
+  end
+  
+  # Fallback if use_native_modules returns nil
+  if config.nil?
+    config = {
+      :reactNativePath => '../node_modules/react-native'
+    }
+  end
+
+  react_native_path = config[:reactNativePath] || '../node_modules/react-native'
+  use_react_native!(
+    :path => react_native_path,
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :fabric_enabled => false
+  )
+
+  target 'MusicAssistantTests' do
+    inherit! :complete
+    # Pods for testing
+  end
+
+  post_install do |installer|
+    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false
+    )
+  end
+end

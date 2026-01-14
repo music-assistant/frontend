@@ -871,7 +871,7 @@ const onTitleClick = async function () {
       const results = await api.getLibraryTracks(
         undefined, // favorite
         searchTerm, // search
-        5 // limit - get a few results to find best match
+        5, // limit - get a few results to find best match
       );
 
       if (results.length > 0) {
@@ -879,11 +879,14 @@ const onTitleClick = async function () {
         let bestMatch = results[0];
 
         if (currentMedia.artist && currentMedia.title) {
-          const exactMatch = results.find(track =>
-            track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
-            track.artists?.some(artist =>
-              artist.name.toLowerCase() === currentMedia.artist!.toLowerCase()
-            )
+          const exactMatch = results.find(
+            (track) =>
+              track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
+              track.artists?.some(
+                (artist) =>
+                  artist.name.toLowerCase() ===
+                  currentMedia.artist!.toLowerCase(),
+              ),
           );
           if (exactMatch) {
             bestMatch = exactMatch;
@@ -942,7 +945,7 @@ const onAlbumClick = async function () {
       const results = await api.getLibraryAlbums(
         undefined, // favorite
         currentMedia.album, // search
-        5 // limit - get a few results to find best match
+        5, // limit - get a few results to find best match
       );
 
       if (results.length > 0) {
@@ -950,12 +953,18 @@ const onAlbumClick = async function () {
 
         // If we have artist info, try to find album by same artist
         if (currentMedia.artist) {
-          const matchWithArtist = results.find(album =>
-            album.artists?.some(artist =>
-              artist.name.toLowerCase() === currentMedia.artist!.toLowerCase() ||
-              artist.name.toLowerCase().includes(currentMedia.artist!.toLowerCase()) ||
-              currentMedia.artist!.toLowerCase().includes(artist.name.toLowerCase())
-            )
+          const matchWithArtist = results.find((album) =>
+            album.artists?.some(
+              (artist) =>
+                artist.name.toLowerCase() ===
+                  currentMedia.artist!.toLowerCase() ||
+                artist.name
+                  .toLowerCase()
+                  .includes(currentMedia.artist!.toLowerCase()) ||
+                currentMedia
+                  .artist!.toLowerCase()
+                  .includes(artist.name.toLowerCase()),
+            ),
           );
           if (matchWithArtist) {
             bestMatch = matchWithArtist;
@@ -994,7 +1003,12 @@ const onArtistClick = async function () {
   // Try to get the artist from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
 
-  if (mediaItem && "artists" in mediaItem && mediaItem.artists && mediaItem.artists.length > 0) {
+  if (
+    mediaItem &&
+    "artists" in mediaItem &&
+    mediaItem.artists &&
+    mediaItem.artists.length > 0
+  ) {
     // Navigate directly to artist detail page
     store.showFullscreenPlayer = false;
     router.push({
@@ -1011,15 +1025,16 @@ const onArtistClick = async function () {
       const results = await api.getLibraryArtists(
         undefined, // favorite
         currentMedia.artist, // search
-        5 // limit
+        5, // limit
       );
 
       if (results.length > 0) {
         // Try to find exact match by name
         let bestMatch = results[0];
 
-        const exactMatch = results.find(artist =>
-          artist.name.toLowerCase() === currentMedia.artist!.toLowerCase()
+        const exactMatch = results.find(
+          (artist) =>
+            artist.name.toLowerCase() === currentMedia.artist!.toLowerCase(),
         );
         if (exactMatch) {
           bestMatch = exactMatch;
