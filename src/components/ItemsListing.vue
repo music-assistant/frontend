@@ -38,7 +38,7 @@
       style="overflow: hidden"
     >
       <!-- Skeleton loading states -->
-      <template v-if="loading && pagedItems.length === 0 && isLibraryItem">
+      <template v-if="loading && pagedItems.length === 0">
         <div v-if="viewMode === 'list'">
           <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
         </div>
