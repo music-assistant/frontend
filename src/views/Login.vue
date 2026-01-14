@@ -1784,6 +1784,55 @@ const connectToRemote = async () => {
       throw new Error("Failed to establish API connection");
     }
 
+    // Check if there's a join code in the URL (party mode)
+    const currentUrlParams = new URLSearchParams(window.location.search);
+    const joinCodeFromUrl = currentUrlParams.get("join");
+
+    console.info(
+      "[Login/connectToRemote] Checking for join code:",
+      "\n  window.location.search:",
+      window.location.search,
+      "\n  joinCodeFromUrl:",
+      joinCodeFromUrl,
+      "\n  joinCodeFromUrl?.length:",
+      joinCodeFromUrl?.length,
+    );
+
+    if (joinCodeFromUrl && joinCodeFromUrl.length === 8) {
+      console.info(
+        "[Login/connectToRemote] Found join code in URL, attempting guest auth",
+      );
+      connectionStatusMessage.value = t(
+        "login.joining_party",
+        "Joining party...",
+      );
+
+      if (await tryGuestCodeAuth(joinCodeFromUrl)) {
+        console.info("[Login/connectToRemote] Guest auth successful!");
+        // Clean up URL - remove join param
+        currentUrlParams.delete("join");
+        const queryString = currentUrlParams.toString();
+        const cleanUrl =
+          window.location.origin +
+          window.location.pathname +
+          (queryString ? "?" + queryString : "");
+        window.history.replaceState({}, "", cleanUrl);
+        return; // Success - App.vue will handle redirect
+      } else {
+        console.warn(
+          "[Login/connectToRemote] Guest auth failed, falling back to login form",
+        );
+        // Clean up URL and fall through to login form
+        currentUrlParams.delete("join");
+        const queryString = currentUrlParams.toString();
+        const cleanUrl =
+          window.location.origin +
+          window.location.pathname +
+          (queryString ? "?" + queryString : "");
+        window.history.replaceState({}, "", cleanUrl);
+      }
+    }
+
     // Fetch available auth providers
     await fetchAuthProviders();
 

@@ -50,7 +50,8 @@ const generateQRCode = async () => {
     };
 
     // Update guest access enabled state based on whether we got a URL
-    const url = result?.url || "";
+    // Ensure url is a string before calling .trim()
+    const url = typeof result?.url === "string" ? result.url : "";
     guestAccessEnabled.value = !!(url && url.trim() !== "");
 
     // Always update qrCodeUrl to ensure UI reflects backend state
