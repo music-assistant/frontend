@@ -292,6 +292,7 @@ const onPlayClick = function (evt: PointerEvent) {
 }
 
 .panel-item-actions {
+  gap: 0;
   padding: 0;
   margin: 0;
   margin-top: 10px;
