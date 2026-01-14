@@ -182,7 +182,7 @@ const computedElapsedTime = computed(() => {
     const computed = computeElapsedTime(
       queue.elapsed_time,
       queue.elapsed_time_last_updated,
-      store.activePlayer?.playback_state,
+      queue.state,
     );
     return computed ?? 0;
   }
