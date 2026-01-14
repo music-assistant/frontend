@@ -917,7 +917,10 @@ const autoConnect = async () => {
       );
 
       try {
-        console.info("[Login/GuestFlow] Step 1: Starting WebRTC connection to", cleanRemoteId.substring(0, 6) + "...");
+        console.info(
+          "[Login/GuestFlow] Step 1: Starting WebRTC connection to",
+          cleanRemoteId.substring(0, 6) + "...",
+        );
         setRemoteIdFromString(cleanRemoteId);
         step.value = "connecting";
 
@@ -939,8 +942,10 @@ const autoConnect = async () => {
         // Wait for API to be ready (serverInfo received from server)
         console.info(
           "[Login/GuestFlow] Step 4: Waiting for API connection (serverInfo)...",
-          "\n  Current api.state:", api.state.value,
-          "\n  Current api.serverInfo:", api.serverInfo.value ? "present" : "null",
+          "\n  Current api.state:",
+          api.state.value,
+          "\n  Current api.serverInfo:",
+          api.serverInfo.value ? "present" : "null",
         );
         const apiConnectStart = Date.now();
         const apiConnected = await waitForApiConnection(15000);
@@ -948,38 +953,55 @@ const autoConnect = async () => {
 
         console.info(
           "[Login/GuestFlow] Step 5: waitForApiConnection result:",
-          "\n  connected:", apiConnected,
-          "\n  time:", apiConnectTime, "ms",
-          "\n  api.state:", api.state.value,
-          "\n  api.serverInfo:", api.serverInfo.value
-            ? { server_id: api.serverInfo.value.server_id, server_version: api.serverInfo.value.server_version }
+          "\n  connected:",
+          apiConnected,
+          "\n  time:",
+          apiConnectTime,
+          "ms",
+          "\n  api.state:",
+          api.state.value,
+          "\n  api.serverInfo:",
+          api.serverInfo.value
+            ? {
+                server_id: api.serverInfo.value.server_id,
+                server_version: api.serverInfo.value.server_version,
+              }
             : "null",
         );
 
         if (apiConnected) {
           console.info(
             "[Login/GuestFlow] Step 6: API connected, starting guest code exchange",
-            "\n  Guest code:", effectiveJoinCode.substring(0, 2) + "***",
+            "\n  Guest code:",
+            effectiveJoinCode.substring(0, 2) + "***",
           );
 
           // Exchange the guest code for a JWT token
           const guestAuthResult = await tryGuestCodeAuth(effectiveJoinCode);
           console.info(
             "[Login/GuestFlow] Step 7: tryGuestCodeAuth result:",
-            "\n  success:", guestAuthResult,
-            "\n  api.state:", api.state.value,
+            "\n  success:",
+            guestAuthResult,
+            "\n  api.state:",
+            api.state.value,
           );
 
           if (guestAuthResult) {
             console.info(
               "[Login/GuestFlow] === GUEST AUTH SUCCESS ===",
-              "\n  Final API state:", api.state.value,
+              "\n  Final API state:",
+              api.state.value,
             );
             // Clear the pending guest code - it's been successfully used
             sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
             // Clean up URL now that auth is complete - remove remote_id and code params
-            const successUrlParams = new URLSearchParams(window.location.search);
-            if (successUrlParams.has("remote_id") || successUrlParams.has("join")) {
+            const successUrlParams = new URLSearchParams(
+              window.location.search,
+            );
+            if (
+              successUrlParams.has("remote_id") ||
+              successUrlParams.has("join")
+            ) {
               successUrlParams.delete("remote_id");
               successUrlParams.delete("join");
               const queryString = successUrlParams.toString();
@@ -995,15 +1017,19 @@ const autoConnect = async () => {
           } else {
             console.error(
               "[Login/GuestFlow] === GUEST AUTH FAILED (tryGuestCodeAuth returned false) ===",
-              "\n  api.state:", api.state.value,
+              "\n  api.state:",
+              api.state.value,
             );
           }
         } else {
           console.error(
             "[Login/GuestFlow] === GUEST AUTH FAILED (waitForApiConnection timeout) ===",
-            "\n  api.state:", api.state.value,
-            "\n  api.serverInfo:", api.serverInfo.value ? "present" : "null",
-            "\n  api.transportState:", api.transportState.value,
+            "\n  api.state:",
+            api.state.value,
+            "\n  api.serverInfo:",
+            api.serverInfo.value ? "present" : "null",
+            "\n  api.transportState:",
+            api.transportState.value,
           );
         }
 
@@ -1023,9 +1049,12 @@ const autoConnect = async () => {
         sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
         console.error(
           "[Login/GuestFlow] === GUEST AUTH FAILED (exception) ===",
-          "\n  error:", error,
-          "\n  message:", error instanceof Error ? error.message : String(error),
-          "\n  api.state:", api.state.value,
+          "\n  error:",
+          error,
+          "\n  message:",
+          error instanceof Error ? error.message : String(error),
+          "\n  api.state:",
+          api.state.value,
         );
         connectionError.value =
           error instanceof Error
@@ -1046,8 +1075,10 @@ const autoConnect = async () => {
   // ===== If we reach here, we did NOT enter the remote party flow =====
   console.info(
     "[Login/GuestFlow] === DID NOT ENTER REMOTE PARTY BLOCK ===",
-    "\n  effectiveRemoteId:", effectiveRemoteId ? `${effectiveRemoteId.substring(0, 6)}...` : "null",
-    "\n  effectiveGuestCode:", effectiveJoinCode ? `${effectiveJoinCode.substring(0, 2)}***` : "null",
+    "\n  effectiveRemoteId:",
+    effectiveRemoteId ? `${effectiveRemoteId.substring(0, 6)}...` : "null",
+    "\n  effectiveGuestCode:",
+    effectiveJoinCode ? `${effectiveJoinCode.substring(0, 2)}***` : "null",
     "\n  Continuing with normal login flow...",
   );
 
@@ -1211,9 +1242,14 @@ const autoConnect = async () => {
 
     console.info(
       "[Login/GuestFlow] Remote-only mode block entered",
-      "\n  storedRemoteId:", storedRemoteId ? `${storedRemoteId.substring(0, 6)}...` : "null",
-      "\n  hasPendingGuestCode:", hasPendingGuestCode ? `${hasPendingGuestCode.substring(0, 2)}***` : "null",
-      "\n  storedToken:", localStorage.getItem(STORAGE_KEY_TOKEN) ? "present" : "null",
+      "\n  storedRemoteId:",
+      storedRemoteId ? `${storedRemoteId.substring(0, 6)}...` : "null",
+      "\n  hasPendingGuestCode:",
+      hasPendingGuestCode
+        ? `${hasPendingGuestCode.substring(0, 2)}***`
+        : "null",
+      "\n  storedToken:",
+      localStorage.getItem(STORAGE_KEY_TOKEN) ? "present" : "null",
     );
 
     if (hasPendingGuestCode && storedRemoteId) {
@@ -1768,7 +1804,8 @@ const connectToRemote = async () => {
 const fetchAuthProviders = async () => {
   console.info(
     "[Login/GuestFlow] fetchAuthProviders called - about to show login form",
-    "\n  Caller stack:", new Error().stack?.split("\n").slice(1, 4).join("\n"),
+    "\n  Caller stack:",
+    new Error().stack?.split("\n").slice(1, 4).join("\n"),
   );
   try {
     // First, check if server info has auth provider hints
