@@ -239,10 +239,7 @@ onMounted(() => {
         player = new SendspinPlayer({
           playerId: props.playerId,
           baseUrl: "http://sendspin.local",
-          // Web player config
-          audioOutputMode: "media-element",
           audioElement,
-          isAndroid,
           clientName: getDeviceName(),
           codecs,
           syncDelay,
