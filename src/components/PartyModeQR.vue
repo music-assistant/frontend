@@ -17,7 +17,7 @@
       >
         <canvas ref="qrCanvas"></canvas>
       </a>
-      <p class="qr-instructions text-h6">Scan to join the party!</p>
+      <p class="qr-instructions text-h4">Scan to join the party!</p>
     </div>
     <div v-else class="qr-error">
       <v-icon size="64" icon="mdi-alert-circle-outline" />
@@ -31,7 +31,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import QRCode from "qrcode";
 import api from "@/plugins/api";
-import { EventType } from "@/plugins/api/interfaces";
+import { EventType, RemoteAccessInfo } from "@/plugins/api/interfaces";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
@@ -39,8 +39,10 @@ const qrCodeUrl = ref<string>("");
 const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
+const lastRemoteAccessEnabled = ref<boolean | null>(null);
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
+let remoteAccessPollInterval: ReturnType<typeof setInterval> | null = null;
 
 const calculateQRSize = () => {
   if (!qrContainer.value) return 320;
@@ -50,6 +52,26 @@ const calculateQRSize = () => {
   const availableSize = Math.min(containerWidth, containerHeight) - 120;
   // Clamp between 160 and 512 for usability
   return Math.max(160, Math.min(512, availableSize));
+};
+
+const checkRemoteAccessStatus = async () => {
+  try {
+    const info = (await api.sendCommand(
+      "remote_access/info",
+    )) as RemoteAccessInfo;
+    const currentEnabled = info.enabled;
+
+    // If remote access status changed, regenerate QR code
+    if (
+      lastRemoteAccessEnabled.value !== null &&
+      lastRemoteAccessEnabled.value !== currentEnabled
+    ) {
+      await generateQRCode();
+    }
+    lastRemoteAccessEnabled.value = currentEnabled;
+  } catch {
+    // Ignore errors - remote_access/info may not be available
+  }
 };
 
 const generateQRCode = async () => {
@@ -118,6 +140,12 @@ const generateQRCode = async () => {
 onMounted(async () => {
   await generateQRCode();
 
+  // Initialize remote access status tracking
+  await checkRemoteAccessStatus();
+
+  // Poll for remote access status changes every 2 seconds
+  remoteAccessPollInterval = setInterval(checkRemoteAccessStatus, 2000);
+
   // Set up ResizeObserver to regenerate QR code when container size changes
   if (qrContainer.value) {
     resizeObserver = new ResizeObserver(() => {
@@ -164,6 +192,9 @@ onUnmounted(() => {
   }
   if (resizeObserver) {
     resizeObserver.disconnect();
+  }
+  if (remoteAccessPollInterval) {
+    clearInterval(remoteAccessPollInterval);
   }
 });
 </script>
