@@ -1,5 +1,5 @@
 <template>
-  <div class="qr-container">
+  <div ref="qrContainer" class="qr-container">
     <div v-if="loading" class="qr-loading">
       <v-progress-circular indeterminate />
     </div>
@@ -34,10 +34,23 @@ import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
+const qrContainer = ref<HTMLElement | null>(null);
 const qrCodeUrl = ref<string>("");
 const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
+const qrSize = ref(320);
 let unsubscribe: (() => void) | null = null;
+let resizeObserver: ResizeObserver | null = null;
+
+const calculateQRSize = () => {
+  if (!qrContainer.value) return 320;
+  const containerWidth = qrContainer.value.clientWidth;
+  const containerHeight = qrContainer.value.clientHeight;
+  // Use the smaller dimension, leave room for padding and instructions
+  const availableSize = Math.min(containerWidth, containerHeight) - 120;
+  // Clamp between 160 and 512 for usability
+  return Math.max(160, Math.min(512, availableSize));
+};
 
 const generateQRCode = async () => {
   loading.value = true;
@@ -68,9 +81,10 @@ const generateQRCode = async () => {
     await nextTick();
 
     // Generate QR code on canvas with MA brand blue and transparent background
+    qrSize.value = calculateQRSize();
     if (qrCanvas.value) {
       await QRCode.toCanvas(qrCanvas.value, url, {
-        width: 320,
+        width: qrSize.value,
         margin: 2,
         color: {
           dark: "#03a9f4", // Music Assistant brand blue
@@ -82,7 +96,7 @@ const generateQRCode = async () => {
       setTimeout(async () => {
         if (qrCanvas.value) {
           await QRCode.toCanvas(qrCanvas.value, url, {
-            width: 320,
+            width: qrSize.value,
             margin: 2,
             color: {
               dark: "#03a9f4", // Music Assistant brand blue
@@ -103,6 +117,27 @@ const generateQRCode = async () => {
 
 onMounted(async () => {
   await generateQRCode();
+
+  // Set up ResizeObserver to regenerate QR code when container size changes
+  if (qrContainer.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (qrCodeUrl.value && qrCanvas.value) {
+        const newSize = calculateQRSize();
+        if (newSize !== qrSize.value) {
+          qrSize.value = newSize;
+          QRCode.toCanvas(qrCanvas.value, qrCodeUrl.value, {
+            width: qrSize.value,
+            margin: 2,
+            color: {
+              dark: "#03a9f4",
+              light: "#00000000",
+            },
+          });
+        }
+      }
+    });
+    resizeObserver.observe(qrContainer.value);
+  }
 
   // Subscribe to PROVIDERS_UPDATED to detect when party_mode provider is reloaded
   // When config changes, the provider is unloaded and reloaded, firing this event twice
@@ -126,6 +161,9 @@ onMounted(async () => {
 onUnmounted(() => {
   if (unsubscribe) {
     unsubscribe();
+  }
+  if (resizeObserver) {
+    resizeObserver.disconnect();
   }
 });
 </script>

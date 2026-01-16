@@ -6,18 +6,12 @@
     <div :class="['track-info', infoSizeClass]">
       <div class="track-name">
         <MarqueeText :disabled="position !== 'current'">
-          {{ queueItem.name }}
+          {{ trackName }}
         </MarqueeText>
       </div>
-      <div
-        v-if="queueItem.media_item && 'artists' in queueItem.media_item"
-        class="track-artist"
-      >
+      <div v-if="artistName" class="track-artist">
         <MarqueeText :disabled="position !== 'current'">
-          {{
-            queueItem.media_item.artists?.map((a: any) => a.name).join(", ") ||
-            ""
-          }}
+          {{ artistName }}
         </MarqueeText>
       </div>
     </div>
@@ -36,6 +30,33 @@ export interface Props {
 }
 
 const props = defineProps<Props>();
+
+// Computed track name - prefer stream metadata title for radio streams
+const trackName = computed(() => {
+  if (!props.queueItem) return "";
+  // For radio streams, stream_metadata.title contains the current track
+  const streamTitle = props.queueItem.streamdetails?.stream_metadata?.title;
+  if (streamTitle) return streamTitle;
+  // Fallback to queue item name
+  return props.queueItem.name;
+});
+
+// Computed artist name - check both media_item.artists and stream_metadata.artist
+const artistName = computed(() => {
+  if (!props.queueItem) return "";
+  // First check media_item.artists (for regular tracks)
+  if (
+    props.queueItem.media_item &&
+    "artists" in props.queueItem.media_item &&
+    props.queueItem.media_item.artists?.length
+  ) {
+    return props.queueItem.media_item.artists
+      .map((a: { name: string }) => a.name)
+      .join(", ");
+  }
+  // Fallback to stream_metadata.artist (for radio streams)
+  return props.queueItem.streamdetails?.stream_metadata?.artist || "";
+});
 
 const artworkSize = computed(() => {
   switch (props.position) {
