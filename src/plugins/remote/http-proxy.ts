@@ -69,6 +69,9 @@ class HttpProxyBridge {
       try {
         await navigator.serviceWorker.register("./sw.js");
 
+        // Set up SW restart detection
+        this.setupServiceWorkerReconnect();
+
         // Wait for service worker to be ready
         await navigator.serviceWorker.ready;
 
@@ -181,6 +184,39 @@ class HttpProxyBridge {
         // Don't set isReady = true here - SW isn't actually controlling
         resolve(false);
       }, 3000);
+    });
+  }
+
+  /**
+   * Detect SW restarts/updates and automatically re-sync remote mode
+   */
+  private setupServiceWorkerReconnect(): void {
+    if (!navigator.serviceWorker) return;
+
+    navigator.serviceWorker.addEventListener("controllerchange", async () => {
+      console.log(
+        "[HttpProxyBridge] Service worker controller changed (SW restarted/updated)",
+      );
+
+      // Check if we're in remote mode
+      const storedMode = localStorage.getItem(REMOTE_MODE_STORAGE_KEY);
+      if (storedMode === "remote" && this.transport) {
+        console.log("[HttpProxyBridge] Re-syncing remote mode with new SW");
+
+        // Wait a moment for SW to fully activate
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Re-send the remote mode message
+        try {
+          await this.notifyRemoteMode(true);
+          console.log("[HttpProxyBridge] Remote mode re-sync successful");
+        } catch (error) {
+          console.error(
+            "[HttpProxyBridge] Failed to re-sync remote mode:",
+            error,
+          );
+        }
+      }
     });
   }
 
