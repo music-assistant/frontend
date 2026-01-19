@@ -94,8 +94,20 @@
       </v-card>
     </div>
 
+    <!-- Not available banner -->
+    <v-alert
+      v-if="!api.players[config.player_id]?.available"
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+    >
+      <div class="disabled-banner">
+        <span>{{ $t("settings.player_not_available") }}</span>
+      </div>
+    </v-alert>
+
     <edit-config
-      v-if="config"
+      v-else-if="config"
       :disabled="!config.enabled"
       :config-entries="allConfigEntries"
       @submit="onSubmit"
