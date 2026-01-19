@@ -67,7 +67,7 @@
         "@vue/tsconfig": "0.8.1",
         "eslint": "8.57.1",
         "eslint-config-prettier": "10.1.8",
-        "eslint-plugin-prettier": "5.5.4",
+        "eslint-plugin-prettier": "5.5.5",
         "eslint-plugin-vue": "9.33.0",
         "https-localhost": "4.7.1",
         "husky": "^9.1.7",
