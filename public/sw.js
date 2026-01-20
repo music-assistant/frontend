@@ -14,8 +14,47 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Store for pending HTTP requests
 const pendingRequests = new Map();
 
+// Storage key for remote mode state in Cache API
+const REMOTE_MODE_CACHE_KEY = "ma-remote-mode-state";
+
+/**
+ * Read remote mode state from persistent storage
+ * Returns true if in remote mode, false otherwise
+ */
+async function getRemoteMode() {
+  try {
+    const cache = await caches.open("ma-sw-state-v1");
+    const response = await cache.match(REMOTE_MODE_CACHE_KEY);
+    if (response) {
+      const data = await response.json();
+      return data.isRemote === true;
+    }
+  } catch (error) {
+    console.error("[ServiceWorker] Error reading remote mode:", error);
+  }
+  return false; // Default to local mode on error
+}
+
+/**
+ * Write remote mode state to persistent storage
+ */
+async function setRemoteMode(isRemote) {
+  try {
+    const cache = await caches.open("ma-sw-state-v1");
+    await cache.put(
+      REMOTE_MODE_CACHE_KEY,
+      new Response(JSON.stringify({ isRemote }), {
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    console.log("[ServiceWorker] Remote mode set to:", isRemote);
+  } catch (error) {
+    console.error("[ServiceWorker] Error writing remote mode:", error);
+  }
+}
+
 // Listen for messages from the main thread
-self.addEventListener("message", (event) => {
+self.addEventListener("message", async (event) => {
   const { type, data } = event.data;
 
   if (type === "http-proxy-response") {
@@ -62,9 +101,8 @@ self.addEventListener("message", (event) => {
       );
     }
   } else if (type === "set-remote-mode") {
-    // Update remote mode state
-    self.isRemoteMode = data.isRemote;
-    console.log("[ServiceWorker] Remote mode set to:", data.isRemote);
+    // Update remote mode state in PERSISTENT storage
+    await setRemoteMode(data.isRemote);
     // Send acknowledgment back to the main thread
     if (event.source) {
       event.source.postMessage({
@@ -86,15 +124,21 @@ self.addEventListener("fetch", (event) => {
   // Check if this request should be proxied
   const shouldProxy = proxyPaths.some((path) => url.pathname.startsWith(path));
 
-  if (self.isRemoteMode && shouldProxy) {
-    // Proxy over WebRTC when in remote mode
-    event.respondWith(handleHttpProxyRequest(event.request));
-    return;
-  }
-
   if (shouldProxy) {
-    // Let these requests through normally when NOT in remote mode
-    event.respondWith(fetch(event.request));
+    // Read remote mode from persistent storage and proxy accordingly
+    event.respondWith(
+      (async () => {
+        const isRemoteMode = await getRemoteMode();
+
+        if (isRemoteMode) {
+          // Proxy over WebRTC when in remote mode
+          return handleHttpProxyRequest(event.request);
+        } else {
+          // Let request through normally when NOT in remote mode
+          return fetch(event.request);
+        }
+      })(),
+    );
     return;
   }
 
@@ -227,9 +271,6 @@ function hexToBytes(hex) {
 function generateRequestId() {
   return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
-
-// Initialize state
-self.isRemoteMode = false;
 
 // Skip waiting to activate the new service worker immediately
 self.addEventListener("install", (event) => {
