@@ -1775,10 +1775,10 @@
   resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
   integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
 
-"@music-assistant/sendspin-js@0.5.0":
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-0.5.0.tgz#675f63f1882d343224ade6a56f374553255aaed3"
-  integrity sha512-aHgy49xBRrii3+9K3t6Wn4Quj4OTFGnPSMCfmxyFp3EanuvVnKpORq3XF8/dhHJhhdaNGejloihU3YL4FZk4wQ==
+"@music-assistant/sendspin-js@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-1.0.1.tgz#fafdb2119529cdd14832b6cba24274f878d5d907"
+  integrity sha512-4vhx7DYyWsVI/OUN2RwMHnBhJT/c+tDnzbp/MJS20jE/4NDZArZi4T4RiBdhjfE75wrQf2k7FwXSd1Wj7aclOQ==
   dependencies:
     opus-encdec "^0.1.1"
 
