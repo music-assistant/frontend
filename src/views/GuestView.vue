@@ -78,11 +78,13 @@
           </div>
           <div class="result-actions">
             <v-btn
+              v-if="addQueueEnabled"
               color="primary"
               variant="elevated"
               :loading="
                 addingItems.has(`${item.media_type}-${item.item_id}-end`)
               "
+              :disabled="rateLimitingEnabled && addQueueTokens <= 0"
               class="action-btn action-btn-primary"
               @click="addToQueue(item, 'end')"
             >
@@ -90,6 +92,7 @@
               Add
             </v-btn>
             <v-btn
+              v-if="playNextEnabled"
               color="secondary"
               variant="flat"
               :loading="
@@ -144,17 +147,20 @@
           :key="item.queue_item_id"
           class="queue-item"
           :class="{
-            'queue-item-current': item.sort_index === currentQueueIndex,
+            'queue-item-current':
+              queueFetchOffset + index === currentQueueIndex,
           }"
         >
           <div class="queue-position">
             <v-icon
-              v-if="item.sort_index === currentQueueIndex"
+              v-if="queueFetchOffset + index === currentQueueIndex"
               color="primary"
             >
               mdi-play-circle
             </v-icon>
-            <span v-else class="queue-number">{{ index + 1 }}</span>
+            <span v-else class="queue-number">{{
+              queueFetchOffset + index + 1
+            }}</span>
           </div>
           <v-avatar size="48" rounded class="queue-avatar">
             <v-img :src="getQueueItemImageUrl(item)" :alt="item.name" cover>
@@ -172,6 +178,43 @@
             <div class="queue-artist scroll-text">
               <span>{{ getQueueItemArtist(item) }}</span>
             </div>
+          </div>
+          <!-- Skip button for currently playing item -->
+          <div
+            v-if="
+              skipSongEnabled &&
+              queueFetchOffset + index === currentQueueIndex
+            "
+            class="queue-item-actions"
+          >
+            <v-btn
+              color="secondary"
+              variant="flat"
+              size="small"
+              :loading="skippingSong"
+              :disabled="rateLimitingEnabled && skipSongTokens <= 0"
+              class="skip-btn"
+              @click="skipCurrentSong"
+            >
+              <v-icon start size="small">mdi-skip-next</v-icon>
+              Skip
+              <span
+                v-if="rateLimitingEnabled"
+                class="skip-token-badge"
+                :class="{ 'no-tokens': skipSongTokens <= 0 }"
+              >
+                {{ skipSongTokens }}
+              </span>
+            </v-btn>
+            <span
+              v-if="
+                rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown
+              "
+              class="skip-countdown"
+            >
+              <v-icon size="x-small">mdi-clock-outline</v-icon>
+              {{ skipTokenCountdown }}
+            </span>
           </div>
         </div>
         <!-- Loading indicator for infinite scroll -->
@@ -243,9 +286,10 @@ const displayedResults = computed(() =>
   searchResults.value.slice(0, displayedResultsCount.value),
 );
 
-// Rate limiting - Token bucket implementation for both "Play Next" and "Add to Queue"
+// Rate limiting - Token bucket implementation for "Play Next", "Add to Queue", and "Skip Song"
 const PLAY_NEXT_STORAGE_KEY = "guest_play_next_bucket";
 const ADD_QUEUE_STORAGE_KEY = "guest_add_queue_bucket";
+const SKIP_SONG_STORAGE_KEY = "guest_skip_song_bucket";
 
 // Default values (will be overridden by server config)
 const PLAY_NEXT_MAX_TOKENS = ref(3); // Maximum tokens for Play Next
@@ -255,6 +299,10 @@ const PLAY_NEXT_REFILL_RATE = ref(1000 * 60 * 20); // 20 minutes in milliseconds
 const ADD_QUEUE_MAX_TOKENS = ref(10); // Maximum tokens for Add to Queue
 const ADD_QUEUE_REFILL_RATE = ref(1000 * 60 * 2); // 2 minutes per token
 
+// Skip song - more restrictive by default (1 per hour)
+const SKIP_SONG_MAX_TOKENS = ref(1); // Maximum tokens for Skip Song
+const SKIP_SONG_REFILL_RATE = ref(1000 * 60 * 60); // 60 minutes per token
+
 interface TokenBucket {
   tokens: number;
   lastRefill: number;
@@ -262,18 +310,36 @@ interface TokenBucket {
 
 interface PartyModeConfig {
   enable_rate_limiting: boolean;
-  play_next_limit: number;
-  play_next_refill_minutes: number;
+  // Add to Queue feature
+  enable_add_queue: boolean;
   add_queue_limit: number;
   add_queue_refill_minutes: number;
+  // Play Next feature
+  enable_play_next: boolean;
+  play_next_limit: number;
+  play_next_refill_minutes: number;
+  // Skip Song feature
+  enable_skip_song: boolean;
+  skip_song_limit: number;
+  skip_song_refill_minutes: number;
+  // UI settings
   album_art_background: boolean;
 }
 
 const rateLimitingEnabled = ref(true); // Default to enabled
+// Feature enable toggles (can be disabled by admin)
+const addQueueEnabled = ref(true);
+const playNextEnabled = ref(true);
+const skipSongEnabled = ref(true);
+// Token counts
 const playNextTokens = ref(3);
 const addQueueTokens = ref(10);
+const skipSongTokens = ref(1);
 const playNextAvailable = computed(() => playNextTokens.value > 0);
+const skipSongAvailable = computed(() => skipSongTokens.value > 0);
 const nextTokenCountdown = ref<string>("");
+const skipTokenCountdown = ref<string>("");
+const skippingSong = ref(false);
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
 
 // Generic token bucket functions
@@ -314,71 +380,85 @@ const saveTokenBucket = (storageKey: string, bucket: TokenBucket) => {
   localStorage.setItem(storageKey, JSON.stringify(bucket));
 };
 
-const consumePlayNextToken = (): boolean => {
-  const bucket = loadTokenBucket(
-    PLAY_NEXT_STORAGE_KEY,
-    PLAY_NEXT_MAX_TOKENS.value,
-    PLAY_NEXT_REFILL_RATE.value,
-  );
+// Generic token consumption function
+const consumeToken = (
+  storageKey: string,
+  maxTokens: number,
+  refillRate: number,
+  tokenRef: { value: number },
+): boolean => {
+  const bucket = loadTokenBucket(storageKey, maxTokens, refillRate);
   if (bucket.tokens <= 0) {
     return false;
   }
 
   bucket.tokens -= 1;
-  saveTokenBucket(PLAY_NEXT_STORAGE_KEY, bucket);
-  playNextTokens.value = bucket.tokens;
+  saveTokenBucket(storageKey, bucket);
+  tokenRef.value = bucket.tokens;
   return true;
 };
 
-const consumeAddQueueToken = (): boolean => {
-  const bucket = loadTokenBucket(
+// Generic time until next token function
+const getTimeUntilNextTokenRefill = (
+  storageKey: string,
+  maxTokens: number,
+  refillRate: number,
+): number => {
+  const bucket = loadTokenBucket(storageKey, maxTokens, refillRate);
+  if (bucket.tokens >= maxTokens) {
+    return 0;
+  }
+
+  const timeSinceRefill = Date.now() - bucket.lastRefill;
+  const timeUntilNext = refillRate - (timeSinceRefill % refillRate);
+  return Math.ceil(timeUntilNext / 1000 / 60); // Return minutes
+};
+
+// Convenience wrappers for each token type
+const consumePlayNextToken = (): boolean =>
+  consumeToken(
+    PLAY_NEXT_STORAGE_KEY,
+    PLAY_NEXT_MAX_TOKENS.value,
+    PLAY_NEXT_REFILL_RATE.value,
+    playNextTokens,
+  );
+
+const consumeAddQueueToken = (): boolean =>
+  consumeToken(
     ADD_QUEUE_STORAGE_KEY,
     ADD_QUEUE_MAX_TOKENS.value,
     ADD_QUEUE_REFILL_RATE.value,
+    addQueueTokens,
   );
-  if (bucket.tokens <= 0) {
-    return false;
-  }
 
-  bucket.tokens -= 1;
-  saveTokenBucket(ADD_QUEUE_STORAGE_KEY, bucket);
-  addQueueTokens.value = bucket.tokens;
-  return true;
-};
+const consumeSkipSongToken = (): boolean =>
+  consumeToken(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+    skipSongTokens,
+  );
 
-const getTimeUntilNextToken = (): number => {
-  const bucket = loadTokenBucket(
+const getTimeUntilNextToken = (): number =>
+  getTimeUntilNextTokenRefill(
     PLAY_NEXT_STORAGE_KEY,
     PLAY_NEXT_MAX_TOKENS.value,
     PLAY_NEXT_REFILL_RATE.value,
   );
-  if (bucket.tokens >= PLAY_NEXT_MAX_TOKENS.value) {
-    return 0;
-  }
 
-  const timeSinceRefill = Date.now() - bucket.lastRefill;
-  const timeUntilNext =
-    PLAY_NEXT_REFILL_RATE.value -
-    (timeSinceRefill % PLAY_NEXT_REFILL_RATE.value);
-  return Math.ceil(timeUntilNext / 1000 / 60); // Return minutes
-};
-
-const getTimeUntilNextAddQueueToken = (): number => {
-  const bucket = loadTokenBucket(
+const getTimeUntilNextAddQueueToken = (): number =>
+  getTimeUntilNextTokenRefill(
     ADD_QUEUE_STORAGE_KEY,
     ADD_QUEUE_MAX_TOKENS.value,
     ADD_QUEUE_REFILL_RATE.value,
   );
-  if (bucket.tokens >= ADD_QUEUE_MAX_TOKENS.value) {
-    return 0;
-  }
 
-  const timeSinceRefill = Date.now() - bucket.lastRefill;
-  const timeUntilNext =
-    ADD_QUEUE_REFILL_RATE.value -
-    (timeSinceRefill % ADD_QUEUE_REFILL_RATE.value);
-  return Math.ceil(timeUntilNext / 1000 / 60); // Return minutes
-};
+const getTimeUntilNextSkipToken = (): number =>
+  getTimeUntilNextTokenRefill(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+  );
 
 // Format countdown timer for next token
 const formatCountdown = (milliseconds: number): string => {
@@ -392,28 +472,43 @@ const formatCountdown = (milliseconds: number): string => {
   return `${seconds}s`;
 };
 
-// Update countdown display
+// Update countdown display for all token types
 const updateCountdown = () => {
-  const bucket = loadTokenBucket(
+  // Update Play Next tokens
+  const playNextBucket = loadTokenBucket(
     PLAY_NEXT_STORAGE_KEY,
     PLAY_NEXT_MAX_TOKENS.value,
     PLAY_NEXT_REFILL_RATE.value,
   );
+  playNextTokens.value = playNextBucket.tokens;
 
-  // Always update the token count display
-  playNextTokens.value = bucket.tokens;
-
-  if (bucket.tokens >= PLAY_NEXT_MAX_TOKENS.value) {
+  if (playNextBucket.tokens >= PLAY_NEXT_MAX_TOKENS.value) {
     nextTokenCountdown.value = "";
-    return;
+  } else {
+    const timeSinceRefill = Date.now() - playNextBucket.lastRefill;
+    const timeUntilNext =
+      PLAY_NEXT_REFILL_RATE.value -
+      (timeSinceRefill % PLAY_NEXT_REFILL_RATE.value);
+    nextTokenCountdown.value = formatCountdown(timeUntilNext);
   }
 
-  const timeSinceRefill = Date.now() - bucket.lastRefill;
-  const timeUntilNext =
-    PLAY_NEXT_REFILL_RATE.value -
-    (timeSinceRefill % PLAY_NEXT_REFILL_RATE.value);
+  // Update Skip Song tokens
+  const skipBucket = loadTokenBucket(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+  );
+  skipSongTokens.value = skipBucket.tokens;
 
-  nextTokenCountdown.value = formatCountdown(timeUntilNext);
+  if (skipBucket.tokens >= SKIP_SONG_MAX_TOKENS.value) {
+    skipTokenCountdown.value = "";
+  } else {
+    const timeSinceRefill = Date.now() - skipBucket.lastRefill;
+    const timeUntilNext =
+      SKIP_SONG_REFILL_RATE.value -
+      (timeSinceRefill % SKIP_SONG_REFILL_RATE.value);
+    skipTokenCountdown.value = formatCountdown(timeUntilNext);
+  }
 };
 
 // Queue state
@@ -559,6 +654,16 @@ const loadMoreResults = () => {
 
 // Add to queue functionality
 const addToQueue = async (item: any, position: "next" | "end") => {
+  // Check if the feature is enabled
+  if (position === "next" && !playNextEnabled.value) {
+    showSnackbar("Play Next is disabled by the host.", "warning");
+    return;
+  }
+  if (position === "end" && !addQueueEnabled.value) {
+    showSnackbar("Add to Queue is disabled by the host.", "warning");
+    return;
+  }
+
   // Only check token limits if rate limiting is enabled
   if (rateLimitingEnabled.value) {
     // Check token bucket rate limit for "Play Next"
@@ -759,6 +864,45 @@ const showSnackbar = (message: string, color: string = "success") => {
   };
 };
 
+// Skip current song functionality
+const skipCurrentSong = async () => {
+  // Check if the feature is enabled
+  if (!skipSongEnabled.value) {
+    showSnackbar("Skip Song is disabled by the host.", "warning");
+    return;
+  }
+
+  // Check token bucket rate limit if rate limiting is enabled
+  if (rateLimitingEnabled.value) {
+    if (!consumeSkipSongToken()) {
+      const minutesUntilNext = getTimeUntilNextSkipToken();
+      showSnackbar(
+        `Skip limit reached. Next skip available in ${minutesUntilNext} minutes.`,
+        "warning",
+      );
+      return;
+    }
+  }
+
+  skippingSong.value = true;
+  try {
+    // queue_id is the same as player_id in Music Assistant
+    const playerId =
+      partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+    if (!playerId) {
+      throw new Error("No player available");
+    }
+
+    await api.playerCommandNext(playerId);
+    showSnackbar("Song skipped!", "success");
+  } catch (error) {
+    console.error("Failed to skip song:", error);
+    showSnackbar("Failed to skip song. Please try again.", "error");
+  } finally {
+    skippingSong.value = false;
+  }
+};
+
 // Exit guest mode
 const exitGuestMode = () => {
   // Clear guest mode flag
@@ -778,12 +922,20 @@ onMounted(async () => {
     )) as PartyModeConfig;
     if (config) {
       rateLimitingEnabled.value = config.enable_rate_limiting ?? true;
-      PLAY_NEXT_MAX_TOKENS.value = config.play_next_limit || 3;
-      PLAY_NEXT_REFILL_RATE.value =
-        (config.play_next_refill_minutes || 20) * 60 * 1000;
+      // Feature enable toggles
+      addQueueEnabled.value = config.enable_add_queue ?? true;
+      playNextEnabled.value = config.enable_play_next ?? true;
+      skipSongEnabled.value = config.enable_skip_song ?? true;
+      // Token limits and refill rates
       ADD_QUEUE_MAX_TOKENS.value = config.add_queue_limit || 10;
       ADD_QUEUE_REFILL_RATE.value =
         (config.add_queue_refill_minutes || 2) * 60 * 1000;
+      PLAY_NEXT_MAX_TOKENS.value = config.play_next_limit || 3;
+      PLAY_NEXT_REFILL_RATE.value =
+        (config.play_next_refill_minutes || 20) * 60 * 1000;
+      SKIP_SONG_MAX_TOKENS.value = config.skip_song_limit || 1;
+      SKIP_SONG_REFILL_RATE.value =
+        (config.skip_song_refill_minutes || 60) * 60 * 1000;
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
@@ -808,6 +960,13 @@ onMounted(async () => {
     ADD_QUEUE_REFILL_RATE.value,
   );
   addQueueTokens.value = addQueueBucket.tokens;
+
+  const skipSongBucket = loadTokenBucket(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+  );
+  skipSongTokens.value = skipSongBucket.tokens;
 
   // Start countdown timer
   updateCountdown();
@@ -1144,6 +1303,41 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.queue-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.skip-btn {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.skip-token-badge {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.skip-token-badge.no-tokens {
+  background: rgba(255, 100, 100, 0.3);
+}
+
+.skip-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
 .empty-queue {
