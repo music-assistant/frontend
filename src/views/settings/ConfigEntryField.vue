@@ -11,26 +11,39 @@
       </v-label>
     </div>
 
-    <!-- label value -->
+    <!-- label / alert value -->
     <v-alert
-      v-else-if="confEntry.type == ConfigEntryType.LABEL"
+      v-else-if="
+        confEntry.type == ConfigEntryType.LABEL ||
+        confEntry.type == ConfigEntryType.ALERT
+      "
       variant="tonal"
-      type="info"
+      :type="confEntry.type === ConfigEntryType.ALERT ? 'warning' : 'info'"
       density="comfortable"
       class="config-alert"
     >
-      {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
-    </v-alert>
-
-    <!-- alert value -->
-    <v-alert
-      v-else-if="confEntry.type == ConfigEntryType.ALERT"
-      density="comfortable"
-      type="warning"
-      variant="tonal"
-      class="config-alert"
-    >
-      {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+      <span v-if="confEntry.action">
+        <i18n-t
+          v-if="$te(`settings.${confEntry.key}.label`)"
+          :keypath="`settings.${confEntry.key}.label`"
+        >
+          <template #link>
+            <span class="label-link" @click.prevent="emit('action')">
+              {{ confEntry.action_label }}
+            </span>
+          </template>
+        </i18n-t>
+        <span v-else>
+          {{ fallbackLinkLabel.before }}
+          <span class="label-link" @click.prevent="emit('action')">
+            {{ confEntry.action_label }}
+          </span>
+          {{ fallbackLinkLabel.after }}
+        </span>
+      </span>
+      <span v-else>
+        {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+      </span>
     </v-alert>
 
     <!-- action type -->
@@ -64,7 +77,12 @@
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn variant="outlined" class="action-btn" @click="$emit('openDsp')">
+      <v-btn
+        variant="outlined"
+        class="action-btn"
+        :disabled="isFieldDisabled"
+        @click="$emit('openDsp')"
+      >
         {{ $t("open_dsp_settings") }}
       </v-btn>
     </div>
@@ -288,6 +306,11 @@ const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
 
+const fallbackLinkLabel = computed(() => {
+  const [before, ...rest] = props.confEntry.label.split("{link}");
+  return { before: before ?? "", after: rest.join("{link}") ?? "" };
+});
+
 const emit = defineEmits<{
   (e: "togglePassword"): void;
   (e: "action"): void;
@@ -419,5 +442,10 @@ const translatedOptions = computed(() => {
 .dsp-status {
   font-size: 0.875rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.label-link {
+  cursor: pointer;
+  text-decoration: underline;
 }
 </style>

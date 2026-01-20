@@ -523,6 +523,13 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
+        "grouping_prevents_settings": {
+            "label": "This player is part of a group. Settings are inherited from {link}."
+        },
+        "settings_apply_to_group_members": {
+            "label": "This player is the group leader. Changes here affect all players in the group."   
+        },
+        "player_specific_divider": "Player-specific settings:", 
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
         "metadata": "Metadata",
