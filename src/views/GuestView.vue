@@ -182,8 +182,7 @@
           <!-- Skip button for currently playing item -->
           <div
             v-if="
-              skipSongEnabled &&
-              queueFetchOffset + index === currentQueueIndex
+              skipSongEnabled && queueFetchOffset + index === currentQueueIndex
             "
             class="queue-item-actions"
           >
