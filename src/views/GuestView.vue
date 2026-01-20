@@ -252,6 +252,7 @@ import { store } from "@/plugins/store";
 import {
   EventType,
   EventMessage,
+  PlayerQueue,
   QueueItem,
   MediaType,
   QueueOption,
@@ -518,14 +519,15 @@ const queueFetchOffset = ref(0);
 const queueTotalItems = ref(0);
 const loadingMoreQueueItems = ref(false);
 
-const currentQueueIndex = computed(() => {
-  // Use party mode queue if configured, otherwise use active player queue
+// Simple computed to get current queue and its state directly from the API
+const currentQueue = computed(() => {
   const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
-  if (queueId && api.queues[queueId]) {
-    return api.queues[queueId].current_index ?? 0;
-  }
-  return 0;
+  return queueId ? api.queues[queueId] : null;
 });
+
+const currentQueueIndex = computed(
+  () => currentQueue.value?.current_index ?? 0,
+);
 
 // Scroll to the currently playing item
 const scrollToCurrentItem = async () => {
@@ -554,12 +556,24 @@ const scrollToCurrentItem = async () => {
 // Auto-scroll to currently playing item when it changes
 watch(currentQueueIndex, scrollToCurrentItem);
 
-// Also scroll when queue items are loaded
+// Also scroll when queue items are loaded (but not when appending more items)
 watch(
   queueItems,
-  async (newItems) => {
+  async (newItems, oldItems) => {
     if (newItems.length > 0) {
-      scrollToCurrentItem();
+      // Only scroll to current item on initial load or reset, not when appending
+      // We detect append by checking if new items were added to the end
+      const isAppending =
+        oldItems &&
+        oldItems.length > 0 &&
+        newItems.length > oldItems.length &&
+        newItems
+          .slice(0, oldItems.length)
+          .every((item, i) => item.queue_item_id === oldItems[i].queue_item_id);
+
+      if (!isAppending) {
+        scrollToCurrentItem();
+      }
       runMarqueeScan();
     }
   },
@@ -718,7 +732,6 @@ const addToQueue = async (item: any, position: "next" | "end") => {
 
 // Queue fetching with smart windowing
 const fetchQueueItems = async (reset = true) => {
-  // Use party mode queue if configured, otherwise use active player queue
   const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
   if (!queueId) {
     queueItems.value = [];
@@ -726,14 +739,21 @@ const fetchQueueItems = async (reset = true) => {
   }
 
   try {
-    // Get total queue size from api.queues
-    const queue = api.queues[queueId];
-    queueTotalItems.value = queue?.items || 0;
+    // Fetch the queue state first to ensure we have the current index
+    // This is important on initial load when api.queues may not be populated yet
+    const queue = await api.sendCommand<PlayerQueue>("player_queues/get", {
+      queue_id: queueId,
+    });
+    // Update the reactive queues object so currentQueue computed works
+    if (queue) {
+      api.queues[queueId] = queue;
+      queueTotalItems.value = queue.items || 0;
+    }
 
     if (reset) {
       // Initial load: fetch 50 items starting from current playing position minus 10
       // This ensures the current song is visible with some context before and after
-      const currentIdx = currentQueueIndex.value;
+      const currentIdx = queue?.current_index ?? 0;
       const offset = Math.max(0, currentIdx - 10);
       queueFetchOffset.value = offset;
 
@@ -981,7 +1001,7 @@ onMounted(async () => {
   // Initial queue fetch
   fetchQueueItems();
 
-  // Subscribe to queue updates
+  // Subscribe to queue updates - refetch when items change
   const unsub1 = api.subscribe(
     EventType.QUEUE_ITEMS_UPDATED,
     (evt: EventMessage) => {
@@ -994,16 +1014,15 @@ onMounted(async () => {
     },
   );
 
+  // Refetch if current playing position moves outside our fetched window
   const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
     const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
     if (evt.object_id === queueId) {
-      // Check if current index has moved outside our fetched range
       const currentIdx = currentQueueIndex.value;
       const fetchedStart = queueFetchOffset.value;
-      const fetchedEnd = queueFetchOffset.value + queueItems.value.length;
+      const fetchedEnd = fetchedStart + queueItems.value.length;
 
-      // Only reset if current index is outside our fetched range
-      // or if we're getting close to the boundaries (within 5 items)
+      // Refetch if current song is outside our window or getting close to boundaries
       if (
         currentIdx < fetchedStart + 5 ||
         currentIdx > fetchedEnd - 5 ||
@@ -1011,7 +1030,6 @@ onMounted(async () => {
       ) {
         fetchQueueItems(true);
       }
-      // Otherwise, just let the watchers handle scrolling to the current item
     }
   });
 
@@ -1031,13 +1049,15 @@ onMounted(async () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
-  min-height: 100vh;
-  height: 100vh;
-  overflow-y: auto;
+  /* Add safe area padding for mobile devices with browser UI */
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
+  /* Use dvh (dynamic viewport height) to account for mobile browser UI */
+  /* max-height ensures content doesn't exceed viewport */
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  padding: 1.5rem;
   box-sizing: border-box;
 }
 
@@ -1247,23 +1267,31 @@ onMounted(async () => {
 }
 
 .queue-section {
-  margin-top: 2rem;
-  padding-top: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
   border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-  flex-shrink: 0;
+  /* Fill remaining space */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .queue-section .section-title {
+  flex: none;
   border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
   padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .queue-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 400px;
+  /* Fill remaining space in queue-section */
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -1348,6 +1376,7 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .guest-view {
     padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
   }
 
   .section-header {

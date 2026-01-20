@@ -847,8 +847,7 @@ const autoConnect = async () => {
 
   // Determine the effective guest code and remote ID
   // Priority: URL params > sessionStorage (for reload recovery)
-  let effectiveJoinCode =
-    urlJoinCode && urlJoinCode.length === 8 ? urlJoinCode : null;
+  let effectiveJoinCode = urlJoinCode || null;
   let effectiveRemoteId = urlRemoteId;
 
   // If no guest code in URL but we have a pending one in sessionStorage, use that
@@ -1083,7 +1082,7 @@ const autoConnect = async () => {
   );
 
   // If remote_id is in URL (without guest code), pre-fill and potentially auto-connect
-  if (urlRemoteId && (!urlJoinCode || urlJoinCode.length !== 8)) {
+  if (urlRemoteId && !urlJoinCode) {
     console.debug("[Login] Found remote_id in URL:", urlRemoteId);
     const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (cleanRemoteId.length === 26) {
@@ -1118,9 +1117,9 @@ const autoConnect = async () => {
     // Continue with normal auto-connect flow which will use the stored token
   }
 
-  // Handle local guest code (no remote_id, just the 8-char code)
+  // Handle local guest code (no remote_id, just the join code)
   // This is for local network party mode access
-  if (urlJoinCode && urlJoinCode.length === 8 && !urlRemoteId) {
+  if (urlJoinCode && !urlRemoteId) {
     console.debug("[Login] Local party mode detected - guest code in URL");
 
     // Clean up URL - remove join param
@@ -1794,11 +1793,9 @@ const connectToRemote = async () => {
       window.location.search,
       "\n  joinCodeFromUrl:",
       joinCodeFromUrl,
-      "\n  joinCodeFromUrl?.length:",
-      joinCodeFromUrl?.length,
     );
 
-    if (joinCodeFromUrl && joinCodeFromUrl.length === 8) {
+    if (joinCodeFromUrl) {
       console.info(
         "[Login/connectToRemote] Found join code in URL, attempting guest auth",
       );
@@ -2039,7 +2036,7 @@ const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
 
   // If we have a guest code (party mode QR), navigate to the full URL
   // This will trigger the autoConnect flow with the code parameter
-  if (extractedGuestCode && extractedGuestCode.length === 8) {
+  if (extractedGuestCode) {
     console.debug(
       "[Login] Party mode QR detected, guest code:",
       extractedGuestCode,
