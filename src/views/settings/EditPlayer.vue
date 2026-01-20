@@ -9,7 +9,7 @@
     >
       <!-- Disabled banner -->
       <v-alert
-        v-if="!config.enabled"
+        v-if="!config?.enabled"
         type="warning"
         variant="tonal"
         class="mb-4"
@@ -29,7 +29,7 @@
       </v-alert>
 
       <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
+      <v-card v-if="config" class="header-card mb-4" elevation="0">
         <div class="header-content">
           <div class="header-icon">
             <v-icon size="32" color="primary">mdi-speaker</v-icon>
@@ -96,7 +96,7 @@
 
     <!-- Not available banner -->
     <v-alert
-      v-if="!api.players[config.player_id]?.available"
+      v-if="config && !api.players[config.player_id]?.available"
       type="warning"
       variant="tonal"
       class="mb-4"
@@ -108,7 +108,7 @@
 
     <edit-config
       v-else-if="config"
-      :disabled="!config.enabled"
+      :disabled="!config?.enabled"
       :config-entries="allConfigEntries"
       @submit="onSubmit"
       @action="onAction"
