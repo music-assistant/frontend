@@ -203,7 +203,6 @@ const unsub = api.subscribe(
 );
 onBeforeUnmount(unsub);
 
-
 function addGroupLabel(
   adjEntries: ConfigEntry[],
   category: string,
@@ -234,7 +233,6 @@ function addGroupLabel(
     });
   }
 }
-
 
 // computed properties
 const group_ctx = computed<GroupContext>(() => {
