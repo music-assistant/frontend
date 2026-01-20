@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -7,7 +8,15 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { toggleHAMenu } from "@/plugins/homeassistant";
+import { store } from "@/plugins/store";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -15,6 +24,7 @@ import { getMenuItems } from "./utils/getMenuItems";
 
 const router = useRouter();
 const { t } = useI18n();
+const { state, isMobile } = useSidebar();
 
 const menuItems = getMenuItems();
 
@@ -27,6 +37,12 @@ const navItems = computed(() => {
       icon: item.icon,
     }));
 });
+
+const isCollapsed = computed(() => state.value === "collapsed");
+
+const handleHAButtonClick = () => {
+  toggleHAMenu();
+};
 </script>
 
 <template>
@@ -44,9 +60,39 @@ const navItems = computed(() => {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
+      <div v-if="store.isHAAppSession" class="px-2 w-full mb-2">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="outline"
+              :class="[
+                'home-assistant-button w-full justify-start',
+                isCollapsed && 'home-assistant-collapsed',
+              ]"
+              @click="handleHAButtonClick"
+            >
+              <img
+                src="@/assets/home-assistant-logo.svg"
+                alt="Home Assistant"
+                class="home-assistant-icon"
+              />
+              <span class="home-assistant-text">Home Assistant</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            align="center"
+            :hidden="state !== 'collapsed' || isMobile"
+          >
+            Home Assistant
+          </TooltipContent>
+        </Tooltip>
+      </div>
       <NavMain :items="navItems" />
     </SidebarContent>
-    <SidebarFooter> <SidebarTrigger class="-ml-1" /> </SidebarFooter>
+    <SidebarFooter>
+      <SidebarTrigger class="-ml-1" />
+    </SidebarFooter>
   </Sidebar>
 </template>
 
@@ -93,5 +139,45 @@ const navItems = computed(() => {
   width: 2rem !important;
   height: 2rem !important;
   margin-right: 0.5rem !important;
+}
+
+.home-assistant-button {
+  transition: all 0.2s ease;
+  padding-left: 8px !important;
+}
+
+.home-assistant-icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  transition: all 0.2s ease;
+}
+
+.home-assistant-text {
+  transition:
+    opacity 0.2s ease,
+    width 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  margin-left: 0.5rem;
+}
+
+.home-assistant-collapsed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center !important;
+  padding-right: 7px !important;
+}
+
+.home-assistant-collapsed .home-assistant-icon {
+  margin: 0 auto;
+}
+
+.home-assistant-collapsed .home-assistant-text {
+  opacity: 0;
+  width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 </style>

@@ -32,13 +32,17 @@ import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useTheme } from "vuetify";
 import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import {
+  subscribeToHAProperties,
+  unsubscribeFromHAProperties,
+} from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
@@ -183,6 +187,11 @@ const completeInitialization = async () => {
   authManager.setCurrentUser(userInfo);
   store.serverInfo = serverInfo;
 
+  // Enable kiosk mode when running in Home Assistant app panel
+  if (store.isHAAppSession && serverInfo.homeassistant_addon) {
+    subscribeToHAProperties({ kioskMode: true });
+  }
+
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
   }
@@ -301,5 +310,9 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
+});
+
+onUnmounted(() => {
+  unsubscribeFromHAProperties();
 });
 </script>

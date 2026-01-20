@@ -57,6 +57,7 @@ interface Store {
   currentUser?: User;
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
+  isHAAppSession: boolean;
   isOnboarding: boolean;
 }
 
@@ -127,5 +128,6 @@ export const store: Store = reactive({
   currentUser: undefined,
   serverInfo: undefined,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
+  isHAAppSession: window.location.pathname.startsWith("/app/"),
   isOnboarding: false,
 });
