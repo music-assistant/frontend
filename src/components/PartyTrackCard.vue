@@ -1,5 +1,13 @@
 <template>
-  <div v-if="queueItem" :class="['track-card', `position-${position}`]">
+  <div
+    v-if="queueItem"
+    :class="[
+      'track-card',
+      `position-${position}`,
+      { 'guest-request': isGuestRequest },
+    ]"
+    :style="isGuestRequest ? { '--guest-color': badgeColor } : {}"
+  >
     <div :class="['track-artwork', artworkSizeClass]">
       <MediaItemThumb :item="queueItem" :size="artworkSize" />
     </div>
@@ -15,6 +23,15 @@
         </MarqueeText>
       </div>
     </div>
+    <!-- Guest request badge -->
+    <div
+      v-if="isGuestRequest"
+      class="guest-badge"
+      :style="{ '--badge-color': badgeColor }"
+    >
+      <v-icon size="small">{{ isPlayNext ? 'mdi-playlist-play' : 'mdi-account-music' }}</v-icon>
+      <span v-if="position === 'current'">{{ badgeText }}</span>
+    </div>
   </div>
 </template>
 
@@ -27,9 +44,40 @@ import type { QueueItem } from "@/plugins/api/interfaces";
 export interface Props {
   queueItem?: QueueItem;
   position: "previous-2" | "previous-1" | "current" | "next-1" | "next-2";
+  requestBadgeColor?: string;
+  playNextBadgeColor?: string;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  requestBadgeColor: "#2196F3", // Default: Blue
+  playNextBadgeColor: "#FF5722", // Default: Orange
+});
+
+// Get the badge color based on queue option (fallback to defaults if empty)
+const badgeColor = computed(() => {
+  const isNext = props.queueItem?.queue_option === "next";
+  const color = isNext ? props.playNextBadgeColor : props.requestBadgeColor;
+  // Fallback to defaults if color is empty (before config loads)
+  if (!color) return isNext ? "#FF5722" : "#2196F3";
+  return color;
+});
+
+// Check if this is a guest request
+const isGuestRequest = computed(() => {
+  return props.queueItem?.added_by_user_role === "guest";
+});
+
+// Check if this was added via "Play Next"
+const isPlayNext = computed(() => {
+  return props.queueItem?.queue_option === "next";
+});
+
+// Get badge text based on queue option
+const badgeText = computed(() => {
+  if (!isGuestRequest.value) return "";
+  if (isPlayNext.value) return "Play Next";
+  return "Request";
+});
 
 // Computed track name - prefer stream metadata title for radio streams
 const trackName = computed(() => {
@@ -152,6 +200,38 @@ const infoSizeClass = computed(() => {
   --z-index: 3;
   background: rgba(255, 255, 255, 0.1);
   box-shadow: 0 0.8vh 3.2vh rgba(0, 0, 0, 0.3);
+}
+
+/* Guest request highlighting - color set via inline style from config */
+.track-card.guest-request {
+  background: color-mix(in srgb, var(--guest-color) 20%, transparent);
+  border: 2px solid color-mix(in srgb, var(--guest-color) 40%, transparent);
+}
+
+.track-card.guest-request.position-current {
+  background: color-mix(in srgb, var(--guest-color) 25%, transparent);
+  border: 2px solid color-mix(in srgb, var(--guest-color) 50%, transparent);
+  box-shadow:
+    0 0.8vh 3.2vh rgba(0, 0, 0, 0.3),
+    0 0 2vh color-mix(in srgb, var(--guest-color) 30%, transparent);
+}
+
+.guest-badge {
+  /* Color set via inline style from config */
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: color-mix(in srgb, var(--badge-color) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .track-card.position-next-1 {

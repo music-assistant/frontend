@@ -179,6 +179,17 @@
               <span>{{ getQueueItemArtist(item) }}</span>
             </div>
           </div>
+          <!-- Guest request badge (right aligned) -->
+          <span
+            v-if="item.added_by_user_role === 'guest'"
+            class="guest-request-badge"
+            :style="{
+              '--badge-color': item.queue_option === 'next' ? playNextBadgeColor : requestBadgeColor,
+            }"
+          >
+            <v-icon size="x-small">{{ item.queue_option === 'next' ? 'mdi-playlist-play' : 'mdi-account-music' }}</v-icon>
+            <span>{{ item.queue_option === 'next' ? 'Play Next' : 'Request' }}</span>
+          </span>
           <!-- Skip button for currently playing item -->
           <div
             v-if="
@@ -324,6 +335,9 @@ interface PartyModeConfig {
   skip_song_refill_minutes: number;
   // UI settings
   album_art_background: boolean;
+  // Badge colors
+  request_badge_color?: string;
+  play_next_badge_color?: string;
 }
 
 const rateLimitingEnabled = ref(true); // Default to enabled
@@ -331,6 +345,9 @@ const rateLimitingEnabled = ref(true); // Default to enabled
 const addQueueEnabled = ref(true);
 const playNextEnabled = ref(true);
 const skipSongEnabled = ref(true);
+// Badge colors (hex values from config, loaded from party_mode/config)
+const requestBadgeColor = ref("");
+const playNextBadgeColor = ref("");
 // Token counts
 const playNextTokens = ref(3);
 const addQueueTokens = ref(10);
@@ -955,10 +972,15 @@ onMounted(async () => {
       SKIP_SONG_MAX_TOKENS.value = config.skip_song_limit || 1;
       SKIP_SONG_REFILL_RATE.value =
         (config.skip_song_refill_minutes || 60) * 60 * 1000;
+      // Badge colors (always set from config)
+      requestBadgeColor.value = config.request_badge_color || "#2196F3";
+      playNextBadgeColor.value = config.play_next_badge_color || "#FF5722";
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
     // Use defaults if fetch fails
+    requestBadgeColor.value = "#2196F3";
+    playNextBadgeColor.value = "#FF5722";
   }
 
   // Push initial state to enable back interception
@@ -1330,6 +1352,24 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.guest-request-badge {
+  /* Color set via inline style from config; CSS fallback only if style missing */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--badge-color);
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .queue-item-actions {

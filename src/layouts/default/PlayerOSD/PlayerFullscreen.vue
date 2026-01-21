@@ -298,6 +298,22 @@
                       </div>
                     </template>
                     <template #append>
+                      <span
+                        v-if="item.added_by_user_role === 'guest'"
+                        :class="[
+                          'guest-request-badge',
+                          { 'play-next': item.queue_option === 'next' },
+                        ]"
+                      >
+                        <v-icon size="x-small">{{
+                          item.queue_option === "next"
+                            ? "mdi-playlist-play"
+                            : "mdi-account-music"
+                        }}</v-icon>
+                        {{
+                          item.queue_option === "next" ? "Play Next" : "Request"
+                        }}
+                      </span>
                       <NowPlayingBadge
                         v-if="
                           item.queue_item_id ===
@@ -1612,5 +1628,27 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.guest-request-badge {
+  /* Fixed colors for main app (not party mode views which use config) */
+  --badge-color: #2196f3; /* Blue for regular requests */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 35%, transparent);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--badge-color);
+  margin-right: 0.5rem;
+}
+
+.guest-request-badge.play-next {
+  --badge-color: #ff5722; /* Orange for Play Next */
 }
 </style>
