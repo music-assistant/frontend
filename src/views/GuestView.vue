@@ -114,8 +114,8 @@
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div v-else-if="!searching && searchQuery" class="empty-state">
+    <!-- Empty State - only show when a search has completed with no results -->
+    <div v-else-if="!searching && hasSearched && searchResults.length === 0" class="empty-state">
       <v-icon size="64" color="grey">mdi-magnify</v-icon>
       <p>No results found for "{{ searchQuery }}"</p>
       <p class="empty-hint">Try a different search term</p>
@@ -297,6 +297,8 @@ const searchQuery = ref("");
 const searchResults = ref<any[]>([]);
 const searching = ref(false);
 const addingItems = ref(new Set<string>());
+const hasSearched = ref(false); // Track if a search has been performed
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Infinite scroll state
 const resultsListRef = ref<HTMLElement | null>(null);
@@ -627,6 +629,7 @@ const performSearch = async () => {
   if (!searchQuery.value || searchQuery.value.length < 2) return;
 
   searching.value = true;
+  hasSearched.value = true;
   try {
     const results = await api.search(searchQuery.value, [
       MediaType.TRACK,
@@ -649,10 +652,40 @@ const performSearch = async () => {
   }
 };
 
+// Debounced search - triggers after user pauses typing
+const debouncedSearch = () => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+  // Only trigger if query is long enough
+  if (searchQuery.value && searchQuery.value.length >= 2) {
+    searchDebounceTimer = setTimeout(() => {
+      performSearch();
+    }, 400); // 400ms debounce delay
+  }
+};
+
+// Watch for search query changes and trigger debounced search
+watch(searchQuery, (newQuery) => {
+  if (!newQuery || newQuery.length < 2) {
+    // Clear results if query is too short
+    if (hasSearched.value) {
+      searchResults.value = [];
+      hasSearched.value = false;
+    }
+  } else {
+    debouncedSearch();
+  }
+});
+
 const clearSearch = () => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
   searchQuery.value = "";
   searchResults.value = [];
   displayedResultsCount.value = 10; // Reset to initial count
+  hasSearched.value = false;
 };
 
 // Infinite scroll handler
@@ -1070,6 +1103,9 @@ onMounted(async () => {
     unsub2();
     if (countdownInterval) {
       clearInterval(countdownInterval);
+    }
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
     }
   });
 });
