@@ -188,8 +188,27 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
 
   // Enable kiosk mode when running in Home Assistant app panel
+  console.log("[HA Debug] completeInitialization called");
+  console.log("[HA Debug] window.location.pathname:", window.location.pathname);
+  console.log(
+    "[HA Debug] pathname.startsWith('/app/'):",
+    window.location.pathname.startsWith("/app/"),
+  );
+  console.log("[HA Debug] store.isHAAppSession:", store.isHAAppSession);
+  console.log(
+    "[HA Debug] serverInfo.homeassistant_addon:",
+    serverInfo.homeassistant_addon,
+  );
+  console.log(
+    "[HA Debug] Should enable kiosk:",
+    store.isHAAppSession && serverInfo.homeassistant_addon,
+  );
+
   if (store.isHAAppSession && serverInfo.homeassistant_addon) {
+    console.log("[HA Debug] Subscribing to HA properties with kioskMode: true");
     subscribeToHAProperties({ kioskMode: true });
+  } else {
+    console.log("[HA Debug] NOT subscribing - conditions not met");
   }
 
   if (api.baseUrl) {
