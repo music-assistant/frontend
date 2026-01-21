@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from "vue-router";
+import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
 const routes = [
@@ -392,6 +393,10 @@ router.afterEach((to, from) => {
   if (!from?.path) return;
   console.debug("navigating from ", from.path, " to ", to.path);
   store.prevRoute = from.path;
+
+  if (store.isIngressSession) {
+    notifyHARouteChange(to.fullPath);
+  }
 
   // Clean up onboard parameter from URL if present
   if (store.isOnboarding && to.path === "/settings/providers") {

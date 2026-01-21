@@ -15,11 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  navigateInHA,
-  toggleHAMenu,
-  unsubscribeFromHAProperties,
-} from "@/plugins/homeassistant";
+import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -44,41 +40,18 @@ const navItems = computed(() => {
 
 const isCollapsed = computed(() => state.value === "collapsed");
 
-// HA Debug functions
-const handleToggleMenu = () => {
-  console.log("[HA Debug] Calling toggleHAMenu()");
-  toggleHAMenu();
-};
+const haButtonText = computed(() => {
+  return haState.kioskModeEnabled ? "Show HA Menu" : "Hide HA Menu";
+});
 
-const handleDisableKiosk = () => {
-  console.log("[HA Debug] Calling unsubscribeFromHAProperties()");
-  unsubscribeFromHAProperties();
-};
+const haButtonTooltip = computed(() => {
+  return haState.kioskModeEnabled
+    ? "Show Home Assistant Menu"
+    : "Hide Home Assistant Menu";
+});
 
-const handleNavigateHA = () => {
-  console.log("[HA Debug] Calling navigateInHA('/')");
-  navigateInHA("/");
-};
-
-const handleRawToggleMenu = () => {
-  console.log("[HA Debug] Raw postMessage: toggle-menu");
-  window.parent.postMessage({ type: "home-assistant/toggle-menu" }, "*");
-};
-
-const handleRawKioskOff = () => {
-  console.log("[HA Debug] Raw postMessage: unsubscribe-properties");
-  window.parent.postMessage(
-    { type: "home-assistant/unsubscribe-properties" },
-    "*",
-  );
-};
-
-const handleRawNavigate = () => {
-  console.log("[HA Debug] Raw postMessage: navigate to /lovelace");
-  window.parent.postMessage(
-    { type: "home-assistant/navigate", path: "/lovelace" },
-    "*",
-  );
+const handleHAMenuToggle = () => {
+  toggleHAMenuVisibility();
 };
 </script>
 
@@ -97,9 +70,8 @@ const handleRawNavigate = () => {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
-      <!-- HA Debug Buttons (only in ingress/app session) -->
-      <div v-if="store.isIngressSession" class="px-2 w-full mb-2 space-y-2">
-        <!-- Toggle Menu Button -->
+      <!-- HA Menu Toggle Button (only in ingress/app session) -->
+      <div v-if="store.isIngressSession" class="px-2 w-full mb-2">
         <Tooltip>
           <TooltipTrigger as-child>
             <Button
@@ -108,14 +80,14 @@ const handleRawNavigate = () => {
                 'home-assistant-button w-full justify-start',
                 isCollapsed && 'home-assistant-collapsed',
               ]"
-              @click="handleToggleMenu"
+              @click="handleHAMenuToggle"
             >
               <img
                 src="@/assets/home-assistant-logo.svg"
-                alt="Toggle Menu"
+                alt="Home Assistant"
                 class="home-assistant-icon"
               />
-              <span class="home-assistant-text">Toggle Menu</span>
+              <span class="home-assistant-text">{{ haButtonText }}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent
@@ -123,59 +95,9 @@ const handleRawNavigate = () => {
             align="center"
             :hidden="state !== 'collapsed' || isMobile"
           >
-            Toggle HA Menu
+            {{ haButtonTooltip }}
           </TooltipContent>
         </Tooltip>
-
-        <!-- Disable Kiosk Button -->
-        <Button
-          v-if="!isCollapsed"
-          variant="outline"
-          class="w-full justify-start text-xs"
-          size="sm"
-          @click="handleDisableKiosk"
-        >
-          Disable Kiosk
-        </Button>
-
-        <!-- Navigate to HA Button -->
-        <Button
-          v-if="!isCollapsed"
-          variant="outline"
-          class="w-full justify-start text-xs"
-          size="sm"
-          @click="handleNavigateHA"
-        >
-          Navigate HA (/)
-        </Button>
-
-        <!-- Raw postMessage tests -->
-        <div
-          v-if="!isCollapsed"
-          class="text-xs text-muted-foreground mt-2 mb-1"
-        >
-          Raw postMessage:
-        </div>
-
-        <Button
-          v-if="!isCollapsed"
-          variant="ghost"
-          class="w-full justify-start text-xs"
-          size="sm"
-          @click="handleRawToggleMenu"
-        >
-          Raw: toggle-menu
-        </Button>
-
-        <Button
-          v-if="!isCollapsed"
-          variant="ghost"
-          class="w-full justify-start text-xs"
-          size="sm"
-          @click="handleRawKioskOff"
-        >
-          Raw: unsubscribe
-        </Button>
       </div>
       <NavMain :items="navItems" />
     </SidebarContent>

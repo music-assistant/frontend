@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { toggleHAMenu } from "@/plugins/homeassistant";
+import { toggleHAMenuVisibility } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
 import { LibraryIcon } from "lucide-vue-next";
 import { ref } from "vue";
@@ -81,7 +81,9 @@ const menuItems = getMenuItems();
 
 const isLibraryOpen = ref(false);
 
-const handleHAButtonClick = toggleHAMenu;
+const handleHAButtonClick = () => {
+  toggleHAMenuVisibility();
+};
 </script>
 
 <style>

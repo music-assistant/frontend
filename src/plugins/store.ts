@@ -57,7 +57,6 @@ interface Store {
   currentUser?: User;
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
-  isHAAppSession: boolean;
   isOnboarding: boolean;
 }
 
@@ -128,12 +127,10 @@ export const store: Store = reactive({
   currentUser: undefined,
   serverInfo: undefined,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
-  isHAAppSession: window.location.pathname.startsWith("/app/"),
   isOnboarding: false,
 });
 
 // Debug logging for HA session detection
 console.log("[HA Debug] Store initialized");
 console.log("[HA Debug] window.location.pathname:", window.location.pathname);
-console.log("[HA Debug] store.isHAAppSession:", store.isHAAppSession);
 console.log("[HA Debug] store.isIngressSession:", store.isIngressSession);
