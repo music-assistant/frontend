@@ -19,8 +19,13 @@
       webPlayer.interacted == true
     "
   />
+  <!-- Sendspin web player is disabled when running in companion mode (native app handles audio) -->
   <SendspinPlayer
-    v-if="webPlayer.tabMode === WebPlayerMode.SENDSPIN && webPlayer.player_id"
+    v-if="
+      webPlayer.tabMode === WebPlayerMode.SENDSPIN &&
+      webPlayer.player_id &&
+      !companionMode
+    "
     :player-id="webPlayer.player_id"
   />
 </template>
@@ -42,6 +47,10 @@ import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowse
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
+import {
+  initializeCompanionIntegration,
+  companionMode,
+} from "./plugins/companion";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import Login from "./views/Login.vue";
 
@@ -218,6 +227,11 @@ const completeInitialization = async () => {
     router.push("/settings/providers");
   }
   api.state.value = ConnectionState.INITIALIZED;
+
+  // Initialize companion app integration
+  if (api.baseUrl) {
+    initializeCompanionIntegration(api.baseUrl);
+  }
 };
 
 onMounted(async () => {

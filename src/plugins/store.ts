@@ -58,6 +58,7 @@ interface Store {
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
   isOnboarding: boolean;
+  companionPlayerId?: string;
 }
 
 export const store: Store = reactive({
