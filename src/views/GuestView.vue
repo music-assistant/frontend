@@ -184,11 +184,20 @@
             v-if="item.added_by_user_role === 'guest'"
             class="guest-request-badge"
             :style="{
-              '--badge-color': item.queue_option === 'next' ? playNextBadgeColor : requestBadgeColor,
+              '--badge-color':
+                item.queue_option === 'next'
+                  ? playNextBadgeColor
+                  : requestBadgeColor,
             }"
           >
-            <v-icon size="x-small">{{ item.queue_option === 'next' ? 'mdi-playlist-play' : 'mdi-account-music' }}</v-icon>
-            <span>{{ item.queue_option === 'next' ? 'Play Next' : 'Request' }}</span>
+            <v-icon size="x-small">{{
+              item.queue_option === "next"
+                ? "mdi-playlist-play"
+                : "mdi-account-music"
+            }}</v-icon>
+            <span>{{
+              item.queue_option === "next" ? "Play Next" : "Request"
+            }}</span>
           </span>
           <!-- Skip button for currently playing item -->
           <div

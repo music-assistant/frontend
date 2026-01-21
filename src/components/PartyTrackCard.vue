@@ -29,7 +29,9 @@
       class="guest-badge"
       :style="{ '--badge-color': badgeColor }"
     >
-      <v-icon size="small">{{ isPlayNext ? 'mdi-playlist-play' : 'mdi-account-music' }}</v-icon>
+      <v-icon size="small">{{
+        isPlayNext ? "mdi-playlist-play" : "mdi-account-music"
+      }}</v-icon>
       <span v-if="position === 'current'">{{ badgeText }}</span>
     </div>
   </div>
