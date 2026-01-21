@@ -137,6 +137,8 @@ const navigateToProviders = () => {
 };
 
 onMounted(async () => {
+  console.log("Home page mounted");
+
   if (authManager.isAdmin()) {
     try {
       const configs = await api.getProviderConfigs();
