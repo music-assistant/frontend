@@ -115,7 +115,10 @@
     </div>
 
     <!-- Empty State - only show when a search has completed with no results -->
-    <div v-else-if="!searching && hasSearched && searchResults.length === 0" class="empty-state">
+    <div
+      v-else-if="!searching && hasSearched && searchResults.length === 0"
+      class="empty-state"
+    >
       <v-icon size="64" color="grey">mdi-magnify</v-icon>
       <p>No results found for "{{ searchQuery }}"</p>
       <p class="empty-hint">Try a different search term</p>
