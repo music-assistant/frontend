@@ -81,9 +81,7 @@ const menuItems = getMenuItems();
 
 const isLibraryOpen = ref(false);
 
-const handleHAButtonClick = () => {
-  toggleHAMenu();
-};
+const handleHAButtonClick = toggleHAMenu;
 </script>
 
 <style>
