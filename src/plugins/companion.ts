@@ -253,6 +253,66 @@ const extractNowPlaying = (player: Player | undefined): NowPlaying => {
 let unwatchNowPlaying: (() => void) | null = null;
 
 /**
+ * Handle player commands from the companion app (tray controls)
+ * This is called via window.__COMPANION_PLAYER_COMMAND__ from Rust
+ */
+const handlePlayerCommand = async (command: string): Promise<void> => {
+  console.log("[Companion] Received player command:", command);
+
+  const player = store.activePlayer;
+  if (!player) {
+    console.warn("[Companion] No active player to control");
+    return;
+  }
+
+  try {
+    // Import api dynamically to avoid circular dependency
+    const { api } = await import("@/plugins/api");
+
+    switch (command) {
+      case "play":
+        await api.playerCommandPlay(player.player_id);
+        break;
+      case "pause":
+        await api.playerCommandPause(player.player_id);
+        break;
+      case "next":
+        await api.playerCommandNext(player.player_id);
+        break;
+      case "previous":
+        await api.playerCommandPrevious(player.player_id);
+        break;
+      default:
+        console.warn("[Companion] Unknown player command:", command);
+    }
+  } catch (error) {
+    console.error("[Companion] Failed to execute player command:", error);
+  }
+};
+
+/**
+ * Register the global player command handler
+ */
+const registerPlayerCommandHandler = (): void => {
+  if (typeof window === "undefined") return;
+
+  // Expose the handler as a global function that Rust can call via eval
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__COMPANION_PLAYER_COMMAND__ = handlePlayerCommand;
+  console.log("[Companion] Registered player command handler");
+};
+
+/**
+ * Unregister the global player command handler
+ */
+const unregisterPlayerCommandHandler = (): void => {
+  if (typeof window === "undefined") return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (window as any).__COMPANION_PLAYER_COMMAND__;
+};
+
+/**
  * Start watching the active player and push updates to Tauri
  */
 const startNowPlayingWatcher = (): void => {
@@ -342,6 +402,9 @@ export const initializeCompanionIntegration = async (
   // Start watching now-playing and pushing to Tauri
   startNowPlayingWatcher();
 
+  // Register handler for player commands from tray
+  registerPlayerCommandHandler();
+
   // Signal to companion app that we're ready
   // This prevents the "outdated server" warning
   const invoke = getCompanionInvoke();
@@ -370,6 +433,7 @@ export const cleanupCompanionIntegration = (): void => {
   }
 
   stopNowPlayingWatcher();
+  unregisterPlayerCommandHandler();
   companionMode.value = false;
   store.companionPlayerId = undefined;
 
