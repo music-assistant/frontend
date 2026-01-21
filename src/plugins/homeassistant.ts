@@ -37,14 +37,13 @@ function handleMessage(event: MessageEvent) {
  * Optionally enables kiosk mode which hides HA's toolbar.
  *
  * @param options.kioskMode - If true, requests HA to hide its toolbar
- * @returns Unsubscribe function
  */
 export function subscribeToHAProperties(
   options: { kioskMode?: boolean } = {},
-): () => void {
+): void {
   if (state.isSubscribed) {
     console.warn("[HA Integration] Already subscribed to HA properties");
-    return unsubscribeFromHAProperties;
+    return;
   }
 
   messageHandler = handleMessage;
@@ -65,8 +64,6 @@ export function subscribeToHAProperties(
     "[HA Integration] Subscribed to HA properties",
     options.kioskMode ? "(kiosk mode enabled)" : "",
   );
-
-  return unsubscribeFromHAProperties;
 }
 
 /**
@@ -130,11 +127,3 @@ export function navigateInHA(
 }
 
 export const haState = readonly(state);
-
-export default {
-  subscribeToHAProperties,
-  unsubscribeFromHAProperties,
-  toggleHAMenu,
-  navigateInHA,
-  state: haState,
-};
