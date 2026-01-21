@@ -204,7 +204,7 @@ const completeInitialization = async () => {
     store.isHAAppSession && serverInfo.homeassistant_addon,
   );
 
-  if (store.isHAAppSession && serverInfo.homeassistant_addon) {
+  if (store.isIngressSession && serverInfo.homeassistant_addon) {
     console.log("[HA Debug] Subscribing to HA properties with kioskMode: true");
     subscribeToHAProperties({ kioskMode: true });
   } else {

@@ -6,7 +6,7 @@
     role="navigation"
   >
     <v-btn
-      v-if="store.isHAAppSession"
+      v-if="store.isIngressSession"
       aria-label="Home Assistant"
       tabindex="0"
       variant="text"

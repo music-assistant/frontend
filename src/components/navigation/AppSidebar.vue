@@ -60,7 +60,7 @@ const handleHAButtonClick = () => {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
-      <div v-if="store.isHAAppSession" class="px-2 w-full mb-2">
+      <div v-if="store.isIngressSession" class="px-2 w-full mb-2">
         <Tooltip>
           <TooltipTrigger as-child>
             <Button
