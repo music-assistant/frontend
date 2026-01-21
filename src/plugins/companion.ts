@@ -121,7 +121,6 @@ export const getCompanionAppVersion = async (): Promise<string | null> => {
   }
 };
 
-
 /**
  * Get the companion app's Sendspin player ID
  * This can be used to show a "This Device" badge in the player list
@@ -191,7 +190,9 @@ const updateNowPlaying = async (nowPlaying: NowPlaying): Promise<void> => {
  */
 const getActiveSource = (player: Player): PlayerSource | undefined => {
   if (!player.active_source || !player.source_list) return undefined;
-  return player.source_list.find((source) => source.id === player.active_source);
+  return player.source_list.find(
+    (source) => source.id === player.active_source,
+  );
 };
 
 /**
@@ -359,7 +360,6 @@ export const initializeCompanionIntegration = async (
   }
 };
 
-
 /**
  * Clean up companion app integration
  * Call this when disconnecting from the MA server
@@ -390,7 +390,6 @@ export const cleanupCompanionIntegration = (): void => {
     can_previous: false,
   });
 };
-
 
 /**
  * Notify the companion app that the user has logged out

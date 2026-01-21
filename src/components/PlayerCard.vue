@@ -45,7 +45,10 @@
       <template #title>
         <!-- special builtin player (web player or companion native player) -->
         <div
-          v-if="webPlayer.player_id === player.player_id || store.companionPlayerId === player.player_id"
+          v-if="
+            webPlayer.player_id === player.player_id ||
+            store.companionPlayerId === player.player_id
+          "
           style="margin-bottom: 3px"
         >
           <span>{{

@@ -101,9 +101,8 @@ export class AuthManager {
 
     // Notify companion app launcher (if running in companion mode)
     // This navigates back to the server selection screen
-    const { notifyCompanionLogout, isCompanionApp } = await import(
-      "@/plugins/companion"
-    );
+    const { notifyCompanionLogout, isCompanionApp } =
+      await import("@/plugins/companion");
     if (isCompanionApp()) {
       await notifyCompanionLogout();
       // Navigation is handled by the companion app, don't reload
