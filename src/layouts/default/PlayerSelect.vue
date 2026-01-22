@@ -169,8 +169,11 @@ const getPlayerPriority = (player: Player): number => {
     score += 2;
   }
 
-  // "This device" web player = 2 points
-  if (player.player_id === webPlayer.player_id) {
+  // "This device" web/companion player = 2 points
+  if (
+    player.player_id === webPlayer.player_id ||
+    player.player_id === store.companionPlayerId
+  ) {
     score += 2;
   }
 
@@ -322,7 +325,7 @@ onMounted(() => {
 });
 
 const checkDefaultPlayer = function () {
-  if (store.activePlayer && playerVisible(store.activePlayer)) return;
+  if (store.activePlayer) return;
   const newDefaultPlayerId = selectDefaultPlayer();
   if (newDefaultPlayerId) {
     store.activePlayerId = newDefaultPlayerId;
@@ -336,15 +339,24 @@ const selectDefaultPlayer = function () {
   const lastPlayerId =
     localStorage.getItem("activePlayerId") ||
     getPreference<string>("activePlayerId").value;
-  if (
-    lastPlayerId &&
-    lastPlayerId in api.players &&
-    api.players[lastPlayerId].available
-  ) {
+  if (lastPlayerId && lastPlayerId in api.players) {
     return lastPlayerId;
   }
-  if (webPlayer.player_id) {
+  // select webPlayer if available (only if we do not have a previous player stored)
+  if (
+    !lastPlayerId &&
+    webPlayer.player_id &&
+    webPlayer.player_id in api.players
+  ) {
     return webPlayer.player_id;
+  }
+  // select companionPlayer if available (only if we do not have a previous player stored)
+  if (
+    !lastPlayerId &&
+    store.companionPlayerId &&
+    store.companionPlayerId in api.players
+  ) {
+    return store.companionPlayerId;
   }
 };
 </script>

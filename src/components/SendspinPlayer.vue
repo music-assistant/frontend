@@ -18,7 +18,7 @@ import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer } from "@/plugins/web_player";
 import {
   prepareSendspinSession,
   isDirectConnection,
@@ -191,10 +191,6 @@ watch(correctionMode, (mode) => {
 // Setup on mount
 onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
-
-  // Set audio source to indicate this tab is handling audio
-  // (for coordination with other tabs via web_player.ts)
-  webPlayer.audioSource = WebPlayerMode.SENDSPIN;
 
   // If already showing active player metadata, play silent audio now that silentAudioRef exists
   if (

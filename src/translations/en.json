@@ -658,13 +658,9 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "web_player_mode": {
-            "label": "Web player mode",
-            "description": "Choose how this browser handles audio playback.",
-            "options": {
-                "sendspin": "Sendspin (experimental)",
-                "disabled": "Disabled (controls only)"
-            }
+        "web_player_enabled": {
+            "label": "Enable built-in (Sendspin) Web Player",
+            "description": "Allow playback to this device/browser using the built-in Sendspin web player."
         },
         "sendspin_sync_delay": {
             "label": "Sendspin sync delay (ms)",
@@ -673,6 +669,10 @@
         "sendspin_output_latency_compensation": {
             "label": "Use browser latency detection",
             "description": "Automatically compensate for hardware audio latency (e.g., Bluetooth headphones) using the browser's output latency API. This API is fairly new and may not work reliably on all browsers and operating systems."
+        },
+        "enable_browser_controls": {
+            "label": "Enable browser media controls",
+            "description": "Allow control of playback using the browser's built-in media controls (e.g., media keys on your keyboard)."
         },
         "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",
