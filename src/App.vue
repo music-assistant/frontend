@@ -254,8 +254,12 @@ const completeInitialization = async () => {
 };
 
 onMounted(async () => {
-  // @ts-ignore
-  store.isInStandaloneMode = window.navigator.standalone || false;
+  // Detect if running as installed PWA (works across iOS, Android, and desktop)
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  store.isInPWAMode =
+    nav.standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches;
 
   // Cache language settings
   const langPref = localStorage.getItem("frontend.settings.language") || "auto";

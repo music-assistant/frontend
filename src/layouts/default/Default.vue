@@ -7,7 +7,7 @@
       <Footer />
     </template>
   </v-app>
-  <reload-prompt v-if="store.isInStandaloneMode" />
+  <reload-prompt />
 </template>
 
 <script lang="ts" setup>
